@@ -980,7 +980,6 @@ function setupCalendar() {
         popup.onclick = (e) => { if (e.target === popup) popup.style.display = 'none'; };
     }
     if (searchInput) {
-        searchInput.setAttribute('autocomplete', 'off');
         searchInput.addEventListener('input', () => {
             renderCalendar();
         });
@@ -2190,7 +2189,6 @@ function setupGanttSearch() {
     const filterBtn = document.getElementById('btn-gantt-filter');
 
     if (searchInput) {
-        searchInput.setAttribute('autocomplete', 'off');
         searchInput.addEventListener('input', () => {
             renderGanttChart();
         });
