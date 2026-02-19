@@ -1,0 +1,5 @@
+Flask
+python-dotenv
+Werkzeug
+Flask-WTF
+Flask-Limiter

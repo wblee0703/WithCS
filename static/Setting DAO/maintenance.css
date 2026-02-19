@@ -1,0 +1,488 @@
+/* ==========================================================================
+   1. 레이아웃 (Layout)
+   ========================================================================== */
+.detail-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.breadcrumb-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.dashboard-main {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    min-width: 0;
+    min-height: 0;
+}
+
+.content-body {
+    display: flex;
+    gap: 15px;
+    flex: 1;
+    overflow: hidden;
+}
+
+.left-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    gap: 15px;
+}
+
+.bottom-grid {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    min-height: 0;
+}
+
+#maint-window {
+    flex: 1;
+    min-height: 0;
+}
+
+/* ==========================================================================
+   2. 카드 컴포넌트 (Cards)
+   ========================================================================== */
+.card {
+    background: #161b22;
+    border-radius: 8px;
+    border: 1px solid #30363d;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.card-header {
+    background: #21262d;
+    padding: 0 15px;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.card-header h3 {
+    font-size: 14px;
+    color: #e6edf3;
+    margin-bottom: 0 !important;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 15px;
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   3. 테이블 컴포넌트 (Tables)
+   ========================================================================== */
+.data-table-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    margin-top: 5px;
+    min-height: 0;
+    padding-bottom: 10px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    color: #8b949e;
+    font-size: 12px;
+    text-align: center;
+    padding: 10px;
+    border-bottom: 1px solid #30363d;
+    position: sticky;
+    top: 0;
+    background: #161b22;
+    z-index: 1;
+}
+
+.data-table td {
+    padding: 12px 10px;
+    text-align: center;
+    font-size: 13px;
+    border-bottom: 1px solid #21262d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.data-table tbody tr:hover {
+    background-color: #161b22;
+}
+
+.data-table input {
+    padding: 4px;
+    font-size: 13px;
+}
+
+/* 테이블 상태 클래스 */
+.active-log {
+    background-color: rgba(35, 134, 54, 0.1) !important;
+    border-left: 4px solid #238636 !important;
+}
+
+tr.editing {
+    background-color: rgba(56, 139, 253, 0.1);
+}
+
+tr.editing td {
+    overflow: visible;
+}
+
+tr.editing td[contenteditable="true"] {
+    outline: 1px solid #58a6ff;
+    background: #0d1117;
+}
+
+tr.dragging {
+    opacity: 0.5;
+    background-color: #21262d;
+}
+
+/* 유지관리 테이블 설정 */
+#maint-table-body tr { cursor: default; }
+.maint-list-table.management-active tbody tr { cursor: grab; }
+
+/* 유지관리 관리 모드 (삭제 컬럼 제어) */
+.maint-list-table th:last-child,
+.maint-list-table td:last-child {
+    display: none;
+}
+
+.maint-list-table.management-active th:last-child,
+.maint-list-table.management-active td:last-child {
+    display: table-cell;
+}
+
+/* 로그 테이블 설정 */
+#log-list-wrapper .data-table {
+    table-layout: fixed;
+}
+
+#log-list-wrapper .data-table th:nth-child(1) { width: 150px; } /* 점검일 */
+#log-list-wrapper .data-table th:nth-child(2) { width: 80px; } /* 구분 */
+#log-list-wrapper .data-table th:nth-child(4) { width: 150px; } /* 작업자 */
+#log-list-wrapper .data-table th:nth-child(5) { width: 90px; }  /* 관리 */
+
+/* 로그 테이블 관리 모드 (삭제 컬럼 제어) */
+#log-list-wrapper .data-table th:nth-child(5),
+#log-list-wrapper .data-table td:nth-child(5) {
+    display: none;
+}
+
+#log-list-wrapper .data-table.management-active th:nth-child(5),
+#log-list-wrapper .data-table.management-active td:nth-child(5) {
+    display: table-cell;
+}
+
+.log-list-container {
+    height: 50%;
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 10px;
+}
+
+/* ==========================================================================
+   4. 폼 및 입력 요소 (Forms & Inputs)
+   ========================================================================== */
+/* 공통 버튼 스타일 */
+#maint-reg-btn,
+#log-reg-btn {
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* 유지관리 물품 입력 */
+#maint-content,
+#maint-date,
+#maint-period {
+    height: 30px;
+    padding: 4px 8px;
+}
+
+.maint-period-input {
+    width: 80px;
+}
+
+/* PM/BM 토글 버튼 */
+.toggle-group {
+    display: flex;
+    height: 30px;
+    background: #0d1117;
+    border-radius: 4px;
+    padding: 2px;
+    border: 1px solid #30363d;
+}
+
+.toggle-group button {
+    background: none;
+    color: #8b949e;
+    padding: 5px 15px;
+    font-size: 12px;
+}
+
+.toggle-group button.active[data-type="PM"] { background: #238636; color: #fff; }
+.toggle-group button.active[data-type="BM"] { background: #1f6feb; color: #fff; }
+.toggle-group button.active[data-type="장비점검"] { background: #d29922; color: #fff; }
+.toggle-group button.active[data-type="프로그램변경"] { background: #8957e5; color: #fff; }
+
+/* 로그 입력 */
+#log-date { width: 140px; height: 30px; flex: none; }
+#log-type-select { width: 110px; height: 30px; flex: none; }
+#log-worker { width: 140px; height: 30px; flex: none; }
+
+.log-select {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 5px;
+    border-radius: 4px;
+    margin-right: 5px;
+}
+
+.log-content-input {
+    display: none;
+    margin-right: 5px;
+    flex: 1;
+}
+
+/* 커스텀 드롭다운 (로그 항목 선택) */
+.log-select-wrapper {
+    position: relative;
+    display: inline-block;
+    width: 200px;
+    margin-right: 5px;
+    flex: none;
+}
+
+.log-select-trigger {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    height: 30px;
+    line-height: 18px;
+    font-size: 13px;
+}
+
+.log-select-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    min-width: 100%;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    z-index: 1000;
+    margin-top: 2px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+
+.log-select-dropdown.show { display: block; }
+
+.log-select-list {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 5px;
+}
+
+.log-select-item {
+    display: flex;
+    font-size: 12px;
+    align-items: center;
+    padding: 6px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-bottom: 2px;
+}
+
+.log-select-item:hover { background: #21262d; }
+
+.log-select-item.selected {
+    background: #1f6feb;
+    color: #fff;
+}
+
+.log-select-item span {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.log-content-select {
+    display: none;
+    width: 10px;
+    flex: 1;
+}
+
+/* 마스터 정보 (DeviceID) */
+.DeviceID-group { margin-bottom: 10px; }
+.DeviceID-label {
+    display: block;
+    color: #8b949e;
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+.DeviceID-group input { padding: 5px 8px; font-size: 12px; }
+
+/* ==========================================================================
+   5. 메모 섹션 (Memo)
+   ========================================================================== */
+.memo-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-top: 10px;
+}
+
+.memo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.memo-title {
+    color: #e6edf3;
+    font-size: 13px;
+    margin: 0;
+}
+
+.memo-textarea { flex: 1; }
+
+/* ==========================================================================
+   6. 동적 요소 및 유틸리티 (Dynamic & Utilities)
+   ========================================================================== */
+/* JS 생성 입력 요소 */
+.edit-period-input {
+    width: 60px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.edit-date-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.edit-date-input {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.btn-calendar-picker {
+    cursor: pointer;
+    background: #21262d;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-size: 14px;
+}
+
+.input-disabled {
+    background-color: #21262d !important;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+}
+
+/* 배지 (Badges) */
+.badge {
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.badge.pm { background: #238636; }
+.badge.bm { background: #1f6feb; }
+.badge.장비점검 { background: #d29922; color: #fff; }
+.badge.프로그램변경 { background: #8957e5; color: #fff; }
+
+.count-badge {
+    background: #30363d;
+    color: #c9d1d9;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-left: 5px;
+    vertical-align: middle;
+    font-weight: normal;
+}
+
+/* 텍스트 색상 */
+.text-green { color: #3fb950; }
+.text-blue { color: #58a6ff; }
+.text-red { color: #f85149; cursor: pointer; }
+.text-orange { color: #d29922; font-weight: bold; }
+
+/* 버튼 유틸리티 */
+.btn-header-setting {
+    margin-left: 20px;
+    padding: 2px 8px;
+    font-size: 11px;
+}
+
+.btn-edit-sm {
+    background: none;
+    border: none;
+    color: #8b949e;
+    font-size: 14px;
+    padding: 0 5px;
+    cursor: pointer;
+}
+.btn-edit-sm:hover { color: #58a6ff; }
+
+.btn-add-sm {
+    background: #238636;
+    color: #fff;
+    border: 1px solid rgba(240, 246, 252, 0.1);
+    border-radius: 4px;
+    padding: 0 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    height: 30px;
+    margin-right: 5px;
+}
+.btn-add-sm:hover { background: #2ea043; }

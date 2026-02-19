@@ -1,0 +1,399 @@
+/* ==========================================================================
+   1. 셋업 페이지 레이아웃 (Setup Page Layout)
+   ========================================================================== */
+
+.setup-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 0;
+    margin-bottom: 0;
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.setup-card-header {
+    background: #21262d;
+    padding: 12px 15px;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.setup-card-header h3 {
+    margin: 0;
+    font-size: 14px;
+    color: #e6edf3;
+}
+
+.setup-card-body {
+    padding: 0;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.info-text {
+    color: #8b949e;
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.detail-content {
+    flex-direction: column;
+}
+
+.detail-header-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.breadcrumb-no-margin {
+    margin-bottom: 0;
+}
+
+.btn-header-setting {
+    margin-left: 20px;
+    padding: 2px 8px;
+    font-size: 11px;
+}
+
+.setup-workspace {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+}
+
+.setup-card-flex {
+    flex: 1;
+    min-width: 0;
+}
+
+.setup-card-body-scroll {
+    padding: 0;
+    overflow-y: auto;
+}
+
+/* ==========================================================================
+   2. 데이터 테이블 스타일 (Data Table Styles)
+   ========================================================================== */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    color: #8b949e;
+    font-size: 12px;
+    text-align: center;
+    padding: 10px;
+    border-bottom: 1px solid #30363d;
+    position: sticky;
+    top: 0;
+    background: #161b22;
+    z-index: 1;
+}
+
+.data-table td {
+    padding: 8px 10px;
+    font-size: 13px;
+    border-bottom: 1px solid #21262d;
+}
+
+.data-table input[type="text"] {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: #e6edf3;
+    padding: 4px;
+}
+
+.data-table input[type="text"]:focus {
+    background: #0d1117;
+    outline: 1px solid #58a6ff;
+    border-radius: 4px;
+}
+
+.th-center { text-align: center; font-size: 13px; }
+.th-w90 { width: 90px; }
+.th-w40 { width: 40px; }
+.th-w50 { width: 50px; }
+.th-w150 { width: 150px; }
+.th-w100 { width: 100px; }
+
+.data-table input[type="date"] {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 4px;
+    border-radius: 4px;
+    width: 100%;
+    font-size: 13px;
+    text-align: center;
+}
+
+.active-log {
+    background-color: rgba(35, 134, 54, 0.1) !important;
+    border-left: 4px solid #238636 !important;
+}
+
+/* ==========================================================================
+   3. 셋업 진행 세부사항 (Setup Detail List)
+   ========================================================================== */
+#setup-detail-card .data-table th:last-child,
+#setup-detail-card .data-table tr:not(.category-header-row) td:last-child {
+    display: none;
+}
+
+#setup-detail-card.edit-mode .data-table th:last-child,
+#setup-detail-card.edit-mode .data-table tr:not(.category-header-row) td:last-child {
+    display: table-cell;
+}
+
+#setup-detail-card.edit-mode .data-table tbody tr {
+    cursor: grab;
+}
+
+/* ==========================================================================
+   4. 셋업 일지 (Setup Log List)
+   ========================================================================== */
+#setup-log-card .manage-col {
+    display: none;
+}
+
+#setup-log-card.edit-mode .manage-col {
+    display: table-cell;
+}
+
+/* 셋업 일지 수정 버튼 스타일 재정의 */
+#setup-log-card .btn-edit {
+    background: none;
+    border: none;
+    color: #8b949e;
+    padding: 0;
+    font-size: 14px;
+    width: auto;
+    vertical-align: middle;
+}
+
+#setup-log-card .btn-edit:hover {
+    color: #e6edf3;
+}
+
+.input-search-dark {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    width: 200px;
+}
+
+.setup-card-body-flex {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.log-input-row {
+    padding: 10px;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    gap: 5px;
+}
+
+.input-dark {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.select-dark {
+    flex: 3;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.input-w120 { width: 120px; }
+
+.log-list-wrapper {
+    height: 50%;
+    overflow-y: auto;
+    border-bottom: 1px solid #30363d;
+}
+
+.memo-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    min-height: 100px;
+}
+
+.memo-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    align-items: center;
+}
+
+.memo-label {
+    font-size: 13px;
+    color: #fff;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.textarea-dark {
+    flex: 1;
+    resize: none;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+/* ==========================================================================
+   5. 카테고리 헤더 및 버튼 (Category Header & Buttons)
+   ========================================================================== */
+.category-header-row {
+    background-color: #21262d;
+}
+
+.category-header {
+    padding: 8px 10px;
+    font-weight: bold;
+    color: #8b949e;
+    font-size: 13px;
+    border-bottom: 1px solid #30363d;
+}
+
+.btn-add-sm {
+    background: transparent;
+    color: #3fb950;
+    border: none;
+    padding: 0 5px;
+    font-size: 16px;
+    font-weight: bold;
+    margin-left: 10px;
+    cursor: pointer;
+    display: none;
+    line-height: 1;
+}
+
+.btn-add-sm:hover {
+    background: transparent;
+    color: #2ea043;
+    transform: scale(1.2);
+}
+
+#setup-detail-card.edit-mode .btn-add-sm {
+    display: inline-block;
+}
+
+/* ==========================================================================
+   6. 모달 (Modals)
+   ========================================================================== */
+.modal-body-scroll {
+    overflow-y: auto;
+}
+
+/* ==========================================================================
+   7. 모달 스타일 (Modal Styles - Copied from index.css)
+   ========================================================================== */
+.modal-window.size-date-edit { width: 350px; height: auto; }
+
+.modal-date-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+.modal-date-row.last {
+    margin-bottom: 20px;
+}
+.modal-date-label {
+    color: #8b949e;
+    font-size: 13px;
+}
+.modal-date-input-fixed {
+    width: 130px;
+}
+.modal-checkbox-label {
+    font-size: 16px;
+    color: #e6edf3;
+    cursor: pointer;
+}
+.modal-checkbox-input {
+    transform: scale(1.5);
+    margin-right: 10px;
+}
+.delay-reason-wrapper {
+    display: none;
+    margin-top: 15px;
+    text-align: left;
+}
+.delay-reason-label {
+    display: block;
+    color: #f0883e;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+.delay-reason-textarea {
+    width: 100%;
+    height: 60px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+    resize: none;
+}
+
+.btn-play-sm {
+    background: transparent;
+    border: 1px solid #3fb950;
+    color: #3fb950;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+}
+.btn-play-sm:hover {
+    background: #3fb950;
+    color: #fff;
+}
+
+.item-row.in-progress td {
+    background-color: rgba(35, 134, 54, 0.1);
+}
+.item-row.in-progress td:first-child {
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+.item-row.in-progress td:last-child {
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
