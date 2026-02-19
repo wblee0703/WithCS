@@ -198,24 +198,33 @@ def save_data(full_data):
         for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_HOME, FILE_SYSTEM_LOG, FILE_WITHTECH_DATA]:
             create_daily_backup(filepath)
 
-        # [수정] 계정 정보(user_accounts)는 클라이언트에서 보내지 않으므로 기존 데이터를 유지해야 함
-        existing_home = load_json_file(FILE_HOME)
-        existing_accounts = existing_home.get('user_accounts', [])
-
-        # [수정] 기존 데이터를 불러오지 않고 초기화하여 클라이언트의 삭제 상태를 반영함
-        setup_data = {}
-        maintenance_data = {}
-        home_data = {"user_accounts": existing_accounts} # 기존 계정 정보 유지
-        system_log_data = {}
-        withtech_data_storage = {}
+        # [수정] 기존 데이터를 로드하여 병합 (Merge) - 데이터 유실 방지
+        setup_data = load_json_file(FILE_SETUP)
+        maintenance_data = load_json_file(FILE_MAINTENANCE)
+        home_data = load_json_file(FILE_HOME)
+        system_log_data = load_json_file(FILE_SYSTEM_LOG)
+        withtech_data_storage = load_json_file(FILE_WITHTECH_DATA)
+        
+        # 계정 정보 백업
+        existing_accounts = home_data.get('user_accounts', [])
 
         for key, value in full_data.items():
             if key == 'setup_data':
-                setup_data[key] = value # 셋업 데이터만 저장
+                # 셋업 데이터 병합 (장비별 키 보존)
+                if key not in setup_data: setup_data[key] = {}
+                if isinstance(value, dict):
+                    setup_data[key].update(value)
+                else:
+                    setup_data[key] = value
             elif key == 'system_logs':
                 system_log_data[key] = value # 시스템 로그 저장
             elif key == 'withtech_data':
-                withtech_data_storage[key] = value # 사이트/장비 목록 저장
+                # 사이트/장비 목록 병합
+                if key not in withtech_data_storage: withtech_data_storage[key] = {}
+                if isinstance(value, dict):
+                    withtech_data_storage[key].update(value)
+                else:
+                    withtech_data_storage[key] = value
             elif key.startswith('details_'):
                 # [추가] maintenance 데이터에서 setup 관련 데이터 제거 (정리)
                 if isinstance(value, dict):
@@ -227,6 +236,9 @@ def save_data(full_data):
                 # user_accounts는 위에서 이미 처리했으므로 덮어쓰지 않도록 주의 (클라이언트가 안 보냄)
                 if key != 'user_accounts':
                     home_data[key] = value
+        
+        # 계정 정보 복원
+        home_data['user_accounts'] = existing_accounts
 
         save_json_file(FILE_SETUP, setup_data)
         save_json_file(FILE_MAINTENANCE, maintenance_data)
