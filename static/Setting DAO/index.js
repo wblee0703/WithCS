@@ -981,8 +981,8 @@ function setupCalendar() {
     }
     if (searchInput) {
         searchInput.setAttribute('autocomplete', 'off');
-        searchInput.addEventListener('input', () => {
-            renderCalendar();
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') renderCalendar();
         });
     }
     if (filterBtn) {
@@ -2191,8 +2191,8 @@ function setupGanttSearch() {
 
     if (searchInput) {
         searchInput.setAttribute('autocomplete', 'off');
-        searchInput.addEventListener('input', () => {
-            renderGanttChart();
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') renderGanttChart();
         });
     }
     if (filterBtn) {

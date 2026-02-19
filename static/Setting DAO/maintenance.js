@@ -96,7 +96,9 @@ function setupLogEvents() {
     if (logWorkerInput) logWorkerInput.spellcheck = false;
 
     const logSearchInput = document.getElementById('log-search');
-    if (logSearchInput) logSearchInput.addEventListener('input', renderLogs);
+    if (logSearchInput) logSearchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') renderLogs();
+    });
 
     const logTypeSelect = document.getElementById('log-type-select');
     if (logTypeSelect) {

@@ -280,8 +280,8 @@ function setupSidebarEvents() {
     // 검색 및 드래그 앤 드롭
     const siteSearch = document.getElementById('site-search');
     const equipSearch = document.getElementById('equip-search');
-    if (siteSearch) siteSearch.addEventListener('input', (e) => filterList('site-list', e.target.value));
-    if (equipSearch) equipSearch.addEventListener('input', (e) => filterList('equip-list', e.target.value));
+    if (siteSearch) siteSearch.addEventListener('keypress', (e) => { if (e.key === 'Enter') filterList('site-list', e.target.value); });
+    if (equipSearch) equipSearch.addEventListener('keypress', (e) => { if (e.key === 'Enter') filterList('equip-list', e.target.value); });
 
     const siteListEl = document.getElementById('site-list');
     const equipListEl = document.getElementById('equip-list');
