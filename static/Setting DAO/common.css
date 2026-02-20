@@ -194,6 +194,7 @@ body {
 
 .detail-content {
     flex: 1;
+    display: flex;
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
@@ -521,6 +522,22 @@ button {
     font-size: 12px;
 }
 
+.btn-header-setting {
+    margin-left: 20px;
+    padding: 2px 8px;
+    font-size: 11px;
+}
+
+.btn-edit-sm {
+    background: none;
+    border: none;
+    color: #8b949e;
+    font-size: 14px;
+    padding: 0 5px;
+    cursor: pointer;
+}
+.btn-edit-sm:hover { color: #58a6ff; }
+
 /* 특수 버튼 (추가, 수정, 삭제) */
 .btn-add {
     background: none;
@@ -630,6 +647,17 @@ input:disabled {
     pointer-events: none;
     filter: grayscale(1);
     transition: 0.5s;
+}
+
+.count-badge {
+    background: #30363d;
+    color: #c9d1d9;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 11px;
+    margin-left: 5px;
+    vertical-align: middle;
+    font-weight: normal;
 }
 
 @media (min-width: 1400px) {

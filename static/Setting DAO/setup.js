@@ -191,7 +191,7 @@ function renderSetupDetailList() {
         headerRow.innerHTML = `
             <td colspan="6" class="category-header">
                 <span class="category-title">${cat}</span>
-                <button class="btn-add-sm" onclick="addSetupDetailItem('${cat}')" title="항목 추가" style="${addBtnStyle}">+</button>
+                <button class="btn-add-category" onclick="addSetupDetailItem('${cat}')" title="항목 추가" style="${addBtnStyle}">+</button>
             </td>
         `;
         tbody.appendChild(headerRow);
@@ -1523,53 +1523,4 @@ function loadSetupInfoFromTarget() {
 
     document.getElementById('setup-load-info-modal').style.display = 'none';
     alert('정보를 불러왔습니다. 저장 버튼을 눌러 반영해주세요.');
-}
-
-/* ==========================================================================
-   7. 유틸리티 (Utilities)
-   ========================================================================== */
-function setupSetupLogResizer() {
-    const resizer = document.getElementById('setup-log-resizer');
-    if (resizer) {
-        const prevSibling = document.getElementById('setup-log-list-wrapper');
-        const container = resizer.parentElement;
-        let isResizing = false;
-
-        resizer.addEventListener('mousedown', (e) => {
-            isResizing = true;
-            document.body.style.cursor = 'row-resize';
-            resizer.classList.add('resizing');
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (!isResizing) return;
-            const containerRect = container.getBoundingClientRect();
-            // 입력 행(첫 번째 자식)의 높이를 고려하여 계산
-            const inputRowHeight = container.children[0].offsetHeight;
-            let newHeight = e.clientY - containerRect.top - inputRowHeight;
-            
-            if (newHeight < 100) newHeight = 100;
-            if (newHeight > containerRect.height - 150) newHeight = containerRect.height - 150;
-
-            prevSibling.style.height = `${newHeight}px`;
-            prevSibling.style.flex = 'none';
-        });
-
-        document.addEventListener('mouseup', () => {
-            if (isResizing) {
-                isResizing = false;
-                document.body.style.cursor = 'default';
-                resizer.classList.remove('resizing');
-            }
-        });
-    }
-}
-
-window.startSetupTask = function(id) {
-    openSetupExecStartModal(id);
-};
-
-function handleSetupDetailReorder() {
-    // 순서 변경 시 자동 저장
-    saveSetupDetails();
 }

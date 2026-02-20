@@ -1,27 +1,10 @@
 /* ==========================================================================
    1. 레이아웃 (Layout)
    ========================================================================== */
-.detail-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-}
-
 .breadcrumb-header {
     display: flex;
     align-items: center;
     margin-bottom: 8px;
-}
-
-.dashboard-main {
-    flex: 1;
-    display: flex;
-    flex-direction: row;
-    gap: 15px;
-    min-width: 0;
-    min-height: 0;
 }
 
 .content-body {
@@ -439,50 +422,8 @@ tr.dragging {
 .badge.장비점검 { background: #d29922; color: #fff; }
 .badge.프로그램변경 { background: #8957e5; color: #fff; }
 
-.count-badge {
-    background: #30363d;
-    color: #c9d1d9;
-    padding: 2px 6px;
-    border-radius: 10px;
-    font-size: 11px;
-    margin-left: 5px;
-    vertical-align: middle;
-    font-weight: normal;
-}
-
 /* 텍스트 색상 */
 .text-green { color: #3fb950; }
 .text-blue { color: #58a6ff; }
 .text-red { color: #f85149; cursor: pointer; }
 .text-orange { color: #d29922; font-weight: bold; }
-
-/* 버튼 유틸리티 */
-.btn-header-setting {
-    margin-left: 20px;
-    padding: 2px 8px;
-    font-size: 11px;
-}
-
-.btn-edit-sm {
-    background: none;
-    border: none;
-    color: #8b949e;
-    font-size: 14px;
-    padding: 0 5px;
-    cursor: pointer;
-}
-.btn-edit-sm:hover { color: #58a6ff; }
-
-.btn-add-sm {
-    background: #238636;
-    color: #fff;
-    border: 1px solid rgba(240, 246, 252, 0.1);
-    border-radius: 4px;
-    padding: 0 10px;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    height: 30px;
-    margin-right: 5px;
-}
-.btn-add-sm:hover { background: #2ea043; }

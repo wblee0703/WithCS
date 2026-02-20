@@ -797,18 +797,6 @@ body {
     overflow-y: auto;
 }
 
-/* 모달 전용 삭제 버튼 (빨간색 배경) */
-.btn-warn {
-    background-color: #da3633;
-    color: white;
-    padding: 5px 15px;
-    font-size: 12px;
-}
-
-.btn-warn:hover {
-    background-color: #b62324;
-}
-
 .btn-add-popup {
     background: none;
     color: #3fb950;
@@ -1265,6 +1253,13 @@ body {
     font-weight: bold;
 }
 
+.gantt-day-today-bg {
+    background-color: rgba(56, 139, 253, 0.2);
+    color: #58a6ff;
+    font-weight: bold;
+    border-bottom: 2px solid #58a6ff;
+}
+
 .gantt-row {
     height: 40px;
     border-bottom: 1px solid #21262d;
@@ -1308,6 +1303,14 @@ body {
     background: rgba(218, 54, 51, 0.15);
     z-index: 0;
     pointer-events: auto;
+}
+.gantt-grid-bg-today {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: rgba(56, 139, 253, 0.1);
+    z-index: 0;
+    pointer-events: none;
 }
 .gantt-grid-line-std {
     position: absolute;

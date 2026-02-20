@@ -36,17 +36,6 @@
     position: relative;
 }
 
-.info-text {
-    color: #8b949e;
-    font-size: 13px;
-    line-height: 1.6;
-    margin: 0;
-}
-
-.detail-content {
-    flex-direction: column;
-}
-
 .detail-header-row {
     display: flex;
     align-items: center;
@@ -55,12 +44,6 @@
 
 .breadcrumb-no-margin {
     margin-bottom: 0;
-}
-
-.btn-header-setting {
-    margin-left: 20px;
-    padding: 2px 8px;
-    font-size: 11px;
 }
 
 .setup-workspace {
@@ -123,7 +106,6 @@
 
 .th-center { text-align: center; font-size: 13px; }
 .th-w90 { width: 90px; }
-.th-w40 { width: 40px; }
 .th-w50 { width: 50px; }
 .th-w150 { width: 150px; }
 .th-w100 { width: 100px; }
@@ -290,7 +272,7 @@
     border-bottom: 1px solid #30363d;
 }
 
-.btn-add-sm {
+.btn-add-category {
     background: transparent;
     color: #3fb950;
     border: none;
@@ -304,13 +286,13 @@
 }
 
 /* 버튼 호버 효과 */
-.btn-add-sm:hover {
+.btn-add-category:hover {
     background: transparent;
     color: #2ea043;
     transform: scale(1.2);
 }
 
-#setup-detail-card.edit-mode .btn-add-sm {
+#setup-detail-card.edit-mode .btn-add-category {
     display: inline-block;
 }
 

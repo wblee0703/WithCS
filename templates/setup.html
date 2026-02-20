@@ -37,9 +37,9 @@
     <!-- ==========================================================================
          2. 대시보드 레이아웃 (Dashboard Layout)
          ========================================================================== -->
-    <div class="dashboard-wrapper">
+    <div class="dashboard-wrapper hierarchy-mode">
         <aside class="dashboard-sidebar">
-            <section class="sidebar-group">
+            <section class="sidebar-group main-category">
                 <div class="group-header">
                     <div class="sidebar-header-row">
                         <h3>대분류: 사업장 <span id="site-count" class="count-badge">0</span> <button class="btn-list-setting"
@@ -57,10 +57,8 @@
                 <div class="group-header">
                     <div class="sidebar-header-row">
                         <h3>중분류: 장비목록 <span id="equip-count" class="count-badge">0</span> <button
-                                class="btn-list-setting" id="equip-setting-btn" title="목록 편집">⚙️</button></h3>
-                        <!-- 자동완성 방지용 가짜 필드 -->
-                        <input type="text" style="display:none">
-                        <input type="password" style="display:none">
+                                class="btn-list-setting" id="equip-setting-btn" title="목록 편집">⚙️</button>
+                        </h3>
                         <input type="text" id="equip-search" class="search-input-mini" placeholder="검색" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
                     </div>
                     <div class="sidebar-input-group">

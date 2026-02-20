@@ -1687,7 +1687,8 @@ function renderGanttChart() {
 
     // Day Header (Previously Week Header)
     let dayHtml = '';
-    const todayStr = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     ganttValidDates.forEach((dObj, i) => {
         let cellClass = 'gantt-date-cell gantt-header-day-cell';
@@ -1716,6 +1717,11 @@ function renderGanttChart() {
         // 1. 공휴일 배경 (가장 아래)
         if (dObj.holiday) {
             bgHtml += `<div class="gantt-grid-bg-holiday" style="left: ${left}px; width: ${ganttDayWidth}px;" title="${dObj.holiday}"></div>`;
+        }
+        
+        // [추가] 오늘 날짜 배경
+        if (dObj.str === todayStr) {
+            bgHtml += `<div class="gantt-grid-bg-today" style="left: ${left}px; width: ${ganttDayWidth}px;"></div>`;
         }
 
         // 2. 기본 그리드 라인 (모든 날짜 좌측)
@@ -2153,46 +2159,4 @@ function saveDateEdit() {
 
     updateTaskDate(site, equip, id, type, { start: start, end: end }, 'manual');
     document.getElementById('setup-date-edit-modal').style.display = 'none';
-}
-
-/* ==========================================================================
-   7. 유틸리티 (Utilities)
-   ========================================================================== */
-function addExecutionBar(site, equip, id) {
-    openSetupExecStartModal(site, equip, id);
-}
-
-function setupEquipInfoResizer() {
-    const resizer = document.getElementById('setup-equip-resizer');
-    const group = document.getElementById('setup-equip-info-group');
-
-    if (!resizer || !group) return;
-
-    resizer.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        document.body.style.cursor = 'col-resize';
-        resizer.classList.add('resizing');
-
-        const startX = e.clientX;
-        const startWidth = group.getBoundingClientRect().width;
-
-        const onMouseMove = (ev) => {
-            const deltaX = startX - ev.clientX; // 왼쪽으로 드래그하면 너비 증가
-            const newWidth = startWidth + deltaX;
-            if (newWidth > 200 && newWidth < 800) {
-                group.style.flex = 'none'; // flex 자동 조절 해제
-                group.style.width = `${newWidth}px`;
-            }
-        };
-
-        const onMouseUp = () => {
-            document.body.style.cursor = 'default';
-            resizer.classList.remove('resizing');
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-        };
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    });
 }
