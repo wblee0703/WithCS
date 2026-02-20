@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ==========================================================================
-   2. 홈 대시보드 로직 (Home Dashboard)
+   2. 네비게이션 및 뷰 전환 (Navigation & View Switching)
    ========================================================================== */
 function goToSetupPage() {
     // [추가] 간트 차트 필터(검색된 장비)가 있으면 우선 이동
@@ -152,6 +152,9 @@ function showHomeSection(type) {
     }
 }
 
+/* ==========================================================================
+   3. 대시보드 로직 (Dashboard Logic)
+   ========================================================================== */
 function updateHomeDashboard() {
     // [추가] 첫 로드 시 마지막 화면 상태 및 필터 복원
     if (isFirstLoad) {
@@ -194,6 +197,9 @@ function saveMaintFilters() {
     localStorage.setItem('maintDashboardFilter', JSON.stringify(maintFilters));
 }
 
+/* ==========================================================================
+   3-1. 유지관리 대시보드 (Maintenance Dashboard)
+   ========================================================================== */
 function updateMaintenanceDashboard() {
     // 데이터 로드 (common.js의 storageData가 있다면 사용, 없으면 직접 로드)
     let data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
@@ -645,7 +651,7 @@ function renderUpcomingList(data) {
 }
 
 /* ==========================================================================
-   2-1. 셋업 대시보드 로직 (Setup Dashboard)
+   3-2. 셋업 대시보드 (Setup Dashboard)
    ========================================================================== */
 function updateSetupDashboard() {
     // [추가] 필터 상태 저장
@@ -953,7 +959,7 @@ function renderSetupUpcomingList(activeEquips) {
 }
 
 /* ==========================================================================
-   3. 캘린더 로직 (Calendar System)
+   4. 캘린더 시스템 (Calendar System)
    ========================================================================== */
 function setupCalendar() {
     const prevBtn = document.getElementById('prev-month');
@@ -1137,9 +1143,6 @@ function renderMonthGrid(year, month, titleId, gridId) {
     }
 }
 
-/* ==========================================================================
-   4. 캘린더 팝업 (Calendar Popup)
-   ========================================================================== */
 function openCalendarPopup(dateStr, events) {
     const popup = document.getElementById('calendar-popup');
     const title = document.getElementById('popup-date-title');
@@ -1288,198 +1291,60 @@ function getPmScheduleForCalendar() {
 }
 
 /* ==========================================================================
-   5. 검색 모달 (Search Modal)
+   5. 간트 차트 시스템 (Gantt Chart System)
    ========================================================================== */
-function setupSearchModal() {
-    const modal = document.getElementById('calendar-search-modal');
-    const closeBtn = document.getElementById('btn-close-search-modal');
-    const siteSelect = document.getElementById('search-site-select');
-    const equipSelect = document.getElementById('search-equip-select');
-    const applyBtn = document.getElementById('btn-apply-search-filter');
-    const resetBtn = document.getElementById('btn-reset-search-filter');
+function setupGanttSearch() {
+    const searchInput = document.getElementById('gantt-search');
+    const filterBtn = document.getElementById('btn-gantt-filter');
 
-    if (!modal) return;
+    if (searchInput) {
+        searchInput.setAttribute('autocomplete', 'off');
+        searchInput.addEventListener('input', () => {
+            renderGanttChart();
+        });
+    }
+    if (filterBtn) {
+        filterBtn.onclick = () => openGanttSearchModal();
+    }
+}
 
-    if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
-    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+function setupGanttZoom() {
+    const btnExpand = document.getElementById('btn-gantt-expand');
+    const btnContract = document.getElementById('btn-gantt-contract');
 
-    if (siteSelect) {
-        siteSelect.onchange = () => {
-            const site = siteSelect.value;
-            updateSearchEquipList(site);
+    if (btnExpand) {
+        btnExpand.onclick = () => {
+            ganttExtraWeeks++;
+            renderGanttChart();
         };
     }
-
-    if (applyBtn) {
-        applyBtn.onclick = () => {
-            currentSearchFilters.site = siteSelect.value;
-            currentSearchFilters.equip = equipSelect.value;
-
-            renderCalendar();
-            modal.style.display = 'none';
-        };
-    }
-
-    if (resetBtn) {
-        resetBtn.onclick = () => {
-            siteSelect.value = '';
-            updateSearchEquipList('');
-            currentSearchFilters = { site: '', equip: '' };
-
-            renderCalendar();
-            modal.style.display = 'none';
+    if (btnContract) {
+        btnContract.onclick = () => {
+            if (ganttExtraWeeks > 0) {
+                ganttExtraWeeks--;
+                renderGanttChart();
+            }
         };
     }
 }
 
-function openSearchModal() {
-    const modal = document.getElementById('calendar-search-modal');
-    const siteSelect = document.getElementById('search-site-select');
-
-    if (!modal || !siteSelect) return;
-
-    // Load Sites
-    const data = JSON.parse(localStorage.getItem('withtech_data')) || {};
-    siteSelect.innerHTML = '<option value="">전체</option>';
-    Object.keys(data).forEach(site => {
-        const option = document.createElement('option');
-        option.value = site;
-        option.textContent = site;
-        siteSelect.appendChild(option);
+function setupGanttResizer() {
+    const resizer = document.querySelector('.gantt-resizer');
+    const sidebar = document.querySelector('.gantt-sidebar');
+    if (!resizer || !sidebar) return;
+    resizer.addEventListener('mousedown', (e) => {
+        e.preventDefault(); document.body.style.cursor = 'col-resize'; resizer.classList.add('resizing');
+        const onMouseMove = (ev) => {
+            const w = ev.clientX - sidebar.getBoundingClientRect().left;
+            if (w > GANTT_SIDEBAR_MIN_WIDTH && w < GANTT_SIDEBAR_MAX_WIDTH) {
+                ganttSidebarWidth = w;
+                sidebar.style.width = `${w}px`;
+                renderGanttChart(); // 너비 변경 시 차트 재렌더링 (비율 자동 조정)
+            }
+        };
+        const onMouseUp = () => { document.body.style.cursor = 'default'; resizer.classList.remove('resizing'); document.removeEventListener('mousemove', onMouseMove); document.removeEventListener('mouseup', onMouseUp); };
+        document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onMouseUp);
     });
-
-    // Restore current selection
-    siteSelect.value = currentSearchFilters.site;
-    updateSearchEquipList(currentSearchFilters.site);
-    const equipSelect = document.getElementById('search-equip-select');
-    if (equipSelect) equipSelect.value = currentSearchFilters.equip;
-
-    modal.style.display = 'flex';
-}
-
-function updateSearchEquipList(site) {
-    const equipSelect = document.getElementById('search-equip-select');
-    equipSelect.innerHTML = '<option value="">전체</option>';
-    equipSelect.disabled = !site;
-
-    if (!site) return;
-
-    const data = JSON.parse(localStorage.getItem('withtech_data')) || {};
-    const equips = data[site] || [];
-    equips.forEach(equip => {
-        const option = document.createElement('option');
-        option.value = equip;
-        const parts = equip.split('::');
-        const name = parts[0];
-        const serial = parts.length > 1 ? parts[1] : '';
-        option.textContent = serial ? `${name} (${serial})` : name;
-        equipSelect.appendChild(option);
-    });
-}
-
-/* ==========================================================================
-   6. 작업 예정일 설정 모달 (Schedule Setting Modal)
-   ========================================================================== */
-function setupScheduleModal() {
-    const modal = document.getElementById('schedule-modal');
-    const closeBtn = document.getElementById('btn-close-schedule-modal');
-    const saveBtn = document.getElementById('btn-save-schedule');
-    const deleteBtn = document.getElementById('btn-delete-schedule');
-    const dateInput = document.getElementById('schedule-date-input');
-    const calendarBtn = document.getElementById('btn-schedule-calendar');
-
-    if (!modal) return;
-
-    if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
-    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
-
-    if (calendarBtn && dateInput) {
-        calendarBtn.onclick = () => {
-            if (typeof dateInput.showPicker === 'function') {
-                dateInput.showPicker(); // 최신 브라우저용 달력 열기
-            } else {
-                dateInput.focus();
-                dateInput.click(); // 호환성 처리
-            }
-        };
-    }
-
-    if (saveBtn) {
-        saveBtn.onclick = () => {
-            if (currentScheduleTarget) {
-                const date = dateInput.value;
-                if (!date) {
-                    alert("날짜를 선택해주세요.");
-                    return;
-                }
-                setScheduleDate(currentScheduleTarget.site, currentScheduleTarget.equip, currentScheduleTarget.itemId, date);
-                modal.style.display = 'none';
-            }
-        };
-    }
-
-    if (deleteBtn) {
-        deleteBtn.onclick = () => {
-            if (currentScheduleTarget) {
-                if (confirm("작업 예정일을 삭제하시겠습니까?")) {
-                    setScheduleDate(currentScheduleTarget.site, currentScheduleTarget.equip, currentScheduleTarget.itemId, '');
-                    modal.style.display = 'none';
-                }
-            }
-        };
-    }
-}
-
-function openScheduleModal(site, equip, itemId) {
-    const key = `details_${site}_${equip}`;
-    const data = JSON.parse(localStorage.getItem(key));
-    let defaultDate = '';
-
-    if (data && data.maint) {
-        const item = data.maint.find(i => i.id === itemId);
-        if (item && item.scheduledDate) {
-            defaultDate = item.scheduledDate;
-        }
-    }
-
-    const modal = document.getElementById('schedule-modal');
-    const dateInput = document.getElementById('schedule-date-input');
-
-    if (modal && dateInput) {
-        currentScheduleTarget = { site, equip, itemId };
-        dateInput.value = defaultDate;
-        modal.style.display = 'flex';
-    }
-}
-
-function setScheduleDate(site, equip, itemId, date, silent = false) {
-    const key = `details_${site}_${equip}`;
-    const data = JSON.parse(localStorage.getItem(key));
-    if (data && data.maint) {
-        const item = data.maint.find(i => i.id === itemId);
-        if (item) {
-            item.scheduledDate = date;
-            localStorage.setItem(key, JSON.stringify(data));
-            updateHomeDashboard();
-            renderCalendar();
-
-            if (!silent) {
-                if (date) alert("작업 예정일이 설정되었습니다.");
-                else alert("작업 예정일이 해제되었습니다.");
-            }
-        }
-    }
-}
-
-/* ==========================================================================
-   9. Gantt Chart Logic (Moved from Setup)
-   ========================================================================== */
-function toggleSetupDeleteMode(btn) {
-    const col = btn.closest('.dashboard-col');
-    if (col) {
-        col.classList.toggle('edit-mode');
-        btn.classList.toggle('active');
-    }
 }
 
 function renderGanttChart() {
@@ -1969,10 +1834,6 @@ function deleteSetupTask(site, equip, id) {
     }
 }
 
-/* ==========================================================================
-   10. 간트 차트 인터랙션 (Drag, Zoom, Search)
-   ========================================================================== */
-
 let isDraggingBar = false;
 let dragMode = null;
 let dragStartX = 0;
@@ -2294,1135 +2155,44 @@ function saveDateEdit() {
     document.getElementById('setup-date-edit-modal').style.display = 'none';
 }
 
+/* ==========================================================================
+   7. 유틸리티 (Utilities)
+   ========================================================================== */
 function addExecutionBar(site, equip, id) {
     openSetupExecStartModal(site, equip, id);
 }
 
-function setupGanttSearchModal() {
-    const modal = document.getElementById('gantt-search-modal');
-    const closeBtn = document.getElementById('btn-close-gantt-search-modal');
-    const siteSelect = document.getElementById('gantt-site-select');
-    const equipSelect = document.getElementById('gantt-equip-select');
-    const applyBtn = document.getElementById('btn-apply-gantt-filter');
-    const resetBtn = document.getElementById('btn-reset-gantt-filter');
+function setupEquipInfoResizer() {
+    const resizer = document.getElementById('setup-equip-resizer');
+    const group = document.getElementById('setup-equip-info-group');
 
-    if (!modal) return;
+    if (!resizer || !group) return;
 
-    if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
-    modal.onclick = (e) => { if (e.target === modal) modal.style.display = 'none'; };
+    resizer.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        document.body.style.cursor = 'col-resize';
+        resizer.classList.add('resizing');
 
-    if (siteSelect) {
-        siteSelect.onchange = () => {
-            updateGanttSearchEquipList(siteSelect.value);
-        };
-    }
+        const startX = e.clientX;
+        const startWidth = group.getBoundingClientRect().width;
 
-    if (applyBtn) {
-        applyBtn.onclick = () => {
-            currentGanttFilters.site = siteSelect.value;
-            currentGanttFilters.equip = equipSelect.value;
-
-            const statusEl = document.getElementById('gantt-filter-status');
-            if (statusEl) {
-                // [수정] 중복 표시 제거 (상단 타이틀 아래에 표시됨)
-                statusEl.textContent = '';
+        const onMouseMove = (ev) => {
+            const deltaX = startX - ev.clientX; // 왼쪽으로 드래그하면 너비 증가
+            const newWidth = startWidth + deltaX;
+            if (newWidth > 200 && newWidth < 800) {
+                group.style.flex = 'none'; // flex 자동 조절 해제
+                group.style.width = `${newWidth}px`;
             }
-            renderGanttChart();
-            modal.style.display = 'none';
         };
-    }
 
-    if (resetBtn) {
-        resetBtn.onclick = () => {
-            siteSelect.value = '';
-            updateGanttSearchEquipList('');
-            currentGanttFilters = { site: '', equip: '' };
-            const statusEl = document.getElementById('gantt-filter-status');
-            if (statusEl) statusEl.textContent = '';
-            renderGanttChart();
-            modal.style.display = 'none';
+        const onMouseUp = () => {
+            document.body.style.cursor = 'default';
+            resizer.classList.remove('resizing');
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
         };
-    }
-}
 
-function openGanttSearchModal() {
-    const modal = document.getElementById('gantt-search-modal');
-    const siteSelect = document.getElementById('gantt-site-select');
-    const equipSelect = document.getElementById('gantt-equip-select');
-    if (!modal || !siteSelect) return;
-
-    const data = JSON.parse(localStorage.getItem('withtech_data')) || {};
-    siteSelect.innerHTML = '<option value="">전체</option>';
-    Object.keys(data).forEach(site => {
-        const option = document.createElement('option');
-        option.value = site;
-        option.textContent = site;
-        siteSelect.appendChild(option);
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
     });
-
-    siteSelect.value = currentGanttFilters.site;
-    updateGanttSearchEquipList(currentGanttFilters.site);
-    if (equipSelect) equipSelect.value = currentGanttFilters.equip;
-
-    modal.style.display = 'flex';
-}
-
-function openExecCompletionModal(site, equip, id) {
-    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const data = setupData[`${site}::${equip}`] || {};
-    const task = data.setupDetails ? data.setupDetails.find(t => t.id == id) : null;
-
-    if (task) {
-        document.getElementById('exec-complete-site').value = site;
-        document.getElementById('exec-complete-equip').value = equip;
-        document.getElementById('exec-complete-id').value = id;
-        document.getElementById('exec-complete-checkbox').checked = task.completed || false;
-        document.getElementById('exec-est-days').value = (task.estDays || '0') + '일';
-
-        // [수정] 날짜 표시 및 지연 여부 실시간 확인
-        const startDateInput = document.getElementById('exec-start-date');
-        const endDateInput = document.getElementById('exec-end-date');
-
-        startDateInput.value = task.execStartDate || task.startDate;
-        endDateInput.value = task.date;
-        document.getElementById('exec-delay-reason').value = task.delayReason || '';
-
-        // [추가] 완료일 최소값 설정 (시작일 이전 불가)
-        if (startDateInput.value) endDateInput.min = startDateInput.value;
-        startDateInput.onchange = (e) => {
-            endDateInput.min = e.target.value;
-        };
-
-        const checkDelayStatus = () => {
-            const estDays = parseInt(task.estDays) || 1;
-            const pStart = new Date(task.startDate);
-            const daysToAdd = estDays > 0 ? estDays - 1 : 0;
-            const pEnd = addBusinessDays(pStart, daysToAdd);
-
-            const currentExecEndStr = document.getElementById('exec-end-date').value;
-            if (!currentExecEndStr) return;
-
-            const execEnd = new Date(currentExecEndStr);
-
-            pEnd.setHours(0, 0, 0, 0);
-            execEnd.setHours(0, 0, 0, 0);
-
-            const reasonContainer = document.getElementById('exec-delay-reason-container');
-            if (execEnd > pEnd) {
-                reasonContainer.style.display = 'block';
-            } else {
-                reasonContainer.style.display = 'none';
-            }
-        };
-
-        // [수정] 완료일 변경 시 지연 상태 확인 및 체크박스 활성/비활성 처리
-        const handleDateChange = () => {
-            checkDelayStatus();
-            const checkbox = document.getElementById('exec-complete-checkbox');
-            if (!endDateInput.value) {
-                checkbox.checked = false;
-                checkbox.disabled = true;
-                toggleInputs(false); // 날짜 입력을 위해 입력창 활성화
-            } else {
-                checkbox.disabled = false;
-            }
-        };
-        endDateInput.onchange = handleDateChange;
-        endDateInput.oninput = handleDateChange;
-
-        checkDelayStatus(); // 초기 실행
-
-        // [추가] 완료 상태에 따른 입력 필드 제어
-        const toggleInputs = (disabled) => {
-            const inputs = [
-                document.getElementById('exec-start-date'),
-                document.getElementById('exec-end-date'),
-                document.getElementById('exec-delay-reason')
-            ];
-            inputs.forEach(el => {
-                if (el) {
-                    el.disabled = disabled;
-                    el.style.color = disabled ? '#8b949e' : '#e6edf3';
-                }
-            });
-        };
-
-        // [추가] 초기 상태 설정 (날짜 없으면 체크박스 비활성)
-        const checkbox = document.getElementById('exec-complete-checkbox');
-        if (!endDateInput.value) {
-            checkbox.checked = false;
-            checkbox.disabled = true;
-        }
-
-        toggleInputs(task.completed);
-
-        checkbox.onclick = (e) => {
-            if (!checkbox.checked) {
-                if (!confirm("완료 상태를 해제하시겠습니까?")) {
-                    e.preventDefault();
-                    checkbox.checked = true;
-                    return;
-                }
-            }
-            toggleInputs(checkbox.checked);
-        };
-
-        document.getElementById('exec-completion-modal').style.display = 'flex';
-    }
-}
-
-function saveExecCompletion() {
-    const site = document.getElementById('exec-complete-site').value;
-    const equip = document.getElementById('exec-complete-equip').value;
-    const id = document.getElementById('exec-complete-id').value;
-    const completed = document.getElementById('exec-complete-checkbox').checked;
-    const delayReason = document.getElementById('exec-delay-reason').value;
-    const newStartDate = document.getElementById('exec-start-date').value;
-    const newEndDate = document.getElementById('exec-end-date').value;
-
-    // [추가] 완료일 유효성 검사
-    if (newStartDate && newEndDate && newEndDate < newStartDate) {
-        return alert("완료일은 시작일보다 빠를 수 없습니다.");
-    }
-
-    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `${site}::${equip}`;
-    let data = setupData[equipKey] || {};
-
-    if (data.setupDetails) {
-        // [수정] 작업 순서대로 정렬하여 인덱스 확인
-        const sortedTasks = [...data.setupDetails].sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
-        const currentIndex = sortedTasks.findIndex(t => t.id == id);
-        const task = data.setupDetails.find(t => t.id == id);
-
-        if (task) {
-            // [추가] 날짜 수정 반영
-            if (newStartDate) task.execStartDate = newStartDate;
-            if (newEndDate) task.date = newEndDate;
-
-            // [추가] 지연 여부 재확인 (저장 시점 기준)
-            let isDelayed = false;
-            if (task.date) {
-                const estDays = parseInt(task.estDays) || 1;
-                const pStart = new Date(task.startDate);
-                const daysToAdd = estDays > 0 ? estDays - 1 : 0;
-                const pEnd = addBusinessDays(pStart, daysToAdd);
-
-                const execEnd = new Date(task.date);
-                pEnd.setHours(0, 0, 0, 0);
-                execEnd.setHours(0, 0, 0, 0);
-
-                if (execEnd > pEnd) isDelayed = true;
-            }
-
-            // [추가] 지연 시 사유 입력 강제
-            if (completed && isDelayed) {
-                if (!delayReason || !delayReason.trim()) {
-                    alert('지연 사유를 입력해주세요.');
-                    return;
-                }
-            }
-
-            task.completed = completed;
-
-            // [추가] 지연 사유 저장
-            if (completed && isDelayed) {
-                task.delayReason = delayReason;
-            } else {
-                delete task.delayReason;
-            }
-
-            // [추가] 완료 취소 시 이후 작업들의 실행 바 및 완료 상태 초기화
-            if (!completed && currentIndex !== -1) {
-                for (let i = currentIndex + 1; i < sortedTasks.length; i++) {
-                    const nextTask = sortedTasks[i];
-                    nextTask.completed = false;
-                    delete nextTask.date;
-                    delete nextTask.execStartDate;
-                    delete nextTask.delayReason;
-                }
-            }
-
-            setupData[equipKey] = data;
-            localStorage.setItem('setup_data', JSON.stringify(setupData));
-            renderGanttChart();
-            if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
-        }
-    }
-    document.getElementById('exec-completion-modal').style.display = 'none';
-}
-
-/* ==========================================================================
-   실행 시작일 설정 모달 (Setup Execution Start Modal)
-   ========================================================================== */
-function setupSetupExecStartModal() {
-    const modal = document.getElementById('setup-exec-start-modal');
-    const closeBtn = document.getElementById('btn-close-setup-exec-start');
-    const saveBtn = document.getElementById('btn-save-setup-exec-start');
-
-    if (!modal) return;
-
-    if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
-    if (saveBtn) saveBtn.onclick = saveSetupExecStart;
-}
-
-function openSetupExecStartModal(site, equip, id) {
-    const modal = document.getElementById('setup-exec-start-modal');
-    if (!modal) return;
-
-    currentExecStartTarget = { site, equip, id };
-    const dateInput = document.getElementById('setup-exec-start-date');
-
-    // 기본값 계산 (이전 작업 완료일 다음날 등)
-    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    let data = setupData[`${site}::${equip}`] || {};
-    let defaultDate = new Date().toISOString().split('T')[0];
-
-    if (data.setupDetails) {
-        const sortedTasks = [...data.setupDetails].sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
-        const taskIndex = sortedTasks.findIndex(t => t.id === id);
-
-        if (taskIndex > 0) {
-            const prevTask = sortedTasks[taskIndex - 1];
-            if (prevTask.completed && prevTask.date) {
-                defaultDate = addBusinessDays(new Date(prevTask.date), 1).toISOString().split('T')[0];
-            }
-        } else if (taskIndex === 0) {
-            // [추가] 첫 번째 항목은 예정일을 기본값으로 설정
-            if (sortedTasks[0].startDate) defaultDate = sortedTasks[0].startDate;
-        }
-    }
-    dateInput.value = defaultDate;
-
-    modal.style.display = 'flex';
-}
-
-function saveSetupExecStart() {
-    if (!currentExecStartTarget) return;
-    const { site, equip, id } = currentExecStartTarget;
-    const dateInput = document.getElementById('setup-exec-start-date');
-    const execDate = dateInput.value;
-
-    if (!execDate) return alert("시작일을 선택해주세요.");
-
-    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `${site}::${equip}`;
-    let data = setupData[equipKey] || {};
-    if (data.setupDetails) {
-        const task = data.setupDetails.find(t => t.id === id);
-        if (task) {
-            task.completed = false;
-            task.execStartDate = execDate;
-            task.date = execDate; // 종료일도 시작일과 동일하게 설정 (1일)
-
-            setupData[equipKey] = data;
-            localStorage.setItem('setup_data', JSON.stringify(setupData));
-            renderGanttChart();
-            if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
-        }
-    }
-
-    document.getElementById('setup-exec-start-modal').style.display = 'none';
-    currentExecStartTarget = null;
-}
-
-function updateGanttSearchEquipList(site) {
-    const equipSelect = document.getElementById('gantt-equip-select');
-    equipSelect.innerHTML = '<option value="">전체</option>';
-    equipSelect.disabled = !site;
-    if (!site) return;
-
-    const data = JSON.parse(localStorage.getItem('withtech_data')) || {};
-    const equips = data[site] || [];
-    equips.forEach(equip => {
-        const option = document.createElement('option');
-        option.value = equip;
-        const parts = equip.split('::');
-        option.textContent = parts.length > 1 ? `${parts[0]} (${parts[1]})` : parts[0];
-        equipSelect.appendChild(option);
-    });
-}
-
-/* ==========================================================================
-   7. 작업 예정일 등록 모달 (Register Schedule Modal)
-   ========================================================================== */
-function setupRegisterScheduleModal() {
-    const modal = document.getElementById('register-schedule-modal');
-    const closeBtn = document.getElementById('btn-close-register-modal');
-    const siteSelect = document.getElementById('register-site-select');
-    const equipSelect = document.getElementById('register-equip-select');
-    const confirmBtn = document.getElementById('btn-confirm-register-schedule');
-
-    if (!modal) return;
-
-    if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
-
-    if (siteSelect) {
-        siteSelect.onchange = () => {
-            const site = siteSelect.value;
-            updateRegisterEquipList(site);
-        };
-    }
-
-    if (equipSelect) {
-        equipSelect.onchange = () => {
-            const site = siteSelect.value;
-            const equip = equipSelect.value;
-            updateRegisterContentUI(site, equip);
-        };
-    }
-
-    if (confirmBtn) {
-        confirmBtn.onclick = () => {
-            const date = document.getElementById('register-date-display').value;
-            const site = siteSelect.value;
-            const equip = equipSelect.value;
-            const typeSelect = document.getElementById('register-type-select');
-            const type = typeSelect ? typeSelect.value : 'PM';
-
-            if (!site || !equip) return alert("장비를 선택해주세요.");
-
-            const key = `details_${site}_${equip}`;
-            let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
-            if (!data.maint) data.maint = [];
-
-            if (type === 'PM' || type === 'BM') {
-                // 드롭다운에서 선택된 항목들 가져오기
-                const list = document.getElementById('register-content-list');
-                const selected = list ? list.querySelectorAll('.log-select-item.selected') : [];
-
-                if (selected.length === 0) return alert("항목을 하나 이상 선택해주세요.");
-
-                const selectedContents = Array.from(selected).map(el => el.dataset.value);
-
-                // 각 항목별로 처리
-                for (const content of selectedContents) {
-                    // 해당 타입과 내용이 일치하는 기존 항목 찾기
-                    let item = data.maint.find(i => i.type === type && i.content === content);
-
-                    if (item) {
-                        // 이미 존재하는 항목이면 예정일 업데이트
-                        if (item.scheduledDate && item.scheduledDate !== date) {
-                            if (!confirm(`'${item.content}' 항목은 이미 ${item.scheduledDate}에 등록되어 있습니다.\n해당 날짜(${date})로 변경하시겠습니까?`)) {
-                                continue;
-                            }
-                        }
-                        item.scheduledDate = date;
-                    } else {
-                        // (예외 처리) 드롭다운에 있는데 데이터에 없는 경우 - 새로 생성
-                        // 보통 드롭다운은 데이터 기반이라 이 경우는 드물지만 안전장치
-                        item = {
-                            id: Date.now() + Math.random(),
-                            type: type,
-                            content: content,
-                            date: new Date().toISOString().split('T')[0], // 등록일
-                            period: type === 'PM' ? '30' : null, // 기본값
-                            scheduledDate: date
-                        };
-                        data.maint.push(item);
-                    }
-                }
-            } else {
-                // 장비점검, 프로그램변경 (직접 입력)
-                const input = document.getElementById('register-content-input');
-                const content = input ? input.value.trim() : '';
-
-                if (!content) return alert("내용을 입력해주세요.");
-
-                // [수정] 바로 완료처리하지 않고 일정(maint)에 등록 (PM/BM과 동일 프로세스)
-                // 기존 항목이 있는지 확인 (중복 방지 및 재사용)
-                let item = data.maint.find(i => i.type === type && i.content === content);
-
-                if (item) {
-                    if (item.scheduledDate && item.scheduledDate !== date) {
-                        if (!confirm(`'${item.content}' 항목은 이미 ${item.scheduledDate}에 등록되어 있습니다.\n해당 날짜(${date})로 변경하시겠습니까?`)) {
-                            return;
-                        }
-                    }
-                    item.scheduledDate = date;
-                } else {
-                    const newItem = {
-                        id: Date.now(),
-                        type: type,
-                        content: content,
-                        date: new Date().toISOString().split('T')[0],
-                        period: null,
-                        scheduledDate: date
-                    };
-                    data.maint.push(newItem);
-                }
-            }
-
-            localStorage.setItem(key, JSON.stringify(data));
-
-            // 캘린더 및 대시보드 갱신
-            updateHomeDashboard();
-            renderCalendar();
-
-            const updatedEvents = getPmScheduleForCalendar();
-            openCalendarPopup(date, updatedEvents[date]); // [수정] 등록 후 바로 캘린더 팝업 갱신
-
-            // 드롭다운 닫기 (전역 이벤트 처리됨)
-            document.querySelectorAll('.log-select-dropdown.show').forEach(d => d.classList.remove('show'));
-
-            alert("작업 예정일이 등록되었습니다.");
-            modal.style.display = 'none';
-
-            document.getElementById('register-schedule-modal').style.display = 'none';
-        };
-    }
-}
-
-function openRegisterScheduleModal(dateStr) {
-    const modal = document.getElementById('register-schedule-modal');
-    const dateDisplay = document.getElementById('register-date-display');
-    const siteSelect = document.getElementById('register-site-select');
-    const equipSelect = document.getElementById('register-equip-select');
-
-    if (!modal || !dateDisplay || !siteSelect) return;
-
-    dateDisplay.value = dateStr;
-
-    // Load Sites
-    const data = JSON.parse(localStorage.getItem('withtech_data')) || {};
-    siteSelect.innerHTML = '<option value="">사업장 선택</option>';
-    Object.keys(data).forEach(site => {
-        const option = document.createElement('option');
-        option.value = site;
-        option.textContent = site;
-        siteSelect.appendChild(option);
-    });
-
-    // [수정] 검색 필터가 적용되어 있다면 해당 사업장/장비로 고정
-    if (currentSearchFilters.site) {
-        siteSelect.value = currentSearchFilters.site;
-        siteSelect.disabled = true;
-        updateRegisterEquipList(currentSearchFilters.site);
-
-        if (currentSearchFilters.equip && equipSelect) {
-            equipSelect.value = currentSearchFilters.equip;
-            equipSelect.disabled = true;
-            updateRegisterContentUI(currentSearchFilters.site, currentSearchFilters.equip);
-        }
-    } else {
-        siteSelect.disabled = false;
-        updateRegisterContentUI('', '');
-    }
-
-    modal.style.display = 'flex';
-}
-
-function updateRegisterEquipList(site) {
-    const equipSelect = document.getElementById('register-equip-select');
-    equipSelect.innerHTML = '<option value="">장비 선택</option>';
-    equipSelect.disabled = !site;
-
-    updateRegisterContentUI(site, '');
-
-    if (!site) return;
-
-    const data = JSON.parse(localStorage.getItem('withtech_data')) || {};
-    const equips = data[site] || [];
-    equips.forEach(equip => {
-        const option = document.createElement('option');
-        option.value = equip;
-        const parts = equip.split('::');
-        const name = parts[0];
-        const serial = parts.length > 1 ? parts[1] : '';
-        option.textContent = serial ? `${name} (${serial})` : name;
-        equipSelect.appendChild(option);
-    });
-}
-
-function updateRegisterContentUI(site, equip) {
-    const listContainer = document.getElementById('register-item-list');
-    if (!listContainer) return;
-
-    listContainer.innerHTML = '';
-    listContainer.style.overflow = 'visible';
-
-    if (!equip) {
-        listContainer.innerHTML = '<div class="form-row"><label class="form-label">구분</label><select class="modal-select" disabled><option>PM</option></select></div><div class="form-row"><label class="form-label">항목</label><input type="text" disabled placeholder="장비를 먼저 선택해주세요" style="width:100%; background:#161b22; border:1px solid #30363d; color:#8b949e; padding:8px; border-radius:4px;"></div>';
-        return;
-    }
-
-    // 구분 선택 Select 생성
-    const typeRow = document.createElement('div');
-    typeRow.className = 'form-row';
-    typeRow.innerHTML = `
-        <label class="form-label">구분</label>
-        <select id="register-type-select" class="modal-select" style="width:100%;">
-            <option value="PM">PM</option>
-            <option value="BM">BM</option>
-            <option value="장비점검">장비점검</option>
-            <option value="프로그램변경">프로그램변경</option>
-        </select>
-    `;
-    listContainer.appendChild(typeRow);
-
-    // 내용 입력 영역 생성
-    const contentRow = document.createElement('div');
-    contentRow.className = 'form-row';
-    contentRow.innerHTML = `<label class="form-label">항목</label><div id="register-content-area" style="flex:1;"></div>`;
-    listContainer.appendChild(contentRow);
-
-    const typeSelect = typeRow.querySelector('select');
-    typeSelect.onchange = () => renderRegisterContentField(site, equip, typeSelect.value);
-
-    // 초기 렌더링 (PM)
-    renderRegisterContentField(site, equip, 'PM');
-}
-
-function renderRegisterContentField(site, equip, type) {
-    const container = document.getElementById('register-content-area');
-    if (!container) return;
-    container.innerHTML = '';
-
-    if (type === 'PM' || type === 'BM') {
-        const key = `details_${site}_${equip}`;
-        const data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
-
-        // 커스텀 드롭다운 구조 생성
-        const wrapper = document.createElement('div');
-        wrapper.className = 'log-select-wrapper';
-        wrapper.onclick = (e) => e.stopPropagation();
-
-        const trigger = document.createElement('div');
-        trigger.className = 'log-select-trigger';
-        trigger.textContent = '항목 선택';
-
-        const dropdown = document.createElement('div');
-        dropdown.className = 'log-select-dropdown';
-
-        const list = document.createElement('div');
-        list.id = 'register-content-list';
-        list.className = 'log-select-list';
-
-        if (data.maint) {
-            data.maint.filter(item => item.type === type).forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'log-select-item';
-                div.dataset.value = item.content;
-                div.innerHTML = `<span>${item.content}</span>`;
-
-                div.onclick = (e) => {
-                    e.stopPropagation();
-                    div.classList.toggle('selected');
-
-                    // 트리거 텍스트 업데이트
-                    const selected = list.querySelectorAll('.log-select-item.selected');
-                    const values = Array.from(selected).map(el => el.dataset.value);
-
-                    if (values.length > 1) {
-                        trigger.textContent = `${values[0]} 외 ${values.length - 1}개`;
-                    } else if (values.length === 1) {
-                        trigger.textContent = values[0];
-                    } else {
-                        trigger.textContent = '항목 선택';
-                    }
-                    trigger.title = values.join('\n');
-                };
-                list.appendChild(div);
-            });
-        }
-
-        dropdown.appendChild(list);
-
-        // 추가 버튼
-        const footer = document.createElement('div');
-        footer.className = 'log-select-footer';
-        const addBtn = document.createElement('button');
-        addBtn.className = 'btn-blue-sm';
-        addBtn.style.width = '100%';
-        addBtn.textContent = '확인';
-        addBtn.onclick = (e) => { e.stopPropagation(); dropdown.classList.remove('show'); };
-        footer.appendChild(addBtn);
-        dropdown.appendChild(footer);
-
-        wrapper.appendChild(trigger);
-        wrapper.appendChild(dropdown);
-
-        trigger.onclick = (e) => {
-            e.stopPropagation();
-            document.querySelectorAll('.log-select-dropdown.show').forEach(d => {
-                if (d !== dropdown) d.classList.remove('show');
-            });
-            dropdown.classList.toggle('show');
-        };
-
-        container.appendChild(wrapper);
-    } else {
-        container.innerHTML = `<input type="text" id="register-content-input" placeholder="내용 입력" style="width:100%;">`;
-    }
-}
-
-/* ==========================================================================
-   8. 상세 정보 및 작업 완료 (Event Detail & Completion)
-   ========================================================================== */
-function setupEventDetailModal() {
-    const modal = document.getElementById('event-detail-modal');
-    const closeBtn = document.getElementById('btn-close-detail-modal');
-    const footerCloseBtn = document.getElementById('btn-close-detail-footer');
-    const completeBtn = document.getElementById('btn-complete-work');
-    const saveBtn = document.getElementById('btn-save-detail-memo');
-    const moveBtn = document.getElementById('btn-move-to-equip');
-    const memoInput = document.getElementById('detail-work-memo');
-
-    if (!modal) return;
-
-    const checkAndClose = () => {
-        if (memoInput && memoInput.value !== originalDetailMemo) {
-            if (!confirm("저장되지 않은 변경사항이 있습니다. 정말 닫으시겠습니까?")) {
-                return;
-            }
-        }
-        modal.style.display = 'none';
-    };
-
-    if (closeBtn) closeBtn.onclick = checkAndClose;
-    if (footerCloseBtn) footerCloseBtn.onclick = checkAndClose;
-    // modal.onclick = (e) => { if (e.target === modal) checkAndClose(); };
-
-    if (saveBtn) {
-        saveBtn.onclick = () => {
-            if (currentDetailTarget) {
-                saveDetailMemo(currentDetailTarget.site, currentDetailTarget.equip, currentDetailTarget.itemId);
-            }
-        };
-    }
-
-    if (memoInput) {
-        memoInput.addEventListener('input', () => {
-            if (saveBtn) {
-                if (memoInput.value !== originalDetailMemo) {
-                    saveBtn.classList.remove('btn-blue');
-                    saveBtn.classList.add('btn-orange');
-                } else {
-                    saveBtn.classList.remove('btn-orange');
-                    saveBtn.classList.add('btn-blue');
-                }
-            }
-        });
-    }
-
-    if (completeBtn) {
-        completeBtn.onclick = () => {
-            if (currentDetailTarget) {
-                const workerInput = document.getElementById('detail-worker');
-                if (workerInput && !workerInput.value.trim()) {
-                    alert("작업자 이름을 입력해주세요.");
-                    return;
-                }
-
-                if (confirm("작업을 완료하시겠습니까?\n현재 날짜(오늘)를 기준으로 점검 주기가 갱신됩니다.")) {
-                    completeWork(currentDetailTarget.site, currentDetailTarget.equip, currentDetailTarget.itemId);
-                    modal.style.display = 'none';
-                    const calendarPopup = document.getElementById('calendar-popup');
-                    if (calendarPopup) calendarPopup.style.display = 'none';
-                }
-            }
-        };
-    }
-
-    if (moveBtn) {
-        moveBtn.onclick = () => {
-            if (memoInput && memoInput.value !== originalDetailMemo) {
-                if (!confirm("저장되지 않은 변경사항이 있습니다. 이동하시겠습니까?")) {
-                    return;
-                }
-            }
-            if (currentDetailTarget) {
-                const { site, equip } = currentDetailTarget;
-                location.href = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
-            }
-        };
-    }
-}
-
-function openEventDetailModal(site, equip, itemId, isCompleted = false) {
-    const key = `details_${site}_${equip}`;
-    const data = JSON.parse(localStorage.getItem(key));
-    if (!data) return;
-
-    let targetItems = [];
-    let contentText = '';
-    let memoText = '';
-    let workerText = '';
-    let typeText = '';
-
-    if (isCompleted) {
-        if (data.logs) {
-            const baseItem = data.logs.find(l => l.id === itemId);
-            if (baseItem) {
-                // [수정] 같은 날짜, 같은 타입의 로그를 모두 찾아서 묶음
-                targetItems = data.logs.filter(l => l.date === baseItem.date && (l.type || 'PM') === (baseItem.type || 'PM'));
-
-                // 항목 내용 합치기
-                contentText = targetItems.map(i => `- ${i.content || i.maintItem || i.memo}`).join('\n');
-
-                // 대표 정보 설정
-                memoText = baseItem.memo || '';
-                workerText = baseItem.worker || '';
-                typeText = baseItem.type || 'PM';
-            }
-        }
-    } else {
-        if (data.maint) {
-            const baseItem = data.maint.find(i => i.id === itemId);
-            if (baseItem && baseItem.scheduledDate) {
-                // 같은 예정일, 같은 타입을 가진 모든 항목 찾기
-                targetItems = data.maint.filter(i => i.scheduledDate === baseItem.scheduledDate && (i.type || 'PM') === (baseItem.type || 'PM'));
-
-                // 항목 내용 합치기
-                contentText = targetItems.map(i => `- ${i.content}`).join('\n');
-                typeText = baseItem.type || 'PM'; // 대표 타입
-
-                // [추가] 미완료 항목일 경우, 해당 장비의 마지막 작업 내용(메모)을 자동으로 기입
-                if (data.logs && data.logs.length > 0) {
-                    // 최신순 정렬 (원본 배열 보호를 위해 복사 후 정렬)
-                    const sortedLogs = [...data.logs].sort((a, b) => {
-                        if (b.date !== a.date) return b.date.localeCompare(a.date);
-                        return b.id - a.id;
-                    });
-                    if (sortedLogs[0] && sortedLogs[0].memo) {
-                        memoText = sortedLogs[0].memo;
-                    }
-                }
-            }
-        }
-    }
-
-    if (targetItems.length === 0) return;
-
-    const modal = document.getElementById('event-detail-modal');
-    const equipInfoEl = document.getElementById('detail-equip-info');
-    const serialEl = document.getElementById('detail-serial-no');
-    const dateRow = document.getElementById('detail-date-row');
-    const dateInput = document.getElementById('detail-scheduled-date');
-    const dateBtn = document.getElementById('btn-update-date');
-    const typeEl = document.getElementById('detail-type');
-    const contentEl = document.getElementById('detail-content');
-    const completeBtn = document.getElementById('btn-complete-work');
-    const saveBtn = document.getElementById('btn-save-detail-memo');
-    const memoInput = document.getElementById('detail-work-memo');
-    const workerInput = document.getElementById('detail-worker');
-
-    if (modal) {
-        const parts = equip.split('::');
-        const equipName = parts[0];
-        const serialNo = parts.length > 1 ? parts[1] : '-';
-
-        if (equipInfoEl) equipInfoEl.textContent = `${site} > ${equipName}`;
-        if (serialEl) serialEl.textContent = serialNo;
-        if (typeEl) {
-            typeEl.textContent = typeText;
-            typeEl.className = ''; // 기존 클래스 초기화
-            typeEl.classList.add(typeText === 'PM' ? 'text-pm' : 'text-bm');
-        }
-
-        if (dateRow && dateInput) {
-            if (isCompleted) {
-                dateRow.style.display = 'none';
-            } else {
-                dateRow.style.display = 'block';
-                if (targetItems.length > 0) {
-                    dateInput.value = targetItems[0].scheduledDate;
-                }
-                if (dateBtn) {
-                    dateBtn.onclick = () => {
-                        const newDate = dateInput.value;
-                        if (!newDate) return alert("날짜를 선택해주세요.");
-                        if (confirm("예정일을 변경하시겠습니까?")) {
-                            updateScheduledDate(site, equip, itemId, newDate);
-                        }
-                    };
-                }
-            }
-        }
-
-        // [수정] 항목별 삭제 버튼 추가를 위해 개별 요소 생성
-        if (contentEl) {
-            contentEl.innerHTML = '';
-            targetItems.forEach(item => {
-                // [수정] 완료된 항목은 콤마로 구분된 내용을 줄바꿈하여 표시
-                let displayContents = [];
-                if (isCompleted) {
-                    const raw = item.content || item.maintItem || item.memo || '';
-                    displayContents = raw.split(',').map(s => s.trim()).filter(s => s);
-                    if (displayContents.length === 0) displayContents.push(raw);
-                } else {
-                    displayContents.push(item.content);
-                }
-
-                displayContents.forEach(contentLine => {
-                    const row = document.createElement('div');
-                    row.style.display = 'flex';
-                    row.style.justifyContent = 'space-between';
-                    row.style.alignItems = 'center';
-                    row.style.marginBottom = '4px';
-
-                    const text = document.createElement('span');
-                    text.textContent = `- ${contentLine}`;
-                    row.appendChild(text);
-
-                    if (!isCompleted) {
-                        const delBtn = document.createElement('button');
-                        delBtn.className = 'btn-del-sm';
-                        delBtn.textContent = '✕';
-                        delBtn.title = '항목 삭제';
-                        delBtn.style.marginLeft = '8px';
-                        delBtn.onclick = () => deleteScheduleItem(site, equip, item.id);
-                        row.appendChild(delBtn);
-                    }
-                    contentEl.appendChild(row);
-                });
-            });
-
-            // [추가] 항목 추가 UI
-            if (!isCompleted) {
-                const addRow = document.createElement('div');
-                addRow.style.display = 'flex';
-                addRow.style.marginTop = '8px';
-                addRow.style.gap = '5px';
-
-                let input;
-                let isSelect = false;
-
-                if ((typeText === 'PM' || typeText === 'BM') && data.maint) {
-                    const uniqueItems = [...new Set(data.maint.filter(i => i.type === typeText).map(i => i.content))];
-                    if (uniqueItems.length > 0) {
-                        isSelect = true;
-                        input = document.createElement('select');
-                        input.innerHTML = `<option value="">항목 선택</option>`;
-                        uniqueItems.forEach(item => {
-                            const option = document.createElement('option');
-                            option.value = item;
-                            option.textContent = item;
-                            input.appendChild(option);
-                        });
-                    }
-                }
-
-                if (!input) {
-                    input = document.createElement('input');
-                    input.type = 'text';
-                    input.placeholder = '항목 추가';
-                }
-
-                input.style.flex = '1';
-                input.style.background = '#0d1117';
-                input.style.border = '1px solid #30363d';
-                input.style.color = '#fff';
-                input.style.padding = '4px 8px';
-                input.style.borderRadius = '4px';
-
-                const addBtn = document.createElement('button');
-                addBtn.textContent = '+';
-                addBtn.className = 'btn-blue';
-                addBtn.style.padding = '0 10px';
-
-                const handleAdd = () => {
-                    const val = input.value.trim();
-                    if (!val) return;
-                    addScheduleItem(site, equip, targetItems[0].scheduledDate, typeText, val);
-                };
-
-                addBtn.onclick = handleAdd;
-                if (!isSelect) {
-                    input.onkeypress = (e) => {
-                        if (e.key === 'Enter') handleAdd();
-                    };
-                }
-
-                addRow.appendChild(input);
-                addRow.appendChild(addBtn);
-                contentEl.appendChild(addRow);
-            }
-        }
-
-        // 작업자 및 메모 입력창 설정 (완료된 항목이면 비활성화)
-        if (workerInput) {
-            workerInput.value = workerText;
-            workerInput.disabled = isCompleted;
-        }
-        if (memoInput) {
-            memoInput.value = memoText;
-            originalDetailMemo = memoText;
-            memoInput.disabled = false; // 메모는 항상 수정 가능
-        }
-
-        // 완료된 항목이면 '작업 완료' 버튼 숨김
-        if (completeBtn) {
-            completeBtn.style.display = isCompleted ? 'none' : 'block';
-        }
-        if (saveBtn) {
-            saveBtn.style.display = isCompleted ? 'block' : 'none';
-            saveBtn.classList.remove('btn-orange');
-            saveBtn.classList.add('btn-blue');
-        }
-
-        // itemId 대신 targetItems 전체를 넘기거나, 대표 ID를 넘기고 completeWork에서 다시 찾음
-        // 여기서는 대표 ID를 넘기고 completeWork에서 같은 날짜 항목을 모두 처리하도록 수정
-        currentDetailTarget = { site, equip, itemId, isCompleted, scheduledDate: targetItems[0].scheduledDate };
-        modal.style.display = 'flex';
-    }
-}
-
-function updateScheduledDate(site, equip, itemId, newDate) {
-    const key = `details_${site}_${equip}`;
-    const data = JSON.parse(localStorage.getItem(key));
-    if (data && data.maint) {
-        const baseItem = data.maint.find(i => i.id === itemId);
-        if (baseItem) {
-            const oldDate = baseItem.scheduledDate;
-            const type = baseItem.type || 'PM';
-
-            let count = 0;
-            data.maint.forEach(item => {
-                if (item.scheduledDate === oldDate && (item.type || 'PM') === type) {
-                    item.scheduledDate = newDate;
-                    count++;
-                }
-            });
-
-            localStorage.setItem(key, JSON.stringify(data));
-            updateHomeDashboard();
-            renderCalendar();
-            alert(`예정일이 변경되었습니다. (${count}건)`);
-
-            const calendarPopup = document.getElementById('calendar-popup');
-            if (calendarPopup) calendarPopup.style.display = 'none';
-        }
-    }
-}
-
-function completeWork(site, equip, itemId) {
-    const key = `details_${site}_${equip}`;
-    const data = JSON.parse(localStorage.getItem(key));
-    if (data && data.maint) {
-        // 대표 아이템 찾기
-        const baseItem = data.maint.find(i => i.id === itemId);
-
-        if (baseItem) {
-            // 작업일 결정
-            const workDate = baseItem.scheduledDate ? baseItem.scheduledDate : new Date().toISOString().split('T')[0];
-
-            // 같은 예정일, 같은 타입을 가진 모든 항목 찾기 (일괄 완료 처리)
-            const targetItems = baseItem.scheduledDate
-                ? data.maint.filter(i => i.scheduledDate === baseItem.scheduledDate && (i.type || 'PM') === (baseItem.type || 'PM'))
-                : [baseItem];
-
-            // 입력된 메모 가져오기
-            const workerInput = document.getElementById('detail-worker');
-            const memoInput = document.getElementById('detail-work-memo');
-            const workerName = workerInput ? workerInput.value.trim() : 'System';
-            const userMemo = memoInput ? memoInput.value.trim() : '';
-
-            // [수정] 항목 내용 합치기 (리스트 1개로 통합)
-            const combinedContent = targetItems.map(item => item.content).join(', ');
-
-            // [수정] 일회성 일정(장비점검, 프로그램변경)은 완료 시 목록에서 삭제
-            if (baseItem.type === '장비점검' || baseItem.type === '프로그램변경') {
-                const targetIds = targetItems.map(i => i.id);
-                data.maint = data.maint.filter(i => !targetIds.includes(i.id));
-            } else {
-                targetItems.forEach(item => {
-                    item.date = workDate; // 기준일 갱신
-                    item.scheduledDate = ""; // 예정일 초기화
-                });
-            }
-
-            if (!data.logs) data.logs = [];
-            data.logs.push({
-                id: Date.now(),
-                date: workDate,
-                type: baseItem.type || 'PM',
-                worker: workerName,
-                memo: userMemo,
-                content: combinedContent
-            });
-
-            localStorage.setItem(key, JSON.stringify(data));
-            updateHomeDashboard();
-            renderCalendar();
-            alert("작업이 완료되었습니다.");
-        }
-    }
-}
-
-function addScheduleItem(site, equip, scheduledDate, type, content) {
-    const key = `details_${site}_${equip}`;
-    const data = JSON.parse(localStorage.getItem(key));
-    if (!data) return;
-    if (!data.maint) data.maint = [];
-
-    const newItem = {
-        id: Date.now(),
-        type: type,
-        content: content,
-        date: new Date().toISOString().split('T')[0],
-        period: type === 'PM' ? '30' : null,
-        scheduledDate: scheduledDate
-    };
-
-    data.maint.push(newItem);
-    localStorage.setItem(key, JSON.stringify(data));
-
-    openEventDetailModal(site, equip, newItem.id, false);
-}
-
-function deleteScheduleItem(site, equip, itemId) {
-    if (!confirm('이 항목을 일정에서 제외하시겠습니까?')) return;
-
-    const key = `details_${site}_${equip}`;
-    const data = JSON.parse(localStorage.getItem(key));
-    if (!data || !data.maint) return;
-
-    const item = data.maint.find(i => i.id === itemId);
-    if (!item) return;
-
-    const scheduledDate = item.scheduledDate;
-    const type = item.type || 'PM';
-
-    // 일정 해제 (setScheduleDate 함수 재사용)
-    setScheduleDate(site, equip, itemId, '', true);
-
-    // 남은 항목 확인 후 모달 갱신 또는 닫기
-    const newData = JSON.parse(localStorage.getItem(key));
-    const remainingItems = newData.maint.filter(i => i.scheduledDate === scheduledDate && (i.type || 'PM') === type);
-
-    if (remainingItems.length > 0) {
-        openEventDetailModal(site, equip, remainingItems[0].id, false);
-    } else {
-        document.getElementById('event-detail-modal').style.display = 'none';
-    }
-}
-
-function saveDetailMemo(site, equip, itemId) {
-    const key = `details_${site}_${equip}`;
-    const data = JSON.parse(localStorage.getItem(key));
-    if (data && data.logs) {
-        const baseItem = data.logs.find(l => l.id === itemId);
-        if (baseItem) {
-            const memoInput = document.getElementById('detail-work-memo');
-            const newMemo = memoInput.value;
-
-            // 같은 날짜, 같은 타입의 모든 로그 메모 업데이트
-            data.logs.forEach(log => {
-                if (log.date === baseItem.date && (log.type || 'PM') === (baseItem.type || 'PM')) {
-                    log.memo = newMemo;
-                }
-            });
-
-            localStorage.setItem(key, JSON.stringify(data));
-
-            originalDetailMemo = newMemo;
-            const saveBtn = document.getElementById('btn-save-detail-memo');
-            if (saveBtn) {
-                saveBtn.classList.remove('btn-orange');
-                saveBtn.classList.add('btn-blue');
-            }
-            alert("메모가 저장되었습니다.");
-        }
-    }
 }

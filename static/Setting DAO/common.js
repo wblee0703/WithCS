@@ -109,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initializeApp() {
     // 2-1. 초기 설정
-    initAccounts();
     // 2-2. 로그인 및 사용자 관리 이벤트
     setupAuthEvents();
     // 2-3. 페이지별 접근 제어
@@ -381,9 +380,6 @@ function restoreLastState() {
 /* ==========================================================================
    3. 인증 및 사용자 관리 (Authentication)
    ========================================================================== */
-function initAccounts() {
-}
-
 function checkLoginStatus() {
     const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
     const role = sessionStorage.getItem('userRole');

@@ -1,7 +1,6 @@
 /* ==========================================================================
    1. 셋업 페이지 레이아웃 (Setup Page Layout)
    ========================================================================== */
-
 .setup-card {
     background: #161b22;
     border: 1px solid #30363d;
@@ -129,7 +128,9 @@
 .th-w150 { width: 150px; }
 .th-w100 { width: 100px; }
 
-.data-table input[type="date"] {
+/* 날짜 입력 필드 스타일 */
+.data-table input[type="date"],
+.input-date-dark {
     background: #0d1117;
     border: 1px solid #30363d;
     color: #fff;
@@ -140,6 +141,7 @@
     text-align: center;
 }
 
+/* 로그 활성화 상태 */
 .active-log {
     background-color: rgba(35, 134, 54, 0.1) !important;
     border-left: 4px solid #238636 !important;
@@ -148,6 +150,7 @@
 /* ==========================================================================
    3. 셋업 진행 세부사항 (Setup Detail List)
    ========================================================================== */
+/* 일반 모드에서는 삭제 버튼 숨김 */
 #setup-detail-card .data-table th:last-child,
 #setup-detail-card .data-table tr:not(.category-header-row) td:last-child {
     display: none;
@@ -165,6 +168,7 @@
 /* ==========================================================================
    4. 셋업 일지 (Setup Log List)
    ========================================================================== */
+/* 일반 모드에서는 관리 컬럼 숨김 */
 #setup-log-card .manage-col {
     display: none;
 }
@@ -188,6 +192,7 @@
     color: #e6edf3;
 }
 
+/* 검색 입력창 */
 .input-search-dark {
     background: #0d1117;
     border: 1px solid #30363d;
@@ -198,6 +203,7 @@
     width: 200px;
 }
 
+/* 일지 입력 영역 */
 .setup-card-body-flex {
     padding: 0;
     display: flex;
@@ -236,6 +242,7 @@
     border-bottom: 1px solid #30363d;
 }
 
+/* 메모 영역 */
 .memo-container {
     flex: 1;
     display: flex;
@@ -296,6 +303,7 @@
     line-height: 1;
 }
 
+/* 버튼 호버 효과 */
 .btn-add-sm:hover {
     background: transparent;
     color: #2ea043;
@@ -309,15 +317,14 @@
 /* ==========================================================================
    6. 모달 (Modals)
    ========================================================================== */
+/* 모달 내부 스크롤 */
 .modal-body-scroll {
     overflow-y: auto;
 }
 
-/* ==========================================================================
-   7. 모달 스타일 (Modal Styles - Copied from index.css)
-   ========================================================================== */
 .modal-window.size-date-edit { width: 350px; height: auto; }
 
+/* 모달 날짜 행 */
 .modal-date-row {
     display: flex;
     align-items: center;
@@ -335,6 +342,8 @@
 .modal-date-input-fixed {
     width: 130px;
 }
+
+/* 모달 체크박스 */
 .modal-checkbox-label {
     font-size: 16px;
     color: #e6edf3;
@@ -344,6 +353,8 @@
     transform: scale(1.5);
     margin-right: 10px;
 }
+
+/* 지연 사유 영역 */
 .delay-reason-wrapper {
     display: none;
     margin-top: 15px;
@@ -366,6 +377,7 @@
     resize: none;
 }
 
+/* 실행 버튼 (Play) */
 .btn-play-sm {
     background: transparent;
     border: 1px solid #3fb950;
@@ -386,6 +398,7 @@
     color: #fff;
 }
 
+/* 진행 중인 항목 하이라이트 */
 .item-row.in-progress td {
     background-color: rgba(35, 134, 54, 0.1);
 }

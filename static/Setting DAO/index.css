@@ -609,6 +609,113 @@ body {
     justify-content: center;
 }
 
+/* 캘린더 타이틀 및 툴바 (Moved from Legacy) */
+.calendar-title-wrapper {
+    width: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    min-height: 40px;
+}
+
+.calendar-center-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.calendar-right-toolbar {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+}
+
+.calendar-main-title {
+    color: #c9d1d9;
+    margin: 0;
+    font-size: 20px;
+}
+
+.calendar-container.no-margin-top {
+    margin-top: 0;
+}
+
+.calendar-target-info {
+    font-size: 14px;
+    color: #3fb950;
+    font-weight: bold;
+    margin-top: 2px;
+}
+
+/* 달력 그리드 이벤트 (Moved from Dynamic) */
+.calendar-event-item {
+    font-size: 9px;
+    text-align: left;
+    background: #21262d;
+    padding: 1px 3px;
+    margin-bottom: 1px;
+    border-radius: 2px;
+    color: #c9d1d9;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.calendar-event-item.completed {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.event-type-text {
+    font-weight: bold;
+}
+
+/* 달력 날짜 셀 내부 (Moved from Dynamic) */
+.holiday-name {
+    font-size: 10px;
+    font-weight: normal;
+}
+
+.event-count {
+    font-size: 11px;
+    color: #8b949e;
+    margin-left: 4px;
+    font-weight: normal;
+}
+
+.date-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+/* 달력 팝업 리스트 (Moved from Dynamic) */
+.popup-item-text {
+    color: #e6edf3;
+}
+
+.popup-item-text.completed {
+    color: #8b949e;
+}
+
+.popup-type-badge {
+    font-weight: bold;
+    margin-right: 5px;
+}
+
+.popup-completed-badge {
+    color: #3fb950;
+    font-size: 12px;
+    margin-left: 10px;
+}
+
 .calendar-search-wrapper {
     flex: 1;
     display: flex;
@@ -986,69 +1093,6 @@ body {
     font-weight: bold;
     border: 1px solid;
     /* 색상은 JS에서 지정 */
-}
-
-/* 달력 그리드 이벤트 */
-.calendar-event-item {
-    font-size: 9px;
-    text-align: left;
-    background: #21262d;
-    padding: 1px 3px;
-    margin-bottom: 1px;
-    border-radius: 2px;
-    color: #c9d1d9;
-    overflow: hidden;
-    white-space: nowrap;
-}
-
-.calendar-event-item.completed {
-    text-decoration: line-through;
-    opacity: 0.6;
-}
-
-.event-type-text {
-    font-weight: bold;
-}
-
-/* 달력 날짜 셀 내부 */
-.holiday-name {
-    font-size: 10px;
-    font-weight: normal;
-}
-
-.event-count {
-    font-size: 11px;
-    color: #8b949e;
-    margin-left: 4px;
-    font-weight: normal;
-}
-
-.date-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    margin-bottom: 5px;
-}
-
-/* 달력 팝업 리스트 */
-.popup-item-text {
-    color: #e6edf3;
-}
-
-.popup-item-text.completed {
-    color: #8b949e;
-}
-
-.popup-type-badge {
-    font-weight: bold;
-    margin-right: 5px;
-}
-
-.popup-completed-badge {
-    color: #3fb950;
-    font-size: 12px;
-    margin-left: 10px;
 }
 
 /* 상세 모달 텍스트 색상 */
@@ -1451,43 +1495,6 @@ body {
 .gantt-sidebar-initial { width: 200px; }
 .gantt-header-cell-fixed { height: 60px; border-bottom: 1px solid #30363d; }
 .gantt-header-row-fixed { height: 30px; }
-
-/* 캘린더 영역 */
-.calendar-title-wrapper {
-    width: 100%;
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-top: 10px;
-    margin-bottom: 5px;
-    min-height: 40px;
-}
-.calendar-center-title {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-.calendar-right-toolbar {
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    align-items: center;
-}
-.calendar-main-title {
-    color: #c9d1d9;
-    margin: 0;
-    font-size: 20px;
-}
-.calendar-container.no-margin-top { margin-top: 0; }
-.calendar-target-info {
-    font-size: 14px;
-    color: #3fb950;
-    font-weight: bold;
-    margin-top: 2px;
-}
 
 /* 모달 및 폼 */
 .modal-window.size-user { width: 500px; height: auto; }

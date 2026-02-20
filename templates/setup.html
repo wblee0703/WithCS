@@ -13,6 +13,9 @@
 </head>
 
 <body>
+    <!-- ==========================================================================
+         1. 헤더 (Header)
+         ========================================================================== -->
     <header class="header">
         <img src="{{ url_for('static', filename='LOGO+WITHTECH.png') }}" alt="WITHTECH Logo" class="header-logo">
         <div class="container">
@@ -31,6 +34,9 @@
         </div>
     </header>
 
+    <!-- ==========================================================================
+         2. 대시보드 레이아웃 (Dashboard Layout)
+         ========================================================================== -->
     <div class="dashboard-wrapper">
         <aside class="dashboard-sidebar">
             <section class="sidebar-group">
@@ -52,7 +58,10 @@
                     <div class="sidebar-header-row">
                         <h3>중분류: 장비목록 <span id="equip-count" class="count-badge">0</span> <button
                                 class="btn-list-setting" id="equip-setting-btn" title="목록 편집">⚙️</button></h3>
-                        <input type="text" id="equip-search" class="search-input-mini" placeholder="검색" autocomplete="off">
+                        <!-- 자동완성 방지용 가짜 필드 -->
+                        <input type="text" style="display:none">
+                        <input type="password" style="display:none">
+                        <input type="text" id="equip-search" class="search-input-mini" placeholder="검색" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
                     </div>
                     <div class="sidebar-input-group">
                         <input type="text" id="equip-input" placeholder="장비 명" disabled>
@@ -163,7 +172,10 @@
         </main>
     </div>
 
-    <!-- 시스템 로그 모달 -->
+    <!-- ==========================================================================
+         3. 모달 팝업 (Modals)
+         ========================================================================== -->
+    <!-- 3.1 시스템 로그 모달 -->
     <div id="log-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window">
             <div class="modal-header">
@@ -191,7 +203,7 @@
         </div>
     </div>
 
-    <!-- 로그인 모달 -->
+    <!-- 3.2 로그인 모달 -->
     <div id="login-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window" style="width: 400px; height: auto;">
             <div class="modal-header">
@@ -207,7 +219,7 @@
         </div>
     </div>
 
-    <!-- 사용자 설정 모달 -->
+    <!-- 3.3 사용자 설정 모달 -->
     <div id="user-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window" style="width: 500px; height: auto;">
             <div class="modal-header">
@@ -238,7 +250,7 @@
         </div>
     </div>
 
-    <!-- 셋업 리스트 불러오기 모달 -->
+    <!-- 3.4 셋업 리스트 불러오기 모달 -->
     <div id="setup-load-list-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window" style="width: 400px; height: auto;">
             <div class="modal-header">
@@ -265,7 +277,7 @@
         </div>
     </div>
 
-    <!-- 셋업 정보 불러오기 모달 -->
+    <!-- 3.5 셋업 정보 불러오기 모달 -->
     <div id="setup-load-info-modal" class="modal-overlay" style="display: none; z-index: 2000;">
         <div class="modal-window" style="width: 400px; height: auto;">
             <div class="modal-header">
@@ -292,7 +304,7 @@
         </div>
     </div>
 
-    <!-- 셋업 완료 등록 모달 -->
+    <!-- 3.6 셋업 완료 등록 모달 -->
     <div id="setup-completion-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window size-date-edit">
             <div class="modal-header">
@@ -328,7 +340,7 @@
         </div>
     </div>
 
-    <!-- 실행 시작일 설정 모달 -->
+    <!-- 3.7 실행 시작일 설정 모달 -->
     <div id="setup-exec-start-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window size-date-edit">
             <div class="modal-header">
@@ -347,7 +359,7 @@
         </div>
     </div>
 
-    <!-- 장비 정보 설정 모달 (Setup 전용) -->
+    <!-- 3.8 장비 정보 설정 모달 (Setup 전용) -->
     <div id="setup-equip-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window" style="width: 600px; height: auto; max-height: 90vh;">
             <div class="modal-header">

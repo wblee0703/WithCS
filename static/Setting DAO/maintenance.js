@@ -1,10 +1,4 @@
 /* ==========================================================================
-   maintenance.js
-   장비 유지관리 페이지 전용 스크립트
-   기능: 유지관리 물품(PM/BM), 점검 이력(Logs), 마스터 정보 수정
-   ========================================================================== */
-
-/* ==========================================================================
    1. 초기화 및 이벤트 리스너 (Initialization)
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
@@ -13,6 +7,10 @@ document.addEventListener('DOMContentLoaded', () => {
     setupUIEvents();
     setupSpecialNoteEvents();
     setupPageProtection();
+    
+    // 모달 초기화
+    setupMaintLoadListModal();
+    // setupMaintLoadInfoModal(); // 필요 시 구현
 });
 
 function setupMaintenanceEvents() {
@@ -76,7 +74,6 @@ function setupMaintenanceEvents() {
         const table = maintBody.closest('table');
         if (table) table.classList.add('maint-list-table');
     }
-    setupMaintLoadListModal();
 }
 
 function setupLogEvents() {
@@ -217,64 +214,8 @@ function setupPageProtection() {
 }
 
 /* ==========================================================================
-   2. 마스터 정보 관리 (Master Info)
+   2. 유지관리 물품 (Maintenance Items: PM/BM)
    ========================================================================== */
-function openMaintEquipModal() {
-    const { site, equip } = currentPath;
-    if (!site || !equip) return alert('장비를 선택해주세요.');
-
-    const modal = document.getElementById('maint-equip-modal');
-    if (!modal) return;
-
-    // 데이터 로드
-    const key = `details_${site}_${equip}`;
-    const data = JSON.parse(localStorage.getItem(key)) || {};
-    const setup = data.setup || {};
-    const parts = equip.split('::');
-
-    // 기본 정보 (Read-only)
-    document.getElementById('maint-modal-site').value = site;
-    document.getElementById('maint-modal-equip').value = parts[0];
-    document.getElementById('maint-modal-serial').value = parts.length > 1 ? parts[1] : '';
-
-    // 상세 정보 필드 매핑
-    const fields = [
-        'custEquipName', 'building', 'floor', 'detailLoc',
-        'manager', 'contact', 'email',
-        'custManager', 'custContact', 'custEmail'
-    ];
-
-    fields.forEach(field => {
-        const el = document.getElementById(`maint-modal-${field}`);
-        if (el) el.value = setup[field] || '';
-    });
-
-    modal.style.display = 'flex';
-}
-
-function saveMaintEquipModal() {
-    const { site, equip } = currentPath;
-    const key = `details_${site}_${equip}`;
-    let data = JSON.parse(localStorage.getItem(key)) || {};
-    if (!data.setup) data.setup = {};
-
-    const fields = [
-        'custEquipName', 'building', 'floor', 'detailLoc',
-        'manager', 'contact', 'email',
-        'custManager', 'custContact', 'custEmail'
-    ];
-    fields.forEach(field => {
-        const el = document.getElementById(`maint-modal-${field}`);
-        if (el) data.setup[field] = el.value;
-    });
-
-    localStorage.setItem(key, JSON.stringify(data));
-    addSystemLog('UPDATE_SETUP', equip, '장비 정보 수정 (Maintenance Page)');
-
-    alert('저장되었습니다.');
-    document.getElementById('maint-equip-modal').style.display = 'none';
-}
-
 function formatPhoneNumber(e) {
     let val = e.target.value.replace(/\D/g, '');
     if (val.length > 11) val = val.substring(0, 11);
@@ -304,43 +245,6 @@ function formatPhoneNumber(e) {
     e.target.value = formatted;
 }
 
-// [추가] 유지관리 관리 모드 토글 함수
-function toggleMaintenanceMode() {
-    const tbody = document.getElementById('maint-table-body');
-    const btn = document.getElementById('btn-maint-settings');
-    if (!tbody) return;
-
-    // [수정] tbody 대신 table에 클래스 토글 (컬럼 전체 숨김/표시 제어)
-    const table = tbody.closest('table');
-    if (table) table.classList.toggle('management-active');
-    
-    if (btn) btn.classList.toggle('active');
-
-    const isActive = table ? table.classList.contains('management-active') : false;
-    Array.from(tbody.children).forEach(row => {
-        row.draggable = isActive;
-    });
-
-    // [추가] 리스트 불러오기 버튼 토글
-    const loadBtn = document.getElementById('btn-load-maint-list');
-    if (loadBtn) loadBtn.style.display = isActive ? 'block' : 'none';
-}
-
-// [추가] 로그 관리 모드 토글 함수
-function toggleLogManagementMode() {
-    const wrapper = document.getElementById('log-list-wrapper');
-    const btn = document.getElementById('btn-log-settings');
-    if (!wrapper) return;
-
-    const table = wrapper.querySelector('table');
-    if (table) table.classList.toggle('management-active');
-    
-    if (btn) btn.classList.toggle('active');
-}
-
-/* ==========================================================================
-   3. 유지관리 물품 (Maintenance Items: PM/BM)
-   ========================================================================== */
 function addDetailItem() {
     if (!currentPath.equip) return alert('장비를 선택해주세요.');
 
@@ -558,116 +462,7 @@ function handleMaintReorder() {
 }
 
 /* ==========================================================================
-   유지관리 리스트 불러오기 모달 (Load Maintenance List Modal)
-   ========================================================================== */
-function setupMaintLoadListModal() {
-    const modal = document.getElementById('maint-load-list-modal');
-    const closeBtn = document.getElementById('btn-close-maint-load-list');
-    const cancelBtn = document.getElementById('btn-cancel-maint-load-list');
-    const confirmBtn = document.getElementById('btn-confirm-maint-load-list');
-    const siteSelect = document.getElementById('maint-load-list-site-select');
-
-    if (!modal) return;
-
-    const closeModal = () => modal.style.display = 'none';
-
-    if (closeBtn) closeBtn.onclick = closeModal;
-    if (cancelBtn) cancelBtn.onclick = closeModal;
-
-    if (siteSelect) {
-        siteSelect.onchange = () => {
-            updateMaintLoadListEquipSelect(siteSelect.value);
-        };
-    }
-
-    if (confirmBtn) {
-        confirmBtn.onclick = loadMaintListFromTarget;
-    }
-}
-
-function openMaintLoadListModal() {
-    if (!currentPath.site || !currentPath.equip) return alert('장비를 선택해주세요.');
-
-    const modal = document.getElementById('maint-load-list-modal');
-    const siteSelect = document.getElementById('maint-load-list-site-select');
-    const equipSelect = document.getElementById('maint-load-list-equip-select');
-
-    if (!modal || !siteSelect) return;
-
-    // Load Sites
-    const data = JSON.parse(localStorage.getItem('withtech_data')) || {};
-    siteSelect.innerHTML = '<option value="">사업장 선택</option>';
-    Object.keys(data).forEach(site => {
-        const option = document.createElement('option');
-        option.value = site;
-        option.textContent = site;
-        siteSelect.appendChild(option);
-    });
-
-    equipSelect.innerHTML = '<option value="">장비 선택</option>';
-    equipSelect.disabled = true;
-
-    modal.style.display = 'flex';
-}
-
-function updateMaintLoadListEquipSelect(site) {
-    const equipSelect = document.getElementById('maint-load-list-equip-select');
-    equipSelect.innerHTML = '<option value="">장비 선택</option>';
-    equipSelect.disabled = !site;
-
-    if (!site) return;
-
-    const data = JSON.parse(localStorage.getItem('withtech_data')) || {};
-    const equips = data[site] || [];
-    equips.forEach(equip => {
-        const option = document.createElement('option');
-        option.value = equip;
-        const parts = equip.split('::');
-        option.textContent = parts.length > 1 ? `${parts[0]} (${parts[1]})` : parts[0];
-        equipSelect.appendChild(option);
-    });
-}
-
-function loadMaintListFromTarget() {
-    const site = document.getElementById('maint-load-list-site-select').value;
-    const equip = document.getElementById('maint-load-list-equip-select').value;
-
-    if (!site || !equip) return alert('불러올 장비를 선택해주세요.');
-
-    if (!confirm('현재 작성된 유지관리 물품 리스트가 초기화되고 선택한 장비의 리스트로 대체됩니다.\n계속하시겠습니까?')) return;
-
-    const sourceKey = `details_${site}_${equip}`;
-    const sourceData = JSON.parse(localStorage.getItem(sourceKey)) || {};
-    const sourceMaint = sourceData.maint || [];
-
-    // 현재 장비에 덮어쓰기 (ID는 새로 생성하여 충돌 방지, 날짜는 오늘로 초기화)
-    const today = new Date().toISOString().split('T')[0];
-    const newMaint = sourceMaint.map((item, index) => ({
-        ...item,
-        id: Date.now() + index, // 새로운 ID 부여
-        date: today, // 시작일(마지막 점검일)을 오늘로 초기화
-        scheduledDate: "" // 예정일 초기화
-    }));
-
-    const targetKey = `details_${currentPath.site}_${currentPath.equip}`;
-    let targetData = JSON.parse(localStorage.getItem(targetKey)) || {};
-    targetData.maint = newMaint;
-    
-    localStorage.setItem(targetKey, JSON.stringify(targetData));
-    
-    // UI 갱신
-    renderDetails();
-    
-    if (typeof addSystemLog === 'function') {
-        addSystemLog('LOAD_MAINT_LIST', currentPath.equip, `From: ${site} > ${equip}`);
-    }
-
-    document.getElementById('maint-load-list-modal').style.display = 'none';
-    alert('리스트를 불러왔습니다.');
-}
-
-/* ==========================================================================
-   4. 점검 이력 및 메모 (Inspection Logs & Memo)
+   3. 점검 이력 및 메모 (Inspection Logs & Memo)
    ========================================================================== */
 function addLogItem(e) {
     // 버튼이 form 내부에 있을 경우 페이지 리로드 방지
@@ -1155,8 +950,174 @@ function updateLogContentOptions() {
 }
 
 /* ==========================================================================
-   5. 특이사항 관리 (Special Note)
+   4. 모달 및 팝업 (Modals & Popups)
    ========================================================================== */
+
+// 4.1 마스터 정보 관리 (Master Info)
+function openMaintEquipModal() {
+    const { site, equip } = currentPath;
+    if (!site || !equip) return alert('장비를 선택해주세요.');
+
+    const modal = document.getElementById('maint-equip-modal');
+    if (!modal) return;
+
+    // 데이터 로드
+    const key = `details_${site}_${equip}`;
+    const data = JSON.parse(localStorage.getItem(key)) || {};
+    const setup = data.setup || {};
+    const parts = equip.split('::');
+
+    // 기본 정보 (Read-only)
+    document.getElementById('maint-modal-site').value = site;
+    document.getElementById('maint-modal-equip').value = parts[0];
+    document.getElementById('maint-modal-serial').value = parts.length > 1 ? parts[1] : '';
+
+    // 상세 정보 필드 매핑
+    const fields = [
+        'custEquipName', 'building', 'floor', 'detailLoc',
+        'manager', 'contact', 'email',
+        'custManager', 'custContact', 'custEmail'
+    ];
+
+    fields.forEach(field => {
+        const el = document.getElementById(`maint-modal-${field}`);
+        if (el) el.value = setup[field] || '';
+    });
+
+    modal.style.display = 'flex';
+}
+
+function saveMaintEquipModal() {
+    const { site, equip } = currentPath;
+    const key = `details_${site}_${equip}`;
+    let data = JSON.parse(localStorage.getItem(key)) || {};
+    if (!data.setup) data.setup = {};
+
+    const fields = [
+        'custEquipName', 'building', 'floor', 'detailLoc',
+        'manager', 'contact', 'email',
+        'custManager', 'custContact', 'custEmail'
+    ];
+    fields.forEach(field => {
+        const el = document.getElementById(`maint-modal-${field}`);
+        if (el) data.setup[field] = el.value;
+    });
+
+    localStorage.setItem(key, JSON.stringify(data));
+    addSystemLog('UPDATE_SETUP', equip, '장비 정보 수정 (Maintenance Page)');
+
+    alert('저장되었습니다.');
+    document.getElementById('maint-equip-modal').style.display = 'none';
+}
+
+// 4.2 유지관리 리스트 불러오기 모달
+function setupMaintLoadListModal() {
+    const modal = document.getElementById('maint-load-list-modal');
+    const closeBtn = document.getElementById('btn-close-maint-load-list');
+    const cancelBtn = document.getElementById('btn-cancel-maint-load-list');
+    const confirmBtn = document.getElementById('btn-confirm-maint-load-list');
+    const siteSelect = document.getElementById('maint-load-list-site-select');
+
+    if (!modal) return;
+
+    const closeModal = () => modal.style.display = 'none';
+
+    if (closeBtn) closeBtn.onclick = closeModal;
+    if (cancelBtn) cancelBtn.onclick = closeModal;
+
+    if (siteSelect) {
+        siteSelect.onchange = () => {
+            updateMaintLoadListEquipSelect(siteSelect.value);
+        };
+    }
+
+    if (confirmBtn) {
+        confirmBtn.onclick = loadMaintListFromTarget;
+    }
+}
+
+function openMaintLoadListModal() {
+    if (!currentPath.site || !currentPath.equip) return alert('장비를 선택해주세요.');
+
+    const modal = document.getElementById('maint-load-list-modal');
+    const siteSelect = document.getElementById('maint-load-list-site-select');
+    const equipSelect = document.getElementById('maint-load-list-equip-select');
+
+    if (!modal || !siteSelect) return;
+
+    // Load Sites
+    const data = JSON.parse(localStorage.getItem('withtech_data')) || {};
+    siteSelect.innerHTML = '<option value="">사업장 선택</option>';
+    Object.keys(data).forEach(site => {
+        const option = document.createElement('option');
+        option.value = site;
+        option.textContent = site;
+        siteSelect.appendChild(option);
+    });
+
+    equipSelect.innerHTML = '<option value="">장비 선택</option>';
+    equipSelect.disabled = true;
+
+    modal.style.display = 'flex';
+}
+
+function updateMaintLoadListEquipSelect(site) {
+    const equipSelect = document.getElementById('maint-load-list-equip-select');
+    equipSelect.innerHTML = '<option value="">장비 선택</option>';
+    equipSelect.disabled = !site;
+
+    if (!site) return;
+
+    const data = JSON.parse(localStorage.getItem('withtech_data')) || {};
+    const equips = data[site] || [];
+    equips.forEach(equip => {
+        const option = document.createElement('option');
+        option.value = equip;
+        const parts = equip.split('::');
+        option.textContent = parts.length > 1 ? `${parts[0]} (${parts[1]})` : parts[0];
+        equipSelect.appendChild(option);
+    });
+}
+
+function loadMaintListFromTarget() {
+    const site = document.getElementById('maint-load-list-site-select').value;
+    const equip = document.getElementById('maint-load-list-equip-select').value;
+
+    if (!site || !equip) return alert('불러올 장비를 선택해주세요.');
+
+    if (!confirm('현재 작성된 유지관리 물품 리스트가 초기화되고 선택한 장비의 리스트로 대체됩니다.\n계속하시겠습니까?')) return;
+
+    const sourceKey = `details_${site}_${equip}`;
+    const sourceData = JSON.parse(localStorage.getItem(sourceKey)) || {};
+    const sourceMaint = sourceData.maint || [];
+
+    // 현재 장비에 덮어쓰기 (ID는 새로 생성하여 충돌 방지, 날짜는 오늘로 초기화)
+    const today = new Date().toISOString().split('T')[0];
+    const newMaint = sourceMaint.map((item, index) => ({
+        ...item,
+        id: Date.now() + index, // 새로운 ID 부여
+        date: today, // 시작일(마지막 점검일)을 오늘로 초기화
+        scheduledDate: "" // 예정일 초기화
+    }));
+
+    const targetKey = `details_${currentPath.site}_${currentPath.equip}`;
+    let targetData = JSON.parse(localStorage.getItem(targetKey)) || {};
+    targetData.maint = newMaint;
+    
+    localStorage.setItem(targetKey, JSON.stringify(targetData));
+    
+    // UI 갱신
+    renderDetails();
+    
+    if (typeof addSystemLog === 'function') {
+        addSystemLog('LOAD_MAINT_LIST', currentPath.equip, `From: ${site} > ${equip}`);
+    }
+
+    document.getElementById('maint-load-list-modal').style.display = 'none';
+    alert('리스트를 불러왔습니다.');
+}
+
+// 4.3 특이사항 관리 (Special Note)
 function setupSpecialNoteEvents() {
     const btnOpen = document.getElementById('btn-special-note');
     const btnClose = document.getElementById('btn-close-special-note');
@@ -1218,3 +1179,40 @@ window.renderSpecialNote = function() {
         btn.style.color = '';
     }
 };
+
+/* ==========================================================================
+   5. 유틸리티 (Utilities)
+   ========================================================================== */
+// 유지관리 관리 모드 토글 함수
+function toggleMaintenanceMode() {
+    const tbody = document.getElementById('maint-table-body');
+    const btn = document.getElementById('btn-maint-settings');
+    if (!tbody) return;
+
+    // tbody 대신 table에 클래스 토글 (컬럼 전체 숨김/표시 제어)
+    const table = tbody.closest('table');
+    if (table) table.classList.toggle('management-active');
+    
+    if (btn) btn.classList.toggle('active');
+
+    const isActive = table ? table.classList.contains('management-active') : false;
+    Array.from(tbody.children).forEach(row => {
+        row.draggable = isActive;
+    });
+
+    // 리스트 불러오기 버튼 토글
+    const loadBtn = document.getElementById('btn-load-maint-list');
+    if (loadBtn) loadBtn.style.display = isActive ? 'block' : 'none';
+}
+
+// 로그 관리 모드 토글 함수
+function toggleLogManagementMode() {
+    const wrapper = document.getElementById('log-list-wrapper');
+    const btn = document.getElementById('btn-log-settings');
+    if (!wrapper) return;
+
+    const table = wrapper.querySelector('table');
+    if (table) table.classList.toggle('management-active');
+    
+    if (btn) btn.classList.toggle('active');
+}

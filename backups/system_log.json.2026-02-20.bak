@@ -1,0 +1,196 @@
+{
+    "system_logs": [
+        {
+            "action": "LOGIN",
+            "details": "로그인 성공 (HOME)",
+            "target": "admin",
+            "timestamp": "2026-02-12T06:53:03.944Z"
+        },
+        {
+            "action": "LOGIN",
+            "details": "로그인 성공 (HOME)",
+            "target": "admin",
+            "timestamp": "2026-02-12T07:01:18.310Z"
+        },
+        {
+            "action": "ADD_MAINTENANCE",
+            "details": "Type: PM, Content: Standard Solution",
+            "target": "SOMA-2000::SOMA-H19-0402",
+            "timestamp": "2026-02-12T07:01:39.247Z"
+        },
+        {
+            "action": "UPDATE_SETUP",
+            "details": "장비 정보 수정 (Maintenance Page)",
+            "target": "SOMA-2000::SOMA-H19-0402",
+            "timestamp": "2026-02-12T07:03:09.384Z"
+        },
+        {
+            "action": "ADD_EQUIP",
+            "details": "Site: SEC 평택",
+            "target": "WIM-100::WIM-100",
+            "timestamp": "2026-02-12T07:03:56.231Z"
+        },
+        {
+            "action": "ADD_MAINTENANCE",
+            "details": "Type: PM, Content: Standard Solution",
+            "target": "WIM-100::WIM-100",
+            "timestamp": "2026-02-12T07:06:46.490Z"
+        },
+        {
+            "action": "ADD_LOG",
+            "details": "Date: 2026-02-12, Worker: 이원배",
+            "target": "WIM-100::WIM-100",
+            "timestamp": "2026-02-12T07:06:50.597Z"
+        },
+        {
+            "action": "UPDATE_MEMO",
+            "details": "LogID: 1770880010597",
+            "target": "WIM-100::WIM-100",
+            "timestamp": "2026-02-12T07:06:54.042Z"
+        },
+        {
+            "action": "UPDATE_SETUP",
+            "details": "장비 정보 수정 (Setup Page)",
+            "target": "WIM-100::WIM-100",
+            "timestamp": "2026-02-12T07:07:53.102Z"
+        },
+        {
+            "action": "LOGIN",
+            "details": "로그인 성공 (HOME)",
+            "target": "admin",
+            "timestamp": "2026-02-12T07:16:36.287Z"
+        },
+        {
+            "action": "LOGIN",
+            "details": "로그인 성공 (HOME)",
+            "target": "admin",
+            "timestamp": "2026-02-12T07:19:23.815Z"
+        },
+        {
+            "action": "LOGIN",
+            "details": "로그인 성공 (HOME)",
+            "target": "admin",
+            "timestamp": "2026-02-12T07:21:13.695Z"
+        },
+        {
+            "action": "LOGIN",
+            "details": "로그인 성공 (HOME)",
+            "target": "admin",
+            "timestamp": "2026-02-12T07:22:43.296Z"
+        },
+        {
+            "action": "LOGIN",
+            "details": "로그인 성공 (HOME)",
+            "target": "admin",
+            "timestamp": "2026-02-12T07:24:47.975Z"
+        },
+        {
+            "action": "UPDATE_SETUP_LOG_MEMO",
+            "details": "셋업 일지 메모 수정",
+            "target": "IWM-1000::W001-OK25-0801",
+            "timestamp": "2026-02-12T07:45:11.040Z"
+        },
+        {
+            "action": "UPDATE_SETUP_LOG_MEMO",
+            "details": "셋업 일지 메모 수정",
+            "target": "IWM-1000::W001-OK25-0801",
+            "timestamp": "2026-02-12T07:46:02.290Z"
+        },
+        {
+            "action": "ADD_LOG",
+            "details": "Date: 2026-02-12, Worker: 이원배",
+            "target": "WIM-100::WIM1-HK24-0401",
+            "timestamp": "2026-02-12T07:46:34.060Z"
+        },
+        {
+            "action": "ADD_LOG",
+            "details": "Date: 2026-02-12, Worker: 이원배",
+            "target": "WIM-100::WIM1-HK24-0401",
+            "timestamp": "2026-02-12T07:46:39.800Z"
+        },
+        {
+            "action": "UPDATE_MEMO",
+            "details": "LogID: 1770860993664",
+            "target": "WIM-100::WIM1-HK24-0401",
+            "timestamp": "2026-02-12T07:46:46.344Z"
+        },
+        {
+            "action": "UPDATE_MEMO",
+            "details": "LogID: 1770860993664",
+            "target": "WIM-100::WIM1-HK24-0401",
+            "timestamp": "2026-02-12T07:46:49.922Z"
+        },
+        {
+            "action": "DELETE_LOG",
+            "details": "ID: 1770882394060",
+            "target": "WIM-100::WIM1-HK24-0401",
+            "timestamp": "2026-02-12T07:46:54.447Z"
+        },
+        {
+            "action": "DELETE_LOG",
+            "details": "ID: 1770882399800",
+            "target": "WIM-100::WIM1-HK24-0401",
+            "timestamp": "2026-02-12T07:46:55.048Z"
+        },
+        {
+            "action": "UPDATE_SETUP_LOG_MEMO",
+            "details": "셋업 일지 메모 수정",
+            "target": "IWM-1000::W001-OK25-0801",
+            "timestamp": "2026-02-12T07:52:40.507Z"
+        },
+        {
+            "action": "LOGIN",
+            "details": "로그인 성공 (HOME)",
+            "target": "admin",
+            "timestamp": "2026-02-12T23:18:36.274Z"
+        },
+        {
+            "action": "LOGIN",
+            "details": "로그인 성공 (HOME)",
+            "target": "admin",
+            "timestamp": "2026-02-12T23:59:04.597Z"
+        },
+        {
+            "action": "LOGIN",
+            "details": "로그인 성공 (HOME)",
+            "target": "admin",
+            "timestamp": "2026-02-13T00:04:23.215Z"
+        },
+        {
+            "action": "LOGIN",
+            "details": "로그인 성공 (HOME)",
+            "target": "admin",
+            "timestamp": "2026-02-13T00:20:01.731Z"
+        },
+        {
+            "action": "CHANGE_PW",
+            "details": "비밀번호 변경",
+            "target": "admin",
+            "timestamp": "2026-02-13T00:20:29.508Z"
+        },
+        {
+            "action": "LOGIN",
+            "details": "로그인 성공 (HOME)",
+            "target": "admin",
+            "timestamp": "2026-02-13T01:06:44.507Z"
+        },
+        {
+            "action": "LOGIN",
+            "details": "로그인 성공 (HOME)",
+            "target": "admin",
+            "timestamp": "2026-02-13T04:31:39.561Z"
+        },
+        {
+            "action": "LOGIN",
+            "details": "로그인 성공 (HOME)",
+            "target": "admin",
+            "timestamp": "2026-02-13T05:10:14.652Z"
+        },
+        {
+            "timestamp": "2026-02-13T05:10:20.279Z",
+            "action": "BACKUP_EXPORT",
+            "target": "System",
+            "details": "데이터 백업 저장"
+        }
+    ]
+}

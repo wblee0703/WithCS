@@ -12,6 +12,9 @@
 </head>
 
 <body>
+    <!-- ==========================================================================
+         1. 헤더 (Header)
+         ========================================================================== -->
     <header class="header">
         <img src="{{ url_for('static', filename='LOGO+WITHTECH.png') }}" alt="WITHTECH Logo" class="header-logo">
         <div class="container">
@@ -30,6 +33,9 @@
         </div>
     </header>
 
+    <!-- ==========================================================================
+         2. 메인 컨텐츠 (Main Content)
+         ========================================================================== -->
     <main class="home-main">
         <div class="home-content">
             <p class="logo-text">THE BEST OR NOTHING</p>
@@ -262,7 +268,10 @@
         </div>
     </main>
 
-    <!-- 사용자 설정 모달 -->
+    <!-- ==========================================================================
+         3. 모달 팝업 (Modals)
+         ========================================================================== -->
+    <!-- 3.1 사용자 설정 모달 -->
     <div id="user-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window size-user">
             <div class="modal-header">
@@ -292,7 +301,7 @@
         </div>
     </div>
 
-    <!-- 캘린더 팝업 -->
+    <!-- 3.2 캘린더 팝업 -->
     <div id="calendar-popup" class="modal-overlay" style="display: none;">
         <div class="modal-window">
             <div class="modal-header">
@@ -308,7 +317,7 @@
         </div>
     </div>
 
-    <!-- 작업 예정일 설정 모달 -->
+    <!-- 3.3 작업 예정일 설정 모달 -->
     <div id="schedule-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window">
             <div class="modal-header">
@@ -328,7 +337,7 @@
         </div>
     </div>
 
-    <!-- 일정 상세 및 작업 완료 모달 -->
+    <!-- 3.4 일정 상세 및 작업 완료 모달 -->
     <div id="event-detail-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window">
             <div class="modal-header">
@@ -379,7 +388,7 @@
         </div>
     </div>
 
-    <!-- 작업 예정일 등록 모달 (달력에서 호출) -->
+    <!-- 3.5 작업 예정일 등록 모달 (달력에서 호출) -->
     <div id="register-schedule-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window">
             <div class="modal-header">
@@ -407,7 +416,7 @@
         </div>
     </div>
 
-    <!-- 일정 날짜 수정 모달 (Home - Setup Status) -->
+    <!-- 3.6 일정 날짜 수정 모달 (Home - Setup Status) -->
     <div id="setup-date-edit-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window size-date-edit">
             <div class="modal-header">
@@ -432,7 +441,7 @@
         </div>
     </div>
 
-    <!-- 달력 상세 검색 모달 -->
+    <!-- 3.7 달력 상세 검색 모달 -->
     <div id="calendar-search-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window">
             <div class="modal-header">
@@ -456,7 +465,7 @@
         </div>
     </div>
 
-    <!-- 실행 완료 체크 모달 -->
+    <!-- 3.8 실행 완료 체크 모달 -->
     <div id="exec-completion-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window size-date-edit">
             <div class="modal-header">
@@ -496,7 +505,7 @@
         </div>
     </div>
 
-    <!-- 실행 시작일 설정 모달 (간트 뷰용) -->
+    <!-- 3.9 실행 시작일 설정 모달 (간트 뷰용) -->
     <div id="setup-exec-start-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window size-date-edit">
             <div class="modal-header">
@@ -515,7 +524,7 @@
         </div>
     </div>
 
-    <!-- 간트 차트 상세 검색 모달 -->
+    <!-- 3.10 간트 차트 상세 검색 모달 -->
     <div id="gantt-search-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window">
             <div class="modal-header">
@@ -539,7 +548,9 @@
         </div>
     </div>
 
-    <!-- Templates -->
+    <!-- ==========================================================================
+         4. 템플릿 (Templates)
+         ========================================================================== -->
     <template id="gantt-task-template">
         <div class="gantt-task-name" draggable="true">
             <div class="gantt-task-label-container">
