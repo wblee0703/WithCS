@@ -1086,12 +1086,43 @@ function importData(event) {
             if (!confirm('현재 데이터를 모두 덮어쓰고 백업 파일로 복원하시겠습니까?\n(주의: 복원 후 기존 데이터는 사라집니다.)')) {
                 event.target.value = ''; return;
             }
+            
+            // 1. LocalStorage 업데이트 (서버 자동 동기화 방지를 위해 originalSetItem 사용)
             Object.keys(importedData).forEach(key => {
-                if (key === 'withtech_data' || key.startsWith('details_') || key === 'setup_data') localStorage.setItem(key, JSON.stringify(importedData[key]));
+                if (key === 'withtech_data' || key.startsWith('details_') || key === 'setup_data' || key === 'system_logs') {
+                    originalSetItem.call(localStorage, key, JSON.stringify(importedData[key]));
+                }
             });
-            addSystemLog('BACKUP_IMPORT', 'System', '데이터 복원 완료');
-            alert('데이터 복원이 완료되었습니다.');
-            location.reload();
+
+            // 2. 시스템 로그 추가
+            const logs = JSON.parse(localStorage.getItem('system_logs')) || [];
+            logs.push({ timestamp: new Date().toISOString(), action: 'BACKUP_IMPORT', target: 'System', details: '데이터 복원 완료' });
+            originalSetItem.call(localStorage, 'system_logs', JSON.stringify(logs));
+
+            // 3. 서버로 데이터 즉시 전송 (페이지 리로드 전 저장 보장)
+            const allData = {};
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key === 'withtech_data' || key.startsWith('details_') || key === 'system_logs' || key === 'setup_data') {
+                    try { allData[key] = JSON.parse(localStorage.getItem(key)); } 
+                    catch (e) { allData[key] = localStorage.getItem(key); }
+                }
+            }
+
+            fetch('/api/data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+                body: JSON.stringify(allData)
+            })
+            .then(() => {
+                alert('데이터 복원 및 서버 저장이 완료되었습니다.');
+                location.reload();
+            })
+            .catch(err => {
+                console.error('Import sync failed:', err);
+                alert('서버 저장에 실패했습니다. 로컬 데이터만 갱신됩니다.');
+                location.reload();
+            });
         } catch (err) { alert('올바르지 않은 백업 파일입니다.'); console.error(err); }
     };
     reader.readAsText(file);
