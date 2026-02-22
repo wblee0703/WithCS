@@ -93,8 +93,20 @@ document.addEventListener('DOMContentLoaded', () => {
             return response.json();
         })
         .then(data => {
+            // [수정] 서버 데이터(.json) 기반으로만 초기화하기 위해 기존 로컬 데이터 삭제
+            // (originalRemoveItem을 사용하여 삭제 시 서버로 빈 데이터가 전송되는 것을 방지)
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key === 'withtech_data' || key.startsWith('details_') || key === 'setup_data' || key === 'system_logs') {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => originalRemoveItem.call(localStorage, key));
+
             // 서버 데이터를 localStorage에 반영
             Object.keys(data).forEach(key => {
+                // originalSetItem을 사용하여 초기화 시 서버로 다시 전송되는 루프 방지
                 originalSetItem.call(localStorage, key, JSON.stringify(data[key]));
             });
             // 전역 변수 갱신

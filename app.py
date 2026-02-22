@@ -166,6 +166,17 @@ def git_push_data():
     except Exception as e:
         app.logger.error(f"GitHub sync failed: {e}")
 
+# [추가] GitHub 데이터 가져오기 (Pull)
+def git_pull_data():
+    try:
+        if not os.path.exists(os.path.join(BASE_DIR, '.git')):
+            return
+
+        subprocess.run(["git", "pull"], check=True)
+        app.logger.info("GitHub pull successful")
+    except Exception as e:
+        app.logger.error(f"GitHub pull failed: {e}")
+
 # ------------------------------------------------------------------------------
 # 4. Core Logic (Data Management)
 # ------------------------------------------------------------------------------
@@ -442,6 +453,9 @@ def change_password():
 if __name__ == '__main__':
     # 서버 시작 전 데이터 파일 초기화
     init_data_files()
+    
+    # [추가] 서버 시작 시 GitHub에서 최신 데이터 동기화
+    git_pull_data()
     
     port = int(os.environ.get("APP_PORT", 5500))
     if not os.environ.get("WERKZEUG_RUN_MAIN"):
