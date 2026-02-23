@@ -1250,3 +1250,7 @@ function addBusinessDays(date, days) {
     }
     return result;
 }
+
+// [추가] 전역 스코프에 함수 노출 (다른 스크립트에서 사용 가능하도록)
+window.isHoliday = isHoliday;
+window.addBusinessDays = addBusinessDays;
