@@ -572,6 +572,24 @@ function changePassword() {
     });
 }
 
+function triggerManualSync() {
+    if (!confirm('GitHub 동기화를 진행하시겠습니까?\n(로컬의 모든 변경사항이 GitHub에 업로드됩니다.)')) return;
+    
+    fetch('/api/admin/sync', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrf_token')
+        }
+    })
+    .then(res => res.json())
+    .then(data => alert(data.message))
+    .catch(err => {
+        console.error('Sync error:', err);
+        alert('동기화 요청 중 오류가 발생했습니다.');
+    });
+}
+
 
 /* ==========================================================================
    4. 사이드바 및 리스트 관리 (Sidebar & List)
