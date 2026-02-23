@@ -155,11 +155,13 @@ def git_push_data():
         if not os.path.exists(os.path.join(BASE_DIR, '.git')):
             return
 
-        status = subprocess.run(["git", "status", "--porcelain", "data/"], capture_output=True, text=True)
+        # [수정] 특정 폴더(data/)가 아닌 전체 변경 사항 감지
+        status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
         if not status.stdout.strip():
             return
 
-        subprocess.run(["git", "add", "data/*.json"], check=True)
+        # [수정] 데이터 파일뿐만 아니라 소스 코드 등 모든 변경 사항을 Commit & Push
+        subprocess.run(["git", "add", "."], check=True)
         subprocess.run(["git", "commit", "-m", f"Auto-save: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"], check=True)
         subprocess.run(["git", "push"], check=True)
         app.logger.info("GitHub sync successful")
