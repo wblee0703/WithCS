@@ -236,21 +236,13 @@ def save_data(full_data):
 
         for key, value in full_data.items():
             if key == 'setup_data':
-                # 셋업 데이터 병합 (장비별 키 보존)
-                if key not in setup_data: setup_data[key] = {}
-                if isinstance(value, dict):
-                    setup_data[key].update(value)
-                else:
-                    setup_data[key] = value
+                # [수정] 셋업 데이터 덮어쓰기 (삭제된 항목 반영을 위해 병합 대신 교체)
+                setup_data[key] = value
             elif key == 'system_logs':
                 system_log_data[key] = value # 시스템 로그 저장
             elif key == 'withtech_data':
-                # 사이트/장비 목록 병합
-                if key not in withtech_data_storage: withtech_data_storage[key] = {}
-                if isinstance(value, dict):
-                    withtech_data_storage[key].update(value)
-                else:
-                    withtech_data_storage[key] = value
+                # [수정] 사이트/장비 목록 덮어쓰기 (삭제된 항목 반영을 위해 병합 대신 교체)
+                withtech_data_storage[key] = value
             elif key.startswith('details_'):
                 # setup 관련 데이터 제거 후 maintenance에 저장
                 if isinstance(value, dict):

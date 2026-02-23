@@ -1099,7 +1099,17 @@ function importData(event) {
                 event.target.value = ''; return;
             }
             
-            // 1. LocalStorage 업데이트 (서버 자동 동기화 방지를 위해 originalSetItem 사용)
+            // [추가] 0. 기존 데이터 삭제 (Clean Import: 기존 쿠키 데이터와 섞이지 않도록 초기화)
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key === 'withtech_data' || key.startsWith('details_') || key === 'setup_data' || key === 'system_logs') {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(key => originalRemoveItem.call(localStorage, key));
+
+            // 1. LocalStorage 업데이트 (불러온 데이터로 채움)
             Object.keys(importedData).forEach(key => {
                 if (key === 'withtech_data' || key.startsWith('details_') || key === 'setup_data' || key === 'system_logs') {
                     originalSetItem.call(localStorage, key, JSON.stringify(importedData[key]));

@@ -22,6 +22,7 @@ let ganttExtraWeeks = 0; // [추가] 간트 차트 달력 확장 주수
 let ganttValidDates = []; // [추가] 간트 차트 유효 날짜 배열 (전역)
 let isHoveringHoliday = false; // [추가] 드래그 중 공휴일 호버 여부
 let currentExecStartTarget = null; // [추가] 실행 시작일 설정 대상
+let currentExecStartTargetId = null; // [추가] 실행 시작일 설정 대상 ID
 
 document.addEventListener('DOMContentLoaded', () => {
     // 초기화 함수 정의
@@ -2159,4 +2160,50 @@ function saveDateEdit() {
 
     updateTaskDate(site, equip, id, type, { start: start, end: end }, 'manual');
     document.getElementById('setup-date-edit-modal').style.display = 'none';
+}
+
+/* ==========================================================================
+   12. 실행 시작일 설정 모달 (Execution Start Modal for Home)
+   ========================================================================== */
+function setupSetupExecStartModal() {
+    const modal = document.getElementById('setup-exec-start-modal');
+    const closeBtn = document.getElementById('btn-close-setup-exec-start');
+    const saveBtn = document.getElementById('btn-save-setup-exec-start');
+    if (!modal) return;
+    if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+    if (saveBtn) saveBtn.onclick = saveSetupExecStart;
+}
+
+function openSetupExecStartModal(id) {
+    const modal = document.getElementById('setup-exec-start-modal');
+    if (!modal) return;
+    currentExecStartTargetId = id;
+    const dateInput = document.getElementById('setup-exec-start-date');
+    // 기본값: 오늘
+    dateInput.value = new Date().toISOString().split('T')[0];
+    modal.style.display = 'flex';
+}
+
+function saveSetupExecStart() {
+    if (!currentExecStartTargetId) return;
+    const dateInput = document.getElementById('setup-exec-start-date');
+    const execDate = dateInput.value;
+    if (!execDate) return alert("시작일을 선택해주세요.");
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    let found = false;
+    Object.keys(setupData).forEach(key => {
+        if (found) return;
+        const data = setupData[key];
+        if (data.setupDetails) {
+            const task = data.setupDetails.find(t => t.id == currentExecStartTargetId);
+            if (task) { task.execStartDate = execDate; found = true; }
+        }
+    });
+    if (found) { localStorage.setItem('setup_data', JSON.stringify(setupData)); renderGanttChart(); }
+    document.getElementById('setup-exec-start-modal').style.display = 'none';
+    currentExecStartTargetId = null;
+}
+
+function addExecutionBar(site, equip, id) {
+    openSetupExecStartModal(id);
 }
