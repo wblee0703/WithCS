@@ -479,7 +479,8 @@
                 <input type="hidden" id="exec-complete-id">
                 <div class="modal-date-row">
                     <label class="modal-date-label">작업 일수</label>
-                    <input type="text" id="exec-est-days" class="input-date-dark modal-date-input-fixed" readonly disabled style="text-align: center;">
+                    <input type="text" id="exec-est-days" class="input-date-dark modal-date-input-fixed" readonly
+                        disabled style="text-align: center;">
                 </div>
                 <div class="modal-date-row">
                     <label class="modal-date-label">시작일</label>
@@ -493,6 +494,18 @@
                     <input type="checkbox" id="exec-complete-checkbox" class="modal-checkbox-input">
                     작업 완료
                 </label>
+                <div id="exec-setup-log-container" class="modal-date-row" style="margin-top: 15px; display: block; text-align: left;">
+                    <label class="modal-date-label" style="display:block; margin-bottom:5px; color:#e6edf3;">셋업 이력 (일지 등록)</label>
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label class="modal-date-label" style="width: 50px; margin-bottom: 0; text-align: left;">업체</label>
+                        <input type="text" id="exec-setup-log-company" class="input-date-dark" placeholder="업체명" style="flex: 1;">
+                    </div>
+                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                        <label class="modal-date-label" style="width: 50px; margin-bottom: 0; text-align: left;">작업자</label>
+                        <input type="text" id="exec-setup-log-worker" class="input-date-dark" placeholder="작업자" style="flex: 1;">
+                    </div>
+                    <textarea id="exec-setup-log-content" class="delay-reason-textarea" placeholder="작업 내용을 입력하세요" spellcheck="false" style="height: 60px;"></textarea>
+                </div>
                 <div id="exec-delay-reason-container" class="delay-reason-wrapper">
                     <label class="delay-reason-label">지연 사유</label>
                     <textarea id="exec-delay-reason" class="delay-reason-textarea" placeholder="지연 사유를 입력하세요"
@@ -519,7 +532,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button class="btn-blue" id="btn-save-setup-exec-start">확인</button>
+                <button class="btn-blue" id="btn-save-setup-exec-start" onclick="saveSetupExecStart()">확인</button>
             </div>
         </div>
     </div>

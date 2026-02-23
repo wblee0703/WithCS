@@ -1447,7 +1447,10 @@ function renderGanttChart() {
                             // [수정] 실행 데이터가 있으면 표시 (완료 여부 무관, 진행중 포함)
                             if (task.date || task.execStartDate) {
                                 execStart = task.execStartDate || task.startDate; // [수정] execStartDate 우선 사용
-                                execEnd = task.date || new Date().toISOString().split('T')[0]; // 완료일 없으면 오늘까지
+                                execEnd = task.date || execStart; // 완료일 없으면 시작일만 표시
+
+                                // [추가] 시작일이 미래인 경우 종료일 보정 (바 표시 보장)
+                                if (execEnd < execStart) execEnd = execStart;
 
                                 // 지연 여부 확인
                                 const planEndDate = new Date(pEnd);
@@ -2174,13 +2177,33 @@ function setupSetupExecStartModal() {
     if (saveBtn) saveBtn.onclick = saveSetupExecStart;
 }
 
-function openSetupExecStartModal(id) {
+function openSetupExecStartModal(site, equip, id) {
     const modal = document.getElementById('setup-exec-start-modal');
     if (!modal) return;
     currentExecStartTargetId = id;
     const dateInput = document.getElementById('setup-exec-start-date');
     // 기본값: 오늘
-    dateInput.value = new Date().toISOString().split('T')[0];
+    let defaultDate = new Date().toISOString().split('T')[0];
+
+    // [추가] 이전 작업 완료일 다음날 계산
+    if (site && equip) {
+        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+        const key = `${site}::${equip}`;
+        const data = setupData[key] || {};
+        const details = data.setupDetails || [];
+        const idx = details.findIndex(t => t.id == id);
+
+        if (idx > 0) {
+            const prev = details[idx - 1];
+            if (prev.date) {
+                defaultDate = window.addBusinessDays(new Date(prev.date), 1).toISOString().split('T')[0];
+            }
+        } else if (idx === 0 && details[0].startDate) {
+            defaultDate = details[0].startDate;
+        }
+    }
+
+    dateInput.value = defaultDate;
     modal.style.display = 'flex';
 }
 
@@ -2199,11 +2222,257 @@ function saveSetupExecStart() {
             if (task) { task.execStartDate = execDate; found = true; }
         }
     });
-    if (found) { localStorage.setItem('setup_data', JSON.stringify(setupData)); renderGanttChart(); }
+    if (found) { 
+        localStorage.setItem('setup_data', JSON.stringify(setupData)); 
+        updateSetupDashboard(); // [수정] 대시보드 갱신 (Gantt 포함)
+    }
     document.getElementById('setup-exec-start-modal').style.display = 'none';
     currentExecStartTargetId = null;
 }
 
 function addExecutionBar(site, equip, id) {
-    openSetupExecStartModal(id);
+    openSetupExecStartModal(site, equip, id);
 }
+
+/* ==========================================================================
+   13. 실행 완료 등록 모달 (Execution Completion Modal for Home)
+   ========================================================================== */
+function openExecCompletionModal(site, equip, id) {
+    const modal = document.getElementById('exec-completion-modal');
+    if (!modal) return;
+
+    // 전역 변수 대신 DOM 요소에 데이터 저장
+    document.getElementById('exec-complete-site').value = site;
+    document.getElementById('exec-complete-equip').value = equip;
+    document.getElementById('exec-complete-id').value = id;
+
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const data = setupData[`${site}::${equip}`] || {};
+    const task = data.setupDetails ? data.setupDetails.find(t => t.id == id) : null;
+
+    if (task) {
+        const estDays = parseInt(task.estDays) || 1;
+        document.getElementById('exec-est-days').value = estDays + '일';
+        
+        const startDate = task.execStartDate || task.startDate || '';
+        document.getElementById('exec-start-date').value = startDate;
+        
+        // [수정] 완료일 자동 계산 (기존 완료일이 없으면 시작일 + 작업일수)
+        // 타임존 이슈 방지를 위해 로컬 날짜 처리
+        const formatDate = (d) => {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        };
+
+        let endDate = task.date;
+        if (!endDate && startDate) {
+            const [y, m, d] = startDate.split('-').map(Number);
+            const daysToAdd = estDays > 0 ? estDays - 1 : 0;
+            endDate = formatDate(window.addBusinessDays(new Date(y, m - 1, d), daysToAdd));
+        } else if (!endDate) {
+            endDate = new Date().toISOString().split('T')[0];
+        }
+        document.getElementById('exec-end-date').value = endDate;
+
+        // [추가] 계획 종료일 계산 및 저장 (지연 판단 기준: 계획 시작일 + 작업일수)
+        const planStart = task.startDate;
+        let planEndDateStr = '';
+        if (planStart) {
+            const pEstDays = parseInt(task.estDays) || 1;
+            const daysToAdd = pEstDays > 0 ? pEstDays - 1 : 0;
+            const [y, m, d] = planStart.split('-').map(Number);
+            const pEnd = window.addBusinessDays(new Date(y, m - 1, d), daysToAdd);
+            
+            const py = pEnd.getFullYear();
+            const pm = String(pEnd.getMonth() + 1).padStart(2, '0');
+            const pd = String(pEnd.getDate()).padStart(2, '0');
+            planEndDateStr = `${py}-${pm}-${pd}`;
+        }
+        
+        let planEndInput = document.getElementById('exec-plan-end-date');
+        if (!planEndInput) {
+            planEndInput = document.createElement('input');
+            planEndInput.type = 'hidden';
+            planEndInput.id = 'exec-plan-end-date';
+            modal.querySelector('.modal-body').appendChild(planEndInput);
+        }
+        planEndInput.value = planEndDateStr;
+
+        const checkbox = document.getElementById('exec-complete-checkbox');
+        checkbox.checked = task.completed;
+        
+        const reasonInput = document.getElementById('exec-delay-reason');
+        reasonInput.value = task.delayReason || '';
+        
+        // 지연 사유 표시 여부 체크 (초기 로드 시)
+        checkExecDelayStatus();
+
+        // [추가] 셋업 이력 입력창 초기화
+        const logInput = document.getElementById('exec-setup-log-content');
+        if (logInput) logInput.value = '';
+        
+        const companyInput = document.getElementById('exec-setup-log-company');
+        if (companyInput) companyInput.value = '위드텍'; // 기본값
+
+        const workerInput = document.getElementById('exec-setup-log-worker');
+        if (workerInput) workerInput.value = sessionStorage.getItem('userId') || ''; // 기본값
+
+        // [추가] 시작일 변경 시 완료일 재계산 이벤트 연결
+        const startDateInput = document.getElementById('exec-start-date');
+        startDateInput.onchange = () => {
+            const sDate = startDateInput.value;
+            if (sDate) {
+                const [y, m, d] = sDate.split('-').map(Number);
+                const daysToAdd = estDays > 0 ? estDays - 1 : 0;
+                const newEnd = formatDate(window.addBusinessDays(new Date(y, m - 1, d), daysToAdd));
+                document.getElementById('exec-end-date').value = newEnd;
+                checkExecDelayStatus();
+            }
+        };
+
+        // [추가] 이미 완료된 작업인 경우 UI 제어 (이력 숨김 및 수정 방지)
+        const isTaskCompleted = task.completed;
+        const logContainer = document.getElementById('exec-setup-log-container');
+        if (logContainer) logContainer.style.display = isTaskCompleted ? 'none' : 'block';
+
+        const inputsToDisable = [
+            'exec-start-date', 'exec-end-date', 'exec-delay-reason',
+            'exec-setup-log-company', 'exec-setup-log-worker', 'exec-setup-log-content'
+        ];
+        inputsToDisable.forEach(inputId => {
+            const el = document.getElementById(inputId);
+            if (el) el.disabled = isTaskCompleted;
+        });
+    }
+
+    modal.style.display = 'flex';
+}
+
+function checkExecDelayStatus() {
+    const planEndDateInput = document.getElementById('exec-plan-end-date'); // [수정] 계획 종료일 기준
+    const completeDateInput = document.getElementById('exec-end-date');
+    const reasonContainer = document.getElementById('exec-delay-reason-container');
+
+    if (planEndDateInput && planEndDateInput.value && completeDateInput.value) {
+        const planEndDate = new Date(planEndDateInput.value);
+        const completeDate = new Date(completeDateInput.value);
+
+        planEndDate.setHours(0,0,0,0);
+        completeDate.setHours(0,0,0,0);
+
+        if (completeDate > planEndDate) {
+            reasonContainer.style.display = 'block';
+            return;
+        }
+    }
+    reasonContainer.style.display = 'none';
+}
+
+// [추가] 날짜 변경 시 지연 사유 체크 이벤트 연결
+document.addEventListener('DOMContentLoaded', () => {
+    const execEndDate = document.getElementById('exec-end-date');
+    if (execEndDate) {
+        execEndDate.addEventListener('change', checkExecDelayStatus);
+    }
+});
+
+function saveExecCompletion() {
+    const site = document.getElementById('exec-complete-site').value;
+    const equip = document.getElementById('exec-complete-equip').value;
+    const id = document.getElementById('exec-complete-id').value;
+    const startDate = document.getElementById('exec-start-date').value;
+    const endDate = document.getElementById('exec-end-date').value;
+    const isCompleted = document.getElementById('exec-complete-checkbox').checked;
+    const delayReason = document.getElementById('exec-delay-reason').value;
+    const reasonContainer = document.getElementById('exec-delay-reason-container');
+    const logContentEl = document.getElementById('exec-setup-log-content');
+    const logContent = logContentEl ? logContentEl.value.trim() : '';
+    const logCompany = document.getElementById('exec-setup-log-company') ? document.getElementById('exec-setup-log-company').value.trim() : '위드텍';
+    const logWorker = document.getElementById('exec-setup-log-worker') ? document.getElementById('exec-setup-log-worker').value.trim() : '';
+
+    if (!startDate) return alert('시작일을 입력해주세요.');
+    if (isCompleted && !endDate) return alert('완료일을 입력해주세요.');
+    if (isCompleted && reasonContainer.style.display !== 'none' && !delayReason.trim()) {
+        return alert('지연 사유를 입력해주세요.');
+    }
+
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${site}::${equip}`;
+    let data = setupData[equipKey] || {};
+    
+    if (data.setupDetails) {
+        const task = data.setupDetails.find(t => t.id == id);
+        if (task) {
+            const wasCompleted = task.completed; // [추가] 기존 완료 상태 확인
+            // [수정] 완료 상태 해제 시 리셋 로직 (이후 작업 초기화 및 실행 버튼 활성화)
+            if (task.completed && !isCompleted) {
+                if (!confirm("완료 상태를 해제하시겠습니까?\n이후 단계의 완료 상태도 함께 초기화됩니다.")) {
+                    return;
+                }
+                
+                // 현재 작업 리셋 (실행 시작일 제거 -> 실행 버튼 활성화)
+                task.execStartDate = '';
+                task.date = '';
+                task.completed = false;
+                task.delayReason = '';
+
+                // 이후 작업 리셋
+                const currentIndex = data.setupDetails.findIndex(t => t.id == id);
+                if (currentIndex !== -1) {
+                    for (let i = currentIndex + 1; i < data.setupDetails.length; i++) {
+                        const nextTask = data.setupDetails[i];
+                        nextTask.execStartDate = '';
+                        nextTask.date = '';
+                        nextTask.completed = false;
+                        nextTask.delayReason = '';
+                    }
+                }
+            } else {
+                task.execStartDate = startDate;
+                task.date = isCompleted ? endDate : '';
+                task.completed = isCompleted;
+                task.delayReason = isCompleted ? delayReason : '';
+            }
+
+            // [추가] 셋업 이력(일지) 자동 등록
+            // 완료 체크 시 혹은 내용이 있을 때 저장 (단, 이미 완료된 작업은 중복 저장 방지)
+            if ((isCompleted && !wasCompleted) || (logContent && !wasCompleted)) {
+                if (!data.setupLogs) data.setupLogs = [];
+
+                let displayContent = task.content || '작업 내용 없음';
+                let finalMemo = logContent;
+
+                // [수정] 지연 사유가 있으면 셋업 일지에 표시
+                if (delayReason) {
+                    displayContent = `[지연] ${displayContent}`;
+                    if (finalMemo) finalMemo += `\n\n[지연 사유]\n${delayReason}`;
+                    else finalMemo = `[지연 사유]\n${delayReason}`;
+                }
+
+                data.setupLogs.push({
+                    id: Date.now(),
+                    date: isCompleted ? endDate : new Date().toISOString().split('T')[0],
+                    worker: logWorker || sessionStorage.getItem('userId') || '',
+                    content: displayContent, // 리스트 내용은 셋업 항목명 (지연 시 [지연] 추가)
+                    company: logCompany || '위드텍',
+                    memo: finalMemo // 팝업 입력 내용은 상세 메모로 저장 (지연 사유 포함)
+                });
+            }
+            
+            setupData[equipKey] = data;
+            localStorage.setItem('setup_data', JSON.stringify(setupData));
+            
+            renderGanttChart();
+            updateSetupDashboard(); // 대시보드 갱신
+        }
+    }
+
+    document.getElementById('exec-completion-modal').style.display = 'none';
+}
+
+// 전역 스코프에 노출 (HTML onclick 속성에서 호출 가능하도록)
+window.saveExecCompletion = saveExecCompletion;
+window.openExecCompletionModal = openExecCompletionModal;
+window.saveSetupExecStart = saveSetupExecStart;

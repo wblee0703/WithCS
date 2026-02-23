@@ -116,6 +116,36 @@ window.checkUnsavedChanges = function() {
     return true;
 };
 
+function setupSetupLogResizer() {
+    const resizer = document.getElementById('setup-log-resizer');
+    if (!resizer) return;
+    const listWrapper = document.getElementById('setup-log-list-wrapper');
+    const container = resizer.parentElement;
+    let isResizing = false;
+
+    resizer.addEventListener('mousedown', (e) => {
+        isResizing = true;
+        document.body.style.cursor = 'row-resize';
+    });
+
+    document.addEventListener('mousemove', (e) => {
+        if (!isResizing) return;
+        const containerRect = container.getBoundingClientRect();
+        const newHeight = e.clientY - containerRect.top - 40;
+        if (newHeight > 100 && newHeight < containerRect.height - 100) {
+            listWrapper.style.height = `${newHeight}px`;
+            listWrapper.style.flex = 'none';
+        }
+    });
+
+    document.addEventListener('mouseup', () => {
+        if (isResizing) {
+            isResizing = false;
+            document.body.style.cursor = 'default';
+        }
+    });
+}
+
 /* ==========================================================================
    2. 메인 렌더링 (Main Rendering)
    ========================================================================== */
@@ -282,6 +312,11 @@ function renderSetupDetailList() {
             tr.querySelectorAll('input').forEach(input => {
                 const eventType = (input.type === 'text') ? 'change' : 'change'; 
                 input.addEventListener(eventType, () => saveSetupDetails());
+                
+                // [추가] 날짜 입력 시 휴일 체크 및 알림
+                if (input.type === 'date') {
+                    input.addEventListener('change', () => checkAndAlertHoliday(input));
+                }
             });
             
             attachSetupCheckboxListener(tr);
@@ -307,6 +342,7 @@ function renderSetupDetailList() {
             if (startInput && cat !== '셋업 완료') {
                 startInput.addEventListener('change', () => {
                     calculateScheduleForward(tr);
+                    calculateScheduleBackward(tr);
                 });
             }
 
@@ -355,6 +391,11 @@ function addSetupDetailItem(category) {
     tr.querySelectorAll('input').forEach(input => {
         const eventType = (input.type === 'text') ? 'change' : 'change';
         input.addEventListener(eventType, () => saveSetupDetails());
+
+        // [추가] 날짜 입력 시 휴일 체크 및 알림
+        if (input.type === 'date') {
+            input.addEventListener('change', () => checkAndAlertHoliday(input));
+        }
     });
     
     attachSetupCheckboxListener(tr);
@@ -372,6 +413,7 @@ function addSetupDetailItem(category) {
     if (startInput && category !== '셋업 완료') {
         startInput.addEventListener('change', () => {
             calculateScheduleForward(tr);
+            calculateScheduleBackward(tr);
         });
     }
 
@@ -601,6 +643,57 @@ function formatLocalDate(date) {
     return `${y}-${m}-${d}`;
 }
 
+// [추가] 휴일 체크 및 알림 함수
+function checkAndAlertHoliday(input) {
+    const dateStr = input.value;
+    if (!dateStr) return;
+
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+
+    if (window.isHoliday(date)) {
+        let name = window.getHolidayName(y, m - 1, d);
+        const day = date.getDay();
+        
+        if (!name) {
+            if (day === 0) name = "일요일";
+            else if (day === 6) name = "토요일";
+            else name = "휴일";
+        }
+
+        // 연속된 휴일 기간 계산
+        let start = new Date(date);
+        let end = new Date(date);
+
+        // 시작일 찾기
+        while (true) {
+            const prev = new Date(start);
+            prev.setDate(prev.getDate() - 1);
+            if (window.isHoliday(prev)) {
+                start = prev;
+            } else {
+                break;
+            }
+        }
+
+        // 종료일 찾기
+        while (true) {
+            const next = new Date(end);
+            next.setDate(next.getDate() + 1);
+            if (window.isHoliday(next)) {
+                end = next;
+            } else {
+                break;
+            }
+        }
+
+        const startStr = formatLocalDate(start);
+        const endStr = formatLocalDate(end);
+
+        alert(`선택하신 날짜는 '${name}'입니다.\n휴일 기간: ${startStr} ~ ${endStr}`);
+    }
+}
+
 window.calculateSetupSchedule = function(targetDateStr) {
     if (!targetDateStr) return;
     
@@ -679,11 +772,12 @@ function calculateScheduleForward(startRow) {
 
     // 변경된 행의 작업일수 가져오기
     const estInput = startRow.querySelector('.detail-est-days-input');
-    const estDays = parseInt(estInput.value) || 0;
+    let estDays = parseInt(estInput.value);
+    if (isNaN(estDays) || estDays <= 0) estDays = 1; // [수정] 최소 1일 보장
     
     // 현재 행 완료일 = 시작일 + (작업일수 - 1)
     // 다음 행 시작일 = 현재 행 완료일 + 1
-    let currentEndDate = window.addBusinessDays(currentStartDate, (estDays > 0 ? estDays - 1 : 0));
+    let currentEndDate = window.addBusinessDays(currentStartDate, estDays - 1);
     let nextStartDate = window.addBusinessDays(currentEndDate, 1);
 
     for (let i = startIndex + 1; i < rows.length; i++) {
@@ -705,9 +799,54 @@ function calculateScheduleForward(startRow) {
             }
             
             // 다음 반복을 위해 날짜 갱신
-            const currentEst = rowEstInput ? (parseInt(rowEstInput.value) || 1) : 1;
-            const thisEndDate = window.addBusinessDays(new Date(nextStartDate), (currentEst > 0 ? currentEst - 1 : 0));
+            let currentEst = rowEstInput ? parseInt(rowEstInput.value) : 1;
+            if (isNaN(currentEst) || currentEst <= 0) currentEst = 1; // [수정] 최소 1일 보장
+            const thisEndDate = window.addBusinessDays(new Date(nextStartDate), currentEst - 1);
             nextStartDate = window.addBusinessDays(thisEndDate, 1);
+        }
+    }
+    saveSetupDetails(); // 계산 후 자동 저장
+}
+
+function calculateScheduleBackward(startRow) {
+    const rows = Array.from(document.querySelectorAll('#setup-detail-body tr.item-row'));
+    const startIndex = rows.indexOf(startRow);
+    if (startIndex <= 0) return; // 첫 번째 항목이거나 찾을 수 없으면 종료
+
+    let nextTaskStartDate = null;
+    
+    // 변경된 행(기준점)의 시작일 가져오기
+    const startInput = startRow.querySelector('.detail-start-date-input');
+    if (startInput && startInput.value) {
+        const [y, m, d] = startInput.value.split('-').map(Number);
+        nextTaskStartDate = new Date(y, m - 1, d);
+    } else {
+        return;
+    }
+
+    // 위쪽으로 역순 순회
+    for (let i = startIndex - 1; i >= 0; i--) {
+        const row = rows[i];
+        const checkbox = row.querySelector('.detail-complete-checkbox');
+        const isCompleted = checkbox ? checkbox.checked : false;
+
+        if (isCompleted) break; // 완료된 작업을 만나면 역산 중단 (고정점)
+
+        const rowStartInput = row.querySelector('.detail-start-date-input');
+        const rowEstInput = row.querySelector('.detail-est-days-input');
+
+        if (rowStartInput && rowEstInput) {
+            let estDays = parseInt(rowEstInput.value);
+            if (isNaN(estDays) || estDays <= 0) estDays = 1; // [수정] 최소 1일 보장
+            // 현재 행 완료일 = 다음 행 시작일 - 1일 (영업일 기준)
+            const currentEndDate = window.addBusinessDays(nextTaskStartDate, -1);
+            // 현재 행 시작일 = 현재 행 완료일 - (작업일수 - 1)
+            const currentStartDate = window.addBusinessDays(currentEndDate, -(estDays - 1));
+            
+            rowStartInput.value = formatLocalDate(currentStartDate);
+            
+            // 다음 반복(더 위쪽)을 위해 기준 날짜 갱신
+            nextTaskStartDate = currentStartDate;
         }
     }
     saveSetupDetails(); // 계산 후 자동 저장
@@ -773,10 +912,13 @@ function renderSetupLogList() {
     // 날짜 내림차순 정렬
     filteredLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    tbody.innerHTML = filteredLogs.map(item => `
-        <tr data-id="${item.id}" onclick="selectSetupLog(${item.id})" class="${selectedSetupLogId === item.id ? 'active-log' : ''}" style="cursor: pointer;">
+    tbody.innerHTML = filteredLogs.map(item => {
+        // [수정] [지연] 태그 주황색 표시
+        const contentHtml = (escapeHtml(item.content) || '-').replace(/\[지연\]/g, '<span style="color: #f0883e; font-weight: bold;">[지연]</span>');
+        
+        return `<tr data-id="${item.id}" onclick="selectSetupLog(${item.id})" class="${selectedSetupLogId === item.id ? 'active-log' : ''}" style="cursor: pointer;">
             <td class="log-date">${item.date}</td>
-            <td class="log-content">${escapeHtml(item.content) || '-'}</td>
+            <td class="log-content">${contentHtml}</td>
             <td class="log-company">${escapeHtml(item.company) || '-'}</td>
             <td class="log-worker">${escapeHtml(item.worker)}</td>
             <td class="manage-col" style="text-align: center;">
@@ -784,7 +926,7 @@ function renderSetupLogList() {
                 <button class="btn-del-sm" onclick="event.stopPropagation(); deleteSetupLogItem(${item.id})">✕</button>
             </td>
         </tr>
-    `).join('');
+    `}).join('');
 }
 
 function addSetupLogItem() {
@@ -839,7 +981,8 @@ function selectSetupLog(id) {
     const equipKey = `${currentPath.site}::${currentPath.equip}`;
     const data = setupData[equipKey] || {};
     const logs = data.setupLogs || [];
-    const log = logs.find(l => l.id === id);
+    // [수정] ID 비교 시 타입 불일치 방지를 위해 == 사용 (HTML 속성은 문자열일 수 있음)
+    const log = logs.find(l => l.id == id);
     
     if (memoArea) {
         const val = log ? (log.memo || "") : "";
@@ -1083,6 +1226,7 @@ function setupSetupCompletionModal() {
                     checkbox.disabled = true;
                 } else {
                     checkbox.disabled = false;
+                    if (!checkbox.checked) checkbox.checked = true; // [추가] 날짜 입력 시 자동 체크
                 }
             }
         };
@@ -1103,6 +1247,13 @@ function openSetupCompletionModal(id, tr) {
     if (!modal) return;
 
     currentSetupCompletionTarget = { id, tr };
+
+    // [추가] 데이터 기반 완료 여부 확인 (DOM 상태 의존성 제거하여 정확도 향상)
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${currentPath.site}::${currentPath.equip}`;
+    const data = setupData[equipKey] || {};
+    const task = data.setupDetails ? data.setupDetails.find(t => t.id == id) : null;
+    const isAlreadyCompleted = task ? task.completed : false;
 
     // 작업 일수 표시
     const estInput = tr.querySelector('.detail-est-days-input');
@@ -1164,7 +1315,42 @@ function openSetupCompletionModal(id, tr) {
         if (minDate && dateInput.value < minDate) dateInput.value = minDate;
     }
 
+    // [추가] 계획 종료일 계산 및 저장 (지연 판단 기준: 계획 시작일 + 작업일수)
+    const trEstInput = tr.querySelector('.detail-est-days-input');
+    let planEndDateStr = '';
+
+    if (trStartDateInput && trStartDateInput.value) {
+        const [y, m, d] = trStartDateInput.value.split('-').map(Number);
+        const estDays = parseInt(trEstInput ? trEstInput.value : '1') || 1;
+        const daysToAdd = estDays > 0 ? estDays - 1 : 0;
+        const pEnd = window.addBusinessDays(new Date(y, m - 1, d), daysToAdd);
+        
+        const py = pEnd.getFullYear();
+        const pm = String(pEnd.getMonth() + 1).padStart(2, '0');
+        const pd = String(pEnd.getDate()).padStart(2, '0');
+        planEndDateStr = `${py}-${pm}-${pd}`;
+    }
+
+    let planEndInput = document.getElementById('setup-plan-end-date');
+    if (!planEndInput) {
+        planEndInput = document.createElement('input');
+        planEndInput.type = 'hidden';
+        planEndInput.id = 'setup-plan-end-date';
+        modal.querySelector('.modal-body').appendChild(planEndInput);
+    }
+    planEndInput.value = planEndDateStr;
+
     document.getElementById('setup-delay-reason').value = tr.dataset.delayReason || "";
+
+    // [추가] 셋업 이력 입력창 초기화
+    const logInput = document.getElementById('setup-setup-log-content');
+    if (logInput) logInput.value = '';
+    
+    const companyInput = document.getElementById('setup-setup-log-company');
+    if (companyInput) companyInput.value = '위드텍'; // 기본값
+
+    const workerInput = document.getElementById('setup-setup-log-worker');
+    if (workerInput) workerInput.value = sessionStorage.getItem('userId') || ''; // 기본값
     
     // 완료일 유무에 따라 체크박스 상태 설정
     const checkbox = document.getElementById('setup-complete-checkbox');
@@ -1174,10 +1360,22 @@ function openSetupCompletionModal(id, tr) {
             checkbox.disabled = true;
         } else {
             checkbox.disabled = false;
-            // 기존 완료 상태 반영 (자동 체크 방지)
-            checkbox.checked = tr.querySelector('.detail-complete-checkbox').checked;
+            checkbox.checked = true; // [수정] 팝업 오픈 시 완료 체크 기본 활성화
         }
     }
+
+    // [추가] 이미 완료된 작업인 경우 UI 제어 (이력 숨김 및 수정 방지)
+    const logContainer = document.getElementById('setup-setup-log-container');
+    if (logContainer) logContainer.style.display = isAlreadyCompleted ? 'none' : 'block';
+
+    const inputsToDisable = [
+        'setup-start-date', 'setup-complete-date', 'setup-delay-reason',
+        'setup-setup-log-company', 'setup-setup-log-worker', 'setup-setup-log-content'
+    ];
+    inputsToDisable.forEach(inputId => {
+        const el = document.getElementById(inputId);
+        if (el) el.disabled = isAlreadyCompleted;
+    });
     
     checkSetupDelayStatus();
     modal.style.display = 'flex';
@@ -1187,17 +1385,12 @@ function checkSetupDelayStatus() {
     if (!currentSetupCompletionTarget) return;
     
     const tr = currentSetupCompletionTarget.tr;
-    const startDateInput = document.getElementById('setup-start-date'); // 모달 내 입력창 참조
-    const estDisplayInput = document.getElementById('setup-est-days'); // 모달 내 표시된 작업일수 사용
+    const planEndDateInput = document.getElementById('setup-plan-end-date'); // [수정] 계획 종료일 기준
     const completeDateInput = document.getElementById('setup-complete-date');
     const reasonContainer = document.getElementById('setup-delay-reason-container');
 
-    if (startDateInput && startDateInput.value && estDisplayInput && completeDateInput.value) {
-        const startDate = new Date(startDateInput.value);
-        const estDays = parseInt(estDisplayInput.value) || 0;
-        // 계획 종료일 계산 (시작일 + 작업일수 - 1)
-        const daysToAdd = estDays > 0 ? estDays - 1 : 0;
-        const planEndDate = window.addBusinessDays(new Date(startDate), daysToAdd); // window 객체 사용
+    if (planEndDateInput && planEndDateInput.value && completeDateInput.value) {
+        const planEndDate = new Date(planEndDateInput.value);
         const completeDate = new Date(completeDateInput.value);
 
         // 시간 초기화
@@ -1220,6 +1413,12 @@ function saveSetupCompletion() {
     const reasonInput = document.getElementById('setup-delay-reason');
     const reasonContainer = document.getElementById('setup-delay-reason-container');
     const completedCheckbox = document.getElementById('setup-complete-checkbox');
+    
+    // [추가] 로그 입력값 가져오기
+    const logContentEl = document.getElementById('setup-setup-log-content');
+    const logContent = logContentEl ? logContentEl.value.trim() : '';
+    const logCompany = document.getElementById('setup-setup-log-company') ? document.getElementById('setup-setup-log-company').value.trim() : '위드텍';
+    const logWorker = document.getElementById('setup-setup-log-worker') ? document.getElementById('setup-setup-log-worker').value.trim() : '';
 
     const isCompleted = completedCheckbox.checked;
 
@@ -1237,6 +1436,7 @@ function saveSetupCompletion() {
     }
 
     const tr = currentSetupCompletionTarget.tr;
+    const wasCompleted = tr.querySelector('.detail-complete-checkbox').checked; // 기존 상태
     tr.querySelector('.detail-complete-checkbox').checked = isCompleted;
     
     // 팝업의 시작일은 실행 시작일이므로, 계획 시작일(startDate)은 변경하지 않고 실행 시작일(execStartDate)만 업데이트
@@ -1249,12 +1449,49 @@ function saveSetupCompletion() {
         tr.dataset.execStartDate = dateInput.value;
     }
 
+    const delayReason = reasonInput.value.trim();
+
     if (isCompleted) {
         tr.querySelector('.detail-date-input').value = dateInput.value;
-        tr.dataset.delayReason = reasonInput.value.trim();
+        tr.dataset.delayReason = delayReason;
     } else {
         tr.querySelector('.detail-date-input').value = '';
         delete tr.dataset.delayReason;
+    }
+
+    // [추가] 셋업 이력(일지) 자동 등록
+    // 완료 체크 시 혹은 내용이 있을 때 저장 (단, 이미 완료된 작업은 중복 저장 방지)
+    if ((isCompleted && !wasCompleted) || (logContent && !wasCompleted)) {
+        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+        const equipKey = `${currentPath.site}::${currentPath.equip}`;
+        let data = setupData[equipKey] || {};
+        if (!data.setupLogs) data.setupLogs = [];
+
+        const taskContent = tr.querySelector('.detail-content-input').value;
+        let displayContent = taskContent || '작업 내용 없음';
+        let finalMemo = logContent;
+
+        // 지연 사유가 있으면 셋업 일지에 표시
+        if (delayReason) {
+            displayContent = `[지연] ${displayContent}`;
+            if (finalMemo) finalMemo += `\n\n[지연 사유]\n${delayReason}`;
+            else finalMemo = `[지연 사유]\n${delayReason}`;
+        }
+
+        data.setupLogs.push({
+            id: Date.now(),
+            date: isCompleted ? dateInput.value : new Date().toISOString().split('T')[0],
+            worker: logWorker || sessionStorage.getItem('userId') || '',
+            content: displayContent,
+            company: logCompany || '위드텍',
+            memo: finalMemo
+        });
+        
+        setupData[equipKey] = data;
+        localStorage.setItem('setup_data', JSON.stringify(setupData));
+        
+        // 일지 리스트 갱신
+        renderSetupLogList();
     }
     
     document.getElementById('setup-completion-modal').style.display = 'none';
@@ -1292,7 +1529,7 @@ function openSetupExecStartModal(id) {
     if (currentIndex > 0) {
         const prevTask = details[currentIndex - 1];
         if (prevTask.completed && prevTask.date) {
-            defaultDate = addBusinessDays(new Date(prevTask.date), 1).toISOString().split('T')[0];
+            defaultDate = window.addBusinessDays(new Date(prevTask.date), 1).toISOString().split('T')[0];
         }
     } else if (currentIndex === 0) {
         // 첫 번째 항목은 예정일을 기본값으로 설정
@@ -1301,6 +1538,10 @@ function openSetupExecStartModal(id) {
     
     dateInput.value = defaultDate;
     modal.style.display = 'flex';
+}
+
+function startSetupTask(id) {
+    openSetupExecStartModal(id);
 }
 
 function saveSetupExecStart() {

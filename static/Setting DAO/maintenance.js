@@ -707,7 +707,6 @@ function toggleLogEdit(id, btn) {
         const currentWorker = workerCell.textContent.trim();
 
         dateCell.innerHTML = `<input type="date" id="edit-log-date-${id}" value="${escapeHtml(currentDate)}" style="width: 100%; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 2px; border-radius: 4px;" onclick="event.stopPropagation()">`;
-        
         typeCell.innerHTML = `
             <select id="edit-log-type-${id}" style="width: 100%; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 2px; border-radius: 4px;" onclick="event.stopPropagation()" onchange="updateEditLogContent(${id})">
                 <option value="PM" ${currentType === 'PM' ? 'selected' : ''}>PM</option>
