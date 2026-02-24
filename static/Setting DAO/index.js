@@ -1513,6 +1513,7 @@ function setupRegisterScheduleModal() {
     const confirmBtn = document.getElementById('btn-confirm-register-schedule');
     const siteSelect = document.getElementById('register-site-select');
     const equipSelect = document.getElementById('register-equip-select');
+    const typeSelect = document.getElementById('register-type-select');
 
     if (!modal) return;
 
@@ -1530,6 +1531,12 @@ function setupRegisterScheduleModal() {
         };
     }
 
+    if (typeSelect) {
+        typeSelect.onchange = () => {
+            updateRegisterItemList(siteSelect.value, equipSelect.value);
+        };
+    }
+
     if (confirmBtn) {
         confirmBtn.onclick = confirmRegisterSchedule;
     }
@@ -1541,6 +1548,7 @@ function openRegisterScheduleModal(dateStr) {
     const siteSelect = document.getElementById('register-site-select');
     const equipSelect = document.getElementById('register-equip-select');
     const itemList = document.getElementById('register-item-list');
+    const typeSelect = document.getElementById('register-type-select');
 
     if (!modal) return;
 
@@ -1558,6 +1566,8 @@ function openRegisterScheduleModal(dateStr) {
     equipSelect.innerHTML = '<option value="">장비 선택</option>';
     equipSelect.disabled = true;
     itemList.innerHTML = '';
+
+    if (typeSelect) typeSelect.value = 'PM'; // 기본값 PM
 
     modal.style.display = 'flex';
 }
@@ -1590,6 +1600,8 @@ function updateRegisterEquipSelect(site) {
 
 function updateRegisterItemList(site, equip) {
     const itemList = document.getElementById('register-item-list');
+    const typeSelect = document.getElementById('register-type-select');
+    const selectedType = typeSelect ? typeSelect.value : 'PM';
     itemList.innerHTML = '';
 
     if (!site || !equip) return;
@@ -1630,6 +1642,7 @@ function updateRegisterItemList(site, equip) {
         }
         
         label.innerHTML = `<span class="badge pm">PM</span> ${escapeHtml(item.content)}${statusText}`;
+        label.innerHTML = `<span class="badge ${selectedType.toLowerCase()}">${selectedType}</span> ${escapeHtml(item.content)}${statusText}`;
 
         div.appendChild(checkbox);
         div.appendChild(label);
