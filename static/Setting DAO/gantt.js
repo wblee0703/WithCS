@@ -1054,9 +1054,9 @@ function saveExecCompletion() {
                 let finalMemo = logContent;
 
                 if (delayReason) {
-                    displayContent = `[지연] `;
-                    if (finalMemo) finalMemo += `\n\n[지연 사유]\n`;
-                    else finalMemo = `[지연 사유]\n`;
+                    displayContent = `[지연] ${displayContent}`;
+                    if (finalMemo) finalMemo += `\n\n[지연 사유]\n${delayReason}`;
+                    else finalMemo = `[지연 사유]\n${delayReason}`;
                 }
 
                 data.setupLogs.push({
