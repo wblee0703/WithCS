@@ -73,8 +73,8 @@ function renderCalendar() {
             infoText += '>';
         }
         if (keyword) {
-            if (infoText) infoText += ` (검색: )`;
-            else infoText = `검색: ""`;
+            if (infoText) infoText += ` (검색: ${keyword})`;
+            else infoText = `검색: "${keyword}"`;
         }
         targetInfoEl.textContent = infoText;
     }
@@ -97,7 +97,7 @@ function renderMonthGrid(year, month, titleId, gridId) {
 
     const pmEvents = getPmScheduleForCalendar();
     titleEl.style.color = '';
-    titleEl.textContent = `년 ${month + 1}월`;
+    titleEl.textContent = `${year}년 ${month + 1}월`;
     gridEl.innerHTML = '';
 
     const firstDay = new Date(year, month, 1).getDay();
@@ -115,7 +115,7 @@ function renderMonthGrid(year, month, titleId, gridId) {
     // Current month's dates
     const today = new Date();
     for (let i = 1; i <= lastDate; i++) {
-        const dateStr = `-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
         let isToday = (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) ? 'today' : '';
 
         const currentDay = new Date(year, month, i);
@@ -165,8 +165,8 @@ function renderMonthGrid(year, month, titleId, gridId) {
                 const typeClass = group.type === 'PM' ? 'type-pm' : 'type-bm';
                 const completedClass = group.isCompleted ? 'completed' : '';
 
-                eventsHtml += `<div class="calendar-event-item ">
-                    ${escapeHtml(group.site)} ${escapeHtml(equipName)} <span class="event-type-text ">${group.type}</span>
+                eventsHtml += `<div class="calendar-event-item ${completedClass}">
+                    ${escapeHtml(group.site)} ${escapeHtml(equipName)} <span class="event-type-text ${typeClass}">${group.type}</span>
                 </div>`;
             });
         }
@@ -178,13 +178,13 @@ function renderMonthGrid(year, month, titleId, gridId) {
         if (holidayName || dayOfWeek === 0) dayClass = 'sunday holiday';
         else if (dayOfWeek === 6) dayClass = 'saturday';
 
-        const countHtml = displayCount > 0 ? `<span class="event-count">()</span>` : '';
-        const dateContent = `<span class="date-num"></span>${holidayName ? ` <span class="holiday-name"></span>` : ''}`;
-        const dateHeader = `<div class="date-header"></div>`;
+        const countHtml = displayCount > 0 ? `<span class="event-count">(${displayCount})</span>` : '';
+        const dateContent = `<span class="date-num">${i}</span>${holidayName ? ` <span class="holiday-name">${holidayName}</span>` : ''}${countHtml}`;
+        const dateHeader = `<div class="date-header">${dateContent}</div>`;
 
         const cell = document.createElement('div');
-        cell.className = `date-cell  `;
-        cell.innerHTML = `<div class="events-container"></div>`;
+        cell.className = `date-cell ${isToday} ${dayClass}`;
+        cell.innerHTML = `${dateHeader}<div class="events-container">${eventsHtml}</div>`;
         cell.onclick = () => openCalendarPopup(dateStr, dayEvents);
         gridEl.appendChild(cell);
     }
@@ -194,7 +194,7 @@ function renderMonthGrid(year, month, titleId, gridId) {
     for (let i = 1; i <= nextDays; i++) {
         const cell = document.createElement('div');
         cell.className = 'date-cell other-month';
-        cell.innerHTML = `<span class="date-num"></span>`;
+        cell.innerHTML = `<span class="date-num">${i}</span>`;
         gridEl.appendChild(cell);
     }
 }
@@ -242,15 +242,15 @@ function openCalendarPopup(dateStr, events) {
             const parts = group.equip.split('::');
             const equipName = parts[0];
             const serialNo = parts.length > 1 ? parts[1] : '';
-            const displayEquip = serialNo ? ` ()` : equipName;
+            const displayEquip = serialNo ? `${equipName} (${serialNo})` : equipName;
 
             const typeClass = group.type === 'PM' ? 'type-pm' : 'type-bm';
-            const typeBadge = `<span class="popup-type-badge ">[${group.type}]</span>`;
+            const typeBadge = `<span class="popup-type-badge ${typeClass}">[${group.type}]</span>`;
 
             const wrapper = document.createElement('div');
             wrapper.className = 'item-wrapper';
             wrapper.innerHTML = `
-                <span class="item-text popup-item-text "> ${escapeHtml(group.site)} > ${escapeHtml(displayEquip)}</span>
+                <span class="item-text popup-item-text ${textClass}">${typeBadge} ${escapeHtml(group.site)} > ${escapeHtml(displayEquip)}</span>
             `;
             li.appendChild(wrapper);
 
@@ -298,7 +298,7 @@ function getPmScheduleForCalendar() {
     Object.keys(mainData).forEach(site => {
         if (mainData[site]) {
             mainData[site].forEach(equip => {
-                const key = `details__`;
+                const key = `details_${site}_${equip}`;
                 try {
                     const data = JSON.parse(localStorage.getItem(key));
                     if (!data) return;
@@ -331,7 +331,7 @@ function getPmScheduleForCalendar() {
                             }
                         });
                     }
-                } catch (e) { console.error(`Error parsing data for key :`, e); }
+                } catch (e) { console.error(`Error parsing data for key ${key}:`, e); }
             });
         }
     });
@@ -391,7 +391,7 @@ function openScheduleModal(site, equip, id) {
     if (!modal) return;
     currentScheduleTarget = { site, equip, id };
     
-    const key = `details__`;
+    const key = `details_${site}_${equip}`;
     const data = JSON.parse(localStorage.getItem(key)) || {};
     const item = data.maint ? data.maint.find(i => i.id === id) : null;
     
@@ -406,7 +406,7 @@ function openScheduleModal(site, equip, id) {
 }
 
 function setScheduleDate(site, equip, id, dateStr, isDelete = false) {
-    const key = `details__`;
+    const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
     
     if (data.maint) {
@@ -421,7 +421,7 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false) {
             
             if (typeof addSystemLog === 'function') {
                 const action = isDelete ? 'DELETE_SCHEDULE' : 'ADD_SCHEDULE';
-                addSystemLog(action, equip, `Date: , Content: ${item.content}`);
+                addSystemLog(action, equip, `Date: ${dateStr}, Content: ${item.content}`);
             }
         }
     }
@@ -465,7 +465,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
     currentDetailTarget = { site, equip, id, isCompleted };
 
-    const key = `details__`;
+    const key = `details_${site}_${equip}`;
     const data = JSON.parse(localStorage.getItem(key)) || {};
     
     let item = null;
@@ -478,7 +478,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     if (!item) return;
 
     const parts = equip.split('::');
-    document.getElementById('detail-equip-info').textContent = ` > ${parts[0]}`;
+    document.getElementById('detail-equip-info').textContent = `${site} > ${parts[0]}`;
     document.getElementById('detail-serial-no').textContent = parts.length > 1 ? parts[1] : '-';
     document.getElementById('detail-type').textContent = item.type || 'PM';
     document.getElementById('detail-content').textContent = item.content || '';
@@ -534,7 +534,7 @@ function completeScheduleWork() {
     if (!worker) return alert('작업자를 입력해주세요.');
 
     const { site, equip, id } = currentDetailTarget;
-    const key = `details__`;
+    const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
     
     const maintItem = data.maint ? data.maint.find(i => i.id == id) : null;
@@ -666,7 +666,7 @@ function updateRegisterItemList(site, equip) {
 
     if (!site || !equip) return;
 
-    const key = `details__`;
+    const key = `details_${site}_${equip}`;
     const data = JSON.parse(localStorage.getItem(key)) || {};
     const maintItems = data.maint || [];
     
@@ -701,7 +701,7 @@ function updateRegisterItemList(site, equip) {
             statusText = ` <span style="color:#e3b341; font-size:0.85em;">(예정: ${item.scheduledDate})</span>`;
         }
         
-        label.innerHTML = `<span class="badge ${selectedType.toLowerCase()}"></span> ${escapeHtml(item.content)}`;
+        label.innerHTML = `<span class="badge ${selectedType.toLowerCase()}">${selectedType}</span> ${escapeHtml(item.content)}${statusText}`;
 
         div.appendChild(checkbox);
         div.appendChild(label);
