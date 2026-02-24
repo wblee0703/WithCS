@@ -15,6 +15,14 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventDetailModal();
     setupRegisterScheduleModal();
     setupSearchModal();
+
+    // 드롭다운 외부 클릭 시 닫기
+    document.addEventListener('click', (e) => {
+        const dropdowns = document.querySelectorAll('.log-select-dropdown.show');
+        dropdowns.forEach(d => {
+            if (!d.parentElement.contains(e.target)) d.classList.remove('show');
+        });
+    });
 });
 
 /* ==========================================================================
@@ -757,6 +765,7 @@ function updateRegisterItemList(site, equip) {
         return;
     }
 
+    // [수정] PM/BM인 경우 드롭다운 바 생성
     const filteredItems = maintItems.filter(item => item.type === selectedType);
 
     if (filteredItems.length === 0) {
@@ -764,36 +773,49 @@ function updateRegisterItemList(site, equip) {
         return;
     }
 
+    const wrapper = document.createElement('div');
+    wrapper.className = 'log-select-wrapper';
+    
+    const trigger = document.createElement('div');
+    trigger.className = 'log-select-trigger';
+    trigger.textContent = '항목 선택';
+    trigger.onclick = (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+    };
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'log-select-dropdown';
+
+    const list = document.createElement('div');
+    list.className = 'log-select-list';
+
     filteredItems.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'register-item-row';
-        div.style.display = 'flex';
-        div.style.alignItems = 'center';
-        div.style.padding = '8px';
-        div.style.borderBottom = '1px solid #30363d';
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.value = item.id;
-        checkbox.id = `reg-item-${item.id}`;
-        checkbox.style.marginRight = '10px';
-
-        const label = document.createElement('label');
-        label.htmlFor = `reg-item-${item.id}`;
-        label.style.flex = '1';
-        label.style.cursor = 'pointer';
-        
-        let statusText = '';
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'log-select-item';
+        itemDiv.dataset.id = item.id;
+        itemDiv.textContent = item.content;
         if (item.scheduledDate) {
-            statusText = ` <span style="color:#e3b341; font-size:0.85em;">(예정: ${item.scheduledDate})</span>`;
+            itemDiv.innerHTML += ` <span style="color:#e3b341; font-size:0.85em;">(예정: ${item.scheduledDate})</span>`;
         }
         
-        label.innerHTML = `<span class="badge ${selectedType.toLowerCase()}">${selectedType}</span> ${escapeHtml(item.content)}${statusText}`;
-
-        div.appendChild(checkbox);
-        div.appendChild(label);
-        itemList.appendChild(div);
+        itemDiv.onclick = (e) => {
+            e.stopPropagation();
+            itemDiv.classList.toggle('selected');
+            
+            // 트리거 텍스트 업데이트
+            const selected = list.querySelectorAll('.log-select-item.selected');
+            if (selected.length === 0) trigger.textContent = '항목 선택';
+            else if (selected.length === 1) trigger.textContent = selected[0].textContent.replace(/\(예정:.*\)/, '').trim();
+            else trigger.textContent = `${selected[0].textContent.replace(/\(예정:.*\)/, '').trim()} 외 ${selected.length - 1}개`;
+        };
+        list.appendChild(itemDiv);
     });
+
+    dropdown.appendChild(list);
+    wrapper.appendChild(trigger);
+    wrapper.appendChild(dropdown);
+    itemList.appendChild(wrapper);
 }
 
 function confirmRegisterSchedule() {
@@ -807,10 +829,10 @@ function confirmRegisterSchedule() {
     if (!dateStr || !site || !equip) return alert('사업장과 장비를 선택해주세요.');
 
     if (selectedType === 'PM' || selectedType === 'BM') {
-        const checkboxes = itemList.querySelectorAll('input[type="checkbox"]:checked');
-        if (checkboxes.length === 0) return alert('등록할 항목을 선택해주세요.');
+        const selectedItems = itemList.querySelectorAll('.log-select-item.selected');
+        if (selectedItems.length === 0) return alert('등록할 항목을 선택해주세요.');
 
-        const ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        const ids = Array.from(selectedItems).map(el => parseInt(el.dataset.id));
         
         ids.forEach(id => {
             setScheduleDate(site, equip, id, dateStr);
