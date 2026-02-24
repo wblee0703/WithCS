@@ -525,7 +525,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         memoInput.value = '';
         memoInput.disabled = false;
         
-        dateRow.style.display = 'flex';
+        dateRow.style.display = 'block';
         document.getElementById('detail-scheduled-date').value = item.scheduledDate || '';
         
         completeBtn.style.display = 'block';
