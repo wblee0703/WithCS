@@ -441,16 +441,6 @@ def change_password():
         
     return jsonify({"status": "success"})
 
-@app.route('/api/admin/sync', methods=['POST'])
-@login_required
-def manual_git_sync():
-    if session.get('role') != 'admin':
-        return jsonify({"status": "fail", "message": "관리자 권한이 필요합니다."}), 403
-        
-    # 수동 동기화 요청 시 즉시 실행 (비동기)
-    Thread(target=git_push_data).start()
-    return jsonify({"status": "success", "message": "GitHub 동기화가 시작되었습니다."})
-
 # ------------------------------------------------------------------------------
 # 8. Main Execution
 # ------------------------------------------------------------------------------
@@ -460,8 +450,6 @@ if __name__ == '__main__':
     
     # [추가] 서버 시작 시 GitHub에서 최신 데이터 동기화
     git_pull_data()
-    # [추가] 서버 시작 시 로컬의 모든 변경 사항(코드 포함)을 GitHub에 업로드
-    git_push_data()
     
     port = int(os.environ.get("APP_PORT", 5500))
     if not os.environ.get("WERKZEUG_RUN_MAIN"):
