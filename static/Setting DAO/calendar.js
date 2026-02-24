@@ -435,6 +435,7 @@ function setupEventDetailModal() {
     const completeBtn = document.getElementById('btn-complete-work');
     const updateDateBtn = document.getElementById('btn-update-date');
     const moveToEquipBtn = document.getElementById('btn-move-to-equip');
+    const editContentBtn = document.getElementById('btn-edit-detail-content');
 
     if (!modal) return;
 
@@ -456,6 +457,10 @@ function setupEventDetailModal() {
                 location.href = `maintenance.html?site=${encodeURIComponent(currentDetailTarget.site)}&equip=${encodeURIComponent(currentDetailTarget.equip)}`;
             }
         };
+    }
+
+    if (editContentBtn) {
+        editContentBtn.onclick = toggleDetailContentEdit;
     }
 }
 
@@ -488,6 +493,14 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     const dateRow = document.getElementById('detail-date-row');
     const completeBtn = document.getElementById('btn-complete-work');
     const saveMemoBtn = document.getElementById('btn-save-detail-memo');
+    const editContentBtn = document.getElementById('btn-edit-detail-content');
+    const contentDiv = document.getElementById('detail-content');
+    const contentInput = document.getElementById('detail-content-input');
+
+    // UI 초기화 (수정 모드 해제)
+    if (contentDiv) contentDiv.style.display = 'block';
+    if (contentInput) contentInput.style.display = 'none';
+    if (editContentBtn) editContentBtn.textContent = '수정';
 
     if (isCompleted) {
         workerInput.value = item.worker || '';
@@ -497,6 +510,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         dateRow.style.display = 'none';
         completeBtn.style.display = 'none';
         saveMemoBtn.style.display = 'none';
+        if (editContentBtn) editContentBtn.style.display = 'none';
     } else {
         workerInput.value = sessionStorage.getItem('userId') || '';
         workerInput.disabled = false;
@@ -509,9 +523,55 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         completeBtn.style.display = 'block';
         completeBtn.textContent = '작업 완료';
         saveMemoBtn.style.display = 'none';
+        if (editContentBtn) editContentBtn.style.display = 'block';
     }
 
     modal.style.display = 'flex';
+}
+
+function toggleDetailContentEdit() {
+    const contentDiv = document.getElementById('detail-content');
+    const contentInput = document.getElementById('detail-content-input');
+    const editBtn = document.getElementById('btn-edit-detail-content');
+    
+    if (contentInput.style.display === 'none') {
+        // 수정 모드 진입
+        contentInput.value = contentDiv.textContent;
+        contentDiv.style.display = 'none';
+        contentInput.style.display = 'block';
+        contentInput.focus();
+        editBtn.textContent = '저장';
+    } else {
+        // 저장 처리
+        const newContent = contentInput.value.trim();
+        if (!newContent) return alert('내용을 입력해주세요.');
+        
+        if (currentDetailTarget) {
+            const { site, equip, id } = currentDetailTarget;
+            const key = `details_${site}_${equip}`;
+            let data = JSON.parse(localStorage.getItem(key)) || {};
+            
+            if (data.maint) {
+                const item = data.maint.find(i => i.id === id);
+                if (item) {
+                    item.content = newContent;
+                    localStorage.setItem(key, JSON.stringify(data));
+                    
+                    // UI 업데이트
+                    contentDiv.textContent = newContent;
+                    contentDiv.style.display = 'block';
+                    contentInput.style.display = 'none';
+                    editBtn.textContent = '수정';
+                    
+                    // 캘린더 및 대시보드 갱신
+                    renderCalendar();
+                    if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+                    
+                    alert('수정되었습니다.');
+                }
+            }
+        }
+    }
 }
 
 function updateScheduleDateFromDetail() {
