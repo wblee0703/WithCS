@@ -670,6 +670,33 @@ function updateRegisterItemList(site, equip) {
     const data = JSON.parse(localStorage.getItem(key)) || {};
     const maintItems = data.maint || [];
     
+    // [수정] 장비점검, 프로그램변경은 텍스트 입력창 표시
+    if (selectedType === '장비점검' || selectedType === '프로그램변경') {
+        const inputDiv = document.createElement('div');
+        inputDiv.style.padding = '10px';
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'register-manual-input';
+        input.className = 'modal-input'; // 스타일 클래스 필요 시 추가
+        input.style.width = '100%';
+        input.style.padding = '8px';
+        input.style.background = '#0d1117';
+        input.style.border = '1px solid #30363d';
+        input.style.color = '#e6edf3';
+        input.style.borderRadius = '4px';
+        
+        if (selectedType === '프로그램변경') {
+            input.value = 'Ver. ';
+        } else {
+            input.placeholder = '점검 내용을 입력하세요';
+        }
+        
+        inputDiv.appendChild(input);
+        itemList.appendChild(inputDiv);
+        return;
+    }
+
     const filteredItems = maintItems.filter(item => item.type === selectedType);
 
     if (filteredItems.length === 0) {
@@ -714,17 +741,47 @@ function confirmRegisterSchedule() {
     const site = document.getElementById('register-site-select').value;
     const equip = document.getElementById('register-equip-select').value;
     const itemList = document.getElementById('register-item-list');
+    const typeSelect = document.getElementById('register-type-select');
+    const selectedType = typeSelect ? typeSelect.value : 'PM';
     
     if (!dateStr || !site || !equip) return alert('사업장과 장비를 선택해주세요.');
 
-    const checkboxes = itemList.querySelectorAll('input[type="checkbox"]:checked');
-    if (checkboxes.length === 0) return alert('등록할 항목을 선택해주세요.');
+    if (selectedType === 'PM' || selectedType === 'BM') {
+        const checkboxes = itemList.querySelectorAll('input[type="checkbox"]:checked');
+        if (checkboxes.length === 0) return alert('등록할 항목을 선택해주세요.');
 
-    const ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
-    
-    ids.forEach(id => {
-        setScheduleDate(site, equip, id, dateStr);
-    });
+        const ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
+        
+        ids.forEach(id => {
+            setScheduleDate(site, equip, id, dateStr);
+        });
+    } else {
+        // 장비점검, 프로그램변경: 새 항목 생성 후 일정 등록
+        const input = document.getElementById('register-manual-input');
+        const content = input ? input.value.trim() : '';
+        
+        if (!content) return alert('내용을 입력해주세요.');
+        
+        const key = `details_${site}_${equip}`;
+        let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
+        if (!data.maint) data.maint = [];
+
+        const newItem = {
+            id: Date.now(),
+            type: selectedType,
+            content: content,
+            date: "", // 아직 수행되지 않음
+            period: null,
+            scheduledDate: dateStr
+        };
+
+        data.maint.push(newItem);
+        localStorage.setItem(key, JSON.stringify(data));
+
+        if (typeof addSystemLog === 'function') {
+            addSystemLog('ADD_SCHEDULE_MANUAL', equip, `Type: ${selectedType}, Date: ${dateStr}, Content: ${content}`);
+        }
+    }
 
     alert('일정이 등록되었습니다.');
     document.getElementById('register-schedule-modal').style.display = 'none';
