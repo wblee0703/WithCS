@@ -281,6 +281,8 @@ function openCalendarPopup(dateStr, events) {
                             setScheduleDate(item.site, item.equip, item.id, '', true);
                         });
                         popup.style.display = 'none';
+                        renderCalendar();
+                        if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
                     }
                 };
                 li.appendChild(delBtn);
