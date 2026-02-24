@@ -782,10 +782,44 @@ function updateRegisterItemList(site, equip) {
     trigger.onclick = (e) => {
         e.stopPropagation();
         dropdown.classList.toggle('show');
+        if (dropdown.classList.contains('show')) {
+            searchInput.value = '';
+            const items = list.querySelectorAll('.log-select-item');
+            items.forEach(item => item.style.display = 'block');
+            setTimeout(() => searchInput.focus(), 0);
+        }
     };
 
     const dropdown = document.createElement('div');
     dropdown.className = 'log-select-dropdown';
+
+    const searchContainer = document.createElement('div');
+    searchContainer.style.padding = '5px';
+    searchContainer.style.borderBottom = '1px solid #30363d';
+
+    const searchInput = document.createElement('input');
+    searchInput.type = 'text';
+    searchInput.placeholder = '항목 검색...';
+    searchInput.style.width = '100%';
+    searchInput.style.padding = '5px';
+    searchInput.style.background = '#0d1117';
+    searchInput.style.border = '1px solid #30363d';
+    searchInput.style.color = '#e6edf3';
+    searchInput.style.borderRadius = '3px';
+    searchInput.style.fontSize = '12px';
+    
+    searchInput.onclick = (e) => e.stopPropagation();
+    searchInput.oninput = (e) => {
+        const val = e.target.value.toLowerCase();
+        const items = list.querySelectorAll('.log-select-item');
+        items.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            item.style.display = text.includes(val) ? 'block' : 'none';
+        });
+    };
+
+    searchContainer.appendChild(searchInput);
+    dropdown.appendChild(searchContainer);
 
     const list = document.createElement('div');
     list.className = 'log-select-list';
