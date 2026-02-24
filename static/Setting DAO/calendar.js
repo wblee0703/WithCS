@@ -510,6 +510,10 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     if (contentInput) contentInput.style.display = 'none';
     if (editContentBtn) editContentBtn.textContent = '수정';
 
+    // [추가] 드롭다운 래퍼가 있다면 제거 (초기화)
+    const dropdownWrapper = document.getElementById('detail-content-dropdown-wrapper');
+    if (dropdownWrapper) dropdownWrapper.remove();
+
     if (isCompleted) {
         workerInput.value = item.worker || '';
         workerInput.disabled = true;
@@ -541,17 +545,118 @@ function toggleDetailContentEdit() {
     const contentDiv = document.getElementById('detail-content');
     const contentInput = document.getElementById('detail-content-input');
     const editBtn = document.getElementById('btn-edit-detail-content');
+    const dropdownWrapperId = 'detail-content-dropdown-wrapper';
+    let dropdownWrapper = document.getElementById(dropdownWrapperId);
     
-    if (contentInput.style.display === 'none') {
-        // 수정 모드 진입
-        contentInput.value = contentDiv.textContent;
-        contentDiv.style.display = 'none';
-        contentInput.style.display = 'block';
-        contentInput.focus();
+    if (contentDiv.style.display !== 'none') {
+        // [수정 모드 진입]
+        if (!currentDetailTarget) return;
+        const { site, equip, id } = currentDetailTarget;
+        const key = `details_${site}_${equip}`;
+        const data = JSON.parse(localStorage.getItem(key)) || {};
+        const item = data.maint ? data.maint.find(i => i.id == id) : null;
+        
+        if (!item) return;
+
+        const type = item.type || 'PM';
+        const currentContent = contentDiv.textContent.trim();
+
+        if (type === 'PM' || type === 'BM') {
+            // PM/BM일 경우 드롭다운 생성
+            contentDiv.style.display = 'none';
+            contentInput.style.display = 'none';
+
+            if (!dropdownWrapper) {
+                dropdownWrapper = document.createElement('div');
+                dropdownWrapper.id = dropdownWrapperId;
+                dropdownWrapper.className = 'log-select-wrapper';
+                dropdownWrapper.style.width = '100%';
+                
+                const trigger = document.createElement('div');
+                trigger.className = 'log-select-trigger';
+                
+                const dropdown = document.createElement('div');
+                dropdown.className = 'log-select-dropdown';
+                
+                const list = document.createElement('div');
+                list.className = 'log-select-list';
+
+                const selectedValues = currentContent ? currentContent.split(',').map(s => s.trim()) : [];
+
+                if (data.maint) {
+                    const filteredItems = data.maint.filter(m => m.type === type);
+                    if (filteredItems.length === 0) {
+                        list.innerHTML = '<div style="padding:10px; color:#8b949e;">등록된 항목이 없습니다.</div>';
+                    } else {
+                        filteredItems.forEach(mItem => {
+                            const div = document.createElement('div');
+                            div.className = 'log-select-item';
+                            if (selectedValues.includes(mItem.content)) {
+                                div.classList.add('selected');
+                            }
+                            div.dataset.value = mItem.content;
+                            div.innerHTML = `<span>${mItem.content}</span>`;
+                            
+                            div.onclick = (e) => {
+                                e.stopPropagation();
+                                div.classList.toggle('selected');
+                                updateTriggerText();
+                            };
+                            list.appendChild(div);
+                        });
+                    }
+                }
+
+                dropdown.appendChild(list);
+                dropdownWrapper.appendChild(trigger);
+                dropdownWrapper.appendChild(dropdown);
+
+                trigger.onclick = (e) => {
+                    e.stopPropagation();
+                    document.querySelectorAll('.log-select-dropdown.show').forEach(d => {
+                        if (d !== dropdown) d.classList.remove('show');
+                    });
+                    dropdown.classList.toggle('show');
+                };
+
+                function updateTriggerText() {
+                    const selected = list.querySelectorAll('.log-select-item.selected');
+                    const values = Array.from(selected).map(el => el.dataset.value);
+                    if (values.length > 1) {
+                        trigger.textContent = `${values[0]} 외 ${values.length - 1}개`;
+                    } else if (values.length === 1) {
+                        trigger.textContent = values[0];
+                    } else {
+                        trigger.textContent = '항목 선택';
+                    }
+                    trigger.title = values.join('\n');
+                }
+                
+                updateTriggerText();
+                contentInput.parentNode.insertBefore(dropdownWrapper, contentInput.nextSibling);
+            }
+        } else {
+            // 그 외 타입은 텍스트 입력
+            contentInput.value = currentContent;
+            contentDiv.style.display = 'none';
+            contentInput.style.display = 'block';
+            contentInput.focus();
+        }
         editBtn.textContent = '저장';
     } else {
         // 저장 처리
-        const newContent = contentInput.value.trim();
+        let newContent = '';
+
+        if (dropdownWrapper) {
+            const list = dropdownWrapper.querySelector('.log-select-list');
+            const selected = list.querySelectorAll('.log-select-item.selected');
+            const values = Array.from(selected).map(el => el.dataset.value);
+            newContent = values.join(', ');
+            dropdownWrapper.remove();
+        } else {
+            newContent = contentInput.value.trim();
+        }
+
         if (!newContent) return alert('내용을 입력해주세요.');
         
         if (currentDetailTarget) {
