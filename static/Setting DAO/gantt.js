@@ -30,6 +30,13 @@ let currentExecStartTargetId = null;
    초기화 및 설정 (Setup & Initialization)
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
+    // 간트 차트 관련 초기화
+    setupGanttSearch();
+    setupGanttZoom();
+    setupGanttResizer();
+    setupEquipInfoResizer();
+    setupSetupExecStartModal();
+
     // 날짜 변경 시 지연 사유 체크 이벤트 연결
     const execEndDate = document.getElementById('exec-end-date');
     if (execEndDate) {
@@ -91,6 +98,41 @@ function setupGanttResizer() {
     });
 }
 
+function setupEquipInfoResizer() {
+    const resizer = document.getElementById('setup-equip-resizer');
+    const group = document.getElementById('setup-equip-info-group');
+
+    if (!resizer || !group) return;
+
+    resizer.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        document.body.style.cursor = 'col-resize';
+        resizer.classList.add('resizing');
+
+        const startX = e.clientX;
+        const startWidth = group.getBoundingClientRect().width;
+
+        const onMouseMove = (ev) => {
+            const deltaX = startX - ev.clientX;
+            const newWidth = startWidth + deltaX;
+            if (newWidth > 200 && newWidth < 800) {
+                group.style.flex = 'none';
+                group.style.width = `px`;
+            }
+        };
+
+        const onMouseUp = () => {
+            document.body.style.cursor = 'default';
+            resizer.classList.remove('resizing');
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+        };
+
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+    });
+}
+
 /* ==========================================================================
    간트 차트 렌더링 (Rendering)
    ========================================================================== */
@@ -128,7 +170,7 @@ function renderGanttChart() {
             }
         }
         if (keyword) {
-            const searchText = searchInput ? searchInput.value : '';
+            const searchText = searchInput ? searchInput.value.trim() : '';
             if (infoText) infoText += ` (검색: )`;
             else infoText = `검색: ""`;
         }
@@ -1042,3 +1084,4 @@ function saveExecCompletion() {
 window.saveExecCompletion = saveExecCompletion;
 window.openExecCompletionModal = openExecCompletionModal;
 window.saveSetupExecStart = saveSetupExecStart;
+window.setupEquipInfoResizer = setupEquipInfoResizer;

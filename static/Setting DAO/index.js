@@ -25,11 +25,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventDetailModal();
     setupRegisterScheduleModal();
     setupSearchModal();
-    setupGanttSearch();
-    setupGanttResizer(); // [이동] 초기화 시 한 번만 실행
-    setupEquipInfoResizer(); // [추가] 장비 정보 리사이저 초기화
-    setupGanttZoom(); // [추가] 간트 차트 줌 버튼 초기화
-    setupSetupExecStartModal(); // [추가] 실행 시작일 모달 초기화
 
     // [수정] 이미 데이터가 로드되었는지 확인 후 실행
     if (window.isDataLoaded) {
@@ -1277,42 +1272,4 @@ function getPmScheduleForCalendar() {
         }
     });
     return events;
-}
-
-/* ==========================================================================
-   4-1. 리사이저 (Resizer)
-   ========================================================================== */
-function setupEquipInfoResizer() {
-    const resizer = document.getElementById('setup-equip-resizer');
-    const group = document.getElementById('setup-equip-info-group');
-
-    if (!resizer || !group) return;
-
-    resizer.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        document.body.style.cursor = 'col-resize';
-        resizer.classList.add('resizing');
-
-        const startX = e.clientX;
-        const startWidth = group.getBoundingClientRect().width;
-
-        const onMouseMove = (ev) => {
-            const deltaX = startX - ev.clientX; // 왼쪽으로 드래그하면 너비 증가
-            const newWidth = startWidth + deltaX;
-            if (newWidth > 200 && newWidth < 800) {
-                group.style.flex = 'none'; // flex 자동 조절 해제
-                group.style.width = `${newWidth}px`;
-            }
-        };
-
-        const onMouseUp = () => {
-            document.body.style.cursor = 'default';
-            resizer.classList.remove('resizing');
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-        };
-
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    });
 }
