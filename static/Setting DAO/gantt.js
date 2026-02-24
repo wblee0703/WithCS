@@ -117,7 +117,7 @@ function setupEquipInfoResizer() {
             const newWidth = startWidth + deltaX;
             if (newWidth > 200 && newWidth < 800) {
                 group.style.flex = 'none';
-                group.style.width = `px`;
+                group.style.width = `${newWidth}px`;
             }
         };
 
@@ -159,20 +159,20 @@ function renderGanttChart() {
             const parts = currentGanttFilters.equip.split('::');
             const name = parts[0];
             const serial = parts.length > 1 ? parts[1] : '';
-            infoText = `${currentGanttFilters.site} >  ${serial ? `()` : ''}`;
+            infoText = `${currentGanttFilters.site} > ${name} ${serial ? `(${serial})` : ''}`;
 
             const data = setupData[`${currentGanttFilters.site}::${currentGanttFilters.equip}`];
             if (data && data.setupDetails && data.setupDetails.length > 0) {
                 const total = data.setupDetails.length;
                 const completed = data.setupDetails.filter(t => t.completed).length;
                 const percent = Math.round((completed / total) * 100);
-                infoText += `   [진행률: %]`;
+                infoText += `   [진행률: ${percent}%]`;
             }
         }
         if (keyword) {
             const searchText = searchInput ? searchInput.value.trim() : '';
-            if (infoText) infoText += ` (검색: )`;
-            else infoText = `검색: ""`;
+            if (infoText) infoText += ` (검색: ${searchText})`;
+            else infoText = `검색: "${searchText}"`;
         }
         targetInfoEl.textContent = infoText;
     }
@@ -193,7 +193,7 @@ function renderGanttChart() {
     Object.keys(mainData).forEach(site => {
         if (mainData[site]) {
             mainData[site].forEach(equip => {
-                const data = setupData[`::`];
+                const data = setupData[`${site}::${equip}`];
 
                 if (data && data.setupDetails) {
                     data.setupDetails.forEach(task => {
@@ -276,7 +276,7 @@ function renderGanttChart() {
 
     if (wrapper) wrapper.style.display = 'flex';
     if (emptyMsg) emptyMsg.style.display = 'none';
-    if (sidebar) sidebar.style.width = `px`;
+    if (sidebar) sidebar.style.width = `${ganttSidebarWidth}px`;
 
     allTasks.sort((a, b) => new Date(a.planStart || a.start) - new Date(b.planStart || b.start));
 
@@ -414,7 +414,7 @@ function renderGanttChart() {
                 if (pct === 0) color = '#8b949e';
                 else if (pct === 100) color = '#3fb950';
 
-                progressSpan.textContent = `%`;
+                progressSpan.textContent = `${pct}%`;
                 progressSpan.style.color = color;
             } else {
                 progressSpan.remove();
@@ -434,7 +434,7 @@ function renderGanttChart() {
         });
     }
 
-    if (timeline) timeline.style.width = `px`;
+    if (timeline) timeline.style.width = `${totalWidth}px`;
 
     let monthHtml = '';
     let currentYm = '';
@@ -466,7 +466,7 @@ function renderGanttChart() {
             cellClass += ' gantt-day-today-bg';
         }
 
-        dayHtml += `<div class="" style="width: px;" title="${dObj.str} ${dObj.holiday || ''}"></div>`;
+        dayHtml += `<div class="${cellClass}" style="width: ${ganttDayWidth}px;" title="${dObj.str} ${dObj.holiday || ''}">${content}</div>`;
     });
     if (headerWeeks) headerWeeks.innerHTML = dayHtml;
 
@@ -478,14 +478,14 @@ function renderGanttChart() {
         const left = i * ganttDayWidth;
 
         if (dObj.holiday) {
-            bgHtml += `<div class="gantt-grid-bg-holiday" style="left: px; width: px;" title="${dObj.holiday}"></div>`;
+            bgHtml += `<div class="gantt-grid-bg-holiday" style="left: ${left}px; width: ${ganttDayWidth}px;" title="${dObj.holiday}"></div>`;
         }
         
         if (dObj.str === todayStr) {
-            bgHtml += `<div class="gantt-grid-bg-today" style="left: px; width: px;"></div>`;
+            bgHtml += `<div class="gantt-grid-bg-today" style="left: ${left}px; width: ${ganttDayWidth}px;"></div>`;
         }
 
-        linesHtml += `<div class="gantt-grid-line-std" style="left: px;"></div>`;
+        linesHtml += `<div class="gantt-grid-line-std" style="left: ${left}px;"></div>`;
 
         if (dObj.date.getDay() === 5) {
             const right = (i + 1) * ganttDayWidth;
@@ -520,7 +520,7 @@ function renderGanttChart() {
                 if (segStart !== -1) {
                     const l = (segStart - startIndex) * ganttDayWidth;
                     const w = (i - segStart) * ganttDayWidth;
-                    html += `<div class="gantt-bar-segment" style="left: px; width: px;"></div>`;
+                    html += `<div class="gantt-bar-segment" style="left: ${l}px; width: ${w}px;"></div>`;
                     segStart = -1;
                 }
             }
@@ -528,7 +528,7 @@ function renderGanttChart() {
         if (segStart !== -1) {
             const l = (segStart - startIndex) * ganttDayWidth;
             const w = (endIndex - segStart + 1) * ganttDayWidth;
-            html += `<div class="gantt-bar-segment" style="left: px; width: px;"></div>`;
+            html += `<div class="gantt-bar-segment" style="left: ${l}px; width: ${w}px;"></div>`;
         }
         return html;
     };
@@ -569,8 +569,8 @@ function renderGanttChart() {
 
         bodyHtml += `
             <div class="gantt-row">
-                <div class="gantt-bar plan" style="left: px; width: px;" title="계획: ${t.planStart} ~ ${t.planEnd}" data-id="${t.id}" data-type="plan" data-site="${t.site}" data-equip="${t.equip}"></div>
-                ${t.execStart ? `<div class="gantt-bar ${t.statusClass}" style="left: px; width: px;" title="실행: ${t.execStart} ~ ${t.execEnd}" data-id="${t.id}" data-type="exec" data-site="${t.site}" data-equip="${t.equip}" data-completed="${t.completed}"></div>` : ''}
+                <div class="gantt-bar plan" style="left: ${pLeft}px; width: ${pWidth}px;" title="계획: ${t.planStart} ~ ${t.planEnd}" data-id="${t.id}" data-type="plan" data-site="${t.site}" data-equip="${t.equip}">${pSegments}</div>
+                ${t.execStart ? `<div class="gantt-bar ${t.statusClass}" style="left: ${eLeft}px; width: ${eWidth}px;" title="실행: ${t.execStart} ~ ${t.execEnd}" data-id="${t.id}" data-type="exec" data-site="${t.site}" data-equip="${t.equip}" data-completed="${t.completed}">${eSegments}${resizeHandles}</div>` : ''}
             </div>`;
     });
 
@@ -582,7 +582,7 @@ function renderGanttChart() {
 function deleteSetupTask(site, equip, id) {
     if (!confirm('이 일정을 삭제하시겠습니까?')) return;
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `::`;
+    const equipKey = `${site}::${equip}`;
     let data = setupData[equipKey] || {};
     if (data.setupDetails) {
         data.setupDetails = data.setupDetails.filter(t => t.id !== id);
@@ -664,7 +664,7 @@ document.addEventListener('mousemove', (e) => {
     } else if (dragMode === 'resize-left') {
         let newWidth = dragBarInitialWidth - deltaX;
         if (newWidth < ganttDayWidth) newWidth = ganttDayWidth;
-        dragBarEl.style.width = `px`;
+        dragBarEl.style.width = `${newWidth}px`;
         dragBarEl.style.left = `${dragBarInitialLeft + (dragBarInitialWidth - newWidth)}px`;
     }
 });
@@ -675,16 +675,16 @@ document.addEventListener('mouseup', (e) => {
         if (dragMode !== 'locked') dragBarEl.style.cursor = 'grab';
 
         if (dragBarEl.dataset.type === 'exec' && isHoveringHoliday) {
-            dragBarEl.style.left = `px`;
-            dragBarEl.style.width = `px`;
+            dragBarEl.style.left = `${dragBarInitialLeft}px`;
+            dragBarEl.style.width = `${dragBarInitialWidth}px`;
             isDraggingBar = false;
             dragBarEl = null;
             dragMode = null;
             return;
         } else if (!hasMoved && dragBarEl.dataset.type === 'exec') {
             openExecCompletionModal(dragBarEl.dataset.site, dragBarEl.dataset.equip, dragBarEl.dataset.id);
-            if (dragMode === 'move') dragBarEl.style.left = `px`;
-            else { dragBarEl.style.width = `px`; dragBarEl.style.left = `px`; }
+            if (dragMode === 'move') dragBarEl.style.left = `${dragBarInitialLeft}px`;
+            else { dragBarEl.style.width = `${dragBarInitialWidth}px`; dragBarEl.style.left = `${dragBarInitialLeft}px`; }
         } else {
             const currentLeft = parseFloat(dragBarEl.style.left);
             const currentWidth = parseFloat(dragBarEl.style.width);
@@ -721,7 +721,7 @@ document.addEventListener('mouseup', (e) => {
 
 function updateTaskDate(site, equip, id, type, change, mode = 'move') {
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `::`;
+    const equipKey = `${site}::${equip}`;
     let data = setupData[equipKey] || {};
     const task = data.setupDetails ? data.setupDetails.find(t => t.id == id) : null;
     if (task) {
@@ -769,7 +769,7 @@ function updateTaskDate(site, equip, id, type, change, mode = 'move') {
    ========================================================================== */
 function openDateEditModal(site, equip, id, type) {
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const data = setupData[`::`] || {};
+    const data = setupData[`${site}::${equip}`] || {};
     const task = data.setupDetails ? data.setupDetails.find(t => t.id == id) : null;
     if (!task) return;
 
@@ -821,7 +821,7 @@ function openSetupExecStartModal(site, equip, id) {
 
     if (site && equip) {
         const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-        const key = `::`;
+        const key = `${site}::${equip}`;
         const data = setupData[key] || {};
         const details = data.setupDetails || [];
         const idx = details.findIndex(t => t.id == id);
@@ -876,7 +876,7 @@ function openExecCompletionModal(site, equip, id) {
     document.getElementById('exec-complete-id').value = id;
 
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const data = setupData[`::`] || {};
+    const data = setupData[`${site}::${equip}`] || {};
     const task = data.setupDetails ? data.setupDetails.find(t => t.id == id) : null;
 
     if (task) {
@@ -890,7 +890,7 @@ function openExecCompletionModal(site, equip, id) {
             const y = d.getFullYear();
             const m = String(d.getMonth() + 1).padStart(2, '0');
             const day = String(d.getDate()).padStart(2, '0');
-            return `--`;
+            return `${y}-${m}-${day}`;
         };
 
         let endDate = task.date;
@@ -914,7 +914,7 @@ function openExecCompletionModal(site, equip, id) {
             const py = pEnd.getFullYear();
             const pm = String(pEnd.getMonth() + 1).padStart(2, '0');
             const pd = String(pEnd.getDate()).padStart(2, '0');
-            planEndDateStr = `--`;
+            planEndDateStr = `${py}-${pm}-${pd}`;
         }
         
         let planEndInput = document.getElementById('exec-plan-end-date');
@@ -1013,7 +1013,7 @@ function saveExecCompletion() {
     }
 
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `::`;
+    const equipKey = `${site}::${equip}`;
     let data = setupData[equipKey] || {};
     
     if (data.setupDetails) {
