@@ -408,6 +408,13 @@
                     <label class="form-label">장비</label>
                     <select id="register-equip-select" class="modal-select" disabled></select>
                 </div>
+                <div class="form-row">
+                    <label class="form-label">구분</label>
+                    <select id="register-type-select" class="modal-select">
+                        <option value="PM">PM</option>
+                        <option value="BM">BM</option>
+                    </select>
+                </div>
                 <div id="register-item-list"></div>
                 <div class="modal-btn-group-right">
                     <button class="btn-blue" id="btn-confirm-register-schedule">등록</button>
@@ -602,6 +609,7 @@
 
     <script src="{{ url_for('static', filename='Setting DAO/common.js') }}"></script>
     <script src="{{ url_for('static', filename='Setting DAO/gantt.js') }}"></script>
+    <script src="{{ url_for('static', filename='Setting DAO/calendar.js') }}"></script>
     <script src="{{ url_for('static', filename='Setting DAO/index.js') }}"></script>
 </body>
 

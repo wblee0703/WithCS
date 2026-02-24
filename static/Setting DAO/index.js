@@ -1610,14 +1610,14 @@ function updateRegisterItemList(site, equip) {
     const data = JSON.parse(localStorage.getItem(key)) || {};
     const maintItems = data.maint || [];
     
-    const pmItems = maintItems.filter(item => item.type === 'PM');
+    const filteredItems = maintItems.filter(item => item.type === selectedType);
 
-    if (pmItems.length === 0) {
+    if (filteredItems.length === 0) {
         itemList.innerHTML = '<div style="padding:10px; color:#8b949e; text-align:center;">등록된 PM 항목이 없습니다.</div>';
         return;
     }
 
-    pmItems.forEach(item => {
+    filteredItems.forEach(item => {
         const div = document.createElement('div');
         div.className = 'register-item-row';
         div.style.display = 'flex';
@@ -1641,7 +1641,6 @@ function updateRegisterItemList(site, equip) {
             statusText = ` <span style="color:#e3b341; font-size:0.85em;">(예정: ${item.scheduledDate})</span>`;
         }
         
-        label.innerHTML = `<span class="badge pm">PM</span> ${escapeHtml(item.content)}${statusText}`;
         label.innerHTML = `<span class="badge ${selectedType.toLowerCase()}">${selectedType}</span> ${escapeHtml(item.content)}${statusText}`;
 
         div.appendChild(checkbox);
