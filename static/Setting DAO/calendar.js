@@ -145,7 +145,7 @@ function renderMonthGrid(year, month, titleId, gridId) {
                     );
 
                     const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
-                    const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip;
+                    const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
 
                     return matchKeyword && matchSite && matchEquip;
                 });
@@ -298,7 +298,7 @@ function openCalendarPopup(dateStr, events) {
                             dayEvents = dayEvents.filter(event => {
                                 const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)));
                                 const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
-                                const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip;
+                                const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
                                 return matchKeyword && matchSite && matchEquip;
                             });
                         }
@@ -446,7 +446,25 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false) {
             if (isDelete) {
                 delete item.scheduledDate;
             } else {
-                item.scheduledDate = dateStr;
+                // [추가] 같은 날짜, 같은 타입의 기존 일정이 있는지 확인하여 병합
+                const existingItem = data.maint.find(i => 
+                    i.id !== id && 
+                    i.scheduledDate === dateStr && 
+                    i.type === item.type
+                );
+
+                if (existingItem) {
+                    // 내용 병합 (중복 제거)
+                    const existingContent = existingItem.content ? existingItem.content.split(',').map(s => s.trim()) : [];
+                    const newContent = item.content ? item.content.split(',').map(s => s.trim()) : [];
+                    const combined = [...new Set([...existingContent, ...newContent])];
+                    existingItem.content = combined.join(', ');
+                    
+                    // 현재 항목은 병합되었으므로 목록에서 제거
+                    data.maint = data.maint.filter(i => i.id !== id);
+                } else {
+                    item.scheduledDate = dateStr;
+                }
             }
             localStorage.setItem(key, JSON.stringify(data));
             
@@ -517,7 +535,10 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     document.getElementById('detail-equip-info').textContent = `${site} > ${parts[0]}`;
     document.getElementById('detail-serial-no').textContent = parts.length > 1 ? parts[1] : '-';
     document.getElementById('detail-type').textContent = item.type || 'PM';
-    document.getElementById('detail-content').textContent = item.content || '';
+    
+    const contentEl = document.getElementById('detail-content');
+    contentEl.innerText = (item.content || '').split(',').map(s => `- ${s.trim()}`).join('\n');
+    contentEl.style.whiteSpace = 'pre-wrap';
     
     const workerInput = document.getElementById('detail-worker');
     const memoInput = document.getElementById('detail-work-memo');
@@ -530,7 +551,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
     // UI 초기화 (수정 모드 해제)
     if (contentDiv) contentDiv.style.display = 'block';
-    if (contentInput) contentInput.style.display = 'none';
+    if (contentInput) contentInput.style.display = 'none'; 
     if (editContentBtn) editContentBtn.textContent = '수정';
 
     // [추가] 드롭다운 래퍼가 있다면 제거 (초기화)
@@ -660,13 +681,11 @@ function toggleDetailContentEdit() {
                 function updateTriggerText() {
                     const selected = list.querySelectorAll('.log-select-item.selected');
                     const values = Array.from(selected).map(el => el.dataset.value);
-                    if (values.length > 1) {
-                        trigger.textContent = `${values[0]} 외 ${values.length - 1}개`;
-                    } else if (values.length === 1) {
-                        trigger.textContent = values[0];
-                    } else {
-                        trigger.textContent = '항목 선택';
-                    }
+                    
+                    trigger.innerText = values.length > 0 ? values.map(v => `- ${v}`).join('\n') : '항목 선택';
+                    trigger.style.height = 'auto';
+                    trigger.style.whiteSpace = 'pre-wrap';
+                    trigger.style.textAlign = 'left';
                     trigger.title = values.join('\n');
                 }
                 
@@ -709,7 +728,7 @@ function toggleDetailContentEdit() {
                     localStorage.setItem(key, JSON.stringify(data));
                     
                     // UI 업데이트
-                    contentDiv.textContent = newContent;
+                    contentDiv.innerText = newContent.split(',').map(s => `- ${s.trim()}`).join('\n');
                     contentDiv.style.display = 'block';
                     contentInput.style.display = 'none';
                     editBtn.textContent = '수정';
@@ -752,7 +771,7 @@ function updateScheduleDateFromDetail() {
                 dayEvents = dayEvents.filter(event => {
                     const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)));
                     const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
-                    const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip;
+                    const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
                     return matchKeyword && matchSite && matchEquip;
                 });
             }
@@ -822,7 +841,7 @@ function completeScheduleWork() {
                 dayEvents = dayEvents.filter(event => {
                     const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)));
                     const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
-                    const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip;
+                    const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
                     return matchKeyword && matchSite && matchEquip;
                 });
             }

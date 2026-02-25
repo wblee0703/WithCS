@@ -317,11 +317,14 @@ function renderSiteStatus(siteStats, totalEquip, allData) {
         li.onclick = () => {
             if (selectedSiteFilter === site.name) {
                 selectedSiteFilter = null; // 이미 선택된 경우 해제
+                currentSearchFilters.site = '';
             } else {
                 selectedSiteFilter = site.name; // 선택
+                currentSearchFilters.site = site.name;
             }
             selectedEquipFilter = null; // 사이트 변경 시 장비 필터 초기화
             selectedSerialFilter = null;
+            currentSearchFilters.equip = '';
             saveMaintFilters(); // [추가] 상태 저장
             // UI 갱신 (리스트 다시 그리기)
             renderSiteStatus(siteStats, totalEquip, allData);
@@ -329,6 +332,7 @@ function renderSiteStatus(siteStats, totalEquip, allData) {
             updateEquipChartBasedOnFilter(allData);
             renderEquipDetailList(allData);
             renderUpcomingList(allData); // 점검 임박 리스트 갱신
+            renderCalendar();
         };
         listEl.appendChild(li);
     });
@@ -441,14 +445,17 @@ function renderEquipChart(equipStats, totalEquip, allData) {
             li.onclick = () => {
                 if (selectedEquipFilter === equip.name) {
                     selectedEquipFilter = null;
+                    currentSearchFilters.equip = '';
                 } else {
                     selectedEquipFilter = equip.name;
+                    currentSearchFilters.equip = equip.name;
                 }
                 selectedSerialFilter = null; // 장비 종류 변경 시 개별 장비 필터 초기화
                 saveMaintFilters(); // [추가] 상태 저장
                 renderEquipChart(equipStats, totalEquip, allData);
                 renderEquipDetailList(allData);
                 renderUpcomingList(allData);
+                renderCalendar();
             };
             listEl.appendChild(li);
         }
@@ -567,8 +574,14 @@ function renderUpcomingList(data) {
         });
     }
 
-    // 남은 일수 오름차순 정렬 (지연된 항목이 가장 위로)
-    upcomingItems.sort((a, b) => a.diffDays - b.diffDays);
+    // [수정] 정렬: 예정일 없는 항목 우선, 그 다음 남은 일수 오름차순
+    upcomingItems.sort((a, b) => {
+        const aHasDate = !!a.item.scheduledDate;
+        const bHasDate = !!b.item.scheduledDate;
+        
+        if (aHasDate !== bHasDate) return aHasDate ? 1 : -1;
+        return a.diffDays - b.diffDays;
+    });
 
     const template = document.getElementById('upcoming-item-template');
 
@@ -581,7 +594,13 @@ function renderUpcomingList(data) {
         const clone = template.content.cloneNode(true);
         const div = clone.querySelector('.upcoming-item');
         div.onclick = () => openScheduleModal(site, equip, item.id);
-        div.title = "클릭하여 작업 예정일 설정";
+        
+        if (item.scheduledDate) {
+            div.style.borderLeft = '4px solid #3fb950';
+            div.title = `작업 예정일: ${item.scheduledDate}`;
+        } else {
+            div.title = "클릭하여 작업 예정일 설정";
+        }
 
         // D-Day 뱃지 색상 및 텍스트
         let badgeClass = 'safe';
@@ -599,7 +618,11 @@ function renderUpcomingList(data) {
         const siteInfo = clone.querySelector('.upcoming-info-site');
         siteInfo.innerHTML = `${escapeHtml(site)} > ${escapeHtml(name)} ${serial ? `<span class="upcoming-info-sn">(${escapeHtml(serial)})</span>` : ''}`;
 
-        clone.querySelector('.upcoming-info-content').textContent = item.content; // textContent는 안전함
+        if (item.scheduledDate) {
+            clone.querySelector('.upcoming-info-content').innerHTML = `${escapeHtml(item.content)} <span style="color:#3fb950; font-size:0.9em;">(예정: ${item.scheduledDate})</span>`;
+        } else {
+            clone.querySelector('.upcoming-info-content').textContent = item.content;
+        }
 
         const badge = clone.querySelector('.d-day-badge');
         badge.className = `d-day-badge ${badgeClass}`;
