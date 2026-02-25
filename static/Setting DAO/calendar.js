@@ -631,6 +631,25 @@ function toggleDetailContentEdit() {
                 }
 
                 dropdown.appendChild(list);
+
+                // [추가] 드롭다운 하단 추가 버튼
+                const footer = document.createElement('div');
+                footer.className = 'log-select-footer';
+                const addBtn = document.createElement('button');
+                addBtn.className = 'btn-blue-sm';
+                addBtn.style.width = '100%';
+                addBtn.textContent = '직접 입력 (추가)';
+                addBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    dropdownWrapper.remove();
+                    contentInput.value = '';
+                    contentInput.placeholder = '새 항목 입력';
+                    contentInput.style.display = 'block';
+                    contentInput.focus();
+                };
+                footer.appendChild(addBtn);
+                dropdown.appendChild(footer);
+
                 dropdownWrapper.appendChild(trigger);
                 dropdownWrapper.appendChild(dropdown);
 
@@ -754,6 +773,7 @@ function completeScheduleWork() {
     const memo = document.getElementById('detail-work-memo').value.trim();
     
     if (!worker) return alert('작업자를 입력해주세요.');
+    if (!memo) return alert('점검 결과 / 메모를 입력해주세요.');
 
     const { site, equip, id } = currentDetailTarget;
     const key = `details_${site}_${equip}`;
@@ -888,19 +908,30 @@ function updateRegisterItemList(site, equip) {
 
     if (!site || !equip) return;
 
+    // [추가] 항목 줄 생성 (form-row)
+    const row = document.createElement('div');
+    row.className = 'form-row';
+    
+    const label = document.createElement('label');
+    label.className = 'form-label';
+    label.textContent = '항목';
+    row.appendChild(label);
+
+    const container = document.createElement('div');
+    container.style.flex = '1';
+    container.style.position = 'relative';
+    row.appendChild(container);
+    
+    itemList.appendChild(row);
+
     const key = `details_${site}_${equip}`;
     const data = JSON.parse(localStorage.getItem(key)) || {};
     const maintItems = data.maint || [];
     
-    // [수정] 장비점검, 프로그램변경은 텍스트 입력창 표시
-    if (selectedType === '장비점검' || selectedType === '프로그램변경') {
-        const inputDiv = document.createElement('div');
-        inputDiv.style.padding = '10px';
-        
+    const createManualInput = (initialValue = '', placeholder = '') => {
         const input = document.createElement('input');
         input.type = 'text';
         input.id = 'register-manual-input';
-        input.className = 'modal-input'; // 스타일 클래스 필요 시 추가
         input.style.width = '100%';
         input.style.padding = '8px';
         input.style.background = '#0d1117';
@@ -908,41 +939,34 @@ function updateRegisterItemList(site, equip) {
         input.style.color = '#e6edf3';
         input.style.borderRadius = '4px';
         
-        if (selectedType === '프로그램변경') {
-            input.value = 'Ver. ';
-        } else {
-            input.placeholder = '점검 내용을 입력하세요';
-        }
+        if (initialValue) input.value = initialValue;
+        if (placeholder) input.placeholder = placeholder;
         
-        inputDiv.appendChild(input);
-        itemList.appendChild(inputDiv);
+        container.innerHTML = '';
+        container.appendChild(input);
+        setTimeout(() => input.focus(), 0);
+    };
+
+    // [수정] 장비점검, 프로그램변경은 텍스트 입력창 표시
+    if (selectedType === '장비점검' || selectedType === '프로그램변경') {
+        if (selectedType === '프로그램변경') {
+            createManualInput('Ver. ');
+        } else {
+            createManualInput('', '점검 내용을 입력하세요');
+        }
         return;
     }
 
     // [수정] PM/BM인 경우 드롭다운 바 생성
     const filteredItems = maintItems.filter(item => item.type === selectedType);
 
-    if (filteredItems.length === 0) {
-        itemList.innerHTML = '<div style="padding:10px; color:#8b949e; text-align:center;">등록된 항목이 없습니다.</div>';
-        return;
-    }
-
     const wrapper = document.createElement('div');
     wrapper.className = 'log-select-wrapper';
+    wrapper.style.width = '100%';
     
     const trigger = document.createElement('div');
     trigger.className = 'log-select-trigger';
     trigger.textContent = '항목 선택';
-    trigger.onclick = (e) => {
-        e.stopPropagation();
-        dropdown.classList.toggle('show');
-        if (dropdown.classList.contains('show')) {
-            searchInput.value = '';
-            const items = list.querySelectorAll('.log-select-item');
-            items.forEach(item => item.style.display = 'block');
-            setTimeout(() => searchInput.focus(), 0);
-        }
-    };
 
     const dropdown = document.createElement('div');
     dropdown.className = 'log-select-dropdown';
@@ -978,32 +1002,63 @@ function updateRegisterItemList(site, equip) {
     const list = document.createElement('div');
     list.className = 'log-select-list';
 
-    filteredItems.forEach(item => {
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'log-select-item';
-        itemDiv.dataset.id = item.id;
-        itemDiv.textContent = item.content;
-        if (item.scheduledDate) {
-            itemDiv.innerHTML += ` <span style="color:#e3b341; font-size:0.85em;">(예정: ${item.scheduledDate})</span>`;
-        }
-        
-        itemDiv.onclick = (e) => {
-            e.stopPropagation();
-            itemDiv.classList.toggle('selected');
+    if (filteredItems.length === 0) {
+        list.innerHTML = '<div style="padding:10px; color:#8b949e; text-align:center;">등록된 항목이 없습니다.</div>';
+    } else {
+        filteredItems.forEach(item => {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'log-select-item';
+            itemDiv.dataset.id = item.id;
+            itemDiv.textContent = item.content;
+            if (item.scheduledDate) {
+                itemDiv.innerHTML += ` <span style="color:#e3b341; font-size:0.85em;">(예정: ${item.scheduledDate})</span>`;
+            }
             
-            // 트리거 텍스트 업데이트
-            const selected = list.querySelectorAll('.log-select-item.selected');
-            if (selected.length === 0) trigger.textContent = '항목 선택';
-            else if (selected.length === 1) trigger.textContent = selected[0].textContent.replace(/\(예정:.*\)/, '').trim();
-            else trigger.textContent = `${selected[0].textContent.replace(/\(예정:.*\)/, '').trim()} 외 ${selected.length - 1}개`;
-        };
-        list.appendChild(itemDiv);
-    });
+            itemDiv.onclick = (e) => {
+                e.stopPropagation();
+                itemDiv.classList.toggle('selected');
+                
+                // 트리거 텍스트 업데이트
+                const selected = list.querySelectorAll('.log-select-item.selected');
+                if (selected.length === 0) trigger.textContent = '항목 선택';
+                else if (selected.length === 1) trigger.textContent = selected[0].textContent.replace(/\(예정:.*\)/, '').trim();
+                else trigger.textContent = `${selected[0].textContent.replace(/\(예정:.*\)/, '').trim()} 외 ${selected.length - 1}개`;
+            };
+            list.appendChild(itemDiv);
+        });
+    }
 
     dropdown.appendChild(list);
+
+    // [추가] 드롭다운 하단 추가 버튼
+    const footer = document.createElement('div');
+    footer.className = 'log-select-footer';
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn-blue-sm';
+    addBtn.style.width = '100%';
+    addBtn.textContent = '직접 입력 (추가)';
+    addBtn.onclick = (e) => {
+        e.stopPropagation();
+        createManualInput('', '새 항목 입력');
+    };
+    footer.appendChild(addBtn);
+    dropdown.appendChild(footer);
+
     wrapper.appendChild(trigger);
     wrapper.appendChild(dropdown);
-    itemList.appendChild(wrapper);
+    
+    trigger.onclick = (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+        if (dropdown.classList.contains('show')) {
+            searchInput.value = '';
+            const items = list.querySelectorAll('.log-select-item');
+            items.forEach(item => item.style.display = 'block');
+            setTimeout(() => searchInput.focus(), 0);
+        }
+    };
+
+    container.appendChild(wrapper);
 }
 
 function confirmRegisterSchedule() {
@@ -1016,19 +1071,11 @@ function confirmRegisterSchedule() {
     
     if (!dateStr || !site || !equip) return alert('사업장과 장비를 선택해주세요.');
 
-    if (selectedType === 'PM' || selectedType === 'BM') {
-        const selectedItems = itemList.querySelectorAll('.log-select-item.selected');
-        if (selectedItems.length === 0) return alert('등록할 항목을 선택해주세요.');
-
-        const ids = Array.from(selectedItems).map(el => parseInt(el.dataset.id));
-        
-        ids.forEach(id => {
-            setScheduleDate(site, equip, id, dateStr);
-        });
-    } else {
-        // 장비점검, 프로그램변경: 새 항목 생성 후 일정 등록
-        const input = document.getElementById('register-manual-input');
-        const content = input ? input.value.trim() : '';
+    // [수정] 수동 입력 확인 (PM/BM 직접 입력 포함)
+    const manualInput = document.getElementById('register-manual-input');
+    
+    if (manualInput) {
+        const content = manualInput.value.trim();
         
         if (!content) return alert('내용을 입력해주세요.');
         
@@ -1051,6 +1098,16 @@ function confirmRegisterSchedule() {
         if (typeof addSystemLog === 'function') {
             addSystemLog('ADD_SCHEDULE_MANUAL', equip, `Type: ${selectedType}, Date: ${dateStr}, Content: ${content}`);
         }
+    } else if (selectedType === 'PM' || selectedType === 'BM') {
+        // 드롭다운 선택
+        const selectedItems = itemList.querySelectorAll('.log-select-item.selected');
+        if (selectedItems.length === 0) return alert('등록할 항목을 선택해주세요.');
+
+        const ids = Array.from(selectedItems).map(el => parseInt(el.dataset.id));
+        
+        ids.forEach(id => {
+            setScheduleDate(site, equip, id, dateStr);
+        });
     }
 
     alert('일정이 등록되었습니다.');
