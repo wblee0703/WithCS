@@ -547,7 +547,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         saveMemoBtn.style.display = 'none';
         if (editContentBtn) editContentBtn.style.display = 'none';
     } else {
-        workerInput.value = sessionStorage.getItem('userId') || '';
+        workerInput.value = localStorage.getItem('lastWorkerName') || sessionStorage.getItem('userId') || '';
         workerInput.disabled = false;
         memoInput.value = '';
         memoInput.disabled = false;
@@ -775,6 +775,8 @@ function completeScheduleWork() {
     if (!worker) return alert('작업자를 입력해주세요.');
     if (!memo) return alert('점검 결과 / 메모를 입력해주세요.');
 
+    localStorage.setItem('lastWorkerName', worker);
+
     const { site, equip, id } = currentDetailTarget;
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
@@ -806,6 +808,32 @@ function completeScheduleWork() {
     document.getElementById('event-detail-modal').style.display = 'none';
     renderCalendar();
     if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+
+    // [추가] 캘린더 팝업이 열려있다면 내용 갱신 (완료 상태 반영)
+    const popup = document.getElementById('calendar-popup');
+    if (popup && popup.style.display !== 'none') {
+        const dateTitle = document.getElementById('popup-date-title');
+        if (dateTitle) {
+            const dateStr = dateTitle.textContent;
+            const allEvents = getPmScheduleForCalendar();
+            let dayEvents = allEvents[dateStr] || [];
+            
+            // 필터 재적용
+            const searchInput = document.getElementById('calendar-search');
+            const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+            if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
+                dayEvents = dayEvents.filter(event => {
+                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)));
+                    const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
+                    const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip;
+                    return matchKeyword && matchSite && matchEquip;
+                });
+            }
+            
+            openCalendarPopup(dateStr, dayEvents);
+        }
+    }
 }
 
 // 작업 예정일 등록 모달
