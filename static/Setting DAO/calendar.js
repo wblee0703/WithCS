@@ -446,25 +446,8 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false) {
             if (isDelete) {
                 delete item.scheduledDate;
             } else {
-                // [추가] 같은 날짜, 같은 타입의 기존 일정이 있는지 확인하여 병합
-                const existingItem = data.maint.find(i => 
-                    i.id !== id && 
-                    i.scheduledDate === dateStr && 
-                    i.type === item.type
-                );
-
-                if (existingItem) {
-                    // 내용 병합 (중복 제거)
-                    const existingContent = existingItem.content ? existingItem.content.split(',').map(s => s.trim()) : [];
-                    const newContent = item.content ? item.content.split(',').map(s => s.trim()) : [];
-                    const combined = [...new Set([...existingContent, ...newContent])];
-                    existingItem.content = combined.join(', ');
-                    
-                    // 현재 항목은 병합되었으므로 목록에서 제거
-                    data.maint = data.maint.filter(i => i.id !== id);
-                } else {
-                    item.scheduledDate = dateStr;
-                }
+                // [수정] 병합 로직 제거: 단순히 예정일만 설정
+                item.scheduledDate = dateStr;
             }
             localStorage.setItem(key, JSON.stringify(data));
             
@@ -535,9 +518,18 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     document.getElementById('detail-equip-info').textContent = `${site} > ${parts[0]}`;
     document.getElementById('detail-serial-no').textContent = parts.length > 1 ? parts[1] : '-';
     document.getElementById('detail-type').textContent = item.type || 'PM';
-    
+
+    // [수정] 같은 날짜에 예정된 항목들을 모두 표시
+    let displayContent = item.content || '';
+    if (!isCompleted && item.scheduledDate) {
+        const sameDayItems = data.maint.filter(i => i.scheduledDate === item.scheduledDate && i.type === item.type);
+        if (sameDayItems.length > 0) {
+            displayContent = sameDayItems.map(i => i.content).join(', ');
+        }
+    }
+
     const contentEl = document.getElementById('detail-content');
-    contentEl.innerText = (item.content || '').split(',').map(s => `- ${s.trim()}`).join('\n');
+    contentEl.innerText = displayContent.split(',').map(s => `- ${s.trim()}`).join('\n');
     contentEl.style.whiteSpace = 'pre-wrap';
     
     const workerInput = document.getElementById('detail-worker');
@@ -603,7 +595,7 @@ function toggleDetailContentEdit() {
         if (!item) return;
 
         const type = item.type || 'PM';
-        const currentContent = contentDiv.textContent.trim();
+        const currentContent = contentDiv.innerText.trim();
 
         if (type === 'PM' || type === 'BM') {
             // PM/BM일 경우 드롭다운 생성
@@ -625,7 +617,7 @@ function toggleDetailContentEdit() {
                 const list = document.createElement('div');
                 list.className = 'log-select-list';
 
-                const selectedValues = currentContent ? currentContent.split(',').map(s => s.trim()) : [];
+                const selectedValues = currentContent ? currentContent.split('\n').map(s => s.replace(/^- /, '').trim()) : [];
 
                 if (data.maint) {
                     const filteredItems = data.maint.filter(m => m.type === type);
@@ -702,19 +694,19 @@ function toggleDetailContentEdit() {
         editBtn.textContent = '저장';
     } else {
         // 저장 처리
-        let newContent = '';
+        let isDropdownMode = false;
+        let dropdownValues = [];
 
         if (dropdownWrapper) {
             const list = dropdownWrapper.querySelector('.log-select-list');
             const selected = list.querySelectorAll('.log-select-item.selected');
-            const values = Array.from(selected).map(el => el.dataset.value);
-            newContent = values.join(', ');
+            dropdownValues = Array.from(selected).map(el => el.dataset.value);
+            isDropdownMode = true;
             dropdownWrapper.remove();
-        } else {
-            newContent = contentInput.value.trim();
         }
 
-        if (!newContent) return alert('내용을 입력해주세요.');
+        const newContent = isDropdownMode ? dropdownValues.join(', ') : contentInput.value.trim();
+        if (!newContent && !isDropdownMode) return alert('내용을 입력해주세요.');
         
         if (currentDetailTarget) {
             const { site, equip, id } = currentDetailTarget;
@@ -724,11 +716,30 @@ function toggleDetailContentEdit() {
             if (data.maint) {
                 const item = data.maint.find(i => i.id === id);
                 if (item) {
-                    item.content = newContent;
+                    if (isDropdownMode && item.scheduledDate) {
+                        // [수정] 병합 방지: 선택된 항목들의 예정일을 업데이트 (항목 내용은 변경 안 함)
+                        const targetDate = item.scheduledDate;
+                        data.maint.forEach(m => {
+                            if (m.type === item.type) {
+                                if (dropdownValues.includes(m.content)) {
+                                    m.scheduledDate = targetDate;
+                                } else if (m.scheduledDate === targetDate) {
+                                    // 현재 날짜에 있었지만 선택 해제된 항목은 예정일 제거
+                                    delete m.scheduledDate;
+                                }
+                            }
+                        });
+                        // UI 업데이트용 텍스트
+                        contentDiv.innerText = dropdownValues.map(s => `- ${s.trim()}`).join('\n');
+                    } else {
+                        // 텍스트 입력 모드 (장비점검 등)는 기존대로 내용 수정
+                        item.content = newContent;
+                        contentDiv.innerText = newContent.split(',').map(s => `- ${s.trim()}`).join('\n');
+                    }
+
                     localStorage.setItem(key, JSON.stringify(data));
                     
                     // UI 업데이트
-                    contentDiv.innerText = newContent.split(',').map(s => `- ${s.trim()}`).join('\n');
                     contentDiv.style.display = 'block';
                     contentInput.style.display = 'none';
                     editBtn.textContent = '수정';
@@ -800,18 +811,22 @@ function completeScheduleWork() {
     if (!maintItem) return;
 
     if (!data.logs) data.logs = [];
+    
+    // [수정] 같은 날짜, 같은 타입의 모든 항목 완료 처리
+    const sameDayItems = data.maint.filter(i => i.scheduledDate === maintItem.scheduledDate && i.type === maintItem.type);
+    const combinedContent = sameDayItems.map(i => i.content).join(', ');
     const completeDate = maintItem.scheduledDate || new Date().toISOString().split('T')[0];
     
     data.logs.push({
         id: Date.now(),
         date: completeDate,
         type: maintItem.type || 'PM',
-        content: maintItem.content,
+        content: combinedContent,
         worker: worker,
         memo: memo
     });
 
-    delete maintItem.scheduledDate;
+    sameDayItems.forEach(i => delete i.scheduledDate);
 
     localStorage.setItem(key, JSON.stringify(data));
     
