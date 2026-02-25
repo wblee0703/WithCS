@@ -207,6 +207,9 @@
                         <div class="gantt-title-wrapper">
                             <div class="gantt-center-title">
                                 <h5 class="gantt-section-subtitle">셋업 일정</h5>
+                                <div style="text-align: right; margin-top: 10px; padding-right: 5px;">
+                                    <button class="btn-move" onclick="goToSetupPage()">장비 셋업 이동</button>
+                                </div>
                                 <div id="gantt-target-info" class="gantt-target-info"></div>
                             </div>
                             <div class="gantt-right-toolbar">
@@ -243,9 +246,6 @@
                                 </div>
                             </div>
                             <div id="gantt-empty-msg" class="empty-msg" style="display: none;">등록된 셋업 일정이 없습니다.</div>
-                        </div>
-                        <div style="text-align: right; margin-top: 10px; padding-right: 5px;">
-                            <button class="btn-move" onclick="goToSetupPage()">장비 셋업 이동</button>
                         </div>
                     </div>
 
@@ -303,22 +303,22 @@
                                 <div id="dash-upcoming-list" class="upcoming-list"></div>
                             </div>
                         </div>
-                        <div class="calendar-container no-margin-top">
-                            <div class="calendar-title-wrapper">
-                                <div class="calendar-center-title">
-                                    <h5 class="calendar-main-title">장비 점검 일정</h5>
-                                    <div style="text-align: right; margin-top: 10px; padding-right: 5px;">
-                                        <button class="btn-move" onclick="goToMaintenancePage()">운영 관리 이동</button>
-                                    </div>
-                                    <div id="calendar-target-info" class="calendar-target-info"></div>
+                        <div class="calendar-title-wrapper">
+                            <div class="calendar-center-title">
+                                <h5 class="calendar-main-title">장비 점검 일정</h5>
+                                <div style="text-align: right; margin-top: 10px; padding-right: 5px;">
+                                    <button class="btn-move" onclick="goToMaintenancePage()">운영 관리 이동</button>
                                 </div>
-                                <div class="calendar-right-toolbar">
-                                    <div class="calendar-search-wrapper">
-                                        <input type="text" id="calendar-search" placeholder="일정 검색 (장비명, 내용)">
-                                        <button id="btn-search-filter" class="btn-gray" title="검색 필터">⚙️</button>
-                                    </div>
+                                <div id="calendar-target-info" class="calendar-target-info"></div>
+                            </div>
+                            <div class="calendar-right-toolbar">
+                                <div class="calendar-search-wrapper">
+                                    <input type="text" id="calendar-search" placeholder="일정 검색 (장비명, 내용)">
+                                    <button id="btn-search-filter" class="btn-gray" title="검색 필터">⚙️</button>
                                 </div>
                             </div>
+                        </div>
+                        <div class="calendar-container no-margin-top">
                             <div class="calendar-header">
                                 <button id="prev-month">◀</button>
                                 <button id="next-month">▶</button>
