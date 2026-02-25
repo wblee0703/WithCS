@@ -206,15 +206,15 @@
                                 <div id="setup-upcoming-list" class="upcoming-list"></div>
                             </div>
                         </div>
-                        <div class="gantt-title-wrapper">
-                            <div class="gantt-center-title">
-                                <h5 class="gantt-section-subtitle">셋업 일정</h5>
+                        <div class="gantt__title-wrapper">
+                            <div class="gantt__center-title">
+                                <h5 class="gantt__subtitle">셋업 일정</h5>
                                 <div style="text-align: right; margin-top: 10px; padding-right: 5px;">
                                     <button class="btn-move" onclick="goToSetupPage()">장비 셋업 이동</button>
                                 </div>
-                                <div id="gantt-target-info" class="gantt-target-info"></div>
+                                <div id="gantt-target-info" class="gantt__target-info"></div>
                             </div>
-                            <div class="gantt-right-toolbar">
+                            <div class="gantt__right-toolbar">
                                 <div class="calendar-search-wrapper search-wrapper-flex">
                                     <button id="btn-gantt-contract" class="btn-gray btn-spacing-right"
                                         title="달력 축소 (1주)">-</button>
@@ -227,21 +227,21 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="setup-card-body gantt-chart-area" id="gantt-chart-area">
-                            <div class="gantt-wrapper" id="gantt-wrapper" style="display: none;">
-                                <div class="gantt-sidebar gantt-sidebar-initial" id="gantt-sidebar">
-                                    <div class="gantt-header-cell gantt-header-cell-fixed">
+                        <div class="setup-card-body gantt" id="gantt-chart-area">
+                            <div class="gantt__wrapper" id="gantt-wrapper" style="display: none;">
+                                <div class="gantt__sidebar gantt__sidebar--initial" id="gantt-sidebar">
+                                    <div class="gantt__header-cell gantt__header-cell--fixed">
                                         Task Name
                                     </div>
 
                                     <div id="gantt-task-list"></div>
                                 </div>
-                                <div class="gantt-resizer" id="gantt-resizer"></div>
-                                <div class="gantt-timeline-container" id="gantt-timeline-container">
-                                    <div class="gantt-timeline" id="gantt-timeline">
-                                        <div class="gantt-header-row gantt-header-row-fixed" id="gantt-header-months">
+                                <div class="gantt__resizer" id="gantt-resizer"></div>
+                                <div class="gantt__timeline-container" id="gantt-timeline-container">
+                                    <div class="gantt__timeline" id="gantt-timeline">
+                                        <div class="gantt__header-row gantt__header-row--fixed" id="gantt-header-months">
                                         </div>
-                                        <div class="gantt-header-row gantt-header-row-fixed" id="gantt-header-weeks">
+                                        <div class="gantt__header-row gantt__header-row--fixed" id="gantt-header-weeks">
                                         </div>
                                         <div id="gantt-body"></div>
                                     </div>
@@ -681,13 +681,13 @@
          4. 템플릿 (Templates)
          ========================================================================== -->
     <template id="gantt-task-template">
-        <div class="gantt-task-name" draggable="true">
-            <div class="gantt-task-label-container">
-                <span class="gantt-task-label-text"></span>
-                <span class="gantt-task-progress-text"></span>
+        <div class="gantt__task-item" draggable="true">
+            <div class="gantt__task-label-container">
+                <span class="gantt__task-label"></span>
+                <span class="gantt__task-progress"></span>
             </div>
-            <div class="gantt-task-controls">
-                <button class="btn-add-exec" title="실행 바 추가">▶</button>
+            <div class="gantt__task-controls">
+                <button class="gantt__btn-add" title="실행 바 추가">▶</button>
                 <button class="btn-del-sm">✕</button>
             </div>
         </div>

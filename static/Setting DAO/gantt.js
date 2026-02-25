@@ -80,8 +80,8 @@ function setupGanttZoom() {
 }
 
 function setupGanttResizer() {
-    const resizer = document.querySelector('.gantt-resizer');
-    const sidebar = document.querySelector('.gantt-sidebar');
+    const resizer = document.querySelector('.gantt__resizer');
+    const sidebar = document.querySelector('.gantt__sidebar');
     if (!resizer || !sidebar) return;
     resizer.addEventListener('mousedown', (e) => {
         e.preventDefault(); document.body.style.cursor = 'col-resize'; resizer.classList.add('resizing');
@@ -411,17 +411,17 @@ function renderGanttChart() {
             }
 
             const clone = template.content.cloneNode(true);
-            const taskDiv = clone.querySelector('.gantt-task-name');
+            const taskDiv = clone.querySelector('.gantt__task-item');
             taskDiv.dataset.id = t.id;
             taskDiv.dataset.site = t.site;
             taskDiv.dataset.equip = t.equip;
             taskDiv.ondblclick = () => openDateEditModal(t.site, t.equip, t.id, 'plan');
 
-            const label = clone.querySelector('.gantt-task-label-text');
+            const label = clone.querySelector('.gantt__task-label');
             label.title = `${t.site} > ${t.equip}`;
             label.textContent = t.displayName;
 
-            const btnAdd = clone.querySelector('.btn-add-exec');
+            const btnAdd = clone.querySelector('.gantt__btn-add');
             if (!t.execEnd) {
                 const equipKey = `${t.site}::${t.equip}`;
                 if (!shownButtonEquips.has(equipKey)) {
@@ -442,7 +442,7 @@ function renderGanttChart() {
                 btnAdd.remove();
             }
 
-            const progressSpan = clone.querySelector('.gantt-task-progress-text');
+            const progressSpan = clone.querySelector('.gantt__task-progress');
             if (t.execStart && t.execEnd) {
                 let pct = 0;
                 if (t.completed) {
@@ -507,11 +507,11 @@ function renderGanttChart() {
         const d = dObj.date;
         const ym = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}`;
         if (ym !== currentYm) {
-            if (currentYm !== '') monthHtml += `<div class="gantt-date-cell gantt-header-month-cell" style="width: ${span * ganttDayWidth}px;"></div>`;
+            if (currentYm !== '') monthHtml += `<div class="gantt__date-cell gantt__date-cell--month" style="width: ${span * ganttDayWidth}px;"></div>`;
             currentYm = ym; span = 1;
         } else span++;
     });
-    if (span > 0) monthHtml += `<div class="gantt-date-cell gantt-header-month-cell" style="width: ${span * ganttDayWidth}px;"></div>`;
+    if (span > 0) monthHtml += `<div class="gantt__date-cell gantt__date-cell--month" style="width: ${span * ganttDayWidth}px;"></div>`;
     if (headerMonths) headerMonths.innerHTML = monthHtml;
 
     let dayHtml = '';
@@ -519,14 +519,14 @@ function renderGanttChart() {
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     ganttValidDates.forEach((dObj, i) => {
-        let cellClass = 'gantt-date-cell gantt-header-day-cell';
+        let cellClass = 'gantt__date-cell gantt__date-cell--day';
         let content = dObj.date.getDate();
 
         if (dObj.holiday) {
-            cellClass += ' gantt-day-holiday-bg';
+            cellClass += ' gantt__date-cell--holiday';
         }
         if (dObj.str === todayStr) {
-            cellClass += ' gantt-day-today-bg';
+            cellClass += ' gantt__date-cell--today';
         }
 
         dayHtml += `<div class="${cellClass}" style="width: ${ganttDayWidth}px;" title="${dObj.str} ${dObj.holiday || ''}">${content}</div>`;
@@ -541,18 +541,18 @@ function renderGanttChart() {
         const left = i * ganttDayWidth;
 
         if (dObj.holiday) {
-            bgHtml += `<div class="gantt-grid-bg-holiday" style="left: ${left}px; width: ${ganttDayWidth}px;" title="${dObj.holiday}"></div>`;
+            bgHtml += `<div class="gantt__grid-bg gantt__grid-bg--holiday" style="left: ${left}px; width: ${ganttDayWidth}px;" title="${dObj.holiday}"></div>`;
         }
         
         if (dObj.str === todayStr) {
-            bgHtml += `<div class="gantt-grid-bg-today" style="left: ${left}px; width: ${ganttDayWidth}px;"></div>`;
+            bgHtml += `<div class="gantt__grid-bg gantt__grid-bg--today" style="left: ${left}px; width: ${ganttDayWidth}px;"></div>`;
         }
 
-        linesHtml += `<div class="gantt-grid-line-std" style="left: ${left}px;"></div>`;
+        linesHtml += `<div class="gantt__grid-line" style="left: ${left}px;"></div>`;
 
         if (dObj.date.getDay() === 5) {
             const right = (i + 1) * ganttDayWidth;
-            boldLinesHtml += `<div class="gantt-grid-line-bold" style="left: ${right - 1}px;"></div>`;
+            boldLinesHtml += `<div class="gantt__grid-line gantt__grid-line--bold" style="left: ${right - 1}px;"></div>`;
         }
     });
 
@@ -583,7 +583,7 @@ function renderGanttChart() {
                 if (segStart !== -1) {
                     const l = (segStart - startIndex) * ganttDayWidth;
                     const w = (i - segStart) * ganttDayWidth;
-                    html += `<div class="gantt-bar-segment" style="left: ${l}px; width: ${w}px;"></div>`;
+                    html += `<div class="gantt__bar-segment" style="left: ${l}px; width: ${w}px;"></div>`;
                     segStart = -1;
                 }
             }
@@ -591,7 +591,7 @@ function renderGanttChart() {
         if (segStart !== -1) {
             const l = (segStart - startIndex) * ganttDayWidth;
             const w = (endIndex - segStart + 1) * ganttDayWidth;
-            html += `<div class="gantt-bar-segment" style="left: ${l}px; width: ${w}px;"></div>`;
+            html += `<div class="gantt__bar-segment" style="left: ${l}px; width: ${w}px;"></div>`;
         }
         return html;
     };
@@ -628,12 +628,14 @@ function renderGanttChart() {
         const pSegments = createSegments(pStartIndex, pEndIndex);
         const eSegments = createSegments(eStartIndex, eEndIndex);
 
-        const resizeHandles = t.completed ? '' : '<div class="resize-handle left"></div><div class="resize-handle right"></div>';
+        const resizeHandles = t.completed ? '' : '<div class="gantt__bar-handle gantt__bar-handle--left"></div><div class="gantt__bar-handle gantt__bar-handle--right"></div>';
+        
+        const statusModifier = t.statusClass === 'exec' ? 'gantt__bar--exec' : (t.statusClass === 'exec-progress' ? 'gantt__bar--progress' : 'gantt__bar--delayed');
 
         bodyHtml += `
-            <div class="gantt-row">
-                <div class="gantt-bar plan" style="left: ${pLeft}px; width: ${pWidth}px;" title="계획: ${t.planStart} ~ ${t.planEnd}" data-id="${t.id}" data-type="plan" data-site="${t.site}" data-equip="${t.equip}">${pSegments}</div>
-                ${t.execStart ? `<div class="gantt-bar ${t.statusClass}" style="left: ${eLeft}px; width: ${eWidth}px;" title="실행: ${t.execStart} ~ ${t.execEnd}" data-id="${t.id}" data-type="exec" data-site="${t.site}" data-equip="${t.equip}" data-completed="${t.completed}">${eSegments}${resizeHandles}</div>` : ''}
+            <div class="gantt__row">
+                <div class="gantt__bar gantt__bar--plan" style="left: ${pLeft}px; width: ${pWidth}px;" title="계획: ${t.planStart} ~ ${t.planEnd}" data-id="${t.id}" data-type="plan" data-site="${t.site}" data-equip="${t.equip}">${pSegments}</div>
+                ${t.execStart ? `<div class="gantt__bar ${statusModifier}" style="left: ${eLeft}px; width: ${eWidth}px;" title="실행: ${t.execStart} ~ ${t.execEnd}" data-id="${t.id}" data-type="exec" data-site="${t.site}" data-equip="${t.equip}" data-completed="${t.completed}">${eSegments}${resizeHandles}</div>` : ''}
             </div>`;
     });
 
@@ -647,7 +649,7 @@ function renderGanttChart() {
    ========================================================================== */
 
 function setupGanttBarDrag() {
-    const bars = document.querySelectorAll('.gantt-bar');
+    const bars = document.querySelectorAll('.gantt__bar');
     bars.forEach(bar => {
         bar.addEventListener('mousedown', (e) => {
             if (bar.dataset.type === 'plan') return;
@@ -666,8 +668,8 @@ function setupGanttBarDrag() {
                 return;
             }
 
-            if (e.target.classList.contains('resize-handle')) {
-                dragMode = e.target.classList.contains('left') ? 'resize-left' : 'resize-right';
+            if (e.target.classList.contains('gantt__bar-handle')) {
+                dragMode = e.target.classList.contains('gantt__bar-handle--left') ? 'resize-left' : 'resize-right';
                 document.body.style.cursor = 'col-resize';
             } else {
                 dragMode = 'move';

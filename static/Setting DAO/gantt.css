@@ -5,14 +5,14 @@
    ========================================================================== */
 
 /* 간트 차트 영역 및 레이아웃 */
-.gantt-chart-area {
+.gantt {
     width: 100%;
     flex: 1;
     overflow: hidden;
     position: relative;
 }
 
-.gantt-wrapper {
+.gantt__wrapper {
     display: flex;
     height: 100%;
     overflow: hidden;
@@ -21,16 +21,16 @@
 }
 
 /* 사이드바 (Task List) */
-.gantt-sidebar {
+.gantt__sidebar {
     flex-shrink: 0;
     background: #161b22;
     border-right: 1px solid #30363d;
     z-index: 2;
 }
 
-.gantt-sidebar-initial { width: 200px; }
+.gantt__sidebar--initial { width: 200px; }
 
-.gantt-header-cell {
+.gantt__header-cell {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -40,9 +40,9 @@
     font-size: 12px;
 }
 
-.gantt-header-cell-fixed { height: 60px; border-bottom: 1px solid #30363d; }
+.gantt__header-cell--fixed { height: 60px; border-bottom: 1px solid #30363d; }
 
-.gantt-task-name {
+.gantt__task-item {
     height: 40px;
     display: flex;
     align-items: center;
@@ -54,28 +54,28 @@
     cursor: default;
 }
 
-.gantt-task-label-container {
+.gantt__task-label-container {
     display: flex;
     align-items: center;
     overflow: hidden;
     white-space: nowrap;
 }
 
-.gantt-task-label-text {
+.gantt__task-label {
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.gantt-task-progress-text { font-size: 11px; margin-left: 6px; }
+.gantt__task-progress { font-size: 11px; margin-left: 6px; }
 
-.gantt-task-controls {
+.gantt__task-controls {
     display: flex;
     align-items: center;
     gap: 5px;
 }
 
 /* 실행 추가 버튼 */
-.btn-add-exec {
+.gantt__btn-add {
     background: transparent;
     border: 1px solid #3fb950;
     color: #3fb950;
@@ -90,24 +90,24 @@
     padding: 0;
 }
 
-.btn-add-exec:hover {
+.gantt__btn-add:hover {
     background: #3fb950;
     color: #fff;
 }
 
 /* 삭제 버튼 (편집 모드) */
-.gantt-task-name .btn-del-sm {
+.gantt__task-item .btn-del-sm {
     display: none;
 }
-.dashboard-col.edit-mode .gantt-task-name .btn-del-sm {
+.dashboard-col.edit-mode .gantt__task-item .btn-del-sm {
     display: block;
 }
-.dashboard-col.edit-mode .gantt-task-name {
+.dashboard-col.edit-mode .gantt__task-item {
     cursor: grab;
 }
 
 /* 타임라인 영역 */
-.gantt-timeline-container {
+.gantt__timeline-container {
     flex: 1;
     overflow: auto;
     background: #0d1117;
@@ -117,16 +117,16 @@
     position: relative; /* For absolute positioned grid lines */
 }
 
-.gantt-header-row {
+.gantt__header-row {
     display: flex;
     height: 40px;
     background: #21262d;
     border-bottom: 1px solid #30363d;
 }
 
-.gantt-header-row-fixed { height: 30px; }
+.gantt__header-row--fixed { height: 30px; }
 
-.gantt-header-month-cell {
+.gantt__date-cell--month {
     height: 30px;
     line-height: 30px;
     text-align: left;
@@ -137,7 +137,7 @@
     box-sizing: border-box;
 }
 
-.gantt-header-day-cell {
+.gantt__date-cell--day {
     height: 30px;
     line-height: 30px;
     text-align: center;
@@ -147,7 +147,7 @@
     box-sizing: border-box;
 }
 
-.gantt-date-cell {
+.gantt__date-cell {
     flex-shrink: 0;
     text-align: center;
     line-height: 40px;
@@ -156,13 +156,13 @@
     border-right: 1px solid #30363d;
 }
 
-.gantt-date-cell.current-week {
+.gantt__date-cell--current-week {
     background: rgba(233, 235, 138, 0.15);
     color: #f5c04f;
     font-weight: bold;
 }
 
-.gantt-day-today-bg {
+.gantt__date-cell--today {
     background-color: rgba(56, 139, 253, 0.2);
     color: #58a6ff;
     font-weight: bold;
@@ -170,14 +170,14 @@
 }
 
 /* 간트 바 및 그리드 */
-.gantt-row {
+.gantt__row {
     height: 40px;
     border-bottom: 1px solid #21262d;
     position: relative;
     pointer-events: none;
 }
 
-.gantt-bar {
+.gantt__bar {
     position: absolute;
     opacity: 0.8;
     cursor: grab;
@@ -186,7 +186,7 @@
     box-shadow: none !important;
 }
 
-.gantt-bar-segment {
+.gantt__bar-segment {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -194,19 +194,19 @@
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-.gantt-bar.plan { top: 5px; height: 12px; cursor: default; }
-.gantt-bar.plan .gantt-bar-segment { background: #1f6feb; }
+.gantt__bar--plan { top: 5px; height: 12px; cursor: default; }
+.gantt__bar--plan .gantt__bar-segment { background: #1f6feb; }
 
-.gantt-bar.exec { top: 21px; height: 12px; }
-.gantt-bar.exec .gantt-bar-segment { background: #238636; }
+.gantt__bar--exec { top: 21px; height: 12px; }
+.gantt__bar--exec .gantt__bar-segment { background: #238636; }
 
-.gantt-bar.exec-progress { top: 21px; height: 12px; }
-.gantt-bar.exec-progress .gantt-bar-segment { background: #e3b341; }
+.gantt__bar--progress { top: 21px; height: 12px; }
+.gantt__bar--progress .gantt__bar-segment { background: #e3b341; }
 
-.gantt-bar.exec-delayed { top: 21px; height: 12px; }
-.gantt-bar.exec-delayed .gantt-bar-segment { background: #f0883e; }
+.gantt__bar--delayed { top: 21px; height: 12px; }
+.gantt__bar--delayed .gantt__bar-segment { background: #f0883e; }
 
-.gantt-grid-bg-holiday {
+.gantt__grid-bg--holiday {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -215,7 +215,7 @@
     pointer-events: auto;
 }
 
-.gantt-grid-bg-today {
+.gantt__grid-bg--today {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -224,7 +224,7 @@
     pointer-events: none;
 }
 
-.gantt-grid-line-std {
+.gantt__grid-line {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -234,7 +234,7 @@
     pointer-events: none;
 }
 
-.gantt-grid-line-bold {
+.gantt__grid-line--bold {
     position: absolute;
     top: 0;
     bottom: 0;
@@ -244,15 +244,15 @@
 }
 
 /* 리사이저 및 핸들 */
-.resize-handle {
+.gantt__bar-handle {
     position: absolute;
     top: 0; bottom: 0; width: 10px;
     cursor: col-resize; z-index: 10;
 }
-.resize-handle.left { left: 0; }
-.resize-handle.right { right: 0; }
+.gantt__bar-handle--left { left: 0; }
+.gantt__bar-handle--right { right: 0; }
 
-.gantt-resizer {
+.gantt__resizer {
     width: 5px;
     cursor: col-resize;
     background-color: transparent;
@@ -262,10 +262,10 @@
     transition: background-color 0.2s;
     pointer-events: auto;
 }
-.gantt-resizer:hover, .gantt-resizer.resizing { background-color: #58a6ff; }
+.gantt__resizer:hover, .gantt__resizer.resizing { background-color: #58a6ff; }
 
 /* 간트 툴바 및 타이틀 */
-.gantt-title-wrapper {
+.gantt__title-wrapper {
     width: 100%;
     position: relative;
     display: flex;
@@ -276,13 +276,13 @@
     min-height: 40px;
 }
 
-.gantt-center-title {
+.gantt__center-title {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-.gantt-right-toolbar {
+.gantt__right-toolbar {
     position: absolute;
     right: 0;
     top: 50%;
@@ -291,13 +291,13 @@
     align-items: center;
 }
 
-.gantt-section-subtitle {
+.gantt__subtitle {
     color: #c9d1d9;
     margin: 0;
     font-size: 20px;
 }
 
-.gantt-target-info {
+.gantt__target-info {
     font-size: 14px;
     color: #3fb950;
     font-weight: bold;
