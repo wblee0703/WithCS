@@ -471,7 +471,15 @@ function setupEventDetailModal() {
 
     if (!modal) return;
 
-    const closeModal = () => modal.style.display = 'none';
+    const closeModal = () => {
+        if (editContentBtn && editContentBtn.textContent === '저장') {
+            if (!confirm('수정 중인 내용이 있습니다. 저장하지 않고 닫으시겠습니까?')) {
+                return;
+            }
+        }
+        modal.style.display = 'none';
+    };
+
     if (closeBtn) closeBtn.onclick = closeModal;
     if (closeFooterBtn) closeFooterBtn.onclick = closeModal;
 
@@ -544,7 +552,12 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     // UI 초기화 (수정 모드 해제)
     if (contentDiv) contentDiv.style.display = 'block';
     if (contentInput) contentInput.style.display = 'none'; 
-    if (editContentBtn) editContentBtn.textContent = '수정';
+    if (editContentBtn) {
+        editContentBtn.textContent = '수정';
+        editContentBtn.classList.add('btn-blue');
+        editContentBtn.style.backgroundColor = '';
+        editContentBtn.style.borderColor = '';
+    }
 
     // [추가] 드롭다운 래퍼가 있다면 제거 (초기화)
     const dropdownWrapper = document.getElementById('detail-content-dropdown-wrapper');
@@ -692,6 +705,9 @@ function toggleDetailContentEdit() {
             contentInput.focus();
         }
         editBtn.textContent = '저장';
+        editBtn.classList.remove('btn-blue');
+        editBtn.style.backgroundColor = '#d29922';
+        editBtn.style.borderColor = '#d29922';
     } else {
         // 저장 처리
         let isDropdownMode = false;
@@ -743,6 +759,9 @@ function toggleDetailContentEdit() {
                     contentDiv.style.display = 'block';
                     contentInput.style.display = 'none';
                     editBtn.textContent = '수정';
+                    editBtn.classList.add('btn-blue');
+                    editBtn.style.backgroundColor = '';
+                    editBtn.style.borderColor = '';
                     
                     // 캘린더 및 대시보드 갱신
                     renderCalendar();
@@ -1259,6 +1278,7 @@ function updateSearchEquipSelect(site) {
     
     equipSelect.disabled = false;
 }
+
 
 // 전역 노출
 window.renderCalendar = renderCalendar;
