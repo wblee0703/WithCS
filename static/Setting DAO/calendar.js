@@ -963,6 +963,33 @@ function openRegisterScheduleModal(dateStr) {
 
     if (typeSelect) typeSelect.value = 'PM';
 
+    // [추가] 현재 검색 필터가 적용되어 있다면 해당 사업장/장비 자동 선택
+    if (currentSearchFilters.site) {
+        siteSelect.value = currentSearchFilters.site;
+        // 사업장이 선택되었으므로 장비 목록 업데이트
+        updateRegisterEquipSelect(currentSearchFilters.site);
+
+        if (currentSearchFilters.equip) {
+            // 장비 필터가 있다면 해당 장비 선택 시도
+            let targetValue = currentSearchFilters.equip;
+            let hasOption = Array.from(equipSelect.options).some(opt => opt.value === targetValue);
+
+            // 정확한 매칭이 없으면 모델명만으로 매칭 시도 (필터는 모델명, 옵션은 모델명::Serial인 경우)
+            if (!hasOption) {
+                const partialMatch = Array.from(equipSelect.options).find(opt => opt.value.split('::')[0] === targetValue);
+                if (partialMatch) {
+                    targetValue = partialMatch.value;
+                    hasOption = true;
+                }
+            }
+
+            if (hasOption) {
+                equipSelect.value = targetValue;
+                updateRegisterItemList(currentSearchFilters.site, targetValue);
+            }
+        }
+    }
+
     modal.style.display = 'flex';
 }
 

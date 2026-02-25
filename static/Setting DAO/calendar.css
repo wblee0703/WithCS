@@ -1,0 +1,368 @@
+/* c:\Users\USER\Desktop\web.py\static\Setting DAO\calendar.css */
+
+/* ==========================================================================
+   캘린더 시스템 스타일 (Calendar System Styles)
+   ========================================================================== */
+
+/* 캘린더 컨테이너 및 헤더 */
+.calendar-container {
+    width: 100%;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 10px;
+}
+
+.calendar-container.no-margin-top {
+    margin-top: 0;
+}
+
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 10px;
+}
+
+#calendar-title-1,
+#calendar-title-2 {
+    display: block;
+    color: #e6edf3;
+    margin-bottom: 10px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.calendar-header button {
+    background: none;
+    color: #8b949e;
+    font-size: 16px;
+    padding: 5px 10px;
+}
+
+.calendar-header button:hover {
+    color: #fff;
+}
+
+/* 캘린더 그리드 */
+.calendar-grid,
+.dates-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    text-align: center;
+}
+
+.day-name {
+    font-size: 12px;
+    color: #8b949e;
+    font-weight: bold;
+    padding-bottom: 10px;
+}
+
+.date-cell {
+    font-size: 13px;
+    border-radius: 4px;
+    height: 110px;
+    background: #0d1117;
+    border: 1px solid #21262d;
+    transition: background-color 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.date-cell.saturday .date-num { color: #e6edf3; }
+.date-cell.sunday .date-num,
+.date-cell.holiday .date-num { color: #ff7b72; }
+.date-cell.other-month { opacity: 0.3; }
+.date-cell:hover { background: #21262d; }
+
+.date-cell.today .date-num {
+    background-color: #1f6feb;
+    color: #fff;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    display: inline-block;
+    font-weight: bold;
+}
+
+.events-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    justify-content: center;
+}
+
+/* 캘린더 타이틀 및 툴바 */
+.calendar-title-wrapper {
+    width: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    min-height: 40px;
+}
+
+.calendar-center-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.calendar-right-toolbar {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+}
+
+.calendar-main-title {
+    color: #c9d1d9;
+    margin: 0;
+    font-size: 20px;
+}
+
+.calendar-target-info {
+    font-size: 14px;
+    color: #3fb950;
+    font-weight: bold;
+    margin-top: 2px;
+}
+
+/* 달력 이벤트 아이템 */
+.calendar-event-item {
+    font-size: 9px;
+    text-align: left;
+    background: #21262d;
+    padding: 1px 3px;
+    margin-bottom: 1px;
+    border-radius: 2px;
+    color: #c9d1d9;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.calendar-event-item.completed {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.event-type-text { font-weight: bold; }
+
+/* 날짜 셀 내부 요소 */
+.holiday-name {
+    font-size: 10px;
+    font-weight: normal;
+}
+
+.event-count {
+    font-size: 11px;
+    color: #8b949e;
+    margin-left: 4px;
+    font-weight: normal;
+}
+
+.date-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+/* 캘린더 팝업 리스트 */
+.popup-item-text { color: #e6edf3; }
+.popup-item-text.completed { color: #8b949e; }
+.popup-type-badge { font-weight: bold; margin-right: 5px; }
+.popup-completed-badge { color: #3fb950; font-size: 12px; margin-left: 10px; }
+
+/* 검색 필터 */
+.calendar-search-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+
+#calendar-search {
+    width: 200px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 4px;
+    text-align: center;
+}
+
+#btn-search-filter { margin-left: 5px; padding: 5px 8px; }
+#search-filter-status { margin-left: 8px; font-size: 12px; color: #3fb950; font-weight: bold; }
+
+/* 2개월 뷰 래퍼 */
+.calendars-wrapper { display: flex; gap: 20px; }
+.calendar-view { flex: 1; }
+.calendar-divider { width: 1px; background: #30363d; }
+
+.event-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+}
+
+/* 팝업 관련 버튼 */
+.btn-calendar-del {
+    background: none !important;
+    border: none !important;
+    color: #f85149 !important;
+    font-size: 14px;
+    padding: 0 5px;
+    margin-left: 10px;
+    flex-shrink: 0;
+    display: inline-block !important;
+}
+
+.btn-calendar-del:hover { color: #ff7b72 !important; }
+
+#popup-event-list {
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.btn-add-popup {
+    background: none;
+    color: #3fb950;
+    font-size: 20px;
+    padding: 0;
+    font-weight: bold;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    margin-top: 2px;
+}
+
+.btn-add-popup:hover { color: #2ea043; }
+
+/* 캘린더 팝업 모달 */
+#calendar-popup .modal-window {
+    width: 400px;
+    height: auto;
+    max-height: 500px;
+}
+
+.popup-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 모달 사이즈 */
+#schedule-modal .modal-window,
+#event-detail-modal .modal-window,
+#calendar-search-modal .modal-window {
+    width: 400px;
+    height: auto;
+}
+
+#register-schedule-modal .modal-window {
+    width: 500px;
+    height: 600px;
+    resize: both;
+    overflow: auto;
+    min-width: 450px;
+    min-height: 600px;
+}
+
+/* 모달 내부 버튼 */
+#btn-schedule-calendar { padding: 8px 12px; }
+#btn-confirm-register-schedule { width: 100%; }
+#btn-apply-search-filter { width: 100px; }
+
+/* 상세 정보 모달 (Detail Modal) */
+.detail-row { margin-bottom: 15px; }
+.detail-row.large-margin { margin-bottom: 20px; }
+.detail-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.detail-label { color: #8b949e; font-size: 12px; display: block; margin-bottom: 5px; }
+.detail-label-row .detail-label { margin: 0; }
+
+#btn-move-to-equip { padding: 2px 8px; font-size: 11px; }
+
+#detail-equip-info,
+#detail-serial-no,
+#detail-content { color: #e6edf3; font-weight: bold; font-size: 14px; }
+#detail-type { font-weight: bold; font-size: 14px; }
+
+#detail-worker {
+    width: 100%;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+#detail-work-memo {
+    width: 100%;
+    height: 300px;
+    resize: none;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+#btn-save-detail-memo,
+#btn-close-detail-footer,
+#btn-complete-work { flex: 1; }
+
+/* 체크박스 리스트 (Register Modal) */
+.checkbox-list-container {
+    flex: 1;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 8px;
+    height: 150px;
+    overflow-y: auto;
+    resize: vertical;
+}
+
+.checkbox-item { display: flex; align-items: center; padding: 4px 0; }
+.checkbox-item:hover { background-color: rgba(255, 255, 255, 0.05); }
+
+.checkbox-col-left {
+    flex: 0 0 20px;
+    min-width: 50px;
+    overflow: hidden;
+    padding-right: 0px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.checkbox-col-right { flex: 1; min-width: 0; overflow: hidden; padding-left: 8px; }
+.register-item-checkbox { margin: 0; cursor: pointer; }
+
+.checkbox-item label {
+    color: #e6edf3;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    width: 100%;
+}
