@@ -503,11 +503,11 @@ function renderGanttChart() {
         const d = dObj.date;
         const ym = `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}`;
         if (ym !== currentYm) {
-            if (currentYm !== '') monthHtml += `<div class="gantt__date-cell gantt__date-cell--month" style="width: ${span * ganttDayWidth}px;"></div>`;
+            if (currentYm !== '') monthHtml += `<div class="gantt__date-cell gantt__date-cell--month" style="width: ${span * ganttDayWidth}px;">${currentYm}</div>`;
             currentYm = ym; span = 1;
         } else span++;
     });
-    if (span > 0) monthHtml += `<div class="gantt__date-cell gantt__date-cell--month" style="width: ${span * ganttDayWidth}px;"></div>`;
+    if (span > 0) monthHtml += `<div class="gantt__date-cell gantt__date-cell--month" style="width: ${span * ganttDayWidth}px;">${currentYm}</div>`;
     if (headerMonths) headerMonths.innerHTML = monthHtml;
 
     let dayHtml = '';
