@@ -321,10 +321,7 @@ function openCalendarPopup(dateStr, events) {
 
         groupedList.forEach(group => {
             const li = document.createElement('li');
-            li.style.cursor = 'pointer';
-            li.style.display = 'flex';
-            li.style.justifyContent = 'space-between';
-            li.style.alignItems = 'center';
+            li.className = 'popup-event-item';
 
             const textClass = group.isCompleted ? 'completed' : '';
             const parts = group.equip.split('::');
@@ -550,7 +547,6 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
     const contentEl = document.getElementById('detail-content');
     contentEl.innerText = displayContent.split(',').map(s => `- ${s.trim()}`).join('\n');
-    contentEl.style.whiteSpace = 'pre-wrap';
     
     const workerInput = document.getElementById('detail-worker');
     const memoInput = document.getElementById('detail-work-memo');
@@ -567,8 +563,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     if (editContentBtn) {
         editContentBtn.textContent = '수정';
         editContentBtn.classList.add('btn-blue');
-        editContentBtn.style.backgroundColor = '';
-        editContentBtn.style.borderColor = '';
+        editContentBtn.classList.remove('btn-save-state');
     }
 
     // [추가] 드롭다운 래퍼가 있다면 제거 (초기화)
@@ -631,7 +626,6 @@ function toggleDetailContentEdit() {
                 dropdownWrapper = document.createElement('div');
                 dropdownWrapper.id = dropdownWrapperId;
                 dropdownWrapper.className = 'log-select-wrapper';
-                dropdownWrapper.style.width = '100%';
                 
                 const trigger = document.createElement('div');
                 trigger.className = 'log-select-trigger';
@@ -647,7 +641,7 @@ function toggleDetailContentEdit() {
                 if (data.maint) {
                     const filteredItems = data.maint.filter(m => m.type === type);
                     if (filteredItems.length === 0) {
-                        list.innerHTML = '<div style="padding:10px; color:#8b949e;">등록된 항목이 없습니다.</div>';
+                        list.innerHTML = '<div class="log-select-empty-msg">등록된 항목이 없습니다.</div>';
                     } else {
                         filteredItems.forEach(mItem => {
                             const div = document.createElement('div');
@@ -675,7 +669,7 @@ function toggleDetailContentEdit() {
                 footer.className = 'log-select-footer';
                 const addBtn = document.createElement('button');
                 addBtn.className = 'btn-blue-sm';
-                addBtn.style.width = '100%';
+                addBtn.classList.add('btn-full-width');
                 addBtn.textContent = '선택 완료';
                 addBtn.onclick = (e) => {
                     e.stopPropagation();
@@ -700,9 +694,7 @@ function toggleDetailContentEdit() {
                     const values = Array.from(selected).map(el => el.dataset.value);
                     
                     trigger.innerText = values.length > 0 ? values.map(v => `- ${v}`).join('\n') : '항목 선택';
-                    trigger.style.height = 'auto';
-                    trigger.style.whiteSpace = 'pre-wrap';
-                    trigger.style.textAlign = 'left';
+                    trigger.classList.add('multi-line');
                     trigger.title = values.join('\n');
                 }
                 
@@ -718,8 +710,7 @@ function toggleDetailContentEdit() {
         }
         editBtn.textContent = '저장';
         editBtn.classList.remove('btn-blue');
-        editBtn.style.backgroundColor = '#d29922';
-        editBtn.style.borderColor = '#d29922';
+        editBtn.classList.add('btn-save-state');
     } else {
         // 저장 처리
         let isDropdownMode = false;
@@ -772,8 +763,7 @@ function toggleDetailContentEdit() {
                     contentInput.style.display = 'none';
                     editBtn.textContent = '수정';
                     editBtn.classList.add('btn-blue');
-                    editBtn.style.backgroundColor = '';
-                    editBtn.style.borderColor = '';
+                    editBtn.classList.remove('btn-save-state');
                     
                     // 캘린더 및 대시보드 갱신
                     renderCalendar();
@@ -1037,8 +1027,7 @@ function updateRegisterItemList(site, equip) {
     row.appendChild(label);
 
     const container = document.createElement('div');
-    container.style.flex = '1';
-    container.style.position = 'relative';
+    container.className = 'register-item-container';
     row.appendChild(container);
     
     itemList.appendChild(row);
@@ -1051,12 +1040,7 @@ function updateRegisterItemList(site, equip) {
         const input = document.createElement('input');
         input.type = 'text';
         input.id = 'register-manual-input';
-        input.style.width = '100%';
-        input.style.padding = '8px';
-        input.style.background = '#0d1117';
-        input.style.border = '1px solid #30363d';
-        input.style.color = '#e6edf3';
-        input.style.borderRadius = '4px';
+        input.className = 'manual-input';
         
         if (initialValue) input.value = initialValue;
         if (placeholder) input.placeholder = placeholder;
@@ -1081,7 +1065,6 @@ function updateRegisterItemList(site, equip) {
 
     const wrapper = document.createElement('div');
     wrapper.className = 'log-select-wrapper';
-    wrapper.style.width = '100%';
     
     const trigger = document.createElement('div');
     trigger.className = 'log-select-trigger';
@@ -1091,19 +1074,12 @@ function updateRegisterItemList(site, equip) {
     dropdown.className = 'log-select-dropdown';
 
     const searchContainer = document.createElement('div');
-    searchContainer.style.padding = '5px';
-    searchContainer.style.borderBottom = '1px solid #30363d';
+    searchContainer.className = 'log-select-search-container';
 
     const searchInput = document.createElement('input');
     searchInput.type = 'text';
     searchInput.placeholder = '항목 검색...';
-    searchInput.style.width = '100%';
-    searchInput.style.padding = '5px';
-    searchInput.style.background = '#0d1117';
-    searchInput.style.border = '1px solid #30363d';
-    searchInput.style.color = '#e6edf3';
-    searchInput.style.borderRadius = '3px';
-    searchInput.style.fontSize = '12px';
+    searchInput.className = 'log-select-search-input';
     
     searchInput.onclick = (e) => e.stopPropagation();
     searchInput.oninput = (e) => {
@@ -1122,7 +1098,7 @@ function updateRegisterItemList(site, equip) {
     list.className = 'log-select-list';
 
     if (filteredItems.length === 0) {
-        list.innerHTML = '<div style="padding:10px; color:#8b949e; text-align:center;">등록된 항목이 없습니다.</div>';
+        list.innerHTML = '<div class="log-select-empty-msg">등록된 항목이 없습니다.</div>';
     } else {
         filteredItems.forEach(item => {
             const itemDiv = document.createElement('div');
@@ -1130,7 +1106,7 @@ function updateRegisterItemList(site, equip) {
             itemDiv.dataset.id = item.id;
             itemDiv.textContent = item.content;
             if (item.scheduledDate) {
-                itemDiv.innerHTML += ` <span style="color:#e3b341; font-size:0.85em;">(예정: ${item.scheduledDate})</span>`;
+                itemDiv.innerHTML += ` <span class="scheduled-date-text">(예정: ${item.scheduledDate})</span>`;
             }
             
             itemDiv.onclick = (e) => {
@@ -1154,7 +1130,7 @@ function updateRegisterItemList(site, equip) {
     footer.className = 'log-select-footer';
     const addBtn = document.createElement('button');
     addBtn.className = 'btn-blue-sm';
-    addBtn.style.width = '100%';
+    addBtn.classList.add('btn-full-width');
     addBtn.textContent = '선택 완료';
     addBtn.onclick = (e) => {
         e.stopPropagation();

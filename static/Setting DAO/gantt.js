@@ -427,8 +427,6 @@ function renderGanttChart() {
                 if (!shownButtonEquips.has(equipKey)) {
                     if (isBtnDisabled) {
                         btnAdd.disabled = true;
-                        btnAdd.style.opacity = '0.3';
-                        btnAdd.style.cursor = 'not-allowed';
                         btnAdd.title = '이전 작업 미완료';
                     } else {
                         btnAdd.onclick = () => addExecutionBar(t.site, t.equip, t.id);
@@ -473,12 +471,12 @@ function renderGanttChart() {
                     }
                 }
 
-                let color = '#e3b341';
-                if (pct === 0) color = '#8b949e';
-                else if (pct === 100) color = '#3fb950';
-
                 progressSpan.textContent = `${pct}%`;
-                progressSpan.style.color = color;
+                
+                progressSpan.className = 'gantt__task-progress'; // 클래스 초기화
+                if (pct === 0) progressSpan.classList.add('gantt__task-progress--empty');
+                else if (pct === 100) progressSpan.classList.add('gantt__task-progress--complete');
+                else progressSpan.classList.add('gantt__task-progress--ongoing');
             } else {
                 progressSpan.remove();
             }
@@ -486,8 +484,6 @@ function renderGanttChart() {
             const btnDel = clone.querySelector('.btn-del-sm');
             if (t.completed) {
                 btnDel.disabled = true;
-                btnDel.style.opacity = '0.3';
-                btnDel.style.cursor = 'not-allowed';
                 btnDel.title = '완료된 작업은 삭제할 수 없습니다.';
             } else {
                 btnDel.onclick = () => deleteSetupTask(t.site, t.equip, t.id);
