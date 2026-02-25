@@ -4,10 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <title>WITHTECH - EQ System</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='Setting DAO/common.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='Setting DAO/index.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='Setting DAO/calendar.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='Setting DAO/gantt.css') }}">
+    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='Style sheet/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='Style sheet/index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='Style sheet/calendar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='Style sheet/gantt.css') }}">
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Noto+Sans+KR:wght@100;300;700&display=swap"
         rel="stylesheet">
@@ -105,7 +105,7 @@
          1. 헤더 (Header)
          ========================================================================== -->
     <header class="header">
-        <img src="{{ url_for('static', filename='LOGO+WITHTECH.png') }}" alt="WITHTECH Logo" class="header-logo">
+        <img src="{{ url_for('SettingDAO', filename='LOGO+WITHTECH.png') }}" alt="WITHTECH Logo" class="header-logo">
         <div class="container">
             <nav>
                 <ul class="nav-links">
@@ -716,10 +716,10 @@
         </div>
     </template>
 
-    <script src="{{ url_for('static', filename='Setting DAO/common.js') }}"></script>
-    <script src="{{ url_for('static', filename='Setting DAO/gantt.js') }}"></script>
-    <script src="{{ url_for('static', filename='Setting DAO/calendar.js') }}"></script>
-    <script src="{{ url_for('static', filename='Setting DAO/index.js') }}"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/gantt.js') }}"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/calendar.js') }}"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/index.js') }}"></script>
 </body>
 
 </html>

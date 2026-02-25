@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, has_request_context
+from flask import Flask, render_template, request, jsonify, session, has_request_context, send_from_directory
 import json
 import os
 import webbrowser
@@ -184,7 +184,10 @@ def git_pull_data():
 # ------------------------------------------------------------------------------
 def init_data_files():
     """데이터 파일이 없으면 초기화하고 기본 계정을 생성합니다."""
-    if not os.path.exists(FILE_HOME):
+    # [수정] 파일이 존재하더라도 계정 정보가 없으면(손상/삭제 등) 복구하도록 로직 개선
+    home_data = load_json_file(FILE_HOME)
+    
+    if not home_data.get('user_accounts'):
         # 환경 변수 또는 기본값으로 계정 생성
         admin_id = os.environ.get('APP_ADMIN_ID') or 'admin'
         admin_pw = os.environ.get('APP_ADMIN_PW') or '1234'
@@ -197,10 +200,9 @@ def init_data_files():
         if user_id and user_pw:
             user_accounts.append({"id": user_id, "pw": generate_password_hash(user_pw), "role": "user"})
 
-        default_home_data = {
-            "user_accounts": user_accounts
-        }
-        save_json_file(FILE_HOME, default_home_data)
+        home_data['user_accounts'] = user_accounts
+        save_json_file(FILE_HOME, home_data)
+        app.logger.warning("User accounts initialized/restored to defaults.")
 
     for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_SYSTEM_LOG, FILE_WITHTECH_DATA]:
         if not os.path.exists(filepath):
@@ -319,6 +321,11 @@ def maintenance():
     if 'user_id' not in session:
         return render_template('index.html')
     return render_template('maintenance.html')
+
+# [추가] SettingDAO 폴더 정적 파일 서빙
+@app.route('/SettingDAO/<path:filename>')
+def SettingDAO(filename):
+    return send_from_directory(os.path.join(app.root_path, 'SettingDAO'), filename)
 
 # ------------------------------------------------------------------------------
 # 7. Routes: API
