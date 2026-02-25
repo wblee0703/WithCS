@@ -2,13 +2,13 @@
    캘린더 시스템 (Calendar System)
    ========================================================================== */
 
-// 전역 변수
+// [1] 전역 변수 (Global Variables)
 let calendarDate = new Date();
-// index.js 등 다른 파일에서도 접근할 수 있도록 window 객체에 할당하거나 var 사용
 var currentSearchFilters = { site: '', equip: '' };
 let currentScheduleTarget = null;
 let currentDetailTarget = null;
 
+// [2] 초기화 (Initialization)
 document.addEventListener('DOMContentLoaded', () => {
     setupCalendar();
     setupScheduleModal();
@@ -26,8 +26,88 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ==========================================================================
-   캘린더 렌더링 및 조작
+   [3] 핵심 로직 & 데이터 처리 (Core Logic & Data)
    ========================================================================== */
+
+/**
+ * 캘린더 표시용 PM/BM 일정 데이터 수집
+ */
+function getPmScheduleForCalendar() {
+    const events = {};
+    const mainData = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+
+    Object.keys(mainData).forEach(site => {
+        if (mainData[site]) {
+            mainData[site].forEach(equip => {
+                const key = `details_${site}_${equip}`;
+                try {
+                    const data = JSON.parse(localStorage.getItem(key));
+                    if (!data) return;
+
+                    if (data.maint) {
+                        data.maint.forEach(item => {
+                            let targetDateStr = '';
+                            if (item.scheduledDate) {
+                                targetDateStr = item.scheduledDate;
+                            }
+                            if (targetDateStr) {
+                                if (!events[targetDateStr]) events[targetDateStr] = [];
+                                events[targetDateStr].push({ site, equip, type: item.type || 'PM', content: item.content, id: item.id });
+                            }
+                        });
+                    }
+
+                    if (data.logs) {
+                        data.logs.forEach(log => {
+                            if (log.date) {
+                                if (!events[log.date]) events[log.date] = [];
+                                events[log.date].push({
+                                    site,
+                                    equip,
+                                    type: log.type || 'PM',
+                                    content: log.content || log.memo || '내용 없음',
+                                    id: log.id,
+                                    isCompleted: true
+                                });
+                            }
+                        });
+                    }
+                } catch (e) { console.error(`Error parsing data for key ${key}:`, e); }
+            });
+        }
+    });
+    return events;
+}
+
+/**
+ * 일정 날짜 설정 (등록/수정/삭제)
+ */
+function setScheduleDate(site, equip, id, dateStr, isDelete = false) {
+    const key = `details_${site}_${equip}`;
+    let data = JSON.parse(localStorage.getItem(key)) || {};
+    
+    if (data.maint) {
+        const item = data.maint.find(i => i.id === id);
+        if (item) {
+            if (isDelete) {
+                delete item.scheduledDate;
+            } else {
+                item.scheduledDate = dateStr;
+            }
+            localStorage.setItem(key, JSON.stringify(data));
+            
+            if (typeof addSystemLog === 'function') {
+                const action = isDelete ? 'DELETE_SCHEDULE' : 'ADD_SCHEDULE';
+                addSystemLog(action, equip, `Date: ${dateStr}, Content: ${item.content}`);
+            }
+        }
+    }
+}
+
+/* ==========================================================================
+   [4] 캘린더 UI 렌더링 (Calendar UI Rendering)
+   ========================================================================== */
+
 function setupCalendar() {
     const prevBtn = document.getElementById('prev-month');
     const nextBtn = document.getElementById('next-month');
@@ -322,58 +402,10 @@ function openCalendarPopup(dateStr, events) {
     popup.style.display = 'flex';
 }
 
-function getPmScheduleForCalendar() {
-    const events = {};
-    const mainData = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
-
-    Object.keys(mainData).forEach(site => {
-        if (mainData[site]) {
-            mainData[site].forEach(equip => {
-                const key = `details_${site}_${equip}`;
-                try {
-                    const data = JSON.parse(localStorage.getItem(key));
-                    if (!data) return;
-
-                    if (data.maint) {
-                        data.maint.forEach(item => {
-                            let targetDateStr = '';
-                            if (item.scheduledDate) {
-                                targetDateStr = item.scheduledDate;
-                            }
-                            if (targetDateStr) {
-                                if (!events[targetDateStr]) events[targetDateStr] = [];
-                                events[targetDateStr].push({ site, equip, type: item.type || 'PM', content: item.content, id: item.id });
-                            }
-                        });
-                    }
-
-                    if (data.logs) {
-                        data.logs.forEach(log => {
-                            if (log.date) {
-                                if (!events[log.date]) events[log.date] = [];
-                                events[log.date].push({
-                                    site,
-                                    equip,
-                                    type: log.type || 'PM',
-                                    content: log.content || log.memo || '내용 없음',
-                                    id: log.id,
-                                    isCompleted: true
-                                });
-                            }
-                        });
-                    }
-                } catch (e) { console.error(`Error parsing data for key ${key}:`, e); }
-            });
-        }
-    });
-    return events;
-}
-
 /* ==========================================================================
-   모달 로직 (Modals)
+   [5] 모달: 작업 예정일 설정 (Schedule Date Modal)
    ========================================================================== */
 
-// 작업 예정일 설정 모달
 function setupScheduleModal() {
     const modal = document.getElementById('schedule-modal');
     const closeBtn = document.getElementById('btn-close-schedule-modal');
@@ -436,30 +468,10 @@ function openScheduleModal(site, equip, id) {
     modal.style.display = 'flex';
 }
 
-function setScheduleDate(site, equip, id, dateStr, isDelete = false) {
-    const key = `details_${site}_${equip}`;
-    let data = JSON.parse(localStorage.getItem(key)) || {};
-    
-    if (data.maint) {
-        const item = data.maint.find(i => i.id === id);
-        if (item) {
-            if (isDelete) {
-                delete item.scheduledDate;
-            } else {
-                // [수정] 병합 로직 제거: 단순히 예정일만 설정
-                item.scheduledDate = dateStr;
-            }
-            localStorage.setItem(key, JSON.stringify(data));
-            
-            if (typeof addSystemLog === 'function') {
-                const action = isDelete ? 'DELETE_SCHEDULE' : 'ADD_SCHEDULE';
-                addSystemLog(action, equip, `Date: ${dateStr}, Content: ${item.content}`);
-            }
-        }
-    }
-}
+/* ==========================================================================
+   [6] 모달: 일정 상세 정보 (Event Detail Modal)
+   ========================================================================== */
 
-// 일정 상세 모달
 function setupEventDetailModal() {
     const modal = document.getElementById('event-detail-modal');
     const closeBtn = document.getElementById('btn-close-detail-modal');
@@ -885,7 +897,10 @@ function completeScheduleWork() {
     }
 }
 
-// 작업 예정일 등록 모달
+/* ==========================================================================
+   [7] 모달: 작업 예정일 등록 (Register Schedule Modal)
+   ========================================================================== */
+
 function setupRegisterScheduleModal() {
     const modal = document.getElementById('register-schedule-modal');
     const closeBtn = document.getElementById('btn-close-register-modal');
@@ -1195,7 +1210,10 @@ function confirmRegisterSchedule() {
     if (popup) popup.style.display = 'none';
 }
 
-// 검색 필터 모달
+/* ==========================================================================
+   [8] 모달: 검색 필터 (Search Filter Modal)
+   ========================================================================== */
+
 function setupSearchModal() {
     const modal = document.getElementById('calendar-search-modal');
     const closeBtn = document.getElementById('btn-close-search-modal');
@@ -1278,7 +1296,6 @@ function updateSearchEquipSelect(site) {
     
     equipSelect.disabled = false;
 }
-
 
 // 전역 노출
 window.renderCalendar = renderCalendar;

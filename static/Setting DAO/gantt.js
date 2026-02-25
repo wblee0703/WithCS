@@ -2,7 +2,7 @@
    간트 차트 및 실행 관리 (Gantt Chart & Execution Management)
    ========================================================================== */
 
-// 전역 변수 (Gantt Global Variables)
+// [1] 전역 변수 (Global Variables)
 let ganttSidebarWidth = 300;
 let ganttDayWidth = 20;
 const GANTT_SIDEBAR_MIN_WIDTH = 250;
@@ -27,7 +27,7 @@ let currentExecStartTarget = null;
 let currentExecStartTargetId = null;
 
 /* ==========================================================================
-   초기화 및 설정 (Setup & Initialization)
+   [2] 초기화 및 설정 (Setup & Initialization)
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
     // 간트 차트 관련 초기화
@@ -134,8 +134,71 @@ function setupEquipInfoResizer() {
 }
 
 /* ==========================================================================
-   간트 차트 렌더링 (Rendering)
+   [3] 데이터 처리 및 로직 (Data Operations)
    ========================================================================== */
+
+function updateTaskDate(site, equip, id, type, change, mode = 'move') {
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${site}::${equip}`;
+    let data = setupData[equipKey] || {};
+    const task = data.setupDetails ? data.setupDetails.find(t => t.id == id) : null;
+    if (task) {
+        if (mode === 'manual') {
+            task.startDate = change.start;
+            const s = new Date(change.start);
+            const e = new Date(change.end);
+            let days = 0;
+            let temp = new Date(s);
+            while (temp < e) {
+                temp = addBusinessDays(temp, 1);
+                days++;
+            }
+            task.estDays = (days + 1).toString();
+        }
+        else if (mode === 'visual-update') {
+            if (type === 'exec') {
+                if (change.newStart) task.execStartDate = change.newStart;
+                if (change.newEnd) task.date = change.newEnd;
+            } else if (type === 'plan') {
+                if (change.newStart) task.startDate = change.newStart;
+                if (change.newStart && change.newEnd) {
+                    let days = 0;
+                    let curr = new Date(change.newStart);
+                    const end = new Date(change.newEnd);
+                    while (curr <= end) {
+                        const d = curr.getDay();
+                        const isHol = (d === 0 || d === 6) || !!getHolidayName(curr.getFullYear(), curr.getMonth(), curr.getDate());
+                        if (!isHol) days++;
+                        curr.setDate(curr.getDate() + 1);
+                    }
+                    task.estDays = days.toString();
+                }
+            }
+        }
+
+        setupData[equipKey] = data;
+        localStorage.setItem('setup_data', JSON.stringify(setupData));
+        renderGanttChart();
+    }
+}
+
+function deleteSetupTask(site, equip, id) {
+    if (!confirm('이 일정을 삭제하시겠습니까?')) return;
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${site}::${equip}`;
+    let data = setupData[equipKey] || {};
+    if (data.setupDetails) {
+        data.setupDetails = data.setupDetails.filter(t => t.id !== id);
+        setupData[equipKey] = data;
+        localStorage.setItem('setup_data', JSON.stringify(setupData));
+        renderGanttChart();
+    }
+}
+
+/* ==========================================================================
+   [4] 간트 차트 렌더링 (Rendering)
+   ========================================================================== */
+
 function renderGanttChart() {
     const wrapper = document.getElementById('gantt-wrapper');
     const emptyMsg = document.getElementById('gantt-empty-msg');
@@ -579,22 +642,10 @@ function renderGanttChart() {
     setupGanttBarDrag();
 }
 
-function deleteSetupTask(site, equip, id) {
-    if (!confirm('이 일정을 삭제하시겠습니까?')) return;
-    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `${site}::${equip}`;
-    let data = setupData[equipKey] || {};
-    if (data.setupDetails) {
-        data.setupDetails = data.setupDetails.filter(t => t.id !== id);
-        setupData[equipKey] = data;
-        localStorage.setItem('setup_data', JSON.stringify(setupData));
-        renderGanttChart();
-    }
-}
-
 /* ==========================================================================
-   드래그 앤 드롭 (Drag & Drop)
+   [5] 드래그 앤 드롭 (Drag & Drop Interaction)
    ========================================================================== */
+
 function setupGanttBarDrag() {
     const bars = document.querySelectorAll('.gantt-bar');
     bars.forEach(bar => {
@@ -719,54 +770,10 @@ document.addEventListener('mouseup', (e) => {
     }
 });
 
-function updateTaskDate(site, equip, id, type, change, mode = 'move') {
-    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `${site}::${equip}`;
-    let data = setupData[equipKey] || {};
-    const task = data.setupDetails ? data.setupDetails.find(t => t.id == id) : null;
-    if (task) {
-        if (mode === 'manual') {
-            task.startDate = change.start;
-            const s = new Date(change.start);
-            const e = new Date(change.end);
-            let days = 0;
-            let temp = new Date(s);
-            while (temp < e) {
-                temp = addBusinessDays(temp, 1);
-                days++;
-            }
-            task.estDays = (days + 1).toString();
-        }
-        else if (mode === 'visual-update') {
-            if (type === 'exec') {
-                if (change.newStart) task.execStartDate = change.newStart;
-                if (change.newEnd) task.date = change.newEnd;
-            } else if (type === 'plan') {
-                if (change.newStart) task.startDate = change.newStart;
-                if (change.newStart && change.newEnd) {
-                    let days = 0;
-                    let curr = new Date(change.newStart);
-                    const end = new Date(change.newEnd);
-                    while (curr <= end) {
-                        const d = curr.getDay();
-                        const isHol = (d === 0 || d === 6) || !!getHolidayName(curr.getFullYear(), curr.getMonth(), curr.getDate());
-                        if (!isHol) days++;
-                        curr.setDate(curr.getDate() + 1);
-                    }
-                    task.estDays = days.toString();
-                }
-            }
-        }
-
-        setupData[equipKey] = data;
-        localStorage.setItem('setup_data', JSON.stringify(setupData));
-        renderGanttChart();
-    }
-}
-
 /* ==========================================================================
-   모달 및 팝업 (Modals)
+   [6] 모달: 날짜 편집 (Date Edit Modal)
    ========================================================================== */
+
 function openDateEditModal(site, equip, id, type) {
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const data = setupData[`${site}::${equip}`] || {};
@@ -802,6 +809,10 @@ function saveDateEdit() {
     updateTaskDate(site, equip, id, type, { start: start, end: end }, 'manual');
     document.getElementById('setup-date-edit-modal').style.display = 'none';
 }
+
+/* ==========================================================================
+   [7] 모달: 실행 시작 (Execution Start Modal)
+   ========================================================================== */
 
 function setupSetupExecStartModal() {
     const modal = document.getElementById('setup-exec-start-modal');
@@ -866,6 +877,10 @@ function saveSetupExecStart() {
 function addExecutionBar(site, equip, id) {
     openSetupExecStartModal(site, equip, id);
 }
+
+/* ==========================================================================
+   [8] 모달: 실행 완료 (Execution Completion Modal)
+   ========================================================================== */
 
 function openExecCompletionModal(site, equip, id) {
     const modal = document.getElementById('exec-completion-modal');
