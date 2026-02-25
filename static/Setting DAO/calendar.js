@@ -638,14 +638,10 @@ function toggleDetailContentEdit() {
                 const addBtn = document.createElement('button');
                 addBtn.className = 'btn-blue-sm';
                 addBtn.style.width = '100%';
-                addBtn.textContent = '직접 입력 (추가)';
+                addBtn.textContent = '선택 완료';
                 addBtn.onclick = (e) => {
                     e.stopPropagation();
-                    dropdownWrapper.remove();
-                    contentInput.value = '';
-                    contentInput.placeholder = '새 항목 입력';
-                    contentInput.style.display = 'block';
-                    contentInput.focus();
+                    dropdown.classList.remove('show');
                 };
                 footer.appendChild(addBtn);
                 dropdown.appendChild(footer);
@@ -1064,10 +1060,10 @@ function updateRegisterItemList(site, equip) {
     const addBtn = document.createElement('button');
     addBtn.className = 'btn-blue-sm';
     addBtn.style.width = '100%';
-    addBtn.textContent = '직접 입력 (추가)';
+    addBtn.textContent = '선택 완료';
     addBtn.onclick = (e) => {
         e.stopPropagation();
-        createManualInput('', '새 항목 입력');
+        dropdown.classList.remove('show');
     };
     footer.appendChild(addBtn);
     dropdown.appendChild(footer);
