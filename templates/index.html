@@ -124,7 +124,6 @@
                     <div class="dashboard-col" id="section-setup" style="display: none;">
                         <div class="section-header center-aligned">
                             <h4 class="section-title">장비 셋업 현황</h4>
-                            <button class="btn-move" onclick="goToSetupPage()">장비 셋업 이동</button>
                         </div>
                         <div class="maint-split-view" id="setup-split-view">
                             <!-- 왼쪽: 차트 영역 -->
@@ -215,13 +214,15 @@
                             </div>
                             <div id="gantt-empty-msg" class="empty-msg" style="display: none;">등록된 셋업 일정이 없습니다.</div>
                         </div>
+                        <div style="text-align: right; margin-top: 10px; padding-right: 5px;">
+                            <button class="btn-move" onclick="goToSetupPage()">장비 셋업 이동</button>
+                        </div>
                     </div>
 
                     <!-- 오른쪽: 유지관리 현황 -->
                     <div class="dashboard-col" id="section-maint" style="display: none;">
                         <div class="section-header center-aligned">
                             <h4 class="section-title">운영 관리 현황</h4>
-                            <button class="btn-move" onclick="goToMaintenancePage()">운영 관리 이동</button>
                         </div>
                         <div class="maint-split-view">
                             <!-- 왼쪽: 차트 영역 -->
@@ -318,6 +319,9 @@
                                     <div id="calendar-dates-2" class="dates-grid"></div>
                                 </div>
                             </div>
+                        </div>
+                        <div style="text-align: right; margin-top: 10px; padding-right: 5px;">
+                            <button class="btn-move" onclick="goToMaintenancePage()">운영 관리 이동</button>
                         </div>
                     </div>
                 </div>
