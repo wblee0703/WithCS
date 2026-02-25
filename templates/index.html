@@ -17,6 +17,7 @@
             width: 100%;
             margin-bottom: 10px;
         }
+
         .log-select-trigger {
             background: #0d1117;
             border: 1px solid #30363d;
@@ -32,6 +33,7 @@
             font-size: 13px;
             text-align: left;
         }
+
         .log-select-dropdown {
             display: none;
             position: absolute;
@@ -43,14 +45,19 @@
             border-radius: 4px;
             z-index: 1000;
             margin-top: 2px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
         }
-        .log-select-dropdown.show { display: block; }
+
+        .log-select-dropdown.show {
+            display: block;
+        }
+
         .log-select-list {
             max-height: 200px;
             overflow-y: auto;
             padding: 5px;
         }
+
         .log-select-item {
             display: block;
             font-size: 13px;
@@ -60,11 +67,34 @@
             color: #e6edf3;
             margin-bottom: 2px;
         }
-        .log-select-item:hover { background: #21262d; }
-        .log-select-item.selected { background: #1f6feb; color: #fff; }
-        .log-select-footer { padding: 5px; border-top: 1px solid #30363d; }
-        .btn-blue-sm { background: #1f6feb; color: white; border: none; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 12px; }
-        .btn-blue-sm:hover { background: #1a5cce; }
+
+        .log-select-item:hover {
+            background: #21262d;
+        }
+
+        .log-select-item.selected {
+            background: #1f6feb;
+            color: #fff;
+        }
+
+        .log-select-footer {
+            padding: 5px;
+            border-top: 1px solid #30363d;
+        }
+
+        .btn-blue-sm {
+            background: #1f6feb;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .btn-blue-sm:hover {
+            background: #1a5cce;
+        }
     </style>
 </head>
 
@@ -277,6 +307,9 @@
                             <div class="calendar-title-wrapper">
                                 <div class="calendar-center-title">
                                     <h5 class="calendar-main-title">장비 점검 일정</h5>
+                                    <div style="text-align: right; margin-top: 10px; padding-right: 5px;">
+                                        <button class="btn-move" onclick="goToMaintenancePage()">운영 관리 이동</button>
+                                    </div>
                                     <div id="calendar-target-info" class="calendar-target-info"></div>
                                 </div>
                                 <div class="calendar-right-toolbar">
@@ -320,9 +353,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div style="text-align: right; margin-top: 10px; padding-right: 5px;">
-                            <button class="btn-move" onclick="goToMaintenancePage()">운영 관리 이동</button>
-                        </div>
+
                     </div>
                 </div>
             </div>
@@ -431,10 +462,12 @@
                 <div class="detail-row large-margin">
                     <div class="detail-label-row">
                         <label class="detail-label">점검 항목</label>
-                        <button class="btn-text-sm btn-blue" id="btn-edit-detail-content" style="padding: 2px 8px; font-size: 11px; display: none;">수정</button>
+                        <button class="btn-text-sm btn-blue" id="btn-edit-detail-content"
+                            style="padding: 2px 8px; font-size: 11px; display: none;">수정</button>
                     </div>
                     <div id="detail-content"></div>
-                    <input type="text" id="detail-content-input" class="input-date-dark" style="display: none; width: 100%;">
+                    <input type="text" id="detail-content-input" class="input-date-dark"
+                        style="display: none; width: 100%;">
                 </div>
                 <div class="detail-row">
                     <label class="detail-label">작업자</label>
@@ -568,17 +601,24 @@
                     <input type="checkbox" id="exec-complete-checkbox" class="modal-checkbox-input">
                     작업 완료
                 </label>
-                <div id="exec-setup-log-container" class="modal-date-row" style="margin-top: 15px; display: block; text-align: left;">
-                    <label class="modal-date-label" style="display:block; margin-bottom:5px; color:#e6edf3;">셋업 이력 (일지 등록)</label>
+                <div id="exec-setup-log-container" class="modal-date-row"
+                    style="margin-top: 15px; display: block; text-align: left;">
+                    <label class="modal-date-label" style="display:block; margin-bottom:5px; color:#e6edf3;">셋업 이력 (일지
+                        등록)</label>
                     <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label class="modal-date-label" style="width: 50px; margin-bottom: 0; text-align: left;">업체</label>
-                        <input type="text" id="exec-setup-log-company" class="input-date-dark" placeholder="업체명" style="flex: 1;">
+                        <label class="modal-date-label"
+                            style="width: 50px; margin-bottom: 0; text-align: left;">업체</label>
+                        <input type="text" id="exec-setup-log-company" class="input-date-dark" placeholder="업체명"
+                            style="flex: 1;">
                     </div>
                     <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label class="modal-date-label" style="width: 50px; margin-bottom: 0; text-align: left;">작업자</label>
-                        <input type="text" id="exec-setup-log-worker" class="input-date-dark" placeholder="작업자" style="flex: 1;">
+                        <label class="modal-date-label"
+                            style="width: 50px; margin-bottom: 0; text-align: left;">작업자</label>
+                        <input type="text" id="exec-setup-log-worker" class="input-date-dark" placeholder="작업자"
+                            style="flex: 1;">
                     </div>
-                    <textarea id="exec-setup-log-content" class="delay-reason-textarea" placeholder="작업 내용을 입력하세요" spellcheck="false" style="height: 60px;"></textarea>
+                    <textarea id="exec-setup-log-content" class="delay-reason-textarea" placeholder="작업 내용을 입력하세요"
+                        spellcheck="false" style="height: 60px;"></textarea>
                 </div>
                 <div id="exec-delay-reason-container" class="delay-reason-wrapper">
                     <label class="delay-reason-label">지연 사유</label>
