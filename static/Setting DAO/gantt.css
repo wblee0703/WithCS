@@ -1,0 +1,334 @@
+/* c:\Users\USER\Desktop\web.py\static\Setting DAO\gantt.css */
+
+/* ==========================================================================
+   간트 차트 스타일 (Gantt Chart Styles)
+   ========================================================================== */
+
+/* 간트 차트 영역 및 레이아웃 */
+.gantt-chart-area {
+    width: 100%;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
+
+.gantt-wrapper {
+    display: flex;
+    height: 100%;
+    overflow: hidden;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+}
+
+/* 사이드바 (Task List) */
+.gantt-sidebar {
+    flex-shrink: 0;
+    background: #161b22;
+    border-right: 1px solid #30363d;
+    z-index: 2;
+}
+
+.gantt-sidebar-initial { width: 200px; }
+
+.gantt-header-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #8b949e;
+    background: #21262d;
+    font-size: 12px;
+}
+
+.gantt-header-cell-fixed { height: 60px; border-bottom: 1px solid #30363d; }
+
+.gantt-task-name {
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    border-bottom: 1px solid #21262d;
+    font-size: 13px;
+    color: #e6edf3;
+    cursor: default;
+}
+
+.gantt-task-label-container {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.gantt-task-label-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gantt-task-progress-text { font-size: 11px; margin-left: 6px; }
+
+.gantt-task-controls {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* 실행 추가 버튼 */
+.btn-add-exec {
+    background: transparent;
+    border: 1px solid #3fb950;
+    color: #3fb950;
+    border-radius: 4px;
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+}
+
+.btn-add-exec:hover {
+    background: #3fb950;
+    color: #fff;
+}
+
+/* 삭제 버튼 (편집 모드) */
+.gantt-task-name .btn-del-sm {
+    display: none;
+}
+.dashboard-col.edit-mode .gantt-task-name .btn-del-sm {
+    display: block;
+}
+.dashboard-col.edit-mode .gantt-task-name {
+    cursor: grab;
+}
+
+/* 타임라인 영역 */
+.gantt-timeline-container {
+    flex: 1;
+    overflow: auto;
+    background: #0d1117;
+}
+
+#gantt-body {
+    position: relative; /* For absolute positioned grid lines */
+}
+
+.gantt-header-row {
+    display: flex;
+    height: 40px;
+    background: #21262d;
+    border-bottom: 1px solid #30363d;
+}
+
+.gantt-header-row-fixed { height: 30px; }
+
+.gantt-header-month-cell {
+    height: 30px;
+    line-height: 30px;
+    text-align: left;
+    padding-left: 8px;
+    border-bottom: 1px solid #30363d;
+    font-weight: bold;
+    color: #e6edf3;
+    box-sizing: border-box;
+}
+
+.gantt-header-day-cell {
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    border-right: 1px solid #30363d;
+    font-size: 11px;
+    color: #8b949e;
+    box-sizing: border-box;
+}
+
+.gantt-date-cell {
+    flex-shrink: 0;
+    text-align: center;
+    line-height: 40px;
+    font-size: 11px;
+    color: #8b949e;
+    border-right: 1px solid #30363d;
+}
+
+.gantt-date-cell.current-week {
+    background: rgba(233, 235, 138, 0.15);
+    color: #f5c04f;
+    font-weight: bold;
+}
+
+.gantt-day-today-bg {
+    background-color: rgba(56, 139, 253, 0.2);
+    color: #58a6ff;
+    font-weight: bold;
+    border-bottom: 2px solid #58a6ff;
+}
+
+/* 간트 바 및 그리드 */
+.gantt-row {
+    height: 40px;
+    border-bottom: 1px solid #21262d;
+    position: relative;
+    pointer-events: none;
+}
+
+.gantt-bar {
+    position: absolute;
+    opacity: 0.8;
+    cursor: grab;
+    pointer-events: auto;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.gantt-bar-segment {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.gantt-bar.plan { top: 5px; height: 12px; cursor: default; }
+.gantt-bar.plan .gantt-bar-segment { background: #1f6feb; }
+
+.gantt-bar.exec { top: 21px; height: 12px; }
+.gantt-bar.exec .gantt-bar-segment { background: #238636; }
+
+.gantt-bar.exec-progress { top: 21px; height: 12px; }
+.gantt-bar.exec-progress .gantt-bar-segment { background: #e3b341; }
+
+.gantt-bar.exec-delayed { top: 21px; height: 12px; }
+.gantt-bar.exec-delayed .gantt-bar-segment { background: #f0883e; }
+
+.gantt-grid-bg-holiday {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: rgba(218, 54, 51, 0.15);
+    z-index: 0;
+    pointer-events: auto;
+}
+
+.gantt-grid-bg-today {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    background: rgba(56, 139, 253, 0.1);
+    z-index: 0;
+    pointer-events: none;
+}
+
+.gantt-grid-line-std {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #21262d;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.gantt-grid-line-bold {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #6e7681; /* Bold line color */
+    z-index: 0;
+}
+
+/* 리사이저 및 핸들 */
+.resize-handle {
+    position: absolute;
+    top: 0; bottom: 0; width: 10px;
+    cursor: col-resize; z-index: 10;
+}
+.resize-handle.left { left: 0; }
+.resize-handle.right { right: 0; }
+
+.gantt-resizer {
+    width: 5px;
+    cursor: col-resize;
+    background-color: transparent;
+    flex-shrink: 0;
+    z-index: 10;
+    margin-left: -2px;
+    transition: background-color 0.2s;
+    pointer-events: auto;
+}
+.gantt-resizer:hover, .gantt-resizer.resizing { background-color: #58a6ff; }
+
+/* 간트 툴바 및 타이틀 */
+.gantt-title-wrapper {
+    width: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom: 5px;
+    min-height: 40px;
+}
+
+.gantt-center-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.gantt-right-toolbar {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+}
+
+.gantt-section-subtitle {
+    color: #c9d1d9;
+    margin: 0;
+    font-size: 20px;
+}
+
+.gantt-target-info {
+    font-size: 14px;
+    color: #3fb950;
+    font-weight: bold;
+    margin-top: 2px;
+}
+
+.btn-spacing-right {
+    margin-right: 5px;
+}
+
+/* 장비 정보 리사이저 (Setup Dashboard) */
+#setup-equip-info-group {
+    position: relative;
+}
+
+.width-resizer {
+    position: absolute;
+    left: -7px; /* gap의 절반 정도 위치 */
+    top: 0;
+    bottom: 0;
+    width: 15px;
+    cursor: col-resize;
+    z-index: 10;
+}
+
+.width-resizer:hover::after, .width-resizer.resizing::after {
+    content: "";
+    position: absolute;
+    left: 7px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #58a6ff;
+}
