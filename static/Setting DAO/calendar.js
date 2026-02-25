@@ -280,9 +280,30 @@ function openCalendarPopup(dateStr, events) {
                         group.items.forEach(item => {
                             setScheduleDate(item.site, item.equip, item.id, '', true);
                         });
-                        popup.style.display = 'none';
+                        
+                        // UI 갱신 (배경 캘린더 및 대시보드)
                         renderCalendar();
                         if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+
+                        // 팝업 닫지 않고 내용만 갱신
+                        const dateStr = document.getElementById('popup-date-title').textContent;
+                        const allEvents = getPmScheduleForCalendar();
+                        let dayEvents = allEvents[dateStr] || [];
+
+                        // 필터 재적용
+                        const searchInput = document.getElementById('calendar-search');
+                        const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+                        if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
+                            dayEvents = dayEvents.filter(event => {
+                                const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)));
+                                const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
+                                const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip;
+                                return matchKeyword && matchSite && matchEquip;
+                            });
+                        }
+                        
+                        openCalendarPopup(dateStr, dayEvents);
                     }
                 };
                 li.appendChild(delBtn);
@@ -698,6 +719,32 @@ function updateScheduleDateFromDetail() {
     setScheduleDate(currentDetailTarget.site, currentDetailTarget.equip, currentDetailTarget.id, newDate);
     alert('예정일이 변경되었습니다.');
     renderCalendar();
+
+    // [추가] 캘린더 팝업이 열려있다면 내용 갱신 (변경된 항목 제거)
+    const popup = document.getElementById('calendar-popup');
+    if (popup && popup.style.display !== 'none') {
+        const dateTitle = document.getElementById('popup-date-title');
+        if (dateTitle) {
+            const dateStr = dateTitle.textContent;
+            const allEvents = getPmScheduleForCalendar();
+            let dayEvents = allEvents[dateStr] || [];
+            
+            // 필터 재적용
+            const searchInput = document.getElementById('calendar-search');
+            const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+            if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
+                dayEvents = dayEvents.filter(event => {
+                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)));
+                    const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
+                    const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip;
+                    return matchKeyword && matchSite && matchEquip;
+                });
+            }
+            
+            openCalendarPopup(dateStr, dayEvents);
+        }
+    }
 }
 
 function completeScheduleWork() {
