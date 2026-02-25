@@ -716,11 +716,11 @@ function completeScheduleWork() {
     if (!maintItem) return;
 
     if (!data.logs) data.logs = [];
-    const today = new Date().toISOString().split('T')[0];
+    const completeDate = maintItem.scheduledDate || new Date().toISOString().split('T')[0];
     
     data.logs.push({
         id: Date.now(),
-        date: today,
+        date: completeDate,
         type: maintItem.type || 'PM',
         content: maintItem.content,
         worker: worker,
