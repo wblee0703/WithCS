@@ -67,7 +67,7 @@
     display: flex;
     align-items: flex-end;
     justify-content: space-around;
-    height: 200px;
+    height: 250px;
     width: 100%;
     padding: 10px; /* Y축 제거로 패딩 통일 */
     position: relative;
@@ -150,3 +150,19 @@
 .type-트러블이슈 { background-color: #da3633; }
 .type-프로그램변경 { background-color: #8957e5; }
 .type-장비점검 { background-color: #6e7681; }
+
+/* 통합 관리 현황 도넛 차트 및 리스트 크기 조정 */
+.integ-dashboard-view .donut-chart-wrapper {
+    width: 250px;
+    height: 250px;
+}
+
+.integ-dashboard-view .chart-center {
+    width: 170px;
+    height: 170px;
+}
+
+.integ-dashboard-view .status-list-container {
+    height: 280px;
+    flex: none !important;
+}
