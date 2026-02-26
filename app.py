@@ -324,6 +324,7 @@ def maintenance():
 
 # [추가] SettingDAO 폴더 정적 파일 서빙
 @app.route('/SettingDAO/<path:filename>')
+@limiter.exempt
 def SettingDAO(filename):
     return send_from_directory(os.path.join(app.root_path, 'SettingDAO'), filename)
 
