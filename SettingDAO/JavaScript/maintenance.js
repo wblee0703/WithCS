@@ -792,7 +792,8 @@ function renderEditLogContentField(id, type, value) {
         if (data.maint) {
             let filteredItems = [];
             if (type === '트러블이슈') {
-                filteredItems = data.maint.filter(item => item.type === 'PM' || item.type === 'BM');
+                filteredItems.push({ content: '데이터이슈' }); // 기본값 추가
+                filteredItems = filteredItems.concat(data.maint.filter(item => item.type === 'PM' || item.type === 'BM'));
             } else {
                 filteredItems = data.maint.filter(item => item.type === type);
             }
@@ -910,7 +911,8 @@ function updateLogContentOptions() {
             if (data.maint) {
                 let filteredItems = [];
                 if (type === '트러블이슈') {
-                    filteredItems = data.maint.filter(item => item.type === 'PM' || item.type === 'BM');
+                    filteredItems.push({ content: '데이터이슈' }); // 기본값 추가
+                    filteredItems = filteredItems.concat(data.maint.filter(item => item.type === 'PM' || item.type === 'BM'));
                 } else {
                     filteredItems = data.maint.filter(item => item.type === type);
                 }
