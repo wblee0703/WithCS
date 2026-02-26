@@ -305,7 +305,7 @@ function renderIntegMaintStats(mainData) {
         // 막대 생성
         Object.keys(dataCounts).forEach((key, index) => {
             const count = dataCounts[key];
-            const maxBarHeight = 140; // 차트 최대 높이 (px)
+            const maxBarHeight = 180; // 차트 최대 높이 (px)
             const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
             
             // 색상 결정
