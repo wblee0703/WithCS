@@ -214,6 +214,8 @@ function renderIntegMaintStats(mainData) {
     const chartEl = document.getElementById('integ-maint-type-chart');
     const siteChartEl = document.getElementById('integ-maint-site-chart');
     const listEl = document.getElementById('integ-maint-item-list');
+    const itemChartEl = document.getElementById('integ-maint-item-chart');
+    const itemCenterText = document.getElementById('integ-maint-item-center');
     if (!chartEl || !listEl) return;
 
     // 선택된 월 기준 설정
@@ -319,14 +321,15 @@ function renderIntegMaintStats(mainData) {
             // 선택된 항목 스타일 처리
             const isActive = selectedKey === key;
             const activeClass = isActive ? 'active' : '';
-            const opacityStyle = (selectedKey && !isActive) ? 'opacity: 0.3;' : '';
 
             const barGroup = document.createElement('div');
             barGroup.className = 'bar-group';
+            if (selectedKey && !isActive) barGroup.classList.add('faded');
+
             barGroup.innerHTML = `
-                <div class="bar-value" style="${opacityStyle}">${count}</div>
-                <div class="bar ${activeClass}" style="height: ${barHeight}px; background: ${bgStyle}; ${opacityStyle}"></div>
-                <div class="bar-label" title="${key}" style="${opacityStyle}">${key}</div>
+                <div class="bar-value">${count}</div>
+                <div class="bar ${activeClass}" style="height: ${barHeight}px; background: ${bgStyle};"></div>
+                <div class="bar-label" title="${key}">${key}</div>
             `;
             
             // 클릭 이벤트
@@ -403,24 +406,43 @@ function renderIntegMaintStats(mainData) {
     
     // 막대 너비 계산을 위한 최대값
     const maxItemCount = sortedItems.length > 0 ? sortedItems[0].count : 0;
+    const totalItemCount = sortedItems.reduce((acc, item) => acc + item.count, 0);
+    
+    // 차트 색상 팔레트
+    const colors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
+    let gradientStr = '';
+    let currentDeg = 0;
 
     if (sortedItems.length === 0) {
         listEl.innerHTML = '<li class="list-empty-msg">데이터 없음</li>';
+        if (itemChartEl) itemChartEl.style.background = '';
+        if (itemCenterText) itemCenterText.innerHTML = `<div class="chart-center-label">Items</div><div class="chart-center-value">0</div>`;
     } else {
-        sortedItems.forEach(item => {
+        sortedItems.forEach((item, index) => {
+            const color = colors[index % colors.length];
+            if (totalItemCount > 0) {
+                const deg = (item.count / totalItemCount) * 360;
+                gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
+                currentDeg += deg;
+            }
+
             const li = document.createElement('li');
             li.className = 'status-list-item';
-            li.style.position = 'relative';
-            li.style.zIndex = '1';
-            const width = maxItemCount > 0 ? (item.count / maxItemCount) * 100 : 0;
             li.innerHTML = `
-                <div class="list-bar-bg" style="width: ${width}%; position: absolute; top: 2px; left: 0; bottom: 2px; background: linear-gradient(to right, rgba(88, 166, 255, 0.2), rgba(88, 166, 255, 0.05)); z-index: -1; border-radius: 4px; transition: width 0.5s ease;"></div>
-                <div style="width: 80px; text-align: center; flex-shrink: 0;"><span class="list-type-badge type-${item.type}" style="margin: 0;">${item.type}</span></div>
-                <span class="status-name" style="flex: 1; text-align: center; margin: 0;">${escapeHtml(item.name)}</span>
-                <span class="status-count" style="width: 60px; text-align: center; flex-shrink: 0;">${item.count}</span>
+                <div class="integ-list-col-type"><span class="list-type-badge type-${item.type}">${item.type}</span></div>
+                <span class="status-color" style="background-color: ${color}; margin-right: 8px;"></span>
+                <span class="status-name integ-list-col-name" style="text-align: left;">${escapeHtml(item.name)}</span>
+                <span class="status-count integ-list-col-count">${item.count}</span>
             `;
             listEl.appendChild(li);
         });
+
+        if (itemChartEl && totalItemCount > 0) {
+            itemChartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
+        }
+        if (itemCenterText) {
+            itemCenterText.innerHTML = `<div class="chart-center-label">Items</div><div class="chart-center-value">${totalItemCount}</div>`;
+        }
     }
 }
 

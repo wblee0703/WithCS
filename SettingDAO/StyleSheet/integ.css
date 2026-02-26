@@ -166,3 +166,77 @@
     height: 300px;
     flex: none !important;
 }
+
+/* [추가] 통합 관리 대시보드 컨트롤 스타일 */
+#integ-setup-period,
+#integ-maint-month {
+    width: auto;
+    padding: 2px 8px;
+    font-size: 12px;
+    height: 28px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    border-radius: 4px;
+}
+
+/* [추가] 차트 컨테이너 너비 보정 */
+#integ-maint-site-chart {
+    width: 100%;
+}
+
+/* [추가] 주요 점검 항목 리스트 스타일 */
+.integ-list-header-type,
+.integ-list-col-type {
+    width: 80px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.integ-list-header-name,
+.integ-list-col-name {
+    flex: 1;
+    text-align: center;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.integ-list-header-count,
+.integ-list-col-count {
+    width: 60px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.integ-list-col-type .list-type-badge {
+    margin: 0;
+}
+
+/* [추가] 차트 바 투명도 처리 */
+.bar-group.faded .bar-value,
+.bar-group.faded .bar,
+.bar-group.faded .bar-label {
+    opacity: 0.3;
+}
+
+/* [추가] 월간 운영 현황 차트 텍스트 스타일 제어 */
+.bar-chart-container .bar-value {
+    font-size: 15px;       /* [설정] 수치 글씨 크기 */
+    color: #e6edf3;        /* [설정] 수치 글씨 색상 */
+    font-weight: bold;
+    margin-bottom: 4px;
+    text-align: center;
+}
+
+.bar-chart-container .bar-label {
+    font-size: 14px;       /* [설정] 항목명 글씨 크기 */
+    color: #e6edf3;          /* [설정] 항목명 글씨 색상 */
+    margin-top: 6px;
+    text-align: center;
+    width: 120%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

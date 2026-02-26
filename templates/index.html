@@ -288,7 +288,7 @@
                                 <div class="status-group card-like">
                                     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 15px; padding: 0 10px;">
                                         <h5 class="status-group-title" style="margin-bottom: 0; font-size: 18px;">기간별 셋업 현황</h5>
-                                        <select id="integ-setup-period" class="modal-select" style="width: auto; padding: 2px 8px; font-size: 12px; height: 28px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px;" onchange="renderIntegSetupSiteStats()">
+                                        <select id="integ-setup-period" class="modal-select" onchange="renderIntegSetupSiteStats()">
                                             <option value="1">1개월</option>
                                             <option value="3" selected>3개월</option>
                                             <option value="6">6개월</option>
@@ -325,12 +325,12 @@
                             <!-- 운영 관리 통계 (신규) -->
                             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 20px; margin-bottom: 10px; padding: 0 5px;">
                                 <h4 class="section-title" style="font-size: 16px; margin: 0;">월간 운영 현황</h4>
-                                <input type="month" id="integ-maint-month" class="modal-select" style="width: auto; padding: 2px 8px; font-size: 12px; height: 28px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px;" onchange="renderIntegMaintStats()">
+                                <input type="month" id="integ-maint-month" class="modal-select" onchange="renderIntegMaintStats()">
                             </div>
                             <div class="integ-row">
                                 <div class="status-group card-like" style="width: 100%;">
-                                    <h5 class="status-group-title">사업장별 현황</h5>
-                                    <div id="integ-maint-site-chart" class="bar-chart-container" style="width: 100%;"></div>
+                                    <h5 class="status-group-title">사업장 작업 현황</h5>
+                                    <div id="integ-maint-site-chart" class="bar-chart-container"></div>
                                 </div>
                             </div>
                             <div class="integ-row">
@@ -339,14 +339,20 @@
                                     <div id="integ-maint-type-chart" class="bar-chart-container"></div>
                                 </div>
                                 <div class="status-group card-like">
-                                    <h5 class="status-group-title">주요 점검 항목</h5>
-                                    <div class="status-list-container status-list-flex">
-                                        <div class="status-list-header">
-                                            <span style="width: 80px; text-align: center;">구분</span>
-                                            <span style="flex: 1; text-align: center;">항목명</span>
-                                            <span style="width: 60px; text-align: center;">건수</span>
+                                    <h5 class="status-group-title">점검 항목</h5>
+                                    <div class="chart-row">
+                                        <div class="donut-chart-wrapper">
+                                            <div class="donut-chart" id="integ-maint-item-chart"></div>
+                                            <div class="chart-center" id="integ-maint-item-center"></div>
                                         </div>
-                                        <ul class="site-status-list" id="integ-maint-item-list"></ul>
+                                        <div class="status-list-container status-list-flex">
+                                            <div class="status-list-header">
+                                                <span class="integ-list-header-type">구분</span>
+                                                <span class="integ-list-header-name">항목명</span>
+                                                <span class="integ-list-header-count">건수</span>
+                                            </div>
+                                            <ul class="site-status-list" id="integ-maint-item-list"></ul>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
