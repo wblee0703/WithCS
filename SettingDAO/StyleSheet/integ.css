@@ -51,6 +51,10 @@
 .text-blue { color: #1f6feb !important; }
 
 /* 리스트 스타일 보정 */
+.integ-dashboard-view .status-group-title {
+    margin-bottom: 5px;
+}
+
 #integ-setup-detail-list .status-list-item {
     padding: 8px 12px;
 }
@@ -65,7 +69,7 @@
     justify-content: space-around;
     height: 200px;
     width: 100%;
-    padding: 20px 10px 10px 40px; /* Y축 공간 확보 (왼쪽 패딩 증가) */
+    padding: 10px 10px 10px 40px; /* Y축 공간 확보 (왼쪽 패딩 증가) */
     position: relative;
     box-sizing: border-box;
 }
@@ -112,7 +116,7 @@
 .y-axis {
     position: absolute;
     left: 10px;
-    top: 20px;
+    top: 10px;
     bottom: 35px; /* 라벨 높이만큼 하단 여백 */
     width: 30px;
     display: flex;
