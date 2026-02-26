@@ -486,7 +486,7 @@ function addLogItem(e) {
     let content = '';
     const contentInput = document.getElementById('log-content-input');
 
-    if (type === 'PM' || type === 'BM') {
+    if (type === 'PM' || type === 'BM' || type === '트러블이슈') {
         const list = document.getElementById('log-content-list');
         const selected = list ? list.querySelectorAll('.log-select-item.selected') : [];
         if (selected.length > 0) {
@@ -713,6 +713,7 @@ function toggleLogEdit(id, btn) {
                 <option value="BM" ${currentType === 'BM' ? 'selected' : ''}>BM</option>
                 <option value="장비점검" ${currentType === '장비점검' ? 'selected' : ''}>장비점검</option>
                 <option value="프로그램변경" ${currentType === '프로그램변경' ? 'selected' : ''}>프로그램변경</option>
+                <option value="트러블이슈" ${currentType === '트러블이슈' ? 'selected' : ''}>트러블이슈</option>
             </select>`;
 
         renderEditLogContentField(id, currentType, currentContent === '-' ? '' : currentContent);
@@ -757,7 +758,7 @@ function renderEditLogContentField(id, type, value) {
     if (!row) return;
     const contentCell = row.cells[2];
     
-    if (type === 'PM' || type === 'BM') {
+    if (type === 'PM' || type === 'BM' || type === '트러블이슈') {
         const key = `details_${currentPath.site}_${currentPath.equip}`;
         const data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
         
@@ -789,7 +790,14 @@ function renderEditLogContentField(id, type, value) {
 
         // 항목 리스트 생성
         if (data.maint) {
-            data.maint.filter(item => item.type === type).forEach(item => {
+            let filteredItems = [];
+            if (type === '트러블이슈') {
+                filteredItems = data.maint.filter(item => item.type === 'PM' || item.type === 'BM');
+            } else {
+                filteredItems = data.maint.filter(item => item.type === type);
+            }
+
+            filteredItems.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'log-select-item';
                 if (currentValues.includes(item.content)) div.classList.add('selected');
@@ -892,7 +900,7 @@ function updateLogContentOptions() {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     const data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
 
-    if (type === 'PM' || type === 'BM') {
+    if (type === 'PM' || type === 'BM' || type === '트러블이슈') {
         contentWrapper.style.display = 'inline-block';
         contentInput.style.display = 'none';
         
@@ -900,7 +908,14 @@ function updateLogContentOptions() {
         if (contentList) {
             contentList.innerHTML = '';
             if (data.maint) {
-                data.maint.filter(item => item.type === type).forEach(item => {
+                let filteredItems = [];
+                if (type === '트러블이슈') {
+                    filteredItems = data.maint.filter(item => item.type === 'PM' || item.type === 'BM');
+                } else {
+                    filteredItems = data.maint.filter(item => item.type === type);
+                }
+
+                filteredItems.forEach(item => {
                     const div = document.createElement('div');
                     div.className = 'log-select-item';
                     div.dataset.value = item.content;

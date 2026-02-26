@@ -421,6 +421,7 @@ tr.dragging {
 .badge.bm { background: #1f6feb; }
 .badge.장비점검 { background: #d29922; color: #fff; }
 .badge.프로그램변경 { background: #8957e5; color: #fff; }
+.badge.트러블이슈 { background: #da3633; color: #fff; }
 
 /* 텍스트 색상 */
 .text-green { color: #3fb950; }
