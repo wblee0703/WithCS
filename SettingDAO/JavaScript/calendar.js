@@ -266,14 +266,14 @@ function renderMonthGrid(year, month, titleId, gridId) {
 
             groups.forEach(group => {
                 const equipName = group.equip.split('::')[0];
-                const typeClass = group.type === 'PM' ? 'type-pm' : 'type-bm';
+                const typeClass = `type-${group.type}`;
                 const completedClass = group.isCompleted ? 'completed' : '';
                 
                 // 드래그 속성 추가 (완료되지 않은 항목만)
                 let dragAttr = '';
                 if (!group.isCompleted) {
                     const idsJson = JSON.stringify(group.ids).replace(/"/g, '&quot;');
-                    dragAttr = `draggable="true" data-drag-site="${escapeHtml(group.site)}" data-drag-equip="${escapeHtml(group.equip)}" data-drag-ids="${idsJson}" ondragstart="handleCalendarDragStartFromData(event)"`;
+                    dragAttr = `draggable="true" data-drag-site="${escapeHtml(group.site)}" data-drag-equip="${escapeHtml(group.equip)}" data-drag-ids="${idsJson}" ondragstart="handleCalendarDragStartFromData(event)" ondragend="this.classList.remove('dragging')"`;
                 }
 
                 eventsHtml += `<div class="calendar-event-item ${completedClass}" ${dragAttr} onclick="event.stopPropagation(); openCalendarPopup('${dateStr}', dayEvents)">
@@ -359,7 +359,7 @@ function openCalendarPopup(dateStr, events) {
             const serialNo = parts.length > 1 ? parts[1] : '';
             const displayEquip = serialNo ? `${equipName} (${serialNo})` : equipName;
 
-            const typeClass = group.type === 'PM' ? 'type-pm' : 'type-bm';
+            const typeClass = `type-${group.type}`;
             const typeBadge = `<span class="popup-type-badge ${typeClass}">[${group.type}]</span>`;
 
             const wrapper = document.createElement('div');
@@ -1379,6 +1379,7 @@ function updateSearchEquipSelect(site) {
 window.handleCalendarDragStartFromData = function(e) {
     e.stopPropagation();
     const target = e.currentTarget;
+    target.classList.add('dragging');
     const site = target.dataset.dragSite;
     const equip = target.dataset.dragEquip;
     const idsStr = target.dataset.dragIds;

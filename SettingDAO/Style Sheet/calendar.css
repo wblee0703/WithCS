@@ -196,6 +196,12 @@
     display: block;
 }
 
+.calendar-event-item.dragging {
+    opacity: 0.5;
+    border: 1px dashed var(--cal-text-secondary);
+    background-color: var(--cal-bg-dark);
+}
+
 .calendar-event-item.completed {
     text-decoration: line-through;
     opacity: 0.6;
