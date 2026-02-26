@@ -111,6 +111,7 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false) {
 function setupCalendar() {
     const prevBtn = document.getElementById('prev-month');
     const nextBtn = document.getElementById('next-month');
+    const todayBtn = document.getElementById('btn-today');
     const closePopupBtn = document.getElementById('btn-close-calendar-popup');
     const popup = document.getElementById('calendar-popup');
     const searchInput = document.getElementById('calendar-search');
@@ -128,6 +129,9 @@ function setupCalendar() {
             renderCalendar();
         };
     }
+    if (todayBtn) {
+        todayBtn.onclick = goToTodayMonth;
+    }
     if (closePopupBtn && popup) {
         closePopupBtn.onclick = () => popup.style.display = 'none';
         popup.onclick = (e) => { if (e.target === popup) popup.style.display = 'none'; };
@@ -141,6 +145,11 @@ function setupCalendar() {
     if (filterBtn) {
         filterBtn.onclick = () => openSearchModal();
     }
+}
+
+function goToTodayMonth() {
+    calendarDate = new Date(); // 오늘 날짜로 초기화
+    renderCalendar(); // 렌더링 (오늘이 포함된 달이 왼쪽(Month 1)에 오게 됨)
 }
 
 function renderCalendar() {
@@ -1357,5 +1366,6 @@ window.handleCalendarDrop = function(e, newDate) {
 
 // 전역 노출
 window.renderCalendar = renderCalendar;
+window.goToTodayMonth = goToTodayMonth;
 window.openScheduleModal = openScheduleModal;
 window.openRegisterScheduleModal = openRegisterScheduleModal;

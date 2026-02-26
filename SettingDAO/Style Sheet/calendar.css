@@ -121,6 +121,18 @@
     font-weight: bold;
 }
 
+#btn-today {
+    font-size: 14px;
+    font-weight: bold;
+    background-color: var(--cal-bg-element);
+    border-radius: 4px;
+    padding: 5px 15px;
+    border: 1px solid var(--cal-border);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+#btn-today:hover { background-color: var(--cal-blue); color: white; border-color: var(--cal-blue); }
+
 .events-container {
     display: flex;
     flex-wrap: wrap;
