@@ -296,7 +296,7 @@ function renderDetails() {
 
     data.maint.forEach(item => {
         // [추가] 장비점검, 프로그램변경 등 일회성 일정은 리스트에서 제외
-        if (item.type === '장비점검' || item.type === '프로그램변경') return;
+        if (item.type === '장비점검' || item.type === '프로그램변경' || item.type === '트러블이슈') return;
 
         const status = calculateStatus(item.type, item.date, item.period);
         const tr = document.createElement('tr');

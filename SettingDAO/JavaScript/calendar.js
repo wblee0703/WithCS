@@ -87,10 +87,15 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false) {
     let data = JSON.parse(localStorage.getItem(key)) || {};
     
     if (data.maint) {
-        const item = data.maint.find(i => i.id === id);
-        if (item) {
+        const index = data.maint.findIndex(i => i.id === id);
+        if (index > -1) {
+            const item = data.maint[index];
             if (isDelete) {
                 delete item.scheduledDate;
+                // [추가] 일회성 일정은 삭제 시 데이터 자체를 제거하여 누적 방지
+                if (['장비점검', '프로그램변경', '트러블이슈'].includes(item.type)) {
+                    data.maint.splice(index, 1);
+                }
             } else {
                 item.scheduledDate = dateStr;
             }
@@ -873,6 +878,14 @@ function completeScheduleWork() {
     });
 
     sameDayItems.forEach(i => delete i.scheduledDate);
+
+    // [추가] 일회성 일정(트러블이슈 등)은 완료 후 리스트에서 제거하여 데이터 누적 방지
+    data.maint = data.maint.filter(item => {
+        if (['장비점검', '프로그램변경', '트러블이슈'].includes(item.type)) {
+            return item.scheduledDate; // 예정일이 남아있지 않으면 제거
+        }
+        return true;
+    });
 
     localStorage.setItem(key, JSON.stringify(data));
     
