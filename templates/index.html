@@ -54,6 +54,11 @@
             <!-- 로그인 후: 환영 메시지 및 메뉴 바로가기 -->
             <div id="home-welcome-container" class="home-dashboard" style="display: none;">
                 <div class="home-menu-container">
+                    <button onclick="showHomeSection('integrated')" class="home-big-btn btn-integrated">
+                        <div class="icon">📑</div>
+                        <h3>Integrated</h3>
+                        <p>통합 관리</p>
+                    </button>
                     <button onclick="showHomeSection('setup')" class="home-big-btn btn-setup">
                         <div class="icon">🛠️</div>
                         <h3>Setup</h3>
@@ -63,11 +68,6 @@
                         <div class="icon">📊</div>
                         <h3>Maintenance</h3>
                         <p>운영 관리</p>
-                    </button>
-                    <button onclick="showHomeSection('integrated')" class="home-big-btn btn-integrated">
-                        <div class="icon">📑</div>
-                        <h3>Integrated</h3>
-                        <p>통합 관리</p>
                     </button>
                 </div>
                 <div class="dashboard-split">
