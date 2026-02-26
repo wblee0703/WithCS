@@ -206,22 +206,7 @@
 .event-type-text.type-프로그램변경, .popup-type-badge.type-프로그램변경 { color: var(--cal-purple); }
 .event-type-text.type-트러블이슈, .popup-type-badge.type-트러블이슈 { color: var(--cal-red-trouble); }
 
-/* Event Item Backgrounds (Light) */
-.calendar-event-item.type-PM {
-    border-left: 2px solid var(--cal-green);
-}
-.calendar-event-item.type-BM {
-    border-left: 2px solid var(--cal-blue-light);
-}
-.calendar-event-item.type-장비점검 {
-    border-left: 2px solid var(--cal-orange);
-}
-.calendar-event-item.type-프로그램변경 {
-    border-left: 2px solid var(--cal-purple);
-}
-.calendar-event-item.type-트러블이슈 {
-    border-left: 2px solid var(--cal-red-trouble);
-}
+
 
 .calendar-event-item.dragging {
     opacity: 0.5;
