@@ -222,7 +222,7 @@ function renderIntegMaintStats(mainData) {
         currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     }
 
-    const typeCounts = { 'PM': 0, 'BM': 0, '트러블이슈': 0, '프로그램변경': 0, '기타': 0 };
+    const typeCounts = { 'PM': 0, 'BM': 0, '트러블이슈': 0, '프로그램변경': 0, '장비점검': 0 };
     const itemCounts = {};
     const siteCounts = {};
 
@@ -306,7 +306,8 @@ function renderIntegMaintStats(mainData) {
         // 막대 생성
         Object.keys(dataCounts).forEach((key, index) => {
             const count = dataCounts[key];
-            const heightPercent = (count / yAxisMax) * 100;
+            const maxBarHeight = 140; // 차트 최대 높이 (px)
+            const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
             
             // 색상 결정
             let bgStyle = '#30363d';
@@ -320,7 +321,7 @@ function renderIntegMaintStats(mainData) {
             barGroup.className = 'bar-group';
             barGroup.innerHTML = `
                 <div class="bar-value">${count}</div>
-                <div class="bar" style="height: ${heightPercent}%; background: ${bgStyle};"></div>
+                <div class="bar" style="height: ${barHeight}px; background: ${bgStyle};"></div>
                 <div class="bar-label" title="${key}">${key}</div>
             `;
             container.appendChild(barGroup);
@@ -333,7 +334,7 @@ function renderIntegMaintStats(mainData) {
         'BM': 'linear-gradient(to top, #1f6feb, #58a6ff)', 
         '트러블이슈': 'linear-gradient(to top, #da3633, #ff7b72)', 
         '프로그램변경': 'linear-gradient(to top, #8957e5, #a371f7)',
-        '기타': 'linear-gradient(to top, #6e7681, #8b949e)' 
+        '장비점검': 'linear-gradient(to top, #6e7681, #8b949e)' 
     };
 
     renderChartWithAxis(chartEl, typeCounts, typeGradients);

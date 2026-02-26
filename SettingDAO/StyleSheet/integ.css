@@ -74,12 +74,15 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-end;
     width: 70px;
+    height: 100%;
     position: relative;
+    z-index: 1;
 }
 
 .bar {
-    width: 100%;
+    width: 40px;
     background-color: #30363d;
     border-radius: 4px 4px 0 0;
     transition: height 0.5s ease;
@@ -96,10 +99,13 @@
 }
 
 .bar-label {
-    margin-top: 8px;
+    height: 30px;
+    margin-top: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 11px;
     color: #8b949e;
-    text-align: center;
 }
 
 /* Y축 스타일 */
@@ -117,4 +123,3 @@
     font-size: 10px;
     padding-right: 5px;
 }
-
