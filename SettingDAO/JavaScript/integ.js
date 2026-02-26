@@ -2,6 +2,10 @@
    통합 관리 대시보드 (Integrated Dashboard)
    ========================================================================== */
 
+// 통합 관리 필터 상태 변수
+let integSelectedSite = null;
+let integSelectedType = null;
+
 function updateIntegratedDashboard() {
     // 데이터 로드
     let data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
@@ -229,6 +233,9 @@ function renderIntegMaintStats(mainData) {
     // 데이터 순회 (캘린더 일정 기준: details_*.maint 및 logs)
     Object.keys(mainData).forEach(site => {
         if (mainData[site]) {
+            // 사업장 필터 확인 (유형 차트 및 리스트용)
+            const isSiteMatch = !integSelectedSite || integSelectedSite === site;
+
             mainData[site].forEach(equip => {
                 const key = `details_${site}_${equip}`;
                 const detailData = JSON.parse(localStorage.getItem(key));
@@ -237,36 +244,38 @@ function renderIntegMaintStats(mainData) {
                 // 1. 예정된 일정 (maint)
                 if (detailData.maint) {
                     detailData.maint.forEach(item => {
-                        if (item.scheduledDate && item.scheduledDate.startsWith(currentMonthPrefix)) {
-                            countMaintItem(item.type, item.content);
-                            siteCounts[site] = (siteCounts[site] || 0) + 1;
-                        }
+                        processItem(site, item.type, item.content, item.scheduledDate, isSiteMatch);
                     });
                 }
 
                 // 2. 완료된 일정 (logs)
                 if (detailData.logs) {
                     detailData.logs.forEach(log => {
-                        if (log.date && log.date.startsWith(currentMonthPrefix)) {
-                            countMaintItem(log.type, log.content);
-                            siteCounts[site] = (siteCounts[site] || 0) + 1;
-                        }
+                        processItem(site, log.type, log.content, log.date, isSiteMatch);
                     });
                 }
             });
         }
     });
 
-    function countMaintItem(type, content) {
-        // 타입 집계
-        if (typeCounts.hasOwnProperty(type)) {
-            typeCounts[type]++;
-        } else {
-            typeCounts['기타']++;
-        }
+    function processItem(site, type, content, date, isSiteMatch) {
+        if (date && date.startsWith(currentMonthPrefix)) {
+            // 1. 사업장별 현황 (필터 무관 전체 집계)
+            siteCounts[site] = (siteCounts[site] || 0) + 1;
 
-        // 항목 집계 (내용별)
-        if (content) {
+            // 2. 작업 유형별 현황 (사업장 필터 적용)
+            if (isSiteMatch) {
+                if (typeCounts.hasOwnProperty(type)) {
+                    typeCounts[type]++;
+                } else {
+                    typeCounts['기타'] = (typeCounts['기타'] || 0) + 1;
+                }
+            }
+
+            // 3. 주요 점검 항목 (사업장 필터 & 유형 필터 적용)
+            const isTypeMatch = !integSelectedType || integSelectedType === type;
+            
+            if (isSiteMatch && isTypeMatch && content) {
             // 콤마로 구분된 항목 분리
             const items = content.split(',').map(s => s.trim());
             items.forEach(i => {
@@ -276,11 +285,12 @@ function renderIntegMaintStats(mainData) {
                     itemCounts[key] = (itemCounts[key] || 0) + 1;
                 }
             });
+            }
         }
     }
 
     // [공통] 차트 렌더링 함수 (Y축 포함)
-    const renderChartWithAxis = (container, dataCounts, colorMapOrArray) => {
+    const renderChartWithAxis = (container, dataCounts, colorMapOrArray, onClickHandler, selectedKey) => {
         container.innerHTML = '';
         
         const values = Object.values(dataCounts);
@@ -306,13 +316,25 @@ function renderIntegMaintStats(mainData) {
                 bgStyle = colorMapOrArray[key];
             }
             
+            // 선택된 항목 스타일 처리
+            const isActive = selectedKey === key;
+            const activeClass = isActive ? 'active' : '';
+            const opacityStyle = (selectedKey && !isActive) ? 'opacity: 0.3;' : '';
+
             const barGroup = document.createElement('div');
             barGroup.className = 'bar-group';
             barGroup.innerHTML = `
-                <div class="bar-value">${count}</div>
-                <div class="bar" style="height: ${barHeight}px; background: ${bgStyle};"></div>
-                <div class="bar-label" title="${key}">${key}</div>
+                <div class="bar-value" style="${opacityStyle}">${count}</div>
+                <div class="bar ${activeClass}" style="height: ${barHeight}px; background: ${bgStyle}; ${opacityStyle}"></div>
+                <div class="bar-label" title="${key}" style="${opacityStyle}">${key}</div>
             `;
+            
+            // 클릭 이벤트
+            if (onClickHandler) {
+                barGroup.onclick = () => onClickHandler(key);
+                barGroup.style.cursor = 'pointer';
+            }
+
             container.appendChild(barGroup);
         });
     };
@@ -326,7 +348,12 @@ function renderIntegMaintStats(mainData) {
         '장비점검': 'linear-gradient(to top, #6e7681, #8b949e)' 
     };
 
-    renderChartWithAxis(chartEl, typeCounts, typeGradients);
+    renderChartWithAxis(chartEl, typeCounts, typeGradients, (key) => {
+        // 유형 클릭 핸들러
+        if (integSelectedType === key) integSelectedType = null; // 토글
+        else integSelectedType = key;
+        renderIntegMaintStats(mainData); // 재렌더링
+    }, integSelectedType);
 
     if (siteChartEl) {
         const siteGradients = [
@@ -339,17 +366,40 @@ function renderIntegMaintStats(mainData) {
             'linear-gradient(to top, #1b7c83, #3fb950)', // Teal/Green
             'linear-gradient(to top, #6e40c9, #8957e5)'  // Dark Purple
         ];
-        renderChartWithAxis(siteChartEl, siteCounts, siteGradients);
+        renderChartWithAxis(siteChartEl, siteCounts, siteGradients, (key) => {
+            // 사업장 클릭 핸들러
+            if (integSelectedSite === key) {
+                integSelectedSite = null; // 토글 해제
+            } else {
+                integSelectedSite = key; // 선택
+            }
+            integSelectedType = null; // 사업장 변경 시 유형 필터 초기화
+            renderIntegMaintStats(mainData); // 재렌더링
+        }, integSelectedSite);
     }
 
     // --- 리스트 렌더링 (상위 5개 항목) ---
     listEl.innerHTML = '';
+    const typeOrder = ['PM', 'BM', '트러블이슈', '프로그램변경', '장비점검'];
+    
     const sortedItems = Object.keys(itemCounts).map(key => {
                                                    const parts = key.split('::');
                                                    // 키에서 유형과 내용 분리 (혹시 내용에 ::가 있을 경우 대비하여 slice 사용)
                                                    return { type: parts[0], name: parts.slice(1).join('::'), count: itemCounts[key] };
                                                })
-                                               .sort((a, b) => b.count - a.count)
+                                               .sort((a, b) => {
+                                                   const idxA = typeOrder.indexOf(a.type);
+                                                   const idxB = typeOrder.indexOf(b.type);
+                                                   
+                                                   // 1순위: 구분 순서
+                                                   if (idxA !== -1 && idxB !== -1) {
+                                                       if (idxA !== idxB) return idxA - idxB;
+                                                   } else if (idxA !== -1) return -1;
+                                                   else if (idxB !== -1) return 1;
+                                                   
+                                                   // 2순위: 건수 내림차순
+                                                   return b.count - a.count;
+                                               })
                                                .slice(0, 10); // 상위 10개
     
     // 막대 너비 계산을 위한 최대값
