@@ -276,7 +276,7 @@ function renderMonthGrid(year, month, titleId, gridId) {
                     dragAttr = `draggable="true" data-drag-site="${escapeHtml(group.site)}" data-drag-equip="${escapeHtml(group.equip)}" data-drag-ids="${idsJson}" ondragstart="handleCalendarDragStartFromData(event)" ondragend="this.classList.remove('dragging')"`;
                 }
 
-                eventsHtml += `<div class="calendar-event-item ${completedClass}" ${dragAttr} onclick="event.stopPropagation(); openCalendarPopup('${dateStr}', dayEvents)">
+                eventsHtml += `<div class="calendar-event-item ${completedClass} ${typeClass}" ${dragAttr} onclick="event.stopPropagation(); openCalendarPopup('${dateStr}', dayEvents)">
                     ${escapeHtml(group.site)} ${escapeHtml(equipName)} <span class="event-type-text ${typeClass}">${group.type}</span>
                 </div>`;
             });
