@@ -43,6 +43,15 @@ function updateIntegratedDashboard() {
         }
     });
 
+    // [추가] 월간 현황 날짜 초기화 (이번 달)
+    const monthPicker = document.getElementById('integ-maint-month');
+    if (monthPicker && !monthPicker.value) {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        monthPicker.value = `${y}-${m}`;
+    }
+
     // UI 렌더링
     renderIntegSetupSiteStats(); // [변경] 기간별 셋업 현황 차트
     renderIntegSetupList(setupEquips);
@@ -147,6 +156,7 @@ function renderIntegSetupSiteStats() {
 
 // 전역 노출
 window.renderIntegSetupSiteStats = renderIntegSetupSiteStats;
+window.renderIntegMaintStats = renderIntegMaintStats;
 
 function renderIntegSetupList(list) {
     const listEl = document.getElementById('integ-setup-detail-list');
@@ -192,14 +202,25 @@ function renderIntegSetupList(list) {
 }
 
 function renderIntegMaintStats(mainData) {
+    // 데이터가 없으면 로드 (onchange 호출 대응)
+    if (!mainData) {
+        mainData = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    }
+
     const chartEl = document.getElementById('integ-maint-type-chart');
     const siteChartEl = document.getElementById('integ-maint-site-chart');
     const listEl = document.getElementById('integ-maint-item-list');
     if (!chartEl || !listEl) return;
 
-    // 이번 달 기준 설정
-    const now = new Date();
-    const currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    // 선택된 월 기준 설정
+    const monthPicker = document.getElementById('integ-maint-month');
+    let currentMonthPrefix = '';
+    if (monthPicker && monthPicker.value) {
+        currentMonthPrefix = monthPicker.value;
+    } else {
+        const now = new Date();
+        currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    }
 
     const typeCounts = { 'PM': 0, 'BM': 0, '트러블이슈': 0, '기타': 0 };
     const itemCounts = {};
@@ -261,7 +282,8 @@ function renderIntegMaintStats(mainData) {
 
     Object.keys(typeCounts).forEach(type => {
         const count = typeCounts[type];
-        const heightPercent = (count / maxCount) * 100;
+        // 막대가 너무 작아 보이지 않게 최소 높이 보정 (데이터가 있으면 최소 5%)
+        const heightPercent = count > 0 ? Math.max((count / maxCount) * 100, 5) : 0;
         
         const barGroup = document.createElement('div');
         barGroup.className = 'bar-group';
@@ -281,7 +303,8 @@ function renderIntegMaintStats(mainData) {
         
         Object.keys(siteCounts).forEach((site, index) => {
             const count = siteCounts[site];
-            const heightPercent = (count / maxSiteCount) * 100;
+            // 막대가 너무 작아 보이지 않게 최소 높이 보정
+            const heightPercent = count > 0 ? Math.max((count / maxSiteCount) * 100, 5) : 0;
             const color = siteColors[index % siteColors.length];
             
             const barGroup = document.createElement('div');
