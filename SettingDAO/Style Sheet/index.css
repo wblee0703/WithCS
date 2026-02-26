@@ -186,6 +186,33 @@ body {
     filter: drop-shadow(0 0 15px rgba(63, 185, 80, 0.4));
 }
 
+/* Active State (Selected) */
+.home-big-btn.active {
+    background: #21262d;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Override hover effect for active buttons in compact mode */
+.home-menu-container.compact .home-big-btn.active,
+.home-menu-container.compact .home-big-btn.active:hover {
+    transform: translateY(1px);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.btn-setup.active {
+    border: 1px solid #58a6ff;
+}
+.btn-setup.active h3 {
+    color: #58a6ff;
+}
+
+.btn-maint.active {
+    border: 1px solid #3fb950;
+}
+.btn-maint.active h3 {
+    color: #3fb950;
+}
+
 /* ==========================================================================
    4. 대시보드 레이아웃 (Dashboard Layout)
    ========================================================================== */
@@ -257,6 +284,13 @@ body {
     width: 100%;
     text-align: center;
     padding-bottom: 10px;
+}
+
+.section-header.center-aligned {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
 .btn-move {
@@ -523,6 +557,11 @@ body {
     border-color: #62a16a;
 }
 
+.btn-text-sm { 
+    padding: 5px 10px; 
+    font-size: 12px; 
+}
+
 /* ==========================================================================
    10. 모달 및 폼 (Modals & Forms)
    ========================================================================== */
@@ -534,6 +573,10 @@ body {
 .modal-section-title {
     color: #e6edf3;
     margin-bottom: 10px;
+}
+
+.modal-section-title-blue { 
+    color: #58a6ff; margin-bottom: 10px; 
 }
 
 #new-user-role,
@@ -560,6 +603,57 @@ body {
     gap: 10px;
 }
 
+.modal-window.size-user { width: 500px; height: auto; }
+.modal-window.size-date-edit { width: 350px; height: auto; }
+
+.modal-date-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+.modal-date-row.last {
+    margin-bottom: 20px;
+}
+.modal-date-label {
+    color: #8b949e;
+    font-size: 13px;
+}
+.modal-date-input-fixed {
+    width: 130px;
+}
+.modal-checkbox-label {
+    font-size: 16px;
+    color: #e6edf3;
+    cursor: pointer;
+}
+.modal-checkbox-input {
+    transform: scale(1.5);
+    margin-right: 10px;
+}
+.delay-reason-wrapper {
+    display: none;
+    margin-top: 15px;
+    text-align: left;
+}
+.delay-reason-label {
+    display: block;
+    color: #f0883e;
+    font-size: 12px;
+    margin-bottom: 5px;
+}
+.delay-reason-textarea {
+    width: 100%;
+    height: 60px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+    resize: none;
+}
+
 /* --- Forms & Inputs --- */
 .form-label {
     width: 60px;
@@ -567,11 +661,45 @@ body {
     font-size: 13px;
 }
 
+.detail-date-row-inner { display: flex; gap: 5px; }
+
+.input-date-dark {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 5px;
+    border-radius: 4px;
+    flex: 1;
+}
+
 /* ==========================================================================
-   11. JS 동적 생성 요소 스타일 (Dynamic Elements)
+   11. 검색 및 필터 (Search & Filter)
+   ========================================================================== */
+.search-wrapper-flex { flex: 0 1 auto; }
+
+.input-search-dark {
+    width: 200px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 4px;
+}
+
+.filter-status-text {
+    margin-left: 8px;
+    font-size: 12px;
+    color: #3fb950;
+    font-weight: bold;
+}
+
+/* ==========================================================================
+   12. JS 동적 생성 요소 스타일 (Dynamic Elements)
    ========================================================================== */
 .equip-bar {
-    background-color: #1f6feb; /* 파란색 바 */
+    background-color: #3fb950; /* 녹색 */
+    width: 4px !important;     /* 얇게 */
+    height: 16px !important;   /* 길게 */
 }
 
 .no-margin-right {
@@ -651,15 +779,6 @@ body {
     /* 색상은 JS에서 지정 */
 }
 
-/* 상세 모달 텍스트 색상 */
-.text-pm {
-    color: #3fb950;
-}
-
-.text-bm {
-    color: #58a6ff;
-}
-
 /* D-Day Badge Colors */
 .d-day-badge.safe {
     background: #238636;
@@ -674,212 +793,12 @@ body {
     border: 1px solid #da3633;
 }
 
-/* Event Type Colors */
-.type-pm { color: #3fb950; }
-.type-bm { color: #58a6ff; }
-
 /* Status List 'All' item color */
 .status-color-all {
     background-color: #e6edf3;
 }
 
 /* ==========================================================================
-   13. Modal Specifics
+   13. 유틸리티 (Utilities)
    ========================================================================== */
-.modal-date-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
-    gap: 10px;
-}
-.modal-date-row.last {
-    margin-bottom: 20px;
-}
-.modal-date-label {
-    color: #8b949e;
-    font-size: 13px;
-}
-.modal-date-input-fixed {
-    width: 130px;
-}
-.modal-checkbox-label {
-    font-size: 16px;
-    color: #e6edf3;
-    cursor: pointer;
-}
-.modal-checkbox-input {
-    transform: scale(1.5);
-    margin-right: 10px;
-}
-.delay-reason-wrapper {
-    display: none;
-    margin-top: 15px;
-    text-align: left;
-}
-.delay-reason-label {
-    display: block;
-    color: #f0883e;
-    font-size: 12px;
-    margin-bottom: 5px;
-}
-.delay-reason-textarea {
-    width: 100%;
-    height: 60px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
-    padding: 8px;
-    border-radius: 4px;
-    resize: none;
-}
-
-/* ==========================================================================
-   14. 인라인 스타일 대체 (Legacy)
-   ========================================================================== */
-/* 섹션 헤더 및 툴바 */
-.section-header.center-aligned {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.section-toolbar {
-    width: 100%;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    margin-bottom: 5px;
-    position: relative;
-}
-
-.section-subtitle {
-    color: #c9d1d9;
-    margin: 0;
-    font-size: 16px;
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-/* 검색 및 필터 */
-.search-wrapper-flex { flex: 0 1 auto; }
-.input-search-dark {
-    width: 200px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 4px;
-}
 .ml-5 { margin-left: 5px; }
-.mt-5 { margin-top: 5px; }
-.filter-status-text {
-    margin-left: 8px;
-    font-size: 12px;
-    color: #3fb950;
-    font-weight: bold;
-}
-
-/* 간트 차트 영역 */
-
-/* 모달 및 폼 */
-.modal-window.size-user { width: 500px; height: auto; }
-.modal-window.size-date-edit { width: 350px; height: auto; }
-.modal-section-title-blue { color: #58a6ff; margin-bottom: 10px; }
-
-.detail-date-row-inner { display: flex; gap: 5px; }
-.input-date-dark {
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
-    padding: 5px;
-    border-radius: 4px;
-    flex: 1;
-}
-.btn-text-sm { padding: 5px 10px; font-size: 12px; }
-
-.form-row.align-start { align-items: flex-start; }
-.info-text-gray {
-    font-size: 12px;
-    color: #8b949e;
-    margin-top: 10px;
-}
-
-/* ==========================================================================
-   16. 커스텀 드롭다운 (Custom Dropdown - Shared with Maintenance)
-   ========================================================================== */
-.log-select-wrapper {
-    position: relative;
-    display: inline-block;
-    width: 100%;
-    flex: 1;
-}
-
-.log-select-trigger {
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
-    padding: 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    height: 35px;
-    line-height: 18px;
-    font-size: 13px;
-}
-
-.log-select-dropdown {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100%;
-    min-width: 100%;
-    background: #161b22;
-    border: 1px solid #30363d;
-    border-radius: 4px;
-    z-index: 1000;
-    margin-top: 2px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-}
-
-.log-select-dropdown.show { display: block; }
-
-.log-select-list {
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 5px;
-}
-
-.log-select-item {
-    display: flex;
-    font-size: 12px;
-    align-items: center;
-    padding: 6px 8px;
-    cursor: pointer;
-    border-radius: 4px;
-    margin-bottom: 2px;
-}
-
-.log-select-item:hover { background: #21262d; }
-
-.log-select-item.selected {
-    background: #1f6feb;
-    color: #fff;
-}
-
-.log-select-item span {
-    flex: 1;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.log-select-footer {
-    padding: 5px;
-    border-top: 1px solid #30363d;
-}

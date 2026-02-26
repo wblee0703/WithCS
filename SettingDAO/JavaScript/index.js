@@ -108,6 +108,12 @@ function showHomeSection(type) {
     const setupSec = document.getElementById('section-setup');
     const maintSec = document.getElementById('section-maint');
 
+    // [추가] 버튼 활성화 상태 토글
+    const btnSetup = document.querySelector('.btn-setup');
+    const btnMaint = document.querySelector('.btn-maint');
+    if (btnSetup) btnSetup.classList.remove('active');
+    if (btnMaint) btnMaint.classList.remove('active');
+
     // 메뉴 컨테이너를 컴팩트 모드로 전환 (애니메이션 효과)
     menuContainer.classList.add('compact');
 
@@ -115,10 +121,12 @@ function showHomeSection(type) {
     localStorage.setItem('lastHomeSection', type);
 
     if (type === 'setup') {
+        if (btnSetup) btnSetup.classList.add('active');
         setupSec.style.display = 'flex';
         maintSec.style.display = 'none';
         renderGanttChart(); // Render Gantt when tab is shown
     } else if (type === 'maint') {
+        if (btnMaint) btnMaint.classList.add('active');
         setupSec.style.display = 'none';
         maintSec.style.display = 'flex';
         renderCalendar();
