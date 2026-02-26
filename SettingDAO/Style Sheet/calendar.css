@@ -69,7 +69,8 @@
 .calendar-grid,
 .dates-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr)); /* 내용이 길어도 7등분 강제 고정 */
+    width: 100%;
     gap: 5px;
     text-align: center;
 }
@@ -94,6 +95,7 @@
     padding: 5px;
     cursor: pointer;
     overflow: hidden;
+    min-width: 0; /* Grid 아이템이 내용보다 작아질 수 있도록 허용 */
 }
 
 .date-cell.saturday .date-num { color: var(--cal-text-primary); }
@@ -171,6 +173,9 @@
     color: var(--cal-text-title);
     overflow: hidden;
     white-space: nowrap;
+    text-overflow: ellipsis; /* 말줄임표 처리 */
+    max-width: 100%; /* 부모 너비를 넘지 않도록 제한 */
+    display: block;
 }
 
 .calendar-event-item.completed {
