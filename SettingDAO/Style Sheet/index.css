@@ -570,7 +570,34 @@ body {
 /* ==========================================================================
    11. JS 동적 생성 요소 스타일 (Dynamic Elements)
    ========================================================================== */
-/* 차트 중앙 텍스트 */
+.equip-bar {
+    background-color: #1f6feb; /* 파란색 바 */
+}
+
+.no-margin-right {
+    margin-right: 0 !important;
+}
+
+.equip-serial {
+    color: #3fb950; /* 녹색 */
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+.scheduled-item {
+    border-left: 4px solid #3fb950 !important; /* 녹색 테두리 */
+}
+
+.scheduled-date-text {
+    color: #3fb950; /* 녹색 텍스트 */
+    font-size: 0.9em;
+}
+
+.badge-auto {
+    width: auto !important;
+    padding: 2px 8px !important;
+}
+   /* 차트 중앙 텍스트 */
 .chart-center-label {
     font-size: 11px;
     color: #8b949e;

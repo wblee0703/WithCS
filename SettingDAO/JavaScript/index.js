@@ -502,10 +502,10 @@ function renderEquipDetailList(data) {
             li.classList.add('active');
         }
         li.innerHTML = `
-            <span class="status-color" style="background-color: var(--cal-blue);"></span>
-            <span class="status-name" style="margin-right:0;">
+            <span class="status-color equip-bar"></span>
+            <span class="status-name no-margin-right">
                 ${escapeHtml(item.site)} > ${escapeHtml(item.name)} 
-                ${item.serial ? `<span style="color: var(--cal-purple); font-weight: bold; margin-left: 5px;">${escapeHtml(item.serial)}</span>` : ''}
+                ${item.serial ? `<span class="equip-serial">${escapeHtml(item.serial)}</span>` : ''}
             </span>
         `;
         li.onclick = () => {
@@ -600,7 +600,7 @@ function renderUpcomingList(data) {
         div.onclick = () => openScheduleModal(site, equip, item.id);
         
         if (item.scheduledDate) {
-            div.style.borderLeft = '4px solid #3fb950';
+            div.classList.add('scheduled-item');
             div.title = `작업 예정일: ${item.scheduledDate}`;
         } else {
             div.title = "클릭하여 작업 예정일 설정";
@@ -623,7 +623,7 @@ function renderUpcomingList(data) {
         siteInfo.innerHTML = `${escapeHtml(site)} > ${escapeHtml(name)} ${serial ? `<span class="upcoming-info-sn">(${escapeHtml(serial)})</span>` : ''}`;
 
         if (item.scheduledDate) {
-            clone.querySelector('.upcoming-info-content').innerHTML = `${escapeHtml(item.content)} <span style="color:#3fb950; font-size:0.9em;">(예정: ${item.scheduledDate})</span>`;
+            clone.querySelector('.upcoming-info-content').innerHTML = `${escapeHtml(item.content)} <span class="scheduled-date-text">(예정: ${item.scheduledDate})</span>`;
         } else {
             clone.querySelector('.upcoming-info-content').textContent = item.content;
         }
@@ -853,7 +853,7 @@ function renderSetupEquipDetailList(activeEquips) {
 
         const li = document.createElement('li');
         li.className = 'status-list-item';
-        li.innerHTML = `<span class="status-name" style="margin-right:0;">${escapeHtml(item.site)} > ${escapeHtml(name)} ${serial ? `(${escapeHtml(serial)})` : ''}</span>`;
+        li.innerHTML = `<span class="status-name no-margin-right">${escapeHtml(item.site)} > ${escapeHtml(name)} ${serial ? `(${escapeHtml(serial)})` : ''}</span>`;
         // [수정] 클릭 시 간트 차트 필터 적용 및 표시
         li.onclick = () => {
             currentGanttFilters.site = item.site;
@@ -949,9 +949,7 @@ function renderSetupUpcomingList(activeEquips) {
         clone.querySelector('.upcoming-info-content').textContent = item.task.content;
 
         const badge = clone.querySelector('.d-day-badge');
-        badge.className = `d-day-badge ${badgeClass}`;
-        badge.style.width = 'auto';
-        badge.style.padding = '2px 8px';
+        badge.className = `d-day-badge ${badgeClass} badge-auto`;
         badge.textContent = dateText;
 
         listEl.appendChild(clone);
