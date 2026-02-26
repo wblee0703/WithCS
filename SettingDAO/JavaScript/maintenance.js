@@ -1,6 +1,18 @@
 /* ==========================================================================
    1. 초기화 및 이벤트 리스너 (Initialization)
    ========================================================================== */
+// [추가] 공통 함수 폴백 (common.js 누락 대비)
+if (typeof window.getDragAfterElement !== 'function') {
+    window.getDragAfterElement = function(container, y, selector) {
+        const draggableElements = [...container.querySelectorAll(selector)];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            return (offset < 0 && offset > closest.offset) ? { offset: offset, element: child } : closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     setupMaintenanceEvents();
     setupLogEvents();

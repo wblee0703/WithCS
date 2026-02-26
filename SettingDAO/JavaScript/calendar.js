@@ -8,6 +8,11 @@ var currentSearchFilters = { site: '', equip: '' };
 let currentScheduleTarget = null;
 let currentDetailTarget = null;
 
+// [추가] 공통 함수 폴백 (common.js 누락 대비)
+if (typeof window.getHolidayName !== 'function') {
+    window.getHolidayName = function(year, month, day) { return null; };
+}
+
 // [2] 초기화 (Initialization)
 document.addEventListener('DOMContentLoaded', () => {
     setupCalendar();

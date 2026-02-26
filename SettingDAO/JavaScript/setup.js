@@ -6,6 +6,31 @@ let originalSetupLogMemo = "";
 let currentSetupCompletionTarget = null;
 let currentExecStartTargetId = null;
 
+// [추가] 공통 함수 폴백 (common.js 누락 대비)
+if (typeof window.isHoliday !== 'function') {
+    window.isHoliday = function(date) { return false; };
+}
+if (typeof window.getHolidayName !== 'function') {
+    window.getHolidayName = function(year, month, day) { return null; };
+}
+if (typeof window.addBusinessDays !== 'function') {
+    window.addBusinessDays = function(date, days) {
+        const result = new Date(date);
+        result.setDate(result.getDate() + days);
+        return result;
+    };
+}
+if (typeof window.getDragAfterElement !== 'function') {
+    window.getDragAfterElement = function(container, y, selector) {
+        const draggableElements = [...container.querySelectorAll(selector)];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            return (offset < 0 && offset > closest.offset) ? { offset: offset, element: child } : closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // 1. 모달 열기 버튼 이벤트 연결
     const loadBtn = document.getElementById('btn-load-setup-list');
