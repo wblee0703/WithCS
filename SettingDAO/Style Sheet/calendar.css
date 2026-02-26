@@ -238,6 +238,11 @@
 .calendars-wrapper { display: flex; gap: 20px; }
 .calendar-divider { width: 1px; background: var(--cal-border); }
 
+.calendar-view {
+    flex: 1;        /* 두 달력의 너비를 1:1로 강제 분할 */
+    min-width: 0;   /* 내부 컨텐츠(Grid)가 Flex 영역을 초과하지 않도록 제한 */
+}
+
 .event-dot {
     width: 6px;
     height: 6px;
