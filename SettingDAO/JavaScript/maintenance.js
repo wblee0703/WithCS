@@ -570,7 +570,7 @@ function renderLogs() {
         let displayContent = log.content || '-';
         let tooltipContent = log.content || '';
 
-        if (log.content && (log.type === 'PM' || log.type === 'BM')) {
+        if (log.content && (log.type === 'PM' || log.type === 'BM' || log.type === '트러블이슈')) {
             const items = log.content.split(',').map(s => s.trim());
             if (items.length > 1) {
                 displayContent = `${items[0]} 외 ${items.length - 1}개`;
@@ -793,6 +793,7 @@ function renderEditLogContentField(id, type, value) {
             let filteredItems = [];
             if (type === '트러블이슈') {
                 filteredItems.push({ content: '데이터이슈' }); // 기본값 추가
+                filteredItems.push({ content: '설비 이상' });
                 filteredItems = filteredItems.concat(data.maint.filter(item => item.type === 'PM' || item.type === 'BM'));
             } else {
                 filteredItems = data.maint.filter(item => item.type === type);
@@ -912,6 +913,7 @@ function updateLogContentOptions() {
                 let filteredItems = [];
                 if (type === '트러블이슈') {
                     filteredItems.push({ content: '데이터이슈' }); // 기본값 추가
+                    filteredItems.push({ content: '설비 이상' });
                     filteredItems = filteredItems.concat(data.maint.filter(item => item.type === 'PM' || item.type === 'BM'));
                 } else {
                     filteredItems = data.maint.filter(item => item.type === type);
