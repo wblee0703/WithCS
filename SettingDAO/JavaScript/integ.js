@@ -9,7 +9,6 @@ function updateIntegratedDashboard() {
 
     let totalCount = 0;
     let setupCount = 0;
-    let operatingCount = 0;
     let setupEquips = [];
 
     // 데이터 집계
@@ -17,7 +16,7 @@ function updateIntegratedDashboard() {
         if (data[site]) {
             data[site].forEach(equip => {
                 totalCount++;
-                const equipKey = `${site}::`;
+                const equipKey = `${site}::${equip}`;
                 const detailData = setupData[equipKey];
 
                 let isSetup = false;
@@ -39,53 +38,115 @@ function updateIntegratedDashboard() {
                 if (isSetup) {
                     setupCount++;
                     setupEquips.push({ site, equip, progress });
-                } else {
-                    operatingCount++;
                 }
             });
         }
     });
 
     // UI 렌더링
-    renderIntegOpChart(operatingCount, setupCount, totalCount);
+    renderIntegSetupSiteStats(); // [변경] 기간별 셋업 현황 차트
     renderIntegSetupList(setupEquips);
     renderIntegMaintStats(data); // [추가] 운영 관리 통계 렌더링
 }
 
-function renderIntegOpChart(operating, setup, total) {
-    const chartEl = document.getElementById('integ-op-chart');
-    const centerText = document.getElementById('integ-op-center');
-    
-    // 텍스트 업데이트
-    document.getElementById('integ-total-count').textContent = total;
-    document.getElementById('integ-op-count').textContent = operating;
-    document.getElementById('integ-setup-count').textContent = setup;
+function renderIntegSetupSiteStats() {
+    const chartEl = document.getElementById('integ-setup-site-chart');
+    const listEl = document.getElementById('integ-setup-site-list');
+    const centerText = document.getElementById('integ-setup-site-center');
+    const periodSelect = document.getElementById('integ-setup-period');
 
-    if (!chartEl) return;
+    if (!chartEl || !listEl || !periodSelect) return;
 
-    if (total === 0) {
+    const period = periodSelect.value;
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const siteCounts = {};
+    let totalInPeriod = 0;
+
+    // 기간 계산
+    let fromDate = null;
+    if (period !== 'all') {
+        const now = new Date();
+        now.setMonth(now.getMonth() - parseInt(period));
+        fromDate = now.toISOString().split('T')[0];
+    }
+
+    Object.keys(setupData).forEach(key => {
+        const parts = key.split('::');
+        const site = parts[0];
+        const data = setupData[key];
+
+        if (data && data.setupDetails) {
+            // 해당 기간 내 활동 여부 확인
+            let hasActivity = false;
+            
+            // 1. 현재 진행 중인 경우 (완료 안됨 + 시작일 있음) -> 무조건 포함
+            const completeItem = data.setupDetails.find(d => d.content === '셋업 완료');
+            if (completeItem && !completeItem.completed && completeItem.startDate) {
+                hasActivity = true;
+            }
+
+            // 2. 기간 내 완료된 작업이 있는 경우
+            if (!hasActivity && fromDate) {
+                const activeTask = data.setupDetails.find(t => {
+                    // 완료일이 기간 내에 있거나
+                    if (t.completed && t.date && t.date >= fromDate) return true;
+                    // 시작일이 기간 내에 있는 경우
+                    if (t.startDate && t.startDate >= fromDate) return true;
+                    return false;
+                });
+                if (activeTask) hasActivity = true;
+            } else if (!hasActivity && period === 'all') {
+                // 전체 기간이면 시작일이 있는 모든 셋업 포함
+                if (data.setupDetails.some(t => t.startDate)) hasActivity = true;
+            }
+
+            if (hasActivity) {
+                siteCounts[site] = (siteCounts[site] || 0) + 1;
+                totalInPeriod++;
+            }
+        }
+    });
+
+    // 차트 및 리스트 렌더링
+    listEl.innerHTML = '';
+    if (totalInPeriod === 0) {
         chartEl.style.background = '';
-        if (centerText) centerText.innerHTML = `<div class="chart-center-label">Rate</div><div class="chart-center-value">0%</div>`;
+        if (centerText) centerText.innerHTML = `<div class="chart-center-label">Total</div><div class="chart-center-value">0</div>`;
+        listEl.innerHTML = '<li class="list-empty-msg">데이터 없음</li>';
         return;
     }
 
-    // 가동률 계산
-    const opRate = Math.round((operating / total) * 100);
+    const colors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
+    let gradientStr = '';
+    let currentDeg = 0;
     
-    // 도넛 차트 그리기 (Green: 가동, Blue: 셋업)
-    // CSS 변수 사용: var(--cal-green) #3fb950, var(--cal-blue) #1f6feb
-    const green = '#3fb950';
-    const blue = '#1f6feb';
-    
-    const opDeg = (operating / total) * 360;
-    
-    // conic-gradient: green 0deg ~ opDeg, blue opDeg ~ 360deg
-    chartEl.style.background = `conic-gradient(${green} 0deg ${opDeg}deg, ${blue} ${opDeg}deg 360deg)`;
-    
+    const sortedSites = Object.keys(siteCounts).map(site => ({ name: site, count: siteCounts[site] }))
+                                               .sort((a, b) => b.count - a.count);
+
+    sortedSites.forEach((site, index) => {
+        const color = colors[index % colors.length];
+        const deg = (site.count / totalInPeriod) * 360;
+        gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
+        currentDeg += deg;
+
+        const li = document.createElement('li');
+        li.className = 'status-list-item';
+        li.innerHTML = `
+            <span class="status-color" style="background-color: ${color};"></span>
+            <span class="status-name">${escapeHtml(site.name)}</span>
+            <span class="status-count">${site.count}</span>
+        `;
+        listEl.appendChild(li);
+    });
+
+    chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
     if (centerText) {
-        centerText.innerHTML = `<div class="chart-center-label">가동률</div><div class="chart-center-value" style="color:${green}">${opRate}%</div>`;
+        centerText.innerHTML = `<div class="chart-center-label">Total</div><div class="chart-center-value">${totalInPeriod}</div>`;
     }
 }
+
+// 전역 노출
+window.renderIntegSetupSiteStats = renderIntegSetupSiteStats;
 
 function renderIntegSetupList(list) {
     const listEl = document.getElementById('integ-setup-detail-list');

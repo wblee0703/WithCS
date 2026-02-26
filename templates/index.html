@@ -284,18 +284,29 @@
                         </div>
                         <div class="integ-dashboard-view">
                             <div class="integ-row">
-                                <!-- 가동률 차트 -->
+                                <!-- 기간별 셋업 현황 차트 -->
                                 <div class="status-group card-like">
-                                    <h5 class="status-group-title">전체 장비 가동률</h5>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 15px; padding: 0 10px;">
+                                        <h5 class="status-group-title" style="margin-bottom: 0; font-size: 18px;">기간별 셋업 현황</h5>
+                                        <select id="integ-setup-period" class="modal-select" style="width: auto; padding: 2px 8px; font-size: 12px; height: 28px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px;" onchange="renderIntegSetupSiteStats()">
+                                            <option value="1">1개월</option>
+                                            <option value="3" selected>3개월</option>
+                                            <option value="6">6개월</option>
+                                            <option value="12">1년</option>
+                                            <option value="all">전체</option>
+                                        </select>
+                                    </div>
                                     <div class="chart-row">
                                         <div class="donut-chart-wrapper">
-                                            <div class="donut-chart" id="integ-op-chart"></div>
-                                            <div class="chart-center" id="integ-op-center"></div>
+                                            <div class="donut-chart" id="integ-setup-site-chart"></div>
+                                            <div class="chart-center" id="integ-setup-site-center"></div>
                                         </div>
-                                        <div class="integ-stat-info">
-                                            <div class="stat-item"><span class="stat-label">전체 장비</span><span class="stat-value" id="integ-total-count">0</span></div>
-                                            <div class="stat-item"><span class="stat-label text-green">가동 중</span><span class="stat-value" id="integ-op-count">0</span></div>
-                                            <div class="stat-item"><span class="stat-label text-blue">셋업 중</span><span class="stat-value" id="integ-setup-count">0</span></div>
+                                        <div class="status-list-container status-list-flex">
+                                            <div class="status-list-header">
+                                                <span class="header-name">사업장</span>
+                                                <span class="header-count">대수</span>
+                                            </div>
+                                            <ul class="site-status-list" id="integ-setup-site-list"></ul>
                                         </div>
                                     </div>
                                 </div>
