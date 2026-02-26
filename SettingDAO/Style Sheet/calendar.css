@@ -69,7 +69,7 @@
 .calendar-grid,
 .dates-grid {
     display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr)); /* 내용이 길어도 7등분 강제 고정 */
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important; /* 내용이 길어도 7등분 강제 고정 */
     width: 100%;
     gap: 5px;
     text-align: center;
