@@ -366,9 +366,9 @@ function renderIntegMaintStats(mainData) {
             const width = maxItemCount > 0 ? (item.count / maxItemCount) * 100 : 0;
             li.innerHTML = `
                 <div class="list-bar-bg" style="width: ${width}%; position: absolute; top: 2px; left: 0; bottom: 2px; background: linear-gradient(to right, rgba(88, 166, 255, 0.2), rgba(88, 166, 255, 0.05)); z-index: -1; border-radius: 4px; transition: width 0.5s ease;"></div>
-                <span class="list-type-badge type-${item.type}">${item.type}</span>
-                <span class="status-name">${escapeHtml(item.name)}</span>
-                <span class="status-count">${item.count}</span>
+                <div style="width: 80px; text-align: center; flex-shrink: 0;"><span class="list-type-badge type-${item.type}" style="margin: 0;">${item.type}</span></div>
+                <span class="status-name" style="flex: 1; text-align: center; margin: 0;">${escapeHtml(item.name)}</span>
+                <span class="status-count" style="width: 60px; text-align: center; flex-shrink: 0;">${item.count}</span>
             `;
             listEl.appendChild(li);
         });
