@@ -193,6 +193,7 @@ function renderIntegSetupList(list) {
 
 function renderIntegMaintStats(mainData) {
     const chartEl = document.getElementById('integ-maint-type-chart');
+    const siteChartEl = document.getElementById('integ-maint-site-chart');
     const listEl = document.getElementById('integ-maint-item-list');
     if (!chartEl || !listEl) return;
 
@@ -202,6 +203,7 @@ function renderIntegMaintStats(mainData) {
 
     const typeCounts = { 'PM': 0, 'BM': 0, '트러블이슈': 0, '기타': 0 };
     const itemCounts = {};
+    const siteCounts = {};
 
     // 데이터 순회 (캘린더 일정 기준: details_*.maint 및 logs)
     Object.keys(mainData).forEach(site => {
@@ -216,6 +218,7 @@ function renderIntegMaintStats(mainData) {
                     detailData.maint.forEach(item => {
                         if (item.scheduledDate && item.scheduledDate.startsWith(currentMonthPrefix)) {
                             countMaintItem(item.type, item.content);
+                            siteCounts[site] = (siteCounts[site] || 0) + 1;
                         }
                     });
                 }
@@ -225,6 +228,7 @@ function renderIntegMaintStats(mainData) {
                     detailData.logs.forEach(log => {
                         if (log.date && log.date.startsWith(currentMonthPrefix)) {
                             countMaintItem(log.type, log.content);
+                            siteCounts[site] = (siteCounts[site] || 0) + 1;
                         }
                     });
                 }
@@ -268,6 +272,28 @@ function renderIntegMaintStats(mainData) {
         `;
         chartEl.appendChild(barGroup);
     });
+
+    // --- 사업장별 차트 렌더링 ---
+    if (siteChartEl) {
+        siteChartEl.innerHTML = '';
+        const maxSiteCount = Math.max(...Object.values(siteCounts), 1);
+        const siteColors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
+        
+        Object.keys(siteCounts).forEach((site, index) => {
+            const count = siteCounts[site];
+            const heightPercent = (count / maxSiteCount) * 100;
+            const color = siteColors[index % siteColors.length];
+            
+            const barGroup = document.createElement('div');
+            barGroup.className = 'bar-group';
+            barGroup.innerHTML = `
+                <div class="bar-value">${count}</div>
+                <div class="bar" style="height: ${heightPercent}%; background-color: ${color};" title="${site}: ${count}건"></div>
+                <div class="bar-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50px;" title="${site}">${site}</div>
+            `;
+            siteChartEl.appendChild(barGroup);
+        });
+    }
 
     // --- 리스트 렌더링 (상위 5개 항목) ---
     listEl.innerHTML = '';
