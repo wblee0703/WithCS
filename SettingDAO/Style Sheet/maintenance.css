@@ -168,7 +168,7 @@ tr.dragging {
 }
 
 #log-list-wrapper .data-table th:nth-child(1) { width: 150px; } /* 점검일 */
-#log-list-wrapper .data-table th:nth-child(2) { width: 80px; } /* 구분 */
+#log-list-wrapper .data-table th:nth-child(2) { width: 100px; } /* 구분 */
 #log-list-wrapper .data-table th:nth-child(4) { width: 150px; } /* 작업자 */
 #log-list-wrapper .data-table th:nth-child(5) { width: 90px; }  /* 관리 */
 
