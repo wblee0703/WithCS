@@ -98,16 +98,28 @@
             background: #1a5cce;
         }
 
-        /* 캘린더 레이아웃 고정 (글자 수에 따른 변형 방지) */
+        /* 캘린더 레이아웃 고정 (글자 수에 따른 변형 방지) - 헤더와 본문 모두 적용 */
+        .calendar-grid,
         .dates-grid {
             display: grid !important;
-            grid-template-columns: repeat(7, 1fr) !important; /* 7열 강제 고정 */
+            grid-template-columns: repeat(7, minmax(0, 1fr)) !important; /* minmax(0, 1fr)을 사용하여 내용이 길어도 균등 분할 */
+            width: 100%;
         }
 
-        .dates-grid > div {
+        /* 날짜 셀 내부 스타일 */
+        .dates-grid > div, .date-cell {
             height: 100px; /* 셀 높이 고정 (필요시 조절) */
             overflow: hidden; /* 넘치는 내용 숨김 */
             white-space: nowrap; /* 줄바꿈 방지 */
+            text-overflow: ellipsis; /* 말줄임표 */
+        }
+
+        /* 이벤트 아이템이 셀 너비를 넘지 않도록 설정 */
+        .calendar-event-item {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
         }
     </style>
 </head>
