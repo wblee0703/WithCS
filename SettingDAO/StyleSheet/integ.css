@@ -65,14 +65,16 @@
     justify-content: space-around;
     height: 200px;
     width: 100%;
-    padding: 20px 10px 10px 10px;
+    padding: 20px 10px 10px 40px; /* Y축 공간 확보 (왼쪽 패딩 증가) */
+    position: relative;
+    box-sizing: border-box;
 }
 
 .bar-group {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 50px;
+    width: 70px;
     position: relative;
 }
 
@@ -82,6 +84,8 @@
     border-radius: 4px 4px 0 0;
     transition: height 0.5s ease;
     min-height: 1px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    border-top: 1px solid rgba(255,255,255,0.1);
 }
 
 .bar-value {
@@ -97,3 +101,20 @@
     color: #8b949e;
     text-align: center;
 }
+
+/* Y축 스타일 */
+.y-axis {
+    position: absolute;
+    left: 10px;
+    top: 20px;
+    bottom: 35px; /* 라벨 높이만큼 하단 여백 */
+    width: 30px;
+    display: flex;
+    flex-direction: column-reverse; /* 0이 아래로 오도록 */
+    justify-content: space-between;
+    border-right: 1px solid #30363d;
+    color: #8b949e;
+    font-size: 10px;
+    padding-right: 5px;
+}
+

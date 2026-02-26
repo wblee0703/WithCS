@@ -71,85 +71,6 @@
                     </button>
                 </div>
                 <div class="dashboard-split">
-                    <!-- 통합 관리 현황 (신규) -->
-                    <div class="dashboard-col" id="section-integrated" style="display: none;">
-                        <div class="section-header center-aligned">
-                            <h4 class="section-title">통합 관리 현황</h4>
-                        </div>
-                        <div class="integ-dashboard-view">
-                            <div class="integ-row">
-                                <!-- 기간별 셋업 현황 차트 -->
-                                <div class="status-group card-like">
-                                    <div
-                                        style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 15px; padding: 0 10px;">
-                                        <h5 class="status-group-title" style="margin-bottom: 0; font-size: 18px;">기간별 셋업
-                                            현황</h5>
-                                        <select id="integ-setup-period" class="modal-select"
-                                            style="width: auto; padding: 2px 8px; font-size: 12px; height: 28px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px;"
-                                            onchange="renderIntegSetupSiteStats()">
-                                            <option value="1">1개월</option>
-                                            <option value="3" selected>3개월</option>
-                                            <option value="6">6개월</option>
-                                            <option value="12">1년</option>
-                                            <option value="all">전체</option>
-                                        </select>
-                                    </div>
-                                    <div class="chart-row">
-                                        <div class="donut-chart-wrapper">
-                                            <div class="donut-chart" id="integ-setup-site-chart"></div>
-                                            <div class="chart-center" id="integ-setup-site-center"></div>
-                                        </div>
-                                        <div class="status-list-container status-list-flex">
-                                            <div class="status-list-header">
-                                                <span class="header-name">사업장</span>
-                                                <span class="header-count">대수</span>
-                                            </div>
-                                            <ul class="site-status-list" id="integ-setup-site-list"></ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- 셋업 진행 리스트 -->
-                                <div class="status-group card-like" style="flex: 1.5;">
-                                    <h5 class="status-group-title">셋업 진행 장비 목록</h5>
-                                    <div class="status-list-container status-list-flex" style="height: 225px;">
-                                        <div class="status-list-header">
-                                            <span class="header-name">장비 정보</span>
-                                            <span class="header-count">진행률</span>
-                                        </div>
-                                        <ul class="site-status-list" id="integ-setup-detail-list"></ul>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- 운영 관리 통계 (신규) -->
-                            <div
-                                style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 20px; margin-bottom: 10px; padding: 0 5px;">
-                                <h4 class="section-title" style="font-size: 16px; margin: 0;">월간 운영 현황</h4>
-                                <input type="month" id="integ-maint-month" class="modal-select"
-                                    style="width: auto; padding: 2px 8px; font-size: 12px; height: 28px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px;"
-                                    onchange="renderIntegMaintStats()">
-                            </div>
-                            <div class="integ-row">
-                                <div class="status-group card-like">
-                                    <h5 class="status-group-title">사업장별 현황</h5>
-                                    <div id="integ-maint-site-chart" class="bar-chart-container"></div>
-                                </div>
-                                <div class="status-group card-like">
-                                    <h5 class="status-group-title">작업 유형별 현황</h5>
-                                    <div id="integ-maint-type-chart" class="bar-chart-container"></div>
-                                </div>
-                                <div class="status-group card-like">
-                                    <h5 class="status-group-title">주요 점검 항목</h5>
-                                    <div class="status-list-container status-list-flex" style="height: 200px;">
-                                        <div class="status-list-header">
-                                            <span class="header-name">항목명</span>
-                                            <span class="header-count">건수</span>
-                                        </div>
-                                        <ul class="site-status-list" id="integ-maint-item-list"></ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                     <!-- 왼쪽: 셋업 현황 -->
                     <div class="dashboard-col" id="section-setup" style="display: none;">
                         <div class="section-header center-aligned">
@@ -236,8 +157,7 @@
                                 <div class="gantt__resizer" id="gantt-resizer"></div>
                                 <div class="gantt__timeline-container" id="gantt-timeline-container">
                                     <div class="gantt__timeline" id="gantt-timeline">
-                                        <div class="gantt__header-row gantt__header-row--fixed"
-                                            id="gantt-header-months">
+                                        <div class="gantt__header-row gantt__header-row--fixed" id="gantt-header-months">
                                         </div>
                                         <div class="gantt__header-row gantt__header-row--fixed" id="gantt-header-weeks">
                                         </div>
@@ -351,6 +271,80 @@
                                         <div class="day-name">토</div>
                                     </div>
                                     <div id="calendar-dates-2" class="dates-grid"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- 통합 관리 현황 (신규) -->
+                    <div class="dashboard-col" id="section-integrated" style="display: none;">
+                        <div class="section-header center-aligned">
+                            <h4 class="section-title">통합 관리 현황</h4>
+                        </div>
+                        <div class="integ-dashboard-view">
+                            <div class="integ-row">
+                                <!-- 기간별 셋업 현황 차트 -->
+                                <div class="status-group card-like">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 15px; padding: 0 10px;">
+                                        <h5 class="status-group-title" style="margin-bottom: 0; font-size: 18px;">기간별 셋업 현황</h5>
+                                        <select id="integ-setup-period" class="modal-select" style="width: auto; padding: 2px 8px; font-size: 12px; height: 28px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px;" onchange="renderIntegSetupSiteStats()">
+                                            <option value="1">1개월</option>
+                                            <option value="3" selected>3개월</option>
+                                            <option value="6">6개월</option>
+                                            <option value="12">1년</option>
+                                            <option value="all">전체</option>
+                                        </select>
+                                    </div>
+                                    <div class="chart-row">
+                                        <div class="donut-chart-wrapper">
+                                            <div class="donut-chart" id="integ-setup-site-chart"></div>
+                                            <div class="chart-center" id="integ-setup-site-center"></div>
+                                        </div>
+                                        <div class="status-list-container status-list-flex">
+                                            <div class="status-list-header">
+                                                <span class="header-name">사업장</span>
+                                                <span class="header-count">대수</span>
+                                            </div>
+                                            <ul class="site-status-list" id="integ-setup-site-list"></ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 셋업 진행 리스트 -->
+                                <div class="status-group card-like" style="flex: 1.5;">
+                                    <h5 class="status-group-title">셋업 진행 장비 목록</h5>
+                                    <div class="status-list-container status-list-flex" style="height: 225px;">
+                                        <div class="status-list-header">
+                                            <span class="header-name">장비 정보</span>
+                                            <span class="header-count">진행률</span>
+                                        </div>
+                                        <ul class="site-status-list" id="integ-setup-detail-list"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 운영 관리 통계 (신규) -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 20px; margin-bottom: 10px; padding: 0 5px;">
+                                <h4 class="section-title" style="font-size: 16px; margin: 0;">월간 운영 현황</h4>
+                                <input type="month" id="integ-maint-month" class="modal-select" style="width: auto; padding: 2px 8px; font-size: 12px; height: 28px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px;" onchange="renderIntegMaintStats()">
+                            </div>
+                            <div class="integ-row">
+                                <div class="status-group card-like">
+                                    <h5 class="status-group-title">사업장별 현황</h5>
+                                    <div id="integ-maint-site-chart" class="bar-chart-container"></div>
+                                </div>
+                                <div class="status-group card-like">
+                                    <h5 class="status-group-title">작업 유형별 현황</h5>
+                                    <div id="integ-maint-type-chart" class="bar-chart-container"></div>
+                                </div>
+                                <div class="status-group card-like">
+                                    <h5 class="status-group-title">주요 점검 항목</h5>
+                                    <div class="status-list-container status-list-flex" style="height: 200px;">
+                                        <div class="status-list-header">
+                                            <span class="header-name">항목명</span>
+                                            <span class="header-count">건수</span>
+                                        </div>
+                                        <ul class="site-status-list" id="integ-maint-item-list"></ul>
+                                    </div>
                                 </div>
                             </div>
                         </div>

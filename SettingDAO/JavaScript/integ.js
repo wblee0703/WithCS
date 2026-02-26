@@ -222,7 +222,7 @@ function renderIntegMaintStats(mainData) {
         currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     }
 
-    const typeCounts = { 'PM': 0, 'BM': 0, '트러블이슈': 0, '기타': 0 };
+    const typeCounts = { 'PM': 0, 'BM': 0, '트러블이슈': 0, '프로그램변경': 0, '기타': 0 };
     const itemCounts = {};
     const siteCounts = {};
 
@@ -275,47 +275,81 @@ function renderIntegMaintStats(mainData) {
         }
     }
 
-    // --- 차트 렌더링 (막대 차트) ---
-    chartEl.innerHTML = '';
-    const maxCount = Math.max(...Object.values(typeCounts), 1); // 0 방지
-    const colors = { 'PM': '#3fb950', 'BM': '#1f6feb', '트러블이슈': '#da3633', '기타': '#8b949e' };
-
-    Object.keys(typeCounts).forEach(type => {
-        const count = typeCounts[type];
-        // 막대가 너무 작아 보이지 않게 최소 높이 보정 (데이터가 있으면 최소 5%)
-        const heightPercent = count > 0 ? Math.max((count / maxCount) * 100, 5) : 0;
+    // [공통] 차트 렌더링 함수 (Y축 포함)
+    const renderChartWithAxis = (container, dataCounts, colorMapOrArray) => {
+        container.innerHTML = '';
         
-        const barGroup = document.createElement('div');
-        barGroup.className = 'bar-group';
-        barGroup.innerHTML = `
-            <div class="bar-value">${count}</div>
-            <div class="bar" style="height: ${heightPercent}%; background-color: ${colors[type]};"></div>
-            <div class="bar-label">${type}</div>
-        `;
-        chartEl.appendChild(barGroup);
-    });
-
-    // --- 사업장별 차트 렌더링 ---
-    if (siteChartEl) {
-        siteChartEl.innerHTML = '';
-        const maxSiteCount = Math.max(...Object.values(siteCounts), 1);
-        const siteColors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
+        const values = Object.values(dataCounts);
+        const maxVal = values.length > 0 ? Math.max(...values) : 0;
         
-        Object.keys(siteCounts).forEach((site, index) => {
-            const count = siteCounts[site];
-            // 막대가 너무 작아 보이지 않게 최소 높이 보정
-            const heightPercent = count > 0 ? Math.max((count / maxSiteCount) * 100, 5) : 0;
-            const color = siteColors[index % siteColors.length];
+        // Y축 스케일 계산 (초기값 10, 초과 시 5단위 증가)
+        let yAxisMax = 10;
+        if (maxVal > 10) {
+            yAxisMax = Math.ceil(maxVal / 5) * 5;
+        }
+
+        // Y축 생성
+        const yAxis = document.createElement('div');
+        yAxis.className = 'y-axis';
+        
+        // 눈금 생성 (0, 5, 10... yAxisMax)
+        let step = 5;
+        if (yAxisMax > 50) step = 10; // 데이터가 많으면 간격 조정
+        
+        for (let i = 0; i <= yAxisMax; i += step) {
+            const tick = document.createElement('span');
+            tick.textContent = i;
+            yAxis.appendChild(tick);
+        }
+        container.appendChild(yAxis);
+
+        // 막대 생성
+        Object.keys(dataCounts).forEach((key, index) => {
+            const count = dataCounts[key];
+            const heightPercent = (count / yAxisMax) * 100;
+            
+            // 색상 결정
+            let bgStyle = '#30363d';
+            if (Array.isArray(colorMapOrArray)) {
+                bgStyle = colorMapOrArray[index % colorMapOrArray.length];
+            } else if (colorMapOrArray[key]) {
+                bgStyle = colorMapOrArray[key];
+            }
             
             const barGroup = document.createElement('div');
             barGroup.className = 'bar-group';
             barGroup.innerHTML = `
                 <div class="bar-value">${count}</div>
-                <div class="bar" style="height: ${heightPercent}%; background-color: ${color};" title="${site}: ${count}건"></div>
-                <div class="bar-label" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50px;" title="${site}">${site}</div>
+                <div class="bar" style="height: ${heightPercent}%; background: ${bgStyle};"></div>
+                <div class="bar-label" title="${key}">${key}</div>
             `;
-            siteChartEl.appendChild(barGroup);
+            container.appendChild(barGroup);
         });
+    };
+
+    // --- 차트 렌더링 실행 ---
+    const typeGradients = { 
+        'PM': 'linear-gradient(to top, #238636, #3fb950)', 
+        'BM': 'linear-gradient(to top, #1f6feb, #58a6ff)', 
+        '트러블이슈': 'linear-gradient(to top, #da3633, #ff7b72)', 
+        '프로그램변경': 'linear-gradient(to top, #8957e5, #a371f7)',
+        '기타': 'linear-gradient(to top, #6e7681, #8b949e)' 
+    };
+
+    renderChartWithAxis(chartEl, typeCounts, typeGradients);
+
+    if (siteChartEl) {
+        const siteGradients = [
+            'linear-gradient(to top, #1f6feb, #58a6ff)', // Blue
+            'linear-gradient(to top, #238636, #3fb950)', // Green
+            'linear-gradient(to top, #d29922, #f0883e)', // Orange
+            'linear-gradient(to top, #8957e5, #a371f7)', // Purple
+            'linear-gradient(to top, #da3633, #ff7b72)', // Red
+            'linear-gradient(to top, #9e6a03, #d29922)', // Dark Orange
+            'linear-gradient(to top, #1b7c83, #3fb950)', // Teal/Green
+            'linear-gradient(to top, #6e40c9, #8957e5)'  // Dark Purple
+        ];
+        renderChartWithAxis(siteChartEl, siteCounts, siteGradients);
     }
 
     // --- 리스트 렌더링 (상위 5개 항목) ---
@@ -324,13 +358,20 @@ function renderIntegMaintStats(mainData) {
                                                .sort((a, b) => b.count - a.count)
                                                .slice(0, 10); // 상위 10개
     
+    // 막대 너비 계산을 위한 최대값
+    const maxItemCount = sortedItems.length > 0 ? sortedItems[0].count : 0;
+
     if (sortedItems.length === 0) {
         listEl.innerHTML = '<li class="list-empty-msg">데이터 없음</li>';
     } else {
         sortedItems.forEach(item => {
             const li = document.createElement('li');
             li.className = 'status-list-item';
+            li.style.position = 'relative';
+            li.style.zIndex = '1';
+            const width = maxItemCount > 0 ? (item.count / maxItemCount) * 100 : 0;
             li.innerHTML = `
+                <div class="list-bar-bg" style="width: ${width}%; position: absolute; top: 2px; left: 0; bottom: 2px; background: linear-gradient(to right, rgba(88, 166, 255, 0.2), rgba(88, 166, 255, 0.05)); z-index: -1; border-radius: 4px; transition: width 0.5s ease;"></div>
                 <span class="status-name">${escapeHtml(item.name)}</span>
                 <span class="status-count">${item.count}</span>
             `;
