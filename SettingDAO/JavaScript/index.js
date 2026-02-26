@@ -502,7 +502,11 @@ function renderEquipDetailList(data) {
             li.classList.add('active');
         }
         li.innerHTML = `
-            <span class="status-name" style="margin-right:0;">${escapeHtml(item.site)} > ${escapeHtml(item.name)} ${item.serial ? `(${escapeHtml(item.serial)})` : ''}</span>
+            <span class="status-color" style="background-color: var(--cal-blue);"></span>
+            <span class="status-name" style="margin-right:0;">
+                ${escapeHtml(item.site)} > ${escapeHtml(item.name)} 
+                ${item.serial ? `<span style="color: var(--cal-purple); font-weight: bold; margin-left: 5px;">${escapeHtml(item.serial)}</span>` : ''}
+            </span>
         `;
         li.onclick = () => {
             if (selectedSerialFilter === item.equip) {
