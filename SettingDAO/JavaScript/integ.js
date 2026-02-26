@@ -14,6 +14,9 @@ function updateIntegratedDashboard() {
 
     // 데이터 집계
     Object.keys(data).forEach(site => {
+        // [추가] 시스템 로그 등 비-장비 데이터 키 제외
+        if (site === 'system_logs' || site === 'user_accounts' || site === 'setup_data') return;
+
         if (data[site]) {
             data[site].forEach(equip => {
                 totalCount++;
@@ -49,6 +52,7 @@ function updateIntegratedDashboard() {
     // UI 렌더링
     renderIntegOpChart(operatingCount, setupCount, totalCount);
     renderIntegSetupList(setupEquips);
+    renderIntegSystemLogs(data); // [추가] 로그 렌더링 호출
 }
 
 function renderIntegOpChart(operating, setup, total) {
@@ -126,6 +130,48 @@ function renderIntegSetupList(list) {
         };
         
         listEl.appendChild(li);
+    });
+}
+
+function renderIntegSystemLogs(data) {
+    const listEl = document.getElementById('integ-system-log-list');
+    if (!listEl) return;
+
+    // 데이터 소스 확인 (merged data 또는 localStorage)
+    let logs = [];
+    if (data && data.system_logs) {
+        logs = data.system_logs;
+    } else {
+        const logData = JSON.parse(localStorage.getItem('system_log')) || {};
+        logs = logData.system_logs || [];
+    }
+
+    listEl.innerHTML = '';
+
+    if (logs.length === 0) {
+        listEl.innerHTML = '<tr><td colspan="4" class="list-empty-msg">로그가 없습니다.</td></tr>';
+        return;
+    }
+
+    // 최신순 정렬
+    logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    // 최근 50개만 표시
+    const recentLogs = logs.slice(0, 50);
+
+    recentLogs.forEach(log => {
+        const tr = document.createElement('tr');
+        
+        // 날짜 포맷팅
+        let timeStr = log.timestamp;
+        
+        tr.innerHTML = `
+            <td>${timeStr}</td>
+            <td>${escapeHtml(log.action)}</td>
+            <td>${escapeHtml(log.target)}</td>
+            <td title="${escapeHtml(log.details)}">${escapeHtml(log.details)}</td>
+        `;
+        listEl.appendChild(tr);
     });
 }
 

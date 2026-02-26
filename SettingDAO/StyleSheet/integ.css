@@ -58,3 +58,48 @@
 #integ-setup-detail-list .status-count {
     font-size: 14px;
 }
+
+/* 시스템 로그 리스트 스타일 */
+.integ-log-container {
+    width: 100%;
+    height: 250px;
+    overflow-y: auto;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+}
+
+.integ-log-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.integ-log-table th {
+    background-color: #21262d;
+    color: #8b949e;
+    padding: 8px 10px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid #30363d;
+}
+
+.integ-log-table td {
+    padding: 6px 10px;
+    color: #e6edf3;
+    border-bottom: 1px solid #21262d;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 0; /* 텍스트 말줄임표 작동을 위해 필요 */
+}
+
+.integ-log-table tr:hover {
+    background-color: #161b22;
+}
+
+/* 컬럼 너비 설정 */
+.integ-log-table th:nth-child(1), .integ-log-table td:nth-child(1) { width: 180px; min-width: 180px; max-width: 180px; }
+.integ-log-table th:nth-child(2), .integ-log-table td:nth-child(2) { width: 120px; min-width: 120px; max-width: 120px; }
+.integ-log-table th:nth-child(3), .integ-log-table td:nth-child(3) { width: 150px; min-width: 150px; max-width: 150px; }
+.integ-log-table th:nth-child(4), .integ-log-table td:nth-child(4) { width: auto; max-width: none; }
