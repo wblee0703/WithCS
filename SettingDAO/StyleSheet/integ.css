@@ -145,11 +145,11 @@
     flex-shrink: 0;
 }
 
-.type-PM { background-color: #238636; }
-.type-BM { background-color: #1f6feb; }
-.type-트러블이슈 { background-color: #da3633; }
-.type-프로그램변경 { background-color: #8957e5; }
-.type-장비점검 { background-color: #6e7681; }
+.list-type-badge.type-PM { background-color: #238636; }
+.list-type-badge.type-BM { background-color: #1f6feb; }
+.list-type-badge.type-트러블이슈 { background-color: #da3633; }
+.list-type-badge.type-프로그램변경 { background-color: #8957e5; }
+.list-type-badge.type-장비점검 { background-color: #6e7681; }
 
 /* 통합 관리 현황 도넛 차트 및 리스트 크기 조정 */
 .integ-dashboard-view .donut-chart-wrapper {
