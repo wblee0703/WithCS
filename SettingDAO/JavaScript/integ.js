@@ -270,7 +270,11 @@ function renderIntegMaintStats(mainData) {
             // 콤마로 구분된 항목 분리
             const items = content.split(',').map(s => s.trim());
             items.forEach(i => {
-                if (i) itemCounts[i] = (itemCounts[i] || 0) + 1;
+                if (i) {
+                    // 유형과 내용을 함께 키로 사용하여 구분
+                    const key = `${type}::${i}`;
+                    itemCounts[key] = (itemCounts[key] || 0) + 1;
+                }
             });
         }
     }
@@ -287,21 +291,6 @@ function renderIntegMaintStats(mainData) {
         if (maxVal > 10) {
             yAxisMax = Math.ceil(maxVal / 5) * 5;
         }
-
-        // Y축 생성
-        const yAxis = document.createElement('div');
-        yAxis.className = 'y-axis';
-        
-        // 눈금 생성 (0, 5, 10... yAxisMax)
-        let step = 5;
-        if (yAxisMax > 50) step = 10; // 데이터가 많으면 간격 조정
-        
-        for (let i = 0; i <= yAxisMax; i += step) {
-            const tick = document.createElement('span');
-            tick.textContent = i;
-            yAxis.appendChild(tick);
-        }
-        container.appendChild(yAxis);
 
         // 막대 생성
         Object.keys(dataCounts).forEach((key, index) => {
@@ -355,7 +344,11 @@ function renderIntegMaintStats(mainData) {
 
     // --- 리스트 렌더링 (상위 5개 항목) ---
     listEl.innerHTML = '';
-    const sortedItems = Object.keys(itemCounts).map(key => ({ name: key, count: itemCounts[key] }))
+    const sortedItems = Object.keys(itemCounts).map(key => {
+                                                   const parts = key.split('::');
+                                                   // 키에서 유형과 내용 분리 (혹시 내용에 ::가 있을 경우 대비하여 slice 사용)
+                                                   return { type: parts[0], name: parts.slice(1).join('::'), count: itemCounts[key] };
+                                               })
                                                .sort((a, b) => b.count - a.count)
                                                .slice(0, 10); // 상위 10개
     
@@ -373,6 +366,7 @@ function renderIntegMaintStats(mainData) {
             const width = maxItemCount > 0 ? (item.count / maxItemCount) * 100 : 0;
             li.innerHTML = `
                 <div class="list-bar-bg" style="width: ${width}%; position: absolute; top: 2px; left: 0; bottom: 2px; background: linear-gradient(to right, rgba(88, 166, 255, 0.2), rgba(88, 166, 255, 0.05)); z-index: -1; border-radius: 4px; transition: width 0.5s ease;"></div>
+                <span class="list-type-badge type-${item.type}">${item.type}</span>
                 <span class="status-name">${escapeHtml(item.name)}</span>
                 <span class="status-count">${item.count}</span>
             `;

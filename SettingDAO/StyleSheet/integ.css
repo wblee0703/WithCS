@@ -52,7 +52,7 @@
 
 /* 리스트 스타일 보정 */
 .integ-dashboard-view .status-group-title {
-    margin-bottom: 2px;
+    margin-bottom: 5px;
 }
 
 #integ-setup-detail-list .status-list-item {
@@ -69,7 +69,7 @@
     justify-content: space-around;
     height: 200px;
     width: 100%;
-    padding: 10px 10px 10px 40px; /* Y축 공간 확보 (왼쪽 패딩 증가) */
+    padding: 10px; /* Y축 제거로 패딩 통일 */
     position: relative;
     box-sizing: border-box;
 }
@@ -116,7 +116,7 @@
 .y-axis {
     position: absolute;
     left: 10px;
-    top: 10px;
+    top: 5px;
     bottom: 35px; /* 라벨 높이만큼 하단 여백 */
     width: 30px;
     display: flex;
@@ -127,3 +127,20 @@
     font-size: 10px;
     padding-right: 5px;
 }
+
+/* 작업 유형 배지 스타일 */
+.list-type-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 8px;
+    font-weight: bold;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.type-PM { background-color: #238636; }
+.type-BM { background-color: #1f6feb; }
+.type-트러블이슈 { background-color: #da3633; }
+.type-프로그램변경 { background-color: #8957e5; }
+.type-장비점검 { background-color: #6e7681; }
