@@ -163,8 +163,9 @@
 }
 
 .integ-dashboard-view .status-list-container {
-    height: 300px;
+    height: 300px; /* [설정] 리스트 높이 */
     flex: none !important;
+    width: 100%;   /* [설정] 리스트 너비 */
 }
 
 /* [추가] 통합 관리 대시보드 컨트롤 스타일 */
@@ -188,7 +189,7 @@
 /* [추가] 주요 점검 항목 리스트 스타일 */
 .integ-list-header-type,
 .integ-list-col-type {
-    width: 80px;
+    width: 80px; /* [설정] 구분 컬럼 너비 */
     text-align: center;
     flex-shrink: 0;
 }
@@ -205,7 +206,7 @@
 
 .integ-list-header-count,
 .integ-list-col-count {
-    width: 60px;
+    width: 60px; /* [설정] 건수 컬럼 너비 */
     text-align: center;
     flex-shrink: 0;
 }
