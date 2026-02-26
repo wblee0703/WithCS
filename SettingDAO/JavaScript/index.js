@@ -107,12 +107,15 @@ function showHomeSection(type) {
     const menuContainer = document.querySelector('.home-menu-container');
     const setupSec = document.getElementById('section-setup');
     const maintSec = document.getElementById('section-maint');
+    const integratedSec = document.getElementById('section-integrated');
 
     // [추가] 버튼 활성화 상태 토글
     const btnSetup = document.querySelector('.btn-setup');
     const btnMaint = document.querySelector('.btn-maint');
+    const btnIntegrated = document.querySelector('.btn-integrated');
     if (btnSetup) btnSetup.classList.remove('active');
     if (btnMaint) btnMaint.classList.remove('active');
+    if (btnIntegrated) btnIntegrated.classList.remove('active');
 
     // 메뉴 컨테이너를 컴팩트 모드로 전환 (애니메이션 효과)
     menuContainer.classList.add('compact');
@@ -124,12 +127,19 @@ function showHomeSection(type) {
         if (btnSetup) btnSetup.classList.add('active');
         setupSec.style.display = 'flex';
         maintSec.style.display = 'none';
+        if (integratedSec) integratedSec.style.display = 'none';
         renderGanttChart(); // Render Gantt when tab is shown
     } else if (type === 'maint') {
         if (btnMaint) btnMaint.classList.add('active');
         setupSec.style.display = 'none';
         maintSec.style.display = 'flex';
+        if (integratedSec) integratedSec.style.display = 'none';
         renderCalendar();
+    } else if (type === 'integrated') {
+        if (btnIntegrated) btnIntegrated.classList.add('active');
+        setupSec.style.display = 'none';
+        maintSec.style.display = 'none';
+        if (integratedSec) integratedSec.style.display = 'flex';
     }
 }
 
@@ -861,7 +871,13 @@ function renderSetupEquipDetailList(activeEquips) {
 
         const li = document.createElement('li');
         li.className = 'status-list-item';
-        li.innerHTML = `<span class="status-name no-margin-right">${escapeHtml(item.site)} > ${escapeHtml(name)} ${serial ? `(${escapeHtml(serial)})` : ''}</span>`;
+        li.innerHTML = `
+            <span class="status-color equip-bar"></span>
+            <span class="status-name no-margin-right">
+                ${escapeHtml(item.site)} > ${escapeHtml(name)} 
+                ${serial ? `<span class="equip-serial">${escapeHtml(serial)}</span>` : ''}
+            </span>
+        `;
         // [수정] 클릭 시 간트 차트 필터 적용 및 표시
         li.onclick = () => {
             currentGanttFilters.site = item.site;
