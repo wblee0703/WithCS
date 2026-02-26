@@ -80,10 +80,10 @@ function renderIntegOpChart(operating, setup, total) {
     const opDeg = (operating / total) * 360;
     
     // conic-gradient: green 0deg ~ opDeg, blue opDeg ~ 360deg
-    chartEl.style.background = `conic-gradient( 0deg deg,  deg 360deg)`;
+    chartEl.style.background = `conic-gradient(${green} 0deg ${opDeg}deg, ${blue} ${opDeg}deg 360deg)`;
     
     if (centerText) {
-        centerText.innerHTML = `<div class="chart-center-label">가동률</div><div class="chart-center-value" style="color:">%</div>`;
+        centerText.innerHTML = `<div class="chart-center-label">가동률</div><div class="chart-center-value" style="color:${green}">${opRate}%</div>`;
     }
 }
 
@@ -113,12 +113,12 @@ function renderIntegSetupList(list) {
         const progressColor = item.progress === 100 ? '#238636' : '#1f6feb';
         
         li.innerHTML = `
-            <span class="status-color equip-bar" style="background-color: ;"></span>
+            <span class="status-color equip-bar" style="background-color: ${progressColor};"></span>
             <span class="status-name no-margin-right">
                 ${escapeHtml(item.site)} > ${escapeHtml(name)} 
                 ${serial ? `<span class="equip-serial">${escapeHtml(serial)}</span>` : ''}
             </span>
-            <span class="status-count" style="color: ">${item.progress}%</span>
+            <span class="status-count" style="color: ${progressColor}">${item.progress}%</span>
         `;
         
         // 클릭 시 셋업 페이지로 이동
