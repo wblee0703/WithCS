@@ -240,9 +240,11 @@ function renderMonthGrid(year, month, titleId, gridId) {
                         site: event.site,
                         equip: event.equip,
                         isCompleted: event.isCompleted,
-                        type: event.type
+                        type: event.type,
+                        ids: [] // ID 목록 저장을 위해 배열 초기화
                     };
                 }
+                groupedEvents[key].ids.push(event.id); // ID 추가
             });
 
             const groups = Object.values(groupedEvents);
@@ -252,8 +254,15 @@ function renderMonthGrid(year, month, titleId, gridId) {
                 const equipName = group.equip.split('::')[0];
                 const typeClass = group.type === 'PM' ? 'type-pm' : 'type-bm';
                 const completedClass = group.isCompleted ? 'completed' : '';
+                
+                // 드래그 속성 추가 (완료되지 않은 항목만)
+                let dragAttr = '';
+                if (!group.isCompleted) {
+                    const idsJson = JSON.stringify(group.ids).replace(/"/g, '&quot;');
+                    dragAttr = `draggable="true" data-drag-site="${escapeHtml(group.site)}" data-drag-equip="${escapeHtml(group.equip)}" data-drag-ids="${idsJson}" ondragstart="handleCalendarDragStartFromData(event)"`;
+                }
 
-                eventsHtml += `<div class="calendar-event-item ${completedClass}">
+                eventsHtml += `<div class="calendar-event-item ${completedClass}" ${dragAttr} onclick="event.stopPropagation(); openCalendarPopup('${dateStr}', dayEvents)">
                     ${escapeHtml(group.site)} ${escapeHtml(equipName)} <span class="event-type-text ${typeClass}">${group.type}</span>
                 </div>`;
             });
@@ -273,7 +282,14 @@ function renderMonthGrid(year, month, titleId, gridId) {
         const cell = document.createElement('div');
         cell.className = `date-cell ${isToday} ${dayClass}`;
         cell.innerHTML = `${dateHeader}<div class="events-container">${eventsHtml}</div>`;
-        cell.onclick = () => openCalendarPopup(dateStr, dayEvents);
+        // 클릭 이벤트는 유지하되, 드롭 이벤트 추가
+        cell.onclick = (e) => { if(!e.defaultPrevented) openCalendarPopup(dateStr, dayEvents); };
+        
+        // 드롭 핸들러 연결
+        cell.ondragover = (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); };
+        cell.ondragleave = (e) => { e.currentTarget.classList.remove('drag-over'); };
+        cell.ondrop = (e) => handleCalendarDrop(e, dateStr);
+        
         gridEl.appendChild(cell);
     }
 
@@ -1299,6 +1315,45 @@ function updateSearchEquipSelect(site) {
     
     equipSelect.disabled = false;
 }
+
+/* ==========================================================================
+   [9] 드래그 앤 드롭 (Drag & Drop)
+   ========================================================================== */
+window.handleCalendarDragStartFromData = function(e) {
+    e.stopPropagation();
+    const target = e.currentTarget;
+    const site = target.dataset.dragSite;
+    const equip = target.dataset.dragEquip;
+    const idsStr = target.dataset.dragIds;
+    
+    const ids = JSON.parse(idsStr);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({ site, equip, ids }));
+};
+
+window.handleCalendarDrop = function(e, newDate) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.classList.remove('drag-over');
+
+    const dataStr = e.dataTransfer.getData('text/plain');
+    if (!dataStr) return;
+
+    try {
+        const { site, equip, ids } = JSON.parse(dataStr);
+        if (!ids || ids.length === 0) return;
+
+        if (confirm(`${ids.length}건의 일정을 ${newDate}로 이동하시겠습니까?`)) {
+            ids.forEach(id => {
+                setScheduleDate(site, equip, id, newDate);
+            });
+            renderCalendar();
+            if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+        }
+    } catch (err) {
+        console.error('Drop error:', err);
+    }
+};
 
 // 전역 노출
 window.renderCalendar = renderCalendar;
