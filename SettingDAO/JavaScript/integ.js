@@ -400,7 +400,7 @@ function renderIntegMaintStats(mainData) {
                                                    // 2순위: 건수 내림차순
                                                    return b.count - a.count;
                                                })
-                                               .slice(0, 10); // 상위 10개
+                                               .slice(0, 6); // 상위 6개
     
     // 막대 너비 계산을 위한 최대값
     const maxItemCount = sortedItems.length > 0 ? sortedItems[0].count : 0;
