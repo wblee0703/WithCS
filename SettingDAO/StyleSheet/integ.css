@@ -1,0 +1,60 @@
+/* ==========================================================================
+   통합 관리 대시보드 스타일 (Integrated Dashboard Styles)
+   ========================================================================== */
+
+.integ-dashboard-view {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
+}
+
+.integ-row {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+}
+
+/* 통계 정보 텍스트 영역 */
+.integ-stat-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 15px;
+    padding: 0 20px;
+    flex: 1;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 14px;
+    color: #8b949e;
+    font-weight: bold;
+}
+
+.stat-value {
+    font-size: 18px;
+    color: #e6edf3;
+    font-weight: bold;
+}
+
+/* 색상 유틸리티 */
+.text-green { color: #3fb950 !important; }
+.text-blue { color: #1f6feb !important; }
+
+/* 리스트 스타일 보정 */
+#integ-setup-detail-list .status-list-item {
+    padding: 8px 12px;
+}
+
+#integ-setup-detail-list .status-count {
+    font-size: 14px;
+}

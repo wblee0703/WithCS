@@ -140,6 +140,9 @@ function showHomeSection(type) {
         setupSec.style.display = 'none';
         maintSec.style.display = 'none';
         if (integratedSec) integratedSec.style.display = 'flex';
+        
+        // [추가] 통합 관리 대시보드 업데이트 호출
+        if (typeof updateIntegratedDashboard === 'function') updateIntegratedDashboard();
     }
 }
 

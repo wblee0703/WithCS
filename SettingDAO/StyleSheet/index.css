@@ -186,6 +186,14 @@ body {
     filter: drop-shadow(0 0 15px rgba(63, 185, 80, 0.4));
 }
 
+.btn-integrated:hover h3 {
+    color: #8957e5;
+}
+
+.btn-integrated:hover .icon {
+    filter: drop-shadow(0 0 15px rgba(137, 87, 229, 0.4));
+}
+
 /* Active State (Selected) */
 .home-big-btn.active {
     background: #21262d;
@@ -211,6 +219,13 @@ body {
 }
 .btn-maint.active h3 {
     color: #3fb950;
+}
+
+.btn-integrated.active {
+    border: 1px solid #8957e5;
+}
+.btn-integrated.active h3 {
+    color: #8957e5;
 }
 
 /* ==========================================================================

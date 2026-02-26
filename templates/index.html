@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/index.css') }}">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/calendar.css') }}?v=6">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/gantt.css') }}">
+    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/integ.css') }}">
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Noto+Sans+KR:wght@100;300;700&display=swap"
         rel="stylesheet">
@@ -281,8 +282,35 @@
                         <div class="section-header center-aligned">
                             <h4 class="section-title">통합 관리 현황</h4>
                         </div>
-                        <div class="placeholder-view" style="flex: 1; display: flex; justify-content: center; align-items: center;">
-                            <p style="color: #8b949e;">통합 관리 대시보드 준비 중입니다.</p>
+                        <div class="integ-dashboard-view">
+                            <div class="integ-row">
+                                <!-- 가동률 차트 -->
+                                <div class="status-group card-like">
+                                    <h5 class="status-group-title">전체 장비 가동률</h5>
+                                    <div class="chart-row">
+                                        <div class="donut-chart-wrapper">
+                                            <div class="donut-chart" id="integ-op-chart"></div>
+                                            <div class="chart-center" id="integ-op-center"></div>
+                                        </div>
+                                        <div class="integ-stat-info">
+                                            <div class="stat-item"><span class="stat-label">전체 장비</span><span class="stat-value" id="integ-total-count">0</span></div>
+                                            <div class="stat-item"><span class="stat-label text-green">가동 중</span><span class="stat-value" id="integ-op-count">0</span></div>
+                                            <div class="stat-item"><span class="stat-label text-blue">셋업 중</span><span class="stat-value" id="integ-setup-count">0</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- 셋업 진행 리스트 -->
+                                <div class="status-group card-like" style="flex: 1.5;">
+                                    <h5 class="status-group-title">셋업 진행 장비 목록</h5>
+                                    <div class="status-list-container status-list-flex" style="height: 225px;">
+                                        <div class="status-list-header">
+                                            <span class="header-name">장비 정보</span>
+                                            <span class="header-count">진행률</span>
+                                        </div>
+                                        <ul class="site-status-list" id="integ-setup-detail-list"></ul>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -649,6 +677,7 @@
     <script src="{{ url_for('SettingDAO', filename='JavaScript/gantt.js') }}"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/calendar.js') }}"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/index.js') }}"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/integ.js') }}"></script>
 </body>
 
 </html>
