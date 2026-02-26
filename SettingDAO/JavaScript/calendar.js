@@ -1086,7 +1086,16 @@ function updateRegisterItemList(site, equip) {
     }
 
     // [수정] PM/BM인 경우 드롭다운 바 생성
-    const filteredItems = maintItems.filter(item => item.type === selectedType);
+    let filteredItems = [];
+    if (selectedType === '트러블이슈') {
+        filteredItems.push({ id: 'default_1', content: '데이터이슈' });
+        filteredItems.push({ id: 'default_2', content: '설비 이상' });
+        // PM/BM 항목 추가
+        const pmBmItems = maintItems.filter(item => item.type === 'PM' || item.type === 'BM');
+        filteredItems = filteredItems.concat(pmBmItems);
+    } else {
+        filteredItems = maintItems.filter(item => item.type === selectedType);
+    }
 
     const wrapper = document.createElement('div');
     wrapper.className = 'log-select-wrapper';
@@ -1217,6 +1226,32 @@ function confirmRegisterSchedule() {
 
         if (typeof addSystemLog === 'function') {
             addSystemLog('ADD_SCHEDULE_MANUAL', equip, `Type: ${selectedType}, Date: ${dateStr}, Content: ${content}`);
+        }
+    } else if (selectedType === '트러블이슈') {
+        // [추가] 트러블이슈 선택 (새 항목 생성)
+        const selectedItems = itemList.querySelectorAll('.log-select-item.selected');
+        if (selectedItems.length === 0) return alert('등록할 항목을 선택해주세요.');
+
+        const key = `details_${site}_${equip}`;
+        let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
+        if (!data.maint) data.maint = [];
+
+        selectedItems.forEach((el, index) => {
+            let content = el.textContent.replace(/\(예정:.*\)/, '').trim();
+            const newItem = {
+                id: Date.now() + index,
+                type: selectedType,
+                content: content,
+                date: "",
+                period: null,
+                scheduledDate: dateStr
+            };
+            data.maint.push(newItem);
+        });
+        localStorage.setItem(key, JSON.stringify(data));
+        
+        if (typeof addSystemLog === 'function') {
+            addSystemLog('ADD_SCHEDULE_TROUBLE', equip, `Date: ${dateStr}, Count: ${selectedItems.length}`);
         }
     } else if (selectedType === 'PM' || selectedType === 'BM') {
         // 드롭다운 선택

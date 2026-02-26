@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupUIEvents();
     setupSpecialNoteEvents();
     setupPageProtection();
-    
+
     // 모달 초기화
     setupMaintLoadListModal();
     // setupMaintLoadInfoModal(); // 필요 시 구현
@@ -392,7 +392,7 @@ function toggleEditRow(id) {
 
         contentCell.contentEditable = "true";
         contentCell.spellcheck = false;
-        
+
         // [수정] 주기(Period) 입력창을 number 타입으로 변경하여 숫자만 입력 가능하게 함
         if (row.querySelector('.badge').textContent === 'PM') {
             const currentPeriod = periodCell.textContent.replace('일', '').trim();
@@ -413,7 +413,7 @@ function toggleEditRow(id) {
         const newContent = contentCell.textContent.trim();
         const dateInput = document.getElementById(`input-date-${id}`);
         const newDate = dateInput ? dateInput.value : '';
-        
+
         // [수정] 주기 값 가져오기 (input이 있으면 input 값, 없으면 텍스트)
         let newPeriod = periodCell.textContent.replace('일', '').trim();
         const periodInput = document.getElementById(`input-period-${id}`);
@@ -482,7 +482,7 @@ function addLogItem(e) {
     const typeSelect = document.getElementById('log-type-select');
     const type = typeSelect ? typeSelect.value : 'PM';
     const worker = workerInput.value.trim();
-    
+
     let content = '';
     const contentInput = document.getElementById('log-content-input');
 
@@ -528,7 +528,7 @@ function addLogItem(e) {
     }
     if (contentInput && type !== '프로그램변경') contentInput.value = '';
     if (contentInput && type === '프로그램변경') contentInput.value = 'Ver. ';
-    
+
     renderLogs();
     console.log("점검 일지 기록 완료");
 }
@@ -717,7 +717,7 @@ function toggleLogEdit(id, btn) {
             </select>`;
 
         renderEditLogContentField(id, currentType, currentContent === '-' ? '' : currentContent);
-        
+
         workerCell.innerHTML = `<input type="text" id="edit-log-worker-${id}" value="${escapeHtml(currentWorker)}" style="width: 100%; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 2px; border-radius: 4px;" onclick="event.stopPropagation()">`;
 
     } else {
@@ -729,11 +729,11 @@ function toggleLogEdit(id, btn) {
 
         const newDate = dateInput.value;
         const newType = typeInput.value;
-        
+
         // [수정] 내용 가져오기 (입력창 또는 드롭다운 트리거)
         let newContent = '';
         const contentInput = document.getElementById(`edit-log-content-${id}`);
-        
+
         if (contentInput) {
             newContent = contentInput.value.trim();
         } else {
@@ -757,11 +757,11 @@ function renderEditLogContentField(id, type, value) {
     const row = document.getElementById(`log-row-${id}`);
     if (!row) return;
     const contentCell = row.cells[2];
-    
+
     if (type === 'PM' || type === 'BM' || type === '트러블이슈') {
         const key = `details_${currentPath.site}_${currentPath.equip}`;
         const data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
-        
+
         // 커스텀 드롭다운 구조 생성
         const wrapper = document.createElement('div');
         wrapper.className = 'log-select-wrapper';
@@ -792,8 +792,8 @@ function renderEditLogContentField(id, type, value) {
         if (data.maint) {
             let filteredItems = [];
             if (type === '트러블이슈') {
-                filteredItems.push({ content: '데이터이슈' }); // 기본값 추가
                 filteredItems.push({ content: '설비 이상' });
+                filteredItems.push({ content: '데이터이슈' }); // 기본값 추가
                 filteredItems = filteredItems.concat(data.maint.filter(item => item.type === 'PM' || item.type === 'BM'));
             } else {
                 filteredItems = data.maint.filter(item => item.type === type);
@@ -805,15 +805,15 @@ function renderEditLogContentField(id, type, value) {
                 if (currentValues.includes(item.content)) div.classList.add('selected');
                 div.dataset.value = item.content;
                 div.innerHTML = `<span>${item.content}</span>`;
-                
+
                 div.onclick = (e) => {
                     e.stopPropagation();
                     div.classList.toggle('selected');
-                    
+
                     // 선택된 항목들로 트리거 텍스트 업데이트
                     const selected = list.querySelectorAll('.log-select-item.selected');
                     const values = Array.from(selected).map(el => el.dataset.value);
-                    
+
                     if (values.length > 1) {
                         trigger.textContent = `${values[0]} 외 ${values.length - 1}개`;
                     } else if (values.length === 1) {
@@ -859,7 +859,7 @@ function renderEditLogContentField(id, type, value) {
 }
 
 // [추가] 수정 모드에서 구분 변경 시 내용 필드 업데이트
-window.updateEditLogContent = function(id) {
+window.updateEditLogContent = function (id) {
     const typeSelect = document.getElementById(`edit-log-type-${id}`);
 
     if (typeSelect) {
@@ -879,7 +879,7 @@ function updateLogItem(id, date, type, content, worker) {
         data.logs[idx].type = type;
         data.logs[idx].content = content;
         data.logs[idx].worker = worker;
-        
+
         localStorage.setItem(key, JSON.stringify(data));
         addSystemLog('UPDATE_LOG', currentPath.equip, `ID: ${id}`);
         renderLogs();
@@ -895,7 +895,7 @@ function updateLogContentOptions() {
     const contentList = document.getElementById('log-content-list');
     const contentTrigger = document.getElementById('log-content-trigger');
     const contentInput = document.getElementById('log-content-input');
-    
+
     if (!typeSelect || !contentWrapper || !contentInput) return;
 
     const type = typeSelect.value;
@@ -905,15 +905,15 @@ function updateLogContentOptions() {
     if (type === 'PM' || type === 'BM' || type === '트러블이슈') {
         contentWrapper.style.display = 'inline-block';
         contentInput.style.display = 'none';
-        
+
         if (contentTrigger) contentTrigger.textContent = '항목 선택';
         if (contentList) {
             contentList.innerHTML = '';
             if (data.maint) {
                 let filteredItems = [];
                 if (type === '트러블이슈') {
-                    filteredItems.push({ content: '데이터이슈' }); // 기본값 추가
                     filteredItems.push({ content: '설비 이상' });
+                    filteredItems.push({ content: '데이터이슈' }); // 기본값 추가
                     filteredItems = filteredItems.concat(data.maint.filter(item => item.type === 'PM' || item.type === 'BM'));
                 } else {
                     filteredItems = data.maint.filter(item => item.type === type);
@@ -957,7 +957,7 @@ function updateLogContentOptions() {
     } else {
         contentWrapper.style.display = 'none';
         contentInput.style.display = 'inline-block';
-        
+
         if (type === '프로그램변경') {
             if (!contentInput.value.startsWith('Ver.')) contentInput.value = 'Ver. ';
         } else {
@@ -1121,12 +1121,12 @@ function loadMaintListFromTarget() {
     const targetKey = `details_${currentPath.site}_${currentPath.equip}`;
     let targetData = JSON.parse(localStorage.getItem(targetKey)) || {};
     targetData.maint = newMaint;
-    
+
     localStorage.setItem(targetKey, JSON.stringify(targetData));
-    
+
     // UI 갱신
     renderDetails();
-    
+
     if (typeof addSystemLog === 'function') {
         addSystemLog('LOAD_MAINT_LIST', currentPath.equip, `From: ${site} > ${equip}`);
     }
@@ -1145,7 +1145,7 @@ function setupSpecialNoteEvents() {
     if (btnOpen) btnOpen.onclick = openSpecialNoteModal;
     if (btnClose) btnClose.onclick = closeSpecialNoteModal;
     if (btnSave) btnSave.onclick = saveSpecialNote;
-    
+
     if (modal) {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closeSpecialNoteModal();
@@ -1184,7 +1184,7 @@ function saveSpecialNote() {
 }
 
 // common.js 등 외부에서 호출될 수 있으므로 window 객체에 할당하거나 전역 함수로 유지
-window.renderSpecialNote = function() {
+window.renderSpecialNote = function () {
     const btn = document.getElementById('btn-special-note');
     if (!btn || !currentPath.equip) return;
     const key = `details_${currentPath.site}_${currentPath.equip}`;
@@ -1210,7 +1210,7 @@ function toggleMaintenanceMode() {
     // tbody 대신 table에 클래스 토글 (컬럼 전체 숨김/표시 제어)
     const table = tbody.closest('table');
     if (table) table.classList.toggle('management-active');
-    
+
     if (btn) btn.classList.toggle('active');
 
     const isActive = table ? table.classList.contains('management-active') : false;
@@ -1231,6 +1231,6 @@ function toggleLogManagementMode() {
 
     const table = wrapper.querySelector('table');
     if (table) table.classList.toggle('management-active');
-    
+
     if (btn) btn.classList.toggle('active');
 }
