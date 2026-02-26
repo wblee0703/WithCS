@@ -97,6 +97,18 @@
         .btn-blue-sm:hover {
             background: #1a5cce;
         }
+
+        /* 캘린더 레이아웃 고정 (글자 수에 따른 변형 방지) */
+        .dates-grid {
+            display: grid !important;
+            grid-template-columns: repeat(7, 1fr) !important; /* 7열 강제 고정 */
+        }
+
+        .dates-grid > div {
+            height: 100px; /* 셀 높이 고정 (필요시 조절) */
+            overflow: hidden; /* 넘치는 내용 숨김 */
+            white-space: nowrap; /* 줄바꿈 방지 */
+        }
     </style>
 </head>
 
