@@ -123,6 +123,14 @@
     text-align: center;
 }
 
+/* [추가] 달력 아이콘 스타일 (어두운 회색) */
+.data-table input[type="date"]::-webkit-calendar-picker-indicator,
+.input-date-dark::-webkit-calendar-picker-indicator,
+.input-dark[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.3);
+    cursor: pointer;
+}
+
 /* 로그 활성화 상태 */
 .active-log {
     background-color: rgba(35, 134, 54, 0.1) !important;

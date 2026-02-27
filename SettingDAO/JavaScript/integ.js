@@ -56,6 +56,18 @@ function updateIntegratedDashboard() {
         monthPicker.value = `${y}-${m}`;
     }
 
+    // [추가] 연도 선택 옵션 초기화 (없으면 생성)
+    const yearSelect = document.getElementById('integ-maint-year');
+    if (yearSelect && yearSelect.options.length === 0) {
+        const currentYear = new Date().getFullYear();
+        for (let y = currentYear; y >= currentYear - 5; y--) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.text = y + '년';
+            yearSelect.appendChild(opt);
+        }
+    }
+
     // UI 렌더링
     renderIntegSetupSiteStats(); // [변경] 기간별 셋업 현황 차트
     renderIntegSetupList(setupEquips);
@@ -161,6 +173,26 @@ function renderIntegSetupSiteStats() {
 // 전역 노출
 window.renderIntegSetupSiteStats = renderIntegSetupSiteStats;
 window.renderIntegMaintStats = renderIntegMaintStats;
+window.toggleIntegPeriodMode = toggleIntegPeriodMode;
+
+// [추가] 기간 모드 토글 함수
+function toggleIntegPeriodMode() {
+    const type = document.getElementById('integ-period-type').value;
+    const monthInput = document.getElementById('integ-maint-month');
+    const yearSelect = document.getElementById('integ-maint-year');
+    const titleSpan = document.getElementById('integ-title-period');
+
+    if (type === 'month') {
+        if (monthInput) monthInput.style.display = 'inline-block';
+        if (yearSelect) yearSelect.style.display = 'none';
+        if (titleSpan) titleSpan.textContent = '월간';
+    } else {
+        if (monthInput) monthInput.style.display = 'none';
+        if (yearSelect) yearSelect.style.display = 'inline-block';
+        if (titleSpan) titleSpan.textContent = '연간';
+    }
+    renderIntegMaintStats();
+}
 
 function renderIntegSetupList(list) {
     const listEl = document.getElementById('integ-setup-detail-list');
@@ -218,14 +250,27 @@ function renderIntegMaintStats(mainData) {
     const itemCenterText = document.getElementById('integ-maint-item-center');
     if (!chartEl || !listEl) return;
 
-    // 선택된 월 기준 설정
-    const monthPicker = document.getElementById('integ-maint-month');
-    let currentMonthPrefix = '';
-    if (monthPicker && monthPicker.value) {
-        currentMonthPrefix = monthPicker.value;
+    // [수정] 기간 필터 모드 확인 및 접두어 설정
+    const periodTypeEl = document.getElementById('integ-period-type');
+    const periodType = periodTypeEl ? periodTypeEl.value : 'month';
+    
+    let targetPrefix = '';
+
+    if (periodType === 'year') {
+        const yearSelect = document.getElementById('integ-maint-year');
+        if (yearSelect && yearSelect.value) {
+            targetPrefix = yearSelect.value;
+        } else {
+            targetPrefix = new Date().getFullYear().toString();
+        }
     } else {
-        const now = new Date();
-        currentMonthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        const monthPicker = document.getElementById('integ-maint-month');
+        if (monthPicker && monthPicker.value) {
+            targetPrefix = monthPicker.value;
+        } else {
+            const now = new Date();
+            targetPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        }
     }
 
     const typeCounts = { 'PM': 0, 'BM': 0, '트러블이슈': 0, '프로그램변경': 0, '장비점검': 0 };
@@ -261,7 +306,7 @@ function renderIntegMaintStats(mainData) {
     });
 
     function processItem(site, type, content, date, isSiteMatch) {
-        if (date && date.startsWith(currentMonthPrefix)) {
+        if (date && date.startsWith(targetPrefix)) {
             // 1. 사업장별 현황 (필터 무관 전체 집계)
             siteCounts[site] = (siteCounts[site] || 0) + 1;
 

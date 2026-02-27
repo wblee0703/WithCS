@@ -208,6 +208,12 @@ tr.dragging {
     padding: 4px 8px;
 }
 
+/* [추가] 달력 아이콘 스타일 (어두운 회색) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.3);
+    cursor: pointer;
+}
+
 .maint-period-input {
     width: 80px;
 }

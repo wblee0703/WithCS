@@ -324,8 +324,15 @@
                             </div>
                             <!-- 운영 관리 통계 (신규) -->
                             <div class="integ-section-header">
-                                <h4 class="integ-section-title">월간 운영 현황</h4>
-                                <input type="month" id="integ-maint-month" class="modal-select" onchange="renderIntegMaintStats()">
+                                <h4 class="integ-section-title"><span id="integ-title-period">월간</span> 운영 현황</h4>
+                                <div class="integ-controls-wrapper">
+                                    <select id="integ-period-type" class="modal-select" onchange="toggleIntegPeriodMode()">
+                                        <option value="month">월간</option>
+                                        <option value="year">연간</option>
+                                    </select>
+                                    <input type="month" id="integ-maint-month" class="modal-select" onchange="renderIntegMaintStats()">
+                                    <select id="integ-maint-year" class="modal-select" style="display: none;" onchange="renderIntegMaintStats()"></select>
+                                </div>
                             </div>
                             <div class="integ-row">
                                 <div class="status-group card-like" style="width: 100%;">

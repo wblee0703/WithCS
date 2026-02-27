@@ -300,8 +300,31 @@
     margin: 0;
 }
 
-.integ-section-header #integ-maint-month {
+.integ-controls-wrapper {
     position: absolute;
-    width : 150px;           /* [설정] 날짜 필터 너비 */
     right: 0;                /* 오른쪽에 고정 */
+    display: flex;
+    gap: 5px;
+}
+
+.integ-section-header #integ-maint-month {
+    width: 150px;           /* [설정] 날짜 필터 너비 */
+}
+
+/* [추가] 월 선택 아이콘 스타일 (어두운 회색) */
+input[type="month"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.3);
+    cursor: pointer;
+}
+
+/* [추가] 연도 선택 스타일 */
+#integ-maint-year {
+    width: 100px;
+    padding: 2px 8px;
+    font-size: 12px;
+    height: 28px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    border-radius: 4px;
 }
