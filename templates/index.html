@@ -285,6 +285,13 @@
                         <div class="integ-dashboard-view">
                             <div class="integ-row">
                                 <!-- 기간별 셋업 현황 차트 -->
+                                <div class="status-group card-like" style="flex: 0 0 auto;">
+                                    <h5 class="status-group-title">셋업 완료율</h5>
+                                    <div class="donut-chart-wrapper">
+                                        <div class="donut-chart" id="integ-setup-complete-chart"></div>
+                                        <div class="chart-center" id="integ-setup-complete-center"></div>
+                                    </div>
+                                </div>
                                 <div class="status-group card-like">
                                     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 15px; padding: 0 10px;">
                                         <h5 class="status-group-title" style="margin-bottom: 0; font-size: 18px;">기간별 셋업 현황</h5>
@@ -297,10 +304,6 @@
                                         </select>
                                     </div>
                                     <div class="chart-row">
-                                        <div class="donut-chart-wrapper">
-                                            <div class="donut-chart" id="integ-setup-complete-chart"></div>
-                                            <div class="chart-center" id="integ-setup-complete-center"></div>
-                                        </div>
                                         <div class="donut-chart-wrapper">
                                             <div class="donut-chart" id="integ-setup-site-chart"></div>
                                             <div class="chart-center" id="integ-setup-site-center"></div>
