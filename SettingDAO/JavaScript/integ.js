@@ -57,6 +57,15 @@ function updateIntegratedDashboard() {
         monthPicker.value = `${y}-${m}`;
     }
 
+    // [추가] 셋업 현황 날짜 초기화 (이번 달)
+    const setupMonthPicker = document.getElementById('integ-setup-month');
+    if (setupMonthPicker && !setupMonthPicker.value) {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        setupMonthPicker.value = `${y}-${m}`;
+    }
+
     // [추가] 연도 선택 옵션 초기화 (없으면 생성)
     const yearSelect = document.getElementById('integ-maint-year');
     if (yearSelect && yearSelect.options.length === 0) {
@@ -66,6 +75,18 @@ function updateIntegratedDashboard() {
             opt.value = y;
             opt.text = y + '년';
             yearSelect.appendChild(opt);
+        }
+    }
+    
+    // [추가] 셋업 연도 선택 옵션 초기화
+    const setupYearSelect = document.getElementById('integ-setup-year');
+    if (setupYearSelect && setupYearSelect.options.length === 0) {
+        const currentYear = new Date().getFullYear();
+        for (let y = currentYear; y >= currentYear - 5; y--) {
+            const opt = document.createElement('option');
+            opt.value = y;
+            opt.text = y + '년';
+            setupYearSelect.appendChild(opt);
         }
     }
 
@@ -81,23 +102,36 @@ function renderIntegSetupSiteStats() {
     const centerText = document.getElementById('integ-setup-site-center');
     const completeChartEl = document.getElementById('integ-setup-complete-chart');
     const completeCenterText = document.getElementById('integ-setup-complete-center');
-    const periodSelect = document.getElementById('integ-setup-period');
 
-    if (!chartEl || !listEl || !periodSelect) return;
+    if (!chartEl || !listEl) return;
 
-    const period = periodSelect.value;
+    // [수정] 기간 필터 설정 (월간/연간)
+    const periodTypeEl = document.getElementById('integ-setup-period-type');
+    const periodType = periodTypeEl ? periodTypeEl.value : 'month';
+    
+    let targetStart = null;
+    let targetEnd = null;
+
+    if (periodType === 'year') {
+        const yearSelect = document.getElementById('integ-setup-year');
+        const year = yearSelect ? parseInt(yearSelect.value) : new Date().getFullYear();
+        targetStart = new Date(year, 0, 1);
+        targetEnd = new Date(year, 11, 31, 23, 59, 59);
+    } else {
+        const monthInput = document.getElementById('integ-setup-month');
+        let date = new Date();
+        if (monthInput && monthInput.value) {
+            const [y, m] = monthInput.value.split('-').map(Number);
+            date = new Date(y, m - 1, 1);
+        }
+        targetStart = new Date(date.getFullYear(), date.getMonth(), 1);
+        targetEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
+    }
+
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const siteCounts = {};
     let totalInPeriod = 0;
     let completedInPeriod = 0;
-
-    // 기간 계산
-    let fromDate = null;
-    if (period !== 'all') {
-        const now = new Date();
-        now.setMonth(now.getMonth() - parseInt(period));
-        fromDate = now.toISOString().split('T')[0];
-    }
 
     Object.keys(setupData).forEach(key => {
         const parts = key.split('::');
@@ -107,27 +141,23 @@ function renderIntegSetupSiteStats() {
         if (data && data.setupDetails) {
             // 해당 기간 내 활동 여부 확인
             let hasActivity = false;
-            let isCompleted = false;
             
-            // 1. 현재 진행 중인 경우 (완료 안됨 + 시작일 있음) -> 무조건 포함
             const completeItem = data.setupDetails.find(d => d.content === '셋업 완료');
-            if (completeItem && completeItem.startDate) {
-                hasActivity = true;
-            }
+            
+            // 셋업 시작일 찾기 (첫 번째 항목의 시작일)
+            const firstItem = data.setupDetails.find(d => d.startDate);
+            if (firstItem) {
+                const setupStart = new Date(firstItem.startDate);
+                let setupEnd = new Date(); // 진행 중이면 현재 날짜까지로 간주
 
-            // 2. 기간 내 완료된 작업이 있는 경우
-            if (!hasActivity && fromDate) {
-                const activeTask = data.setupDetails.find(t => {
-                    // 완료일이 기간 내에 있거나
-                    if (t.completed && t.date && t.date >= fromDate) return true;
-                    // 시작일이 기간 내에 있는 경우
-                    if (t.startDate && t.startDate >= fromDate) return true;
-                    return false;
-                });
-                if (activeTask) hasActivity = true;
-            } else if (!hasActivity && period === 'all') {
-                // 전체 기간이면 시작일이 있는 모든 셋업 포함
-                if (data.setupDetails.some(t => t.startDate)) hasActivity = true;
+                if (completeItem && completeItem.completed && completeItem.date) {
+                    setupEnd = new Date(completeItem.date);
+                }
+
+                // 기간 겹침 확인 (SetupStart <= TargetEnd AND SetupEnd >= TargetStart)
+                if (setupStart <= targetEnd && setupEnd >= targetStart) {
+                    hasActivity = true;
+                }
             }
 
             if (hasActivity) {
@@ -195,6 +225,26 @@ function renderIntegSetupSiteStats() {
 window.renderIntegSetupSiteStats = renderIntegSetupSiteStats;
 window.renderIntegMaintStats = renderIntegMaintStats;
 window.toggleIntegPeriodMode = toggleIntegPeriodMode;
+window.toggleIntegSetupPeriodMode = toggleIntegSetupPeriodMode;
+
+// [추가] 셋업 기간 모드 토글 함수
+function toggleIntegSetupPeriodMode() {
+    const type = document.getElementById('integ-setup-period-type').value;
+    const monthInput = document.getElementById('integ-setup-month');
+    const yearSelect = document.getElementById('integ-setup-year');
+    const titleSpan = document.getElementById('integ-setup-title-period');
+
+    if (type === 'month') {
+        if (monthInput) monthInput.style.display = 'inline-block';
+        if (yearSelect) yearSelect.style.display = 'none';
+        if (titleSpan) titleSpan.textContent = '월간';
+    } else {
+        if (monthInput) monthInput.style.display = 'none';
+        if (yearSelect) yearSelect.style.display = 'inline-block';
+        if (titleSpan) titleSpan.textContent = '연간';
+    }
+    renderIntegSetupSiteStats();
+}
 
 // [추가] 기간 모드 토글 함수
 function toggleIntegPeriodMode() {

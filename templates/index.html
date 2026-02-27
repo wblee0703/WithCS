@@ -283,10 +283,22 @@
                             <h4 class="section-title">통합 관리 현황</h4>
                         </div>
                         <div class="integ-dashboard-view">
+                            <!-- [추가] 장비 셋업 현황 헤더 -->
+                            <div class="integ-section-header">
+                                <h4 class="integ-section-title"><span id="integ-setup-title-period">월간</span> 장비 셋업 현황</h4>
+                                <div class="integ-controls-wrapper">
+                                    <select id="integ-setup-period-type" class="modal-select" onchange="toggleIntegSetupPeriodMode()">
+                                        <option value="month">월간</option>
+                                        <option value="year">연간</option>
+                                    </select>
+                                    <input type="month" id="integ-setup-month" class="modal-select" onchange="renderIntegSetupSiteStats()">
+                                    <select id="integ-setup-year" class="modal-select" style="display: none;" onchange="renderIntegSetupSiteStats()"></select>
+                                </div>
+                            </div>
                             <div class="integ-row">
                                 <!-- 기간별 셋업 현황 차트 -->
                                  
-                                <div class="status-group card-like" style="margin-bottom: 0; font-size: 18px;"
+                                <div class="status-group card-like" style="margin-bottom: 0; font-size: 18px;">
                                     <h5 class="status-group-title">셋업 완료율</h5>
                                     <div class="donut-chart-wrapper">
                                         <div class="donut-chart" id="integ-setup-complete-chart"></div>
@@ -296,13 +308,6 @@
                                 <div class="status-group card-like">
                                     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 15px; padding: 0 10px;">
                                         <h5 class="status-group-title" style="margin-bottom: 0; font-size: 18px;">셋업 진행중</h5>
-                                        <select id="integ-setup-period" class="modal-select" onchange="renderIntegSetupSiteStats()">
-                                            <option value="1">1개월</option>
-                                            <option value="3" selected>3개월</option>
-                                            <option value="6">6개월</option>
-                                            <option value="12">1년</option>
-                                            <option value="all">전체</option>
-                                        </select>
                                     </div>
                                     <div class="chart-row">
                                         <div class="donut-chart-wrapper">

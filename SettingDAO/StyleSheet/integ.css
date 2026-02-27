@@ -330,7 +330,6 @@ input[type="month"]::-webkit-calendar-picker-indicator {
 }
 
 /* [추가] 기간 유형(월간/연간) 선택 드롭다운 스타일 */
-#integ-period-type {
 #integ-period-type,
 #integ-setup-period-type {
     width: auto;             /* [설정] 너비 */
@@ -358,4 +357,4 @@ input[type="month"]::-webkit-calendar-picker-indicator {
     color: #e6edf3;
     border-radius: 4px;
 }
-}
+
