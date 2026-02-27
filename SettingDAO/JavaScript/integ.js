@@ -146,8 +146,8 @@ function renderIntegSetupSiteStats() {
         li.className = 'status-list-item';
         li.innerHTML = `
             <span class="status-color" style="background-color: ${color};"></span>
-            <span class="status-name">${escapeHtml(site.name)}</span>
-            <span class="status-count">${site.count}</span>
+            <span class="status-name integ-setup-site-col-name">${escapeHtml(site.name)}</span>
+            <span class="status-count integ-setup-site-col-count">${site.count}</span>
         `;
         listEl.appendChild(li);
     });
@@ -189,11 +189,11 @@ function renderIntegSetupList(list) {
         
         li.innerHTML = `
             <span class="status-color equip-bar" style="background-color: ${progressColor};"></span>
-            <span class="status-name no-margin-right">
+            <span class="status-name no-margin-right integ-setup-detail-col-name">
                 ${escapeHtml(item.site)} > ${escapeHtml(name)} 
                 ${serial ? `<span class="equip-serial">${escapeHtml(serial)}</span>` : ''}
             </span>
-            <span class="status-count" style="color: ${progressColor}">${item.progress}%</span>
+            <span class="status-count integ-setup-detail-col-progress" style="color: ${progressColor}">${item.progress}%</span>
         `;
         
         // 클릭 시 셋업 페이지로 이동
