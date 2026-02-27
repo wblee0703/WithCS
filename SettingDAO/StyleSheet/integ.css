@@ -302,5 +302,6 @@
 
 .integ-section-header #integ-maint-month {
     position: absolute;
+    width : 150px;           /* [설정] 날짜 필터 너비 */
     right: 0;                /* 오른쪽에 고정 */
 }

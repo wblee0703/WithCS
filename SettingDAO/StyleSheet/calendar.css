@@ -5,13 +5,13 @@
    ========================================================================== */
 
 :root {
-    --cal-bg-dark: #0d1117;
-    --cal-bg-card: #161b22;
-    --cal-bg-element: #21262d;
-    --cal-border: #30363d;
-    --cal-text-primary: #e6edf3;
-    --cal-text-secondary: #8b949e;
-    --cal-text-title: #c9d1d9;
+    --cal-bg-dark: #ffffff;
+    --cal-bg-card: #ffffff;
+    --cal-bg-element: #f6f8fa;
+    --cal-border: #d0d7de;
+    --cal-text-primary: #24292f;
+    --cal-text-secondary: #57606a;
+    --cal-text-title: #24292f;
     --cal-text-white: #fff;
     --cal-blue: #1f6feb;
     --cal-green: #3fb950;
@@ -23,7 +23,7 @@
     --cal-blue-light: #58a6ff;
     --cal-purple: #8957e5;
     --cal-red-trouble: #da3633;
-    --cal-hover-light: rgba(255, 255, 255, 0.05);
+    --cal-hover-light: rgba(0, 0, 0, 0.05);
 }
 
 /* 캘린더 컨테이너 및 헤더 */
@@ -65,7 +65,7 @@
 }
 
 .calendar-header button:hover {
-    color: var(--cal-text-white);
+    color: var(--cal-text-primary);
 }
 
 /* 캘린더 그리드 */
@@ -260,7 +260,7 @@
     width: 200px;
     background: var(--cal-bg-dark);
     border: 1px solid var(--cal-border);
-    color: var(--cal-text-white);
+    color: var(--cal-text-primary);
     padding: 5px 10px;
     border-radius: 4px;
     text-align: center;
@@ -371,7 +371,7 @@
     width: 100%;
     background: var(--cal-bg-dark);
     border: 1px solid var(--cal-border);
-    color: var(--cal-text-white);
+    color: var(--cal-text-primary);
     padding: 8px;
     border-radius: 4px;
 }
@@ -382,7 +382,7 @@
     resize: none;
     background: var(--cal-bg-dark);
     border: 1px solid var(--cal-border);
-    color: var(--cal-text-white);
+    color: var(--cal-text-primary);
     padding: 8px;
     border-radius: 4px;
 }
@@ -508,7 +508,7 @@
 .log-select-trigger {
     background: var(--cal-bg-dark);
     border: 1px solid var(--cal-border);
-    color: var(--cal-text-white);
+    color: var(--cal-text-primary);
     padding: 8px;
     border-radius: 4px;
     cursor: pointer;
