@@ -1796,7 +1796,7 @@ function loadSetupInfoFromTarget() {
     alert('정보를 불러왔습니다. 저장 버튼을 눌러 반영해주세요.');
 }
 
-// [추가] 셋업 예정일 초기화 버튼 설정
+// [추가] 셋업 일정 초기화 버튼 설정
 function setupSetupResetButton() {
     // 톱니바퀴 버튼 찾기 (onclick 속성으로 식별)
     const settingsBtn = document.querySelector('button[onclick*="toggleSetupDetailDeleteMode"]');
@@ -1807,7 +1807,7 @@ function setupSetupResetButton() {
         const resetBtn = document.createElement('button');
         resetBtn.id = 'btn-reset-setup-date';
         resetBtn.className = 'btn-reset';
-        resetBtn.textContent = '📅 예정일 초기화';
+        resetBtn.textContent = '📅 셋업 일정 초기화';
         resetBtn.style.display = 'none'; // 초기엔 숨김
         resetBtn.onclick = resetSetupDates;
         
@@ -1816,7 +1816,7 @@ function setupSetupResetButton() {
     }
 }
 
-// [추가] 셋업 예정일 초기화 로직
+// [추가] 셋업 일정 초기화 로직
 function resetSetupDates() {
     if (!currentPath.site || !currentPath.equip) return;
     
