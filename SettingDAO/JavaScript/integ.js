@@ -151,19 +151,20 @@ function renderIntegSetupSiteStats() {
             
             const completeItem = data.setupDetails.find(d => d.content === '셋업 완료');
             
-            // 셋업 시작일 찾기 (첫 번째 항목의 시작일)
-            const firstItem = data.setupDetails.find(d => d.startDate);
-            if (firstItem) {
-                const setupStart = new Date(firstItem.startDate);
-                let setupEnd = new Date(); // 진행 중이면 현재 날짜까지로 간주
-
-                if (completeItem && completeItem.completed && completeItem.date) {
-                    setupEnd = new Date(completeItem.date);
-                }
-
-                // 기간 겹침 확인 (SetupStart <= TargetEnd AND SetupEnd >= TargetStart)
-                if (setupStart <= targetEnd && setupEnd >= targetStart) {
+            // [수정] 진행 중인 항목은 기간 무관하게 포함 (목록과 일치시키기 위함)
+            if (completeItem && completeItem.startDate) {
+                // 1. 진행 중인 경우: 무조건 포함
+                if (!completeItem.completed) {
                     hasActivity = true;
+                }
+                // 2. 완료된 경우: 기간 내 활동이 있었는지 확인
+                else {
+                    const firstItem = data.setupDetails.find(d => d.startDate);
+                    if (firstItem) {
+                        const setupStart = new Date(firstItem.startDate);
+                        const setupEnd = new Date(completeItem.date);
+                        if (setupStart <= targetEnd && setupEnd >= targetStart) hasActivity = true;
+                    }
                 }
             }
 
@@ -184,7 +185,7 @@ function renderIntegSetupSiteStats() {
     listEl.innerHTML = '';
     if (activeCount === 0) {
         chartEl.style.background = '';
-        if (centerText) centerText.innerHTML = `<div class="chart-center-label">Total</div><div class="chart-center-value">0</div>`;
+        if (centerText) centerText.innerHTML = `<div class="chart-center-label">Active</div><div class="chart-center-value">0</div>`;
         listEl.innerHTML = '<li class="list-empty-msg">데이터 없음</li>';
     } else {
         const colors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
@@ -212,7 +213,7 @@ function renderIntegSetupSiteStats() {
 
         chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
         if (centerText) {
-            centerText.innerHTML = `<div class="chart-center-label">Total</div><div class="chart-center-value">${activeCount}</div>`;
+            centerText.innerHTML = `<div class="chart-center-label">Active</div><div class="chart-center-value">${activeCount}</div>`;
         }
     }
 
