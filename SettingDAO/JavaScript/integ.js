@@ -14,6 +14,7 @@ function updateIntegratedDashboard() {
     let totalCount = 0;
     let setupCount = 0;
     let setupEquips = [];
+    let completedEquips = [];
 
     // 데이터 집계
     Object.keys(data).forEach(site => {
@@ -42,7 +43,11 @@ function updateIntegratedDashboard() {
 
                 if (isSetup) {
                     setupCount++;
-                    setupEquips.push({ site, equip, progress });
+                    if (progress === 100) {
+                        completedEquips.push({ site, equip, progress });
+                    } else {
+                        setupEquips.push({ site, equip, progress });
+                    }
                 }
             });
         }
@@ -93,6 +98,7 @@ function updateIntegratedDashboard() {
     // UI 렌더링
     renderIntegSetupSiteStats(); // [변경] 기간별 셋업 현황 차트
     renderIntegSetupList(setupEquips);
+    renderIntegCompletedList(completedEquips); // [추가] 완료된 장비 리스트
     renderIntegMaintStats(data); // [추가] 운영 관리 통계 렌더링
 }
 
@@ -310,6 +316,51 @@ function renderIntegSetupList(list) {
             if (typeof showHomeSection === 'function') showHomeSection('setup');
             
             // 3. 셋업 대시보드 갱신 (필터 적용)
+            if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+        };
+        
+        listEl.appendChild(li);
+    });
+}
+
+// [추가] 완료된 장비 리스트 렌더링 (진행률 제외)
+function renderIntegCompletedList(list) {
+    const listEl = document.getElementById('integ-setup-complete-list');
+    if (!listEl) return;
+    
+    listEl.innerHTML = '';
+
+    if (list.length === 0) {
+        listEl.innerHTML = '<li class="list-empty-msg">완료된 장비 없음</li>';
+        return;
+    }
+
+    // 이름순 정렬
+    list.sort((a, b) => a.equip.localeCompare(b.equip));
+
+    list.forEach(item => {
+        const parts = item.equip.split('::');
+        const name = parts[0];
+        const serial = parts.length > 1 ? parts[1] : '';
+
+        const li = document.createElement('li');
+        li.className = 'status-list-item';
+        
+        li.innerHTML = `
+            <span class="status-color equip-bar" style="background-color: #238636;"></span>
+            <span class="status-name no-margin-right integ-setup-complete-col-name">
+                ${escapeHtml(item.site)} > ${escapeHtml(name)} 
+                ${serial ? `<span class="equip-serial">${escapeHtml(serial)}</span>` : ''}
+            </span>
+        `;
+        
+        // 클릭 시 셋업 대시보드로 이동
+        li.onclick = () => {
+            if (typeof currentGanttFilters !== 'undefined') {
+                currentGanttFilters.site = item.site;
+                currentGanttFilters.equip = item.equip;
+            }
+            if (typeof showHomeSection === 'function') showHomeSection('setup');
             if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
         };
         
