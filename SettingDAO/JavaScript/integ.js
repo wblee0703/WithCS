@@ -136,8 +136,9 @@ function renderIntegSetupSiteStats() {
 
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const siteCounts = {};
-    let totalInPeriod = 0;
-    let completedInPeriod = 0;
+    let totalForRate = 0;
+    let completedCount = 0;
+    let activeCount = 0;
 
     Object.keys(setupData).forEach(key => {
         const parts = key.split('::');
@@ -167,11 +168,13 @@ function renderIntegSetupSiteStats() {
             }
 
             if (hasActivity) {
-                siteCounts[site] = (siteCounts[site] || 0) + 1;
-                totalInPeriod++;
+                totalForRate++;
                 // 완료 여부 체크
                 if (completeItem && completeItem.completed) {
-                    completedInPeriod++;
+                    completedCount++;
+                } else {
+                    activeCount++;
+                    siteCounts[site] = (siteCounts[site] || 0) + 1;
                 }
             }
         }
@@ -179,51 +182,53 @@ function renderIntegSetupSiteStats() {
 
     // 차트 및 리스트 렌더링
     listEl.innerHTML = '';
-    if (totalInPeriod === 0) {
+    if (activeCount === 0) {
         chartEl.style.background = '';
-        if (completeChartEl) completeChartEl.style.background = '';
-        if (completeCenterText) completeCenterText.innerHTML = `<div class="chart-center-label">Complete</div><div class="chart-center-value">0%</div>`;
         if (centerText) centerText.innerHTML = `<div class="chart-center-label">Total</div><div class="chart-center-value">0</div>`;
         listEl.innerHTML = '<li class="list-empty-msg">데이터 없음</li>';
-        return;
-    }
+    } else {
+        const colors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
+        let gradientStr = '';
+        let currentDeg = 0;
+        
+        const sortedSites = Object.keys(siteCounts).map(site => ({ name: site, count: siteCounts[site] }))
+                                                   .sort((a, b) => b.count - a.count);
 
-    const colors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
-    let gradientStr = '';
-    let currentDeg = 0;
-    
-    const sortedSites = Object.keys(siteCounts).map(site => ({ name: site, count: siteCounts[site] }))
-                                               .sort((a, b) => b.count - a.count);
+        sortedSites.forEach((site, index) => {
+            const color = colors[index % colors.length];
+            const deg = (site.count / activeCount) * 360;
+            gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
+            currentDeg += deg;
 
-    sortedSites.forEach((site, index) => {
-        const color = colors[index % colors.length];
-        const deg = (site.count / totalInPeriod) * 360;
-        gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
-        currentDeg += deg;
+            const li = document.createElement('li');
+            li.className = 'status-list-item';
+            li.innerHTML = `
+                <span class="status-color" style="background-color: ${color};"></span>
+                <span class="status-name integ-setup-site-col-name">${escapeHtml(site.name)}</span>
+                <span class="status-count integ-setup-site-col-count">${site.count}</span>
+            `;
+            listEl.appendChild(li);
+        });
 
-        const li = document.createElement('li');
-        li.className = 'status-list-item';
-        li.innerHTML = `
-            <span class="status-color" style="background-color: ${color};"></span>
-            <span class="status-name integ-setup-site-col-name">${escapeHtml(site.name)}</span>
-            <span class="status-count integ-setup-site-col-count">${site.count}</span>
-        `;
-        listEl.appendChild(li);
-    });
-
-    chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
-    if (centerText) {
-        centerText.innerHTML = `<div class="chart-center-label">Total</div><div class="chart-center-value">${totalInPeriod}</div>`;
+        chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
+        if (centerText) {
+            centerText.innerHTML = `<div class="chart-center-label">Total</div><div class="chart-center-value">${activeCount}</div>`;
+        }
     }
 
     // [추가] 완료율 도넛 차트 렌더링
     if (completeChartEl && completeCenterText) {
-        const completeRate = totalInPeriod > 0 ? (completedInPeriod / totalInPeriod) * 100 : 0;
-        const completeDeg = (completedInPeriod / totalInPeriod) * 360;
-        
-        // 완료(초록) / 미완료(회색) 그라데이션
-        completeChartEl.style.background = `conic-gradient(#238636 0deg ${completeDeg}deg, #30363d ${completeDeg}deg 360deg)`;
-        completeCenterText.innerHTML = `<div class="chart-center-label">Complete</div><div class="chart-center-value">${Math.round(completeRate)}%</div>`;
+        if (totalForRate === 0) {
+            completeChartEl.style.background = '';
+            completeCenterText.innerHTML = `<div class="chart-center-label">Complete</div><div class="chart-center-value">0%</div>`;
+        } else {
+            const completeRate = (completedCount / totalForRate) * 100;
+            const completeDeg = (completedCount / totalForRate) * 360;
+            
+            // 완료(초록) / 미완료(회색) 그라데이션
+            completeChartEl.style.background = `conic-gradient(#238636 0deg ${completeDeg}deg, #30363d ${completeDeg}deg 360deg)`;
+            completeCenterText.innerHTML = `<div class="chart-center-label">Complete</div><div class="chart-center-value">${Math.round(completeRate)}%</div>`;
+        }
     }
 }
 
