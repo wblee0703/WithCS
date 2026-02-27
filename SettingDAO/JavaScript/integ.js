@@ -29,7 +29,8 @@ function updateIntegratedDashboard() {
                 // 셋업 중인지 판단 (셋업 데이터가 있고, 완료되지 않았으며, 시작일이 있는 경우)
                 if (detailData && detailData.setupDetails && detailData.setupDetails.length > 0) {
                     const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
-                    if (completeItem && !completeItem.completed && completeItem.startDate) {
+                    // [수정] 완료된 항목도 포함 (진행률 100% 표시)
+                    if (completeItem && completeItem.startDate) {
                         isSetup = true;
                         
                         // 진행률 계산
@@ -78,6 +79,8 @@ function renderIntegSetupSiteStats() {
     const chartEl = document.getElementById('integ-setup-site-chart');
     const listEl = document.getElementById('integ-setup-site-list');
     const centerText = document.getElementById('integ-setup-site-center');
+    const completeChartEl = document.getElementById('integ-setup-complete-chart');
+    const completeCenterText = document.getElementById('integ-setup-complete-center');
     const periodSelect = document.getElementById('integ-setup-period');
 
     if (!chartEl || !listEl || !periodSelect) return;
@@ -86,6 +89,7 @@ function renderIntegSetupSiteStats() {
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const siteCounts = {};
     let totalInPeriod = 0;
+    let completedInPeriod = 0;
 
     // 기간 계산
     let fromDate = null;
@@ -103,10 +107,11 @@ function renderIntegSetupSiteStats() {
         if (data && data.setupDetails) {
             // 해당 기간 내 활동 여부 확인
             let hasActivity = false;
+            let isCompleted = false;
             
             // 1. 현재 진행 중인 경우 (완료 안됨 + 시작일 있음) -> 무조건 포함
             const completeItem = data.setupDetails.find(d => d.content === '셋업 완료');
-            if (completeItem && !completeItem.completed && completeItem.startDate) {
+            if (completeItem && completeItem.startDate) {
                 hasActivity = true;
             }
 
@@ -128,6 +133,10 @@ function renderIntegSetupSiteStats() {
             if (hasActivity) {
                 siteCounts[site] = (siteCounts[site] || 0) + 1;
                 totalInPeriod++;
+                // 완료 여부 체크
+                if (completeItem && completeItem.completed) {
+                    completedInPeriod++;
+                }
             }
         }
     });
@@ -136,6 +145,8 @@ function renderIntegSetupSiteStats() {
     listEl.innerHTML = '';
     if (totalInPeriod === 0) {
         chartEl.style.background = '';
+        if (completeChartEl) completeChartEl.style.background = '';
+        if (completeCenterText) completeCenterText.innerHTML = `<div class="chart-center-label">Complete</div><div class="chart-center-value">0%</div>`;
         if (centerText) centerText.innerHTML = `<div class="chart-center-label">Total</div><div class="chart-center-value">0</div>`;
         listEl.innerHTML = '<li class="list-empty-msg">데이터 없음</li>';
         return;
@@ -167,6 +178,16 @@ function renderIntegSetupSiteStats() {
     chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
     if (centerText) {
         centerText.innerHTML = `<div class="chart-center-label">Total</div><div class="chart-center-value">${totalInPeriod}</div>`;
+    }
+
+    // [추가] 완료율 도넛 차트 렌더링
+    if (completeChartEl && completeCenterText) {
+        const completeRate = totalInPeriod > 0 ? (completedInPeriod / totalInPeriod) * 100 : 0;
+        const completeDeg = (completedInPeriod / totalInPeriod) * 360;
+        
+        // 완료(초록) / 미완료(회색) 그라데이션
+        completeChartEl.style.background = `conic-gradient(#238636 0deg ${completeDeg}deg, #30363d ${completeDeg}deg 360deg)`;
+        completeCenterText.innerHTML = `<div class="chart-center-label">Complete</div><div class="chart-center-value">${Math.round(completeRate)}%</div>`;
     }
 }
 
@@ -228,9 +249,18 @@ function renderIntegSetupList(list) {
             <span class="status-count integ-setup-detail-col-progress" style="color: ${progressColor}">${item.progress}%</span>
         `;
         
-        // 클릭 시 셋업 페이지로 이동
+        // 클릭 시 셋업 대시보드(간트뷰)로 이동 및 필터링
         li.onclick = () => {
-            location.href = `setup.html?site=${encodeURIComponent(item.site)}&equip=${encodeURIComponent(item.equip)}`;
+            // 1. 간트 차트 필터 설정 (index.js 전역 변수 활용)
+            if (typeof currentGanttFilters !== 'undefined') {
+                currentGanttFilters.site = item.site;
+                currentGanttFilters.equip = item.equip;
+            }
+            // 2. 셋업 섹션으로 이동
+            if (typeof showHomeSection === 'function') showHomeSection('setup');
+            
+            // 3. 셋업 대시보드 갱신 (필터 적용)
+            if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
         };
         
         listEl.appendChild(li);
