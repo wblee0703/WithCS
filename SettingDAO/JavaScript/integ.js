@@ -359,7 +359,15 @@ function renderIntegMaintStats(mainData) {
     }, integSelectedType);
 
     if (siteChartEl) {
+        // [추가] 전체 합계 계산 및 '전체' 항목 추가
+        let totalSiteCount = 0;
+        Object.values(siteCounts).forEach(count => totalSiteCount += count);
+        
+        // '전체'가 가장 앞에 오도록 새로운 객체 생성
+        const orderedSiteCounts = { '전체': totalSiteCount, ...siteCounts };
+
         const siteGradients = [
+            'linear-gradient(to top, #6e7681, #8b949e)', // [추가] 전체 (Gray)
             'linear-gradient(to top, #1f6feb, #58a6ff)', // Blue
             'linear-gradient(to top, #238636, #3fb950)', // Green
             'linear-gradient(to top, #d29922, #f0883e)', // Orange
@@ -369,9 +377,11 @@ function renderIntegMaintStats(mainData) {
             'linear-gradient(to top, #1b7c83, #3fb950)', // Teal/Green
             'linear-gradient(to top, #6e40c9, #8957e5)'  // Dark Purple
         ];
-        renderChartWithAxis(siteChartEl, siteCounts, siteGradients, (key) => {
+        renderChartWithAxis(siteChartEl, orderedSiteCounts, siteGradients, (key) => {
             // 사업장 클릭 핸들러
-            if (integSelectedSite === key) {
+            if (key === '전체') {
+                integSelectedSite = null;
+            } else if (integSelectedSite === key) {
                 integSelectedSite = null; // 토글 해제
             } else {
                 integSelectedSite = key; // 선택

@@ -281,3 +281,26 @@
     width: 80px; /* [설정] 진행률 컬럼 너비 */
     text-align: center;
 }
+
+/* [추가] 월간 운영 현황 헤더 스타일 */
+.integ-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* 제목 중앙 정렬 */
+    position: relative;      /* 날짜 필터 절대 위치 기준 */
+    width: 100%;             /* [설정] 헤더 너비 (예: 1200px 등으로 변경 가능) */
+    margin: 20px auto 10px auto; /* 중앙 정렬 */
+    padding: 0 5px;
+}
+
+.integ-section-title {
+    font-size: 22px;         /* [설정] 제목 글씨 크기 */
+    font-weight: bold;
+    color: #c9d1d9;
+    margin: 0;
+}
+
+.integ-section-header #integ-maint-month {
+    position: absolute;
+    right: 0;                /* 오른쪽에 고정 */
+}
