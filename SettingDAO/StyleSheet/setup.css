@@ -304,6 +304,19 @@
     display: inline-block;
 }
 
+/* [추가] 초기화 버튼 스타일 */
+.btn-reset {
+    background: transparent;
+    border: 1px solid #da3633;
+    color: #da3633;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    margin-right: 5px;
+}
+.btn-reset:hover { background: #da3633; color: #fff; }
+
 /* ==========================================================================
    6. 모달 (Modals)
    ========================================================================== */

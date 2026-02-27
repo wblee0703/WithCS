@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSetupExecStartModal();
     setupSetupLoadListModal();
     setupSetupLoadInfoModal();
+    setupSetupResetButton(); // [추가] 초기화 버튼 설정
 });
 
 // common.js의 checkUnsavedChanges 함수 오버라이드 (페이지 이동 시 체크)
@@ -500,6 +501,10 @@ function toggleSetupDetailDeleteMode(btn) {
         // 리스트 불러오기 버튼 토글
         const loadBtn = document.getElementById('btn-load-setup-list');
         if (loadBtn) loadBtn.style.display = isEditMode ? 'block' : 'none';
+
+        // [추가] 초기화 버튼 토글
+        const resetBtn = document.getElementById('btn-reset-setup-date');
+        if (resetBtn) resetBtn.style.display = isEditMode ? 'inline-block' : 'none';
     }
 }
 
@@ -1789,4 +1794,53 @@ function loadSetupInfoFromTarget() {
 
     document.getElementById('setup-load-info-modal').style.display = 'none';
     alert('정보를 불러왔습니다. 저장 버튼을 눌러 반영해주세요.');
+}
+
+// [추가] 셋업 예정일 초기화 버튼 설정
+function setupSetupResetButton() {
+    // 톱니바퀴 버튼 찾기 (onclick 속성으로 식별)
+    const settingsBtn = document.querySelector('button[onclick*="toggleSetupDetailDeleteMode"]');
+    if (settingsBtn && settingsBtn.parentNode) {
+        // 이미 버튼이 있는지 확인
+        if (document.getElementById('btn-reset-setup-date')) return;
+
+        const resetBtn = document.createElement('button');
+        resetBtn.id = 'btn-reset-setup-date';
+        resetBtn.className = 'btn-reset';
+        resetBtn.textContent = '📅 예정일 초기화';
+        resetBtn.style.display = 'none'; // 초기엔 숨김
+        resetBtn.onclick = resetSetupDates;
+        
+        // 톱니바퀴 버튼 앞에 추가
+        settingsBtn.parentNode.insertBefore(resetBtn, settingsBtn);
+    }
+}
+
+// [추가] 셋업 예정일 초기화 로직
+function resetSetupDates() {
+    if (!currentPath.site || !currentPath.equip) return;
+    
+    if (!confirm("현재 장비의 셋업 예정일과 진행 상태를 모두 초기화하시겠습니까?\n(작업일수와 항목 구성은 유지됩니다.)")) return;
+    
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${currentPath.site}::${currentPath.equip}`;
+    let data = setupData[equipKey] || {};
+    
+    if (data.setupDetails) {
+        data.setupDetails.forEach(item => {
+            item.completed = false;
+            item.date = "";
+            item.startDate = "";
+            item.execStartDate = "";
+            item.delayReason = "";
+        });
+        
+        setupData[equipKey] = data;
+        localStorage.setItem('setup_data', JSON.stringify(setupData));
+        
+        // UI 갱신
+        renderSetupDetailList();
+        updateExecutionRate();
+        alert("초기화되었습니다.");
+    }
 }
