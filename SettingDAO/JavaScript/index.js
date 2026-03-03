@@ -728,6 +728,7 @@ function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
     const chartEl = document.getElementById('setup-site-status-chart');
     const listEl = document.getElementById('setup-site-status-list');
     const centerText = document.getElementById('setup-site-chart-center');
+    const barChartEl = document.getElementById('setup-site-bar-chart');
 
     if (!chartEl || !listEl) return;
     listEl.innerHTML = '';
@@ -736,6 +737,7 @@ function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
         chartEl.style.background = '';
         if (centerText) centerText.innerHTML = `<div class="chart-center-label">Site</div><div class="chart-center-value">0</div>`;
         listEl.innerHTML = '<li class="list-empty-msg">진행 중인 셋업 없음</li>';
+        if (barChartEl) barChartEl.innerHTML = '<div class="list-empty-msg" style="width:100%; text-align:center;">데이터 없음</div>';
         return;
     }
 
@@ -743,6 +745,67 @@ function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
     let gradientStr = '';
     let currentDeg = 0;
     siteStats.sort((a, b) => b.count - a.count);
+
+    // --- 막대그래프 렌더링 (상단 추가) ---
+    if (barChartEl) {
+        barChartEl.innerHTML = '';
+        // 전체 항목을 포함한 데이터 배열 생성 (전체가 제일 왼쪽)
+        const barData = [{ name: '전체', count: totalEquip }, ...siteStats];
+
+        // Y축 스케일 계산
+        const maxVal = Math.max(...barData.map(d => d.count));
+        let yAxisMax = 10;
+        if (maxVal > 10) {
+            yAxisMax = Math.ceil(maxVal / 5) * 5;
+        }
+
+        barData.forEach((item, index) => {
+            const isTotal = item.name === '전체';
+            const count = item.count;
+            const maxBarHeight = 140; // 컨테이너 높이(200px) 고려하여 조정
+            const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
+
+            // 색상 결정 (전체는 회색, 나머지는 팔레트 순환)
+            let bgStyle = '#6e7681';
+            if (!isTotal) {
+                bgStyle = colors[(index - 1) % colors.length];
+            }
+
+            // 활성 상태 확인
+            const isActive = (setupDashboardFilter.site === item.name) || (isTotal && !setupDashboardFilter.site);
+            const activeClass = isActive ? 'active' : '';
+
+            const barGroup = document.createElement('div');
+            barGroup.className = 'bar-group';
+            // 선택되지 않은 항목 흐리게 처리
+            if (setupDashboardFilter.site && !isActive) {
+                barGroup.classList.add('faded');
+            }
+
+            barGroup.innerHTML = `
+                <div class="bar-value">${count}</div>
+                <div class="bar ${activeClass}" style="height: ${barHeight}px; background: ${bgStyle};"></div>
+                <div class="bar-label" title="${item.name}">${item.name}</div>
+            `;
+
+            barGroup.onclick = () => {
+                if (isTotal) {
+                    setupDashboardFilter.site = '';
+                } else {
+                    setupDashboardFilter.site = (setupDashboardFilter.site === item.name) ? '' : item.name;
+                }
+                setupDashboardFilter.equip = '';
+                currentGanttFilters = { site: '', equip: '' };
+                currentSearchFilters = { site: '', equip: '' };
+                renderCalendar();
+                updateSetupDashboard();
+            };
+            
+            barGroup.style.cursor = 'pointer';
+            barChartEl.appendChild(barGroup);
+        });
+    }
+    // ----------------------------------
 
     // 전체
     const allLi = document.createElement('li');
