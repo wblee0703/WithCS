@@ -15,9 +15,9 @@ window.getSiteColor = function(siteName) {
 
     // [수정] 특정 사업장 고정 색상 지정
     const nameUpper = siteName.toUpperCase();
-    if (nameUpper.includes('SKH')) return '#f0883e'; // 주황색 (Orange)
-    if (nameUpper.includes('SEC')) return '#1f6feb'; // 파란색 (Blue)
-    if (nameUpper.includes('ENF')) return '#8957e5'; // 보라색 (Purple)
+    if (nameUpper.includes('SKH')) return '#F37021'; // 주황색 (Orange)
+    if (nameUpper.includes('SEC')) return '#034EA2'; // 파란색 (Blue)
+    if (nameUpper.includes('ENF')) return '#0096D6'; // 보라색 (Purple)
 
     const colors = [
         '#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', 
