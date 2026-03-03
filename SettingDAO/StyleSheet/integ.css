@@ -294,9 +294,10 @@
     width: 150px;           /* [설정] 날짜 필터 너비 */
 }
 
-/* [추가] 월 선택 아이콘 스타일 (어두운 회색) */
-input[type="month"]::-webkit-calendar-picker-indicator {
-    filter: invert(0.3);
+/* [추가] 달력 아이콘 스타일 (회색 계열) */
+input[type="month"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
     cursor: pointer;
 }
 
@@ -360,7 +361,9 @@ input[type="month"]::-webkit-calendar-picker-indicator {
 
 /* [추가] 직접 입력 날짜 필드 스타일 */
 #integ-setup-start,
-#integ-setup-end {
+#integ-setup-end,
+#integ-maint-start,
+#integ-maint-end {
     width: 130px;
     padding: 2px 8px;
     font-size: 12px;

@@ -161,6 +161,12 @@ function initDateControls() {
         }
     });
 
+    // 운영 관리 직접 입력 날짜 초기화
+    const maintStart = document.getElementById('integ-maint-start');
+    const maintEnd = document.getElementById('integ-maint-end');
+    if (maintStart && !maintStart.value) maintStart.value = startDate;
+    if (maintEnd && !maintEnd.value) maintEnd.value = endDate;
+
     // 직접 입력 날짜 초기화
     const startInput = document.getElementById('integ-setup-start');
     const endInput = document.getElementById('integ-setup-end');
@@ -471,19 +477,34 @@ function renderIntegMaintStats(mainData) {
     // 기간 필터 확인
     const periodTypeEl = document.getElementById('integ-period-type');
     const periodType = periodTypeEl ? periodTypeEl.value : 'month';
-    let targetPrefix = '';
+    
+    // [수정] 날짜 체크 함수 생성 (월간/연간/직접입력 지원)
+    let dateCheckFn = null;
 
     if (periodType === 'year') {
         const yearSelect = document.getElementById('integ-maint-year');
-        targetPrefix = (yearSelect && yearSelect.value) ? yearSelect.value : new Date().getFullYear().toString();
+        const targetPrefix = (yearSelect && yearSelect.value) ? yearSelect.value : new Date().getFullYear().toString();
+        dateCheckFn = (d) => d && d.startsWith(targetPrefix);
+    } else if (periodType === 'custom') {
+        const startInput = document.getElementById('integ-maint-start');
+        const endInput = document.getElementById('integ-maint-end');
+        let targetStart, targetEnd;
+        
+        if (startInput && endInput && startInput.value && endInput.value) {
+            targetStart = new Date(startInput.value);
+            targetEnd = new Date(endInput.value);
+            targetEnd.setHours(23, 59, 59, 999); // 종료일의 끝까지 포함
+        }
+        
+        dateCheckFn = (d) => {
+            if (!d || !targetStart || !targetEnd) return false;
+            const itemDate = new Date(d);
+            return itemDate >= targetStart && itemDate <= targetEnd;
+        };
     } else {
         const monthPicker = document.getElementById('integ-maint-month');
-        if (monthPicker && monthPicker.value) {
-            targetPrefix = monthPicker.value;
-        } else {
-            const now = new Date();
-            targetPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        }
+        const targetPrefix = (monthPicker && monthPicker.value) ? monthPicker.value : `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+        dateCheckFn = (d) => d && d.startsWith(targetPrefix);
     }
 
     const typeCounts = { 'PM': 0, 'BM': 0, '트러블이슈': 0, '프로그램변경': 0, '장비점검': 0 };
@@ -500,7 +521,7 @@ function renderIntegMaintStats(mainData) {
                 if (!detailData) return;
 
                 const processItem = (type, content, date) => {
-                    if (date && date.startsWith(targetPrefix)) {
+                    if (dateCheckFn(date)) {
                         siteCounts[site] = (siteCounts[site] || 0) + 1;
                         if (isSiteMatch) {
                             if (typeCounts.hasOwnProperty(type)) typeCounts[type]++;
@@ -613,16 +634,31 @@ function togglePeriodMode(typeId, monthId, yearId, titleId) {
     const type = document.getElementById(typeId).value;
     const monthInput = document.getElementById(monthId);
     const yearSelect = document.getElementById(yearId);
+    // [추가] 운영 관리용 직접 입력 필드 ID 처리 (ID가 고정되어 있으므로 하드코딩 또는 인자로 확장 가능하나, 여기서는 ID 규칙에 따라 처리)
+    const isMaint = typeId === 'integ-period-type';
+    const startInput = document.getElementById(isMaint ? 'integ-maint-start' : 'integ-setup-start');
+    const endInput = document.getElementById(isMaint ? 'integ-maint-end' : 'integ-setup-end');
+    const tilde = document.getElementById(isMaint ? 'integ-maint-tilde' : 'integ-setup-tilde');
     const titleSpan = document.getElementById(titleId);
+
+    // 모든 입력 숨김
+    if (monthInput) monthInput.style.display = 'none';
+    if (yearSelect) yearSelect.style.display = 'none';
+    if (startInput) startInput.style.display = 'none';
+    if (endInput) endInput.style.display = 'none';
+    if (tilde) tilde.style.display = 'none';
 
     if (type === 'month') {
         if (monthInput) monthInput.style.display = 'inline-block';
-        if (yearSelect) yearSelect.style.display = 'none';
         if (titleSpan) titleSpan.textContent = '월간';
-    } else {
-        if (monthInput) monthInput.style.display = 'none';
+    } else if (type === 'year') {
         if (yearSelect) yearSelect.style.display = 'inline-block';
         if (titleSpan) titleSpan.textContent = '연간';
+    } else if (type === 'custom') {
+        if (startInput) startInput.style.display = 'inline-block';
+        if (endInput) endInput.style.display = 'inline-block';
+        if (tilde) tilde.style.display = 'inline-block';
+        if (titleSpan) titleSpan.textContent = '기간별';
     }
 }
 
