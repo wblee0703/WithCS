@@ -222,7 +222,7 @@ function renderIntegSetupSiteStats() {
             
             // 완료(초록) / 미완료(회색) 그라데이션
             completeChartEl.style.background = `conic-gradient(#238636 0deg ${completeDeg}deg, #30363d ${completeDeg}deg 360deg)`;
-            completeCenterText.innerHTML = `<div class="chart-center-label">Complete</div><div class="chart-center-value">${Math.round(completeRate)}%</div>`;
+            completeCenterText.innerHTML = `<div class="chart-center-label">Complete Rate</div><div class="chart-center-value">${Math.round(completeRate)}%</div>`;
         }
     }
 
@@ -230,7 +230,7 @@ function renderIntegSetupSiteStats() {
     if (doneChartEl && doneCenterText) {
         if (completedCount === 0) {
             doneChartEl.style.background = '';
-            doneCenterText.innerHTML = `<div class="chart-center-label">Complete</div><div class="chart-center-value">0</div>`;
+            doneCenterText.innerHTML = `<div class="chart-center-label">Done</div><div class="chart-center-value">0</div>`;
         } else {
             const colors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
             let gradientStr = '';
@@ -247,7 +247,7 @@ function renderIntegSetupSiteStats() {
             });
 
             doneChartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
-            doneCenterText.innerHTML = `<div class="chart-center-label">Done</div><div class="chart-center-value">${completedCount}</div>`;
+            doneCenterText.innerHTML = `<div class="chart-center-label">Complete</div><div class="chart-center-value">${completedCount}</div>`;
         }
     }
 }

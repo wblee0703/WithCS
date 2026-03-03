@@ -331,6 +331,11 @@ input[type="month"]::-webkit-calendar-picker-indicator {
     width: 100%; /* [설정] 리스트 너비 */
 }
 
+/* [추가] 점검 항목 리스트 컨테이너 스타일 */
+#integ-maint-item-list-container {
+    width: 70%;
+}
+
 .integ-setup-complete-header-name,
 .integ-setup-complete-col-name {
     flex: 1;
