@@ -26,6 +26,7 @@ function updateIntegratedDashboard() {
 
                 let isSetup = false;
                 let progress = 0;
+                let completionDate = "";
 
                 // 셋업 중인지 판단 (셋업 데이터가 있고, 완료되지 않았으며, 시작일이 있는 경우)
                 if (detailData && detailData.setupDetails && detailData.setupDetails.length > 0) {
@@ -33,6 +34,7 @@ function updateIntegratedDashboard() {
                     // [수정] 완료된 항목도 포함 (진행률 100% 표시)
                     if (completeItem && completeItem.startDate) {
                         isSetup = true;
+                        if (completeItem.completed) completionDate = completeItem.date;
                         
                         // 진행률 계산
                         const totalTasks = detailData.setupDetails.length;
@@ -44,7 +46,7 @@ function updateIntegratedDashboard() {
                 if (isSetup) {
                     setupCount++;
                     if (progress === 100) {
-                        completedEquips.push({ site, equip, progress });
+                        completedEquips.push({ site, equip, progress, date: completionDate });
                     } else {
                         setupEquips.push({ site, equip, progress });
                     }
@@ -375,6 +377,7 @@ function renderIntegCompletedList(list) {
                 ${escapeHtml(item.site)} > ${escapeHtml(name)} 
                 ${serial ? `<span class="equip-serial">${escapeHtml(serial)}</span>` : ''}
             </span>
+            <span class="status-count integ-setup-complete-col-date">${item.date || ''}</span>
         `;
         
         // 클릭 시 셋업 대시보드로 이동
