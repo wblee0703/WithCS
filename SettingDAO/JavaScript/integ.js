@@ -40,6 +40,20 @@ function updateIntegratedDashboard() {
         const year = yearSelect ? parseInt(yearSelect.value) : new Date().getFullYear();
         targetStart = new Date(year, 0, 1);
         targetEnd = new Date(year, 11, 31, 23, 59, 59);
+    } else if (periodType === 'custom') {
+        const startInput = document.getElementById('integ-setup-start');
+        const endInput = document.getElementById('integ-setup-end');
+        if (startInput && endInput && startInput.value && endInput.value) {
+            const [sy, sm, sd] = startInput.value.split('-').map(Number);
+            const [ey, em, ed] = endInput.value.split('-').map(Number);
+            targetStart = new Date(sy, sm - 1, sd);
+            targetEnd = new Date(ey, em - 1, ed, 23, 59, 59);
+        } else {
+            // 입력값이 없으면 현재 월 기본값 사용
+            const now = new Date();
+            targetStart = new Date(now.getFullYear(), now.getMonth(), 1);
+            targetEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        }
     } else {
         const monthInput = document.getElementById('integ-setup-month');
         let date = new Date();
@@ -124,6 +138,9 @@ function initDateControls() {
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const startDate = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const lastDay = new Date(currentYear, now.getMonth() + 1, 0).getDate();
+    const endDate = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
     // 월간 입력창 초기화
     ['integ-maint-month', 'integ-setup-month'].forEach(id => {
@@ -143,6 +160,12 @@ function initDateControls() {
             }
         }
     });
+
+    // 직접 입력 날짜 초기화
+    const startInput = document.getElementById('integ-setup-start');
+    const endInput = document.getElementById('integ-setup-end');
+    if (startInput && !startInput.value) startInput.value = startDate;
+    if (endInput && !endInput.value) endInput.value = endDate;
 }
 
 /* ==========================================================================
@@ -399,7 +422,34 @@ function renderIntegCompletedList(list) {
 }
 
 function toggleIntegSetupPeriodMode() {
-    togglePeriodMode('integ-setup-period-type', 'integ-setup-month', 'integ-setup-year', 'integ-setup-title-period');
+    const type = document.getElementById('integ-setup-period-type').value;
+    const monthInput = document.getElementById('integ-setup-month');
+    const yearSelect = document.getElementById('integ-setup-year');
+    const startInput = document.getElementById('integ-setup-start');
+    const endInput = document.getElementById('integ-setup-end');
+    const tilde = document.getElementById('integ-setup-tilde');
+    const titleSpan = document.getElementById('integ-setup-title-period');
+
+    // 모든 입력 숨김
+    if (monthInput) monthInput.style.display = 'none';
+    if (yearSelect) yearSelect.style.display = 'none';
+    if (startInput) startInput.style.display = 'none';
+    if (endInput) endInput.style.display = 'none';
+    if (tilde) tilde.style.display = 'none';
+
+    if (type === 'month') {
+        if (monthInput) monthInput.style.display = 'inline-block';
+        if (titleSpan) titleSpan.textContent = '월간';
+    } else if (type === 'year') {
+        if (yearSelect) yearSelect.style.display = 'inline-block';
+        if (titleSpan) titleSpan.textContent = '연간';
+    } else if (type === 'custom') {
+        if (startInput) startInput.style.display = 'inline-block';
+        if (endInput) endInput.style.display = 'inline-block';
+        if (tilde) tilde.style.display = 'inline-block';
+        if (titleSpan) titleSpan.textContent = '기간별';
+    }
+    
     updateIntegratedDashboard(); // [수정] 전체 대시보드 갱신
 }
 
