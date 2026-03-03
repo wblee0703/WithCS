@@ -327,7 +327,7 @@ function renderIntegSetupList(list) {
                 ${escapeHtml(item.site)} > ${escapeHtml(name)} 
                 ${serial ? `<span class="equip-serial">${escapeHtml(serial)}</span>` : ''}
             </span>
-            <span class="status-count integ-setup-detail-col-progress" style="color: ${progressColor}">${item.progress}%</span>
+            <span class="status-count integ-setup-detail-col-progress">${item.progress}%</span>
         `;
         
         // 클릭 시 셋업 대시보드(간트뷰)로 이동 및 필터링
