@@ -5,6 +5,7 @@
 // 통합 관리 필터 상태 변수
 let integSelectedSite = null;
 let integSelectedType = null;
+let integSetupSelectedSite = null; // [추가] 셋업 현황 사업장 필터
 
 function updateIntegratedDashboard() {
     // 데이터 로드
@@ -15,6 +16,10 @@ function updateIntegratedDashboard() {
     let setupCount = 0;
     let setupEquips = [];
     let completedEquips = [];
+
+    // [추가] 막대그래프용 전체 집계 데이터
+    const allSiteCounts = {};
+    let totalActiveAll = 0;
 
     // 데이터 집계
     Object.keys(data).forEach(site => {
@@ -45,10 +50,20 @@ function updateIntegratedDashboard() {
 
                 if (isSetup) {
                     setupCount++;
-                    if (progress === 100) {
-                        completedEquips.push({ site, equip, progress, date: completionDate });
-                    } else {
-                        setupEquips.push({ site, equip, progress });
+                    
+                    // 1. 막대그래프용 전체 집계 (진행 중인 것만)
+                    if (progress < 100) {
+                        allSiteCounts[site] = (allSiteCounts[site] || 0) + 1;
+                        totalActiveAll++;
+                    }
+
+                    // 2. 리스트용 필터링 집계
+                    if (!integSetupSelectedSite || integSetupSelectedSite === site) {
+                        if (progress === 100) {
+                            completedEquips.push({ site, equip, progress, date: completionDate });
+                        } else {
+                            setupEquips.push({ site, equip, progress });
+                        }
                     }
                 }
             });
@@ -98,6 +113,7 @@ function updateIntegratedDashboard() {
     }
 
     // UI 렌더링
+    renderIntegSetupBarChart(allSiteCounts, totalActiveAll); // [추가] 셋업 막대그래프
     renderIntegSetupSiteStats(); // [변경] 기간별 셋업 현황 차트
     renderIntegSetupList(setupEquips);
     renderIntegCompletedList(completedEquips); // [추가] 완료된 장비 리스트
@@ -148,6 +164,9 @@ function renderIntegSetupSiteStats() {
         const parts = key.split('::');
         const site = parts[0];
         const data = setupData[key];
+
+        // [추가] 사업장 필터 적용
+        if (integSetupSelectedSite && site !== integSetupSelectedSite) return;
 
         if (data && data.setupDetails) {
             // 해당 기간 내 활동 여부 확인
@@ -248,6 +267,64 @@ function renderIntegSetupSiteStats() {
             doneCenterText.innerHTML = `<div class="chart-center-label">Complete</div><div class="chart-center-value">${completedCount}</div>`;
         }
     }
+}
+
+// [추가] 통합 관리 - 사업장 셋업 현황 막대그래프 렌더링
+function renderIntegSetupBarChart(siteCounts, totalCount) {
+    const chartEl = document.getElementById('integ-setup-site-bar-chart');
+    if (!chartEl) return;
+
+    chartEl.innerHTML = '';
+
+    // 데이터 배열 생성 ('전체' 포함)
+    const dataItems = [{ name: '전체', count: totalCount }];
+    Object.keys(siteCounts).forEach(site => {
+        dataItems.push({ name: site, count: siteCounts[site] });
+    });
+    
+    // 정렬 (전체 제외하고 내림차순)
+    const sortedSites = dataItems.slice(1).sort((a, b) => b.count - a.count);
+    const finalData = [dataItems[0], ...sortedSites];
+
+    // Y축 스케일 계산
+    const maxVal = Math.max(...finalData.map(d => d.count));
+    let yAxisMax = 10;
+    if (maxVal > 10) {
+        yAxisMax = Math.ceil(maxVal / 5) * 5;
+    }
+
+    finalData.forEach((item, index) => {
+        const isTotal = item.name === '전체';
+        const count = item.count;
+        const maxBarHeight = 140;
+        const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
+
+        let bgStyle = window.getSiteGradient(item.name);
+
+        // 활성 상태 확인
+        const isActive = (integSetupSelectedSite === item.name) || (isTotal && !integSetupSelectedSite);
+        const activeClass = isActive ? 'active' : '';
+
+        const barGroup = document.createElement('div');
+        barGroup.className = 'bar-group';
+        if (integSetupSelectedSite && !isActive) {
+            barGroup.classList.add('faded');
+        }
+
+        barGroup.innerHTML = `
+            <div class="bar-value">${count}</div>
+            <div class="bar ${activeClass}" style="height: ${barHeight}px; background: ${bgStyle};"></div>
+            <div class="bar-label" title="${item.name}">${item.name}</div>
+        `;
+
+        barGroup.onclick = () => {
+            integSetupSelectedSite = isTotal ? null : (integSetupSelectedSite === item.name ? null : item.name);
+            updateIntegratedDashboard(); // 전체 대시보드 갱신 (필터 적용)
+        };
+        
+        barGroup.style.cursor = 'pointer';
+        chartEl.appendChild(barGroup);
+    });
 }
 
 // 전역 노출

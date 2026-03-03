@@ -17,7 +17,9 @@ window.getSiteColor = function(siteName) {
     const nameUpper = siteName.toUpperCase();
     if (nameUpper.includes('SKH')) return '#F37021'; // 주황색 (Orange)
     if (nameUpper.includes('SEC')) return '#034EA2'; // 파란색 (Blue)
-    if (nameUpper.includes('ENF')) return '#0096D6'; // 보라색 (Purple)
+    if (nameUpper.includes('ENF')) return '#0096D6'; // 밝은 파란색 (Light Blue)
+    if (nameUpper.includes('ONSEMI')) return '#1D3546'; // 진한 파란색 (Dark Blue)
+    if (nameUpper.includes('LG')) return '#6B6B6B'; // 회색 (Gray)
 
     const colors = [
         '#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', 
@@ -45,7 +47,12 @@ window.getSiteGradient = function(siteName) {
         '#a371f7': 'linear-gradient(to top, #a371f7, #c4a7f7)',
         '#9e6a03': 'linear-gradient(to top, #9e6a03, #d29922)',
         '#1b7c83': 'linear-gradient(to top, #1b7c83, #3fb950)',
-        '#6e40c9': 'linear-gradient(to top, #6e40c9, #8957e5)'
+        '#6e40c9': 'linear-gradient(to top, #6e40c9, #8957e5)',
+        '#F37021': 'linear-gradient(to top, #F37021, #ff9e66)', // SKH
+        '#034EA2': 'linear-gradient(to top, #034EA2, #4a8eff)', // SEC
+        '#0096D6': 'linear-gradient(to top, #0096D6, #66c2ff)', // ENF
+        '#1D3546': 'linear-gradient(to top, #1D3546, #3a5a70)', // Onsemi
+        '#6B6B6B': 'linear-gradient(to top, #6B6B6B, #9e9e9e)'  // LG
     };
     return gradientMap[color] || 'linear-gradient(to top, #30363d, #57606a)';
 };
@@ -803,10 +810,7 @@ function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
             const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
 
             // 색상 결정 (전체는 회색, 나머지는 팔레트 순환)
-            let bgStyle = '#6e7681';
-            if (!isTotal) {
-                bgStyle = window.getSiteColor(item.name);
-            }
+            let bgStyle = window.getSiteGradient(item.name);
 
             // 활성 상태 확인
             const isActive = (setupDashboardFilter.site === item.name) || (isTotal && !setupDashboardFilter.site);
