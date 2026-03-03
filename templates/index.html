@@ -300,32 +300,32 @@
                                         onchange="renderIntegSetupSiteStats()"></select>
                                 </div>
                             </div>
-                            <div class="status-group card-like" style="width: 100%;">
+                            <div class="status-group card-like integ-full-width-card">
                                 <h5 class="status-group-title">사업장 셋업 현황</h5>
                                 <div id="setup-site-bar-chart" class="bar-chart-container"></div>
                             </div>
                                 <div class="integ-row">
                                     <!-- 기간별 셋업 현황 차트 -->
 
-                                    <div class="status-group card-like" style="flex: 1.2;">
+                                    <div class="status-group card-like integ-setup-chart-card">
                                         <h5 class="status-group-title">셋업 현황 차트</h5>
-                                        <div class="chart-row" style="justify-content: space-around; gap: 10px;">
-                                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                                <h6 style="color: #8b949e; margin-bottom: 10px; font-size: 14px;">완료율</h6>
+                                        <div class="chart-row integ-setup-chart-row">
+                                            <div class="integ-donut-container">
+                                                <h6 class="integ-donut-title">완료율</h6>
                                                 <div class="donut-chart-wrapper">
                                                     <div class="donut-chart" id="integ-setup-complete-chart"></div>
                                                     <div class="chart-center" id="integ-setup-complete-center"></div>
                                                 </div>
                                             </div>
-                                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                                <h6 style="color: #8b949e; margin-bottom: 10px; font-size: 14px;">셋업 완료</h6>
+                                            <div class="integ-donut-container">
+                                                <h6 class="integ-donut-title">셋업 완료</h6>
                                                 <div class="donut-chart-wrapper">
                                                     <div class="donut-chart" id="integ-setup-done-chart"></div>
                                                     <div class="chart-center" id="integ-setup-done-center"></div>
                                                 </div>
                                             </div>
-                                            <div style="display: flex; flex-direction: column; align-items: center;">
-                                                <h6 style="color: #8b949e; margin-bottom: 10px; font-size: 14px;">진행중 (사업장)</h6>
+                                            <div class="integ-donut-container">
+                                                <h6 class="integ-donut-title">진행중 (사업장)</h6>
                                                 <div class="donut-chart-wrapper">
                                                     <div class="donut-chart" id="integ-setup-site-chart"></div>
                                                     <div class="chart-center" id="integ-setup-site-center"></div>
@@ -333,7 +333,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="status-group card-like" style="flex: 1;">
+                                    <div class="status-group card-like integ-setup-list-card">
                                         <h5 class="status-group-title">셋업 완료 장비</h5>
                                         <div class="status-list-container status-list-flex" id="integ-setup-complete-list-container">
                                             <div class="status-list-header">
@@ -343,7 +343,7 @@
                                         </div>
                                     </div>
                                     <!-- 셋업 진행 리스트 -->
-                                    <div class="status-group card-like" style="flex: 1.0;">
+                                    <div class="status-group card-like integ-setup-list-card">
                                         <h5 class="status-group-title">셋업 진행 장비 목록</h5>
                                         <div class="status-list-container status-list-flex"
                                             id="integ-setup-detail-container">
@@ -371,7 +371,7 @@
                                     </div>
                                 </div>
                                 <div class="integ-row">
-                                    <div class="status-group card-like" style="width: 100%;">
+                                    <div class="status-group card-like integ-full-width-card">
                                         <h5 class="status-group-title">사업장 작업 현황</h5>
                                         <div id="integ-maint-site-chart" class="bar-chart-container"></div>
                                     </div>
