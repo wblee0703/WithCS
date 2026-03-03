@@ -230,7 +230,7 @@ function renderIntegSetupSiteStats() {
     if (doneChartEl && doneCenterText) {
         if (completedCount === 0) {
             doneChartEl.style.background = '';
-            doneCenterText.innerHTML = `<div class="chart-center-label">Done</div><div class="chart-center-value">0</div>`;
+            doneCenterText.innerHTML = `<div class="chart-center-label">Complete</div><div class="chart-center-value">0</div>`;
         } else {
             const colors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
             let gradientStr = '';
@@ -526,7 +526,8 @@ function renderIntegMaintStats(mainData) {
 
             const barGroup = document.createElement('div');
             barGroup.className = 'bar-group';
-            if (selectedKey && !isActive) barGroup.classList.add('faded');
+            // [수정] '전체'가 선택된 경우에는 다른 항목을 흐리게 처리하지 않음
+            if (selectedKey && selectedKey !== '전체' && !isActive) barGroup.classList.add('faded');
 
             barGroup.innerHTML = `
                 <div class="bar-value">${count}</div>
@@ -590,7 +591,7 @@ function renderIntegMaintStats(mainData) {
             }
             integSelectedType = null; // 사업장 변경 시 유형 필터 초기화
             renderIntegMaintStats(mainData); // 재렌더링
-        }, integSelectedSite);
+        }, integSelectedSite || '전체');
     }
 
     // --- 리스트 렌더링 (상위 5개 항목) ---

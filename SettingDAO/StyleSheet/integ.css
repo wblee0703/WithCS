@@ -341,8 +341,6 @@ input[type="month"]::-webkit-calendar-picker-indicator {
 .integ-setup-complete-col-date {
     width: 90px;
     text-align: center;
-    font-size: 12px;
-    color: #8b949e;
 }
 
 /* [추가] 셋업 현황 컨트롤 스타일 */
