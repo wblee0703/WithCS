@@ -157,7 +157,8 @@
                                 <div class="gantt__resizer" id="gantt-resizer"></div>
                                 <div class="gantt__timeline-container" id="gantt-timeline-container">
                                     <div class="gantt__timeline" id="gantt-timeline">
-                                        <div class="gantt__header-row gantt__header-row--fixed" id="gantt-header-months">
+                                        <div class="gantt__header-row gantt__header-row--fixed"
+                                            id="gantt-header-months">
                                         </div>
                                         <div class="gantt__header-row gantt__header-row--fixed" id="gantt-header-weeks">
                                         </div>
@@ -285,28 +286,34 @@
                         <div class="integ-dashboard-view">
                             <!-- [추가] 장비 셋업 현황 헤더 -->
                             <div class="integ-section-header">
-                                <h4 class="integ-section-title"><span id="integ-setup-title-period"></span> 장비 셋업 현황</h4>
-                                <div id="setup-site-bar-chart" class="bar-chart-container" style="width: 100%; height: 200px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #30363d;"></div>
+                                <h4 class="integ-section-title"><span id="integ-setup-title-period"></span> 장비 셋업 현황
+                                </h4>
                                 <div class="integ-controls-wrapper">
-                                    <select id="integ-setup-period-type" class="modal-select" onchange="toggleIntegSetupPeriodMode()">
+                                    <select id="integ-setup-period-type" class="modal-select"
+                                        onchange="toggleIntegSetupPeriodMode()">
                                         <option value="month">월간</option>
                                         <option value="year">연간</option>
                                     </select>
-                                    <input type="month" id="integ-setup-month" class="modal-select" onchange="renderIntegSetupSiteStats()">
-                                    <select id="integ-setup-year" class="modal-select" style="display: none;" onchange="renderIntegSetupSiteStats()"></select>
+                                    <input type="month" id="integ-setup-month" class="modal-select"
+                                        onchange="renderIntegSetupSiteStats()">
+                                    <select id="integ-setup-year" class="modal-select" style="display: none;"
+                                        onchange="renderIntegSetupSiteStats()"></select>
                                 </div>
                             </div>
                             <div class="integ-row">
                                 <!-- 기간별 셋업 현황 차트 -->
-                                 
-                                <div class="status-group card-like" style="flex: 1.5; margin-bottom: 0; font-size: 18px;">
+                                <div id="setup-site-bar-chart" class="bar-chart-container"style="width: 100%; height: 200px; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #30363d;">
+                                </div>
+                                <div class="status-group card-like"
+                                    style="flex: 1.5; margin-bottom: 0; font-size: 18px;">
                                     <h5 class="status-group-title">셋업 완료율</h5>
                                     <div class="chart-row">
                                         <div class="donut-chart-wrapper">
                                             <div class="donut-chart" id="integ-setup-complete-chart"></div>
                                             <div class="chart-center" id="integ-setup-complete-center"></div>
                                         </div>
-                                        <div class="status-list-container status-list-flex" id="integ-setup-complete-list-container">
+                                        <div class="status-list-container status-list-flex"
+                                            id="integ-setup-complete-list-container">
                                             <div class="status-list-header">
                                                 <span class="integ-setup-complete-header-name">완료 장비</span>
                                             </div>
@@ -321,7 +328,8 @@
                                             <div class="donut-chart" id="integ-setup-site-chart"></div>
                                             <div class="chart-center" id="integ-setup-site-center"></div>
                                         </div>
-                                        <div class="status-list-container status-list-flex" id="integ-setup-site-container">
+                                        <div class="status-list-container status-list-flex"
+                                            id="integ-setup-site-container">
                                             <div class="status-list-header">
                                                 <span class="integ-setup-site-header-name">사업장</span>
                                                 <span class="integ-setup-site-header-count">대수</span>
@@ -333,7 +341,8 @@
                                 <!-- 셋업 진행 리스트 -->
                                 <div class="status-group card-like" style="flex: 1.0;">
                                     <h5 class="status-group-title">셋업 진행 장비 목록</h5>
-                                    <div class="status-list-container status-list-flex" id="integ-setup-detail-container">
+                                    <div class="status-list-container status-list-flex"
+                                        id="integ-setup-detail-container">
                                         <div class="status-list-header">
                                             <span class="integ-setup-detail-header-name">장비 정보</span>
                                             <span class="integ-setup-detail-header-count">진행률</span>
@@ -346,12 +355,15 @@
                             <div class="integ-section-header">
                                 <h4 class="integ-section-title"><span id="integ-title-period"></span> 장비 운영 현황</h4>
                                 <div class="integ-controls-wrapper">
-                                    <select id="integ-period-type" class="modal-select" onchange="toggleIntegPeriodMode()">
+                                    <select id="integ-period-type" class="modal-select"
+                                        onchange="toggleIntegPeriodMode()">
                                         <option value="month">월간</option>
                                         <option value="year">연간</option>
                                     </select>
-                                    <input type="month" id="integ-maint-month" class="modal-select" onchange="renderIntegMaintStats()">
-                                    <select id="integ-maint-year" class="modal-select" style="display: none;" onchange="renderIntegMaintStats()"></select>
+                                    <input type="month" id="integ-maint-month" class="modal-select"
+                                        onchange="renderIntegMaintStats()">
+                                    <select id="integ-maint-year" class="modal-select" style="display: none;"
+                                        onchange="renderIntegMaintStats()"></select>
                                 </div>
                             </div>
                             <div class="integ-row">
