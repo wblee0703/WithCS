@@ -191,7 +191,6 @@ function renderIntegSetupSiteStats() {
         chartEl.style.background = '';
         if (centerText) centerText.innerHTML = `<div class="chart-center-label">Active</div><div class="chart-center-value">0</div>`;
     } else {
-        const colors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
         let gradientStr = '';
         let currentDeg = 0;
         
@@ -199,7 +198,7 @@ function renderIntegSetupSiteStats() {
                                                    .sort((a, b) => b.count - a.count);
 
         sortedSites.forEach((site, index) => {
-            const color = colors[index % colors.length];
+            const color = window.getSiteColor(site.name);
             const deg = (site.count / activeCount) * 360;
             gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
             currentDeg += deg;
@@ -232,7 +231,6 @@ function renderIntegSetupSiteStats() {
             doneChartEl.style.background = '';
             doneCenterText.innerHTML = `<div class="chart-center-label">Done</div><div class="chart-center-value">0</div>`;
         } else {
-            const colors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
             let gradientStr = '';
             let currentDeg = 0;
             
@@ -240,7 +238,7 @@ function renderIntegSetupSiteStats() {
                                                        .sort((a, b) => b.count - a.count);
 
             sortedDoneSites.forEach((site, index) => {
-                const color = colors[index % colors.length];
+                const color = window.getSiteColor(site.name);
                 const deg = (site.count / completedCount) * 360;
                 gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
                 currentDeg += deg;
@@ -569,17 +567,11 @@ function renderIntegMaintStats(mainData) {
         // '전체'가 가장 앞에 오도록 새로운 객체 생성
         const orderedSiteCounts = { '전체': totalSiteCount, ...siteCounts };
 
-        const siteGradients = [
-            'linear-gradient(to top, #6e7681, #8b949e)', // [추가] 전체 (Gray)
-            'linear-gradient(to top, #1f6feb, #58a6ff)', // Blue
-            'linear-gradient(to top, #238636, #3fb950)', // Green
-            'linear-gradient(to top, #d29922, #f0883e)', // Orange
-            'linear-gradient(to top, #8957e5, #a371f7)', // Purple
-            'linear-gradient(to top, #da3633, #ff7b72)', // Red
-            'linear-gradient(to top, #9e6a03, #d29922)', // Dark Orange
-            'linear-gradient(to top, #1b7c83, #3fb950)', // Teal/Green
-            'linear-gradient(to top, #6e40c9, #8957e5)'  // Dark Purple
-        ];
+        const siteGradients = {};
+        Object.keys(orderedSiteCounts).forEach(key => {
+            siteGradients[key] = window.getSiteGradient(key);
+        });
+
         renderChartWithAxis(siteChartEl, orderedSiteCounts, siteGradients, (key) => {
             // 사업장 클릭 핸들러
             if (key === '전체') {

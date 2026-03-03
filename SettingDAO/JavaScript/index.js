@@ -9,6 +9,47 @@ let currentGanttFilters = { site: '', equip: '' };
 let setupDashboardFilter = { site: '', equip: '' };
 let isFirstLoad = true;
 
+// [추가] 사업장별 고유 색상 생성 함수 (이름 기반 해시)
+window.getSiteColor = function(siteName) {
+    if (!siteName || siteName === '전체') return '#6e7681';
+
+    // [수정] 특정 사업장 고정 색상 지정
+    const nameUpper = siteName.toUpperCase();
+    if (nameUpper.includes('SKH')) return '#f0883e'; // 주황색 (Orange)
+    if (nameUpper.includes('SEC')) return '#1f6feb'; // 파란색 (Blue)
+    if (nameUpper.includes('ENF')) return '#8957e5'; // 보라색 (Purple)
+
+    const colors = [
+        '#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', 
+        '#f0883e', '#3fb950', '#a371f7', '#9e6a03', '#1b7c83', '#6e40c9'
+    ];
+    let hash = 0;
+    for (let i = 0; i < siteName.length; i++) {
+        hash = siteName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+};
+
+// [추가] 사업장별 고유 그라데이션 생성 함수
+window.getSiteGradient = function(siteName) {
+    if (!siteName || siteName === '전체') return 'linear-gradient(to top, #6e7681, #8b949e)';
+    const color = window.getSiteColor(siteName);
+    const gradientMap = {
+        '#1f6feb': 'linear-gradient(to top, #1f6feb, #58a6ff)',
+        '#238636': 'linear-gradient(to top, #238636, #3fb950)',
+        '#d29922': 'linear-gradient(to top, #d29922, #f0883e)',
+        '#8957e5': 'linear-gradient(to top, #8957e5, #a371f7)',
+        '#da3633': 'linear-gradient(to top, #da3633, #ff7b72)',
+        '#f0883e': 'linear-gradient(to top, #f0883e, #ffb066)',
+        '#3fb950': 'linear-gradient(to top, #3fb950, #6bc47d)',
+        '#a371f7': 'linear-gradient(to top, #a371f7, #c4a7f7)',
+        '#9e6a03': 'linear-gradient(to top, #9e6a03, #d29922)',
+        '#1b7c83': 'linear-gradient(to top, #1b7c83, #3fb950)',
+        '#6e40c9': 'linear-gradient(to top, #6e40c9, #8957e5)'
+    };
+    return gradientMap[color] || 'linear-gradient(to top, #30363d, #57606a)';
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     // 초기화 함수 정의
     const initDashboard = () => {
@@ -281,9 +322,6 @@ function renderSiteStatus(siteStats, totalEquip, allData) {
         return;
     }
 
-    // 색상 팔레트
-    const colors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
-
     let gradientStr = '';
     let currentDeg = 0;
 
@@ -316,7 +354,7 @@ function renderSiteStatus(siteStats, totalEquip, allData) {
     listEl.appendChild(allLi);
 
     siteStats.forEach((site, index) => {
-        const color = colors[index % colors.length];
+        const color = window.getSiteColor(site.name);
         const deg = (site.count / totalEquip) * 360;
 
         gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
@@ -741,7 +779,6 @@ function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
         return;
     }
 
-    const colors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
     let gradientStr = '';
     let currentDeg = 0;
     siteStats.sort((a, b) => b.count - a.count);
@@ -768,7 +805,7 @@ function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
             // 색상 결정 (전체는 회색, 나머지는 팔레트 순환)
             let bgStyle = '#6e7681';
             if (!isTotal) {
-                bgStyle = colors[(index - 1) % colors.length];
+                bgStyle = window.getSiteColor(item.name);
             }
 
             // 활성 상태 확인
@@ -823,7 +860,7 @@ function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
     listEl.appendChild(allLi);
 
     siteStats.forEach((site, index) => {
-        const color = colors[index % colors.length];
+        const color = window.getSiteColor(site.name);
         const deg = (site.count / totalEquip) * 360;
         gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
         currentDeg += deg;
