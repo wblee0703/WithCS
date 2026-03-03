@@ -15,6 +15,7 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import shutil
 import subprocess
+import secrets
 
 app = Flask(__name__)
 
@@ -35,7 +36,10 @@ env_path = os.path.join(BASE_DIR, '.env')
 if not os.path.exists(env_path):
     try:
         with open(env_path, 'w', encoding='utf-8') as f:
-            f.write("APP_ADMIN_ID=admin\nAPP_ADMIN_PW=1234\nAPP_USER_ID=user\nAPP_USER_PW=1234\nAPP_PORT=5500\n")
+            # [보안] 초기 비밀번호 랜덤 생성 (소스코드 내 하드코딩 제거)
+            init_admin_pw = secrets.token_urlsafe(8)
+            init_user_pw = secrets.token_urlsafe(8)
+            f.write(f"APP_ADMIN_ID=admin\nAPP_ADMIN_PW={init_admin_pw}\nAPP_USER_ID=user\nAPP_USER_PW={init_user_pw}\nAPP_PORT=5500\n")
     except: pass
 load_dotenv(env_path)
 
@@ -189,10 +193,17 @@ def init_data_files():
     
     if not home_data.get('user_accounts'):
         # 환경 변수 또는 기본값으로 계정 생성
-        admin_id = os.environ.get('APP_ADMIN_ID') or 'admin'
-        admin_pw = os.environ.get('APP_ADMIN_PW') or '1234'
-        user_id = os.environ.get('APP_USER_ID') or 'user'
-        user_pw = os.environ.get('APP_USER_PW') or '1234'
+        admin_id = os.environ.get('APP_ADMIN_ID', 'admin')
+        admin_pw = os.environ.get('APP_ADMIN_PW')
+        if not admin_pw:
+            admin_pw = secrets.token_urlsafe(8)
+            app.logger.warning(f"Initial Admin PW generated: {admin_pw}")
+
+        user_id = os.environ.get('APP_USER_ID', 'user')
+        user_pw = os.environ.get('APP_USER_PW')
+        if not user_pw:
+            user_pw = secrets.token_urlsafe(8)
+            app.logger.warning(f"Initial User PW generated: {user_pw}")
 
         user_accounts = []
         if admin_id and admin_pw:
