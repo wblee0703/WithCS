@@ -283,6 +283,14 @@
     margin: 0;
 }
 
+.integ-title-setup {
+    color: #79c0ff !important; /* 하늘색 */
+}
+
+.integ-title-maint {
+    color: #7ee787 !important; /* 연두색 */
+}
+
 .integ-controls-wrapper {
     position: absolute;
     right: 0;                /* 오른쪽에 고정 */
