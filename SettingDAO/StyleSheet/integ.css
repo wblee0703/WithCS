@@ -336,6 +336,12 @@ input[type="month"]::-webkit-calendar-picker-indicator {
     width: 70%;
 }
 
+/* [추가] 점검 항목 차트 및 리스트 레이아웃 설정 */
+#integ-maint-item-chart-row {
+    justify-content: center; /* 카드 중앙 정렬 */
+    gap: 40px; /* [설정] 차트와 리스트 사이 간격 */
+}
+
 .integ-setup-complete-header-name,
 .integ-setup-complete-col-name {
     flex: 1;
