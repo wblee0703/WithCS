@@ -149,12 +149,14 @@ function setupAuthEvents() {
     const userModal = document.getElementById('user-modal');
     const btnAddUser = document.getElementById('btn-add-user');
     const btnChangePw = document.getElementById('btn-change-pw');
+    const btnGithubSync = document.getElementById('btn-github-sync');
 
     if (btnUserSettings) btnUserSettings.addEventListener('click', openUserModal);
     if (btnCloseUserModal) btnCloseUserModal.addEventListener('click', closeUserModal);
     if (userModal) userModal.addEventListener('click', (e) => { if (e.target === userModal) closeUserModal(); });
     if (btnAddUser) btnAddUser.addEventListener('click', addNewUser);
     if (btnChangePw) btnChangePw.addEventListener('click', changePassword);
+    if (btnGithubSync) btnGithubSync.addEventListener('click', triggerManualSync);
 
     if (btnLoginLogout) btnLoginLogout.addEventListener('click', handleLoginLogoutClick);
     if (btnLoginSubmit) btnLoginSubmit.addEventListener('click', () => attemptLogin(loginIdInput.value, loginPwInput.value, 'Modal'));
