@@ -107,6 +107,8 @@ function renderIntegSetupSiteStats() {
     const centerText = document.getElementById('integ-setup-site-center');
     const completeChartEl = document.getElementById('integ-setup-complete-chart');
     const completeCenterText = document.getElementById('integ-setup-complete-center');
+    const doneChartEl = document.getElementById('integ-setup-done-chart');
+    const doneCenterText = document.getElementById('integ-setup-done-center');
 
     if (!chartEl) return;
 
@@ -135,6 +137,7 @@ function renderIntegSetupSiteStats() {
 
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const siteCounts = {};
+    const completedSiteCounts = {};
     let totalForRate = 0;
     let completedCount = 0;
     let activeCount = 0;
@@ -172,6 +175,7 @@ function renderIntegSetupSiteStats() {
                 // 완료 여부 체크
                 if (completeItem && completeItem.completed) {
                     completedCount++;
+                    completedSiteCounts[site] = (completedSiteCounts[site] || 0) + 1;
                 } else {
                     activeCount++;
                     siteCounts[site] = (siteCounts[site] || 0) + 1;
@@ -217,6 +221,31 @@ function renderIntegSetupSiteStats() {
             // 완료(초록) / 미완료(회색) 그라데이션
             completeChartEl.style.background = `conic-gradient(#238636 0deg ${completeDeg}deg, #30363d ${completeDeg}deg 360deg)`;
             completeCenterText.innerHTML = `<div class="chart-center-label">Complete</div><div class="chart-center-value">${Math.round(completeRate)}%</div>`;
+        }
+    }
+
+    // [추가] 셋업 완료(사업장별) 도넛 차트 렌더링
+    if (doneChartEl && doneCenterText) {
+        if (completedCount === 0) {
+            doneChartEl.style.background = '';
+            doneCenterText.innerHTML = `<div class="chart-center-label">Done</div><div class="chart-center-value">0</div>`;
+        } else {
+            const colors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
+            let gradientStr = '';
+            let currentDeg = 0;
+            
+            const sortedDoneSites = Object.keys(completedSiteCounts).map(site => ({ name: site, count: completedSiteCounts[site] }))
+                                                       .sort((a, b) => b.count - a.count);
+
+            sortedDoneSites.forEach((site, index) => {
+                const color = colors[index % colors.length];
+                const deg = (site.count / completedCount) * 360;
+                gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
+                currentDeg += deg;
+            });
+
+            doneChartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
+            doneCenterText.innerHTML = `<div class="chart-center-label">Done</div><div class="chart-center-value">${completedCount}</div>`;
         }
     }
 }
