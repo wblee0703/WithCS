@@ -251,15 +251,14 @@ function renderIntegSetupSiteStats() {
             const completeItem = data.setupDetails.find(d => d.content === '셋업 완료');
             
             if (completeItem && completeItem.startDate) {
-                if (!completeItem.completed) {
-                    hasActivity = true;
+                const firstItem = data.setupDetails.find(d => d.startDate);
+                const setupStart = firstItem ? new Date(firstItem.startDate) : new Date(completeItem.startDate);
+
+                if (completeItem.completed && completeItem.date) {
+                    const setupEnd = new Date(completeItem.date);
+                    if (setupStart <= targetEnd && setupEnd >= targetStart) hasActivity = true;
                 } else {
-                    const firstItem = data.setupDetails.find(d => d.startDate);
-                    if (firstItem) {
-                        const setupStart = new Date(firstItem.startDate);
-                        const setupEnd = new Date(completeItem.date);
-                        if (setupStart <= targetEnd && setupEnd >= targetStart) hasActivity = true;
-                    }
+                    if (setupStart <= targetEnd) hasActivity = true;
                 }
             }
 
