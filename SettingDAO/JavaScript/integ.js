@@ -104,12 +104,11 @@ function updateIntegratedDashboard() {
 
 function renderIntegSetupSiteStats() {
     const chartEl = document.getElementById('integ-setup-site-chart');
-    const listEl = document.getElementById('integ-setup-site-list');
     const centerText = document.getElementById('integ-setup-site-center');
     const completeChartEl = document.getElementById('integ-setup-complete-chart');
     const completeCenterText = document.getElementById('integ-setup-complete-center');
 
-    if (!chartEl || !listEl) return;
+    if (!chartEl) return;
 
     // [수정] 기간 필터 설정 (월간/연간)
     const periodTypeEl = document.getElementById('integ-setup-period-type');
@@ -182,11 +181,9 @@ function renderIntegSetupSiteStats() {
     });
 
     // 차트 및 리스트 렌더링
-    listEl.innerHTML = '';
     if (activeCount === 0) {
         chartEl.style.background = '';
         if (centerText) centerText.innerHTML = `<div class="chart-center-label">Active</div><div class="chart-center-value">0</div>`;
-        listEl.innerHTML = '<li class="list-empty-msg">데이터 없음</li>';
     } else {
         const colors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
         let gradientStr = '';
@@ -200,15 +197,6 @@ function renderIntegSetupSiteStats() {
             const deg = (site.count / activeCount) * 360;
             gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
             currentDeg += deg;
-
-            const li = document.createElement('li');
-            li.className = 'status-list-item';
-            li.innerHTML = `
-                <span class="status-color" style="background-color: ${color};"></span>
-                <span class="status-name integ-setup-site-col-name">${escapeHtml(site.name)}</span>
-                <span class="status-count integ-setup-site-col-count">${site.count}</span>
-            `;
-            listEl.appendChild(li);
         });
 
         chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;

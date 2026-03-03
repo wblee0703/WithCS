@@ -246,25 +246,6 @@
     white-space: nowrap;
 }
 
-/* [추가] 기간별 셋업 현황 리스트 개별 설정 */
-#integ-setup-site-container {
-    height: 250px; /* [설정] 리스트 높이 */
-    width: 100%;   /* [설정] 리스트 너비 */
-    flex: 1;
-}
-
-.integ-setup-site-header-name,
-.integ-setup-site-col-name {
-    flex: 1;
-    padding-left: 10px; /* [설정] 사업장명 들여쓰기 */
-}
-
-.integ-setup-site-header-count,
-.integ-setup-site-col-count {
-    width: 60px; /* [설정] 대수 컬럼 너비 */
-    text-align: center;
-}
-
 /* [추가] 셋업 진행 장비 목록 리스트 개별 설정 */
 #integ-setup-detail-container {
     height: 250px; /* [설정] 리스트 높이 */
