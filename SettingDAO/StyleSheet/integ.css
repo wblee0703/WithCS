@@ -153,20 +153,20 @@
 
 /* 통합 관리 현황 도넛 차트 및 리스트 크기 조정 */
 .integ-dashboard-view .donut-chart-wrapper {
-    width: 250px;
-    height: 250px;
+    width: 200px;
+    height: 200px;
 }
 
 .integ-dashboard-view .chart-center {
-    width: 170px;
-    height: 170px;
+    width: 140px;
+    height: 140px;
 }
 
 .integ-dashboard-view .status-list-container {
     height: 250px; /* [설정] 리스트 높이 */
     flex: none !important;
     max-height: none; /* [추가] 높이 제한 해제 */
-    width: 68%; /* [설정] 리스트 너비 */
+    width: 100%; /* [설정] 리스트 너비 */
 }
 
 /* [추가] 통합 관리 대시보드 컨트롤 스타일 */
@@ -249,7 +249,7 @@
 /* [추가] 기간별 셋업 현황 리스트 개별 설정 */
 #integ-setup-site-container {
     height: 250px; /* [설정] 리스트 높이 */
-    width: 43%;   /* [설정] 리스트 너비 (auto로 변경하여 꽉 채움) */
+    width: 100%;   /* [설정] 리스트 너비 */
     flex: 1;
 }
 
@@ -347,7 +347,7 @@ input[type="month"]::-webkit-calendar-picker-indicator {
 #integ-setup-complete-list-container {
     height: 250px;
     flex: 1;
-    width: 62%; /* [설정] 리스트 너비 (auto로 변경하여 꽉 채움) */
+    width: 100%; /* [설정] 리스트 너비 */
 }
 
 .integ-setup-complete-header-name,

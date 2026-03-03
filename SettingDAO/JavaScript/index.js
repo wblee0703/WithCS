@@ -700,7 +700,7 @@ function updateSetupDashboard() {
                     const isCompleted = completeItem && completeItem.completed;
                     const hasScheduledDate = completeItem && completeItem.startDate;
 
-                    if (!isCompleted && hasScheduledDate) {
+                    if (hasScheduledDate) {
                         activeSetupEquips.push({ site, equip });
 
                         // 통계 집계
