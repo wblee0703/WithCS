@@ -44,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
+
 function setupGanttSearch() {
     const filterBtn = document.getElementById('btn-gantt-filter');
 
