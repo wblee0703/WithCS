@@ -990,10 +990,6 @@ function renderSetupEquipDetailList(activeEquips) {
             currentGanttFilters.site = item.site;
             currentGanttFilters.equip = item.equip; // [수정] 전체 장비명(Serial 포함)으로 필터링
             updateSetupDashboard();
-
-            currentSearchFilters.site = item.site;
-            currentSearchFilters.equip = item.equip;
-            renderCalendar();
         };
         listEl.appendChild(li);
     });

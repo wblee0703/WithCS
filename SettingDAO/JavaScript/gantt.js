@@ -45,15 +45,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function setupGanttSearch() {
-    const searchInput = document.getElementById('gantt-search');
     const filterBtn = document.getElementById('btn-gantt-filter');
 
-    if (searchInput) {
-        searchInput.setAttribute('autocomplete', 'off');
-        searchInput.addEventListener('input', () => {
-            renderGanttChart();
-        });
-    }
     if (filterBtn) {
         filterBtn.onclick = () => openGanttSearchModal();
     }
@@ -210,9 +203,6 @@ function renderGanttChart() {
     const sidebar = document.getElementById('gantt-sidebar');
     const targetInfoEl = document.getElementById('gantt-target-info');
 
-    const searchInput = document.getElementById('gantt-search');
-    const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
 
     // 선택된 장비 정보 표시
@@ -232,15 +222,10 @@ function renderGanttChart() {
                 infoText += `   [진행률: ${percent}%]`;
             }
         }
-        if (keyword) {
-            const searchText = searchInput ? searchInput.value.trim() : '';
-            if (infoText) infoText += ` (검색: ${searchText})`;
-            else infoText = `검색: "${searchText}"`;
-        }
         targetInfoEl.textContent = infoText;
     }
 
-    const hasActiveFilter = keyword || currentGanttFilters.equip;
+    const hasActiveFilter = currentGanttFilters.site || currentGanttFilters.equip;
     if (!hasActiveFilter) {
         if (wrapper) wrapper.style.display = 'none';
         if (emptyMsg) {
@@ -266,16 +251,10 @@ function renderGanttChart() {
                         const equipName = parts[0];
                         const displayName = task.content;
 
-                        const matchKeyword = !keyword || (
-                            (site.toLowerCase().includes(keyword)) ||
-                            (equip.toLowerCase().includes(keyword)) ||
-                            (task.content.toLowerCase().includes(keyword))
-                        );
-
                         const matchSite = !currentGanttFilters.site || site === currentGanttFilters.site;
                         const matchEquip = !currentGanttFilters.equip || equip === currentGanttFilters.equip || equipName === currentGanttFilters.equip;
 
-                        if (matchKeyword && matchSite && matchEquip) {
+                        if (matchSite && matchEquip) {
                             let estDays = parseInt(task.estDays) || 0;
                             if (task.content === '셋업 완료' || task.category === '셋업 완료') {
                                 estDays = 1;
