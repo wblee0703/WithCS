@@ -617,7 +617,17 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     } else {
         workerInput.value = localStorage.getItem('lastWorkerName') || sessionStorage.getItem('userId') || '';
         workerInput.disabled = false;
-        memoInput.value = '';
+        
+        // [추가] 이전 점검 결과(메모) 불러오기
+        let lastMemo = '';
+        if (data.logs && data.logs.length > 0) {
+            const sortedLogs = [...data.logs].sort((a, b) => {
+                if (b.date !== a.date) return b.date.localeCompare(a.date);
+                return b.id - a.id;
+            });
+            if (sortedLogs.length > 0) lastMemo = sortedLogs[0].memo || '';
+        }
+        memoInput.value = lastMemo;
         memoInput.disabled = false;
         
         dateRow.style.display = 'block';
