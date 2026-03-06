@@ -265,17 +265,7 @@ def load_data():
     with data_lock:
         data = {}
         
-        # 1. 단일 키로 매핑되는 파일 로드 (구조 명확화)
-        if os.path.exists(FILE_SETUP):
-            data['setup_data'] = load_json_file(FILE_SETUP)
-            
-        if os.path.exists(FILE_WITHTECH_DATA):
-            data['withtech_data'] = load_json_file(FILE_WITHTECH_DATA)
-            
-        if os.path.exists(FILE_SYSTEM_LOG):
-            data['system_logs'] = load_json_file(FILE_SYSTEM_LOG)
-
-        # 2. 여러 키가 포함된 파일 병합 (Maintenance, Home)
+        # 1. 병합 파일 먼저 로드 (Maintenance, Home) - 기본 베이스
         if os.path.exists(FILE_MAINTENANCE):
             maint_data = load_json_file(FILE_MAINTENANCE)
             if isinstance(maint_data, dict):
@@ -289,6 +279,20 @@ def load_data():
                     home_data = home_data.copy()
                     del home_data['user_accounts']
                 data.update(home_data)
+
+        # 2. 단일 키 파일 로드 (개별 파일이 우선순위를 가짐)
+        if os.path.exists(FILE_SETUP):
+            setup_content = load_json_file(FILE_SETUP)
+            # [수정] 중첩된 setup_data 키가 있다면 평탄화 (구조 보정)
+            if isinstance(setup_content, dict) and 'setup_data' in setup_content and len(setup_content) == 1:
+                setup_content = setup_content['setup_data']
+            data['setup_data'] = setup_content
+            
+        if os.path.exists(FILE_WITHTECH_DATA):
+            data['withtech_data'] = load_json_file(FILE_WITHTECH_DATA)
+            
+        if os.path.exists(FILE_SYSTEM_LOG):
+            data['system_logs'] = load_json_file(FILE_SYSTEM_LOG)
 
         return data
 
@@ -305,6 +309,10 @@ def save_data(full_data):
         home_data = load_json_file(FILE_HOME)
         system_log_data = load_json_file(FILE_SYSTEM_LOG)
         withtech_data_storage = load_json_file(FILE_WITHTECH_DATA)
+        
+        # [수정] maintenance_data에 잘못 포함된 setup_data 제거 (중복/덮어쓰기 방지)
+        if isinstance(maintenance_data, dict) and 'setup_data' in maintenance_data:
+            del maintenance_data['setup_data']
         
         # 3. 데이터 분류 및 병합
         existing_accounts = home_data.get('user_accounts', [])
