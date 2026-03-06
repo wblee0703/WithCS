@@ -283,6 +283,10 @@
     margin: 0;
 }
 
+.integ-title-equip {
+    color: #a371f7 !important; /* 보라색 */
+}
+
 .integ-title-setup {
     color: #79c0ff !important; /* 하늘색 */
 }

@@ -201,9 +201,9 @@ function renderIntegEquipStats(data) {
         }
     });
 
-    // 1. 사업장 별 장비 현황 (내림차순 정렬)
+    // 1. 사업장 별 장비 현황 (이름순 정렬)
     const sortedSiteCounts = Object.entries(siteCounts)
-        .sort(([,a], [,b]) => b - a)
+        .sort(([a,], [b,]) => a.localeCompare(b))
         .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
 
     const siteGradients = {};
@@ -211,9 +211,9 @@ function renderIntegEquipStats(data) {
     
     renderChartWithAxis(siteChartEl, sortedSiteCounts, siteGradients);
 
-    // 2. 모델 별 장비 현황 (내림차순 정렬)
+    // 2. 모델 별 장비 현황 (이름순 정렬)
     const sortedModelCounts = Object.entries(modelCounts)
-        .sort(([,a], [,b]) => b - a)
+        .sort(([a,], [b,]) => a.localeCompare(b))
         .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
 
     const modelColors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
