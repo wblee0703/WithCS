@@ -1338,9 +1338,11 @@ function openSetupCompletionModal(id, tr) {
         const estDays = parseInt(estVal) || 0;
 
         if (sDateVal && estDays > 0) {
-            dateInput.value = window.addBusinessDays(new Date(sDateVal), estDays - 1).toISOString().split('T')[0];
+            const [y, m, d] = sDateVal.split('-').map(Number);
+            const sDate = new Date(y, m - 1, d);
+            dateInput.value = formatLocalDate(window.addBusinessDays(sDate, estDays - 1));
         } else {
-            dateInput.value = new Date().toISOString().split('T')[0]; // 기본값 오늘
+            dateInput.value = formatLocalDate(new Date()); // 기본값 오늘 (Local)
         }
         if (minDate && dateInput.value < minDate) dateInput.value = minDate;
     }
@@ -1510,7 +1512,7 @@ function saveSetupCompletion() {
 
         data.setupLogs.push({
             id: Date.now(),
-            date: isCompleted ? dateInput.value : new Date().toISOString().split('T')[0],
+            date: isCompleted ? dateInput.value : formatLocalDate(new Date()),
             worker: logWorker || sessionStorage.getItem('userId') || '',
             content: displayContent,
             company: logCompany || '위드텍',
@@ -1551,7 +1553,7 @@ function openSetupExecStartModal(id) {
     const dateInput = document.getElementById('setup-exec-start-date');
     
     // 기본값 계산: 이전 작업 완료일 다음날 (영업일 기준)
-    let defaultDate = new Date().toISOString().split('T')[0];
+    let defaultDate = formatLocalDate(new Date());
     
     const details = getCurrentSetupDetailsData();
     const currentIndex = details.findIndex(item => item.id === id);
@@ -1559,7 +1561,9 @@ function openSetupExecStartModal(id) {
     if (currentIndex > 0) {
         const prevTask = details[currentIndex - 1];
         if (prevTask.completed && prevTask.date) {
-            defaultDate = window.addBusinessDays(new Date(prevTask.date), 1).toISOString().split('T')[0];
+            const [y, m, d] = prevTask.date.split('-').map(Number);
+            const prevDate = new Date(y, m - 1, d);
+            defaultDate = formatLocalDate(window.addBusinessDays(prevDate, 1));
         }
     } else if (currentIndex === 0) {
         // 첫 번째 항목은 예정일을 기본값으로 설정
