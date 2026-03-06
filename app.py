@@ -264,15 +264,21 @@ def load_data():
     """모든 데이터 파일을 읽어 하나의 딕셔너리로 병합합니다."""
     with data_lock:
         data = {}
-        if os.path.exists(DATA_DIR):
-            for filename in os.listdir(DATA_DIR):
-                if filename.endswith('.json'):
-                    filepath = os.path.join(DATA_DIR, filename)
-                    file_data = load_json_file(filepath)
-                    if file_data:
-                        data.update(file_data)
-                    else:
-                        app.logger.warning(f"Warning: {filename} loaded empty or failed.")
+        # [수정] 명시적으로 지정된 파일만 로드하여 안정성 확보 및 순서 보장
+        target_files = [FILE_SETUP, FILE_MAINTENANCE, FILE_HOME, FILE_SYSTEM_LOG, FILE_WITHTECH_DATA]
+        
+        for filepath in target_files:
+            if os.path.exists(filepath):
+                file_data = load_json_file(filepath)
+                if file_data:
+                    # [보안] 사용자 계정 정보는 클라이언트에 전송하지 않음
+                    if 'user_accounts' in file_data:
+                        file_data = file_data.copy()
+                        del file_data['user_accounts']
+                    
+                    data.update(file_data)
+                else:
+                    app.logger.warning(f"Warning: {os.path.basename(filepath)} loaded empty or failed.")
 
         return data
 
