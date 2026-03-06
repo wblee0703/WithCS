@@ -290,7 +290,7 @@ function renderSetupDetailList() {
             if (item.execStartDate) minDateAttr = `min="${item.execStartDate}"`;
             else if (item.startDate) minDateAttr = `min="${item.startDate}"`;
 
-            const estVal = (item.estDays !== undefined && item.estDays !== null) ? item.estDays : '';
+            const estVal = (item.estDays !== undefined && item.estDays !== null && item.estDays !== '') ? item.estDays : '1';
             let estDaysHtml = `<input type="text" class="detail-est-days-input" value="${estVal}" placeholder="0" style="text-align: center; width: 100%; background: transparent; border: none; color: ${inputColor};" ${generalDisabledAttr}>`;
             
             if (cat === '셋업 완료') {
@@ -405,7 +405,7 @@ function addSetupDetailItem(category) {
                     <input type="text" class="detail-content-input" value="" placeholder="새 항목" style="flex:1;">
                 </div>
             </td>
-            <td><input type="text" class="detail-est-days-input" value="" placeholder="0" style="text-align: center; width: 100%; background: transparent; border: none; color: #e6edf3;"></td>
+            <td><input type="text" class="detail-est-days-input" value="1" placeholder="0" style="text-align: center; width: 100%; background: transparent; border: none; color: #e6edf3;"></td>
             <td><input type="date" class="detail-start-date-input" value=""></td>
             <td><input type="date" class="detail-date-input" value=""></td>
             <td style="text-align: center;"><input type="checkbox" class="detail-complete-checkbox" style="visibility: hidden;"></td>
@@ -534,7 +534,13 @@ function saveSetupDetails() {
         const date = row.querySelector('.detail-date-input').value;
         const startDate = row.querySelector('.detail-start-date-input').value;
         const estInput = row.querySelector('.detail-est-days-input');
-        const estDays = estInput ? estInput.value : "0";
+        
+        let estDays = "0";
+        if (estInput) {
+            estDays = estInput.value.trim();
+            if (estDays === "") estDays = "1"; // 빈 값은 1로 저장
+        }
+        
         const delayReason = row.dataset.delayReason || "";
         const execStartDate = row.dataset.execStartDate || "";
         newDetails.push({ id, completed, content, date, startDate, estDays, category: currentCategory, delayReason, execStartDate });
