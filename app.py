@@ -102,12 +102,46 @@ app.logger.warning('Server startup')
 # ------------------------------------------------------------------------------
 # 3. Utility Functions (File I/O, Backup, Git)
 # ------------------------------------------------------------------------------
+# [이동] load_json_file에서 사용하기 위해 위로 이동
+def restore_from_backup(target_filepath):
+    """파일이 없을 경우 백업 폴더에서 최신 백업을 찾아 복원합니다."""
+    filename = os.path.basename(target_filepath)
+    # 백업 파일 패턴: filename.YYYY-MM-DD.bak
+    search_pattern = os.path.join(BACKUP_DIR, f"{filename}.*.bak")
+    backups = glob.glob(search_pattern)
+    
+    if not backups:
+        return False
+        
+    # 최신순 정렬 (파일명에 날짜가 포함되어 있으므로 역순 정렬 시 최신 날짜가 먼저 옴)
+    backups.sort(reverse=True) 
+    latest_backup = backups[0]
+    
+    try:
+        shutil.copy2(latest_backup, target_filepath)
+        app.logger.warning(f"Restored {filename} from backup: {os.path.basename(latest_backup)}")
+        return True
+    except Exception as e:
+        app.logger.error(f"Failed to restore backup for {filename}: {e}")
+        return False
+
 def load_json_file(filepath):
     if os.path.exists(filepath):
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        except:
+        except json.JSONDecodeError as e:
+            app.logger.error(f"JSON Decode Error in {filepath}: {e}. Attempting to restore from backup.")
+            # 파일이 깨졌으므로 백업에서 복구 시도
+            if restore_from_backup(filepath):
+                try:
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        return json.load(f)
+                except Exception as retry_e:
+                    app.logger.error(f"Failed to load restored file {filepath}: {retry_e}")
+            return {}
+        except Exception as e:
+            app.logger.error(f"Error loading {filepath}: {e}")
             return {}
     return {}
 
@@ -184,29 +218,6 @@ def git_pull_data():
     except Exception as e:
         app.logger.error(f"GitHub pull failed: {e}")
 
-# [추가] 백업 파일에서 복구
-def restore_from_backup(target_filepath):
-    """파일이 없을 경우 백업 폴더에서 최신 백업을 찾아 복원합니다."""
-    filename = os.path.basename(target_filepath)
-    # 백업 파일 패턴: filename.YYYY-MM-DD.bak
-    search_pattern = os.path.join(BACKUP_DIR, f"{filename}.*.bak")
-    backups = glob.glob(search_pattern)
-    
-    if not backups:
-        return False
-        
-    # 최신순 정렬 (파일명에 날짜가 포함되어 있으므로 역순 정렬 시 최신 날짜가 먼저 옴)
-    backups.sort(reverse=True) 
-    latest_backup = backups[0]
-    
-    try:
-        shutil.copy2(latest_backup, target_filepath)
-        app.logger.warning(f"Restored {filename} from backup: {os.path.basename(latest_backup)}")
-        return True
-    except Exception as e:
-        app.logger.error(f"Failed to restore backup for {filename}: {e}")
-        return False
-
 # ------------------------------------------------------------------------------
 # 4. Core Logic (Data Management)
 # ------------------------------------------------------------------------------
@@ -256,9 +267,12 @@ def load_data():
         if os.path.exists(DATA_DIR):
             for filename in os.listdir(DATA_DIR):
                 if filename.endswith('.json'):
-                    file_data = load_json_file(os.path.join(DATA_DIR, filename))
+                    filepath = os.path.join(DATA_DIR, filename)
+                    file_data = load_json_file(filepath)
                     if file_data:
                         data.update(file_data)
+                    else:
+                        app.logger.warning(f"Warning: {filename} loaded empty or failed.")
 
         return data
 
