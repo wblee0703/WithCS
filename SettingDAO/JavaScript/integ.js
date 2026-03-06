@@ -421,6 +421,9 @@ function renderDonutChart(chartEl, centerText, counts, total, label) {
 
 function renderIntegSetupList(list) {
     const listEl = document.getElementById('integ-setup-detail-list');
+    const titleEl = document.getElementById('integ-setup-active-title');
+    if (titleEl) titleEl.textContent = `셋업 진행 장비 (${list.length})`;
+
     if (!listEl) return;
     listEl.innerHTML = '';
 
@@ -462,6 +465,9 @@ function renderIntegSetupList(list) {
 
 function renderIntegCompletedList(list) {
     const listEl = document.getElementById('integ-setup-complete-list');
+    const titleEl = document.getElementById('integ-setup-complete-title');
+    if (titleEl) titleEl.textContent = `셋업 완료 장비 (${list.length})`;
+
     if (!listEl) return;
     listEl.innerHTML = '';
 
