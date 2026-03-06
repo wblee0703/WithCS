@@ -127,6 +127,7 @@ function updateIntegratedDashboard() {
     initDateControls();
 
     // UI 렌더링
+    renderIntegEquipStats(data); // [추가] 장비 통합 현황 렌더링
     renderIntegSetupBarChart(allSiteCounts, totalActiveAll);
     renderIntegSetupSiteStats();
     renderIntegSetupList(setupEquips);
@@ -172,6 +173,51 @@ function initDateControls() {
     const endInput = document.getElementById('integ-setup-end');
     if (startInput && !startInput.value) startInput.value = startDate;
     if (endInput && !endInput.value) endInput.value = endDate;
+}
+
+/* ==========================================================================
+   [추가] 장비 통합 현황 섹션 (Equipment Integration Section)
+   ========================================================================== */
+function renderIntegEquipStats(data) {
+    const siteChartEl = document.getElementById('integ-equip-site-chart');
+    const modelChartEl = document.getElementById('integ-equip-model-chart');
+    
+    if (!siteChartEl || !modelChartEl) return;
+
+    const siteCounts = {};
+    const modelCounts = {};
+
+    // 데이터 집계
+    Object.keys(data).forEach(site => {
+        if (data[site] && data[site].length > 0) {
+            // 1. 사업장 별 장비 수
+            siteCounts[site] = data[site].length;
+
+            // 2. 모델 별 장비 수 (장비명 기준 집계)
+            data[site].forEach(equip => {
+                const model = equip.split('::')[0]; // 장비명(모델) 추출
+                modelCounts[model] = (modelCounts[model] || 0) + 1;
+            });
+        }
+    });
+
+    // 1. 사업장 별 장비 현황 (내림차순 정렬)
+    const sortedSiteCounts = Object.entries(siteCounts)
+        .sort(([,a], [,b]) => b - a)
+        .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
+
+    const siteGradients = {};
+    Object.keys(sortedSiteCounts).forEach(key => siteGradients[key] = window.getSiteGradient(key));
+    
+    renderChartWithAxis(siteChartEl, sortedSiteCounts, siteGradients);
+
+    // 2. 모델 별 장비 현황 (내림차순 정렬)
+    const sortedModelCounts = Object.entries(modelCounts)
+        .sort(([,a], [,b]) => b - a)
+        .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
+
+    const modelColors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
+    renderChartWithAxis(modelChartEl, sortedModelCounts, modelColors);
 }
 
 /* ==========================================================================
