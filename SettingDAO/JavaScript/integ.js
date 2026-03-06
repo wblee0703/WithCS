@@ -124,6 +124,12 @@ function updateIntegratedDashboard() {
         }
     });
 
+    // [추가] 셋업 요약 정보 업데이트
+    const setupSummaryEl = document.getElementById('integ-setup-summary');
+    if (setupSummaryEl) {
+        setupSummaryEl.textContent = `(진행중 : ${setupEquips.length}, 완료 : ${completedEquips.length}, 전체 : ${setupCount})`;
+    }
+
     // 날짜/연도 컨트롤 초기화
     initDateControls();
 
