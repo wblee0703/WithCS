@@ -4,6 +4,7 @@
 let integSelectedSite = null;
 let integSelectedType = null;
 let integSetupSelectedSite = null;
+let integEquipSelectedSite = null;
 
 // 전역 함수 노출
 window.renderIntegSetupSiteStats = renderIntegSetupSiteStats;
@@ -194,22 +195,24 @@ function renderIntegEquipStats(data) {
             // 1. 사업장 별 장비 수
             siteCounts[site] = data[site].length;
 
-            // 2. 모델 별 장비 수 (장비명 기준 집계)
-            data[site].forEach(equip => {
-                const model = equip.split('::')[0]; // 장비명(모델) 추출
-                
-                if (!modelCounts[model]) modelCounts[model] = { total: 0, setup: 0 };
-                modelCounts[model].total++;
+            // 2. 모델 별 장비 수 (장비명 기준 집계) - [수정] 필터 적용
+            if (!integEquipSelectedSite || site === integEquipSelectedSite) {
+                data[site].forEach(equip => {
+                    const model = equip.split('::')[0]; // 장비명(모델) 추출
+                    
+                    if (!modelCounts[model]) modelCounts[model] = { total: 0, setup: 0 };
+                    modelCounts[model].total++;
 
-                const equipKey = `${site}::${equip}`;
-                const detailData = setupData[equipKey];
-                if (detailData && detailData.setupDetails) {
-                    const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
-                    if (completeItem && completeItem.startDate && !completeItem.completed) {
-                        modelCounts[model].setup++;
+                    const equipKey = `${site}::${equip}`;
+                    const detailData = setupData[equipKey];
+                    if (detailData && detailData.setupDetails) {
+                        const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
+                        if (completeItem && completeItem.startDate && !completeItem.completed) {
+                            modelCounts[model].setup++;
+                        }
                     }
-                }
-            });
+                });
+            }
         }
     });
 
@@ -221,7 +224,10 @@ function renderIntegEquipStats(data) {
     const siteGradients = {};
     Object.keys(sortedSiteCounts).forEach(key => siteGradients[key] = window.getSiteGradient(key));
     
-    renderChartWithAxis(siteChartEl, sortedSiteCounts, siteGradients);
+    renderChartWithAxis(siteChartEl, sortedSiteCounts, siteGradients, (key) => {
+        integEquipSelectedSite = (integEquipSelectedSite === key) ? null : key;
+        renderIntegEquipStats(data);
+    }, integEquipSelectedSite);
 
     // 2. 모델 별 장비 현황 (이름순 정렬)
     const sortedModelCounts = Object.entries(modelCounts)
