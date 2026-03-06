@@ -290,7 +290,8 @@ function renderSetupDetailList() {
             if (item.execStartDate) minDateAttr = `min="${item.execStartDate}"`;
             else if (item.startDate) minDateAttr = `min="${item.startDate}"`;
 
-            let estDaysHtml = `<input type="text" class="detail-est-days-input" value="${item.estDays || ''}" placeholder="0" style="text-align: center; width: 100%; background: transparent; border: none; color: ${inputColor};" ${generalDisabledAttr}>`;
+            const estVal = (item.estDays !== undefined && item.estDays !== null) ? item.estDays : '';
+            let estDaysHtml = `<input type="text" class="detail-est-days-input" value="${estVal}" placeholder="0" style="text-align: center; width: 100%; background: transparent; border: none; color: ${inputColor};" ${generalDisabledAttr}>`;
             
             if (cat === '셋업 완료') {
                 estDaysHtml = `<button type="button" class="btn-recalc-date" onclick="triggerSetupScheduleCalculation()" style="background: transparent; border: 1px solid #30363d; color: #8b949e; border-radius: 4px; cursor: pointer; padding: 2px 8px; font-size: 11px;">↺</button>`;
