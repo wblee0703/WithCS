@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupGanttResizer();
     setupEquipInfoResizer();
     setupSetupExecStartModal();
+    setupGanttSearchModal();
 
     // 날짜 변경 시 지연 사유 체크 이벤트 연결
     const execEndDate = document.getElementById('exec-end-date');
@@ -452,7 +453,7 @@ function renderGanttChart() {
                 }
 
                 progressSpan.textContent = `${pct}%`;
-                
+
                 progressSpan.className = 'gantt__task-progress'; // 클래스 초기화
                 if (pct === 0) progressSpan.classList.add('gantt__task-progress--empty');
                 else if (pct === 100) progressSpan.classList.add('gantt__task-progress--complete');
@@ -519,7 +520,7 @@ function renderGanttChart() {
         if (dObj.holiday) {
             bgHtml += `<div class="gantt__grid-bg gantt__grid-bg--holiday" style="left: ${left}px; width: ${ganttDayWidth}px;" title="${dObj.holiday}"></div>`;
         }
-        
+
         if (dObj.str === todayStr) {
             bgHtml += `<div class="gantt__grid-bg gantt__grid-bg--today" style="left: ${left}px; width: ${ganttDayWidth}px;"></div>`;
         }
@@ -605,7 +606,7 @@ function renderGanttChart() {
         const eSegments = createSegments(eStartIndex, eEndIndex);
 
         const resizeHandles = t.completed ? '' : '<div class="gantt__bar-handle gantt__bar-handle--left"></div><div class="gantt__bar-handle gantt__bar-handle--right"></div>';
-        
+
         const statusModifier = t.statusClass === 'exec' ? 'gantt__bar--exec' : (t.statusClass === 'exec-progress' ? 'gantt__bar--progress' : 'gantt__bar--delayed');
 
         bodyHtml += `
@@ -844,8 +845,8 @@ function saveSetupExecStart() {
             if (task) { task.execStartDate = execDate; found = true; }
         }
     });
-    if (found) { 
-        localStorage.setItem('setup_data', JSON.stringify(setupData)); 
+    if (found) {
+        localStorage.setItem('setup_data', JSON.stringify(setupData));
         if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
     }
     document.getElementById('setup-exec-start-modal').style.display = 'none';
@@ -875,10 +876,10 @@ function openExecCompletionModal(site, equip, id) {
     if (task) {
         const estDays = parseInt(task.estDays) || 1;
         document.getElementById('exec-est-days').value = estDays + '일';
-        
+
         const startDate = task.execStartDate || task.startDate || '';
         document.getElementById('exec-start-date').value = startDate;
-        
+
         const formatDate = (d) => {
             const y = d.getFullYear();
             const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -903,13 +904,13 @@ function openExecCompletionModal(site, equip, id) {
             const daysToAdd = pEstDays > 0 ? pEstDays - 1 : 0;
             const [y, m, d] = planStart.split('-').map(Number);
             const pEnd = window.addBusinessDays(new Date(y, m - 1, d), daysToAdd);
-            
+
             const py = pEnd.getFullYear();
             const pm = String(pEnd.getMonth() + 1).padStart(2, '0');
             const pd = String(pEnd.getDate()).padStart(2, '0');
             planEndDateStr = `${py}-${pm}-${pd}`;
         }
-        
+
         let planEndInput = document.getElementById('exec-plan-end-date');
         if (!planEndInput) {
             planEndInput = document.createElement('input');
@@ -921,15 +922,15 @@ function openExecCompletionModal(site, equip, id) {
 
         const checkbox = document.getElementById('exec-complete-checkbox');
         checkbox.checked = task.completed;
-        
+
         const reasonInput = document.getElementById('exec-delay-reason');
         reasonInput.value = task.delayReason || '';
-        
+
         checkExecDelayStatus();
 
         const logInput = document.getElementById('exec-setup-log-content');
         if (logInput) logInput.value = '';
-        
+
         const companyInput = document.getElementById('exec-setup-log-company');
         if (companyInput) companyInput.value = '위드텍';
 
@@ -974,8 +975,8 @@ function checkExecDelayStatus() {
         const planEndDate = new Date(planEndDateInput.value);
         const completeDate = new Date(completeDateInput.value);
 
-        planEndDate.setHours(0,0,0,0);
-        completeDate.setHours(0,0,0,0);
+        planEndDate.setHours(0, 0, 0, 0);
+        completeDate.setHours(0, 0, 0, 0);
 
         if (completeDate > planEndDate) {
             reasonContainer.style.display = 'block';
@@ -1008,7 +1009,7 @@ function saveExecCompletion() {
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const equipKey = `${site}::${equip}`;
     let data = setupData[equipKey] || {};
-    
+
     if (data.setupDetails) {
         const task = data.setupDetails.find(t => t.id == id);
         if (task) {
@@ -1017,7 +1018,7 @@ function saveExecCompletion() {
                 if (!confirm("완료 상태를 해제하시겠습니까?\n이후 단계의 완료 상태도 함께 초기화됩니다.")) {
                     return;
                 }
-                
+
                 task.execStartDate = '';
                 task.date = '';
                 task.completed = false;
@@ -1061,10 +1062,10 @@ function saveExecCompletion() {
                     memo: finalMemo
                 });
             }
-            
+
             setupData[equipKey] = data;
             localStorage.setItem('setup_data', JSON.stringify(setupData));
-            
+
             renderGanttChart();
             if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
         }
@@ -1078,3 +1079,109 @@ window.saveExecCompletion = saveExecCompletion;
 window.openExecCompletionModal = openExecCompletionModal;
 window.saveSetupExecStart = saveSetupExecStart;
 window.setupEquipInfoResizer = setupEquipInfoResizer;
+
+/* ==========================================================================
+   [9] 모달: 간트 차트 검색 (Gantt Search Modal)
+   ========================================================================== */
+function setupGanttSearchModal() {
+    const modal = document.getElementById('gantt-search-modal');
+    const closeBtn = document.getElementById('btn-close-gantt-search-modal');
+    const resetBtn = document.getElementById('btn-reset-gantt-filter');
+    const applyBtn = document.getElementById('btn-apply-gantt-filter');
+    const siteSelect = document.getElementById('gantt-site-select');
+
+    if (!modal) return;
+
+    if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
+
+    if (siteSelect) {
+        siteSelect.onchange = () => {
+            updateGanttSearchEquipSelect(siteSelect.value);
+        };
+    }
+
+    if (resetBtn) {
+        resetBtn.onclick = () => {
+            if (typeof currentGanttFilters !== 'undefined') {
+                currentGanttFilters = { site: '', equip: '' };
+            }
+            modal.style.display = 'none';
+            renderGanttChart();
+            if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+        };
+    }
+
+    if (applyBtn) {
+        applyBtn.onclick = () => {
+            const site = document.getElementById('gantt-site-select').value;
+            const equip = document.getElementById('gantt-equip-select').value;
+            
+            if (typeof currentGanttFilters !== 'undefined') {
+                currentGanttFilters = { site, equip };
+            }
+            
+            modal.style.display = 'none';
+            renderGanttChart();
+            if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+        };
+    }
+}
+
+function openGanttSearchModal() {
+    const modal = document.getElementById('gantt-search-modal');
+    const siteSelect = document.getElementById('gantt-site-select');
+    const equipSelect = document.getElementById('gantt-equip-select');
+
+    if (!modal) return;
+
+    // Load Sites
+    const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    
+    if (siteSelect) {
+        siteSelect.innerHTML = '<option value="">전체 사업장</option>';
+        Object.keys(data).forEach(site => {
+            const option = document.createElement('option');
+            option.value = site;
+            option.textContent = site;
+            if (typeof currentGanttFilters !== 'undefined' && currentGanttFilters.site === site) {
+                option.selected = true;
+            }
+            siteSelect.appendChild(option);
+        });
+    }
+
+    if (equipSelect) {
+        const currentSite = siteSelect ? siteSelect.value : '';
+        updateGanttSearchEquipSelect(currentSite);
+        if (typeof currentGanttFilters !== 'undefined' && currentGanttFilters.equip) {
+            equipSelect.value = currentGanttFilters.equip;
+        }
+    }
+
+    modal.style.display = 'flex';
+}
+
+function updateGanttSearchEquipSelect(site) {
+    const equipSelect = document.getElementById('gantt-equip-select');
+    if (!equipSelect) return;
+    
+    equipSelect.innerHTML = '<option value="">전체 장비</option>';
+    
+    if (!site) {
+        equipSelect.disabled = true;
+        return;
+    }
+
+    const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    const equips = data[site] || [];
+    
+    equips.forEach(equip => {
+        const option = document.createElement('option');
+        option.value = equip;
+        const parts = equip.split('::');
+        option.textContent = parts.length > 1 ? `${parts[0]} (${parts[1]})` : parts[0];
+        equipSelect.appendChild(option);
+    });
+    
+    equipSelect.disabled = false;
+}
