@@ -289,10 +289,18 @@ def load_data():
             data['setup_data'] = setup_content
             
         if os.path.exists(FILE_WITHTECH_DATA):
-            data['withtech_data'] = load_json_file(FILE_WITHTECH_DATA)
+            withtech_content = load_json_file(FILE_WITHTECH_DATA)
+            # [추가] 중첩된 withtech_data 키가 있다면 평탄화 (구조 보정)
+            if isinstance(withtech_content, dict) and 'withtech_data' in withtech_content and len(withtech_content) == 1:
+                withtech_content = withtech_content['withtech_data']
+            data['withtech_data'] = withtech_content
             
         if os.path.exists(FILE_SYSTEM_LOG):
-            data['system_logs'] = load_json_file(FILE_SYSTEM_LOG)
+            log_content = load_json_file(FILE_SYSTEM_LOG)
+            # [추가] 중첩된 system_logs 키가 있다면 평탄화
+            if isinstance(log_content, dict) and 'system_logs' in log_content and len(log_content) == 1:
+                log_content = log_content['system_logs']
+            data['system_logs'] = log_content
 
         return data
 
@@ -310,9 +318,16 @@ def save_data(full_data):
         system_log_data = load_json_file(FILE_SYSTEM_LOG)
         withtech_data_storage = load_json_file(FILE_WITHTECH_DATA)
         
-        # [수정] maintenance_data에 잘못 포함된 setup_data 제거 (중복/덮어쓰기 방지)
-        if isinstance(maintenance_data, dict) and 'setup_data' in maintenance_data:
-            del maintenance_data['setup_data']
+        # [수정] maintenance_data 및 home_data에 잘못 포함된 주요 데이터 제거 (중복/덮어쓰기 방지)
+        for container in [maintenance_data, home_data]:
+            if isinstance(container, dict):
+                if 'setup_data' in container: del container['setup_data']
+                if 'withtech_data' in container: del container['withtech_data']
+                if 'system_logs' in container: del container['system_logs']
+                # details_로 시작하는 키도 home_data에서 제거 (maintenance_data는 details_를 가짐)
+                if container is home_data:
+                    keys_to_remove = [k for k in container.keys() if k.startswith('details_')]
+                    for k in keys_to_remove: del container[k]
         
         # 3. 데이터 분류 및 병합
         existing_accounts = home_data.get('user_accounts', [])
