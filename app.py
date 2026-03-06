@@ -3,6 +3,7 @@ import json
 import os
 import webbrowser
 from threading import Timer, Lock, Thread
+import glob
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -183,11 +184,40 @@ def git_pull_data():
     except Exception as e:
         app.logger.error(f"GitHub pull failed: {e}")
 
+# [추가] 백업 파일에서 복구
+def restore_from_backup(target_filepath):
+    """파일이 없을 경우 백업 폴더에서 최신 백업을 찾아 복원합니다."""
+    filename = os.path.basename(target_filepath)
+    # 백업 파일 패턴: filename.YYYY-MM-DD.bak
+    search_pattern = os.path.join(BACKUP_DIR, f"{filename}.*.bak")
+    backups = glob.glob(search_pattern)
+    
+    if not backups:
+        return False
+        
+    # 최신순 정렬 (파일명에 날짜가 포함되어 있으므로 역순 정렬 시 최신 날짜가 먼저 옴)
+    backups.sort(reverse=True) 
+    latest_backup = backups[0]
+    
+    try:
+        shutil.copy2(latest_backup, target_filepath)
+        app.logger.warning(f"Restored {filename} from backup: {os.path.basename(latest_backup)}")
+        return True
+    except Exception as e:
+        app.logger.error(f"Failed to restore backup for {filename}: {e}")
+        return False
+
 # ------------------------------------------------------------------------------
 # 4. Core Logic (Data Management)
 # ------------------------------------------------------------------------------
 def init_data_files():
     """데이터 파일이 없으면 초기화하고 기본 계정을 생성합니다."""
+    
+    # [추가] 중요 파일이 없으면 백업에서 복원 시도
+    for filepath in [FILE_HOME, FILE_SETUP, FILE_MAINTENANCE, FILE_SYSTEM_LOG, FILE_WITHTECH_DATA]:
+        if not os.path.exists(filepath):
+            restore_from_backup(filepath)
+
     # [수정] 파일이 존재하더라도 계정 정보가 없으면(손상/삭제 등) 복구하도록 로직 개선
     home_data = load_json_file(FILE_HOME)
     
