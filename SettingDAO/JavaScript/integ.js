@@ -186,6 +186,7 @@ function renderIntegEquipStats(data) {
 
     const siteCounts = {};
     const modelCounts = {};
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
 
     // 데이터 집계
     Object.keys(data).forEach(site => {
@@ -196,7 +197,18 @@ function renderIntegEquipStats(data) {
             // 2. 모델 별 장비 수 (장비명 기준 집계)
             data[site].forEach(equip => {
                 const model = equip.split('::')[0]; // 장비명(모델) 추출
-                modelCounts[model] = (modelCounts[model] || 0) + 1;
+                
+                if (!modelCounts[model]) modelCounts[model] = { total: 0, setup: 0 };
+                modelCounts[model].total++;
+
+                const equipKey = `${site}::${equip}`;
+                const detailData = setupData[equipKey];
+                if (detailData && detailData.setupDetails) {
+                    const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
+                    if (completeItem && completeItem.startDate && !completeItem.completed) {
+                        modelCounts[model].setup++;
+                    }
+                }
             });
         }
     });
@@ -216,7 +228,16 @@ function renderIntegEquipStats(data) {
         .sort(([a,], [b,]) => a.localeCompare(b))
         .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
 
-    const modelColors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
+    const modelColors = [
+        'linear-gradient(to top, #1f6feb, #58a6ff)',
+        'linear-gradient(to top, #238636, #3fb950)',
+        'linear-gradient(to top, #d29922, #e3b341)',
+        'linear-gradient(to top, #8957e5, #a371f7)',
+        'linear-gradient(to top, #da3633, #ff7b72)',
+        'linear-gradient(to top, #f0883e, #ffa657)',
+        'linear-gradient(to top, #3fb950, #56d364)',
+        'linear-gradient(to top, #a371f7, #bc8cff)'
+    ];
     renderChartWithAxis(modelChartEl, sortedModelCounts, modelColors);
 }
 
@@ -710,13 +731,20 @@ function togglePeriodMode(typeId, monthId, yearId, titleId) {
 
 function renderChartWithAxis(container, dataCounts, colorMapOrArray, onClickHandler, selectedKey) {
     container.innerHTML = '';
-    const values = Object.values(dataCounts);
+    const values = Object.values(dataCounts).map(v => (typeof v === 'object' ? v.total : v));
     const maxVal = values.length > 0 ? Math.max(...values) : 0;
     let yAxisMax = 10;
     if (maxVal > 10) yAxisMax = Math.ceil(maxVal / 5) * 5;
 
     Object.keys(dataCounts).forEach((key, index) => {
-        const count = dataCounts[key];
+        let count = dataCounts[key];
+        let setupCount = 0;
+
+        if (typeof count === 'object') {
+            setupCount = count.setup || 0;
+            count = count.total || 0;
+        }
+
         const maxBarHeight = 180;
         const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
         
@@ -731,9 +759,29 @@ function renderChartWithAxis(container, dataCounts, colorMapOrArray, onClickHand
         barGroup.className = 'bar-group';
         if (selectedKey && selectedKey !== '전체' && !isActive) barGroup.classList.add('faded');
 
+        let barContent = '';
+        if (setupCount > 0) {
+            const setupHeightPct = (setupCount / count) * 100;
+            const setupOverlay = `<div style="width: 100%; height: ${setupHeightPct}%; background: repeating-linear-gradient(45deg, rgba(255,255,255,0.3), rgba(255,255,255,0.3) 5px, transparent 5px, transparent 10px); border-bottom: 1px solid rgba(255,255,255,0.5); position: absolute; top: 0; left: 0;" title="셋업중: ${setupCount}대"></div>`;
+            
+            barContent = `
+                <div class="bar-value">
+                    ${count}
+                    <span style="font-size:11px; color:#d29922; margin-left:2px;">(${setupCount})</span>
+                </div>
+                <div class="bar ${activeClass}" style="height: ${barHeight}px; background: ${bgStyle}; position: relative; overflow: hidden;">
+                    ${setupOverlay}
+                </div>
+            `;
+        } else {
+            barContent = `
+                <div class="bar-value">${count}</div>
+                <div class="bar ${activeClass}" style="height: ${barHeight}px; background: ${bgStyle};"></div>
+            `;
+        }
+
         barGroup.innerHTML = `
-            <div class="bar-value">${count}</div>
-            <div class="bar ${activeClass}" style="height: ${barHeight}px; background: ${bgStyle};"></div>
+            ${barContent}
             <div class="bar-label" title="${key}">${key}</div>
         `;
         
