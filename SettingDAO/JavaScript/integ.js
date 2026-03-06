@@ -182,12 +182,15 @@ function initDateControls() {
 function renderIntegEquipStats(data) {
     const siteChartEl = document.getElementById('integ-equip-site-chart');
     const modelChartEl = document.getElementById('integ-equip-model-chart');
+    const summaryEl = document.getElementById('integ-equip-summary');
     
     if (!siteChartEl || !modelChartEl) return;
 
     const siteCounts = {};
     const modelCounts = {};
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    let totalEquipCount = 0;
+    let filteredSiteCount = 0;
 
     // 데이터 집계
     Object.keys(data).forEach(site => {
@@ -197,7 +200,9 @@ function renderIntegEquipStats(data) {
 
             // 2. 모델 별 장비 수 (장비명 기준 집계) - [수정] 필터 적용
             if (!integEquipSelectedSite || site === integEquipSelectedSite) {
+                filteredSiteCount++;
                 data[site].forEach(equip => {
+                    totalEquipCount++;
                     const model = equip.split('::')[0]; // 장비명(모델) 추출
                     
                     if (!modelCounts[model]) modelCounts[model] = { total: 0, setup: 0 };
@@ -215,6 +220,12 @@ function renderIntegEquipStats(data) {
             }
         }
     });
+
+    // 요약 정보 업데이트
+    if (summaryEl) {
+        const modelCount = Object.keys(modelCounts).length;
+        summaryEl.textContent = `(사업장 : ${filteredSiteCount}, 장비 모델 : ${modelCount}, 장비수 : ${totalEquipCount})`;
+    }
 
     // 1. 사업장 별 장비 현황 (이름순 정렬)
     const sortedSiteCounts = Object.entries(siteCounts)
