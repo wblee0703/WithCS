@@ -138,8 +138,6 @@
                                         title="달력 축소 (1주)">-</button>
                                     <button id="btn-gantt-expand" class="btn-gray btn-spacing-right"
                                         title="달력 확장 (1주)">+</button>
-                                    <button id="btn-gantt-filter" class="btn-gray ml-5" title="장비 검색">검색</button>
-                                    <span id="gantt-filter-status" class="filter-status-text"></span>
                                 </div>
                             </div>
                         </div>
@@ -701,30 +699,6 @@
             </div>
             <div class="modal-footer">
                 <button class="btn-blue" id="btn-save-setup-exec-start" onclick="saveSetupExecStart()">확인</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3.10 간트 차트 상세 검색 모달 -->
-    <div id="gantt-search-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window">
-            <div class="modal-header">
-                <h3>간트 차트 상세 검색</h3>
-                <button class="btn-del-sm" id="btn-close-gantt-search-modal">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-row">
-                    <label class="form-label">사업장</label>
-                    <select id="gantt-site-select" class="modal-select"></select>
-                </div>
-                <div class="form-row">
-                    <label class="form-label">장비</label>
-                    <select id="gantt-equip-select" class="modal-select" disabled></select>
-                </div>
-                <div class="modal-btn-group-right">
-                    <button class="btn-gray" id="btn-reset-gantt-filter">초기화</button>
-                    <button class="btn-blue" id="btn-apply-gantt-filter">적용</button>
-                </div>
             </div>
         </div>
     </div>
