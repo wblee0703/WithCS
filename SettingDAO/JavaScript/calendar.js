@@ -882,7 +882,13 @@ function completeScheduleWork() {
         memo: memo
     });
 
-    sameDayItems.forEach(i => delete i.scheduledDate);
+    sameDayItems.forEach(i => {
+        delete i.scheduledDate;
+        // [추가] PM/BM 항목은 완료 시 시작일(마지막 점검일) 갱신
+        if (i.type === 'PM' || i.type === 'BM') {
+            i.date = completeDate;
+        }
+    });
 
     // [추가] 일회성 일정(트러블이슈 등)은 완료 후 리스트에서 제거하여 데이터 누적 방지
     data.maint = data.maint.filter(item => {
