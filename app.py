@@ -264,21 +264,31 @@ def load_data():
     """모든 데이터 파일을 읽어 하나의 딕셔너리로 병합합니다."""
     with data_lock:
         data = {}
-        # [수정] 명시적으로 지정된 파일만 로드하여 안정성 확보 및 순서 보장
-        target_files = [FILE_SETUP, FILE_MAINTENANCE, FILE_HOME, FILE_SYSTEM_LOG, FILE_WITHTECH_DATA]
         
-        for filepath in target_files:
-            if os.path.exists(filepath):
-                file_data = load_json_file(filepath)
-                if file_data:
-                    # [보안] 사용자 계정 정보는 클라이언트에 전송하지 않음
-                    if 'user_accounts' in file_data:
-                        file_data = file_data.copy()
-                        del file_data['user_accounts']
-                    
-                    data.update(file_data)
-                else:
-                    app.logger.warning(f"Warning: {os.path.basename(filepath)} loaded empty or failed.")
+        # 1. 단일 키로 매핑되는 파일 로드 (구조 명확화)
+        if os.path.exists(FILE_SETUP):
+            data['setup_data'] = load_json_file(FILE_SETUP)
+            
+        if os.path.exists(FILE_WITHTECH_DATA):
+            data['withtech_data'] = load_json_file(FILE_WITHTECH_DATA)
+            
+        if os.path.exists(FILE_SYSTEM_LOG):
+            data['system_logs'] = load_json_file(FILE_SYSTEM_LOG)
+
+        # 2. 여러 키가 포함된 파일 병합 (Maintenance, Home)
+        if os.path.exists(FILE_MAINTENANCE):
+            maint_data = load_json_file(FILE_MAINTENANCE)
+            if isinstance(maint_data, dict):
+                data.update(maint_data)
+                
+        if os.path.exists(FILE_HOME):
+            home_data = load_json_file(FILE_HOME)
+            if isinstance(home_data, dict):
+                # [보안] 사용자 계정 정보 제외
+                if 'user_accounts' in home_data:
+                    home_data = home_data.copy()
+                    del home_data['user_accounts']
+                data.update(home_data)
 
         return data
 
@@ -301,13 +311,13 @@ def save_data(full_data):
 
         for key, value in full_data.items():
             if key == 'setup_data':
-                # [수정] 셋업 데이터 덮어쓰기 (삭제된 항목 반영을 위해 병합 대신 교체)
-                setup_data[key] = value
+                # [수정] 중첩 방지: 딕셔너리 키 할당이 아닌 변수(파일 내용) 자체 교체
+                setup_data = value
             elif key == 'system_logs':
-                system_log_data[key] = value # 시스템 로그 저장
+                system_log_data = value
             elif key == 'withtech_data':
-                # [수정] 사이트/장비 목록 덮어쓰기 (삭제된 항목 반영을 위해 병합 대신 교체)
-                withtech_data_storage[key] = value
+                # [수정] 중첩 방지
+                withtech_data_storage = value
             elif key.startswith('details_'):
                 # setup 관련 데이터 제거 후 maintenance에 저장
                 if isinstance(value, dict):
@@ -321,7 +331,8 @@ def save_data(full_data):
                     home_data[key] = value
         
         # 계정 정보 보존
-        home_data['user_accounts'] = existing_accounts
+        if isinstance(home_data, dict):
+            home_data['user_accounts'] = existing_accounts
 
         # 4. 파일 저장
         save_json_file(FILE_SETUP, setup_data)
