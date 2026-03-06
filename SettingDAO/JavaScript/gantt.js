@@ -31,6 +31,7 @@ let currentExecStartTargetId = null;
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
     // 간트 차트 관련 초기화
+    setupGanttSearch();
     setupGanttZoom();
     setupGanttResizer();
     setupEquipInfoResizer();
@@ -42,6 +43,14 @@ document.addEventListener('DOMContentLoaded', () => {
         execEndDate.addEventListener('change', checkExecDelayStatus);
     }
 });
+
+function setupGanttSearch() {
+    const filterBtn = document.getElementById('btn-gantt-filter');
+
+    if (filterBtn) {
+        filterBtn.onclick = () => openGanttSearchModal();
+    }
+}
 
 function setupGanttZoom() {
     const btnExpand = document.getElementById('btn-gantt-expand');
