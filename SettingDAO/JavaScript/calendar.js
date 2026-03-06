@@ -861,6 +861,12 @@ function updateScheduleDateFromDetail() {
 function completeScheduleWork() {
     if (!currentDetailTarget || currentDetailTarget.isCompleted) return;
 
+    // [추가] 점검 항목 수정 중인지 확인 (저장 버튼이 활성화된 상태)
+    const editContentBtn = document.getElementById('btn-edit-detail-content');
+    if (editContentBtn && editContentBtn.textContent === '저장') {
+        return alert('점검 항목 수정 중입니다. 먼저 저장해주세요.');
+    }
+
     const worker = document.getElementById('detail-worker').value.trim();
     const memo = document.getElementById('detail-work-memo').value.trim();
     
