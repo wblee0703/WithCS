@@ -303,7 +303,7 @@
                             <!-- [추가] 셋업 통합 관리 헤더 -->
                             <div class="integ-section-header" style="flex-direction: column; gap: 5px;">
                                 <h4 class="integ-section-title integ-title-setup"><span id="integ-setup-title-period"></span> 셋업 통합 관리</h4>
-                                <span id="integ-setup-summary" style="font-size: 16px; color: #e6edf3; font-weight: bold;">(진행중 : 0, 완료 : 0, 전체 : 0)</span>
+                                <span id="integ-setup-summary" style="font-size: 16px; color: #e6edf3; font-weight: bold;">(전체 : 0, 진행중 : 0, 완료 : 0)</span>
                                 <div class="integ-controls-wrapper">
                                     <select id="integ-setup-period-type" class="modal-select"
                                         onchange="toggleIntegSetupPeriodMode()">
@@ -377,8 +377,9 @@
                                     </div>
                                 </div>
                                 <!-- 운영 관리 통계 (신규) -->
-                                <div class="integ-section-header">
+                                <div class="integ-section-header" style="flex-direction: column; gap: 5px;">
                                     <h4 class="integ-section-title integ-title-maint"><span id="integ-title-period"></span> 운영 통합 관리</h4>
+                                    <span id="integ-maint-summary" style="font-size: 16px; color: #e6edf3; font-weight: bold;">(PM : 0, BM : 0, 트러블이슈 : 0, 프로그램변경 : 0, 장비점검 : 0)</span>
                                     <div class="integ-controls-wrapper">
                                         <select id="integ-period-type" class="modal-select"
                                             onchange="toggleIntegPeriodMode()">

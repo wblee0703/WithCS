@@ -127,7 +127,7 @@ function updateIntegratedDashboard() {
     // [추가] 셋업 요약 정보 업데이트
     const setupSummaryEl = document.getElementById('integ-setup-summary');
     if (setupSummaryEl) {
-        setupSummaryEl.textContent = `(진행중 : ${setupEquips.length}, 완료 : ${completedEquips.length}, 전체 : ${setupCount})`;
+        setupSummaryEl.textContent = `(전체 : ${setupCount}, 진행중 : ${setupEquips.length}, 완료 : ${completedEquips.length})`;
     }
 
     // 날짜/연도 컨트롤 초기화
@@ -637,6 +637,12 @@ function renderIntegMaintStats(mainData) {
             });
         }
     });
+
+    // [추가] 운영 관리 요약 정보 업데이트
+    const maintSummaryEl = document.getElementById('integ-maint-summary');
+    if (maintSummaryEl) {
+        maintSummaryEl.textContent = `(PM : ${typeCounts['PM']}, BM : ${typeCounts['BM']}, 트러블이슈 : ${typeCounts['트러블이슈']}, 프로그램변경 : ${typeCounts['프로그램변경']}, 장비점검 : ${typeCounts['장비점검']})`;
+    }
 
     // 1. 작업 유형별 차트
     const typeGradients = { 
