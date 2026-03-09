@@ -7,6 +7,7 @@ let calendarDate = new Date();
 var currentSearchFilters = { site: '', equip: '' };
 let currentScheduleTarget = null;
 let currentDetailTarget = null;
+let expandedViewId = null;
 
 // [추가] 공통 함수 폴백 (common.js 누락 대비)
 if (typeof window.getHolidayName !== 'function') {
@@ -127,6 +128,21 @@ function setupCalendar() {
     const searchInput = document.getElementById('calendar-search');
     const filterBtn = document.getElementById('btn-search-filter');
 
+    // [추가] 캘린더 타이틀 클릭 이벤트 (확장/축소)
+    const title1 = document.getElementById('calendar-title-1');
+    const title2 = document.getElementById('calendar-title-2');
+    
+    if (title1) {
+        title1.style.cursor = 'pointer';
+        title1.title = '클릭하여 확대/축소';
+        title1.onclick = () => toggleCalendarExpand(1);
+    }
+    if (title2) {
+        title2.style.cursor = 'pointer';
+        title2.title = '클릭하여 확대/축소';
+        title2.onclick = () => toggleCalendarExpand(2);
+    }
+
     if (prevBtn) {
         prevBtn.onclick = () => {
             calendarDate.setMonth(calendarDate.getMonth() - 1);
@@ -154,6 +170,36 @@ function setupCalendar() {
     }
     if (filterBtn) {
         filterBtn.onclick = () => openSearchModal();
+    }
+}
+
+function toggleCalendarExpand(viewId) {
+    const views = document.querySelectorAll('.calendar-view');
+    const divider = document.querySelector('.calendar-divider');
+    
+    if (expandedViewId === viewId) {
+        // 이미 확장된 상태면 원래대로 복귀
+        expandedViewId = null;
+        views.forEach(v => {
+            v.style.display = '';
+            v.style.flex = '';
+            v.style.maxWidth = '';
+        });
+        if (divider) divider.style.display = '';
+    } else {
+        // 해당 뷰 확장
+        expandedViewId = viewId;
+        views.forEach((v, index) => {
+            // viewId는 1부터 시작, index는 0부터 시작
+            if (index + 1 === viewId) {
+                v.style.display = 'flex';
+                v.style.flex = '1';
+                v.style.maxWidth = '100%';
+            } else {
+                v.style.display = 'none';
+            }
+        });
+        if (divider) divider.style.display = 'none';
     }
 }
 
