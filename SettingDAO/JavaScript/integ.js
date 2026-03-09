@@ -25,6 +25,8 @@ function updateIntegratedDashboard() {
     let setupCount = 0;
     let setupEquips = [];
     let completedEquips = [];
+    let summaryActiveCount = 0;
+    let summaryCompletedCount = 0;
 
     // 막대그래프용 전체 집계 데이터
     const allSiteCounts = {};
@@ -111,6 +113,13 @@ function updateIntegratedDashboard() {
                     allSiteCounts[site] = (allSiteCounts[site] || 0) + 1;
                     totalActiveAll++;
 
+                    // 요약 정보용 전체 집계 (필터 무관)
+                    if (progress === 100) {
+                        summaryCompletedCount++;
+                    } else {
+                        summaryActiveCount++;
+                    }
+
                     // 2. 리스트용 필터링 집계
                     if (!integSetupSelectedSite || integSetupSelectedSite === site) {
                         if (progress === 100) {
@@ -127,7 +136,7 @@ function updateIntegratedDashboard() {
     // [추가] 셋업 요약 정보 업데이트
     const setupSummaryEl = document.getElementById('integ-setup-summary');
     if (setupSummaryEl) {
-        setupSummaryEl.textContent = `(전체 : ${setupCount}, 진행중 : ${setupEquips.length}, 완료 : ${completedEquips.length})`;
+        setupSummaryEl.textContent = `(전체 : ${setupCount}, 진행중 : ${summaryActiveCount}, 완료 : ${summaryCompletedCount})`;
     }
 
     // 날짜/연도 컨트롤 초기화
@@ -194,9 +203,9 @@ function renderIntegEquipStats(data) {
 
     const siteCounts = {};
     const modelCounts = {};
+    const allModels = new Set();
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     let totalEquipCount = 0;
-    let filteredSiteCount = 0;
 
     // 데이터 집계
     Object.keys(data).forEach(site => {
@@ -204,13 +213,13 @@ function renderIntegEquipStats(data) {
             // 1. 사업장 별 장비 수
             siteCounts[site] = data[site].length;
 
-            // 2. 모델 별 장비 수 (장비명 기준 집계) - [수정] 필터 적용
-            if (!integEquipSelectedSite || site === integEquipSelectedSite) {
-                filteredSiteCount++;
-                data[site].forEach(equip => {
-                    totalEquipCount++;
-                    const model = equip.split('::')[0]; // 장비명(모델) 추출
-                    
+            data[site].forEach(equip => {
+                totalEquipCount++;
+                const model = equip.split('::')[0]; // 장비명(모델) 추출
+                allModels.add(model);
+                
+                // 2. 모델 별 장비 수 (장비명 기준 집계) - [수정] 필터 적용
+                if (!integEquipSelectedSite || site === integEquipSelectedSite) {
                     if (!modelCounts[model]) modelCounts[model] = { total: 0, setup: 0 };
                     modelCounts[model].total++;
 
@@ -222,15 +231,16 @@ function renderIntegEquipStats(data) {
                             modelCounts[model].setup++;
                         }
                     }
-                });
-            }
+                }
+            });
         }
     });
 
     // 요약 정보 업데이트
     if (summaryEl) {
-        const modelCount = Object.keys(modelCounts).length;
-        summaryEl.textContent = `(사업장 : ${filteredSiteCount}, 장비 모델 : ${modelCount}, 장비수 : ${totalEquipCount})`;
+        const siteCount = Object.keys(siteCounts).length;
+        const modelCount = allModels.size;
+        summaryEl.textContent = `(사업장 : ${siteCount}, 장비 모델 : ${modelCount}, 장비수 : ${totalEquipCount})`;
     }
 
     // 1. 사업장 별 장비 현황 (이름순 정렬)
@@ -604,6 +614,7 @@ function renderIntegMaintStats(mainData) {
     }
 
     const typeCounts = { 'PM': 0, 'BM': 0, '트러블이슈': 0, '프로그램변경': 0, '장비점검': 0 };
+    const totalTypeCounts = { 'PM': 0, 'BM': 0, '트러블이슈': 0, '프로그램변경': 0, '장비점검': 0 };
     const itemCounts = {};
     const siteCounts = {};
 
@@ -619,6 +630,11 @@ function renderIntegMaintStats(mainData) {
                 const processItem = (type, content, date) => {
                     if (dateCheckFn(date)) {
                         siteCounts[site] = (siteCounts[site] || 0) + 1;
+                        
+                        // 요약 정보용 전체 집계 (필터 무관)
+                        if (totalTypeCounts.hasOwnProperty(type)) totalTypeCounts[type]++;
+                        else totalTypeCounts['기타'] = (totalTypeCounts['기타'] || 0) + 1;
+
                         if (isSiteMatch) {
                             if (typeCounts.hasOwnProperty(type)) typeCounts[type]++;
                             else typeCounts['기타'] = (typeCounts['기타'] || 0) + 1;
@@ -641,7 +657,7 @@ function renderIntegMaintStats(mainData) {
     // [추가] 운영 관리 요약 정보 업데이트
     const maintSummaryEl = document.getElementById('integ-maint-summary');
     if (maintSummaryEl) {
-        maintSummaryEl.textContent = `(PM : ${typeCounts['PM']}, BM : ${typeCounts['BM']}, 트러블이슈 : ${typeCounts['트러블이슈']}, 프로그램변경 : ${typeCounts['프로그램변경']}, 장비점검 : ${typeCounts['장비점검']})`;
+        maintSummaryEl.textContent = `(PM : ${totalTypeCounts['PM']}, BM : ${totalTypeCounts['BM']}, 트러블이슈 : ${totalTypeCounts['트러블이슈']}, 프로그램변경 : ${totalTypeCounts['프로그램변경']}, 장비점검 : ${totalTypeCounts['장비점검']})`;
     }
 
     // 1. 작업 유형별 차트
