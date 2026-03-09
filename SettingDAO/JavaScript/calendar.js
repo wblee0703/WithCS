@@ -184,6 +184,7 @@ function toggleCalendarExpand(viewId) {
             v.style.display = '';
             v.style.flex = '';
             v.style.maxWidth = '';
+            v.style.flexDirection = '';
         });
         if (divider) divider.style.display = '';
     } else {
@@ -193,6 +194,7 @@ function toggleCalendarExpand(viewId) {
             // viewId는 1부터 시작, index는 0부터 시작
             if (index + 1 === viewId) {
                 v.style.display = 'flex';
+                v.style.flexDirection = 'column';
                 v.style.flex = '1';
                 v.style.maxWidth = '100%';
             } else {
