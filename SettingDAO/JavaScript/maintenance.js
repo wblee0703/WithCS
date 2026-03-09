@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupUIEvents();
     setupSpecialNoteEvents();
     setupPageProtection();
+    setupFileEvents(); // [추가] 파일 이벤트 초기화
 
     // 모달 초기화
     setupMaintLoadListModal();
@@ -340,6 +341,9 @@ function renderDetails() {
 
     // [이동] 유지관리 물품 목록이 갱신될 때 로그 입력 폼의 항목 옵션도 함께 업데이트
     updateLogContentOptions();
+
+    // [추가] 파일 리스트 갱신
+    renderFiles();
 }
 
 function calculateStatus(type, start, period) {
@@ -1246,3 +1250,127 @@ function toggleLogManagementMode() {
 
     if (btn) btn.classList.toggle('active');
 }
+
+/* ==========================================================================
+   [추가] 6. 파일 관리 (File Management)
+   ========================================================================== */
+function setupFileEvents() {
+    const uploadBtn = document.getElementById('btn-upload-file');
+    const fileInput = document.getElementById('file-upload-input');
+
+    if (uploadBtn && fileInput) {
+        uploadBtn.onclick = () => fileInput.click();
+        fileInput.onchange = handleFileUpload;
+    }
+}
+
+function handleFileUpload(e) {
+    if (!currentPath.site || !currentPath.equip) return alert('장비를 선택해주세요.');
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const key = `details_${currentPath.site}_${currentPath.equip}`;
+    // 용량 체크 (간단히 2MB 제한)
+    const MAX_SIZE = 2 * 1024 * 1024; 
+
+    Array.from(files).forEach(file => {
+        if (file.size > MAX_SIZE) {
+            alert(`파일 '${file.name}'이 너무 큽니다. (2MB 제한)`);
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const fileData = {
+                id: Date.now() + Math.random(),
+                name: file.name,
+                type: file.type,
+                size: file.size,
+                content: evt.target.result, // Base64
+                date: new Date().toISOString().split('T')[0]
+            };
+            
+            // 데이터 다시 로드 (비동기 처리 중 변경 대비)
+            let currentData = JSON.parse(localStorage.getItem(key)) || {};
+            if (!currentData.files) currentData.files = [];
+            
+            currentData.files.push(fileData);
+            
+            try {
+                localStorage.setItem(key, JSON.stringify(currentData));
+                renderFiles();
+                if (typeof addSystemLog === 'function') {
+                    addSystemLog('UPLOAD_FILE', currentPath.equip, `File: ${file.name}`);
+                }
+            } catch (e) {
+                alert('저장 용량이 부족하여 파일을 저장할 수 없습니다.');
+                console.error(e);
+            }
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    e.target.value = '';
+}
+
+function renderFiles() {
+    const listEl = document.getElementById('file-list');
+    if (!listEl) return;
+    
+    if (!currentPath.site || !currentPath.equip) {
+        listEl.innerHTML = '<li class="list-empty-msg">장비를 선택해주세요.</li>';
+        return;
+    }
+
+    const key = `details_${currentPath.site}_${currentPath.equip}`;
+    const data = JSON.parse(localStorage.getItem(key)) || {};
+    const files = data.files || [];
+
+    listEl.innerHTML = '';
+    
+    if (files.length === 0) {
+        listEl.innerHTML = '<li class="list-empty-msg">등록된 파일이 없습니다.</li>';
+        return;
+    }
+
+    files.forEach(file => {
+        const li = document.createElement('li');
+        li.className = 'file-item';
+        li.innerHTML = `
+            <span class="file-name" onclick="downloadFile(${file.id})">📄 ${escapeHtml(file.name)}</span>
+            <span class="file-info">${file.date}</span>
+            <button class="btn-del-sm" onclick="deleteFile(${file.id})">✕</button>
+        `;
+        listEl.appendChild(li);
+    });
+}
+
+window.downloadFile = function(id) {
+    const key = `details_${currentPath.site}_${currentPath.equip}`;
+    const data = JSON.parse(localStorage.getItem(key)) || {};
+    const file = data.files ? data.files.find(f => f.id === id) : null;
+    
+    if (file) {
+        const a = document.createElement('a');
+        a.href = file.content;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+};
+
+window.deleteFile = function(id) {
+    if (!confirm('파일을 삭제하시겠습니까?')) return;
+    const key = `details_${currentPath.site}_${currentPath.equip}`;
+    let data = JSON.parse(localStorage.getItem(key)) || {};
+    
+    if (data.files) {
+        data.files = data.files.filter(f => f.id !== id);
+        localStorage.setItem(key, JSON.stringify(data));
+        renderFiles();
+        if (typeof addSystemLog === 'function') {
+            addSystemLog('DELETE_FILE', currentPath.equip, `FileID: ${id}`);
+        }
+    }
+};

@@ -44,7 +44,8 @@
                         <h3>대분류: 사업장 <span id="site-count" class="count-badge">0</span> <button class="btn-list-setting"
                                 id="site-setting-btn" title="목록 편집">⚙️</button>
                         </h3>
-                        <input type="text" id="site-search" class="search-input-mini" placeholder="검색" autocomplete="off">
+                        <input type="text" id="site-search" class="search-input-mini" placeholder="검색"
+                            autocomplete="off">
                     </div>
                     <div class="input-with-btn">
                         <input type="text" id="site-input" placeholder="사업장 추가">
@@ -60,7 +61,8 @@
                         <h3>중분류: 장비목록 <span id="equip-count" class="count-badge">0</span> <button
                                 class="btn-list-setting" id="equip-setting-btn" title="목록 편집">⚙️</button>
                         </h3>
-                        <input type="text" id="equip-search" class="search-input-mini" placeholder="검색" autocomplete="off" readonly onfocus="this.removeAttribute('readonly');">
+                        <input type="text" id="equip-search" class="search-input-mini" placeholder="검색"
+                            autocomplete="off" readonly onfocus="this.removeAttribute('readonly');">
                     </div>
                     <div class="sidebar-input-group">
                         <input type="text" id="equip-input" placeholder="장비 명" disabled>
@@ -92,7 +94,8 @@
 
             <div class="detail-content" style="display: none;">
                 <div class="breadcrumb-header">
-                    <header class="breadcrumb" id="current-path" style="margin-bottom: 0;">📍 사업장 > 장비명 > Serial No.</header>
+                    <header class="breadcrumb" id="current-path" style="margin-bottom: 0;">📍 사업장 > 장비명 > Serial No.
+                    </header>
                     <button class="btn-gray btn-header-setting" onclick="openMaintEquipModal()">장비 정보 설정</button>
                 </div>
 
@@ -101,10 +104,14 @@
                         <section class="card" id="maint-window">
                             <div class="card-header">
                                 <h3>유지관리 물품
-                                    <button id="btn-special-note" class="btn-list-setting" title="특이사항 입력" style="font-size: 14px; margin-left: 8px;">📝</button>
-                                    <button id="btn-maint-settings" class="btn-list-setting" title="관리 모드 (순서 변경/삭제)" style="font-size: 14px;">⚙️</button>
+                                    <button id="btn-special-note" class="btn-list-setting" title="특이사항 입력"
+                                        style="font-size: 14px; margin-left: 8px;">📝</button>
+                                    <button id="btn-maint-settings" class="btn-list-setting" title="관리 모드 (순서 변경/삭제)"
+                                        style="font-size: 14px;">⚙️</button>
                                 </h3>
-                                <button class="btn-gray" id="btn-load-maint-list" style="display: none; padding: 2px 10px; font-size: 12px; margin-left: auto; margin-right: 5px;">리스트 불러오기</button>
+                                <button class="btn-gray" id="btn-load-maint-list"
+                                    style="display: none; padding: 2px 10px; font-size: 12px; margin-left: auto; margin-right: 5px;">리스트
+                                    불러오기</button>
                                 <span class="badge pm" id="maint-count">항목: 0건</span>
                             </div>
                             <div class="card-body">
@@ -115,7 +122,8 @@
                                     </div>
                                     <input type="text" id="maint-content" placeholder="유지관리 물품" class="flex-grow">
                                     <input type="date" id="maint-date">
-                                    <input type="number" id="maint-period" placeholder="주기(일)" class="maint-period-input">
+                                    <input type="number" id="maint-period" placeholder="주기(일)"
+                                        class="maint-period-input">
                                     <button class="btn-blue" id="maint-reg-btn">등록</button>
                                 </div>
                                 <div class="data-table-wrapper">
@@ -136,12 +144,27 @@
                             </div>
                         </section>
                     </div>
+                    <!-- 파일 관리 카드 -->
+                    <div class="card" style="flex: 1; min-height: 200px;">
+                        <div class="card-header">
+                            <h3>📁 관련 파일</h3>
+                            <input type="file" id="file-upload-input" style="display: none;" multiple>
+                            <button id="btn-upload-file" class="btn-blue-sm"
+                                style="padding: 4px 10px; font-size: 12px;">업로드</button>
+                        </div>
+                        <div class="card-body">
+                            <ul id="file-list" class="file-list">
+                                <li class="list-empty-msg">장비를 선택해주세요.</li>
+                            </ul>
+                        </div>
+                    </div>
 
                     <div class="bottom-grid">
                         <section class="card" id="log-window">
                             <div class="card-header">
                                 <h3>장비 점검 이력
-                                    <button id="btn-log-settings" class="btn-list-setting" title="관리 모드 (삭제)" style="font-size: 14px;">⚙️</button>
+                                    <button id="btn-log-settings" class="btn-list-setting" title="관리 모드 (삭제)"
+                                        style="font-size: 14px;">⚙️</button>
                                 </h3>
                                 <input type="text" id="log-search" placeholder="검색 (작업자, 날짜, 메모 내용)">
                             </div>
@@ -160,11 +183,13 @@
                                         <div id="log-content-dropdown" class="log-select-dropdown">
                                             <div id="log-content-list" class="log-select-list"></div>
                                             <div class="log-select-footer">
-                                                <button id="btn-log-content-add" class="btn-blue-sm" style="width: 100%;">추가</button>
+                                                <button id="btn-log-content-add" class="btn-blue-sm"
+                                                    style="width: 100%;">추가</button>
                                             </div>
                                         </div>
                                     </div>
-                                    <input type="text" id="log-content-input" class="log-content-input" placeholder="내용">
+                                    <input type="text" id="log-content-input" class="log-content-input"
+                                        placeholder="내용">
                                     <input type="text" id="log-worker" placeholder="작업자">
                                     <button class="btn-blue" id="log-reg-btn">기록</button>
                                 </div>
@@ -188,7 +213,8 @@
                                         <h4 class="memo-title">작업 내용</h4>
                                         <button class="btn-blue-sm" id="memo-save-btn">저장</button>
                                     </div>
-                                    <textarea id="device-memo" placeholder="상세 내용을 입력하세요." class="memo-textarea"></textarea>
+                                    <textarea id="device-memo" placeholder="상세 내용을 입력하세요."
+                                        class="memo-textarea"></textarea>
                                 </div>
                             </div>
                         </section>
@@ -286,14 +312,18 @@
             <div class="modal-body">
                 <div class="form-row">
                     <label class="form-label" style="width: 60px;">사업장</label>
-                    <select id="maint-load-list-site-select" class="modal-select" style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
+                    <select id="maint-load-list-site-select" class="modal-select"
+                        style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
                 </div>
                 <div class="form-row">
                     <label class="form-label" style="width: 60px;">장비</label>
-                    <select id="maint-load-list-equip-select" class="modal-select" disabled style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
+                    <select id="maint-load-list-equip-select" class="modal-select" disabled
+                        style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
                 </div>
-                <div style="margin-top: 20px; padding: 10px; background: rgba(248, 81, 73, 0.1); border: 1px solid rgba(248, 81, 73, 0.4); border-radius: 4px;">
-                    <p class="info-text-gray" style="color: #ff7b72; margin: 0; font-size: 12px; line-height: 1.4;">⚠️ <strong>주의:</strong> 불러오기 시 현재 작성된 유지관리 물품 리스트는 모두 삭제되고 선택한 장비의 리스트로 대체됩니다.</p>
+                <div
+                    style="margin-top: 20px; padding: 10px; background: rgba(248, 81, 73, 0.1); border: 1px solid rgba(248, 81, 73, 0.4); border-radius: 4px;">
+                    <p class="info-text-gray" style="color: #ff7b72; margin: 0; font-size: 12px; line-height: 1.4;">⚠️
+                        <strong>주의:</strong> 불러오기 시 현재 작성된 유지관리 물품 리스트는 모두 삭제되고 선택한 장비의 리스트로 대체됩니다.</p>
                 </div>
             </div>
             <div class="modal-footer">
@@ -313,14 +343,18 @@
             <div class="modal-body">
                 <div class="form-row">
                     <label class="form-label" style="width: 60px;">사업장</label>
-                    <select id="maint-load-info-site-select" class="modal-select" style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
+                    <select id="maint-load-info-site-select" class="modal-select"
+                        style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
                 </div>
                 <div class="form-row">
                     <label class="form-label" style="width: 60px;">장비</label>
-                    <select id="maint-load-info-equip-select" class="modal-select" disabled style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
+                    <select id="maint-load-info-equip-select" class="modal-select" disabled
+                        style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
                 </div>
-                <div style="margin-top: 20px; padding: 10px; background: rgba(31, 111, 235, 0.1); border: 1px solid rgba(31, 111, 235, 0.4); border-radius: 4px;">
-                    <p class="info-text-gray" style="color: #58a6ff; margin: 0; font-size: 12px; line-height: 1.4;">ℹ️ <strong>알림:</strong> 선택한 장비의 정보(위치, 담당자 등)를 불러와 현재 화면에 적용합니다. (저장 버튼을 눌러야 반영됩니다.)</p>
+                <div
+                    style="margin-top: 20px; padding: 10px; background: rgba(31, 111, 235, 0.1); border: 1px solid rgba(31, 111, 235, 0.4); border-radius: 4px;">
+                    <p class="info-text-gray" style="color: #58a6ff; margin: 0; font-size: 12px; line-height: 1.4;">ℹ️
+                        <strong>알림:</strong> 선택한 장비의 정보(위치, 담당자 등)를 불러와 현재 화면에 적용합니다. (저장 버튼을 눌러야 반영됩니다.)</p>
                 </div>
             </div>
             <div class="modal-footer">
@@ -336,8 +370,10 @@
             <div class="modal-header">
                 <h3>장비 정보 설정</h3>
                 <div style="display: flex; align-items: center;">
-                    <button class="btn-gray" id="btn-load-maint-info" style="padding: 2px 10px; font-size: 12px; margin-right: 5px;">정보 불러오기</button>
-                    <button class="btn-del-sm" onclick="document.getElementById('maint-equip-modal').style.display='none'">✕</button>
+                    <button class="btn-gray" id="btn-load-maint-info"
+                        style="padding: 2px 10px; font-size: 12px; margin-right: 5px;">정보 불러오기</button>
+                    <button class="btn-del-sm"
+                        onclick="document.getElementById('maint-equip-modal').style.display='none'">✕</button>
                 </div>
             </div>
             <div class="modal-body" style="overflow-y: auto;">
@@ -347,7 +383,8 @@
                 </div>
                 <div class="form-row">
                     <label class="form-label">Serial</label><input type="text" id="maint-modal-serial" disabled>
-                    <label class="form-label">관리번호</label><input type="text" id="maint-modal-custEquipName" placeholder="고객사 장비명">
+                    <label class="form-label">관리번호</label><input type="text" id="maint-modal-custEquipName"
+                        placeholder="고객사 장비명">
                 </div>
                 <hr style="border: 0; border-top: 1px solid #30363d; margin: 10px 0;">
                 <div class="form-row">
@@ -361,17 +398,20 @@
                     <label class="form-label">담당자</label><input type="text" id="maint-modal-manager">
                     <label class="form-label">연락처</label><input type="text" id="maint-modal-contact">
                 </div>
-                <div class="form-row"><label class="form-label">이메일</label><input type="text" id="maint-modal-email" class="flex-grow"></div>
+                <div class="form-row"><label class="form-label">이메일</label><input type="text" id="maint-modal-email"
+                        class="flex-grow"></div>
                 <h4 style="color: #58a6ff; margin: 15px 0 5px;">고객사 정보</h4>
                 <div class="form-row">
                     <label class="form-label">담당자</label><input type="text" id="maint-modal-custManager">
                     <label class="form-label">연락처</label><input type="text" id="maint-modal-custContact">
                 </div>
-                <div class="form-row"><label class="form-label">이메일</label><input type="text" id="maint-modal-custEmail" class="flex-grow"></div>
+                <div class="form-row"><label class="form-label">이메일</label><input type="text" id="maint-modal-custEmail"
+                        class="flex-grow"></div>
             </div>
             <div class="modal-footer">
                 <button class="btn-blue" onclick="saveMaintEquipModal()">저장</button>
-                <button class="btn-gray" onclick="document.getElementById('maint-equip-modal').style.display='none'">닫기</button>
+                <button class="btn-gray"
+                    onclick="document.getElementById('maint-equip-modal').style.display='none'">닫기</button>
             </div>
         </div>
     </div>
@@ -384,7 +424,8 @@
                 <button class="btn-del-sm" id="btn-close-special-note">✕</button>
             </div>
             <div class="modal-body">
-                <textarea id="special-note-textarea" spellcheck="false" placeholder="장비에 대한 특이사항을 입력하세요..." style="flex: 1; resize: none; margin-bottom: 10px; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 10px; border-radius: 4px;"></textarea>
+                <textarea id="special-note-textarea" spellcheck="false" placeholder="장비에 대한 특이사항을 입력하세요..."
+                    style="flex: 1; resize: none; margin-bottom: 10px; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 10px; border-radius: 4px;"></textarea>
                 <div class="modal-btn-group-right">
                     <button class="btn-blue" id="btn-save-special-note">저장</button>
                 </div>

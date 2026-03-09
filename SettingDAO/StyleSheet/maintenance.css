@@ -434,3 +434,47 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .text-blue { color: #58a6ff; }
 .text-red { color: #f85149; cursor: pointer; }
 .text-orange { color: #d29922; font-weight: bold; }
+
+/* [추가] 파일 리스트 스타일 */
+.file-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    border-bottom: 1px solid #30363d;
+    font-size: 13px;
+    color: #e6edf3;
+}
+
+.file-item:hover {
+    background-color: #21262d;
+}
+
+.file-name {
+    flex: 1;
+    color: #58a6ff;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: 10px;
+}
+
+.file-name:hover {
+    text-decoration: underline;
+}
+
+.file-info {
+    color: #8b949e;
+    font-size: 11px;
+    margin-right: 10px;
+    flex-shrink: 0;
+}
