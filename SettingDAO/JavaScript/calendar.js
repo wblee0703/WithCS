@@ -748,7 +748,7 @@ function toggleDetailContentEdit() {
             }
         } else {
             // 그 외 타입은 텍스트 입력
-            contentInput.value = currentContent;
+            contentInput.value = item.content || '';
             contentDiv.style.display = 'none';
             contentInput.style.display = 'block';
             contentInput.focus();
