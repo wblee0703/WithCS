@@ -34,5 +34,11 @@
         "action": "LOAD_MAINT_LIST",
         "target": "WAD-10::AD10-EK24-0202",
         "details": "From: SKH 이천 > SOMA-2000::SOMA-H19-0402"
+    },
+    {
+        "timestamp": "2026-03-10T06:05:13.641Z",
+        "action": "UPDATE_MAINTENANCE",
+        "target": "WAD-10::AD10-EK24-0202",
+        "details": "수정: Standard Solution (날짜: 2026-03-10, 주기: 30)"
     }
 ]
