@@ -1,1 +1,20 @@
-[]
+[
+    {
+        "timestamp": "2026-03-10T06:01:09.998Z",
+        "action": "ADD_SCHEDULE",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "Date: 2026-04-01, Content: Standard Solution"
+    },
+    {
+        "timestamp": "2026-03-10T06:01:10.003Z",
+        "action": "ADD_SCHEDULE",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "Date: 2026-04-01, Content: Sampling & Skimmer Cone"
+    },
+    {
+        "timestamp": "2026-03-10T06:01:10.009Z",
+        "action": "ADD_SCHEDULE",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "Date: 2026-04-01, Content: Ion Lens"
+    }
+]
