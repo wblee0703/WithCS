@@ -305,7 +305,6 @@
                 "date": "2026-03-04",
                 "id": 1769490112046,
                 "period": 30,
-                "scheduledDate": "2026-04-01",
                 "type": "PM"
             },
             {
@@ -313,6 +312,7 @@
                 "date": "2026-02-05",
                 "id": 1769492197520,
                 "period": 180,
+                "scheduledDate": "",
                 "type": "PM"
             },
             {
@@ -320,6 +320,7 @@
                 "date": "2026-02-05",
                 "id": 1769494883305,
                 "period": 365,
+                "scheduledDate": "",
                 "type": "PM"
             }
         ],
@@ -406,32 +407,7 @@
     },
     "details_LGD 구미_OMS-100L::OMS1-LK22-0104": {
         "logs": [],
-        "maint": [
-            {
-                "content": "Standard Solution",
-                "date": "2026-03-10",
-                "id": 1773110879781,
-                "period": 30,
-                "scheduledDate": "",
-                "type": "PM"
-            },
-            {
-                "content": "Sampling & Skimmer Cone",
-                "date": "2026-03-10",
-                "id": 1773110879782,
-                "period": 180,
-                "scheduledDate": "",
-                "type": "PM"
-            },
-            {
-                "content": "Ion Lens",
-                "date": "2026-03-10",
-                "id": 1773110879783,
-                "period": 365,
-                "scheduledDate": "",
-                "type": "PM"
-            }
-        ],
+        "maint": [],
         "memo": "",
         "setup": {
             "model": "OMS1-LK22-0104"
@@ -509,16 +485,7 @@
                 "worker": "이원배"
             }
         ],
-        "maint": [
-            {
-                "content": "ff",
-                "date": "",
-                "id": 1773105096775,
-                "period": null,
-                "scheduledDate": "2026-03-11",
-                "type": "장비점검"
-            }
-        ]
+        "maint": []
     },
     "details_NES 여수_SOMA-3000E::SOMA-EK23-0401": {
         "logs": [],

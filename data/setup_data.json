@@ -139,12 +139,12 @@
         "setupDetails": [
             {
                 "category": "장비 반입 및 정위치",
-                "completed": false,
+                "completed": true,
                 "content": "장비 도면 부착",
-                "date": "",
+                "date": "2026-03-04",
                 "delayReason": "",
                 "estDays": "1",
-                "execStartDate": "",
+                "execStartDate": "2026-03-04",
                 "id": 1771574685086,
                 "startDate": "2026-03-04"
             },
@@ -269,18 +269,28 @@
                 "id": 1771574685097,
                 "startDate": "2026-04-10"
             }
+        ],
+        "setupLogs": [
+            {
+                "company": "위드텍",
+                "content": "장비 도면 부착",
+                "date": "2026-03-04",
+                "id": 1773108835527,
+                "memo": "",
+                "worker": "admin"
+            }
         ]
     },
     "LGD 구미::OMS-100L::OMS1-LK22-0104": {
         "setupDetails": [
             {
                 "category": "장비 반입 및 정위치",
-                "completed": false,
+                "completed": true,
                 "content": "장비 도면 부착",
-                "date": "",
+                "date": "2026-03-11",
                 "delayReason": "",
                 "estDays": "1",
-                "execStartDate": "",
+                "execStartDate": "2026-03-11",
                 "id": 1772517271628,
                 "startDate": "2026-03-11"
             },
@@ -291,7 +301,7 @@
                 "date": "",
                 "delayReason": "",
                 "estDays": "1",
-                "execStartDate": "",
+                "execStartDate": "2026-03-12",
                 "id": 1772517271629,
                 "startDate": "2026-03-12"
             },
@@ -404,6 +414,16 @@
                 "execStartDate": "",
                 "id": 1772517271639,
                 "startDate": "2026-04-17"
+            }
+        ],
+        "setupLogs": [
+            {
+                "company": "위드텍",
+                "content": "장비 도면 부착",
+                "date": "2026-03-11",
+                "id": 1773109880712,
+                "memo": "",
+                "worker": "admin"
             }
         ]
     },
@@ -946,23 +966,23 @@
             },
             {
                 "category": "장비 반입 및 정위치",
-                "completed": true,
+                "completed": false,
                 "content": "다이크 설치",
-                "date": "2026-05-01",
+                "date": "",
                 "delayReason": "",
                 "estDays": "1",
-                "execStartDate": "2026-05-01",
+                "execStartDate": "",
                 "id": 1770881657887,
                 "startDate": "2026-05-01"
             },
             {
                 "category": "장비 반입 및 정위치",
-                "completed": true,
+                "completed": false,
                 "content": "장비 반입",
-                "date": "2026-05-06",
-                "delayReason": "fdsafdsa",
+                "date": "",
+                "delayReason": "",
                 "estDays": "1",
-                "execStartDate": "2026-05-04",
+                "execStartDate": "",
                 "id": 1770881657888,
                 "startDate": "2026-05-04"
             },
@@ -975,7 +995,7 @@
                 "estDays": "2",
                 "execStartDate": "",
                 "id": 1770881657889,
-                "startDate": "2026-05-05"
+                "startDate": "2026-05-06"
             },
             {
                 "category": "통신 상태 및 유틸리티",
@@ -986,7 +1006,7 @@
                 "estDays": "1",
                 "execStartDate": "",
                 "id": 1770881657890,
-                "startDate": "2026-05-07"
+                "startDate": "2026-05-08"
             },
             {
                 "category": "통신 상태 및 유틸리티",
@@ -997,7 +1017,7 @@
                 "estDays": "2",
                 "execStartDate": "",
                 "id": 1770881657891,
-                "startDate": "2026-05-08"
+                "startDate": "2026-05-11"
             },
             {
                 "category": "통신 상태 및 유틸리티",
@@ -1008,7 +1028,7 @@
                 "estDays": "3",
                 "execStartDate": "",
                 "id": 1770881657892,
-                "startDate": "2026-05-12"
+                "startDate": "2026-05-13"
             },
             {
                 "category": "통신 상태 및 유틸리티",
@@ -1019,7 +1039,7 @@
                 "estDays": "3",
                 "execStartDate": "",
                 "id": 1770883362373,
-                "startDate": "2026-05-15"
+                "startDate": "2026-05-18"
             },
             {
                 "category": "통신 상태 및 유틸리티",
@@ -1030,7 +1050,7 @@
                 "estDays": "1",
                 "execStartDate": "",
                 "id": 1770883362630,
-                "startDate": "2026-05-20"
+                "startDate": "2026-05-21"
             },
             {
                 "category": "통신 상태 및 유틸리티",
@@ -1041,7 +1061,7 @@
                 "estDays": "2",
                 "execStartDate": "",
                 "id": 1770883362966,
-                "startDate": "2026-05-21"
+                "startDate": "2026-05-22"
             },
             {
                 "category": "통신 상태 및 유틸리티",
@@ -1052,7 +1072,7 @@
                 "estDays": "2",
                 "execStartDate": "",
                 "id": 1770883363174,
-                "startDate": "2026-05-26"
+                "startDate": "2026-05-27"
             },
             {
                 "category": "통신 상태 및 유틸리티",
@@ -1063,7 +1083,7 @@
                 "estDays": "10",
                 "execStartDate": "",
                 "id": 1770883363334,
-                "startDate": "2026-05-28"
+                "startDate": "2026-05-29"
             },
             {
                 "category": "통신 상태 및 유틸리티",
@@ -1074,7 +1094,7 @@
                 "estDays": "1",
                 "execStartDate": "",
                 "id": 1770883363492,
-                "startDate": "2026-06-12"
+                "startDate": "2026-06-15"
             },
             {
                 "category": "셋업 평가",
@@ -1085,7 +1105,7 @@
                 "estDays": "5",
                 "execStartDate": "",
                 "id": 1770881657893,
-                "startDate": "2026-06-15"
+                "startDate": "2026-06-16"
             },
             {
                 "category": "셋업 평가",
@@ -1096,7 +1116,7 @@
                 "estDays": "2",
                 "execStartDate": "",
                 "id": 1770881657894,
-                "startDate": "2026-06-22"
+                "startDate": "2026-06-23"
             },
             {
                 "category": "셋업 평가",
@@ -1107,7 +1127,7 @@
                 "estDays": "2",
                 "execStartDate": "",
                 "id": 1770881657895,
-                "startDate": "2026-06-24"
+                "startDate": "2026-06-25"
             },
             {
                 "category": "셋업 평가",
@@ -1118,7 +1138,7 @@
                 "estDays": "5",
                 "execStartDate": "",
                 "id": 1770881657896,
-                "startDate": "2026-06-26"
+                "startDate": "2026-06-29"
             },
             {
                 "category": "셋업 완료",
@@ -1129,7 +1149,7 @@
                 "estDays": "0",
                 "execStartDate": "",
                 "id": 1770881657897,
-                "startDate": "2026-07-03"
+                "startDate": "2026-07-06"
             }
         ],
         "setupLogs": [
@@ -1139,22 +1159,6 @@
                 "date": "2026-04-30",
                 "id": 1772158418244,
                 "memo": "",
-                "worker": "admin"
-            },
-            {
-                "company": "위드텍",
-                "content": "다이크 설치",
-                "date": "2026-05-01",
-                "id": 1773122566298,
-                "memo": "",
-                "worker": "admin"
-            },
-            {
-                "company": "위드텍",
-                "content": "[지연] 장비 반입",
-                "date": "2026-05-06",
-                "id": 1773122582968,
-                "memo": "[지연 사유]\nfdsafdsa",
                 "worker": "admin"
             }
         ]

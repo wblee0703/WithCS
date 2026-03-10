@@ -1,38 +1,20 @@
 [
     {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::R24-01-01-C",
-        "timestamp": "2026-03-10T06:03:23.784Z"
+        "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-11",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "timestamp": "2026-03-10T02:31:18.685Z"
     },
     {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "WIM-100::R24-01-01-C",
-        "timestamp": "2026-03-10T06:03:23.789Z"
+        "action": "UPDATE_SETUP_COMPLETION",
+        "details": "작업 완료 등록 (ID: 1772517271628)",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "timestamp": "2026-03-10T02:31:20.713Z"
     },
     {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (역방향)",
-        "target": "WIM-100::R24-01-01-C",
-        "timestamp": "2026-03-10T06:03:23.791Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::R24-01-01-C",
-        "timestamp": "2026-03-10T06:03:27.919Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "WIM-100::R24-01-01-C",
-        "timestamp": "2026-03-10T06:03:29.419Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (역방향)",
-        "target": "WIM-100::R24-01-01-C",
-        "timestamp": "2026-03-10T06:03:29.424Z"
+        "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-12",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "timestamp": "2026-03-10T02:31:29.153Z"
     }
 ]

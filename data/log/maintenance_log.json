@@ -1,44 +1,8 @@
 [
     {
-        "action": "ADD_SCHEDULE",
-        "details": "Date: 2026-04-01, Content: Standard Solution",
-        "target": "SOMA-2000::SOMA-H19-0402",
-        "timestamp": "2026-03-10T06:01:09.998Z"
-    },
-    {
-        "action": "ADD_SCHEDULE",
-        "details": "Date: 2026-04-01, Content: Sampling & Skimmer Cone",
-        "target": "SOMA-2000::SOMA-H19-0402",
-        "timestamp": "2026-03-10T06:01:10.003Z"
-    },
-    {
-        "action": "ADD_SCHEDULE",
-        "details": "Date: 2026-04-01, Content: Ion Lens",
-        "target": "SOMA-2000::SOMA-H19-0402",
-        "timestamp": "2026-03-10T06:01:10.009Z"
-    },
-    {
         "action": "DELETE_SCHEDULE",
-        "details": "Date: , Content: Standard Solution",
-        "target": "SOMA-2000::SOMA-H19-0402",
-        "timestamp": "2026-03-10T06:01:34.376Z"
-    },
-    {
-        "action": "ADD_SCHEDULE",
-        "details": "Date: 2026-04-01, Content: Standard Solution",
-        "target": "SOMA-2000::SOMA-H19-0402",
-        "timestamp": "2026-03-10T06:02:22.212Z"
-    },
-    {
-        "timestamp": "2026-03-10T06:05:06.476Z",
-        "action": "LOAD_MAINT_LIST",
-        "target": "WAD-10::AD10-EK24-0202",
-        "details": "From: SKH 이천 > SOMA-2000::SOMA-H19-0402"
-    },
-    {
-        "timestamp": "2026-03-10T06:05:13.641Z",
-        "action": "UPDATE_MAINTENANCE",
-        "target": "WAD-10::AD10-EK24-0202",
-        "details": "수정: Standard Solution (날짜: 2026-03-10, 주기: 30)"
+        "details": "Date: , Content: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-10T02:30:59.257Z"
     }
 ]
