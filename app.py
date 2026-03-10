@@ -435,6 +435,13 @@ def save_data(full_data):
 # ------------------------------------------------------------------------------
 # 5. Decorators & Middlewares
 # ------------------------------------------------------------------------------
+# [추가] 템플릿 전역에서 모바일 접속 여부(is_mobile)를 사용할 수 있도록 설정
+@app.context_processor
+def inject_mobile_info():
+    user_agent = request.headers.get('User-Agent', '').lower()
+    is_mobile = 'mobile' in user_agent or 'android' in user_agent or 'iphone' in user_agent
+    return dict(is_mobile=is_mobile)
+
 def login_required(f):
     """로그인 여부를 확인하는 데코레이터"""
     @wraps(f)

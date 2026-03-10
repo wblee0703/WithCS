@@ -1,8 +1,8 @@
 [
     {
-        "timestamp": "2026-03-10T02:47:59.781Z",
         "action": "LOAD_MAINT_LIST",
+        "details": "From: SKH 이천 > SOMA-2000::SOMA-H19-0402",
         "target": "OMS-100L::OMS1-LK22-0104",
-        "details": "From: SKH 이천 > SOMA-2000::SOMA-H19-0402"
+        "timestamp": "2026-03-10T02:47:59.781Z"
     }
 ]

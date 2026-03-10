@@ -388,3 +388,49 @@
     width: 2px;
     background-color: var(--gantt-blue-light);
 }
+
+/* ==========================================================
+   모바일 반응형 스타일 (Mobile Responsive Styles)
+   ========================================================== */
+
+/* 화면 너비가 768px 이하일 때 적용됩니다. */
+@media (max-width: 768px) {
+
+    /* 전체적인 여백 줄이기 */
+    body, .main-container {
+        padding: 8px;
+    }
+
+    /* 카드(섹션) 스타일을 화면 너비에 꽉 차게 조정 */
+    .card {
+        width: 100%;
+        margin: 10px 0;
+        padding: 12px;
+    }
+
+    /* 테이블이 화면을 넘어갈 경우 가로 스크롤 생성 */
+    /* 사용법: <div class="table-wrapper"><table>...</table></div> */
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch; /* iOS에서 부드러운 스크롤 효과 */
+        border: 1px solid #30363d;
+        border-radius: 6px;
+    }
+
+    table {
+        width: 100%;
+        min-width: 650px; /* 테이블 내용이 뭉개지지 않도록 최소 너비 지정 */
+        font-size: 13px; /* 모바일에서 글자 크기 살짝 줄이기 */
+    }
+    
+    th, td {
+        padding: 6px 8px; /* 셀 내부 여백 조정 */
+    }
+
+    /* 모달 창을 화면에 맞게 조정 */
+    .modal-content {
+        width: 95vw; /* 화면 너비의 95% */
+        max-width: 100%;
+        height: 85vh; /* 화면 높이의 85% */
+    }
+}
