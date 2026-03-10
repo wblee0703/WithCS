@@ -942,7 +942,14 @@ body {
     #equip-detail-container,
     #setup-equip-detail-container {
         height: 180px;
+        flex: none; /* [수정] 부모 flex 컨테이너에서 늘어나지 않도록 고정 */
         overflow-y: auto;
+    }
+
+    /* [요청] 장비 정보 리스트 글자 크기 축소 */
+    #equip-detail-list .status-list-item,
+    #setup-equip-detail-list .status-list-item {
+        font-size: 12px;
     }
 
     .section-title, .gantt__subtitle, .calendar-main-title {
