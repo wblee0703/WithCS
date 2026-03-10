@@ -915,6 +915,12 @@ body {
         height: auto !important; /* 데스크탑의 고정 높이(330px) 무시 */
     }
 
+    /* [요청] 예정 작업 카드 크기 고정 및 스크롤 */
+    .upcoming-container {
+        height: 250px; /* 고정 높이 설정 */
+        flex: none; /* flex-grow/shrink 방지 */
+    }
+
     /* [요청] 모바일에서 간트 차트 숨김 (검색/이동은 유지) */
     #gantt-chart-area {
         display: none;
