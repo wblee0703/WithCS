@@ -85,6 +85,7 @@ body {
     color: #8b949e;
     font-size: 14px;
     font-weight: bold;
+    cursor: pointer;
 }
 
 /* ==========================================================================
@@ -799,6 +800,11 @@ body.role-user select {
         gap: 10px;
     }
 
+    /* [요청] 모바일 헤더에서 로그인/설정 버튼 숨기기 */
+    .header .user-controls > button {
+        display: none;
+    }
+
     /* 햄버거 메뉴 버튼 */
     .hamburger-menu {
         display: flex;
@@ -897,6 +903,7 @@ body.role-user select {
         width: 100%;
         padding: 12px;
         font-size: 16px;
+        display: none; /* [요청] 모바일 메뉴에서 버튼 숨김 */
     }
     .mobile-user-controls .user-info {
         color: #8b949e;
