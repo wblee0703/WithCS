@@ -497,16 +497,3 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
     font-size: 14px;
 }
-
-/* [추가] 엑셀 편집 테이블 스타일 */
-#excel-edit-container table {
-    border-collapse: collapse;
-    width: 100%;
-    font-size: 13px;
-}
-
-#excel-edit-container td, #excel-edit-container th {
-    border: 1px solid #ccc;
-    padding: 4px 8px;
-    min-width: 50px;
-}

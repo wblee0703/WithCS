@@ -1361,12 +1361,6 @@ function isTextFile(filename) {
     return ['txt', 'csv', 'log', 'json', 'xml', 'md', 'html', 'css', 'js', 'py', 'bat', 'sh', 'ini', 'conf', 'properties'].includes(ext);
 }
 
-function isExcelFile(filename) {
-    if (!filename) return false;
-    const ext = filename.split('.').pop().toLowerCase();
-    return ['xlsx', 'xls'].includes(ext);
-}
-
 function renderFiles() {
     const listEl = document.getElementById('file-list');
     if (!listEl) return;
@@ -1389,7 +1383,7 @@ function renderFiles() {
 
     files.forEach(file => {
         // [추가] 텍스트 파일 여부 확인
-        const isEditable = isTextFile(file.name) || isExcelFile(file.name);
+        const isEditable = isTextFile(file.name);
         const li = document.createElement('li');
         li.className = 'file-item';
         li.innerHTML = `
@@ -1436,7 +1430,6 @@ window.deleteFile = function(id) {
    [추가] 파일 편집 기능 (File Editing)
    ========================================================================== */
 let currentEditingFileId = null;
-let currentEditingFileType = null; // 'text' or 'excel'
 
 window.editFile = function(id) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
@@ -1458,27 +1451,8 @@ window.editFile = function(id) {
         document.getElementById('file-edit-title').textContent = `파일 편집: ${file.name}`;
         
         const textEditor = document.getElementById('file-edit-content');
-        const excelEditor = document.getElementById('excel-edit-container');
+        textEditor.value = text;
 
-        if (isExcelFile(file.name)) {
-            if (typeof XLSX === 'undefined') return alert('엑셀 라이브러리가 로드되지 않았습니다.');
-            
-            currentEditingFileType = 'excel';
-            textEditor.style.display = 'none';
-            excelEditor.style.display = 'block';
-            
-            const wb = XLSX.read(binaryString, {type: 'binary'});
-            const wsName = wb.SheetNames[0]; // 첫 번째 시트만 편집
-            const ws = wb.Sheets[wsName];
-            const html = XLSX.utils.sheet_to_html(ws, { editable: true, id: 'excel-table' });
-            excelEditor.innerHTML = html;
-        } else {
-            currentEditingFileType = 'text';
-            excelEditor.style.display = 'none';
-            textEditor.style.display = 'block';
-            textEditor.value = text;
-        }
-        
         currentEditingFileId = id;
 
         document.getElementById('file-edit-modal').style.display = 'flex';
@@ -1498,28 +1472,15 @@ window.saveFileContent = function() {
         const fileIdx = data.files.findIndex(f => f.id === currentEditingFileId);
         if (fileIdx > -1) {
             try {
-                let base64 = '';
-                let size = 0;
-
-                if (currentEditingFileType === 'excel') {
-                    const table = document.getElementById('excel-table');
-                    const wb = XLSX.utils.table_to_book(table, {sheet: "Sheet1"});
-                    const wbout = XLSX.write(wb, {bookType: 'xlsx', type: 'binary'});
-                    
-                    // Binary String -> Base64
-                    base64 = window.btoa(wbout);
-                    size = wbout.length; // 대략적인 사이즈
-                } else {
-                    const content = document.getElementById('file-edit-content').value;
-                    // 텍스트 -> Base64 인코딩 (한글 처리 포함)
-                    const bytes = new TextEncoder().encode(content);
-                    let binaryString = '';
-                    for (let i = 0; i < bytes.byteLength; i++) {
-                        binaryString += String.fromCharCode(bytes[i]);
-                    }
-                    base64 = window.btoa(binaryString);
-                    size = bytes.byteLength;
+                const content = document.getElementById('file-edit-content').value;
+                // 텍스트 -> Base64 인코딩 (한글 처리 포함)
+                const bytes = new TextEncoder().encode(content);
+                let binaryString = '';
+                for (let i = 0; i < bytes.byteLength; i++) {
+                    binaryString += String.fromCharCode(bytes[i]);
                 }
+                const base64 = window.btoa(binaryString);
+                const size = bytes.byteLength;
                 
                 // 기존 MIME 타입 유지
                 const originalHeader = data.files[fileIdx].content.split(',')[0];
