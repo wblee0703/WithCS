@@ -16,5 +16,11 @@
         "action": "ADD_SCHEDULE",
         "target": "SOMA-2000::SOMA-H19-0402",
         "details": "Date: 2026-04-01, Content: Ion Lens"
+    },
+    {
+        "timestamp": "2026-03-10T06:01:34.376Z",
+        "action": "DELETE_SCHEDULE",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "Date: , Content: Standard Solution"
     }
 ]
