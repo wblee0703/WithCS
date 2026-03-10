@@ -926,13 +926,9 @@ body {
         display: none;
     }
 
+    /* [요청] 모바일에서 현황 도넛 차트 숨김 */
     .donut-chart-wrapper {
-        width: 180px;
-        height: 180px;
-    }
-    .chart-center {
-        width: 120px;
-        height: 120px;
+        display: none;
     }
 
     .status-list-container {
@@ -964,15 +960,15 @@ body {
     }
     /* [요청] 캘린더 검색창 위치 조정 */
     .calendar-center-title {
-        display: contents; /* 자식 요소를 부모의 자식처럼 취급하여 순서 재배치 */
+        display: contents !important; /* 자식 요소를 부모의 자식처럼 취급하여 순서 재배치 */
     }
     .calendar-title-wrapper .calendar-main-title { order: 1; }
-    .calendar-title-wrapper div[style*="text-align: right"] { order: 2; margin-top: 0; } /* 운영 관리 이동 버튼 */
+    .calendar-title-wrapper div[style*="text-align: right"] { order: 2; margin-top: 0; width: 100%; text-align: center !important; } /* 운영 관리 이동 버튼 */
     .calendar-title-wrapper .calendar-right-toolbar { order: 3; width: 100%; } /* 검색 기능 */
     .calendar-title-wrapper #calendar-target-info { order: 4; }
     .calendar-right-toolbar, .gantt__right-toolbar {
-        position: static;
-        transform: none;
+        position: static !important;
+        transform: none !important;
         justify-content: center;
     }
 }
