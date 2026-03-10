@@ -946,6 +946,12 @@ body {
         overflow-y: auto;
     }
 
+    /* [요청] 장비 정보 리스트 글자 크기 축소 */
+    #equip-detail-list .status-list-item,
+    #setup-equip-detail-list .status-list-item {
+        font-size: 12px;
+    }
+
     .section-title, .gantt__subtitle, .calendar-main-title {
         font-size: 18px;
     }

@@ -504,4 +504,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #integ-setup-detail-list .status-count {
         font-size: 11px;
     }
+
+    /* [요청] 모바일 점검 항목 리스트 스타일 조정 */
+    #integ-maint-item-list-container {
+        width: 100%;
+    }
+    .integ-list-header-type,
+    .integ-list-col-type {
+        margin-right: 10px;
+        width: 60px;
+    }
+    .integ-list-header-name,
+    .integ-list-col-name {
+        width: auto;
+    }
 }
