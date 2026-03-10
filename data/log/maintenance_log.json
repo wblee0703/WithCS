@@ -1,1 +1,8 @@
-[]
+[
+    {
+        "timestamp": "2026-03-10T02:30:59.257Z",
+        "action": "DELETE_SCHEDULE",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "details": "Date: , Content: ff"
+    }
+]

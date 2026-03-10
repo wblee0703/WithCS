@@ -485,16 +485,7 @@
                 "worker": "이원배"
             }
         ],
-        "maint": [
-            {
-                "content": "ff",
-                "date": "",
-                "id": 1773105096775,
-                "period": null,
-                "scheduledDate": "2026-03-11",
-                "type": "장비점검"
-            }
-        ]
+        "maint": []
     },
     "details_NES 여수_SOMA-3000E::SOMA-EK23-0401": {
         "logs": [],
