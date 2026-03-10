@@ -4,5 +4,11 @@
         "details": "From: SKH 이천 > SOMA-2000::SOMA-H19-0402",
         "target": "OMS-100L::OMS1-LK22-0104",
         "timestamp": "2026-03-10T02:47:59.781Z"
+    },
+    {
+        "timestamp": "2026-03-10T09:31:35.368Z",
+        "action": "DELETE_SCHEDULE",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "details": "Date: , Content: ff"
     }
 ]
