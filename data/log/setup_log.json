@@ -1,1 +1,8 @@
-[]
+[
+    {
+        "timestamp": "2026-03-10T02:31:18.685Z",
+        "action": "START_SETUP_EXEC",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "details": "실행 시작일 설정: 2026-03-11"
+    }
+]
