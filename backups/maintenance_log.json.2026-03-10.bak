@@ -1,0 +1,422 @@
+[
+    {
+        "action": "DELETE_SCHEDULE",
+        "details": "Date: , Content: 9.5%HNO3",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-02-25T02:47:58.146Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-05, Content: 9.5%HNO3",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-02-25T02:48:03.609Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-05, Content: 9.5%HNO3",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-02-25T02:50:53.941Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-05, Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-02-26T00:37:02.581Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-04, Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-02-26T00:37:04.960Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-05, Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-02-26T00:37:17.593Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-04, Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-02-26T00:37:21.866Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-05, Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-02-26T00:37:36.103Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-04, Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-02-26T00:37:41.470Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-05, Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-02-26T00:37:52.635Z"
+    },
+    {
+        "action": "ADD_MAINTENANCE",
+        "details": "Type: BM, Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-02-26T01:43:54.427Z"
+    },
+    {
+        "action": "ADD_LOG",
+        "details": "Date: 2026-02-26, Worker: 이원배",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-02-26T01:44:04.614Z"
+    },
+    {
+        "action": "ADD_LOG",
+        "details": "Date: 2026-02-26, Worker: 이원배",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-02-26T01:47:27.839Z"
+    },
+    {
+        "action": "DELETE_LOG",
+        "details": "ID: 1772070244614",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-02-26T01:52:52.202Z"
+    },
+    {
+        "action": "DELETE_LOG",
+        "details": "ID: 1772070447839",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-02-26T01:52:53.314Z"
+    },
+    {
+        "action": "ADD_SCHEDULE_TROUBLE",
+        "details": "Date: 2026-02-12, Count: 3",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-02-26T02:15:36.083Z"
+    },
+    {
+        "action": "DELETE_SCHEDULE",
+        "details": "Date: , Content: 데이터이슈",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-02-26T02:31:14.834Z"
+    },
+    {
+        "action": "DELETE_SCHEDULE",
+        "details": "Date: , Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-02-26T02:31:14.834Z"
+    },
+    {
+        "action": "DELETE_SCHEDULE",
+        "details": "Date: , Content: Sampling & Skimmer Cone",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-02-26T02:31:14.834Z"
+    },
+    {
+        "action": "DELETE_MAINTENANCE",
+        "details": "ID: 1772070234427",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-02-26T02:31:33.687Z"
+    },
+    {
+        "action": "ADD_SCHEDULE_TROUBLE",
+        "details": "Date: 2026-02-26, Count: 3",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-02-26T02:31:46.742Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: 데이터이슈",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-02-26T02:32:03.356Z"
+    },
+    {
+        "action": "DELETE_LOG",
+        "details": "ID: 1772073123356",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-02-27T00:28:29.287Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-04, Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-03T22:57:14.294Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-04, Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-03-03T22:57:16.598Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-06T02:10:16.482Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-03-06T02:10:29.158Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "timestamp": "2026-03-06T02:10:56.596Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: Standard Solution",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-06T02:11:04.801Z"
+    },
+    {
+        "action": "DELETE_LOG",
+        "details": "ID: 1772763016482",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-06T02:18:52.320Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-04, Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-06T02:19:12.883Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-06T02:19:57.856Z"
+    },
+    {
+        "action": "UPDATE_MAINTENANCE",
+        "details": "ID: 1769490121876, Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-03-06T02:20:18.180Z"
+    },
+    {
+        "action": "UPDATE_MAINTENANCE",
+        "details": "ID: 1769490103387, Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "timestamp": "2026-03-06T02:20:29.393Z"
+    },
+    {
+        "action": "UPDATE_MAINTENANCE",
+        "details": "ID: 1769488811527, Content: Standard Solution",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-06T02:20:41.554Z"
+    },
+    {
+        "action": "UPDATE_MAINTENANCE",
+        "details": "ID: 1769757062846, Content: 9.5%HNO3",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-06T02:20:46.241Z"
+    },
+    {
+        "action": "ADD_SCHEDULE_MANUAL",
+        "details": "Type: 프로그램변경, Date: 2026-03-05, Content: Ver.",
+        "target": "SOMA-3000E::SOMA-EK25-0401",
+        "timestamp": "2026-03-06T02:51:42.909Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-06, Content: Ver.",
+        "target": "SOMA-3000E::SOMA-EK25-0401",
+        "timestamp": "2026-03-06T02:52:35.516Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: Ver.",
+        "target": "SOMA-3000E::SOMA-EK25-0401",
+        "timestamp": "2026-03-06T02:55:02.439Z"
+    },
+    {
+        "action": "UPDATE_LOG",
+        "details": "ID: 1772765702439",
+        "target": "SOMA-3000E::SOMA-EK25-0401",
+        "timestamp": "2026-03-06T02:55:22.515Z"
+    },
+    {
+        "action": "UPDATE_MEMO",
+        "details": "LogID: 1772765702439",
+        "target": "SOMA-3000E::SOMA-EK25-0401",
+        "timestamp": "2026-03-06T02:55:55.527Z"
+    },
+    {
+        "action": "ADD_SCHEDULE_MANUAL",
+        "details": "Type: 프로그램변경, Date: 2026-03-09, Content: Ver. 1.0.1.21",
+        "target": "SOMA-3000E::SOMA-EK25-0401",
+        "timestamp": "2026-03-09T23:22:03.199Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: Ver. 1.0.1.21",
+        "target": "SOMA-3000E::SOMA-EK25-0401",
+        "timestamp": "2026-03-09T23:23:43.492Z"
+    },
+    {
+        "action": "ADD_SCHEDULE_MANUAL",
+        "details": "Type: 프로그램변경, Date: 2026-03-09, Content: Ver. 1.0.1.20",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-09T23:24:07.995Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: - Ver. 1.0.1.21",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-09T23:24:35.249Z"
+    },
+    {
+        "action": "UPDATE_LOG",
+        "details": "ID: 1773098675249",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-09T23:25:01.663Z"
+    },
+    {
+        "action": "ADD_SCHEDULE_MANUAL",
+        "details": "Type: 프로그램변경, Date: 2026-03-09, Content: Ver. 1.0.1.21",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-09T23:25:21.185Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: Ver. 1.0.1.21",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-09T23:26:27.886Z"
+    },
+    {
+        "action": "ADD_SCHEDULE_MANUAL",
+        "details": "Type: 프로그램변경, Date: 2026-03-10, Content: Ver. 1.0.1.21",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-09T23:27:59.203Z"
+    },
+    {
+        "action": "DELETE_SCHEDULE",
+        "details": "Date: , Content: Ver. 1.0.1.21",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-09T23:28:12.563Z"
+    },
+    {
+        "action": "ADD_SCHEDULE_MANUAL",
+        "details": "Type: 프로그램변경, Date: 2026-03-06, Content: Ver. 1.0.1.20",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-09T23:29:07.873Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: Ver. 1.0.1.20",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-09T23:29:19.455Z"
+    },
+    {
+        "action": "ADD_SCHEDULE_MANUAL",
+        "details": "Type: 프로그램변경, Date: 2026-03-06, Content: Ver. 1.0.1.20",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-09T23:29:33.207Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: Ver. 1.0.1.20",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-09T23:29:40.173Z"
+    },
+    {
+        "action": "ADD_SCHEDULE_MANUAL",
+        "details": "Type: 프로그램변경, Date: 2026-03-10, Content: Ver. 1.0.1.20",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-09T23:39:57.183Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-04, Content: Ver. 1.0.1.20",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-09T23:40:01.031Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-04, Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-09T23:40:16.292Z"
+    },
+    {
+        "action": "ADD_SCHEDULE_MANUAL",
+        "details": "Type: 장비점검, Date: 2026-03-04, Content: 헌팅스펙 적용",
+        "target": "SOMA-3000E::SOMA-EK23-0401",
+        "timestamp": "2026-03-09T23:40:40.134Z"
+    },
+    {
+        "action": "DELETE_SCHEDULE",
+        "details": "Date: , Content: Ver. 1.0.1.20",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-09T23:41:04.118Z"
+    },
+    {
+        "action": "DELETE_SCHEDULE",
+        "details": "Date: , Content: 헌팅스펙 적용",
+        "target": "SOMA-3000E::SOMA-EK23-0401",
+        "timestamp": "2026-03-09T23:41:05.148Z"
+    },
+    {
+        "action": "DELETE_SCHEDULE",
+        "details": "Date: , Content: Standard Solution",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-09T23:41:06.067Z"
+    },
+    {
+        "action": "UPLOAD_FILE",
+        "details": "File: SKH(이천)_SOMA-HK19-0402(4OGIM01)_설비점검일지_(주)위드텍.xlsx",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-10T00:03:56.079Z"
+    },
+    {
+        "action": "UPLOAD_FILE",
+        "details": "File: SKH(이천)_SOMA-HK19-0903(4OGIM02)_설비점검일지_(주)위드텍.xlsx",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-10T00:07:20.584Z"
+    },
+    {
+        "action": "DELETE_FILE",
+        "details": "FileID: 1773101036076.3003",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-10T00:20:35.749Z"
+    },
+    {
+        "action": "DELETE_FILE",
+        "details": "FileID: 1773101240580.0872",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-10T00:20:36.483Z"
+    },
+    {
+        "action": "UPLOAD_FILE",
+        "details": "File: SKH(이천)_SOMA-HK19-0402(4OGIM01)_설비점검일지_(주)위드텍.xlsx",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-10T00:20:40.688Z"
+    },
+    {
+        "action": "UPLOAD_FILE",
+        "details": "File: PM Report.xlsx",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-10T00:30:16.782Z"
+    },
+    {
+        "action": "UPDATE_FILE",
+        "details": "FileID: 1773102616774.3652",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-10T00:30:30.473Z"
+    },
+    {
+        "action": "DELETE_FILE",
+        "details": "FileID: 1773102616774.3652",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-10T00:31:14.192Z"
+    },
+    {
+        "action": "ADD_SCHEDULE_MANUAL",
+        "details": "Type: 장비점검, Date: 2026-03-11, Content: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-10T01:11:36.775Z"
+    }
+]

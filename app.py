@@ -73,8 +73,12 @@ for d in [DATA_DIR, LOG_DIR, BACKUP_DIR]:
 FILE_SETUP = os.path.join(DATA_DIR, 'setup_data.json')
 FILE_MAINTENANCE = os.path.join(DATA_DIR, 'maintenance_data.json')
 FILE_HOME = os.path.join(DATA_DIR, 'home_data.json')
-FILE_SYSTEM_LOG = os.path.join(DATA_DIR, 'system_log.json')
 FILE_WITHTECH_DATA = os.path.join(DATA_DIR, 'withtech_data.json')
+
+# [변경] 로그 파일 경로 (logs 폴더로 이동 및 분리)
+FILE_COMMON_LOG = os.path.join(LOG_DIR, 'common_log.json')
+FILE_SETUP_LOG = os.path.join(LOG_DIR, 'setup_log.json')
+FILE_MAINTENANCE_LOG = os.path.join(LOG_DIR, 'maintenance_log.json')
 
 # 로깅 필터 설정
 class RequestInfoFilter(logging.Filter):
@@ -221,13 +225,46 @@ def git_pull_data():
 # ------------------------------------------------------------------------------
 # 4. Core Logic (Data Management)
 # ------------------------------------------------------------------------------
+# [추가] 로그 카테고리 분류 로직 (Backend)
+COMMON_ACTIONS = {'LOGIN', 'LOGOUT', 'ADD_USER', 'CHANGE_PW', 'ADD_SITE', 'DELETE_SITE', 'ADD_EQUIP', 'DELETE_EQUIP', 'RENAME_ITEM', 'BACKUP_EXPORT', 'BACKUP_IMPORT'}
+SETUP_ACTIONS = {
+    'UPDATE_SETUP', 'ADD_SETUP_ITEM', 'DELETE_SETUP_ITEM', 'UPDATE_SETUP_ITEM', 'REORDER_SETUP',
+    'UPDATE_SETUP_DETAILS', 'UPDATE_SETUP_STATUS', 'CALC_SETUP_SCHEDULE', 'START_SETUP_EXEC',
+    'UPDATE_SETUP_COMPLETION', 'ADD_SETUP_LOG', 'DELETE_SETUP_LOG', 'UPDATE_SETUP_LOG_MEMO', 'UPDATE_SETUP_LOG'
+}
+
+def get_log_category(action):
+    if action in COMMON_ACTIONS: return 'common'
+    if action in SETUP_ACTIONS: return 'setup'
+    return 'maintenance'
+
 def init_data_files():
     """데이터 파일이 없으면 초기화하고 기본 계정을 생성합니다."""
     
     # [추가] 중요 파일이 없으면 백업에서 복원 시도
-    for filepath in [FILE_HOME, FILE_SETUP, FILE_MAINTENANCE, FILE_SYSTEM_LOG, FILE_WITHTECH_DATA]:
+    for filepath in [FILE_HOME, FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH_DATA, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG]:
         if not os.path.exists(filepath):
             restore_from_backup(filepath)
+
+    # [추가] 기존 system_log.json 마이그레이션 (분할 저장)
+    old_log_path = os.path.join(DATA_DIR, 'system_log.json')
+    if os.path.exists(old_log_path):
+        if not os.path.exists(FILE_COMMON_LOG) and not os.path.exists(FILE_SETUP_LOG) and not os.path.exists(FILE_MAINTENANCE_LOG):
+            app.logger.warning("Migrating system_log.json to split log files...")
+            old_logs = load_json_file(old_log_path)
+            if isinstance(old_logs, list):
+                common, setup, maint = [], [], []
+                for log in old_logs:
+                    cat = get_log_category(log.get('action', ''))
+                    if cat == 'common': common.append(log)
+                    elif cat == 'setup': setup.append(log)
+                    else: maint.append(log)
+                save_json_file(FILE_COMMON_LOG, common)
+                save_json_file(FILE_SETUP_LOG, setup)
+                save_json_file(FILE_MAINTENANCE_LOG, maint)
+            try:
+                os.rename(old_log_path, old_log_path + '.migrated')
+            except: pass
 
     # [수정] 파일이 존재하더라도 계정 정보가 없으면(손상/삭제 등) 복구하도록 로직 개선
     home_data = load_json_file(FILE_HOME)
@@ -256,9 +293,9 @@ def init_data_files():
         save_json_file(FILE_HOME, home_data)
         app.logger.warning("User accounts initialized/restored to defaults.")
 
-    for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_SYSTEM_LOG, FILE_WITHTECH_DATA]:
+    for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH_DATA, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG]:
         if not os.path.exists(filepath):
-            save_json_file(filepath, {})
+            save_json_file(filepath, {} if 'log.json' not in filepath else [])
 
 def load_data():
     """모든 데이터 파일을 읽어 하나의 딕셔너리로 병합합니다."""
@@ -295,12 +332,17 @@ def load_data():
                 withtech_content = withtech_content['withtech_data']
             data['withtech_data'] = withtech_content
             
-        if os.path.exists(FILE_SYSTEM_LOG):
-            log_content = load_json_file(FILE_SYSTEM_LOG)
-            # [추가] 중첩된 system_logs 키가 있다면 평탄화
-            if isinstance(log_content, dict) and 'system_logs' in log_content and len(log_content) == 1:
-                log_content = log_content['system_logs']
-            data['system_logs'] = log_content
+        # [변경] 3개의 로그 파일을 읽어서 하나로 합침 (프론트엔드 호환성 유지)
+        common_logs = load_json_file(FILE_COMMON_LOG)
+        if not isinstance(common_logs, list): common_logs = []
+        
+        setup_logs = load_json_file(FILE_SETUP_LOG)
+        if not isinstance(setup_logs, list): setup_logs = []
+        
+        maint_logs = load_json_file(FILE_MAINTENANCE_LOG)
+        if not isinstance(maint_logs, list): maint_logs = []
+        
+        data['system_logs'] = common_logs + setup_logs + maint_logs
 
         return data
 
@@ -308,14 +350,13 @@ def save_data(full_data):
     """데이터를 분류하여 각 파일에 저장하고 백업 및 Git 동기화를 수행합니다."""
     with data_lock:
         # 1. 백업 수행
-        for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_HOME, FILE_SYSTEM_LOG, FILE_WITHTECH_DATA]:
+        for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_HOME, FILE_WITHTECH_DATA, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG]:
             create_daily_backup(filepath)
 
         # 2. 기존 데이터 로드 (병합 준비)
         setup_data = load_json_file(FILE_SETUP)
         maintenance_data = load_json_file(FILE_MAINTENANCE)
         home_data = load_json_file(FILE_HOME)
-        system_log_data = load_json_file(FILE_SYSTEM_LOG)
         withtech_data_storage = load_json_file(FILE_WITHTECH_DATA)
         
         # [수정] maintenance_data 및 home_data에 잘못 포함된 주요 데이터 제거 (중복/덮어쓰기 방지)
@@ -323,7 +364,6 @@ def save_data(full_data):
             if isinstance(container, dict):
                 if 'setup_data' in container: del container['setup_data']
                 if 'withtech_data' in container: del container['withtech_data']
-                if 'system_logs' in container: del container['system_logs']
                 # details_로 시작하는 키도 home_data에서 제거 (maintenance_data는 details_를 가짐)
                 if container is home_data:
                     keys_to_remove = [k for k in container.keys() if k.startswith('details_')]
@@ -331,13 +371,22 @@ def save_data(full_data):
         
         # 3. 데이터 분류 및 병합
         existing_accounts = home_data.get('user_accounts', [])
+        
+        common_logs_list = []
+        setup_logs_list = []
+        maint_logs_list = []
 
         for key, value in full_data.items():
             if key == 'setup_data':
                 # [수정] 중첩 방지: 딕셔너리 키 할당이 아닌 변수(파일 내용) 자체 교체
                 setup_data = value
             elif key == 'system_logs':
-                system_log_data = value
+                if isinstance(value, list):
+                    for log in value:
+                        cat = get_log_category(log.get('action', ''))
+                        if cat == 'common': common_logs_list.append(log)
+                        elif cat == 'setup': setup_logs_list.append(log)
+                        else: maint_logs_list.append(log)
             elif key == 'withtech_data':
                 # [수정] 중첩 방지
                 withtech_data_storage = value
@@ -361,8 +410,11 @@ def save_data(full_data):
         save_json_file(FILE_SETUP, setup_data)
         save_json_file(FILE_MAINTENANCE, maintenance_data)
         save_json_file(FILE_HOME, home_data)
-        save_json_file(FILE_SYSTEM_LOG, system_log_data)
         save_json_file(FILE_WITHTECH_DATA, withtech_data_storage)
+        
+        save_json_file(FILE_COMMON_LOG, common_logs_list)
+        save_json_file(FILE_SETUP_LOG, setup_logs_list)
+        save_json_file(FILE_MAINTENANCE_LOG, maint_logs_list)
 
         # 5. Git 동기화 (비동기)
         Thread(target=git_push_data).start()
