@@ -6,6 +6,7 @@ let currentPath = { site: '', equip: '' };
 let selectedLogId = null;
 let originalMemo = "";
 let originalSetupData = null;
+let currentLogFilter = 'all'; // [추가] 현재 로그 필터 상태
 
 const setupInputIds = [
     'DeviceID-cust-equip-name', 'DeviceID-building', 'DeviceID-floor', 'DeviceID-detail-loc',
@@ -335,6 +336,19 @@ function setupDataManagementEvents() {
     }
     if (logModal) {
         logModal.addEventListener('click', (e) => { if (e.target === logModal) closeLogModal(); });
+    }
+
+    // [추가] 로그 필터 버튼 이벤트
+    const filterBtns = document.querySelectorAll('.btn-filter');
+    if (filterBtns.length > 0) {
+        filterBtns.forEach(btn => {
+            btn.onclick = () => {
+                filterBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentLogFilter = btn.dataset.filter;
+                renderSystemLogs();
+            };
+        });
     }
 }
 
@@ -1191,13 +1205,32 @@ function renderSystemLogs() {
     const tbody = document.getElementById('system-log-body');
     if (!tbody) return;
 
-    if (logs.length === 0) {
+    // [추가] 필터링 로직
+    const filteredLogs = logs.filter(log => {
+        if (currentLogFilter === 'all') return true;
+        const category = getLogCategory(log.action);
+        return category === currentLogFilter;
+    });
+
+    if (filteredLogs.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: #8b949e;">로그 내역이 없습니다.</td></tr>';
         return;
     }
 
-    logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    tbody.innerHTML = logs.map(log => `<tr><td>${new Date(log.timestamp).toLocaleString()}</td><td><span class="badge pm" style="background: #30363d;">${log.action}</span></td><td>${log.target}</td><td>${log.details}</td></tr>`).join('');
+    filteredLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    tbody.innerHTML = filteredLogs.map(log => `<tr><td>${new Date(log.timestamp).toLocaleString()}</td><td><span class="badge pm" style="background: #30363d;">${log.action}</span></td><td>${log.target}</td><td>${log.details}</td></tr>`).join('');
+}
+
+// [추가] 로그 카테고리 분류 함수
+function getLogCategory(action) {
+    const commonActions = ['LOGIN', 'LOGOUT', 'ADD_USER', 'CHANGE_PW', 'ADD_SITE', 'DELETE_SITE', 'ADD_EQUIP', 'DELETE_EQUIP', 'RENAME_ITEM', 'BACKUP_EXPORT', 'BACKUP_IMPORT'];
+    const setupActions = ['UPDATE_SETUP', 'ADD_SETUP_ITEM', 'DELETE_SETUP_ITEM', 'UPDATE_SETUP_ITEM', 'REORDER_SETUP'];
+    
+    if (commonActions.includes(action)) return 'common';
+    if (setupActions.includes(action)) return 'setup';
+    
+    // 나머지는 운영관리(maint)로 간주 (ADD_MAINTENANCE, ADD_LOG 등)
+    return 'maint';
 }
 
 function clearSystemLogs() {

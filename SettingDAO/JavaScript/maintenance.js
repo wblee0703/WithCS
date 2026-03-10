@@ -298,7 +298,8 @@ function addDetailItem() {
 
     data.maint.push(newItem);
     localStorage.setItem(key, JSON.stringify(data));
-    addSystemLog('ADD_MAINTENANCE', currentPath.equip, `Type: ${maintType}, Content: ${content}`);
+    // [수정] 상세 로그 기록
+    addSystemLog('ADD_MAINTENANCE', currentPath.equip, `[${maintType}] ${content} (주기: ${period || '-'}일, 시작일: ${date})`);
 
     // 입력창 초기화
     document.getElementById('maint-content').value = '';
@@ -391,12 +392,16 @@ function deleteDetailItem(id) {
     let data = JSON.parse(localStorage.getItem(key));
 
     if (data && data.maint) {
+        // [추가] 삭제될 아이템 정보 미리 저장
+        const targetItem = data.maint.find(item => item.id === id);
+        const deletedContent = targetItem ? targetItem.content : 'Unknown';
+
         // 3. 해당 ID를 제외한 나머지 항목만 남김 (필터링)
         data.maint = data.maint.filter(item => item.id !== id);
 
         // 4. 변경된 데이터 저장
         localStorage.setItem(key, JSON.stringify(data));
-        addSystemLog('DELETE_MAINTENANCE', currentPath.equip, `ID: ${id}`);
+        addSystemLog('DELETE_MAINTENANCE', currentPath.equip, `삭제: ${deletedContent} (ID: ${id})`);
 
         // 5. 화면 즉시 갱신
         renderDetails();
@@ -471,7 +476,7 @@ function updateRowData(id, content, date, period) {
         data.maint[idx].date = date;
         data.maint[idx].period = data.maint[idx].type === 'PM' ? (parseInt(period) || 0) : null;
         localStorage.setItem(key, JSON.stringify(data));
-        addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `ID: ${id}, Content: ${content}`);
+        addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `수정: ${content} (날짜: ${date}, 주기: ${period || '-'})`);
     }
 }
 
@@ -544,7 +549,7 @@ function addLogItem(e) {
 
     data.logs.push(newLog);
     localStorage.setItem(key, JSON.stringify(data));
-    addSystemLog('ADD_LOG', currentPath.equip, `Date: ${date}, Worker: ${worker}`);
+    addSystemLog('ADD_LOG', currentPath.equip, `[${type}] ${content} (작업자: ${worker}, 날짜: ${date})`);
 
     // 입력창 초기화 및 리스트 갱신
     workerInput.value = '';
@@ -668,7 +673,7 @@ function saveMemo() {
     if (logIdx > -1) {
         data.logs[logIdx].memo = memoContent; // 메모 업데이트
         localStorage.setItem(key, JSON.stringify(data));
-        addSystemLog('UPDATE_MEMO', currentPath.equip, `LogID: ${selectedLogId}`);
+        addSystemLog('UPDATE_MEMO', currentPath.equip, `메모 수정 (LogID: ${selectedLogId})`);
 
         originalMemo = memoContent; // 원본 업데이트
 
@@ -689,9 +694,14 @@ function deleteLogItem(id) {
     let data = JSON.parse(localStorage.getItem(key));
 
     if (!data || !data.logs) return; // 데이터 안전장치
+    
+    // [추가] 삭제될 로그 정보 미리 저장
+    const targetLog = data.logs.find(l => l.id === id);
+    const deletedInfo = targetLog ? `${targetLog.date} ${targetLog.content}` : 'Unknown';
+
     data.logs = data.logs.filter(l => l.id !== id);
     localStorage.setItem(key, JSON.stringify(data));
-    addSystemLog('DELETE_LOG', currentPath.equip, `ID: ${id}`);
+    addSystemLog('DELETE_LOG', currentPath.equip, `삭제: ${deletedInfo}`);
 
     if (selectedLogId === id) {
         selectedLogId = null;
@@ -909,7 +919,7 @@ function updateLogItem(id, date, type, content, worker) {
         data.logs[idx].worker = worker;
 
         localStorage.setItem(key, JSON.stringify(data));
-        addSystemLog('UPDATE_LOG', currentPath.equip, `ID: ${id}`);
+        addSystemLog('UPDATE_LOG', currentPath.equip, `수정: [${type}] ${content} (작업자: ${worker}, 날짜: ${date})`);
         renderLogs();
     } else {
         alert('항목을 찾을 수 없습니다. (ID: ' + id + ')');
