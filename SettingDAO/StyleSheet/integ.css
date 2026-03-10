@@ -496,7 +496,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .integ-setup-detail-col-progress,
     .integ-setup-complete-header-date,
     .integ-setup-detail-header-count {
-        font-size: 11px; /* 기존 14px -> 11px (-3) */
+        display: none; /* [요청] 모바일에서 완료일/진행률 숨김 */
     }
     
     /* 리스트 내부 카운트/날짜 텍스트 */

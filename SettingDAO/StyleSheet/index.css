@@ -903,6 +903,17 @@ body {
         gap: 15px;
     }
 
+    /* [요청] 셋업/운영 현황 카드 세로 배치 */
+    .maint-left-charts {
+        flex-direction: column;
+        height: auto;
+    }
+
+    /* [요청] 모바일에서 간트 차트 숨김 (검색/이동은 유지) */
+    #gantt-chart-area {
+        display: none;
+    }
+
     .donut-chart-wrapper {
         width: 180px;
         height: 180px;
@@ -924,6 +935,7 @@ body {
         flex-direction: column;
         align-items: stretch;
         gap: 10px;
+        height: auto; /* [요청] 내용이 겹치지 않도록 높이 자동 조절 */
     }
     .calendar-right-toolbar, .gantt__right-toolbar {
         position: static;
