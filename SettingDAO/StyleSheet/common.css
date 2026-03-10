@@ -811,7 +811,8 @@ body.role-user select {
         border: none;
         cursor: pointer;
         padding: 0;
-        z-index: 1011;
+        z-index: 9999; /* [수정] 다른 요소보다 위에 오도록 최상위 설정 */
+        position: relative; /* [수정] z-index 적용을 위해 relative 설정 */
     }
     .hamburger-menu .bar {
         width: 100%;

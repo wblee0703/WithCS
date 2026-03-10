@@ -69,6 +69,25 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         window.addEventListener('DataLoaded', initDashboard);
     }
+
+    // [요청] Integrated 대시보드 리스트 클릭 시 이동 확인 팝업
+    const integLists = ['integ-setup-complete-list', 'integ-setup-detail-list'];
+    integLists.forEach(id => {
+        const list = document.getElementById(id);
+        if (list) {
+            // 캡처링(true)을 사용하여 기존 클릭 이벤트보다 먼저 실행
+            list.addEventListener('click', (e) => {
+                const li = e.target.closest('li');
+                if (li) {
+                    if (!confirm('해당 장비의 셋업 페이지로 이동하시겠습니까?')) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
+                    }
+                }
+            }, true);
+        }
+    });
 });
 
 /* ==========================================================================

@@ -909,6 +909,12 @@ body {
         height: auto;
     }
 
+    /* [요청] 모바일에서 셋업/운영 현황 컨테이너 높이 자동 조절 (겹침 방지) */
+    .maint-split-view {
+        flex-direction: column;
+        height: auto !important; /* 데스크탑의 고정 높이(330px) 무시 */
+    }
+
     /* [요청] 모바일에서 간트 차트 숨김 (검색/이동은 유지) */
     #gantt-chart-area {
         display: none;
