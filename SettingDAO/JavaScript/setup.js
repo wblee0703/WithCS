@@ -333,7 +333,7 @@ function renderSetupDetailList() {
             `;
             tr.addEventListener('dragstart', () => tr.classList.add('dragging'));
             // 드래그 종료 시 자동 저장
-            tr.addEventListener('dragend', () => { tr.classList.remove('dragging'); saveSetupDetails(); });
+            tr.addEventListener('dragend', () => { tr.classList.remove('dragging'); saveSetupDetails('REORDER_SETUP', '순서 변경'); });
             
             // 입력 변경 시 자동 저장 (텍스트는 change 이벤트로 과도한 저장 방지)
             tr.querySelectorAll('input').forEach(input => {
@@ -412,7 +412,7 @@ function addSetupDetailItem(category) {
         <td style="text-align: center;"><button class="btn-del-sm" onclick="deleteSetupDetailItem(${id})">✕</button></td>
     `;
     tr.addEventListener('dragstart', () => tr.classList.add('dragging'));
-    tr.addEventListener('dragend', () => { tr.classList.remove('dragging'); saveSetupDetails(); });
+    tr.addEventListener('dragend', () => { tr.classList.remove('dragging'); saveSetupDetails('REORDER_SETUP', '순서 변경'); });
     
     // 입력 변경 감지 이벤트 추가
     tr.querySelectorAll('input').forEach(input => {
@@ -477,14 +477,14 @@ function addSetupDetailItem(category) {
         }
     }
 
-    saveSetupDetails(); // 항목 추가 후 자동 저장
+    saveSetupDetails('ADD_SETUP_ITEM', `Category: ${category}`); // 항목 추가 후 자동 저장 및 로그
 }
 
 function deleteSetupDetailItem(id) {
     const row = document.querySelector(`#setup-detail-body tr[data-id="${id}"]`);
     if (row) {
         row.remove();
-        saveSetupDetails(); // 삭제 후 자동 저장
+        saveSetupDetails('DELETE_SETUP_ITEM', `ID: ${id}`); // 삭제 후 자동 저장 및 로그
     }
 }
 
@@ -509,7 +509,7 @@ function toggleSetupDetailDeleteMode(btn) {
     }
 }
 
-function saveSetupDetails() {
+function saveSetupDetails(logAction = 'UPDATE_SETUP_DETAILS', logDetails = '셋업 상세 내역 수정') {
     if (!currentPath.site || !currentPath.equip) return alert('장비를 선택해주세요.');
     
     const rows = document.querySelectorAll('#setup-detail-body tr');
@@ -562,6 +562,11 @@ function saveSetupDetails() {
     
     // 실행률 업데이트
     updateExecutionRate(completedItems, totalItems);
+
+    // [추가] 시스템 로그 기록
+    if (typeof addSystemLog === 'function') {
+        addSystemLog(logAction, currentPath.equip, logDetails);
+    }
 }
 
 function updateExecutionRate(completed, total) {
@@ -636,7 +641,7 @@ function attachSetupCheckboxListener(row) {
             openSetupCompletionModal(row.dataset.id, row);
             return;
         }
-        saveSetupDetails(); // 체크박스 변경 시 자동 저장
+        saveSetupDetails('UPDATE_SETUP_STATUS', '완료 상태 변경 (체크 해제)'); // 체크박스 변경 시 자동 저장
     });
 }
 
@@ -788,7 +793,7 @@ window.calculateSetupSchedule = function(targetDateStr) {
             }
         }
     }
-    saveSetupDetails(); // 계산 후 자동 저장
+    saveSetupDetails('CALC_SETUP_SCHEDULE', '일정 자동 계산 (완료일 기준)'); // 계산 후 자동 저장
 };
 
 function calculateScheduleForward(startRow) {
@@ -842,7 +847,7 @@ function calculateScheduleForward(startRow) {
             nextStartDate = window.addBusinessDays(thisEndDate, 1);
         }
     }
-    saveSetupDetails(); // 계산 후 자동 저장
+    saveSetupDetails('CALC_SETUP_SCHEDULE', '일정 자동 계산 (순방향)'); // 계산 후 자동 저장
 }
 
 function calculateScheduleBackward(startRow) {
@@ -886,7 +891,7 @@ function calculateScheduleBackward(startRow) {
             nextTaskStartDate = currentStartDate;
         }
     }
-    saveSetupDetails(); // 계산 후 자동 저장
+    saveSetupDetails('CALC_SETUP_SCHEDULE', '일정 자동 계산 (역방향)'); // 계산 후 자동 저장
 }
 
 window.triggerSetupScheduleCalculation = function() {
@@ -993,6 +998,10 @@ function addSetupLogItem() {
     select.value = ''; // 선택창 초기화
     if (companyInput) companyInput.value = '위드텍';
     renderSetupLogList();
+
+    if (typeof addSystemLog === 'function') {
+        addSystemLog('ADD_SETUP_LOG', currentPath.equip, `[${content}] ${worker}`);
+    }
 }
 
 function selectSetupLog(id) {
@@ -1079,6 +1088,10 @@ function deleteSetupLogItem(id) {
             document.getElementById('setup-log-detail-memo').value = "";
         }
         renderSetupLogList();
+
+        if (typeof addSystemLog === 'function') {
+            addSystemLog('DELETE_SETUP_LOG', currentPath.equip, `ID: ${id}`);
+        }
     }
 }
 
@@ -1536,7 +1549,7 @@ function saveSetupCompletion() {
     document.getElementById('setup-completion-modal').style.display = 'none';
 
     // 변경 사항 저장 및 리스트 갱신 (다음 버튼 표시를 위해 필수)
-    saveSetupDetails();
+    saveSetupDetails('UPDATE_SETUP_COMPLETION', `작업 완료 등록 (ID: ${currentSetupCompletionTarget.id})`);
     renderSetupDetailList();
 }
 
@@ -1596,7 +1609,7 @@ function saveSetupExecStart() {
     const row = document.querySelector(`#setup-detail-body tr[data-id="${currentExecStartTargetId}"]`);
     if (row) {
         row.dataset.execStartDate = execDate;
-        saveSetupDetails(); // Auto save
+        saveSetupDetails('START_SETUP_EXEC', `실행 시작일 설정: ${execDate}`); // Auto save with log
         renderSetupDetailList(); // Re-render to update UI
     }
     
