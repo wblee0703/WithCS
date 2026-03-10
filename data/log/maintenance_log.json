@@ -28,5 +28,11 @@
         "details": "Date: 2026-04-01, Content: Standard Solution",
         "target": "SOMA-2000::SOMA-H19-0402",
         "timestamp": "2026-03-10T06:02:22.212Z"
+    },
+    {
+        "timestamp": "2026-03-10T06:05:06.476Z",
+        "action": "LOAD_MAINT_LIST",
+        "target": "WAD-10::AD10-EK24-0202",
+        "details": "From: SKH 이천 > SOMA-2000::SOMA-H19-0402"
     }
 ]
