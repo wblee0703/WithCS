@@ -1290,6 +1290,10 @@ function setupFileEvents() {
             }
         });
     }
+
+    // [추가] 파일 편집 모달 저장 버튼 이벤트
+    const saveFileBtn = document.getElementById('btn-save-file-content');
+    if (saveFileBtn) saveFileBtn.onclick = saveFileContent;
 }
 
 function handleFiles(files) {
@@ -1359,11 +1363,14 @@ function renderFiles() {
     }
 
     files.forEach(file => {
+        // [추가] 텍스트 파일 여부 확인
+        const isEditable = isTextFile(file.name);
         const li = document.createElement('li');
         li.className = 'file-item';
         li.innerHTML = `
             <span class="file-name" onclick="downloadFile(${file.id})">📄 ${escapeHtml(file.name)}</span>
             <span class="file-info">${file.date}</span>
+            ${isEditable ? `<button class="btn-edit-sm" onclick="editFile(${file.id})" title="내용 편집" style="margin-right: 8px;">📝</button>` : ''}
             <button class="btn-del-sm" onclick="deleteFile(${file.id})">✕</button>
         `;
         listEl.appendChild(li);
@@ -1398,4 +1405,85 @@ window.deleteFile = function(id) {
             addSystemLog('DELETE_FILE', currentPath.equip, `FileID: ${id}`);
         }
     }
+};
+
+/* ==========================================================================
+   [추가] 파일 편집 기능 (File Editing)
+   ========================================================================== */
+let currentEditingFileId = null;
+
+function isTextFile(filename) {
+    const ext = filename.split('.').pop().toLowerCase();
+    // 편집 가능한 확장자 목록
+    return ['txt', 'csv', 'log', 'json', 'xml', 'md', 'html', 'css', 'js', 'py', 'bat', 'sh', 'ini', 'conf', 'properties'].includes(ext);
+}
+
+window.editFile = function(id) {
+    const key = `details_${currentPath.site}_${currentPath.equip}`;
+    const data = JSON.parse(localStorage.getItem(key)) || {};
+    const file = data.files ? data.files.find(f => f.id === id) : null;
+
+    if (!file) return alert('파일을 찾을 수 없습니다.');
+
+    try {
+        // Base64 디코딩 (한글 처리 포함)
+        const base64 = file.content.split(',')[1];
+        const binaryString = window.atob(base64);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        const text = new TextDecoder().decode(bytes);
+
+        document.getElementById('file-edit-title').textContent = `파일 편집: ${file.name}`;
+        document.getElementById('file-edit-content').value = text;
+        currentEditingFileId = id;
+
+        document.getElementById('file-edit-modal').style.display = 'flex';
+    } catch (e) {
+        console.error(e);
+        alert('파일 내용을 읽을 수 없습니다.');
+    }
+};
+
+window.saveFileContent = function() {
+    if (!currentEditingFileId) return;
+
+    const content = document.getElementById('file-edit-content').value;
+    const key = `details_${currentPath.site}_${currentPath.equip}`;
+    let data = JSON.parse(localStorage.getItem(key)) || {};
+    
+    if (data.files) {
+        const fileIdx = data.files.findIndex(f => f.id === currentEditingFileId);
+        if (fileIdx > -1) {
+            try {
+                // 텍스트 -> Base64 인코딩 (한글 처리 포함)
+                const bytes = new TextEncoder().encode(content);
+                let binaryString = '';
+                for (let i = 0; i < bytes.byteLength; i++) {
+                    binaryString += String.fromCharCode(bytes[i]);
+                }
+                const base64 = window.btoa(binaryString);
+                
+                // 기존 MIME 타입 유지
+                const originalHeader = data.files[fileIdx].content.split(',')[0];
+                data.files[fileIdx].content = `${originalHeader},${base64}`;
+                data.files[fileIdx].size = bytes.byteLength; // 사이즈 업데이트
+
+                localStorage.setItem(key, JSON.stringify(data));
+                addSystemLog('UPDATE_FILE', currentPath.equip, `FileID: ${currentEditingFileId}`);
+                
+                alert('저장되었습니다.');
+                closeFileEditModal();
+            } catch (e) {
+                console.error(e);
+                alert('저장 중 오류가 발생했습니다.');
+            }
+        }
+    }
+};
+
+window.closeFileEditModal = function() {
+    document.getElementById('file-edit-modal').style.display = 'none';
+    currentEditingFileId = null;
 };
