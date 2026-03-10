@@ -942,6 +942,7 @@ body {
     #equip-detail-container,
     #setup-equip-detail-container {
         height: 180px;
+        flex: none; /* [수정] 부모 flex 컨테이너에서 늘어나지 않도록 고정 */
         overflow-y: auto;
     }
 
