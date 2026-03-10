@@ -124,6 +124,7 @@ function initializeApp() {
     // 2-1. 초기 설정
     // 2-2. 로그인 및 사용자 관리 이벤트
     setupAuthEvents();
+    setupMobileNav(); // [이동] 페이지 접근 제어 전에 실행하여 홈 화면에서도 메뉴 작동하도록 수정
     // 2-3. 페이지별 접근 제어
     if (!handlePageAccess()) return;
     // 2-4. UI 초기화
@@ -134,7 +135,6 @@ function initializeApp() {
     setupResizers();
     // 2-5. URL 파라미터 처리
     restoreLastState();
-    setupMobileNav(); // [추가] 모바일 네비게이션 설정
     // [중요] 데이터 로드 완료 상태 표시
     window.isDataLoaded = true;
     // 데이터 로드 완료 이벤트 발생 (index.js 등에서 감지)
@@ -188,15 +188,8 @@ function setupMobileNav() {
     hamburger.addEventListener('click', toggleNav);
     navOverlay.addEventListener('click', toggleNav);
 
-    // 로그인 상태에 따라 메뉴 링크 활성화/비활성화
-    const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
-    const setupLink = mobileNav.querySelector('a[href*="setup.html"]');
-    const maintLink = mobileNav.querySelector('a[href*="maintenance.html"]');
-
-    if (!isLoggedIn) {
-        if(setupLink) setupLink.style.display = 'none';
-        if(maintLink) maintLink.style.display = 'none';
-    }
+    // [수정] 초기 상태 반영 (로그인 여부에 따른 메뉴 표시)
+    checkLoginStatus();
 }
 
 function handlePageAccess() {
@@ -476,6 +469,15 @@ function checkLoginStatus() {
         }
         if (btnUserSettings) btnUserSettings.style.display = 'none';
         document.body.classList.remove('role-admin', 'role-user');
+    }
+
+    // [추가] 모바일 메뉴 링크 제어 (로그인 상태에 따라 표시/숨김)
+    const mobileNav = document.getElementById('mobile-nav');
+    if (mobileNav) {
+        const setupLink = mobileNav.querySelector('a[href*="setup"]');
+        const maintLink = mobileNav.querySelector('a[href*="maintenance"]');
+        if (setupLink) setupLink.style.display = isLoggedIn ? 'block' : 'none';
+        if (maintLink) maintLink.style.display = isLoggedIn ? 'block' : 'none';
     }
 }
 
