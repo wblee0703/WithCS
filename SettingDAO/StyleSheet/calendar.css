@@ -572,6 +572,11 @@
         display: none;
     }
 
+    /* [요청] 모바일에서 1달치 달력만 표시 */
+    .calendars-wrapper .calendar-view:last-of-type {
+        display: none;
+    }
+
     .date-cell {
         height: auto;
         min-height: 90px;

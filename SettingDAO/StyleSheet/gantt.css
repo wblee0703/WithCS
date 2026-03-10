@@ -403,7 +403,11 @@
         max-height: 40vh; /* 높이 제한 및 스크롤 */
         overflow-y: auto;
     }
-
+/* [요청] 셋업 일정 검색된 내용 글씨 크기 조정 */
+    .gantt__target-info {
+        font-size: 12px;
+    }
+    
     #gantt-task-list {
         overflow-y: auto;
     }

@@ -920,6 +920,12 @@ body {
         display: none;
     }
 
+    /* [요청] 셋업 일정 -/+ 버튼 숨김 */
+    #btn-gantt-contract,
+    #btn-gantt-expand {
+        display: none;
+    }
+
     .donut-chart-wrapper {
         width: 180px;
         height: 180px;
@@ -932,6 +938,12 @@ body {
     .status-list-container {
         max-height: 200px;
     }
+    /* [요청] 장비 정보 리스트 높이 고정 (약 5개) 및 스크롤 */
+    #equip-detail-container,
+    #setup-equip-detail-container {
+        height: 180px;
+        overflow-y: auto;
+    }
 
     .section-title, .gantt__subtitle, .calendar-main-title {
         font-size: 18px;
@@ -942,6 +954,15 @@ body {
         align-items: stretch;
         gap: 10px;
         height: auto; /* [요청] 내용이 겹치지 않도록 높이 자동 조절 */
+    }
+    /* [요청] 캘린더 검색창 위치 조정 */
+    .calendar-center-title {
+        align-items: center;
+    }
+    .calendar-center-title > h5 { order: 1; }
+    .calendar-center-title > #calendar-target-info { order: 2; }
+    .calendar-center-title > div:nth-child(2) { /* 이동 버튼 포함 div */
+        order: 3;
     }
     .calendar-right-toolbar, .gantt__right-toolbar {
         position: static;
