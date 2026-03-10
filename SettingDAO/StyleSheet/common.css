@@ -802,7 +802,7 @@ body.role-user select {
 
     /* [요청] 모바일 헤더에서 로그인/설정 버튼 숨기기 */
     .header .user-controls > button {
-        display: none;
+        display: none !important; /* [수정] JS 인라인 스타일을 덮어쓰기 위해 !important 추가 */
     }
 
     /* 햄버거 메뉴 버튼 */
@@ -903,7 +903,6 @@ body.role-user select {
         width: 100%;
         padding: 12px;
         font-size: 16px;
-        display: none; /* [요청] 모바일 메뉴에서 버튼 숨김 */
     }
     .mobile-user-controls .user-info {
         color: #8b949e;
