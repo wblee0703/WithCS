@@ -157,6 +157,18 @@ function showHomeSection(type) {
     const maintSec = document.getElementById('section-maint');
     const integratedSec = document.getElementById('section-integrated');
 
+    // [Mobile] 이미 활성화된 섹션 버튼을 클릭했을 때 메뉴 확장/축소 토글
+    let isAlreadyActive = false;
+    if (type === 'setup' && document.querySelector('.btn-setup.active')) isAlreadyActive = true;
+    if (type === 'maint' && document.querySelector('.btn-maint.active')) isAlreadyActive = true;
+    if (type === 'integrated' && document.querySelector('.btn-integrated.active')) isAlreadyActive = true;
+
+    if (isAlreadyActive && menuContainer.classList.contains('compact')) {
+        menuContainer.classList.toggle('expanded');
+        return; // 섹션 전환 로직 실행 중단
+    }
+    menuContainer.classList.remove('expanded'); // 다른 섹션 선택 시 메뉴 접기
+
     // [추가] 버튼 활성화 상태 토글
     const btnSetup = document.querySelector('.btn-setup');
     const btnMaint = document.querySelector('.btn-maint');

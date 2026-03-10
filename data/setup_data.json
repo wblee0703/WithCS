@@ -139,12 +139,12 @@
         "setupDetails": [
             {
                 "category": "장비 반입 및 정위치",
-                "completed": true,
+                "completed": false,
                 "content": "장비 도면 부착",
-                "date": "2026-03-04",
+                "date": "",
                 "delayReason": "",
                 "estDays": "1",
-                "execStartDate": "2026-03-04",
+                "execStartDate": "",
                 "id": 1771574685086,
                 "startDate": "2026-03-04"
             },
@@ -269,28 +269,18 @@
                 "id": 1771574685097,
                 "startDate": "2026-04-10"
             }
-        ],
-        "setupLogs": [
-            {
-                "company": "위드텍",
-                "content": "장비 도면 부착",
-                "date": "2026-03-04",
-                "id": 1773108835527,
-                "memo": "",
-                "worker": "admin"
-            }
         ]
     },
     "LGD 구미::OMS-100L::OMS1-LK22-0104": {
         "setupDetails": [
             {
                 "category": "장비 반입 및 정위치",
-                "completed": true,
+                "completed": false,
                 "content": "장비 도면 부착",
-                "date": "2026-03-11",
+                "date": "",
                 "delayReason": "",
                 "estDays": "1",
-                "execStartDate": "2026-03-11",
+                "execStartDate": "",
                 "id": 1772517271628,
                 "startDate": "2026-03-11"
             },
@@ -301,7 +291,7 @@
                 "date": "",
                 "delayReason": "",
                 "estDays": "1",
-                "execStartDate": "2026-03-12",
+                "execStartDate": "",
                 "id": 1772517271629,
                 "startDate": "2026-03-12"
             },
@@ -414,16 +404,6 @@
                 "execStartDate": "",
                 "id": 1772517271639,
                 "startDate": "2026-04-17"
-            }
-        ],
-        "setupLogs": [
-            {
-                "company": "위드텍",
-                "content": "장비 도면 부착",
-                "date": "2026-03-11",
-                "id": 1773109880712,
-                "memo": "",
-                "worker": "admin"
             }
         ]
     },
@@ -971,7 +951,7 @@
                 "date": "",
                 "delayReason": "",
                 "estDays": "1",
-                "execStartDate": "",
+                "execStartDate": "2026-05-01",
                 "id": 1770881657887,
                 "startDate": "2026-05-01"
             },
