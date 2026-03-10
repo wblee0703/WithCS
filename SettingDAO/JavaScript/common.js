@@ -188,6 +188,22 @@ function setupMobileNav() {
     hamburger.addEventListener('click', toggleNav);
     navOverlay.addEventListener('click', toggleNav);
 
+    // [추가] 모바일 메뉴의 링크 클릭 시, 메뉴를 닫고 해당 페이지로 이동
+    // innerHTML로 복제된 노드에 이벤트 리스너를 다시 연결합니다. (이벤트 위임 방식 사용)
+    mobileNav.addEventListener('click', function(e) {
+        const link = e.target.closest('a');
+        if (link && link.href) {
+            e.preventDefault(); // 기본 링크 동작을 막습니다.
+            const destination = link.href;
+            
+            // 메뉴를 닫는 애니메이션을 먼저 실행
+            toggleNav();
+            
+            // 애니메이션(0.3s)이 끝날 시간을 고려하여 약간의 지연 후 페이지 이동
+            setTimeout(() => { window.location.href = destination; }, 300);
+        }
+    });
+
     // [수정] 초기 상태 반영 (로그인 여부에 따른 메뉴 표시)
     checkLoginStatus();
 }
