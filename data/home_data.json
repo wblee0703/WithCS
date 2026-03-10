@@ -9,7 +9,7 @@
         },
         {
             "id": "user",
-            "pw": "scrypt:32768:8:1$yM4nPwvN64HZAS0e$5a7695946cf17cff74b6e904ce06a9df26a0b3cda7eda9746d2eb77714491a62e9fa3b8a4afcad171e6c20fbf7123b571214b66e9367eb81560fb229aeca52b0",
+            "pw": "scrypt:32768:8:1$63CwfjlE6wqszd7S$a675e8c8387a5efad37bb955ddfde82f6a67b773fe7b19fb0d9685feb0762ce6a55a6069f961a31f4af455824aa2303594c6e6ada3e9dcef7f4e1459dc7dfaf2",
             "role": "user"
         }
     ]

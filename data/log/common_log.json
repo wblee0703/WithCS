@@ -34,5 +34,11 @@
         "action": "LOGIN",
         "target": "user",
         "details": "로그인 성공 (HOME)"
+    },
+    {
+        "timestamp": "2026-03-10T07:27:19.037Z",
+        "action": "CHANGE_PW",
+        "target": "user",
+        "details": "비밀번호 변경"
     }
 ]
