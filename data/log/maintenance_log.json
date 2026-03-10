@@ -1,32 +1,32 @@
 [
     {
-        "timestamp": "2026-03-10T06:01:09.998Z",
         "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-04-01, Content: Standard Solution",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "Date: 2026-04-01, Content: Standard Solution"
+        "timestamp": "2026-03-10T06:01:09.998Z"
     },
     {
-        "timestamp": "2026-03-10T06:01:10.003Z",
         "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-04-01, Content: Sampling & Skimmer Cone",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "Date: 2026-04-01, Content: Sampling & Skimmer Cone"
+        "timestamp": "2026-03-10T06:01:10.003Z"
     },
     {
-        "timestamp": "2026-03-10T06:01:10.009Z",
         "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-04-01, Content: Ion Lens",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "Date: 2026-04-01, Content: Ion Lens"
+        "timestamp": "2026-03-10T06:01:10.009Z"
     },
     {
-        "timestamp": "2026-03-10T06:01:34.376Z",
         "action": "DELETE_SCHEDULE",
+        "details": "Date: , Content: Standard Solution",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "Date: , Content: Standard Solution"
+        "timestamp": "2026-03-10T06:01:34.376Z"
     },
     {
-        "timestamp": "2026-03-10T06:02:22.212Z",
         "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-04-01, Content: Standard Solution",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "Date: 2026-04-01, Content: Standard Solution"
+        "timestamp": "2026-03-10T06:02:22.212Z"
     }
 ]
