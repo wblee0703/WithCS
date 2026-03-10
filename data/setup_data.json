@@ -272,12 +272,12 @@
         ],
         "setupLogs": [
             {
-                "id": 1773108835527,
-                "date": "2026-03-04",
-                "worker": "admin",
-                "content": "장비 도면 부착",
                 "company": "위드텍",
-                "memo": ""
+                "content": "장비 도면 부착",
+                "date": "2026-03-04",
+                "id": 1773108835527,
+                "memo": "",
+                "worker": "admin"
             }
         ]
     },
