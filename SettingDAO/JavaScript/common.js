@@ -134,6 +134,7 @@ function initializeApp() {
     setupResizers();
     // 2-5. URL 파라미터 처리
     restoreLastState();
+    setupMobileNav(); // [추가] 모바일 네비게이션 설정
     // [중요] 데이터 로드 완료 상태 표시
     window.isDataLoaded = true;
     // 데이터 로드 완료 이벤트 발생 (index.js 등에서 감지)
@@ -163,6 +164,38 @@ function setupAuthEvents() {
     if (btnLoginSubmit) btnLoginSubmit.addEventListener('click', () => attemptLogin(loginIdInput.value, loginPwInput.value, 'Modal'));
     if (loginPwInput) {
         loginPwInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') attemptLogin(loginIdInput.value, loginPwInput.value, 'Modal'); });
+    }
+}
+
+// [추가] 모바일 네비게이션 설정 함수
+function setupMobileNav() {
+    const hamburger = document.getElementById('hamburger-menu');
+    const mobileNav = document.getElementById('mobile-nav');
+    const navOverlay = document.getElementById('nav-overlay');
+    const mainNav = document.querySelector('.header .container .nav-links');
+
+    if (!hamburger || !mobileNav || !navOverlay || !mainNav) return;
+
+    // 메인 네비게이션 복제
+    mobileNav.innerHTML = `<ul class="mobile-nav-links">${mainNav.innerHTML}</ul>`;
+
+    const toggleNav = () => {
+        hamburger.classList.toggle('active');
+        mobileNav.classList.toggle('active');
+        navOverlay.classList.toggle('active');
+    };
+
+    hamburger.addEventListener('click', toggleNav);
+    navOverlay.addEventListener('click', toggleNav);
+
+    // 로그인 상태에 따라 메뉴 링크 활성화/비활성화
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+    const setupLink = mobileNav.querySelector('a[href*="setup.html"]');
+    const maintLink = mobileNav.querySelector('a[href*="maintenance.html"]');
+
+    if (!isLoggedIn) {
+        if(setupLink) setupLink.style.display = 'none';
+        if(maintLink) maintLink.style.display = 'none';
     }
 }
 

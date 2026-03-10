@@ -20,6 +20,13 @@
          1. 헤더 (Header)
          ========================================================================== -->
     <header class="header">
+        <!-- [추가] 모바일용 햄버거 메뉴 버튼 -->
+        <button class="hamburger-menu" id="hamburger-menu">
+            <div class="bar"></div>
+            <div class="bar"></div>
+            <div class="bar"></div>
+        </button>
+
         <img src="{{ url_for('SettingDAO', filename='LOGO+WITHTECH.png') }}" alt="WITHTECH Logo" class="header-logo">
         <div class="container">
             <nav>
@@ -30,6 +37,11 @@
                 </ul>
             </nav>
         </div>
+
+        <!-- [추가] 모바일 네비게이션 패널 -->
+        <div class="nav-overlay" id="nav-overlay"></div>
+        <nav class="mobile-nav" id="mobile-nav"></nav>
+
         <div class="user-controls">
             <span id="user-info" class="user-info" style="display: none;"></span>
             <button id="btn-login-logout" class="btn-gray">로그인</button>

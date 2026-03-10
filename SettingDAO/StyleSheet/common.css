@@ -163,6 +163,12 @@ body {
     z-index: 10;
 }
 
+.hamburger-menu,
+.mobile-nav,
+.nav-overlay {
+    display: none; /* 데스크탑에서는 숨김 */
+}
+
 .resizer:hover,
 .resizer.resizing {
     background-color: #58a6ff;
@@ -727,42 +733,189 @@ body.role-user select {
 
 /* 화면 너비가 768px 이하일 때 적용됩니다. */
 @media (max-width: 768px) {
-
-    /* 전체적인 여백 줄이기 */
-    body, .main-container {
-        padding: 8px;
+    /* 1. 기본 및 레이아웃 조정 */
+    body {
+        overflow-y: auto; /* 모바일에서는 페이지 스크롤 허용 */
+        -webkit-text-size-adjust: 100%; /* iOS 폰트 크기 자동 조정 방지 */
     }
 
-    /* 카드(섹션) 스타일을 화면 너비에 꽉 차게 조정 */
-    .card {
+    .dashboard-wrapper,
+    .dashboard-main,
+    .content-body, /* maintenance.css */
+    .left-panel, /* maintenance.css */
+    .setup-workspace, /* setup.css */
+    .maint-split-view, /* index.css */
+    .maint-left-charts, /* index.css */
+    .dashboard-split, /* index.css */
+    .integ-row, /* integ.css */
+    .calendars-wrapper, /* calendar.css */
+    .gantt__wrapper /* gantt.css */
+    {
+        flex-direction: column;
+        height: auto; /* 높이 자동 조정 */
+        gap: 10px; /* 간격 줄이기 */
+    }
+
+    .dashboard-sidebar,
+    .dashboard-main > .card,
+    .detail-content,
+    .dashboard-col,
+    .setup-card-flex,
+    .calendar-view {
         width: 100%;
-        margin: 10px 0;
-        padding: 12px;
+        flex: none; /* flex 비율 무시 */
+        height: auto;
     }
 
-    /* 테이블이 화면을 넘어갈 경우 가로 스크롤 생성 */
-    /* 사용법: <div class="table-wrapper"><table>...</table></div> */
+    .main-container, .dashboard-wrapper {
+        padding: 10px;
+        height: auto;
+    }
+
+    /* 리사이저 숨기기 */
+    .resizer, .resizer-vertical, .gantt__resizer, #setup-log-resizer {
+        display: none !important;
+    }
+
+    /* 2. 헤더 및 네비게이션 */
+    .header {
+        height: 60px;
+        justify-content: space-between;
+        padding: 0 15px;
+    }
+
+    .header-logo {
+        position: static;
+        height: 30px;
+        left: auto;
+        transform: none;
+    }
+
+    .header .container { display: none; } /* 기존 네비게이션 숨기기 */
+
+    .user-controls {
+        position: static;
+        right: auto;
+        gap: 10px;
+    }
+
+    /* 햄버거 메뉴 버튼 */
+    .hamburger-menu {
+        display: flex;
+        order: -1; /* 로고보다 앞에 오도록 */
+        flex-direction: column;
+        justify-content: space-around;
+        width: 24px;
+        height: 24px;
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        z-index: 1011;
+    }
+    .hamburger-menu .bar {
+        width: 100%;
+        height: 3px;
+        background-color: #e6edf3;
+        border-radius: 10px;
+        transition: all 0.3s ease-in-out;
+    }
+    .hamburger-menu.active .bar:nth-child(1) {
+        transform: rotate(45deg) translate(6px, 6px);
+    }
+    .hamburger-menu.active .bar:nth-child(2) {
+        opacity: 0;
+    }
+    .hamburger-menu.active .bar:nth-child(3) {
+        transform: rotate(-45deg) translate(6px, -6px);
+    }
+
+    /* 모바일 네비게이션 패널 */
+    .mobile-nav {
+        display: flex;
+        position: fixed;
+        top: 0;
+        left: -100%; /* 초기에는 화면 밖 */
+        width: 80%;
+        max-width: 300px;
+        height: 100%;
+        background-color: #161b22;
+        border-right: 1px solid #30363d;
+        z-index: 1010;
+        transition: left 0.3s ease-in-out;
+        padding-top: 80px;
+        flex-direction: column;
+    }
+    .mobile-nav.active {
+        left: 0;
+    }
+    .mobile-nav-links {
+        list-style: none;
+    }
+    .mobile-nav-links li a {
+        display: block;
+        padding: 15px 20px;
+        color: #e6edf3;
+        text-decoration: none;
+        font-size: 18px;
+        border-bottom: 1px solid #21262d;
+    }
+    .mobile-nav-links li a.active {
+        background-color: #21262d;
+        font-weight: bold;
+    }
+    
+    /* 모바일 네비게이션 활성화 시 배경 오버레이 */
+    .nav-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1009;
+    }
+    .nav-overlay.active {
+        display: block;
+    }
+
+    /* 3. 폼 및 버튼 */
+    .form-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .form-row input, .form-row select {
+        width: 100% !important;
+    }
+    .form-label {
+        width: auto;
+        text-align: left;
+        margin-bottom: 2px;
+    }
+
+    /* 4. 모달 */
+    .modal-window {
+        width: 95vw;
+        height: 85vh;
+    }
+    .modal-body {
+        overflow-y: auto;
+    }
+
+    /* 5. 테이블 */
     .table-wrapper {
         overflow-x: auto;
-        -webkit-overflow-scrolling: touch; /* iOS에서 부드러운 스크롤 효과 */
+        -webkit-overflow-scrolling: touch;
         border: 1px solid #30363d;
         border-radius: 6px;
     }
-
-    table {
-        width: 100%;
-        min-width: 650px; /* 테이블 내용이 뭉개지지 않도록 최소 너비 지정 */
-        font-size: 13px; /* 모바일에서 글자 크기 살짝 줄이기 */
+    .data-table {
+        font-size: 12px;
     }
-    
-    th, td {
-        padding: 6px 8px; /* 셀 내부 여백 조정 */
-    }
-
-    /* 모달 창을 화면에 맞게 조정 */
-    .modal-content {
-        width: 95vw; /* 화면 너비의 95% */
-        max-width: 100%;
-        height: 85vh; /* 화면 높이의 85% */
+    .data-table th, .data-table td {
+        padding: 6px 8px;
+        white-space: nowrap;
     }
 }
