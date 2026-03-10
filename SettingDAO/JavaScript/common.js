@@ -125,6 +125,26 @@ function initializeApp() {
     // 2-2. 로그인 및 사용자 관리 이벤트
     setupAuthEvents();
     setupMobileNav(); // [이동] 페이지 접근 제어 전에 실행하여 홈 화면에서도 메뉴 작동하도록 수정
+
+    // [개선] 데스크톱 네비게이션 링크 클릭 시, 이동 전 변경사항 확인
+    const desktopNav = document.querySelector('.header .container .nav-links');
+    if (desktopNav) {
+        desktopNav.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (link && link.href) {
+                // 현재 페이지와 같은 링크는 무시
+                if (new URL(link.href).pathname === window.location.pathname) {
+                    e.preventDefault();
+                    return;
+                }
+                // 저장되지 않은 변경사항이 있으면 확인창 표시 후 이동 중단
+                if (!checkUnsavedChanges()) {
+                    e.preventDefault();
+                }
+            }
+        });
+    }
+
     // 2-3. 페이지별 접근 제어
     if (!handlePageAccess()) return;
     // 2-4. UI 초기화
@@ -231,13 +251,22 @@ function setupMobileNav() {
     mobileNav.addEventListener('click', function(e) {
         const link = e.target.closest('a');
         if (link && link.href) {
-            e.preventDefault(); // 기본 링크 동작을 막습니다.
+            // [개선] 페이지 이동 전, 저장되지 않은 변경사항이 있는지 확인합니다.
+            if (!checkUnsavedChanges()) {
+                e.preventDefault(); // 사용자가 '취소'를 누르면 페이지 이동을 막습니다.
+                return;
+            }
+
+            // 현재 페이지와 같은 링크는 메뉴만 닫고 새로고침하지 않습니다.
+            if (new URL(link.href).pathname === window.location.pathname) {
+                e.preventDefault();
+                toggleNav(); // 메뉴만 닫습니다.
+                return;
+            }
+
+            e.preventDefault(); // 기본 링크 동작을 막고, 애니메이션 후 수동으로 이동합니다.
             const destination = link.href;
-            
-            // 메뉴를 닫는 애니메이션을 먼저 실행
             toggleNav();
-            
-            // 애니메이션(0.3s)이 끝날 시간을 고려하여 약간의 지연 후 페이지 이동
             setTimeout(() => { window.location.href = destination; }, 300);
         }
     });
