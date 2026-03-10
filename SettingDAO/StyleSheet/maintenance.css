@@ -489,3 +489,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     margin-right: 10px;
     flex-shrink: 0;
 }
+
+/* [추가] 파일 편집 버튼 스타일 */
+.btn-edit-sm {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}

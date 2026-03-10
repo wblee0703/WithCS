@@ -1342,6 +1342,13 @@ function handleFiles(files) {
     });
 }
 
+// [이동] isTextFile 함수를 renderFiles 위로 이동하여 호이스팅 이슈 방지 및 가독성 확보
+function isTextFile(filename) {
+    if (!filename) return false;
+    const ext = filename.split('.').pop().toLowerCase();
+    return ['txt', 'csv', 'log', 'json', 'xml', 'md', 'html', 'css', 'js', 'py', 'bat', 'sh', 'ini', 'conf', 'properties'].includes(ext);
+}
+
 function renderFiles() {
     const listEl = document.getElementById('file-list');
     if (!listEl) return;
@@ -1369,8 +1376,8 @@ function renderFiles() {
         li.className = 'file-item';
         li.innerHTML = `
             <span class="file-name" onclick="downloadFile(${file.id})">📄 ${escapeHtml(file.name)}</span>
+            ${isEditable ? `<button class="btn-edit-sm" onclick="editFile(${file.id})" title="내용 편집" style="margin-right: 8px; cursor: pointer;">📝</button>` : ''}
             <span class="file-info">${file.date}</span>
-            ${isEditable ? `<button class="btn-edit-sm" onclick="editFile(${file.id})" title="내용 편집" style="margin-right: 8px;">📝</button>` : ''}
             <button class="btn-del-sm" onclick="deleteFile(${file.id})">✕</button>
         `;
         listEl.appendChild(li);
@@ -1411,12 +1418,6 @@ window.deleteFile = function(id) {
    [추가] 파일 편집 기능 (File Editing)
    ========================================================================== */
 let currentEditingFileId = null;
-
-function isTextFile(filename) {
-    const ext = filename.split('.').pop().toLowerCase();
-    // 편집 가능한 확장자 목록
-    return ['txt', 'csv', 'log', 'json', 'xml', 'md', 'html', 'css', 'js', 'py', 'bat', 'sh', 'ini', 'conf', 'properties'].includes(ext);
-}
 
 window.editFile = function(id) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
