@@ -12,6 +12,7 @@
 - **Backend**: Flask (Python)
 - **Frontend**: HTML, CSS, JavaScript (Vanilla)
 - **Database**: JSON File Storage (Local)
+- **Database**: SQLite (Local)
 
 ## 설치 및 실행 방법
 
