@@ -881,6 +881,31 @@ body.role-user select {
         display: block;
     }
 
+    /* [추가] 모바일 유저 컨트롤 스타일 */
+    .mobile-user-controls {
+        margin-top: auto; /* 하단 고정 */
+        padding: 20px;
+        border-top: 1px solid #30363d;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+        align-items: center;
+        background-color: #161b22;
+    }
+    .mobile-user-controls button {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+    }
+    .mobile-user-controls .user-info {
+        color: #8b949e;
+        font-size: 14px;
+        margin-bottom: 5px;
+        font-weight: bold;
+        cursor: pointer; /* [요청] 클릭 가능하도록 커서 변경 */
+    }
+
     /* 3. 폼 및 버튼 */
     .form-row {
         flex-direction: column;

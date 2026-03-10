@@ -179,6 +179,42 @@ function setupMobileNav() {
     // 메인 네비게이션 복제
     mobileNav.innerHTML = `<ul class="mobile-nav-links">${mainNav.innerHTML}</ul>`;
 
+    // [추가] 유저 컨트롤 복제 및 모바일 메뉴 하단에 추가
+    const userControls = document.querySelector('.user-controls');
+    if (userControls) {
+        const mobileControls = userControls.cloneNode(true);
+        mobileControls.className = 'mobile-user-controls';
+        
+        // ID 변경 및 이벤트 연결
+        const btnLogin = mobileControls.querySelector('#btn-login-logout');
+        if (btnLogin) {
+            btnLogin.id = 'mobile-btn-login-logout';
+            btnLogin.addEventListener('click', () => {
+                toggleNav(); // 메뉴 닫기
+                handleLoginLogoutClick();
+            });
+        }
+        
+        const btnSettings = mobileControls.querySelector('#btn-user-settings');
+        if (btnSettings) {
+            btnSettings.id = 'mobile-btn-user-settings';
+            btnSettings.addEventListener('click', () => {
+                toggleNav(); // 메뉴 닫기
+                openUserModal();
+            });
+        }
+        
+        const userInfo = mobileControls.querySelector('#user-info');
+        if (userInfo) {
+            userInfo.id = 'mobile-user-info';
+            // [요청] 모바일 사용자 정보 클릭 시 로그아웃
+            userInfo.addEventListener('click', () => {
+                handleLoginLogoutClick();
+            });
+        }
+        mobileNav.appendChild(mobileControls);
+    }
+
     const toggleNav = () => {
         hamburger.classList.toggle('active');
         mobileNav.classList.toggle('active');
@@ -462,6 +498,11 @@ function checkLoginStatus() {
     const dashboardWrapper = document.querySelector('.dashboard-wrapper');
     const homeLoginContainer = document.getElementById('home-login-container');
 
+    // [추가] 모바일 컨트롤 요소
+    const mobileUserInfo = document.getElementById('mobile-user-info');
+    const mobileBtnLogin = document.getElementById('mobile-btn-login-logout');
+    const mobileBtnSettings = document.getElementById('mobile-btn-user-settings');
+
     if (isLoggedIn) {
         if (loginModal) loginModal.style.display = 'none';
         if (userInfo) {
@@ -473,6 +514,18 @@ function checkLoginStatus() {
             btnLoginLogout.classList.replace('btn-blue', 'btn-gray');
         }
         if (btnUserSettings) btnUserSettings.style.display = 'inline-block';
+        
+        // [추가] 모바일 업데이트
+        if (mobileUserInfo) {
+            mobileUserInfo.textContent = `${userId} (${role === 'admin' ? '관리자' : '일반'})`;
+            mobileUserInfo.style.display = 'block';
+        }
+        if (mobileBtnLogin) {
+            mobileBtnLogin.textContent = '로그아웃';
+            mobileBtnLogin.classList.replace('btn-blue', 'btn-gray');
+        }
+        if (mobileBtnSettings) mobileBtnSettings.style.display = 'block';
+
         if (dashboardWrapper) dashboardWrapper.style.filter = 'none';
         document.body.classList.remove('role-admin', 'role-user');
         document.body.classList.add(`role-${role}`);
@@ -484,6 +537,15 @@ function checkLoginStatus() {
             btnLoginLogout.classList.replace('btn-gray', 'btn-blue');
         }
         if (btnUserSettings) btnUserSettings.style.display = 'none';
+
+        // [추가] 모바일 업데이트
+        if (mobileUserInfo) mobileUserInfo.style.display = 'none';
+        if (mobileBtnLogin) {
+            mobileBtnLogin.textContent = '로그인';
+            mobileBtnLogin.classList.replace('btn-gray', 'btn-blue');
+        }
+        if (mobileBtnSettings) mobileBtnSettings.style.display = 'none';
+
         document.body.classList.remove('role-admin', 'role-user');
     }
 
