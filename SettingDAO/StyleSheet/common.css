@@ -698,3 +698,25 @@ body.role-user select {
     opacity: 0.6;
     background: #161b22;
 }
+
+/* ==========================================================================
+   10. 시스템 로그 필터 (System Log Filter)
+   ========================================================================== */
+.log-filter-bar {
+    padding: 10px 15px;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    gap: 5px;
+    background: #161b22;
+}
+
+.btn-filter {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #8b949e;
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 4px;
+}
+.btn-filter:hover { color: #e6edf3; }
+.btn-filter.active { background: #1f6feb; color: #fff; border-color: #1f6feb; }
