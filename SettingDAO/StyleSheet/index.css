@@ -926,13 +926,9 @@ body {
         display: none;
     }
 
+    /* [요청] 모바일에서 현황 도넛 차트 숨김 */
     .donut-chart-wrapper {
-        width: 180px;
-        height: 180px;
-    }
-    .chart-center {
-        width: 120px;
-        height: 120px;
+        display: none;
     }
 
     .status-list-container {

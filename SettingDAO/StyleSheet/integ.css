@@ -256,6 +256,7 @@
 .integ-setup-detail-header-name,
 .integ-setup-detail-col-name {
     flex: 1;
+    font-size:14px;
     padding-left: 10px; /* [설정] 장비 정보 들여쓰기 */
 }
 
@@ -477,6 +478,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         min-width: 30%; /* 화면에 약 3개 정도 보이도록 설정 */
         flex-shrink: 0; /* 줄어들지 않도록 고정 */
         margin-right: 10px;
+    }
+
+    /* [요청] 모바일에서 현황 도넛 차트 숨김 */
+    .integ-donut-container {
+        display: none;
     }
 
     .integ-setup-chart-row {
