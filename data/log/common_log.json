@@ -70,5 +70,11 @@
         "action": "ADD_EQUIP",
         "target": "asfd",
         "details": "Site: ENF 아산"
+    },
+    {
+        "timestamp": "2026-03-10T23:52:11.450Z",
+        "action": "DELETE_EQUIP",
+        "target": "asfd",
+        "details": "Site: ENF 아산"
     }
 ]
