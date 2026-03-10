@@ -62,10 +62,11 @@ limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "5
 # ------------------------------------------------------------------------------
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 LOG_DIR = os.path.join(BASE_DIR, 'logs')
+DATA_LOG_DIR = os.path.join(DATA_DIR, 'log') # [추가] 데이터 로그 폴더
 BACKUP_DIR = os.path.join(BASE_DIR, 'backups')
 
 # 디렉토리 생성
-for d in [DATA_DIR, LOG_DIR, BACKUP_DIR]:
+for d in [DATA_DIR, LOG_DIR, BACKUP_DIR, DATA_LOG_DIR]:
     if not os.path.exists(d):
         os.makedirs(d)
 
@@ -75,10 +76,10 @@ FILE_MAINTENANCE = os.path.join(DATA_DIR, 'maintenance_data.json')
 FILE_HOME = os.path.join(DATA_DIR, 'home_data.json')
 FILE_WITHTECH_DATA = os.path.join(DATA_DIR, 'withtech_data.json')
 
-# [변경] 로그 파일 경로 (logs 폴더로 이동 및 분리)
-FILE_COMMON_LOG = os.path.join(LOG_DIR, 'common_log.json')
-FILE_SETUP_LOG = os.path.join(LOG_DIR, 'setup_log.json')
-FILE_MAINTENANCE_LOG = os.path.join(LOG_DIR, 'maintenance_log.json')
+# [변경] 로그 파일 경로 (data/log 폴더로 이동)
+FILE_COMMON_LOG = os.path.join(DATA_LOG_DIR, 'common_log.json')
+FILE_SETUP_LOG = os.path.join(DATA_LOG_DIR, 'setup_log.json')
+FILE_MAINTENANCE_LOG = os.path.join(DATA_LOG_DIR, 'maintenance_log.json')
 
 # 로깅 필터 설정
 class RequestInfoFilter(logging.Filter):
@@ -245,6 +246,18 @@ def init_data_files():
     for filepath in [FILE_HOME, FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH_DATA, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG]:
         if not os.path.exists(filepath):
             restore_from_backup(filepath)
+
+    # [추가] logs/ 폴더의 json 로그 파일을 data/log/로 이동 (경로 변경 마이그레이션)
+    old_log_dir = os.path.join(BASE_DIR, 'logs')
+    for log_file in ['common_log.json', 'setup_log.json', 'maintenance_log.json']:
+        old_path = os.path.join(old_log_dir, log_file)
+        new_path = os.path.join(DATA_LOG_DIR, log_file)
+        if os.path.exists(old_path) and not os.path.exists(new_path):
+            try:
+                shutil.move(old_path, new_path)
+                app.logger.info(f"Moved {log_file} from logs/ to data/log/")
+            except Exception as e:
+                app.logger.error(f"Failed to move {log_file}: {e}")
 
     # [추가] 기존 system_log.json 마이그레이션 (분할 저장)
     old_log_path = os.path.join(DATA_DIR, 'system_log.json')
