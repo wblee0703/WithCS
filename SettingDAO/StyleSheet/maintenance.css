@@ -447,6 +447,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     margin: 0;
     overflow-y: auto;
     flex: 1;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.file-list.drag-over {
+    background-color: rgba(88, 166, 255, 0.1);
+    border: 2px dashed #58a6ff;
 }
 
 .file-item {

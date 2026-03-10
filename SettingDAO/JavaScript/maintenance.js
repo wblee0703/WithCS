@@ -1257,16 +1257,43 @@ function toggleLogManagementMode() {
 function setupFileEvents() {
     const uploadBtn = document.getElementById('btn-upload-file');
     const fileInput = document.getElementById('file-upload-input');
+    const fileList = document.getElementById('file-list');
 
     if (uploadBtn && fileInput) {
         uploadBtn.onclick = () => fileInput.click();
-        fileInput.onchange = handleFileUpload;
+        fileInput.onchange = (e) => {
+            handleFiles(e.target.files);
+            e.target.value = '';
+        };
+    }
+
+    // [추가] 드래그 앤 드롭 이벤트
+    if (fileList) {
+        fileList.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fileList.classList.add('drag-over');
+        });
+
+        fileList.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fileList.classList.remove('drag-over');
+        });
+
+        fileList.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fileList.classList.remove('drag-over');
+            if (e.dataTransfer && e.dataTransfer.files) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
     }
 }
 
-function handleFileUpload(e) {
+function handleFiles(files) {
     if (!currentPath.site || !currentPath.equip) return alert('장비를 선택해주세요.');
-    const files = e.target.files;
     if (!files || files.length === 0) return;
 
     const key = `details_${currentPath.site}_${currentPath.equip}`;
@@ -1309,8 +1336,6 @@ function handleFileUpload(e) {
         };
         reader.readAsDataURL(file);
     });
-    
-    e.target.value = '';
 }
 
 function renderFiles() {
