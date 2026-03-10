@@ -349,7 +349,7 @@ function setupSidebarEvents() {
     const siteSettingBtn = document.getElementById('site-setting-btn');
     // [추가] 사업장 추가 입력창 그룹 (초기 숨김 처리)
     const siteInputGroup = siteInput ? siteInput.parentElement : null;
-    if (siteInputGroup && siteInputGroup.classList.contains('sidebar-input-group')) {
+    if (siteInputGroup) {
         siteInputGroup.style.display = 'none';
     }
 
@@ -358,7 +358,7 @@ function setupSidebarEvents() {
             document.getElementById('site-list').classList.toggle('edit-active');
             siteSettingBtn.classList.toggle('active');
             // [추가] 톱니바퀴 클릭 시 입력창 토글
-            if (siteInputGroup && siteInputGroup.classList.contains('sidebar-input-group')) {
+            if (siteInputGroup) {
                 siteInputGroup.style.display = siteInputGroup.style.display === 'none' ? 'flex' : 'none';
             }
         });
@@ -368,7 +368,7 @@ function setupSidebarEvents() {
     // [추가] 장비 추가 입력창 그룹 (초기 숨김 처리)
     const equipInputEl = document.getElementById('equip-input');
     const equipInputGroup = equipInputEl ? equipInputEl.parentElement : null;
-    if (equipInputGroup && equipInputGroup.classList.contains('sidebar-input-group')) {
+    if (equipInputGroup) {
         equipInputGroup.style.display = 'none';
     }
 
@@ -377,7 +377,7 @@ function setupSidebarEvents() {
             document.getElementById('equip-list').classList.toggle('edit-active');
             equipSettingBtn.classList.toggle('active');
             // [추가] 톱니바퀴 클릭 시 입력창 토글
-            if (equipInputGroup && equipInputGroup.classList.contains('sidebar-input-group')) {
+            if (equipInputGroup) {
                 equipInputGroup.style.display = equipInputGroup.style.display === 'none' ? 'flex' : 'none';
             }
         });
