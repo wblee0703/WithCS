@@ -552,5 +552,13 @@
                 "type": "PM"
             }
         ]
+    },
+    "details_ENF 아산_asfd": {
+        "maint": [],
+        "logs": [],
+        "memo": "",
+        "setup": {
+            "model": ""
+        }
     }
 }
