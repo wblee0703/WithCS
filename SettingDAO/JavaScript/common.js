@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // originalSetItem을 사용하여 초기화 시 서버로 다시 전송되는 루프 방지
                 originalSetItem.call(localStorage, key, JSON.stringify(data[key]));
             });
-            // 전역 변수 갱신
+            // [수정] 전역 변수 갱신 (초기 로드 시 데이터 누락 방지)
             storageData = JSON.parse(localStorage.getItem('withtech_data')) || {};
             initializeApp();
         })
