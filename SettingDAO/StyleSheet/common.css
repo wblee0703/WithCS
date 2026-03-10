@@ -781,8 +781,11 @@ body.role-user select {
     /* 2. 헤더 및 네비게이션 */
     .header {
         height: 60px;
-        justify-content: space-between;
+        /* [요청] 헤더 정렬 방식 변경 */
+        justify-content: flex-start;
+        align-items: center;
         padding: 0 15px;
+        gap: 15px;
     }
 
     .header-logo {
@@ -790,14 +793,28 @@ body.role-user select {
         height: 30px;
         left: auto;
         transform: none;
+        margin-right: auto; /* [요청] 로고를 왼쪽에, 나머지를 오른쪽에 배치 */
     }
 
-    .header .container { display: none; } /* 기존 네비게이션 숨기기 */
+    .header .container {
+        display: block; /* [요청] 데스크탑 메뉴바 표시 */
+        order: 2; /* [요청] 사용자 정보 뒤로 순서 변경 */
+    }
+
+    /* [추가] 모바일용 네비게이션 링크 스타일 */
+    .nav-links {
+        gap: 20px;
+    }
+    .nav-links a {
+        font-size: 14px;
+        font-weight: 700;
+    }
 
     .user-controls {
         position: static;
         right: auto;
         gap: 10px;
+        order: 1; /* [요청] 메뉴바 앞으로 순서 변경 */
     }
 
     /* [요청] 모바일 헤더에서 로그인/설정 버튼 숨기기 */
@@ -807,7 +824,7 @@ body.role-user select {
 
     /* 햄버거 메뉴 버튼 */
     .hamburger-menu {
-        display: flex;
+        display: none; /* [요청] 햄버거 메뉴 숨기기 */
         order: -1; /* 로고보다 앞에 오도록 */
         flex-direction: column;
         justify-content: space-around;
@@ -839,7 +856,7 @@ body.role-user select {
 
     /* 모바일 네비게이션 패널 */
     .mobile-nav {
-        display: flex;
+        display: none; /* [요청] 모바일 네비게이션 숨기기 */
         position: fixed;
         top: 0;
         left: -100%; /* 초기에는 화면 밖 */
@@ -874,7 +891,7 @@ body.role-user select {
     
     /* 모바일 네비게이션 활성화 시 배경 오버레이 */
     .nav-overlay {
-        display: none;
+        display: none; /* [요청] 오버레이 숨기기 */
         position: fixed;
         top: 0;
         left: 0;
