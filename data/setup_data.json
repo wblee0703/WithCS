@@ -121,6 +121,17 @@
                 "execStartDate": "",
                 "id": 1772509876115,
                 "startDate": "2026-04-03"
+            },
+            {
+                "category": "셋업 완료",
+                "completed": false,
+                "content": "셋업 완료",
+                "date": "",
+                "delayReason": "",
+                "estDays": "0",
+                "execStartDate": "",
+                "id": 1772509876116,
+                "startDate": "2026-04-10"
             }
         ]
     },
@@ -1816,6 +1827,17 @@
                 "execStartDate": "2026-03-16",
                 "id": 1771813080915,
                 "startDate": "2026-03-16"
+            },
+            {
+                "category": "셋업 완료",
+                "completed": true,
+                "content": "셋업 완료",
+                "date": "2026-03-23",
+                "delayReason": "",
+                "estDays": "0",
+                "execStartDate": "2026-03-23",
+                "id": 1771813080916,
+                "startDate": "2026-03-23"
             }
         ],
         "setupLogs": [
@@ -2039,6 +2061,17 @@
                 "execStartDate": "2026-04-03",
                 "id": 1772159006268,
                 "startDate": "2026-04-03"
+            },
+            {
+                "category": "셋업 완료",
+                "completed": true,
+                "content": "셋업 완료",
+                "date": "2026-04-10",
+                "delayReason": "",
+                "estDays": "0",
+                "execStartDate": "2026-04-10",
+                "id": 1772159006269,
+                "startDate": "2026-04-10"
             }
         ],
         "setupLogs": [
@@ -2290,7 +2323,7 @@
                 "id": 1772159006702,
                 "completed": false,
                 "content": "장비 도면 부착",
-                "date": "",
+                "date": "2026-03-12",
                 "startDate": "2026-03-11",
                 "estDays": "1",
                 "category": "장비 반입 및 정위치",
@@ -2408,11 +2441,11 @@
                 "execStartDate": ""
             },
             {
-                "id": 1773214915854,
+                "id": 1773270940970,
                 "completed": false,
                 "content": "셋업 완료",
                 "date": "",
-                "startDate": "2026-04-17",
+                "startDate": "",
                 "estDays": "0",
                 "category": "셋업 완료",
                 "delayReason": "",
