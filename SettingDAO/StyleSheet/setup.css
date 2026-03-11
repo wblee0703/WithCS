@@ -492,8 +492,7 @@
         overflow-y: auto !important;
     }
 
-    /* [요청] 모바일 셋업 진행 세부사항 리스트 표시 제어 */
-    
+      
     /* [추가] 일반 모드 테이블 레이아웃 및 스타일 */
     #setup-detail-card:not(.edit-mode) .data-table {
         table-layout: fixed;
@@ -502,12 +501,12 @@
     #setup-detail-card:not(.edit-mode) .data-table th,
     #setup-detail-card:not(.edit-mode) .data-table td {
         padding: 8px 4px;
-        font-size: 12px;
-        vertical-align: middle;
+        font-size: 10px;
     }
 
     /* [추가] 일반 모드 컬럼 너비 */
     #setup-detail-card:not(.edit-mode) .data-table th:nth-child(1) { width: auto; } /* 내용 */
+    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(2) { width: 35px; } /* 작업일 */
     #setup-detail-card:not(.edit-mode) .data-table th:nth-child(3) { width: 65px; } /* 예정일 */
     #setup-detail-card:not(.edit-mode) .data-table th:nth-child(4) { width: 65px; } /* 완료일 */
     #setup-detail-card:not(.edit-mode) .data-table th:nth-child(5) { width: 40px; } /* 상태 */
@@ -543,12 +542,6 @@
         font-size: 10px;
         padding: 0;
     }
-    
-    #setup-detail-card.edit-mode .detail-est-days-input {
-        width: 100% !important;
-        font-size: 11px;
-    }
-
     /* [요청] 모바일에서 카드 접기 버튼 표시 */
     .btn-collapse {
         display: block !important;
