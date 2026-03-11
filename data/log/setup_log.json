@@ -16,5 +16,11 @@
         "action": "CALC_SETUP_SCHEDULE",
         "target": "SOLA-1000::SOLA-1000",
         "details": "일정 자동 계산 (순방향)"
+    },
+    {
+        "timestamp": "2026-03-11T07:33:48.287Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "일정 자동 계산 (순방향)"
     }
 ]
