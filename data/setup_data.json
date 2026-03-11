@@ -2380,5 +2380,105 @@
                 "startDate": ""
             }
         ]
+    },
+    "SEC 평택::SOLA-2000LC": {
+        "setupDetails": [
+            {
+                "id": 1773213998922,
+                "category": "장비 반입 및 정위치",
+                "content": "장비 도면 부착",
+                "startDate": "",
+                "estDays": "1",
+                "date": ""
+            },
+            {
+                "id": 1773213998923,
+                "category": "장비 반입 및 정위치",
+                "content": "다이크 설치",
+                "startDate": "",
+                "estDays": "1",
+                "date": ""
+            },
+            {
+                "id": 1773213998924,
+                "category": "장비 반입 및 정위치",
+                "content": "장비 반입",
+                "startDate": "",
+                "estDays": "1",
+                "date": ""
+            },
+            {
+                "id": 1773213998925,
+                "category": "장비 반입 및 정위치",
+                "content": "다이크 공사 및 리크센서 설치",
+                "startDate": "",
+                "estDays": "2",
+                "date": ""
+            },
+            {
+                "id": 1773213998926,
+                "category": "통신 상태 및 유틸리티",
+                "content": "Utility 배관 공사 및 연결",
+                "startDate": "",
+                "estDays": "5",
+                "date": ""
+            },
+            {
+                "id": 1773213998927,
+                "category": "통신 상태 및 유틸리티",
+                "content": "Utility 턴온",
+                "startDate": "",
+                "estDays": "1",
+                "date": ""
+            },
+            {
+                "id": 1773213998928,
+                "category": "통신 상태 및 유틸리티",
+                "content": "인터락 Test 및 통신상태 확인 ",
+                "startDate": "",
+                "estDays": "2",
+                "date": ""
+            },
+            {
+                "id": 1773213998929,
+                "category": "셋업 평가",
+                "content": "분석부 안정화 및 오염제어",
+                "startDate": "",
+                "estDays": "5",
+                "date": ""
+            },
+            {
+                "id": 1773213998930,
+                "category": "셋업 평가",
+                "content": "Calibration 평가",
+                "startDate": "",
+                "estDays": "2",
+                "date": ""
+            },
+            {
+                "id": 1773213998931,
+                "category": "셋업 평가",
+                "content": "Sample 측정",
+                "startDate": "",
+                "estDays": "2",
+                "date": ""
+            },
+            {
+                "id": 1773213998932,
+                "category": "셋업 평가",
+                "content": "신뢰도 평가",
+                "startDate": "",
+                "estDays": "5",
+                "date": ""
+            },
+            {
+                "id": 1773213998933,
+                "category": "셋업 완료",
+                "content": "셋업 완료",
+                "startDate": "",
+                "estDays": "0",
+                "date": ""
+            }
+        ]
     }
 }
