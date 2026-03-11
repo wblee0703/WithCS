@@ -520,7 +520,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .card-body {
         padding: 10px;
     }
-
+/* [요청] 모바일에서 카드 접기 시 제목만 남기기 (높이 자동) */
+    .card {
+        height: auto !important;
+        min-height: 0 !important;
+        flex: none !important;
+    }
+    
     .log-select-wrapper {
         width: 100%;
         margin-right: 0;
@@ -533,10 +539,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         overflow-y: auto !important;
     }
 
-    /* [요청] 작업 내용(메모 등) 높이 수정 (내용 더 많이 보이게) */
+    /* [요청] 작업 내용(메모 등) 높이 수정 (최소 300px ~ 최대 800px, 스크롤) */
     #device-memo, 
     #setup-log-detail-memo,
     textarea.delay-reason-textarea {
-        height: 150px !important;
+        height: 300px !important;
+        min-height: 300px !important;
+        max-height: 800px !important;
+        overflow-y: auto !important;
     }
 }
