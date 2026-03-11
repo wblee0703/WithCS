@@ -495,9 +495,7 @@
 
       
     /* [추가] 일반 모드 테이블 레이아웃 및 스타일 */
-    #setup-detail-card:not(.edit-mode) .data-table {
-        table-layout: fixed;
-    }
+    /* [수정] table-layout: fixed 제거하여 너비 문제 해결 */
 
     #setup-detail-card:not(.edit-mode) .data-table th,
     #setup-detail-card:not(.edit-mode) .data-table td {
@@ -513,10 +511,6 @@
     #setup-detail-card:not(.edit-mode) .data-table th:nth-child(5) { width: 40px; } /* 상태 */
 
     /* 2. 편집 모드 (톱니바퀴 클릭): 모든 컬럼 표시 및 너비 고정 */
-    #setup-detail-card.edit-mode .data-table {
-        table-layout: fixed; /* 테이블 너비 고정 */
-    }
-
     /* 헤더 및 셀 패딩 축소 */
     #setup-detail-card.edit-mode .data-table th,
     #setup-detail-card.edit-mode .data-table td {
