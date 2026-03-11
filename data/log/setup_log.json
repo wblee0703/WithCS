@@ -132,285 +132,57 @@
         "timestamp": "2026-03-11T05:57:27.755Z"
     },
     {
+        "timestamp": "2026-03-11T06:03:05.906Z",
         "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
         "target": "IWM-1000::W001-OK25-0801",
-        "timestamp": "2026-03-11T06:03:05.906Z"
+        "details": "셋업 상세 내역 수정"
     },
     {
+        "timestamp": "2026-03-11T06:03:11.624Z",
         "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-11T06:03:11.624Z"
+        "details": "셋업 상세 내역 수정"
     },
     {
+        "timestamp": "2026-03-11T06:03:16.067Z",
         "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-11T06:03:16.067Z"
+        "details": "셋업 상세 내역 수정"
     },
     {
+        "timestamp": "2026-03-11T06:03:18.319Z",
         "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-11T06:03:18.319Z"
+        "details": "셋업 상세 내역 수정"
     },
     {
+        "timestamp": "2026-03-11T06:03:20.224Z",
         "action": "REORDER_SETUP",
-        "details": "순서 변경",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-11T06:03:20.224Z"
+        "details": "순서 변경"
     },
     {
+        "timestamp": "2026-03-11T06:03:23.952Z",
         "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-11T06:03:23.952Z"
+        "details": "셋업 상세 내역 수정"
     },
     {
+        "timestamp": "2026-03-11T06:03:26.691Z",
         "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-11T06:03:26.691Z"
+        "details": "셋업 상세 내역 수정"
     },
     {
+        "timestamp": "2026-03-11T06:03:29.522Z",
         "action": "REORDER_SETUP",
-        "details": "순서 변경",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-11T06:03:29.522Z"
+        "details": "순서 변경"
     },
     {
+        "timestamp": "2026-03-11T06:03:34.452Z",
         "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-11T06:03:34.452Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-H19-0402",
-        "timestamp": "2026-03-11T06:23:33.173Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-H19-0402",
-        "timestamp": "2026-03-11T06:23:42.028Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-H19-0402",
-        "timestamp": "2026-03-11T06:23:56.051Z"
-    },
-    {
-        "action": "ADD_SETUP_ITEM",
-        "details": "Category: 통신 상태 및 유틸리티",
-        "target": "SOMA-2000::SOMA-H19-0402",
-        "timestamp": "2026-03-11T06:25:33.069Z"
-    },
-    {
-        "action": "ADD_SETUP_ITEM",
-        "details": "Category: 통신 상태 및 유틸리티",
-        "target": "SOMA-2000::SOMA-H19-0402",
-        "timestamp": "2026-03-11T06:25:34.110Z"
-    },
-    {
-        "action": "DELETE_SETUP_ITEM",
-        "details": "ID: 1773210333064",
-        "target": "SOMA-2000::SOMA-H19-0402",
-        "timestamp": "2026-03-11T06:25:35.194Z"
-    },
-    {
-        "action": "DELETE_SETUP_ITEM",
-        "details": "ID: 1773210334106",
-        "target": "SOMA-2000::SOMA-H19-0402",
-        "timestamp": "2026-03-11T06:25:35.713Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-H19-0402",
-        "timestamp": "2026-03-11T06:25:38.107Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-3000E::SOMA-EK24-0401",
-        "timestamp": "2026-03-11T06:25:56.239Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-3000E::SOMA-EK24-0401",
-        "timestamp": "2026-03-11T06:26:54.163Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:04:36.185Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:04:40.827Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:04:41.769Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:04:49.500Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:04:51.219Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:05:01.418Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:05:49.769Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:05:51.001Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:05:52.162Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:05:54.794Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:05:55.889Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:05:57.608Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:05:58.407Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:05:59.367Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-11T07:16:51.739Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:20:45.624Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T07:20:54.281Z"
-    },
-    {
-        "timestamp": "2026-03-11T07:55:52.444Z",
-        "action": "UPDATE_SETUP_DETAILS",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
-    },
-    {
-        "timestamp": "2026-03-11T07:56:03.415Z",
-        "action": "UPDATE_SETUP_DETAILS",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
-    },
-    {
-        "timestamp": "2026-03-11T07:56:25.011Z",
-        "action": "UPDATE_SETUP_DETAILS",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
-    },
-    {
-        "timestamp": "2026-03-11T07:56:25.020Z",
-        "action": "CALC_SETUP_SCHEDULE",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "details": "일정 자동 계산 (완료일 기준)"
-    },
-    {
-        "timestamp": "2026-03-11T07:56:32.557Z",
-        "action": "UPDATE_SETUP_DETAILS",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
-    },
-    {
-        "timestamp": "2026-03-11T07:56:32.568Z",
-        "action": "CALC_SETUP_SCHEDULE",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "details": "일정 자동 계산 (순방향)"
-    },
-    {
-        "timestamp": "2026-03-11T07:56:32.573Z",
-        "action": "CALC_SETUP_SCHEDULE",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "details": "일정 자동 계산 (역방향)"
-    },
-    {
-        "timestamp": "2026-03-11T07:56:44.868Z",
-        "action": "UPDATE_SETUP_DETAILS",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
-    },
-    {
-        "timestamp": "2026-03-11T07:56:50.711Z",
-        "action": "UPDATE_SETUP_DETAILS",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
-    },
-    {
-        "timestamp": "2026-03-11T07:56:50.718Z",
-        "action": "CALC_SETUP_SCHEDULE",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "details": "일정 자동 계산 (순방향)"
-    },
-    {
-        "timestamp": "2026-03-11T07:57:01.176Z",
-        "action": "UPDATE_SETUP_DETAILS",
-        "target": "WIM-100::WIM1-HK24-0401",
         "details": "셋업 상세 내역 수정"
     }
 ]
