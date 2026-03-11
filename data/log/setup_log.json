@@ -346,5 +346,11 @@
         "details": "셋업 상세 내역 수정",
         "target": "WIM-100::WIM1-HK24-0401",
         "timestamp": "2026-03-11T07:20:54.281Z"
+    },
+    {
+        "timestamp": "2026-03-11T07:55:52.444Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "셋업 상세 내역 수정"
     }
 ]
