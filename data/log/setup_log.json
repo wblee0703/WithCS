@@ -112,5 +112,11 @@
         "details": "셋업 상세 내역 수정",
         "target": "WIM-100::WIM1-HK24-0401",
         "timestamp": "2026-03-11T04:52:02.502Z"
+    },
+    {
+        "timestamp": "2026-03-11T05:57:22.371Z",
+        "action": "UPDATE_SETUP_LOG_MEMO",
+        "target": "IWM-1000::W001-OK25-0801",
+        "details": "셋업 일지 메모 수정"
     }
 ]
