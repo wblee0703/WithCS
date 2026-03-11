@@ -186,63 +186,63 @@
         "timestamp": "2026-03-11T06:03:34.452Z"
     },
     {
-        "timestamp": "2026-03-11T06:23:33.173Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T06:23:33.173Z"
     },
     {
-        "timestamp": "2026-03-11T06:23:42.028Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T06:23:42.028Z"
     },
     {
-        "timestamp": "2026-03-11T06:23:56.051Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T06:23:56.051Z"
     },
     {
-        "timestamp": "2026-03-11T06:25:33.069Z",
         "action": "ADD_SETUP_ITEM",
+        "details": "Category: 통신 상태 및 유틸리티",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "Category: 통신 상태 및 유틸리티"
+        "timestamp": "2026-03-11T06:25:33.069Z"
     },
     {
-        "timestamp": "2026-03-11T06:25:34.110Z",
         "action": "ADD_SETUP_ITEM",
+        "details": "Category: 통신 상태 및 유틸리티",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "Category: 통신 상태 및 유틸리티"
+        "timestamp": "2026-03-11T06:25:34.110Z"
     },
     {
-        "timestamp": "2026-03-11T06:25:35.194Z",
         "action": "DELETE_SETUP_ITEM",
+        "details": "ID: 1773210333064",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "ID: 1773210333064"
+        "timestamp": "2026-03-11T06:25:35.194Z"
     },
     {
-        "timestamp": "2026-03-11T06:25:35.713Z",
         "action": "DELETE_SETUP_ITEM",
+        "details": "ID: 1773210334106",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "ID: 1773210334106"
+        "timestamp": "2026-03-11T06:25:35.713Z"
     },
     {
-        "timestamp": "2026-03-11T06:25:38.107Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T06:25:38.107Z"
     },
     {
-        "timestamp": "2026-03-11T06:25:56.239Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-3000E::SOMA-EK24-0401",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T06:25:56.239Z"
     },
     {
-        "timestamp": "2026-03-11T06:26:54.163Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-3000E::SOMA-EK24-0401",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T06:26:54.163Z"
     }
 ]
