@@ -155,6 +155,11 @@
     cursor: grab;
 }
 
+/* [요청] 셋업 상세내역 작업내용 좌측 정렬 */
+#setup-detail-card .data-table td:first-child {
+    text-align: left;
+}
+
 /* ==========================================================================
    4. 셋업 일지 (Setup Log List)
    ========================================================================== */
@@ -443,10 +448,6 @@
         display: none;
         height: 0;
         width: 0;
-    }
-
-    .data-table input[type="date"]::-webkit-calendar-picker-indicator {
-        display: none;
     }
 
     .log-input-row {
