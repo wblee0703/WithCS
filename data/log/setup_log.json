@@ -28,5 +28,11 @@
         "action": "START_SETUP_EXEC",
         "target": "WIM-100::WIM1-HK24-0401",
         "details": "실행 시작일 설정: 2026-03-11"
+    },
+    {
+        "timestamp": "2026-03-11T03:10:48.011Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "셋업 상세 내역 수정"
     }
 ]
