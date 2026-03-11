@@ -6,63 +6,63 @@
         "timestamp": "2026-03-11T07:28:37.485Z"
     },
     {
-        "timestamp": "2026-03-11T07:33:42.894Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-11T07:33:42.894Z"
     },
     {
-        "timestamp": "2026-03-11T07:33:45.878Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-11T07:33:45.878Z"
     },
     {
-        "timestamp": "2026-03-11T07:33:48.287Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-11T07:33:48.287Z"
     },
     {
-        "timestamp": "2026-03-11T07:33:50.942Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-11T07:33:50.942Z"
     },
     {
-        "timestamp": "2026-03-11T07:33:58.468Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T07:33:58.468Z"
     },
     {
-        "timestamp": "2026-03-11T07:33:58.470Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-11T07:33:58.470Z"
     },
     {
-        "timestamp": "2026-03-11T07:33:58.471Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (역방향)",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "일정 자동 계산 (역방향)"
+        "timestamp": "2026-03-11T07:33:58.471Z"
     },
     {
-        "timestamp": "2026-03-11T07:34:00.407Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T07:34:00.407Z"
     },
     {
-        "timestamp": "2026-03-11T07:34:00.409Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-11T07:34:00.409Z"
     },
     {
-        "timestamp": "2026-03-11T07:34:00.410Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (역방향)",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "일정 자동 계산 (역방향)"
+        "timestamp": "2026-03-11T07:34:00.410Z"
     }
 ]

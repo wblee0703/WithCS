@@ -260,6 +260,21 @@ function renderSetupDetailList() {
         localStorage.setItem('setup_data', JSON.stringify(setupData));
     }
 
+    // [요청] '셋업 완료' 항목이 없는 경우, 강제로 추가하여 복구
+    if (data.setupDetails) {
+        const hasCompletionItem = data.setupDetails.some(item => item.category === '셋업 완료' && item.content === '셋업 완료');
+        if (!hasCompletionItem) {
+            data.setupDetails.push({
+                id: Date.now() + 999, // 고유 ID
+                category: "셋업 완료",
+                content: "셋업 완료",
+                startDate: "", estDays: "0", date: ""
+            });
+            setupData[equipKey] = data;
+            localStorage.setItem('setup_data', JSON.stringify(setupData));
+        }
+    }
+
     // 편집 모드 확인
     const card = document.getElementById('setup-detail-card');
     const isEditMode = card ? card.classList.contains('edit-mode') : false;
