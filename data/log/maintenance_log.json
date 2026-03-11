@@ -10,5 +10,11 @@
         "details": "Date: , Content: ff",
         "target": "SOMA-3000E::SOMA-EK24-0402",
         "timestamp": "2026-03-10T09:31:35.368Z"
+    },
+    {
+        "timestamp": "2026-03-11T08:21:07.800Z",
+        "action": "ADD_LOG",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "[장비점검] Test (작업자: 이원배, 날짜: 2026-03-11)"
     }
 ]
