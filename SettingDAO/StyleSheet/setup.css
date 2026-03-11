@@ -542,6 +542,12 @@
         font-size: 10px;
         padding: 0;
     }
+    
+    #setup-detail-card #setup-detail-card.edit-mode .detail-est-days-input {
+        width: 100% !important;
+        font-size: 11px;
+    }
+
     /* [요청] 모바일에서 카드 접기 버튼 표시 */
     .btn-collapse {
         display: block !important;
