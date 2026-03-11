@@ -1,18 +1,24 @@
 [
     {
-        "timestamp": "2026-03-11T03:08:03.799Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T03:08:03.799Z"
     },
     {
-        "timestamp": "2026-03-11T03:08:03.804Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-11T03:08:03.804Z"
     },
     {
-        "timestamp": "2026-03-11T03:08:06.786Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-11T03:08:06.786Z"
+    },
+    {
+        "timestamp": "2026-03-11T03:09:06.511Z",
         "action": "UPDATE_SETUP_DETAILS",
         "target": "WIM-100::WIM1-HK24-0401",
         "details": "셋업 상세 내역 수정"
