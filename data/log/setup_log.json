@@ -130,5 +130,11 @@
         "details": "셋업 일지 메모 수정",
         "target": "IWM-1000::W001-OK25-0801",
         "timestamp": "2026-03-11T05:57:27.755Z"
+    },
+    {
+        "timestamp": "2026-03-11T06:03:05.906Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "IWM-1000::W001-OK25-0801",
+        "details": "셋업 상세 내역 수정"
     }
 ]
