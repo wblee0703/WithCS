@@ -422,4 +422,20 @@
         min-width: 3.3vw; /* 100vw / 30일 ≈ 3.3vw (화면 너비에 맞춰 1달 표시) */
         flex-shrink: 0;
     }
+
+    @media (orientation: landscape) {
+        .gantt__wrapper {
+            flex-direction: row !important;
+            gap: 0 !important;
+        }
+        .gantt__sidebar {
+            width: 250px !important;
+            max-height: none;
+            border-right: 1px solid var(--gantt-border);
+            border-bottom: none;
+        }
+        .gantt__timeline-container {
+            height: auto;
+        }
+    }
 }

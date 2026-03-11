@@ -317,20 +317,26 @@ function renderSetupDetailList() {
             const contentDisabledAttr = (item.completed || !isEditMode) ? 'disabled' : '';
             const inputColor = item.completed ? '#8b949e' : '#e6edf3';
 
-            // [수정] 모바일/편집 모드에 따라 셀 내용 동적 생성
+            // [수정] 모드(편집/일반)에 따라 셀 내용 동적 생성
             let contentCellHtml, startDateCellHtml, dateCellHtml;
             let minDateAttr = '';
 
-            // [수정] 모바일 구분 없이 항상 입력창 형태로 표시 (모든 컬럼 표시 요청 반영)
-            contentCellHtml = `
-                <div style="display:flex; align-items:center; gap:5px;">
-                    <input type="text" class="detail-content-input" value="${escapeHtml(item.content)}" placeholder="항목 입력" style="flex:1; color: ${inputColor};" ${contentDisabledAttr}>
-                </div>
-            `;
             if (item.execStartDate) minDateAttr = `min="${item.execStartDate}"`;
             else if (item.startDate) minDateAttr = `min="${item.startDate}"`;
-            startDateCellHtml = `<input type="date" class="detail-start-date-input" value="${item.startDate || ''}" style="color: ${inputColor};" ${generalDisabledAttr}>`;
-            dateCellHtml = `<input type="date" class="detail-date-input" value="${item.date || ''}" style="color: ${inputColor};" ${generalDisabledAttr} ${minDateAttr}>`;
+
+            if (isEditMode) {
+                contentCellHtml = `
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <input type="text" class="detail-content-input" value="${escapeHtml(item.content)}" placeholder="항목 입력" style="flex:1; color: ${inputColor};" ${contentDisabledAttr}>
+                    </div>
+                `;
+                startDateCellHtml = `<input type="date" class="detail-start-date-input" value="${item.startDate || ''}" style="color: ${inputColor};" ${generalDisabledAttr}>`;
+                dateCellHtml = `<input type="date" class="detail-date-input" value="${item.date || ''}" style="color: ${inputColor};" ${generalDisabledAttr} ${minDateAttr}>`;
+            } else {
+                contentCellHtml = `<div class="scrollable-content">${escapeHtml(item.content)}</div>`;
+                startDateCellHtml = `<div class="date-display" style="color: ${inputColor};">${formatDateYYMMDD(item.startDate)}</div>`;
+                dateCellHtml = `<div class="date-display" style="color: ${inputColor};">${formatDateYYMMDD(item.date)}</div>`;
+            }
 
             const estVal = (item.estDays !== undefined && item.estDays !== null && item.estDays !== '') ? item.estDays : '1';
             let estDaysHtml = `<input type="text" class="detail-est-days-input" value="${estVal}" placeholder="0" style="text-align: center; width: 100%; background: transparent; border: none; color: ${inputColor};" ${generalDisabledAttr}>`;
