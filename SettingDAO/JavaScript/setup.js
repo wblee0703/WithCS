@@ -383,7 +383,7 @@ function renderSetupDetailList() {
                     // 미완료 & 미실행 상태
                     if (isPreviousCompleted && !foundNextTask) {
                         foundNextTask = true; // 실행 가능한 첫 번째 작업
-                        actionCellHtml = `<div style="display:flex; justify-content:center;"><button class="btn-play-sm" onclick="startSetupTask(${item.id})">▶</button><input type="checkbox" class="detail-complete-checkbox" style="display:none;"></div>`;
+                        actionCellHtml = `<div style="display:flex; justify-content:center;"><button class="btn-play-sm" onclick="event.stopPropagation(); startSetupTask(${item.id})">▶</button><input type="checkbox" class="detail-complete-checkbox" style="display:none;"></div>`;
                     } else {
                         actionCellHtml = `<input type="checkbox" class="detail-complete-checkbox" style="visibility: hidden;">`;
                     }
@@ -536,7 +536,7 @@ function addSetupDetailItem(category) {
         const prevCheckbox = prevRow.querySelector('.detail-complete-checkbox');
         if (prevCheckbox && prevCheckbox.checked) {
             // 이전 항목이 완료되었으면 실행 버튼 표시
-            actionTd.innerHTML = `<div style="display:flex; justify-content:center;"><button class="btn-play-sm" onclick="startSetupTask(${id})">▶</button><input type="checkbox" class="detail-complete-checkbox" style="display:none;"></div>`;
+            actionTd.innerHTML = `<div style="display:flex; justify-content:center;"><button class="btn-play-sm" onclick="event.stopPropagation(); startSetupTask(${id})">▶</button><input type="checkbox" class="detail-complete-checkbox" style="display:none;"></div>`;
             attachSetupCheckboxListener(tr); // 버튼과 함께 생성된 숨겨진 체크박스에 리스너 다시 연결
         } else {
             // 이전 항목 미완료 시 체크박스 숨김
@@ -703,7 +703,7 @@ function attachSetupCheckboxListener(row) {
             if (row.dataset.category !== '셋업 완료') {
                 const actionTd = row.cells[4];
                 const id = row.dataset.id;
-                actionTd.innerHTML = `<div style="display:flex; justify-content:center;"><button class="btn-play-sm" onclick="startSetupTask(${id})">▶</button><input type="checkbox" class="detail-complete-checkbox" style="display:none;"></div>`;
+                actionTd.innerHTML = `<div style="display:flex; justify-content:center;"><button class="btn-play-sm" onclick="event.stopPropagation(); startSetupTask(${id})">▶</button><input type="checkbox" class="detail-complete-checkbox" style="display:none;"></div>`;
                 // 새 체크박스에 리스너 다시 연결
                 attachSetupCheckboxListener(row);
             }
@@ -1694,6 +1694,8 @@ function openSetupExecStartModal(id) {
 function startSetupTask(id) {
     openSetupExecStartModal(id);
 }
+// [추가] 인라인 onclick에서 호출될 수 있도록 전역 객체에 명시적 할당
+window.startSetupTask = startSetupTask;
 
 function saveSetupExecStart() {
     if (!currentExecStartTargetId) return;

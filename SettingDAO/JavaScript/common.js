@@ -575,10 +575,19 @@ function setupCollapsibleCards() {
             const btn = document.createElement('button');
             btn.className = 'btn-collapse';
             
-            // [수정] 모바일(가로모드 포함) 초기 상태: 접힘
+            // [수정] 모바일(가로모드 포함) 초기 상태 설정
             if (window.innerWidth <= 950) {
-                btn.innerHTML = '▼';
-                body.style.display = 'none';
+                const headerText = header.textContent;
+                // [요청] 셋업 진행 세부사항, 장비 점검 이력은 초기 상태에서 열어둠
+                const keepOpen = (card.id === 'setup-detail-card') || headerText.includes('셋업 진행 세부사항') || headerText.includes('장비 점검 이력');
+                
+                if (keepOpen) {
+                    btn.innerHTML = '▲';
+                    body.style.display = '';
+                } else {
+                    btn.innerHTML = '▼';
+                    body.style.display = 'none';
+                }
             } else {
                 btn.innerHTML = '▲'; // 초기 상태: 펼쳐짐
             }

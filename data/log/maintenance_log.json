@@ -4,23 +4,5 @@
         "details": "From: SKH 이천 > SOMA-2000::SOMA-H19-0402",
         "target": "OMS-100L::OMS1-LK22-0104",
         "timestamp": "2026-03-10T02:47:59.781Z"
-    },
-    {
-        "action": "DELETE_SCHEDULE",
-        "details": "Date: , Content: ff",
-        "target": "SOMA-3000E::SOMA-EK24-0402",
-        "timestamp": "2026-03-10T09:31:35.368Z"
-    },
-    {
-        "action": "ADD_LOG",
-        "details": "[장비점검] Test (작업자: 이원배, 날짜: 2026-03-11)",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T08:21:07.800Z"
-    },
-    {
-        "action": "UPDATE_MEMO",
-        "details": "메모 수정 (LogID: 1773217267796)",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-11T08:21:16.302Z"
     }
 ]
