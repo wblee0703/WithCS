@@ -152,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', () => {
         const currentWidth = window.innerWidth;
         if ((lastWidth <= 768 && currentWidth > 768) || (lastWidth > 768 && currentWidth <= 768)) {
+        if ((lastWidth <= 950 && currentWidth > 950) || (lastWidth > 950 && currentWidth <= 950)) {
             renderSetupDetailList();
         }
         lastWidth = currentWidth;
@@ -170,6 +171,7 @@ window.checkUnsavedChanges = function() {
 function setupSetupLogResizer() {
     // [추가] 모바일 화면(너비 768px 이하)에서는 리사이저 기능 비활성화
     if (window.innerWidth <= 768) {
+    if (window.innerWidth <= 950) {
         const resizer = document.getElementById('setup-log-resizer');
         if (resizer) resizer.style.display = 'none'; // 리사이저 핸들 숨기기
         return;
@@ -263,7 +265,6 @@ function renderSetupDetailList() {
     // 편집 모드 확인
     const card = document.getElementById('setup-detail-card');
     const isEditMode = card ? card.classList.contains('edit-mode') : false;
-    const isMobile = window.innerWidth <= 768;
 
     tbody.innerHTML = '';
 
@@ -322,27 +323,16 @@ function renderSetupDetailList() {
             let contentCellHtml, startDateCellHtml, dateCellHtml;
             let minDateAttr = '';
 
-            if (isMobile && !isEditMode) {
-                // 모바일 일반 모드
-                contentCellHtml = `
-                    <div class="scrollable-content-wrapper">
-                        <span class="detail-content-text">${escapeHtml(item.content)}</span>
-                    </div>
-                `;
-                startDateCellHtml = `<span class="date-display">${formatDateYYMMDD(item.startDate)}</span>`;
-                dateCellHtml = `<span class="date-display">${formatDateYYMMDD(item.date)}</span>`;
-            } else {
-                // 데스크탑 또는 모바일 편집 모드
-                contentCellHtml = `
-                    <div style="display:flex; align-items:center; gap:5px;">
-                        <input type="text" class="detail-content-input" value="${escapeHtml(item.content)}" placeholder="항목 입력" style="flex:1; color: ${inputColor};" ${contentDisabledAttr}>
-                    </div>
-                `;
-                if (item.execStartDate) minDateAttr = `min="${item.execStartDate}"`;
-                else if (item.startDate) minDateAttr = `min="${item.startDate}"`;
-                startDateCellHtml = `<input type="date" class="detail-start-date-input" value="${item.startDate || ''}" style="color: ${inputColor};" ${generalDisabledAttr}>`;
-                dateCellHtml = `<input type="date" class="detail-date-input" value="${item.date || ''}" style="color: ${inputColor};" ${generalDisabledAttr} ${minDateAttr}>`;
-            }
+            // [수정] 모바일 구분 없이 항상 입력창 형태로 표시 (모든 컬럼 표시 요청 반영)
+            contentCellHtml = `
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <input type="text" class="detail-content-input" value="${escapeHtml(item.content)}" placeholder="항목 입력" style="flex:1; color: ${inputColor};" ${contentDisabledAttr}>
+                </div>
+            `;
+            if (item.execStartDate) minDateAttr = `min="${item.execStartDate}"`;
+            else if (item.startDate) minDateAttr = `min="${item.startDate}"`;
+            startDateCellHtml = `<input type="date" class="detail-start-date-input" value="${item.startDate || ''}" style="color: ${inputColor};" ${generalDisabledAttr}>`;
+            dateCellHtml = `<input type="date" class="detail-date-input" value="${item.date || ''}" style="color: ${inputColor};" ${generalDisabledAttr} ${minDateAttr}>`;
 
             const estVal = (item.estDays !== undefined && item.estDays !== null && item.estDays !== '') ? item.estDays : '1';
             let estDaysHtml = `<input type="text" class="detail-est-days-input" value="${estVal}" placeholder="0" style="text-align: center; width: 100%; background: transparent; border: none; color: ${inputColor};" ${generalDisabledAttr}>`;

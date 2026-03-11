@@ -468,12 +468,6 @@
 
     /* [요청] 모바일 셋업 진행 세부사항 리스트 표시 제어 */
     
-    /* 1. 일반 모드: 작업일(2) 숨김 (내용, 예정일, 완료일, 상태만 표시) */
-    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(2),
-    #setup-detail-card:not(.edit-mode) .item-row td:nth-child(2) {
-        display: none;
-    }
-
     /* [추가] 일반 모드 테이블 레이아웃 및 스타일 */
     #setup-detail-card:not(.edit-mode) .data-table {
         table-layout: fixed;
@@ -491,28 +485,6 @@
     #setup-detail-card:not(.edit-mode) .data-table th:nth-child(3) { width: 65px; } /* 예정일 */
     #setup-detail-card:not(.edit-mode) .data-table th:nth-child(4) { width: 65px; } /* 완료일 */
     #setup-detail-card:not(.edit-mode) .data-table th:nth-child(5) { width: 40px; } /* 상태 */
-
-    /* [추가] 내용(작업내용) 좌우 스크롤 스타일 */
-    #setup-detail-card:not(.edit-mode) .scrollable-content-wrapper {
-        overflow-x: auto;
-        white-space: nowrap;
-        max-width: 100%;
-        display: block;
-        /* [요청] 스크롤바 숨김 (Scrollbar hiding) */
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
-    }
-    #setup-detail-card:not(.edit-mode) .scrollable-content-wrapper::-webkit-scrollbar {
-        display: none; /* Chrome, Safari, Opera */
-    }
-
-    /* [추가] 날짜 표시 스타일 (yy.mm.dd) */
-    #setup-detail-card:not(.edit-mode) .date-display {
-        font-size: 12px;
-        color: #c9d1d9;
-        text-align: center;
-        display: block;
-    }
 
     /* 2. 편집 모드 (톱니바퀴 클릭): 모든 컬럼 표시 및 너비 고정 */
     #setup-detail-card.edit-mode .data-table {
