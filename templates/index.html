@@ -14,12 +14,19 @@
             <p class="logo-text">Think Hard, Fine Action</p>
 
             <!-- 로그인 전: 로그인 폼 -->
-            <div id="home-login-container" class="login-box">
+            <!-- [수정] 초기 로딩 시 깜빡임 방지를 위해 기본적으로 숨김 처리 (display: none) -->
+            <div id="home-login-container" class="login-box" style="display: none;">
                 <h3>SYSTEM LOGIN</h3>
                 <input type="text" id="home-login-id" placeholder="ID">
                 <input type="password" id="home-login-pw" placeholder="PASSWORD">
                 <button id="home-login-btn" class="btn-blue">LOGIN</button>
             </div>
+            <script>
+                // [UX] 로그인 상태가 아니면 즉시 표시하여 빈 화면 대기 시간 최소화
+                if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+                    document.getElementById('home-login-container').style.display = 'flex';
+                }
+            </script>
 
             <!-- 로그인 후: 환영 메시지 및 메뉴 바로가기 -->
             <div id="home-welcome-container" class="home-dashboard" style="display: none;">
