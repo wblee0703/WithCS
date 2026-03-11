@@ -545,8 +545,8 @@
         ]
     },
     "details_ENF 아산_asfd": {
-        "maint": [],
         "logs": [],
+        "maint": [],
         "memo": "",
         "setup": {
             "model": ""
