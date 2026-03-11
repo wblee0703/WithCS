@@ -202,5 +202,11 @@
         "action": "UPDATE_SETUP_DETAILS",
         "target": "SOMA-2000::SOMA-H19-0402",
         "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-11T06:25:33.069Z",
+        "action": "ADD_SETUP_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "Category: 통신 상태 및 유틸리티"
     }
 ]
