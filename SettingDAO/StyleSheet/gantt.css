@@ -379,6 +379,9 @@
     z-index: 10;
 }
 
+/* 모바일 안내 메시지 기본 숨김 */
+.gantt-mobile-guide { display: none; }
+
 .width-resizer:hover::after, .width-resizer.resizing::after {
     content: "";
     position: absolute;
@@ -421,7 +424,19 @@
     .gantt__header-row--fixed .gantt__date-cell {
         flex-shrink: 0;
     }
-
+ 
+    /* [요청] 모바일 세로 모드일 때 간트 뷰 안내 메시지 표시 */
+    @media (orientation: portrait) {
+        .gantt-mobile-guide {
+            display: block;
+            width: 100%;
+            text-align: center;
+            color: var(--gantt-text-secondary);
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    }
+    
     @media (orientation: landscape) {
         .gantt__wrapper {
             flex-direction: row !important;

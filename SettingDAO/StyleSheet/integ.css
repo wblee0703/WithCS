@@ -464,7 +464,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         font-size: 18px;
     }
     #integ-equip-summary, #integ-setup-summary, #integ-maint-summary {
-        font-size: 10px; /* [요청] 모바일 요약 정보 글자 크기 축소 */
+        font-size: 10px !important; /* [요청] 모바일 요약 정보 글자 크기 축소 (인라인 스타일 덮어쓰기) */
     }
 
     .bar-chart-container {
@@ -483,6 +483,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     /* [요청] 모바일에서 현황 도넛 차트 숨김 */
     .integ-donut-container {
         display: none;
+    }
+    
+    /* [요청] 모바일에서 셋업 현황 차트 카드 전체 숨김 */
+    .integ-setup-chart-card {
+        display: none !important;
     }
 
     .integ-setup-chart-row {
