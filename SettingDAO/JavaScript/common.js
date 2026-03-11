@@ -87,15 +87,18 @@ function saveData() {
    2. 초기화 및 이벤트 리스너 (Initialization)
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
-    // 서버에서 데이터 가져오기
+    // [변경] 1. 앱 초기화 즉시 실행 (UI 반응성 향상 - 버벅임 제거)
+    // 로컬 스토리지에 캐시된 데이터를 사용하여 즉시 화면을 구성합니다.
+    initializeApp();
+
+    // 2. 서버 데이터 비동기 로드 (백그라운드 동기화)
     fetch('/api/data')
         .then(response => {
             if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
         })
         .then(data => {
-            // [수정] 서버 데이터(.json) 기반으로만 초기화하기 위해 기존 로컬 데이터 삭제
-            // (originalRemoveItem을 사용하여 삭제 시 서버로 빈 데이터가 전송되는 것을 방지)
+            // 기존 데이터 정리
             const keysToRemove = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
@@ -107,16 +110,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // 서버 데이터를 localStorage에 반영
             Object.keys(data).forEach(key => {
-                // originalSetItem을 사용하여 초기화 시 서버로 다시 전송되는 루프 방지
                 originalSetItem.call(localStorage, key, JSON.stringify(data[key]));
             });
             // [수정] 전역 변수 갱신 (초기 로드 시 데이터 누락 방지)
             storageData = JSON.parse(localStorage.getItem('withtech_data')) || {};
-            initializeApp();
+            
+            // [추가] 데이터 갱신 후 UI 리프레시 (화면 깜빡임 없이 데이터만 최신화)
+            refreshAppViews();
+            
+            // [중요] 데이터 로드 완료 이벤트 발생
+            window.isDataLoaded = true;
+            window.dispatchEvent(new Event('DataLoaded'));
         })
         .catch(err => {
             console.error('Failed to load data from server:', err);
-            initializeApp(); // 실패 시 로컬 데이터로 진행
+            // 실패해도 이미 로컬 데이터로 초기화되었으므로 추가 조치 불필요
+            window.isDataLoaded = true;
+            window.dispatchEvent(new Event('DataLoaded'));
         });
 });
 
@@ -156,10 +166,28 @@ function initializeApp() {
     setupCollapsibleCards(); // [추가] 소분류 카드 접기 기능 초기화
     // 2-5. URL 파라미터 처리
     restoreLastState();
-    // [중요] 데이터 로드 완료 상태 표시
-    window.isDataLoaded = true;
-    // 데이터 로드 완료 이벤트 발생 (index.js 등에서 감지)
-    window.dispatchEvent(new Event('DataLoaded'));
+    // window.isDataLoaded 설정 및 이벤트 발생은 서버 동기화 완료 후로 이동됨
+}
+
+// [추가] 데이터 갱신 후 화면 리프레시 함수
+function refreshAppViews() {
+    // 1. 사이드바 갱신
+    renderSites();
+    
+    // 2. 현재 화면 상태에 따라 뷰 갱신
+    // Home 화면은 DataLoaded 이벤트에 의해 index.js가 처리하므로 여기서는 자동 처리됨
+    
+    // Setup/Maintenance 화면인 경우: 선택 상태 복원 및 상세 내용 갱신
+    if (currentPath.site) {
+        const activeSiteLi = Array.from(document.querySelectorAll('#site-list li .item-text'))
+            .find(el => el.textContent.trim() === currentPath.site)?.parentElement;
+        if (activeSiteLi) {
+            // 사이트가 존재하면 장비 목록 재렌더링
+            renderEquips(currentPath.site);
+            // 부드러운 UX를 위해 마지막 선택 상태 강제 복원 (상세 내용 갱신 포함)
+            restoreLastState();
+        }
+    }
 }
 
 function setupAuthEvents() {

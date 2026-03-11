@@ -562,6 +562,13 @@ function toggleSetupDetailDeleteMode(btn) {
 function saveSetupDetails(logAction = 'UPDATE_SETUP_DETAILS', logDetails = '셋업 상세 내역 수정') {
     if (!currentPath.site || !currentPath.equip) return alert('장비를 선택해주세요.');
     
+    // [수정] 모바일 등 입력창이 없는 뷰에서도 데이터 손실 방지를 위해 기존 데이터 로드
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${currentPath.site}::${currentPath.equip}`;
+    let data = setupData[equipKey] || {};
+    // ID로 기존 아이템을 빠르게 찾기 위한 맵 생성
+    const originalDetailsMap = new Map((data.setupDetails || []).map(i => [i.id, i]));
+
     const rows = document.querySelectorAll('#setup-detail-body tr');
     const newDetails = [];
     let currentCategory = "장비 반입 및 정위치";
@@ -578,21 +585,35 @@ function saveSetupDetails(logAction = 'UPDATE_SETUP_DETAILS', logDetails = '셋�
         const id = parseInt(row.dataset.id);
         if (isNaN(id)) return;
 
+        // 기존 아이템 가져오기
+        const originalItem = originalDetailsMap.get(id) || {};
+
         const checkbox = row.querySelector('.detail-complete-checkbox');
-        const completed = checkbox ? checkbox.checked : false;
-        const content = row.querySelector('.detail-content-input').value;
-        const date = row.querySelector('.detail-date-input').value;
-        const startDate = row.querySelector('.detail-start-date-input').value;
+        const completed = checkbox ? checkbox.checked : (originalItem.completed || false);
+
+        // 입력 요소가 없으면(모바일 뷰 등) 기존 데이터 유지
+        const contentInput = row.querySelector('.detail-content-input');
+        const content = contentInput ? contentInput.value : (originalItem.content || "");
+
+        const dateInput = row.querySelector('.detail-date-input');
+        const date = dateInput ? dateInput.value : (originalItem.date || "");
+
+        const startDateInput = row.querySelector('.detail-start-date-input');
+        const startDate = startDateInput ? startDateInput.value : (originalItem.startDate || "");
+
         const estInput = row.querySelector('.detail-est-days-input');
         
         let estDays = "0";
         if (estInput) {
             estDays = estInput.value.trim();
             if (estDays === "") estDays = "1"; // 빈 값은 1로 저장
+        } else {
+            estDays = originalItem.estDays || "1";
         }
         
-        const delayReason = row.dataset.delayReason || "";
-        const execStartDate = row.dataset.execStartDate || "";
+        const delayReason = row.dataset.delayReason !== undefined ? row.dataset.delayReason : (originalItem.delayReason || "");
+        const execStartDate = row.dataset.execStartDate !== undefined ? row.dataset.execStartDate : (originalItem.execStartDate || "");
+
         newDetails.push({ id, completed, content, date, startDate, estDays, category: currentCategory, delayReason, execStartDate });
         
         // 실행률 계산용 카운트
@@ -600,9 +621,6 @@ function saveSetupDetails(logAction = 'UPDATE_SETUP_DETAILS', logDetails = '셋�
         if (completed) completedItems++;
     });
 
-    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `${currentPath.site}::${currentPath.equip}`;
-    let data = setupData[equipKey] || {};
     data.setupDetails = newDetails;
     setupData[equipKey] = data;
     localStorage.setItem('setup_data', JSON.stringify(setupData));
@@ -640,7 +658,7 @@ function updateExecutionRate(completed, total) {
 // 체크박스 이벤트 리스너 (체크 해제 시 실행 버튼 복구 로직 포함)
 function attachSetupCheckboxListener(row) {
     const checkbox = row.querySelector('.detail-complete-checkbox');
-    const dateInput = row.querySelector('.detail-date-input');
+    // const dateInput = row.querySelector('.detail-date-input'); // [제거] 아래에서 안전하게 접근
     if (!checkbox) return;
 
     checkbox.addEventListener('click', (e) => {
@@ -649,7 +667,10 @@ function attachSetupCheckboxListener(row) {
                 e.preventDefault();
                 return;
             }
-            dateInput.value = '';
+            // [수정] 입력창이 있을 때만 값 초기화
+            const dateInput = row.querySelector('.detail-date-input');
+            if (dateInput) dateInput.value = '';
+
             delete row.dataset.delayReason;
             delete row.dataset.execStartDate;
             row.classList.remove('in-progress');
@@ -1352,41 +1373,48 @@ function openSetupCompletionModal(id, tr) {
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const equipKey = `${currentPath.site}::${currentPath.equip}`;
     const data = setupData[equipKey] || {};
+    // id는 숫자, dataset.id는 문자열일 수 있으므로 비교 시 주의
     const task = data.setupDetails ? data.setupDetails.find(t => t.id == id) : null;
     const isAlreadyCompleted = task ? task.completed : false;
 
     // 작업 일수 표시
     const estInput = tr.querySelector('.detail-est-days-input');
+    // [수정] DOM에 입력창이 없으면 데이터에서 값 가져오기
+    let estDaysValue = '1';
+    if (task && task.estDays) estDaysValue = task.estDays;
+    else if (estInput) estDaysValue = estInput.value || '1';
+
     if (tr.dataset.category === '셋업 완료') {
         document.getElementById('setup-est-days').value = '1일';
-    } else if (estInput) {
-        document.getElementById('setup-est-days').value = (estInput.value || '0') + '일';
+    } else {
+        document.getElementById('setup-est-days').value = estDaysValue + '일';
     }
 
     // 이전 작업 완료일 찾기 (최소 선택 가능일)
+    // [수정] 데이터 기반으로 이전 완료일 찾기 (DOM 의존성 제거)
     let minDate = "";
-    let prevRow = tr.previousElementSibling;
-    while (prevRow) {
-        if (!prevRow.classList.contains('category-header-row')) {
-            const prevCheckbox = prevRow.querySelector('.detail-complete-checkbox');
-            const prevDateInput = prevRow.querySelector('.detail-date-input');
-            if (prevCheckbox && prevCheckbox.checked && prevDateInput && prevDateInput.value) {
-                minDate = prevDateInput.value;
+    const currentIndex = data.setupDetails.findIndex(t => t.id == id);
+    if (currentIndex > 0) {
+        for (let i = currentIndex - 1; i >= 0; i--) {
+            const prevTask = data.setupDetails[i];
+            if (prevTask.completed && prevTask.date) {
+                minDate = prevTask.date;
                 break;
             }
         }
-        prevRow = prevRow.previousElementSibling;
     }
 
     // 시작일 설정
     const startDateInput = document.getElementById('setup-start-date');
     const trStartDateInput = tr.querySelector('.detail-start-date-input');
     // 실행일(execStartDate)이 있으면 우선 사용, 없으면 계획 시작일 사용
-    const execStartDate = tr.dataset.execStartDate;
+    // [수정] 데이터에서 가져오기
+    const execStartDate = task ? task.execStartDate : tr.dataset.execStartDate;
+    const plannedStartDate = task ? task.startDate : (trStartDateInput ? trStartDateInput.value : '');
 
     if (startDateInput) {
         if (execStartDate) startDateInput.value = execStartDate;
-        else if (trStartDateInput) startDateInput.value = trStartDateInput.value;
+        else if (plannedStartDate) startDateInput.value = plannedStartDate;
     }
 
     const dateInput = document.getElementById('setup-complete-date');
@@ -1398,9 +1426,9 @@ function openSetupCompletionModal(id, tr) {
         dateInput.min = minDate;
     }
     
-    const trDateInput = tr.querySelector('.detail-date-input');
-    if (trDateInput && trDateInput.value) {
-        dateInput.value = trDateInput.value;
+    // 완료일 초기값 (이미 완료된 경우 기존 값)
+    if (task && task.date) {
+        dateInput.value = task.date;
     } else {
         // 완료일 초기값: 시작일 + (작업일수 - 1) 계산 (영업일 기준)
         const sDateVal = startDateInput.value;
@@ -1418,12 +1446,11 @@ function openSetupCompletionModal(id, tr) {
     }
 
     // [추가] 계획 종료일 계산 및 저장 (지연 판단 기준: 계획 시작일 + 작업일수)
-    const trEstInput = tr.querySelector('.detail-est-days-input');
     let planEndDateStr = '';
 
-    if (trStartDateInput && trStartDateInput.value) {
-        const [y, m, d] = trStartDateInput.value.split('-').map(Number);
-        const estDays = parseInt(trEstInput ? trEstInput.value : '1') || 1;
+    if (plannedStartDate) {
+        const [y, m, d] = plannedStartDate.split('-').map(Number);
+        const estDays = parseInt(estDaysValue) || 1;
         const daysToAdd = estDays > 0 ? estDays - 1 : 0;
         const pEnd = window.addBusinessDays(new Date(y, m - 1, d), daysToAdd);
         
@@ -1442,7 +1469,7 @@ function openSetupCompletionModal(id, tr) {
     }
     planEndInput.value = planEndDateStr;
 
-    document.getElementById('setup-delay-reason').value = tr.dataset.delayReason || "";
+    document.getElementById('setup-delay-reason').value = (task ? task.delayReason : "") || tr.dataset.delayReason || "";
 
     // [추가] 셋업 이력 입력창 초기화
     const logInput = document.getElementById('setup-setup-log-content');
@@ -1554,10 +1581,10 @@ function saveSetupCompletion() {
     const delayReason = reasonInput.value.trim();
 
     if (isCompleted) {
-        tr.querySelector('.detail-date-input').value = dateInput.value;
+        if(tr.querySelector('.detail-date-input')) tr.querySelector('.detail-date-input').value = dateInput.value;
         tr.dataset.delayReason = delayReason;
     } else {
-        tr.querySelector('.detail-date-input').value = '';
+        if(tr.querySelector('.detail-date-input')) tr.querySelector('.detail-date-input').value = '';
         delete tr.dataset.delayReason;
     }
 
@@ -1569,7 +1596,10 @@ function saveSetupCompletion() {
         let data = setupData[equipKey] || {};
         if (!data.setupLogs) data.setupLogs = [];
 
-        const taskContent = tr.querySelector('.detail-content-input').value;
+        // 데이터에서 내용 가져오기 (DOM에 없을 수 있음)
+        const task = data.setupDetails ? data.setupDetails.find(t => t.id == currentSetupCompletionTarget.id) : null;
+        const taskContent = task ? task.content : '작업 내용 없음';
+        
         let displayContent = taskContent || '작업 내용 없음';
         let finalMemo = logContent;
 

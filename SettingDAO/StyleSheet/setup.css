@@ -496,6 +496,14 @@
     #setup-detail-card:not(.edit-mode) .scrollable-content-wrapper {
         overflow-x: auto;
         white-space: nowrap;
+        max-width: 100%;
+        display: block;
+        /* [요청] 스크롤바 숨김 (Scrollbar hiding) */
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+    #setup-detail-card:not(.edit-mode) .scrollable-content-wrapper::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
     }
 
     /* [추가] 날짜 표시 스타일 (yy.mm.dd) */
@@ -516,6 +524,11 @@
     #setup-detail-card.edit-mode .data-table td {
         padding: 4px 2px;
         font-size: 11px;
+    }
+
+    /* [추가] 모바일 뷰에서 테이블 셀 너비 제어 (스크롤 가능하게) */
+    #setup-detail-card:not(.edit-mode) .data-table td:nth-child(1) {
+        max-width: 0; /* flex/table 내에서 줄어들게 강제 */
     }
 
     /* 컬럼 너비 설정 (합계가 화면 너비를 넘지 않도록 조정, 날짜는 고정) */
