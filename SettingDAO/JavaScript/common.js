@@ -153,6 +153,7 @@ function initializeApp() {
     setupSidebarEvents();
     setupDataManagementEvents();
     setupResizers();
+    setupCollapsibleCards(); // [추가] 소분류 카드 접기 기능 초기화
     // 2-5. URL 파라미터 처리
     restoreLastState();
     // [중요] 데이터 로드 완료 상태 표시
@@ -447,6 +448,11 @@ function setupDataManagementEvents() {
     const btnImport = document.getElementById('btn-import');
     const fileImport = document.getElementById('file-import');
     if (btnExport) btnExport.addEventListener('click', exportData);
+    // [추가] 모바일에서 데이터 관리 숨기기 식별을 위한 클래스 추가
+    if (btnExport && btnExport.parentElement) {
+        btnExport.parentElement.classList.add('data-management-section');
+    }
+    
     if (btnImport) btnImport.addEventListener('click', () => fileImport.click());
     if (fileImport) fileImport.addEventListener('change', importData);
 
@@ -495,6 +501,33 @@ function setupResizers() {
         });
         document.addEventListener('mouseup', () => { isResizing = false; document.body.style.cursor = 'default'; resizer.classList.remove('resizing'); });
     }
+}
+
+// [추가] 소분류 카드 접기 기능 (위아래 화살표 버튼 추가)
+function setupCollapsibleCards() {
+    const cards = document.querySelectorAll('.card');
+    cards.forEach(card => {
+        const header = card.querySelector('.card-header');
+        const body = card.querySelector('.card-body');
+        if (header && body && !header.querySelector('.btn-collapse')) {
+            const btn = document.createElement('button');
+            btn.className = 'btn-collapse';
+            btn.innerHTML = '▲'; // 초기 상태: 펼쳐짐
+            btn.style.cssText = 'float: right; background: none; border: none; color: #8b949e; cursor: pointer; font-size: 14px; line-height: 1;';
+            
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                if (body.style.display === 'none') {
+                    body.style.display = ''; // 원래 display 속성 복구
+                    btn.innerHTML = '▲';
+                } else {
+                    body.style.display = 'none';
+                    btn.innerHTML = '▼';
+                }
+            };
+            header.appendChild(btn);
+        }
+    });
 }
 
 function restoreLastState() {
@@ -1022,6 +1055,27 @@ function createListItem(id, text, type, onSelect, subText = '') {
 
     li.onclick = () => {
         if (!checkUnsavedChanges()) return;
+        
+        // [추가] 모바일: 대분류/중분류 선택 시 해당 항목만 표시하고 나머지 접기
+        if (window.innerWidth <= 768) {
+            const isActive = li.classList.contains('active');
+            const siblings = Array.from(li.parentElement.children);
+            
+            if (isActive) {
+                // 이미 선택된 항목을 다시 클릭하면 전체 펼치기/접기 토글
+                const anyHidden = siblings.some(sib => sib !== li && sib.style.display === 'none');
+                siblings.forEach(sib => {
+                    if (sib !== li) sib.style.display = anyHidden ? '' : 'none';
+                });
+                return; // 데이터 재로드는 건너뜀
+            } else {
+                // 새로운 항목 선택 시 형제 요소 숨김
+                siblings.forEach(sib => {
+                    if (sib !== li) sib.style.display = 'none';
+                });
+            }
+        }
+
         li.parentElement.querySelectorAll('li').forEach(i => i.classList.remove('active'));
         li.classList.add('active');
         onSelect(id);

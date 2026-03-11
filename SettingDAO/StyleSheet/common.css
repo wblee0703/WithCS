@@ -146,6 +146,7 @@ body {
     min-width: 0;
     flex: 1;
 }
+
 /* 브레드크럼 (경로 표시) */
 .breadcrumb {
     color: #58a6ff;
@@ -153,6 +154,7 @@ body {
     font-size: 14px;
     margin-bottom: 8px;
 }
+
 /* Resizers */
 .resizer {
     width: 5px;
@@ -167,7 +169,8 @@ body {
 .hamburger-menu,
 .mobile-nav,
 .nav-overlay {
-    display: none; /* 데스크탑에서는 숨김 */
+    display: none;
+    /* 데스크탑에서는 숨김 */
 }
 
 .resizer:hover,
@@ -468,6 +471,7 @@ body {
     font-size: 16px;
     font-weight: bold;
 }
+
 /* ==========================================================================
    7. 버튼 (Buttons)
    ========================================================================== */
@@ -543,7 +547,10 @@ button {
     padding: 0 5px;
     cursor: pointer;
 }
-.btn-edit-sm:hover { color: #58a6ff; }
+
+.btn-edit-sm:hover {
+    color: #58a6ff;
+}
 
 /* 특수 버튼 (추가, 수정, 삭제) */
 .btn-add {
@@ -725,8 +732,16 @@ body.role-user select {
     font-size: 12px;
     border-radius: 4px;
 }
-.btn-filter:hover { color: #e6edf3; }
-.btn-filter.active { background: #1f6feb; color: #fff; border-color: #1f6feb; }
+
+.btn-filter:hover {
+    color: #e6edf3;
+}
+
+.btn-filter.active {
+    background: #1f6feb;
+    color: #fff;
+    border-color: #1f6feb;
+}
 
 /* ==========================================================
    모바일 반응형 스타일 (Mobile Responsive Styles)
@@ -734,47 +749,67 @@ body.role-user select {
 
 /* 화면 너비가 768px 이하일 때 적용됩니다. */
 @media (max-width: 768px) {
+
     /* 1. 기본 및 레이아웃 조정 */
     body {
-        overflow-y: auto; /* 모바일에서는 페이지 스크롤 허용 */
-        -webkit-text-size-adjust: 100%; /* iOS 폰트 크기 자동 조정 방지 */
+        overflow-y: auto;
+        /* 모바일에서는 페이지 스크롤 허용 */
+        -webkit-text-size-adjust: 100%;
+        /* iOS 폰트 크기 자동 조정 방지 */
     }
 
     .dashboard-wrapper,
     .dashboard-main,
-    .content-body, /* maintenance.css */
-    .left-panel, /* maintenance.css */
-    .setup-workspace, /* setup.css */
-    .maint-split-view, /* index.css */
-    .maint-left-charts, /* index.css */
-    .dashboard-split, /* index.css */
-    .integ-row, /* integ.css */
-    .calendars-wrapper, /* calendar.css */
-    .gantt__wrapper /* gantt.css */
-    {
+    .content-body,
+    /* maintenance.css */
+    .left-panel,
+    /* maintenance.css */
+    .setup-workspace,
+    /* setup.css */
+    .maint-split-view,
+    /* index.css */
+    .maint-left-charts,
+    /* index.css */
+    .dashboard-split,
+    /* index.css */
+    .integ-row,
+    /* integ.css */
+    .calendars-wrapper,
+    /* calendar.css */
+    .gantt__wrapper
+
+    /* gantt.css */
+        {
         flex-direction: column;
-        height: auto; /* 높이 자동 조정 */
-        gap: 10px; /* 간격 줄이기 */
+        height: auto;
+        /* 높이 자동 조정 */
+        gap: 10px;
+        /* 간격 줄이기 */
     }
 
     .dashboard-sidebar,
-    .dashboard-main > .card,
+    .dashboard-main>.card,
     .detail-content,
     .dashboard-col,
     .setup-card-flex,
     .calendar-view {
         width: 100%;
-        flex: none; /* flex 비율 무시 */
+        flex: none;
+        /* flex 비율 무시 */
         height: auto;
     }
 
-    .main-container, .dashboard-wrapper {
+    .main-container,
+    .dashboard-wrapper {
         padding: 10px;
         height: auto;
     }
 
     /* 리사이저 숨기기 */
-    .resizer, .resizer-vertical, .gantt__resizer, #setup-log-resizer {
+    .resizer,
+    .resizer-vertical,
+    .gantt__resizer,
+    #setup-log-resizer {
         display: none !important;
     }
 
@@ -804,6 +839,7 @@ body.role-user select {
     .nav-links {
         gap: 20px;
     }
+
     .nav-links a {
         font-size: 14px;
         font-weight: 700;
@@ -817,7 +853,7 @@ body.role-user select {
     }
 
     /* [요청] 모바일 헤더에서 로그인/설정 버튼 숨기기 */
-    .header .user-controls > button {
+    .header .user-controls>button {
         display: inline-block;
     }
 
@@ -833,9 +869,12 @@ body.role-user select {
         border: none;
         cursor: pointer;
         padding: 0;
-        z-index: 9999; /* [수정] 다른 요소보다 위에 오도록 최상위 설정 */
-        position: relative; /* [수정] z-index 적용을 위해 relative 설정 */
+        z-index: 9999;
+        /* [수정] 다른 요소보다 위에 오도록 최상위 설정 */
+        position: relative;
+        /* [수정] z-index 적용을 위해 relative 설정 */
     }
+
     .hamburger-menu .bar {
         width: 100%;
         height: 3px;
@@ -843,12 +882,15 @@ body.role-user select {
         border-radius: 10px;
         transition: all 0.3s ease-in-out;
     }
+
     .hamburger-menu.active .bar:nth-child(1) {
         transform: rotate(45deg) translate(6px, 6px);
     }
+
     .hamburger-menu.active .bar:nth-child(2) {
         opacity: 0;
     }
+
     .hamburger-menu.active .bar:nth-child(3) {
         transform: rotate(-45deg) translate(6px, -6px);
     }
@@ -858,7 +900,8 @@ body.role-user select {
         display: flex;
         position: fixed;
         top: 0;
-        left: -100%; /* 초기에는 화면 밖 */
+        left: -100%;
+        /* 초기에는 화면 밖 */
         width: 80%;
         max-width: 300px;
         height: 100%;
@@ -869,12 +912,15 @@ body.role-user select {
         padding-top: 80px;
         flex-direction: column;
     }
+
     .mobile-nav.active {
         left: 0;
     }
+
     .mobile-nav-links {
         list-style: none;
     }
+
     .mobile-nav-links li a {
         display: block;
         padding: 15px 20px;
@@ -883,11 +929,12 @@ body.role-user select {
         font-size: 18px;
         border-bottom: 1px solid #21262d;
     }
+
     .mobile-nav-links li a.active {
         background-color: #21262d;
         font-weight: bold;
     }
-    
+
     /* 모바일 네비게이션 활성화 시 배경 오버레이 */
     .nav-overlay {
         display: none;
@@ -896,16 +943,18 @@ body.role-user select {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0,0,0,0.5);
+        background: rgba(0, 0, 0, 0.5);
         z-index: 1009;
     }
+
     .nav-overlay.active {
         display: block;
     }
 
     /* [추가] 모바일 유저 컨트롤 스타일 */
     .mobile-user-controls {
-        margin-top: auto; /* 하단 고정 */
+        margin-top: auto;
+        /* 하단 고정 */
         padding: 20px;
         border-top: 1px solid #30363d;
         display: flex;
@@ -915,17 +964,20 @@ body.role-user select {
         align-items: center;
         background-color: #161b22;
     }
+
     .mobile-user-controls button {
         width: 100%;
         padding: 12px;
         font-size: 16px;
     }
+
     .mobile-user-controls .user-info {
         color: #8b949e;
         font-size: 14px;
         margin-bottom: 5px;
         font-weight: bold;
-        cursor: pointer; /* [요청] 클릭 가능하도록 커서 변경 */
+        cursor: pointer;
+        /* [요청] 클릭 가능하도록 커서 변경 */
     }
 
     /* 3. 폼 및 버튼 */
@@ -934,9 +986,12 @@ body.role-user select {
         align-items: stretch;
         gap: 8px;
     }
-    .form-row input, .form-row select {
+
+    .form-row input,
+    .form-row select {
         width: 100% !important;
     }
+
     .form-label {
         width: auto;
         text-align: left;
@@ -948,6 +1003,7 @@ body.role-user select {
         width: 95vw;
         height: 85vh;
     }
+
     .modal-body {
         overflow-y: auto;
     }
@@ -959,11 +1015,19 @@ body.role-user select {
         border: 1px solid #30363d;
         border-radius: 6px;
     }
+
     .data-table {
         font-size: 12px;
     }
-    .data-table th, .data-table td {
+
+    .data-table th,
+    .data-table td {
         padding: 6px 8px;
         white-space: nowrap;
+    }
+
+    /* [요청] 중분류 아래 데이터 관리 숨김 */
+    .data-management-section {
+        display: none !important;
     }
 }

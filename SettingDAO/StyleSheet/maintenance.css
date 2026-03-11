@@ -525,4 +525,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         width: 100%;
         margin-right: 0;
     }
+        /* [요청] 장비 점검 이력 리스트 높이 수정 (약 3개 보이게, 스크롤) */
+    #log-list-wrapper, 
+    #setup-log-list-wrapper {
+        height: 150px !important; /* 약 3행 높이 */
+        flex: none !important;
+        overflow-y: auto !important;
+    }
+
+    /* [요청] 작업 내용(메모 등) 높이 수정 (내용 더 많이 보이게) */
+    #device-memo, 
+    #setup-log-detail-memo,
+    textarea.delay-reason-textarea {
+        height: 150px !important;
+    }
 }
