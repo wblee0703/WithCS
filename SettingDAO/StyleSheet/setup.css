@@ -481,6 +481,11 @@
         height: auto !important; /* [추가] 접기 기능 지원 */
         min-height: 0 !important; /* [추가] 접기 기능 지원 */
         margin-bottom: 20px;
+        overflow: visible !important; /* [수정] 내부 테이블 스크롤이 잘리지 않도록 수정 */
+    }
+    /* [추가] 셋업 상세내역 테이블 가로 스크롤 */
+    #setup-detail-card .setup-card-body-scroll {
+        overflow-x: auto;
     }
     /* 메인 영역 스크롤 허용 */
     #detail-window {
