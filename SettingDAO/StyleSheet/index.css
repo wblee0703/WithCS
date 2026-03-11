@@ -820,7 +820,7 @@ body {
    ========================================================== */
 
 /* 화면 너비가 768px 이하일 때 적용됩니다. */
-@media (max-width: 768px) {
+@media (max-width: 950px) {
     .home-main {
         padding: 10px;
     }
@@ -912,9 +912,16 @@ body {
         flex: none; /* flex-grow/shrink 방지 */
     }
 
-    /* [요청] 모바일에서 간트 차트 숨김 (검색/이동은 유지) */
+    /* [요청] 모바일 세로 모드에서 간트 차트 숨김 */
     #gantt-chart-area {
         display: none;
+    }
+
+    /* [요청] 모바일 가로 모드(화면 회전)에서는 간트 차트 표시 */
+    @media (orientation: landscape) {
+        #gantt-chart-area {
+            display: flex !important;
+        }
     }
 
     /* [요청] 셋업 일정 -/+ 버튼 숨김 */

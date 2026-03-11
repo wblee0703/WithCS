@@ -423,7 +423,7 @@
    ========================================================== */
 
 /* 화면 너비가 768px 이하일 때 적용됩니다. */
-@media (max-width: 768px) {
+@media (max-width: 950px) {
     .setup-card-body {
         overflow-y: auto;
     }

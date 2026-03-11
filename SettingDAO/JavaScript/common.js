@@ -575,8 +575,8 @@ function setupCollapsibleCards() {
             const btn = document.createElement('button');
             btn.className = 'btn-collapse';
             
-            // [수정] 모바일 초기 상태: 접힘
-            if (window.innerWidth <= 768) {
+            // [수정] 모바일(가로모드 포함) 초기 상태: 접힘
+            if (window.innerWidth <= 950) {
                 btn.innerHTML = '▼';
                 body.style.display = 'none';
             } else {
@@ -1127,7 +1127,7 @@ function createListItem(id, text, type, onSelect, subText = '') {
         if (!checkUnsavedChanges()) return;
         
         // [추가] 모바일: 대분류/중분류 선택 시 해당 항목만 표시하고 나머지 접기
-        if (window.innerWidth <= 768) {
+        if (window.innerWidth <= 950) {
             const isActive = li.classList.contains('active');
             const siblings = Array.from(li.parentElement.children);
             

@@ -151,7 +151,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let lastWidth = window.innerWidth;
     window.addEventListener('resize', () => {
         const currentWidth = window.innerWidth;
-        if ((lastWidth <= 768 && currentWidth > 768) || (lastWidth > 768 && currentWidth <= 768)) {
         if ((lastWidth <= 950 && currentWidth > 950) || (lastWidth > 950 && currentWidth <= 950)) {
             renderSetupDetailList();
         }
@@ -170,7 +169,6 @@ window.checkUnsavedChanges = function() {
 
 function setupSetupLogResizer() {
     // [추가] 모바일 화면(너비 768px 이하)에서는 리사이저 기능 비활성화
-    if (window.innerWidth <= 768) {
     if (window.innerWidth <= 950) {
         const resizer = document.getElementById('setup-log-resizer');
         if (resizer) resizer.style.display = 'none'; // 리사이저 핸들 숨기기
