@@ -339,9 +339,17 @@ function renderSetupDetailList() {
             if (item.execStartDate) minDateAttr = `min="${item.execStartDate}"`;
             else if (item.startDate) minDateAttr = `min="${item.startDate}"`;
 
-            // [요청 수정] 날짜 필드는 항상 input으로 표시하여 바로 수정 가능하게 함
-            startDateCellHtml = `<input type="date" class="detail-start-date-input" value="${item.startDate || ''}" style="color: ${inputColor};" ${generalDisabledAttr}>`;
-            dateCellHtml = `<input type="date" class="detail-date-input" value="${item.date || ''}" style="color: ${inputColor};" ${generalDisabledAttr} ${minDateAttr}>`;
+            // [요청 수정] PC/편집모드에서는 input, 모바일 일반모드에서는 텍스트로 표시
+            const isMobileNonEdit = window.innerWidth <= 950 && !isEditMode;
+            if (isMobileNonEdit) {
+                // 모바일 일반 모드: yy.mm.dd 형식 텍스트로 표시
+                startDateCellHtml = `<div class="date-display" style="color: ${inputColor};">${formatDateYYMMDD(item.startDate)}</div>`;
+                dateCellHtml = `<div class="date-display" style="color: ${inputColor};">${formatDateYYMMDD(item.date)}</div>`;
+            } else {
+                // PC 또는 모바일 편집 모드: 날짜 수정이 가능한 input으로 표시
+                startDateCellHtml = `<input type="date" class="detail-start-date-input" value="${item.startDate || ''}" style="color: ${inputColor};" ${generalDisabledAttr}>`;
+                dateCellHtml = `<input type="date" class="detail-date-input" value="${item.date || ''}" style="color: ${inputColor};" ${generalDisabledAttr} ${minDateAttr}>`;
+            }
 
             if (isEditMode) {
                 contentCellHtml = `

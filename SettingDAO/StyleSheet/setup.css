@@ -498,7 +498,7 @@
     /* [수정] table-layout: fixed 제거하여 너비 문제 해결 */
 
     #setup-detail-card:not(.edit-mode) .data-table th,
-    #setup-detail-card:not(.edit-mode) .data-table td {
+    #setup-detail-card:not(.edit-mode) .data-table td, .detail-est-days-input {
         padding: 8px 4px;
         font-size: 10px;
     }
