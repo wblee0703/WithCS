@@ -435,4 +435,20 @@
     .memo-container {
         min-height: 150px;
     }
+
+    /* [요청] 모바일에서 셋업 소분류 카드 세로 배치 */
+    .setup-workspace {
+        flex-direction: column !important;
+        height: auto !important;
+        overflow-y: visible !important;
+    }
+    .setup-card {
+        width: 100% !important;
+        flex: none !important;
+        margin-bottom: 20px;
+    }
+    /* 메인 영역 스크롤 허용 */
+    #detail-window {
+        overflow-y: auto !important;
+    }
 }

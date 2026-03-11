@@ -192,12 +192,38 @@ function setupAuthEvents() {
 
 // [추가] 모바일 네비게이션 설정 함수
 function setupMobileNav() {
-    const hamburger = document.getElementById('hamburger-menu');
-    const mobileNav = document.getElementById('mobile-nav');
-    const navOverlay = document.getElementById('nav-overlay');
-    const mainNav = document.querySelector('.header .container .nav-links');
+    // [수정] 요소가 없으면 동적으로 생성 (setup.html, maintenance.html 등에서 헤더 구조 보완)
+    const header = document.querySelector('.header');
+    if (!header) return;
 
-    if (!hamburger || !mobileNav || !navOverlay || !mainNav) return;
+    let hamburger = document.getElementById('hamburger-menu');
+    if (!hamburger) {
+        hamburger = document.createElement('button');
+        hamburger.className = 'hamburger-menu';
+        hamburger.id = 'hamburger-menu';
+        hamburger.innerHTML = '<div class="bar"></div><div class="bar"></div><div class="bar"></div>';
+        // 헤더의 첫 번째 자식으로 추가
+        header.insertBefore(hamburger, header.firstChild);
+    }
+
+    let navOverlay = document.getElementById('nav-overlay');
+    if (!navOverlay) {
+        navOverlay = document.createElement('div');
+        navOverlay.className = 'nav-overlay';
+        navOverlay.id = 'nav-overlay';
+        header.appendChild(navOverlay);
+    }
+
+    let mobileNav = document.getElementById('mobile-nav');
+    if (!mobileNav) {
+        mobileNav = document.createElement('nav');
+        mobileNav.className = 'mobile-nav';
+        mobileNav.id = 'mobile-nav';
+        header.appendChild(mobileNav);
+    }
+
+    const mainNav = document.querySelector('.header .container .nav-links');
+    if (!mainNav) return;
 
     // 메인 네비게이션 복제
     mobileNav.innerHTML = `<ul class="mobile-nav-links">${mainNav.innerHTML}</ul>`;
