@@ -118,5 +118,11 @@
         "action": "UPDATE_SETUP_DETAILS",
         "target": "SOMA-2000::SOMA-H19-0903",
         "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-11T07:37:38.162Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "details": "셋업 상세 내역 수정"
     }
 ]
