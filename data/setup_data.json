@@ -2284,136 +2284,100 @@
     "SKH 이천::WIM-100::WIM1-HK24-0401": {
         "setupDetails": [
             {
-                "id": 1772159006702,
-                "completed": false,
-                "content": "장비 도면 부착",
-                "date": "2026-03-12",
-                "startDate": "2026-03-11",
-                "estDays": "1",
                 "category": "장비 반입 및 정위치",
-                "delayReason": "",
-                "execStartDate": ""
+                "content": "장비 도면 부착",
+                "date": "",
+                "estDays": "1",
+                "id": 1772159006702,
+                "startDate": ""
             },
             {
-                "id": 1772159006703,
-                "completed": false,
+                "category": "장비 반입 및 정위치",
                 "content": "다이크 설치",
                 "date": "",
-                "startDate": "2026-03-12",
                 "estDays": "1",
-                "category": "장비 반입 및 정위치",
-                "delayReason": "",
-                "execStartDate": ""
+                "id": 1772159006703,
+                "startDate": ""
             },
             {
-                "id": 1772159006704,
-                "completed": false,
+                "category": "장비 반입 및 정위치",
                 "content": "장비 반입",
                 "date": "",
-                "startDate": "2026-03-13",
                 "estDays": "1",
-                "category": "장비 반입 및 정위치",
-                "delayReason": "",
-                "execStartDate": ""
+                "id": 1772159006704,
+                "startDate": ""
             },
             {
-                "id": 1772159006705,
-                "completed": false,
+                "category": "장비 반입 및 정위치",
                 "content": "다이크 공사 및 리크센서 설치",
                 "date": "",
-                "startDate": "2026-03-16",
                 "estDays": "2",
-                "category": "장비 반입 및 정위치",
-                "delayReason": "",
-                "execStartDate": ""
+                "id": 1772159006705,
+                "startDate": ""
             },
             {
-                "id": 1772159006706,
-                "completed": false,
+                "category": "통신 상태 및 유틸리티",
                 "content": "Utility 배관 공사 및 연결",
                 "date": "",
-                "startDate": "2026-03-18",
                 "estDays": "5",
-                "category": "통신 상태 및 유틸리티",
-                "delayReason": "",
-                "execStartDate": ""
+                "id": 1772159006706,
+                "startDate": ""
             },
             {
-                "id": 1772159006707,
-                "completed": false,
+                "category": "통신 상태 및 유틸리티",
                 "content": "Utility 턴온",
                 "date": "",
-                "startDate": "2026-03-25",
                 "estDays": "1",
-                "category": "통신 상태 및 유틸리티",
-                "delayReason": "",
-                "execStartDate": ""
+                "id": 1772159006707,
+                "startDate": ""
             },
             {
-                "id": 1772159006708,
-                "completed": false,
+                "category": "통신 상태 및 유틸리티",
                 "content": "인터락 Test 및 통신상태 확인 ",
                 "date": "",
-                "startDate": "2026-03-26",
                 "estDays": "2",
-                "category": "통신 상태 및 유틸리티",
-                "delayReason": "",
-                "execStartDate": ""
+                "id": 1772159006708,
+                "startDate": ""
             },
             {
-                "id": 1772159006709,
-                "completed": false,
+                "category": "셋업 평가",
                 "content": "분석부 안정화 및 오염제어",
                 "date": "",
-                "startDate": "2026-03-30",
                 "estDays": "5",
-                "category": "셋업 평가",
-                "delayReason": "",
-                "execStartDate": ""
+                "id": 1772159006709,
+                "startDate": ""
             },
             {
-                "id": 1772159006710,
-                "completed": false,
+                "category": "셋업 평가",
                 "content": "Calibration 평가",
                 "date": "",
-                "startDate": "2026-04-06",
                 "estDays": "2",
-                "category": "셋업 평가",
-                "delayReason": "",
-                "execStartDate": ""
+                "id": 1772159006710,
+                "startDate": ""
             },
             {
-                "id": 1772159006711,
-                "completed": false,
+                "category": "셋업 평가",
                 "content": "Sample 측정",
                 "date": "",
-                "startDate": "2026-04-08",
                 "estDays": "2",
-                "category": "셋업 평가",
-                "delayReason": "",
-                "execStartDate": ""
+                "id": 1772159006711,
+                "startDate": ""
             },
             {
-                "id": 1772159006712,
-                "completed": false,
+                "category": "셋업 평가",
                 "content": "신뢰도 평가",
                 "date": "",
-                "startDate": "2026-04-10",
                 "estDays": "5",
-                "category": "셋업 평가",
-                "delayReason": "",
-                "execStartDate": ""
+                "id": 1772159006712,
+                "startDate": ""
             },
             {
-                "id": 1772159006713,
-                "completed": false,
+                "category": "셋업 완료",
                 "content": "셋업 완료",
                 "date": "",
-                "startDate": "2026-04-17",
                 "estDays": "0",
-                "category": "셋업 완료",
-                "delayReason": "",
-                "execStartDate": ""
+                "id": 1772159006713,
+                "startDate": ""
             }
         ]
     }

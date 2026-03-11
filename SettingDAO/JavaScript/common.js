@@ -175,6 +175,20 @@ function setupAuthEvents() {
     const btnGithubSync = document.getElementById('btn-github-sync');
     const userInfo = document.getElementById('user-info');
 
+    // [추가] 홈 화면 로그인 요소 이벤트 연결
+    const homeLoginBtn = document.getElementById('home-login-btn');
+    const homeLoginId = document.getElementById('home-login-id');
+    const homeLoginPw = document.getElementById('home-login-pw');
+
+    if (homeLoginBtn) {
+        homeLoginBtn.addEventListener('click', () => attemptLogin(homeLoginId.value, homeLoginPw.value, 'HOME'));
+    }
+    if (homeLoginPw) {
+        homeLoginPw.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') attemptLogin(homeLoginId.value, homeLoginPw.value, 'HOME');
+        });
+    }
+
     if (userInfo) userInfo.addEventListener('click', handleLoginLogoutClick);
     if (btnUserSettings) btnUserSettings.addEventListener('click', openUserModal);
     if (btnCloseUserModal) btnCloseUserModal.addEventListener('click', closeUserModal);
@@ -304,31 +318,28 @@ function setupMobileNav() {
 
 function handlePageAccess() {
     const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+    const homeWelcomeContainer = document.getElementById('home-welcome-container');
     const homeLoginContainer = document.getElementById('home-login-container');
 
-    if (homeLoginContainer) {
+    if (homeWelcomeContainer) {
         // [HOME 화면]
         if (isLoggedIn) {
-            document.getElementById('home-login-container').style.display = 'none';
-            document.getElementById('home-welcome-container').style.display = 'flex';
+            homeWelcomeContainer.style.display = 'flex';
+            if (homeLoginContainer) homeLoginContainer.style.display = 'none';
             updateHomeDashboard();
         } else {
-            document.getElementById('home-login-container').style.display = 'flex';
-            document.getElementById('home-welcome-container').style.display = 'none';
+            homeWelcomeContainer.style.display = 'none';
+            if (homeLoginContainer) homeLoginContainer.style.display = 'flex';
+            // 로그인 모달은 checkLoginStatus()에서 자동으로 표시됩니다.
         }
 
-        const homeLoginBtn = document.getElementById('home-login-btn');
-        const homeLoginId = document.getElementById('home-login-id');
-        const homeLoginPw = document.getElementById('home-login-pw');
-
-        if (homeLoginBtn) homeLoginBtn.addEventListener('click', () => attemptLogin(homeLoginId.value, homeLoginPw.value, 'HOME'));
         const homeLogoutBtn = document.getElementById('home-logout-btn');
         if (homeLogoutBtn) homeLogoutBtn.addEventListener('click', () => {
             if (confirm('로그아웃 하시겠습니까?')) {
                 // [보안] 서버 로그아웃 요청
                 fetch('/api/logout', { 
                     method: 'POST',
-                    headers: { 'X-CSRFToken': getCookie('csrf_token') } // [보안] CSRF 토큰 추가
+                    headers: { 'X-CSRFToken': getCookie('csrf_token') }
                 }).then(() => {
                     localStorage.removeItem('lastHomeSection');
                     localStorage.removeItem('setupDashboardFilter');
@@ -337,9 +348,6 @@ function handlePageAccess() {
                     location.reload();
                 });
             }
-        });
-        if (homeLoginPw) homeLoginPw.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') attemptLogin(homeLoginId.value, homeLoginPw.value, 'HOME');
         });
 
         checkLoginStatus();

@@ -6,6 +6,21 @@ let originalSetupLogMemo = "";
 let currentSetupCompletionTarget = null;
 let currentExecStartTargetId = null;
 
+// [추가] 날짜 포맷팅 함수 (YYYY-MM-DD -> YY.MM.DD)
+function formatDateYYMMDD(dateString) {
+    if (!dateString) return '-';
+    try {
+        const parts = dateString.split('-');
+        if (parts.length === 3) {
+            const year = parts[0].slice(-2);
+            return `${year}.${parts[1]}.${parts[2]}`;
+        }
+        return dateString;
+    } catch (e) {
+        return dateString;
+    }
+}
+
 // [추가] 공통 함수 폴백 (common.js 누락 대비)
 if (typeof window.isHoliday !== 'function') {
     window.isHoliday = function(date) { return false; };
@@ -238,6 +253,7 @@ function renderSetupDetailList() {
     // 편집 모드 확인
     const card = document.getElementById('setup-detail-card');
     const isEditMode = card ? card.classList.contains('edit-mode') : false;
+    const isMobile = window.innerWidth <= 768;
 
     tbody.innerHTML = '';
 
@@ -292,10 +308,31 @@ function renderSetupDetailList() {
             const contentDisabledAttr = (item.completed || !isEditMode) ? 'disabled' : '';
             const inputColor = item.completed ? '#8b949e' : '#e6edf3';
 
-            // 완료일 입력창 최소값 설정 (실행일 또는 시작일 기준)
+            // [수정] 모바일/편집 모드에 따라 셀 내용 동적 생성
+            let contentCellHtml, startDateCellHtml, dateCellHtml;
             let minDateAttr = '';
-            if (item.execStartDate) minDateAttr = `min="${item.execStartDate}"`;
-            else if (item.startDate) minDateAttr = `min="${item.startDate}"`;
+
+            if (isMobile && !isEditMode) {
+                // 모바일 일반 모드
+                contentCellHtml = `
+                    <div class="scrollable-content-wrapper">
+                        <span class="detail-content-text">${escapeHtml(item.content)}</span>
+                    </div>
+                `;
+                startDateCellHtml = `<span class="date-display">${formatDateYYMMDD(item.startDate)}</span>`;
+                dateCellHtml = `<span class="date-display">${formatDateYYMMDD(item.date)}</span>`;
+            } else {
+                // 데스크탑 또는 모바일 편집 모드
+                contentCellHtml = `
+                    <div style="display:flex; align-items:center; gap:5px;">
+                        <input type="text" class="detail-content-input" value="${escapeHtml(item.content)}" placeholder="항목 입력" style="flex:1; color: ${inputColor};" ${contentDisabledAttr}>
+                    </div>
+                `;
+                if (item.execStartDate) minDateAttr = `min="${item.execStartDate}"`;
+                else if (item.startDate) minDateAttr = `min="${item.startDate}"`;
+                startDateCellHtml = `<input type="date" class="detail-start-date-input" value="${item.startDate || ''}" style="color: ${inputColor};" ${generalDisabledAttr}>`;
+                dateCellHtml = `<input type="date" class="detail-date-input" value="${item.date || ''}" style="color: ${inputColor};" ${generalDisabledAttr} ${minDateAttr}>`;
+            }
 
             const estVal = (item.estDays !== undefined && item.estDays !== null && item.estDays !== '') ? item.estDays : '1';
             let estDaysHtml = `<input type="text" class="detail-est-days-input" value="${estVal}" placeholder="0" style="text-align: center; width: 100%; background: transparent; border: none; color: ${inputColor};" ${generalDisabledAttr}>`;
@@ -327,14 +364,10 @@ function renderSetupDetailList() {
             }
 
             tr.innerHTML = `
-                <td>
-                    <div style="display:flex; align-items:center; gap:5px;">
-                        <input type="text" class="detail-content-input" value="${escapeHtml(item.content)}" placeholder="항목 입력" style="flex:1; color: ${inputColor};" ${contentDisabledAttr}>
-                    </div>
-                </td>
+                <td>${contentCellHtml}</td>
                 <td style="text-align: center;">${estDaysHtml}</td>
-                <td><input type="date" class="detail-start-date-input" value="${item.startDate || ''}" style="color: ${inputColor};" ${generalDisabledAttr}></td>
-                <td><input type="date" class="detail-date-input" value="${item.date}" style="color: ${inputColor};" ${generalDisabledAttr} ${minDateAttr}></td>
+                <td>${startDateCellHtml}</td>
+                <td>${dateCellHtml}</td>
                 <td style="text-align: center;">${actionCellHtml}</td>
                 <td style="text-align: center;"><button class="btn-del-sm" onclick="deleteSetupDetailItem(${item.id})">✕</button></td>
             `;

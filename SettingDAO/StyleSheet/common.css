@@ -450,6 +450,16 @@ body {
     background: #161b22;
 }
 
+/* Modal Select */
+.modal-select {
+    background: #0d1117;
+    color: #fff;
+    border: 1px solid #30363d;
+    padding: 8px;
+    border-radius: 4px;
+    flex: 1;
+}
+
 /* Login Form inside Modal */
 .login-form {
     display: flex;
@@ -741,6 +751,39 @@ body.role-user select {
     background: #1f6feb;
     color: #fff;
     border-color: #1f6feb;
+}
+
+/* ==========================================================================
+   11. 공통 데이터 테이블 (Data Table)
+   ========================================================================== */
+.data-table-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    color: #8b949e;
+    font-size: 12px;
+    text-align: center;
+    padding: 10px;
+    border-bottom: 1px solid #30363d;
+    position: sticky;
+    top: 0;
+    background: #161b22;
+    z-index: 1;
+}
+
+.data-table td {
+    padding: 8px 10px;
+    font-size: 13px;
+    border-bottom: 1px solid #21262d;
+    text-align: center;
 }
 
 /* ==========================================================

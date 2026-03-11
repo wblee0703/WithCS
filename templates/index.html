@@ -1,57 +1,14 @@
-<!DOCTYPE html>
-<html lang="ko">
+{% extends 'common.html' %}
+{% set active_page = 'home' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WITHTECH - EQ System</title>
-    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common.css') }}">
+{% block extra_css %}
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/index.css') }}">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/calendar.css') }}?v=6">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/gantt.css') }}">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/integ.css') }}">
-    <link
-        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Noto+Sans+KR:wght@100;300;700&display=swap"
-        rel="stylesheet">
-</head>
+{% endblock %}
 
-<body>
-    <!-- ==========================================================================
-         1. 헤더 (Header)
-         ========================================================================== -->
-    <header class="header">
-        <!-- [추가] 모바일용 햄버거 메뉴 버튼 -->
-        <button class="hamburger-menu" id="hamburger-menu">
-            <div class="bar"></div>
-            <div class="bar"></div>
-            <div class="bar"></div>
-        </button>
-
-        <img src="{{ url_for('SettingDAO', filename='LOGO+WITHTECH.png') }}" alt="WITHTECH Logo" class="header-logo">
-        <div class="container">
-            <nav>
-                <ul class="nav-links">
-                    <li><a href="{{ url_for('home') }}" class="active">Home</a></li>
-                    <li><a href="{{ url_for('setup') }}">장비 셋업</a></li>
-                    <li><a href="{{ url_for('maintenance') }}">운영 관리</a></li>
-                </ul>
-            </nav>
-        </div>
-
-        <!-- [추가] 모바일 네비게이션 패널 -->
-        <div class="nav-overlay" id="nav-overlay"></div>
-        <nav class="mobile-nav" id="mobile-nav"></nav>
-
-        <div class="user-controls">
-            <span id="user-info" class="user-info" style="display: none;"></span>
-            <button id="btn-login-logout" class="btn-gray">로그인</button>
-            <button id="btn-user-settings" class="btn-gray" style="display: none;">⚙️ 설정</button>
-        </div>
-    </header>
-
-    <!-- ==========================================================================
-         2. 메인 컨텐츠 (Main Content)
-         ========================================================================== -->
+{% block content %}
     <main class="home-main">
         <div class="home-content">
             <p class="logo-text">Think Hard, Fine Action</p>
@@ -445,40 +402,6 @@
             </div>
     </main>
 
-    <!-- ==========================================================================
-         3. 모달 팝업 (Modals)
-         ========================================================================== -->
-    <!-- 3.1 사용자 설정 모달 -->
-    <div id="user-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window size-user">
-            <div class="modal-header">
-                <h3>계정 관리</h3>
-                <button class="btn-del-sm" id="btn-close-user-modal">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="sidebar-group" id="admin-panel" style="display: none;">
-                    <h4 class="modal-section-title modal-section-title-blue">관리자 기능</h4>
-                    <div class="form-row">
-                        <input type="text" id="new-user-id" placeholder="아이디">
-                        <input type="password" id="new-user-pw" placeholder="비밀번호">
-                        <select id="new-user-role">
-                            <option value="user">일반</option>
-                            <option value="admin">관리자</option>
-                        </select>
-                        <button class="btn-add" id="btn-add-user">+</button>
-                    </div>
-                    <button id="btn-github-sync" class="btn-green" style="width: 100%; margin-top: 10px;">GitHub 전체 동기화</button>
-                </div>
-                <h4 class="modal-section-title modal-section-title-blue">비밀번호 변경</h4>
-                <div class="form-row">
-                    <input type="password" id="change-pw-current" placeholder="현재 비밀번호">
-                    <input type="password" id="change-pw-new" placeholder="새 비밀번호">
-                    <button class="btn-blue" id="btn-change-pw">변경</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- 3.2 캘린더 팝업 -->
     <div id="calendar-popup" class="modal-overlay" style="display: none;">
         <div class="modal-window">
@@ -800,12 +723,11 @@
             <div class="d-day-badge" style="width: auto; padding: 2px 8px;"></div>
         </div>
     </template>
+{% endblock %}
 
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}"></script>
+{% block extra_js %}
     <script src="{{ url_for('SettingDAO', filename='JavaScript/gantt.js') }}"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/calendar.js') }}"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/index.js') }}"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/integ.js') }}"></script>
-</body>
-
-</html>
+{% endblock %}

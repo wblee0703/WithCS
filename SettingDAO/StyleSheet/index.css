@@ -594,16 +594,7 @@ body {
     color: #58a6ff; margin-bottom: 10px; 
 }
 
-#new-user-role,
-.modal-select {
-    background: #0d1117;
-    color: #fff;
-    border: 1px solid #30363d;
-    padding: 8px;
-    border-radius: 4px;
-    flex: 1;
-}
-
+/* [이동] modal-select 스타일은 common.css로 이동되었습니다. */
 .modal-btn-group {
     display: flex;
     justify-content: space-between;

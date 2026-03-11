@@ -413,6 +413,11 @@
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
 }
+/* [요청] 카드 접기 버튼 데스크탑 숨김 */
+.btn-collapse {
+    display: none;
+}
+
 /* ==========================================================
    모바일 반응형 스타일 (Mobile Responsive Styles)
    ========================================================== */
@@ -463,14 +468,42 @@
 
     /* [요청] 모바일 셋업 진행 세부사항 리스트 표시 제어 */
     
-    /* 1. 일반 모드: 작업일(2), 예정일(3), 완료일(4) 숨김 (내용, 상태만 표시) */
+    /* 1. 일반 모드: 작업일(2) 숨김 (내용, 예정일, 완료일, 상태만 표시) */
     #setup-detail-card:not(.edit-mode) .data-table th:nth-child(2),
-    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(3),
-    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(4),
-    #setup-detail-card:not(.edit-mode) .item-row td:nth-child(2),
-    #setup-detail-card:not(.edit-mode) .item-row td:nth-child(3),
-    #setup-detail-card:not(.edit-mode) .item-row td:nth-child(4) {
+    #setup-detail-card:not(.edit-mode) .item-row td:nth-child(2) {
         display: none;
+    }
+
+    /* [추가] 일반 모드 테이블 레이아웃 및 스타일 */
+    #setup-detail-card:not(.edit-mode) .data-table {
+        table-layout: fixed;
+    }
+
+    #setup-detail-card:not(.edit-mode) .data-table th,
+    #setup-detail-card:not(.edit-mode) .data-table td {
+        padding: 8px 4px;
+        font-size: 12px;
+        vertical-align: middle;
+    }
+
+    /* [추가] 일반 모드 컬럼 너비 */
+    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(1) { width: auto; } /* 내용 */
+    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(3) { width: 65px; } /* 예정일 */
+    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(4) { width: 65px; } /* 완료일 */
+    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(5) { width: 40px; } /* 상태 */
+
+    /* [추가] 내용(작업내용) 좌우 스크롤 스타일 */
+    #setup-detail-card:not(.edit-mode) .scrollable-content-wrapper {
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    /* [추가] 날짜 표시 스타일 (yy.mm.dd) */
+    #setup-detail-card:not(.edit-mode) .date-display {
+        font-size: 12px;
+        color: #c9d1d9;
+        text-align: center;
+        display: block;
     }
 
     /* 2. 편집 모드 (톱니바퀴 클릭): 모든 컬럼 표시 및 너비 고정 */
@@ -504,5 +537,10 @@
     #setup-detail-card.edit-mode .detail-est-days-input {
         width: 100% !important;
         font-size: 11px;
+    }
+
+    /* [요청] 모바일에서 카드 접기 버튼 표시 */
+    .btn-collapse {
+        display: block !important;
     }
 }
