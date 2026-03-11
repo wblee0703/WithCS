@@ -238,5 +238,11 @@
         "action": "UPDATE_SETUP_DETAILS",
         "target": "SOMA-3000E::SOMA-EK24-0401",
         "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-11T06:26:54.163Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "details": "셋업 상세 내역 수정"
     }
 ]
