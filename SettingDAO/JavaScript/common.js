@@ -531,14 +531,22 @@ function setupResizers() {
 
 // [추가] 소분류 카드 접기 기능 (위아래 화살표 버튼 추가)
 function setupCollapsibleCards() {
-    const cards = document.querySelectorAll('.card');
+    const cards = document.querySelectorAll('.card, .setup-card');
     cards.forEach(card => {
-        const header = card.querySelector('.card-header');
-        const body = card.querySelector('.card-body');
+        const header = card.querySelector('.card-header, .setup-card-header');
+        const body = card.querySelector('.card-body, .setup-card-body');
         if (header && body && !header.querySelector('.btn-collapse')) {
             const btn = document.createElement('button');
             btn.className = 'btn-collapse';
-            btn.innerHTML = '▲'; // 초기 상태: 펼쳐짐
+            
+            // [수정] 모바일 초기 상태: 접힘
+            if (window.innerWidth <= 768) {
+                btn.innerHTML = '▼';
+                body.style.display = 'none';
+            } else {
+                btn.innerHTML = '▲'; // 초기 상태: 펼쳐짐
+            }
+            
             btn.style.cssText = 'float: right; background: none; border: none; color: #8b949e; cursor: pointer; font-size: 14px; line-height: 1;';
             
             btn.onclick = (e) => {
