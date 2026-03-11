@@ -16,5 +16,11 @@
         "action": "ADD_LOG",
         "target": "WIM-100::WIM1-HK24-0401",
         "details": "[장비점검] Test (작업자: 이원배, 날짜: 2026-03-11)"
+    },
+    {
+        "timestamp": "2026-03-11T08:21:16.302Z",
+        "action": "UPDATE_MEMO",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "메모 수정 (LogID: 1773217267796)"
     }
 ]

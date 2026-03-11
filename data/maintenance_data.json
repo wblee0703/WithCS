@@ -56,7 +56,7 @@
                 "type": "장비점검",
                 "content": "Test",
                 "worker": "이원배",
-                "memo": ""
+                "memo": "테스트"
             }
         ],
         "maint": [
