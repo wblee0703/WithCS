@@ -244,5 +244,11 @@
         "details": "셋업 상세 내역 수정",
         "target": "SOMA-3000E::SOMA-EK24-0401",
         "timestamp": "2026-03-11T06:26:54.163Z"
+    },
+    {
+        "timestamp": "2026-03-11T07:04:36.185Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "셋업 상세 내역 수정"
     }
 ]
