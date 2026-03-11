@@ -1044,9 +1044,9 @@
         "timestamp": "2026-03-11T07:12:10.523Z"
     },
     {
-        "timestamp": "2026-03-11T07:19:22.274Z",
         "action": "LOGIN",
+        "details": "로그인 성공 (HOME)",
         "target": "admin",
-        "details": "로그인 성공 (HOME)"
+        "timestamp": "2026-03-11T07:19:22.274Z"
     }
 ]
