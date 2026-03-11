@@ -146,6 +146,16 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSetupLoadListModal();
     setupSetupLoadInfoModal();
     setupSetupResetButton(); // [추가] 초기화 버튼 설정
+
+    // 8. 화면 크기 변경 감지 (모바일/데스크탑 뷰 전환 시 리스트 재렌더링)
+    let lastWidth = window.innerWidth;
+    window.addEventListener('resize', () => {
+        const currentWidth = window.innerWidth;
+        if ((lastWidth <= 768 && currentWidth > 768) || (lastWidth > 768 && currentWidth <= 768)) {
+            renderSetupDetailList();
+        }
+        lastWidth = currentWidth;
+    });
 });
 
 // common.js의 checkUnsavedChanges 함수 오버라이드 (페이지 이동 시 체크)

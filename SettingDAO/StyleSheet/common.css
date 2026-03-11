@@ -1073,4 +1073,8 @@ body.role-user select {
     .data-management-section {
         display: none !important;
     }
+    /* [요청] 모바일에서 데이터 관리 섹션 전체 숨김 */
+    .sidebar-group.backup-section {
+        display: none !important;
+    }
 }
