@@ -1796,6 +1796,17 @@
                 "execStartDate": ""
             },
             {
+                "id": 1773210334106,
+                "completed": false,
+                "content": "",
+                "date": "",
+                "startDate": "",
+                "estDays": "1",
+                "category": "통신 상태 및 유틸리티",
+                "delayReason": "",
+                "execStartDate": ""
+            },
+            {
                 "id": 1771813080912,
                 "completed": true,
                 "content": "분석부 안정화 및 오염제어",
