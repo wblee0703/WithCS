@@ -114,15 +114,21 @@
         "timestamp": "2026-03-11T07:37:05.165Z"
     },
     {
-        "timestamp": "2026-03-11T07:37:35.153Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T07:37:35.153Z"
     },
     {
-        "timestamp": "2026-03-11T07:37:38.162Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T07:37:38.162Z"
+    },
+    {
+        "timestamp": "2026-03-11T23:30:02.771Z",
+        "action": "UPDATE_SETUP_STATUS",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "details": "완료 상태 변경 (체크 해제)"
     }
 ]
