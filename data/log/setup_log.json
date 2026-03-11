@@ -64,5 +64,17 @@
         "details": "일정 자동 계산 (역방향)",
         "target": "SOLA-1000::SOLA-1000",
         "timestamp": "2026-03-11T07:34:00.410Z"
+    },
+    {
+        "timestamp": "2026-03-11T07:36:56.102Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-11T07:36:56.105Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "일정 자동 계산 (완료일 기준)"
     }
 ]
