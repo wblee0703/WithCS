@@ -2441,15 +2441,12 @@
                 "execStartDate": ""
             },
             {
-                "id": 1773270922293,
-                "completed": false,
+                "id": 1773270938997,
+                "category": "셋업 완료",
                 "content": "셋업 완료",
-                "date": "",
                 "startDate": "",
                 "estDays": "0",
-                "category": "셋업 완료",
-                "delayReason": "",
-                "execStartDate": ""
+                "date": ""
             }
         ]
     }

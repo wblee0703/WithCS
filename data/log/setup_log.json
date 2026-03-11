@@ -186,61 +186,67 @@
         "timestamp": "2026-03-11T06:03:34.452Z"
     },
     {
-        "timestamp": "2026-03-11T23:13:02.996Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T23:13:02.996Z"
     },
     {
-        "timestamp": "2026-03-11T23:13:04.367Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T23:13:04.367Z"
     },
     {
-        "timestamp": "2026-03-11T23:15:07.524Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T23:15:07.524Z"
     },
     {
-        "timestamp": "2026-03-11T23:15:08.918Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T23:15:08.918Z"
     },
     {
-        "timestamp": "2026-03-11T23:15:11.578Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T23:15:11.578Z"
     },
     {
-        "timestamp": "2026-03-11T23:15:14.167Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T23:15:14.167Z"
     },
     {
-        "timestamp": "2026-03-11T23:15:19.813Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T23:15:19.813Z"
     },
     {
-        "timestamp": "2026-03-11T23:15:20.302Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T23:15:20.302Z"
     },
     {
-        "timestamp": "2026-03-11T23:15:21.292Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-11T23:15:21.292Z"
     },
     {
-        "timestamp": "2026-03-11T23:15:21.644Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-11T23:15:21.644Z"
+    },
+    {
+        "timestamp": "2026-03-11T23:15:37.997Z",
         "action": "UPDATE_SETUP_DETAILS",
         "target": "WIM-100::WIM1-HK24-0401",
         "details": "셋업 상세 내역 수정"
