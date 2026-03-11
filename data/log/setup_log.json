@@ -406,5 +406,11 @@
         "action": "CALC_SETUP_SCHEDULE",
         "target": "WIM-100::WIM1-HK24-0401",
         "details": "일정 자동 계산 (순방향)"
+    },
+    {
+        "timestamp": "2026-03-11T07:57:01.176Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "셋업 상세 내역 수정"
     }
 ]
