@@ -178,5 +178,11 @@
         "action": "REORDER_SETUP",
         "target": "SOMA-2000::SOMA-HK21-0202",
         "details": "순서 변경"
+    },
+    {
+        "timestamp": "2026-03-11T06:03:34.452Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "셋업 상세 내역 수정"
     }
 ]
