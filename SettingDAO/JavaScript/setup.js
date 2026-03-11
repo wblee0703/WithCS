@@ -561,8 +561,6 @@ function toggleSetupDetailDeleteMode(btn) {
         saveSetupDetails(); // 모드 전환 전 저장
         card.classList.toggle('edit-mode');
         btn.classList.toggle('active');
-        
-        renderSetupDetailList(); // 리스트 재렌더링 (입력창 활성/비활성 적용)
 
         const isEditMode = card.classList.contains('edit-mode');
 
@@ -573,6 +571,8 @@ function toggleSetupDetailDeleteMode(btn) {
         // [추가] 초기화 버튼 토글
         const resetBtn = document.getElementById('btn-reset-setup-date');
         if (resetBtn) resetBtn.style.display = isEditMode ? 'inline-block' : 'none';
+
+        renderSetupDetailList(); // 리스트 재렌더링 (입력창 활성/비활성 적용)
     }
 }
 

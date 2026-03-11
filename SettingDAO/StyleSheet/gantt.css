@@ -419,7 +419,6 @@
     /* [요청] 모바일 가로 모드에서 1달치(약 30일) 보여주고 나머지는 스크롤 */
     .gantt__date-cell--day,
     .gantt__header-row--fixed .gantt__date-cell {
-        min-width: 3.3vw; /* 100vw / 30일 ≈ 3.3vw (화면 너비에 맞춰 1달 표시) */
         flex-shrink: 0;
     }
 
