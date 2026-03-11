@@ -114,21 +114,75 @@
         "timestamp": "2026-03-11T04:52:02.502Z"
     },
     {
-        "timestamp": "2026-03-11T05:57:22.371Z",
         "action": "UPDATE_SETUP_LOG_MEMO",
+        "details": "셋업 일지 메모 수정",
         "target": "IWM-1000::W001-OK25-0801",
-        "details": "셋업 일지 메모 수정"
+        "timestamp": "2026-03-11T05:57:22.371Z"
     },
     {
-        "timestamp": "2026-03-11T05:57:23.089Z",
         "action": "UPDATE_SETUP_LOG_MEMO",
+        "details": "셋업 일지 메모 수정",
         "target": "IWM-1000::W001-OK25-0801",
-        "details": "셋업 일지 메모 수정"
+        "timestamp": "2026-03-11T05:57:23.089Z"
     },
     {
-        "timestamp": "2026-03-11T05:57:27.755Z",
         "action": "UPDATE_SETUP_LOG_MEMO",
+        "details": "셋업 일지 메모 수정",
         "target": "IWM-1000::W001-OK25-0801",
-        "details": "셋업 일지 메모 수정"
+        "timestamp": "2026-03-11T05:57:27.755Z"
+    },
+    {
+        "timestamp": "2026-03-11T06:03:05.906Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "IWM-1000::W001-OK25-0801",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-11T06:03:11.624Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-11T06:03:16.067Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-11T06:03:18.319Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-11T06:03:20.224Z",
+        "action": "REORDER_SETUP",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "순서 변경"
+    },
+    {
+        "timestamp": "2026-03-11T06:03:23.952Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-11T06:03:26.691Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-11T06:03:29.522Z",
+        "action": "REORDER_SETUP",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "순서 변경"
+    },
+    {
+        "timestamp": "2026-03-11T06:03:34.452Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "셋업 상세 내역 수정"
     }
 ]
