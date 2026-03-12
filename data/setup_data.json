@@ -2023,9 +2023,9 @@
             },
             {
                 "id": 1771813080910,
-                "completed": false,
+                "completed": true,
                 "content": "Utility 턴온",
-                "date": "",
+                "date": "2026-02-26",
                 "startDate": "2026-02-26",
                 "estDays": "1",
                 "category": "통신 상태 및 유틸리티",
@@ -2195,6 +2195,14 @@
                 "id": 1772509632287,
                 "memo": "",
                 "worker": "admin"
+            },
+            {
+                "id": 1773297234987,
+                "date": "2026-02-26",
+                "worker": "admin",
+                "content": "Utility 턴온",
+                "company": "위드텍",
+                "memo": ""
             }
         ]
     },
