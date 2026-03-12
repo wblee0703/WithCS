@@ -1056,7 +1056,13 @@
         "timestamp": "2026-03-12T00:12:49.631Z"
     },
     {
-        "timestamp": "2026-03-12T00:29:21.075Z",
+        "action": "LOGIN",
+        "details": "로그인 성공 (HOME)",
+        "target": "admin",
+        "timestamp": "2026-03-12T00:29:21.075Z"
+    },
+    {
+        "timestamp": "2026-03-12T00:47:54.762Z",
         "action": "LOGIN",
         "target": "admin",
         "details": "로그인 성공 (HOME)"
