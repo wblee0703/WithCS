@@ -141,7 +141,14 @@ function openMobileDatePicker(id, field, currentDate) {
 
         if (field === 'startDate') {
             const startInput = row.querySelector('.detail-start-date-input');
-            if (startInput) startInput.value = newValue;
+            if (startInput) {
+                startInput.value = newValue;
+                // [추가] 모바일 뷰 텍스트 즉시 갱신
+                const textDiv = startInput.previousElementSibling;
+                if (textDiv && textDiv.classList.contains('date-display-text')) {
+                    textDiv.textContent = formatDateYYMMDD(newValue);
+                }
+            }
             
             // [수정] 셋업 완료 항목인 경우 PC와 동일하게 전체 일정 재계산(역산) 수행
             if (row.dataset.category === '셋업 완료') {
@@ -153,7 +160,14 @@ function openMobileDatePicker(id, field, currentDate) {
             }
         } else if (field === 'date') {
             const dateInput = row.querySelector('.detail-date-input');
-            if (dateInput) dateInput.value = newValue;
+            if (dateInput) {
+                dateInput.value = newValue;
+                // [추가] 모바일 뷰 텍스트 즉시 갱신
+                const textDiv = dateInput.previousElementSibling;
+                if (textDiv && textDiv.classList.contains('date-display-text')) {
+                    textDiv.textContent = formatDateYYMMDD(newValue);
+                }
+            }
             
             const checkbox = row.querySelector('.detail-complete-checkbox');
             if (newValue && checkbox && !checkbox.checked) checkbox.checked = true;
@@ -934,6 +948,12 @@ window.calculateSetupSchedule = function(targetDateStr) {
                     const newStart = window.addBusinessDays(currentEndDate, -(estDays - 1));
                     
                     startInput.value = formatLocalDate(newStart);
+
+                    // [추가] 모바일 뷰 텍스트 갱신 (역산 결과 반영)
+                    const textDiv = startInput.previousElementSibling;
+                    if (textDiv && textDiv.classList.contains('date-display-text')) {
+                        textDiv.textContent = formatDateYYMMDD(startInput.value);
+                    }
                     
                     // 다음(위쪽) 항목의 완료일 = 현재 항목 시작일 - 1일
                     currentEndDate = window.addBusinessDays(newStart, -1);
@@ -981,6 +1001,12 @@ function calculateScheduleForward(startRow, skipSave = false) {
         if (rowStartInput) {
             if (!isCompleted) {
                 rowStartInput.value = formatLocalDate(nextStartDate);
+
+                // [추가] 모바일 뷰 텍스트 갱신 (자동 계산 결과 반영)
+                const textDiv = rowStartInput.previousElementSibling;
+                if (textDiv && textDiv.classList.contains('date-display-text')) {
+                    textDiv.textContent = formatDateYYMMDD(rowStartInput.value);
+                }
             } else {
                 // 완료된 항목은 날짜를 변경하지 않지만, 다음 계산의 기준점으로 사용
                 if (rowStartInput.value) {
@@ -1036,6 +1062,12 @@ function calculateScheduleBackward(startRow, skipSave = false) {
             const currentStartDate = window.addBusinessDays(currentEndDate, -(estDays - 1));
             
             rowStartInput.value = formatLocalDate(currentStartDate);
+
+            // [추가] 모바일 뷰 텍스트 갱신 (자동 계산 결과 반영)
+            const textDiv = rowStartInput.previousElementSibling;
+            if (textDiv && textDiv.classList.contains('date-display-text')) {
+                textDiv.textContent = formatDateYYMMDD(rowStartInput.value);
+            }
             
             // 다음 반복(더 위쪽)을 위해 기준 날짜 갱신
             nextTaskStartDate = currentStartDate;
