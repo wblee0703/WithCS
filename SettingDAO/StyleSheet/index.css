@@ -810,10 +810,7 @@ body {
     background-color: #e6edf3;
 }
 
-/* [요청] 모바일 전용 버튼 표시 */
-    .mobile-only-btn {
-        display: block !important;
-    }
+
 /* ==========================================================================
    13. 유틸리티 (Utilities)
    ========================================================================== */
@@ -882,7 +879,10 @@ body {
         width: 100%; /* [요청] 선택된 버튼은 전체 너비 유지 */
         order: 2;    /* [요청] 선택된 버튼을 아래쪽(내용 바로 위)으로 배치 */
     }
-    
+    /* [요청] 모바일 전용 버튼 표시 */
+    .mobile-only-btn {
+        display: block !important;
+    }
     .home-menu-container.compact .home-big-btn .icon { font-size: 20px; }
     .home-menu-container.compact .home-big-btn h3 { font-size: 14px; }
 
