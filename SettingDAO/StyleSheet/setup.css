@@ -586,7 +586,7 @@
 
     /* [요청] 모바일 소분류 제목 글자 크기 축소 */
     .setup-card-header h3 {
-        font-size: 13px;
+        font-size: 12px;
         margin-right: 10px; /* 제목과 설정 버튼 사이 간격 */
     }
 
