@@ -564,27 +564,33 @@
         "timestamp": "2026-03-12T04:24:15.963Z"
     },
     {
-        "timestamp": "2026-03-12T04:24:26.314Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (완료일 기준)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "일정 자동 계산 (완료일 기준)"
+        "timestamp": "2026-03-12T04:24:26.314Z"
     },
     {
-        "timestamp": "2026-03-12T04:24:30.202Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (완료일 기준)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "일정 자동 계산 (완료일 기준)"
+        "timestamp": "2026-03-12T04:24:30.202Z"
     },
     {
-        "timestamp": "2026-03-12T04:24:31.179Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (완료일 기준)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "일정 자동 계산 (완료일 기준)"
+        "timestamp": "2026-03-12T04:24:31.179Z"
     },
     {
-        "timestamp": "2026-03-12T04:24:34.300Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-13",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "실행 시작일 설정: 2026-03-13"
+        "timestamp": "2026-03-12T04:24:34.300Z"
+    },
+    {
+        "timestamp": "2026-03-12T04:24:50.091Z",
+        "action": "UPDATE_SETUP_STATUS",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "details": "완료 상태 해제 및 이후 단계 초기화"
     }
 ]

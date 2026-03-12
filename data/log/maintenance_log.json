@@ -66,9 +66,9 @@
         "timestamp": "2026-03-12T04:24:04.327Z"
     },
     {
-        "timestamp": "2026-03-12T04:24:39.298Z",
         "action": "UPDATE_SETUP_DATE",
+        "details": "완료일 수정",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "완료일 수정"
+        "timestamp": "2026-03-12T04:24:39.298Z"
     }
 ]
