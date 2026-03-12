@@ -790,5 +790,11 @@
         "action": "UPDATE_SETUP_DETAILS",
         "target": "SOMA-2000::SOMA-HK21-0202",
         "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T04:37:13.879Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (순방향)"
     }
 ]
