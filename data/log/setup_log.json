@@ -1240,5 +1240,11 @@
         "action": "UPDATE_SETUP_COMPLETION",
         "target": "SOMA-2000::SOMA-HK21-0202",
         "details": "작업 완료 등록 (ID: 1772159008387)"
+    },
+    {
+        "timestamp": "2026-03-12T12:21:00.496Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "일정 자동 계산 (완료일 기준)"
     }
 ]
