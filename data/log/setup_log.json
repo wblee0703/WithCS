@@ -1342,5 +1342,11 @@
         "action": "UPDATE_SETUP_COMPLETION",
         "target": "SOMA-2000::SOMA-HC19-1204",
         "details": "작업 완료 등록 (ID: 1771815478939)"
+    },
+    {
+        "timestamp": "2026-03-12T15:18:44.131Z",
+        "action": "START_SETUP_EXEC",
+        "target": "SOMA-2000::SOMA-HC19-1204",
+        "details": "실행 시작일 설정: 2026-03-05"
     }
 ]
