@@ -2225,9 +2225,9 @@
             },
             {
                 "id": 1772159006261,
-                "completed": false,
+                "completed": true,
                 "content": "다이크 공사 및 리크센서 설치",
-                "date": "",
+                "date": "2026-03-12",
                 "startDate": "2026-03-16",
                 "estDays": "2",
                 "category": "장비 반입 및 정위치",
