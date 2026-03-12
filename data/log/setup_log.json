@@ -942,39 +942,51 @@
         "timestamp": "2026-03-12T06:02:33.572Z"
     },
     {
-        "timestamp": "2026-03-12T06:17:00.789Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T06:17:00.789Z"
     },
     {
-        "timestamp": "2026-03-12T06:17:08.366Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T06:17:08.366Z"
     },
     {
-        "timestamp": "2026-03-12T06:18:25.220Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T06:18:25.220Z"
     },
     {
-        "timestamp": "2026-03-12T06:18:26.414Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T06:18:26.414Z"
     },
     {
-        "timestamp": "2026-03-12T06:18:32.451Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T06:18:32.451Z"
     },
     {
-        "timestamp": "2026-03-12T06:18:33.713Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T06:18:33.713Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-12T06:24:48.375Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-12T06:24:51.261Z"
     }
 ]
