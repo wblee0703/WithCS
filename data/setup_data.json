@@ -2217,136 +2217,136 @@
     "SKH 이천::SOMA-2000::SOMA-H19-0903": {
         "setupDetails": [
             {
-                "id": 1772159006258,
+                "category": "장비 반입 및 정위치",
                 "completed": true,
                 "content": "장비 도면 부착",
                 "date": "2026-03-04",
-                "startDate": "2026-03-04",
-                "estDays": "1",
-                "category": "장비 반입 및 정위치",
                 "delayReason": "",
-                "execStartDate": "2026-03-04"
+                "estDays": "1",
+                "execStartDate": "2026-03-04",
+                "id": 1772159006258,
+                "startDate": "2026-03-04"
             },
             {
-                "id": 1772159006259,
+                "category": "장비 반입 및 정위치",
                 "completed": true,
                 "content": "다이크 설치",
                 "date": "2026-03-05",
-                "startDate": "2026-03-06",
-                "estDays": "1",
-                "category": "장비 반입 및 정위치",
                 "delayReason": "",
-                "execStartDate": "2026-03-05"
+                "estDays": "1",
+                "execStartDate": "2026-03-05",
+                "id": 1772159006259,
+                "startDate": "2026-03-06"
             },
             {
-                "id": 1772159006260,
+                "category": "장비 반입 및 정위치",
                 "completed": true,
                 "content": "장비 반입",
                 "date": "2026-03-09",
-                "startDate": "2026-03-09",
-                "estDays": "1",
-                "category": "장비 반입 및 정위치",
                 "delayReason": "",
-                "execStartDate": "2026-03-09"
+                "estDays": "1",
+                "execStartDate": "2026-03-09",
+                "id": 1772159006260,
+                "startDate": "2026-03-09"
             },
             {
-                "id": 1772159006261,
+                "category": "장비 반입 및 정위치",
                 "completed": true,
                 "content": "다이크 공사 및 리크센서 설치",
                 "date": "2026-03-11",
-                "startDate": "2026-03-10",
-                "estDays": "2",
-                "category": "장비 반입 및 정위치",
                 "delayReason": "",
-                "execStartDate": "2026-03-10"
+                "estDays": "2",
+                "execStartDate": "2026-03-10",
+                "id": 1772159006261,
+                "startDate": "2026-03-10"
             },
             {
-                "id": 1772159006262,
+                "category": "통신 상태 및 유틸리티",
                 "completed": true,
                 "content": "Utility 배관 공사 및 연결",
                 "date": "2026-03-18",
-                "startDate": "2026-03-12",
-                "estDays": "5",
-                "category": "통신 상태 및 유틸리티",
                 "delayReason": "",
-                "execStartDate": "2026-03-12"
+                "estDays": "5",
+                "execStartDate": "2026-03-12",
+                "id": 1772159006262,
+                "startDate": "2026-03-12"
             },
             {
-                "id": 1772159006263,
+                "category": "통신 상태 및 유틸리티",
                 "completed": false,
                 "content": "Utility 턴온",
                 "date": "",
-                "startDate": "2026-03-19",
-                "estDays": "3",
-                "category": "통신 상태 및 유틸리티",
                 "delayReason": "",
-                "execStartDate": ""
+                "estDays": "3",
+                "execStartDate": "",
+                "id": 1772159006263,
+                "startDate": "2026-03-19"
             },
             {
-                "id": 1772159006264,
+                "category": "통신 상태 및 유틸리티",
                 "completed": false,
                 "content": "인터락 Test 및 통신상태 확인 ",
                 "date": "",
-                "startDate": "2026-03-24",
-                "estDays": "2",
-                "category": "통신 상태 및 유틸리티",
                 "delayReason": "",
-                "execStartDate": ""
+                "estDays": "2",
+                "execStartDate": "",
+                "id": 1772159006264,
+                "startDate": "2026-03-24"
             },
             {
-                "id": 1772159006265,
+                "category": "셋업 평가",
                 "completed": false,
                 "content": "분석부 안정화 및 오염제어",
                 "date": "",
-                "startDate": "2026-03-26",
-                "estDays": "5",
-                "category": "셋업 평가",
                 "delayReason": "",
-                "execStartDate": ""
+                "estDays": "5",
+                "execStartDate": "",
+                "id": 1772159006265,
+                "startDate": "2026-03-26"
             },
             {
-                "id": 1772159006266,
+                "category": "셋업 평가",
                 "completed": false,
                 "content": "Calibration 평가",
                 "date": "",
-                "startDate": "2026-04-02",
-                "estDays": "2",
-                "category": "셋업 평가",
                 "delayReason": "",
-                "execStartDate": ""
+                "estDays": "2",
+                "execStartDate": "",
+                "id": 1772159006266,
+                "startDate": "2026-04-02"
             },
             {
-                "id": 1772159006267,
+                "category": "셋업 평가",
                 "completed": false,
                 "content": "Sample 측정",
                 "date": "",
-                "startDate": "2026-04-06",
-                "estDays": "2",
-                "category": "셋업 평가",
                 "delayReason": "",
-                "execStartDate": ""
+                "estDays": "2",
+                "execStartDate": "",
+                "id": 1772159006267,
+                "startDate": "2026-04-06"
             },
             {
-                "id": 1772159006268,
+                "category": "셋업 평가",
                 "completed": false,
                 "content": "신뢰도 평가",
                 "date": "",
-                "startDate": "2026-04-08",
-                "estDays": "5",
-                "category": "셋업 평가",
                 "delayReason": "",
-                "execStartDate": ""
+                "estDays": "5",
+                "execStartDate": "",
+                "id": 1772159006268,
+                "startDate": "2026-04-08"
             },
             {
-                "id": 1772159006269,
+                "category": "셋업 완료",
                 "completed": false,
                 "content": "셋업 완료",
                 "date": "",
-                "startDate": "2026-04-15",
-                "estDays": "0",
-                "category": "셋업 완료",
                 "delayReason": "",
-                "execStartDate": ""
+                "estDays": "0",
+                "execStartDate": "",
+                "id": 1772159006269,
+                "startDate": "2026-04-15"
             }
         ],
         "setupLogs": [
@@ -2538,9 +2538,9 @@
             },
             {
                 "category": "장비 반입 및 정위치",
-                "completed": false,
+                "completed": true,
                 "content": "장비 반입",
-                "date": "",
+                "date": "2026-03-17",
                 "delayReason": "",
                 "estDays": "1",
                 "execStartDate": "2026-03-17",
@@ -2549,34 +2549,34 @@
             },
             {
                 "category": "장비 반입 및 정위치",
-                "completed": false,
+                "completed": true,
                 "content": "다이크 공사 및 리크센서 설치",
-                "date": "",
+                "date": "2026-03-19",
                 "delayReason": "",
                 "estDays": "2",
-                "execStartDate": "",
+                "execStartDate": "2026-03-18",
                 "id": 1772159008385,
                 "startDate": "2026-03-18"
             },
             {
                 "category": "통신 상태 및 유틸리티",
-                "completed": false,
+                "completed": true,
                 "content": "Utility 배관 공사 및 연결",
-                "date": "",
+                "date": "2026-03-26",
                 "delayReason": "",
                 "estDays": "5",
-                "execStartDate": "",
+                "execStartDate": "2026-03-20",
                 "id": 1772159008386,
                 "startDate": "2026-03-20"
             },
             {
                 "category": "통신 상태 및 유틸리티",
-                "completed": false,
+                "completed": true,
                 "content": "Utility 턴온",
-                "date": "",
+                "date": "2026-03-27",
                 "delayReason": "",
                 "estDays": "1",
-                "execStartDate": "",
+                "execStartDate": "2026-03-27",
                 "id": 1772159008387,
                 "startDate": "2026-03-27"
             },
@@ -2743,6 +2743,38 @@
                 "id": 1773290259490,
                 "memo": "",
                 "worker": "admin"
+            },
+            {
+                "company": "위드텍",
+                "content": "장비 반입",
+                "date": "2026-03-17",
+                "id": 1773318036567,
+                "memo": "",
+                "worker": "admin"
+            },
+            {
+                "company": "위드텍",
+                "content": "다이크 공사 및 리크센서 설치",
+                "date": "2026-03-19",
+                "id": 1773318039798,
+                "memo": "",
+                "worker": "admin"
+            },
+            {
+                "company": "위드텍",
+                "content": "Utility 배관 공사 및 연결",
+                "date": "2026-03-26",
+                "id": 1773318045923,
+                "memo": "",
+                "worker": "admin"
+            },
+            {
+                "company": "위드텍",
+                "content": "Utility 턴온",
+                "date": "2026-03-27",
+                "id": 1773318049109,
+                "memo": "",
+                "worker": "admin"
             }
         ]
     },
@@ -2752,23 +2784,23 @@
                 "category": "장비 반입 및 정위치",
                 "completed": true,
                 "content": "장비 도면 부착",
-                "date": "2026-03-12",
+                "date": "2026-03-11",
                 "delayReason": "",
                 "estDays": "1",
-                "execStartDate": "2026-03-12",
+                "execStartDate": "2026-03-11",
                 "id": 1772159006702,
-                "startDate": ""
+                "startDate": "2026-03-11"
             },
             {
                 "category": "장비 반입 및 정위치",
-                "completed": true,
+                "completed": false,
                 "content": "다이크 설치",
-                "date": "2026-03-13",
+                "date": "",
                 "delayReason": "",
                 "estDays": "1",
-                "execStartDate": "2026-03-13",
+                "execStartDate": "",
                 "id": 1772159006703,
-                "startDate": ""
+                "startDate": "2026-03-12"
             },
             {
                 "category": "장비 반입 및 정위치",
@@ -2779,7 +2811,7 @@
                 "estDays": "1",
                 "execStartDate": "",
                 "id": 1772159006704,
-                "startDate": ""
+                "startDate": "2026-03-13"
             },
             {
                 "category": "장비 반입 및 정위치",
@@ -2790,7 +2822,7 @@
                 "estDays": "2",
                 "execStartDate": "",
                 "id": 1772159006705,
-                "startDate": ""
+                "startDate": "2026-03-16"
             },
             {
                 "category": "통신 상태 및 유틸리티",
@@ -2801,7 +2833,7 @@
                 "estDays": "5",
                 "execStartDate": "",
                 "id": 1772159006706,
-                "startDate": ""
+                "startDate": "2026-03-18"
             },
             {
                 "category": "통신 상태 및 유틸리티",
@@ -2812,7 +2844,7 @@
                 "estDays": "1",
                 "execStartDate": "",
                 "id": 1772159006707,
-                "startDate": ""
+                "startDate": "2026-03-25"
             },
             {
                 "category": "통신 상태 및 유틸리티",
@@ -2823,7 +2855,7 @@
                 "estDays": "2",
                 "execStartDate": "",
                 "id": 1772159006708,
-                "startDate": ""
+                "startDate": "2026-03-26"
             },
             {
                 "category": "셋업 평가",
@@ -2834,7 +2866,7 @@
                 "estDays": "5",
                 "execStartDate": "",
                 "id": 1772159006709,
-                "startDate": ""
+                "startDate": "2026-03-30"
             },
             {
                 "category": "셋업 평가",
@@ -2845,7 +2877,7 @@
                 "estDays": "2",
                 "execStartDate": "",
                 "id": 1772159006710,
-                "startDate": ""
+                "startDate": "2026-04-06"
             },
             {
                 "category": "셋업 평가",
@@ -2856,7 +2888,7 @@
                 "estDays": "2",
                 "execStartDate": "",
                 "id": 1772159006711,
-                "startDate": ""
+                "startDate": "2026-04-08"
             },
             {
                 "category": "셋업 평가",
@@ -2867,7 +2899,7 @@
                 "estDays": "5",
                 "execStartDate": "",
                 "id": 1772159006712,
-                "startDate": ""
+                "startDate": "2026-04-10"
             },
             {
                 "category": "셋업 완료",
@@ -2878,7 +2910,7 @@
                 "estDays": "0",
                 "execStartDate": "",
                 "id": 1773282942711,
-                "startDate": ""
+                "startDate": "2026-04-17"
             }
         ],
         "setupLogs": [
@@ -2895,6 +2927,38 @@
                 "content": "다이크 설치",
                 "date": "2026-03-13",
                 "id": 1773282941708,
+                "memo": "",
+                "worker": "admin"
+            },
+            {
+                "company": "위드텍",
+                "content": "장비 도면 부착",
+                "date": "2026-03-12",
+                "id": 1773318003769,
+                "memo": "",
+                "worker": "admin"
+            },
+            {
+                "company": "위드텍",
+                "content": "[지연] 장비 도면 부착",
+                "date": "2026-03-12",
+                "id": 1773318089149,
+                "memo": "[지연 사유]\nNb",
+                "worker": "admin"
+            },
+            {
+                "company": "위드텍",
+                "content": "다이크 설치",
+                "date": "2026-03-13",
+                "id": 1773318093580,
+                "memo": "",
+                "worker": "admin"
+            },
+            {
+                "company": "위드텍",
+                "content": "장비 도면 부착",
+                "date": "2026-03-11",
+                "id": 1773318133663,
                 "memo": "",
                 "worker": "admin"
             }
