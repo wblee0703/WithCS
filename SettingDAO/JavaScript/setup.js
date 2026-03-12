@@ -116,6 +116,49 @@ function checkAndAlertHoliday(input) {
     }
 }
 
+// [추가] 모바일 전용 날짜 수정 피커 (네이티브 달력 호출)
+function openMobileDatePicker(id, field, currentDate) {
+    let input = document.getElementById('mobile-date-picker-input');
+    if (!input) {
+        input = document.createElement('input');
+        input.type = 'date';
+        input.id = 'mobile-date-picker-input';
+        input.style.position = 'fixed';
+        input.style.left = '-9999px';
+        input.style.top = '0';
+        document.body.appendChild(input);
+    }
+
+    input.value = currentDate || '';
+
+    // 날짜 선택 시 데이터 업데이트 및 저장
+    input.onchange = function() {
+        const newValue = input.value;
+        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+        const equipKey = `${currentPath.site}::${currentPath.equip}`;
+        let data = setupData[equipKey] || {};
+        
+        if (data.setupDetails) {
+            const task = data.setupDetails.find(t => t.id == id);
+            if (task) {
+                if (field === 'startDate') {
+                    task.startDate = newValue;
+                } else if (field === 'date') {
+                    task.date = newValue;
+                    // 완료일 입력 시 자동으로 완료 상태 체크
+                    if (newValue && !task.completed) task.completed = true;
+                }
+                setupData[equipKey] = data;
+                localStorage.setItem('setup_data', JSON.stringify(setupData));
+                renderSetupDetailList(); // 화면 갱신
+            }
+        }
+    };
+
+    try { if ('showPicker' in HTMLInputElement.prototype) input.showPicker(); else input.click(); } catch (e) { input.click(); }
+}
+window.openMobileDatePicker = openMobileDatePicker;
+
 /* ==========================================================================
    3. 초기화 및 이벤트 리스너 (Initialization & Events)
    ========================================================================== */
@@ -407,9 +450,9 @@ function renderSetupDetailList() {
             const isMobileNonEdit = window.innerWidth <= 950 && !isEditMode;
             if (isMobileNonEdit) {
                 // 모바일 일반 모드: yy.mm.dd 형식 텍스트로 표시
-                // [수정] 날짜 텍스트 클릭 시 팝업 연결 (시작일 -> 실행일 설정, 완료일 -> 완료 설정)
-                startDateCellHtml = `<div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); startSetupTask(${item.id})">${formatDateYYMMDD(item.startDate)}</div>`;
-                dateCellHtml = `<div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); openSetupCompletionModal(${item.id}, this.closest('tr'))">${formatDateYYMMDD(item.date)}</div>`;
+                // [수정] 날짜 텍스트 클릭 시 네이티브 날짜 피커 호출 (시작일/완료일 직접 수정)
+                startDateCellHtml = `<div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); openMobileDatePicker(${item.id}, 'startDate', '${item.startDate || ''}')">${formatDateYYMMDD(item.startDate)}</div>`;
+                dateCellHtml = `<div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); openMobileDatePicker(${item.id}, 'date', '${item.date || ''}')">${formatDateYYMMDD(item.date)}</div>`;
             } else {
                 // PC 또는 모바일 편집 모드: 날짜 수정이 가능한 input으로 표시
                 startDateCellHtml = `<input type="date" class="detail-start-date-input ${inputColorClass}" value="${item.startDate || ''}" ${generalDisabledAttr}>`;
