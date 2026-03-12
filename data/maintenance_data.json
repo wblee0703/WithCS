@@ -49,14 +49,6 @@
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
                 "type": "PM",
                 "worker": "이원배 진봉균"
-            },
-            {
-                "content": "Test",
-                "date": "2026-03-11",
-                "id": 1773217267796,
-                "memo": "테스트",
-                "type": "장비점검",
-                "worker": "이원배"
             }
         ],
         "maint": [
@@ -65,8 +57,7 @@
                 "date": "2026-03-05",
                 "id": 1769488811527,
                 "period": 30,
-                "type": "PM",
-                "scheduledDate": "2026-03-12"
+                "type": "PM"
             },
             {
                 "content": "9.5%HNO3",
@@ -314,7 +305,6 @@
                 "date": "2026-03-04",
                 "id": 1769490112046,
                 "period": 30,
-                "scheduledDate": "2026-03-10",
                 "type": "PM"
             },
             {
