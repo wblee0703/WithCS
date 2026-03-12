@@ -2434,47 +2434,47 @@
         "setupDetails": [
             {
                 "id": 1772159008382,
-                "completed": true,
+                "completed": false,
                 "content": "장비 도면 부착",
                 "date": "",
                 "startDate": "2026-03-12",
                 "estDays": "1",
                 "category": "장비 반입 및 정위치",
                 "delayReason": "",
-                "execStartDate": "2026-03-12"
+                "execStartDate": ""
             },
             {
                 "id": 1772159008383,
-                "completed": true,
+                "completed": false,
                 "content": "다이크 설치",
                 "date": "2026-03-13",
                 "startDate": "2026-03-13",
                 "estDays": "1",
                 "category": "장비 반입 및 정위치",
                 "delayReason": "",
-                "execStartDate": "2026-03-12"
+                "execStartDate": ""
             },
             {
                 "id": 1772159008384,
-                "completed": true,
+                "completed": false,
                 "content": "장비 반입",
                 "date": "2026-03-16",
                 "startDate": "2026-03-16",
                 "estDays": "1",
                 "category": "장비 반입 및 정위치",
                 "delayReason": "",
-                "execStartDate": "2026-03-16"
+                "execStartDate": ""
             },
             {
                 "id": 1772159008385,
-                "completed": true,
+                "completed": false,
                 "content": "다이크 공사 및 리크센서 설치",
                 "date": "2026-03-18",
                 "startDate": "2026-03-17",
                 "estDays": "2",
                 "category": "장비 반입 및 정위치",
                 "delayReason": "",
-                "execStartDate": "2026-03-17"
+                "execStartDate": ""
             },
             {
                 "id": 1772159008386,
@@ -2552,14 +2552,6 @@
                 "category": "셋업 평가",
                 "delayReason": "",
                 "execStartDate": ""
-            },
-            {
-                "id": 1773281651716,
-                "category": "셋업 완료",
-                "content": "셋업 완료",
-                "startDate": "",
-                "estDays": "0",
-                "date": ""
             }
         ],
         "setupLogs": [
