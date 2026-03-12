@@ -909,15 +909,12 @@
                 "execStartDate": ""
             },
             {
-                "id": 1773288293384,
-                "completed": false,
+                "id": 1773288312014,
+                "category": "셋업 완료",
                 "content": "셋업 완료",
-                "date": "",
                 "startDate": "",
                 "estDays": "0",
-                "category": "셋업 완료",
-                "delayReason": "",
-                "execStartDate": ""
+                "date": ""
             }
         ],
         "setupLogs": [
