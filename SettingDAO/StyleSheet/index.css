@@ -1029,7 +1029,7 @@ body {
 
     /* [요청] 모바일에서 카드 제목과 내용 사이 여백 축소 */
     .status-group-title {
-        margin-bottom: 10px;
+        margin-bottom: 5px;
         font-size: 16px;
     }
     .upcoming-title {
