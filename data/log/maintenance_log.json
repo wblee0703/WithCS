@@ -16,5 +16,11 @@
         "details": "Date: 2026-03-12, Content: ff",
         "target": "SOMA-3000E::SOMA-EK24-0402",
         "timestamp": "2026-03-12T01:05:54.009Z"
+    },
+    {
+        "timestamp": "2026-03-12T01:10:12.130Z",
+        "action": "ADD_SCHEDULE_MANUAL",
+        "target": "SOMA-2000::SOMA-HC19-1204",
+        "details": "Type: 장비점검, Date: 2026-03-19, Content: 점검"
     }
 ]
