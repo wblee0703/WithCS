@@ -588,6 +588,21 @@
         margin-right: auto;
     }
 
+    /* [요청] 편집 모드 버튼 (초기화, 불러오기) 줄바꿈 및 정렬 */
+    /* 초기화 버튼: 다음 줄 좌측 정렬 */
+    #btn-reset-setup-date {
+        order: 5;
+        margin-top: 5px;
+        margin-right: auto;
+    }
+
+    /* 불러오기 버튼: 다음 줄 우측 정렬 (진행률 아래) */
+    #btn-load-setup-list {
+        order: 6;
+        margin-top: 5px;
+        margin-left: auto;
+    }
+
     /* [Fix] 모바일에서 카드 접기 버튼 표시 */
     .btn-collapse {
         display: block !important;
