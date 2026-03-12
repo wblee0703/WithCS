@@ -2434,14 +2434,14 @@
         "setupDetails": [
             {
                 "id": 1772159008382,
-                "completed": true,
+                "completed": false,
                 "content": "장비 도면 부착",
-                "date": "2026-03-12",
+                "date": "",
                 "startDate": "",
                 "estDays": "1",
                 "category": "장비 반입 및 정위치",
                 "delayReason": "",
-                "execStartDate": "2026-03-12"
+                "execStartDate": ""
             },
             {
                 "id": 1772159008383,
