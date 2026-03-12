@@ -223,7 +223,6 @@
     background-color: var(--gantt-bg-today);
     color: var(--gantt-blue-light);
     font-weight: bold;
-    border-bottom: 2px solid var(--gantt-blue-light);
 }
 
 /* 간트 바 및 그리드 */

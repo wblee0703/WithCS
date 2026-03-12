@@ -145,7 +145,7 @@
 
                     <!-- 오른쪽: 유지관리 현황 -->
                     <div class="dashboard-col" id="section-maint" style="display: none;">
-                        <button id="btn-mobile-register-task" class="btn-blue mobile-only-btn" style="width: 100%; margin-bottom: 15px; display: none;">📅 작업 등록</button>
+                        <button id="btn-mobile-register-task" class="btn-add mobile-only-btn" style="width: 100%; margin-bottom: 15px; display: none;">📅 작업 등록</button>
                         <div class="maint-split-view">
                             <!-- 왼쪽: 차트 영역 -->
                             <div class="maint-left-charts">
@@ -742,6 +742,19 @@
                         window.openRegisterScheduleModal(today);
                     }
                 });
+            }
+
+            // [요청] 모바일에서 캘린더 이벤트 드래그 비활성화
+            // 화면 너비가 950px 이하일 때, .calendar-event-item에서 발생하는 dragstart 이벤트를 취소합니다.
+            if (window.matchMedia("(max-width: 950px)").matches) {
+                const calendarContainer = document.querySelector('.calendar-container');
+                if (calendarContainer) {
+                    calendarContainer.addEventListener('dragstart', function(event) {
+                        if (event.target.classList.contains('calendar-event-item')) {
+                            event.preventDefault();
+                        }
+                    });
+                }
             }
         });
     </script>
