@@ -2206,7 +2206,7 @@
             },
             {
                 "id": 1772159006260,
-                "completed": false,
+                "completed": true,
                 "content": "장비 반입",
                 "date": "2026-03-09",
                 "startDate": "2026-03-09",
@@ -2427,6 +2427,14 @@
                 "id": 1773281334119,
                 "memo": "",
                 "worker": "admin"
+            },
+            {
+                "id": 1773293508518,
+                "date": "2026-03-09",
+                "worker": "admin",
+                "content": "장비 반입",
+                "company": "위드텍",
+                "memo": ""
             }
         ]
     },
