@@ -414,15 +414,15 @@
         "timestamp": "2026-03-12T02:35:41.712Z"
     },
     {
-        "timestamp": "2026-03-12T02:37:07.457Z",
         "action": "UPDATE_SETUP_STATUS",
+        "details": "완료 상태 해제 및 이후 단계 초기화",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "완료 상태 해제 및 이후 단계 초기화"
+        "timestamp": "2026-03-12T02:37:07.457Z"
     },
     {
-        "timestamp": "2026-03-12T02:37:10.556Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-13",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "실행 시작일 설정: 2026-03-13"
+        "timestamp": "2026-03-12T02:37:10.556Z"
     }
 ]
