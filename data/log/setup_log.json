@@ -1318,5 +1318,11 @@
         "action": "CALC_SETUP_SCHEDULE",
         "target": "SOMA-2000::SOMA-HC19-1204",
         "details": "일정 자동 계산 (순방향)"
+    },
+    {
+        "timestamp": "2026-03-12T15:17:58.101Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HC19-1204",
+        "details": "일정 자동 계산 (순방향)"
     }
 ]
