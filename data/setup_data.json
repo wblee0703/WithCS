@@ -2793,9 +2793,9 @@
             },
             {
                 "id": 1772159006703,
-                "completed": false,
+                "completed": true,
                 "content": "다이크 설치",
-                "date": "",
+                "date": "2026-03-13",
                 "startDate": "2026-03-13",
                 "estDays": "1",
                 "category": "장비 반입 및 정위치",
@@ -2945,6 +2945,14 @@
                 "content": "[지연] 장비 도면 부착",
                 "company": "위드텍",
                 "memo": "[지연 사유]\nNb"
+            },
+            {
+                "id": 1773318093580,
+                "date": "2026-03-13",
+                "worker": "admin",
+                "content": "다이크 설치",
+                "company": "위드텍",
+                "memo": ""
             }
         ]
     }
