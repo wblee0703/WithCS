@@ -24,9 +24,9 @@
         "timestamp": "2026-03-11T08:21:16.302Z"
     },
     {
-        "timestamp": "2026-03-12T00:13:46.767Z",
         "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-10, Content: Standard Solution",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "Date: 2026-03-10, Content: Standard Solution"
+        "timestamp": "2026-03-12T00:13:46.767Z"
     }
 ]
