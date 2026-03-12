@@ -304,5 +304,11 @@
         "details": "완료 상태 해제 및 이후 단계 초기화",
         "target": "SOMA-2000::SOMA-HK21-0202",
         "timestamp": "2026-03-12T02:14:15.150Z"
+    },
+    {
+        "timestamp": "2026-03-12T02:15:01.035Z",
+        "action": "START_SETUP_EXEC",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "실행 시작일 설정: 2026-03-12"
     }
 ]
