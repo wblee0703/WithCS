@@ -574,8 +574,8 @@
         margin-right: 5px;
     }
 
-    /* 설정, 접기 등 기존 버튼 (Row 1 좌측 정렬) */
-    .setup-card-header > button:not(#btn-load-setup-list):not(#btn-reset-setup-date) {
+    /* 설정(톱니바퀴) 버튼 (Row 1 좌측 정렬) - 접기 버튼 제외 */
+    .setup-card-header > button:not(.btn-collapse):not(#btn-load-setup-list):not(#btn-reset-setup-date) {
         order: 2;
         margin-right: auto; /* [수정] 진행률을 오른쪽으로 밀어내기 위해 추가 */
     }
@@ -594,9 +594,16 @@
         content: none;
     }
 
+    /* [요청] 접기 버튼 (Row 1 맨 우측) */
+    .btn-collapse {
+        order: 4 !important;
+        display: block !important;
+        margin-left: 0;
+    }
+
     /* [요청] 초기화 버튼 (Row 2 좌측 정렬) */
     #btn-reset-setup-date {
-        order: 4;
+        order: 5;
         flex: 1 1 40%;
         text-align: left;
         margin-top: 5px;
@@ -605,16 +612,11 @@
 
     /* [요청] 리스트 불러오기 버튼 (Row 2 우측 정렬) */
     #btn-load-setup-list {
-        order: 5;
+        order: 6;
         flex: 1 1 40%;
         text-align: right;
         margin-top: 5px;
         margin-left: auto;
-    }
-
-    /* [요청] 모바일에서 카드 접기 버튼 표시 */
-    .btn-collapse {
-        display: block !important;
     }
 
     /* [요청] 작업 완료 등록 팝업 모바일 최적화 */
