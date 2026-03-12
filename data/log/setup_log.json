@@ -1134,15 +1134,15 @@
         "timestamp": "2026-03-12T06:57:57.998Z"
     },
     {
-        "timestamp": "2026-03-12T07:07:30.845Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T07:07:30.845Z"
     },
     {
-        "timestamp": "2026-03-12T07:07:32.243Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T07:07:32.243Z"
     }
 ]
