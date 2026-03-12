@@ -172,5 +172,11 @@
         "details": "로그인 성공 (HOME)",
         "target": "admin",
         "timestamp": "2026-03-12T04:22:52.603Z"
+    },
+    {
+        "timestamp": "2026-03-12T04:29:28.344Z",
+        "action": "LOGIN",
+        "target": "admin",
+        "details": "로그인 성공 (HOME)"
     }
 ]
