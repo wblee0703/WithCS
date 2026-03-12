@@ -703,8 +703,9 @@ function attachSetupCheckboxListener(row) {
             const dateInput = row.querySelector('.detail-date-input');
             if (dateInput) dateInput.value = '';
 
-            delete row.dataset.delayReason;
-            delete row.dataset.execStartDate;
+            // [FIX] delete 대신 빈 문자열 할당하여 saveSetupDetails에서 원본 데이터로 복구되는 것 방지
+            row.dataset.delayReason = "";
+            row.dataset.execStartDate = "";
             row.classList.remove('in-progress');
 
             // 입력 필드 활성화 (체크 해제 시 수정 가능하도록)
@@ -728,8 +729,9 @@ function attachSetupCheckboxListener(row) {
                     const nextDateInput = nextRow.querySelector('.detail-date-input');
                     if (nextDateInput) nextDateInput.value = '';
 
-                    delete nextRow.dataset.delayReason;
-                    delete nextRow.dataset.execStartDate;
+                    // [FIX] delete 대신 빈 문자열 할당
+                    nextRow.dataset.delayReason = "";
+                    nextRow.dataset.execStartDate = "";
                     nextRow.classList.remove('in-progress');
                     
                     // [요청] 이후 단계 버튼 제거 및 숨김 처리 (DOM 직접 수정으로 즉시 반영)
