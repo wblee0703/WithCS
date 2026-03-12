@@ -412,5 +412,11 @@
         "details": "작업 완료 등록 (ID: 1772159006703)",
         "target": "WIM-100::WIM1-HK24-0401",
         "timestamp": "2026-03-12T02:35:41.712Z"
+    },
+    {
+        "timestamp": "2026-03-12T02:37:07.457Z",
+        "action": "UPDATE_SETUP_STATUS",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "완료 상태 해제 및 이후 단계 초기화"
     }
 ]
