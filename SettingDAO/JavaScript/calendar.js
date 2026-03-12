@@ -557,7 +557,7 @@ function setupEventDetailModal() {
     const closeBtn = document.getElementById('btn-close-detail-modal');
     const closeFooterBtn = document.getElementById('btn-close-detail-footer');
     const completeBtn = document.getElementById('btn-complete-work');
-    const updateDateBtn = document.getElementById('btn-update-date');
+    const dateInput = document.getElementById('detail-scheduled-date');
     const moveToEquipBtn = document.getElementById('btn-move-to-equip');
     const editContentBtn = document.getElementById('btn-edit-detail-content');
 
@@ -579,8 +579,8 @@ function setupEventDetailModal() {
         completeBtn.onclick = completeScheduleWork;
     }
 
-    if (updateDateBtn) {
-        updateDateBtn.onclick = updateScheduleDateFromDetail;
+    if (dateInput) {
+        dateInput.addEventListener('change', updateScheduleDateFromDetail);
     }
     
     if (moveToEquipBtn) {
@@ -876,7 +876,6 @@ function updateScheduleDateFromDetail() {
     if (!newDate) return alert('날짜를 선택해주세요.');
     
     setScheduleDate(currentDetailTarget.site, currentDetailTarget.equip, currentDetailTarget.id, newDate);
-    alert('예정일이 변경되었습니다.');
     renderCalendar();
 
     // [추가] 캘린더 팝업이 열려있다면 내용 갱신 (변경된 항목 제거)
