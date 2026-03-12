@@ -678,8 +678,14 @@ function saveSetupDetails(logAction = 'UPDATE_SETUP_DETAILS', logDetails = '셋�
         const contentInput = row.querySelector('.detail-content-input');
         const content = contentInput ? contentInput.value : (originalItem.content || "");
 
+        // [수정] DOM에 입력창이 없으면 dataset.date 확인 (모바일 팝업 수정 대응)
         const dateInput = row.querySelector('.detail-date-input');
-        const date = dateInput ? dateInput.value : (originalItem.date || "");
+        let date = "";
+        if (row.dataset.date !== undefined) {
+            date = row.dataset.date;
+        } else {
+            date = dateInput ? dateInput.value : (originalItem.date || "");
+        }
 
         const startDateInput = row.querySelector('.detail-start-date-input');
         const startDate = startDateInput ? startDateInput.value : (originalItem.startDate || "");
@@ -1595,9 +1601,11 @@ function saveSetupCompletion() {
     if (isCompleted) {
         if(tr.querySelector('.detail-date-input')) tr.querySelector('.detail-date-input').value = dateInput.value;
         tr.dataset.delayReason = delayReason;
+        tr.dataset.date = dateInput.value; // [추가] 데이터셋에 날짜 저장
     } else {
         if(tr.querySelector('.detail-date-input')) tr.querySelector('.detail-date-input').value = '';
         delete tr.dataset.delayReason;
+        tr.dataset.date = ""; // [추가] 데이터셋 날짜 초기화
     }
 
     // [추가] 셋업 이력(일지) 자동 등록
