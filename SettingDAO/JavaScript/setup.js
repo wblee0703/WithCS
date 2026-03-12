@@ -134,24 +134,31 @@ function openMobileDatePicker(id, field, currentDate) {
     // 날짜 선택 시 데이터 업데이트 및 저장
     input.onchange = function() {
         const newValue = input.value;
-        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-        const equipKey = `${currentPath.site}::${currentPath.equip}`;
-        let data = setupData[equipKey] || {};
         
-        if (data.setupDetails) {
-            const task = data.setupDetails.find(t => t.id == id);
-            if (task) {
-                if (field === 'startDate') {
-                    task.startDate = newValue;
-                } else if (field === 'date') {
-                    task.date = newValue;
-                    // 완료일 입력 시 자동으로 완료 상태 체크
-                    if (newValue && !task.completed) task.completed = true;
-                }
-                setupData[equipKey] = data;
-                localStorage.setItem('setup_data', JSON.stringify(setupData));
-                renderSetupDetailList(); // 화면 갱신
+        // [수정] DOM 업데이트 및 자동 계산 로직 적용 (데이터 직접 수정 대신 계산 함수 활용)
+        const row = document.querySelector(`#setup-detail-body tr[data-id="${id}"]`);
+        if (!row) return;
+
+        if (field === 'startDate') {
+            const startInput = row.querySelector('.detail-start-date-input');
+            if (startInput) startInput.value = newValue;
+            
+            // [수정] 셋업 완료 항목인 경우 PC와 동일하게 전체 일정 재계산(역산) 수행
+            if (row.dataset.category === '셋업 완료') {
+                if (typeof calculateSetupSchedule === 'function') calculateSetupSchedule(newValue);
+            } else {
+                // 순방향 계산(저장 생략) 후 역방향 계산(저장 수행)
+                if (typeof calculateScheduleForward === 'function') calculateScheduleForward(row, true);
+                if (typeof calculateScheduleBackward === 'function') calculateScheduleBackward(row);
             }
+        } else if (field === 'date') {
+            const dateInput = row.querySelector('.detail-date-input');
+            if (dateInput) dateInput.value = newValue;
+            
+            const checkbox = row.querySelector('.detail-complete-checkbox');
+            if (newValue && checkbox && !checkbox.checked) checkbox.checked = true;
+            
+            saveSetupDetails('UPDATE_SETUP_DATE', '완료일 수정');
         }
     };
 
@@ -451,8 +458,9 @@ function renderSetupDetailList() {
             if (isMobileNonEdit) {
                 // 모바일 일반 모드: yy.mm.dd 형식 텍스트로 표시
                 // [수정] 날짜 텍스트 클릭 시 네이티브 날짜 피커 호출 (시작일/완료일 직접 수정)
-                startDateCellHtml = `<div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); openMobileDatePicker(${item.id}, 'startDate', '${item.startDate || ''}')">${formatDateYYMMDD(item.startDate)}</div>`;
-                dateCellHtml = `<div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); openMobileDatePicker(${item.id}, 'date', '${item.date || ''}')">${formatDateYYMMDD(item.date)}</div>`;
+                // [추가] 숨겨진 input 추가 (자동 계산 함수가 DOM을 참조할 수 있도록)
+                startDateCellHtml = `<div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); openMobileDatePicker(${item.id}, 'startDate', '${item.startDate || ''}')">${formatDateYYMMDD(item.startDate)}</div><input type="hidden" class="detail-start-date-input" value="${item.startDate || ''}">`;
+                dateCellHtml = `<div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); openMobileDatePicker(${item.id}, 'date', '${item.date || ''}')">${formatDateYYMMDD(item.date)}</div><input type="hidden" class="detail-date-input" value="${item.date || ''}">`;
             } else {
                 // PC 또는 모바일 편집 모드: 날짜 수정이 가능한 input으로 표시
                 startDateCellHtml = `<input type="date" class="detail-start-date-input ${inputColorClass}" value="${item.startDate || ''}" ${generalDisabledAttr}>`;
@@ -936,7 +944,8 @@ window.calculateSetupSchedule = function(targetDateStr) {
     saveSetupDetails('CALC_SETUP_SCHEDULE', '일정 자동 계산 (완료일 기준)'); // 계산 후 자동 저장
 };
 
-function calculateScheduleForward(startRow) {
+// [수정] skipSave 파라미터 추가 (연속 계산 시 중복 저장 방지)
+function calculateScheduleForward(startRow, skipSave = false) {
     const rows = Array.from(document.querySelectorAll('#setup-detail-body tr.item-row'));
     const startIndex = rows.indexOf(startRow);
     if (startIndex === -1) return;
@@ -987,10 +996,11 @@ function calculateScheduleForward(startRow) {
             nextStartDate = window.addBusinessDays(thisEndDate, 1);
         }
     }
-    saveSetupDetails('CALC_SETUP_SCHEDULE', '일정 자동 계산 (순방향)'); // 계산 후 자동 저장
+    if (!skipSave) saveSetupDetails('CALC_SETUP_SCHEDULE', '일정 자동 계산 (순방향)');
 }
 
-function calculateScheduleBackward(startRow) {
+// [수정] skipSave 파라미터 추가
+function calculateScheduleBackward(startRow, skipSave = false) {
     const rows = Array.from(document.querySelectorAll('#setup-detail-body tr.item-row'));
     const startIndex = rows.indexOf(startRow);
     if (startIndex <= 0) return; // 첫 번째 항목이거나 찾을 수 없으면 종료
@@ -1031,7 +1041,7 @@ function calculateScheduleBackward(startRow) {
             nextTaskStartDate = currentStartDate;
         }
     }
-    saveSetupDetails('CALC_SETUP_SCHEDULE', '일정 자동 계산 (역방향)'); // 계산 후 자동 저장
+    if (!skipSave) saveSetupDetails('CALC_SETUP_SCHEDULE', '일정 자동 계산 (역방향)');
 }
 
 window.triggerSetupScheduleCalculation = function() {

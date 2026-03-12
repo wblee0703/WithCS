@@ -158,6 +158,7 @@
 /* [요청] 셋업 상세내역 작업내용 좌측 정렬 */
 #setup-detail-card .data-table td:first-child {
     text-align: left;
+    padding-left: 10px !important; /* [요청] 좌측 여백 추가 */
 }
 
 /* ==========================================================================
@@ -511,9 +512,9 @@
     /* [추가] 일반 모드 컬럼 너비 */
     #setup-detail-card:not(.edit-mode) .data-table th:nth-child(1) { width: auto; } /* 내용 */
     #setup-detail-card:not(.edit-mode) .data-table th:nth-child(2) { width: 35px; } /* 작업일 */
-    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(3) { width: 65px; } /* 예정일 */
-    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(4) { width: 65px; } /* 완료일 */
-    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(5) { width: 40px; } /* 상태 */
+    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(3) { width: 75px; } /* 예정일 */
+    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(4) { width: 75px; } /* 완료일 */
+    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(5) { width: 35px; } /* 상태 */
 
     /* 2. 편집 모드 (톱니바퀴 클릭): 모든 컬럼 표시 및 너비 고정 */
     /* 헤더 및 셀 패딩 축소 */
@@ -525,7 +526,7 @@
 
     /* [추가] 일반 모드에서 내용 셀 패딩 조정 */
     #setup-detail-card:not(.edit-mode) .data-table td:nth-child(1) {
-        padding: 4px 2px;
+        padding: 4px 2px 4px 12px; /* [요청] 좌측 여백 추가 (일반 모드) */
     }
     /* 컬럼 너비 설정 (합계가 화면 너비를 넘지 않도록 조정, 날짜는 고정) */
     #setup-detail-card.edit-mode .data-table th:nth-child(1) { width: auto; } /* 내용 */
@@ -546,6 +547,17 @@
     #setup-detail-card #setup-detail-card.edit-mode .detail-est-days-input {
         width: 100% !important;
         font-size: 11px;
+    }
+
+    /* [요청] 모바일에서 진행률 위치 조정 (접기 버튼 왼쪽으로 이동) */
+    .setup-card-header {
+        position: relative; /* 절대 위치 기준점 설정 */
+    }
+    #setup-progress-rate {
+        position: absolute;
+        right: 45px; /* 접기 버튼 공간 확보 후 배치 */
+        top: 50%;
+        transform: translateY(-50%);
     }
 
         /* [요청] 모바일에서 카드 접기 버튼 표시 */
