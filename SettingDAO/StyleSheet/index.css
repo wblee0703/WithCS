@@ -837,7 +837,8 @@ body {
         gap: 15px;
     }
     .home-menu-container.compact {
-        flex-direction: column;
+        flex-direction: row; /* [요청] 버튼 가로 배치 및 줄바꿈 허용 */
+        flex-wrap: wrap;
         gap: 10px;
         padding-bottom: 10px;
     }
@@ -861,23 +862,19 @@ body {
     .home-big-btn p { display: none; }
 
     .home-menu-container.compact .home-big-btn {
-        display: none; /* 기본적으로 숨김 */
-        width: 100%;
+        display: flex; /* [요청] 모든 버튼 표시 */
+        width: calc(50% - 5px); /* [요청] 선택 안 된 버튼은 절반 너비 (gap 10px 고려) */
         height: 50px;
         padding: 0 10px;
         gap: 10px;
         justify-content: center;
+        order: 1; /* [요청] 선택 안 된 버튼을 위쪽으로 배치 */
     }
     
-    /* 활성화된 버튼만 표시 */
+    /* 선택된 버튼 스타일 */
     .home-menu-container.compact .home-big-btn.active {
-        display: flex;
-        order: -1; /* 최상단 배치 */
-    }
-
-    /* 메뉴 확장 시 모든 버튼 표시 */
-    .home-menu-container.compact.expanded .home-big-btn {
-        display: flex;
+        width: 100%; /* [요청] 선택된 버튼은 전체 너비 유지 */
+        order: 2;    /* [요청] 선택된 버튼을 아래쪽(내용 바로 위)으로 배치 */
     }
 
     .home-menu-container.compact .home-big-btn .icon { font-size: 20px; }
@@ -923,14 +920,21 @@ body {
             display: flex !important;
         }
 
-        /* [요청] 모바일 가로 모드에서 장비 셋업/운영 현황 카드 2개씩 정렬 */
-        .maint-left-charts {
-            flex-direction: row;
+        /* [요청] 모바일 가로 모드에서 장비 셋업/운영 현황 카드 및 예정 작업 2개씩 정렬 */
+        .maint-split-view {
+            flex-direction: row !important;
             flex-wrap: wrap;
         }
-        .maint-left-charts .status-group {
-            width: calc(50% - 8px); /* gap 15px 고려 */
+
+        .maint-left-charts {
+            display: contents; /* 컨테이너 레이아웃 무시하고 자식들을 상위 그리드에 포함 */
+        }
+
+        .maint-left-charts .status-group,
+        .upcoming-container {
+            width: calc(50% - 10px) !important; /* gap 20px 고려 */
             flex: none;
+            margin-right: 0 !important;
         }
     }
 

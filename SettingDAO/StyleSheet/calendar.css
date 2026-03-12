@@ -607,10 +607,26 @@
         overflow-y: auto;
     }
 
+    /* [요청] 점검 상세 정보 팝업 모바일 최적화 */
+    #event-detail-modal .modal-window {
+        width: 90% !important;
+        height: auto !important;
+        max-height: 80vh !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        resize: none;
+    }
+    #event-detail-modal .modal-body { overflow-y: auto; }
+
     /* [요청] 모바일 가로 모드(회전) 대응 */
     @media (orientation: landscape) {
         #register-schedule-modal .modal-window {
             height: 90vh !important; /* 높이 확보 */
+            max-height: 90vh !important;
+        }
+
+        #event-detail-modal .modal-window {
+            height: 90vh !important;
             max-height: 90vh !important;
         }
     }
