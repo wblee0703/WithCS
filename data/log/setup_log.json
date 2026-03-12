@@ -1324,5 +1324,11 @@
         "action": "CALC_SETUP_SCHEDULE",
         "target": "SOMA-2000::SOMA-HC19-1204",
         "details": "일정 자동 계산 (순방향)"
+    },
+    {
+        "timestamp": "2026-03-12T15:18:04.664Z",
+        "action": "UPDATE_SETUP_STATUS",
+        "target": "SOMA-2000::SOMA-HC19-1204",
+        "details": "완료 상태 해제 및 이후 단계 초기화"
     }
 ]
