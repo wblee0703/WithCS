@@ -490,5 +490,23 @@
         "action": "CALC_SETUP_SCHEDULE",
         "target": "SOMA-2000::SOMA-H19-0903",
         "details": "일정 자동 계산 (역방향)"
+    },
+    {
+        "timestamp": "2026-03-12T04:23:23.440Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "details": "일정 자동 계산 (순방향)"
+    },
+    {
+        "timestamp": "2026-03-12T04:23:23.827Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "details": "일정 자동 계산 (순방향)"
+    },
+    {
+        "timestamp": "2026-03-12T04:23:24.247Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "details": "셋업 상세 내역 수정"
     }
 ]
