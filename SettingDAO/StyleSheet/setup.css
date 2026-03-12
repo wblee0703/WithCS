@@ -508,12 +508,13 @@
     #setup-detail-card:not(.edit-mode) .data-table th, .date-display,
     #setup-detail-card:not(.edit-mode) .data-table td, .detail-est-days-input {
         padding: 8px 4px;
-        font-size: 10px;
+        font-size: 11px;
     }
 
     /* [리팩토링] 모바일 일반 모드에서는 날짜 입력창 숨기고 텍스트 표시 */
     #setup-detail-card:not(.edit-mode) .date-display-text {
         display: block;
+        font-size: 11px; /* [요청] 예정일/완료일 글자 크기 2px 축소 */
     }
     #setup-detail-card:not(.edit-mode) .detail-start-date-input,
     #setup-detail-card:not(.edit-mode) .detail-date-input {
