@@ -316,5 +316,11 @@
         "details": "실행 시작일 설정: 2026-03-11",
         "target": "SOMA-2000::SOMA-HK21-0202",
         "timestamp": "2026-03-12T01:55:18.437Z"
+    },
+    {
+        "timestamp": "2026-03-12T02:03:37.120Z",
+        "action": "UPDATE_SETUP_COMPLETION",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "작업 완료 등록 (ID: 1772159008382)"
     }
 ]
