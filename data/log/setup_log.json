@@ -306,9 +306,9 @@
         "timestamp": "2026-03-12T02:14:15.150Z"
     },
     {
-        "timestamp": "2026-03-12T02:16:31.515Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-12",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "실행 시작일 설정: 2026-03-12"
+        "timestamp": "2026-03-12T02:16:31.515Z"
     }
 ]
