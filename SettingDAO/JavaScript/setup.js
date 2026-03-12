@@ -137,6 +137,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 else detailBody.insertBefore(draggable, afterElement);
             }
         });
+
+        // [추가] 실행 버튼 이벤트 위임 (인라인 onclick 문제 해결 및 클릭 반응성 개선)
+        detailBody.addEventListener('click', (e) => {
+            const btn = e.target.closest('.btn-play-sm');
+            if (btn) {
+                e.stopPropagation(); // 행(row) 클릭 이벤트 전파 방지
+                const tr = btn.closest('tr');
+                if (tr && tr.dataset.id) {
+                    startSetupTask(parseInt(tr.dataset.id));
+                }
+            }
+        });
     }
 
     // 7. 기타 초기화
@@ -383,7 +395,8 @@ function renderSetupDetailList() {
                     // 미완료 & 미실행 상태
                     if (isPreviousCompleted && !foundNextTask) {
                         foundNextTask = true; // 실행 가능한 첫 번째 작업
-                        actionCellHtml = `<div style="display:flex; justify-content:center;"><button class="btn-play-sm" onclick="event.stopPropagation(); startSetupTask(${item.id})">▶</button><input type="checkbox" class="detail-complete-checkbox" style="display:none;"></div>`;
+                        // [수정] onclick 제거 (상단 이벤트 위임으로 처리)
+                        actionCellHtml = `<div style="display:flex; justify-content:center;"><button class="btn-play-sm">▶</button><input type="checkbox" class="detail-complete-checkbox" style="display:none;"></div>`;
                     } else {
                         actionCellHtml = `<input type="checkbox" class="detail-complete-checkbox" style="visibility: hidden;">`;
                     }
@@ -536,7 +549,8 @@ function addSetupDetailItem(category) {
         const prevCheckbox = prevRow.querySelector('.detail-complete-checkbox');
         if (prevCheckbox && prevCheckbox.checked) {
             // 이전 항목이 완료되었으면 실행 버튼 표시
-            actionTd.innerHTML = `<div style="display:flex; justify-content:center;"><button class="btn-play-sm" onclick="event.stopPropagation(); startSetupTask(${id})">▶</button><input type="checkbox" class="detail-complete-checkbox" style="display:none;"></div>`;
+            // [수정] onclick 제거
+            actionTd.innerHTML = `<div style="display:flex; justify-content:center;"><button class="btn-play-sm">▶</button><input type="checkbox" class="detail-complete-checkbox" style="display:none;"></div>`;
             attachSetupCheckboxListener(tr); // 버튼과 함께 생성된 숨겨진 체크박스에 리스너 다시 연결
         } else {
             // 이전 항목 미완료 시 체크박스 숨김
@@ -703,7 +717,8 @@ function attachSetupCheckboxListener(row) {
             if (row.dataset.category !== '셋업 완료') {
                 const actionTd = row.cells[4];
                 const id = row.dataset.id;
-                actionTd.innerHTML = `<div style="display:flex; justify-content:center;"><button class="btn-play-sm" onclick="event.stopPropagation(); startSetupTask(${id})">▶</button><input type="checkbox" class="detail-complete-checkbox" style="display:none;"></div>`;
+                // [수정] onclick 제거
+                actionTd.innerHTML = `<div style="display:flex; justify-content:center;"><button class="btn-play-sm">▶</button><input type="checkbox" class="detail-complete-checkbox" style="display:none;"></div>`;
                 // 새 체크박스에 리스너 다시 연결
                 attachSetupCheckboxListener(row);
             }

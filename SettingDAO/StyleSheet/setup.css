@@ -396,15 +396,17 @@
     border: 1px solid #3fb950;
     color: #3fb950;
     border-radius: 4px;
-    width: 24px;
-    height: 24px;
-    font-size: 10px;
+    width: 28px; /* [수정] 버튼 크기 확대 */
+    height: 28px;
+    font-size: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     padding: 0;
     flex-shrink: 0;
+    position: relative; /* [추가] 위치 및 클릭 우선순위 보정 */
+    z-index: 5;
 }
 .btn-play-sm:hover {
     background: #3fb950;
