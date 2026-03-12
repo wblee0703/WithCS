@@ -642,9 +642,15 @@
         "timestamp": "2026-03-12T04:30:27.584Z"
     },
     {
-        "timestamp": "2026-03-12T04:30:37.343Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (역방향)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "일정 자동 계산 (역방향)"
+        "timestamp": "2026-03-12T04:30:37.343Z"
+    },
+    {
+        "timestamp": "2026-03-12T04:30:50.154Z",
+        "action": "START_SETUP_EXEC",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "details": "실행 시작일 설정: 2026-03-05"
     }
 ]
