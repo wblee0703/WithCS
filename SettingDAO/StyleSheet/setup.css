@@ -577,6 +577,22 @@
     #setup-setup-log-content {
         height: 120px !important;
     }
+
+    /* [요청] 모바일 헤더 레이아웃 조정 */
+    .setup-card-header {
+        flex-wrap: wrap; /* 내용이 많을 경우 줄바꿈 허용 */
+    }
+
+    /* [요청] 진행률과 접기 버튼을 오른쪽으로 보내기 위해, 설정 버튼에 자동 마진 추가 */
+    .setup-card-header > button:not(.btn-collapse):not(#btn-load-setup-list):not(#btn-reset-setup-date) {
+        margin-right: auto;
+    }
+
+    /* [Fix] 모바일에서 카드 접기 버튼 표시 */
+    .btn-collapse {
+        display: block !important;
+    }
+
     @media (orientation: landscape) {
         /* [요청] 가로 모드 레이아웃: 한 줄 또는 컴팩트 배치 */
         .setup-card-header h3 {
