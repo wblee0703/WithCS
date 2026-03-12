@@ -910,11 +910,14 @@
             },
             {
                 "id": 1773288312014,
-                "category": "셋업 완료",
+                "completed": false,
                 "content": "셋업 완료",
+                "date": "",
                 "startDate": "",
                 "estDays": "0",
-                "date": ""
+                "category": "셋업 완료",
+                "delayReason": "",
+                "execStartDate": ""
             }
         ],
         "setupLogs": [
