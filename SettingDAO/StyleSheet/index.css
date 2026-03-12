@@ -917,7 +917,8 @@ body {
 
     /* [요청] 예정 작업/점검 임박 리스트 높이를 장비 정보 카드와 동일하게 맞춤 */
     .upcoming-list {
-        height: 195px; /* 장비 정보 리스트(180px) + 헤더 높이 차이 보정 */
+        height: 265px !important; /* 장비 정보 리스트(250px) + 헤더 높이 차이 보정 */
+        overflow-y: auto;
     }
 
     /* [요청] 모바일 세로 모드에서 간트 차트 숨김 */
@@ -966,7 +967,7 @@ body {
     /* [요청] 장비 정보 리스트 높이 고정 (약 5개) 및 스크롤 */
     #equip-detail-container,
     #setup-equip-detail-container {
-        height: 180px;
+        height: 250px !important; /* 높이 증가 및 고정 */
         flex: none; /* [수정] 부모 flex 컨테이너에서 늘어나지 않도록 고정 */
         overflow-y: auto;
     }
