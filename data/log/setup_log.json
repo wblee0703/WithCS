@@ -1156,5 +1156,11 @@
         "details": "셋업 상세 내역 수정",
         "target": "IWM-1000::W001-OK25-0801",
         "timestamp": "2026-03-12T07:14:01.793Z"
+    },
+    {
+        "timestamp": "2026-03-12T12:19:55.356Z",
+        "action": "UPDATE_SETUP_STATUS",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "완료 상태 해제 및 이후 단계 초기화"
     }
 ]
