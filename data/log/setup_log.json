@@ -718,5 +718,11 @@
         "action": "CALC_SETUP_SCHEDULE",
         "target": "SOMA-2000::SOMA-HK21-0202",
         "details": "일정 자동 계산 (역방향)"
+    },
+    {
+        "timestamp": "2026-03-12T04:36:51.614Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (역방향)"
     }
 ]
