@@ -892,5 +892,11 @@
         "details": "셋업 상세 내역 수정",
         "target": "OMS-100L::OMS1-LK22-0104",
         "timestamp": "2026-03-12T05:35:37.466Z"
+    },
+    {
+        "timestamp": "2026-03-12T05:56:37.668Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "details": "셋업 상세 내역 수정"
     }
 ]
