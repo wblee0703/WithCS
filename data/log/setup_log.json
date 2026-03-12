@@ -1048,5 +1048,11 @@
         "action": "UPDATE_SETUP_DETAILS",
         "target": "SOMA-2000::SOMA-H19-0402",
         "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T06:33:51.000Z",
+        "action": "UPDATE_SETUP_STATUS",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "완료 상태 해제 및 이후 단계 초기화"
     }
 ]
