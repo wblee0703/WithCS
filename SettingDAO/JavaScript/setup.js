@@ -453,19 +453,19 @@ function renderSetupDetailList() {
             if (item.execStartDate) minDateAttr = `min="${item.execStartDate}"`;
             else if (item.startDate) minDateAttr = `min="${item.startDate}"`;
 
-            // [요청 수정] PC/편집모드에서는 input, 모바일 일반모드에서는 텍스트로 표시
-            const isMobileNonEdit = window.innerWidth <= 950 && !isEditMode;
-            if (isMobileNonEdit) {
-                // 모바일 일반 모드: yy.mm.dd 형식 텍스트로 표시
-                // [수정] 날짜 텍스트 클릭 시 네이티브 날짜 피커 호출 (시작일/완료일 직접 수정)
-                // [추가] 숨겨진 input 추가 (자동 계산 함수가 DOM을 참조할 수 있도록)
-                startDateCellHtml = `<div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); openMobileDatePicker(${item.id}, 'startDate', '${item.startDate || ''}')">${formatDateYYMMDD(item.startDate)}</div><input type="hidden" class="detail-start-date-input" value="${item.startDate || ''}">`;
-                dateCellHtml = `<div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); openMobileDatePicker(${item.id}, 'date', '${item.date || ''}')">${formatDateYYMMDD(item.date)}</div><input type="hidden" class="detail-date-input" value="${item.date || ''}">`;
-            } else {
-                // PC 또는 모바일 편집 모드: 날짜 수정이 가능한 input으로 표시
-                startDateCellHtml = `<input type="date" class="detail-start-date-input ${inputColorClass}" value="${item.startDate || ''}" ${generalDisabledAttr}>`;
-                dateCellHtml = `<input type="date" class="detail-date-input ${inputColorClass}" value="${item.date || ''}" ${generalDisabledAttr} ${minDateAttr}>`;
-            }
+            // [리팩토링] PC/모바일 뷰 통합: 항상 div(표시용)와 input(편집/데이터용)을 모두 렌더링하고 CSS로 표시 여부 제어
+            startDateCellHtml = `
+                <div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); openMobileDatePicker(${item.id}, 'startDate', '${item.startDate || ''}')">
+                    ${formatDateYYMMDD(item.startDate)}
+                </div>
+                <input type="date" class="detail-start-date-input ${inputColorClass}" value="${item.startDate || ''}" ${generalDisabledAttr}>
+            `;
+            dateCellHtml = `
+                <div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); openMobileDatePicker(${item.id}, 'date', '${item.date || ''}')">
+                    ${formatDateYYMMDD(item.date)}
+                </div>
+                <input type="date" class="detail-date-input ${inputColorClass}" value="${item.date || ''}" ${generalDisabledAttr} ${minDateAttr}>
+            `;
 
             if (isEditMode) {
                 contentCellHtml = `

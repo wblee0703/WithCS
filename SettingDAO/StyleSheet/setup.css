@@ -131,6 +131,11 @@
     cursor: pointer;
 }
 
+/* [리팩토링] PC/편집 모드에서는 날짜 텍스트 숨김 */
+.date-display-text {
+    display: none;
+}
+
 /* 로그 활성화 상태 */
 .active-log {
     background-color: rgba(35, 134, 54, 0.1) !important;
@@ -507,6 +512,15 @@
     }
     .date-display {
         font-size: 10px;
+    }
+
+    /* [리팩토링] 모바일 일반 모드에서는 날짜 입력창 숨기고 텍스트 표시 */
+    #setup-detail-card:not(.edit-mode) .date-display-text {
+        display: block;
+    }
+    #setup-detail-card:not(.edit-mode) .detail-start-date-input,
+    #setup-detail-card:not(.edit-mode) .detail-date-input {
+        display: none;
     }
 
     /* [추가] 일반 모드 컬럼 너비 */
