@@ -2434,7 +2434,7 @@
         "setupDetails": [
             {
                 "id": 1772159008382,
-                "completed": false,
+                "completed": true,
                 "content": "장비 도면 부착",
                 "date": "",
                 "startDate": "2026-03-12",
@@ -2554,20 +2554,25 @@
                 "execStartDate": ""
             },
             {
-                "id": 1772159008393,
-                "completed": false,
-                "content": "셋업 완료",
-                "date": "",
-                "startDate": "2026-04-20",
-                "estDays": "0",
+                "id": 1773281418036,
                 "category": "셋업 완료",
-                "delayReason": "",
-                "execStartDate": ""
+                "content": "셋업 완료",
+                "startDate": "",
+                "estDays": "0",
+                "date": ""
             }
         ],
         "setupLogs": [
             {
+                "company": "위드텍",
+                "content": "장비 도면 부착",
+                "date": "2026-03-12",
                 "id": 1773281394126,
+                "memo": "",
+                "worker": "admin"
+            },
+            {
+                "id": 1773281417031,
                 "date": "2026-03-12",
                 "worker": "admin",
                 "content": "장비 도면 부착",
