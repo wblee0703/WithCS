@@ -2456,7 +2456,7 @@
             },
             {
                 "id": 1772159008384,
-                "completed": false,
+                "completed": true,
                 "content": "장비 반입",
                 "date": "2026-03-16",
                 "startDate": "2026-03-16",
@@ -2554,7 +2554,7 @@
                 "execStartDate": ""
             },
             {
-                "id": 1773281944492,
+                "id": 1773281948248,
                 "category": "셋업 완료",
                 "content": "셋업 완료",
                 "startDate": "",
@@ -2624,6 +2624,14 @@
                 "date": "2026-03-13",
                 "worker": "admin",
                 "content": "다이크 설치",
+                "company": "위드텍",
+                "memo": ""
+            },
+            {
+                "id": 1773281947242,
+                "date": "2026-03-16",
+                "worker": "admin",
+                "content": "장비 반입",
                 "company": "위드텍",
                 "memo": ""
             }
