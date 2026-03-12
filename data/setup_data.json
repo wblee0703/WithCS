@@ -2272,12 +2272,12 @@
             },
             {
                 "category": "셋업 평가",
-                "completed": true,
+                "completed": false,
                 "content": "Calibration 평가",
-                "date": "2026-03-30",
+                "date": "",
                 "delayReason": "",
                 "estDays": "2",
-                "execStartDate": "2026-03-30",
+                "execStartDate": "",
                 "id": 1772159006266,
                 "startDate": "2026-03-30"
             },
@@ -2288,7 +2288,7 @@
                 "date": "",
                 "delayReason": "",
                 "estDays": "2",
-                "execStartDate": "2026-04-01",
+                "execStartDate": "",
                 "id": 1772159006267,
                 "startDate": "2026-04-01"
             },
@@ -2299,7 +2299,7 @@
                 "date": "",
                 "delayReason": "",
                 "estDays": "5",
-                "execStartDate": "2026-04-03",
+                "execStartDate": "",
                 "id": 1772159006268,
                 "startDate": "2026-04-03"
             },
@@ -2310,7 +2310,7 @@
                 "date": "",
                 "delayReason": "",
                 "estDays": "0",
-                "execStartDate": "2026-04-10",
+                "execStartDate": "",
                 "id": 1772159006269,
                 "startDate": "2026-04-10"
             }
