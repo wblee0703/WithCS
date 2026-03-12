@@ -82,11 +82,5 @@
         "details": "완료일 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
         "timestamp": "2026-03-12T04:37:23.553Z"
-    },
-    {
-        "action": "ADD_SCHEDULE",
-        "details": "Date: 2026-03-12, Content: Standard Solution",
-        "target": "SOMA-2000::SOMA-H19-0402",
-        "timestamp": "2026-03-12T15:08:39.507Z"
     }
 ]
