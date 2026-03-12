@@ -2434,20 +2434,20 @@
         "setupDetails": [
             {
                 "id": 1772159008382,
-                "completed": true,
+                "completed": false,
                 "content": "장비 도면 부착",
-                "date": "2026-03-12",
+                "date": "",
                 "startDate": "2026-03-12",
                 "estDays": "1",
                 "category": "장비 반입 및 정위치",
                 "delayReason": "",
-                "execStartDate": "2026-03-12"
+                "execStartDate": ""
             },
             {
                 "id": 1772159008383,
                 "completed": false,
                 "content": "다이크 설치",
-                "date": "2026-03-13",
+                "date": "",
                 "startDate": "2026-03-13",
                 "estDays": "1",
                 "category": "장비 반입 및 정위치",
@@ -2458,7 +2458,7 @@
                 "id": 1772159008384,
                 "completed": false,
                 "content": "장비 반입",
-                "date": "2026-03-16",
+                "date": "",
                 "startDate": "2026-03-16",
                 "estDays": "1",
                 "category": "장비 반입 및 정위치",
@@ -2469,7 +2469,7 @@
                 "id": 1772159008385,
                 "completed": false,
                 "content": "다이크 공사 및 리크센서 설치",
-                "date": "2026-03-18",
+                "date": "",
                 "startDate": "2026-03-17",
                 "estDays": "2",
                 "category": "장비 반입 및 정위치",
