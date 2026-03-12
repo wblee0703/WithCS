@@ -2434,9 +2434,9 @@
         "setupDetails": [
             {
                 "id": 1772159008382,
-                "completed": false,
+                "completed": true,
                 "content": "장비 도면 부착",
-                "date": "",
+                "date": "2026-03-11",
                 "startDate": "2026-03-11",
                 "estDays": "1",
                 "category": "장비 반입 및 정위치",
@@ -2563,6 +2563,16 @@
                 "category": "셋업 완료",
                 "delayReason": "",
                 "execStartDate": ""
+            }
+        ],
+        "setupLogs": [
+            {
+                "id": 1773280320639,
+                "date": "2026-03-11",
+                "worker": "admin",
+                "content": "장비 도면 부착",
+                "company": "위드텍",
+                "memo": ""
             }
         ]
     },
