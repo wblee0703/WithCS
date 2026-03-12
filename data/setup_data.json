@@ -2733,133 +2733,136 @@
     "SKH 이천::WIM-100::WIM1-HK24-0401": {
         "setupDetails": [
             {
-                "category": "장비 반입 및 정위치",
+                "id": 1772159006702,
                 "completed": true,
                 "content": "장비 도면 부착",
                 "date": "2026-03-12",
-                "delayReason": "",
+                "startDate": "",
                 "estDays": "1",
-                "execStartDate": "2026-03-12",
-                "id": 1772159006702,
-                "startDate": ""
+                "category": "장비 반입 및 정위치",
+                "delayReason": "",
+                "execStartDate": "2026-03-12"
             },
             {
-                "category": "장비 반입 및 정위치",
+                "id": 1772159006703,
                 "completed": true,
                 "content": "다이크 설치",
                 "date": "2026-03-13",
-                "delayReason": "",
+                "startDate": "",
                 "estDays": "1",
-                "execStartDate": "2026-03-13",
-                "id": 1772159006703,
-                "startDate": ""
+                "category": "장비 반입 및 정위치",
+                "delayReason": "",
+                "execStartDate": "2026-03-13"
             },
             {
-                "category": "장비 반입 및 정위치",
+                "id": 1772159006704,
                 "completed": false,
                 "content": "장비 반입",
                 "date": "",
-                "delayReason": "",
+                "startDate": "",
                 "estDays": "1",
-                "execStartDate": "",
-                "id": 1772159006704,
-                "startDate": ""
+                "category": "장비 반입 및 정위치",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
-                "category": "장비 반입 및 정위치",
+                "id": 1772159006705,
                 "completed": false,
                 "content": "다이크 공사 및 리크센서 설치",
                 "date": "",
-                "delayReason": "",
+                "startDate": "",
                 "estDays": "2",
-                "execStartDate": "",
-                "id": 1772159006705,
-                "startDate": ""
+                "category": "장비 반입 및 정위치",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
-                "category": "통신 상태 및 유틸리티",
+                "id": 1772159006706,
                 "completed": false,
                 "content": "Utility 배관 공사 및 연결",
                 "date": "",
-                "delayReason": "",
+                "startDate": "",
                 "estDays": "5",
-                "execStartDate": "",
-                "id": 1772159006706,
-                "startDate": ""
+                "category": "통신 상태 및 유틸리티",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
-                "category": "통신 상태 및 유틸리티",
+                "id": 1772159006707,
                 "completed": false,
                 "content": "Utility 턴온",
                 "date": "",
-                "delayReason": "",
+                "startDate": "",
                 "estDays": "1",
-                "execStartDate": "",
-                "id": 1772159006707,
-                "startDate": ""
+                "category": "통신 상태 및 유틸리티",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
-                "category": "통신 상태 및 유틸리티",
+                "id": 1772159006708,
                 "completed": false,
                 "content": "인터락 Test 및 통신상태 확인 ",
                 "date": "",
-                "delayReason": "",
+                "startDate": "",
                 "estDays": "2",
-                "execStartDate": "",
-                "id": 1772159006708,
-                "startDate": ""
+                "category": "통신 상태 및 유틸리티",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
-                "category": "셋업 평가",
+                "id": 1772159006709,
                 "completed": false,
                 "content": "분석부 안정화 및 오염제어",
                 "date": "",
-                "delayReason": "",
+                "startDate": "",
                 "estDays": "5",
-                "execStartDate": "",
-                "id": 1772159006709,
-                "startDate": ""
+                "category": "셋업 평가",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
-                "category": "셋업 평가",
+                "id": 1772159006710,
                 "completed": false,
                 "content": "Calibration 평가",
                 "date": "",
-                "delayReason": "",
+                "startDate": "",
                 "estDays": "2",
-                "execStartDate": "",
-                "id": 1772159006710,
-                "startDate": ""
+                "category": "셋업 평가",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
-                "category": "셋업 평가",
+                "id": 1772159006711,
                 "completed": false,
                 "content": "Sample 측정",
                 "date": "",
-                "delayReason": "",
+                "startDate": "",
                 "estDays": "2",
-                "execStartDate": "",
-                "id": 1772159006711,
-                "startDate": ""
+                "category": "셋업 평가",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
-                "category": "셋업 평가",
+                "id": 1772159006712,
                 "completed": false,
                 "content": "신뢰도 평가",
                 "date": "",
-                "delayReason": "",
+                "startDate": "",
                 "estDays": "5",
-                "execStartDate": "",
-                "id": 1772159006712,
-                "startDate": ""
+                "category": "셋업 평가",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
-                "category": "셋업 완료",
+                "id": 1773282942711,
+                "completed": false,
                 "content": "셋업 완료",
                 "date": "",
+                "startDate": "",
                 "estDays": "0",
-                "id": 1773282942711,
-                "startDate": ""
+                "category": "셋업 완료",
+                "delayReason": "",
+                "execStartDate": ""
             }
         ],
         "setupLogs": [
