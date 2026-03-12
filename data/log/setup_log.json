@@ -312,87 +312,87 @@
         "timestamp": "2026-03-12T02:16:31.515Z"
     },
     {
-        "timestamp": "2026-03-12T02:18:46.798Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-12",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "실행 시작일 설정: 2026-03-12"
+        "timestamp": "2026-03-12T02:18:46.798Z"
     },
     {
-        "timestamp": "2026-03-12T02:18:58.050Z",
         "action": "UPDATE_SETUP_COMPLETION",
+        "details": "작업 완료 등록 (ID: 1772159008382)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "작업 완료 등록 (ID: 1772159008382)"
+        "timestamp": "2026-03-12T02:18:58.050Z"
     },
     {
-        "timestamp": "2026-03-12T02:19:01.409Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-13",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "실행 시작일 설정: 2026-03-13"
+        "timestamp": "2026-03-12T02:19:01.409Z"
     },
     {
-        "timestamp": "2026-03-12T02:19:03.493Z",
         "action": "UPDATE_SETUP_COMPLETION",
+        "details": "작업 완료 등록 (ID: 1772159008383)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "작업 완료 등록 (ID: 1772159008383)"
+        "timestamp": "2026-03-12T02:19:03.493Z"
     },
     {
-        "timestamp": "2026-03-12T02:19:05.004Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-16",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "실행 시작일 설정: 2026-03-16"
+        "timestamp": "2026-03-12T02:19:05.004Z"
     },
     {
-        "timestamp": "2026-03-12T02:19:07.248Z",
         "action": "UPDATE_SETUP_COMPLETION",
+        "details": "작업 완료 등록 (ID: 1772159008384)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "작업 완료 등록 (ID: 1772159008384)"
+        "timestamp": "2026-03-12T02:19:07.248Z"
     },
     {
-        "timestamp": "2026-03-12T02:19:08.645Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-17",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "실행 시작일 설정: 2026-03-17"
+        "timestamp": "2026-03-12T02:19:08.645Z"
     },
     {
-        "timestamp": "2026-03-12T02:19:11.810Z",
         "action": "UPDATE_SETUP_COMPLETION",
+        "details": "작업 완료 등록 (ID: 1772159008385)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "작업 완료 등록 (ID: 1772159008385)"
+        "timestamp": "2026-03-12T02:19:11.810Z"
     },
     {
-        "timestamp": "2026-03-12T02:19:13.380Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-19",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "실행 시작일 설정: 2026-03-19"
+        "timestamp": "2026-03-12T02:19:13.380Z"
     },
     {
-        "timestamp": "2026-03-12T02:19:14.413Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-19",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "실행 시작일 설정: 2026-03-19"
+        "timestamp": "2026-03-12T02:19:14.413Z"
     },
     {
-        "timestamp": "2026-03-12T02:19:15.483Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-19",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "실행 시작일 설정: 2026-03-19"
+        "timestamp": "2026-03-12T02:19:15.483Z"
     },
     {
-        "timestamp": "2026-03-12T02:19:18.124Z",
         "action": "UPDATE_SETUP_COMPLETION",
+        "details": "작업 완료 등록 (ID: 1772159008386)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "작업 완료 등록 (ID: 1772159008386)"
+        "timestamp": "2026-03-12T02:19:18.124Z"
     },
     {
-        "timestamp": "2026-03-12T02:19:21.905Z",
         "action": "UPDATE_SETUP_STATUS",
+        "details": "완료 상태 해제 및 이후 단계 초기화",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "완료 상태 해제 및 이후 단계 초기화"
+        "timestamp": "2026-03-12T02:19:21.905Z"
     },
     {
-        "timestamp": "2026-03-12T02:19:27.340Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-17",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "실행 시작일 설정: 2026-03-17"
+        "timestamp": "2026-03-12T02:19:27.340Z"
     }
 ]
