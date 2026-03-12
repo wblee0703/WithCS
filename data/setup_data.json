@@ -2474,7 +2474,7 @@
                 "estDays": "2",
                 "category": "장비 반입 및 정위치",
                 "delayReason": "",
-                "execStartDate": ""
+                "execStartDate": "2026-03-17"
             },
             {
                 "id": 1772159008386,
@@ -2554,7 +2554,7 @@
                 "execStartDate": ""
             },
             {
-                "id": 1773281643690,
+                "id": 1773281645561,
                 "category": "셋업 완료",
                 "content": "셋업 완료",
                 "startDate": "",
