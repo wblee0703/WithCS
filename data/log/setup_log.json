@@ -208,5 +208,17 @@
         "action": "START_SETUP_EXEC",
         "target": "SOMA-2000::SOMA-HC19-1204",
         "details": "실행 시작일 설정: 2026-03-10"
+    },
+    {
+        "timestamp": "2026-03-12T01:51:55.952Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T01:51:55.954Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (순방향)"
     }
 ]
