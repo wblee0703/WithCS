@@ -612,33 +612,39 @@
         "timestamp": "2026-03-12T04:29:48.120Z"
     },
     {
-        "timestamp": "2026-03-12T04:30:04.873Z",
         "action": "UPDATE_SETUP_COMPLETION",
+        "details": "작업 완료 등록 (ID: 1772159006261)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "작업 완료 등록 (ID: 1772159006261)"
+        "timestamp": "2026-03-12T04:30:04.873Z"
     },
     {
-        "timestamp": "2026-03-12T04:30:07.165Z",
         "action": "UPDATE_SETUP_STATUS",
+        "details": "완료 상태 해제 및 이후 단계 초기화",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "완료 상태 해제 및 이후 단계 초기화"
+        "timestamp": "2026-03-12T04:30:07.165Z"
     },
     {
-        "timestamp": "2026-03-12T04:30:11.820Z",
         "action": "UPDATE_SETUP_STATUS",
+        "details": "완료 상태 해제 및 이후 단계 초기화",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "완료 상태 해제 및 이후 단계 초기화"
+        "timestamp": "2026-03-12T04:30:11.820Z"
     },
     {
-        "timestamp": "2026-03-12T04:30:16.428Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-13",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "실행 시작일 설정: 2026-03-13"
+        "timestamp": "2026-03-12T04:30:16.428Z"
     },
     {
-        "timestamp": "2026-03-12T04:30:27.584Z",
         "action": "UPDATE_SETUP_STATUS",
+        "details": "완료 상태 해제 및 이후 단계 초기화",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "완료 상태 해제 및 이후 단계 초기화"
+        "timestamp": "2026-03-12T04:30:27.584Z"
+    },
+    {
+        "timestamp": "2026-03-12T04:30:37.343Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "details": "일정 자동 계산 (역방향)"
     }
 ]
