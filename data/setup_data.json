@@ -2478,9 +2478,9 @@
             },
             {
                 "id": 1772159008386,
-                "completed": false,
+                "completed": true,
                 "content": "Utility 배관 공사 및 연결",
-                "date": "",
+                "date": "2026-03-25",
                 "startDate": "2026-03-19",
                 "estDays": "5",
                 "category": "통신 상태 및 유틸리티",
@@ -2554,7 +2554,7 @@
                 "execStartDate": ""
             },
             {
-                "id": 1773281952810,
+                "id": 1773281959124,
                 "category": "셋업 완료",
                 "content": "셋업 완료",
                 "startDate": "",
@@ -2640,6 +2640,14 @@
                 "date": "2026-03-18",
                 "worker": "admin",
                 "content": "다이크 공사 및 리크센서 설치",
+                "company": "위드텍",
+                "memo": ""
+            },
+            {
+                "id": 1773281958117,
+                "date": "2026-03-25",
+                "worker": "admin",
+                "content": "Utility 배관 공사 및 연결",
                 "company": "위드텍",
                 "memo": ""
             }
