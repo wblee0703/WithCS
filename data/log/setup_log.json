@@ -628,5 +628,11 @@
         "action": "UPDATE_SETUP_STATUS",
         "target": "SOMA-2000::SOMA-H19-0903",
         "details": "완료 상태 해제 및 이후 단계 초기화"
+    },
+    {
+        "timestamp": "2026-03-12T04:30:16.428Z",
+        "action": "START_SETUP_EXEC",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "details": "실행 시작일 설정: 2026-03-13"
     }
 ]
