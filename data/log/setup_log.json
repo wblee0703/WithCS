@@ -154,5 +154,11 @@
         "details": "완료 상태 변경 (체크 해제)",
         "target": "SOMA-2000::SOMA-H19-0903",
         "timestamp": "2026-03-12T01:21:50.741Z"
+    },
+    {
+        "timestamp": "2026-03-12T01:24:21.292Z",
+        "action": "UPDATE_SETUP_STATUS",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "details": "완료 상태 변경 (체크 해제)"
     }
 ]
