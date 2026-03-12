@@ -694,8 +694,9 @@ function attachSetupCheckboxListener(row) {
 
     checkbox.addEventListener('click', (e) => {
         if (!checkbox.checked) {
-            if (!confirm("완료 상태를 해제하시겠습니까?\n이후 단계의 완료 상태도 함께 초기화됩니다.")) {
+            if (!confirm("완료 상태를 해제하시겠습니까?\n이후 단계의 진행 상태도 모두 초기화됩니다.")) {
                 e.preventDefault();
+                checkbox.checked = true; // [추가] 취소 시 체크 상태 복구
                 return;
             }
             // [수정] 입력창이 있을 때만 값 초기화
@@ -716,8 +717,6 @@ function attachSetupCheckboxListener(row) {
             // 체크 해제 시 실행 버튼 생성 (셋업 완료 항목 제외)
             if (row.dataset.category !== '셋업 완료') {
                 const actionTd = row.cells[4];
-                const id = row.dataset.id;
-                // [수정] onclick 제거
                 actionTd.innerHTML = `<div style="display:flex; justify-content:center;"><button class="btn-play-sm">▶</button><input type="checkbox" class="detail-complete-checkbox" style="display:none;"></div>`;
                 // 새 체크박스에 리스너 다시 연결
                 attachSetupCheckboxListener(row);
@@ -726,25 +725,29 @@ function attachSetupCheckboxListener(row) {
             let nextRow = row.nextElementSibling;
             while (nextRow) {
                 if (nextRow.classList.contains('item-row')) {
-                    const nextCheckbox = nextRow.querySelector('.detail-complete-checkbox');
                     const nextDateInput = nextRow.querySelector('.detail-date-input');
-                    if (nextCheckbox) {
-                        nextCheckbox.checked = false;
-                        nextCheckbox.style.visibility = 'hidden';
-                    }
                     if (nextDateInput) nextDateInput.value = '';
+
                     delete nextRow.dataset.delayReason;
                     delete nextRow.dataset.execStartDate;
                     nextRow.classList.remove('in-progress');
+                    
+                    // [요청] 이후 단계 버튼 제거 및 숨김 처리 (DOM 직접 수정으로 즉시 반영)
+                    const nextActionTd = nextRow.cells[4];
+                    if (nextActionTd) {
+                        nextActionTd.innerHTML = `<input type="checkbox" class="detail-complete-checkbox" style="visibility: hidden;">`;
+                        attachSetupCheckboxListener(nextRow); // 리스너 재부착
+                    }
                 }
                 nextRow = nextRow.nextElementSibling;
             }
+            
+            // [요청] 즉시 반영을 위해 저장 (데이터 정합성 유지)
+            saveSetupDetails('UPDATE_SETUP_STATUS', '완료 상태 해제 및 이후 단계 초기화');
         } else {
             e.preventDefault();
             openSetupCompletionModal(row.dataset.id, row);
-            return;
         }
-        saveSetupDetails('UPDATE_SETUP_STATUS', '완료 상태 변경 (체크 해제)'); // 체크박스 변경 시 자동 저장
     });
 }
 
