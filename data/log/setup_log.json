@@ -694,5 +694,11 @@
         "action": "UPDATE_SETUP_COMPLETION",
         "target": "SOMA-2000::SOMA-H19-0903",
         "details": "작업 완료 등록 (ID: 1772159006262)"
+    },
+    {
+        "timestamp": "2026-03-12T04:31:51.766Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "details": "일정 자동 계산 (순방향)"
     }
 ]
