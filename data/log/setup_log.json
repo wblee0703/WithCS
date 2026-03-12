@@ -856,5 +856,11 @@
         "action": "UPDATE_SETUP_COMPLETION",
         "target": "OMS-100L::OMS1-LK22-0104",
         "details": "작업 완료 등록 (ID: 1772517271628)"
+    },
+    {
+        "timestamp": "2026-03-12T05:30:23.963Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "details": "셋업 상세 내역 수정"
     }
 ]
