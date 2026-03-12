@@ -2621,7 +2621,8 @@
                 "date": "",
                 "estDays": "1",
                 "id": 1772159006702,
-                "startDate": ""
+                "startDate": "",
+                "execStartDate": "2026-03-12"
             },
             {
                 "category": "장비 반입 및 정위치",
