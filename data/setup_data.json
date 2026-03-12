@@ -907,6 +907,14 @@
                 "category": "셋업 평가",
                 "delayReason": "",
                 "execStartDate": ""
+            },
+            {
+                "id": 1773288293384,
+                "category": "셋업 완료",
+                "content": "셋업 완료",
+                "startDate": "",
+                "estDays": "0",
+                "date": ""
             }
         ],
         "setupLogs": [
