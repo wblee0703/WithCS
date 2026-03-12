@@ -940,5 +940,11 @@
         "details": "셋업 상세 내역 수정",
         "target": "OMS-100L::OMS1-LK22-0104",
         "timestamp": "2026-03-12T06:02:33.572Z"
+    },
+    {
+        "timestamp": "2026-03-12T06:17:00.789Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "셋업 상세 내역 수정"
     }
 ]
