@@ -396,15 +396,17 @@
     border: 1px solid #3fb950;
     color: #3fb950;
     border-radius: 4px;
-    width: 24px;
-    height: 24px;
-    font-size: 10px;
+    width: 28px; /* [수정] 버튼 크기 확대 */
+    height: 28px;
+    font-size: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     padding: 0;
     flex-shrink: 0;
+    position: relative; /* [추가] 위치 및 클릭 우선순위 보정 */
+    z-index: 5;
 }
 .btn-play-sm:hover {
     background: #3fb950;
@@ -551,3 +553,47 @@
         display: block !important;
     }
 }
+
+/* ==========================================================================
+   7. 신규 유틸리티 클래스 (New Utility Classes for JS Refactoring)
+   ========================================================================== */
+
+/* Execution Rate Colors */
+.rate-text-100 { color: #3fb950 !important; }
+.rate-text-mid { color: #e3b341 !important; }
+.rate-text-0 { color: #8b949e !important; }
+
+/* Helpers */
+.visibility-hidden { visibility: hidden !important; }
+.display-none { display: none !important; }
+.color-completed { color: #8b949e !important; }
+.color-normal { color: #e6edf3 !important; }
+.flex-center { display: flex; justify-content: center; align-items: center; }
+
+/* Setup Detail Components */
+.btn-recalc-date {
+    background: transparent; 
+    border: 1px solid #30363d; 
+    color: #8b949e; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    padding: 2px 8px; 
+    font-size: 11px;
+}
+
+.input-est-days {
+    text-align: center; 
+    width: 100%; 
+    background: transparent; 
+    border: none;
+}
+
+.date-display-text {
+    text-align: center;
+    font-size: 13px;
+}
+
+/* Setup Log Components */
+.tag-delayed { color: #f0883e; font-weight: bold; }
+.btn-editing-active { background-color: #238636 !important; color: #ffffff !important; }
+.input-edit-cell { width: 100%; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 2px; border-radius: 4px; }
