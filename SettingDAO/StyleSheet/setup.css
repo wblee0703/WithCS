@@ -505,12 +505,9 @@
     /* [추가] 일반 모드 테이블 레이아웃 및 스타일 */
     /* [수정] table-layout: fixed 제거하여 너비 문제 해결 */
 
-    #setup-detail-card:not(.edit-mode) .data-table th,
+    #setup-detail-card:not(.edit-mode) .data-table th, .date-display,
     #setup-detail-card:not(.edit-mode) .data-table td, .detail-est-days-input {
         padding: 8px 4px;
-        font-size: 10px;
-    }
-    .date-display {
         font-size: 10px;
     }
 
@@ -580,11 +577,12 @@
     /* 설정, 접기 등 기존 버튼 (Row 1 좌측 정렬) */
     .setup-card-header > button:not(#btn-load-setup-list):not(#btn-reset-setup-date) {
         order: 2;
+        margin-right: auto; /* [수정] 진행률을 오른쪽으로 밀어내기 위해 추가 */
     }
 
     /* 진행률 (Row 1 우측 정렬 - 남은 공간 차지하여 밀어냄) */
     #setup-progress-rate {
-        flex: 1 0 auto;
+        /* flex: 1 0 auto; */ /* [수정] flex-grow 속성 제거 */
         order: 3;
         width: auto;
         text-align: right;
