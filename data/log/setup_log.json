@@ -712,5 +712,11 @@
         "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-H19-0903",
         "timestamp": "2026-03-12T04:31:53.743Z"
+    },
+    {
+        "timestamp": "2026-03-12T04:36:42.722Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (역방향)"
     }
 ]
