@@ -1719,6 +1719,9 @@ function saveSetupExecStart() {
 
     if (!execDate) return alert("시작일을 선택해주세요.");
 
+    // [수정] 팝업 먼저 닫기 (렌더링 중 오류 발생 시에도 닫히도록 조치)
+    document.getElementById('setup-exec-start-modal').style.display = 'none';
+
     // [수정] DOM 의존성 제거: 데이터 직접 수정 후 갱신
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const equipKey = `${currentPath.site}::${currentPath.equip}`;
@@ -1738,7 +1741,6 @@ function saveSetupExecStart() {
         }
     }
     
-    document.getElementById('setup-exec-start-modal').style.display = 'none';
     currentExecStartTargetId = null;
 }
 

@@ -967,13 +967,16 @@ body {
         max-height: 200px;
     }
     /* [요청] 장비 정보 리스트 높이 고정 (약 5개) 및 스크롤 */
-    #equip-detail-container,
-    #setup-equip-detail-container {
-        height: 250px !important; /* 높이 증가 및 고정 */
+    #equip-detail-container {
+        height: 300px !important; /* 높이 증가 및 고정 */
         flex: none; /* [수정] 부모 flex 컨테이너에서 늘어나지 않도록 고정 */
         overflow-y: auto;
     }
-
+    #setup-equip-detail-container {
+        height: auto !important; /* 높이 증가 및 고정 */
+        flex: none; /* [수정] 부모 flex 컨테이너에서 늘어나지 않도록 고정 */
+        overflow-y: auto;
+    }
     /* [요청] 장비 정보 리스트 글자 크기 축소 */
     #equip-detail-list .status-list-item,
     #setup-equip-detail-list .status-list-item {
