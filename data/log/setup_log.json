@@ -136,17 +136,5 @@
         "details": "작업 완료 등록 (ID: 1770881657887)",
         "target": "WIM-100::R24-01-01-C",
         "timestamp": "2026-03-12T01:15:12.267Z"
-    },
-    {
-        "timestamp": "2026-03-12T01:16:05.482Z",
-        "action": "UPDATE_SETUP_DETAILS",
-        "target": "SOLA-1000",
-        "details": "셋업 상세 내역 수정"
-    },
-    {
-        "timestamp": "2026-03-12T01:16:05.484Z",
-        "action": "CALC_SETUP_SCHEDULE",
-        "target": "SOLA-1000",
-        "details": "일정 자동 계산 (순방향)"
     }
 ]
