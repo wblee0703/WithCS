@@ -557,4 +557,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .btn-collapse {
         display: block !important;
     }
+
+    /* [요청] 모바일에서 장비 점검 이력(bottom-grid)을 최상단으로 배치 */
+    .bottom-grid {
+        order: -1;
+    }
 }

@@ -1078,4 +1078,10 @@ body.role-user select {
     .sidebar-group.backup-section {
         display: none !important;
     }
+
+    /* [요청] 모바일 사이드바 대분류/중분류 제목 글자 크기 14px로 변경 */
+    .group-header h3,
+    .sidebar-header-row h3 {
+        font-size: 14px !important;
+    }
 }

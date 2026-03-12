@@ -581,11 +581,22 @@
     /* [요청] 모바일 헤더 레이아웃 조정 */
     .setup-card-header {
         flex-wrap: wrap; /* 내용이 많을 경우 줄바꿈 허용 */
+        justify-content: flex-start; /* [수정] 왼쪽 정렬 후 margin으로 제어 */
+    }
+
+    /* [요청] 모바일 소분류 제목 글자 크기 축소 */
+    .setup-card-header h3 {
+        font-size: 13px;
     }
 
     /* [요청] 진행률과 접기 버튼을 오른쪽으로 보내기 위해, 설정 버튼에 자동 마진 추가 */
     .setup-card-header > button:not(.btn-collapse):not(#btn-load-setup-list):not(#btn-reset-setup-date) {
         margin-right: auto;
+    }
+
+    /* [요청] 진행률과 접기 버튼 사이 간격 조정 */
+    #setup-progress-rate {
+        margin-right: 8px;
     }
 
     /* [요청] 편집 모드 버튼 (초기화, 불러오기) 줄바꿈 및 정렬 */
