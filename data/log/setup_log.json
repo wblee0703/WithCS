@@ -472,5 +472,11 @@
         "action": "UPDATE_SETUP_DETAILS",
         "target": "SOLA-1000::SOLA-1000",
         "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T04:06:07.029Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "셋업 상세 내역 수정"
     }
 ]
