@@ -2437,12 +2437,12 @@
                 "worker": "admin"
             },
             {
-                "id": 1773289426680,
-                "date": "2026-03-06",
-                "worker": "admin",
-                "content": "장비 반입",
                 "company": "위드텍",
-                "memo": ""
+                "content": "장비 반입",
+                "date": "2026-03-06",
+                "id": 1773289426680,
+                "memo": "",
+                "worker": "admin"
             }
         ]
     },

@@ -480,85 +480,91 @@
         "timestamp": "2026-03-12T04:06:07.029Z"
     },
     {
-        "timestamp": "2026-03-12T04:23:14.400Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (역방향)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "일정 자동 계산 (역방향)"
+        "timestamp": "2026-03-12T04:23:14.400Z"
     },
     {
-        "timestamp": "2026-03-12T04:23:17.945Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (역방향)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "일정 자동 계산 (역방향)"
+        "timestamp": "2026-03-12T04:23:17.945Z"
     },
     {
-        "timestamp": "2026-03-12T04:23:23.440Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-12T04:23:23.440Z"
     },
     {
-        "timestamp": "2026-03-12T04:23:23.827Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-12T04:23:23.827Z"
     },
     {
-        "timestamp": "2026-03-12T04:23:24.247Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T04:23:24.247Z"
     },
     {
-        "timestamp": "2026-03-12T04:23:29.863Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-12T04:23:29.863Z"
     },
     {
-        "timestamp": "2026-03-12T04:23:30.197Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-12T04:23:30.197Z"
     },
     {
-        "timestamp": "2026-03-12T04:23:30.560Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T04:23:30.560Z"
     },
     {
-        "timestamp": "2026-03-12T04:23:36.414Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (역방향)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "일정 자동 계산 (역방향)"
+        "timestamp": "2026-03-12T04:23:36.414Z"
     },
     {
-        "timestamp": "2026-03-12T04:23:39.733Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (역방향)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "일정 자동 계산 (역방향)"
+        "timestamp": "2026-03-12T04:23:39.733Z"
     },
     {
-        "timestamp": "2026-03-12T04:23:46.686Z",
         "action": "UPDATE_SETUP_COMPLETION",
+        "details": "작업 완료 등록 (ID: 1772159006260)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "작업 완료 등록 (ID: 1772159006260)"
+        "timestamp": "2026-03-12T04:23:46.686Z"
     },
     {
-        "timestamp": "2026-03-12T04:23:52.983Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-13",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "실행 시작일 설정: 2026-03-13"
+        "timestamp": "2026-03-12T04:23:52.983Z"
     },
     {
-        "timestamp": "2026-03-12T04:24:11.914Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (역방향)",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "일정 자동 계산 (역방향)"
+        "timestamp": "2026-03-12T04:24:11.914Z"
     },
     {
-        "timestamp": "2026-03-12T04:24:15.963Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (완료일 기준)",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-03-12T04:24:15.963Z"
+    },
+    {
+        "timestamp": "2026-03-12T04:24:26.314Z",
         "action": "CALC_SETUP_SCHEDULE",
         "target": "SOMA-2000::SOMA-H19-0903",
         "details": "일정 자동 계산 (완료일 기준)"
