@@ -2247,9 +2247,9 @@
             },
             {
                 "id": 1772159006263,
-                "completed": false,
+                "completed": true,
                 "content": "Utility 턴온",
-                "date": "",
+                "date": "2026-03-12",
                 "startDate": "2026-03-25",
                 "estDays": "1",
                 "category": "통신 상태 및 유틸리티",
