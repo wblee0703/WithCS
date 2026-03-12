@@ -731,6 +731,13 @@ function attachSetupCheckboxListener(row) {
                         nextActionTd.innerHTML = `<input type="checkbox" class="detail-complete-checkbox" style="visibility: hidden;">`;
                         attachSetupCheckboxListener(nextRow); // 리스너 재부착
                     }
+
+                    // [추가] 이후 단계 입력 필드 활성화 (초기화된 항목 수정 가능하도록)
+                    const nextInputs = nextRow.querySelectorAll('input[type="text"], input[type="date"]');
+                    nextInputs.forEach(input => {
+                        input.disabled = false;
+                        input.style.color = '#e6edf3';
+                    });
                 }
                 nextRow = nextRow.nextElementSibling;
             }
