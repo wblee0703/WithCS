@@ -763,6 +763,9 @@ function attachSetupCheckboxListener(row) {
             // [수정] 입력창이 있을 때만 값 초기화
             const dateInput = row.querySelector('.detail-date-input');
             if (dateInput) dateInput.value = '';
+            
+            // [추가] 모바일 대응: 데이터셋 날짜 초기화 (입력창 없을 때 저장 시 반영용)
+            row.dataset.date = "";
 
             // [FIX] delete 대신 빈 문자열 할당하여 saveSetupDetails에서 원본 데이터로 복구되는 것 방지
             row.dataset.delayReason = "";
@@ -790,6 +793,9 @@ function attachSetupCheckboxListener(row) {
                 if (nextRow.classList.contains('item-row')) {
                     const nextDateInput = nextRow.querySelector('.detail-date-input');
                     if (nextDateInput) nextDateInput.value = '';
+                    
+                    // [추가] 모바일 대응: 이후 단계 데이터셋 날짜 초기화
+                    nextRow.dataset.date = "";
 
                     // [FIX] delete 대신 빈 문자열 할당
                     nextRow.dataset.delayReason = "";
@@ -815,6 +821,7 @@ function attachSetupCheckboxListener(row) {
             
             // [요청] 즉시 반영을 위해 저장 (데이터 정합성 유지)
             saveSetupDetails('UPDATE_SETUP_STATUS', '완료 상태 해제 및 이후 단계 초기화');
+            renderSetupDetailList(); // [추가] 화면 갱신 (모바일 텍스트 반영)
         } else {
             e.preventDefault();
             openSetupCompletionModal(row.dataset.id, row);
@@ -1712,11 +1719,23 @@ function saveSetupExecStart() {
 
     if (!execDate) return alert("시작일을 선택해주세요.");
 
-    const row = document.querySelector(`#setup-detail-body tr[data-id="${currentExecStartTargetId}"]`);
-    if (row) {
-        row.dataset.execStartDate = execDate;
-        saveSetupDetails('START_SETUP_EXEC', `실행 시작일 설정: ${execDate}`); // Auto save with log
-        renderSetupDetailList(); // Re-render to update UI
+    // [수정] DOM 의존성 제거: 데이터 직접 수정 후 갱신
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${currentPath.site}::${currentPath.equip}`;
+    let data = setupData[equipKey] || {};
+    
+    if (data.setupDetails) {
+        const task = data.setupDetails.find(t => t.id == currentExecStartTargetId);
+        if (task) {
+            task.execStartDate = execDate;
+            setupData[equipKey] = data;
+            localStorage.setItem('setup_data', JSON.stringify(setupData));
+            
+            if (typeof addSystemLog === 'function') {
+                addSystemLog('START_SETUP_EXEC', currentPath.equip, `실행 시작일 설정: ${execDate}`);
+            }
+            renderSetupDetailList(); // 화면 갱신
+        }
     }
     
     document.getElementById('setup-exec-start-modal').style.display = 'none';
