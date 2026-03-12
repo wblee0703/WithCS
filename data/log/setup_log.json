@@ -234,9 +234,9 @@
         "timestamp": "2026-03-12T02:10:01.100Z"
     },
     {
-        "timestamp": "2026-03-12T02:10:17.037Z",
         "action": "UPDATE_SETUP_COMPLETION",
+        "details": "작업 완료 등록 (ID: 1772159008382)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "작업 완료 등록 (ID: 1772159008382)"
+        "timestamp": "2026-03-12T02:10:17.037Z"
     }
 ]
