@@ -396,21 +396,21 @@
         "timestamp": "2026-03-12T02:19:27.340Z"
     },
     {
-        "timestamp": "2026-03-12T02:35:38.761Z",
         "action": "UPDATE_SETUP_COMPLETION",
+        "details": "작업 완료 등록 (ID: 1772159006702)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "작업 완료 등록 (ID: 1772159006702)"
+        "timestamp": "2026-03-12T02:35:38.761Z"
     },
     {
-        "timestamp": "2026-03-12T02:35:40.220Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-13",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "실행 시작일 설정: 2026-03-13"
+        "timestamp": "2026-03-12T02:35:40.220Z"
     },
     {
-        "timestamp": "2026-03-12T02:35:41.712Z",
         "action": "UPDATE_SETUP_COMPLETION",
+        "details": "작업 완료 등록 (ID: 1772159006703)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "작업 완료 등록 (ID: 1772159006703)"
+        "timestamp": "2026-03-12T02:35:41.712Z"
     }
 ]
