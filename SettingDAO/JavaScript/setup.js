@@ -474,8 +474,14 @@ function renderSetupDetailList() {
                 </div>
                 <input type="date" class="detail-start-date-input ${inputColorClass}" value="${item.startDate || ''}" ${generalDisabledAttr}>
             `;
+
+            // [수정] 완료일이 비어있으면(미완료) 완료 등록 팝업 호출, 있으면 날짜 수정 달력 호출
+            const dateClickAction = item.date 
+                ? `openMobileDatePicker(${item.id}, 'date', '${item.date}')` 
+                : `openSetupCompletionModal(${item.id}, this.closest('tr'))`;
+
             dateCellHtml = `
-                <div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); openMobileDatePicker(${item.id}, 'date', '${item.date || ''}')">
+                <div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); ${dateClickAction}">
                     ${formatDateYYMMDD(item.date)}
                 </div>
                 <input type="date" class="detail-date-input ${inputColorClass}" value="${item.date || ''}" ${generalDisabledAttr} ${minDateAttr}>

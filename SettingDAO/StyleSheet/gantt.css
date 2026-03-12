@@ -398,6 +398,16 @@
 
 /* 화면 너비가 768px 이하일 때 적용됩니다. */
 @media (max-width: 950px) {
+    /* [추가] 모바일 기본 레이아웃 (세로 배치) */
+    .gantt__wrapper {
+        flex-direction: column;
+    }
+
+    /* [추가] 모바일에서 리사이저 숨김 */
+    .gantt__resizer {
+        display: none;
+    }
+
     .gantt__sidebar {
         width: 100% !important; /* JS style override */
         border-right: none;
@@ -442,6 +452,9 @@
             flex-direction: row !important;
             gap: 0 !important;
         }
+        /* [추가] 가로 모드에서 리사이저 복구 (필요시) - 터치 조작 어려움으로 일단 숨김 유지하거나 필요시 주석 해제 */
+        /* .gantt__resizer { display: block; } */
+
         .gantt__sidebar {
             width: 250px !important;
             max-height: none;

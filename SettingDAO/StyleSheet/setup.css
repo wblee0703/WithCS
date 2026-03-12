@@ -578,6 +578,26 @@
     .btn-collapse {
         display: block !important;
     }
+
+    /* [요청] 작업 완료 등록 팝업 모바일 최적화 */
+    #setup-completion-modal .modal-window {
+        width: 90% !important;
+        height: auto !important;
+        max-height: 80vh !important;
+        min-width: 0 !important;
+        display: flex;
+        flex-direction: column;
+    }
+    #setup-completion-modal .modal-body {
+        overflow-y: auto;
+        flex: 1;
+    }
+    @media (orientation: landscape) {
+        #setup-completion-modal .modal-window {
+            height: 90vh !important;
+            max-height: 90vh !important;
+        }
+    }
 }
 
 /* ==========================================================================

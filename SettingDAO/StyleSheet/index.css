@@ -927,6 +927,20 @@ body {
     #gantt-chart-area {
         display: none;
     }
+    /* [요청] 간트 실행 완료 팝업 모바일 최적화 */
+    #exec-completion-modal .modal-window {
+        width: 90% !important;
+        height: 90vh !important;
+        max-height: 90vh !important;
+        min-width: 0 !important;
+        display: flex;
+        flex-direction: column;
+    }
+    #exec-completion-modal .modal-body {
+        overflow-y: auto;
+        flex: 1;
+        padding: 15px !important;
+    }
 
     /* [요청] 모바일 가로 모드(화면 회전)에서는 간트 차트 표시 */
     @media (orientation: landscape) {
