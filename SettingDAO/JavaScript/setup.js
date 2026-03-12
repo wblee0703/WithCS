@@ -744,35 +744,6 @@ function attachSetupCheckboxListener(row) {
     });
 }
 
-// 셋업 세부사항 현재 데이터 가져오기 (변경 감지용)
-function getCurrentSetupDetailsData() {
-    const rows = document.querySelectorAll('#setup-detail-body tr');
-    const details = [];
-    let currentCategory = "장비 반입 및 정위치"; // 기본 카테고리
-
-    rows.forEach(row => {
-        if (row.classList.contains('category-header-row')) {
-            currentCategory = row.dataset.category;
-            return;
-        }
-
-        const id = parseInt(row.dataset.id);
-        if (isNaN(id)) return;
-
-        const checkbox = row.querySelector('.detail-complete-checkbox');
-        const completed = checkbox ? checkbox.checked : false;
-        const content = row.querySelector('.detail-content-input').value;
-        const date = row.querySelector('.detail-date-input').value;
-        const startDate = row.querySelector('.detail-start-date-input').value;
-        const estInput = row.querySelector('.detail-est-days-input');
-        const estDays = estInput ? estInput.value : "0";
-        const delayReason = row.dataset.delayReason || "";
-        const execStartDate = row.dataset.execStartDate || "";
-        details.push({ id, completed, content, date, startDate, estDays, category: currentCategory, delayReason, execStartDate });
-    });
-    return details;
-}
-
 /* ==========================================================================
    4. 일정 계산 (Schedule Calculation)
    ========================================================================== */
@@ -1683,7 +1654,11 @@ function openSetupExecStartModal(id) {
     // 기본값 계산: 이전 작업 완료일 다음날 (영업일 기준)
     let defaultDate = formatLocalDate(new Date());
     
-    const details = getCurrentSetupDetailsData();
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${currentPath.site}::${currentPath.equip}`;
+    const data = setupData[equipKey] || {};
+    const details = data.setupDetails || [];
+
     const currentIndex = details.findIndex(item => item.id === id);
     
     if (currentIndex > 0) {
