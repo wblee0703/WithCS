@@ -591,6 +591,7 @@
 .date-display-text {
     text-align: center;
     font-size: 13px;
+    cursor: pointer;
 }
 
 /* Setup Log Components */

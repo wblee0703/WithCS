@@ -407,8 +407,9 @@ function renderSetupDetailList() {
             const isMobileNonEdit = window.innerWidth <= 950 && !isEditMode;
             if (isMobileNonEdit) {
                 // 모바일 일반 모드: yy.mm.dd 형식 텍스트로 표시
-                startDateCellHtml = `<div class="date-display-text ${inputColorClass}">${formatDateYYMMDD(item.startDate)}</div>`;
-                dateCellHtml = `<div class="date-display-text ${inputColorClass}">${formatDateYYMMDD(item.date)}</div>`;
+                // [수정] 날짜 텍스트 클릭 시 팝업 연결 (시작일 -> 실행일 설정, 완료일 -> 완료 설정)
+                startDateCellHtml = `<div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); startSetupTask(${item.id})">${formatDateYYMMDD(item.startDate)}</div>`;
+                dateCellHtml = `<div class="date-display-text ${inputColorClass}" onclick="event.stopPropagation(); openSetupCompletionModal(${item.id}, this.closest('tr'))">${formatDateYYMMDD(item.date)}</div>`;
             } else {
                 // PC 또는 모바일 편집 모드: 날짜 수정이 가능한 input으로 표시
                 startDateCellHtml = `<input type="date" class="detail-start-date-input ${inputColorClass}" value="${item.startDate || ''}" ${generalDisabledAttr}>`;
