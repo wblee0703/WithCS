@@ -568,16 +568,18 @@
     }
 
     .setup-card-header h3 {
-        flex: 0 0 auto; /* [수정] 너비 자동 */
+        flex: 0 0 100%; /* [수정] 전체 너비 차지 (상단 배치) */
+        width: 100%;
         order: 1;
         min-width: 0;
-        margin-right: 5px;
+        margin-right: 0;
+        margin-bottom: 5px;
     }
 
-    /* 설정(톱니바퀴) 버튼 (Row 1 좌측 정렬) - 접기 버튼 제외 */
+    /* 설정(톱니바퀴) 버튼 (Row 2 좌측) - 접기 버튼 제외 */
     .setup-card-header > button:not(.btn-collapse):not(#btn-load-setup-list):not(#btn-reset-setup-date) {
         order: 2;
-        margin-right: auto; /* [수정] 진행률을 오른쪽으로 밀어내기 위해 추가 */
+        margin-right: 0; /* [수정] 자동 마진 제거 (간격 자동 분배) */
     }
 
     /* 진행률 (Row 1 우측 정렬 - 남은 공간 차지하여 밀어냄) */
