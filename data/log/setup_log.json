@@ -1090,5 +1090,11 @@
         "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-H19-0903",
         "timestamp": "2026-03-12T06:37:15.441Z"
+    },
+    {
+        "timestamp": "2026-03-12T06:44:21.475Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "셋업 상세 내역 수정"
     }
 ]
