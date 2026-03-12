@@ -714,117 +714,117 @@
         "timestamp": "2026-03-12T04:31:53.743Z"
     },
     {
-        "timestamp": "2026-03-12T04:36:42.722Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (역방향)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "일정 자동 계산 (역방향)"
+        "timestamp": "2026-03-12T04:36:42.722Z"
     },
     {
-        "timestamp": "2026-03-12T04:36:51.614Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (역방향)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "일정 자동 계산 (역방향)"
+        "timestamp": "2026-03-12T04:36:51.614Z"
     },
     {
-        "timestamp": "2026-03-12T04:36:57.673Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-12T04:36:57.673Z"
     },
     {
-        "timestamp": "2026-03-12T04:36:58.222Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-12T04:36:58.222Z"
     },
     {
-        "timestamp": "2026-03-12T04:36:58.617Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T04:36:58.617Z"
     },
     {
-        "timestamp": "2026-03-12T04:37:01.219Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-12T04:37:01.219Z"
     },
     {
-        "timestamp": "2026-03-12T04:37:01.921Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-12T04:37:01.921Z"
     },
     {
-        "timestamp": "2026-03-12T04:37:02.255Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T04:37:02.255Z"
     },
     {
-        "timestamp": "2026-03-12T04:37:06.361Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-12T04:37:06.361Z"
     },
     {
-        "timestamp": "2026-03-12T04:37:06.641Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-12T04:37:06.641Z"
     },
     {
-        "timestamp": "2026-03-12T04:37:07.848Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-12T04:37:07.848Z"
     },
     {
-        "timestamp": "2026-03-12T04:37:09.214Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-12T04:37:09.214Z"
     },
     {
-        "timestamp": "2026-03-12T04:37:11.655Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T04:37:11.655Z"
     },
     {
-        "timestamp": "2026-03-12T04:37:13.879Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-12T04:37:13.879Z"
     },
     {
-        "timestamp": "2026-03-12T04:37:15.275Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-12T04:37:15.275Z"
     },
     {
-        "timestamp": "2026-03-12T04:37:28.973Z",
         "action": "UPDATE_SETUP_STATUS",
+        "details": "완료 상태 해제 및 이후 단계 초기화",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "완료 상태 해제 및 이후 단계 초기화"
+        "timestamp": "2026-03-12T04:37:28.973Z"
     },
     {
-        "timestamp": "2026-03-12T04:37:35.709Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-16",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "실행 시작일 설정: 2026-03-16"
+        "timestamp": "2026-03-12T04:37:35.709Z"
     },
     {
-        "timestamp": "2026-03-12T04:37:39.497Z",
         "action": "UPDATE_SETUP_COMPLETION",
+        "details": "작업 완료 등록 (ID: 1772159008383)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "작업 완료 등록 (ID: 1772159008383)"
+        "timestamp": "2026-03-12T04:37:39.497Z"
     },
     {
-        "timestamp": "2026-03-12T04:37:44.813Z",
         "action": "START_SETUP_EXEC",
+        "details": "실행 시작일 설정: 2026-03-17",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "실행 시작일 설정: 2026-03-17"
+        "timestamp": "2026-03-12T04:37:44.813Z"
     }
 ]
