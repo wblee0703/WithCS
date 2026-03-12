@@ -978,15 +978,15 @@
         "timestamp": "2026-03-12T06:18:33.713Z"
     },
     {
-        "timestamp": "2026-03-12T06:24:48.375Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T06:24:48.375Z"
     },
     {
-        "timestamp": "2026-03-12T06:24:51.261Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-12T06:24:51.261Z"
     }
 ]
