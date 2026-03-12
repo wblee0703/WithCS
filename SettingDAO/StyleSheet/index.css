@@ -930,7 +930,7 @@ body {
     /* [요청] 간트 실행 완료 팝업 모바일 최적화 */
     #exec-completion-modal .modal-window {
         width: 90% !important;
-        height: 90vh !important;
+        height: auto !important;
         max-height: 90vh !important;
         min-width: 0 !important;
         display: flex;
@@ -940,6 +940,11 @@ body {
         overflow-y: auto;
         flex: 1;
         padding: 15px !important;
+    }
+
+    /* [요청] 셋업 이력 작업 내용 메모장 크기 확대 */
+    #exec-setup-log-content {
+        height: 120px !important;
     }
 
     /* [요청] 모바일 가로 모드(화면 회전)에서는 간트 차트 표시 */
@@ -978,7 +983,8 @@ body {
     }
 
     .status-list-container {
-        max-height: 200px;
+        height: 200px !important; /* [요청] 리스트 높이 고정 */
+        max-height: 200px !important;
     }
     /* [요청] 장비 정보 리스트 높이 고정 (약 5개) 및 스크롤 */
     #equip-detail-container {
@@ -987,7 +993,7 @@ body {
         overflow-y: auto;
     }
     #setup-equip-detail-container {
-        height: auto !important; /* 높이 증가 및 고정 */
+        height: 200px !important; /* [요청] 셋업 장비 정보 리스트 높이 고정 */
         flex: none; /* [수정] 부모 flex 컨테이너에서 늘어나지 않도록 고정 */
         overflow-y: auto;
     }
@@ -1019,5 +1025,14 @@ body {
         position: static !important;
         transform: none !important;
         justify-content: center;
+    }
+
+    /* [요청] 모바일에서 카드 제목과 내용 사이 여백 축소 */
+    .status-group-title {
+        margin-bottom: 10px;
+        font-size: 16px;
+    }
+    .upcoming-title {
+        margin-bottom: 5px;
     }
 }
