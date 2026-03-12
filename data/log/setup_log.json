@@ -196,5 +196,11 @@
         "details": "완료 상태 해제 및 이후 단계 초기화",
         "target": "SOMA-2000::SOMA-HC19-1204",
         "timestamp": "2026-03-12T01:44:06.855Z"
+    },
+    {
+        "timestamp": "2026-03-12T01:51:36.708Z",
+        "action": "UPDATE_SETUP_STATUS",
+        "target": "SOMA-2000::SOMA-HC19-1204",
+        "details": "완료 상태 해제 및 이후 단계 초기화"
     }
 ]
