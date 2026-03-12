@@ -52,6 +52,7 @@ body {
     left: 40px;
     height: 50px;
     width: auto;
+    cursor: pointer; /* [추가] 클릭 가능 표시 */
 }
 
 .nav-links {

@@ -135,6 +135,7 @@ function initializeApp() {
     // 2-2. 로그인 및 사용자 관리 이벤트
     setupAuthEvents();
     setupMobileNav(); // [이동] 페이지 접근 제어 전에 실행하여 홈 화면에서도 메뉴 작동하도록 수정
+    setupLogoEvent(); // [추가] 로고 클릭 시 홈 이동
 
     // [개선] 데스크톱 네비게이션 링크 클릭 시, 이동 전 변경사항 확인
     const desktopNav = document.querySelector('.header .container .nav-links');
@@ -342,6 +343,17 @@ function setupMobileNav() {
 
     // [수정] 초기 상태 반영 (로그인 여부에 따른 메뉴 표시)
     checkLoginStatus();
+}
+
+// [추가] 로고 클릭 이벤트 (PC/모바일 공통)
+function setupLogoEvent() {
+    const logo = document.querySelector('.header-logo');
+    if (logo) {
+        logo.addEventListener('click', () => {
+            if (!checkUnsavedChanges()) return;
+            window.location.href = 'index.html';
+        });
+    }
 }
 
 function handlePageAccess() {

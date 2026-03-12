@@ -922,6 +922,16 @@ body {
         #gantt-chart-area {
             display: flex !important;
         }
+
+        /* [요청] 모바일 가로 모드에서 장비 셋업/운영 현황 카드 2개씩 정렬 */
+        .maint-left-charts {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+        .maint-left-charts .status-group {
+            width: calc(50% - 8px); /* gap 15px 고려 */
+            flex: none;
+        }
     }
 
     /* [요청] 셋업 일정 -/+ 버튼 숨김 */

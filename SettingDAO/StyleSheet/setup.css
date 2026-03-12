@@ -497,10 +497,13 @@
     /* [추가] 일반 모드 테이블 레이아웃 및 스타일 */
     /* [수정] table-layout: fixed 제거하여 너비 문제 해결 */
 
-    #setup-detail-card:not(.edit-mode) .data-table th, .date-display,
+    #setup-detail-card:not(.edit-mode) .data-table th,
     #setup-detail-card:not(.edit-mode) .data-table td, .detail-est-days-input {
         padding: 8px 4px;
         font-size: 10px;
+    }
+    .date-display {
+        font-size: 11px;
     }
 
     /* [추가] 일반 모드 컬럼 너비 */
