@@ -252,9 +252,9 @@
         "timestamp": "2026-03-12T07:06:51.545Z"
     },
     {
-        "timestamp": "2026-03-12T07:13:51.314Z",
         "action": "LOGIN",
+        "details": "로그인 성공 (HOME)",
         "target": "admin",
-        "details": "로그인 성공 (HOME)"
+        "timestamp": "2026-03-12T07:13:51.314Z"
     }
 ]

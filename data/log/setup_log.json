@@ -1144,5 +1144,11 @@
         "details": "셋업 상세 내역 수정",
         "target": "SOMA-2000::SOMA-H19-0402",
         "timestamp": "2026-03-12T07:07:32.243Z"
+    },
+    {
+        "timestamp": "2026-03-12T07:14:00.024Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "IWM-1000::W001-OK25-0801",
+        "details": "셋업 상세 내역 수정"
     }
 ]
