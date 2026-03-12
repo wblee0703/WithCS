@@ -1174,5 +1174,11 @@
         "action": "UPDATE_SETUP_COMPLETION",
         "target": "WIM-100::WIM1-HK24-0401",
         "details": "작업 완료 등록 (ID: 1772159006702)"
+    },
+    {
+        "timestamp": "2026-03-12T12:20:05.901Z",
+        "action": "UPDATE_SETUP_STATUS",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "완료 상태 해제 및 이후 단계 초기화"
     }
 ]
