@@ -1270,5 +1270,11 @@
         "action": "UPDATE_SETUP_STATUS",
         "target": "WIM-100::WIM1-HK24-0401",
         "details": "완료 상태 해제 및 이후 단계 초기화"
+    },
+    {
+        "timestamp": "2026-03-12T12:21:39.830Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "셋업 상세 내역 수정"
     }
 ]
