@@ -2272,7 +2272,7 @@
             },
             {
                 "category": "셋업 평가",
-                "completed": false,
+                "completed": true,
                 "content": "Calibration 평가",
                 "date": "2026-03-30",
                 "delayReason": "",
@@ -2419,6 +2419,14 @@
                 "id": 1772509850715,
                 "memo": "",
                 "worker": "admin"
+            },
+            {
+                "id": 1773278603085,
+                "date": "2026-03-30",
+                "worker": "admin",
+                "content": "Calibration 평가",
+                "company": "위드텍",
+                "memo": ""
             }
         ]
     },
