@@ -563,8 +563,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         display: block !important;
     }
 
-    /* [요청] 모바일에서 장비 점검 이력(bottom-grid)을 최상단으로 배치 */
-    .bottom-grid {
+    /* [요청] 모바일에서 장비 점검 이력(#log-window)을 최상단으로 배치 */
+    #log-window {
         order: -1 !important;
     }
 }
