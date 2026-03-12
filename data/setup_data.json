@@ -293,7 +293,7 @@
                 "estDays": "1",
                 "category": "장비 반입 및 정위치",
                 "delayReason": "",
-                "execStartDate": ""
+                "execStartDate": "2026-03-12"
             },
             {
                 "id": 1772517271630,
@@ -408,12 +408,12 @@
         ],
         "setupLogs": [
             {
-                "id": 1773293418588,
-                "date": "2026-03-11",
-                "worker": "admin",
-                "content": "장비 도면 부착",
                 "company": "위드텍",
-                "memo": ""
+                "content": "장비 도면 부착",
+                "date": "2026-03-11",
+                "id": 1773293418588,
+                "memo": "",
+                "worker": "admin"
             }
         ]
     },

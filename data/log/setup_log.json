@@ -852,43 +852,91 @@
         "timestamp": "2026-03-12T04:47:42.699Z"
     },
     {
-        "timestamp": "2026-03-12T05:30:18.600Z",
         "action": "UPDATE_SETUP_COMPLETION",
+        "details": "작업 완료 등록 (ID: 1772517271628)",
         "target": "OMS-100L::OMS1-LK22-0104",
-        "details": "작업 완료 등록 (ID: 1772517271628)"
+        "timestamp": "2026-03-12T05:30:18.600Z"
     },
     {
-        "timestamp": "2026-03-12T05:30:23.963Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "timestamp": "2026-03-12T05:30:23.963Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "timestamp": "2026-03-12T05:30:25.628Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "timestamp": "2026-03-12T05:30:27.156Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "timestamp": "2026-03-12T05:30:28.658Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "timestamp": "2026-03-12T05:33:48.850Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "timestamp": "2026-03-12T05:35:37.466Z"
+    },
+    {
+        "timestamp": "2026-03-12T05:56:37.668Z",
         "action": "UPDATE_SETUP_DETAILS",
         "target": "OMS-100L::OMS1-LK22-0104",
         "details": "셋업 상세 내역 수정"
     },
     {
-        "timestamp": "2026-03-12T05:30:25.628Z",
+        "timestamp": "2026-03-12T05:56:38.729Z",
         "action": "UPDATE_SETUP_DETAILS",
         "target": "OMS-100L::OMS1-LK22-0104",
         "details": "셋업 상세 내역 수정"
     },
     {
-        "timestamp": "2026-03-12T05:30:27.156Z",
+        "timestamp": "2026-03-12T05:58:23.752Z",
         "action": "UPDATE_SETUP_DETAILS",
         "target": "OMS-100L::OMS1-LK22-0104",
         "details": "셋업 상세 내역 수정"
     },
     {
-        "timestamp": "2026-03-12T05:30:28.658Z",
+        "timestamp": "2026-03-12T05:58:24.997Z",
         "action": "UPDATE_SETUP_DETAILS",
         "target": "OMS-100L::OMS1-LK22-0104",
         "details": "셋업 상세 내역 수정"
     },
     {
-        "timestamp": "2026-03-12T05:33:48.850Z",
+        "timestamp": "2026-03-12T05:58:29.633Z",
         "action": "UPDATE_SETUP_DETAILS",
         "target": "OMS-100L::OMS1-LK22-0104",
         "details": "셋업 상세 내역 수정"
     },
     {
-        "timestamp": "2026-03-12T05:35:37.466Z",
+        "timestamp": "2026-03-12T05:58:33.452Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T06:00:38.199Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T06:02:33.572Z",
         "action": "UPDATE_SETUP_DETAILS",
         "target": "OMS-100L::OMS1-LK22-0104",
         "details": "셋업 상세 내역 수정"
