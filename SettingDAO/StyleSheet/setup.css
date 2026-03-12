@@ -560,67 +560,6 @@
         font-size: 11px;
     }
 
-    /* [요청] 모바일 헤더 레이아웃 재구성 (Flex Wrap) */
-    .setup-card-header {
-        flex-wrap: wrap;
-        justify-content: space-between;
-        gap: 5px;
-    }
-
-    .setup-card-header h3 {
-        flex: 0 0 100%; /* [수정] 전체 너비 차지 (상단 배치) */
-        width: 100%;
-        order: 1;
-        min-width: 0;
-        margin-right: 0;
-        margin-bottom: 5px;
-    }
-
-    /* 설정(톱니바퀴) 버튼 (Row 2 좌측) - 접기 버튼 제외 */
-    .setup-card-header > button:not(.btn-collapse):not(#btn-load-setup-list):not(#btn-reset-setup-date) {
-        order: 2;
-        margin-right: 0; /* [수정] 자동 마진 제거 (간격 자동 분배) */
-    }
-
-    /* 진행률 (Row 1 우측 정렬 - 남은 공간 차지하여 밀어냄) */
-    #setup-progress-rate {
-        /* flex: 1 0 auto; */ /* [수정] flex-grow 속성 제거 */
-        order: 3;
-        width: auto;
-        text-align: right;
-        margin-top: 0;
-        padding-right: 2px;
-    }
-    /* [요청] 진행률 라벨 삭제 */
-    #setup-progress-rate::before {
-        content: none;
-    }
-
-    /* [요청] 접기 버튼 (Row 1 맨 우측) */
-    .btn-collapse {
-        order: 4 !important;
-        display: block !important;
-        margin-left: 0;
-    }
-
-    /* [요청] 초기화 버튼 (Row 2 좌측 정렬) */
-    #btn-reset-setup-date {
-        order: 5;
-        flex: 1 1 40%;
-        text-align: left;
-        margin-top: 5px;
-        margin-right: auto;
-    }
-
-    /* [요청] 리스트 불러오기 버튼 (Row 2 우측 정렬) */
-    #btn-load-setup-list {
-        order: 6;
-        flex: 1 1 40%;
-        text-align: right;
-        margin-top: 5px;
-        margin-left: auto;
-    }
-
     /* [요청] 작업 완료 등록 팝업 모바일 최적화 */
     #setup-completion-modal .modal-window {
         width: 90% !important;
