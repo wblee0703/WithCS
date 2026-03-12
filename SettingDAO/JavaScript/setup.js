@@ -630,8 +630,10 @@ function saveSetupDetails(logAction = 'UPDATE_SETUP_DETAILS', logDetails = '셋�
             estDays = originalItem.estDays || "1";
         }
         
-        const delayReason = row.dataset.delayReason !== undefined ? row.dataset.delayReason : (originalItem.delayReason || "");
-        const execStartDate = row.dataset.execStartDate !== undefined ? row.dataset.execStartDate : (originalItem.execStartDate || "");
+        // [FIX] DOM 상태를 우선 저장 (완료 해제 시 빈 문자열로 설정된 값을 저장하기 위함)
+        // originalItem fallback을 제거하여, DOM에서 초기화된 값이 무시되지 않도록 수정
+        const delayReason = row.dataset.delayReason !== undefined ? row.dataset.delayReason : "";
+        const execStartDate = row.dataset.execStartDate !== undefined ? row.dataset.execStartDate : "";
 
         newDetails.push({ id, completed, content, date, startDate, estDays, category: currentCategory, delayReason, execStartDate });
         
