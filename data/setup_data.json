@@ -815,7 +815,7 @@
                 "content": "장비 반입",
                 "date": "",
                 "startDate": "2026-03-12",
-                "estDays": "1",
+                "estDays": "2",
                 "category": "장비 반입 및 정위치",
                 "delayReason": "",
                 "execStartDate": ""
@@ -907,14 +907,6 @@
                 "category": "셋업 평가",
                 "delayReason": "",
                 "execStartDate": ""
-            },
-            {
-                "id": 1773288075746,
-                "category": "셋업 완료",
-                "content": "셋업 완료",
-                "startDate": "",
-                "estDays": "0",
-                "date": ""
             }
         ],
         "setupLogs": [
