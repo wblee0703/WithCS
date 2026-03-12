@@ -2034,9 +2034,9 @@
             },
             {
                 "id": 1771813080911,
-                "completed": false,
+                "completed": true,
                 "content": "인터락 Test 및 통신상태 확인 ",
-                "date": "",
+                "date": "2026-03-02",
                 "startDate": "2026-02-27",
                 "estDays": "2",
                 "category": "통신 상태 및 유틸리티",
@@ -2201,6 +2201,14 @@
                 "date": "2026-02-26",
                 "worker": "admin",
                 "content": "Utility 턴온",
+                "company": "위드텍",
+                "memo": ""
+            },
+            {
+                "id": 1773297237794,
+                "date": "2026-03-02",
+                "worker": "admin",
+                "content": "인터락 Test 및 통신상태 확인 ",
                 "company": "위드텍",
                 "memo": ""
             }
