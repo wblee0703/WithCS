@@ -30,15 +30,15 @@
         "timestamp": "2026-03-12T01:10:40.300Z"
     },
     {
-        "timestamp": "2026-03-12T03:11:32.834Z",
         "action": "DELETE_SCHEDULE",
+        "details": "Date: , Content: ff",
         "target": "SOMA-3000E::SOMA-EK24-0402",
-        "details": "Date: , Content: ff"
+        "timestamp": "2026-03-12T03:11:32.834Z"
     },
     {
-        "timestamp": "2026-03-12T03:11:45.316Z",
         "action": "DELETE_SCHEDULE",
+        "details": "Date: , Content: 점검",
         "target": "SOMA-2000::SOMA-HC19-1204",
-        "details": "Date: , Content: 점검"
+        "timestamp": "2026-03-12T03:11:45.316Z"
     }
 ]

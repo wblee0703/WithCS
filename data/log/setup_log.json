@@ -424,5 +424,59 @@
         "details": "실행 시작일 설정: 2026-03-13",
         "target": "SOMA-2000::SOMA-HK21-0202",
         "timestamp": "2026-03-12T02:37:10.556Z"
+    },
+    {
+        "timestamp": "2026-03-12T04:01:12.064Z",
+        "action": "START_SETUP_EXEC",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "실행 시작일 설정: 2026-03-11"
+    },
+    {
+        "timestamp": "2026-03-12T04:01:14.747Z",
+        "action": "UPDATE_SETUP_COMPLETION",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "작업 완료 등록 (ID: 1771893000088)"
+    },
+    {
+        "timestamp": "2026-03-12T04:01:46.630Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T04:04:52.384Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T04:05:02.913Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T04:05:11.014Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T04:05:19.090Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T04:05:25.830Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T04:06:07.029Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "셋업 상세 내역 수정"
     }
 ]
