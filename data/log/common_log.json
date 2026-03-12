@@ -138,9 +138,9 @@
         "timestamp": "2026-03-12T02:12:30.282Z"
     },
     {
-        "timestamp": "2026-03-12T05:30:44.380Z",
         "action": "LOGIN",
+        "details": "로그인 성공 (HOME)",
         "target": "admin",
-        "details": "로그인 성공 (HOME)"
+        "timestamp": "2026-03-12T05:30:44.380Z"
     }
 ]
