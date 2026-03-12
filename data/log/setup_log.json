@@ -306,579 +306,141 @@
         "timestamp": "2026-03-12T02:14:15.150Z"
     },
     {
+        "timestamp": "2026-03-12T02:15:01.035Z",
         "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-12",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:16:31.515Z"
+        "details": "실행 시작일 설정: 2026-03-12"
     },
     {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-12",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-12T02:18:46.798Z"
-    },
-    {
+        "timestamp": "2026-03-12T02:15:02.562Z",
         "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1772159008382)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:18:58.050Z"
+        "details": "작업 완료 등록 (ID: 1772159008382)"
     },
     {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-13",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:19:01.409Z"
-    },
-    {
-        "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1772159008383)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:19:03.493Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-16",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:19:05.004Z"
-    },
-    {
-        "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1772159008384)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:19:07.248Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-17",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:19:08.645Z"
-    },
-    {
-        "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1772159008385)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:19:11.810Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-19",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:19:13.380Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-19",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:19:14.413Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-19",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:19:15.483Z"
-    },
-    {
-        "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1772159008386)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:19:18.124Z"
-    },
-    {
+        "timestamp": "2026-03-12T02:15:06.940Z",
         "action": "UPDATE_SETUP_STATUS",
-        "details": "완료 상태 해제 및 이후 단계 초기화",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:19:21.905Z"
+        "details": "완료 상태 해제 및 이후 단계 초기화"
     },
     {
+        "timestamp": "2026-03-12T02:15:46.419Z",
         "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-17",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:19:27.340Z"
+        "details": "실행 시작일 설정: 2026-03-12"
     },
     {
+        "timestamp": "2026-03-12T02:15:48.838Z",
         "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1772159006702)",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-12T02:35:38.761Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-13",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-12T02:35:40.220Z"
-    },
-    {
-        "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1772159006703)",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "timestamp": "2026-03-12T02:35:41.712Z"
-    },
-    {
-        "action": "UPDATE_SETUP_STATUS",
-        "details": "완료 상태 해제 및 이후 단계 초기화",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:37:07.457Z"
+        "details": "작업 완료 등록 (ID: 1772159008382)"
     },
     {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-13",
+        "timestamp": "2026-03-12T04:01:59.538Z",
+        "action": "CALC_SETUP_SCHEDULE",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T02:37:10.556Z"
+        "details": "일정 자동 계산 (순방향)"
     },
     {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-11",
-        "target": "SOLA-1000::SOLA-1000",
-        "timestamp": "2026-03-12T04:01:12.064Z"
+        "timestamp": "2026-03-12T04:02:01.026Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (순방향)"
     },
     {
-        "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1771893000088)",
-        "target": "SOLA-1000::SOLA-1000",
-        "timestamp": "2026-03-12T04:01:14.747Z"
-    },
-    {
+        "timestamp": "2026-03-12T04:02:02.078Z",
         "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOLA-1000::SOLA-1000",
-        "timestamp": "2026-03-12T04:01:46.630Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOLA-1000::SOLA-1000",
-        "timestamp": "2026-03-12T04:04:52.384Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOLA-1000::SOLA-1000",
-        "timestamp": "2026-03-12T04:05:02.913Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOLA-1000::SOLA-1000",
-        "timestamp": "2026-03-12T04:05:11.014Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOLA-1000::SOLA-1000",
-        "timestamp": "2026-03-12T04:05:19.090Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOLA-1000::SOLA-1000",
-        "timestamp": "2026-03-12T04:05:25.830Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOLA-1000::SOLA-1000",
-        "timestamp": "2026-03-12T04:06:07.029Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (역방향)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:23:14.400Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (역방향)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:23:17.945Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:23:23.440Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:23:23.827Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:23:24.247Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:23:29.863Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:23:30.197Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:23:30.560Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (역방향)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:23:36.414Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (역방향)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:23:39.733Z"
-    },
-    {
-        "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1772159006260)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:23:46.686Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-13",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:23:52.983Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (역방향)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:24:11.914Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (완료일 기준)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:24:15.963Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (완료일 기준)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:24:26.314Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (완료일 기준)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:24:30.202Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (완료일 기준)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:24:31.179Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-13",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:24:34.300Z"
-    },
-    {
-        "action": "UPDATE_SETUP_STATUS",
-        "details": "완료 상태 해제 및 이후 단계 초기화",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:24:50.091Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (역방향)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:29:39.142Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-09",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:29:41.464Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (역방향)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:29:48.120Z"
-    },
-    {
-        "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1772159006261)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:30:04.873Z"
-    },
-    {
-        "action": "UPDATE_SETUP_STATUS",
-        "details": "완료 상태 해제 및 이후 단계 초기화",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:30:07.165Z"
-    },
-    {
-        "action": "UPDATE_SETUP_STATUS",
-        "details": "완료 상태 해제 및 이후 단계 초기화",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:30:11.820Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-13",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:30:16.428Z"
-    },
-    {
-        "action": "UPDATE_SETUP_STATUS",
-        "details": "완료 상태 해제 및 이후 단계 초기화",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:30:27.584Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (역방향)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:30:37.343Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-05",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:30:50.154Z"
-    },
-    {
-        "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1772159006259)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:30:56.304Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-09",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:31:07.426Z"
-    },
-    {
-        "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1772159006260)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:31:09.841Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-10",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:31:12.917Z"
-    },
-    {
-        "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1772159006261)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:31:14.466Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-12",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:31:18.938Z"
-    },
-    {
-        "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1772159006262)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:31:20.212Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:31:51.766Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:31:52.903Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:31:53.743Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (역방향)",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:36:42.722Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (역방향)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:36:51.614Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:36:57.673Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:36:58.222Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:36:58.617Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:01.219Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:01.921Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:02.255Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:06.361Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:06.641Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:07.848Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:09.214Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:11.655Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:13.879Z"
-    },
-    {
-        "action": "CALC_SETUP_SCHEDULE",
-        "details": "일정 자동 계산 (순방향)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:15.275Z"
-    },
-    {
-        "action": "UPDATE_SETUP_STATUS",
-        "details": "완료 상태 해제 및 이후 단계 초기화",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:28.973Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-16",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:35.709Z"
-    },
-    {
-        "action": "UPDATE_SETUP_COMPLETION",
-        "details": "작업 완료 등록 (ID: 1772159008383)",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:39.497Z"
-    },
-    {
-        "action": "START_SETUP_EXEC",
-        "details": "실행 시작일 설정: 2026-03-17",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:44.813Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:47:18.794Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:47:24.845Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:47:31.389Z"
-    },
-    {
-        "action": "UPDATE_SETUP_DETAILS",
-        "details": "셋업 상세 내역 수정",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:47:42.699Z"
-    },
-    {
-        "timestamp": "2026-03-12T05:30:18.600Z",
-        "action": "UPDATE_SETUP_COMPLETION",
-        "target": "OMS-100L::OMS1-LK22-0104",
-        "details": "작업 완료 등록 (ID: 1772517271628)"
-    },
-    {
-        "timestamp": "2026-03-12T05:30:23.963Z",
-        "action": "UPDATE_SETUP_DETAILS",
-        "target": "OMS-100L::OMS1-LK22-0104",
         "details": "셋업 상세 내역 수정"
     },
     {
-        "timestamp": "2026-03-12T05:30:25.628Z",
+        "timestamp": "2026-03-12T04:02:09.051Z",
         "action": "UPDATE_SETUP_DETAILS",
-        "target": "OMS-100L::OMS1-LK22-0104",
+        "target": "SOMA-2000::SOMA-HK21-0202",
         "details": "셋업 상세 내역 수정"
     },
     {
-        "timestamp": "2026-03-12T05:30:27.156Z",
+        "timestamp": "2026-03-12T04:02:09.053Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (순방향)"
+    },
+    {
+        "timestamp": "2026-03-12T04:02:09.055Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (역방향)"
+    },
+    {
+        "timestamp": "2026-03-12T04:02:10.672Z",
         "action": "UPDATE_SETUP_DETAILS",
-        "target": "OMS-100L::OMS1-LK22-0104",
+        "target": "SOMA-2000::SOMA-HK21-0202",
         "details": "셋업 상세 내역 수정"
     },
     {
-        "timestamp": "2026-03-12T05:30:28.658Z",
+        "timestamp": "2026-03-12T04:02:10.676Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (순방향)"
+    },
+    {
+        "timestamp": "2026-03-12T04:02:10.678Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (역방향)"
+    },
+    {
+        "timestamp": "2026-03-12T04:02:15.226Z",
         "action": "UPDATE_SETUP_DETAILS",
-        "target": "OMS-100L::OMS1-LK22-0104",
+        "target": "SOMA-2000::SOMA-HK21-0202",
         "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T04:02:16.607Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (순방향)"
+    },
+    {
+        "timestamp": "2026-03-12T04:02:16.609Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (역방향)"
+    },
+    {
+        "timestamp": "2026-03-12T04:02:18.141Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T04:02:18.143Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (순방향)"
+    },
+    {
+        "timestamp": "2026-03-12T04:02:18.145Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (역방향)"
+    },
+    {
+        "timestamp": "2026-03-12T04:02:23.533Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T04:02:23.535Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (순방향)"
+    },
+    {
+        "timestamp": "2026-03-12T04:02:23.536Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "일정 자동 계산 (역방향)"
     }
 ]

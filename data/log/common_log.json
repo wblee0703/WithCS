@@ -138,63 +138,9 @@
         "timestamp": "2026-03-12T02:12:30.282Z"
     },
     {
+        "timestamp": "2026-03-12T05:30:44.380Z",
         "action": "LOGIN",
-        "details": "로그인 성공 (HOME)",
         "target": "admin",
-        "timestamp": "2026-03-12T02:18:33.514Z"
-    },
-    {
-        "action": "LOGIN",
-        "details": "로그인 성공 (HOME)",
-        "target": "admin",
-        "timestamp": "2026-03-12T02:30:06.915Z"
-    },
-    {
-        "action": "LOGIN",
-        "details": "로그인 성공 (HOME)",
-        "target": "admin",
-        "timestamp": "2026-03-12T02:36:44.598Z"
-    },
-    {
-        "action": "LOGIN",
-        "details": "로그인 성공 (HOME)",
-        "target": "admin",
-        "timestamp": "2026-03-12T03:10:20.172Z"
-    },
-    {
-        "action": "LOGIN",
-        "details": "로그인 성공 (HOME)",
-        "target": "admin",
-        "timestamp": "2026-03-12T04:00:55.187Z"
-    },
-    {
-        "action": "LOGIN",
-        "details": "로그인 성공 (HOME)",
-        "target": "admin",
-        "timestamp": "2026-03-12T04:22:52.603Z"
-    },
-    {
-        "action": "LOGIN",
-        "details": "로그인 성공 (HOME)",
-        "target": "admin",
-        "timestamp": "2026-03-12T04:29:28.344Z"
-    },
-    {
-        "action": "LOGIN",
-        "details": "로그인 성공 (HOME)",
-        "target": "admin",
-        "timestamp": "2026-03-12T04:36:31.006Z"
-    },
-    {
-        "action": "LOGIN",
-        "details": "로그인 성공 (HOME)",
-        "target": "admin",
-        "timestamp": "2026-03-12T04:53:18.045Z"
-    },
-    {
-        "action": "LOGIN",
-        "details": "로그인 성공 (HOME)",
-        "target": "admin",
-        "timestamp": "2026-03-12T05:26:11.440Z"
+        "details": "로그인 성공 (HOME)"
     }
 ]
