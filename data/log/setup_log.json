@@ -1198,5 +1198,11 @@
         "action": "UPDATE_SETUP_DETAILS",
         "target": "SOMA-2000::SOMA-HK21-0202",
         "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-12T12:20:36.574Z",
+        "action": "UPDATE_SETUP_COMPLETION",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "작업 완료 등록 (ID: 1772159008384)"
     }
 ]
