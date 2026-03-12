@@ -745,58 +745,12 @@
             const btnMobileRegister = document.getElementById('btn-mobile-register-task');
             if (btnMobileRegister) {
                 btnMobileRegister.addEventListener('click', () => {
-                    const modal = document.getElementById('register-schedule-modal');
-                    if (modal) {
-                        // 오늘 날짜로 초기화
-                        const today = new Date().toISOString().split('T')[0];
-                        document.getElementById('register-date-display').value = today;
-                        
-                        // 사이트/장비 선택 초기화 (기본 함수 활용 시도 또는 직접 초기화)
-                        const siteSelect = document.getElementById('register-site-select');
-                        if (siteSelect) {
-                            // 로컬스토리지 데이터 기반으로 옵션 채우기 (이미 calendar.js 등에서 로드되었을 수 있음)
-                            // 여기서는 UI 표시만 처리
-                            modal.style.display = 'flex';
-                        }
+                    const today = new Date().toISOString().split('T')[0];
+                    // [수정] calendar.js의 함수 호출 (데이터 연동 및 초기화)
+                    if (typeof window.openRegisterScheduleModal === 'function') {
+                        window.isMobileRegisterFlow = true; // 모바일 플로우 플래그 설정
+                        window.openRegisterScheduleModal(today);
                     }
-                });
-            }
-
-            // [추가] 등록 후 바로 상세 팝업 연결
-            const btnConfirmRegister = document.getElementById('btn-confirm-register-schedule');
-            if (btnConfirmRegister) {
-                btnConfirmRegister.addEventListener('click', () => {
-                    // 등록 팝업의 입력값 가져오기
-                    const siteSelect = document.getElementById('register-site-select');
-                    const equipSelect = document.getElementById('register-equip-select');
-                    const dateInput = document.getElementById('register-date-display');
-                    const typeSelect = document.getElementById('register-type-select');
-
-                    if (!siteSelect || !equipSelect || !dateInput) return;
-                    
-                    const site = siteSelect.value;
-                    const equip = equipSelect.value;
-                    const date = dateInput.value;
-                    const type = typeSelect ? typeSelect.value : '';
-
-                    if (!site || !equip || !date) return; // 유효성 검사는 기존 로직에 맡김
-
-                    // 기존 calendar.js의 등록 로직이 비동기(AJAX)일 가능성이 높으므로
-                    // 약간의 지연 후 상세 팝업을 엽니다. (ID를 받아올 수 없으므로 정보만 전달)
-                    setTimeout(() => {
-                        const detailModal = document.getElementById('event-detail-modal');
-                        if (detailModal) {
-                            // 상세 팝업에 정보 채우기
-                            const infoDiv = document.getElementById('detail-equip-info');
-                            if (infoDiv) infoDiv.textContent = `${site} > ${equip}`;
-                            
-                            const dateDiv = document.getElementById('detail-scheduled-date');
-                            if (dateDiv) dateDiv.value = date;
-
-                            // 상세 팝업 표시
-                            detailModal.style.display = 'flex';
-                        }
-                    }, 500); // 0.5초 대기
                 });
             }
         });

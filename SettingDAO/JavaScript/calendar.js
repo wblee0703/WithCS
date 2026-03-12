@@ -1285,6 +1285,8 @@ function confirmRegisterSchedule() {
     const itemList = document.getElementById('register-item-list');
     const typeSelect = document.getElementById('register-type-select');
     const selectedType = typeSelect ? typeSelect.value : 'PM';
+
+    let lastProcessedId = null; // [추가] 등록된 작업 ID 추적
     
     if (!dateStr || !site || !equip) return alert('사업장과 장비를 선택해주세요.');
 
@@ -1308,6 +1310,8 @@ function confirmRegisterSchedule() {
             period: null,
             scheduledDate: dateStr
         };
+
+        lastProcessedId = newItem.id;
 
         data.maint.push(newItem);
         localStorage.setItem(key, JSON.stringify(data));
@@ -1334,6 +1338,7 @@ function confirmRegisterSchedule() {
                 period: null,
                 scheduledDate: dateStr
             };
+            if (index === 0) lastProcessedId = newItem.id;
             data.maint.push(newItem);
         });
         localStorage.setItem(key, JSON.stringify(data));
@@ -1350,6 +1355,7 @@ function confirmRegisterSchedule() {
         
         ids.forEach(id => {
             setScheduleDate(site, equip, id, dateStr);
+            if (!lastProcessedId) lastProcessedId = id;
         });
     }
 
@@ -1359,6 +1365,14 @@ function confirmRegisterSchedule() {
     renderCalendar();
     const popup = document.getElementById('calendar-popup');
     if (popup) popup.style.display = 'none';
+
+    // [추가] 모바일 작업 등록 플로우: 등록 후 바로 상세 팝업 오픈
+    if (window.isMobileRegisterFlow && lastProcessedId) {
+        window.isMobileRegisterFlow = false;
+        setTimeout(() => {
+            openEventDetailModal(site, equip, lastProcessedId, false);
+        }, 100);
+    }
 }
 
 /* ==========================================================================
