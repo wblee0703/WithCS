@@ -586,15 +586,14 @@
 
     /* [요청] 모바일 소분류 제목 글자 크기 축소 */
     .setup-card-header h3 {
-        font-size: 10px;
+        font-size: 12px;
         margin-right: 10px; /* 제목과 설정 버튼 사이 간격 */
     }
 
-    /* [요청] 진행률과 접기 버튼을 오른쪽으로 보내기 위해, 설정 버튼에 자동 마진 추가 */
-    .setup-card-header > button:not(.btn-collapse):not(#btn-load-setup-list):not(#btn-reset-setup-date) {
-        /* margin-right: auto; 제거 */
+    .breadcrumb.breadcrumb-no-margin {
+        font-size: 12px;
     }
-
+    
     /* [요청] 진행률을 오른쪽으로 밀고, 접기 버튼과 간격 조정 */
     #setup-progress-rate {
         margin-left: auto; /* 진행률과 그 뒤 요소를 오른쪽으로 밀어냄 */
