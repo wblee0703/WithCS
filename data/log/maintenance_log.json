@@ -18,15 +18,15 @@
         "timestamp": "2026-03-12T01:05:54.009Z"
     },
     {
-        "timestamp": "2026-03-12T01:10:12.130Z",
         "action": "ADD_SCHEDULE_MANUAL",
+        "details": "Type: 장비점검, Date: 2026-03-19, Content: 점검",
         "target": "SOMA-2000::SOMA-HC19-1204",
-        "details": "Type: 장비점검, Date: 2026-03-19, Content: 점검"
+        "timestamp": "2026-03-12T01:10:12.130Z"
     },
     {
-        "timestamp": "2026-03-12T01:10:40.300Z",
         "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-19, Content: 점검",
         "target": "SOMA-2000::SOMA-HC19-1204",
-        "details": "Date: 2026-03-19, Content: 점검"
+        "timestamp": "2026-03-12T01:10:40.300Z"
     }
 ]

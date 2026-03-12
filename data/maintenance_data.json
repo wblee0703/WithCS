@@ -562,16 +562,16 @@
         }
     },
     "details_SKH 우시_SOMA-2000::SOMA-HC19-1204": {
+        "logs": [],
         "maint": [
             {
-                "id": 1773277812129,
-                "type": "장비점검",
                 "content": "점검",
                 "date": "",
+                "id": 1773277812129,
                 "period": null,
-                "scheduledDate": "2026-03-19"
+                "scheduledDate": "2026-03-19",
+                "type": "장비점검"
             }
-        ],
-        "logs": []
+        ]
     }
 }
