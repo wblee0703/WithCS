@@ -220,5 +220,11 @@
         "action": "CALC_SETUP_SCHEDULE",
         "target": "SOMA-2000::SOMA-HK21-0202",
         "details": "일정 자동 계산 (순방향)"
+    },
+    {
+        "timestamp": "2026-03-12T01:51:58.142Z",
+        "action": "START_SETUP_EXEC",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "details": "실행 시작일 설정: 2026-03-11"
     }
 ]
