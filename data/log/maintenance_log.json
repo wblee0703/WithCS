@@ -28,5 +28,11 @@
         "details": "Date: 2026-03-10, Content: Standard Solution",
         "target": "SOMA-2000::SOMA-H19-0402",
         "timestamp": "2026-03-12T00:13:46.767Z"
+    },
+    {
+        "timestamp": "2026-03-12T00:57:22.538Z",
+        "action": "ADD_SCHEDULE",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "Date: 2026-03-12, Content: Standard Solution"
     }
 ]
