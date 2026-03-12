@@ -2452,7 +2452,7 @@
                 "estDays": "1",
                 "category": "장비 반입 및 정위치",
                 "delayReason": "",
-                "execStartDate": ""
+                "execStartDate": "2026-03-12"
             },
             {
                 "id": 1772159008384,
@@ -2552,6 +2552,14 @@
                 "category": "셋업 평가",
                 "delayReason": "",
                 "execStartDate": ""
+            },
+            {
+                "id": 1773281625653,
+                "category": "셋업 완료",
+                "content": "셋업 완료",
+                "startDate": "",
+                "estDays": "0",
+                "date": ""
             }
         ],
         "setupLogs": [
