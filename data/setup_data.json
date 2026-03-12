@@ -2225,9 +2225,9 @@
             },
             {
                 "id": 1772159006261,
-                "completed": false,
+                "completed": true,
                 "content": "다이크 공사 및 리크센서 설치",
-                "date": "",
+                "date": "2026-03-11",
                 "startDate": "2026-03-10",
                 "estDays": "2",
                 "category": "장비 반입 및 정위치",
@@ -2465,6 +2465,14 @@
                 "date": "2026-03-09",
                 "worker": "admin",
                 "content": "장비 반입",
+                "company": "위드텍",
+                "memo": ""
+            },
+            {
+                "id": 1773289874462,
+                "date": "2026-03-11",
+                "worker": "admin",
+                "content": "다이크 공사 및 리크센서 설치",
                 "company": "위드텍",
                 "memo": ""
             }
