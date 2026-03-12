@@ -1,8 +1,86 @@
 [
     {
-        "timestamp": "2026-03-12T14:02:57.440Z",
+        "action": "LOAD_MAINT_LIST",
+        "details": "From: SKH 이천 > SOMA-2000::SOMA-H19-0402",
+        "target": "OMS-100L::OMS1-LK22-0104",
+        "timestamp": "2026-03-10T02:47:59.781Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-12, Content: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-12T01:05:52.061Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-12, Content: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-12T01:05:54.009Z"
+    },
+    {
         "action": "ADD_SCHEDULE_MANUAL",
-        "target": "WIM-100::WIM1-HK24-0401",
-        "details": "Type: 장비점검, Date: 2026-03-11, Content: ㅁㅁ"
+        "details": "Type: 장비점검, Date: 2026-03-19, Content: 점검",
+        "target": "SOMA-2000::SOMA-HC19-1204",
+        "timestamp": "2026-03-12T01:10:12.130Z"
+    },
+    {
+        "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-03-19, Content: 점검",
+        "target": "SOMA-2000::SOMA-HC19-1204",
+        "timestamp": "2026-03-12T01:10:40.300Z"
+    },
+    {
+        "action": "DELETE_SCHEDULE",
+        "details": "Date: , Content: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-12T03:11:32.834Z"
+    },
+    {
+        "action": "DELETE_SCHEDULE",
+        "details": "Date: , Content: 점검",
+        "target": "SOMA-2000::SOMA-HC19-1204",
+        "timestamp": "2026-03-12T03:11:45.316Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DATE",
+        "details": "완료일 수정",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-03-12T04:23:44.131Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DATE",
+        "details": "완료일 수정",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-03-12T04:24:00.143Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DATE",
+        "details": "완료일 수정",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-03-12T04:24:02.876Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DATE",
+        "details": "완료일 수정",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-03-12T04:24:04.327Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DATE",
+        "details": "완료일 수정",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-03-12T04:24:39.298Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DATE",
+        "details": "완료일 수정",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "timestamp": "2026-03-12T04:37:19.596Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DATE",
+        "details": "완료일 수정",
+        "target": "SOMA-2000::SOMA-HK21-0202",
+        "timestamp": "2026-03-12T04:37:23.553Z"
     }
 ]

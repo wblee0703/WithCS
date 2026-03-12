@@ -79,14 +79,6 @@
                 "id": 1769494687832,
                 "period": "365",
                 "type": "PM"
-            },
-            {
-                "id": 1773324177439,
-                "type": "장비점검",
-                "content": "ㅁㅁ",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-03-11"
             }
         ],
         "memo": "",
