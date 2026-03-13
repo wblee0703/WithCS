@@ -492,6 +492,14 @@ def maintenance():
         return render_template('index.html')
     return render_template('maintenance.html')
 
+@app.route('/admin.html')
+def admin():
+    if 'user_id' not in session:
+        return render_template('index.html')
+    if session.get('role') != 'admin':
+        return render_template('index.html')
+    return render_template('admin.html')
+
 # [추가] SettingDAO 폴더 정적 파일 서빙
 @app.route('/SettingDAO/<path:filename>')
 @limiter.exempt

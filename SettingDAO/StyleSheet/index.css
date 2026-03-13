@@ -194,6 +194,14 @@ body {
     filter: drop-shadow(0 0 15px rgba(137, 87, 229, 0.4));
 }
 
+.btn-admin:hover h3 {
+    color: #f85149;
+}
+
+.btn-admin:hover .icon {
+    filter: drop-shadow(0 0 15px rgba(248, 81, 73, 0.4));
+}
+
 /* Active State (Selected) */
 .home-big-btn.active {
     background: #21262d;
@@ -226,6 +234,13 @@ body {
 }
 .btn-integrated.active h3 {
     color: #8957e5;
+}
+
+.btn-admin.active {
+    border: 1px solid #f85149;
+}
+.btn-admin.active h3 {
+    color: #f85149;
 }
 
 /* ==========================================================================
@@ -886,8 +901,8 @@ body {
     .home-menu-container.compact .home-big-btn {
         display: flex; /* [요청] 모든 버튼 표시 */
         flex-direction: row;
-        flex: none;
-        width: calc((100% - 20px) / 3); /* [수정] 3개 버튼 한 줄 배치 */
+        flex: 1; /* [수정] 버튼 갯수(3개/4개)에 따라 너비 자동 조절 */
+        min-width: 80px;
         height: 50px;
         padding: 0 5px;
         gap: 5px;
