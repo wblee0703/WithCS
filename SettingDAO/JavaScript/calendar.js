@@ -3,7 +3,8 @@
    ========================================================================== */
 
 // [1] 전역 변수 (Global Variables)
-let calendarDate = new Date();
+const nowInit = new Date();
+let calendarDate = new Date(nowInit.getFullYear(), nowInit.getMonth(), 1); // [수정] 1일로 초기화하여 월 계산 오류 방지
 var currentSearchFilters = { site: '', equip: '' };
 let currentScheduleTarget = null;
 let currentDetailTarget = null;
@@ -206,7 +207,15 @@ function toggleCalendarExpand(viewId) {
 }
 
 function goToTodayMonth() {
-    calendarDate = new Date(); // 오늘 날짜로 초기화
+    const now = new Date();
+    calendarDate = new Date(now.getFullYear(), now.getMonth(), 1); // [수정] 1일로 설정
+
+    // [수정] 1개월 보기 상태에서 2번째 달(Next Month)을 보고 있었다면,
+    // Today 클릭 시 현재 월이 보이는 1번 뷰로 전환하여 밀림 현상 방지
+    if (expandedViewId === 2) {
+        toggleCalendarExpand(1);
+    }
+
     renderCalendar(); // 렌더링 (오늘이 포함된 달이 왼쪽(Month 1)에 오게 됨)
 }
 
@@ -557,6 +566,7 @@ function setupEventDetailModal() {
     const closeBtn = document.getElementById('btn-close-detail-modal');
     const closeFooterBtn = document.getElementById('btn-close-detail-footer');
     const completeBtn = document.getElementById('btn-complete-work');
+    const cancelBtn = document.getElementById('btn-cancel-completion');
     const dateInput = document.getElementById('detail-scheduled-date');
     const moveToEquipBtn = document.getElementById('btn-move-to-equip');
     const editContentBtn = document.getElementById('btn-edit-detail-content');
@@ -577,6 +587,10 @@ function setupEventDetailModal() {
 
     if (completeBtn) {
         completeBtn.onclick = completeScheduleWork;
+    }
+
+    if (cancelBtn) {
+        cancelBtn.onclick = cancelScheduleCompletion;
     }
 
     if (dateInput) {
@@ -639,6 +653,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     const editContentBtn = document.getElementById('btn-edit-detail-content');
     const contentDiv = document.getElementById('detail-content');
     const contentInput = document.getElementById('detail-content-input');
+    const cancelBtn = document.getElementById('btn-cancel-completion');
 
     // UI 초기화 (수정 모드 해제)
     if (contentDiv) contentDiv.style.display = 'block';
@@ -658,10 +673,13 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         workerInput.disabled = true;
         memoInput.value = item.memo || '';
         memoInput.disabled = true;
-        dateRow.style.display = 'none';
+        dateRow.style.display = 'block';
+        document.getElementById('detail-scheduled-date').value = item.date || '';
+        document.getElementById('detail-scheduled-date').disabled = true;
         completeBtn.style.display = 'none';
         saveMemoBtn.style.display = 'none';
         if (editContentBtn) editContentBtn.style.display = 'none';
+        if (cancelBtn) cancelBtn.style.display = 'block'; // 완료된 상태면 취소 버튼 표시
     } else {
         workerInput.value = localStorage.getItem('lastWorkerName') || sessionStorage.getItem('userId') || '';
         workerInput.disabled = false;
@@ -680,11 +698,13 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         
         dateRow.style.display = 'block';
         document.getElementById('detail-scheduled-date').value = item.scheduledDate || '';
+        document.getElementById('detail-scheduled-date').disabled = false;
         
         completeBtn.style.display = 'block';
         completeBtn.textContent = '작업 완료';
         saveMemoBtn.style.display = 'none';
         if (editContentBtn) editContentBtn.style.display = 'block';
+        if (cancelBtn) cancelBtn.style.display = 'none'; // 미완료 상태면 취소 버튼 숨김
     }
 
     modal.style.display = 'flex';
@@ -997,6 +1017,67 @@ function completeScheduleWork() {
             openCalendarPopup(dateStr, dayEvents);
         }
     }
+}
+
+function cancelScheduleCompletion() {
+    if (!currentDetailTarget || !currentDetailTarget.isCompleted) return;
+    
+    if (!confirm('작업 완료를 취소하고 예정 상태로 되돌리시겠습니까?')) return;
+
+    const { site, equip, id } = currentDetailTarget;
+    const key = `details_${site}_${equip}`;
+    let data = JSON.parse(localStorage.getItem(key)) || {};
+    
+    if (!data.logs) return;
+    
+    // 로그에서 해당 항목 찾기
+    const logIndex = data.logs.findIndex(l => l.id == id);
+    if (logIndex === -1) return;
+    
+    const logItem = data.logs[logIndex];
+    const logContent = logItem.content;
+    const logType = logItem.type;
+    const logDate = logItem.date;
+    
+    // 1. 로그 삭제
+    data.logs.splice(logIndex, 1);
+    
+    // 2. 예정 일정(maint) 복구
+    // 로그 내용은 콤마로 구분되어 있을 수 있으므로 분리하여 처리
+    const contents = logContent.split(',').map(s => s.trim());
+    
+    if (!data.maint) data.maint = [];
+
+    contents.forEach((content, idx) => {
+        // 기존 maint 리스트에 같은 내용과 타입의 항목이 있는지 확인 (PM 등 유지되는 항목)
+        // 예정일(scheduledDate)만 다시 세팅하여 달력에 표시되게 함
+        let existingItem = data.maint.find(m => m.type === logType && m.content === content);
+        
+        if (existingItem) {
+            existingItem.scheduledDate = logDate;
+        } else {
+            // 일회성 항목 등으로 인해 maint에서 삭제된 경우 재생성
+            data.maint.push({
+                id: Date.now() + idx,
+                type: logType,
+                content: content,
+                date: "", // 수행되지 않은 상태로 초기화
+                period: null,
+                scheduledDate: logDate
+            });
+        }
+    });
+    
+    localStorage.setItem(key, JSON.stringify(data));
+    
+    if (typeof addSystemLog === 'function') {
+        addSystemLog('CANCEL_COMPLETION', equip, `Reverted: ${logContent}`);
+    }
+    
+    alert('작업 완료가 취소되었습니다.');
+    document.getElementById('event-detail-modal').style.display = 'none';
+    renderCalendar();
+    if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
 }
 
 /* ==========================================================================
