@@ -1332,15 +1332,15 @@
         "timestamp": "2026-03-13T00:00:16.554Z"
     },
     {
-        "timestamp": "2026-03-13T01:10:44.613Z",
         "action": "DELETE_SETUP_LOG",
+        "details": "ID: 1773288074737",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "ID: 1773288074737"
+        "timestamp": "2026-03-13T01:10:44.613Z"
     },
     {
-        "timestamp": "2026-03-13T01:10:46.633Z",
         "action": "DELETE_SETUP_LOG",
+        "details": "ID: 1773105173866",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "ID: 1773105173866"
+        "timestamp": "2026-03-13T01:10:46.633Z"
     }
 ]
