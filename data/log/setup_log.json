@@ -1330,5 +1330,11 @@
         "details": "일정 자동 계산 (완료일 기준)",
         "target": "SOLA-1000::SOLA-1000",
         "timestamp": "2026-03-13T00:00:16.554Z"
+    },
+    {
+        "timestamp": "2026-03-13T01:10:44.613Z",
+        "action": "DELETE_SETUP_LOG",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "ID: 1773288074737"
     }
 ]
