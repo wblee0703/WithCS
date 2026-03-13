@@ -57,20 +57,12 @@
                                 <input type="text" id="site-info-name" class="input-dark">
                             </div>
                             <div class="form-group">
-                                <label>담당자</label>
-                                <input type="text" id="site-info-manager" class="input-dark">
-                            </div>
-                            <div class="form-group">
-                                <label>연락처</label>
-                                <input type="text" id="site-info-contact" class="input-dark">
-                            </div>
-                            <div class="form-group">
-                                <label>주소</label>
-                                <input type="text" id="site-info-address" class="input-dark">
-                            </div>
-                            <div class="form-group">
-                                <label>비고</label>
-                                <textarea id="site-info-memo" class="textarea-dark" rows="3"></textarea>
+                                <label>건물 목록</label>
+                                <div style="display: flex; gap: 5px; margin-bottom: 10px;">
+                                    <input type="text" id="site-info-building-input" class="input-dark" style="flex: 1;" placeholder="건물명">
+                                    <button id="btn-add-building" class="btn-green-sm" style="white-space: nowrap;">추가</button>
+                                </div>
+                                <ul id="site-info-building-list" class="admin-list" style="height: 200px; overflow-y: auto;"></ul>
                             </div>
                             
                             <div class="form-actions">

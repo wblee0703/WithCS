@@ -1,4 +1,5 @@
 let currentAdminSite = null; // 현재 선택된 사업장
+let currentBuildingList = []; // 현재 편집 중인 건물 목록
 
 document.addEventListener('DOMContentLoaded', () => {
     setupAdminMenu();
@@ -72,6 +73,24 @@ function setupSiteMgmt() {
     if (btnDel) {
         btnDel.addEventListener('click', handleSiteDelete);
     }
+
+    // 건물 추가 버튼
+    const btnAddBuilding = document.getElementById('btn-add-building');
+    const inputBuilding = document.getElementById('site-info-building-input');
+    if (btnAddBuilding && inputBuilding) {
+        btnAddBuilding.addEventListener('click', () => {
+            const val = inputBuilding.value.trim();
+            if (!val) return;
+            if (currentBuildingList.includes(val)) return alert('이미 존재하는 건물입니다.');
+            currentBuildingList.push(val);
+            renderBuildingList();
+            inputBuilding.value = '';
+            inputBuilding.focus();
+        });
+        inputBuilding.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') btnAddBuilding.click();
+        });
+    }
 }
 
 function renderAdminSiteList() {
@@ -120,10 +139,25 @@ function loadSiteDetail(siteName) {
     const metaKey = `site_meta_${siteName}`;
     const metaData = JSON.parse(localStorage.getItem(metaKey)) || {};
 
-    document.getElementById('site-info-manager').value = metaData.manager || '';
-    document.getElementById('site-info-contact').value = metaData.contact || '';
-    document.getElementById('site-info-address').value = metaData.address || '';
-    document.getElementById('site-info-memo').value = metaData.memo || '';
+    currentBuildingList = metaData.buildings || [];
+    renderBuildingList();
+}
+
+function renderBuildingList() {
+    const list = document.getElementById('site-info-building-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    currentBuildingList.forEach((building, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="item-text">${building}</span><span class="del-btn" style="float: right;">✕</span>`;
+        li.querySelector('.del-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            currentBuildingList.splice(index, 1);
+            renderBuildingList();
+        });
+        list.appendChild(li);
+    });
 }
 
 function handleSiteSave() {
@@ -161,10 +195,7 @@ function handleSiteSave() {
 
     // 2. 메타데이터 저장 (localStorage에 별도 저장)
     const metaData = {
-        manager: document.getElementById('site-info-manager').value,
-        contact: document.getElementById('site-info-contact').value,
-        address: document.getElementById('site-info-address').value,
-        memo: document.getElementById('site-info-memo').value
+        buildings: currentBuildingList
     };
     localStorage.setItem(`site_meta_${currentAdminSite}`, JSON.stringify(metaData));
 
