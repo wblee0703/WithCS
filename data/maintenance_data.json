@@ -57,7 +57,8 @@
                 "date": "2026-03-05",
                 "id": 1769488811527,
                 "period": 30,
-                "type": "PM"
+                "type": "PM",
+                "scheduledDate": "2026-04-02"
             },
             {
                 "content": "9.5%HNO3",
@@ -139,7 +140,8 @@
                 "date": "2026-03-04",
                 "id": 1769490121876,
                 "period": 30,
-                "type": "PM"
+                "type": "PM",
+                "scheduledDate": "2026-04-01"
             },
             {
                 "content": "Sampling & Skimmer Cone",
@@ -214,7 +216,8 @@
                 "date": "2026-03-05",
                 "id": 1769490103387,
                 "period": 30,
-                "type": "PM"
+                "type": "PM",
+                "scheduledDate": "2026-04-02"
             },
             {
                 "content": "Sampling & Skimmer Cone",
@@ -305,7 +308,8 @@
                 "date": "2026-03-04",
                 "id": 1769490112046,
                 "period": 30,
-                "type": "PM"
+                "type": "PM",
+                "scheduledDate": "2026-04-01"
             },
             {
                 "content": "Sampling & Skimmer Cone",
