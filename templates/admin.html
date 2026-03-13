@@ -83,8 +83,23 @@
             <div class="card-header"><h3>장비관리</h3></div>
             <div class="card-body">
                 <div class="admin-split-view">
+                    <!-- 좌측: 장비 모델 목록 -->
+                    <div class="admin-col-list" style="flex: 0 0 250px;">
+                        <div class="list-header">
+                            <span>장비 모델</span>
+                            <span id="admin-model-count" class="badge">0</span>
+                        </div>
+                        <ul id="admin-model-list" class="admin-list">
+                            <!-- JS 렌더링 -->
+                        </ul>
+                        <div class="list-footer">
+                            <input type="text" id="admin-model-name-input" placeholder="모델명" class="input-dark full-width" style="margin-bottom: 5px;">
+                            <input type="text" id="admin-model-abbr-input" placeholder="약어" class="input-dark full-width">
+                            <button id="btn-admin-add-model" class="btn-green full-width" style="margin-top: 5px;">모델 추가</button>
+                        </div>
+                    </div>
                     <!-- 좌측: 장비 목록 -->
-                    <div class="admin-col-list">
+                    <div class="admin-col-list" style="flex: 0 0 250px;">
                         <div class="list-header" style="flex-direction: column; align-items: stretch; gap: 5px;">
                             <div style="display:flex; justify-content:space-between;">
                                 <span>등록된 장비</span>

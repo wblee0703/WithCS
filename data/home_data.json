@@ -12,5 +12,11 @@
             "pw": "scrypt:32768:8:1$63CwfjlE6wqszd7S$a675e8c8387a5efad37bb955ddfde82f6a67b773fe7b19fb0d9685feb0762ce6a55a6069f961a31f4af455824aa2303594c6e6ada3e9dcef7f4e1459dc7dfaf2",
             "role": "user"
         }
+    ],
+    "equipment_models": [
+        {
+            "name": "SOMA-2000",
+            "abbr": "SOMA-2000"
+        }
     ]
 }

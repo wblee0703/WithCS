@@ -2,10 +2,13 @@ let currentAdminSite = null; // 현재 선택된 사업장
 let currentBuildingList = []; // 현재 편집 중인 건물 목록
 let currentAdminEquipSite = null; // 장비 관리에서 선택된 사업장
 let currentAdminEquipKey = null; // 장비 관리에서 선택된 장비 키 (Name::Serial)
+let equipmentModels = []; // 장비 모델 목록
+let currentAdminModel = null; // 선택된 장비 모델
 
 document.addEventListener('DOMContentLoaded', () => {
     setupAdminMenu();
     setupSiteMgmt();
+    setupEquipModelMgmt();
 });
 
 // 사이드바 메뉴 탭 전환 기능
@@ -30,6 +33,7 @@ function setupAdminMenu() {
 
                 if (item.dataset.target === 'equip-mgmt') {
                     updateEquipSiteSelect();
+                    renderEquipModelList();
                 }
             });
         });
@@ -248,6 +252,96 @@ function handleSiteDelete() {
 }
 
 /* ==========================================================================
+   장비 모델 관리 (Equipment Model Management)
+   ========================================================================== */
+function setupEquipModelMgmt() {
+    loadEquipmentModels();
+    renderEquipModelList();
+
+    const btnAdd = document.getElementById('btn-admin-add-model');
+    const nameInput = document.getElementById('admin-model-name-input');
+    const abbrInput = document.getElementById('admin-model-abbr-input');
+
+    if (btnAdd) {
+        const addModel = () => {
+            const name = nameInput.value.trim();
+            const abbr = abbrInput.value.trim();
+            if (!name || !abbr) return alert('모델명과 약어를 모두 입력해주세요.');
+            if (equipmentModels.some(m => m.name === name)) return alert('이미 존재하는 모델명입니다.');
+
+            equipmentModels.push({ name, abbr });
+            saveEquipmentModels();
+            addSystemLog('ADD_EQUIP_MODEL', name, `Abbr: ${abbr}`);
+            
+            nameInput.value = '';
+            abbrInput.value = '';
+            renderEquipModelList();
+        };
+        btnAdd.addEventListener('click', addModel);
+        nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') abbrInput.focus(); });
+        abbrInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addModel(); });
+    }
+}
+
+function loadEquipmentModels() {
+    try {
+        const data = localStorage.getItem('equipment_models');
+        equipmentModels = data ? JSON.parse(data) : [];
+    } catch (e) {
+        console.error("Error loading equipment models:", e);
+        equipmentModels = [];
+    }
+}
+
+function saveEquipmentModels() {
+    localStorage.setItem('equipment_models', JSON.stringify(equipmentModels));
+}
+
+function renderEquipModelList() {
+    const list = document.getElementById('admin-model-list');
+    const countEl = document.getElementById('admin-model-count');
+    if (!list) return;
+
+    list.innerHTML = '';
+    equipmentModels.sort((a, b) => a.name.localeCompare(b.name));
+    if (countEl) countEl.textContent = equipmentModels.length;
+
+    equipmentModels.forEach(model => {
+        const li = document.createElement('li');
+        if (currentAdminModel && currentAdminModel.name === model.name) {
+            li.classList.add('active');
+        }
+        
+        li.innerHTML = `
+            <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <span title="${model.name}">${model.name}</span>
+                <span style="color: #8b949e; font-size: 12px;">(${model.abbr})</span>
+            </div>
+            <span class="item-controls"><span class="del-item-btn" title="모델 삭제">✕</span></span>
+        `;
+
+        li.addEventListener('click', () => {
+            currentAdminModel = (currentAdminModel && currentAdminModel.name === model.name) ? null : model;
+            renderEquipModelList();
+            renderAdminEquipList();
+            resetEquipForm();
+        });
+
+        li.querySelector('.del-item-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!confirm(`'${model.name}' 모델을 삭제하시겠습니까?\n이 모델을 사용하는 장비가 있을 수 있습니다.`)) return;
+            equipmentModels = equipmentModels.filter(m => m.name !== model.name);
+            saveEquipmentModels();
+            addSystemLog('DELETE_EQUIP_MODEL', model.name);
+            if (currentAdminModel && currentAdminModel.name === model.name) currentAdminModel = null;
+            renderEquipModelList();
+            renderAdminEquipList();
+        });
+        list.appendChild(li);
+    });
+}
+
+/* ==========================================================================
    장비 관리 (Equipment Management)
    ========================================================================== */
 function setupEquipMgmt() {
@@ -270,7 +364,16 @@ function setupEquipMgmt() {
             document.getElementById('admin-equip-form').style.display = 'block';
             document.getElementById('admin-equip-placeholder').style.display = 'none';
             document.getElementById('equip-info-site').value = currentAdminEquipSite;
-            document.getElementById('equip-info-name').focus();
+             
+            const nameInput = document.getElementById('equip-info-name');
+            if (currentAdminModel) {
+                nameInput.value = currentAdminModel.name;
+                nameInput.readOnly = true;
+                document.getElementById('equip-info-serial').focus();
+            } else {
+                nameInput.readOnly = false;
+                nameInput.focus();
+            }
         });
     }
 
@@ -308,7 +411,16 @@ function renderAdminEquipList() {
 
     if (!currentAdminEquipSite || !storageData[currentAdminEquipSite]) return;
 
-    const equips = storageData[currentAdminEquipSite];
+    let equips = storageData[currentAdminEquipSite];
+
+    // 모델 필터링
+    if (currentAdminModel) {
+        equips = equips.filter(key => {
+            const modelName = key.split('::')[0];
+            return modelName === currentAdminModel.name;
+        });
+    }
+
     if (countEl) countEl.textContent = equips.length;
 
     equips.forEach(fullKey => {
@@ -343,7 +455,9 @@ function resetEquipForm() {
     currentAdminEquipKey = null;
     document.getElementById('admin-equip-form').style.display = 'none';
     document.getElementById('admin-equip-placeholder').style.display = 'flex';
-    document.getElementById('equip-info-name').value = '';
+    const nameInput = document.getElementById('equip-info-name');
+    nameInput.value = '';
+    nameInput.readOnly = false;
     document.getElementById('equip-info-serial').value = '';
     
     const list = document.getElementById('admin-equip-list');
@@ -352,7 +466,8 @@ function resetEquipForm() {
 
 function handleEquipSave() {
     if (!currentAdminEquipSite) return;
-    const name = document.getElementById('equip-info-name').value.trim();
+    const nameInput = document.getElementById('equip-info-name');
+    const name = nameInput.value.trim();
     const serial = document.getElementById('equip-info-serial').value.trim();
     
     if (!name) return alert('장비명(모델)을 입력해주세요.');
@@ -403,6 +518,7 @@ function handleEquipSave() {
     alert('저장되었습니다.');
     currentAdminEquipKey = newKey; // 키 갱신
     renderAdminEquipList();
+    nameInput.readOnly = !!currentAdminModel; // 모델 선택 상태에 따라 잠금 상태 복원
 }
 
 function handleEquipDelete() {

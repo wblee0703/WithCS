@@ -45,7 +45,7 @@ function saveAllToServer() {
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             // 동기화할 키 필터링
-            if (key === 'withtech_data' || key.startsWith('details_') || key === 'system_logs' || key === 'setup_data') {
+            if (key === 'withtech_data' || key.startsWith('details_') || key === 'system_logs' || key === 'setup_data' || key === 'equipment_models') {
                 try {
                     allData[key] = JSON.parse(localStorage.getItem(key));
                 } catch (e) {
@@ -67,14 +67,14 @@ function saveAllToServer() {
 
 localStorage.setItem = function(key, value) {
     originalSetItem.call(this, key, value);
-    if (key === 'withtech_data' || key.startsWith('details_') || key === 'system_logs' || key === 'setup_data') {
+    if (key === 'withtech_data' || key.startsWith('details_') || key === 'system_logs' || key === 'setup_data' || key === 'equipment_models') {
         saveAllToServer();
     }
 };
 
 localStorage.removeItem = function(key) {
     originalRemoveItem.call(this, key);
-    if (key === 'withtech_data' || key.startsWith('details_') || key === 'system_logs' || key === 'setup_data') {
+    if (key === 'withtech_data' || key.startsWith('details_') || key === 'system_logs' || key === 'setup_data' || key === 'equipment_models') {
         saveAllToServer();
     }
 };
@@ -105,7 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const keysToRemove = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key === 'withtech_data' || key.startsWith('details_') || key === 'setup_data' || key === 'system_logs') {
+                if (key === 'withtech_data' || key.startsWith('details_') || key === 'setup_data' || key === 'system_logs' || key === 'equipment_models') {
                     keysToRemove.push(key);
                 }
             }
