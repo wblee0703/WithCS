@@ -887,10 +887,10 @@ body {
         display: flex; /* [요청] 모든 버튼 표시 */
         flex-direction: row;
         flex: none;
-        width: calc(50% - 5px); /* [요청] 선택 안 된 버튼은 절반 너비 (gap 10px 고려) */
+        width: calc((100% - 20px) / 3); /* [수정] 3개 버튼 한 줄 배치 */
         height: 50px;
-        padding: 0 10px;
-        gap: 10px;
+        padding: 0 5px;
+        gap: 5px;
         justify-content: center;
     }
 

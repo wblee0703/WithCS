@@ -541,9 +541,40 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
     
     .log-select-wrapper {
-        width: 100%;
-        margin-right: 0;
+        width: auto !important;
+        flex: 1 !important;
+        margin-right: 0 !important;
     }
+
+    /* [요청] 장비 점검 이력 입력창 한 줄 배치 */
+    #log-window .form-row {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 3px !important;
+    }
+    #log-date {
+        width: 90px !important;
+        flex: none !important;
+    }
+    #log-type-select {
+        width: 55px !important;
+        flex: none !important;
+        padding: 0 !important;
+    }
+    #log-worker {
+        width: 55px !important;
+        flex: none !important;
+    }
+    /* 입력 폰트 크기 축소 */
+    #log-date, #log-type-select, .log-select-trigger, #log-worker {
+        font-size: 11px !important;
+        padding-left: 2px !important;
+        padding-right: 2px !important;
+    }
+    #log-add-btn, #log-reg-btn {
+        padding: 0 5px !important;
+    }
+
         /* [요청] 장비 점검 이력 리스트 높이 수정 (약 3개 보이게, 스크롤) */
     #log-list-wrapper, 
     #setup-log-list-wrapper {
