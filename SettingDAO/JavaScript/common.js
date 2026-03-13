@@ -91,6 +91,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 로컬 스토리지에 캐시된 데이터를 사용하여 즉시 화면을 구성합니다.
     initializeApp();
 
+    // [추가] 로그인하지 않은 상태에서는 서버 데이터 요청을 보내지 않음 (401 에러 로그 방지)
+    if (sessionStorage.getItem('isLoggedIn') !== 'true') return;
+
     // 2. 서버 데이터 비동기 로드 (백그라운드 동기화)
     fetch('/api/data')
         .then(response => {

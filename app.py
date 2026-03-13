@@ -458,7 +458,8 @@ def set_security_headers(response):
     
     # 에러 로그 기록 (정적 파일 제외)
     if not request.path.startswith('/static') and not request.path.startswith('/favicon.ico'):
-        if response.status_code >= 400:
+        # [수정] 401 Unauthorized는 정상적인 인증 루틴일 수 있으므로 경고 로그에서 제외
+        if response.status_code >= 400 and response.status_code != 401:
             app.logger.warning(f"Response Status: {response.status}")
     
     # 보안 헤더
