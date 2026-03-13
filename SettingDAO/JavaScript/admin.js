@@ -313,20 +313,28 @@ function renderEquipModelList() {
         }
         
         li.innerHTML = `
-            <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                <span title="${model.name} / ${model.abbr}">${model.name} / ${model.abbr}</span>
+            <div class="model-col model-name-col"><span>${model.name}</span></div>
+            <div class="model-col model-abbr-col"><span>${model.abbr}</span></div>
+            <div class="model-col model-actions-col">
+                <button class="btn-blue-sm btn-edit-model">수정</button>
+                <button class="btn-del-sm btn-delete-model">삭제</button>
             </div>
-            <span class="item-controls"><span class="del-item-btn" title="모델 삭제">✕</span></span>
         `;
 
         li.addEventListener('click', () => {
+            // 수정 중일 때는 선택/해제 기능 비활성화
+            if (li.classList.contains('editing')) return;
+
             currentAdminModel = (currentAdminModel && currentAdminModel.name === model.name) ? null : model;
             renderEquipModelList();
             renderAdminEquipList();
             resetEquipForm();
         });
 
-        li.querySelector('.del-item-btn').addEventListener('click', (e) => {
+        const editBtn = li.querySelector('.btn-edit-model');
+        const deleteBtn = li.querySelector('.btn-delete-model');
+
+        deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             if (!confirm(`'${model.name}' 모델을 삭제하시겠습니까?\n이 모델을 사용하는 장비가 있을 수 있습니다.`)) return;
             equipmentModels = equipmentModels.filter(m => m.name !== model.name);
@@ -335,6 +343,75 @@ function renderEquipModelList() {
             if (currentAdminModel && currentAdminModel.name === model.name) currentAdminModel = null;
             renderEquipModelList();
             renderAdminEquipList();
+        });
+
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isEditing = li.classList.contains('editing');
+
+            if (!isEditing) {
+                // 수정 모드 진입
+                li.classList.add('editing');
+                li.classList.remove('active'); // 선택 효과 제거
+                editBtn.textContent = '저장';
+                editBtn.classList.replace('btn-blue-sm', 'btn-green-sm');
+
+                const nameCol = li.querySelector('.model-name-col');
+                const abbrCol = li.querySelector('.model-abbr-col');
+                
+                nameCol.innerHTML = `<input type="text" class="input-dark" value="${model.name}" style="width: 100%;">`;
+                abbrCol.innerHTML = `<input type="text" class="input-dark" value="${model.abbr}" style="width: 100%;">`;
+                
+                nameCol.querySelector('input').focus();
+            } else {
+                // 변경사항 저장
+                const nameInput = li.querySelector('.model-name-col input');
+                const abbrInput = li.querySelector('.model-abbr-col input');
+                const newName = nameInput.value.trim();
+                const newAbbr = abbrInput.value.trim();
+
+                if (!newName || !newAbbr) return alert('모델명과 약어를 모두 입력해주세요.');
+                if (newName !== model.name && equipmentModels.some(m => m.name === newName)) return alert('이미 존재하는 모델명입니다.');
+                
+                const shouldMigrate = newName !== model.name;
+                if (shouldMigrate && !confirm(`모델명을 변경하면 이 모델을 사용하는 모든 장비의 이름이 함께 변경됩니다.\n계속하시겠습니까?`)) {
+                    renderEquipModelList(); // UI 원상 복구
+                    return;
+                }
+
+                const modelToUpdate = equipmentModels.find(m => m.name === model.name);
+                if (modelToUpdate) {
+                    const oldModelName = modelToUpdate.name;
+                    modelToUpdate.name = newName;
+                    modelToUpdate.abbr = newAbbr;
+
+                    if (shouldMigrate) {
+                        Object.keys(storageData).forEach(site => {
+                            storageData[site] = storageData[site].map(equipKey => {
+                                const parts = equipKey.split('::');
+                                if (parts[0] === oldModelName) {
+                                    const newEquipKey = parts.length > 1 ? `${newName}::${parts[1]}` : newName;
+                                    
+                                    const oldDetailsKey = `details_${site}_${equipKey}`;
+                                    const newDetailsKey = `details_${site}_${newEquipKey}`;
+                                    if (localStorage.getItem(oldDetailsKey)) {
+                                        localStorage.setItem(newDetailsKey, localStorage.getItem(oldDetailsKey));
+                                        localStorage.removeItem(oldDetailsKey);
+                                    }
+                                    return newEquipKey;
+                                }
+                                return equipKey;
+                            });
+                        });
+                        saveData();
+                    }
+                    saveEquipmentModels();
+                    addSystemLog('UPDATE_EQUIP_MODEL', oldModelName, `To: ${newName} / ${newAbbr}`);
+                    if (currentAdminModel && currentAdminModel.name === oldModelName) currentAdminModel = modelToUpdate;
+                    renderEquipModelList();
+                    renderAdminEquipList();
+                }
+            }
         });
         list.appendChild(li);
     });
