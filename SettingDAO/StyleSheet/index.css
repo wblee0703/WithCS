@@ -892,14 +892,8 @@ body {
         padding: 0 10px;
         gap: 10px;
         justify-content: center;
-        order: 1; /* [요청] 선택 안 된 버튼을 위쪽으로 배치 */
     }
-    
-    /* 선택된 버튼 스타일 */
-    .home-menu-container.compact .home-big-btn.active {
-        width: 100%; /* [요청] 선택된 버튼은 전체 너비 유지 */
-        order: 2;    /* [요청] 선택된 버튼을 아래쪽(내용 바로 위)으로 배치 */
-    }
+
     /* [요청] 모바일 전용 버튼 표시 */
     .mobile-only-btn {
         display: block !important;
