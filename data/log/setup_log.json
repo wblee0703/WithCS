@@ -1350,15 +1350,15 @@
         "timestamp": "2026-03-13T01:11:00.090Z"
     },
     {
-        "timestamp": "2026-03-13T01:11:12.591Z",
         "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "셋업 상세 내역 수정"
+        "timestamp": "2026-03-13T01:11:12.591Z"
     },
     {
-        "timestamp": "2026-03-13T01:11:12.593Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "일정 자동 계산 (순방향)"
+        "timestamp": "2026-03-13T01:11:12.593Z"
     }
 ]
