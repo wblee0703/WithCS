@@ -172,5 +172,11 @@
         "details": "",
         "target": "SOMA-2000",
         "timestamp": "2026-03-13T07:08:11.640Z"
+    },
+    {
+        "timestamp": "2026-03-13T07:17:32.808Z",
+        "action": "RENAME_SITE",
+        "target": "DUPONT 천안",
+        "details": "To: DUPONT"
     }
 ]
