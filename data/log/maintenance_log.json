@@ -208,5 +208,11 @@
         "details": "To: SOMA-2000 / SOMA-2000",
         "target": "SOMA-20",
         "timestamp": "2026-03-13T07:23:33.147Z"
+    },
+    {
+        "timestamp": "2026-03-13T07:48:52.401Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "WIM-100",
+        "details": "Abbr: WIM-100"
     }
 ]
