@@ -54,27 +54,33 @@
         "timestamp": "2026-03-13T00:16:55.319Z"
     },
     {
-        "timestamp": "2026-03-13T00:21:27.990Z",
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:21:27.990Z"
+    },
+    {
+        "action": "CANCEL_COMPLETION",
+        "details": "Reverted: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:21:32.571Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:21:43.674Z"
+    },
+    {
+        "action": "CANCEL_COMPLETION",
+        "details": "Reverted: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:21:47.111Z"
+    },
+    {
+        "timestamp": "2026-03-13T00:22:06.319Z",
         "action": "COMPLETE_SCHEDULE",
         "target": "SOMA-3000E::SOMA-EK24-0402",
         "details": "Content: ff"
-    },
-    {
-        "timestamp": "2026-03-13T00:21:32.571Z",
-        "action": "CANCEL_COMPLETION",
-        "target": "SOMA-3000E::SOMA-EK24-0402",
-        "details": "Reverted: ff"
-    },
-    {
-        "timestamp": "2026-03-13T00:21:43.674Z",
-        "action": "COMPLETE_SCHEDULE",
-        "target": "SOMA-3000E::SOMA-EK24-0402",
-        "details": "Content: ff"
-    },
-    {
-        "timestamp": "2026-03-13T00:21:47.111Z",
-        "action": "CANCEL_COMPLETION",
-        "target": "SOMA-3000E::SOMA-EK24-0402",
-        "details": "Reverted: ff"
     }
 ]
