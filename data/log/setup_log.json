@@ -1360,5 +1360,11 @@
         "details": "일정 자동 계산 (순방향)",
         "target": "SOLA-1000::SOLA-1000",
         "timestamp": "2026-03-13T01:11:12.593Z"
+    },
+    {
+        "timestamp": "2026-03-13T01:46:14.181Z",
+        "action": "START_SETUP_EXEC",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "실행 시작일 설정: 2026-03-03"
     }
 ]
