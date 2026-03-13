@@ -1039,6 +1039,10 @@ function cancelScheduleCompletion() {
     const logType = logItem.type;
     const logDate = logItem.date;
     
+    // [추가] 값 복구를 위해 저장
+    const recoveredWorker = logItem.worker || '';
+    const recoveredMemo = logItem.memo || '';
+    
     // 1. 로그 삭제
     data.logs.splice(logIndex, 1);
     
@@ -1048,6 +1052,8 @@ function cancelScheduleCompletion() {
     
     if (!data.maint) data.maint = [];
 
+    let recoveredMaintId = null; // 복구된 메인 ID 추적
+
     contents.forEach((content, idx) => {
         // 기존 maint 리스트에 같은 내용과 타입의 항목이 있는지 확인 (PM 등 유지되는 항목)
         // 예정일(scheduledDate)만 다시 세팅하여 달력에 표시되게 함
@@ -1055,16 +1061,19 @@ function cancelScheduleCompletion() {
         
         if (existingItem) {
             existingItem.scheduledDate = logDate;
+            if (idx === 0) recoveredMaintId = existingItem.id;
         } else {
             // 일회성 항목 등으로 인해 maint에서 삭제된 경우 재생성
+            const newId = Date.now() + idx;
             data.maint.push({
-                id: Date.now() + idx,
+                id: newId,
                 type: logType,
                 content: content,
                 date: "", // 수행되지 않은 상태로 초기화
                 period: null,
                 scheduledDate: logDate
             });
+            if (idx === 0) recoveredMaintId = newId;
         }
     });
     
@@ -1075,9 +1084,70 @@ function cancelScheduleCompletion() {
     }
     
     alert('작업 완료가 취소되었습니다.');
-    document.getElementById('event-detail-modal').style.display = 'none';
+    // document.getElementById('event-detail-modal').style.display = 'none'; // [수정] 팝업 닫지 않음
+    
+    // 배경 데이터 및 캘린더 갱신
     renderCalendar();
     if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+
+    // [추가] 캘린더 팝업(예정 목록)이 열려있다면 내용 갱신
+    const popup = document.getElementById('calendar-popup');
+    if (popup && popup.style.display !== 'none') {
+        const dateTitle = document.getElementById('popup-date-title');
+        if (dateTitle) {
+            const dateStr = dateTitle.textContent;
+            const allEvents = getPmScheduleForCalendar();
+            let dayEvents = allEvents[dateStr] || [];
+            
+            // 필터 재적용
+            const searchInput = document.getElementById('calendar-search');
+            const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+            if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
+                dayEvents = dayEvents.filter(event => {
+                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)));
+                    const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
+                    const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
+                    return matchKeyword && matchSite && matchEquip;
+                });
+            }
+            
+            openCalendarPopup(dateStr, dayEvents);
+        }
+    }
+
+    // [추가] 모달 UI 상태를 '예정(미완료)' 상태로 변경 및 값 복구
+    currentDetailTarget.isCompleted = false;
+    if (recoveredMaintId) currentDetailTarget.id = recoveredMaintId;
+
+    const workerInput = document.getElementById('detail-worker');
+    const memoInput = document.getElementById('detail-work-memo');
+    const dateInput = document.getElementById('detail-scheduled-date');
+    const completeBtn = document.getElementById('btn-complete-work');
+    const cancelBtn = document.getElementById('btn-cancel-completion');
+    const saveMemoBtn = document.getElementById('btn-save-detail-memo');
+    const editContentBtn = document.getElementById('btn-edit-detail-content');
+
+    if (workerInput) {
+        workerInput.disabled = false;
+        workerInput.value = recoveredWorker; // 기존 값 복구
+    }
+    if (memoInput) {
+        memoInput.disabled = false;
+        memoInput.value = recoveredMemo; // 기존 값 복구
+    }
+    if (dateInput) {
+        dateInput.disabled = false;
+        dateInput.value = logDate; // 완료일 -> 예정일로 설정
+    }
+
+    if (completeBtn) {
+        completeBtn.style.display = 'block';
+        completeBtn.textContent = '작업 완료';
+    }
+    if (cancelBtn) cancelBtn.style.display = 'none';
+    if (saveMemoBtn) saveMemoBtn.style.display = 'none';
+    if (editContentBtn) editContentBtn.style.display = 'block';
 }
 
 /* ==========================================================================
