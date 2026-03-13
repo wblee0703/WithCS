@@ -330,6 +330,14 @@
                 "period": null,
                 "scheduledDate": "2026-03-10",
                 "type": "장비점검"
+            },
+            {
+                "id": 1773370740902,
+                "type": "장비점검",
+                "content": "장비점검",
+                "date": "",
+                "period": null,
+                "scheduledDate": "2026-03-13"
             }
         ],
         "memo": "",
