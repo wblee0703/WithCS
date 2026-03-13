@@ -255,7 +255,7 @@ body {
 .dashboard-col {
     flex: 1;
     background: #0d1117;
-    border: 1px solid #30363d;
+    border: none;
     border-radius: 6px;
     padding: 20px;
     display: flex;
@@ -360,7 +360,6 @@ body {
 }
 
 .status-group-title {
-    color: #c9d1d9;
     margin-bottom: 20px;
     text-align: center;
     font-size: 20px;
@@ -500,7 +499,6 @@ body {
 
 .status-count {
     font-weight: bold;
-    color: #8b949e;
     flex-shrink: 0;
 }
 
@@ -924,9 +922,12 @@ body {
     }
 
     /* [요청] 모바일 세로 모드에서 간트 차트 숨김 */
-    #gantt-chart-area {
-        display: none;
+    @media (orientation: portrait) {
+        #gantt-wrapper {
+            display: none !important;
+        }
     }
+
     /* [요청] 간트 실행 완료 팝업 모바일 최적화 */
     #exec-completion-modal .modal-window {
         width: 90% !important;
@@ -949,10 +950,6 @@ body {
 
     /* [요청] 모바일 가로 모드(화면 회전)에서는 간트 차트 표시 */
     @media (orientation: landscape) {
-        #gantt-chart-area {
-            display: flex !important;
-        }
-
         /* [요청] 모바일 가로 모드에서 장비 셋업/운영 현황 카드 및 예정 작업 2개씩 정렬 */
         .maint-split-view {
             flex-direction: row !important;

@@ -33,11 +33,18 @@
     flex: 1;
     overflow: hidden;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--gantt-bg-card);
+    border: 1px solid var(--gantt-border);
+    border-radius: 8px;
+    padding: 15px;
 }
 
 .gantt__wrapper {
     display: flex;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
     border: 1px solid var(--gantt-border);
     border-radius: 6px;
@@ -179,6 +186,7 @@
     position: sticky;
     top: 0;
     z-index: 20;
+    font-size: 16px;
 }
 
 #gantt-header-weeks {
@@ -222,7 +230,6 @@
     background-color: var(--gantt-bg-today);
     color: var(--gantt-blue-light);
     font-weight: bold;
-    border-bottom: 2px solid var(--gantt-blue-light);
 }
 
 /* 간트 바 및 그리드 */
@@ -327,7 +334,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 10px;
+    margin-top: 0;
     margin-bottom: 5px;
     min-height: 40px;
 }
@@ -405,7 +412,7 @@
 
     /* [추가] 모바일에서 리사이저 숨김 */
     .gantt__resizer {
-        display: none;
+        display: none !important;
     }
 
     .gantt__sidebar {

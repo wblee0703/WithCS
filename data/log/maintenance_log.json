@@ -30,54 +30,55 @@
         "timestamp": "2026-03-12T01:10:40.300Z"
     },
     {
-        "action": "DELETE_SCHEDULE",
-        "details": "Date: , Content: ff",
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: ff",
         "target": "SOMA-3000E::SOMA-EK24-0402",
-        "timestamp": "2026-03-12T03:11:32.834Z"
+        "timestamp": "2026-03-13T00:16:29.237Z"
     },
     {
-        "action": "DELETE_SCHEDULE",
-        "details": "Date: , Content: 점검",
-        "target": "SOMA-2000::SOMA-HC19-1204",
-        "timestamp": "2026-03-12T03:11:45.316Z"
+        "action": "CANCEL_COMPLETION",
+        "details": "Reverted: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:16:36.873Z"
     },
     {
-        "action": "UPDATE_SETUP_DATE",
-        "details": "완료일 수정",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:23:44.131Z"
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:16:50.068Z"
     },
     {
-        "action": "UPDATE_SETUP_DATE",
-        "details": "완료일 수정",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:24:00.143Z"
+        "action": "CANCEL_COMPLETION",
+        "details": "Reverted: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:16:55.319Z"
     },
     {
-        "action": "UPDATE_SETUP_DATE",
-        "details": "완료일 수정",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:24:02.876Z"
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:21:27.990Z"
     },
     {
-        "action": "UPDATE_SETUP_DATE",
-        "details": "완료일 수정",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:24:04.327Z"
+        "action": "CANCEL_COMPLETION",
+        "details": "Reverted: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:21:32.571Z"
     },
     {
-        "action": "UPDATE_SETUP_DATE",
-        "details": "완료일 수정",
-        "target": "SOMA-2000::SOMA-H19-0903",
-        "timestamp": "2026-03-12T04:24:39.298Z"
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:21:43.674Z"
     },
     {
-        "action": "UPDATE_SETUP_DATE",
-        "details": "완료일 수정",
-        "target": "SOMA-2000::SOMA-HK21-0202",
-        "timestamp": "2026-03-12T04:37:19.596Z"
+        "action": "CANCEL_COMPLETION",
+        "details": "Reverted: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:21:47.111Z"
     },
     {
+<<<<<<< HEAD
         "action": "UPDATE_SETUP_DATE",
         "details": "완료일 수정",
         "target": "SOMA-2000::SOMA-HK21-0202",
@@ -100,5 +101,41 @@
         "action": "ADD_SCHEDULE_MANUAL",
         "target": "SOMA-2000::SOMA-H19-0402",
         "details": "Type: 장비점검, Date: 2026-03-10, Content: 장비점검"
+=======
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:22:06.319Z"
+    },
+    {
+        "action": "CANCEL_COMPLETION",
+        "details": "Reverted: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:22:20.345Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:22:29.853Z"
+    },
+    {
+        "action": "CANCEL_COMPLETION",
+        "details": "Reverted: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:22:34.077Z"
+    },
+    {
+        "action": "COMPLETE_SCHEDULE",
+        "details": "Content: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:29:24.871Z"
+    },
+    {
+        "action": "CANCEL_COMPLETION",
+        "details": "Reverted: ff",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-13T00:29:29.152Z"
+>>>>>>> 28d2b67ed799f53b1e4a351ee46480daf0cd3f68
     }
 ]
