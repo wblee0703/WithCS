@@ -825,7 +825,9 @@ function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
     if (barChartEl) {
         barChartEl.innerHTML = '';
         // 전체 항목을 포함한 데이터 배열 생성 (전체가 제일 왼쪽)
-        const barData = [{ name: '전체', count: totalEquip }, ...siteStats];
+        // [수정] 막대그래프 이름순 정렬
+        const sortedSiteStats = [...siteStats].sort((a, b) => a.name.localeCompare(b.name));
+        const barData = [{ name: '전체', count: totalEquip }, ...sortedSiteStats];
 
         // Y축 스케일 계산
         const maxVal = Math.max(...barData.map(d => d.count));
