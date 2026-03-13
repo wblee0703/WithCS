@@ -508,17 +508,18 @@
                 "memo": "1. SOMA-3000E - 1.0.1.20\n 1) 적정기 혼합모드시 STD Add 칸이 그룹6개가 되면 크기조정 필요하여 자동으로 맞춰지게 수정\n 2) PortSetting 페이지의 헌팅 관련 UI를 Agilent MS 뿐만 아니라 PerkinElmer MS도 보여지도록 수정\n 3) Admin 적정기 페이지 View 정렬 및 툴팁 추가\n 4) 적정기 분석결과 소수점 자리수 설정 추가\n 5) 적정기 결과 계산시 Span Factor(Adjustment Factor) 적용하여 계산하도록 수정\n 6) 적정기 번호 변경 후 스케줄 추가하고 저장할 때 추가된 항목이 아닌 기본 AddList에서의 적정기 값이 초기화 되는 부분 수정\n 7) 적정기 데이터 저장시 사이트네임을 '사이트네임/시리얼'로 표기(메탈데이터와 동일시)\n 8) 페어적정기 번호 및 Enable 추가하여 하드코딩된 내역 변경, 아산1호기 1~2, 아산2호기 1~12로 숫자 변경 (실제 설비는 admin페이지에서 변경 가능)\n 9) 적정기 Enable화를 통해 False된 적정기는 포트 및 스케줄에서 안나오도록 처리\n 10) 데이터뷰 연동하는 Spec, SpecOffset 추가",
                 "type": "프로그램변경",
                 "worker": "이원배"
-            },
-            {
-                "id": 1773361326319,
-                "date": "2026-03-12",
-                "type": "장비점검",
-                "content": "ff",
-                "worker": "admin",
-                "memo": "1. BOE 분석시 HF, NH4F로 저장되기에 각각의 Spec, SpecOffset을 추가\n\n<Data Viewer> 1.0.2.9 \n1. 적정기 데이터 리포트 할 때 Port 추가 표시(매뉴얼/인라인 표기)\n2. Reference Value를 전체 1개로 계산이 아닌 성상별로 입력하게 Column에 추가\n3. BOE와 페어 적정기의 Spec, SpecOffset을 구분하여 적용"
             }
         ],
-        "maint": []
+        "maint": [
+            {
+                "id": 1773361340345,
+                "type": "장비점검",
+                "content": "ff",
+                "date": "",
+                "period": null,
+                "scheduledDate": "2026-03-12"
+            }
+        ]
     },
     "details_NES 여수_SOMA-3000E::SOMA-EK23-0401": {
         "logs": [],
