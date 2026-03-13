@@ -160,5 +160,11 @@
         "details": "Abbr: SOMA-2000",
         "target": "SOMA-2000",
         "timestamp": "2026-03-13T06:54:38.803Z"
+    },
+    {
+        "timestamp": "2026-03-13T07:08:04.746Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "soma-2000",
+        "details": "Abbr: soma-"
     }
 ]
