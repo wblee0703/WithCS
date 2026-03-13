@@ -1330,5 +1330,35 @@
         "details": "일정 자동 계산 (완료일 기준)",
         "target": "SOLA-1000::SOLA-1000",
         "timestamp": "2026-03-13T00:00:16.554Z"
+    },
+    {
+        "action": "DELETE_SETUP_LOG",
+        "details": "ID: 1773288074737",
+        "target": "SOLA-1000::SOLA-1000",
+        "timestamp": "2026-03-13T01:10:44.613Z"
+    },
+    {
+        "action": "DELETE_SETUP_LOG",
+        "details": "ID: 1773105173866",
+        "target": "SOLA-1000::SOLA-1000",
+        "timestamp": "2026-03-13T01:10:46.633Z"
+    },
+    {
+        "action": "UPDATE_SETUP_STATUS",
+        "details": "완료 상태 해제 및 이후 단계 초기화",
+        "target": "SOLA-1000::SOLA-1000",
+        "timestamp": "2026-03-13T01:11:00.090Z"
+    },
+    {
+        "action": "UPDATE_SETUP_DETAILS",
+        "details": "셋업 상세 내역 수정",
+        "target": "SOLA-1000::SOLA-1000",
+        "timestamp": "2026-03-13T01:11:12.591Z"
+    },
+    {
+        "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (순방향)",
+        "target": "SOLA-1000::SOLA-1000",
+        "timestamp": "2026-03-13T01:11:12.593Z"
     }
 ]
