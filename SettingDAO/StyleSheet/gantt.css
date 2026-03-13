@@ -33,11 +33,18 @@
     flex: 1;
     overflow: hidden;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    background: var(--gantt-bg-card);
+    border: 1px solid var(--gantt-border);
+    border-radius: 8px;
+    padding: 15px;
 }
 
 .gantt__wrapper {
     display: flex;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
     border: 1px solid var(--gantt-border);
     border-radius: 6px;
@@ -327,7 +334,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 10px;
+    margin-top: 0;
     margin-bottom: 5px;
     min-height: 40px;
 }
