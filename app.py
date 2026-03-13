@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, session, has_request_context, send_from_directory
 import json
 import os
+import sys
 import webbrowser
 from threading import Timer, Lock, Thread
 import glob
@@ -657,4 +658,14 @@ if __name__ == '__main__':
     port = int(os.environ.get("APP_PORT", 5500))
     if not os.environ.get("WERKZEUG_RUN_MAIN"):
         Timer(1, lambda: webbrowser.open(f'http://127.0.0.1:{port}/')).start()
-    app.run(debug=False, port=port, host='0.0.0.0')
+
+    # [수정] Waitress 서버 적용 (개발 서버 경고 제거 및 안정성 향상)
+    try:
+        from waitress import serve
+        print(f" * Serving with Waitress on http://0.0.0.0:{port}")
+        serve(app, host='0.0.0.0', port=port, threads=6)
+    except ImportError:
+        # Waitress가 설치되지 않은 경우 기존 Flask 개발 서버 사용
+        print(" * Waitress not found. Running with basic Flask server.")
+        print(f" * To fix the warning, run: & \"{sys.executable}\" -m pip install waitress")
+        app.run(debug=False, port=port, host='0.0.0.0')
