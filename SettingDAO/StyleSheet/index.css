@@ -918,6 +918,7 @@ body {
         flex-wrap: wrap;
         height: auto;
         align-items: stretch; /* 높이 맞춤 */
+        gap: 10px !important; /* [수정] 15px -> 10px (너비 계산 오차 해결하여 가로 배치) */
     }
 
     .maint-left-charts .status-group:nth-child(1),
