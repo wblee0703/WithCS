@@ -490,5 +490,11 @@
         "action": "DELETE_SITE",
         "target": "4",
         "details": "Admin Page"
+    },
+    {
+        "timestamp": "2026-03-13T06:14:18.284Z",
+        "action": "DELETE_SITE",
+        "target": "5",
+        "details": "Admin Page"
     }
 ]
