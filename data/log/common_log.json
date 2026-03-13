@@ -324,29 +324,7 @@
         "timestamp": "2026-03-12T23:57:42.770Z"
     },
     {
-        "action": "LOGIN",
-        "details": "로그인 성공 (HOME)",
-        "target": "admin",
-        "timestamp": "2026-03-13T00:56:31.250Z"
-    },
-    {
-        "action": "LOGIN",
-        "details": "로그인 성공 (HOME)",
-        "target": "admin",
-        "timestamp": "2026-03-13T01:06:25.810Z"
-    },
-    {
-        "action": "LOGIN",
-        "details": "로그인 성공 (HOME)",
-        "target": "admin",
-        "timestamp": "2026-03-13T01:07:44.614Z"
-    },
-    {
-<<<<<<< HEAD
-        "timestamp": "2026-03-13T01:11:48.718Z",
-=======
-        "timestamp": "2026-03-13T01:16:12.976Z",
->>>>>>> d3ee41d1f383bd475cfacebd2133a7a2964f592a
+        "timestamp": "2026-03-13T01:28:19.279Z",
         "action": "LOGIN",
         "target": "admin",
         "details": "로그인 성공 (HOME)"
