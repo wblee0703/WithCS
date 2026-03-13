@@ -457,6 +457,43 @@ function setupEquipMgmt() {
     const btnDel = document.getElementById('btn-admin-del-equip');
     if (btnSave) btnSave.addEventListener('click', handleEquipSave);
     if (btnDel) btnDel.addEventListener('click', handleEquipDelete);
+
+    // [추가] 장비명(모델) 자동완성 검색
+    const nameInput = document.getElementById('equip-info-name');
+    const suggestionList = document.getElementById('equip-model-suggestions');
+
+    if (nameInput && suggestionList) {
+        const handleInput = () => {
+            if (nameInput.readOnly) return;
+            const query = nameInput.value.trim().toLowerCase();
+            
+            // 입력값이 없으면 전체 목록 표시, 있으면 필터링
+            const matches = query 
+                ? equipmentModels.filter(m => m.name.toLowerCase().includes(query) || m.abbr.toLowerCase().includes(query))
+                : equipmentModels;
+
+            suggestionList.innerHTML = '';
+            if (matches.length > 0) {
+                matches.forEach(m => {
+                    const li = document.createElement('li');
+                    li.className = 'suggestion-item';
+                    li.innerHTML = `${m.name} <span class="abbr">(${m.abbr})</span>`;
+                    li.onclick = () => {
+                        nameInput.value = m.name;
+                        suggestionList.style.display = 'none';
+                    };
+                    suggestionList.appendChild(li);
+                });
+                suggestionList.style.display = 'block';
+            } else {
+                suggestionList.style.display = 'none';
+            }
+        };
+
+        nameInput.addEventListener('input', handleInput);
+        nameInput.addEventListener('focus', handleInput);
+        nameInput.addEventListener('blur', () => { setTimeout(() => { suggestionList.style.display = 'none'; }, 200); });
+    }
 }
 
 function updateEquipSiteSelect() {
@@ -534,6 +571,10 @@ function resetEquipForm() {
     nameInput.value = '';
     nameInput.readOnly = false;
     document.getElementById('equip-info-serial').value = '';
+
+    // 자동완성 목록 숨김
+    const suggestionList = document.getElementById('equip-model-suggestions');
+    if (suggestionList) suggestionList.style.display = 'none';
     
     const list = document.getElementById('admin-equip-list');
     if(list) list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
