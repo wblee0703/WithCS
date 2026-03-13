@@ -912,34 +912,27 @@ body {
         gap: 15px;
     }
 
-    /* [요청] 셋업/운영 현황 카드 가로 배치 (사업장/장비 현황) */
-    .maint-left-charts {
+    /* [요청] 모바일에서 셋업/운영 현황 컨테이너 높이 자동 조절 (겹침 방지) */
+    .maint-split-view {
         flex-direction: row !important;
         flex-wrap: wrap;
-        height: auto;
-        align-items: stretch; /* 높이 맞춤 */
-        gap: 10px !important; /* [수정] 15px -> 10px (너비 계산 오차 해결하여 가로 배치) */
+        gap: 10px;
+        height: auto !important; /* 데스크탑의 고정 높이(330px) 무시 */
     }
 
-    .maint-left-charts .status-group:nth-child(1),
-    .maint-left-charts .status-group:nth-child(2) {
+    /* [요청] 모바일 2x2 그리드 배치 (사업장/장비 현황 | 장비 정보/점검 임박) */
+    .maint-left-charts {
+        display: contents !important;
+    }
+
+    .maint-left-charts .status-group {
         width: calc(50% - 5px) !important;
         flex: none !important;
     }
 
-    .maint-left-charts .status-group:nth-child(3) {
-        width: 100% !important;
-        flex: none !important;
-    }
-
-    /* [요청] 모바일에서 셋업/운영 현황 컨테이너 높이 자동 조절 (겹침 방지) */
-    .maint-split-view {
-        flex-direction: column;
-        height: auto !important; /* 데스크탑의 고정 높이(330px) 무시 */
-    }
-
     /* [요청] 예정 작업 카드 크기 고정 및 스크롤 */
     .upcoming-container {
+        width: calc(50% - 5px) !important;
         height: 300px !important; /* [수정] 카드 높이 고정 */
         flex: none; /* flex-grow/shrink 방지 */
     }
@@ -980,22 +973,7 @@ body {
 
     /* [요청] 모바일 가로 모드(화면 회전)에서는 간트 차트 표시 */
     @media (orientation: landscape) {
-        /* [요청] 모바일 가로 모드에서 장비 셋업/운영 현황 카드 및 예정 작업 2개씩 정렬 */
-        .maint-split-view {
-            flex-direction: row !important;
-            flex-wrap: wrap;
-        }
-
-        .maint-left-charts {
-            display: contents; /* 컨테이너 레이아웃 무시하고 자식들을 상위 그리드에 포함 */
-        }
-
-        .maint-left-charts .status-group,
-        .upcoming-container {
-            width: calc(50% - 10px) !important; /* gap 20px 고려 */
-            flex: none;
-            margin-right: 0 !important;
-        }
+        /* [수정] 대시보드 2x2 배치는 기본 모바일 스타일로 통합됨 */
     }
 
     /* [요청] 셋업 일정 -/+ 버튼 숨김 */
