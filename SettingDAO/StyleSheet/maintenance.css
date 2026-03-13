@@ -579,7 +579,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
     /* 입력 폰트 크기 축소 */
     #log-date, #log-type-select, .log-select-trigger, #log-worker, .log-content-input {
-        font-size: 11px !important;
+        font-size: 12px !important;
         padding-left: 2px !important;
         padding-right: 2px !important;
         height: 30px !important;

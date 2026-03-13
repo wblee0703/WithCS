@@ -1048,4 +1048,9 @@ body {
     .upcoming-title {
         margin-bottom: 5px;
     }
+
+    /* [요청] 모바일 헤더 햄버거 메뉴 바 색상 변경 (흰색) */
+    .hamburger-menu .bar {
+        background-color: #ffffff !important;
+    }
 }

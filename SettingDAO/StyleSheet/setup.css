@@ -621,6 +621,11 @@
         display: block !important;
     }
 
+    /* [요청] 모바일 헤더 햄버거 메뉴 바 색상 변경 (흰색) */
+    .hamburger-menu .bar {
+        background-color: #ffffff !important;
+    }
+
     @media (orientation: landscape) {
         /* [요청] 가로 모드 레이아웃: 한 줄 또는 컴팩트 배치 */
         .setup-card-header h3 {
