@@ -258,7 +258,13 @@
         "timestamp": "2026-03-13T03:00:20.325Z"
     },
     {
-        "timestamp": "2026-03-13T03:05:24.776Z",
+        "action": "LOGIN",
+        "details": "로그인 성공 (HOME)",
+        "target": "admin",
+        "timestamp": "2026-03-13T03:05:24.776Z"
+    },
+    {
+        "timestamp": "2026-03-13T03:10:41.069Z",
         "action": "LOGIN",
         "target": "admin",
         "details": "로그인 성공 (HOME)"
