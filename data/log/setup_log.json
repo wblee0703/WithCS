@@ -1366,5 +1366,11 @@
         "action": "START_SETUP_EXEC",
         "target": "SOMA-2000::SOMA-H19-0402",
         "details": "실행 시작일 설정: 2026-03-03"
+    },
+    {
+        "timestamp": "2026-03-13T01:46:16.011Z",
+        "action": "UPDATE_SETUP_COMPLETION",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "작업 완료 등록 (ID: 1771813080912)"
     }
 ]
