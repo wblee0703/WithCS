@@ -639,4 +639,14 @@
             max-height: 90vh !important;
         }
     }
+
+    /* [요청] 모바일 캘린더 제목 글자색 흰색 */
+    .calendar-main-title {
+        color: #ffffff;
+    }
+
+    /* [요청] 모바일 캘린더 일자 컬럼 미완료 작업 글자색 변경 (연월 제목과 동일) */
+    .calendar-event-item:not(.completed) {
+        color: var(--cal-text-primary);
+    }
 }
