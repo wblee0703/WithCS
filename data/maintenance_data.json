@@ -322,6 +322,14 @@
                 "period": 365,
                 "scheduledDate": "",
                 "type": "PM"
+            },
+            {
+                "id": 1773360486484,
+                "type": "장비점검",
+                "content": "장비점검",
+                "date": "",
+                "period": null,
+                "scheduledDate": "2026-03-10"
             }
         ],
         "memo": "",

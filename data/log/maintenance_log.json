@@ -84,15 +84,21 @@
         "timestamp": "2026-03-12T04:37:23.553Z"
     },
     {
-        "timestamp": "2026-03-13T00:01:30.900Z",
         "action": "UPDATE_MEMO",
+        "details": "메모 수정 (LogID: 1772763064801)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "메모 수정 (LogID: 1772763064801)"
+        "timestamp": "2026-03-13T00:01:30.900Z"
     },
     {
-        "timestamp": "2026-03-13T00:01:39.432Z",
         "action": "UPDATE_MEMO",
+        "details": "메모 수정 (LogID: 1772763064801)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "메모 수정 (LogID: 1772763064801)"
+        "timestamp": "2026-03-13T00:01:39.432Z"
+    },
+    {
+        "timestamp": "2026-03-13T00:08:06.488Z",
+        "action": "ADD_SCHEDULE_MANUAL",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "Type: 장비점검, Date: 2026-03-10, Content: 장비점검"
     }
 ]
