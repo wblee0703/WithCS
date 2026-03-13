@@ -6,6 +6,130 @@
     flex-direction: column;
     height: 100%;
     min-height: 0;
+    overflow: hidden; /* 내부 스크롤 사용 */
+}
+
+/* 좌우 분할 레이아웃 */
+.admin-split-view {
+    display: flex;
+    gap: 20px;
+    height: 100%;
+    overflow: hidden;
+}
+
+.admin-col-list {
+    flex: 0 0 300px; /* 고정 너비 */
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #30363d;
+    padding-right: 15px;
+}
+
+.admin-col-detail {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding-left: 5px;
+    overflow-y: auto;
+}
+
+/* 리스트 스타일 */
+.list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: #c9d1d9;
+}
+
+.admin-list {
+    flex: 1;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    overflow-y: auto;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    background: #0d1117;
+}
+
+.admin-list li {
+    padding: 10px 12px;
+    border-bottom: 1px solid #21262d;
+    cursor: pointer;
+    color: #e6edf3;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.admin-list li:hover {
+    background: #161b22;
+}
+
+.admin-list li.active {
+    background: #1f6feb;
+    color: #fff;
+    font-weight: bold;
+}
+
+.list-footer {
+    margin-top: 10px;
+}
+
+/* 상세 정보 폼 스타일 */
+.detail-header {
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.detail-header h4 {
+    color: #e6edf3;
+    margin: 0 0 5px 0;
+}
+
+.detail-desc {
+    font-size: 13px;
+    color: #8b949e;
+    margin: 0;
+}
+
+.admin-form-container {
+    max-width: 600px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    color: #8b949e;
+    margin-bottom: 5px;
+    font-size: 13px;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #30363d;
+}
+
+.placeholder-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #8b949e;
+    font-size: 14px;
+}
+
+/* 유틸리티 */
+.full-width {
+    width: 100%;
 }
 
 /* [추가] 컨텐츠 영역 플레이스홀더 텍스트 */
