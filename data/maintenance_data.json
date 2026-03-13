@@ -49,20 +49,27 @@
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
                 "type": "PM",
                 "worker": "이원배 진봉균"
+            },
+            {
+                "id": 1773368537146,
+                "date": "2026-03-11",
+                "type": "PM",
+                "content": "Standard Solution, 9.5%HNO3",
+                "worker": "admin",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
             }
         ],
         "maint": [
             {
                 "content": "Standard Solution",
-                "date": "2026-03-05",
+                "date": "2026-03-11",
                 "id": 1769488811527,
                 "period": 30,
-                "scheduledDate": "2026-04-02",
                 "type": "PM"
             },
             {
                 "content": "9.5%HNO3",
-                "date": "2026-03-05",
+                "date": "2026-03-11",
                 "id": 1769757062846,
                 "period": 30,
                 "type": "PM"
@@ -140,7 +147,6 @@
                 "date": "2026-03-04",
                 "id": 1769490121876,
                 "period": 30,
-                "scheduledDate": "2026-04-01",
                 "type": "PM"
             },
             {
@@ -216,7 +222,6 @@
                 "date": "2026-03-05",
                 "id": 1769490103387,
                 "period": 30,
-                "scheduledDate": "2026-04-02",
                 "type": "PM"
             },
             {
@@ -308,7 +313,6 @@
                 "date": "2026-03-04",
                 "id": 1769490112046,
                 "period": 30,
-                "scheduledDate": "2026-04-01",
                 "type": "PM"
             },
             {
@@ -326,6 +330,14 @@
                 "period": 365,
                 "scheduledDate": "",
                 "type": "PM"
+            },
+            {
+                "content": "장비점검",
+                "date": "",
+                "id": 1773360486484,
+                "period": null,
+                "scheduledDate": "2026-03-10",
+                "type": "장비점검"
             }
         ],
         "memo": "",
@@ -487,7 +499,7 @@
             {
                 "content": "Ver. 1.0.1.20",
                 "date": "2026-03-06",
-                "id": 1773098980173,
+                "id": 1773363077801,
                 "memo": "1. SOMA-3000E - 1.0.1.20\n 1) 적정기 혼합모드시 STD Add 칸이 그룹6개가 되면 크기조정 필요하여 자동으로 맞춰지게 수정\n 2) PortSetting 페이지의 헌팅 관련 UI를 Agilent MS 뿐만 아니라 PerkinElmer MS도 보여지도록 수정\n 3) Admin 적정기 페이지 View 정렬 및 툴팁 추가\n 4) 적정기 분석결과 소수점 자리수 설정 추가\n 5) 적정기 결과 계산시 Span Factor(Adjustment Factor) 적용하여 계산하도록 수정\n 6) 적정기 번호 변경 후 스케줄 추가하고 저장할 때 추가된 항목이 아닌 기본 AddList에서의 적정기 값이 초기화 되는 부분 수정\n 7) 적정기 데이터 저장시 사이트네임을 '사이트네임/시리얼'로 표기(메탈데이터와 동일시)\n 8) 페어적정기 번호 및 Enable 추가하여 하드코딩된 내역 변경, 아산1호기 1~2, 아산2호기 1~12로 숫자 변경 (실제 설비는 admin페이지에서 변경 가능)\n 9) 적정기 Enable화를 통해 False된 적정기는 포트 및 스케줄에서 안나오도록 처리\n 10) 데이터뷰 연동하는 Spec, SpecOffset 추가",
                 "type": "프로그램변경",
                 "worker": "이원배"
