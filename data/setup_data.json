@@ -794,12 +794,12 @@
                 "worker": "admin"
             },
             {
-                "id": 1773365201888,
-                "date": "2026-02-19",
-                "worker": "admin",
-                "content": "장비 반입",
                 "company": "위드텍",
-                "memo": ""
+                "content": "장비 반입",
+                "date": "2026-02-19",
+                "id": 1773365201888,
+                "memo": "",
+                "worker": "admin"
             }
         ]
     },
