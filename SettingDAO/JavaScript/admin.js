@@ -314,8 +314,7 @@ function renderEquipModelList() {
         
         li.innerHTML = `
             <div style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                <span title="${model.name}">${model.name}</span>
-                <span style="color: #8b949e; font-size: 12px;">(${model.abbr})</span>
+                <span title="${model.name} / ${model.abbr}">${model.name} / ${model.abbr}</span>
             </div>
             <span class="item-controls"><span class="del-item-btn" title="모델 삭제">✕</span></span>
         `;

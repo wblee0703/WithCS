@@ -15,8 +15,8 @@
     ],
     "equipment_models": [
         {
-            "name": "SOMA-2000",
-            "abbr": "SOMA-2000"
+            "abbr": "SOMA-2000",
+            "name": "SOMA-2000"
         }
     ]
 }
