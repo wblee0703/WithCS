@@ -316,8 +316,6 @@ function renderEquipModelList() {
             <div class="model-col model-name-col"><span>${model.name}</span></div>
             <div class="model-col model-abbr-col"><span>${model.abbr}</span></div>
             <div class="model-col model-actions-col">
-                <button class="btn-blue-sm btn-edit-model">수정</button>
-                <button class="btn-del-sm btn-delete-model">삭제</button>
                 <button class="btn-edit-sm btn-edit-model">✏️</button>
                 <button class="btn-del-sm btn-delete-model">✕</button>
             </div>
@@ -356,8 +354,6 @@ function renderEquipModelList() {
                 li.classList.add('editing');
                 li.classList.remove('active'); // 선택 효과 제거
                 editBtn.textContent = '저장';
-                editBtn.classList.replace('btn-blue-sm', 'btn-green-sm');
-
                 editBtn.classList.replace('btn-edit-sm', 'btn-green-sm');
                 const nameCol = li.querySelector('.model-name-col');
                 const abbrCol = li.querySelector('.model-abbr-col');

@@ -78,6 +78,7 @@
 /* [추가] 헤더 컬럼에 직접 패딩 적용 (리스트 아이템과 정렬 맞춤) */
 .admin-list-header .model-col {
     padding: 8px 12px;
+    justify-content: center; /* [요청] 헤더 텍스트 가운데 정렬 */
 }
 
 .model-col {
