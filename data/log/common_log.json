@@ -634,5 +634,11 @@
         "action": "ADD_SITE",
         "target": "LSE 안성",
         "details": "Admin Page"
+    },
+    {
+        "timestamp": "2026-03-13T07:19:33.282Z",
+        "action": "ADD_SITE",
+        "target": "원익IPS",
+        "details": "Admin Page"
     }
 ]
