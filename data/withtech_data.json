@@ -44,14 +44,14 @@
     "SK KEY_FOUNDRY": [],
     "SK SILTRON": [],
     "SKH 우시": [
-        "SOMA-2000::SOMA-HC19-1204",
-        "SOMA-2000::SOMA-HC20-0601",
-        "SOMA-2000::SOMA-HC21-0101"
+        "SOMA-20::SOMA-HC19-1204",
+        "SOMA-20::SOMA-HC20-0601",
+        "SOMA-20::SOMA-HC21-0101"
     ],
     "SKH 이천": [
-        "SOMA-2000::SOMA-H19-0402",
-        "SOMA-2000::SOMA-H19-0903",
-        "SOMA-2000::SOMA-HK21-0202",
+        "SOMA-20::SOMA-H19-0402",
+        "SOMA-20::SOMA-H19-0903",
+        "SOMA-20::SOMA-HK21-0202",
         "WIM-100::WIM1-HK24-0401"
     ],
     "SKH 청주": [],
