@@ -102,15 +102,15 @@
         "timestamp": "2026-03-13T00:08:06.488Z"
     },
     {
-        "timestamp": "2026-03-13T00:51:15.946Z",
         "action": "CANCEL_COMPLETION",
+        "details": "Reverted: Ver. 1.0.1.20",
         "target": "SOMA-3000E::SOMA-EK24-0401",
-        "details": "Reverted: Ver. 1.0.1.20"
+        "timestamp": "2026-03-13T00:51:15.946Z"
     },
     {
-        "timestamp": "2026-03-13T00:51:17.801Z",
         "action": "COMPLETE_SCHEDULE",
+        "details": "Content: Ver. 1.0.1.20",
         "target": "SOMA-3000E::SOMA-EK24-0401",
-        "details": "Content: Ver. 1.0.1.20"
+        "timestamp": "2026-03-13T00:51:17.801Z"
     }
 ]
