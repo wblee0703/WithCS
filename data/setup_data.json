@@ -821,12 +821,12 @@
             },
             {
                 "category": "장비 반입 및 정위치",
-                "completed": true,
+                "completed": false,
                 "content": "장비 반입",
-                "date": "2026-03-03",
+                "date": "",
                 "delayReason": "",
                 "estDays": "2",
-                "execStartDate": "2026-03-03",
+                "execStartDate": "",
                 "id": 1771893000089,
                 "startDate": "2026-03-03"
             },
