@@ -817,7 +817,7 @@ body {
 
 /* [추가] 녹색 소형 버튼 스타일 */
 .btn-green-sm {
-    background-color: #51ce6a;
+    background-color: #4edf69;
     color: #fff;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 6px;
@@ -827,13 +827,7 @@ body {
     cursor: pointer;
 }
 .btn-green-sm:hover {
-    background-color: #2ea043;
-}
-
-.icon-orange {
-    color: #f0883e; /* 주황색 */
-    margin-right: 5px;
-    font-weight: bold;
+    background-color: #4edf69;
 }
 
 /* ==========================================================
