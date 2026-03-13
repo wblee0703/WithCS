@@ -136,5 +136,17 @@
         "action": "CANCEL_COMPLETION",
         "target": "WIM-100::WIM1-HK24-0401",
         "details": "Reverted: Standard Solution, 9.5%HNO3"
+    },
+    {
+        "timestamp": "2026-03-13T05:25:45.030Z",
+        "action": "DELETE_SCHEDULE",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "Date: , Content: Standard Solution"
+    },
+    {
+        "timestamp": "2026-03-13T05:25:45.030Z",
+        "action": "DELETE_SCHEDULE",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "Date: , Content: 9.5%HNO3"
     }
 ]
