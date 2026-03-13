@@ -1342,5 +1342,11 @@
         "details": "ID: 1773105173866",
         "target": "SOLA-1000::SOLA-1000",
         "timestamp": "2026-03-13T01:10:46.633Z"
+    },
+    {
+        "timestamp": "2026-03-13T01:11:00.090Z",
+        "action": "UPDATE_SETUP_STATUS",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "완료 상태 해제 및 이후 단계 초기화"
     }
 ]
