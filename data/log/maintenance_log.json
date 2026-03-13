@@ -100,5 +100,11 @@
         "action": "ADD_SCHEDULE",
         "target": "SOMA-2000::SOMA-HK21-0202",
         "details": "Date: 2026-04-02, Content: Standard Solution"
+    },
+    {
+        "timestamp": "2026-03-13T03:13:38.466Z",
+        "action": "ADD_SCHEDULE",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "Date: 2026-04-02, Content: Standard Solution"
     }
 ]
