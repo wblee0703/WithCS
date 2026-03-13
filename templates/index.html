@@ -2,397 +2,408 @@
 {% set active_page = 'home' %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/index.css') }}">
-    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/calendar.css') }}?v=6">
-    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/gantt.css') }}">
-    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/integ.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/index.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/calendar.css') }}?v=6">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/gantt.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/integ.css') }}">
 {% endblock %}
 
 {% block content %}
-    <main class="home-main">
-        <div class="home-content">
-            <p class="logo-text">Think Hard, Fine Action</p>
+<main class="home-main">
+    <div class="home-content">
+        <p class="logo-text">Think Hard, Fine Action</p>
 
-            <!-- 로그인 전: 로그인 폼 -->
-            <!-- [수정] 초기 로딩 시 깜빡임 방지를 위해 기본적으로 숨김 처리 (display: none) -->
-            <div id="home-login-container" class="login-box" style="display: none;">
-                <h3>SYSTEM LOGIN</h3>
-                <input type="text" id="home-login-id" placeholder="ID">
-                <input type="password" id="home-login-pw" placeholder="PASSWORD">
-                <button id="home-login-btn" class="btn-blue">LOGIN</button>
+        <!-- 로그인 전: 로그인 폼 -->
+        <!-- [수정] 초기 로딩 시 깜빡임 방지를 위해 기본적으로 숨김 처리 (display: none) -->
+        <div id="home-login-container" class="login-box" style="display: none;">
+            <h3>SYSTEM LOGIN</h3>
+            <input type="text" id="home-login-id" placeholder="ID">
+            <input type="password" id="home-login-pw" placeholder="PASSWORD">
+            <button id="home-login-btn" class="btn-blue">LOGIN</button>
+        </div>
+        <script>
+            // [UX] 로그인 상태가 아니면 즉시 표시하여 빈 화면 대기 시간 최소화
+            if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+                document.getElementById('home-login-container').style.display = 'flex';
+            }
+        </script>
+
+        <!-- 로그인 후: 환영 메시지 및 메뉴 바로가기 -->
+        <div id="home-welcome-container" class="home-dashboard" style="display: none;">
+            <div class="home-menu-container">
+                <button onclick="showHomeSection('integrated')" class="home-big-btn btn-integrated">
+                    <div class="icon">📑</div>
+                    <h3>Integrated</h3>
+                    <p>통합 관리</p>
+                </button>
+                <button onclick="showHomeSection('setup')" class="home-big-btn btn-setup">
+                    <div class="icon">🛠️</div>
+                    <h3>Setup</h3>
+                    <p>장비 셋업</p>
+                </button>
+                <button onclick="showHomeSection('maint')" class="home-big-btn btn-maint">
+                    <div class="icon">📊</div>
+                    <h3>Maintenance</h3>
+                    <p>운영 관리</p>
+                </button>
             </div>
-            <script>
-                // [UX] 로그인 상태가 아니면 즉시 표시하여 빈 화면 대기 시간 최소화
-                if (sessionStorage.getItem('isLoggedIn') !== 'true') {
-                    document.getElementById('home-login-container').style.display = 'flex';
-                }
-            </script>
+            <div class="dashboard-split">
+                <!-- 왼쪽: 셋업 현황 -->
+                <div class="dashboard-col" id="section-setup" style="display: none;">
+                    <div class="maint-split-view" id="setup-split-view">
+                        <!-- 왼쪽: 차트 영역 -->
+                        <div class="maint-left-charts">
+                            <div class="status-group card-like">
+                                <h5 class="status-group-title">사업장 현황</h5>
+                                <div class="chart-row">
+                                    <div class="donut-chart-wrapper">
+                                        <div class="donut-chart" id="setup-site-status-chart"></div>
+                                        <div class="chart-center" id="setup-site-chart-center"></div>
+                                    </div>
+                                    <div class="status-list-container status-list-flex">
+                                        <div class="status-list-header">
+                                            <span class="header-name">사업장</span>
+                                            <span class="header-count">장비수</span>
+                                        </div>
+                                        <ul class="site-status-list" id="setup-site-status-list"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="status-group card-like">
+                                <h5 class="status-group-title">장비 현황</h5>
+                                <div class="chart-row">
+                                    <div class="donut-chart-wrapper">
+                                        <div class="donut-chart" id="setup-equip-status-chart"></div>
+                                        <div class="chart-center" id="setup-equip-chart-center"></div>
+                                    </div>
+                                    <div class="status-list-container status-list-flex">
+                                        <div class="status-list-header">
+                                            <span class="header-name">장비명</span>
+                                            <span class="header-count">장비수</span>
+                                        </div>
+                                        <ul class="site-status-list" id="setup-equip-status-list"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="status-group card-like" id="setup-equip-info-group">
+                                <h5 class="status-group-title">장비 정보</h5>
+                                <div id="setup-equip-detail-container" class="status-list-container status-list-flex">
+                                    <ul class="site-status-list" id="setup-equip-detail-list"></ul>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="setup-upcoming-container" class="upcoming-container">
+                            <h5 class="upcoming-title">⚠️ 예정 작업</h5>
+                            <div id="setup-upcoming-list" class="upcoming-list"></div>
+                        </div>
+                    </div>
+                    <div class="setup-card-body gantt" id="gantt-chart-area">
+                        <div class="gantt__title-wrapper">
+                            <div class="gantt__center-title">
+                                <h5 class="gantt__subtitle">셋업 일정</h5>
+                                <div style="text-align: right; margin-top: 10px; padding-right: 5px;">
+                                    <button class="btn-move" onclick="goToSetupPage()">장비 셋업 이동</button>
+                                </div>
+                                <div id="gantt-target-info" class="gantt__target-info"></div>
+                            </div>
+                            <div class="gantt__right-toolbar">
+                                <div class="calendar-search-wrapper search-wrapper-flex">
+                                    <button id="btn-gantt-contract" class="btn-gray btn-spacing-right"
+                                        title="달력 축소 (1주)">-</button>
+                                    <button id="btn-gantt-expand" class="btn-gray btn-spacing-right"
+                                        title="달력 확장 (1주)">+</button>
+                                    <button id="btn-gantt-filter" class="btn-gray ml-5" title="장비 검색">검색</button>
+                                    <span id="gantt-filter-status" class="filter-status-text"></span>
+                                </div>
+                            </div>
+                            <div class="gantt-mobile-guide">🔄 화면을 가로로 돌리면 차트가 표시됩니다</div>
+                        </div>
+                        <div class="gantt__wrapper" id="gantt-wrapper" style="display: none;">
+                            <div class="gantt__sidebar gantt__sidebar--initial" id="gantt-sidebar">
+                                <div class="gantt__header-cell gantt__header-cell--fixed">
+                                    작업명
+                                </div>
 
-            <!-- 로그인 후: 환영 메시지 및 메뉴 바로가기 -->
-            <div id="home-welcome-container" class="home-dashboard" style="display: none;">
-                <div class="home-menu-container">
-                    <button onclick="showHomeSection('integrated')" class="home-big-btn btn-integrated">
-                        <div class="icon">📑</div>
-                        <h3>Integrated</h3>
-                        <p>통합 관리</p>
-                    </button>
-                    <button onclick="showHomeSection('setup')" class="home-big-btn btn-setup">
-                        <div class="icon">🛠️</div>
-                        <h3>Setup</h3>
-                        <p>장비 셋업</p>
-                    </button>
-                    <button onclick="showHomeSection('maint')" class="home-big-btn btn-maint">
-                        <div class="icon">📊</div>
-                        <h3>Maintenance</h3>
-                        <p>운영 관리</p>
-                    </button>
+                                <div id="gantt-task-list"></div>
+                            </div>
+                            <div class="gantt__resizer" id="gantt-resizer"></div>
+                            <div class="gantt__timeline-container" id="gantt-timeline-container">
+                                <div class="gantt__timeline" id="gantt-timeline">
+                                    <div class="gantt__header-row gantt__header-row--fixed" id="gantt-header-months">
+                                    </div>
+                                    <div class="gantt__header-row gantt__header-row--fixed" id="gantt-header-weeks">
+                                    </div>
+                                    <div id="gantt-body"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="gantt-empty-msg" class="empty-msg" style="display: none;">등록된 셋업 일정이 없습니다.</div>
+                    </div>
                 </div>
-                <div class="dashboard-split">
-                    <!-- 왼쪽: 셋업 현황 -->
-                    <div class="dashboard-col" id="section-setup" style="display: none;">
-                        <div class="maint-split-view" id="setup-split-view">
-                            <!-- 왼쪽: 차트 영역 -->
-                            <div class="maint-left-charts">
-                                <div class="status-group card-like">
-                                    <h5 class="status-group-title">사업장 현황</h5>
-                                    <div class="chart-row">
-                                        <div class="donut-chart-wrapper">
-                                            <div class="donut-chart" id="setup-site-status-chart"></div>
-                                            <div class="chart-center" id="setup-site-chart-center"></div>
-                                        </div>
-                                        <div class="status-list-container status-list-flex">
-                                            <div class="status-list-header">
-                                                <span class="header-name">사업장</span>
-                                                <span class="header-count">장비수</span>
-                                            </div>
-                                            <ul class="site-status-list" id="setup-site-status-list"></ul>
-                                        </div>
+
+                <!-- 오른쪽: 유지관리 현황 -->
+                <div class="dashboard-col" id="section-maint" style="display: none;">
+                    <button id="btn-mobile-register-task" class="btn-add mobile-only-btn"
+                        style="width: 100%; margin-bottom: 15px; display: none;">📅 작업 등록</button>
+                    <div class="maint-split-view">
+                        <!-- 왼쪽: 차트 영역 -->
+                        <div class="maint-left-charts">
+                            <div class="status-group card-like">
+                                <h5 class="status-group-title">사업장 현황</h5>
+                                <div class="chart-row">
+                                    <div class="donut-chart-wrapper">
+                                        <div class="donut-chart" id="site-status-chart"></div>
+                                        <div class="chart-center" id="site-chart-center"></div>
                                     </div>
-                                </div>
-                                <div class="status-group card-like">
-                                    <h5 class="status-group-title">장비 현황</h5>
-                                    <div class="chart-row">
-                                        <div class="donut-chart-wrapper">
-                                            <div class="donut-chart" id="setup-equip-status-chart"></div>
-                                            <div class="chart-center" id="setup-equip-chart-center"></div>
+                                    <div class="status-list-container status-list-flex">
+                                        <div class="status-list-header">
+                                            <span class="header-name">사업장</span>
+                                            <span class="header-count">장비수</span>
                                         </div>
-                                        <div class="status-list-container status-list-flex">
-                                            <div class="status-list-header">
-                                                <span class="header-name">장비명</span>
-                                                <span class="header-count">장비수</span>
-                                            </div>
-                                            <ul class="site-status-list" id="setup-equip-status-list"></ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="status-group card-like" id="setup-equip-info-group">
-                                    <h5 class="status-group-title">장비 정보</h5>
-                                    <div id="setup-equip-detail-container"
-                                        class="status-list-container status-list-flex">
-                                        <ul class="site-status-list" id="setup-equip-detail-list"></ul>
+                                        <ul class="site-status-list" id="site-status-list"></ul>
                                     </div>
                                 </div>
                             </div>
-                            <div id="setup-upcoming-container" class="upcoming-container">
-                                <h5 class="upcoming-title">⚠️ 예정 작업</h5>
-                                <div id="setup-upcoming-list" class="upcoming-list"></div>
+                            <div class="status-group card-like">
+                                <h5 class="status-group-title">장비 현황</h5>
+                                <div class="chart-row">
+                                    <div class="donut-chart-wrapper">
+                                        <div class="donut-chart" id="equip-status-chart"></div>
+                                        <div class="chart-center" id="equip-chart-center"></div>
+                                    </div>
+                                    <div class="status-list-container status-list-flex">
+                                        <div class="status-list-header">
+                                            <span class="header-name">장비명</span>
+                                            <span class="header-count">장비수</span>
+                                        </div>
+                                        <ul class="site-status-list" id="equip-status-list"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="status-group card-like">
+                                <h5 class="status-group-title">장비 정보</h5>
+                                <div id="equip-detail-container" class="status-list-container status-list-flex">
+                                    <ul class="site-status-list" id="equip-detail-list"></ul>
+                                </div>
                             </div>
                         </div>
-                        <div class="setup-card-body gantt" id="gantt-chart-area">
-                            <div class="gantt__title-wrapper">
-                                <div class="gantt__center-title">
-                                    <h5 class="gantt__subtitle">셋업 일정</h5>
-                                    <div style="text-align: right; margin-top: 10px; padding-right: 5px;">
-                                        <button class="btn-move" onclick="goToSetupPage()">장비 셋업 이동</button>
-                                    </div>
-                                    <div id="gantt-target-info" class="gantt__target-info"></div>
-                                </div>
-                                <div class="gantt__right-toolbar">
-                                    <div class="calendar-search-wrapper search-wrapper-flex">
-                                        <button id="btn-gantt-contract" class="btn-gray btn-spacing-right"
-                                            title="달력 축소 (1주)">-</button>
-                                        <button id="btn-gantt-expand" class="btn-gray btn-spacing-right"
-                                            title="달력 확장 (1주)">+</button>
-                                        <button id="btn-gantt-filter" class="btn-gray ml-5" title="장비 검색">검색</button>
-                                        <span id="gantt-filter-status" class="filter-status-text"></span>
-                                    </div>
-                                </div>
-                                <div class="gantt-mobile-guide">🔄 화면을 가로로 돌리면 차트가 표시됩니다</div>
-                            </div>
-                            <div class="gantt__wrapper" id="gantt-wrapper" style="display: none;">
-                                <div class="gantt__sidebar gantt__sidebar--initial" id="gantt-sidebar">
-                                    <div class="gantt__header-cell gantt__header-cell--fixed">
-                                        Task Name
-                                    </div>
 
-                                    <div id="gantt-task-list"></div>
+                        <!-- 오른쪽: 점검 임박 리스트 -->
+                        <div id="dash-upcoming-container" class="upcoming-container">
+                            <h5 class="upcoming-title">⚠️ 점검 임박 (30일 이내)</h5>
+                            <div id="dash-upcoming-list" class="upcoming-list"></div>
+                        </div>
+                    </div>
+                    <div class="calendar-container no-margin-top">
+                        <div class="calendar-title-wrapper">
+                            <div class="calendar-center-title">
+                                <h5 class="calendar-main-title">장비 점검 일정</h5>
+                                <div style="text-align: right; margin-top: 10px; padding-right: 5px;">
+                                    <button class="btn-move" onclick="goToMaintenancePage()">운영 관리 이동</button>
                                 </div>
-                                <div class="gantt__resizer" id="gantt-resizer"></div>
-                                <div class="gantt__timeline-container" id="gantt-timeline-container">
-                                    <div class="gantt__timeline" id="gantt-timeline">
-                                        <div class="gantt__header-row gantt__header-row--fixed"
-                                            id="gantt-header-months">
-                                        </div>
-                                        <div class="gantt__header-row gantt__header-row--fixed" id="gantt-header-weeks">
-                                        </div>
-                                        <div id="gantt-body"></div>
-                                    </div>
+                                <div id="calendar-target-info" class="calendar-target-info"></div>
+                            </div>
+                            <div class="calendar-right-toolbar">
+                                <div class="calendar-search-wrapper">
+                                    <input type="text" id="calendar-search" placeholder="Parts & 작업내용 검색">
+                                    <button id="btn-search-filter" class="btn-gray" title="검색 필터">⚙️</button>
                                 </div>
                             </div>
-                            <div id="gantt-empty-msg" class="empty-msg" style="display: none;">등록된 셋업 일정이 없습니다.</div>
+                        </div>
+                        <div class="calendar-header">
+                            <button id="prev-month">◀</button>
+                            <button id="btn-today">Today</button>
+                            <button id="next-month">▶</button>
+                        </div>
+                        <div class="calendars-wrapper">
+                            <div class="calendar-view">
+                                <h3 id="calendar-title-1"></h3>
+                                <div class="calendar-grid">
+                                    <div class="day-name">일</div>
+                                    <div class="day-name">월</div>
+                                    <div class="day-name">화</div>
+                                    <div class="day-name">수</div>
+                                    <div class="day-name">목</div>
+                                    <div class="day-name">금</div>
+                                    <div class="day-name">토</div>
+                                </div>
+                                <div id="calendar-dates-1" class="dates-grid"></div>
+                            </div>
+                            <div class="calendar-divider"></div>
+                            <div class="calendar-view">
+                                <h3 id="calendar-title-2"></h3>
+                                <div class="calendar-grid">
+                                    <div class="day-name">일</div>
+                                    <div class="day-name">월</div>
+                                    <div class="day-name">화</div>
+                                    <div class="day-name">수</div>
+                                    <div class="day-name">목</div>
+                                    <div class="day-name">금</div>
+                                    <div class="day-name">토</div>
+                                </div>
+                                <div id="calendar-dates-2" class="dates-grid"></div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- 오른쪽: 유지관리 현황 -->
-                    <div class="dashboard-col" id="section-maint" style="display: none;">
-                        <button id="btn-mobile-register-task" class="btn-add mobile-only-btn" style="width: 100%; margin-bottom: 15px; display: none;">📅 작업 등록</button>
-                        <div class="maint-split-view">
-                            <!-- 왼쪽: 차트 영역 -->
-                            <div class="maint-left-charts">
-                                <div class="status-group card-like">
-                                    <h5 class="status-group-title">사업장 현황</h5>
-                                    <div class="chart-row">
-                                        <div class="donut-chart-wrapper">
-                                            <div class="donut-chart" id="site-status-chart"></div>
-                                            <div class="chart-center" id="site-chart-center"></div>
-                                        </div>
-                                        <div class="status-list-container status-list-flex">
-                                            <div class="status-list-header">
-                                                <span class="header-name">사업장</span>
-                                                <span class="header-count">장비수</span>
-                                            </div>
-                                            <ul class="site-status-list" id="site-status-list"></ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="status-group card-like">
-                                    <h5 class="status-group-title">장비 현황</h5>
-                                    <div class="chart-row">
-                                        <div class="donut-chart-wrapper">
-                                            <div class="donut-chart" id="equip-status-chart"></div>
-                                            <div class="chart-center" id="equip-chart-center"></div>
-                                        </div>
-                                        <div class="status-list-container status-list-flex">
-                                            <div class="status-list-header">
-                                                <span class="header-name">장비명</span>
-                                                <span class="header-count">장비수</span>
-                                            </div>
-                                            <ul class="site-status-list" id="equip-status-list"></ul>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="status-group card-like">
-                                    <h5 class="status-group-title">장비 정보</h5>
-                                    <div id="equip-detail-container" class="status-list-container status-list-flex">
-                                        <ul class="site-status-list" id="equip-detail-list"></ul>
-                                    </div>
-                                </div>
-                            </div>
+                </div>
 
-                            <!-- 오른쪽: 점검 임박 리스트 -->
-                            <div id="dash-upcoming-container" class="upcoming-container">
-                                <h5 class="upcoming-title">⚠️ 점검 임박 (30일 이내)</h5>
-                                <div id="dash-upcoming-list" class="upcoming-list"></div>
-                            </div>
+                <!-- 통합 관리 현황 (신규) -->
+                <div class="dashboard-col" id="section-integrated" style="display: none;">
+                    <div class="integ-dashboard-view">
+                        <!-- [추가] 장비 통합 현황 (사업장 별 / 모델 별) -->
+                        <div class="integ-section-header" style="flex-direction: column; gap: 5px;">
+                            <h4 class="integ-section-title integ-title-equip">장비 통합 현황</h4>
+                            <span id="integ-equip-summary"
+                                style="font-size: 16px; color: #e6edf3; font-weight: bold;">(사업장 : 0, 장비 모델 : 0, 장비수 :
+                                0)</span>
                         </div>
-                        <div class="calendar-container no-margin-top">
-                            <div class="calendar-title-wrapper">
-                                <div class="calendar-center-title">
-                                    <h5 class="calendar-main-title">장비 점검 일정</h5>
-                                    <div style="text-align: right; margin-top: 10px; padding-right: 5px;">
-                                        <button class="btn-move" onclick="goToMaintenancePage()">운영 관리 이동</button>
-                                    </div>
-                                    <div id="calendar-target-info" class="calendar-target-info"></div>
-                                </div>
-                                <div class="calendar-right-toolbar">
-                                    <div class="calendar-search-wrapper">
-                                        <input type="text" id="calendar-search" placeholder="Parts & 작업내용 검색">
-                                        <button id="btn-search-filter" class="btn-gray" title="검색 필터">⚙️</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="calendar-header">
-                                <button id="prev-month">◀</button>
-                                <button id="btn-today">Today</button>
-                                <button id="next-month">▶</button>
-                            </div>
-                            <div class="calendars-wrapper">
-                                <div class="calendar-view">
-                                    <h3 id="calendar-title-1"></h3>
-                                    <div class="calendar-grid">
-                                        <div class="day-name">일</div>
-                                        <div class="day-name">월</div>
-                                        <div class="day-name">화</div>
-                                        <div class="day-name">수</div>
-                                        <div class="day-name">목</div>
-                                        <div class="day-name">금</div>
-                                        <div class="day-name">토</div>
-                                    </div>
-                                    <div id="calendar-dates-1" class="dates-grid"></div>
-                                </div>
-                                <div class="calendar-divider"></div>
-                                <div class="calendar-view">
-                                    <h3 id="calendar-title-2"></h3>
-                                    <div class="calendar-grid">
-                                        <div class="day-name">일</div>
-                                        <div class="day-name">월</div>
-                                        <div class="day-name">화</div>
-                                        <div class="day-name">수</div>
-                                        <div class="day-name">목</div>
-                                        <div class="day-name">금</div>
-                                        <div class="day-name">토</div>
-                                    </div>
-                                    <div id="calendar-dates-2" class="dates-grid"></div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- 통합 관리 현황 (신규) -->
-                    <div class="dashboard-col" id="section-integrated" style="display: none;">
-                        <div class="integ-dashboard-view">
-                            <!-- [추가] 장비 통합 현황 (사업장 별 / 모델 별) -->
-                            <div class="integ-section-header" style="flex-direction: column; gap: 5px;">
-                                <h4 class="integ-section-title integ-title-equip">장비 통합 현황</h4>
-                                <span id="integ-equip-summary" style="font-size: 16px; color: #e6edf3; font-weight: bold;">(사업장 : 0, 장비 모델 : 0, 장비수 : 0)</span>
-                            </div>
-                            <div class="integ-row">
-                                <div class="status-group card-like integ-full-width-card">
-                                    <h5 class="status-group-title">사업장 별 장비 현황</h5>
-                                    <div id="integ-equip-site-chart" class="bar-chart-container"></div>
-                                </div>
-                            </div>
-                            <div class="integ-row">
-                                <div class="status-group card-like integ-full-width-card">
-                                    <h5 class="status-group-title">모델 별 장비 현황</h5>
-                                    <div id="integ-equip-model-chart" class="bar-chart-container"></div>
-                                </div>
-                            </div>
-
-                            <!-- [추가] 셋업 통합 관리 헤더 -->
-                            <div class="integ-section-header" style="flex-direction: column; gap: 5px;">
-                                <h4 class="integ-section-title integ-title-setup"><span id="integ-setup-title-period"></span> 셋업 통합 관리</h4>
-                                <span id="integ-setup-summary" style="font-size: 16px; color: #e6edf3; font-weight: bold;">(전체 : 0, 진행중 : 0, 완료 : 0)</span>
-                                <div class="integ-controls-wrapper">
-                                    <select id="integ-setup-period-type" class="modal-select"
-                                        onchange="toggleIntegSetupPeriodMode()">
-                                        <option value="month">월간</option>
-                                        <option value="year">연간</option>
-                                        <option value="custom">직접 입력</option>
-                                    </select>
-                                    <input type="month" id="integ-setup-month" class="modal-select"
-                                        onchange="updateIntegratedDashboard()">
-                                    <select id="integ-setup-year" class="modal-select" style="display: none;"
-                                        onchange="updateIntegratedDashboard()"></select>
-                                    <input type="date" id="integ-setup-start" class="modal-select" style="display: none;" onchange="updateIntegratedDashboard()">
-                                    <span id="integ-setup-tilde" style="display: none; color: #e6edf3; align-self: center; margin: 0 5px;">~</span>
-                                    <input type="date" id="integ-setup-end" class="modal-select" style="display: none;" onchange="updateIntegratedDashboard()">
-                                </div>
-                            </div>
+                        <div class="integ-row">
                             <div class="status-group card-like integ-full-width-card">
-                                <h5 class="status-group-title">사업장 셋업 현황</h5>
-                                <div id="integ-setup-site-bar-chart" class="bar-chart-container"></div>
+                                <h5 class="status-group-title">사업장 별 장비 현황</h5>
+                                <div id="integ-equip-site-chart" class="bar-chart-container"></div>
                             </div>
-                                <div class="integ-row">
-                                    <!-- 기간별 셋업 현황 차트 -->
+                        </div>
+                        <div class="integ-row">
+                            <div class="status-group card-like integ-full-width-card">
+                                <h5 class="status-group-title">모델 별 장비 현황</h5>
+                                <div id="integ-equip-model-chart" class="bar-chart-container"></div>
+                            </div>
+                        </div>
 
-                                    <div class="status-group card-like integ-setup-chart-card">
-                                        <h5 class="status-group-title">셋업 현황 차트</h5>
-                                        <div class="chart-row integ-setup-chart-row">
-                                            <div class="integ-donut-container">
-                                                <h6 class="integ-donut-title">완료율</h6>
-                                                <div class="donut-chart-wrapper">
-                                                    <div class="donut-chart" id="integ-setup-complete-chart"></div>
-                                                    <div class="chart-center" id="integ-setup-complete-center"></div>
-                                                </div>
-                                            </div>
-                                            <div class="integ-donut-container">
-                                                <h6 class="integ-donut-title">셋업 완료</h6>
-                                                <div class="donut-chart-wrapper">
-                                                    <div class="donut-chart" id="integ-setup-done-chart"></div>
-                                                    <div class="chart-center" id="integ-setup-done-center"></div>
-                                                </div>
-                                            </div>
-                                            <div class="integ-donut-container">
-                                                <h6 class="integ-donut-title">진행중</h6>
-                                                <div class="donut-chart-wrapper">
-                                                    <div class="donut-chart" id="integ-setup-site-chart"></div>
-                                                    <div class="chart-center" id="integ-setup-site-center"></div>
-                                                </div>
-                                            </div>
+                        <!-- [추가] 셋업 통합 관리 헤더 -->
+                        <div class="integ-section-header" style="flex-direction: column; gap: 5px;">
+                            <h4 class="integ-section-title integ-title-setup"><span
+                                    id="integ-setup-title-period"></span> 셋업 통합 관리</h4>
+                            <span id="integ-setup-summary"
+                                style="font-size: 16px; color: #e6edf3; font-weight: bold;">(전체 : 0, 진행중 : 0, 완료 :
+                                0)</span>
+                            <div class="integ-controls-wrapper">
+                                <select id="integ-setup-period-type" class="modal-select"
+                                    onchange="toggleIntegSetupPeriodMode()">
+                                    <option value="month">월간</option>
+                                    <option value="year">연간</option>
+                                    <option value="custom">직접 입력</option>
+                                </select>
+                                <input type="month" id="integ-setup-month" class="modal-select"
+                                    onchange="updateIntegratedDashboard()">
+                                <select id="integ-setup-year" class="modal-select" style="display: none;"
+                                    onchange="updateIntegratedDashboard()"></select>
+                                <input type="date" id="integ-setup-start" class="modal-select" style="display: none;"
+                                    onchange="updateIntegratedDashboard()">
+                                <span id="integ-setup-tilde"
+                                    style="display: none; color: #e6edf3; align-self: center; margin: 0 5px;">~</span>
+                                <input type="date" id="integ-setup-end" class="modal-select" style="display: none;"
+                                    onchange="updateIntegratedDashboard()">
+                            </div>
+                        </div>
+                        <div class="status-group card-like integ-full-width-card">
+                            <h5 class="status-group-title">사업장 셋업 현황</h5>
+                            <div id="integ-setup-site-bar-chart" class="bar-chart-container"></div>
+                        </div>
+                        <div class="integ-row">
+                            <!-- 기간별 셋업 현황 차트 -->
+
+                            <div class="status-group card-like integ-setup-chart-card">
+                                <h5 class="status-group-title">셋업 현황 차트</h5>
+                                <div class="chart-row integ-setup-chart-row">
+                                    <div class="integ-donut-container">
+                                        <h6 class="integ-donut-title">완료율</h6>
+                                        <div class="donut-chart-wrapper">
+                                            <div class="donut-chart" id="integ-setup-complete-chart"></div>
+                                            <div class="chart-center" id="integ-setup-complete-center"></div>
                                         </div>
                                     </div>
-                                    <div class="status-group card-like integ-setup-list-card">
-                                        <h5 class="status-group-title" id="integ-setup-complete-title">셋업 완료 장비</h5>
-                                        <div class="status-list-container status-list-flex" id="integ-setup-complete-list-container">
-                                            <div class="status-list-header">
-                                                <span class="integ-setup-complete-header-name">장비 정보</span>
-                                                <span class="integ-setup-complete-header-date">완료일</span>
-                                            </div>
-                                            <ul class="site-status-list" id="integ-setup-complete-list"></ul>
+                                    <div class="integ-donut-container">
+                                        <h6 class="integ-donut-title">셋업 완료</h6>
+                                        <div class="donut-chart-wrapper">
+                                            <div class="donut-chart" id="integ-setup-done-chart"></div>
+                                            <div class="chart-center" id="integ-setup-done-center"></div>
                                         </div>
                                     </div>
-                                    <!-- 셋업 진행 리스트 -->
-                                    <div class="status-group card-like integ-setup-list-card">
-                                        <h5 class="status-group-title" id="integ-setup-active-title">셋업 진행 장비</h5>
-                                        <div class="status-list-container status-list-flex"
-                                            id="integ-setup-detail-container">
-                                            <div class="status-list-header">
-                                                <span class="integ-setup-detail-header-name">장비 정보</span>
-                                                <span class="integ-setup-detail-header-count">진행률</span>
-                                            </div>
-                                            <ul class="site-status-list" id="integ-setup-detail-list"></ul>
+                                    <div class="integ-donut-container">
+                                        <h6 class="integ-donut-title">진행중</h6>
+                                        <div class="donut-chart-wrapper">
+                                            <div class="donut-chart" id="integ-setup-site-chart"></div>
+                                            <div class="chart-center" id="integ-setup-site-center"></div>
                                         </div>
                                     </div>
                                 </div>
-                                <!-- 운영 관리 통계 (신규) -->
-                                <div class="integ-section-header" style="flex-direction: column; gap: 5px;">
-                                    <h4 class="integ-section-title integ-title-maint"><span id="integ-title-period"></span> 운영 통합 관리</h4>
-                                    <span id="integ-maint-summary" style="font-size: 16px; color: #e6edf3; font-weight: bold;">(PM : 0, BM : 0, 트러블이슈 : 0, 프로그램변경 : 0, 장비점검 : 0)</span>
-                                    <div class="integ-controls-wrapper">
-                                        <select id="integ-period-type" class="modal-select"
-                                            onchange="toggleIntegPeriodMode()">
-                                            <option value="month">월간</option>
-                                            <option value="year">연간</option>
-                                        <option value="custom">직접 입력</option>
-                                        </select>
-                                        <input type="month" id="integ-maint-month" class="modal-select"
-                                            onchange="renderIntegMaintStats()">
-                                        <select id="integ-maint-year" class="modal-select" style="display: none;"
-                                            onchange="renderIntegMaintStats()"></select>
-                                    <input type="date" id="integ-maint-start" class="modal-select" style="display: none;" onchange="renderIntegMaintStats()">
-                                    <span id="integ-maint-tilde" style="display: none; color: #e6edf3; align-self: center; margin: 0 5px;">~</span>
-                                    <input type="date" id="integ-maint-end" class="modal-select" style="display: none;" onchange="renderIntegMaintStats()">
+                            </div>
+                            <div class="status-group card-like integ-setup-list-card">
+                                <h5 class="status-group-title" id="integ-setup-complete-title">셋업 완료 장비</h5>
+                                <div class="status-list-container status-list-flex"
+                                    id="integ-setup-complete-list-container">
+                                    <div class="status-list-header">
+                                        <span class="integ-setup-complete-header-name">장비 정보</span>
+                                        <span class="integ-setup-complete-header-date">완료일</span>
                                     </div>
+                                    <ul class="site-status-list" id="integ-setup-complete-list"></ul>
                                 </div>
-                                <div class="integ-row">
-                                    <div class="status-group card-like integ-full-width-card">
-                                        <h5 class="status-group-title">사업장 작업 현황</h5>
-                                        <div id="integ-maint-site-chart" class="bar-chart-container"></div>
+                            </div>
+                            <!-- 셋업 진행 리스트 -->
+                            <div class="status-group card-like integ-setup-list-card">
+                                <h5 class="status-group-title" id="integ-setup-active-title">셋업 진행 장비</h5>
+                                <div class="status-list-container status-list-flex" id="integ-setup-detail-container">
+                                    <div class="status-list-header">
+                                        <span class="integ-setup-detail-header-name">장비 정보</span>
+                                        <span class="integ-setup-detail-header-count">진행률</span>
                                     </div>
+                                    <ul class="site-status-list" id="integ-setup-detail-list"></ul>
                                 </div>
-                                <div class="integ-row">
-                                    <div class="status-group card-like">
-                                        <h5 class="status-group-title">작업 유형별 현황</h5>
-                                        <div id="integ-maint-type-chart" class="bar-chart-container"></div>
+                            </div>
+                        </div>
+                        <!-- 운영 관리 통계 (신규) -->
+                        <div class="integ-section-header" style="flex-direction: column; gap: 5px;">
+                            <h4 class="integ-section-title integ-title-maint"><span id="integ-title-period"></span> 운영
+                                통합 관리</h4>
+                            <span id="integ-maint-summary"
+                                style="font-size: 16px; color: #e6edf3; font-weight: bold;">(PM : 0, BM : 0, 트러블이슈 : 0,
+                                프로그램변경 : 0, 장비점검 : 0)</span>
+                            <div class="integ-controls-wrapper">
+                                <select id="integ-period-type" class="modal-select" onchange="toggleIntegPeriodMode()">
+                                    <option value="month">월간</option>
+                                    <option value="year">연간</option>
+                                    <option value="custom">직접 입력</option>
+                                </select>
+                                <input type="month" id="integ-maint-month" class="modal-select"
+                                    onchange="renderIntegMaintStats()">
+                                <select id="integ-maint-year" class="modal-select" style="display: none;"
+                                    onchange="renderIntegMaintStats()"></select>
+                                <input type="date" id="integ-maint-start" class="modal-select" style="display: none;"
+                                    onchange="renderIntegMaintStats()">
+                                <span id="integ-maint-tilde"
+                                    style="display: none; color: #e6edf3; align-self: center; margin: 0 5px;">~</span>
+                                <input type="date" id="integ-maint-end" class="modal-select" style="display: none;"
+                                    onchange="renderIntegMaintStats()">
+                            </div>
+                        </div>
+                        <div class="integ-row">
+                            <div class="status-group card-like integ-full-width-card">
+                                <h5 class="status-group-title">사업장 작업 현황</h5>
+                                <div id="integ-maint-site-chart" class="bar-chart-container"></div>
+                            </div>
+                        </div>
+                        <div class="integ-row">
+                            <div class="status-group card-like">
+                                <h5 class="status-group-title">작업 유형별 현황</h5>
+                                <div id="integ-maint-type-chart" class="bar-chart-container"></div>
+                            </div>
+                            <div class="status-group card-like">
+                                <h5 class="status-group-title">점검 항목</h5>
+                                <div class="chart-row" id="integ-maint-item-chart-row">
+                                    <div class="donut-chart-wrapper">
+                                        <div class="donut-chart" id="integ-maint-item-chart"></div>
+                                        <div class="chart-center" id="integ-maint-item-center"></div>
                                     </div>
-                                    <div class="status-group card-like">
-                                        <h5 class="status-group-title">점검 항목</h5>
-                                        <div class="chart-row" id="integ-maint-item-chart-row">
-                                            <div class="donut-chart-wrapper">
-                                                <div class="donut-chart" id="integ-maint-item-chart"></div>
-                                                <div class="chart-center" id="integ-maint-item-center"></div>
-                                            </div>
-                                            <div class="status-list-container status-list-flex" id="integ-maint-item-list-container">
-                                                <div class="status-list-header">
-                                                    <span class="integ-list-header-type">구분</span>
-                                                    <span class="integ-list-header-name">항목명</span>
-                                                    <span class="integ-list-header-count">건수</span>
-                                                </div>
-                                                <ul class="site-status-list" id="integ-maint-item-list"></ul>
-                                            </div>
+                                    <div class="status-list-container status-list-flex"
+                                        id="integ-maint-item-list-container">
+                                        <div class="status-list-header">
+                                            <span class="integ-list-header-type">구분</span>
+                                            <span class="integ-list-header-name">항목명</span>
+                                            <span class="integ-list-header-count">건수</span>
                                         </div>
+                                        <ul class="site-status-list" id="integ-maint-item-list"></ul>
                                     </div>
                                 </div>
                             </div>
@@ -400,363 +411,363 @@
                     </div>
                 </div>
             </div>
-    </main>
+        </div>
+    </div>
+</main>
 
-    <!-- 3.2 캘린더 팝업 -->
-    <div id="calendar-popup" class="modal-overlay" style="display: none;">
-        <div class="modal-window">
-            <div class="modal-header">
-                <h3 id="popup-date-title"></h3>
-                <div class="popup-header-controls">
-                    <button class="btn-add-popup" id="btn-open-register-modal" title="작업 예정일 등록">+</button>
-                    <button class="btn-del-sm" id="btn-close-calendar-popup">✕</button>
-                </div>
+<!-- 3.2 캘린더 팝업 -->
+<div id="calendar-popup" class="modal-overlay" style="display: none;">
+    <div class="modal-window">
+        <div class="modal-header">
+            <h3 id="popup-date-title"></h3>
+            <div class="popup-header-controls">
+                <button class="btn-add-popup" id="btn-open-register-modal" title="작업 예정일 등록">+</button>
+                <button class="btn-del-sm" id="btn-close-calendar-popup">✕</button>
             </div>
-            <div class="modal-body">
-                <ul id="popup-event-list" class="list-data"></ul>
+        </div>
+        <div class="modal-body">
+            <ul id="popup-event-list" class="list-data"></ul>
+        </div>
+    </div>
+</div>
+
+<!-- 3.3 작업 예정일 설정 모달 -->
+<div id="schedule-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window">
+        <div class="modal-header">
+            <h3>작업 예정일 설정</h3>
+            <button class="btn-del-sm" id="btn-close-schedule-modal">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <input type="date" id="schedule-date-input">
+                <button id="btn-schedule-calendar" class="btn-gray" title="달력 열기">📅</button>
+            </div>
+            <div class="modal-btn-group">
+                <button class="btn-del" id="btn-delete-schedule">일정 삭제</button>
+                <button class="btn-blue" id="btn-save-schedule">저장</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- 3.3 작업 예정일 설정 모달 -->
-    <div id="schedule-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window">
-            <div class="modal-header">
-                <h3>작업 예정일 설정</h3>
-                <button class="btn-del-sm" id="btn-close-schedule-modal">✕</button>
+<!-- 3.4 일정 상세 및 작업 완료 모달 -->
+<div id="event-detail-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window">
+        <div class="modal-header">
+            <h3>작업 상세 정보</h3>
+            <button class="btn-del-sm" id="btn-close-detail-modal">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="detail-row">
+                <div class="detail-label-row">
+                    <label class="detail-label">장비 정보</label>
+                    <button class="btn-shortcut" id="btn-move-to-equip">이동</button>
+                </div>
+                <div id="detail-equip-info"></div>
             </div>
-            <div class="modal-body">
-                <div class="form-row">
-                    <input type="date" id="schedule-date-input">
-                    <button id="btn-schedule-calendar" class="btn-gray" title="달력 열기">📅</button>
+            <div class="detail-row">
+                <label class="detail-label">Serial No.</label>
+                <div id="detail-serial-no"></div>
+            </div>
+            <div class="detail-row" id="detail-date-row" style="display: none;">
+                <label class="detail-label">작업일</label>
+                <div class="detail-date-row-inner">
+                    <input type="date" id="detail-scheduled-date" class="input-date-dark">
                 </div>
-                <div class="modal-btn-group">
-                    <button class="btn-del" id="btn-delete-schedule">일정 삭제</button>
-                    <button class="btn-blue" id="btn-save-schedule">저장</button>
+            </div>
+            <div class="detail-row">
+                <label class="detail-label">구분</label>
+                <div id="detail-type"></div>
+            </div>
+            <div class="detail-row large-margin">
+                <div class="detail-label-row">
+                    <label class="detail-label">점검 항목</label>
+                    <button class="btn-text-sm btn-blue" id="btn-edit-detail-content"
+                        style="padding: 2px 8px; font-size: 11px; display: none;">수정</button>
                 </div>
+                <div id="detail-content"></div>
+                <input type="text" id="detail-content-input" class="input-date-dark"
+                    style="display: none; width: 100%;">
+            </div>
+            <div class="detail-row">
+                <label class="detail-label">작업자</label>
+                <input type="text" id="detail-worker" placeholder="작업자 성명">
+            </div>
+            <div class="detail-row">
+                <label class="detail-label">점검 결과 / 메모</label>
+                <textarea id="detail-work-memo" placeholder="작업 내용을 입력하세요" spellcheck="false"></textarea>
+            </div>
+            <div class="modal-btn-group">
+                <button class="btn-blue" id="btn-save-detail-memo" style="display: none;">저장</button>
+                <button class="btn-gray" id="btn-close-detail-footer">닫기</button>
+                <button class="btn-del" id="btn-cancel-completion" style="display: none;">작업완료 취소</button>
+                <button class="btn-green" id="btn-complete-work">작업 완료</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- 3.4 일정 상세 및 작업 완료 모달 -->
-    <div id="event-detail-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window">
-            <div class="modal-header">
-                <h3>작업 상세 정보</h3>
-                <button class="btn-del-sm" id="btn-close-detail-modal">✕</button>
+<!-- 3.5 작업 예정일 등록 모달 (달력에서 호출) -->
+<div id="register-schedule-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window">
+        <div class="modal-header">
+            <h3>작업 등록</h3>
+            <button class="btn-del-sm" id="btn-close-register-modal">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <label class="form-label">날짜</label>
+                <input type="date" id="register-date-display" class="input-date-dark">
             </div>
-            <div class="modal-body">
-                <div class="detail-row">
-                    <div class="detail-label-row">
-                        <label class="detail-label">장비 정보</label>
-                        <button class="btn-shortcut" id="btn-move-to-equip">이동</button>
-                    </div>
-                    <div id="detail-equip-info"></div>
-                </div>
-                <div class="detail-row">
-                    <label class="detail-label">Serial No.</label>
-                    <div id="detail-serial-no"></div>
-                </div>
-                <div class="detail-row" id="detail-date-row" style="display: none;">
-                    <label class="detail-label">작업일</label>
-                    <div class="detail-date-row-inner">
-                        <input type="date" id="detail-scheduled-date" class="input-date-dark">
-                    </div>
-                </div>
-                <div class="detail-row">
-                    <label class="detail-label">구분</label>
-                    <div id="detail-type"></div>
-                </div>
-                <div class="detail-row large-margin">
-                    <div class="detail-label-row">
-                        <label class="detail-label">점검 항목</label>
-                        <button class="btn-text-sm btn-blue" id="btn-edit-detail-content"
-                            style="padding: 2px 8px; font-size: 11px; display: none;">수정</button>
-                    </div>
-                    <div id="detail-content"></div>
-                    <input type="text" id="detail-content-input" class="input-date-dark"
-                        style="display: none; width: 100%;">
-                </div>
-                <div class="detail-row">
-                    <label class="detail-label">작업자</label>
-                    <input type="text" id="detail-worker" placeholder="작업자 성명">
-                </div>
-                <div class="detail-row">
-                    <label class="detail-label">점검 결과 / 메모</label>
-                    <textarea id="detail-work-memo" placeholder="작업 내용을 입력하세요" spellcheck="false"></textarea>
-                </div>
-                <div class="modal-btn-group">
-                    <button class="btn-blue" id="btn-save-detail-memo" style="display: none;">저장</button>
-                    <button class="btn-gray" id="btn-close-detail-footer">닫기</button>
-                    <button class="btn-del" id="btn-cancel-completion" style="display: none;">작업완료 취소</button>
-                    <button class="btn-green" id="btn-complete-work">작업 완료</button>
-                </div>
+            <div class="form-row">
+                <label class="form-label">사업장</label>
+                <select id="register-site-select" class="modal-select"></select>
+            </div>
+            <div class="form-row">
+                <label class="form-label">장비</label>
+                <select id="register-equip-select" class="modal-select" disabled></select>
+            </div>
+            <div class="form-row">
+                <label class="form-label">구분</label>
+                <select id="register-type-select" class="modal-select">
+                    <option value="PM">PM</option>
+                    <option value="BM">BM</option>
+                    <option value="장비점검">장비 점검</option>
+                    <option value="프로그램변경">프로그램 변경</option>
+                    <option value="트러블이슈">트러블이슈</option>
+                </select>
+            </div>
+            <div id="register-item-list"></div>
+            <div class="modal-btn-group-right">
+                <button class="btn-blue" id="btn-confirm-register-schedule">등록</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- 3.5 작업 예정일 등록 모달 (달력에서 호출) -->
-    <div id="register-schedule-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window">
-            <div class="modal-header">
-                <h3>작업 등록</h3>
-                <button class="btn-del-sm" id="btn-close-register-modal">✕</button>
+<!-- 3.6 일정 날짜 수정 모달 (Home - Setup Status) -->
+<div id="setup-date-edit-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window size-date-edit">
+        <div class="modal-header">
+            <h3>계획 일정 수정</h3>
+            <button class="btn-del-sm"
+                onclick="document.getElementById('setup-date-edit-modal').style.display='none'">✕</button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="edit-task-id">
+            <input type="hidden" id="edit-task-type">
+            <input type="hidden" id="edit-task-site">
+            <input type="hidden" id="edit-task-equip">
+            <div class="form-row"><label class="form-label">시작일</label><input type="date" id="edit-start-date">
             </div>
-            <div class="modal-body">
-                <div class="form-row">
-                    <label class="form-label">날짜</label>
-                    <input type="date" id="register-date-display" class="input-date-dark">
-                </div>
-                <div class="form-row">
-                    <label class="form-label">사업장</label>
-                    <select id="register-site-select" class="modal-select"></select>
-                </div>
-                <div class="form-row">
-                    <label class="form-label">장비</label>
-                    <select id="register-equip-select" class="modal-select" disabled></select>
-                </div>
-                <div class="form-row">
-                    <label class="form-label">구분</label>
-                    <select id="register-type-select" class="modal-select">
-                        <option value="PM">PM</option>
-                        <option value="BM">BM</option>
-                        <option value="장비점검">장비 점검</option>
-                        <option value="프로그램변경">프로그램 변경</option>
-                        <option value="트러블이슈">트러블이슈</option>
-                    </select>
-                </div>
-                <div id="register-item-list"></div>
-                <div class="modal-btn-group-right">
-                    <button class="btn-blue" id="btn-confirm-register-schedule">등록</button>
-                </div>
+            <div class="form-row"><label class="form-label">종료일</label><input type="date" id="edit-end-date"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-blue" onclick="saveDateEdit()">저장</button>
+            <button class="btn-gray"
+                onclick="document.getElementById('setup-date-edit-modal').style.display='none'">취소</button>
+        </div>
+    </div>
+</div>
+
+<!-- 3.7 달력 상세 검색 모달 -->
+<div id="calendar-search-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window">
+        <div class="modal-header">
+            <h3>달력 상세 검색</h3>
+            <button class="btn-del-sm" id="btn-close-search-modal">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <label class="form-label">사업장</label>
+                <select id="search-site-select" class="modal-select"></select>
+            </div>
+            <div class="form-row">
+                <label class="form-label">장비</label>
+                <select id="search-equip-select" class="modal-select" disabled></select>
+            </div>
+            <div class="modal-btn-group-right">
+                <button class="btn-gray" id="btn-reset-search-filter">초기화</button>
+                <button class="btn-blue" id="btn-apply-search-filter">적용</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- 3.6 일정 날짜 수정 모달 (Home - Setup Status) -->
-    <div id="setup-date-edit-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window size-date-edit">
-            <div class="modal-header">
-                <h3>계획 일정 수정</h3>
-                <button class="btn-del-sm"
-                    onclick="document.getElementById('setup-date-edit-modal').style.display='none'">✕</button>
+<!-- 3.8 실행 완료 체크 모달 -->
+<div id="exec-completion-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window size-date-edit">
+        <div class="modal-header">
+            <h3>작업 완료 등록</h3>
+            <button class="btn-del-sm"
+                onclick="document.getElementById('exec-completion-modal').style.display='none'">✕</button>
+        </div>
+        <div class="modal-body" style="text-align: center; padding: 20px;">
+            <input type="hidden" id="exec-complete-site">
+            <input type="hidden" id="exec-complete-equip">
+            <input type="hidden" id="exec-complete-id">
+            <div class="modal-date-row">
+                <label class="modal-date-label">작업 일수</label>
+                <input type="text" id="exec-est-days" class="input-date-dark modal-date-input-fixed" readonly disabled
+                    style="text-align: center;">
             </div>
-            <div class="modal-body">
-                <input type="hidden" id="edit-task-id">
-                <input type="hidden" id="edit-task-type">
-                <input type="hidden" id="edit-task-site">
-                <input type="hidden" id="edit-task-equip">
-                <div class="form-row"><label class="form-label">시작일</label><input type="date" id="edit-start-date">
+            <div class="modal-date-row">
+                <label class="modal-date-label">시작일</label>
+                <input type="date" id="exec-start-date" class="input-date-dark modal-date-input-fixed">
+            </div>
+            <div class="modal-date-row last">
+                <label class="modal-date-label">완료일</label>
+                <input type="date" id="exec-end-date" class="input-date-dark modal-date-input-fixed">
+            </div>
+            <label class="modal-checkbox-label">
+                <input type="checkbox" id="exec-complete-checkbox" class="modal-checkbox-input">
+                작업 완료
+            </label>
+            <div id="exec-setup-log-container" class="modal-date-row"
+                style="margin-top: 15px; display: block; text-align: left;">
+                <label class="modal-date-label" style="display:block; margin-bottom:5px; color:#e6edf3;">셋업 이력 (일지
+                    등록)</label>
+                <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                    <label class="modal-date-label" style="width: 50px; margin-bottom: 0; text-align: left;">업체</label>
+                    <input type="text" id="exec-setup-log-company" class="input-date-dark" placeholder="업체명"
+                        style="flex: 1;">
                 </div>
-                <div class="form-row"><label class="form-label">종료일</label><input type="date" id="edit-end-date"></div>
+                <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                    <label class="modal-date-label" style="width: 50px; margin-bottom: 0; text-align: left;">작업자</label>
+                    <input type="text" id="exec-setup-log-worker" class="input-date-dark" placeholder="작업자"
+                        style="flex: 1;">
+                </div>
+                <textarea id="exec-setup-log-content" class="delay-reason-textarea" placeholder="작업 내용을 입력하세요"
+                    spellcheck="false" style="height: 60px;"></textarea>
             </div>
-            <div class="modal-footer">
-                <button class="btn-blue" onclick="saveDateEdit()">저장</button>
-                <button class="btn-gray"
-                    onclick="document.getElementById('setup-date-edit-modal').style.display='none'">취소</button>
+            <div id="exec-delay-reason-container" class="delay-reason-wrapper">
+                <label class="delay-reason-label">지연 사유</label>
+                <textarea id="exec-delay-reason" class="delay-reason-textarea" placeholder="지연 사유를 입력하세요"
+                    spellcheck="false"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-blue" onclick="saveExecCompletion()">확인</button>
+        </div>
+    </div>
+</div>
+
+<!-- 3.9 실행 시작일 설정 모달 (간트 뷰용) -->
+<div id="setup-exec-start-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window size-date-edit">
+        <div class="modal-header">
+            <h3>실행 시작일 설정</h3>
+            <button class="btn-del-sm" id="btn-close-setup-exec-start">✕</button>
+        </div>
+        <div class="modal-body" style="text-align: center; padding: 20px;">
+            <div class="modal-date-row">
+                <label class="modal-date-label">시작일</label>
+                <input type="date" id="setup-exec-start-date" class="input-date-dark modal-date-input-fixed">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-blue" id="btn-save-setup-exec-start" onclick="saveSetupExecStart()">확인</button>
+        </div>
+    </div>
+</div>
+
+<!-- 3.10 간트 차트 상세 검색 모달 -->
+<div id="gantt-search-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window">
+        <div class="modal-header">
+            <h3>간트 차트 상세 검색</h3>
+            <button class="btn-del-sm" id="btn-close-gantt-search-modal">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <label class="form-label">사업장</label>
+                <select id="gantt-site-select" class="modal-select"></select>
+            </div>
+            <div class="form-row">
+                <label class="form-label">장비</label>
+                <select id="gantt-equip-select" class="modal-select" disabled></select>
+            </div>
+            <div class="modal-btn-group-right">
+                <button class="btn-gray" id="btn-reset-gantt-filter">초기화</button>
+                <button class="btn-blue" id="btn-apply-gantt-filter">적용</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- 3.7 달력 상세 검색 모달 -->
-    <div id="calendar-search-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window">
-            <div class="modal-header">
-                <h3>달력 상세 검색</h3>
-                <button class="btn-del-sm" id="btn-close-search-modal">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-row">
-                    <label class="form-label">사업장</label>
-                    <select id="search-site-select" class="modal-select"></select>
-                </div>
-                <div class="form-row">
-                    <label class="form-label">장비</label>
-                    <select id="search-equip-select" class="modal-select" disabled></select>
-                </div>
-                <div class="modal-btn-group-right">
-                    <button class="btn-gray" id="btn-reset-search-filter">초기화</button>
-                    <button class="btn-blue" id="btn-apply-search-filter">적용</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3.8 실행 완료 체크 모달 -->
-    <div id="exec-completion-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window size-date-edit">
-            <div class="modal-header">
-                <h3>작업 완료 등록</h3>
-                <button class="btn-del-sm"
-                    onclick="document.getElementById('exec-completion-modal').style.display='none'">✕</button>
-            </div>
-            <div class="modal-body" style="text-align: center; padding: 20px;">
-                <input type="hidden" id="exec-complete-site">
-                <input type="hidden" id="exec-complete-equip">
-                <input type="hidden" id="exec-complete-id">
-                <div class="modal-date-row">
-                    <label class="modal-date-label">작업 일수</label>
-                    <input type="text" id="exec-est-days" class="input-date-dark modal-date-input-fixed" readonly
-                        disabled style="text-align: center;">
-                </div>
-                <div class="modal-date-row">
-                    <label class="modal-date-label">시작일</label>
-                    <input type="date" id="exec-start-date" class="input-date-dark modal-date-input-fixed">
-                </div>
-                <div class="modal-date-row last">
-                    <label class="modal-date-label">완료일</label>
-                    <input type="date" id="exec-end-date" class="input-date-dark modal-date-input-fixed">
-                </div>
-                <label class="modal-checkbox-label">
-                    <input type="checkbox" id="exec-complete-checkbox" class="modal-checkbox-input">
-                    작업 완료
-                </label>
-                <div id="exec-setup-log-container" class="modal-date-row"
-                    style="margin-top: 15px; display: block; text-align: left;">
-                    <label class="modal-date-label" style="display:block; margin-bottom:5px; color:#e6edf3;">셋업 이력 (일지
-                        등록)</label>
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label class="modal-date-label"
-                            style="width: 50px; margin-bottom: 0; text-align: left;">업체</label>
-                        <input type="text" id="exec-setup-log-company" class="input-date-dark" placeholder="업체명"
-                            style="flex: 1;">
-                    </div>
-                    <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                        <label class="modal-date-label"
-                            style="width: 50px; margin-bottom: 0; text-align: left;">작업자</label>
-                        <input type="text" id="exec-setup-log-worker" class="input-date-dark" placeholder="작업자"
-                            style="flex: 1;">
-                    </div>
-                    <textarea id="exec-setup-log-content" class="delay-reason-textarea" placeholder="작업 내용을 입력하세요"
-                        spellcheck="false" style="height: 60px;"></textarea>
-                </div>
-                <div id="exec-delay-reason-container" class="delay-reason-wrapper">
-                    <label class="delay-reason-label">지연 사유</label>
-                    <textarea id="exec-delay-reason" class="delay-reason-textarea" placeholder="지연 사유를 입력하세요"
-                        spellcheck="false"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-blue" onclick="saveExecCompletion()">확인</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3.9 실행 시작일 설정 모달 (간트 뷰용) -->
-    <div id="setup-exec-start-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window size-date-edit">
-            <div class="modal-header">
-                <h3>실행 시작일 설정</h3>
-                <button class="btn-del-sm" id="btn-close-setup-exec-start">✕</button>
-            </div>
-            <div class="modal-body" style="text-align: center; padding: 20px;">
-                <div class="modal-date-row">
-                    <label class="modal-date-label">시작일</label>
-                    <input type="date" id="setup-exec-start-date" class="input-date-dark modal-date-input-fixed">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-blue" id="btn-save-setup-exec-start" onclick="saveSetupExecStart()">확인</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 3.10 간트 차트 상세 검색 모달 -->
-    <div id="gantt-search-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window">
-            <div class="modal-header">
-                <h3>간트 차트 상세 검색</h3>
-                <button class="btn-del-sm" id="btn-close-gantt-search-modal">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-row">
-                    <label class="form-label">사업장</label>
-                    <select id="gantt-site-select" class="modal-select"></select>
-                </div>
-                <div class="form-row">
-                    <label class="form-label">장비</label>
-                    <select id="gantt-equip-select" class="modal-select" disabled></select>
-                </div>
-                <div class="modal-btn-group-right">
-                    <button class="btn-gray" id="btn-reset-gantt-filter">초기화</button>
-                    <button class="btn-blue" id="btn-apply-gantt-filter">적용</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ==========================================================================
+<!-- ==========================================================================
          4. 템플릿 (Templates)
          ========================================================================== -->
-    <template id="gantt-task-template">
-        <div class="gantt__task-item" draggable="true">
-            <div class="gantt__task-label-container">
-                <span class="gantt__task-label"></span>
-                <span class="gantt__task-progress"></span>
-            </div>
-            <div class="gantt__task-controls">
-                <button class="gantt__btn-add" title="실행 바 추가">▶</button>
-                <button class="btn-del-sm">✕</button>
-            </div>
+<template id="gantt-task-template">
+    <div class="gantt__task-item" draggable="true">
+        <div class="gantt__task-label-container">
+            <span class="gantt__task-label"></span>
+            <span class="gantt__task-progress"></span>
         </div>
-    </template>
+        <div class="gantt__task-controls">
+            <button class="gantt__btn-add" title="실행 바 추가">▶</button>
+            <button class="btn-del-sm">✕</button>
+        </div>
+    </div>
+</template>
 
-    <template id="upcoming-item-template">
-        <div class="upcoming-item">
-            <div style="flex: 1;">
-                <div class="upcoming-info-site"></div>
-                <div class="upcoming-info-content"></div>
-            </div>
-            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px; margin-left: 10px;">
-                <div class="d-day-badge"></div>
-                <button class="btn-shortcut">이동</button>
-            </div>
+<template id="upcoming-item-template">
+    <div class="upcoming-item">
+        <div style="flex: 1;">
+            <div class="upcoming-info-site"></div>
+            <div class="upcoming-info-content"></div>
         </div>
-    </template>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 5px; margin-left: 10px;">
+            <div class="d-day-badge"></div>
+            <button class="btn-shortcut">이동</button>
+        </div>
+    </div>
+</template>
 
-    <template id="setup-upcoming-item-template">
-        <div class="upcoming-item">
-            <div style="flex: 1;">
-                <div class="upcoming-info-site"></div>
-                <div class="upcoming-info-content"></div>
-            </div>
-            <div class="d-day-badge" style="width: auto; padding: 2px 8px;"></div>
+<template id="setup-upcoming-item-template">
+    <div class="upcoming-item">
+        <div style="flex: 1;">
+            <div class="upcoming-info-site"></div>
+            <div class="upcoming-info-content"></div>
         </div>
-    </template>
+        <div class="d-day-badge" style="width: auto; padding: 2px 8px;"></div>
+    </div>
+</template>
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/gantt.js') }}"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/calendar.js') }}"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/index.js') }}"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/integ.js') }}"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // [추가] 모바일 작업 등록 버튼 이벤트
-            const btnMobileRegister = document.getElementById('btn-mobile-register-task');
-            if (btnMobileRegister) {
-                btnMobileRegister.addEventListener('click', () => {
-                    const today = new Date().toISOString().split('T')[0];
-                    // [수정] calendar.js의 함수 호출 (데이터 연동 및 초기화)
-                    if (typeof window.openRegisterScheduleModal === 'function') {
-                        window.isMobileRegisterFlow = true; // 모바일 플로우 플래그 설정
-                        window.openRegisterScheduleModal(today);
+<script src="{{ url_for('SettingDAO', filename='JavaScript/gantt.js') }}"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/calendar.js') }}"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/index.js') }}"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/integ.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // [추가] 모바일 작업 등록 버튼 이벤트
+        const btnMobileRegister = document.getElementById('btn-mobile-register-task');
+        if (btnMobileRegister) {
+            btnMobileRegister.addEventListener('click', () => {
+                const today = new Date().toISOString().split('T')[0];
+                // [수정] calendar.js의 함수 호출 (데이터 연동 및 초기화)
+                if (typeof window.openRegisterScheduleModal === 'function') {
+                    window.isMobileRegisterFlow = true; // 모바일 플로우 플래그 설정
+                    window.openRegisterScheduleModal(today);
+                }
+            });
+        }
+
+        // [요청] 모바일에서 캘린더 이벤트 드래그 비활성화
+        // 화면 너비가 950px 이하일 때, .calendar-event-item에서 발생하는 dragstart 이벤트를 취소합니다.
+        if (window.matchMedia("(max-width: 950px)").matches) {
+            const calendarContainer = document.querySelector('.calendar-container');
+            if (calendarContainer) {
+                calendarContainer.addEventListener('dragstart', function (event) {
+                    if (event.target.classList.contains('calendar-event-item')) {
+                        event.preventDefault();
                     }
                 });
             }
-
-            // [요청] 모바일에서 캘린더 이벤트 드래그 비활성화
-            // 화면 너비가 950px 이하일 때, .calendar-event-item에서 발생하는 dragstart 이벤트를 취소합니다.
-            if (window.matchMedia("(max-width: 950px)").matches) {
-                const calendarContainer = document.querySelector('.calendar-container');
-                if (calendarContainer) {
-                    calendarContainer.addEventListener('dragstart', function(event) {
-                        if (event.target.classList.contains('calendar-event-item')) {
-                            event.preventDefault();
-                        }
-                    });
-                }
-            }
-        });
-    </script>
+        }
+    });
+</script>
 {% endblock %}
