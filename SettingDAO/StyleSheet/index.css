@@ -815,6 +815,21 @@ body {
    ========================================================================== */
 .ml-5 { margin-left: 5px; }
 
+/* [추가] 녹색 소형 버튼 스타일 */
+.btn-green-sm {
+    background-color: #238636;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.btn-green-sm:hover {
+    background-color: #2ea043;
+}
+
 /* ==========================================================
    모바일 반응형 스타일 (Mobile Responsive Styles)
    ========================================================== */
