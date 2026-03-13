@@ -681,7 +681,8 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         if (editContentBtn) editContentBtn.style.display = 'none';
         if (cancelBtn) cancelBtn.style.display = 'block'; // 완료된 상태면 취소 버튼 표시
     } else {
-        workerInput.value = localStorage.getItem('lastWorkerName') || sessionStorage.getItem('userId') || '';
+        // [수정] 저장된 작업자(취소된 내용)가 있으면 우선 사용
+        workerInput.value = item.worker || localStorage.getItem('lastWorkerName') || sessionStorage.getItem('userId') || '';
         workerInput.disabled = false;
         
         // [추가] 이전 점검 결과(메모) 불러오기
@@ -693,7 +694,8 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             });
             if (sortedLogs.length > 0) lastMemo = sortedLogs[0].memo || '';
         }
-        memoInput.value = lastMemo;
+        // [수정] 저장된 메모(취소된 내용)가 있으면 우선 사용, 없으면 이전 이력 메모 사용
+        memoInput.value = item.memo || lastMemo;
         memoInput.disabled = false;
         
         dateRow.style.display = 'block';
@@ -967,6 +969,9 @@ function completeScheduleWork() {
 
     sameDayItems.forEach(i => {
         delete i.scheduledDate;
+        // [추가] 완료 처리 시 임시 저장된 작업자/메모 삭제 (다음 예정일 때 초기화된 상태로 시작)
+        delete i.worker;
+        delete i.memo;
         // [추가] PM/BM 항목은 완료 시 시작일(마지막 점검일) 갱신
         if (i.type === 'PM' || i.type === 'BM') {
             i.date = completeDate;
@@ -1061,6 +1066,9 @@ function cancelScheduleCompletion() {
         
         if (existingItem) {
             existingItem.scheduledDate = logDate;
+            // [추가] 취소 시 입력했던 내용 복구 저장
+            existingItem.worker = recoveredWorker;
+            existingItem.memo = recoveredMemo;
             if (idx === 0) recoveredMaintId = existingItem.id;
         } else {
             // 일회성 항목 등으로 인해 maint에서 삭제된 경우 재생성
@@ -1071,7 +1079,9 @@ function cancelScheduleCompletion() {
                 content: content,
                 date: "", // 수행되지 않은 상태로 초기화
                 period: null,
-                scheduledDate: logDate
+                scheduledDate: logDate,
+                worker: recoveredWorker, // [추가]
+                memo: recoveredMemo      // [추가]
             });
             if (idx === 0) recoveredMaintId = newId;
         }
