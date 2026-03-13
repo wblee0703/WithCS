@@ -153,8 +153,13 @@ tr.dragging {
 }
 
 /* 유지관리 테이블 설정 */
-#maint-table-body tr { cursor: default; }
-.maint-list-table.management-active tbody tr { cursor: grab; }
+#maint-table-body tr {
+    cursor: default;
+}
+
+.maint-list-table.management-active tbody tr {
+    cursor: grab;
+}
 
 /* 유지관리 관리 모드 (삭제 컬럼 제어) */
 .maint-list-table th:last-child,
@@ -172,10 +177,26 @@ tr.dragging {
     table-layout: fixed;
 }
 
-#log-list-wrapper .data-table th:nth-child(1) { width: 150px; } /* 점검일 */
-#log-list-wrapper .data-table th:nth-child(2) { width: 100px; } /* 구분 */
-#log-list-wrapper .data-table th:nth-child(4) { width: 150px; } /* 작업자 */
-#log-list-wrapper .data-table th:nth-child(5) { width: 90px; }  /* 관리 */
+#log-list-wrapper .data-table th:nth-child(1) {
+    width: 150px;
+}
+
+/* 점검일 */
+#log-list-wrapper .data-table th:nth-child(2) {
+    width: 100px;
+}
+
+/* 구분 */
+#log-list-wrapper .data-table th:nth-child(4) {
+    width: 150px;
+}
+
+/* 작업자 */
+#log-list-wrapper .data-table th:nth-child(5) {
+    width: 90px;
+}
+
+/* 관리 */
 
 /* 로그 테이블 관리 모드 (삭제 컬럼 제어) */
 #log-list-wrapper .data-table th:nth-child(5),
@@ -240,15 +261,44 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     font-size: 12px;
 }
 
-.toggle-group button.active[data-type="PM"] { background: #238636; color: #fff; }
-.toggle-group button.active[data-type="BM"] { background: #1f6feb; color: #fff; }
-.toggle-group button.active[data-type="장비점검"] { background: #d29922; color: #fff; }
-.toggle-group button.active[data-type="프로그램변경"] { background: #8957e5; color: #fff; }
+.toggle-group button.active[data-type="PM"] {
+    background: #238636;
+    color: #fff;
+}
+
+.toggle-group button.active[data-type="BM"] {
+    background: #1f6feb;
+    color: #fff;
+}
+
+.toggle-group button.active[data-type="장비점검"] {
+    background: #d29922;
+    color: #fff;
+}
+
+.toggle-group button.active[data-type="프로그램변경"] {
+    background: #8957e5;
+    color: #fff;
+}
 
 /* 로그 입력 */
-#log-date { width: 140px; height: 30px; flex: none; }
-#log-type-select { width: 110px; height: 30px; flex: none; }
-#log-worker { width: 140px; height: 30px; flex: none; }
+#log-date {
+    width: 140px;
+    height: 30px;
+    flex: none;
+}
+
+#log-type-select {
+    width: 110px;
+    height: 30px;
+    flex: none;
+}
+
+#log-worker {
+    width: 140px;
+    height: 30px;
+    flex: none;
+}
 
 .log-select {
     background: #0d1117;
@@ -301,10 +351,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     border-radius: 4px;
     z-index: 1000;
     margin-top: 2px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
-.log-select-dropdown.show { display: block; }
+.log-select-dropdown.show {
+    display: block;
+}
 
 .log-select-list {
     max-height: 200px;
@@ -322,7 +374,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     margin-bottom: 2px;
 }
 
-.log-select-item:hover { background: #21262d; }
+.log-select-item:hover {
+    background: #21262d;
+}
 
 .log-select-item.selected {
     background: #1f6feb;
@@ -343,7 +397,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* 마스터 정보 (DeviceID) */
-.DeviceID-group { margin-bottom: 10px; }
+.DeviceID-group {
+    margin-bottom: 10px;
+}
+
 .DeviceID-label {
     display: block;
     color: #8b949e;
@@ -351,7 +408,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     font-weight: bold;
     margin-bottom: 5px;
 }
-.DeviceID-group input { padding: 5px 8px; font-size: 12px; }
+
+.DeviceID-group input {
+    padding: 5px 8px;
+    font-size: 12px;
+}
 
 /* ==========================================================================
    5. 메모 섹션 (Memo)
@@ -376,7 +437,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     margin: 0;
 }
 
-.memo-textarea { flex: 1; }
+.memo-textarea {
+    flex: 1;
+}
 
 /* ==========================================================================
    6. 동적 요소 및 유틸리티 (Dynamic & Utilities)
@@ -428,17 +491,47 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     font-weight: bold;
 }
 
-.badge.pm { background: #238636; }
-.badge.bm { background: #1f6feb; }
-.badge.장비점검 { background: #d29922; color: #fff; }
-.badge.프로그램변경 { background: #8957e5; color: #fff; }
-.badge.트러블이슈 { background: #da3633; color: #fff; }
+.badge.pm {
+    background: #238636;
+}
+
+.badge.bm {
+    background: #1f6feb;
+}
+
+.badge.장비점검 {
+    background: #d29922;
+    color: #fff;
+}
+
+.badge.프로그램변경 {
+    background: #8957e5;
+    color: #fff;
+}
+
+.badge.트러블이슈 {
+    background: #da3633;
+    color: #fff;
+}
 
 /* 텍스트 색상 */
-.text-green { color: #3fb950; }
-.text-blue { color: #58a6ff; }
-.text-red { color: #f85149; cursor: pointer; }
-.text-orange { color: #d29922; font-weight: bold; }
+.text-green {
+    color: #3fb950;
+}
+
+.text-blue {
+    color: #58a6ff;
+}
+
+.text-red {
+    color: #f85149;
+    cursor: pointer;
+}
+
+.text-orange {
+    color: #d29922;
+    font-weight: bold;
+}
 
 /* [추가] 파일 리스트 스타일 */
 .file-list {
@@ -505,7 +598,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     font-size: 13px;
 }
 
-#excel-edit-container td, #excel-edit-container th {
+#excel-edit-container td,
+#excel-edit-container th {
     border: 1px solid #ccc;
     padding: 4px 8px;
     min-width: 50px;
@@ -515,6 +609,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .btn-collapse {
     display: none;
 }
+
 /* ==========================================================
    모바일 반응형 스타일 (Mobile Responsive Styles)
    ========================================================== */
@@ -533,16 +628,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .breadcrumb {
         font-size: 12px;
     }
-/* [요청] 모바일에서 카드 접기 시 제목만 남기기 (높이 자동) */
+
+    /* [요청] 모바일에서 카드 접기 시 제목만 남기기 (높이 자동) */
     .card {
         height: auto !important;
         min-height: 0 !important;
         flex: none !important;
     }
-    
+
     .log-select-wrapper {
         width: auto !important;
-        flex: 1.5 !important; /* [수정] 항목 선택창 너비 비율 확대 (유동적) */
+        flex: 1.5 !important;
+        /* [수정] 항목 선택창 너비 비율 확대 (유동적) */
         margin-right: 0 !important;
         min-width: 0 !important;
     }
@@ -561,24 +658,35 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         flex-wrap: nowrap !important;
         gap: 3px !important;
     }
+
     #log-date {
         width: auto !important;
-        flex: 1.2 !important; /* [수정] 날짜 입력창 너비 비율 할당 */
+        flex: 1.2 !important;
+        /* [수정] 날짜 입력창 너비 비율 할당 */
         min-width: 0 !important;
     }
+
     #log-type-select {
         width: auto !important;
-        flex: 0.7 !important; /* [수정] 구분 선택창 너비 비율 할당 */
+        flex: 0.7 !important;
+        /* [수정] 구분 선택창 너비 비율 할당 */
         min-width: 0 !important;
         padding: 0 !important;
     }
+
     #log-worker {
         width: auto !important;
-        flex: 0.8 !important; /* [수정] 작업자 입력창 너비 비율 할당 */
+        flex: 0.8 !important;
+        /* [수정] 작업자 입력창 너비 비율 할당 */
         min-width: 0 !important;
     }
+
     /* 입력 폰트 크기 축소 */
-    #log-date, #log-type-select, .log-select-trigger, #log-worker, .log-content-input {
+    #log-date,
+    #log-type-select,
+    .log-select-trigger,
+    #log-worker,
+    .log-content-input {
         font-size: 12px !important;
         padding-left: 2px !important;
         padding-right: 2px !important;
@@ -590,29 +698,33 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         display: none !important;
         -webkit-appearance: none;
     }
+
     #log-type-select {
         -webkit-appearance: none;
         -moz-appearance: none;
         appearance: none;
     }
 
-    #log-add-btn, #log-reg-btn {
+    #log-add-btn,
+    #log-reg-btn {
         padding: 0 5px !important;
     }
 
-        /* [요청] 장비 점검 이력 리스트 높이 수정 (약 3개 보이게, 스크롤) */
-    #log-list-wrapper, 
+    /* [요청] 장비 점검 이력 리스트 높이 수정 (약 3개 보이게, 스크롤) */
+    #log-list-wrapper,
     #setup-log-list-wrapper {
-        height: 300px !important; /* [수정] 150px -> 300px (2배 확대) */
+        height: 300px !important;
+        /* [수정] 150px -> 300px (2배 확대) */
         flex: none !important;
         overflow-y: auto !important;
     }
 
     /* [요청] 작업 내용(메모 등) 높이 수정 (최소 300px ~ 최대 800px, 스크롤) */
-    #device-memo, 
+    #device-memo,
     #setup-log-detail-memo,
     textarea.delay-reason-textarea {
-        height: 200px !important; /* [수정] 300px -> 200px (2/3 축소) */
+        height: 200px !important;
+        /* [수정] 300px -> 200px (2/3 축소) */
         min-height: 200px !important;
         max-height: 800px !important;
         overflow-y: auto !important;
@@ -628,8 +740,4 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         order: -1 !important;
     }
 
-    /* [요청] 모바일 헤더 햄버거 메뉴 바 색상 변경 (흰색) */
-    .hamburger-menu .bar {
-        background-color: #ffffff !important;
-    }
 }

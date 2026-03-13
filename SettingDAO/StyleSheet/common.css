@@ -918,11 +918,11 @@ body.role-user select {
         position: relative;
         /* [수정] z-index 적용을 위해 relative 설정 */
     }
-
+    /* [요청] 모바일 헤더 햄버거 메뉴 바 색상 변경 (흰색) */
     .hamburger-menu .bar {
         width: 100%;
         height: 3px;
-        background-color: #e6edf3;
+        background-color: #ffffff !important;
         border-radius: 10px;
         transition: all 0.3s ease-in-out;
     }
