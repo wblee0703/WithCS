@@ -28,5 +28,11 @@
         "details": "Date: 2026-03-19, Content: 점검",
         "target": "SOMA-2000::SOMA-HC19-1204",
         "timestamp": "2026-03-12T01:10:40.300Z"
+    },
+    {
+        "timestamp": "2026-03-13T00:16:29.237Z",
+        "action": "COMPLETE_SCHEDULE",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "details": "Content: ff"
     }
 ]
