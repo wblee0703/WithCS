@@ -216,9 +216,9 @@
         "timestamp": "2026-03-13T07:48:52.401Z"
     },
     {
-        "timestamp": "2026-03-13T07:52:08.518Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: COSMOS-100N",
         "target": "COSMOS-100N",
-        "details": "Abbr: COSMOS-100N"
+        "timestamp": "2026-03-13T07:52:08.518Z"
     }
 ]

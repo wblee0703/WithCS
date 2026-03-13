@@ -327,7 +327,6 @@ function renderEquipModelList() {
 
             currentAdminModel = (currentAdminModel && currentAdminModel.name === model.name) ? null : model;
             renderEquipModelList();
-            renderAdminEquipList();
             resetEquipForm();
         });
 
@@ -533,14 +532,6 @@ function renderAdminEquipList() {
     if (!currentAdminEquipSite || !storageData[currentAdminEquipSite]) return;
 
     let equips = storageData[currentAdminEquipSite];
-
-    // 모델 필터링
-    if (currentAdminModel) {
-        equips = equips.filter(key => {
-            const modelName = key.split('::')[0];
-            return modelName === currentAdminModel.name;
-        });
-    }
 
     if (countEl) countEl.textContent = equips.length;
 
