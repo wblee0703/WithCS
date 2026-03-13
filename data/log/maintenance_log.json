@@ -178,5 +178,11 @@
         "action": "RENAME_SITE",
         "target": "DUPONT 천안",
         "details": "To: DUPONT"
+    },
+    {
+        "timestamp": "2026-03-13T07:17:37.674Z",
+        "action": "RENAME_SITE",
+        "target": "ECOPRO_NH 오창",
+        "details": "To: ECOPRO_NH"
     }
 ]
