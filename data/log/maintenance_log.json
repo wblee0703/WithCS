@@ -192,21 +192,21 @@
         "timestamp": "2026-03-13T07:17:55.954Z"
     },
     {
-        "timestamp": "2026-03-13T07:23:15.504Z",
         "action": "UPDATE_EQUIP_MODEL",
+        "details": "To: SOMA-2000 / SOMA-2000",
         "target": "soma-2000",
-        "details": "To: SOMA-2000 / SOMA-2000"
+        "timestamp": "2026-03-13T07:23:15.504Z"
     },
     {
-        "timestamp": "2026-03-13T07:23:26.422Z",
         "action": "UPDATE_EQUIP_MODEL",
+        "details": "To: SOMA-20 / SOMA-2000",
         "target": "SOMA-2000",
-        "details": "To: SOMA-20 / SOMA-2000"
+        "timestamp": "2026-03-13T07:23:26.422Z"
     },
     {
-        "timestamp": "2026-03-13T07:23:33.147Z",
         "action": "UPDATE_EQUIP_MODEL",
+        "details": "To: SOMA-2000 / SOMA-2000",
         "target": "SOMA-20",
-        "details": "To: SOMA-2000 / SOMA-2000"
+        "timestamp": "2026-03-13T07:23:33.147Z"
     }
 ]

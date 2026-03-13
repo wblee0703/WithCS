@@ -465,23 +465,32 @@ function setupEquipMgmt() {
     if (nameInput && suggestionList) {
         const handleInput = () => {
             if (nameInput.readOnly) return;
-            const query = nameInput.value.trim().toLowerCase();
             
+            const query = nameInput.value.trim().toLowerCase();
             // 입력값이 없으면 전체 목록 표시, 있으면 필터링
             const matches = query 
                 ? equipmentModels.filter(m => m.name.toLowerCase().includes(query) || m.abbr.toLowerCase().includes(query))
                 : equipmentModels;
 
             suggestionList.innerHTML = '';
+            
             if (matches.length > 0) {
                 matches.forEach(m => {
                     const li = document.createElement('li');
                     li.className = 'suggestion-item';
-                    li.innerHTML = `${m.name} <span class="abbr">(${m.abbr})</span>`;
-                    li.onclick = () => {
+                    li.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span>${m.name}</span>
+                            <span style="color:#8b949e; font-size:11px;">${m.abbr}</span>
+                        </div>
+                    `;
+                    
+                    // [수정] mousedown을 사용하여 blur보다 먼저 실행되도록 처리 (클릭 씹힘 방지)
+                    li.addEventListener('mousedown', (e) => {
+                        e.preventDefault(); // 입력창 포커스 유지
                         nameInput.value = m.name;
                         suggestionList.style.display = 'none';
-                    };
+                    });
                     suggestionList.appendChild(li);
                 });
                 suggestionList.style.display = 'block';
@@ -492,7 +501,7 @@ function setupEquipMgmt() {
 
         nameInput.addEventListener('input', handleInput);
         nameInput.addEventListener('focus', handleInput);
-        nameInput.addEventListener('blur', () => { setTimeout(() => { suggestionList.style.display = 'none'; }, 200); });
+        nameInput.addEventListener('blur', () => { setTimeout(() => { suggestionList.style.display = 'none'; }, 150); });
     }
 }
 

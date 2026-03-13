@@ -139,6 +139,7 @@
 
 #admin-model-list li > .model-col {
     padding: 10px 12px;
+    justify-content: center;
 }
 
 .admin-list li {
