@@ -547,6 +547,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         min-width: 0 !important;
     }
 
+    /* [추가] 텍스트 입력창(프로그램변경 등) 너비 및 높이 맞춤 */
+    .log-content-input {
+        width: auto !important;
+        flex: 1.5 !important;
+        min-width: 0 !important;
+        margin-right: 0 !important;
+    }
+
     /* [요청] 장비 점검 이력 입력창 한 줄 배치 */
     #log-window .form-row {
         flex-direction: row !important;
@@ -570,10 +578,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         min-width: 0 !important;
     }
     /* 입력 폰트 크기 축소 */
-    #log-date, #log-type-select, .log-select-trigger, #log-worker {
+    #log-date, #log-type-select, .log-select-trigger, #log-worker, .log-content-input {
         font-size: 11px !important;
         padding-left: 2px !important;
         padding-right: 2px !important;
+        height: 30px !important;
     }
 
     /* [요청] 모바일에서 점검일 달력 아이콘 및 구분 선택 화살표 숨김 */
