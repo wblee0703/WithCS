@@ -55,7 +55,8 @@ if os.environ.get('APP_ENV') == 'production':
 
 # Security Extensions
 csrf = CSRFProtect(app)
-limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "50 per hour"])
+# [수정] 메모리 저장소 명시적 설정으로 경고 메시지 제거
+limiter = Limiter(get_remote_address, app=app, storage_uri="memory://", default_limits=["200 per day", "50 per hour"])
 
 # ------------------------------------------------------------------------------
 # 2. File Paths & Logging Setup
