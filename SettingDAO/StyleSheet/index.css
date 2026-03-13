@@ -949,6 +949,14 @@ body {
         #gantt-wrapper {
             display: none !important;
         }
+
+        /* [요청] 세로 모드에서 장비 정보와 예정 작업은 한 줄에 하나씩 배치 */
+        .maint-left-charts .status-group:nth-child(3) {
+            width: 100% !important;
+        }
+        .upcoming-container {
+            width: 100% !important;
+        }
     }
 
     /* [요청] 간트 실행 완료 팝업 모바일 최적화 */
