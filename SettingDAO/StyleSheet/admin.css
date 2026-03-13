@@ -9,11 +9,19 @@
     overflow: hidden; /* 내부 스크롤 사용 */
 }
 
+.admin-section .card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
 /* 좌우 분할 레이아웃 */
 .admin-split-view {
     display: flex;
     gap: 20px;
-    height: 100%;
+    flex: 1; /* [수정] flex로 높이 채움 (스크롤 보장) */
     overflow: hidden;
 }
 
@@ -23,6 +31,7 @@
     flex-direction: column;
     border-right: 1px solid #30363d;
     padding-right: 15px;
+    padding-left: 10px; /* [요청] 리스트 좌측 여백 추가 */
 }
 
 .admin-col-detail {
