@@ -482,7 +482,12 @@ body {
     font-size: 16px;
     font-weight: bold;
 }
-
+/* [요청] 계정 관리 팝업창 크기 자동 조절 (여백 축소) */
+#user-modal .modal-window {
+    width: 500px !important;
+    height: auto !important;
+    min-height: 0 !important;
+}
 /* ==========================================================================
    7. 버튼 (Buttons)
    ========================================================================== */
