@@ -1,5 +1,7 @@
 let currentAdminSite = null; // 현재 선택된 사업장
 let currentBuildingList = []; // 현재 편집 중인 건물 목록
+let currentAdminEquipSite = null; // 장비 관리에서 선택된 사업장
+let currentAdminEquipKey = null; // 장비 관리에서 선택된 장비 키 (Name::Serial)
 
 document.addEventListener('DOMContentLoaded', () => {
     setupAdminMenu();
@@ -24,6 +26,10 @@ function setupAdminMenu() {
                     sec.style.display = 'flex';
                 } else {
                     sec.style.display = 'none';
+                }
+
+                if (item.dataset.target === 'equip-mgmt') {
+                    updateEquipSiteSelect();
                 }
             });
         });
@@ -240,3 +246,192 @@ function handleSiteDelete() {
     document.getElementById('admin-site-placeholder').style.display = 'flex';
     renderAdminSiteList();
 }
+
+/* ==========================================================================
+   장비 관리 (Equipment Management)
+   ========================================================================== */
+function setupEquipMgmt() {
+    // 사업장 선택 필터
+    const siteSelect = document.getElementById('admin-equip-site-filter');
+    if (siteSelect) {
+        siteSelect.addEventListener('change', (e) => {
+            currentAdminEquipSite = e.target.value;
+            renderAdminEquipList();
+            resetEquipForm();
+        });
+    }
+
+    // 신규 등록 모드 버튼
+    const btnNew = document.getElementById('btn-admin-new-equip');
+    if (btnNew) {
+        btnNew.addEventListener('click', () => {
+            if (!currentAdminEquipSite) return alert('사업장을 먼저 선택해주세요.');
+            resetEquipForm();
+            document.getElementById('admin-equip-form').style.display = 'block';
+            document.getElementById('admin-equip-placeholder').style.display = 'none';
+            document.getElementById('equip-info-site').value = currentAdminEquipSite;
+            document.getElementById('equip-info-name').focus();
+        });
+    }
+
+    // 저장 및 삭제 버튼
+    const btnSave = document.getElementById('btn-admin-save-equip');
+    const btnDel = document.getElementById('btn-admin-del-equip');
+    if (btnSave) btnSave.addEventListener('click', handleEquipSave);
+    if (btnDel) btnDel.addEventListener('click', handleEquipDelete);
+}
+
+function updateEquipSiteSelect() {
+    const select = document.getElementById('admin-equip-site-filter');
+    if (!select) return;
+    
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">사업장 선택...</option>';
+    
+    Object.keys(storageData).sort().forEach(site => {
+        const opt = document.createElement('option');
+        opt.value = site;
+        opt.textContent = site;
+        select.appendChild(opt);
+    });
+    
+    if (storageData[currentVal]) select.value = currentVal;
+}
+
+function renderAdminEquipList() {
+    const list = document.getElementById('admin-equip-list');
+    const countEl = document.getElementById('admin-equip-count');
+    if (!list) return;
+
+    list.innerHTML = '';
+    if (countEl) countEl.textContent = '0';
+
+    if (!currentAdminEquipSite || !storageData[currentAdminEquipSite]) return;
+
+    const equips = storageData[currentAdminEquipSite];
+    if (countEl) countEl.textContent = equips.length;
+
+    equips.forEach(fullKey => {
+        const parts = fullKey.split('::');
+        const name = parts[0];
+        const serial = parts.length > 1 ? parts[1] : '';
+
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${name}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
+        
+        if (currentAdminEquipKey === fullKey) li.classList.add('active');
+
+        li.addEventListener('click', () => {
+            currentAdminEquipKey = fullKey;
+            // UI 업데이트
+            list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
+            li.classList.add('active');
+            
+            // 폼 로드
+            document.getElementById('admin-equip-form').style.display = 'block';
+            document.getElementById('admin-equip-placeholder').style.display = 'none';
+            document.getElementById('equip-info-site').value = currentAdminEquipSite;
+            document.getElementById('equip-info-name').value = name;
+            document.getElementById('equip-info-serial').value = serial;
+        });
+
+        list.appendChild(li);
+    });
+}
+
+function resetEquipForm() {
+    currentAdminEquipKey = null;
+    document.getElementById('admin-equip-form').style.display = 'none';
+    document.getElementById('admin-equip-placeholder').style.display = 'flex';
+    document.getElementById('equip-info-name').value = '';
+    document.getElementById('equip-info-serial').value = '';
+    
+    const list = document.getElementById('admin-equip-list');
+    if(list) list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
+}
+
+function handleEquipSave() {
+    if (!currentAdminEquipSite) return;
+    const name = document.getElementById('equip-info-name').value.trim();
+    const serial = document.getElementById('equip-info-serial').value.trim();
+    
+    if (!name) return alert('장비명(모델)을 입력해주세요.');
+    
+    const newKey = serial ? `${name}::${serial}` : name;
+    
+    // 중복 체크 (수정이면 자기 자신 제외)
+    if (currentAdminEquipKey !== newKey && storageData[currentAdminEquipSite].includes(newKey)) {
+        return alert('해당 사업장에 이미 동일한 장비가 존재합니다.');
+    }
+
+    // 수정 (Rename) 처리
+    if (currentAdminEquipKey && currentAdminEquipKey !== newKey) {
+        if(!confirm('장비 정보를 변경하시겠습니까?\n기존 데이터가 새 정보로 이동됩니다.')) return;
+        
+        // 리스트 내 키 변경
+        const idx = storageData[currentAdminEquipSite].indexOf(currentAdminEquipKey);
+        if (idx !== -1) storageData[currentAdminEquipSite][idx] = newKey;
+        
+        // details 데이터 이동
+        const oldData = localStorage.getItem(`details_${currentAdminEquipSite}_${currentAdminEquipKey}`);
+        if (oldData) {
+            localStorage.setItem(`details_${currentAdminEquipSite}_${newKey}`, oldData);
+            localStorage.removeItem(`details_${currentAdminEquipSite}_${currentAdminEquipKey}`);
+        }
+        
+        // setup_data 이동
+        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+        const oldSetupKey = `${currentAdminEquipSite}::${currentAdminEquipKey}`;
+        if (setupData[oldSetupKey]) {
+            setupData[`${currentAdminEquipSite}::${newKey}`] = setupData[oldSetupKey];
+            delete setupData[oldSetupKey];
+            localStorage.setItem('setup_data', JSON.stringify(setupData));
+        }
+        
+        addSystemLog('UPDATE_EQUIP', newKey, `From: ${currentAdminEquipKey}`);
+    } 
+    // 신규 등록
+    else if (!currentAdminEquipKey) {
+        storageData[currentAdminEquipSite].push(newKey);
+        // 초기 데이터 생성
+        const initData = { maint: [], logs: [], memo: "", setup: { model: serial } }; // Serial을 모델란에 저장 (관례)
+        localStorage.setItem(`details_${currentAdminEquipSite}_${newKey}`, JSON.stringify(initData));
+        addSystemLog('ADD_EQUIP', newKey, `Site: ${currentAdminEquipSite}`);
+    }
+
+    saveData();
+    alert('저장되었습니다.');
+    currentAdminEquipKey = newKey; // 키 갱신
+    renderAdminEquipList();
+}
+
+function handleEquipDelete() {
+    if (!currentAdminEquipSite || !currentAdminEquipKey) return;
+    
+    if (!confirm(`'${currentAdminEquipKey}' 장비를 삭제하시겠습니까?\n모든 점검 이력과 데이터가 삭제됩니다.`)) return;
+
+    // 리스트에서 제거
+    storageData[currentAdminEquipSite] = storageData[currentAdminEquipSite].filter(k => k !== currentAdminEquipKey);
+    
+    // details 제거
+    localStorage.removeItem(`details_${currentAdminEquipSite}_${currentAdminEquipKey}`);
+    
+    // setup_data 제거
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    delete setupData[`${currentAdminEquipSite}::${currentAdminEquipKey}`];
+    localStorage.setItem('setup_data', JSON.stringify(setupData));
+    
+    addSystemLog('DELETE_EQUIP', currentAdminEquipKey, `Site: ${currentAdminEquipSite}`);
+    
+    saveData();
+    alert('삭제되었습니다.');
+    resetEquipForm();
+    renderAdminEquipList();
+}
+
+// [추가] 초기화 시 장비 관리 이벤트 등록
+const originalSetupAdminMenu = setupAdminMenu; // 기존 함수 보존
+setupAdminMenu = function() {
+    originalSetupAdminMenu(); // 기존 로직 실행
+    setupEquipMgmt(); // 장비 관리 로직 초기화
+};
