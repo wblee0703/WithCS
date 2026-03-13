@@ -568,5 +568,11 @@
         "action": "ADD_SITE",
         "target": "DB HITEK 상우",
         "details": "Admin Page"
+    },
+    {
+        "timestamp": "2026-03-13T07:13:41.766Z",
+        "action": "ADD_SITE",
+        "target": "SDC 기흥",
+        "details": "Admin Page"
     }
 ]
