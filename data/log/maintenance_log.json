@@ -84,27 +84,27 @@
         "timestamp": "2026-03-12T04:37:23.553Z"
     },
     {
-        "timestamp": "2026-03-13T03:13:20.392Z",
         "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-04-01, Content: Standard Solution",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "Date: 2026-04-01, Content: Standard Solution"
+        "timestamp": "2026-03-13T03:13:20.392Z"
     },
     {
-        "timestamp": "2026-03-13T03:13:28.300Z",
         "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-04-01, Content: Standard Solution",
         "target": "SOMA-2000::SOMA-H19-0903",
-        "details": "Date: 2026-04-01, Content: Standard Solution"
+        "timestamp": "2026-03-13T03:13:28.300Z"
     },
     {
-        "timestamp": "2026-03-13T03:13:33.277Z",
         "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-04-02, Content: Standard Solution",
         "target": "SOMA-2000::SOMA-HK21-0202",
-        "details": "Date: 2026-04-02, Content: Standard Solution"
+        "timestamp": "2026-03-13T03:13:33.277Z"
     },
     {
-        "timestamp": "2026-03-13T03:13:38.466Z",
         "action": "ADD_SCHEDULE",
+        "details": "Date: 2026-04-02, Content: Standard Solution",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "Date: 2026-04-02, Content: Standard Solution"
+        "timestamp": "2026-03-13T03:13:38.466Z"
     }
 ]
