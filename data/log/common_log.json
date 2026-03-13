@@ -408,9 +408,15 @@
         "timestamp": "2026-03-13T06:13:11.538Z"
     },
     {
-        "timestamp": "2026-03-13T06:13:20.347Z",
         "action": "DELETE_SITE",
+        "details": "Admin Page",
         "target": "SKhynix",
+        "timestamp": "2026-03-13T06:13:20.347Z"
+    },
+    {
+        "timestamp": "2026-03-13T06:13:39.774Z",
+        "action": "ADD_SITE",
+        "target": "1",
         "details": "Admin Page"
     }
 ]
