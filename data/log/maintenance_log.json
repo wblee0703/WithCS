@@ -174,21 +174,27 @@
         "timestamp": "2026-03-13T07:08:11.640Z"
     },
     {
-        "timestamp": "2026-03-13T07:17:32.808Z",
         "action": "RENAME_SITE",
+        "details": "To: DUPONT",
         "target": "DUPONT 천안",
-        "details": "To: DUPONT"
+        "timestamp": "2026-03-13T07:17:32.808Z"
     },
     {
-        "timestamp": "2026-03-13T07:17:37.674Z",
         "action": "RENAME_SITE",
+        "details": "To: ECOPRO_NH",
         "target": "ECOPRO_NH 오창",
-        "details": "To: ECOPRO_NH"
+        "timestamp": "2026-03-13T07:17:37.674Z"
     },
     {
-        "timestamp": "2026-03-13T07:17:55.954Z",
         "action": "RENAME_SITE",
+        "details": "To: TEKSCEND",
         "target": "TEKSCEND 이천",
-        "details": "To: TEKSCEND"
+        "timestamp": "2026-03-13T07:17:55.954Z"
+    },
+    {
+        "timestamp": "2026-03-13T07:23:15.504Z",
+        "action": "UPDATE_EQUIP_MODEL",
+        "target": "soma-2000",
+        "details": "To: SOMA-2000 / SOMA-2000"
     }
 ]

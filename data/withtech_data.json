@@ -1,4 +1,8 @@
 {
+    "DB HITEK 부천": [],
+    "DB HITEK 상우": [],
+    "DUPONT": [],
+    "ECOPRO_NH": [],
     "ENF 아산": [
         "SOMA-3000E::SOMA-EK24-0401",
         "SOMA-3000E::SOMA-EK24-0402",
@@ -11,15 +15,21 @@
         "WAD-NH4OH::AD10-EK24-0201",
         "TDM-100::Titrator"
     ],
+    "Gemvax&kael": [],
     "LGD 구미": [
         "OMS-100L::OMS1-LK22-0104"
     ],
+    "LGD 파주": [],
+    "LSE 안성": [],
     "NES 여수": [
         "SOMA-3000E::SOMA-EK23-0401"
     ],
     "Onsemi 부천": [
         "IWM-1000::W001-OK25-0801"
     ],
+    "SDC 기흥": [],
+    "SDC 탕정": [],
+    "SEC 온양": [],
     "SEC 천안": [
         "SOLA-1000::SOLA-1000"
     ],
@@ -30,6 +40,9 @@
         "SOLA-3000",
         "SOLA-5000"
     ],
+    "SEC 화성": [],
+    "SK KEY_FOUNDRY": [],
+    "SK SILTRON": [],
     "SKH 우시": [
         "SOMA-2000::SOMA-HC19-1204",
         "SOMA-2000::SOMA-HC20-0601",
@@ -41,20 +54,7 @@
         "SOMA-2000::SOMA-HK21-0202",
         "WIM-100::WIM1-HK24-0401"
     ],
-    "DB HITEK 부천": [],
-    "DB HITEK 상우": [],
-    "SDC 기흥": [],
-    "SDC 탕정": [],
-    "SEC 온양": [],
-    "SEC 화성": [],
-    "DUPONT": [],
-    "ECOPRO_NH": [],
-    "TEKSCEND": [],
     "SKH 청주": [],
-    "SK KEY_FOUNDRY": [],
-    "Gemvax&kael": [],
-    "LSE 안성": [],
-    "원익IPS": [],
-    "LGD 파주": [],
-    "SK SILTRON": []
+    "TEKSCEND": [],
+    "원익IPS": []
 }
