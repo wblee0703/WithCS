@@ -4,6 +4,7 @@ let currentAdminEquipSite = null; // 장비 관리에서 선택된 사업장
 let currentAdminEquipKey = null; // 장비 관리에서 선택된 장비 키 (Name::Serial)
 let equipmentModels = []; // 장비 모델 목록
 let currentAdminModel = null; // 선택된 장비 모델
+let currentAdminEquipSiteContext = null; // [추가] 선택된 장비의 실제 사업장 (전체 보기 시 식별용)
 
 document.addEventListener('DOMContentLoaded', () => {
     setupAdminMenu();
@@ -34,6 +35,7 @@ function setupAdminMenu() {
                 if (item.dataset.target === 'equip-mgmt') {
                     updateEquipSiteSelect();
                     renderEquipModelList();
+                    renderAdminEquipList();
                 }
             });
         });
@@ -433,11 +435,12 @@ function setupEquipMgmt() {
     const btnNew = document.getElementById('btn-admin-new-equip');
     if (btnNew) {
         btnNew.addEventListener('click', () => {
-            if (!currentAdminEquipSite) return alert('사업장을 먼저 선택해주세요.');
             resetEquipForm();
             document.getElementById('admin-equip-form').style.display = 'block';
             document.getElementById('admin-equip-placeholder').style.display = 'none';
-            document.getElementById('equip-info-site').value = currentAdminEquipSite;
+            const siteInput = document.getElementById('equip-info-site');
+            siteInput.value = currentAdminEquipSite || '';
+            siteInput.disabled = false; // 신규 등록 시에는 사업장 입력 가능
              
             const nameInput = document.getElementById('equip-info-name');
             if (currentAdminModel) {
@@ -502,6 +505,45 @@ function setupEquipMgmt() {
         nameInput.addEventListener('focus', handleInput);
         nameInput.addEventListener('blur', () => { setTimeout(() => { suggestionList.style.display = 'none'; }, 150); });
     }
+
+    // [추가] 사업장 검색 제안 (신규 등록 시)
+    const siteInput = document.getElementById('equip-info-site');
+    const siteSuggestionList = document.getElementById('equip-site-suggestions');
+
+    if (siteInput && siteSuggestionList) {
+        const handleSiteInput = () => {
+            if (siteInput.disabled) return;
+            const query = siteInput.value.trim().toLowerCase();
+            const sites = Object.keys(storageData).sort();
+            
+            // 검색어가 있으면 필터링, 없으면 전체 표시
+            const matches = query 
+                ? sites.filter(s => s.toLowerCase().includes(query))
+                : sites;
+
+            siteSuggestionList.innerHTML = '';
+            if (matches.length > 0) {
+                matches.forEach(site => {
+                    const li = document.createElement('li');
+                    li.className = 'suggestion-item';
+                    li.textContent = site;
+                    li.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        siteInput.value = site;
+                        siteSuggestionList.style.display = 'none';
+                    });
+                    siteSuggestionList.appendChild(li);
+                });
+                siteSuggestionList.style.display = 'block';
+            } else {
+                siteSuggestionList.style.display = 'none';
+            }
+        };
+
+        siteInput.addEventListener('input', handleSiteInput);
+        siteInput.addEventListener('focus', handleSiteInput);
+        siteInput.addEventListener('blur', () => { setTimeout(() => { siteSuggestionList.style.display = 'none'; }, 150); });
+    }
 }
 
 function updateEquipSiteSelect() {
@@ -509,7 +551,7 @@ function updateEquipSiteSelect() {
     if (!select) return;
     
     const currentVal = select.value;
-    select.innerHTML = '<option value="">사업장 선택...</option>';
+    select.innerHTML = '<option value="">전체 장비 보기</option>';
     
     Object.keys(storageData).sort().forEach(site => {
         const opt = document.createElement('option');
@@ -529,24 +571,42 @@ function renderAdminEquipList() {
     list.innerHTML = '';
     if (countEl) countEl.textContent = '0';
 
-    if (!currentAdminEquipSite || !storageData[currentAdminEquipSite]) return;
+    // [수정] 사업장이 선택되지 않았으면(null/empty) 전체 장비 표시, 아니면 해당 사업장만 표시
+    let items = [];
+    if (currentAdminEquipSite && storageData[currentAdminEquipSite]) {
+        storageData[currentAdminEquipSite].forEach(k => items.push({site: currentAdminEquipSite, key: k}));
+    } else if (!currentAdminEquipSite) {
+        Object.keys(storageData).sort().forEach(site => {
+            if (storageData[site]) {
+                storageData[site].forEach(k => items.push({site: site, key: k}));
+            }
+        });
+    }
 
-    let equips = storageData[currentAdminEquipSite];
+    if (countEl) countEl.textContent = items.length;
 
-    if (countEl) countEl.textContent = equips.length;
-
-    equips.forEach(fullKey => {
+    items.forEach(item => {
+        const fullKey = item.key;
+        const site = item.site;
         const parts = fullKey.split('::');
         const name = parts[0];
         const serial = parts.length > 1 ? parts[1] : '';
 
         const li = document.createElement('li');
-        li.innerHTML = `<span>${name}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
         
-        if (currentAdminEquipKey === fullKey) li.classList.add('active');
+        // 전체 보기일 경우 사업장 이름도 표시
+        let content = `<span>${name}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
+        if (!currentAdminEquipSite) {
+            content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:#8b949e;">${site}</span><div>${content}</div></div>`;
+        }
+        li.innerHTML = content;
+        
+        // [수정] 활성화 체크 시 사이트 컨텍스트도 확인
+        if (currentAdminEquipKey === fullKey && (!currentAdminEquipSiteContext || currentAdminEquipSiteContext === site)) li.classList.add('active');
 
         li.addEventListener('click', () => {
             currentAdminEquipKey = fullKey;
+            currentAdminEquipSiteContext = site; // 컨텍스트 저장
             // UI 업데이트
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
@@ -554,7 +614,8 @@ function renderAdminEquipList() {
             // 폼 로드
             document.getElementById('admin-equip-form').style.display = 'block';
             document.getElementById('admin-equip-placeholder').style.display = 'none';
-            document.getElementById('equip-info-site').value = currentAdminEquipSite;
+            document.getElementById('equip-info-site').value = site; // [수정] 아이템의 실제 사업장 입력
+            document.getElementById('equip-info-site').disabled = true; // [추가] 기존 장비 수정 시 사업장 변경 불가
             document.getElementById('equip-info-name').value = name;
             document.getElementById('equip-info-serial').value = serial;
         });
@@ -565,6 +626,7 @@ function renderAdminEquipList() {
 
 function resetEquipForm() {
     currentAdminEquipKey = null;
+    currentAdminEquipSiteContext = null;
     document.getElementById('admin-equip-form').style.display = 'none';
     document.getElementById('admin-equip-placeholder').style.display = 'flex';
     const nameInput = document.getElementById('equip-info-name');
@@ -575,13 +637,19 @@ function resetEquipForm() {
     // 자동완성 목록 숨김
     const suggestionList = document.getElementById('equip-model-suggestions');
     if (suggestionList) suggestionList.style.display = 'none';
+    const siteSuggestionList = document.getElementById('equip-site-suggestions');
+    if (siteSuggestionList) siteSuggestionList.style.display = 'none';
     
     const list = document.getElementById('admin-equip-list');
     if(list) list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
 }
 
 function handleEquipSave() {
-    if (!currentAdminEquipSite) return;
+    // [수정] 현재 필터값이 없어도(전체보기) 폼에 입력된 사업장 기준으로 저장 수행
+    const targetSite = document.getElementById('equip-info-site').value.trim();
+    if (!targetSite) return alert('사업장을 선택하거나 목록에서 장비를 선택해주세요.');
+    if (!storageData[targetSite]) return alert('존재하지 않는 사업장입니다. 사업장 관리에서 먼저 등록해주세요.');
+
     const nameInput = document.getElementById('equip-info-name');
     const name = nameInput.value.trim();
     const serial = document.getElementById('equip-info-serial').value.trim();
@@ -591,7 +659,7 @@ function handleEquipSave() {
     const newKey = serial ? `${name}::${serial}` : name;
     
     // 중복 체크 (수정이면 자기 자신 제외)
-    if (currentAdminEquipKey !== newKey && storageData[currentAdminEquipSite].includes(newKey)) {
+    if (currentAdminEquipKey !== newKey && storageData[targetSite].includes(newKey)) {
         return alert('해당 사업장에 이미 동일한 장비가 존재합니다.');
     }
 
@@ -600,21 +668,21 @@ function handleEquipSave() {
         if(!confirm('장비 정보를 변경하시겠습니까?\n기존 데이터가 새 정보로 이동됩니다.')) return;
         
         // 리스트 내 키 변경
-        const idx = storageData[currentAdminEquipSite].indexOf(currentAdminEquipKey);
-        if (idx !== -1) storageData[currentAdminEquipSite][idx] = newKey;
+        const idx = storageData[targetSite].indexOf(currentAdminEquipKey);
+        if (idx !== -1) storageData[targetSite][idx] = newKey;
         
         // details 데이터 이동
-        const oldData = localStorage.getItem(`details_${currentAdminEquipSite}_${currentAdminEquipKey}`);
+        const oldData = localStorage.getItem(`details_${targetSite}_${currentAdminEquipKey}`);
         if (oldData) {
-            localStorage.setItem(`details_${currentAdminEquipSite}_${newKey}`, oldData);
-            localStorage.removeItem(`details_${currentAdminEquipSite}_${currentAdminEquipKey}`);
+            localStorage.setItem(`details_${targetSite}_${newKey}`, oldData);
+            localStorage.removeItem(`details_${targetSite}_${currentAdminEquipKey}`);
         }
         
         // setup_data 이동
         const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-        const oldSetupKey = `${currentAdminEquipSite}::${currentAdminEquipKey}`;
+        const oldSetupKey = `${targetSite}::${currentAdminEquipKey}`;
         if (setupData[oldSetupKey]) {
-            setupData[`${currentAdminEquipSite}::${newKey}`] = setupData[oldSetupKey];
+            setupData[`${targetSite}::${newKey}`] = setupData[oldSetupKey];
             delete setupData[oldSetupKey];
             localStorage.setItem('setup_data', JSON.stringify(setupData));
         }
@@ -623,11 +691,11 @@ function handleEquipSave() {
     } 
     // 신규 등록
     else if (!currentAdminEquipKey) {
-        storageData[currentAdminEquipSite].push(newKey);
+        storageData[targetSite].push(newKey);
         // 초기 데이터 생성
         const initData = { maint: [], logs: [], memo: "", setup: { model: serial } }; // Serial을 모델란에 저장 (관례)
-        localStorage.setItem(`details_${currentAdminEquipSite}_${newKey}`, JSON.stringify(initData));
-        addSystemLog('ADD_EQUIP', newKey, `Site: ${currentAdminEquipSite}`);
+        localStorage.setItem(`details_${targetSite}_${newKey}`, JSON.stringify(initData));
+        addSystemLog('ADD_EQUIP', newKey, `Site: ${targetSite}`);
     }
 
     saveData();
@@ -638,22 +706,23 @@ function handleEquipSave() {
 }
 
 function handleEquipDelete() {
-    if (!currentAdminEquipSite || !currentAdminEquipKey) return;
+    const targetSite = document.getElementById('equip-info-site').value;
+    if (!targetSite || !currentAdminEquipKey) return;
     
     if (!confirm(`'${currentAdminEquipKey}' 장비를 삭제하시겠습니까?\n모든 점검 이력과 데이터가 삭제됩니다.`)) return;
 
     // 리스트에서 제거
-    storageData[currentAdminEquipSite] = storageData[currentAdminEquipSite].filter(k => k !== currentAdminEquipKey);
+    storageData[targetSite] = storageData[targetSite].filter(k => k !== currentAdminEquipKey);
     
     // details 제거
-    localStorage.removeItem(`details_${currentAdminEquipSite}_${currentAdminEquipKey}`);
+    localStorage.removeItem(`details_${targetSite}_${currentAdminEquipKey}`);
     
     // setup_data 제거
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    delete setupData[`${currentAdminEquipSite}::${currentAdminEquipKey}`];
+    delete setupData[`${targetSite}::${currentAdminEquipKey}`];
     localStorage.setItem('setup_data', JSON.stringify(setupData));
     
-    addSystemLog('DELETE_EQUIP', currentAdminEquipKey, `Site: ${currentAdminEquipSite}`);
+    addSystemLog('DELETE_EQUIP', currentAdminEquipKey, `Site: ${targetSite}`);
     
     saveData();
     alert('삭제되었습니다.');
