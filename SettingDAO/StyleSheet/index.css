@@ -942,6 +942,21 @@ body {
         #gantt-wrapper {
             display: none !important;
         }
+
+        /* [요청] 세로 모드에서 사업장/장비 현황 가로 배치 */
+        .maint-left-charts {
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+        .maint-left-charts .status-group:nth-child(1),
+        .maint-left-charts .status-group:nth-child(2) {
+            width: calc(50% - 5px) !important;
+            flex: none !important;
+        }
+        .maint-left-charts .status-group:nth-child(3) {
+            width: 100% !important;
+            flex: none !important;
+        }
     }
 
     /* [요청] 간트 실행 완료 팝업 모바일 최적화 */
