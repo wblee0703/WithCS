@@ -912,10 +912,23 @@ body {
         gap: 15px;
     }
 
-    /* [요청] 셋업/운영 현황 카드 세로 배치 */
+    /* [요청] 셋업/운영 현황 카드 가로 배치 (사업장/장비 현황) */
     .maint-left-charts {
-        flex-direction: column;
+        flex-direction: row !important;
+        flex-wrap: wrap;
         height: auto;
+        align-items: stretch; /* 높이 맞춤 */
+    }
+
+    .maint-left-charts .status-group:nth-child(1),
+    .maint-left-charts .status-group:nth-child(2) {
+        width: calc(50% - 5px) !important;
+        flex: none !important;
+    }
+
+    .maint-left-charts .status-group:nth-child(3) {
+        width: 100% !important;
+        flex: none !important;
     }
 
     /* [요청] 모바일에서 셋업/운영 현황 컨테이너 높이 자동 조절 (겹침 방지) */
@@ -941,21 +954,6 @@ body {
     @media (orientation: portrait) {
         #gantt-wrapper {
             display: none !important;
-        }
-
-        /* [요청] 세로 모드에서 사업장/장비 현황 가로 배치 */
-        .maint-left-charts {
-            flex-direction: row;
-            flex-wrap: wrap;
-        }
-        .maint-left-charts .status-group:nth-child(1),
-        .maint-left-charts .status-group:nth-child(2) {
-            width: calc(50% - 5px) !important;
-            flex: none !important;
-        }
-        .maint-left-charts .status-group:nth-child(3) {
-            width: 100% !important;
-            flex: none !important;
         }
     }
 

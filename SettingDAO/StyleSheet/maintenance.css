@@ -542,8 +542,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     
     .log-select-wrapper {
         width: auto !important;
-        flex: 1 !important;
+        flex: 1.5 !important; /* [수정] 항목 선택창 너비 비율 확대 (유동적) */
         margin-right: 0 !important;
+        min-width: 0 !important;
     }
 
     /* [요청] 장비 점검 이력 입력창 한 줄 배치 */
@@ -553,17 +554,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         gap: 3px !important;
     }
     #log-date {
-        width: 90px !important;
-        flex: none !important;
+        width: auto !important;
+        flex: 1.2 !important; /* [수정] 날짜 입력창 너비 비율 할당 */
+        min-width: 0 !important;
     }
     #log-type-select {
-        width: 55px !important;
-        flex: none !important;
+        width: auto !important;
+        flex: 0.7 !important; /* [수정] 구분 선택창 너비 비율 할당 */
+        min-width: 0 !important;
         padding: 0 !important;
     }
     #log-worker {
-        width: 55px !important;
-        flex: none !important;
+        width: auto !important;
+        flex: 0.8 !important; /* [수정] 작업자 입력창 너비 비율 할당 */
+        min-width: 0 !important;
     }
     /* 입력 폰트 크기 축소 */
     #log-date, #log-type-select, .log-select-trigger, #log-worker {
