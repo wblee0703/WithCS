@@ -604,5 +604,11 @@
         "action": "ADD_SITE",
         "target": "ECOPRO_NH 오창",
         "details": "Admin Page"
+    },
+    {
+        "timestamp": "2026-03-13T07:16:11.637Z",
+        "action": "ADD_SITE",
+        "target": "DUPONT 천안",
+        "details": "Admin Page"
     }
 ]
