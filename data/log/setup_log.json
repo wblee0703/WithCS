@@ -1318,5 +1318,11 @@
         "details": "일정 자동 계산 (역방향)",
         "target": "SOMA-2000::SOMA-H19-0903",
         "timestamp": "2026-03-12T23:52:12.316Z"
+    },
+    {
+        "timestamp": "2026-03-13T00:00:10.269Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "일정 자동 계산 (완료일 기준)"
     }
 ]
