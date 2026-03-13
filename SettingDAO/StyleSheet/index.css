@@ -822,9 +822,12 @@ body {
 /* 화면 너비가 768px 이하일 때 적용됩니다. */
 @media (max-width: 950px) {
     .home-main {
-        padding: 10px;
+        padding: 0;
     }
-
+/* [요청] 모바일에서 좌우 여백 최소화 */
+        .home-content {
+            padding: 5px;
+        }
     .login-box {
         width: 90%;
         padding: 20px;
@@ -887,7 +890,7 @@ body {
 
     /* 대시보드 레이아웃 */
     .dashboard-col {
-        padding: 15px;
+        padding: 5px;
         overflow-y: visible; /* 내부 스크롤 제거 */
     }
 

@@ -405,6 +405,11 @@
 
 /* 화면 너비가 768px 이하일 때 적용됩니다. */
 @media (max-width: 950px) {
+    /* [요청] 모바일에서 간트 차트 패딩 축소 */
+    .gantt {
+        padding: 5px;
+    }
+
     /* [추가] 모바일 기본 레이아웃 (세로 배치) */
     .gantt__wrapper {
         flex-direction: column;

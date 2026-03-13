@@ -567,7 +567,7 @@
 /* 화면 너비가 768px 이하일 때 적용됩니다. */
 @media (max-width: 950px) {
     .calendar-container {
-        padding: 10px;
+        padding: 5px;
     }
 
     .calendar-divider {
