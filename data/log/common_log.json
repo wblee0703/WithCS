@@ -354,21 +354,21 @@
         "timestamp": "2026-03-13T01:32:37.160Z"
     },
     {
-        "timestamp": "2026-03-13T01:42:08.051Z",
         "action": "LOGIN",
+        "details": "로그인 성공 (HOME)",
         "target": "admin",
-        "details": "로그인 성공 (HOME)"
+        "timestamp": "2026-03-13T01:42:08.051Z"
     },
     {
-        "timestamp": "2026-03-13T05:20:09.711Z",
         "action": "LOGIN",
+        "details": "로그인 성공 (HOME)",
         "target": "admin",
-        "details": "로그인 성공 (HOME)"
+        "timestamp": "2026-03-13T05:20:09.711Z"
     },
     {
-        "timestamp": "2026-03-13T05:25:15.485Z",
         "action": "LOGIN",
+        "details": "로그인 성공 (HOME)",
         "target": "admin",
-        "details": "로그인 성공 (HOME)"
+        "timestamp": "2026-03-13T05:25:15.485Z"
     }
 ]
