@@ -84,21 +84,21 @@
         "timestamp": "2026-03-13T00:22:06.319Z"
     },
     {
-        "timestamp": "2026-03-13T00:22:20.345Z",
         "action": "CANCEL_COMPLETION",
+        "details": "Reverted: ff",
         "target": "SOMA-3000E::SOMA-EK24-0402",
-        "details": "Reverted: ff"
+        "timestamp": "2026-03-13T00:22:20.345Z"
     },
     {
-        "timestamp": "2026-03-13T00:22:29.853Z",
         "action": "COMPLETE_SCHEDULE",
+        "details": "Content: ff",
         "target": "SOMA-3000E::SOMA-EK24-0402",
-        "details": "Content: ff"
+        "timestamp": "2026-03-13T00:22:29.853Z"
     },
     {
-        "timestamp": "2026-03-13T00:22:34.077Z",
         "action": "CANCEL_COMPLETION",
+        "details": "Reverted: ff",
         "target": "SOMA-3000E::SOMA-EK24-0402",
-        "details": "Reverted: ff"
+        "timestamp": "2026-03-13T00:22:34.077Z"
     }
 ]

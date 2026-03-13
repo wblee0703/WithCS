@@ -512,12 +512,12 @@
         ],
         "maint": [
             {
-                "id": 1773361354077,
-                "type": "장비점검",
                 "content": "ff",
                 "date": "",
+                "id": 1773361354077,
                 "period": null,
-                "scheduledDate": "2026-03-12"
+                "scheduledDate": "2026-03-12",
+                "type": "장비점검"
             }
         ]
     },
