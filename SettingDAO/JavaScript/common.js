@@ -204,7 +204,6 @@ function setupAuthEvents() {
     const userModal = document.getElementById('user-modal');
     const btnAddUser = document.getElementById('btn-add-user');
     const btnChangePw = document.getElementById('btn-change-pw');
-    const btnGithubSync = document.getElementById('btn-github-sync');
     const userInfo = document.getElementById('user-info');
 
     // [추가] 홈 화면 로그인 요소 이벤트 연결
@@ -227,7 +226,6 @@ function setupAuthEvents() {
     if (userModal) userModal.addEventListener('click', (e) => { if (e.target === userModal) closeUserModal(); });
     if (btnAddUser) btnAddUser.addEventListener('click', addNewUser);
     if (btnChangePw) btnChangePw.addEventListener('click', changePassword);
-    if (btnGithubSync) btnGithubSync.addEventListener('click', triggerManualSync);
 
     if (btnLoginLogout) btnLoginLogout.addEventListener('click', handleLoginLogoutClick);
     if (btnLoginSubmit) btnLoginSubmit.addEventListener('click', () => attemptLogin(loginIdInput.value, loginPwInput.value, 'Modal'));
@@ -877,24 +875,6 @@ function changePassword() {
         } else {
             alert(data.message || '비밀번호 변경 실패');
         }
-    });
-}
-
-function triggerManualSync() {
-    if (!confirm('GitHub 동기화를 진행하시겠습니까?\n(로컬의 모든 변경사항이 GitHub에 업로드됩니다.)')) return;
-    
-    fetch('/api/admin/sync', {
-        method: 'POST',
-        headers: { 
-            'Content-Type': 'application/json',
-            'X-CSRFToken': getCookie('csrf_token')
-        }
-    })
-    .then(res => res.json())
-    .then(data => alert(data.message))
-    .catch(err => {
-        console.error('Sync error:', err);
-        alert('동기화 요청 중 오류가 발생했습니다.');
     });
 }
 

@@ -627,32 +627,6 @@ def change_password():
         
     return jsonify({"status": "success"})
 
-@app.route('/api/admin/sync', methods=['POST'])
-@login_required
-def manual_sync():
-    if session.get('role') != 'admin':
-        return jsonify({"status": "fail", "message": "관리자 권한이 필요합니다."}), 403
-    
-    try:
-        if not os.path.exists(os.path.join(BASE_DIR, '.git')):
-             return jsonify({"status": "fail", "message": "Git 저장소가 아닙니다."}), 400
-
-        # 변경 사항 확인
-        status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
-        if not status.stdout.strip():
-             return jsonify({"status": "success", "message": "변경 사항이 없습니다."})
-
-        # 전체 추가 및 커밋/푸시
-        subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(["git", "commit", "-m", f"Manual-sync: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"], check=True)
-        subprocess.run(["git", "push"], check=True)
-        
-        app.logger.info("Manual GitHub sync successful")
-        return jsonify({"status": "success", "message": "GitHub 동기화가 완료되었습니다."})
-    except Exception as e:
-        app.logger.error(f"Manual sync failed: {e}")
-        return jsonify({"status": "fail", "message": f"동기화 실패: {str(e)}"}), 500
-
 # ------------------------------------------------------------------------------
 # 8. Main Execution
 # ------------------------------------------------------------------------------

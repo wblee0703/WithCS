@@ -378,13 +378,19 @@
         "timestamp": "2026-03-13T05:33:58.697Z"
     },
     {
-        "timestamp": "2026-03-13T05:48:02.112Z",
         "action": "LOGIN",
+        "details": "로그인 성공 (HOME)",
         "target": "admin",
-        "details": "로그인 성공 (HOME)"
+        "timestamp": "2026-03-13T05:48:02.112Z"
     },
     {
-        "timestamp": "2026-03-13T05:55:49.197Z",
+        "action": "LOGIN",
+        "details": "로그인 성공 (HOME)",
+        "target": "admin",
+        "timestamp": "2026-03-13T05:55:49.197Z"
+    },
+    {
+        "timestamp": "2026-03-13T06:05:34.458Z",
         "action": "LOGIN",
         "target": "admin",
         "details": "로그인 성공 (HOME)"
