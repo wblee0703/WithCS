@@ -1320,15 +1320,15 @@
         "timestamp": "2026-03-12T23:52:12.316Z"
     },
     {
-        "timestamp": "2026-03-13T00:00:10.269Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (완료일 기준)",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "일정 자동 계산 (완료일 기준)"
+        "timestamp": "2026-03-13T00:00:10.269Z"
     },
     {
-        "timestamp": "2026-03-13T00:00:16.554Z",
         "action": "CALC_SETUP_SCHEDULE",
+        "details": "일정 자동 계산 (완료일 기준)",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "일정 자동 계산 (완료일 기준)"
+        "timestamp": "2026-03-13T00:00:16.554Z"
     }
 ]
