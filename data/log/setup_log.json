@@ -1344,9 +1344,21 @@
         "timestamp": "2026-03-13T01:10:46.633Z"
     },
     {
-        "timestamp": "2026-03-13T01:11:00.090Z",
         "action": "UPDATE_SETUP_STATUS",
+        "details": "완료 상태 해제 및 이후 단계 초기화",
         "target": "SOLA-1000::SOLA-1000",
-        "details": "완료 상태 해제 및 이후 단계 초기화"
+        "timestamp": "2026-03-13T01:11:00.090Z"
+    },
+    {
+        "timestamp": "2026-03-13T01:11:12.591Z",
+        "action": "UPDATE_SETUP_DETAILS",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "셋업 상세 내역 수정"
+    },
+    {
+        "timestamp": "2026-03-13T01:11:12.593Z",
+        "action": "CALC_SETUP_SCHEDULE",
+        "target": "SOLA-1000::SOLA-1000",
+        "details": "일정 자동 계산 (순방향)"
     }
 ]
