@@ -148,5 +148,11 @@
         "action": "DELETE_SCHEDULE",
         "target": "WIM-100::WIM1-HK24-0401",
         "details": "Date: , Content: 9.5%HNO3"
+    },
+    {
+        "timestamp": "2026-03-13T05:25:49.681Z",
+        "action": "DELETE_SCHEDULE",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "Date: , Content: 장비점검"
     }
 ]
