@@ -5,11 +5,13 @@ let equipmentModels = []; // 장비 모델 목록
 let currentAdminModel = null; // 선택된 장비 모델
 let currentAdminEquipSite = null; // 장비 관리에서 선택된 사업장
 let currentAdminEquipSiteContext = null; // [추가] 선택된 장비의 실제 사업장 (전체 보기 시 식별용)
+let adminItems = []; // [추가] 물품 목록
 
 document.addEventListener('DOMContentLoaded', () => {
     setupAdminMenu();
     setupSiteMgmt();
     setupEquipModelMgmt();
+    setupItemMgmt();
 });
 
 // 사이드바 메뉴 탭 전환 기능
@@ -36,6 +38,9 @@ function setupAdminMenu() {
                     updateEquipSiteSelect();
                     renderEquipModelList();
                     renderAdminEquipList();
+                }
+                if (item.dataset.target === 'item-mgmt') {
+                    renderAdminItemList();
                 }
             });
         });
@@ -787,6 +792,129 @@ function handleEquipDelete() {
     alert('삭제되었습니다.');
     resetEquipForm();
     renderAdminEquipList();
+}
+
+/* ==========================================================================
+   물품 관리 (Item Management)
+   ========================================================================== */
+function setupItemMgmt() {
+    loadAdminItems();
+
+    const btnAdd = document.getElementById('btn-admin-add-item');
+    const typeInput = document.getElementById('admin-item-type-input');
+    const partInput = document.getElementById('admin-item-part-input');
+    const cycleInput = document.getElementById('admin-item-cycle-input');
+
+    if (btnAdd) {
+        btnAdd.addEventListener('click', () => {
+            const type = typeInput.value;
+            const part = partInput.value.trim();
+            const cycle = cycleInput.value.trim();
+
+            if (!part) return alert('교체(수리) 파츠 명을 입력해주세요.');
+
+            adminItems.push({ id: Date.now(), type, part, cycle });
+            saveAdminItems();
+            addSystemLog('ADD_ITEM_ADMIN', part, `Type: ${type}, Cycle: ${cycle}`);
+            
+            partInput.value = '';
+            cycleInput.value = '';
+            renderAdminItemList();
+            partInput.focus();
+        });
+        
+        partInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') cycleInput.focus(); });
+        cycleInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') btnAdd.click(); });
+    }
+}
+
+function loadAdminItems() {
+    try {
+        const data = localStorage.getItem('admin_items');
+        adminItems = data ? JSON.parse(data) : [];
+    } catch (e) {
+        console.error(e);
+        adminItems = [];
+    }
+}
+
+function saveAdminItems() {
+    localStorage.setItem('admin_items', JSON.stringify(adminItems));
+}
+
+function renderAdminItemList() {
+    const list = document.getElementById('admin-item-list');
+    const countEl = document.getElementById('admin-item-count');
+    if (!list) return;
+
+    list.innerHTML = '';
+    if (countEl) countEl.textContent = adminItems.length;
+
+    adminItems.forEach(item => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <div class="model-col" style="flex: 1.5; justify-content: center;"><span>${item.type}</span></div>
+            <div class="model-col" style="flex: 4;"><span>${item.part}</span></div>
+            <div class="model-col" style="flex: 1.5; justify-content: center;"><span>${item.cycle ? item.cycle + '일' : '-'}</span></div>
+            <div class="model-col model-actions-col">
+                <button class="btn-edit-sm btn-edit-item">✏️</button>
+                <button class="btn-del-sm btn-delete-item">✕</button>
+            </div>
+        `;
+
+        const editBtn = li.querySelector('.btn-edit-item');
+        const deleteBtn = li.querySelector('.btn-delete-item');
+
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!confirm(`'${item.part}' 물품을 삭제하시겠습니까?`)) return;
+            adminItems = adminItems.filter(i => i.id !== item.id);
+            saveAdminItems();
+            addSystemLog('DELETE_ITEM_ADMIN', item.part);
+            renderAdminItemList();
+        });
+
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isEditing = li.classList.contains('editing');
+
+            if (!isEditing) {
+                li.classList.add('editing');
+                editBtn.textContent = '저장';
+                editBtn.classList.replace('btn-edit-sm', 'btn-green-sm');
+                
+                const typeCol = li.children[0];
+                const partCol = li.children[1];
+                const cycleCol = li.children[2];
+                
+                typeCol.innerHTML = `
+                    <select class="input-dark" style="width: 100%;">
+                        <option value="PM" ${item.type === 'PM' ? 'selected' : ''}>PM</option>
+                        <option value="BM" ${item.type === 'BM' ? 'selected' : ''}>BM</option>
+                        <option value="기타" ${item.type === '기타' ? 'selected' : ''}>기타</option>
+                    </select>
+                `;
+                partCol.innerHTML = `<input type="text" class="input-dark" value="${item.part}" style="width: 100%;">`;
+                cycleCol.innerHTML = `<input type="number" class="input-dark" value="${item.cycle || ''}" style="width: 100%;">`;
+            } else {
+                const newType = li.children[0].querySelector('select').value.trim();
+                const newPart = li.children[1].querySelector('input').value.trim();
+                const newCycle = li.children[2].querySelector('input').value.trim();
+
+                if (!newPart) return alert('교체(수리) 파츠 명을 입력해주세요.');
+
+                item.type = newType;
+                item.part = newPart;
+                item.cycle = newCycle;
+
+                saveAdminItems();
+                addSystemLog('UPDATE_ITEM_ADMIN', item.part, `To: ${newType} / ${newPart} / ${newCycle}`);
+                renderAdminItemList();
+            }
+        });
+
+        list.appendChild(li);
+    });
 }
 
 // [추가] 초기화 시 장비 관리 이벤트 등록
