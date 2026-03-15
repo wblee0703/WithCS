@@ -1,6 +1,5 @@
 let currentAdminSite = null; // 현재 선택된 사업장
 let currentBuildingList = []; // 현재 편집 중인 건물 목록
-let currentAdminEquipSite = null; // 장비 관리에서 선택된 사업장
 let currentAdminEquipKey = null; // 장비 관리에서 선택된 장비 키 (Name::Serial)
 let equipmentModels = []; // 장비 모델 목록
 let currentAdminModel = null; // 선택된 장비 모델
@@ -33,7 +32,6 @@ function setupAdminMenu() {
                 }
 
                 if (item.dataset.target === 'equip-mgmt') {
-                    updateEquipSiteSelect();
                     renderEquipModelList();
                     renderAdminEquipList();
                 }
@@ -264,6 +262,11 @@ function setupEquipModelMgmt() {
     const nameInput = document.getElementById('admin-model-name-input');
     const abbrInput = document.getElementById('admin-model-abbr-input');
 
+        const searchInput = document.getElementById('admin-model-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', renderEquipModelList);
+        }
+
     if (btnAdd) {
         const addModel = () => {
             const name = nameInput.value.trim();
@@ -302,13 +305,21 @@ function saveEquipmentModels() {
 function renderEquipModelList() {
     const list = document.getElementById('admin-model-list');
     const countEl = document.getElementById('admin-model-count');
+    const searchInput = document.getElementById('admin-model-search');
+    const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
     if (!list) return;
 
     list.innerHTML = '';
-    equipmentModels.sort((a, b) => a.name.localeCompare(b.name));
-    if (countEl) countEl.textContent = equipmentModels.length;
+    
+    let filteredModels = equipmentModels;
+    if (keyword) {
+        filteredModels = equipmentModels.filter(m => m.name.toLowerCase().includes(keyword) || m.abbr.toLowerCase().includes(keyword));
+    }
 
-    equipmentModels.forEach(model => {
+    filteredModels.sort((a, b) => a.name.localeCompare(b.name));
+    if (countEl) countEl.textContent = filteredModels.length;
+
+    filteredModels.forEach(model => {
         const li = document.createElement('li');
         if (currentAdminModel && currentAdminModel.name === model.name) {
             li.classList.add('active');
@@ -433,13 +444,11 @@ function renderEquipModelList() {
    장비 관리 (Equipment Management)
    ========================================================================== */
 function setupEquipMgmt() {
-    // 사업장 선택 필터
-    const siteSelect = document.getElementById('admin-equip-site-filter');
-    if (siteSelect) {
-        siteSelect.addEventListener('change', (e) => {
-            currentAdminEquipSite = e.target.value;
+    // 장비 검색 필터
+    const equipSearchInput = document.getElementById('admin-equip-search');
+    if (equipSearchInput) {
+        equipSearchInput.addEventListener('input', () => {
             renderAdminEquipList();
-            resetEquipForm();
         });
     }
 
@@ -451,7 +460,7 @@ function setupEquipMgmt() {
             document.getElementById('admin-equip-form').style.display = 'block';
             document.getElementById('admin-equip-placeholder').style.display = 'none';
             const siteInput = document.getElementById('equip-info-site');
-            siteInput.value = currentAdminEquipSite || '';
+            siteInput.value = '';
             siteInput.disabled = false; // 신규 등록 시에는 사업장 입력 가능
              
             const nameInput = document.getElementById('equip-info-name');
@@ -558,40 +567,32 @@ function setupEquipMgmt() {
     }
 }
 
-function updateEquipSiteSelect() {
-    const select = document.getElementById('admin-equip-site-filter');
-    if (!select) return;
-    
-    const currentVal = select.value;
-    select.innerHTML = '<option value="">전체 장비 보기</option>';
-    
-    Object.keys(storageData).sort().forEach(site => {
-        const opt = document.createElement('option');
-        opt.value = site;
-        opt.textContent = site;
-        select.appendChild(opt);
-    });
-    
-    if (storageData[currentVal]) select.value = currentVal;
-}
-
 function renderAdminEquipList() {
     const list = document.getElementById('admin-equip-list');
     const countEl = document.getElementById('admin-equip-count');
+    const searchInput = document.getElementById('admin-equip-search');
+    const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
     if (!list) return;
 
     list.innerHTML = '';
     if (countEl) countEl.textContent = '0';
 
-    // [수정] 사업장이 선택되지 않았으면(null/empty) 전체 장비 표시, 아니면 해당 사업장만 표시
     let items = [];
-    if (currentAdminEquipSite && storageData[currentAdminEquipSite]) {
-        storageData[currentAdminEquipSite].forEach(k => items.push({site: currentAdminEquipSite, key: k}));
-    } else if (!currentAdminEquipSite) {
-        Object.keys(storageData).sort().forEach(site => {
-            if (storageData[site]) {
-                storageData[site].forEach(k => items.push({site: site, key: k}));
-            }
+    Object.keys(storageData).sort().forEach(site => {
+        if (storageData[site]) {
+            storageData[site].forEach(k => items.push({site: site, key: k}));
+        }
+    });
+
+    if (keyword) {
+        items = items.filter(item => {
+            const parts = item.key.split('::');
+            const name = parts[0] || '';
+            const serial = parts.length > 1 ? parts[1] : '';
+            return item.site.toLowerCase().includes(keyword) || 
+                   name.toLowerCase().includes(keyword) || 
+                   serial.toLowerCase().includes(keyword);
         });
     }
 
@@ -606,11 +607,7 @@ function renderAdminEquipList() {
 
         const li = document.createElement('li');
         
-        // 전체 보기일 경우 사업장 이름도 표시
-        let content = `<span>${name}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
-        if (!currentAdminEquipSite) {
-            content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:#8b949e;">${site}</span><div>${content}</div></div>`;
-        }
+        let content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:#8b949e;">${site}</span><div><span>${name}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span></div></div>`;
         li.innerHTML = content;
         
         // [수정] 활성화 체크 시 사이트 컨텍스트도 확인
