@@ -450,71 +450,12 @@ function renderEquipModelList() {
    장비 관리 (Equipment Management)
    ========================================================================== */
 function setupEquipMgmt() {
-    // 사업장 선택 필터 (자동완성 드롭다운 방식)
-    const siteFilterInput = document.getElementById('admin-equip-site-filter-input');
-    const siteFilterSuggestions = document.getElementById('admin-equip-site-suggestions');
-
-    if (siteFilterInput && siteFilterSuggestions) {
-        const handleSiteFilterInput = () => {
-            const query = siteFilterInput.value.trim().toLowerCase();
-            const keywords = query ? query.split(/\s+/) : [];
-            const sites = Object.keys(storageData).sort();
-            
-            const matches = query ? sites.filter(s => {
-                const text = s.toLowerCase();
-                return keywords.every(kw => text.includes(kw));
-            }) : sites;
-
-            siteFilterSuggestions.innerHTML = '';
-            
-            // 전체 보기 항목
-            const allLi = document.createElement('li');
-            allLi.className = 'suggestion-item';
-            allLi.style.fontWeight = 'bold';
-            allLi.style.color = '#58a6ff';
-            allLi.textContent = '전체 사업장 보기';
-            allLi.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                siteFilterInput.value = '';
-                currentAdminEquipSite = null;
-                siteFilterSuggestions.style.display = 'none';
-                renderAdminEquipList();
-            });
-            siteFilterSuggestions.appendChild(allLi);
-
-            matches.forEach(site => {
-                const li = document.createElement('li');
-                li.className = 'suggestion-item';
-                li.textContent = site;
-                li.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    siteFilterInput.value = site;
-                    currentAdminEquipSite = site;
-                    siteFilterSuggestions.style.display = 'none';
-                    renderAdminEquipList();
-                });
-                siteFilterSuggestions.appendChild(li);
-            });
-            siteFilterSuggestions.style.display = 'block';
-        };
-
-        siteFilterInput.addEventListener('input', () => {
-            if (siteFilterInput.value.trim() === '') {
-                currentAdminEquipSite = null;
-                renderAdminEquipList();
-            }
-            handleSiteFilterInput();
-        });
-        siteFilterInput.addEventListener('focus', handleSiteFilterInput);
-        siteFilterInput.addEventListener('blur', () => {
-            setTimeout(() => { siteFilterSuggestions.style.display = 'none'; }, 150);
-            const val = siteFilterInput.value.trim();
-            if (val !== '' && !storageData[val]) {
-                siteFilterInput.value = currentAdminEquipSite || '';
-            } else {
-                currentAdminEquipSite = val === '' ? null : val;
-                renderAdminEquipList();
-            }
+    // 사업장 선택 필터
+    const siteSelect = document.getElementById('admin-equip-site-filter');
+    if (siteSelect) {
+        siteSelect.addEventListener('change', (e) => {
+            currentAdminEquipSite = e.target.value;
+            renderAdminEquipList();
         });
     }
 
@@ -650,10 +591,20 @@ function setupEquipMgmt() {
 }
 
 function updateEquipSiteSelect() {
-    const input = document.getElementById('admin-equip-site-filter-input');
-    if (input) {
-        input.value = currentAdminEquipSite || '';
-    }
+    const select = document.getElementById('admin-equip-site-filter');
+    if (!select) return;
+    
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">전체 사업장 보기</option>';
+    
+    Object.keys(storageData).sort().forEach(site => {
+        const opt = document.createElement('option');
+        opt.value = site;
+        opt.textContent = site;
+        select.appendChild(opt);
+    });
+    
+    if (storageData[currentVal]) select.value = currentVal;
 }
 
 function renderAdminEquipList() {

@@ -85,12 +85,12 @@
                 <div class="admin-split-view">
                     <!-- 좌측: 장비 모델 목록 -->
                     <div class="admin-col-list wide-col">
-                        <div class="list-header column-header">
-                            <div class="header-title-row">
+                        <div class="list-header">
+                            <div style="display: flex; align-items: center; gap: 5px;">
                                 <span>장비 모델</span>
                                 <span id="admin-model-count" class="badge">0</span>
                             </div>
-                            <input type="text" id="admin-model-search" class="input-dark full-width compact-select" placeholder="모델명 또는 약어 검색" autocomplete="off">
+                            <input type="text" id="admin-model-search" class="input-dark compact-select" placeholder="모델명 또는 약어 검색" autocomplete="off" style="flex: 1; margin-left: 15px;">
                         </div>
                         <div class="admin-list-header">
                             <div class="model-col model-name-col">모델명</div>
@@ -113,10 +113,9 @@
                                 <span>등록된 장비</span>
                                 <span id="admin-equip-count" class="badge">0</span>
                             </div>
-                            <div class="autocomplete-wrapper" style="margin-bottom: 5px;">
-                                <input type="text" id="admin-equip-site-filter-input" class="input-dark full-width compact-select" placeholder="사업장 필터 (전체 보기)" autocomplete="off">
-                                <ul id="admin-equip-site-suggestions" class="suggestion-list"></ul>
-                            </div>
+                            <select id="admin-equip-site-filter" class="modal-select full-width compact-select" style="margin-bottom: 5px;">
+                                <option value="">전체 사업장 보기</option>
+                            </select>
                             <input type="text" id="admin-equip-search" class="input-dark full-width compact-select" placeholder="사업장, 장비명, 시리얼 검색 (띄어쓰기 조합)" autocomplete="off">
                         </div>
                         <ul id="admin-equip-list" class="admin-list"></ul>
