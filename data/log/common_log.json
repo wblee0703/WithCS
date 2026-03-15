@@ -702,7 +702,13 @@
         "timestamp": "2026-03-15T23:01:16.416Z"
     },
     {
-        "timestamp": "2026-03-15T23:10:57.780Z",
+        "action": "LOGIN",
+        "details": "로그인 성공 (HOME)",
+        "target": "admin",
+        "timestamp": "2026-03-15T23:10:57.780Z"
+    },
+    {
+        "timestamp": "2026-03-15T23:16:53.907Z",
         "action": "LOGIN",
         "target": "admin",
         "details": "로그인 성공 (HOME)"

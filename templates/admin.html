@@ -41,7 +41,7 @@
                         </ul>
                         <div class="list-footer">
                             <input type="text" id="admin-site-add-input" placeholder="새 사업장 이름" class="input-dark full-width">
-                            <button id="btn-admin-add-site" class="btn-green full-width" style="margin-top: 5px;">신규 등록</button>
+                            <button id="btn-admin-add-site" class="btn-green full-width">신규 등록</button>
                         </div>
                     </div>
 
@@ -58,11 +58,11 @@
                             </div>
                             <div class="form-group">
                                 <label>건물 목록</label>
-                                <div style="display: flex; gap: 5px; margin-bottom: 10px;">
-                                    <input type="text" id="site-info-building-input" class="input-dark" style="flex: 1;" placeholder="건물명">
-                                    <button id="btn-add-building" class="btn-green-sm" style="white-space: nowrap;">추가</button>
+                                <div class="form-input-group">
+                                    <input type="text" id="site-info-building-input" class="input-dark flex-1" placeholder="건물명">
+                                    <button id="btn-add-building" class="btn-green-sm no-wrap">추가</button>
                                 </div>
-                                <ul id="site-info-building-list" class="admin-list" style="height: 200px; overflow-y: auto;"></ul>
+                                <ul id="site-info-building-list" class="admin-list building-list"></ul>
                             </div>
                             
                             <div class="form-actions">
@@ -84,7 +84,7 @@
             <div class="card-body">
                 <div class="admin-split-view">
                     <!-- 좌측: 장비 모델 목록 -->
-                    <div class="admin-col-list" style="flex: 0 0 400px;">
+                    <div class="admin-col-list wide-col">
                         <div class="list-header">
                             <span>장비 모델</span>
                             <span id="admin-model-count" class="badge">0</span>
@@ -98,19 +98,19 @@
                             <!-- JS 렌더링 -->
                         </ul>
                         <div class="list-footer">
-                            <input type="text" id="admin-model-name-input" placeholder="모델명" class="input-dark full-width" style="margin-bottom: 5px;">
+                            <input type="text" id="admin-model-name-input" placeholder="모델명" class="input-dark full-width">
                             <input type="text" id="admin-model-abbr-input" placeholder="약어" class="input-dark full-width">
-                            <button id="btn-admin-add-model" class="btn-green full-width" style="margin-top: 5px;">모델 추가</button>
+                            <button id="btn-admin-add-model" class="btn-green full-width">모델 추가</button>
                         </div>
                     </div>
                     <!-- 좌측: 장비 목록 -->
-                    <div class="admin-col-list" style="flex: 0 0 400px;">
-                        <div class="list-header" style="flex-direction: column; align-items: stretch; gap: 5px;">
-                            <div style="display:flex; justify-content:space-between;">
+                    <div class="admin-col-list wide-col">
+                        <div class="list-header column-header">
+                            <div class="header-title-row">
                                 <span>등록된 장비</span>
                                 <span id="admin-equip-count" class="badge">0</span>
                             </div>
-                            <select id="admin-equip-site-filter" class="modal-select full-width" style="padding: 4px;">
+                            <select id="admin-equip-site-filter" class="modal-select full-width compact-select">
                                 <option value="">사업장 선택...</option>
                             </select>
                         </div>
@@ -127,17 +127,20 @@
                             <p class="detail-desc">장비명(모델)과 시리얼 번호를 관리합니다.</p>
                         </div>
                         <div id="admin-equip-form" class="admin-form-container" style="display:none;">
-                            <div class="form-group" style="position: relative; width: 50%;">
+                            <div class="form-group form-group-half">
                                 <label>사업장</label>
-                                <input type="text" id="equip-info-site" class="input-dark" placeholder="Site Name" autocomplete="off" style="width: 100%;">
+                                <input type="text" id="equip-info-site" class="input-dark full-width" placeholder="Site Name" autocomplete="off">
                                 <ul id="equip-site-suggestions" class="suggestion-list"></ul>
                             </div>
-                            <div class="form-group" style="position: relative; width: 50%;">
+                            <div class="form-group form-group-half">
                                 <label>장비명 (모델)</label>
-                                <input type="text" id="equip-info-name" class="input-dark" placeholder="Equipment Name" autocomplete="off" style="width: 100%;">
+                                <input type="text" id="equip-info-name" class="input-dark full-width" placeholder="Equipment Name" autocomplete="off">
                                 <ul id="equip-model-suggestions" class="suggestion-list"></ul>
                             </div>
-                            <div class="form-group"><label>Serial No.</label><input type="text" id="equip-info-serial" class="input-dark" placeholder="Serial Number"></div>
+                            <div class="form-group">
+                                <label>Serial No.</label>
+                                <input type="text" id="equip-info-serial" class="input-dark full-width" placeholder="Serial Number">
+                            </div>
                             <div class="form-actions"><button id="btn-admin-del-equip" class="btn-del-sm">삭제</button><button id="btn-admin-save-equip" class="btn-blue">저장 (추가/수정)</button></div>
                         </div>
                         <div id="admin-equip-placeholder" class="placeholder-container"><p>사업장을 선택하고 장비를 선택하거나 신규 등록하세요.</p></div>

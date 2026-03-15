@@ -41,6 +41,12 @@
     padding-left: 5px;
     overflow-y: auto;
 }
+
+/* 장비관리 좌측 넓은 컬럼 */
+.wide-col {
+    flex: 0 0 400px;
+}
+
 /* [추가] 장비 모델 검색 제안 리스트 */
 .suggestion-list {
     position: absolute;
@@ -57,6 +63,7 @@
     list-style: none;
     padding: 0;
     margin-top: 2px;
+    box-sizing: border-box; /* 너비가 삐져나가지 않도록 수정 */
 }
 
 .suggestion-item {
@@ -163,6 +170,9 @@
 
 .list-footer {
     margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
 /* 상세 정보 폼 스타일 */
@@ -191,6 +201,11 @@
     margin-bottom: 15px;
 }
 
+.form-group-half {
+    position: relative;
+    width: 50%;
+}
+
 .form-group label {
     display: block;
     color: #8b949e;
@@ -204,6 +219,36 @@
     margin-top: 30px;
     padding-top: 20px;
     border-top: 1px solid #30363d;
+}
+
+/* 입력창 그룹 유틸리티 */
+.form-input-group {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.flex-1 { flex: 1; }
+.no-wrap { white-space: nowrap; }
+
+.building-list {
+    height: 200px;
+    overflow-y: auto;
+}
+
+.column-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+}
+
+.header-title-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.compact-select {
+    padding: 4px;
 }
 
 .placeholder-container {
