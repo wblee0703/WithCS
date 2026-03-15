@@ -3,6 +3,7 @@ let currentBuildingList = []; // 현재 편집 중인 건물 목록
 let currentAdminEquipKey = null; // 장비 관리에서 선택된 장비 키 (Name::Serial)
 let equipmentModels = []; // 장비 모델 목록
 let currentAdminModel = null; // 선택된 장비 모델
+let currentAdminEquipSite = null; // 장비 관리에서 선택된 사업장
 let currentAdminEquipSiteContext = null; // [추가] 선택된 장비의 실제 사업장 (전체 보기 시 식별용)
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -32,6 +33,7 @@ function setupAdminMenu() {
                 }
 
                 if (item.dataset.target === 'equip-mgmt') {
+                    updateEquipSiteSelect();
                     renderEquipModelList();
                     renderAdminEquipList();
                 }
@@ -444,6 +446,15 @@ function renderEquipModelList() {
    장비 관리 (Equipment Management)
    ========================================================================== */
 function setupEquipMgmt() {
+    // 사업장 선택 필터
+    const siteSelect = document.getElementById('admin-equip-site-filter');
+    if (siteSelect) {
+        siteSelect.addEventListener('change', (e) => {
+            currentAdminEquipSite = e.target.value;
+            renderAdminEquipList();
+        });
+    }
+
     // 장비 검색 필터
     const equipSearchInput = document.getElementById('admin-equip-search');
     if (equipSearchInput) {
@@ -460,7 +471,7 @@ function setupEquipMgmt() {
             document.getElementById('admin-equip-form').style.display = 'block';
             document.getElementById('admin-equip-placeholder').style.display = 'none';
             const siteInput = document.getElementById('equip-info-site');
-            siteInput.value = '';
+            siteInput.value = currentAdminEquipSite || '';
             siteInput.disabled = false; // 신규 등록 시에는 사업장 입력 가능
              
             const nameInput = document.getElementById('equip-info-name');
@@ -567,6 +578,23 @@ function setupEquipMgmt() {
     }
 }
 
+function updateEquipSiteSelect() {
+    const select = document.getElementById('admin-equip-site-filter');
+    if (!select) return;
+    
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">전체 사업장 보기</option>';
+    
+    Object.keys(storageData).sort().forEach(site => {
+        const opt = document.createElement('option');
+        opt.value = site;
+        opt.textContent = site;
+        select.appendChild(opt);
+    });
+    
+    if (storageData[currentVal]) select.value = currentVal;
+}
+
 function renderAdminEquipList() {
     const list = document.getElementById('admin-equip-list');
     const countEl = document.getElementById('admin-equip-count');
@@ -579,11 +607,15 @@ function renderAdminEquipList() {
     if (countEl) countEl.textContent = '0';
 
     let items = [];
-    Object.keys(storageData).sort().forEach(site => {
-        if (storageData[site]) {
-            storageData[site].forEach(k => items.push({site: site, key: k}));
-        }
-    });
+    if (currentAdminEquipSite && storageData[currentAdminEquipSite]) {
+        storageData[currentAdminEquipSite].forEach(k => items.push({site: currentAdminEquipSite, key: k}));
+    } else {
+        Object.keys(storageData).sort().forEach(site => {
+            if (storageData[site]) {
+                storageData[site].forEach(k => items.push({site: site, key: k}));
+            }
+        });
+    }
 
     if (keyword) {
         items = items.filter(item => {
@@ -607,7 +639,12 @@ function renderAdminEquipList() {
 
         const li = document.createElement('li');
         
-        let content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:#8b949e;">${site}</span><div><span>${name}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span></div></div>`;
+        let content = `<span>${name}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
+        if (!currentAdminEquipSite) {
+            content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:#8b949e;">${site}</span><div>${content}</div></div>`;
+        } else {
+            content = `<div>${content}</div>`;
+        }
         li.innerHTML = content;
         
         // [수정] 활성화 체크 시 사이트 컨텍스트도 확인
