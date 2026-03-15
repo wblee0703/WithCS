@@ -315,7 +315,11 @@ function renderEquipModelList() {
     
     let filteredModels = equipmentModels;
     if (keyword) {
-        filteredModels = equipmentModels.filter(m => m.name.toLowerCase().includes(keyword) || m.abbr.toLowerCase().includes(keyword));
+        const keywords = keyword.split(/\s+/);
+        filteredModels = equipmentModels.filter(m => {
+            const text = `${m.name} ${m.abbr}`.toLowerCase();
+            return keywords.every(kw => text.includes(kw));
+        });
     }
 
     filteredModels.sort((a, b) => a.name.localeCompare(b.name));
@@ -453,9 +457,13 @@ function setupEquipMgmt() {
     if (siteFilterInput && siteFilterSuggestions) {
         const handleSiteFilterInput = () => {
             const query = siteFilterInput.value.trim().toLowerCase();
+            const keywords = query ? query.split(/\s+/) : [];
             const sites = Object.keys(storageData).sort();
             
-            const matches = query ? sites.filter(s => s.toLowerCase().includes(query)) : sites;
+            const matches = query ? sites.filter(s => {
+                const text = s.toLowerCase();
+                return keywords.every(kw => text.includes(kw));
+            }) : sites;
 
             siteFilterSuggestions.innerHTML = '';
             
@@ -556,9 +564,13 @@ function setupEquipMgmt() {
             if (nameInput.readOnly) return;
             
             const query = nameInput.value.trim().toLowerCase();
+            const keywords = query ? query.split(/\s+/) : [];
             // 입력값이 없으면 전체 목록 표시, 있으면 필터링
             const matches = query 
-                ? equipmentModels.filter(m => m.name.toLowerCase().includes(query) || m.abbr.toLowerCase().includes(query))
+                ? equipmentModels.filter(m => {
+                    const text = `${m.name} ${m.abbr}`.toLowerCase();
+                    return keywords.every(kw => text.includes(kw));
+                })
                 : equipmentModels;
 
             suggestionList.innerHTML = '';
@@ -601,11 +613,15 @@ function setupEquipMgmt() {
         const handleSiteInput = () => {
             if (siteInput.disabled) return;
             const query = siteInput.value.trim().toLowerCase();
+            const keywords = query ? query.split(/\s+/) : [];
             const sites = Object.keys(storageData).sort();
             
             // 검색어가 있으면 필터링, 없으면 전체 표시
             const matches = query 
-                ? sites.filter(s => s.toLowerCase().includes(query))
+                ? sites.filter(s => {
+                    const text = s.toLowerCase();
+                    return keywords.every(kw => text.includes(kw));
+                })
                 : sites;
 
             siteSuggestionList.innerHTML = '';
@@ -663,13 +679,13 @@ function renderAdminEquipList() {
     }
 
     if (keyword) {
+        const keywords = keyword.split(/\s+/);
         items = items.filter(item => {
             const parts = item.key.split('::');
             const name = parts[0] || '';
             const serial = parts.length > 1 ? parts[1] : '';
-            return item.site.toLowerCase().includes(keyword) || 
-                   name.toLowerCase().includes(keyword) || 
-                   serial.toLowerCase().includes(keyword);
+            const text = `${item.site} ${name} ${serial}`.toLowerCase();
+            return keywords.every(kw => text.includes(kw));
         });
     }
 
