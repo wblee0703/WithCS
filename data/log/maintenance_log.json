@@ -222,9 +222,9 @@
         "timestamp": "2026-03-13T07:52:08.518Z"
     },
     {
-        "timestamp": "2026-03-15T23:02:31.701Z",
         "action": "UPDATE_EQUIP_MODEL",
+        "details": "To: SOMA-2000 / SOMA-2000",
         "target": "SOMA-2000",
-        "details": "To: SOMA-2000 / SOMA-2000"
+        "timestamp": "2026-03-15T23:02:31.701Z"
     }
 ]

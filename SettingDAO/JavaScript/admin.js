@@ -329,7 +329,19 @@ function renderEquipModelList() {
 
             currentAdminModel = (currentAdminModel && currentAdminModel.name === model.name) ? null : model;
             renderEquipModelList();
-            resetEquipForm();
+            
+            // [수정] 장비 모델 리스트 클릭 시 기존 선택된 장비 정보 폼이 초기화되는 현상 방지
+            if (!currentAdminEquipKey && document.getElementById('admin-equip-form').style.display === 'block') {
+                // 신규 등록 모드(장비 미선택)일 때만 모델명 자동 입력 및 읽기 전용 처리
+                const nameInput = document.getElementById('equip-info-name');
+                if (currentAdminModel) {
+                    nameInput.value = currentAdminModel.name;
+                    nameInput.readOnly = true;
+                } else {
+                    nameInput.value = '';
+                    nameInput.readOnly = false;
+                }
+            }
         });
 
         const editBtn = li.querySelector('.btn-edit-model');
@@ -617,6 +629,7 @@ function renderAdminEquipList() {
             document.getElementById('equip-info-site').value = site; // [수정] 아이템의 실제 사업장 입력
             document.getElementById('equip-info-site').disabled = true; // [추가] 기존 장비 수정 시 사업장 변경 불가
             document.getElementById('equip-info-name').value = name;
+            document.getElementById('equip-info-name').readOnly = false; // [추가] 기존 장비 클릭 시 모델명 수정 가능하도록 잠금 해제
             document.getElementById('equip-info-serial').value = serial;
         });
 
@@ -702,7 +715,7 @@ function handleEquipSave() {
     alert('저장되었습니다.');
     currentAdminEquipKey = newKey; // 키 갱신
     renderAdminEquipList();
-    nameInput.readOnly = !!currentAdminModel; // 모델 선택 상태에 따라 잠금 상태 복원
+    nameInput.readOnly = false; // [수정] 저장 후에는 기존 장비 선택 상태가 되므로 잠금 해제
 }
 
 function handleEquipDelete() {
