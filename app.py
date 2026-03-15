@@ -50,6 +50,7 @@ app.secret_key = os.environ.get('SECRET_KEY', 'CHANGE_THIS_TO_A_COMPLEX_RANDOM_K
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 if os.environ.get('APP_ENV') == 'production':
     app.config['SESSION_COOKIE_SECURE'] = True
