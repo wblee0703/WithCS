@@ -52,5 +52,11 @@
         "action": "ADD_CHECK_CATEGORY",
         "target": "SOMA-3000E::SOMA-EK24-0401",
         "details": "분류 추가: 정기 > PM"
+    },
+    {
+        "timestamp": "2026-03-16T02:05:26.452Z",
+        "action": "ADD_CHECK_CATEGORY",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "details": "분류 추가: 비정기 > BM"
     }
 ]
