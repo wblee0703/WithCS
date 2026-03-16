@@ -15,6 +15,10 @@
     ],
     "equipment_models": [
         {
+            "name": "COSMOS-100",
+            "abbr": "COSMOS 100"
+        },
+        {
             "abbr": "COSMOS-100N",
             "name": "COSMOS-100N"
         },
@@ -103,8 +107,8 @@
             "abbr": "WOA683"
         },
         {
-            "name": "COSMOS-100",
-            "abbr": "COSMOS 100"
+            "name": "COSMOS-200",
+            "abbr": "COSMOS 200"
         }
     ]
 }
