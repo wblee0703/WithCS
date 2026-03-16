@@ -30,9 +30,15 @@
         "timestamp": "2026-03-16T01:06:31.018Z"
     },
     {
-        "timestamp": "2026-03-16T01:10:17.463Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ",
         "target": "Multi Standard Solution",
-        "details": "Type: PM, Code: "
+        "timestamp": "2026-03-16T01:10:17.463Z"
+    },
+    {
+        "timestamp": "2026-03-16T01:15:48.973Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "고객 대응",
+        "details": "Type: 고객대응, Spec: 0, Cycle: "
     }
 ]
