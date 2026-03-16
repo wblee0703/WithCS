@@ -170,23 +170,23 @@
                             <span id="admin-item-count" class="badge">0</span>
                         </div>
                         <div class="admin-list-header">
-                            <div class="model-col" style="flex: 1.5; justify-content: center;">점검 구분</div>
-                            <div class="model-col" style="flex: 4; justify-content: center;">교체(수리) 파츠</div>
-                            <div class="model-col" style="flex: 1.5; justify-content: center;">교체주기(일)</div>
-                            <div class="model-col model-actions-col">기능</div>
+                            <div class="model-col" style="flex: 1.5; justify-content: center; text-align: center;">점검 구분</div>
+                            <div class="model-col" style="flex: 4; justify-content: flex-start; padding-left: 10px;">교체(수리) 파츠</div>
+                            <div class="model-col" style="flex: 1.5; justify-content: center; text-align: center;">교체주기(일)</div>
+                            <div class="model-col model-actions-col" style="flex: 1; justify-content: center;">기능</div>
                         </div>
                         <ul id="admin-item-list" class="admin-list"></ul>
                         <div class="list-footer">
                             <div style="display: flex; gap: 5px;">
-                                <select id="admin-item-type-input" class="input-dark" style="flex: 1.5;">
+                                <select id="admin-item-type-input" class="input-dark compact-select" style="flex: 1.5; text-align: center; height: 35px; border-radius: 4px;">
                                     <option value="PM">PM</option>
                                     <option value="BM">BM</option>
                                     <option value="기타">기타</option>
                                 </select>
-                                <input type="text" id="admin-item-part-input" placeholder="교체(수리) 파츠 명" class="input-dark" style="flex: 4;">
-                                <input type="number" id="admin-item-cycle-input" placeholder="주기(일)" class="input-dark" style="flex: 1.5;">
+                                <input type="text" id="admin-item-part-input" placeholder="교체(수리) 파츠 명" class="input-dark" style="flex: 4; height: 35px; padding-left: 10px;">
+                                <input type="number" id="admin-item-cycle-input" placeholder="주기(일)" class="input-dark" style="flex: 1.5; height: 35px; text-align: center;">
                             </div>
-                            <button id="btn-admin-add-item" class="btn-green full-width" style="margin-top: 5px;">물품 추가</button>
+                            <button id="btn-admin-add-item" class="btn-green full-width" style="margin-top: 10px;">물품 추가</button>
                         </div>
                     </div>
                 </div>

@@ -853,10 +853,16 @@ function renderAdminItemList() {
     adminItems.forEach(item => {
         const li = document.createElement('li');
         li.innerHTML = `
-            <div class="model-col" style="flex: 1.5; justify-content: center;"><span>${item.type}</span></div>
-            <div class="model-col" style="flex: 4;"><span>${item.part}</span></div>
-            <div class="model-col" style="flex: 1.5; justify-content: center;"><span>${item.cycle ? item.cycle + '일' : '-'}</span></div>
-            <div class="model-col model-actions-col">
+            <div class="model-col" style="flex: 1.5; justify-content: center; text-align: center;">
+                <span class="badge ${item.type.toLowerCase()}">${item.type}</span>
+            </div>
+            <div class="model-col" style="flex: 4; justify-content: flex-start; padding-left: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                ${item.part}
+            </div>
+            <div class="model-col" style="flex: 1.5; justify-content: center; text-align: center;">
+                ${item.cycle ? item.cycle + '일' : '-'}
+            </div>
+            <div class="model-col model-actions-col" style="flex: 1; justify-content: center;">
                 <button class="btn-edit-sm btn-edit-item">✏️</button>
                 <button class="btn-del-sm btn-delete-item">✕</button>
             </div>
@@ -888,14 +894,14 @@ function renderAdminItemList() {
                 const cycleCol = li.children[2];
                 
                 typeCol.innerHTML = `
-                    <select class="input-dark" style="width: 100%;">
+                    <select class="input-dark compact-select" style="width: 100%; text-align: center; height: 30px; border-radius: 4px;">
                         <option value="PM" ${item.type === 'PM' ? 'selected' : ''}>PM</option>
                         <option value="BM" ${item.type === 'BM' ? 'selected' : ''}>BM</option>
                         <option value="기타" ${item.type === '기타' ? 'selected' : ''}>기타</option>
                     </select>
                 `;
-                partCol.innerHTML = `<input type="text" class="input-dark" value="${item.part}" style="width: 100%;">`;
-                cycleCol.innerHTML = `<input type="number" class="input-dark" value="${item.cycle || ''}" style="width: 100%;">`;
+                partCol.innerHTML = `<input type="text" class="input-dark" value="${item.part}" style="width: 100%; height: 30px; padding-left: 5px;">`;
+                cycleCol.innerHTML = `<input type="number" class="input-dark" value="${item.cycle || ''}" style="width: 100%; height: 30px; text-align: center;">`;
             } else {
                 const newType = li.children[0].querySelector('select').value.trim();
                 const newPart = li.children[1].querySelector('input').value.trim();
