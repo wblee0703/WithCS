@@ -1,4 +1,10 @@
 {
-    "categories": {},
-    "items": {}
+    "categories": {
+        "SOMA-3000E::SOMA-EK24-0401::정기": [
+            "PM"
+        ]
+    },
+    "items": {
+        "SOMA-3000E::SOMA-EK24-0401::정기::PM": []
+    }
 }
