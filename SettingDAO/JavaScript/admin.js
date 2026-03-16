@@ -882,7 +882,7 @@ function setupItemMgmt() {
 
             if (!part) return alert('물품명을 입력해주세요.');
 
-            adminItems.push({ id: Date.now(), type, part, spec, cycle, code: '', partno: '', equip: '' });
+            adminItems.push({ id: Date.now(), type, detailType: '', part, spec, cycle, code: '', partno: '', equip: '' });
             saveAdminItems();
             addSystemLog('ADD_ITEM_ADMIN', part, `Type: ${type}, Spec: ${spec}, Cycle: ${cycle}`);
             
@@ -1011,7 +1011,7 @@ function renderAdminItemList() {
     if (keyword) {
         const keywords = keyword.split(/\s+/);
         filteredItems = adminItems.filter(item => {
-            const text = `${item.type || ''} ${item.part || ''} ${item.spec || ''} ${item.code || ''} ${item.partno || ''} ${item.equip || ''}`.toLowerCase();
+            const text = `${item.type || ''} ${item.detailType || ''} ${item.part || ''} ${item.spec || ''} ${item.code || ''} ${item.partno || ''} ${item.equip || ''}`.toLowerCase();
             return keywords.every(kw => text.includes(kw));
         });
     }
@@ -1081,6 +1081,7 @@ function loadItemDetail(item) {
     if (placeholder) placeholder.style.display = 'none';
 
     document.getElementById('item-info-type').value = item.type || 'PM';
+    document.getElementById('item-info-detail-type').value = item.detailType || '';
     document.getElementById('item-info-part').value = item.part || '';
     document.getElementById('item-info-spec').value = item.spec || '';
     
@@ -1106,6 +1107,7 @@ function handleItemDetailSave() {
     if (!currentAdminItemId) return;
     
     const type = document.getElementById('item-info-type').value;
+    const detailType = document.getElementById('item-info-detail-type').value.trim();
     const part = document.getElementById('item-info-part').value.trim();
     const spec = document.getElementById('item-info-spec').value.trim();
     const cycle = type === 'PM' ? document.getElementById('item-info-cycle').value.trim() : "";
@@ -1118,7 +1120,7 @@ function handleItemDetailSave() {
 
     const idx = adminItems.findIndex(i => i.id === currentAdminItemId);
     if (idx > -1) {
-        adminItems[idx] = { ...adminItems[idx], type, part, spec, cycle, code, partno, equip };
+        adminItems[idx] = { ...adminItems[idx], type, detailType, part, spec, cycle, code, partno, equip };
         saveAdminItems();
         addSystemLog('UPDATE_ITEM_ADMIN_DETAIL', part, `Type: ${type}, Code: ${code}`);
         alert('물품 정보가 저장되었습니다.');

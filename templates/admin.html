@@ -202,32 +202,42 @@
                             <p class="detail-desc">선택된 물품의 세부 정보 및 사용 장비를 관리합니다.</p>
                         </div>
                         <div id="admin-item-form" class="admin-form-container" style="display:none;">
-                            <div class="form-group">
-                                <label>점검 구분</label>
-                                <select id="item-info-type" class="input-dark full-width compact-select select-padding-md">
-                                    <option value="PM">PM</option>
-                                    <option value="BM">BM</option>
-                                </select>
+                            <div class="admin-flex-row" style="margin-bottom: 15px; gap: 10px;">
+                                <div style="flex: 1;">
+                                    <label style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">점검 구분</label>
+                                    <select id="item-info-type" class="input-dark full-width compact-select select-padding-md">
+                                        <option value="PM">PM</option>
+                                        <option value="BM">BM</option>
+                                    </select>
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">점검 상세 구분</label>
+                                    <input type="text" id="item-info-detail-type" class="input-dark full-width" placeholder="상세 구분 입력">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label>물품명</label>
-                                <input type="text" id="item-info-part" class="input-dark full-width">
+                            <div class="admin-flex-row" style="margin-bottom: 15px; gap: 10px;">
+                                <div style="flex: 1;">
+                                    <label style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">물품명</label>
+                                    <input type="text" id="item-info-part" class="input-dark full-width">
+                                </div>
+                                <div style="flex: 1.5;">
+                                    <label style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">세부 규격</label>
+                                    <input type="text" id="item-info-spec" class="input-dark full-width">
+                                </div>
+                                <div style="flex: 0.5;">
+                                    <label style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">교체주기(일)</label>
+                                    <input type="number" id="item-info-cycle" class="input-dark full-width">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label>세부 규격</label>
-                                <input type="text" id="item-info-spec" class="input-dark full-width">
-                            </div>
-                            <div class="form-group">
-                                <label>교체주기(일)</label>
-                                <input type="number" id="item-info-cycle" class="input-dark full-width">
-                            </div>
-                            <div class="form-group">
-                                <label>코드명</label>
-                                <input type="text" id="item-info-code" class="input-dark full-width" placeholder="코드명을 입력하세요">
-                            </div>
-                            <div class="form-group">
-                                <label>품번</label>
-                                <input type="text" id="item-info-partno" class="input-dark full-width" placeholder="품번을 입력하세요">
+                            <div class="admin-flex-row" style="margin-bottom: 15px; gap: 10px;">
+                                <div style="flex: 1;">
+                                    <label style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">코드명</label>
+                                    <input type="text" id="item-info-code" class="input-dark full-width" placeholder="코드명 입력">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">품번</label>
+                                    <input type="text" id="item-info-partno" class="input-dark full-width" placeholder="품번 입력">
+                                </div>
                             </div>
                             <div class="form-group">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
