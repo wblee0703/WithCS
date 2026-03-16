@@ -196,5 +196,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "SOT-100B",
         "details": "Abbr: SOT-100B"
+    },
+    {
+        "timestamp": "2026-03-16T02:24:13.077Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "SOT-200B",
+        "details": "Abbr: SOT-200B"
     }
 ]
