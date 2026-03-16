@@ -77,7 +77,10 @@ for d in [DATA_DIR, LOG_DIR, BACKUP_DIR, DATA_LOG_DIR]:
 FILE_SETUP = os.path.join(DATA_DIR, 'setup_data.json')
 FILE_MAINTENANCE = os.path.join(DATA_DIR, 'maintenance_data.json')
 FILE_HOME = os.path.join(DATA_DIR, 'home_data.json')
-FILE_WITHTECH_DATA = os.path.join(DATA_DIR, 'withtech_data.json')
+FILE_WITHTECH = os.path.join(DATA_DIR, 'withtech.json')
+FILE_DEVICE = os.path.join(DATA_DIR, 'Device.json')
+FILE_ITEM = os.path.join(DATA_DIR, 'Item.json')
+FILE_MANAGEMENT = os.path.join(DATA_DIR, 'Management.json')
 
 # [변경] 로그 파일 경로 (data/log 폴더로 이동)
 FILE_COMMON_LOG = os.path.join(DATA_LOG_DIR, 'common_log.json')
@@ -246,7 +249,7 @@ def init_data_files():
     """데이터 파일이 없으면 초기화하고 기본 계정을 생성합니다."""
     
     # [추가] 중요 파일이 없으면 백업에서 복원 시도
-    for filepath in [FILE_HOME, FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH_DATA, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG]:
+    for filepath in [FILE_HOME, FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH, FILE_DEVICE, FILE_ITEM, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG]:
         if not os.path.exists(filepath):
             restore_from_backup(filepath)
 
@@ -309,9 +312,12 @@ def init_data_files():
         save_json_file(FILE_HOME, home_data)
         app.logger.warning("User accounts initialized/restored to defaults.")
 
-    for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH_DATA, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG]:
+    for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH, FILE_DEVICE, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG]:
         if not os.path.exists(filepath):
             save_json_file(filepath, {} if 'log.json' not in filepath else [])
+            
+    if not os.path.exists(FILE_ITEM):
+        save_json_file(FILE_ITEM, [])
 
 def load_data():
     """모든 데이터 파일을 읽어 하나의 딕셔너리로 병합합니다."""
@@ -341,14 +347,48 @@ def load_data():
                 setup_content = setup_content['setup_data']
             data['setup_data'] = setup_content
             
-        if os.path.exists(FILE_WITHTECH_DATA):
-            withtech_content = load_json_file(FILE_WITHTECH_DATA)
-            # [추가] 중첩된 withtech_data 키가 있다면 평탄화 (구조 보정)
-            if isinstance(withtech_content, dict) and 'withtech_data' in withtech_content and len(withtech_content) == 1:
-                withtech_content = withtech_content['withtech_data']
-            data['withtech_data'] = withtech_content
+        # 3. 데이터 구조 재설계 파일들 (Adapter Pattern)
+        # 3.1 withtech.json (사업장 관리)
+        withtech_file = load_json_file(FILE_WITHTECH)
+        if isinstance(withtech_file, dict):
+            for site, info in withtech_file.items():
+                if isinstance(info, dict) and 'buildings' in info:
+                    data[f'site_meta_{site}'] = {'buildings': info['buildings']}
+
+        # 3.2 Device.json (장비 관리)
+        device_file = load_json_file(FILE_DEVICE)
+        if isinstance(device_file, dict):
+            data['equipment_models'] = device_file.get('models', [])
+            data['withtech_data'] = device_file.get('equipments', {})
+            # Device.json 내의 상세 정보(setup, specialNote)를 details_ 객체에 병합
+            details_obj = device_file.get('details', {})
+            for site_equip, info in details_obj.items():
+                k = f'details_{site_equip}'
+                if k not in data:
+                    data[k] = {}
+                data[k]['setup'] = info.get('setup', {})
+                data[k]['specialNote'] = info.get('specialNote', '')
+                
+        # 3.3 Item.json (물품 관리)
+        item_file = load_json_file(FILE_ITEM)
+        data['admin_items'] = item_file if isinstance(item_file, list) else []
+        
+        # 3.4 Management.json (점검 구분 관리)
+        mgmt_file = load_json_file(FILE_MANAGEMENT)
+        if isinstance(mgmt_file, dict):
+            data['check_type_categories'] = mgmt_file.get('categories', {})
+            data['check_type_items'] = mgmt_file.get('items', {})
             
-        # [변경] 3개의 로그 파일을 읽어서 하나로 합침 (프론트엔드 호환성 유지)
+        # [마이그레이션 호환성] 기존 withtech_data.json 이 남아있다면 병합 (초기 1회용)
+        old_withtech_path = os.path.join(DATA_DIR, 'withtech_data.json')
+        if os.path.exists(old_withtech_path) and not data.get('withtech_data'):
+            old_data = load_json_file(old_withtech_path)
+            if isinstance(old_data, dict) and 'withtech_data' in old_data:
+                data['withtech_data'] = old_data['withtech_data']
+            else:
+                data['withtech_data'] = old_data
+
+        # 4. 3개의 로그 파일을 읽어서 하나로 합침 (프론트엔드 호환성 유지)
         common_logs = load_json_file(FILE_COMMON_LOG)
         if not isinstance(common_logs, list): common_logs = []
         
@@ -366,35 +406,37 @@ def save_data(full_data):
     """데이터를 분류하여 각 파일에 저장하고 백업 및 Git 동기화를 수행합니다."""
     with data_lock:
         # 1. 백업 수행
-        for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_HOME, FILE_WITHTECH_DATA, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG]:
+        for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_HOME, FILE_WITHTECH, FILE_DEVICE, FILE_ITEM, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG]:
             create_daily_backup(filepath)
 
-        # 2. 기존 데이터 로드 (병합 준비)
-        setup_data = load_json_file(FILE_SETUP)
-        maintenance_data = load_json_file(FILE_MAINTENANCE)
+        # 2. 기존 데이터 로드 (계정 정보 보존용 등)
         home_data = load_json_file(FILE_HOME)
-        withtech_data_storage = load_json_file(FILE_WITHTECH_DATA)
-        
-        # [수정] maintenance_data 및 home_data에 잘못 포함된 주요 데이터 제거 (중복/덮어쓰기 방지)
-        for container in [maintenance_data, home_data]:
-            if isinstance(container, dict):
-                if 'setup_data' in container: del container['setup_data']
-                if 'withtech_data' in container: del container['withtech_data']
-                # details_로 시작하는 키도 home_data에서 제거 (maintenance_data는 details_를 가짐)
-                if container is home_data:
-                    keys_to_remove = [k for k in container.keys() if k.startswith('details_')]
-                    for k in keys_to_remove: del container[k]
-        
-        # 3. 데이터 분류 및 병합
         existing_accounts = home_data.get('user_accounts', [])
+        home_data.clear()
+        home_data['user_accounts'] = existing_accounts
+
+        # 각 저장소 컨테이너 초기화
+        setup_data = {}
+        maintenance_data = {}
+        withtech_data = {}
+        device_data = {
+            "models": full_data.get('equipment_models', []),
+            "equipments": full_data.get('withtech_data', {}),
+            "details": {}
+        }
+        item_data = full_data.get('admin_items', [])
+        management_data = {
+            "categories": full_data.get('check_type_categories', {}),
+            "items": full_data.get('check_type_items', {})
+        }
         
         common_logs_list = []
         setup_logs_list = []
         maint_logs_list = []
 
+        # 3. 데이터 분류 및 병합
         for key, value in full_data.items():
             if key == 'setup_data':
-                # [수정] 중첩 방지: 딕셔너리 키 할당이 아닌 변수(파일 내용) 자체 교체
                 setup_data = value
             elif key == 'system_logs':
                 if isinstance(value, list):
@@ -403,30 +445,49 @@ def save_data(full_data):
                         if cat == 'common': common_logs_list.append(log)
                         elif cat == 'setup': setup_logs_list.append(log)
                         else: maint_logs_list.append(log)
-            elif key == 'withtech_data':
-                # [수정] 중첩 방지
-                withtech_data_storage = value
+            elif key.startswith('site_meta_'):
+                site = key.replace('site_meta_', '')
+                if site not in withtech_data:
+                    withtech_data[site] = {}
+                withtech_data[site]['buildings'] = value.get('buildings', [])
             elif key.startswith('details_'):
-                # setup 관련 데이터 제거 후 maintenance에 저장
-                if isinstance(value, dict):
-                    value.pop('setupDetails', None)
-                    value.pop('setupLogs', None)
-                    value.pop('setupTasks', None)
-                maintenance_data[key] = value
+                site_equip = key.replace('details_', '', 1)
+                if not isinstance(value, dict):
+                    continue
+                
+                # maintenance_data.json 에는 운영 정보만 저장
+                if key not in maintenance_data:
+                    maintenance_data[key] = {}
+                maintenance_data[key]['maint'] = value.get('maint', [])
+                maintenance_data[key]['logs'] = value.get('logs', [])
+                maintenance_data[key]['memo'] = value.get('memo', '')
+                maintenance_data[key]['files'] = value.get('files', [])
+                
+                # Device.json 에는 장비 설정 및 특이사항 정보 저장
+                if site_equip not in device_data['details']:
+                    device_data['details'][site_equip] = {}
+                device_data['details'][site_equip]['setup'] = value.get('setup', {})
+                device_data['details'][site_equip]['specialNote'] = value.get('specialNote', '')
+            elif key in ['equipment_models', 'withtech_data', 'admin_items', 'check_type_categories', 'check_type_items', 'user_accounts']:
+                # 이미 각 구조체로 매핑했으므로 무시
+                pass
             else:
-                # user_accounts 제외하고 home_data에 저장
-                if key != 'user_accounts':
-                    home_data[key] = value
-        
-        # 계정 정보 보존
-        if isinstance(home_data, dict):
-            home_data['user_accounts'] = existing_accounts
+                # 위 분류에 속하지 않는 나머지 (예: 대시보드 기타 설정 등)는 home_data에 저장
+                home_data[key] = value
+
+        # [보완] Device.json 의 equipments 에 등록된 사업장은 withtech.json 에도 기본 골격을 만들어줌
+        for site in device_data['equipments'].keys():
+            if site not in withtech_data:
+                withtech_data[site] = {"buildings": []}
 
         # 4. 파일 저장
         save_json_file(FILE_SETUP, setup_data)
         save_json_file(FILE_MAINTENANCE, maintenance_data)
         save_json_file(FILE_HOME, home_data)
-        save_json_file(FILE_WITHTECH_DATA, withtech_data_storage)
+        save_json_file(FILE_WITHTECH, withtech_data)
+        save_json_file(FILE_DEVICE, device_data)
+        save_json_file(FILE_ITEM, item_data)
+        save_json_file(FILE_MANAGEMENT, management_data)
         
         save_json_file(FILE_COMMON_LOG, common_logs_list)
         save_json_file(FILE_SETUP_LOG, setup_logs_list)

@@ -247,7 +247,7 @@ function handleSiteSave() {
     };
     localStorage.setItem(`site_meta_${currentAdminSite}`, JSON.stringify(metaData));
 
-    saveData(); // 전체 동기화
+    if (typeof saveData === 'function') saveData(); // 전체 동기화
     alert('저장되었습니다.');
     renderAdminSiteList(); // 리스트 갱신 (이름 변경 반영)
 }
@@ -278,7 +278,7 @@ function handleSiteDelete() {
     delete storageData[currentAdminSite];
     
     addSystemLog('DELETE_SITE', currentAdminSite, 'Admin Page');
-    saveData();
+    if (typeof saveData === 'function') saveData();
 
     alert('삭제되었습니다.');
     currentAdminSite = null;
@@ -353,6 +353,7 @@ function loadEquipmentModels() {
 
 function saveEquipmentModels() {
     localStorage.setItem('equipment_models', JSON.stringify(equipmentModels));
+    if (typeof saveData === 'function') saveData();
 }
 
 function renderEquipModelList() {
@@ -921,7 +922,7 @@ function handleEquipSave() {
         addSystemLog('ADD_EQUIP', newKey, `Site: ${targetSite}`);
     }
 
-    saveData();
+    if (typeof saveData === 'function') saveData();
     alert('저장되었습니다.');
     currentAdminEquipKey = newKey; // 키 갱신
     renderAdminEquipList();
@@ -946,7 +947,7 @@ function handleEquipDelete() {
     
     addSystemLog('DELETE_EQUIP', currentAdminEquipKey, `Site: ${targetSite}`);
     
-    saveData();
+    if (typeof saveData === 'function') saveData();
     alert('삭제되었습니다.');
     resetEquipForm();
     renderAdminEquipList();
@@ -1108,6 +1109,7 @@ function loadAdminItems() {
 
 function saveAdminItems() {
     localStorage.setItem('admin_items', JSON.stringify(adminItems));
+    if (typeof saveData === 'function') saveData();
 }
 
 function renderAdminItemList() {
@@ -1413,6 +1415,7 @@ function loadCheckTypeCategories() {
 
 function saveCheckTypeCategories() {
     localStorage.setItem('check_type_categories', JSON.stringify(checkTypeCategoriesData));
+    if (typeof saveData === 'function') saveData();
 }
 
 function loadCheckTypeItems() {
@@ -1426,6 +1429,7 @@ function loadCheckTypeItems() {
 
 function saveCheckTypeItems() {
     localStorage.setItem('check_type_items', JSON.stringify(checkTypeItemsData));
+    if (typeof saveData === 'function') saveData();
 }
 
 function updateCheckTypeSiteSelect() {
