@@ -4,5 +4,11 @@
         "action": "ADD_LOG",
         "target": "WIM-100::WIM1-HK24-0401",
         "details": "[장비점검] ad (작업자: asdsad, 날짜: 2026-03-16)"
+    },
+    {
+        "timestamp": "2026-03-16T07:02:20.008Z",
+        "action": "UPDATE_MEMO",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "메모 수정 (LogID: 1773644537768)"
     }
 ]
