@@ -244,5 +244,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "NaVi-TM(MG2)",
         "details": "Abbr: MG200H-2"
+    },
+    {
+        "timestamp": "2026-03-16T02:27:21.606Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "NaVi-TM(WF)",
+        "details": "Abbr: WF301"
     }
 ]
