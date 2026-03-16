@@ -65,6 +65,10 @@
         {
             "name": "WOA-683",
             "abbr": "WOA683"
+        },
+        {
+            "name": "OWIC",
+            "abbr": "OWIC"
         }
     ]
 }

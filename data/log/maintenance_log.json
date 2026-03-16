@@ -148,5 +148,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "WOA-683",
         "details": "Abbr: WOA683"
+    },
+    {
+        "timestamp": "2026-03-16T02:23:16.546Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "OWIC",
+        "details": "Abbr: OWIC"
     }
 ]
