@@ -1529,27 +1529,32 @@ function renderCheckTypeItemList() {
     if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
     
     const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}`;
-    let items = checkTypeItemsData[key] || [];
+    
+    // [수정] 데이터가 아예 생성된 적이 없는 경우에만(처음 1회만) 물품 관리에 등록된 정보를 기본값으로 가져옴
+    if (!checkTypeItemsData.hasOwnProperty(key)) {
+        let defaultItems = [];
+        if (currentCheckTypeSubCategory === 'PM' || currentCheckTypeSubCategory === 'BM') {
+            const equipName = currentCheckTypeEquipKey.split('::')[0];
+            const matchedItems = adminItems.filter(item => {
+                if (item.type !== currentCheckTypeSubCategory) return false;
+                if (!item.equip) return false;
+                const equips = item.equip.split(',').map(e => e.trim());
+                return equips.includes(equipName);
+            });
 
-    // [추가] PM, BM일 경우, 등록된 데이터가 없으면 '물품 관리'에 등록된 해당 장비의 물품 정보를 기본값으로 가져옴
-    if (items.length === 0 && (currentCheckTypeSubCategory === 'PM' || currentCheckTypeSubCategory === 'BM')) {
-        const equipName = currentCheckTypeEquipKey.split('::')[0];
-        const matchedItems = adminItems.filter(item => {
-            if (item.type !== currentCheckTypeSubCategory) return false;
-            if (!item.equip) return false;
-            const equips = item.equip.split(',').map(e => e.trim());
-            return equips.includes(equipName);
-        });
-
-        if (matchedItems.length > 0) {
-            items = matchedItems.map((mItem, index) => ({
-                id: Date.now() + index,
-                content: mItem.part
-            }));
-            checkTypeItemsData[key] = items;
-            saveCheckTypeItems();
+            if (matchedItems.length > 0) {
+                defaultItems = matchedItems.map((mItem, index) => ({
+                    id: Date.now() + index,
+                    content: mItem.part
+                }));
+            }
         }
+        // 항목이 있든 없든 배열을 저장해두어, 이후에 전부 지우더라도 다시 불러오지 않도록 함
+        checkTypeItemsData[key] = defaultItems;
+        saveCheckTypeItems();
     }
+
+    let items = checkTypeItemsData[key] || [];
     
     if (items.length === 0) {
         list.innerHTML = '<li style="justify-content: center; color: #8b949e; cursor: default; hover:none;">등록된 항목이 없습니다.</li>';

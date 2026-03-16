@@ -312,19 +312,25 @@
         "timestamp": "2026-03-16T04:17:38.992Z"
     },
     {
-        "timestamp": "2026-03-16T04:17:58.755Z",
         "action": "DELETE_CHECK_ITEM",
+        "details": "항목 삭제: Multi Standard Solution",
         "target": "SOMA-2000",
-        "details": "항목 삭제: Multi Standard Solution"
+        "timestamp": "2026-03-16T04:17:58.755Z"
     },
     {
-        "timestamp": "2026-03-16T04:18:07.413Z",
         "action": "DELETE_CHECK_ITEM",
+        "details": "항목 삭제: Multi Standard Solution",
         "target": "SOMA-2000",
-        "details": "항목 삭제: Multi Standard Solution"
+        "timestamp": "2026-03-16T04:18:07.413Z"
     },
     {
-        "timestamp": "2026-03-16T04:18:22.196Z",
+        "action": "DELETE_CHECK_ITEM",
+        "details": "항목 삭제: Multi Standard Solution",
+        "target": "SOMA-2000",
+        "timestamp": "2026-03-16T04:18:22.196Z"
+    },
+    {
+        "timestamp": "2026-03-16T04:23:41.235Z",
         "action": "DELETE_CHECK_ITEM",
         "target": "SOMA-2000",
         "details": "항목 삭제: Multi Standard Solution"
