@@ -149,6 +149,12 @@
         "SOMA-3000E::SOMA-EK24-0403::비정기::Alarm": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::Data / Para 이상": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::Hunting": [],
-        "SOMA-3000E::SOMA-EK24-0403::용액제조::용액제조": []
+        "SOMA-3000E::SOMA-EK24-0403::용액제조::용액제조": [],
+        "SOMA-2000::SOMA-HC19-1204::정기::PM": [
+            {
+                "id": 1773704358840,
+                "content": "Stadnard"
+            }
+        ]
     }
 }
