@@ -280,5 +280,11 @@
         "details": "항목 추가: SS",
         "target": "SOMA-3000E::SOMA-EK24-0402",
         "timestamp": "2026-03-16T02:32:34.177Z"
+    },
+    {
+        "timestamp": "2026-03-16T02:53:48.883Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "details": "항목 추가: [PM] Multi Standard Solution"
     }
 ]
