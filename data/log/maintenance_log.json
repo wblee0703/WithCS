@@ -70,5 +70,11 @@
         "action": "ADD_CHECK_CATEGORY",
         "target": "SOMA-3000E::SOMA-EK24-0401",
         "details": "분류 추가: 비정기 > Hunting"
+    },
+    {
+        "timestamp": "2026-03-16T02:05:54.467Z",
+        "action": "ADD_CHECK_CATEGORY",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "details": "분류 추가: 비정기 > Data / Para 이상"
     }
 ]
