@@ -77,10 +77,10 @@ for d in [DATA_DIR, LOG_DIR, BACKUP_DIR, DATA_LOG_DIR]:
 FILE_SETUP = os.path.join(DATA_DIR, 'setup_data.json')
 FILE_MAINTENANCE = os.path.join(DATA_DIR, 'maintenance_data.json')
 FILE_HOME = os.path.join(DATA_DIR, 'home_data.json')
-FILE_WITHTECH = os.path.join(DATA_DIR, 'withtech.json')
-FILE_DEVICE = os.path.join(DATA_DIR, 'Device.json')
-FILE_ITEM = os.path.join(DATA_DIR, 'Item.json')
-FILE_MANAGEMENT = os.path.join(DATA_DIR, 'Management.json')
+FILE_WITHTECH = os.path.join(DATA_DIR, 'client_data.json')
+FILE_DEVICE = os.path.join(DATA_DIR, 'device_data.json')
+FILE_ITEM = os.path.join(DATA_DIR, 'item_data.json')
+FILE_MANAGEMENT = os.path.join(DATA_DIR, 'management_data.json')
 
 # [변경] 로그 파일 경로 (data/log 폴더로 이동)
 FILE_COMMON_LOG = os.path.join(DATA_LOG_DIR, 'common_log.json')
@@ -258,6 +258,20 @@ def get_log_category(action):
 def init_data_files():
     """데이터 파일이 없으면 초기화하고 기본 계정을 생성합니다."""
     
+    # [추가] JSON 파일명 변경에 따른 마이그레이션 (기존 데이터를 새 파일명으로 자동 이동)
+    file_renames = [
+        ('withtech.json', 'client_data.json'),
+        ('Device.json', 'device_data.json'),
+        ('Management.json', 'management_data.json'),
+        ('Item.json', 'item_data.json')
+    ]
+    for old_n, new_n in file_renames:
+        old_p = os.path.join(DATA_DIR, old_n)
+        new_p = os.path.join(DATA_DIR, new_n)
+        if os.path.exists(old_p) and not os.path.exists(new_p):
+            try: shutil.move(old_p, new_p)
+            except: pass
+
     # [추가] 중요 파일이 없으면 백업에서 복원 시도
     for filepath in [FILE_HOME, FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH, FILE_DEVICE, FILE_ITEM, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG, FILE_ADMIN_LOG]:
         if not os.path.exists(filepath):
@@ -360,19 +374,19 @@ def load_data():
             data['setup_data'] = setup_content
             
         # 3. 데이터 구조 재설계 파일들 (Adapter Pattern)
-        # 3.1 withtech.json (사업장 관리)
+        # 3.1 client_data.json (사업장 관리)
         withtech_file = load_json_file(FILE_WITHTECH)
         if isinstance(withtech_file, dict):
             for site, info in withtech_file.items():
                 if isinstance(info, dict) and 'buildings' in info:
                     data[f'site_meta_{site}'] = {'buildings': info['buildings']}
 
-        # 3.2 Device.json (장비 관리)
+        # 3.2 device_data.json (장비 관리)
         device_file = load_json_file(FILE_DEVICE)
         if isinstance(device_file, dict):
             data['equipment_models'] = device_file.get('models', [])
             data['withtech_data'] = device_file.get('equipments', {})
-            # Device.json 내의 상세 정보(setup, specialNote)를 details_ 객체에 병합
+            # device_data.json 내의 상세 정보(setup, specialNote)를 details_ 객체에 병합
             details_obj = device_file.get('details', {})
             for site_equip, info in details_obj.items():
                 k = f'details_{site_equip}'
@@ -385,7 +399,7 @@ def load_data():
         item_file = load_json_file(FILE_ITEM)
         data['admin_items'] = item_file if isinstance(item_file, list) else []
         
-        # 3.4 Management.json (점검 구분 관리)
+        # 3.4 management_data.json (점검 구분 관리)
         mgmt_file = load_json_file(FILE_MANAGEMENT)
         if isinstance(mgmt_file, dict):
             data['check_type_categories'] = mgmt_file.get('categories', {})
@@ -486,7 +500,7 @@ def save_data(full_data):
                 maintenance_data[key]['memo'] = value.get('memo', '')
                 maintenance_data[key]['files'] = value.get('files', [])
                 
-                # Device.json 에는 장비 설정 및 특이사항 정보 저장
+                # device_data.json 에는 장비 설정 및 특이사항 정보 저장
                 if site_equip not in device_data['details']:
                     device_data['details'][site_equip] = {}
                 device_data['details'][site_equip]['setup'] = value.get('setup', {})

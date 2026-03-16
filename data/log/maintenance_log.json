@@ -1,20 +1,20 @@
 [
     {
-        "timestamp": "2026-03-16T07:02:17.768Z",
         "action": "ADD_LOG",
+        "details": "[장비점검] ad (작업자: asdsad, 날짜: 2026-03-16)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "[장비점검] ad (작업자: asdsad, 날짜: 2026-03-16)"
+        "timestamp": "2026-03-16T07:02:17.768Z"
     },
     {
-        "timestamp": "2026-03-16T07:02:20.008Z",
         "action": "UPDATE_MEMO",
+        "details": "메모 수정 (LogID: 1773644537768)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "메모 수정 (LogID: 1773644537768)"
+        "timestamp": "2026-03-16T07:02:20.008Z"
     },
     {
-        "timestamp": "2026-03-16T07:02:23.778Z",
         "action": "UPDATE_MEMO",
+        "details": "메모 수정 (LogID: 1773644537768)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "메모 수정 (LogID: 1773644537768)"
+        "timestamp": "2026-03-16T07:02:23.778Z"
     }
 ]
