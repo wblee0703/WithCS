@@ -89,11 +89,11 @@
     "details_SKH 이천_SOMA-2000::SOMA-H19-0402": {
         "maint": [
             {
-                "id": 1773647948939,
-                "type": "PM",
                 "content": "Stadnard",
                 "date": "2026-03-16",
-                "period": "30"
+                "id": 1773647948939,
+                "period": "30",
+                "type": "PM"
             }
         ],
         "logs": [],
