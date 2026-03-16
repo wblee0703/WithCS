@@ -863,26 +863,25 @@ function setupItemMgmt() {
     if (btnDelDetail) btnDelDetail.addEventListener('click', handleItemDetailDelete);
 
     // 장비 모델 제안 박스 설정
-    const equipSearchInput = document.getElementById('item-info-equip-search');
+    const btnAddEquip = document.getElementById('btn-add-item-equip');
     const equipHiddenInput = document.getElementById('item-info-equip');
     const equipSuggestionList = document.getElementById('item-equip-suggestions');
 
-    if (equipSearchInput && equipSuggestionList) {
-        const handleEquipInput = () => {
-            const query = equipSearchInput.value.trim().toLowerCase();
+    if (btnAddEquip && equipSuggestionList) {
+        btnAddEquip.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             
-            const keywords = query ? query.split(/\s+/) : [];
-            const matches = query
-                ? equipmentModels.filter(m => {
-                    const text = `${m.name} ${m.abbr}`.toLowerCase();
-                    return keywords.every(kw => text.includes(kw));
-                })
-                : equipmentModels;
+            if (equipSuggestionList.style.display === 'block') {
+                equipSuggestionList.style.display = 'none';
+                return;
+            }
 
             equipSuggestionList.innerHTML = '';
+            const matches = equipmentModels;
             
             if (matches.length > 0) {
-                const currentEquips = equipHiddenInput.value ? equipHiddenInput.value.split(',').map(e => e.trim()).filter(e => e) : [];
+                const currentEquips = equipHiddenInput.value ? equipHiddenInput.value.split(',').map(ev => ev.trim()).filter(ev => ev) : [];
                 matches.forEach(m => {
                     const li = document.createElement('li');
                     li.className = 'suggestion-item';
@@ -893,33 +892,29 @@ function setupItemMgmt() {
                         </div>
                     `;
                     
-                    li.addEventListener('mousedown', (e) => {
-                        e.preventDefault();
+                    li.addEventListener('mousedown', (ev) => {
+                        ev.preventDefault();
                         if (!currentEquips.includes(m.name)) {
                             currentEquips.push(m.name);
                             equipHiddenInput.value = currentEquips.join(', ');
                             renderEquipTags();
                         }
-                        equipSearchInput.value = ''; // 검색어 초기화
                         equipSuggestionList.style.display = 'none';
-                        equipSearchInput.focus(); // 계속 입력할 수 있도록 포커스 유지
                     });
                     equipSuggestionList.appendChild(li);
                 });
                 equipSuggestionList.style.display = 'block';
             } else {
+                equipSuggestionList.innerHTML = '<li class="suggestion-item" style="text-align:center; color:#8b949e; cursor:default;">등록된 장비가 없습니다.</li>';
+                equipSuggestionList.style.display = 'block';
+            }
+        });
+
+        // 외부 클릭 시 제안 목록 닫기
+        document.addEventListener('click', (e) => {
+            if (equipSuggestionList.style.display === 'block' && e.target !== btnAddEquip && !equipSuggestionList.contains(e.target)) {
                 equipSuggestionList.style.display = 'none';
             }
-        };
-
-        equipSearchInput.addEventListener('input', handleEquipInput);
-        equipSearchInput.addEventListener('focus', handleEquipInput);
-        // 포커스를 잃으면 제안 리스트를 숨기고, 입력 중이던 쓸모없는 텍스트 지우기
-        equipSearchInput.addEventListener('blur', () => { setTimeout(() => { equipSuggestionList.style.display = 'none'; equipSearchInput.value = ''; }, 150); });
-        
-        // 엔터키 입력 방지 (폼 서밋 방지)
-        equipSearchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') e.preventDefault();
         });
     }
 }
@@ -1095,7 +1090,6 @@ function loadItemDetail(item) {
     document.getElementById('item-info-code').value = item.code || '';
     document.getElementById('item-info-partno').value = item.partno || '';
     document.getElementById('item-info-equip').value = item.equip || '';
-    document.getElementById('item-info-equip-search').value = ''; // 검색창 초기화
     
     renderEquipTags(); // 기존 저장된 장비 데이터들을 태그로 변환하여 표시
 }

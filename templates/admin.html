@@ -233,9 +233,13 @@
                                 <input type="text" id="item-info-partno" class="input-dark full-width" placeholder="품번을 입력하세요">
                             </div>
                             <div class="form-group">
-                                <label>사용 장비 (모델명)</label>
-                                <div class="autocomplete-wrapper">
-                                    <input type="text" id="item-info-equip" class="input-dark full-width" placeholder="장비 모델 검색" autocomplete="off">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                    <label style="margin-bottom: 0;">사용 장비 (모델명)</label>
+                                    <button id="btn-add-item-equip" class="btn-green-sm" type="button" style="padding: 2px 8px; font-size: 11px;">추가</button>
+                                </div>
+                                <div class="autocomplete-wrapper tag-input-container">
+                                    <div id="item-equip-tags" class="tag-container" style="flex: 1; min-height: 24px;"></div>
+                                    <input type="hidden" id="item-info-equip">
                                     <ul id="item-equip-suggestions" class="suggestion-list"></ul>
                                 </div>
                             </div>
