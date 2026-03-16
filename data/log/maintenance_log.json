@@ -202,5 +202,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "SOT-200B",
         "details": "Abbr: SOT-200B"
+    },
+    {
+        "timestamp": "2026-03-16T02:24:45.094Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "COSMOS-100",
+        "details": "Abbr: COSMOS 100"
     }
 ]
