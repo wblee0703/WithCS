@@ -96,7 +96,17 @@
                 "type": "PM"
             }
         ],
-        "logs": [],
+        "logs": [
+            {
+                "id": 1773704521377,
+                "date": "2026-03-16",
+                "type": "정기",
+                "detailType": "PM",
+                "content": "Stadnard",
+                "worker": "이원배",
+                "memo": ""
+            }
+        ],
         "memo": "",
         "files": []
     },
