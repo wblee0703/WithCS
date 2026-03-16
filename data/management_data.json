@@ -36,6 +36,7 @@
         "SOMA-3000E::SOMA-EK24-0401::비정기::Hunting": [],
         "SOMA-3000E::SOMA-EK24-0401::정기::PM": [],
         "SOMA-3000E::SOMA-EK24-0401::비정기::Data / Para 이상": [],
-        "SOMA-3000E::SOMA-EK24-0401::비정기::BM": []
+        "SOMA-3000E::SOMA-EK24-0401::비정기::BM": [],
+        "SOMA-3000E::SOMA-EK24-0401::온라인 점검::온라인 점검": []
     }
 }
