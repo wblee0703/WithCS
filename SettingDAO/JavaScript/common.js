@@ -1526,7 +1526,15 @@ function renderSystemLogs() {
 
 // [추가] 로그 카테고리 분류 함수
 function getLogCategory(action) {
-    const commonActions = ['LOGIN', 'LOGOUT', 'ADD_USER', 'CHANGE_PW', 'ADD_SITE', 'DELETE_SITE', 'ADD_EQUIP', 'DELETE_EQUIP', 'RENAME_ITEM', 'BACKUP_EXPORT', 'BACKUP_IMPORT'];
+    const commonActions = ['LOGIN', 'LOGOUT', 'ADD_USER', 'CHANGE_PW', 'BACKUP_EXPORT', 'BACKUP_IMPORT'];
+    const adminActions = [
+        'ADD_SITE', 'DELETE_SITE', 'RENAME_SITE', 
+        'ADD_EQUIP', 'UPDATE_EQUIP', 'DELETE_EQUIP', 'RENAME_ITEM',
+        'ADD_EQUIP_MODEL', 'UPDATE_EQUIP_MODEL', 'DELETE_EQUIP_MODEL',
+        'ADD_ITEM_ADMIN', 'UPDATE_ITEM_ADMIN_DETAIL', 'DELETE_ITEM_ADMIN',
+        'ADD_CHECK_CATEGORY', 'DELETE_CHECK_CATEGORY',
+        'ADD_CHECK_ITEM', 'DELETE_CHECK_ITEM', 'LOAD_CHECK_TYPE'
+    ];
     const setupActions = [
         'UPDATE_SETUP', 'ADD_SETUP_ITEM', 'DELETE_SETUP_ITEM', 'UPDATE_SETUP_ITEM', 'REORDER_SETUP',
         'UPDATE_SETUP_DETAILS', 'UPDATE_SETUP_STATUS', 'CALC_SETUP_SCHEDULE', 'START_SETUP_EXEC',
@@ -1534,6 +1542,7 @@ function getLogCategory(action) {
     ];
     
     if (commonActions.includes(action)) return 'common';
+    if (adminActions.includes(action)) return 'admin';
     if (setupActions.includes(action)) return 'setup';
     
     // 나머지는 운영관리(maint)로 간주 (ADD_MAINTENANCE, ADD_LOG 등)

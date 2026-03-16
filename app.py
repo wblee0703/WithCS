@@ -86,6 +86,7 @@ FILE_MANAGEMENT = os.path.join(DATA_DIR, 'Management.json')
 FILE_COMMON_LOG = os.path.join(DATA_LOG_DIR, 'common_log.json')
 FILE_SETUP_LOG = os.path.join(DATA_LOG_DIR, 'setup_log.json')
 FILE_MAINTENANCE_LOG = os.path.join(DATA_LOG_DIR, 'maintenance_log.json')
+FILE_ADMIN_LOG = os.path.join(DATA_LOG_DIR, 'admin_log.json')
 
 # 로깅 필터 설정
 class RequestInfoFilter(logging.Filter):
@@ -233,7 +234,15 @@ def git_pull_data():
 # 4. Core Logic (Data Management)
 # ------------------------------------------------------------------------------
 # [추가] 로그 카테고리 분류 로직 (Backend)
-COMMON_ACTIONS = {'LOGIN', 'LOGOUT', 'ADD_USER', 'CHANGE_PW', 'ADD_SITE', 'DELETE_SITE', 'ADD_EQUIP', 'DELETE_EQUIP', 'RENAME_ITEM', 'BACKUP_EXPORT', 'BACKUP_IMPORT'}
+COMMON_ACTIONS = {'LOGIN', 'LOGOUT', 'ADD_USER', 'CHANGE_PW', 'BACKUP_EXPORT', 'BACKUP_IMPORT'}
+ADMIN_ACTIONS = {
+    'ADD_SITE', 'DELETE_SITE', 'RENAME_SITE', 
+    'ADD_EQUIP', 'UPDATE_EQUIP', 'DELETE_EQUIP', 'RENAME_ITEM',
+    'ADD_EQUIP_MODEL', 'UPDATE_EQUIP_MODEL', 'DELETE_EQUIP_MODEL',
+    'ADD_ITEM_ADMIN', 'UPDATE_ITEM_ADMIN_DETAIL', 'DELETE_ITEM_ADMIN',
+    'ADD_CHECK_CATEGORY', 'DELETE_CHECK_CATEGORY',
+    'ADD_CHECK_ITEM', 'DELETE_CHECK_ITEM', 'LOAD_CHECK_TYPE'
+}
 SETUP_ACTIONS = {
     'UPDATE_SETUP', 'ADD_SETUP_ITEM', 'DELETE_SETUP_ITEM', 'UPDATE_SETUP_ITEM', 'REORDER_SETUP',
     'UPDATE_SETUP_DETAILS', 'UPDATE_SETUP_STATUS', 'CALC_SETUP_SCHEDULE', 'START_SETUP_EXEC',
@@ -242,6 +251,7 @@ SETUP_ACTIONS = {
 
 def get_log_category(action):
     if action in COMMON_ACTIONS: return 'common'
+    if action in ADMIN_ACTIONS: return 'admin'
     if action in SETUP_ACTIONS: return 'setup'
     return 'maintenance'
 
@@ -249,13 +259,13 @@ def init_data_files():
     """데이터 파일이 없으면 초기화하고 기본 계정을 생성합니다."""
     
     # [추가] 중요 파일이 없으면 백업에서 복원 시도
-    for filepath in [FILE_HOME, FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH, FILE_DEVICE, FILE_ITEM, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG]:
+    for filepath in [FILE_HOME, FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH, FILE_DEVICE, FILE_ITEM, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG, FILE_ADMIN_LOG]:
         if not os.path.exists(filepath):
             restore_from_backup(filepath)
 
     # [추가] logs/ 폴더의 json 로그 파일을 data/log/로 이동 (경로 변경 마이그레이션)
     old_log_dir = os.path.join(BASE_DIR, 'logs')
-    for log_file in ['common_log.json', 'setup_log.json', 'maintenance_log.json']:
+    for log_file in ['common_log.json', 'setup_log.json', 'maintenance_log.json', 'admin_log.json']:
         old_path = os.path.join(old_log_dir, log_file)
         new_path = os.path.join(DATA_LOG_DIR, log_file)
         if os.path.exists(old_path) and not os.path.exists(new_path):
@@ -268,17 +278,19 @@ def init_data_files():
     # [추가] 기존 system_log.json 마이그레이션 (분할 저장)
     old_log_path = os.path.join(DATA_DIR, 'system_log.json')
     if os.path.exists(old_log_path):
-        if not os.path.exists(FILE_COMMON_LOG) and not os.path.exists(FILE_SETUP_LOG) and not os.path.exists(FILE_MAINTENANCE_LOG):
+        if not os.path.exists(FILE_COMMON_LOG) and not os.path.exists(FILE_SETUP_LOG) and not os.path.exists(FILE_MAINTENANCE_LOG) and not os.path.exists(FILE_ADMIN_LOG):
             app.logger.warning("Migrating system_log.json to split log files...")
             old_logs = load_json_file(old_log_path)
             if isinstance(old_logs, list):
-                common, setup, maint = [], [], []
+                common, admin, setup, maint = [], [], [], []
                 for log in old_logs:
                     cat = get_log_category(log.get('action', ''))
                     if cat == 'common': common.append(log)
+                    elif cat == 'admin': admin.append(log)
                     elif cat == 'setup': setup.append(log)
                     else: maint.append(log)
                 save_json_file(FILE_COMMON_LOG, common)
+                save_json_file(FILE_ADMIN_LOG, admin)
                 save_json_file(FILE_SETUP_LOG, setup)
                 save_json_file(FILE_MAINTENANCE_LOG, maint)
             try:
@@ -312,7 +324,7 @@ def init_data_files():
         save_json_file(FILE_HOME, home_data)
         app.logger.warning("User accounts initialized/restored to defaults.")
 
-    for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH, FILE_DEVICE, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG]:
+    for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH, FILE_DEVICE, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG, FILE_ADMIN_LOG]:
         if not os.path.exists(filepath):
             save_json_file(filepath, {} if 'log.json' not in filepath else [])
             
@@ -397,8 +409,11 @@ def load_data():
         
         maint_logs = load_json_file(FILE_MAINTENANCE_LOG)
         if not isinstance(maint_logs, list): maint_logs = []
+
+        admin_logs = load_json_file(FILE_ADMIN_LOG)
+        if not isinstance(admin_logs, list): admin_logs = []
         
-        data['system_logs'] = common_logs + setup_logs + maint_logs
+        data['system_logs'] = common_logs + admin_logs + setup_logs + maint_logs
 
         return data
 
@@ -406,7 +421,7 @@ def save_data(full_data):
     """데이터를 분류하여 각 파일에 저장하고 백업 및 Git 동기화를 수행합니다."""
     with data_lock:
         # 1. 백업 수행
-        for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_HOME, FILE_WITHTECH, FILE_DEVICE, FILE_ITEM, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG]:
+        for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_HOME, FILE_WITHTECH, FILE_DEVICE, FILE_ITEM, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG, FILE_ADMIN_LOG]:
             create_daily_backup(filepath)
 
         # 2. 기존 데이터 로드 (계정 정보 보존용 등)
@@ -437,6 +452,7 @@ def save_data(full_data):
         }
         
         common_logs_list = []
+        admin_logs_list = []
         setup_logs_list = []
         maint_logs_list = []
 
@@ -449,6 +465,7 @@ def save_data(full_data):
                     for log in value:
                         cat = get_log_category(log.get('action', ''))
                         if cat == 'common': common_logs_list.append(log)
+                        elif cat == 'admin': admin_logs_list.append(log)
                         elif cat == 'setup': setup_logs_list.append(log)
                         else: maint_logs_list.append(log)
             elif key.startswith('site_meta_'):
@@ -499,6 +516,7 @@ def save_data(full_data):
         save_json_file(FILE_MANAGEMENT, management_data)
         
         save_json_file(FILE_COMMON_LOG, common_logs_list)
+        save_json_file(FILE_ADMIN_LOG, admin_logs_list)
         save_json_file(FILE_SETUP_LOG, setup_logs_list)
         save_json_file(FILE_MAINTENANCE_LOG, maint_logs_list)
 
