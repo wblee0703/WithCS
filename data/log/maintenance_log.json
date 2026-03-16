@@ -4,5 +4,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Stadnard",
         "details": "Type: PM, Spec: Stadnard, Cycle: 300"
+    },
+    {
+        "timestamp": "2026-03-16T06:45:13.669Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "details": "항목 추가: [Alarm] alarm"
     }
 ]

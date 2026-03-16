@@ -12,6 +12,11 @@
     },
     "items": {
         "SOMA-3000E::SOMA-EK24-0401::정기::PM": [],
-        "SOMA-3000E::SOMA-EK24-0401::비정기::Alarm": []
+        "SOMA-3000E::SOMA-EK24-0401::비정기::Alarm": [
+            {
+                "id": 1773643513669,
+                "content": "alarm"
+            }
+        ]
     }
 }
