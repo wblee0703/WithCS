@@ -15,132 +15,132 @@
     ],
     "equipment_models": [
         {
-            "name": "COSMOS-100",
-            "abbr": "COSMOS 100"
+            "abbr": "COSMOS 100",
+            "name": "COSMOS-100"
         },
         {
             "abbr": "COSMOS-100N",
             "name": "COSMOS-100N"
         },
         {
-            "name": "COSMOS-200",
-            "abbr": "COSMOS 200"
+            "abbr": "COSMOS 200",
+            "name": "COSMOS-200"
         },
         {
-            "name": "COSMOS-400",
-            "abbr": "COSMOS 400"
+            "abbr": "COSMOS 400",
+            "name": "COSMOS-400"
         },
         {
-            "name": "IAM7000",
-            "abbr": "IAM7000"
+            "abbr": "IAM7000",
+            "name": "IAM7000"
         },
         {
-            "name": "MAX-7sx",
-            "abbr": "MAX-7sx"
+            "abbr": "MAX-7sx",
+            "name": "MAX-7sx"
         },
         {
-            "name": "NaVi-EM201",
-            "abbr": "EM201"
+            "abbr": "EM201",
+            "name": "NaVi-EM201"
         },
         {
-            "name": "NaVi-MG200",
-            "abbr": "MG200"
+            "abbr": "MG200",
+            "name": "NaVi-MG200"
         },
         {
-            "name": "NaVi-SM301",
-            "abbr": "SM301"
+            "abbr": "SM301",
+            "name": "NaVi-SM301"
         },
         {
-            "name": "NaVi-ST100",
-            "abbr": "ST100"
+            "abbr": "ST100",
+            "name": "NaVi-ST100"
         },
         {
-            "name": "NaVi-TM(MG200H-2)",
-            "abbr": "TM(MG2)"
+            "abbr": "TM(MG2)",
+            "name": "NaVi-TM(MG200H-2)"
         },
         {
-            "name": "NaVi-TM(MG200H-1)",
-            "abbr": "TM(MG1)"
+            "abbr": "TM(MG1)",
+            "name": "NaVi-TM(MG200H-1)"
         },
         {
-            "name": "NaVi-TM(WF)",
-            "abbr": "WF301"
+            "abbr": "WF301",
+            "name": "NaVi-TM(WF)"
         },
         {
-            "name": "NaVi-TM(WiDGA)",
-            "abbr": "TM(WG)"
+            "abbr": "TM(WG)",
+            "name": "NaVi-TM(WiDGA)"
         },
         {
-            "name": "NaVi-TM(WOA-683)",
-            "abbr": "TM(WOA)"
+            "abbr": "TM(WOA)",
+            "name": "NaVi-TM(WOA-683)"
         },
         {
-            "name": "NaVi-WF301",
-            "abbr": "WF301"
+            "abbr": "WF301",
+            "name": "NaVi-WF301"
         },
         {
-            "name": "OMS-100",
-            "abbr": "OMS100"
+            "abbr": "OMS100",
+            "name": "OMS-100"
         },
         {
-            "name": "OWIC",
-            "abbr": "OWIC"
+            "abbr": "OWIC",
+            "name": "OWIC"
         },
         {
-            "name": "PAMS-300S",
-            "abbr": "PAMS(P)"
+            "abbr": "PAMS(P)",
+            "name": "PAMS-300S"
         },
         {
-            "name": "PAMS-300ST",
-            "abbr": "PAMS(T)"
+            "abbr": "PAMS(T)",
+            "name": "PAMS-300ST"
         },
         {
-            "name": "PGA-C10",
-            "abbr": "PGA-C10"
+            "abbr": "PGA-C10",
+            "name": "PGA-C10"
         },
         {
-            "name": "proFAST 100",
-            "abbr": "PROFAST100"
+            "abbr": "PROFAST100",
+            "name": "proFAST 100"
         },
         {
-            "name": "proFAST 2000",
-            "abbr": "PROFAST2000"
+            "abbr": "PROFAST2000",
+            "name": "proFAST 2000"
         },
         {
-            "name": "SKHCEA-100",
-            "abbr": "SKHCEA-100"
+            "abbr": "SKHCEA-100",
+            "name": "SKHCEA-100"
         },
         {
-            "name": "SKHCEA-200",
-            "abbr": "SKHCEA-200"
+            "abbr": "SKHCEA-200",
+            "name": "SKHCEA-200"
         },
         {
             "abbr": "SOMA-2000",
             "name": "SOMA-2000"
         },
         {
-            "name": "SOT-100B",
-            "abbr": "SOT-100B"
+            "abbr": "SOT-100B",
+            "name": "SOT-100B"
         },
         {
-            "name": "SOT-100S",
-            "abbr": "SOT-100S"
+            "abbr": "SOT-100S",
+            "name": "SOT-100S"
         },
         {
-            "name": "SOT-200B",
-            "abbr": "SOT-200B"
+            "abbr": "SOT-200B",
+            "name": "SOT-200B"
         },
         {
-            "name": "WiDGA-100",
-            "abbr": "WiDGA"
+            "abbr": "WiDGA",
+            "name": "WiDGA-100"
         },
         {
             "abbr": "WIM-100",
             "name": "WIM-100"
         },
         {
-            "name": "WOA-683",
-            "abbr": "WOA683"
+            "abbr": "WOA683",
+            "name": "WOA-683"
         }
     ]
 }

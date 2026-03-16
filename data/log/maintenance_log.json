@@ -78,201 +78,201 @@
         "timestamp": "2026-03-16T02:05:54.467Z"
     },
     {
-        "timestamp": "2026-03-16T02:15:57.700Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ",
         "target": "Multi Standard Solution",
-        "details": "Type: PM, Code: "
+        "timestamp": "2026-03-16T02:15:57.700Z"
     },
     {
-        "timestamp": "2026-03-16T02:21:06.743Z",
         "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 정기 > PM",
         "target": "SOMA-2000::SOMA-HC21-0101",
-        "details": "분류 추가: 정기 > PM"
+        "timestamp": "2026-03-16T02:21:06.743Z"
     },
     {
-        "timestamp": "2026-03-16T02:21:46.914Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: WF301",
         "target": "NaVi-WF301",
-        "details": "Abbr: WF301"
+        "timestamp": "2026-03-16T02:21:46.914Z"
     },
     {
-        "timestamp": "2026-03-16T02:21:55.208Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: MG200",
         "target": "NaVi-MG200",
-        "details": "Abbr: MG200"
+        "timestamp": "2026-03-16T02:21:55.208Z"
     },
     {
-        "timestamp": "2026-03-16T02:22:02.006Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: SM301",
         "target": "NaVi-SM301",
-        "details": "Abbr: SM301"
+        "timestamp": "2026-03-16T02:22:02.006Z"
     },
     {
-        "timestamp": "2026-03-16T02:22:10.526Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: EM201",
         "target": "NaVi-EM201",
-        "details": "Abbr: EM201"
+        "timestamp": "2026-03-16T02:22:10.526Z"
     },
     {
-        "timestamp": "2026-03-16T02:22:28.516Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: PROFAST100",
         "target": "proFAST 100",
-        "details": "Abbr: PROFAST100"
+        "timestamp": "2026-03-16T02:22:28.516Z"
     },
     {
-        "timestamp": "2026-03-16T02:22:36.976Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: PROFAST2000",
         "target": "proFAST 2000",
-        "details": "Abbr: PROFAST2000"
+        "timestamp": "2026-03-16T02:22:36.976Z"
     },
     {
-        "timestamp": "2026-03-16T02:22:43.934Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: OMS100",
         "target": "OMS-100",
-        "details": "Abbr: OMS100"
+        "timestamp": "2026-03-16T02:22:43.934Z"
     },
     {
-        "timestamp": "2026-03-16T02:22:53.047Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: ST100",
         "target": "NaVi-ST100",
-        "details": "Abbr: ST100"
+        "timestamp": "2026-03-16T02:22:53.047Z"
     },
     {
-        "timestamp": "2026-03-16T02:23:01.967Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: WiDGA",
         "target": "WiDGA-100",
-        "details": "Abbr: WiDGA"
+        "timestamp": "2026-03-16T02:23:01.967Z"
     },
     {
-        "timestamp": "2026-03-16T02:23:10.854Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: WOA683",
         "target": "WOA-683",
-        "details": "Abbr: WOA683"
+        "timestamp": "2026-03-16T02:23:10.854Z"
     },
     {
-        "timestamp": "2026-03-16T02:23:16.546Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: OWIC",
         "target": "OWIC",
-        "details": "Abbr: OWIC"
+        "timestamp": "2026-03-16T02:23:16.546Z"
     },
     {
-        "timestamp": "2026-03-16T02:23:31.784Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: PGA-C10",
         "target": "PGA-C10",
-        "details": "Abbr: PGA-C10"
+        "timestamp": "2026-03-16T02:23:31.784Z"
     },
     {
-        "timestamp": "2026-03-16T02:23:42.702Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: IAM7000",
         "target": "IAM7000",
-        "details": "Abbr: IAM7000"
+        "timestamp": "2026-03-16T02:23:42.702Z"
     },
     {
-        "timestamp": "2026-03-16T02:23:47.901Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: MAX-7sx",
         "target": "MAX-7sx",
-        "details": "Abbr: MAX-7sx"
+        "timestamp": "2026-03-16T02:23:47.901Z"
     },
     {
-        "timestamp": "2026-03-16T02:23:52.526Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: SKHCEA-100",
         "target": "SKHCEA-100",
-        "details": "Abbr: SKHCEA-100"
+        "timestamp": "2026-03-16T02:23:52.526Z"
     },
     {
-        "timestamp": "2026-03-16T02:23:56.182Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: SKHCEA-200",
         "target": "SKHCEA-200",
-        "details": "Abbr: SKHCEA-200"
+        "timestamp": "2026-03-16T02:23:56.182Z"
     },
     {
-        "timestamp": "2026-03-16T02:24:03.278Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: SOT-100S",
         "target": "SOT-100S",
-        "details": "Abbr: SOT-100S"
+        "timestamp": "2026-03-16T02:24:03.278Z"
     },
     {
-        "timestamp": "2026-03-16T02:24:08.668Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: SOT-100B",
         "target": "SOT-100B",
-        "details": "Abbr: SOT-100B"
+        "timestamp": "2026-03-16T02:24:08.668Z"
     },
     {
-        "timestamp": "2026-03-16T02:24:13.077Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: SOT-200B",
         "target": "SOT-200B",
-        "details": "Abbr: SOT-200B"
+        "timestamp": "2026-03-16T02:24:13.077Z"
     },
     {
-        "timestamp": "2026-03-16T02:24:45.094Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: COSMOS 100",
         "target": "COSMOS-100",
-        "details": "Abbr: COSMOS 100"
+        "timestamp": "2026-03-16T02:24:45.094Z"
     },
     {
-        "timestamp": "2026-03-16T02:25:11.550Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: COSMOS 200",
         "target": "COSMOS-200",
-        "details": "Abbr: COSMOS 200"
+        "timestamp": "2026-03-16T02:25:11.550Z"
     },
     {
-        "timestamp": "2026-03-16T02:25:20.551Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: COSMOS 400",
         "target": "COSMOS-400",
-        "details": "Abbr: COSMOS 400"
+        "timestamp": "2026-03-16T02:25:20.551Z"
     },
     {
-        "timestamp": "2026-03-16T02:25:34.870Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: PAMS(P)",
         "target": "PAMS-300S",
-        "details": "Abbr: PAMS(P)"
+        "timestamp": "2026-03-16T02:25:34.870Z"
     },
     {
-        "timestamp": "2026-03-16T02:25:54.448Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: PAMS(T)",
         "target": "PAMS-300ST",
-        "details": "Abbr: PAMS(T)"
+        "timestamp": "2026-03-16T02:25:54.448Z"
     },
     {
-        "timestamp": "2026-03-16T02:26:48.782Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: MG200H-1",
         "target": "NaVi-TM(MG1)",
-        "details": "Abbr: MG200H-1"
+        "timestamp": "2026-03-16T02:26:48.782Z"
     },
     {
-        "timestamp": "2026-03-16T02:27:01.566Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: MG200H-2",
         "target": "NaVi-TM(MG2)",
-        "details": "Abbr: MG200H-2"
+        "timestamp": "2026-03-16T02:27:01.566Z"
     },
     {
-        "timestamp": "2026-03-16T02:27:21.606Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: WF301",
         "target": "NaVi-TM(WF)",
-        "details": "Abbr: WF301"
+        "timestamp": "2026-03-16T02:27:21.606Z"
     },
     {
-        "timestamp": "2026-03-16T02:27:53.582Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: TM(WG)",
         "target": "NaVi-TM(WiDGA)",
-        "details": "Abbr: TM(WG)"
+        "timestamp": "2026-03-16T02:27:53.582Z"
     },
     {
-        "timestamp": "2026-03-16T02:28:11.727Z",
         "action": "ADD_EQUIP_MODEL",
+        "details": "Abbr: TM(WOA)",
         "target": "NaVi-TM(WOA-683)",
-        "details": "Abbr: TM(WOA)"
+        "timestamp": "2026-03-16T02:28:11.727Z"
     },
     {
-        "timestamp": "2026-03-16T02:28:48.181Z",
         "action": "UPDATE_EQUIP_MODEL",
+        "details": "To: NaVi-TM(MG200H-1) / TM(MG1)",
         "target": "NaVi-TM(MG1)",
-        "details": "To: NaVi-TM(MG200H-1) / TM(MG1)"
+        "timestamp": "2026-03-16T02:28:48.181Z"
     },
     {
-        "timestamp": "2026-03-16T02:29:02.052Z",
         "action": "UPDATE_EQUIP_MODEL",
+        "details": "To: NaVi-TM(MG200H-2) / TM(MG2)",
         "target": "NaVi-TM(MG2)",
-        "details": "To: NaVi-TM(MG200H-2) / TM(MG2)"
+        "timestamp": "2026-03-16T02:29:02.052Z"
     }
 ]
