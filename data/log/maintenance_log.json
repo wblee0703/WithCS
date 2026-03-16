@@ -288,9 +288,15 @@
         "timestamp": "2026-03-16T02:53:48.883Z"
     },
     {
-        "timestamp": "2026-03-16T03:31:38.435Z",
         "action": "DELETE_ITEM_ADMIN",
+        "details": "",
         "target": "고객 대응",
-        "details": ""
+        "timestamp": "2026-03-16T03:31:38.435Z"
+    },
+    {
+        "timestamp": "2026-03-16T03:44:55.771Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Multi Standard Solution",
+        "details": "Type: PM, Code: 111"
     }
 ]

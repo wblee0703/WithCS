@@ -305,6 +305,21 @@ function setupEquipModelMgmt() {
             searchInput.addEventListener('input', renderEquipModelList);
         }
 
+    // [추가] 장비 모델 관리 모드 토글
+    const btnModelSettings = document.getElementById('btn-model-settings');
+    const modelContainer = document.getElementById('admin-model-container');
+    if (btnModelSettings && modelContainer) {
+        btnModelSettings.addEventListener('click', () => {
+            modelContainer.classList.toggle('management-active');
+            if (modelContainer.classList.contains('management-active')) {
+                btnModelSettings.classList.add('active');
+            } else {
+                btnModelSettings.classList.remove('active');
+                renderEquipModelList(); // 관리 모드 종료 시 편집 중이던 상태 초기화
+            }
+        });
+    }
+
     if (btnAdd) {
         const addModel = () => {
             const name = nameInput.value.trim();
@@ -996,7 +1011,7 @@ function renderAdminItemList() {
     if (keyword) {
         const keywords = keyword.split(/\s+/);
         filteredItems = adminItems.filter(item => {
-            const text = `${item.type} ${item.part} ${item.spec || ''}`.toLowerCase();
+            const text = `${item.type || ''} ${item.part || ''} ${item.spec || ''} ${item.code || ''} ${item.partno || ''} ${item.equip || ''}`.toLowerCase();
             return keywords.every(kw => text.includes(kw));
         });
     }
