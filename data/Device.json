@@ -290,15 +290,21 @@
             },
             "specialNote": ""
         },
+        "SEC 평택_SOLA-3000": {
+            "setup": {
+                "model": ""
+            },
+            "specialNote": ""
+        },
         "SEC 평택_SOLA-1000": {
             "setup": {
                 "model": ""
             },
             "specialNote": ""
         },
-        "SEC 평택_SOLA-3000": {
+        "LGD 구미_OMS-100L::OMS1-LK22-0104": {
             "setup": {
-                "model": ""
+                "model": "OMS1-LK22-0104"
             },
             "specialNote": ""
         },
@@ -315,12 +321,6 @@
                 "floor": "2층 Plenum",
                 "manager": "이원배",
                 "model": "SOMA-H19-0903"
-            },
-            "specialNote": ""
-        },
-        "LGD 구미_OMS-100L::OMS1-LK22-0104": {
-            "setup": {
-                "model": "OMS1-LK22-0104"
             },
             "specialNote": ""
         },
@@ -356,6 +356,10 @@
             },
             "specialNote": ""
         },
+        "ENF 천안_SOMA-3000E::SOMA-EK25-0401": {
+            "setup": {},
+            "specialNote": ""
+        },
         "SKH 이천_SOMA-2000::SOMA-HK21-0202": {
             "setup": {
                 "building": "M16",
@@ -370,10 +374,6 @@
                 "manager": "이원배",
                 "model": "SOMA-HK21-0202"
             },
-            "specialNote": ""
-        },
-        "ENF 천안_SOMA-3000E::SOMA-EK25-0401": {
-            "setup": {},
             "specialNote": ""
         },
         "SKH 우시_SOMA-2000::SOMA-HC19-1204": {
