@@ -55,6 +55,10 @@
             "abbr": "ST100"
         },
         {
+            "name": "NaVi-TM(MG1)",
+            "abbr": "MG200H-1"
+        },
+        {
             "name": "NaVi-WF301",
             "abbr": "WF301"
         },
@@ -123,8 +127,8 @@
             "abbr": "WOA683"
         },
         {
-            "name": "NaVi-TM(MG1)",
-            "abbr": "MG200H-1"
+            "name": "NaVi-TM(MG2)",
+            "abbr": "MG200H-2"
         }
     ]
 }
