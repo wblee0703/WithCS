@@ -16,5 +16,11 @@
         "details": "메모 수정 (LogID: 1773644537768)",
         "target": "WIM-100::WIM1-HK24-0401",
         "timestamp": "2026-03-16T07:02:23.778Z"
+    },
+    {
+        "timestamp": "2026-03-16T07:59:08.939Z",
+        "action": "ADD_MAINTENANCE",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "[PM] Stadnard (주기: 30일, 시작일: 2026-03-16)"
     }
 ]

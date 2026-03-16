@@ -234,6 +234,31 @@ tr.dragging {
     padding: 4px 8px;
 }
 
+/* 드롭다운(select) 공통 다크 테마 디자인 적용 */
+select.input-dark,
+select#log-type-select,
+select#maint-content {
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    cursor: pointer;
+    outline: none;
+    border-radius: 4px;
+}
+
+select.input-dark:focus,
+select#log-type-select:focus,
+select#maint-content:focus {
+    border-color: #58a6ff;
+}
+
+select.input-dark option,
+select#log-type-select option,
+select#maint-content option {
+    background-color: #161b22;
+    color: #e6edf3;
+}
+
 /* [추가] 달력 아이콘 스타일 (어두운 회색) */
 input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(0.3);

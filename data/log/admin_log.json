@@ -24,9 +24,9 @@
         "timestamp": "2026-03-16T07:33:01.562Z"
     },
     {
-        "timestamp": "2026-03-16T07:56:07.365Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ",
         "target": "Stadnard",
-        "details": "Type: PM, Code: "
+        "timestamp": "2026-03-16T07:56:07.365Z"
     }
 ]
