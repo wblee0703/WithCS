@@ -67,6 +67,10 @@
             "abbr": "WF301"
         },
         {
+            "name": "NaVi-TM(WiDGA)",
+            "abbr": "TM(WG)"
+        },
+        {
             "name": "NaVi-WF301",
             "abbr": "WF301"
         },
@@ -135,8 +139,8 @@
             "abbr": "WOA683"
         },
         {
-            "name": "NaVi-TM(WiDGA)",
-            "abbr": "TM(WG)"
+            "name": "NaVi-TM(WOA-683)",
+            "abbr": "TM(WOA)"
         }
     ]
 }

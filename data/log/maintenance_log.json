@@ -256,5 +256,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "NaVi-TM(WiDGA)",
         "details": "Abbr: TM(WG)"
+    },
+    {
+        "timestamp": "2026-03-16T02:28:11.727Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "NaVi-TM(WOA-683)",
+        "details": "Abbr: TM(WOA)"
     }
 ]
