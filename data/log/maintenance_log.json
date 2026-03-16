@@ -1,8 +1,1 @@
-[
-    {
-        "timestamp": "2026-03-16T06:35:36.155Z",
-        "action": "ADD_CHECK_ITEM",
-        "target": "SOMA-2000::SOMA-HC19-1204",
-        "details": "항목 추가: [Alarm] interlock"
-    }
-]
+[]
