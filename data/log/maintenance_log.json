@@ -130,5 +130,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "OMS-100",
         "details": "Abbr: OMS100"
+    },
+    {
+        "timestamp": "2026-03-16T02:22:53.047Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "NaVi-ST100",
+        "details": "Abbr: ST100"
     }
 ]

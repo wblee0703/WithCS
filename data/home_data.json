@@ -35,6 +35,10 @@
             "abbr": "WF301"
         },
         {
+            "name": "OMS-100",
+            "abbr": "OMS100"
+        },
+        {
             "name": "proFAST 100",
             "abbr": "PROFAST100"
         },
@@ -51,8 +55,8 @@
             "name": "WIM-100"
         },
         {
-            "name": "OMS-100",
-            "abbr": "OMS100"
+            "name": "NaVi-ST100",
+            "abbr": "ST100"
         }
     ]
 }
