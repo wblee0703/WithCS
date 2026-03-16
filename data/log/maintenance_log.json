@@ -82,5 +82,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Multi Standard Solution",
         "details": "Type: PM, Code: "
+    },
+    {
+        "timestamp": "2026-03-16T02:21:06.743Z",
+        "action": "ADD_CHECK_CATEGORY",
+        "target": "SOMA-2000::SOMA-HC21-0101",
+        "details": "분류 추가: 정기 > PM"
     }
 ]
