@@ -1,29 +1,11 @@
 {
-    "details_SEC 평택_SOLA-1000": {
-        "maint": [],
-        "logs": [],
-        "memo": "",
-        "files": []
-    },
     "details_SKH 이천_SOMA-20::SOMA-HK21-0202": {
         "maint": [],
         "logs": [],
         "memo": "",
         "files": []
     },
-    "details_SKH 이천_SOMA-2000::SOMA-H19-0903": {
-        "maint": [],
-        "logs": [],
-        "memo": "",
-        "files": []
-    },
     "details_SEC 평택_SOLA-5000": {
-        "maint": [],
-        "logs": [],
-        "memo": "",
-        "files": []
-    },
-    "details_LGD 구미_OMS-100L::OMS1-LK22-0104": {
         "maint": [],
         "logs": [],
         "memo": "",
@@ -41,19 +23,7 @@
         "memo": "",
         "files": []
     },
-    "details_SKH 이천_SOMA-2000::SOMA-H19-0402": {
-        "maint": [],
-        "logs": [],
-        "memo": "",
-        "files": []
-    },
     "details_SKH 이천_SOMA-20::SOMA-H19-0402": {
-        "maint": [],
-        "logs": [],
-        "memo": "",
-        "files": []
-    },
-    "details_ENF 아산_SOMA-3000E::SOMA-EK24-0401": {
         "maint": [],
         "logs": [],
         "memo": "",
@@ -86,13 +56,49 @@
         "memo": "",
         "files": []
     },
-    "details_SKH 이천_SOMA-2000::SOMA-HK21-0202": {
+    "details_SKH 이천_SOMA-20::SOMA-H19-0903": {
         "maint": [],
         "logs": [],
         "memo": "",
         "files": []
     },
-    "details_SKH 이천_SOMA-20::SOMA-H19-0903": {
+    "details_SEC 평택_SOLA-1000": {
+        "maint": [],
+        "logs": [],
+        "memo": "",
+        "files": []
+    },
+    "details_SEC 평택_SOLA-3000": {
+        "maint": [],
+        "logs": [],
+        "memo": "",
+        "files": []
+    },
+    "details_SKH 이천_SOMA-2000::SOMA-H19-0903": {
+        "maint": [],
+        "logs": [],
+        "memo": "",
+        "files": []
+    },
+    "details_LGD 구미_OMS-100L::OMS1-LK22-0104": {
+        "maint": [],
+        "logs": [],
+        "memo": "",
+        "files": []
+    },
+    "details_SKH 이천_SOMA-2000::SOMA-H19-0402": {
+        "maint": [],
+        "logs": [],
+        "memo": "",
+        "files": []
+    },
+    "details_ENF 아산_SOMA-3000E::SOMA-EK24-0401": {
+        "maint": [],
+        "logs": [],
+        "memo": "",
+        "files": []
+    },
+    "details_SKH 이천_SOMA-2000::SOMA-HK21-0202": {
         "maint": [],
         "logs": [],
         "memo": "",
@@ -123,12 +129,6 @@
         "files": []
     },
     "details_ENF 아산_asfd": {
-        "maint": [],
-        "logs": [],
-        "memo": "",
-        "files": []
-    },
-    "details_SEC 평택_SOLA-3000": {
         "maint": [],
         "logs": [],
         "memo": "",

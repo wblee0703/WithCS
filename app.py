@@ -257,20 +257,6 @@ def get_log_category(action):
 
 def init_data_files():
     """데이터 파일이 없으면 초기화하고 기본 계정을 생성합니다."""
-    
-    # [추가] JSON 파일명 변경에 따른 마이그레이션 (기존 데이터를 새 파일명으로 자동 이동)
-    file_renames = [
-        ('withtech.json', 'client_data.json'),
-        ('Device.json', 'device_data.json'),
-        ('Management.json', 'management_data.json'),
-        ('Item.json', 'item_data.json')
-    ]
-    for old_n, new_n in file_renames:
-        old_p = os.path.join(DATA_DIR, old_n)
-        new_p = os.path.join(DATA_DIR, new_n)
-        if os.path.exists(old_p) and not os.path.exists(new_p):
-            try: shutil.move(old_p, new_p)
-            except: pass
 
     # [추가] 중요 파일이 없으면 백업에서 복원 시도
     for filepath in [FILE_HOME, FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH, FILE_DEVICE, FILE_ITEM, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG, FILE_ADMIN_LOG]:
