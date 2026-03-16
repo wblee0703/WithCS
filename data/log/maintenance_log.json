@@ -298,5 +298,11 @@
         "details": "Type: PM, Code: 111",
         "target": "Multi Standard Solution",
         "timestamp": "2026-03-16T03:44:55.771Z"
+    },
+    {
+        "timestamp": "2026-03-16T04:10:58.509Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [PM] 센서 점검"
     }
 ]
