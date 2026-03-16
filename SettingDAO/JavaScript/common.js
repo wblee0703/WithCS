@@ -40,7 +40,7 @@ let syncDebounceTimer = null;
 const SYNC_KEYS = ['withtech_data', 'system_logs', 'setup_data', 'equipment_models', 'admin_items', 'check_type_categories', 'check_type_items'];
 
 function shouldSyncKey(key) {
-    return SYNC_KEYS.includes(key) || key.startsWith('details_');
+    return SYNC_KEYS.includes(key) || key.startsWith('details_') || key.startsWith('site_meta_');
 }
 
 function saveAllToServer() {

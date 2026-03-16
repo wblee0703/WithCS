@@ -418,6 +418,7 @@ def save_data(full_data):
         existing_device = load_json_file(FILE_DEVICE)
         existing_item = load_json_file(FILE_ITEM)
         existing_mgmt = load_json_file(FILE_MANAGEMENT)
+        existing_withtech = load_json_file(FILE_WITHTECH)
 
         # 각 저장소 컨테이너 초기화
         setup_data = {}
@@ -480,10 +481,13 @@ def save_data(full_data):
                 # 위 분류에 속하지 않는 나머지 (예: 대시보드 기타 설정 등)는 home_data에 저장
                 home_data[key] = value
 
-        # [보완] Device.json 의 equipments 에 등록된 사업장은 withtech.json 에도 기본 골격을 만들어줌
+        # [보완] 사업장 기본 골격 생성 및 기존 건물명 데이터 보호 (방어 로직)
         for site in device_data['equipments'].keys():
             if site not in withtech_data:
-                withtech_data[site] = {"buildings": []}
+                if isinstance(existing_withtech, dict) and site in existing_withtech:
+                    withtech_data[site] = existing_withtech[site] # 기존에 저장된 건물 데이터가 있으면 보존
+                else:
+                    withtech_data[site] = {"buildings": []}
 
         # 4. 파일 저장
         save_json_file(FILE_SETUP, setup_data)
