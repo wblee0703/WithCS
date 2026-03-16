@@ -160,5 +160,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "PGA-C10",
         "details": "Abbr: PGA-C10"
+    },
+    {
+        "timestamp": "2026-03-16T02:23:42.702Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "IAM7000",
+        "details": "Abbr: IAM7000"
     }
 ]

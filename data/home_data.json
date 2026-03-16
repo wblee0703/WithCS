@@ -47,6 +47,10 @@
             "abbr": "OWIC"
         },
         {
+            "name": "PGA-C10",
+            "abbr": "PGA-C10"
+        },
+        {
             "name": "proFAST 100",
             "abbr": "PROFAST100"
         },
@@ -71,8 +75,8 @@
             "abbr": "WOA683"
         },
         {
-            "name": "PGA-C10",
-            "abbr": "PGA-C10"
+            "name": "IAM7000",
+            "abbr": "IAM7000"
         }
     ]
 }
