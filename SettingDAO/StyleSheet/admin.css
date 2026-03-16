@@ -15,7 +15,7 @@
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
-    padding-top: 25px; /* 제목과 아래 컨텐츠(카드) 사이의 여백 증가 */
+    padding-top: 5px; /* 제목과 아래 컨텐츠(카드) 사이의 여백 증가 */
 }
 
 /* 좌우 분할 레이아웃 */
@@ -77,6 +77,13 @@
 .suggestion-item:hover { background: #1f6feb; }
 .suggestion-item .abbr { color: #8b949e; font-size: 11px; margin-left: 5px; }
 
+/* 검색 제안 리스트 아이템 레이아웃 */
+.suggestion-item-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 /* 리스트 스타일 */
 .list-header {
     display: flex;
@@ -85,6 +92,16 @@
     margin-bottom: 10px;
     font-weight: bold;
     color: #c9d1d9;
+    padding-top: 3px; /* 입력창 클릭 시 테두리(outline) 상단이 잘리는 현상 방지 */
+}
+
+/* 항목 카운팅 배지 텍스트 녹색 표시 */
+.list-header .badge {
+    color: #3fb950; /* 녹색 텍스트 */
+    background: #21262d;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 12px;
 }
 
 .admin-list {
@@ -258,6 +275,10 @@
     padding: 4px;
 }
 
+.select-padding-md {
+    padding: 6px;
+}
+
 .placeholder-container {
     display: flex;
     align-items: center;
@@ -295,8 +316,7 @@
    물품 관리 (Item Management) 전용 스타일
    ========================================================================== */
 .admin-item-list-container {
-    flex: 1;
-    max-width: 800px;
+    flex: 0 0 550px;
     border-right: none;
     padding-right: 0;
 }

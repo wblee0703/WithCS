@@ -164,6 +164,7 @@
             <div class="card-header"><h3>물품 관리</h3></div>
             <div class="card-body">
                 <div class="admin-split-view">
+                    <!-- 좌측: 물품 목록 -->
                     <div class="admin-col-list admin-item-list-container">
                         <div class="list-header">
                             <div style="display: flex; align-items: center; gap: 5px;">
@@ -192,6 +193,60 @@
                                 <input type="number" id="admin-item-cycle-input" placeholder="주기(일)" class="input-dark input-item-cycle item-footer-input">
                             </div>
                             <button id="btn-admin-add-item" class="btn-green full-width mt-10">물품 추가</button>
+                        </div>
+                    </div>
+
+                    <!-- 우측: 물품 상세 정보 -->
+                    <div class="admin-col-detail">
+                        <div class="detail-header">
+                            <h4>물품 상세 정보</h4>
+                            <p class="detail-desc">선택된 물품의 세부 정보 및 사용 장비를 관리합니다.</p>
+                        </div>
+                        <div id="admin-item-form" class="admin-form-container" style="display:none;">
+                            <div class="form-group">
+                                <label>점검 구분</label>
+                                <select id="item-info-type" class="input-dark full-width compact-select select-padding-md">
+                                    <option value="PM">PM</option>
+                                    <option value="BM">BM</option>
+                                    <option value="고객대응">고객대응</option>
+                                    <option value="기타">기타</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>교체(수리) 파츠 명</label>
+                                <input type="text" id="item-info-part" class="input-dark full-width">
+                            </div>
+                            <div class="form-group">
+                                <label>세부 규격</label>
+                                <input type="text" id="item-info-spec" class="input-dark full-width">
+                            </div>
+                            <div class="form-group">
+                                <label>교체주기(일)</label>
+                                <input type="number" id="item-info-cycle" class="input-dark full-width">
+                            </div>
+                            <div class="form-group">
+                                <label>코드명</label>
+                                <input type="text" id="item-info-code" class="input-dark full-width" placeholder="코드명을 입력하세요">
+                            </div>
+                            <div class="form-group">
+                                <label>품번</label>
+                                <input type="text" id="item-info-partno" class="input-dark full-width" placeholder="품번을 입력하세요">
+                            </div>
+                            <div class="form-group">
+                                <label>사용 장비 (모델명)</label>
+                                <div class="autocomplete-wrapper">
+                                    <input type="text" id="item-info-equip" class="input-dark full-width" placeholder="장비 모델 검색" autocomplete="off">
+                                    <ul id="item-equip-suggestions" class="suggestion-list"></ul>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button id="btn-admin-del-item-detail" class="btn-del-sm">삭제</button>
+                                <button id="btn-admin-save-item-detail" class="btn-blue">저장 (수정)</button>
+                            </div>
+                        </div>
+                        <div id="admin-item-placeholder" class="placeholder-container">
+                            <p>좌측 목록에서 물품을 선택해주세요.</p>
                         </div>
                     </div>
                 </div>

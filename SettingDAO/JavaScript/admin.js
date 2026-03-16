@@ -6,12 +6,16 @@ let currentAdminModel = null; // 선택된 장비 모델
 let currentAdminEquipSite = null; // 장비 관리에서 선택된 사업장
 let currentAdminEquipSiteContext = null; // [추가] 선택된 장비의 실제 사업장 (전체 보기 시 식별용)
 let adminItems = []; // [추가] 물품 목록
+let currentAdminItemId = null; // [추가] 선택된 물품 ID
 
 document.addEventListener('DOMContentLoaded', () => {
     setupAdminMenu();
     setupSiteMgmt();
     setupEquipModelMgmt();
     setupItemMgmt();
+    
+    // [추가] 모든 설정 완료 후 마지막 작업 탭 복원
+    restoreLastAdminSection();
 });
 
 // 사이드바 메뉴 탭 전환 기능
@@ -24,6 +28,9 @@ function setupAdminMenu() {
             // 1. 메뉴 활성화 상태 변경
             menuItems.forEach(li => li.classList.remove('active'));
             item.classList.add('active');
+            
+            // [추가] 선택된 메뉴 상태를 로컬 스토리지에 저장
+            localStorage.setItem('lastAdminSection', item.dataset.target);
 
             // 2. 해당 섹션 표시
             const targetId = `section-${item.dataset.target}`;
@@ -45,6 +52,18 @@ function setupAdminMenu() {
             });
         });
     });
+}
+
+// [추가] 마지막으로 선택했던 어드민 메뉴 탭을 복원하는 함수
+function restoreLastAdminSection() {
+    const lastSection = localStorage.getItem('lastAdminSection');
+    if (lastSection) {
+        const menuItems = document.querySelectorAll('#admin-menu-list li');
+        const targetItem = Array.from(menuItems).find(li => li.dataset.target === lastSection);
+        if (targetItem) {
+            targetItem.click();
+        }
+    }
 }
 
 /* ==========================================================================
@@ -526,9 +545,9 @@ function setupEquipMgmt() {
                     const li = document.createElement('li');
                     li.className = 'suggestion-item';
                     li.innerHTML = `
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div class="suggestion-item-content">
                             <span>${m.name}</span>
-                            <span style="color:#8b949e; font-size:11px;">${m.abbr}</span>
+                            <span class="abbr">${m.abbr}</span>
                         </div>
                     `;
                     
@@ -820,7 +839,7 @@ function setupItemMgmt() {
 
             if (!part) return alert('교체(수리) 파츠 명을 입력해주세요.');
 
-            adminItems.push({ id: Date.now(), type, part, spec, cycle });
+            adminItems.push({ id: Date.now(), type, part, spec, cycle, code: '', partno: '', equip: '' });
             saveAdminItems();
             addSystemLog('ADD_ITEM_ADMIN', part, `Type: ${type}, Spec: ${spec}, Cycle: ${cycle}`);
             
@@ -834,6 +853,59 @@ function setupItemMgmt() {
         partInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') specInput.focus(); });
         specInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') cycleInput.focus(); });
         cycleInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') btnAdd.click(); });
+    }
+
+    // 상세 정보 폼 이벤트
+    const btnSaveDetail = document.getElementById('btn-admin-save-item-detail');
+    const btnDelDetail = document.getElementById('btn-admin-del-item-detail');
+
+    if (btnSaveDetail) btnSaveDetail.addEventListener('click', handleItemDetailSave);
+    if (btnDelDetail) btnDelDetail.addEventListener('click', handleItemDetailDelete);
+
+    // 장비 모델 제안 박스 설정
+    const equipInput = document.getElementById('item-info-equip');
+    const equipSuggestionList = document.getElementById('item-equip-suggestions');
+
+    if (equipInput && equipSuggestionList) {
+        const handleEquipInput = () => {
+            const query = equipInput.value.trim().toLowerCase();
+            const keywords = query ? query.split(/\s+/) : [];
+            const matches = query
+                ? equipmentModels.filter(m => {
+                    const text = `${m.name} ${m.abbr}`.toLowerCase();
+                    return keywords.every(kw => text.includes(kw));
+                })
+                : equipmentModels;
+
+            equipSuggestionList.innerHTML = '';
+            
+            if (matches.length > 0) {
+                matches.forEach(m => {
+                    const li = document.createElement('li');
+                    li.className = 'suggestion-item';
+                    li.innerHTML = `
+                        <div class="suggestion-item-content">
+                            <span>${m.name}</span>
+                            <span class="abbr">${m.abbr}</span>
+                        </div>
+                    `;
+                    
+                    li.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        equipInput.value = m.name;
+                        equipSuggestionList.style.display = 'none';
+                    });
+                    equipSuggestionList.appendChild(li);
+                });
+                equipSuggestionList.style.display = 'block';
+            } else {
+                equipSuggestionList.style.display = 'none';
+            }
+        };
+
+        equipInput.addEventListener('input', handleEquipInput);
+        equipInput.addEventListener('focus', handleEquipInput);
+        equipInput.addEventListener('blur', () => { setTimeout(() => { equipSuggestionList.style.display = 'none'; }, 150); });
     }
 }
 
@@ -873,6 +945,9 @@ function renderAdminItemList() {
 
     filteredItems.forEach(item => {
         const li = document.createElement('li');
+        if (currentAdminItemId === item.id) {
+            li.classList.add('active');
+        }
         li.innerHTML = `
             <div class="model-col col-item-type">
                 <span class="badge ${item.type.toLowerCase()}">${item.type}</span>
@@ -892,6 +967,16 @@ function renderAdminItemList() {
             </div>
         `;
 
+        li.addEventListener('click', () => {
+            if (li.classList.contains('editing')) return;
+            
+            currentAdminItemId = item.id;
+            list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
+            li.classList.add('active');
+            
+            loadItemDetail(item);
+        });
+
         const editBtn = li.querySelector('.btn-edit-item');
         const deleteBtn = li.querySelector('.btn-delete-item');
 
@@ -901,6 +986,13 @@ function renderAdminItemList() {
             adminItems = adminItems.filter(i => i.id !== item.id);
             saveAdminItems();
             addSystemLog('DELETE_ITEM_ADMIN', item.part);
+            
+            if (currentAdminItemId === item.id) {
+                currentAdminItemId = null;
+                document.getElementById('admin-item-form').style.display = 'none';
+                document.getElementById('admin-item-placeholder').style.display = 'flex';
+            }
+            
             renderAdminItemList();
         });
 
@@ -949,6 +1041,64 @@ function renderAdminItemList() {
 
         list.appendChild(li);
     });
+}
+
+function loadItemDetail(item) {
+    const form = document.getElementById('admin-item-form');
+    const placeholder = document.getElementById('admin-item-placeholder');
+    
+    if (form) form.style.display = 'block';
+    if (placeholder) placeholder.style.display = 'none';
+
+    document.getElementById('item-info-type').value = item.type || 'PM';
+    document.getElementById('item-info-part').value = item.part || '';
+    document.getElementById('item-info-spec').value = item.spec || '';
+    document.getElementById('item-info-cycle').value = item.cycle || '';
+    document.getElementById('item-info-code').value = item.code || '';
+    document.getElementById('item-info-partno').value = item.partno || '';
+    document.getElementById('item-info-equip').value = item.equip || '';
+}
+
+function handleItemDetailSave() {
+    if (!currentAdminItemId) return;
+    
+    const type = document.getElementById('item-info-type').value;
+    const part = document.getElementById('item-info-part').value.trim();
+    const spec = document.getElementById('item-info-spec').value.trim();
+    const cycle = document.getElementById('item-info-cycle').value.trim();
+    const code = document.getElementById('item-info-code').value.trim();
+    const partno = document.getElementById('item-info-partno').value.trim();
+    const equip = document.getElementById('item-info-equip').value.trim();
+
+    if (!part) return alert('교체(수리) 파츠 명을 입력해주세요.');
+
+    const idx = adminItems.findIndex(i => i.id === currentAdminItemId);
+    if (idx > -1) {
+        adminItems[idx] = { ...adminItems[idx], type, part, spec, cycle, code, partno, equip };
+        saveAdminItems();
+        addSystemLog('UPDATE_ITEM_ADMIN_DETAIL', part, `Type: ${type}, Code: ${code}`);
+        alert('물품 정보가 저장되었습니다.');
+        renderAdminItemList();
+    }
+}
+
+function handleItemDetailDelete() {
+    if (!currentAdminItemId) return;
+    
+    const item = adminItems.find(i => i.id === currentAdminItemId);
+    if (!item) return;
+
+    if (!confirm(`'${item.part}' 물품을 삭제하시겠습니까?`)) return;
+
+    adminItems = adminItems.filter(i => i.id !== currentAdminItemId);
+    saveAdminItems();
+    addSystemLog('DELETE_ITEM_ADMIN', item.part);
+    
+    currentAdminItemId = null;
+    document.getElementById('admin-item-form').style.display = 'none';
+    document.getElementById('admin-item-placeholder').style.display = 'flex';
+    
+    renderAdminItemList();
 }
 
 // [추가] 초기화 시 장비 관리 이벤트 등록
