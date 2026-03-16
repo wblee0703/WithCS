@@ -493,7 +493,21 @@
                 "worker": "이원배"
             }
         ],
-        "maint": []
+        "maint": [],
+        "setup": {
+            "model": "SOMA-EK24-0401",
+            "building": "",
+            "detailLoc": "",
+            "custEquipName": "",
+            "floor": "",
+            "manager": "",
+            "contact": "",
+            "email": "",
+            "custManager": "",
+            "custContact": "",
+            "custEmail": ""
+        },
+        "specialNote": ""
     },
     "details_ENF 아산_SOMA-3000E::SOMA-EK24-0402": {
         "logs": [
