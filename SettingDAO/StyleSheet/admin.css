@@ -289,3 +289,76 @@
 #admin-menu-list li:hover:not(.active) {
     background: #21262d;
 }
+
+/* ==========================================================================
+   물품 관리 (Item Management) 전용 스타일
+   ========================================================================== */
+.admin-item-list-container {
+    flex: 1;
+    max-width: 800px;
+    border-right: none;
+    padding-right: 0;
+}
+
+/* 각 컬럼별 비율 및 정렬 */
+.col-item-type {
+    flex: 1.5;
+    justify-content: center;
+    text-align: center;
+}
+
+.col-item-part {
+    flex: 4;
+    justify-content: flex-start;
+    padding-left: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.col-item-cycle {
+    flex: 1.5;
+    justify-content: center;
+    text-align: center;
+}
+
+.col-item-actions {
+    flex: 1;
+    justify-content: center;
+}
+
+/* 입력창 비율 및 텍스트 정렬 */
+.input-item-type {
+    flex: 1.5;
+    text-align: center;
+    border-radius: 4px;
+}
+
+.input-item-part {
+    flex: 4;
+    padding-left: 10px;
+}
+
+.input-item-cycle {
+    flex: 1.5;
+    text-align: center;
+}
+
+/* 입력창 높이 및 정렬 그룹 */
+.item-footer-input {
+    height: 35px;
+}
+
+.item-edit-input {
+    height: 30px;
+    width: 100%;
+}
+
+.admin-flex-row {
+    display: flex;
+    gap: 5px;
+}
+
+.mt-10 {
+    margin-top: 10px;
+}

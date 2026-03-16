@@ -853,16 +853,16 @@ function renderAdminItemList() {
     adminItems.forEach(item => {
         const li = document.createElement('li');
         li.innerHTML = `
-            <div class="model-col" style="flex: 1.5; justify-content: center; text-align: center;">
+            <div class="model-col col-item-type">
                 <span class="badge ${item.type.toLowerCase()}">${item.type}</span>
             </div>
-            <div class="model-col" style="flex: 4; justify-content: flex-start; padding-left: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            <div class="model-col col-item-part">
                 ${item.part}
             </div>
-            <div class="model-col" style="flex: 1.5; justify-content: center; text-align: center;">
+            <div class="model-col col-item-cycle">
                 ${item.cycle ? item.cycle + '일' : '-'}
             </div>
-            <div class="model-col model-actions-col" style="flex: 1; justify-content: center;">
+            <div class="model-col model-actions-col col-item-actions">
                 <button class="btn-edit-sm btn-edit-item">✏️</button>
                 <button class="btn-del-sm btn-delete-item">✕</button>
             </div>
@@ -894,14 +894,14 @@ function renderAdminItemList() {
                 const cycleCol = li.children[2];
                 
                 typeCol.innerHTML = `
-                    <select class="input-dark compact-select" style="width: 100%; text-align: center; height: 30px; border-radius: 4px;">
+                    <select class="input-dark compact-select input-item-type item-edit-input">
                         <option value="PM" ${item.type === 'PM' ? 'selected' : ''}>PM</option>
                         <option value="BM" ${item.type === 'BM' ? 'selected' : ''}>BM</option>
                         <option value="기타" ${item.type === '기타' ? 'selected' : ''}>기타</option>
                     </select>
                 `;
-                partCol.innerHTML = `<input type="text" class="input-dark" value="${item.part}" style="width: 100%; height: 30px; padding-left: 5px;">`;
-                cycleCol.innerHTML = `<input type="number" class="input-dark" value="${item.cycle || ''}" style="width: 100%; height: 30px; text-align: center;">`;
+                partCol.innerHTML = `<input type="text" class="input-dark input-item-part item-edit-input" value="${item.part}">`;
+                cycleCol.innerHTML = `<input type="number" class="input-dark input-item-cycle item-edit-input" value="${item.cycle || ''}">`;
             } else {
                 const newType = li.children[0].querySelector('select').value.trim();
                 const newPart = li.children[1].querySelector('input').value.trim();
