@@ -88,5 +88,11 @@
         "action": "ADD_CHECK_CATEGORY",
         "target": "SOMA-2000::SOMA-HC21-0101",
         "details": "분류 추가: 정기 > PM"
+    },
+    {
+        "timestamp": "2026-03-16T02:21:46.914Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "NaVi-WF301",
+        "details": "Abbr: WF301"
     }
 ]

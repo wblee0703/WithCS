@@ -1380,6 +1380,23 @@ function renderCheckTypeSubCategoryList() {
     if (!currentCheckTypeEquipKey || !currentCheckTypeCategory) return;
     
     const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}`;
+    
+    // [추가] 점검 구분별 세부 구분 초기값 설정
+    const defaultSubCategories = {
+        '정기': ['PM'],
+        '비정기': ['BM', 'Alarm', 'Hunting', 'Data / Para 이상'],
+        '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타']
+    };
+
+    if (!checkTypeCategoriesData[key]) {
+        if (defaultSubCategories[currentCheckTypeCategory]) {
+            checkTypeCategoriesData[key] = [...defaultSubCategories[currentCheckTypeCategory]];
+            saveCheckTypeCategories();
+        } else {
+            checkTypeCategoriesData[key] = [];
+        }
+    }
+
     const categories = checkTypeCategoriesData[key] || [];
     
     categories.forEach((cat, index) => {
