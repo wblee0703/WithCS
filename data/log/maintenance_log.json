@@ -76,5 +76,11 @@
         "details": "분류 추가: 비정기 > Data / Para 이상",
         "target": "SOMA-3000E::SOMA-EK24-0401",
         "timestamp": "2026-03-16T02:05:54.467Z"
+    },
+    {
+        "timestamp": "2026-03-16T02:15:57.700Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Multi Standard Solution",
+        "details": "Type: PM, Code: "
     }
 ]
