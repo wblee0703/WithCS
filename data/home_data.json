@@ -35,6 +35,10 @@
             "abbr": "WF301"
         },
         {
+            "name": "proFAST 100",
+            "abbr": "PROFAST100"
+        },
+        {
             "abbr": "SOMA-2000",
             "name": "SOMA-2000"
         },
@@ -43,8 +47,8 @@
             "name": "WIM-100"
         },
         {
-            "name": "proFAST 100",
-            "abbr": "PROFAST100"
+            "name": "proFAST 2000",
+            "abbr": "PROFAST2000"
         }
     ]
 }
