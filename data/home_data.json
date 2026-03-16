@@ -55,12 +55,12 @@
             "abbr": "ST100"
         },
         {
-            "name": "NaVi-TM(MG200H-1)",
-            "abbr": "TM(MG1)"
+            "name": "NaVi-TM(MG200H-2)",
+            "abbr": "TM(MG2)"
         },
         {
-            "name": "NaVi-TM(MG2)",
-            "abbr": "MG200H-2"
+            "name": "NaVi-TM(MG200H-1)",
+            "abbr": "TM(MG1)"
         },
         {
             "name": "NaVi-TM(WF)",
