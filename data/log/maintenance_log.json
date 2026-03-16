@@ -94,5 +94,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "NaVi-WF301",
         "details": "Abbr: WF301"
+    },
+    {
+        "timestamp": "2026-03-16T02:21:55.208Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "NaVi-MG200",
+        "details": "Abbr: MG200"
     }
 ]

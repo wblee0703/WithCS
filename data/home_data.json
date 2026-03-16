@@ -19,6 +19,10 @@
             "name": "COSMOS-100N"
         },
         {
+            "name": "NaVi-WF301",
+            "abbr": "WF301"
+        },
+        {
             "abbr": "SOMA-2000",
             "name": "SOMA-2000"
         },
@@ -27,8 +31,8 @@
             "name": "WIM-100"
         },
         {
-            "name": "NaVi-WF301",
-            "abbr": "WF301"
+            "name": "NaVi-MG200",
+            "abbr": "MG200"
         }
     ]
 }
