@@ -31,6 +31,10 @@
             "abbr": "SM301"
         },
         {
+            "name": "NaVi-ST100",
+            "abbr": "ST100"
+        },
+        {
             "name": "NaVi-WF301",
             "abbr": "WF301"
         },
@@ -55,8 +59,8 @@
             "name": "WIM-100"
         },
         {
-            "name": "NaVi-ST100",
-            "abbr": "ST100"
+            "name": "WiDGA-100",
+            "abbr": "WiDGA"
         }
     ]
 }
