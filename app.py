@@ -415,19 +415,24 @@ def save_data(full_data):
         home_data.clear()
         home_data['user_accounts'] = existing_accounts
 
+        existing_device = load_json_file(FILE_DEVICE)
+        existing_item = load_json_file(FILE_ITEM)
+        existing_mgmt = load_json_file(FILE_MANAGEMENT)
+
         # 각 저장소 컨테이너 초기화
         setup_data = {}
         maintenance_data = {}
         withtech_data = {}
+         # [수정] 프론트엔드에서 데이터가 누락되어 도착했을 경우를 대비한 방어 코드 (기존 데이터 유지)
         device_data = {
-            "models": full_data.get('equipment_models', []),
-            "equipments": full_data.get('withtech_data', {}),
+            "models": full_data.get('equipment_models', existing_device.get('models', [])),
+            "equipments": full_data.get('withtech_data', existing_device.get('equipments', {})),
             "details": {}
         }
-        item_data = full_data.get('admin_items', [])
+        item_data = full_data.get('admin_items', existing_item if isinstance(existing_item, list) else [])
         management_data = {
-            "categories": full_data.get('check_type_categories', {}),
-            "items": full_data.get('check_type_items', {})
+            "categories": full_data.get('check_type_categories', existing_mgmt.get('categories', {})),
+            "items": full_data.get('check_type_items', existing_mgmt.get('items', {}))
         }
         
         common_logs_list = []

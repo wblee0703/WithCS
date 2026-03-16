@@ -36,7 +36,16 @@ const originalSetItem = localStorage.setItem;
 const originalRemoveItem = localStorage.removeItem;
 let syncDebounceTimer = null;
 
+// [추가] 동기화 대상 키 목록 정의 (데이터 분리 구조 완벽 대응)
+const SYNC_KEYS = ['withtech_data', 'system_logs', 'setup_data', 'equipment_models', 'admin_items', 'check_type_categories', 'check_type_items'];
+
+function shouldSyncKey(key) {
+    return SYNC_KEYS.includes(key) || key.startsWith('details_');
+}
+
 function saveAllToServer() {
+    if (!window.isDataLoaded) return; // [핵심 방어] 서버 데이터 로드 전에는 기존 로컬 데이터가 서버를 덮어쓰는 것을 원천 차단!
+
     // 연속된 호출 시 이전 타이머 취소 (과도한 요청 방지)
     if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
 
@@ -45,7 +54,7 @@ function saveAllToServer() {
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             // 동기화할 키 필터링
-            if (key === 'withtech_data' || key.startsWith('details_') || key === 'system_logs' || key === 'setup_data' || key === 'equipment_models') {
+            if (shouldSyncKey(key)) {
                 try {
                     allData[key] = JSON.parse(localStorage.getItem(key));
                 } catch (e) {
@@ -67,14 +76,14 @@ function saveAllToServer() {
 
 localStorage.setItem = function(key, value) {
     originalSetItem.call(this, key, value);
-    if (key === 'withtech_data' || key.startsWith('details_') || key === 'system_logs' || key === 'setup_data' || key === 'equipment_models') {
+    if (shouldSyncKey(key)) {
         saveAllToServer();
     }
 };
 
 localStorage.removeItem = function(key) {
     originalRemoveItem.call(this, key);
-    if (key === 'withtech_data' || key.startsWith('details_') || key === 'system_logs' || key === 'setup_data' || key === 'equipment_models') {
+    if (shouldSyncKey(key)) {
         saveAllToServer();
     }
 };
@@ -87,6 +96,8 @@ function saveData() {
    2. 초기화 및 이벤트 리스너 (Initialization)
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
+    window.isDataLoaded = false; // 명시적 초기화
+
     // [변경] 1. 앱 초기화 즉시 실행 (UI 반응성 향상 - 버벅임 제거)
     // 로컬 스토리지에 캐시된 데이터를 사용하여 즉시 화면을 구성합니다.
     initializeApp();
@@ -105,7 +116,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const keysToRemove = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key === 'withtech_data' || key.startsWith('details_') || key === 'setup_data' || key === 'system_logs' || key === 'equipment_models') {
+                if (shouldSyncKey(key)) {
                     keysToRemove.push(key);
                 }
             }
@@ -118,11 +129,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // [수정] 전역 변수 갱신 (초기 로드 시 데이터 누락 방지)
             storageData = JSON.parse(localStorage.getItem('withtech_data')) || {};
             
+            // [중요] 데이터 로드 완료 상태로 변경 (이제부터 saveAllToServer 작동 허용)
+            window.isDataLoaded = true;
+
             // [추가] 데이터 갱신 후 UI 리프레시 (화면 깜빡임 없이 데이터만 최신화)
             refreshAppViews();
             
-            // [중요] 데이터 로드 완료 이벤트 발생
-            window.isDataLoaded = true;
             window.dispatchEvent(new Event('DataLoaded'));
         })
         .catch(err => {
@@ -1397,11 +1409,9 @@ function checkUnsavedChanges() {
    ========================================================================== */
 function exportData() {
     const allData = {};
-    const mainData = localStorage.getItem('withtech_data');
-    if (mainData) allData['withtech_data'] = JSON.parse(mainData);
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
-        if (key.startsWith('details_') || key === 'setup_data') allData[key] = JSON.parse(localStorage.getItem(key));
+        if (shouldSyncKey(key)) allData[key] = JSON.parse(localStorage.getItem(key));
     }
     const blob = new Blob([JSON.stringify(allData, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -1430,7 +1440,7 @@ function importData(event) {
             const keysToRemove = [];
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key === 'withtech_data' || key.startsWith('details_') || key === 'setup_data' || key === 'system_logs') {
+                if (shouldSyncKey(key)) {
                     keysToRemove.push(key);
                 }
             }
@@ -1438,7 +1448,7 @@ function importData(event) {
 
             // 1. LocalStorage 업데이트 (불러온 데이터로 채움)
             Object.keys(importedData).forEach(key => {
-                if (key === 'withtech_data' || key.startsWith('details_') || key === 'setup_data' || key === 'system_logs') {
+                if (shouldSyncKey(key)) {
                     originalSetItem.call(localStorage, key, JSON.stringify(importedData[key]));
                 }
             });
@@ -1452,7 +1462,7 @@ function importData(event) {
             const allData = {};
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
-                if (key === 'withtech_data' || key.startsWith('details_') || key === 'system_logs' || key === 'setup_data') {
+                if (shouldSyncKey(key)) {
                     try { allData[key] = JSON.parse(localStorage.getItem(key)); } 
                     catch (e) { allData[key] = localStorage.getItem(key); }
                 }
