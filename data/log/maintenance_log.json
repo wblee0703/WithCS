@@ -262,5 +262,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "NaVi-TM(WOA-683)",
         "details": "Abbr: TM(WOA)"
+    },
+    {
+        "timestamp": "2026-03-16T02:28:48.181Z",
+        "action": "UPDATE_EQUIP_MODEL",
+        "target": "NaVi-TM(MG1)",
+        "details": "To: NaVi-TM(MG200H-1) / TM(MG1)"
     }
 ]
