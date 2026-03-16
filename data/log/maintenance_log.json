@@ -24,9 +24,9 @@
         "timestamp": "2026-03-16T07:59:08.939Z"
     },
     {
-        "timestamp": "2026-03-16T23:42:01.377Z",
         "action": "ADD_LOG",
+        "details": "[정기 - PM] Stadnard (작업자: 이원배, 날짜: 2026-03-16)",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "[정기 - PM] Stadnard (작업자: 이원배, 날짜: 2026-03-16)"
+        "timestamp": "2026-03-16T23:42:01.377Z"
     }
 ]
