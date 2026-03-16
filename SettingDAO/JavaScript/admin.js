@@ -863,12 +863,14 @@ function setupItemMgmt() {
     if (btnDelDetail) btnDelDetail.addEventListener('click', handleItemDetailDelete);
 
     // 장비 모델 제안 박스 설정
-    const equipInput = document.getElementById('item-info-equip');
+    const equipSearchInput = document.getElementById('item-info-equip-search');
+    const equipHiddenInput = document.getElementById('item-info-equip');
     const equipSuggestionList = document.getElementById('item-equip-suggestions');
 
-    if (equipInput && equipSuggestionList) {
+    if (equipSearchInput && equipSuggestionList) {
         const handleEquipInput = () => {
-            const query = equipInput.value.trim().toLowerCase();
+            const query = equipSearchInput.value.trim().toLowerCase();
+            
             const keywords = query ? query.split(/\s+/) : [];
             const matches = query
                 ? equipmentModels.filter(m => {
@@ -880,6 +882,7 @@ function setupItemMgmt() {
             equipSuggestionList.innerHTML = '';
             
             if (matches.length > 0) {
+                const currentEquips = equipHiddenInput.value ? equipHiddenInput.value.split(',').map(e => e.trim()).filter(e => e) : [];
                 matches.forEach(m => {
                     const li = document.createElement('li');
                     li.className = 'suggestion-item';
@@ -892,8 +895,14 @@ function setupItemMgmt() {
                     
                     li.addEventListener('mousedown', (e) => {
                         e.preventDefault();
-                        equipInput.value = m.name;
+                        if (!currentEquips.includes(m.name)) {
+                            currentEquips.push(m.name);
+                            equipHiddenInput.value = currentEquips.join(', ');
+                            renderEquipTags();
+                        }
+                        equipSearchInput.value = ''; // 검색어 초기화
                         equipSuggestionList.style.display = 'none';
+                        equipSearchInput.focus(); // 계속 입력할 수 있도록 포커스 유지
                     });
                     equipSuggestionList.appendChild(li);
                 });
@@ -903,9 +912,15 @@ function setupItemMgmt() {
             }
         };
 
-        equipInput.addEventListener('input', handleEquipInput);
-        equipInput.addEventListener('focus', handleEquipInput);
-        equipInput.addEventListener('blur', () => { setTimeout(() => { equipSuggestionList.style.display = 'none'; }, 150); });
+        equipSearchInput.addEventListener('input', handleEquipInput);
+        equipSearchInput.addEventListener('focus', handleEquipInput);
+        // 포커스를 잃으면 제안 리스트를 숨기고, 입력 중이던 쓸모없는 텍스트 지우기
+        equipSearchInput.addEventListener('blur', () => { setTimeout(() => { equipSuggestionList.style.display = 'none'; equipSearchInput.value = ''; }, 150); });
+        
+        // 엔터키 입력 방지 (폼 서밋 방지)
+        equipSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') e.preventDefault();
+        });
     }
 }
 
@@ -1043,6 +1058,29 @@ function renderAdminItemList() {
     });
 }
 
+// [추가] 장비 태그 렌더링 함수
+function renderEquipTags() {
+    const equipHiddenInput = document.getElementById('item-info-equip');
+    const equipTagsContainer = document.getElementById('item-equip-tags');
+    if (!equipHiddenInput || !equipTagsContainer) return;
+
+    equipTagsContainer.innerHTML = '';
+    const currentEquips = equipHiddenInput.value ? equipHiddenInput.value.split(',').map(e => e.trim()).filter(e => e) : [];
+    
+    currentEquips.forEach(equip => {
+        const tag = document.createElement('div');
+        tag.className = 'tag-item';
+        tag.innerHTML = `<span>${equip}</span><span class="tag-remove" title="삭제">✕</span>`;
+        tag.querySelector('.tag-remove').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const newEquips = currentEquips.filter(e => e !== equip);
+            equipHiddenInput.value = newEquips.join(', ');
+            renderEquipTags();
+        });
+        equipTagsContainer.appendChild(tag);
+    });
+}
+
 function loadItemDetail(item) {
     const form = document.getElementById('admin-item-form');
     const placeholder = document.getElementById('admin-item-placeholder');
@@ -1057,6 +1095,9 @@ function loadItemDetail(item) {
     document.getElementById('item-info-code').value = item.code || '';
     document.getElementById('item-info-partno').value = item.partno || '';
     document.getElementById('item-info-equip').value = item.equip || '';
+    document.getElementById('item-info-equip-search').value = ''; // 검색창 초기화
+    
+    renderEquipTags(); // 기존 저장된 장비 데이터들을 태그로 변환하여 표시
 }
 
 function handleItemDetailSave() {
@@ -1068,7 +1109,8 @@ function handleItemDetailSave() {
     const cycle = document.getElementById('item-info-cycle').value.trim();
     const code = document.getElementById('item-info-code').value.trim();
     const partno = document.getElementById('item-info-partno').value.trim();
-    const equip = document.getElementById('item-info-equip').value.trim();
+    const equipRaw = document.getElementById('item-info-equip').value;
+    const equip = equipRaw.split(',').map(e => e.trim()).filter(e => e).join(', '); // 불필요한 빈칸 및 쉼표 제거
 
     if (!part) return alert('교체(수리) 파츠 명을 입력해주세요.');
 
