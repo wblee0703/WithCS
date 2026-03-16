@@ -286,5 +286,11 @@
         "details": "항목 추가: [PM] Multi Standard Solution",
         "target": "SOMA-2000::SOMA-H19-0903",
         "timestamp": "2026-03-16T02:53:48.883Z"
+    },
+    {
+        "timestamp": "2026-03-16T03:31:38.435Z",
+        "action": "DELETE_ITEM_ADMIN",
+        "target": "고객 대응",
+        "details": ""
     }
 ]
