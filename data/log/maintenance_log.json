@@ -172,5 +172,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "MAX-7sx",
         "details": "Abbr: MAX-7sx"
+    },
+    {
+        "timestamp": "2026-03-16T02:23:52.526Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "SKHCEA-100",
+        "details": "Abbr: SKHCEA-100"
     }
 ]

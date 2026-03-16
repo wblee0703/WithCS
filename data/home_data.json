@@ -23,6 +23,10 @@
             "abbr": "IAM7000"
         },
         {
+            "name": "MAX-7sx",
+            "abbr": "MAX-7sx"
+        },
+        {
             "name": "NaVi-EM201",
             "abbr": "EM201"
         },
@@ -79,8 +83,8 @@
             "abbr": "WOA683"
         },
         {
-            "name": "MAX-7sx",
-            "abbr": "MAX-7sx"
+            "name": "SKHCEA-100",
+            "abbr": "SKHCEA-100"
         }
     ]
 }
