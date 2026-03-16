@@ -220,5 +220,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "COSMOS-400",
         "details": "Abbr: COSMOS 400"
+    },
+    {
+        "timestamp": "2026-03-16T02:25:34.870Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "PAMS-300S",
+        "details": "Abbr: PAMS(P)"
     }
 ]
