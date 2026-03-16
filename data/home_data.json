@@ -43,6 +43,10 @@
             "abbr": "OMS100"
         },
         {
+            "name": "OWIC",
+            "abbr": "OWIC"
+        },
+        {
             "name": "proFAST 100",
             "abbr": "PROFAST100"
         },
@@ -67,8 +71,8 @@
             "abbr": "WOA683"
         },
         {
-            "name": "OWIC",
-            "abbr": "OWIC"
+            "name": "PGA-C10",
+            "abbr": "PGA-C10"
         }
     ]
 }
