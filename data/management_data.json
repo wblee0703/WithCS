@@ -3,15 +3,6 @@
         "SOLA-1000::정기": [
             "PM"
         ],
-        "SOMA-3000E::SOMA-EK24-0401::비정기": [
-            "BM",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
-        ],
-        "SOMA-3000E::SOMA-EK24-0401::정기": [
-            "PM"
-        ],
         "SOMA-3000E::SOMA-EK24-0401::고객대응": [
             "순회 점검",
             "프로그램 변경 / 평가",
@@ -24,11 +15,20 @@
             "Cal 보정",
             "기타"
         ],
-        "SOMA-3000E::SOMA-EK24-0401::용액제조": [
-            "용액제조"
+        "SOMA-3000E::SOMA-EK24-0401::비정기": [
+            "BM",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
         ],
         "SOMA-3000E::SOMA-EK24-0401::온라인 점검": [
             "온라인 점검"
+        ],
+        "SOMA-3000E::SOMA-EK24-0401::용액제조": [
+            "용액제조"
+        ],
+        "SOMA-3000E::SOMA-EK24-0401::정기": [
+            "PM"
         ],
         "SOMA-3000E::SOMA-EK24-0402::고객대응": [
             "순회 점검",
@@ -48,23 +48,11 @@
             "Hunting",
             "Data / Para 이상"
         ],
-        "SOMA-3000E::SOMA-EK24-0402::용액제조": [
-            "용액제조"
-        ],
         "SOMA-3000E::SOMA-EK24-0402::온라인 점검": [
             "온라인 점검"
         ],
-        "SOMA-3000E::SOMA-EK24-0403::온라인 점검": [
-            "온라인 점검"
-        ],
-        "SOMA-3000E::SOMA-EK24-0403::용액제조": [
+        "SOMA-3000E::SOMA-EK24-0402::용액제조": [
             "용액제조"
-        ],
-        "SOMA-3000E::SOMA-EK24-0403::비정기": [
-            "BM",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
         ],
         "SOMA-3000E::SOMA-EK24-0403::고객대응": [
             "순회 점검",
@@ -77,22 +65,38 @@
             "설비 개조",
             "Cal 보정",
             "기타"
+        ],
+        "SOMA-3000E::SOMA-EK24-0403::비정기": [
+            "BM",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
+        "SOMA-3000E::SOMA-EK24-0403::온라인 점검": [
+            "온라인 점검"
+        ],
+        "SOMA-3000E::SOMA-EK24-0403::용액제조": [
+            "용액제조"
+        ],
+        "SOMA-3000E::SOMA-EK24-0402::정기": [
+            "PM"
         ]
     },
     "items": {
         "SOMA-3000E::SOMA-EK24-0401::비정기::Alarm": [],
-        "SOMA-3000E::SOMA-EK24-0401::비정기::Hunting": [],
-        "SOMA-3000E::SOMA-EK24-0401::정기::PM": [],
-        "SOMA-3000E::SOMA-EK24-0401::비정기::Data / Para 이상": [],
         "SOMA-3000E::SOMA-EK24-0401::비정기::BM": [],
+        "SOMA-3000E::SOMA-EK24-0401::비정기::Data / Para 이상": [],
+        "SOMA-3000E::SOMA-EK24-0401::비정기::Hunting": [],
         "SOMA-3000E::SOMA-EK24-0401::온라인 점검::온라인 점검": [],
         "SOMA-3000E::SOMA-EK24-0401::용액제조::용액제조": [],
+        "SOMA-3000E::SOMA-EK24-0401::정기::PM": [],
         "SOMA-3000E::SOMA-EK24-0402::비정기::Hunting": [],
         "SOMA-3000E::SOMA-EK24-0402::용액제조::용액제조": [],
-        "SOMA-3000E::SOMA-EK24-0403::용액제조::용액제조": [],
         "SOMA-3000E::SOMA-EK24-0403::고객대응::설비 평가": [],
-        "SOMA-3000E::SOMA-EK24-0403::비정기::Hunting": [],
+        "SOMA-3000E::SOMA-EK24-0403::비정기::Alarm": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::Data / Para 이상": [],
-        "SOMA-3000E::SOMA-EK24-0403::비정기::Alarm": []
+        "SOMA-3000E::SOMA-EK24-0403::비정기::Hunting": [],
+        "SOMA-3000E::SOMA-EK24-0403::용액제조::용액제조": [],
+        "SOMA-3000E::SOMA-EK24-0402::정기::PM": []
     }
 }
