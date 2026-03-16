@@ -92,7 +92,12 @@
         ]
     },
     "items": {
-        "SOMA-3000E::SOMA-EK24-0401::비정기::Alarm": [],
+        "SOMA-3000E::SOMA-EK24-0401::비정기::Alarm": [
+            {
+                "id": 1773646381561,
+                "content": "interlock"
+            }
+        ],
         "SOMA-3000E::SOMA-EK24-0401::비정기::BM": [],
         "SOMA-3000E::SOMA-EK24-0401::비정기::Data / Para 이상": [],
         "SOMA-3000E::SOMA-EK24-0401::비정기::Hunting": [],
