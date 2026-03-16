@@ -17,13 +17,21 @@ let checkTypeCategoriesData = {}; // [추가] 분류 저장소
 let checkTypeItemsData = {}; // [추가] 세부 항목 저장소
 
 document.addEventListener('DOMContentLoaded', () => {
-    setupAdminMenu();
-    setupSiteMgmt();
-    setupEquipModelMgmt();
-    setupItemMgmt();
-    
-    // [추가] 모든 설정 완료 후 마지막 작업 탭 복원
-    restoreLastAdminSection();
+    const initAdmin = () => {
+        setupAdminMenu();
+        setupSiteMgmt();
+        setupEquipModelMgmt();
+        setupItemMgmt();
+        
+        // 모든 설정 완료 후 마지막 작업 탭 복원
+        restoreLastAdminSection();
+    };
+
+    if (window.isDataLoaded) {
+        initAdmin();
+    } else {
+        window.addEventListener('DataLoaded', initAdmin);
+    }
 });
 
 // 사이드바 메뉴 탭 전환 기능

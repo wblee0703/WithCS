@@ -26,16 +26,23 @@ if (typeof window.escapeHtml !== 'function') {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    setupMaintenanceEvents();
-    setupLogEvents();
-    setupUIEvents();
-    setupSpecialNoteEvents();
-    setupPageProtection();
-    setupFileEvents(); // [추가] 파일 이벤트 초기화
+    const initMaint = () => {
+        setupMaintenanceEvents();
+        setupLogEvents();
+        setupUIEvents();
+        setupSpecialNoteEvents();
+        setupPageProtection();
+        setupFileEvents(); // 파일 이벤트 초기화
 
-    // 모달 초기화
-    setupMaintLoadListModal();
-    // setupMaintLoadInfoModal(); // 필요 시 구현
+        // 모달 초기화
+        setupMaintLoadListModal();
+    };
+
+    if (window.isDataLoaded) {
+        initMaint();
+    } else {
+        window.addEventListener('DataLoaded', initMaint);
+    }
 });
 
 function setupMaintenanceEvents() {

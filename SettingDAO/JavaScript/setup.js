@@ -184,115 +184,123 @@ window.openMobileDatePicker = openMobileDatePicker;
    3. 초기화 및 이벤트 리스너 (Initialization & Events)
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. 모달 열기 버튼 이벤트 연결
-    const loadBtn = document.getElementById('btn-load-setup-list');
-    if (loadBtn) {
-        loadBtn.addEventListener('click', openSetupLoadListModal);
-    }
-
-    const loadInfoBtn = document.getElementById('btn-load-setup-info');
-    if (loadInfoBtn) {
-        loadInfoBtn.addEventListener('click', openSetupLoadInfoModal);
-    }
-
-    // 2. 셋업 일지 입력창 엔터키 이벤트 (업체, 작업자 입력 시 추가)
-    const logCompanyInput = document.getElementById('setup-log-company');
-    const logWorkerInput = document.getElementById('setup-log-worker');
-    if (logCompanyInput) logCompanyInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addSetupLogItem(); });
-    if (logWorkerInput) logWorkerInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addSetupLogItem(); });
-
-    // 3. 셋업 일지 메모 변경 감지 및 페이지 이탈 방지
-    const memoArea = document.getElementById('setup-log-detail-memo');
-    const logSaveBtn = document.getElementById('btn-save-setup-log-memo');
-    
-    if (memoArea && logSaveBtn) {
-        memoArea.addEventListener('input', () => {
-            if (memoArea.value !== originalSetupLogMemo) {
-                logSaveBtn.classList.remove('btn-green-sm');
-                logSaveBtn.classList.add('btn-orange-sm');
-            } else {
-                logSaveBtn.classList.remove('btn-orange-sm');
-                logSaveBtn.classList.add('btn-green-sm');
-            }
-        });
-
-        memoArea.addEventListener('click', () => {
-            if (selectedSetupLogId === null) {
-                alert('리스트를 먼저 선택해주세요.');
-                memoArea.blur(); // 포커스 해제하여 입력 방지
-            }
-        });
-    }
-
-    window.addEventListener('beforeunload', (e) => {
-        // 셋업 일지 메모 변경 확인
-        if (selectedSetupLogId !== null && document.getElementById('setup-log-detail-memo').value !== originalSetupLogMemo) {
-            e.preventDefault();
-            e.returnValue = '';
+    const initSetup = () => {
+        // 1. 모달 열기 버튼 이벤트 연결
+        const loadBtn = document.getElementById('btn-load-setup-list');
+        if (loadBtn) {
+            loadBtn.addEventListener('click', openSetupLoadListModal);
         }
-    });
 
-    // 4. 셋업 일지 날짜 필터 이벤트
-    const filterDateInput = document.getElementById('setup-log-filter-date');
-    if (filterDateInput) {
-        filterDateInput.addEventListener('input', renderSetupLogList);
-    }
-
-    // 5. 셋업 일지 작업 내용 선택 시 자동 입력
-    const logSelect = document.getElementById('setup-log-select');
-    if (logSelect) {
-        logSelect.addEventListener('change', (e) => {
-            const content = e.target.value;
-            if (!content || !currentPath.site || !currentPath.equip) return;
-
-            const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-            const equipKey = `${currentPath.site}::${currentPath.equip}`;
-            const data = setupData[equipKey] || {};
-            const details = data.setupDetails || [];
-            const item = details.find(d => d.content === content);
-
-            if (item) {
-                const dateInput = document.getElementById('setup-log-date');
-                const companyInput = document.getElementById('setup-log-company');
-                const workerInput = document.getElementById('setup-log-worker');
-                if (dateInput) dateInput.value = item.date || '';
-                if (companyInput) companyInput.value = '위드텍';
-                if (workerInput) workerInput.value = item.worker || '';
-            }
-        });
-    }
-
-    // 6. 셋업 진행 세부사항 리스트 드래그 앤 드롭
-    const detailBody = document.getElementById('setup-detail-body');
-    if (detailBody) {
-        detailBody.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const afterElement = getDragAfterElement(detailBody, e.clientY, 'tr:not(.dragging)');
-            const draggable = document.querySelector('.dragging');
-            if (draggable) {
-                if (afterElement == null) detailBody.appendChild(draggable);
-                else detailBody.insertBefore(draggable, afterElement);
-            }
-        });
-    }
-
-    // 7. 기타 초기화
-    setupSetupLogResizer();
-    setupSetupCompletionModal();
-    setupSetupExecStartModal();
-    setupSetupLoadListModal();
-    setupSetupLoadInfoModal();
-    setupSetupResetButton(); // [추가] 초기화 버튼 설정
-
-    // 8. 화면 크기 변경 감지 (모바일/데스크탑 뷰 전환 시 리스트 재렌더링)
-    let lastWidth = window.innerWidth;
-    window.addEventListener('resize', () => {
-        const currentWidth = window.innerWidth;
-        if ((lastWidth <= 950 && currentWidth > 950) || (lastWidth > 950 && currentWidth <= 950)) {
-            renderSetupDetailList();
+        const loadInfoBtn = document.getElementById('btn-load-setup-info');
+        if (loadInfoBtn) {
+            loadInfoBtn.addEventListener('click', openSetupLoadInfoModal);
         }
-        lastWidth = currentWidth;
-    });
+
+        // 2. 셋업 일지 입력창 엔터키 이벤트 (업체, 작업자 입력 시 추가)
+        const logCompanyInput = document.getElementById('setup-log-company');
+        const logWorkerInput = document.getElementById('setup-log-worker');
+        if (logCompanyInput) logCompanyInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addSetupLogItem(); });
+        if (logWorkerInput) logWorkerInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addSetupLogItem(); });
+
+        // 3. 셋업 일지 메모 변경 감지 및 페이지 이탈 방지
+        const memoArea = document.getElementById('setup-log-detail-memo');
+        const logSaveBtn = document.getElementById('btn-save-setup-log-memo');
+        
+        if (memoArea && logSaveBtn) {
+            memoArea.addEventListener('input', () => {
+                if (memoArea.value !== originalSetupLogMemo) {
+                    logSaveBtn.classList.remove('btn-green-sm');
+                    logSaveBtn.classList.add('btn-orange-sm');
+                } else {
+                    logSaveBtn.classList.remove('btn-orange-sm');
+                    logSaveBtn.classList.add('btn-green-sm');
+                }
+            });
+
+            memoArea.addEventListener('click', () => {
+                if (selectedSetupLogId === null) {
+                    alert('리스트를 먼저 선택해주세요.');
+                    memoArea.blur(); // 포커스 해제하여 입력 방지
+                }
+            });
+        }
+
+        window.addEventListener('beforeunload', (e) => {
+            // 셋업 일지 메모 변경 확인
+            if (selectedSetupLogId !== null && document.getElementById('setup-log-detail-memo').value !== originalSetupLogMemo) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        // 4. 셋업 일지 날짜 필터 이벤트
+        const filterDateInput = document.getElementById('setup-log-filter-date');
+        if (filterDateInput) {
+            filterDateInput.addEventListener('input', renderSetupLogList);
+        }
+
+        // 5. 셋업 일지 작업 내용 선택 시 자동 입력
+        const logSelect = document.getElementById('setup-log-select');
+        if (logSelect) {
+            logSelect.addEventListener('change', (e) => {
+                const content = e.target.value;
+                if (!content || !currentPath.site || !currentPath.equip) return;
+
+                const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+                const equipKey = `${currentPath.site}::${currentPath.equip}`;
+                const data = setupData[equipKey] || {};
+                const details = data.setupDetails || [];
+                const item = details.find(d => d.content === content);
+
+                if (item) {
+                    const dateInput = document.getElementById('setup-log-date');
+                    const companyInput = document.getElementById('setup-log-company');
+                    const workerInput = document.getElementById('setup-log-worker');
+                    if (dateInput) dateInput.value = item.date || '';
+                    if (companyInput) companyInput.value = '위드텍';
+                    if (workerInput) workerInput.value = item.worker || '';
+                }
+            });
+        }
+
+        // 6. 셋업 진행 세부사항 리스트 드래그 앤 드롭
+        const detailBody = document.getElementById('setup-detail-body');
+        if (detailBody) {
+            detailBody.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const afterElement = getDragAfterElement(detailBody, e.clientY, 'tr:not(.dragging)');
+                const draggable = document.querySelector('.dragging');
+                if (draggable) {
+                    if (afterElement == null) detailBody.appendChild(draggable);
+                    else detailBody.insertBefore(draggable, afterElement);
+                }
+            });
+        }
+
+        // 7. 기타 초기화
+        setupSetupLogResizer();
+        setupSetupCompletionModal();
+        setupSetupExecStartModal();
+        setupSetupLoadListModal();
+        setupSetupLoadInfoModal();
+        setupSetupResetButton(); 
+
+        // 8. 화면 크기 변경 감지 (모바일/데스크탑 뷰 전환 시 리스트 재렌더링)
+        let lastWidth = window.innerWidth;
+        window.addEventListener('resize', () => {
+            const currentWidth = window.innerWidth;
+            if ((lastWidth <= 950 && currentWidth > 950) || (lastWidth > 950 && currentWidth <= 950)) {
+                renderSetupDetailList();
+            }
+            lastWidth = currentWidth;
+        });
+    };
+
+    if (window.isDataLoaded) {
+        initSetup();
+    } else {
+        window.addEventListener('DataLoaded', initSetup);
+    }
 });
 
 function setupSetupLogResizer() {
