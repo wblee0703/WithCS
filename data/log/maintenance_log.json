@@ -166,5 +166,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "IAM7000",
         "details": "Abbr: IAM7000"
+    },
+    {
+        "timestamp": "2026-03-16T02:23:47.901Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "MAX-7sx",
+        "details": "Abbr: MAX-7sx"
     }
 ]

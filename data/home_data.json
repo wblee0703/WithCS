@@ -19,6 +19,10 @@
             "name": "COSMOS-100N"
         },
         {
+            "name": "IAM7000",
+            "abbr": "IAM7000"
+        },
+        {
             "name": "NaVi-EM201",
             "abbr": "EM201"
         },
@@ -75,8 +79,8 @@
             "abbr": "WOA683"
         },
         {
-            "name": "IAM7000",
-            "abbr": "IAM7000"
+            "name": "MAX-7sx",
+            "abbr": "MAX-7sx"
         }
     ]
 }
