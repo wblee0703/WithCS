@@ -1,23 +1,26 @@
 {
     "categories": {
-        "SOMA-3000E::SOMA-EK24-0401::정기": [
-            "PM"
-        ],
         "SOMA-3000E::SOMA-EK24-0401::비정기": [
             "BM",
             "Alarm",
             "Hunting",
             "Data / Para 이상"
+        ],
+        "SOMA-3000E::SOMA-EK24-0401::정기": [
+            "PM"
+        ],
+        "SOLA-1000::정기": [
+            "PM"
         ]
     },
     "items": {
-        "SOMA-3000E::SOMA-EK24-0401::정기::PM": [],
         "SOMA-3000E::SOMA-EK24-0401::비정기::Alarm": [
             {
-                "id": 1773643513669,
-                "content": "alarm"
+                "content": "alarm",
+                "id": 1773643513669
             }
         ],
-        "SOMA-3000E::SOMA-EK24-0401::비정기::Hunting": []
+        "SOMA-3000E::SOMA-EK24-0401::비정기::Hunting": [],
+        "SOMA-3000E::SOMA-EK24-0401::정기::PM": []
     }
 }

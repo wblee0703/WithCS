@@ -1,13 +1,13 @@
 [
     {
-        "id": 1773643498984,
-        "type": "PM",
-        "detailType": "",
-        "part": "Stadnard",
-        "spec": "Stadnard",
-        "cycle": "300",
         "code": "",
+        "cycle": "300",
+        "detailType": "",
+        "equip": "",
+        "id": 1773643498984,
+        "part": "Stadnard",
         "partno": "",
-        "equip": ""
+        "spec": "Stadnard",
+        "type": "PM"
     }
 ]
