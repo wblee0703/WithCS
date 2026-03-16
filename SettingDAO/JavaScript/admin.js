@@ -1217,7 +1217,6 @@ function setupCheckTypeMgmt() {
             }
             document.getElementById('check-type-detail-desc').textContent = `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' 세부 항목을 관리합니다.`;
             
-            updateCheckTypePartSelect();
             renderCheckTypeItemList();
         });
     }
@@ -1225,35 +1224,17 @@ function setupCheckTypeMgmt() {
     // [추가] 점검 세부 항목 추가 이벤트
     const btnAddItem = document.getElementById('btn-add-check-type-item');
     const inputContent = document.getElementById('check-type-item-content');
-    const selectPart = document.getElementById('check-type-item-part');
     
-    if (btnAddItem && inputContent && selectPart && selectSub) {
-        // [추가] PM/BM인 상태에서 교체 파츠 선택 시, 작업 세부 내용 자동 채움
-        selectPart.addEventListener('change', () => {
-            const subCat = selectSub.value;
-            if ((subCat === 'PM' || subCat === 'BM') && selectPart.value) {
-                if (!inputContent.value.trim()) {
-                    inputContent.value = selectPart.value;
-                }
-            }
-        });
-
+    if (btnAddItem && inputContent && selectSub) {
         btnAddItem.addEventListener('click', () => {
             if (!currentCheckTypeEquipKey || !currentCheckTypeCategory) return;
             
             let content = inputContent.value.trim();
-            const part = selectPart.value;
             const subCat = selectSub.value;
             
             if (!subCat) return alert('세부 구분을 선택해주세요.');
 
-            // [추가] PM, BM일 경우 내용이 비어있어도 파츠가 선택되었다면 파츠명으로 내용 대체
-            if ((subCat === 'PM' || subCat === 'BM') && !content && part) {
-                content = part;
-            }
-            
             if (!content) {
-                if (subCat === 'PM' || subCat === 'BM') return alert('작업 세부 내용을 입력하거나 교체 파츠를 선택해주세요.');
                 return alert('작업 세부 내용을 입력해주세요.');
             }
             
@@ -1262,15 +1243,13 @@ function setupCheckTypeMgmt() {
             
             checkTypeItemsData[key].push({
                 id: Date.now(),
-                content: content,
-                part: part
+                content: content
             });
             
             saveCheckTypeItems();
             addSystemLog('ADD_CHECK_ITEM', currentCheckTypeEquipKey, `항목 추가: [${subCat}] ${content}`);
             
             inputContent.value = '';
-            selectPart.value = '';
             
             if (currentCheckTypeSubCategory !== subCat) {
                 selectSub.value = subCat;
@@ -1469,7 +1448,6 @@ function renderCheckTypeSubCategoryList() {
             
             // [추가] 교체 파츠 목록 업데이트 및 리스트 렌더링
             updateCheckTypeSubCategoryDropdown();
-            updateCheckTypePartSelect();
             renderCheckTypeItemList();
         });
         
@@ -1518,32 +1496,6 @@ window.deleteCheckTypeSubCategory = function(key, index) {
     renderCheckTypeSubCategoryList();
 }
 
-function updateCheckTypePartSelect() {
-    const selectPart = document.getElementById('check-type-item-part');
-    if (!selectPart) return;
-    
-    selectPart.innerHTML = '<option value="">교체 파츠 (선택 안함)</option>';
-    
-    if (!currentCheckTypeEquipKey) return;
-    
-    // 선택된 장비의 모델명 추출
-    const equipName = currentCheckTypeEquipKey.split('::')[0];
-    
-    // 물품 관리 목록에서 해당 모델명이 포함된 물품들만 필터링
-    const matchedItems = adminItems.filter(item => {
-        if (!item.equip) return false;
-        const equips = item.equip.split(',').map(e => e.trim());
-        return equips.includes(equipName);
-    });
-    
-    matchedItems.forEach(item => {
-        const opt = document.createElement('option');
-        opt.value = item.part;
-        opt.textContent = item.part;
-        selectPart.appendChild(opt);
-    });
-}
-
 function renderCheckTypeItemList() {
     const list = document.getElementById('check-type-item-list');
     if (!list) return;
@@ -1564,15 +1516,13 @@ function renderCheckTypeItemList() {
         const li = document.createElement('li');
         li.style.display = 'flex';
         li.style.cursor = 'default';
+        li.style.fontSize = '12px';
         li.innerHTML = `
-            <div class="model-col" style="flex: 1; justify-content: center; color: #8b949e;">
+            <div class="model-col" style="flex: 1; justify-content: center; text-align: center; color: #8b949e;">
                 ${currentCheckTypeSubCategory}
             </div>
-            <div class="model-col" style="flex: 2; padding-left: 10px; white-space: normal; word-break: break-all;">
+            <div class="model-col" style="flex: 3; justify-content: center; text-align: center; white-space: normal; word-break: break-all;">
                 ${item.content}
-            </div>
-            <div class="model-col" style="flex: 1; justify-content: center; color: #58a6ff;">
-                ${item.part || '-'}
             </div>
             <div class="model-col" style="flex: 0 0 60px; justify-content: center;">
                 <button class="btn-del-sm" onclick="deleteCheckTypeItem('${key}', ${item.id})">✕</button>

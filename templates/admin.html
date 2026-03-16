@@ -185,7 +185,6 @@
                                 <select id="admin-item-type-input" class="input-dark compact-select input-item-type item-footer-input">
                                     <option value="PM">PM</option>
                                     <option value="BM">BM</option>
-                                    <option value="고객대응">고객대응</option>
                                 </select>
                                 <input type="text" id="admin-item-part-input" placeholder="물품명" class="input-dark input-item-part item-footer-input">
                                 <input type="text" id="admin-item-spec-input" placeholder="세부 규격" class="input-dark input-item-spec item-footer-input">
@@ -207,7 +206,6 @@
                                 <select id="item-info-type" class="input-dark full-width compact-select select-padding-md">
                                     <option value="PM">PM</option>
                                     <option value="BM">BM</option>
-                                    <option value="고객대응">고객대응</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -313,8 +311,7 @@
                         <div id="check-type-detail-container" class="admin-form-container" style="display:none; max-width: 100%;">
                             <div class="admin-list-header" style="margin-bottom: 0;">
                                 <div class="model-col" style="flex: 1; justify-content: center;">구분</div>
-                                <div class="model-col" style="flex: 2; padding-left: 10px;">작업 세부 내용</div>
-                                <div class="model-col" style="flex: 1; justify-content: center;">교체 파츠</div>
+                                <div class="model-col" style="flex: 3; justify-content: center;">작업 세부 내용</div>
                                 <div class="model-col" style="flex: 0 0 60px; justify-content: center;">기능</div>
                             </div>
                             <ul id="check-type-item-list" class="admin-list" style="border-top: none; border-top-left-radius: 0; border-top-right-radius: 0; max-height: 400px; margin-bottom: 15px;">
@@ -324,10 +321,7 @@
                                 <label style="margin-bottom: 5px;">신규 점검 항목 추가</label>
                                 <div style="display: flex; gap: 5px;">
                                     <select id="check-type-item-subcategory-select" class="input-dark" style="flex: 1; text-align: center; height: 35px; border-radius: 4px;"></select>
-                                    <input type="text" id="check-type-item-content" class="input-dark" style="flex: 2; padding-left: 10px; height: 35px;" placeholder="작업 세부 내용 입력">
-                                    <select id="check-type-item-part" class="input-dark" style="flex: 1; text-align: center; height: 35px; border-radius: 4px;">
-                                        <option value="">교체 파츠 (선택 안함)</option>
-                                    </select>
+                                    <input type="text" id="check-type-item-content" class="input-dark" style="flex: 3; padding-left: 10px; height: 35px;" placeholder="작업 세부 내용 입력">
                                     <button id="btn-add-check-type-item" class="btn-green-sm" style="width: 60px; height: 35px;">추가</button>
                                 </div>
                             </div>
