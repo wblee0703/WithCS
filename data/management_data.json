@@ -3,6 +3,15 @@
         "SOLA-1000::정기": [
             "PM"
         ],
+        "SOMA-2000::SOMA-HC21-0101::비정기": [
+            "BM",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
+        "SOMA-2000::SOMA-HC21-0101::정기": [
+            "PM"
+        ],
         "SOMA-3000E::SOMA-EK24-0401::고객대응": [
             "순회 점검",
             "프로그램 변경 / 평가",
@@ -80,22 +89,16 @@
         ],
         "SOMA-3000E::SOMA-EK24-0403::용액제조": [
             "용액제조"
-        ],
-        "SOMA-2000::SOMA-HC21-0101::정기": [
-            "PM"
-        ],
-        "SOMA-2000::SOMA-HC21-0101::비정기": [
-            "BM",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
         ]
     },
     "items": {
+        "SOMA-2000::SOMA-HC21-0101::비정기::Alarm": [],
+        "SOMA-2000::SOMA-HC21-0101::비정기::BM": [],
+        "SOMA-2000::SOMA-HC21-0101::정기::PM": [],
         "SOMA-3000E::SOMA-EK24-0401::비정기::Alarm": [
             {
-                "id": 1773646381561,
-                "content": "interlock"
+                "content": "interlock",
+                "id": 1773646381561
             }
         ],
         "SOMA-3000E::SOMA-EK24-0401::비정기::BM": [],
@@ -111,9 +114,6 @@
         "SOMA-3000E::SOMA-EK24-0403::비정기::Alarm": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::Data / Para 이상": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::Hunting": [],
-        "SOMA-3000E::SOMA-EK24-0403::용액제조::용액제조": [],
-        "SOMA-2000::SOMA-HC21-0101::정기::PM": [],
-        "SOMA-2000::SOMA-HC21-0101::비정기::BM": [],
-        "SOMA-2000::SOMA-HC21-0101::비정기::Alarm": []
+        "SOMA-3000E::SOMA-EK24-0403::용액제조::용액제조": []
     }
 }

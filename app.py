@@ -371,7 +371,7 @@ def load_data():
         device_file = load_json_file(FILE_DEVICE)
         if isinstance(device_file, dict):
             data['equipment_models'] = device_file.get('models', [])
-            data['withtech_data'] = device_file.get('equipments', {})
+            data['device_data'] = device_file.get('equipments', {})
             # device_data.json 내의 상세 정보(setup, specialNote)를 details_ 객체에 병합
             details_obj = device_file.get('details', {})
             for site_equip, info in details_obj.items():
@@ -393,12 +393,12 @@ def load_data():
             
         # [마이그레이션 호환성] 기존 withtech_data.json 이 남아있다면 병합 (초기 1회용)
         old_withtech_path = os.path.join(DATA_DIR, 'withtech_data.json')
-        if os.path.exists(old_withtech_path) and not data.get('withtech_data'):
+        if os.path.exists(old_withtech_path) and not data.get('device_data'):
             old_data = load_json_file(old_withtech_path)
             if isinstance(old_data, dict) and 'withtech_data' in old_data:
-                data['withtech_data'] = old_data['withtech_data']
+                data['device_data'] = old_data['withtech_data']
             else:
-                data['withtech_data'] = old_data
+                data['device_data'] = old_data
 
         # 4. 3개의 로그 파일을 읽어서 하나로 합침 (프론트엔드 호환성 유지)
         common_logs = load_json_file(FILE_COMMON_LOG)
@@ -440,9 +440,9 @@ def save_data(full_data):
         maintenance_data = {}
         withtech_data = {}
          # [수정] 프론트엔드에서 데이터가 누락되어 도착했을 경우를 대비한 방어 코드 (기존 데이터 유지)
-        device_data = {
+        device_json_data = {
             "models": full_data.get('equipment_models', existing_device.get('models', [])),
-            "equipments": full_data.get('withtech_data', existing_device.get('equipments', {})),
+            "equipments": full_data.get('device_data', existing_device.get('equipments', {})),
             "details": {}
         }
         item_data = full_data.get('admin_items', existing_item if isinstance(existing_item, list) else [])
@@ -487,11 +487,11 @@ def save_data(full_data):
                 maintenance_data[key]['files'] = value.get('files', [])
                 
                 # device_data.json 에는 장비 설정 및 특이사항 정보 저장
-                if site_equip not in device_data['details']:
-                    device_data['details'][site_equip] = {}
-                device_data['details'][site_equip]['setup'] = value.get('setup', {})
-                device_data['details'][site_equip]['specialNote'] = value.get('specialNote', '')
-            elif key in ['equipment_models', 'withtech_data', 'admin_items', 'check_type_categories', 'check_type_items', 'user_accounts']:
+                if site_equip not in device_json_data['details']:
+                    device_json_data['details'][site_equip] = {}
+                device_json_data['details'][site_equip]['setup'] = value.get('setup', {})
+                device_json_data['details'][site_equip]['specialNote'] = value.get('specialNote', '')
+            elif key in ['equipment_models', 'device_data', 'admin_items', 'check_type_categories', 'check_type_items', 'user_accounts']:
                 # 이미 각 구조체로 매핑했으므로 무시
                 pass
             else:
@@ -499,7 +499,7 @@ def save_data(full_data):
                 home_data[key] = value
 
         # [보완] 사업장 기본 골격 생성 및 기존 건물명 데이터 보호 (방어 로직)
-        for site in device_data['equipments'].keys():
+        for site in device_json_data['equipments'].keys():
             if site not in withtech_data:
                 if isinstance(existing_withtech, dict) and site in existing_withtech:
                     withtech_data[site] = existing_withtech[site] # 기존에 저장된 건물 데이터가 있으면 보존
@@ -511,7 +511,7 @@ def save_data(full_data):
         save_json_file(FILE_MAINTENANCE, maintenance_data)
         save_json_file(FILE_HOME, home_data)
         save_json_file(FILE_WITHTECH, withtech_data)
-        save_json_file(FILE_DEVICE, device_data)
+        save_json_file(FILE_DEVICE, device_json_data)
         save_json_file(FILE_ITEM, item_data)
         save_json_file(FILE_MANAGEMENT, management_data)
         

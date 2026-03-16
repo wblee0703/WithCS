@@ -1880,7 +1880,7 @@ function openSetupLoadListModal() {
     if (!modal || !siteSelect) return;
 
     // Load Sites
-    const data = JSON.parse(localStorage.getItem('withtech_data')) || {};
+    const data = JSON.parse(localStorage.getItem('device_data')) || {};
     siteSelect.innerHTML = '<option value="">사업장 선택</option>';
     Object.keys(data).forEach(site => {
         const option = document.createElement('option');
@@ -1902,7 +1902,7 @@ function updateLoadListEquipSelect(site) {
 
     if (!site) return;
 
-    const data = JSON.parse(localStorage.getItem('withtech_data')) || {};
+    const data = JSON.parse(localStorage.getItem('device_data')) || {};
     const equips = data[site] || [];
     equips.forEach(equip => {
         const option = document.createElement('option');
@@ -1989,7 +1989,7 @@ function openSetupLoadInfoModal() {
     if (!modal || !siteSelect) return;
 
     // Load Sites
-    const data = JSON.parse(localStorage.getItem('withtech_data')) || {};
+    const data = JSON.parse(localStorage.getItem('device_data')) || {};
     siteSelect.innerHTML = '<option value="">사업장 선택</option>';
     Object.keys(data).forEach(site => {
         const option = document.createElement('option');
@@ -2011,7 +2011,7 @@ function updateLoadInfoEquipSelect(site) {
 
     if (!site) return;
 
-    const data = JSON.parse(localStorage.getItem('withtech_data')) || {};
+    const data = JSON.parse(localStorage.getItem('device_data')) || {};
     const equips = data[site] || [];
     equips.forEach(equip => {
         const option = document.createElement('option');

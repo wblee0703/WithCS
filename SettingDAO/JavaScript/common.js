@@ -1,7 +1,7 @@
 /* ==========================================================================
    1. 전역 변수 및 데이터 관리 (Global State)
    ========================================================================== */
-let storageData = JSON.parse(localStorage.getItem('withtech_data')) || {};
+let storageData = JSON.parse(localStorage.getItem('device_data')) || {};
 let currentPath = { site: '', equip: '' };
 let selectedLogId = null;
 let originalMemo = "";
@@ -37,7 +37,7 @@ const originalRemoveItem = localStorage.removeItem;
 let syncDebounceTimer = null;
 
 // [추가] 동기화 대상 키 목록 정의 (데이터 분리 구조 완벽 대응)
-const SYNC_KEYS = ['withtech_data', 'system_logs', 'setup_data', 'equipment_models', 'admin_items', 'check_type_categories', 'check_type_items'];
+const SYNC_KEYS = ['device_data', 'system_logs', 'setup_data', 'equipment_models', 'admin_items', 'check_type_categories', 'check_type_items'];
 
 function shouldSyncKey(key) {
     return SYNC_KEYS.includes(key) || key.startsWith('details_') || key.startsWith('site_meta_');
@@ -89,7 +89,7 @@ localStorage.removeItem = function(key) {
 };
 
 function saveData() {
-    localStorage.setItem('withtech_data', JSON.stringify(storageData));
+    localStorage.setItem('device_data', JSON.stringify(storageData));
 }
 
 /* ==========================================================================
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 originalSetItem.call(localStorage, key, JSON.stringify(data[key]));
             });
             // [수정] 전역 변수 갱신 (초기 로드 시 데이터 누락 방지)
-            storageData = JSON.parse(localStorage.getItem('withtech_data')) || {};
+            storageData = JSON.parse(localStorage.getItem('device_data')) || {};
             
             // [중요] 데이터 로드 완료 상태로 변경 (이제부터 saveAllToServer 작동 허용)
             window.isDataLoaded = true;
