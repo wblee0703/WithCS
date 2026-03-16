@@ -98,5 +98,105 @@
                 "date": ""
             }
         ]
+    },
+    "SKH 이천::WIM-100::WIM1-HK24-0401": {
+        "setupDetails": [
+            {
+                "id": 1773703488044,
+                "category": "장비 반입 및 정위치",
+                "content": "장비 도면 부착",
+                "startDate": "",
+                "estDays": "1",
+                "date": ""
+            },
+            {
+                "id": 1773703488045,
+                "category": "장비 반입 및 정위치",
+                "content": "다이크 설치",
+                "startDate": "",
+                "estDays": "1",
+                "date": ""
+            },
+            {
+                "id": 1773703488046,
+                "category": "장비 반입 및 정위치",
+                "content": "장비 반입",
+                "startDate": "",
+                "estDays": "1",
+                "date": ""
+            },
+            {
+                "id": 1773703488047,
+                "category": "장비 반입 및 정위치",
+                "content": "다이크 공사 및 리크센서 설치",
+                "startDate": "",
+                "estDays": "2",
+                "date": ""
+            },
+            {
+                "id": 1773703488048,
+                "category": "통신 상태 및 유틸리티",
+                "content": "Utility 배관 공사 및 연결",
+                "startDate": "",
+                "estDays": "5",
+                "date": ""
+            },
+            {
+                "id": 1773703488049,
+                "category": "통신 상태 및 유틸리티",
+                "content": "Utility 턴온",
+                "startDate": "",
+                "estDays": "1",
+                "date": ""
+            },
+            {
+                "id": 1773703488050,
+                "category": "통신 상태 및 유틸리티",
+                "content": "인터락 Test 및 통신상태 확인 ",
+                "startDate": "",
+                "estDays": "2",
+                "date": ""
+            },
+            {
+                "id": 1773703488051,
+                "category": "셋업 평가",
+                "content": "분석부 안정화 및 오염제어",
+                "startDate": "",
+                "estDays": "5",
+                "date": ""
+            },
+            {
+                "id": 1773703488052,
+                "category": "셋업 평가",
+                "content": "Calibration 평가",
+                "startDate": "",
+                "estDays": "2",
+                "date": ""
+            },
+            {
+                "id": 1773703488053,
+                "category": "셋업 평가",
+                "content": "Sample 측정",
+                "startDate": "",
+                "estDays": "2",
+                "date": ""
+            },
+            {
+                "id": 1773703488054,
+                "category": "셋업 평가",
+                "content": "신뢰도 평가",
+                "startDate": "",
+                "estDays": "5",
+                "date": ""
+            },
+            {
+                "id": 1773703488055,
+                "category": "셋업 완료",
+                "content": "셋업 완료",
+                "startDate": "",
+                "estDays": "0",
+                "date": ""
+            }
+        ]
     }
 }
