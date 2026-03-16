@@ -261,7 +261,7 @@
             <div class="card-body">
                 <div class="admin-split-view">
                     <!-- 좌측: 대상 장비 선택 -->
-                    <div class="admin-col-list" style="flex: 0 0 280px;">
+                    <div class="admin-col-list" style="flex: 0 0 260px;">
                         <div class="list-header column-header">
                             <div class="header-title-row">
                                 <span>대상 장비 선택</span>
@@ -276,7 +276,7 @@
                     </div>
                     
                     <!-- 중앙: 점검 구분 선택 -->
-                    <div class="admin-col-list" style="flex: 0 0 200px;">
+                    <div class="admin-col-list" style="flex: 0 0 150px;">
                         <div class="list-header">
                             <span>점검 구분</span>
                         </div>
@@ -289,6 +289,21 @@
                         </ul>
                     </div>
                     
+                    <!-- 중앙2: 분류 선택 -->
+                    <div class="admin-col-list" style="flex: 0 0 200px;">
+                        <div class="list-header">
+                            <span>분류 목록</span>
+                        </div>
+                        <ul id="check-type-subcategory-list" class="admin-list" style="opacity: 0.5; pointer-events: none;">
+                        </ul>
+                        <div class="list-footer" id="check-type-subcategory-footer" style="opacity: 0.5; pointer-events: none;">
+                            <div class="admin-flex-row">
+                                <input type="text" id="check-type-subcategory-input" placeholder="분류명 추가" class="input-dark flex-1">
+                                <button id="btn-add-check-type-subcategory" class="btn-green-sm no-wrap">추가</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- 우측: 세부 항목 관리 -->
                     <div class="admin-col-detail">
                         <div class="detail-header">
@@ -299,7 +314,7 @@
                             <p class="placeholder-text">이곳에 점검 항목 리스트와 추가 폼이 들어갈 예정입니다.</p>
                         </div>
                         <div id="check-type-detail-placeholder" class="placeholder-container">
-                            <p>좌측에서 장비와 점검 구분을 순서대로 선택해주세요.</p>
+                            <p>장비, 점검 구분, 분류를 순서대로 선택해주세요.</p>
                         </div>
                     </div>
                 </div>
