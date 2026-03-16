@@ -22,5 +22,11 @@
         "details": "항목 추가: [Alarm] interlock",
         "target": "SOMA-3000E::SOMA-EK24-0401",
         "timestamp": "2026-03-16T07:33:01.562Z"
+    },
+    {
+        "timestamp": "2026-03-16T07:56:07.365Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Stadnard",
+        "details": "Type: PM, Code: "
     }
 ]

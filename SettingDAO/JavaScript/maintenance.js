@@ -66,6 +66,9 @@ function setupMaintenanceEvents() {
                     maintPeriodInput.classList.remove('input-disabled');
                     maintPeriodInput.placeholder = '주기(일)';
                 }
+
+                // [추가] 유지관리 물품 항목 옵션 갱신
+                if (typeof updateMaintContentOptions === 'function') updateMaintContentOptions();
             };
         });
     }
@@ -364,7 +367,86 @@ function renderDetails() {
 
     // [추가] 파일 리스트 갱신
     renderFiles();
+
+    // [추가] 유지관리 항목 입력 옵션 갱신
+    if (typeof updateMaintContentOptions === 'function') updateMaintContentOptions();
 }
+
+// [추가] 유지관리 물품 입력창을 등록된 물품 관리 데이터로 갱신하는 함수
+window.updateMaintContentOptions = function() {
+    const activeBtn = document.querySelector('#maint-type-toggle .active');
+    if (!activeBtn) return;
+    const maintType = activeBtn.dataset.type;
+    
+    let contentElement = document.getElementById('maint-content');
+    if (!contentElement) return;
+
+    // 데이터 로드
+    const data = JSON.parse(localStorage.getItem('admin_items')) || [];
+    const equipModel = currentPath.equip ? currentPath.equip.split('::')[0] : '';
+
+    // PM, BM일 경우 select로 전환하여 등록된 항목 표시
+    if (maintType === 'PM' || maintType === 'BM') {
+        const filteredItems = data.filter(item => {
+            if (item.type !== maintType) return false;
+            // 현재 장비 모델과 일치하는 물품만 필터링
+            if (item.equip) {
+                const equips = item.equip.split(',').map(e => e.trim());
+                if (!equips.includes(equipModel)) return false;
+            } else {
+                return false; 
+            }
+            return true;
+        });
+
+        let selectEl = contentElement;
+        if (contentElement.tagName.toLowerCase() !== 'select') {
+            selectEl = document.createElement('select');
+            selectEl.id = 'maint-content';
+            selectEl.className = contentElement.className;
+            if (!selectEl.classList.contains('input-dark')) selectEl.classList.add('input-dark');
+            selectEl.style.cssText = contentElement.style.cssText;
+            contentElement.parentNode.replaceChild(selectEl, contentElement);
+            
+            // 항목 선택 시 교체주기 자동 입력
+            selectEl.addEventListener('change', (e) => {
+                const val = e.target.value;
+                const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+                const activeType = document.querySelector('#maint-type-toggle .active').dataset.type;
+                const match = adminItems.find(i => i.part === val && i.type === activeType);
+                const periodInput = document.getElementById('maint-period');
+                if (periodInput && !periodInput.disabled) {
+                    periodInput.value = (match && match.cycle) ? match.cycle : '';
+                }
+            });
+        }
+        
+        if (filteredItems.length === 0) {
+            selectEl.innerHTML = `<option value="">등록된 ${maintType} 물품이 없습니다.</option>`;
+        } else {
+            selectEl.innerHTML = `<option value="">물품 선택</option>`;
+            filteredItems.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.part;
+                option.textContent = item.part;
+                selectEl.appendChild(option);
+            });
+        }
+        
+    } else {
+        // PM, BM이 아닌 기타 타입일 경우 자유 입력 텍스트창으로 복구
+        if (contentElement.tagName.toLowerCase() !== 'input') {
+            const inputEl = document.createElement('input');
+            inputEl.type = 'text';
+            inputEl.id = 'maint-content';
+            inputEl.className = contentElement.className;
+            inputEl.style.cssText = contentElement.style.cssText;
+            inputEl.placeholder = '항목 내용 입력';
+            inputEl.spellcheck = false;
+            contentElement.parentNode.replaceChild(inputEl, contentElement);
+        }
+    }
+};
 
 function calculateStatus(type, start, period) {
     const now = new Date();
