@@ -67,6 +67,10 @@
             "abbr": "OWIC"
         },
         {
+            "name": "PAMS-300S",
+            "abbr": "PAMS(P)"
+        },
+        {
             "name": "PGA-C10",
             "abbr": "PGA-C10"
         },
@@ -115,8 +119,8 @@
             "abbr": "WOA683"
         },
         {
-            "name": "PAMS-300S",
-            "abbr": "PAMS(P)"
+            "name": "PAMS-300ST",
+            "abbr": "PAMS(T)"
         }
     ]
 }

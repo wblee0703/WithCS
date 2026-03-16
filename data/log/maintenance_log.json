@@ -226,5 +226,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "PAMS-300S",
         "details": "Abbr: PAMS(P)"
+    },
+    {
+        "timestamp": "2026-03-16T02:25:54.448Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "PAMS-300ST",
+        "details": "Abbr: PAMS(T)"
     }
 ]
