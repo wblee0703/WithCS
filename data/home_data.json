@@ -23,6 +23,10 @@
             "abbr": "MG200"
         },
         {
+            "name": "NaVi-SM301",
+            "abbr": "SM301"
+        },
+        {
             "name": "NaVi-WF301",
             "abbr": "WF301"
         },
@@ -35,8 +39,8 @@
             "name": "WIM-100"
         },
         {
-            "name": "NaVi-SM301",
-            "abbr": "SM301"
+            "name": "NaVi-EM201",
+            "abbr": "EM201"
         }
     ]
 }
