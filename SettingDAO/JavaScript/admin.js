@@ -806,6 +806,11 @@ function setupItemMgmt() {
     const specInput = document.getElementById('admin-item-spec-input');
     const cycleInput = document.getElementById('admin-item-cycle-input');
 
+    const searchInput = document.getElementById('admin-item-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', renderAdminItemList);
+    }
+
     if (btnAdd) {
         btnAdd.addEventListener('click', () => {
             const type = typeInput.value;
@@ -849,12 +854,24 @@ function saveAdminItems() {
 function renderAdminItemList() {
     const list = document.getElementById('admin-item-list');
     const countEl = document.getElementById('admin-item-count');
+    const searchInput = document.getElementById('admin-item-search');
+    const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
     if (!list) return;
 
     list.innerHTML = '';
-    if (countEl) countEl.textContent = adminItems.length;
+    
+    let filteredItems = adminItems;
+    if (keyword) {
+        const keywords = keyword.split(/\s+/);
+        filteredItems = adminItems.filter(item => {
+            const text = `${item.type} ${item.part} ${item.spec || ''}`.toLowerCase();
+            return keywords.every(kw => text.includes(kw));
+        });
+    }
 
-    adminItems.forEach(item => {
+    if (countEl) countEl.textContent = filteredItems.length;
+
+    filteredItems.forEach(item => {
         const li = document.createElement('li');
         li.innerHTML = `
             <div class="model-col col-item-type">

@@ -166,8 +166,11 @@
                 <div class="admin-split-view">
                     <div class="admin-col-list admin-item-list-container">
                         <div class="list-header">
-                            <span>등록된 물품 목록</span>
-                            <span id="admin-item-count" class="badge">0</span>
+                            <div style="display: flex; align-items: center; gap: 5px;">
+                                <span>등록된 물품 목록</span>
+                                <span id="admin-item-count" class="badge">0</span>
+                            </div>
+                            <input type="text" id="admin-item-search" class="input-dark compact-select" placeholder="파츠 명 또는 세부 규격 검색" autocomplete="off" style="width: 240px; min-width: 200px; margin-left: auto;">
                         </div>
                         <div class="admin-list-header">
                             <div class="model-col col-item-type">점검 구분</div>
@@ -182,7 +185,7 @@
                                 <select id="admin-item-type-input" class="input-dark compact-select input-item-type item-footer-input">
                                     <option value="PM">PM</option>
                                     <option value="BM">BM</option>
-                                    <option value="기타">기타</option>
+                                    <option value="고객대응">고객대응</option>
                                 </select>
                                 <input type="text" id="admin-item-part-input" placeholder="교체(수리) 파츠 명" class="input-dark input-item-part item-footer-input">
                                 <input type="text" id="admin-item-spec-input" placeholder="세부 규격" class="input-dark input-item-spec item-footer-input">

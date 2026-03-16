@@ -15,6 +15,7 @@
     flex-direction: column;
     min-height: 0;
     overflow: hidden;
+    padding-top: 25px; /* 제목과 아래 컨텐츠(카드) 사이의 여백 증가 */
 }
 
 /* 좌우 분할 레이아웃 */
