@@ -79,6 +79,10 @@
             "name": "SOMA-2000"
         },
         {
+            "name": "SOT-100S",
+            "abbr": "SOT-100S"
+        },
+        {
             "name": "WiDGA-100",
             "abbr": "WiDGA"
         },
@@ -91,8 +95,8 @@
             "abbr": "WOA683"
         },
         {
-            "name": "SOT-100S",
-            "abbr": "SOT-100S"
+            "name": "SOT-100B",
+            "abbr": "SOT-100B"
         }
     ]
 }
