@@ -37,7 +37,16 @@
     },
     "details_SKH 이천_WIM-100::WIM1-HK24-0401": {
         "maint": [],
-        "logs": [],
+        "logs": [
+            {
+                "id": 1773644537768,
+                "date": "2026-03-16",
+                "type": "장비점검",
+                "content": "ad",
+                "worker": "asdsad",
+                "memo": ""
+            }
+        ],
         "memo": "",
         "files": []
     },
