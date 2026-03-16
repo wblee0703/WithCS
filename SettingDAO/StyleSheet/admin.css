@@ -53,7 +53,8 @@
     position: absolute;
     top: 100%;
     left: 0;
-    width: 100%;
+    min-width: 100%;
+    width: max-content;
     background: #161b22;
     border: 1px solid #30363d;
     border-radius: 4px;
@@ -73,6 +74,7 @@
     border-bottom: 1px solid #21262d;
     color: #e6edf3;
     font-size: 13px;
+    white-space: nowrap;
 }
 .suggestion-item:hover { background: #1f6feb; }
 .suggestion-item .abbr { color: #8b949e; font-size: 11px; margin-left: 5px; }

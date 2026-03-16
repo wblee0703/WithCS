@@ -495,17 +495,17 @@
         ],
         "maint": [],
         "setup": {
-            "model": "SOMA-EK24-0401",
             "building": "",
-            "detailLoc": "",
+            "contact": "",
+            "custContact": "",
+            "custEmail": "",
             "custEquipName": "",
+            "custManager": "",
+            "detailLoc": "",
+            "email": "",
             "floor": "",
             "manager": "",
-            "contact": "",
-            "email": "",
-            "custManager": "",
-            "custContact": "",
-            "custEmail": ""
+            "model": "SOMA-EK24-0401"
         },
         "specialNote": ""
     },
