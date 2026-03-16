@@ -178,5 +178,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "SKHCEA-100",
         "details": "Abbr: SKHCEA-100"
+    },
+    {
+        "timestamp": "2026-03-16T02:23:56.182Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "SKHCEA-200",
+        "details": "Abbr: SKHCEA-200"
     }
 ]
