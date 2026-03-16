@@ -1203,21 +1203,61 @@ function setupCheckTypeMgmt() {
         });
     }
 
+    // [추가] 폼 드롭다운 변경 시 좌측 세부 구분 리스트 연동
+    const selectSub = document.getElementById('check-type-item-subcategory-select');
+    if (selectSub) {
+        selectSub.addEventListener('change', (e) => {
+            currentCheckTypeSubCategory = e.target.value;
+            const subList = document.getElementById('check-type-subcategory-list');
+            if (subList) {
+                subList.querySelectorAll('li').forEach(li => {
+                    if (li.dataset.sub === currentCheckTypeSubCategory) li.classList.add('active');
+                    else li.classList.remove('active');
+                });
+            }
+            document.getElementById('check-type-detail-desc').textContent = `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' 세부 항목을 관리합니다.`;
+            
+            updateCheckTypePartSelect();
+            renderCheckTypeItemList();
+        });
+    }
+
     // [추가] 점검 세부 항목 추가 이벤트
     const btnAddItem = document.getElementById('btn-add-check-type-item');
     const inputContent = document.getElementById('check-type-item-content');
     const selectPart = document.getElementById('check-type-item-part');
     
-    if (btnAddItem && inputContent && selectPart) {
+    if (btnAddItem && inputContent && selectPart && selectSub) {
+        // [추가] PM/BM인 상태에서 교체 파츠 선택 시, 작업 세부 내용 자동 채움
+        selectPart.addEventListener('change', () => {
+            const subCat = selectSub.value;
+            if ((subCat === 'PM' || subCat === 'BM') && selectPart.value) {
+                if (!inputContent.value.trim()) {
+                    inputContent.value = selectPart.value;
+                }
+            }
+        });
+
         btnAddItem.addEventListener('click', () => {
-            if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
+            if (!currentCheckTypeEquipKey || !currentCheckTypeCategory) return;
             
-            const content = inputContent.value.trim();
+            let content = inputContent.value.trim();
             const part = selectPart.value;
+            const subCat = selectSub.value;
             
-            if (!content) return alert('작업 세부 내용을 입력해주세요.');
+            if (!subCat) return alert('세부 구분을 선택해주세요.');
+
+            // [추가] PM, BM일 경우 내용이 비어있어도 파츠가 선택되었다면 파츠명으로 내용 대체
+            if ((subCat === 'PM' || subCat === 'BM') && !content && part) {
+                content = part;
+            }
             
-            const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}`;
+            if (!content) {
+                if (subCat === 'PM' || subCat === 'BM') return alert('작업 세부 내용을 입력하거나 교체 파츠를 선택해주세요.');
+                return alert('작업 세부 내용을 입력해주세요.');
+            }
+            
+            const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${subCat}`;
             if (!checkTypeItemsData[key]) checkTypeItemsData[key] = [];
             
             checkTypeItemsData[key].push({
@@ -1227,11 +1267,17 @@ function setupCheckTypeMgmt() {
             });
             
             saveCheckTypeItems();
-            addSystemLog('ADD_CHECK_ITEM', currentCheckTypeEquipKey, `항목 추가: ${content}`);
+            addSystemLog('ADD_CHECK_ITEM', currentCheckTypeEquipKey, `항목 추가: [${subCat}] ${content}`);
             
             inputContent.value = '';
             selectPart.value = '';
-            renderCheckTypeItemList();
+            
+            if (currentCheckTypeSubCategory !== subCat) {
+                selectSub.value = subCat;
+                selectSub.dispatchEvent(new Event('change'));
+            } else {
+                renderCheckTypeItemList();
+            }
             inputContent.focus();
         });
         
@@ -1401,6 +1447,7 @@ function renderCheckTypeSubCategoryList() {
     
     categories.forEach((cat, index) => {
         const li = document.createElement('li');
+        li.dataset.sub = cat; // [추가] 연동을 위한 데이터 속성
         li.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <span>${cat}</span>
@@ -1421,12 +1468,37 @@ function renderCheckTypeSubCategoryList() {
             document.getElementById('check-type-detail-desc').textContent = `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' 세부 항목을 관리합니다.`;
             
             // [추가] 교체 파츠 목록 업데이트 및 리스트 렌더링
+            updateCheckTypeSubCategoryDropdown();
             updateCheckTypePartSelect();
             renderCheckTypeItemList();
         });
         
         list.appendChild(li);
     });
+    
+    updateCheckTypeSubCategoryDropdown();
+}
+
+function updateCheckTypeSubCategoryDropdown() {
+    const selectSub = document.getElementById('check-type-item-subcategory-select');
+    if (!selectSub) return;
+    
+    selectSub.innerHTML = '';
+    
+    if (!currentCheckTypeEquipKey || !currentCheckTypeCategory) return;
+    const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}`;
+    const categories = checkTypeCategoriesData[key] || [];
+    
+    categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        selectSub.appendChild(opt);
+    });
+    
+    if (currentCheckTypeSubCategory && categories.includes(currentCheckTypeSubCategory)) {
+        selectSub.value = currentCheckTypeSubCategory;
+    }
 }
 
 window.deleteCheckTypeSubCategory = function(key, index) {
@@ -1493,6 +1565,9 @@ function renderCheckTypeItemList() {
         li.style.display = 'flex';
         li.style.cursor = 'default';
         li.innerHTML = `
+            <div class="model-col" style="flex: 1; justify-content: center; color: #8b949e;">
+                ${currentCheckTypeSubCategory}
+            </div>
             <div class="model-col" style="flex: 2; padding-left: 10px; white-space: normal; word-break: break-all;">
                 ${item.content}
             </div>
