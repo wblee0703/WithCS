@@ -529,6 +529,11 @@ function setupEquipMgmt() {
             siteInput.value = currentAdminEquipSite || '';
             siteInput.disabled = false; // 신규 등록 시에는 사업장 입력 가능
              
+            // [추가] 선택된 사업장이 있으면 건물 목록도 업데이트
+            if (currentAdminEquipSite) {
+                updateEquipBuildingDropdown(currentAdminEquipSite);
+            }
+
             const nameInput = document.getElementById('equip-info-name');
             if (currentAdminModel) {
                 nameInput.value = currentAdminModel.name;
@@ -626,6 +631,7 @@ function setupEquipMgmt() {
                         e.preventDefault();
                         siteInput.value = site;
                         siteSuggestionList.style.display = 'none';
+                        updateEquipBuildingDropdown(site); // [추가]
                     });
                     siteSuggestionList.appendChild(li);
                 });
@@ -637,8 +643,32 @@ function setupEquipMgmt() {
 
         siteInput.addEventListener('input', handleSiteInput);
         siteInput.addEventListener('focus', handleSiteInput);
-        siteInput.addEventListener('blur', () => { setTimeout(() => { siteSuggestionList.style.display = 'none'; }, 150); });
+        siteInput.addEventListener('blur', () => { 
+            setTimeout(() => { 
+                siteSuggestionList.style.display = 'none'; 
+                updateEquipBuildingDropdown(siteInput.value.trim()); // [추가] 
+            }, 150); 
+        });
     }
+}
+
+function updateEquipBuildingDropdown(siteName, selectedValue = '') {
+    const select = document.getElementById('equip-info-building');
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">건물 선택</option>';
+    if (!siteName) return;
+
+    const metaData = JSON.parse(localStorage.getItem(`site_meta_${siteName}`)) || {};
+    const buildings = metaData.buildings || [];
+    
+    buildings.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b;
+        opt.textContent = b;
+        if (b === selectedValue) opt.selected = true;
+        select.appendChild(opt);
+    })
 }
 
 function updateEquipSiteSelect() {
@@ -728,6 +758,21 @@ function renderAdminEquipList() {
             document.getElementById('equip-info-name').value = name;
             document.getElementById('equip-info-name').readOnly = false; // [추가] 기존 장비 클릭 시 모델명 수정 가능하도록 잠금 해제
             document.getElementById('equip-info-serial').value = serial;
+
+            // [추가] 건물명 및 세부위치 렌더링
+            const detailData = JSON.parse(localStorage.getItem(`details_${site}_${fullKey}`)) || {};
+            const setupInfo = detailData.setup || {};
+            
+            updateEquipBuildingDropdown(site, setupInfo.building || '');
+            document.getElementById('equip-info-cust-equip-name').value = setupInfo.custEquipName || '';
+            document.getElementById('equip-info-floor').value = setupInfo.floor || '';
+            document.getElementById('equip-info-location').value = setupInfo.detailLoc || '';
+            document.getElementById('equip-info-manager').value = setupInfo.manager || '';
+            document.getElementById('equip-info-contact').value = setupInfo.contact || '';
+            document.getElementById('equip-info-email').value = setupInfo.email || '';
+            document.getElementById('equip-info-cust-manager').value = setupInfo.custManager || '';
+            document.getElementById('equip-info-cust-contact').value = setupInfo.custContact || '';
+            document.getElementById('equip-info-cust-email').value = setupInfo.custEmail || '';
         });
 
         list.appendChild(li);
@@ -743,6 +788,17 @@ function resetEquipForm() {
     nameInput.value = '';
     nameInput.readOnly = false;
     document.getElementById('equip-info-serial').value = '';
+
+    // [추가] 필드 초기화
+    const bSelect = document.getElementById('equip-info-building');
+    if (bSelect) bSelect.innerHTML = '<option value="">건물 선택</option>';
+
+    ['equip-info-location', 'equip-info-cust-equip-name', 'equip-info-floor', 
+     'equip-info-manager', 'equip-info-contact', 'equip-info-email', 
+     'equip-info-cust-manager', 'equip-info-cust-contact', 'equip-info-cust-email'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
 
     // 자동완성 목록 숨김
     const suggestionList = document.getElementById('equip-model-suggestions');
@@ -764,6 +820,18 @@ function handleEquipSave() {
     const name = nameInput.value.trim();
     const serial = document.getElementById('equip-info-serial').value.trim();
     
+    // [추가]
+    const building = document.getElementById('equip-info-building').value;
+    const location = document.getElementById('equip-info-location').value.trim();
+    const custEquipName = document.getElementById('equip-info-cust-equip-name').value.trim();
+    const floor = document.getElementById('equip-info-floor').value.trim();
+    const manager = document.getElementById('equip-info-manager').value.trim();
+    const contact = document.getElementById('equip-info-contact').value.trim();
+    const email = document.getElementById('equip-info-email').value.trim();
+    const custManager = document.getElementById('equip-info-cust-manager').value.trim();
+    const custContact = document.getElementById('equip-info-cust-contact').value.trim();
+    const custEmail = document.getElementById('equip-info-cust-email').value.trim();
+
     if (!name) return alert('장비명(모델)을 입력해주세요.');
     
     const newKey = serial ? `${name}::${serial}` : name;
@@ -783,8 +851,23 @@ function handleEquipSave() {
         
         // details 데이터 이동
         const oldData = localStorage.getItem(`details_${targetSite}_${currentAdminEquipKey}`);
+        let parsedData = oldData ? JSON.parse(oldData) : { maint: [], logs: [], memo: "", setup: {} };
+        
+        if (!parsedData.setup) parsedData.setup = {};
+        parsedData.setup.model = serial;
+        parsedData.setup.building = building;
+        parsedData.setup.detailLoc = location;
+        parsedData.setup.custEquipName = custEquipName;
+        parsedData.setup.floor = floor;
+        parsedData.setup.manager = manager;
+        parsedData.setup.contact = contact;
+        parsedData.setup.email = email;
+        parsedData.setup.custManager = custManager;
+        parsedData.setup.custContact = custContact;
+        parsedData.setup.custEmail = custEmail;
+
+        localStorage.setItem(`details_${targetSite}_${newKey}`, JSON.stringify(parsedData));
         if (oldData) {
-            localStorage.setItem(`details_${targetSite}_${newKey}`, oldData);
             localStorage.removeItem(`details_${targetSite}_${currentAdminEquipKey}`);
         }
         
@@ -799,11 +882,41 @@ function handleEquipSave() {
         
         addSystemLog('UPDATE_EQUIP', newKey, `From: ${currentAdminEquipKey}`);
     } 
+    // 기존 정보 단순 업데이트
+    else if (currentAdminEquipKey && currentAdminEquipKey === newKey) {
+        const dataKey = `details_${targetSite}_${newKey}`;
+        let parsedData = JSON.parse(localStorage.getItem(dataKey)) || { maint: [], logs: [], memo: "", setup: {} };
+        if (!parsedData.setup) parsedData.setup = {};
+        parsedData.setup.model = serial;
+        parsedData.setup.building = building;
+        parsedData.setup.detailLoc = location;
+        parsedData.setup.custEquipName = custEquipName;
+        parsedData.setup.floor = floor;
+        parsedData.setup.manager = manager;
+        parsedData.setup.contact = contact;
+        parsedData.setup.email = email;
+        parsedData.setup.custManager = custManager;
+        parsedData.setup.custContact = custContact;
+        parsedData.setup.custEmail = custEmail;
+        localStorage.setItem(dataKey, JSON.stringify(parsedData));
+    }
     // 신규 등록
     else if (!currentAdminEquipKey) {
         storageData[targetSite].push(newKey);
         // 초기 데이터 생성
-        const initData = { maint: [], logs: [], memo: "", setup: { model: serial } }; // Serial을 모델란에 저장 (관례)
+        const initData = { maint: [], logs: [], memo: "", setup: { 
+            model: serial, 
+            building: building, 
+            detailLoc: location,
+            custEquipName: custEquipName,
+            floor: floor,
+            manager: manager,
+            contact: contact,
+            email: email,
+            custManager: custManager,
+            custContact: custContact,
+            custEmail: custEmail
+        } }; 
         localStorage.setItem(`details_${targetSite}_${newKey}`, JSON.stringify(initData));
         addSystemLog('ADD_EQUIP', newKey, `Site: ${targetSite}`);
     }
