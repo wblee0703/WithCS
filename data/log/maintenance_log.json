@@ -112,5 +112,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "NaVi-EM201",
         "details": "Abbr: EM201"
+    },
+    {
+        "timestamp": "2026-03-16T02:22:28.516Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "proFAST 100",
+        "details": "Abbr: PROFAST100"
     }
 ]
