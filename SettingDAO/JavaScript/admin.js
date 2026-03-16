@@ -971,82 +971,14 @@ function renderAdminItemList() {
             <div class="model-col col-item-cycle">
                 ${item.cycle ? item.cycle + '일' : '-'}
             </div>
-            <div class="model-col model-actions-col col-item-actions">
-                <button class="btn-edit-sm btn-edit-item">✏️</button>
-                <button class="btn-del-sm btn-delete-item">✕</button>
-            </div>
         `;
 
         li.addEventListener('click', () => {
-            if (li.classList.contains('editing')) return;
-            
             currentAdminItemId = item.id;
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
             
             loadItemDetail(item);
-        });
-
-        const editBtn = li.querySelector('.btn-edit-item');
-        const deleteBtn = li.querySelector('.btn-delete-item');
-
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (!confirm(`'${item.part}' 물품을 삭제하시겠습니까?`)) return;
-            adminItems = adminItems.filter(i => i.id !== item.id);
-            saveAdminItems();
-            addSystemLog('DELETE_ITEM_ADMIN', item.part);
-            
-            if (currentAdminItemId === item.id) {
-                currentAdminItemId = null;
-                document.getElementById('admin-item-form').style.display = 'none';
-                document.getElementById('admin-item-placeholder').style.display = 'flex';
-            }
-            
-            renderAdminItemList();
-        });
-
-        editBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const isEditing = li.classList.contains('editing');
-
-            if (!isEditing) {
-                li.classList.add('editing');
-                editBtn.textContent = '저장';
-                editBtn.classList.replace('btn-edit-sm', 'btn-green-sm');
-                
-                const typeCol = li.children[0];
-                const partCol = li.children[1];
-                const specCol = li.children[2];
-                const cycleCol = li.children[3];
-                
-                typeCol.innerHTML = `
-                    <select class="input-dark compact-select input-item-type item-edit-input">
-                        <option value="PM" ${item.type === 'PM' ? 'selected' : ''}>PM</option>
-                        <option value="BM" ${item.type === 'BM' ? 'selected' : ''}>BM</option>
-                        <option value="기타" ${item.type === '기타' ? 'selected' : ''}>기타</option>
-                    </select>
-                `;
-                partCol.innerHTML = `<input type="text" class="input-dark input-item-part item-edit-input" value="${item.part}">`;
-                specCol.innerHTML = `<input type="text" class="input-dark input-item-spec item-edit-input" value="${item.spec || ''}">`;
-                cycleCol.innerHTML = `<input type="number" class="input-dark input-item-cycle item-edit-input" value="${item.cycle || ''}">`;
-            } else {
-                const newType = li.children[0].querySelector('select').value.trim();
-                const newPart = li.children[1].querySelector('input').value.trim();
-                const newSpec = li.children[2].querySelector('input').value.trim();
-                const newCycle = li.children[3].querySelector('input').value.trim();
-
-                if (!newPart) return alert('교체(수리) 파츠 명을 입력해주세요.');
-
-                item.type = newType;
-                item.part = newPart;
-                item.spec = newSpec;
-                item.cycle = newCycle;
-
-                saveAdminItems();
-                addSystemLog('UPDATE_ITEM_ADMIN', item.part, `To: ${newType} / ${newPart} / ${newSpec} / ${newCycle}`);
-                renderAdminItemList();
-            }
         });
 
         list.appendChild(li);

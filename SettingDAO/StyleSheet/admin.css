@@ -316,7 +316,7 @@
    물품 관리 (Item Management) 전용 스타일
    ========================================================================== */
 .admin-item-list-container {
-    flex: 0 0 550px;
+    flex: 0 0 650px;
     border-right: none;
     padding-right: 0;
 }
