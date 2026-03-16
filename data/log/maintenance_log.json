@@ -36,9 +36,15 @@
         "timestamp": "2026-03-16T01:10:17.463Z"
     },
     {
-        "timestamp": "2026-03-16T01:15:48.973Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: 고객대응, Spec: 0, Cycle: ",
         "target": "고객 대응",
-        "details": "Type: 고객대응, Spec: 0, Cycle: "
+        "timestamp": "2026-03-16T01:15:48.973Z"
+    },
+    {
+        "timestamp": "2026-03-16T01:53:35.130Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "BM",
+        "details": "Type: BM, Spec: BM, Cycle: "
     }
 ]

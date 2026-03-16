@@ -175,7 +175,7 @@
                         </div>
                         <div class="admin-list-header">
                             <div class="model-col col-item-type">점검 구분</div>
-                            <div class="model-col col-item-part">교체(수리) 파츠</div>
+                            <div class="model-col col-item-part">물품명</div>
                             <div class="model-col col-item-spec">세부 규격</div>
                             <div class="model-col col-item-cycle">교체주기(일)</div>
                         </div>
@@ -187,7 +187,7 @@
                                     <option value="BM">BM</option>
                                     <option value="고객대응">고객대응</option>
                                 </select>
-                                <input type="text" id="admin-item-part-input" placeholder="교체(수리) 파츠 명" class="input-dark input-item-part item-footer-input">
+                                <input type="text" id="admin-item-part-input" placeholder="물품명" class="input-dark input-item-part item-footer-input">
                                 <input type="text" id="admin-item-spec-input" placeholder="세부 규격" class="input-dark input-item-spec item-footer-input">
                                 <input type="number" id="admin-item-cycle-input" placeholder="주기(일)" class="input-dark input-item-cycle item-footer-input">
                             </div>
@@ -208,11 +208,10 @@
                                     <option value="PM">PM</option>
                                     <option value="BM">BM</option>
                                     <option value="고객대응">고객대응</option>
-                                    <option value="기타">기타</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>교체(수리) 파츠 명</label>
+                                <label>물품명</label>
                                 <input type="text" id="item-info-part" class="input-dark full-width">
                             </div>
                             <div class="form-group">
@@ -260,7 +259,50 @@
         <div id="section-check-type-mgmt" class="card admin-section" style="display: none;">
             <div class="card-header"><h3>점검 구분 관리</h3></div>
             <div class="card-body">
-                <p class="placeholder-text">점검 구분 관리 기능이 여기에 추가될 예정입니다.</p>
+                <div class="admin-split-view">
+                    <!-- 좌측: 대상 장비 선택 -->
+                    <div class="admin-col-list" style="flex: 0 0 280px;">
+                        <div class="list-header column-header">
+                            <div class="header-title-row">
+                                <span>대상 장비 선택</span>
+                                <span id="check-type-equip-count" class="badge">0</span>
+                            </div>
+                            <select id="check-type-site-filter" class="modal-select full-width compact-select" style="margin-bottom: 5px;">
+                                <option value="">전체 사업장 보기</option>
+                            </select>
+                            <input type="text" id="check-type-equip-search" class="input-dark full-width compact-select" placeholder="장비명 검색" autocomplete="off">
+                        </div>
+                        <ul id="check-type-equip-list" class="admin-list"></ul>
+                    </div>
+                    
+                    <!-- 중앙: 점검 구분 선택 -->
+                    <div class="admin-col-list" style="flex: 0 0 200px;">
+                        <div class="list-header">
+                            <span>점검 구분</span>
+                        </div>
+                        <ul id="check-type-category-list" class="admin-list" style="opacity: 0.5; pointer-events: none;">
+                            <li data-type="정기">정기</li>
+                            <li data-type="비정기">비정기</li>
+                            <li data-type="고객대응">고객대응</li>
+                            <li data-type="용액제조">용액제조</li>
+                            <li data-type="온라인 점검">온라인 점검</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- 우측: 세부 항목 관리 -->
+                    <div class="admin-col-detail">
+                        <div class="detail-header">
+                            <h4>점검 항목 관리</h4>
+                            <p class="detail-desc" id="check-type-detail-desc">장비와 점검 구분을 선택하면 세부 항목을 관리할 수 있습니다.</p>
+                        </div>
+                        <div id="check-type-detail-container" class="admin-form-container" style="display:none;">
+                            <p class="placeholder-text">이곳에 점검 항목 리스트와 추가 폼이 들어갈 예정입니다.</p>
+                        </div>
+                        <div id="check-type-detail-placeholder" class="placeholder-container">
+                            <p>좌측에서 장비와 점검 구분을 순서대로 선택해주세요.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

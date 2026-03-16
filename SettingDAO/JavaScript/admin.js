@@ -8,6 +8,11 @@ let currentAdminEquipSiteContext = null; // [추가] 선택된 장비의 실제 
 let adminItems = []; // [추가] 물품 목록
 let currentAdminItemId = null; // [추가] 선택된 물품 ID
 
+// [추가] 점검 구분 관리 상태 변수
+let currentCheckTypeEquipKey = null;
+let currentCheckTypeSiteContext = null;
+let currentCheckTypeCategory = null;
+
 document.addEventListener('DOMContentLoaded', () => {
     setupAdminMenu();
     setupSiteMgmt();
@@ -48,6 +53,10 @@ function setupAdminMenu() {
                 }
                 if (item.dataset.target === 'item-mgmt') {
                     renderAdminItemList();
+                }
+                if (item.dataset.target === 'check-type-mgmt') {
+                    updateCheckTypeSiteSelect();
+                    renderCheckTypeEquipList();
                 }
             });
         });
@@ -830,14 +839,30 @@ function setupItemMgmt() {
         searchInput.addEventListener('input', renderAdminItemList);
     }
 
+    // [추가] 점검 구분에 따른 교체주기 비활성화 (물품 추가 폼)
+    if (typeInput && cycleInput) {
+        typeInput.addEventListener('change', () => {
+            if (typeInput.value === 'PM') {
+                cycleInput.disabled = false;
+                cycleInput.placeholder = '주기(일)';
+            } else {
+                cycleInput.disabled = true;
+                cycleInput.value = '';
+                cycleInput.placeholder = '주기 없음';
+            }
+        });
+        // 초기 상태 반영
+        typeInput.dispatchEvent(new Event('change'));
+    }
+
     if (btnAdd) {
         btnAdd.addEventListener('click', () => {
             const type = typeInput.value;
             const part = partInput.value.trim();
             const spec = specInput.value.trim();
-            const cycle = cycleInput.value.trim();
+            const cycle = type === 'PM' ? cycleInput.value.trim() : "";
 
-            if (!part) return alert('교체(수리) 파츠 명을 입력해주세요.');
+            if (!part) return alert('물품명을 입력해주세요.');
 
             adminItems.push({ id: Date.now(), type, part, spec, cycle, code: '', partno: '', equip: '' });
             saveAdminItems();
@@ -845,19 +870,41 @@ function setupItemMgmt() {
             
             partInput.value = '';
             specInput.value = '';
-            cycleInput.value = '';
+            if (type === 'PM') cycleInput.value = '';
             renderAdminItemList();
             partInput.focus();
         });
         
         partInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') specInput.focus(); });
-        specInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') cycleInput.focus(); });
+        specInput.addEventListener('keypress', (e) => { 
+            if (e.key === 'Enter') {
+                if (!cycleInput.disabled) cycleInput.focus();
+                else btnAdd.click();
+            }
+        });
         cycleInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') btnAdd.click(); });
     }
 
     // 상세 정보 폼 이벤트
     const btnSaveDetail = document.getElementById('btn-admin-save-item-detail');
     const btnDelDetail = document.getElementById('btn-admin-del-item-detail');
+
+    // [추가] 점검 구분에 따른 교체주기 비활성화 (물품 상세 정보 폼)
+    const detailTypeInput = document.getElementById('item-info-type');
+    const detailCycleInput = document.getElementById('item-info-cycle');
+
+    if (detailTypeInput && detailCycleInput) {
+        detailTypeInput.addEventListener('change', () => {
+            if (detailTypeInput.value === 'PM') {
+                detailCycleInput.disabled = false;
+                detailCycleInput.placeholder = '';
+            } else {
+                detailCycleInput.disabled = true;
+                detailCycleInput.value = '';
+                detailCycleInput.placeholder = '주기 없음';
+            }
+        });
+    }
 
     if (btnSaveDetail) btnSaveDetail.addEventListener('click', handleItemDetailSave);
     if (btnDelDetail) btnDelDetail.addEventListener('click', handleItemDetailDelete);
@@ -1018,7 +1065,18 @@ function loadItemDetail(item) {
     document.getElementById('item-info-type').value = item.type || 'PM';
     document.getElementById('item-info-part').value = item.part || '';
     document.getElementById('item-info-spec').value = item.spec || '';
-    document.getElementById('item-info-cycle').value = item.cycle || '';
+    
+    const cycleInput = document.getElementById('item-info-cycle');
+    if ((item.type || 'PM') === 'PM') {
+        cycleInput.disabled = false;
+        cycleInput.value = item.cycle || '';
+        cycleInput.placeholder = '';
+    } else {
+        cycleInput.disabled = true;
+        cycleInput.value = '';
+        cycleInput.placeholder = '주기 없음';
+    }
+
     document.getElementById('item-info-code').value = item.code || '';
     document.getElementById('item-info-partno').value = item.partno || '';
     document.getElementById('item-info-equip').value = item.equip || '';
@@ -1032,13 +1090,13 @@ function handleItemDetailSave() {
     const type = document.getElementById('item-info-type').value;
     const part = document.getElementById('item-info-part').value.trim();
     const spec = document.getElementById('item-info-spec').value.trim();
-    const cycle = document.getElementById('item-info-cycle').value.trim();
+    const cycle = type === 'PM' ? document.getElementById('item-info-cycle').value.trim() : "";
     const code = document.getElementById('item-info-code').value.trim();
     const partno = document.getElementById('item-info-partno').value.trim();
     const equipRaw = document.getElementById('item-info-equip').value;
     const equip = equipRaw.split(',').map(e => e.trim()).filter(e => e).join(', '); // 불필요한 빈칸 및 쉼표 제거
 
-    if (!part) return alert('교체(수리) 파츠 명을 입력해주세요.');
+    if (!part) return alert('물품명을 입력해주세요.');
 
     const idx = adminItems.findIndex(i => i.id === currentAdminItemId);
     if (idx > -1) {
@@ -1069,9 +1127,134 @@ function handleItemDetailDelete() {
     renderAdminItemList();
 }
 
+/* ==========================================================================
+   점검 구분 관리 (Check Type Management)
+   ========================================================================== */
+function setupCheckTypeMgmt() {
+    const siteSelect = document.getElementById('check-type-site-filter');
+    if (siteSelect) {
+        siteSelect.addEventListener('change', (e) => {
+            currentCheckTypeSiteContext = e.target.value;
+            renderCheckTypeEquipList();
+        });
+    }
+
+    const searchInput = document.getElementById('check-type-equip-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', renderCheckTypeEquipList);
+    }
+
+    const categoryItems = document.querySelectorAll('#check-type-category-list li');
+    categoryItems.forEach(li => {
+        li.addEventListener('click', () => {
+            if (!currentCheckTypeEquipKey) return;
+            
+            categoryItems.forEach(item => item.classList.remove('active'));
+            li.classList.add('active');
+            currentCheckTypeCategory = li.dataset.type;
+            
+            document.getElementById('check-type-detail-placeholder').style.display = 'none';
+            document.getElementById('check-type-detail-container').style.display = 'block';
+            document.getElementById('check-type-detail-desc').textContent = `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' 항목을 관리합니다.`;
+        });
+    });
+}
+
+function updateCheckTypeSiteSelect() {
+    const select = document.getElementById('check-type-site-filter');
+    if (!select) return;
+    
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">전체 사업장 보기</option>';
+    
+    Object.keys(storageData).sort().forEach(site => {
+        const opt = document.createElement('option');
+        opt.value = site;
+        opt.textContent = site;
+        select.appendChild(opt);
+    });
+    
+    if (storageData[currentVal]) select.value = currentVal;
+}
+
+function renderCheckTypeEquipList() {
+    const list = document.getElementById('check-type-equip-list');
+    const countEl = document.getElementById('check-type-equip-count');
+    const searchInput = document.getElementById('check-type-equip-search');
+    const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+    if (!list) return;
+    list.innerHTML = '';
+
+    let items = [];
+    if (currentCheckTypeSiteContext && storageData[currentCheckTypeSiteContext]) {
+        storageData[currentCheckTypeSiteContext].forEach(k => items.push({site: currentCheckTypeSiteContext, key: k}));
+    } else {
+        Object.keys(storageData).sort().forEach(site => {
+            if (storageData[site]) {
+                storageData[site].forEach(k => items.push({site: site, key: k}));
+            }
+        });
+    }
+
+    if (keyword) {
+        const keywords = keyword.split(/\s+/);
+        items = items.filter(item => {
+            const parts = item.key.split('::');
+            const name = parts[0] || '';
+            const serial = parts.length > 1 ? parts[1] : '';
+            const text = `${item.site} ${name} ${serial}`.toLowerCase();
+            return keywords.every(kw => text.includes(kw));
+        });
+    }
+
+    if (countEl) countEl.textContent = items.length;
+
+    items.forEach(item => {
+        const fullKey = item.key;
+        const site = item.site;
+        const parts = fullKey.split('::');
+        const name = parts[0];
+        const serial = parts.length > 1 ? parts[1] : '';
+
+        const li = document.createElement('li');
+        
+        let content = `<span>${name}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
+        if (!currentCheckTypeSiteContext) {
+            content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:#8b949e;">${site}</span><div>${content}</div></div>`;
+        } else {
+            content = `<div>${content}</div>`;
+        }
+        li.innerHTML = content;
+        
+        if (currentCheckTypeEquipKey === fullKey) li.classList.add('active');
+
+        li.addEventListener('click', () => {
+            currentCheckTypeEquipKey = fullKey;
+            
+            list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
+            li.classList.add('active');
+            
+            const categoryList = document.getElementById('check-type-category-list');
+            categoryList.style.opacity = '1';
+            categoryList.style.pointerEvents = 'auto';
+            
+            currentCheckTypeCategory = null;
+            categoryList.querySelectorAll('li').forEach(l => l.classList.remove('active'));
+            
+            document.getElementById('check-type-detail-placeholder').style.display = 'flex';
+            document.getElementById('check-type-detail-container').style.display = 'none';
+            document.getElementById('check-type-detail-desc').textContent = '장비와 점검 구분을 선택하면 세부 항목을 관리할 수 있습니다.';
+        });
+
+        list.appendChild(li);
+    });
+}
+
 // [추가] 초기화 시 장비 관리 이벤트 등록
 const originalSetupAdminMenu = setupAdminMenu; // 기존 함수 보존
 setupAdminMenu = function() {
     originalSetupAdminMenu(); // 기존 로직 실행
     setupEquipMgmt(); // 장비 관리 로직 초기화
+    setupCheckTypeMgmt(); // 점검 구분 관리 초기화
 };
