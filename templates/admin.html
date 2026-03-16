@@ -261,7 +261,7 @@
             <div class="card-body">
                 <div class="admin-split-view">
                     <!-- 좌측: 대상 장비 선택 -->
-                    <div class="admin-col-list" style="flex: 0 0 260px;">
+                    <div class="admin-col-list" style="flex: 0 0 350px;">
                         <div class="list-header column-header">
                             <div class="header-title-row">
                                 <span>대상 장비 선택</span>
@@ -276,7 +276,7 @@
                     </div>
                     
                     <!-- 중앙: 점검 구분 선택 -->
-                    <div class="admin-col-list" style="flex: 0 0 150px;">
+                    <div class="admin-col-list" style="flex: 0 0 250px;">
                         <div class="list-header">
                             <span>점검 구분</span>
                         </div>
@@ -292,7 +292,7 @@
                     <!-- 중앙2: 분류 선택 -->
                     <div class="admin-col-list" style="flex: 0 0 200px;">
                         <div class="list-header">
-                            <span>분류 목록</span>
+                            <span>세부 구분</span>
                         </div>
                         <ul id="check-type-subcategory-list" class="admin-list" style="opacity: 0.5; pointer-events: none;">
                         </ul>
@@ -310,8 +310,25 @@
                             <h4>점검 항목 관리</h4>
                             <p class="detail-desc" id="check-type-detail-desc">장비와 점검 구분을 선택하면 세부 항목을 관리할 수 있습니다.</p>
                         </div>
-                        <div id="check-type-detail-container" class="admin-form-container" style="display:none;">
-                            <p class="placeholder-text">이곳에 점검 항목 리스트와 추가 폼이 들어갈 예정입니다.</p>
+                        <div id="check-type-detail-container" class="admin-form-container" style="display:none; max-width: 100%;">
+                            <div class="admin-list-header" style="margin-bottom: 0;">
+                                <div class="model-col" style="flex: 2; padding-left: 10px;">작업 세부 내용</div>
+                                <div class="model-col" style="flex: 1; justify-content: center;">교체 파츠</div>
+                                <div class="model-col" style="flex: 0 0 60px; justify-content: center;">기능</div>
+                            </div>
+                            <ul id="check-type-item-list" class="admin-list" style="border-top: none; border-top-left-radius: 0; border-top-right-radius: 0; max-height: 400px; margin-bottom: 15px;">
+                            </ul>
+                            
+                            <div class="form-group" style="border-top: 1px solid #30363d; padding-top: 15px;">
+                                <label style="margin-bottom: 5px;">신규 점검 항목 추가</label>
+                                <div style="display: flex; gap: 5px;">
+                                    <input type="text" id="check-type-item-content" class="input-dark" style="flex: 2; padding-left: 10px; height: 35px;" placeholder="작업 세부 내용 입력">
+                                    <select id="check-type-item-part" class="input-dark" style="flex: 1; text-align: center; height: 35px; border-radius: 4px;">
+                                        <option value="">교체 파츠 (선택 안함)</option>
+                                    </select>
+                                    <button id="btn-add-check-type-item" class="btn-green-sm" style="width: 60px; height: 35px;">추가</button>
+                                </div>
+                            </div>
                         </div>
                         <div id="check-type-detail-placeholder" class="placeholder-container">
                             <p>장비, 점검 구분, 분류를 순서대로 선택해주세요.</p>

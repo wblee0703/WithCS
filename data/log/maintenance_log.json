@@ -48,33 +48,33 @@
         "timestamp": "2026-03-16T01:53:35.130Z"
     },
     {
-        "timestamp": "2026-03-16T02:05:17.748Z",
         "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 정기 > PM",
         "target": "SOMA-3000E::SOMA-EK24-0401",
-        "details": "분류 추가: 정기 > PM"
+        "timestamp": "2026-03-16T02:05:17.748Z"
     },
     {
-        "timestamp": "2026-03-16T02:05:26.452Z",
         "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 비정기 > BM",
         "target": "SOMA-3000E::SOMA-EK24-0401",
-        "details": "분류 추가: 비정기 > BM"
+        "timestamp": "2026-03-16T02:05:26.452Z"
     },
     {
-        "timestamp": "2026-03-16T02:05:37.046Z",
         "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 비정기 > Alarm",
         "target": "SOMA-3000E::SOMA-EK24-0401",
-        "details": "분류 추가: 비정기 > Alarm"
+        "timestamp": "2026-03-16T02:05:37.046Z"
     },
     {
-        "timestamp": "2026-03-16T02:05:41.295Z",
         "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 비정기 > Hunting",
         "target": "SOMA-3000E::SOMA-EK24-0401",
-        "details": "분류 추가: 비정기 > Hunting"
+        "timestamp": "2026-03-16T02:05:41.295Z"
     },
     {
-        "timestamp": "2026-03-16T02:05:54.467Z",
         "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 비정기 > Data / Para 이상",
         "target": "SOMA-3000E::SOMA-EK24-0401",
-        "details": "분류 추가: 비정기 > Data / Para 이상"
+        "timestamp": "2026-03-16T02:05:54.467Z"
     }
 ]

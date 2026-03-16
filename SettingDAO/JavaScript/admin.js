@@ -14,6 +14,7 @@ let currentCheckTypeSiteContext = null;
 let currentCheckTypeCategory = null;
 let currentCheckTypeSubCategory = null; // [추가] 선택된 분류
 let checkTypeCategoriesData = {}; // [추가] 분류 저장소
+let checkTypeItemsData = {}; // [추가] 세부 항목 저장소
 
 document.addEventListener('DOMContentLoaded', () => {
     setupAdminMenu();
@@ -1134,6 +1135,7 @@ function handleItemDetailDelete() {
    ========================================================================== */
 function setupCheckTypeMgmt() {
     loadCheckTypeCategories();
+    loadCheckTypeItems();
 
     const siteSelect = document.getElementById('check-type-site-filter');
     if (siteSelect) {
@@ -1200,6 +1202,43 @@ function setupCheckTypeMgmt() {
             if (e.key === 'Enter') btnAddSub.click();
         });
     }
+
+    // [추가] 점검 세부 항목 추가 이벤트
+    const btnAddItem = document.getElementById('btn-add-check-type-item');
+    const inputContent = document.getElementById('check-type-item-content');
+    const selectPart = document.getElementById('check-type-item-part');
+    
+    if (btnAddItem && inputContent && selectPart) {
+        btnAddItem.addEventListener('click', () => {
+            if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
+            
+            const content = inputContent.value.trim();
+            const part = selectPart.value;
+            
+            if (!content) return alert('작업 세부 내용을 입력해주세요.');
+            
+            const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}`;
+            if (!checkTypeItemsData[key]) checkTypeItemsData[key] = [];
+            
+            checkTypeItemsData[key].push({
+                id: Date.now(),
+                content: content,
+                part: part
+            });
+            
+            saveCheckTypeItems();
+            addSystemLog('ADD_CHECK_ITEM', currentCheckTypeEquipKey, `항목 추가: ${content}`);
+            
+            inputContent.value = '';
+            selectPart.value = '';
+            renderCheckTypeItemList();
+            inputContent.focus();
+        });
+        
+        inputContent.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') btnAddItem.click();
+        });
+    }
 }
 
 function loadCheckTypeCategories() {
@@ -1213,6 +1252,19 @@ function loadCheckTypeCategories() {
 
 function saveCheckTypeCategories() {
     localStorage.setItem('check_type_categories', JSON.stringify(checkTypeCategoriesData));
+}
+
+function loadCheckTypeItems() {
+    try {
+        const data = localStorage.getItem('check_type_items');
+        checkTypeItemsData = data ? JSON.parse(data) : {};
+    } catch(e) {
+        checkTypeItemsData = {};
+    }
+}
+
+function saveCheckTypeItems() {
+    localStorage.setItem('check_type_items', JSON.stringify(checkTypeItemsData));
 }
 
 function updateCheckTypeSiteSelect() {
@@ -1350,6 +1402,10 @@ function renderCheckTypeSubCategoryList() {
             document.getElementById('check-type-detail-placeholder').style.display = 'none';
             document.getElementById('check-type-detail-container').style.display = 'block';
             document.getElementById('check-type-detail-desc').textContent = `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' 세부 항목을 관리합니다.`;
+            
+            // [추가] 교체 파츠 목록 업데이트 및 리스트 렌더링
+            updateCheckTypePartSelect();
+            renderCheckTypeItemList();
         });
         
         list.appendChild(li);
@@ -1372,6 +1428,81 @@ window.deleteCheckTypeSubCategory = function(key, index) {
     
     renderCheckTypeSubCategoryList();
 }
+
+function updateCheckTypePartSelect() {
+    const selectPart = document.getElementById('check-type-item-part');
+    if (!selectPart) return;
+    
+    selectPart.innerHTML = '<option value="">교체 파츠 (선택 안함)</option>';
+    
+    if (!currentCheckTypeEquipKey) return;
+    
+    // 선택된 장비의 모델명 추출
+    const equipName = currentCheckTypeEquipKey.split('::')[0];
+    
+    // 물품 관리 목록에서 해당 모델명이 포함된 물품들만 필터링
+    const matchedItems = adminItems.filter(item => {
+        if (!item.equip) return false;
+        const equips = item.equip.split(',').map(e => e.trim());
+        return equips.includes(equipName);
+    });
+    
+    matchedItems.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.part;
+        opt.textContent = item.part;
+        selectPart.appendChild(opt);
+    });
+}
+
+function renderCheckTypeItemList() {
+    const list = document.getElementById('check-type-item-list');
+    if (!list) return;
+    
+    list.innerHTML = '';
+    
+    if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
+    
+    const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}`;
+    const items = checkTypeItemsData[key] || [];
+    
+    if (items.length === 0) {
+        list.innerHTML = '<li style="justify-content: center; color: #8b949e; cursor: default; hover:none;">등록된 항목이 없습니다.</li>';
+        return;
+    }
+    
+    items.forEach(item => {
+        const li = document.createElement('li');
+        li.style.display = 'flex';
+        li.style.cursor = 'default';
+        li.innerHTML = `
+            <div class="model-col" style="flex: 2; padding-left: 10px; white-space: normal; word-break: break-all;">
+                ${item.content}
+            </div>
+            <div class="model-col" style="flex: 1; justify-content: center; color: #58a6ff;">
+                ${item.part || '-'}
+            </div>
+            <div class="model-col" style="flex: 0 0 60px; justify-content: center;">
+                <button class="btn-del-sm" onclick="deleteCheckTypeItem('${key}', ${item.id})">✕</button>
+            </div>
+        `;
+        list.appendChild(li);
+    });
+}
+
+window.deleteCheckTypeItem = function(key, id) {
+    if (!confirm('이 항목을 삭제하시겠습니까?')) return;
+    
+    if (checkTypeItemsData[key]) {
+        const item = checkTypeItemsData[key].find(i => i.id === id);
+        if (item) {
+            checkTypeItemsData[key] = checkTypeItemsData[key].filter(i => i.id !== id);
+            saveCheckTypeItems();
+            addSystemLog('DELETE_CHECK_ITEM', key.split('::')[0], `항목 삭제: ${item.content}`);
+            renderCheckTypeItemList();
+        }
+    }
+};
 
 // [추가] 초기화 시 장비 관리 이벤트 등록
 const originalSetupAdminMenu = setupAdminMenu; // 기존 함수 보존
