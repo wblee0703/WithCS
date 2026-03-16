@@ -124,5 +124,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "proFAST 2000",
         "details": "Abbr: PROFAST2000"
+    },
+    {
+        "timestamp": "2026-03-16T02:22:43.934Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "OMS-100",
+        "details": "Abbr: OMS100"
     }
 ]
