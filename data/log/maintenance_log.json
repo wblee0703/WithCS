@@ -274,5 +274,11 @@
         "details": "To: NaVi-TM(MG200H-2) / TM(MG2)",
         "target": "NaVi-TM(MG2)",
         "timestamp": "2026-03-16T02:29:02.052Z"
+    },
+    {
+        "timestamp": "2026-03-16T02:32:34.177Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "details": "항목 추가: SS"
     }
 ]
