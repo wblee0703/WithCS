@@ -2,200 +2,200 @@
     "SKH 이천::SOMA-2000::SOMA-H19-0903": {
         "setupDetails": [
             {
-                "id": 1773703482908,
                 "category": "장비 반입 및 정위치",
                 "content": "장비 도면 부착",
-                "startDate": "",
+                "date": "",
                 "estDays": "1",
-                "date": ""
+                "id": 1773703482908,
+                "startDate": ""
             },
             {
-                "id": 1773703482909,
                 "category": "장비 반입 및 정위치",
                 "content": "다이크 설치",
-                "startDate": "",
+                "date": "",
                 "estDays": "1",
-                "date": ""
+                "id": 1773703482909,
+                "startDate": ""
             },
             {
-                "id": 1773703482910,
                 "category": "장비 반입 및 정위치",
                 "content": "장비 반입",
-                "startDate": "",
+                "date": "",
                 "estDays": "1",
-                "date": ""
+                "id": 1773703482910,
+                "startDate": ""
             },
             {
-                "id": 1773703482911,
                 "category": "장비 반입 및 정위치",
                 "content": "다이크 공사 및 리크센서 설치",
-                "startDate": "",
+                "date": "",
                 "estDays": "2",
-                "date": ""
+                "id": 1773703482911,
+                "startDate": ""
             },
             {
-                "id": 1773703482912,
                 "category": "통신 상태 및 유틸리티",
                 "content": "Utility 배관 공사 및 연결",
-                "startDate": "",
+                "date": "",
                 "estDays": "5",
-                "date": ""
+                "id": 1773703482912,
+                "startDate": ""
             },
             {
-                "id": 1773703482913,
                 "category": "통신 상태 및 유틸리티",
                 "content": "Utility 턴온",
-                "startDate": "",
+                "date": "",
                 "estDays": "1",
-                "date": ""
+                "id": 1773703482913,
+                "startDate": ""
             },
             {
-                "id": 1773703482914,
                 "category": "통신 상태 및 유틸리티",
                 "content": "인터락 Test 및 통신상태 확인 ",
-                "startDate": "",
+                "date": "",
                 "estDays": "2",
-                "date": ""
+                "id": 1773703482914,
+                "startDate": ""
             },
             {
-                "id": 1773703482915,
                 "category": "셋업 평가",
                 "content": "분석부 안정화 및 오염제어",
-                "startDate": "",
+                "date": "",
                 "estDays": "5",
-                "date": ""
+                "id": 1773703482915,
+                "startDate": ""
             },
             {
-                "id": 1773703482916,
                 "category": "셋업 평가",
                 "content": "Calibration 평가",
-                "startDate": "",
+                "date": "",
                 "estDays": "2",
-                "date": ""
+                "id": 1773703482916,
+                "startDate": ""
             },
             {
-                "id": 1773703482917,
                 "category": "셋업 평가",
                 "content": "Sample 측정",
-                "startDate": "",
+                "date": "",
                 "estDays": "2",
-                "date": ""
+                "id": 1773703482917,
+                "startDate": ""
             },
             {
-                "id": 1773703482918,
                 "category": "셋업 평가",
                 "content": "신뢰도 평가",
-                "startDate": "",
+                "date": "",
                 "estDays": "5",
-                "date": ""
+                "id": 1773703482918,
+                "startDate": ""
             },
             {
-                "id": 1773703482919,
                 "category": "셋업 완료",
                 "content": "셋업 완료",
-                "startDate": "",
+                "date": "",
                 "estDays": "0",
-                "date": ""
+                "id": 1773703482919,
+                "startDate": ""
             }
         ]
     },
     "SKH 이천::WIM-100::WIM1-HK24-0401": {
         "setupDetails": [
             {
-                "id": 1773703488044,
                 "category": "장비 반입 및 정위치",
                 "content": "장비 도면 부착",
-                "startDate": "",
+                "date": "",
                 "estDays": "1",
-                "date": ""
+                "id": 1773703488044,
+                "startDate": ""
             },
             {
-                "id": 1773703488045,
                 "category": "장비 반입 및 정위치",
                 "content": "다이크 설치",
-                "startDate": "",
+                "date": "",
                 "estDays": "1",
-                "date": ""
+                "id": 1773703488045,
+                "startDate": ""
             },
             {
-                "id": 1773703488046,
                 "category": "장비 반입 및 정위치",
                 "content": "장비 반입",
-                "startDate": "",
+                "date": "",
                 "estDays": "1",
-                "date": ""
+                "id": 1773703488046,
+                "startDate": ""
             },
             {
-                "id": 1773703488047,
                 "category": "장비 반입 및 정위치",
                 "content": "다이크 공사 및 리크센서 설치",
-                "startDate": "",
+                "date": "",
                 "estDays": "2",
-                "date": ""
+                "id": 1773703488047,
+                "startDate": ""
             },
             {
-                "id": 1773703488048,
                 "category": "통신 상태 및 유틸리티",
                 "content": "Utility 배관 공사 및 연결",
-                "startDate": "",
+                "date": "",
                 "estDays": "5",
-                "date": ""
+                "id": 1773703488048,
+                "startDate": ""
             },
             {
-                "id": 1773703488049,
                 "category": "통신 상태 및 유틸리티",
                 "content": "Utility 턴온",
-                "startDate": "",
+                "date": "",
                 "estDays": "1",
-                "date": ""
+                "id": 1773703488049,
+                "startDate": ""
             },
             {
-                "id": 1773703488050,
                 "category": "통신 상태 및 유틸리티",
                 "content": "인터락 Test 및 통신상태 확인 ",
-                "startDate": "",
+                "date": "",
                 "estDays": "2",
-                "date": ""
+                "id": 1773703488050,
+                "startDate": ""
             },
             {
-                "id": 1773703488051,
                 "category": "셋업 평가",
                 "content": "분석부 안정화 및 오염제어",
-                "startDate": "",
+                "date": "",
                 "estDays": "5",
-                "date": ""
+                "id": 1773703488051,
+                "startDate": ""
             },
             {
-                "id": 1773703488052,
                 "category": "셋업 평가",
                 "content": "Calibration 평가",
-                "startDate": "",
+                "date": "",
                 "estDays": "2",
-                "date": ""
+                "id": 1773703488052,
+                "startDate": ""
             },
             {
-                "id": 1773703488053,
                 "category": "셋업 평가",
                 "content": "Sample 측정",
-                "startDate": "",
+                "date": "",
                 "estDays": "2",
-                "date": ""
+                "id": 1773703488053,
+                "startDate": ""
             },
             {
-                "id": 1773703488054,
                 "category": "셋업 평가",
                 "content": "신뢰도 평가",
-                "startDate": "",
+                "date": "",
                 "estDays": "5",
-                "date": ""
+                "id": 1773703488054,
+                "startDate": ""
             },
             {
-                "id": 1773703488055,
                 "category": "셋업 완료",
                 "content": "셋업 완료",
-                "startDate": "",
+                "date": "",
                 "estDays": "0",
-                "date": ""
+                "id": 1773703488055,
+                "startDate": ""
             }
         ]
     }
