@@ -23,6 +23,10 @@
             "name": "COSMOS-100N"
         },
         {
+            "name": "COSMOS-200",
+            "abbr": "COSMOS 200"
+        },
+        {
             "name": "IAM7000",
             "abbr": "IAM7000"
         },
@@ -107,8 +111,8 @@
             "abbr": "WOA683"
         },
         {
-            "name": "COSMOS-200",
-            "abbr": "COSMOS 200"
+            "name": "COSMOS-400",
+            "abbr": "COSMOS 400"
         }
     ]
 }

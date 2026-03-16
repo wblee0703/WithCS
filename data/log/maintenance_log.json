@@ -214,5 +214,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "COSMOS-200",
         "details": "Abbr: COSMOS 200"
+    },
+    {
+        "timestamp": "2026-03-16T02:25:20.551Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "COSMOS-400",
+        "details": "Abbr: COSMOS 400"
     }
 ]
