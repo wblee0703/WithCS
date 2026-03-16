@@ -41,6 +41,12 @@
             "설비 개조",
             "Cal 보정",
             "기타"
+        ],
+        "SOMA-3000E::SOMA-EK24-0402::비정기": [
+            "BM",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
         ]
     },
     "items": {
