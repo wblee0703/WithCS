@@ -347,14 +347,16 @@
     padding-right: 0;
 }
 
-#admin-item-list li {
+#admin-item-list li,
+#check-type-item-list li {
     padding: 0;
     display: flex;
     align-items: center;
     font-size: 13px;
 }
 
-#admin-item-list li > .model-col {
+#admin-item-list li > .model-col,
+#check-type-item-list li > .model-col {
     padding: 10px 12px;
 }
 

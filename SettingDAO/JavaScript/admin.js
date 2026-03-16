@@ -1558,7 +1558,6 @@ function renderCheckTypeItemList() {
     
     items.forEach(item => {
         const li = document.createElement('li');
-        li.style.display = 'flex';
         li.style.cursor = 'default';
         li.style.fontSize = '12px';
         li.innerHTML = `
