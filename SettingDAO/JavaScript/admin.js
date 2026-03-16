@@ -1160,6 +1160,13 @@ function setupCheckTypeMgmt() {
         });
     }
 
+    // [추가] 다른 장비 설정 불러오기
+    const btnLoad = document.getElementById('btn-load-check-type');
+    if (btnLoad) {
+        btnLoad.addEventListener('click', openCheckTypeLoadModal);
+    }
+    setupCheckTypeLoadModal();
+
     const searchInput = document.getElementById('check-type-equip-search');
     if (searchInput) {
         searchInput.addEventListener('input', renderCheckTypeEquipList);
@@ -1425,7 +1432,9 @@ function renderCheckTypeSubCategoryList() {
     const defaultSubCategories = {
         '정기': ['PM'],
         '비정기': ['BM', 'Alarm', 'Hunting', 'Data / Para 이상'],
-        '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타']
+        '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
+        '용액제조': ['용액제조'],
+        '온라인 점검': ['온라인 점검']
     };
 
     if (!checkTypeCategoriesData[key]) {
@@ -1560,6 +1569,132 @@ window.deleteCheckTypeItem = function(key, id) {
         }
     }
 };
+
+// [추가] 점검 구분 설정 불러오기 모달 및 데이터 복사 로직
+function setupCheckTypeLoadModal() {
+    const modal = document.getElementById('check-type-load-modal');
+    const closeBtn = document.getElementById('btn-close-check-type-load');
+    const cancelBtn = document.getElementById('btn-cancel-check-type-load');
+    const confirmBtn = document.getElementById('btn-confirm-check-type-load');
+    const siteSelect = document.getElementById('load-check-type-site-select');
+
+    if (!modal) return;
+
+    const closeModal = () => modal.style.display = 'none';
+
+    if (closeBtn) closeBtn.onclick = closeModal;
+    if (cancelBtn) cancelBtn.onclick = closeModal;
+
+    if (siteSelect) {
+        siteSelect.onchange = () => {
+            updateLoadCheckTypeEquipSelect(siteSelect.value);
+        };
+    }
+
+    if (confirmBtn) {
+        confirmBtn.onclick = loadCheckTypeDataFromTarget;
+    }
+}
+
+function openCheckTypeLoadModal() {
+    if (!currentCheckTypeEquipKey) return alert('설정을 덮어쓸 "대상 장비"를 왼쪽 목록에서 먼저 선택해주세요.');
+
+    const modal = document.getElementById('check-type-load-modal');
+    const siteSelect = document.getElementById('load-check-type-site-select');
+    const equipSelect = document.getElementById('load-check-type-equip-select');
+
+    if (!modal || !siteSelect) return;
+
+    siteSelect.innerHTML = '<option value="">사업장 선택</option>';
+    Object.keys(storageData).forEach(site => {
+        const option = document.createElement('option');
+        option.value = site;
+        option.textContent = site;
+        siteSelect.appendChild(option);
+    });
+
+    equipSelect.innerHTML = '<option value="">장비 선택</option>';
+    equipSelect.disabled = true;
+
+    modal.style.display = 'flex';
+}
+
+function updateLoadCheckTypeEquipSelect(site) {
+    const equipSelect = document.getElementById('load-check-type-equip-select');
+    equipSelect.innerHTML = '<option value="">장비 선택</option>';
+    equipSelect.disabled = !site;
+
+    if (!site) return;
+
+    const equips = storageData[site] || [];
+    equips.forEach(equip => {
+        const option = document.createElement('option');
+        option.value = equip;
+        const parts = equip.split('::');
+        option.textContent = parts.length > 1 ? `${parts[0]} (${parts[1]})` : parts[0];
+        equipSelect.appendChild(option);
+    });
+}
+
+function loadCheckTypeDataFromTarget() {
+    const site = document.getElementById('load-check-type-site-select').value;
+    const equip = document.getElementById('load-check-type-equip-select').value;
+
+    if (!site || !equip) return alert('정보를 불러올 원본 장비를 선택해주세요.');
+    
+    const sourceEquipKey = equip;
+
+    if (sourceEquipKey === currentCheckTypeEquipKey) return alert('원본 장비와 대상 장비가 같습니다. 다른 장비를 선택해주세요.');
+
+    if (!confirm('현재 장비의 점검 구분 및 세부 항목 설정이 모두 지워지고 선택한 장비의 설정으로 덮어쓰기 됩니다.\n계속하시겠습니까?')) return;
+
+    // 1. 현재 장비의 기존 데이터 삭제
+    Object.keys(checkTypeCategoriesData).forEach(k => {
+        if (k.startsWith(`${currentCheckTypeEquipKey}::`)) {
+            delete checkTypeCategoriesData[k];
+        }
+    });
+    Object.keys(checkTypeItemsData).forEach(k => {
+        if (k.startsWith(`${currentCheckTypeEquipKey}::`)) {
+            delete checkTypeItemsData[k];
+        }
+    });
+
+    // 2. 소스 장비 데이터 복사
+    Object.keys(checkTypeCategoriesData).forEach(k => {
+        if (k.startsWith(`${sourceEquipKey}::`)) {
+            const suffix = k.substring(sourceEquipKey.length);
+            const newKey = currentCheckTypeEquipKey + suffix;
+            checkTypeCategoriesData[newKey] = JSON.parse(JSON.stringify(checkTypeCategoriesData[k]));
+        }
+    });
+    
+    Object.keys(checkTypeItemsData).forEach(k => {
+        if (k.startsWith(`${sourceEquipKey}::`)) {
+            const suffix = k.substring(sourceEquipKey.length);
+            const newKey = currentCheckTypeEquipKey + suffix;
+            // 고유 ID 재발급 (충돌 방지)
+            const newItems = checkTypeItemsData[k].map((item, idx) => ({
+                ...item,
+                id: Date.now() + Math.floor(Math.random() * 10000) + idx
+            }));
+            checkTypeItemsData[newKey] = newItems;
+        }
+    });
+
+    saveCheckTypeCategories();
+    saveCheckTypeItems();
+    addSystemLog('LOAD_CHECK_TYPE', currentCheckTypeEquipKey, `From: ${sourceEquipKey}`);
+
+    alert('설정을 성공적으로 불러왔습니다.');
+    document.getElementById('check-type-load-modal').style.display = 'none';
+
+    // UI 갱신
+    if (currentCheckTypeCategory) {
+        renderCheckTypeSubCategoryList();
+        renderCheckTypeItemList();
+    }
+}
 
 // [추가] 초기화 시 장비 관리 이벤트 등록
 const originalSetupAdminMenu = setupAdminMenu; // 기존 함수 보존

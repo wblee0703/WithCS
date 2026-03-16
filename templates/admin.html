@@ -272,6 +272,9 @@
                             <input type="text" id="check-type-equip-search" class="input-dark full-width compact-select" placeholder="장비명 검색" autocomplete="off">
                         </div>
                         <ul id="check-type-equip-list" class="admin-list"></ul>
+                        <div class="list-footer">
+                            <button id="btn-load-check-type" class="btn-blue full-width">다른 장비 설정 불러오기</button>
+                        </div>
                     </div>
                     
                     <!-- 중앙: 점검 구분 선택 -->
@@ -330,6 +333,35 @@
                         <div id="check-type-detail-placeholder" class="placeholder-container">
                             <p>장비, 점검 구분, 분류를 순서대로 선택해주세요.</p>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. 점검 구분 관리 설정 불러오기 모달 -->
+        <div id="check-type-load-modal" class="modal-overlay" style="display:none;">
+            <div class="modal-window" style="width: 450px; height: 350px;">
+                <div class="modal-header">
+                    <h4>점검 항목 설정 불러오기</h4>
+                    <span class="close-btn" id="btn-close-check-type-load">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <p class="modal-desc" style="margin-bottom: 15px; color: #8b949e; font-size: 13px;">선택한 장비의 <strong>점검 구분 및 세부 항목 설정</strong>을 대상 장비로 복사(덮어쓰기)합니다.</p>
+                    <div class="form-group">
+                        <label>원본 사업장 선택</label>
+                        <select id="load-check-type-site-select" class="input-dark full-width" style="height: 30px; font-size: 14px;">
+                            <option value="">사업장 선택</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>원본 장비 선택</label>
+                        <select id="load-check-type-equip-select" class="input-dark full-width" disabled style="height: 30px; font-size: 14px;">
+                            <option value="">장비 선택</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button id="btn-cancel-check-type-load" class="btn-gray">취소</button>
+                        <button id="btn-confirm-check-type-load" class="btn-blue">불러오기 (덮어쓰기)</button>
                     </div>
                 </div>
             </div>
