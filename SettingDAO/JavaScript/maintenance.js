@@ -134,7 +134,12 @@ function setupLogEvents() {
 
     const logTypeSelect = document.getElementById('log-type-select');
     if (logTypeSelect) {
-        logTypeSelect.addEventListener('change', updateLogContentOptions);
+        logTypeSelect.addEventListener('change', updateLogDetailTypeOptions);
+    }
+
+    const logDetailTypeSelect = document.getElementById('log-detail-type-select');
+    if (logDetailTypeSelect) {
+        logDetailTypeSelect.addEventListener('change', updateLogContentOptions);
     }
 
     // [추가] 커스텀 드롭다운 이벤트 핸들링
@@ -367,6 +372,9 @@ function renderDetails() {
 
     // [추가] 파일 리스트 갱신
     renderFiles();
+
+    // [추가] 로그 구분, 세부구분, 내용 초기화 (Admin 연동)
+    updateLogTypeOptions();
 
     // [추가] 유지관리 항목 입력 옵션 갱신
     if (typeof updateMaintContentOptions === 'function') updateMaintContentOptions();
@@ -602,13 +610,16 @@ function addLogItem(e) {
 
     const date = dateInput.value;
     const typeSelect = document.getElementById('log-type-select');
-    const type = typeSelect ? typeSelect.value : 'PM';
+    const detailTypeSelect = document.getElementById('log-detail-type-select');
+    const type = typeSelect ? typeSelect.value : '';
+    const detailType = detailTypeSelect ? detailTypeSelect.value : '';
     const worker = workerInput.value.trim();
 
     let content = '';
     const contentInput = document.getElementById('log-content-input');
+    const contentWrapper = document.getElementById('log-content-wrapper');
 
-    if (type === 'PM' || type === 'BM' || type === '트러블이슈') {
+    if (contentWrapper && contentWrapper.style.display !== 'none') {
         const list = document.getElementById('log-content-list');
         const selected = list ? list.querySelectorAll('.log-select-item.selected') : [];
         if (selected.length > 0) {
@@ -618,7 +629,7 @@ function addLogItem(e) {
         content = contentInput ? contentInput.value.trim() : '';
     }
 
-    if (!date || !worker || !content) return alert('날짜, 내용, 작업자를 모두 입력해주세요.');
+    if (!date || !type || !detailType || !worker || !content) return alert('모든 항목을 올바르게 선택/입력해주세요.');
 
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [], memo: "" };
@@ -631,6 +642,7 @@ function addLogItem(e) {
         id: Date.now(), // 고유 식별자
         date: date,
         type: type,
+        detailType: detailType,
         content: content,
         worker: worker,
         memo: "" // 상세 메모 초기값
@@ -638,7 +650,7 @@ function addLogItem(e) {
 
     data.logs.push(newLog);
     localStorage.setItem(key, JSON.stringify(data));
-    addSystemLog('ADD_LOG', currentPath.equip, `[${type}] ${content} (작업자: ${worker}, 날짜: ${date})`);
+    addSystemLog('ADD_LOG', currentPath.equip, `[${type} - ${detailType}] ${content} (작업자: ${worker}, 날짜: ${date})`);
 
     // 입력창 초기화 및 리스트 갱신
     workerInput.value = '';
@@ -683,16 +695,25 @@ function renderLogs() {
                 (log.worker && log.worker.toLowerCase().includes(keyword)) ||
                 (log.date && log.date.includes(keyword)) ||
                 (log.content && log.content.toLowerCase().includes(keyword)) ||
-                (log.memo && log.memo.toLowerCase().includes(keyword))
+                (log.memo && log.memo.toLowerCase().includes(keyword)) ||
+                (log.type && log.type.toLowerCase().includes(keyword)) ||
+                (log.detailType && log.detailType.toLowerCase().includes(keyword))
             );
         }
     }
+    
+    const getLogBadgeClass = (t, dt) => {
+        if (t === 'PM' || dt === 'PM') return 'pm';
+        if (t === 'BM' || dt === 'BM') return 'bm';
+        return 'default';
+    };
 
     logBody.innerHTML = sortedLogs.map(log => {
         let displayContent = log.content || '-';
         let tooltipContent = log.content || '';
 
-        if (log.content && (log.type === 'PM' || log.type === 'BM' || log.type === '트러블이슈')) {
+        // 항목이 많은 경우 축약 표시
+        if (log.content && log.content.includes(',')) {
             const items = log.content.split(',').map(s => s.trim());
             if (items.length > 1) {
                 displayContent = `${items[0]} 외 ${items.length - 1}개`;
@@ -703,7 +724,8 @@ function renderLogs() {
         return `
         <tr id="log-row-${log.id}" onclick="selectLog(${log.id})" class="${selectedLogId === log.id ? 'active-log' : ''}">
             <td>${log.date}</td>
-            <td><span class="badge ${(log.type || 'PM').toLowerCase()}">${log.type || 'PM'}</span></td>
+            <td><span class="badge ${getLogBadgeClass(log.type, log.detailType)}">${escapeHtml(log.type || 'PM')}</span></td>
+            <td>${escapeHtml(log.detailType || '-')}</td>
             <td title="${escapeHtml(tooltipContent)}">${escapeHtml(displayContent)}</td>
             <td>${escapeHtml(log.worker)}</td>
             <td>
@@ -825,69 +847,97 @@ function toggleLogEdit(id, btn) {
 
         const dateCell = row.cells[0];
         const typeCell = row.cells[1];
-        const contentCell = row.cells[2];
-        const workerCell = row.cells[3];
+        const detailCell = row.cells[2];
+        const contentCell = row.cells[3];
+        const workerCell = row.cells[4];
 
         const currentDate = dateCell.textContent.trim();
         const currentType = typeCell.textContent.trim();
+        const currentDetailType = detailCell.textContent.trim() === '-' ? '' : detailCell.textContent.trim();
         const currentContent = contentCell.textContent.trim();
         const currentWorker = workerCell.textContent.trim();
 
-        dateCell.innerHTML = `<input type="date" id="edit-log-date-${id}" value="${escapeHtml(currentDate)}" style="width: 100%; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 2px; border-radius: 4px;" onclick="event.stopPropagation()">`;
+        dateCell.innerHTML = `<input type="date" id="edit-log-date-${id}" value="${escapeHtml(currentDate)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
+        
+        const allCategories = ['정기', '비정기', '고객대응', '용액제조', '온라인 점검', 'PM', 'BM', '장비점검', '프로그램변경', '트러블이슈'];
         typeCell.innerHTML = `
-            <select id="edit-log-type-${id}" style="width: 100%; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 2px; border-radius: 4px;" onclick="event.stopPropagation()" onchange="updateEditLogContent(${id})">
-                <option value="PM" ${currentType === 'PM' ? 'selected' : ''}>PM</option>
-                <option value="BM" ${currentType === 'BM' ? 'selected' : ''}>BM</option>
-                <option value="장비점검" ${currentType === '장비점검' ? 'selected' : ''}>장비점검</option>
-                <option value="프로그램변경" ${currentType === '프로그램변경' ? 'selected' : ''}>프로그램변경</option>
-                <option value="트러블이슈" ${currentType === '트러블이슈' ? 'selected' : ''}>트러블이슈</option>
+            <select id="edit-log-type-${id}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()" onchange="updateEditDetailTypeOptions(${id})">
+                <option value="">구분</option>
+                ${allCategories.map(c => `<option value="${c}" ${currentType === c ? 'selected' : ''}>${c}</option>`).join('')}
             </select>`;
 
-        renderEditLogContentField(id, currentType, currentContent === '-' ? '' : currentContent);
+        detailCell.innerHTML = `
+            <select id="edit-log-detail-type-${id}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()" onchange="updateEditLogContentField(${id})">
+                <option value="${escapeHtml(currentDetailType)}">${escapeHtml(currentDetailType) || '세부구분 선택'}</option>
+            </select>`;
 
-        workerCell.innerHTML = `<input type="text" id="edit-log-worker-${id}" value="${escapeHtml(currentWorker)}" style="width: 100%; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 2px; border-radius: 4px;" onclick="event.stopPropagation()">`;
+        renderEditLogContentField(id, currentType, currentDetailType, currentContent === '-' ? '' : currentContent);
+        updateEditDetailTypeOptions(id, currentDetailType);
+
+        workerCell.innerHTML = `<input type="text" id="edit-log-worker-${id}" value="${escapeHtml(currentWorker)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
 
     } else {
         const dateInput = document.getElementById(`edit-log-date-${id}`);
         const typeInput = document.getElementById(`edit-log-type-${id}`);
+        const detailTypeInput = document.getElementById(`edit-log-detail-type-${id}`);
         const workerInput = document.getElementById(`edit-log-worker-${id}`);
 
-        if (!dateInput || !typeInput || !workerInput) return alert('입력 필드를 찾을 수 없습니다. 다시 시도해주세요.');
+        if (!dateInput || !typeInput || !detailTypeInput || !workerInput) return alert('입력 필드를 찾을 수 없습니다. 다시 시도해주세요.');
 
         const newDate = dateInput.value;
         const newType = typeInput.value;
+        const newDetailType = detailTypeInput.value;
 
         // [수정] 내용 가져오기 (입력창 또는 드롭다운 트리거)
         let newContent = '';
-        const contentInput = document.getElementById(`edit-log-content-${id}`);
+        const wrapper = document.querySelector(`#log-row-${id} .log-select-wrapper`);
 
-        if (contentInput) {
-            newContent = contentInput.value.trim();
-        } else {
-            const list = document.querySelector(`#log-row-${id} .log-select-list`);
+        if (wrapper) {
+            const list = wrapper.querySelector('.log-select-list');
             if (list) {
                 const selected = list.querySelectorAll('.log-select-item.selected');
                 newContent = Array.from(selected).map(el => el.dataset.value).join(', ');
             }
+        } else {
+            const contentInput = document.getElementById(`edit-log-content-${id}`);
+            if (contentInput) newContent = contentInput.value.trim();
         }
 
         const newWorker = workerInput.value.trim();
 
-        if (!newDate || !newWorker) return alert('날짜와 작업자는 필수입니다.');
+        if (!newDate || !newType || !newDetailType || !newWorker) return alert('빈 항목이 없도록 모두 입력해주세요.');
 
-        updateLogItem(id, newDate, newType, newContent, newWorker);
+        updateLogItem(id, newDate, newType, newDetailType, newContent, newWorker);
     }
 }
 
 // [수정] 수정 모드에서 내용 필드 렌더링 (PM/BM일 경우 다중 선택 드롭다운)
-function renderEditLogContentField(id, type, value) {
+window.renderEditLogContentField = function(id, type, detailType, value) {
     const row = document.getElementById(`log-row-${id}`);
     if (!row) return;
-    const contentCell = row.cells[2];
+    const contentCell = row.cells[3]; // 0: date, 1: type, 2: detailType, 3: content
 
-    if (type === 'PM' || type === 'BM' || type === '트러블이슈') {
-        const key = `details_${currentPath.site}_${currentPath.equip}`;
-        const data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
+    const equipKey = currentPath.equip;
+    const itemData = JSON.parse(localStorage.getItem('check_type_items')) || {};
+    const key = `${equipKey}::${type}::${detailType}`;
+    const items = itemData[key] || [];
+
+    // 구버전 호환성
+    if (type === 'PM' || type === 'BM' || type === '트러블이슈' || detailType === 'PM' || detailType === 'BM') {
+        const keyMaint = `details_${currentPath.site}_${currentPath.equip}`;
+        const dataMaint = JSON.parse(localStorage.getItem(keyMaint)) || { maint: [] };
+        let filteredItems = [];
+        if (type === '트러블이슈') {
+            filteredItems.push({ content: '설비 이상' });
+            filteredItems.push({ content: '데이터이슈' });
+            filteredItems = filteredItems.concat(dataMaint.maint.filter(item => item.type === 'PM' || item.type === 'BM'));
+        } else {
+            filteredItems = dataMaint.maint.filter(item => item.type === type || item.type === detailType);
+        }
+        items.push(...filteredItems);
+    }
+
+    if (items.length > 0) {
 
         // 커스텀 드롭다운 구조 생성
         const wrapper = document.createElement('div');
@@ -915,18 +965,10 @@ function renderEditLogContentField(id, type, value) {
         const list = document.createElement('div');
         list.className = 'log-select-list';
 
-        // 항목 리스트 생성
-        if (data.maint) {
-            let filteredItems = [];
-            if (type === '트러블이슈') {
-                filteredItems.push({ content: '설비 이상' });
-                filteredItems.push({ content: '데이터이슈' }); // 기본값 추가
-                filteredItems = filteredItems.concat(data.maint.filter(item => item.type === 'PM' || item.type === 'BM'));
-            } else {
-                filteredItems = data.maint.filter(item => item.type === type);
-            }
-
-            filteredItems.forEach(item => {
+        items.forEach(item => {
+            // 중복 렌더링 방지
+            if (Array.from(list.children).some(child => child.dataset.value === item.content)) return;
+            
                 const div = document.createElement('div');
                 div.className = 'log-select-item';
                 if (currentValues.includes(item.content)) div.classList.add('selected');
@@ -937,7 +979,6 @@ function renderEditLogContentField(id, type, value) {
                     e.stopPropagation();
                     div.classList.toggle('selected');
 
-                    // 선택된 항목들로 트리거 텍스트 업데이트
                     const selected = list.querySelectorAll('.log-select-item.selected');
                     const values = Array.from(selected).map(el => el.dataset.value);
 
@@ -951,12 +992,10 @@ function renderEditLogContentField(id, type, value) {
                     trigger.title = values.join('\n');
                 };
                 list.appendChild(div);
-            });
-        }
+        });
 
         dropdown.appendChild(list);
 
-        // [추가] 드롭다운 하단 추가 버튼 생성
         const footer = document.createElement('div');
         footer.className = 'log-select-footer';
         const addBtn = document.createElement('button');
@@ -981,118 +1020,189 @@ function renderEditLogContentField(id, type, value) {
         contentCell.innerHTML = '';
         contentCell.appendChild(wrapper);
     } else {
-        contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="${escapeHtml(value)}" style="width: 100%; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 2px; border-radius: 4px;" onclick="event.stopPropagation()">`;
+        contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="${escapeHtml(value)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
     }
 }
 
-// [추가] 수정 모드에서 구분 변경 시 내용 필드 업데이트
-window.updateEditLogContent = function (id) {
-    const typeSelect = document.getElementById(`edit-log-type-${id}`);
-
-    if (typeSelect) {
-        const type = typeSelect.value;
-        renderEditLogContentField(id, type, '');
+// [추가] Admin 점검 구분 연동 동적 생성 함수
+window.updateLogTypeOptions = function() {
+    const typeSelect = document.getElementById('log-type-select');
+    if (!typeSelect) return;
+    
+    const categories = ['정기', '비정기', '고객대응', '용액제조', '온라인 점검']; // Admin 기본 구분
+    const currentVal = typeSelect.value;
+    
+    typeSelect.innerHTML = '<option value="">구분 선택</option>';
+    categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        typeSelect.appendChild(opt);
+    });
+    
+    if (currentVal && categories.includes(currentVal)) {
+        typeSelect.value = currentVal;
     }
+    
+    updateLogDetailTypeOptions();
 };
 
-function updateLogItem(id, date, type, content, worker) {
-    const key = `details_${currentPath.site}_${currentPath.equip}`;
-    let data = JSON.parse(localStorage.getItem(key));
-    if (!data || !data.logs) return;
-
-    const idx = data.logs.findIndex(l => l.id === id);
-    if (idx > -1) {
-        data.logs[idx].date = date;
-        data.logs[idx].type = type;
-        data.logs[idx].content = content;
-        data.logs[idx].worker = worker;
-
-        localStorage.setItem(key, JSON.stringify(data));
-        addSystemLog('UPDATE_LOG', currentPath.equip, `수정: [${type}] ${content} (작업자: ${worker}, 날짜: ${date})`);
-        renderLogs();
-    } else {
-        alert('항목을 찾을 수 없습니다. (ID: ' + id + ')');
+window.updateLogDetailTypeOptions = function() {
+    const typeSelect = document.getElementById('log-type-select');
+    const detailTypeSelect = document.getElementById('log-detail-type-select');
+    if (!typeSelect || !detailTypeSelect) return;
+    
+    const type = typeSelect.value;
+    detailTypeSelect.innerHTML = '<option value="">세부구분 선택</option>';
+    
+    if (!type) {
+        detailTypeSelect.disabled = true;
+        updateLogContentOptions();
+        return;
     }
-}
+    
+    detailTypeSelect.disabled = false;
+    
+    const equipKey = currentPath.equip;
+    const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
+    const key = `${equipKey}::${type}`;
+    const subCategories = catData[key] || [];
+    
+    if (subCategories.length === 0) {
+        detailTypeSelect.innerHTML = '<option value="">등록된 세부구분 없음</option>';
+        detailTypeSelect.disabled = true;
+    } else {
+        subCategories.forEach(sub => {
+            const opt = document.createElement('option');
+            opt.value = sub;
+            opt.textContent = sub;
+            detailTypeSelect.appendChild(opt);
+        });
+    }
+    
+    updateLogContentOptions();
+};
 
 // [추가] 로그 입력 폼 항목 업데이트 함수
-function updateLogContentOptions() {
+window.updateLogContentOptions = function() {
     const typeSelect = document.getElementById('log-type-select');
+    const detailTypeSelect = document.getElementById('log-detail-type-select');
     const contentWrapper = document.getElementById('log-content-wrapper');
     const contentList = document.getElementById('log-content-list');
     const contentTrigger = document.getElementById('log-content-trigger');
     const contentInput = document.getElementById('log-content-input');
 
-    if (!typeSelect || !contentWrapper || !contentInput) return;
+    if (!typeSelect || !detailTypeSelect || !contentWrapper || !contentInput) return;
 
     const type = typeSelect.value;
-    const key = `details_${currentPath.site}_${currentPath.equip}`;
-    const data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
+    const detailType = detailTypeSelect.value;
+    const equipKey = currentPath.equip;
 
-    if (type === 'PM' || type === 'BM' || type === '트러블이슈') {
+    if (!type || !detailType) {
+        contentWrapper.style.display = 'none';
+        contentInput.style.display = 'inline-block';
+        contentInput.placeholder = '내용 (세부구분을 먼저 선택하세요)';
+        contentInput.value = '';
+        contentInput.disabled = true;
+        return;
+    }
+
+    contentInput.disabled = false;
+    
+    const itemData = JSON.parse(localStorage.getItem('check_type_items')) || {};
+    const key = `${equipKey}::${type}::${detailType}`;
+    const items = itemData[key] || [];
+
+    if (items.length > 0) {
         contentWrapper.style.display = 'inline-block';
         contentInput.style.display = 'none';
 
         if (contentTrigger) contentTrigger.textContent = '항목 선택';
         if (contentList) {
             contentList.innerHTML = '';
-            if (data.maint) {
-                let filteredItems = [];
-                if (type === '트러블이슈') {
-                    filteredItems.push({ content: '설비 이상' });
-                    filteredItems.push({ content: '데이터이슈' }); // 기본값 추가
-                    filteredItems = filteredItems.concat(data.maint.filter(item => item.type === 'PM' || item.type === 'BM'));
-                } else {
-                    filteredItems = data.maint.filter(item => item.type === type);
-                }
-
-                filteredItems.forEach(item => {
-                    const div = document.createElement('div');
-                    div.className = 'log-select-item';
-                    div.dataset.value = item.content;
-
-                    const span = document.createElement('span');
-                    span.textContent = item.content;
-
-                    const updateText = () => {
-                        const selected = contentList.querySelectorAll('.log-select-item.selected');
-                        const values = Array.from(selected).map(el => el.dataset.value);
-                        if (contentTrigger) {
-                            if (values.length > 1) {
-                                contentTrigger.textContent = `${values[0]} 외 ${values.length - 1}개`;
-                            } else if (values.length === 1) {
-                                contentTrigger.textContent = values[0];
-                            } else {
-                                contentTrigger.textContent = '항목 선택';
-                            }
-                            contentTrigger.title = values.join('\n');
-                        }
-                    };
-
-                    // 항목 클릭: 다중 선택 (토글)
-                    div.onclick = (e) => {
-                        e.stopPropagation();
-                        div.classList.toggle('selected');
-                        updateText();
-                    };
-
-                    div.appendChild(span);
-                    contentList.appendChild(div);
-                });
-            }
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'log-select-item';
+                div.dataset.value = item.content;
+                div.innerHTML = `<span>${item.content}</span>`;
+                div.onclick = (e) => {
+                    e.stopPropagation();
+                    div.classList.toggle('selected');
+                    
+                    const selected = contentList.querySelectorAll('.log-select-item.selected');
+                    const values = Array.from(selected).map(el => el.dataset.value);
+                    if (values.length > 1) {
+                        contentTrigger.textContent = `${values[0]} 외 ${values.length - 1}개`;
+                    } else if (values.length === 1) {
+                        contentTrigger.textContent = values[0];
+                    } else {
+                        contentTrigger.textContent = '항목 선택';
+                    }
+                    contentTrigger.title = values.join('\n');
+                };
+                contentList.appendChild(div);
+            });
         }
     } else {
         contentWrapper.style.display = 'none';
         contentInput.style.display = 'inline-block';
-
-        if (type === '프로그램변경') {
-            if (!contentInput.value.startsWith('Ver.')) contentInput.value = 'Ver. ';
-        } else {
-            if (contentInput.value.startsWith('Ver.')) contentInput.value = '';
-            contentInput.placeholder = '점검 내용';
-        }
+        contentInput.placeholder = '등록된 점검 항목이 없습니다. 직접 입력하세요.';
+        contentInput.value = '';
     }
-}
+};
+
+window.updateEditDetailTypeOptions = function(id, presetVal = '') {
+    const typeSelect = document.getElementById(`edit-log-type-${id}`);
+    const detailTypeSelect = document.getElementById(`edit-log-detail-type-${id}`);
+    if (!typeSelect || !detailTypeSelect) return;
+    
+    const type = typeSelect.value;
+    detailTypeSelect.innerHTML = '<option value="">세부구분 선택</option>';
+    
+    if (!type) {
+        detailTypeSelect.disabled = true;
+        updateEditLogContentField(id);
+        return;
+    }
+    
+    detailTypeSelect.disabled = false;
+    
+    const equipKey = currentPath.equip;
+    const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
+    const key = `${equipKey}::${type}`;
+    const subCategories = catData[key] || [];
+    
+    // 기존 값 유지 로직
+    if (presetVal && !subCategories.includes(presetVal)) {
+        subCategories.unshift(presetVal);
+    }
+    
+    if (subCategories.length === 0) {
+        detailTypeSelect.innerHTML = '<option value="">등록된 세부구분 없음</option>';
+        detailTypeSelect.disabled = true;
+    } else {
+        subCategories.forEach(sub => {
+            const opt = document.createElement('option');
+            opt.value = sub;
+            opt.textContent = sub;
+            if (sub === presetVal) opt.selected = true;
+            detailTypeSelect.appendChild(opt);
+        });
+    }
+    
+    if (!presetVal) updateEditLogContentField(id);
+};
+
+window.updateEditLogContentField = function(id) {
+    const typeSelect = document.getElementById(`edit-log-type-${id}`);
+    const detailTypeSelect = document.getElementById(`edit-log-detail-type-${id}`);
+    if (!typeSelect || !detailTypeSelect) return;
+    
+    const type = typeSelect.value;
+    const detailType = detailTypeSelect.value;
+    
+    renderEditLogContentField(id, type, detailType, '');
+};
 
 /* ==========================================================================
    4. 모달 및 팝업 (Modals & Popups)

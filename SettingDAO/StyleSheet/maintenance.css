@@ -178,34 +178,39 @@ tr.dragging {
 }
 
 #log-list-wrapper .data-table th:nth-child(1) {
-    width: 150px;
+    width: 100px;
 }
 
 /* 점검일 */
 #log-list-wrapper .data-table th:nth-child(2) {
-    width: 100px;
+    width: 90px;
 }
 
 /* 구분 */
-#log-list-wrapper .data-table th:nth-child(4) {
-    width: 150px;
+#log-list-wrapper .data-table th:nth-child(3) {
+    width: 100px;
+}
+
+/* 세부구분 */
+#log-list-wrapper .data-table th:nth-child(5) {
+    width: 90px;
 }
 
 /* 작업자 */
-#log-list-wrapper .data-table th:nth-child(5) {
-    width: 90px;
+#log-list-wrapper .data-table th:nth-child(6) {
+    width: 70px;
 }
 
 /* 관리 */
 
 /* 로그 테이블 관리 모드 (삭제 컬럼 제어) */
-#log-list-wrapper .data-table th:nth-child(5),
-#log-list-wrapper .data-table td:nth-child(5) {
+#log-list-wrapper .data-table th:nth-child(6),
+#log-list-wrapper .data-table td:nth-child(6) {
     display: none;
 }
 
-#log-list-wrapper .data-table.management-active th:nth-child(5),
-#log-list-wrapper .data-table.management-active td:nth-child(5) {
+#log-list-wrapper .data-table.management-active th:nth-child(6),
+#log-list-wrapper .data-table.management-active td:nth-child(6) {
     display: table-cell;
 }
 
@@ -237,6 +242,7 @@ tr.dragging {
 /* 드롭다운(select) 공통 다크 테마 디자인 적용 */
 select.input-dark,
 select#log-type-select,
+select#log-detail-type-select,
 select#maint-content {
     background-color: #0d1117;
     border: 1px solid #30363d;
@@ -248,12 +254,14 @@ select#maint-content {
 
 select.input-dark:focus,
 select#log-type-select:focus,
+select#log-detail-type-select:focus,
 select#maint-content:focus {
     border-color: #58a6ff;
 }
 
 select.input-dark option,
 select#log-type-select option,
+select#log-detail-type-select option,
 select#maint-content option {
     background-color: #161b22;
     color: #e6edf3;
@@ -699,6 +707,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         padding: 0 !important;
     }
 
+    #log-detail-type-select {
+        width: auto !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        appearance: none;
+        -webkit-appearance: none;
+    }
+
     #log-worker {
         width: auto !important;
         flex: 0.7 !important;
@@ -709,6 +726,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     /* 입력 폰트 크기 축소 */
     #log-date,
     #log-type-select,
+    #log-detail-type-select,
     .log-select-trigger,
     #log-worker,
     .log-content-input {
