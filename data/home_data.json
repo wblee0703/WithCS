@@ -71,6 +71,10 @@
             "abbr": "PAMS(P)"
         },
         {
+            "name": "PAMS-300ST",
+            "abbr": "PAMS(T)"
+        },
+        {
             "name": "PGA-C10",
             "abbr": "PGA-C10"
         },
@@ -119,8 +123,8 @@
             "abbr": "WOA683"
         },
         {
-            "name": "PAMS-300ST",
-            "abbr": "PAMS(T)"
+            "name": "NaVi-TM(MG1)",
+            "abbr": "MG200H-1"
         }
     ]
 }

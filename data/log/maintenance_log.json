@@ -232,5 +232,11 @@
         "action": "ADD_EQUIP_MODEL",
         "target": "PAMS-300ST",
         "details": "Abbr: PAMS(T)"
+    },
+    {
+        "timestamp": "2026-03-16T02:26:48.782Z",
+        "action": "ADD_EQUIP_MODEL",
+        "target": "NaVi-TM(MG1)",
+        "details": "Abbr: MG200H-1"
     }
 ]
