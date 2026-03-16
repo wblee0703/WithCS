@@ -300,6 +300,16 @@
     padding-right: 0;
 }
 
+#admin-item-list li {
+    padding: 0;
+    display: flex;
+    align-items: center;
+}
+
+#admin-item-list li > .model-col {
+    padding: 10px 12px;
+}
+
 /* 각 컬럼별 비율 및 정렬 */
 .col-item-type {
     flex: 1.5;
@@ -308,9 +318,18 @@
 }
 
 .col-item-part {
-    flex: 4;
-    justify-content: flex-start;
-    padding-left: 10px;
+    flex: 3;
+    justify-content: center;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.col-item-spec {
+    flex: 3;
+    justify-content: center;
+    text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -332,11 +351,31 @@
     flex: 1.5;
     text-align: center;
     border-radius: 4px;
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    cursor: pointer;
+    outline: none;
+}
+
+.input-item-type:focus {
+    border-color: #58a6ff;
+}
+
+/* 드롭다운 옵션 목록(목록창) 스타일 */
+.input-item-type option {
+    background-color: #161b22;
+    color: #e6edf3;
 }
 
 .input-item-part {
-    flex: 4;
-    padding-left: 10px;
+    flex: 3;
+    text-align: center;
+}
+
+.input-item-spec {
+    flex: 3;
+    text-align: center;
 }
 
 .input-item-cycle {

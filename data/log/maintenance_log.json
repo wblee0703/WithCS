@@ -6,15 +6,15 @@
         "timestamp": "2026-03-16T00:06:27.434Z"
     },
     {
-        "timestamp": "2026-03-16T00:10:33.682Z",
         "action": "DELETE_ITEM_ADMIN",
+        "details": "",
         "target": "Standard Solution",
-        "details": ""
+        "timestamp": "2026-03-16T00:10:33.682Z"
     },
     {
-        "timestamp": "2026-03-16T00:10:43.564Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Cycle: 30",
         "target": "standard",
-        "details": "Type: PM, Cycle: 30"
+        "timestamp": "2026-03-16T00:10:43.564Z"
     }
 ]

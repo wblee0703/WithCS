@@ -803,27 +803,31 @@ function setupItemMgmt() {
     const btnAdd = document.getElementById('btn-admin-add-item');
     const typeInput = document.getElementById('admin-item-type-input');
     const partInput = document.getElementById('admin-item-part-input');
+    const specInput = document.getElementById('admin-item-spec-input');
     const cycleInput = document.getElementById('admin-item-cycle-input');
 
     if (btnAdd) {
         btnAdd.addEventListener('click', () => {
             const type = typeInput.value;
             const part = partInput.value.trim();
+            const spec = specInput.value.trim();
             const cycle = cycleInput.value.trim();
 
             if (!part) return alert('교체(수리) 파츠 명을 입력해주세요.');
 
-            adminItems.push({ id: Date.now(), type, part, cycle });
+            adminItems.push({ id: Date.now(), type, part, spec, cycle });
             saveAdminItems();
-            addSystemLog('ADD_ITEM_ADMIN', part, `Type: ${type}, Cycle: ${cycle}`);
+            addSystemLog('ADD_ITEM_ADMIN', part, `Type: ${type}, Spec: ${spec}, Cycle: ${cycle}`);
             
             partInput.value = '';
+            specInput.value = '';
             cycleInput.value = '';
             renderAdminItemList();
             partInput.focus();
         });
         
-        partInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') cycleInput.focus(); });
+        partInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') specInput.focus(); });
+        specInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') cycleInput.focus(); });
         cycleInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') btnAdd.click(); });
     }
 }
@@ -859,6 +863,9 @@ function renderAdminItemList() {
             <div class="model-col col-item-part">
                 ${item.part}
             </div>
+            <div class="model-col col-item-spec">
+                ${item.spec || '-'}
+            </div>
             <div class="model-col col-item-cycle">
                 ${item.cycle ? item.cycle + '일' : '-'}
             </div>
@@ -891,7 +898,8 @@ function renderAdminItemList() {
                 
                 const typeCol = li.children[0];
                 const partCol = li.children[1];
-                const cycleCol = li.children[2];
+                const specCol = li.children[2];
+                const cycleCol = li.children[3];
                 
                 typeCol.innerHTML = `
                     <select class="input-dark compact-select input-item-type item-edit-input">
@@ -901,20 +909,23 @@ function renderAdminItemList() {
                     </select>
                 `;
                 partCol.innerHTML = `<input type="text" class="input-dark input-item-part item-edit-input" value="${item.part}">`;
+                specCol.innerHTML = `<input type="text" class="input-dark input-item-spec item-edit-input" value="${item.spec || ''}">`;
                 cycleCol.innerHTML = `<input type="number" class="input-dark input-item-cycle item-edit-input" value="${item.cycle || ''}">`;
             } else {
                 const newType = li.children[0].querySelector('select').value.trim();
                 const newPart = li.children[1].querySelector('input').value.trim();
-                const newCycle = li.children[2].querySelector('input').value.trim();
+                const newSpec = li.children[2].querySelector('input').value.trim();
+                const newCycle = li.children[3].querySelector('input').value.trim();
 
                 if (!newPart) return alert('교체(수리) 파츠 명을 입력해주세요.');
 
                 item.type = newType;
                 item.part = newPart;
+                item.spec = newSpec;
                 item.cycle = newCycle;
 
                 saveAdminItems();
-                addSystemLog('UPDATE_ITEM_ADMIN', item.part, `To: ${newType} / ${newPart} / ${newCycle}`);
+                addSystemLog('UPDATE_ITEM_ADMIN', item.part, `To: ${newType} / ${newPart} / ${newSpec} / ${newCycle}`);
                 renderAdminItemList();
             }
         });
