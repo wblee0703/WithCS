@@ -544,5 +544,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Diaphragm",
         "details": "Type: BM, Spec: 024489 for N815 (815 부품)"
+    },
+    {
+        "timestamp": "2026-03-17T04:45:52.490Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Diaphragm",
+        "details": "Type: BM, Spec: 027473 for N838 (838 부품)"
     }
 ]
