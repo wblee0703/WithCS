@@ -803,15 +803,15 @@
         "equip": ""
     },
     {
-        "code": "Syringe_2.5mL (SETo)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723475154,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00002252",
+        "code": "Syringe_2.5mL (SETo)",
         "part": "Syringe(2.5mL)",
-        "partno": "",
         "spec": "3020009, 2.5mL, SETonic",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "AGILENT CELL",

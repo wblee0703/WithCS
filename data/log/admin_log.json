@@ -1156,5 +1156,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Syringe(1mL)",
         "details": "Type: BM, Code: Syringe_1mL (SETo)"
+    },
+    {
+        "timestamp": "2026-03-17T05:10:10.135Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Syringe(2.5mL)",
+        "details": "Type: BM, Code: Syringe_2.5mL (SETo)"
     }
 ]
