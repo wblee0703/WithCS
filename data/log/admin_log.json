@@ -400,5 +400,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Cell focus lens for ICP-MS",
         "details": "Type: BM, Spec: G3280-20633, 정품"
+    },
+    {
+        "timestamp": "2026-03-17T04:35:36.372Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Cell focus lens for ICP-MS",
+        "details": "Type: BM, Code: ORS (Cell focus lens)"
     }
 ]
