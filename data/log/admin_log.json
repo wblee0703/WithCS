@@ -808,5 +808,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Leak Sensor Board",
         "details": "Type: BM, Spec: Leak Sensor Board / 유니랩코리아"
+    },
+    {
+        "timestamp": "2026-03-17T04:59:24.920Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "SMPS:SDR-240-24(10A)",
+        "details": "Type: BM, Spec: 10A(240W) output 24V / MEAN WALL"
     }
 ]

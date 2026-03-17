@@ -889,5 +889,16 @@
         "spec": "Leak Sensor Board / 유니랩코리아",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723564920,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "SMPS(10A)",
+        "part": "SMPS:SDR-240-24(10A)",
+        "spec": "10A(240W) output 24V / MEAN WALL",
+        "cycle": "",
+        "equip": ""
     }
 ]
