@@ -1633,8 +1633,6 @@ function renderCheckTypeSubCategoryList() {
         li.draggable = true; // [추가] 드래그 활성화
         li.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <span style="flex: 1; display: flex; align-items: center; gap: 8px;"><span style="color: #8b949e; cursor: grab; font-size: 14px;" title="드래그하여 순서 변경">☰</span> ${cat}</span>
-                <button class="btn-del-sm" onclick="event.stopPropagation(); deleteCheckTypeSubCategory('${key}', ${index})">✕</button>
                 <span class="subcategory-text" style="flex: 1; cursor: grab;" title="드래그하여 순서 변경">${cat}</span>
                 <div style="display: flex; gap: 5px;">
                     <button class="btn-edit-sm btn-edit-subcat" title="수정" onclick="event.stopPropagation();">✏️</button>
@@ -1715,7 +1713,6 @@ function renderCheckTypeSubCategoryList() {
         });
 
         // [추가] 드래그 앤 드롭 순서 변경 이벤트 처리
-        li.addEventListener('dragstart', () => li.classList.add('dragging'));
         li.addEventListener('dragstart', (e) => {
             if (li.classList.contains('editing')) {
                 e.preventDefault();

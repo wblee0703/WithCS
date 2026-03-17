@@ -930,6 +930,13 @@ function renderEquips(siteName) {
     if (!list) return;
     list.innerHTML = '';
 
+    // [추가] 장비 모델 약어 매핑을 위해 데이터 로드
+    let equipmentModels = [];
+    try {
+        const data = localStorage.getItem('equipment_models');
+        equipmentModels = data ? JSON.parse(data) : [];
+    } catch(e) {}
+
     if (storageData[siteName]) {
         storageData[siteName].forEach(name => {
             const key = `details_${siteName}_${name}`;
@@ -939,13 +946,22 @@ function renderEquips(siteName) {
             const parts = name.split('::');
             const equipName = parts[0];
             const modelName = parts.length > 1 ? parts[1] : '';
+            
+            // [수정] 모델명 대신 약어(abbr)가 있으면 적용
+            let displayEquipName = equipName;
+            const modelObj = equipmentModels.find(m => m.name === equipName);
+            if (modelObj && modelObj.abbr) {
+                displayEquipName = modelObj.abbr;
+            }
+
             const displaySubText = modelName ? `/ ${modelName}` : '';
 
-            const li = createListItem(name, equipName, 'equip', (selectedEquip) => {
+            const li = createListItem(name, displayEquipName, 'equip', (selectedEquip) => {
                 onEquipClick(siteName, selectedEquip);
             }, displaySubText);
 
             li.dataset.custName = custEquipName;
+            li.dataset.fullModelName = equipName; // 검색을 위해 원본 모델명 저장
             list.appendChild(li);
         });
     }
@@ -1180,8 +1196,9 @@ function filterList(listId, keyword) {
         const text = item.querySelector('.item-text').textContent.toLowerCase();
         const subText = item.querySelector('.item-subtext') ? item.querySelector('.item-subtext').textContent.toLowerCase() : '';
         const custName = item.dataset.custName ? item.dataset.custName.toLowerCase() : '';
+        const fullModelName = item.dataset.fullModelName ? item.dataset.fullModelName.toLowerCase() : '';
 
-        if (text.includes(key) || subText.includes(key) || custName.includes(key)) {
+        if (text.includes(key) || subText.includes(key) || custName.includes(key) || fullModelName.includes(key)) {
             item.style.display = '';
         } else {
             item.style.display = 'none';
