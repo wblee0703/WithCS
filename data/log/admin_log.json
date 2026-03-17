@@ -1162,5 +1162,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Syringe(2.5mL)",
         "details": "Type: BM, Code: Syringe_2.5mL (SETo)"
+    },
+    {
+        "timestamp": "2026-03-17T05:10:19.804Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Agilent FLD standard flow cell(국내)",
+        "details": "Type: BM, Code: AGILENT CELL"
     }
 ]

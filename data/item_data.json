@@ -814,15 +814,15 @@
         "equip": ""
     },
     {
-        "code": "AGILENT CELL",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723484490,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00002331",
+        "code": "AGILENT CELL",
         "part": "Agilent FLD standard flow cell(국내)",
-        "partno": "",
         "spec": "G1321-60005, 8uL",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "3WAY",
