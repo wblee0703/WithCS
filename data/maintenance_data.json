@@ -402,9 +402,9 @@
             {
                 "code": "Ion Lens",
                 "content": "Extraction-omega lens assembly",
-                "date": "2026-03-17",
+                "date": "2026-02-04",
                 "id": 1773732555980,
-                "period": "365",
+                "period": 365,
                 "type": "PM"
             }
         ],
