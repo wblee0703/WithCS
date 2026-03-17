@@ -490,5 +490,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Analysis Column(4mm)",
         "details": "Type: BM, Spec: IC SI-50 4E, 5UM 4.0x250mm, Shodex"
+    },
+    {
+        "timestamp": "2026-03-17T04:44:36.571Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Suppressor(2mm 음이온)",
+        "details": "Type: BM, Spec: 088667, ADRS600, 2MM"
     }
 ]

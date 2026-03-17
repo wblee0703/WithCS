@@ -306,5 +306,16 @@
         "spec": "IC SI-50 4E, 5UM 4.0x250mm, Shodex",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722676571,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "SRS(2mm)",
+        "part": "Suppressor(2mm 음이온)",
+        "spec": "088667, ADRS600, 2MM",
+        "cycle": "",
+        "equip": ""
     }
 ]
