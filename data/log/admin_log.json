@@ -1018,5 +1018,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Vacuum Pump[Thomas-P], 4/1 Connector",
         "details": "Type: BM, Code: V/P (Thomas)"
+    },
+    {
+        "timestamp": "2026-03-17T05:07:22.863Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Welch Part, 서비스킷",
+        "details": "Type: BM, Code: WELCH PART"
     }
 ]

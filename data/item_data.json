@@ -550,15 +550,15 @@
         "equip": ""
     },
     {
-        "code": "WELCH PART",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723089086,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000326",
+        "code": "WELCH PART",
         "part": "Welch Part, 서비스킷",
-        "partno": "",
         "spec": "402041, for MPC 601 E",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "MFC_Linetech(10LPM)",
