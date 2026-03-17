@@ -514,5 +514,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Solenoid Valve(MHPNLBT032)",
         "details": "Type: BM, Spec: 3Way HP M3 Threaded Valve 24VDC, Nresearch"
+    },
+    {
+        "timestamp": "2026-03-17T04:45:13.894Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Solenoid Valve",
+        "details": "Type: BM, Spec: 2WAY (G) USB3-6-3-E_DC 24V_AMC용"
     }
 ]
