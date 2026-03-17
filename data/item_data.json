@@ -836,15 +836,15 @@
         "equip": ""
     },
     {
-        "code": "PLC386(CPU)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723528800,
+        "type": "BM",
+        "detailType": "",
+        "partno": "B00000023",
+        "code": "PLC386(CPU)",
         "part": "PLC386 CPU Board",
-        "partno": "",
         "spec": "TB-PLCS386 CPU 보드, MOQ(10) / 테크마스",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "PLC386(TR8)",

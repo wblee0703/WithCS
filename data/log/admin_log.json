@@ -1174,5 +1174,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "3-Way Solenoid Valve",
         "details": "Type: BM, Code: 3WAY"
+    },
+    {
+        "timestamp": "2026-03-17T05:10:35.763Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "PLC386 CPU Board",
+        "details": "Type: BM, Code: PLC386(CPU)"
     }
 ]
