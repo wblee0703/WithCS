@@ -208,12 +208,6 @@
     font-weight: bold;
 }
 
-/* [추가] 드래그 중인 아이템 스타일 */
-.admin-list li.dragging {
-    opacity: 0.5;
-    background-color: #21262d;
-}
-
 .list-footer {
     margin-top: 10px;
     display: flex;

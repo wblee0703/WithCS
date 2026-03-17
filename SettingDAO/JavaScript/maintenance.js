@@ -658,11 +658,11 @@ function addLogItem(e) {
     const newLog = {
         id: Date.now(), // 고유 식별자
         date: date,
+        memo: "", // 상세 메모 초기값
         type: type,
         detailType: detailType,
         content: content,
         worker: worker,
-        memo: "" // 상세 메모 초기값
     };
 
     data.logs.push(newLog);

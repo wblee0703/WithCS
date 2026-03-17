@@ -96,21 +96,21 @@
         "timestamp": "2026-03-17T01:19:35.464Z"
     },
     {
-        "timestamp": "2026-03-17T01:21:37.084Z",
         "action": "DELETE_ITEM_ADMIN",
+        "details": "",
         "target": "Stadnard",
-        "details": ""
+        "timestamp": "2026-03-17T01:21:37.084Z"
     },
     {
-        "timestamp": "2026-03-17T01:23:09.486Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 046138, AG14(2x50mm), Cycle: ",
         "target": "Guard Column(2mm)",
-        "details": "Type: BM, Spec: 046138, AG14(2x50mm), Cycle: "
+        "timestamp": "2026-03-17T01:23:09.486Z"
     },
     {
-        "timestamp": "2026-03-17T01:23:44.280Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: GC(2mm)",
         "target": "Guard Column(2mm)",
-        "details": "Type: BM, Code: GC(2mm)"
+        "timestamp": "2026-03-17T01:23:44.280Z"
     }
 ]

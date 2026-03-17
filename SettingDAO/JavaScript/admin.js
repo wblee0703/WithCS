@@ -1005,7 +1005,17 @@ function setupItemMgmt() {
 
             if (!part) return alert('물품명을 입력해주세요.');
 
-            adminItems.push({ id: Date.now(), type, detailType: '', part, spec, cycle, code, partno: '', equip: '' });
+            adminItems.push({
+                id: Date.now(),
+                type: type,
+                detailType: '',
+                partno: '',
+                code: code,
+                part: part,
+                spec: spec,
+                cycle: cycle,
+                equip: ''
+            });
             saveAdminItems();
             addSystemLog('ADD_ITEM_ADMIN', part, `Type: ${type}, Spec: ${spec}, Cycle: ${cycle}`);
             
@@ -1249,7 +1259,17 @@ function handleItemDetailSave() {
 
     const idx = adminItems.findIndex(i => i.id === currentAdminItemId);
     if (idx > -1) {
-        adminItems[idx] = { ...adminItems[idx], type, detailType, part, spec, cycle, code, partno, equip };
+        adminItems[idx] = {
+            id: adminItems[idx].id,
+            type: type,
+            detailType: detailType,
+            partno: partno,
+            code: code,
+            part: part,
+            spec: spec,
+            cycle: cycle,
+            equip: equip
+        };
         saveAdminItems();
         addSystemLog('UPDATE_ITEM_ADMIN_DETAIL', part, `Type: ${type}, Code: ${code}`);
         alert('물품 정보가 저장되었습니다.');
