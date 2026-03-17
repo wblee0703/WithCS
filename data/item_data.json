@@ -239,15 +239,16 @@
         "equip": "SOMA-2000, WIM-100"
     },
     {
-        "code": "RF Coil",
-        "cycle": "",
-        "detailType": "분석부 교체",
-        "equip": "SOMA-2000, WIM-100",
         "id": 1773722420494,
-        "part": "RF coil for 7900",
+        "type": "BM",
+        "detailType": "분석부 교체",
+        "additional": "ICPMS",
         "partno": "A00003373",
+        "code": "RF Coil",
+        "part": "RF coil for 7900",
         "spec": "G8400-60434",
-        "type": "BM"
+        "cycle": "",
+        "equip": "SOMA-2000, WIM-100"
     },
     {
         "code": "EM",
