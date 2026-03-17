@@ -726,15 +726,15 @@
         "equip": ""
     },
     {
-        "code": "SYRINGE PUMP (T)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723261766,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00001574",
+        "code": "SYRINGE PUMP (T)",
         "part": "Syringe Pump(TECAN)",
-        "partno": "",
         "spec": "20738421, XLP6K 3P 1/4-28",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "S/P (C3000)",

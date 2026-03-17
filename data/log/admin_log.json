@@ -1114,5 +1114,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Solenoid valve",
         "details": "Type: BM, Code: 3WAY_V(G)"
+    },
+    {
+        "timestamp": "2026-03-17T05:09:13.430Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Syringe Pump(TECAN)",
+        "details": "Type: BM, Code: SYRINGE PUMP (T)"
     }
 ]
