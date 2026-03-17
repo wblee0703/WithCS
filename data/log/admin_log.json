@@ -300,21 +300,27 @@
         "timestamp": "2026-03-17T04:26:54.846Z"
     },
     {
-        "timestamp": "2026-03-17T04:27:13.185Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 31-808-2577, G1833-65421, OEM",
         "target": "Quartz Torch Bonnet",
-        "details": "Type: PM, Spec: 31-808-2577, G1833-65421, OEM"
+        "timestamp": "2026-03-17T04:27:13.185Z"
     },
     {
-        "timestamp": "2026-03-17T04:27:29.614Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Bonnet",
         "target": "Quartz Torch Bonnet",
-        "details": "Type: BM, Code: Bonnet"
+        "timestamp": "2026-03-17T04:27:29.614Z"
     },
     {
-        "timestamp": "2026-03-17T04:27:53.592Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: AT5004, G1833-65419, OEM",
         "target": "Shield Plate for ICP-MS",
-        "details": "Type: BM, Spec: AT5004, G1833-65419, OEM"
+        "timestamp": "2026-03-17T04:27:53.592Z"
+    },
+    {
+        "timestamp": "2026-03-17T04:28:13.527Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Shield Plate for ICP-MS",
+        "details": "Type: BM, Code: Shield plate"
     }
 ]
