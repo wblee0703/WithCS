@@ -493,5 +493,16 @@
         "spec": "160553, HEAD KIT,PK,10ML,STD",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723032994,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "다이아프램(830)",
+        "part": "Diaphragm",
+        "spec": "045742 for N830 (N830부품)",
+        "cycle": "",
+        "equip": ""
     }
 ]
