@@ -583,15 +583,15 @@
         "equip": ""
     },
     {
-        "code": "F/M (5LPM)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723152870,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000451",
+        "code": "F/M (5LPM)",
         "part": "Flow meter(Outlet valve)",
-        "partno": "",
         "spec": "LZM-WO/1-5LPM, OEM, POC1/4-01MW",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "SAMPLER (양)",
