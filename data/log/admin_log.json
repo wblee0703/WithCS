@@ -208,5 +208,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Extraction-omega lens assembly",
         "details": "Type: PM, Spec: G8400-67002, lens for 7900s, Agilent 정품"
+    },
+    {
+        "timestamp": "2026-03-17T03:57:46.404Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Extraction-omega lens assembly",
+        "details": "Type: PM, Code: Ion Lens"
     }
 ]
