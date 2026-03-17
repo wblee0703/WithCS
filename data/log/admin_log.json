@@ -406,5 +406,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Cell focus lens for ICP-MS",
         "details": "Type: BM, Code: ORS (Cell focus lens)"
+    },
+    {
+        "timestamp": "2026-03-17T04:35:54.820Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Octopole assembly, ICP-MS",
+        "details": "Type: BM, Spec: G3280-67045, Agilent 정품"
     }
 ]

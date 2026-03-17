@@ -218,5 +218,16 @@
         "spec": "G3280-20633, 정품",
         "cycle": "",
         "equip": "SOMA-2000, WIM-100"
+    },
+    {
+        "id": 1773722154820,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "Octopole",
+        "part": "Octopole assembly, ICP-MS",
+        "spec": "G3280-67045, Agilent 정품",
+        "cycle": "",
+        "equip": ""
     }
 ]
