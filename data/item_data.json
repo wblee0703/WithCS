@@ -792,15 +792,15 @@
         "equip": ""
     },
     {
-        "code": "Syringe_1mL (SETo)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723438610,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00002251",
+        "code": "Syringe_1mL (SETo)",
         "part": "Syringe(1mL)",
-        "partno": "",
         "spec": "3020008, 1mL, SETonic",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "Syringe_2.5mL (SETo)",
