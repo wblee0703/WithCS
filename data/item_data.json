@@ -484,15 +484,15 @@
         "type": "BM"
     },
     {
-        "code": "HPLC HEAD KIT",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722998098,
-        "part": "HPLC PUMP HEAD KIT",
+        "type": "BM",
+        "detailType": "",
         "partno": "A00000119",
+        "code": "HPLC HEAD KIT",
+        "part": "HPLC PUMP HEAD KIT",
         "spec": "160553, HEAD KIT,PK,10ML,STD",
-        "type": "PM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "id": 1773723032994,

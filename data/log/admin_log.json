@@ -1258,5 +1258,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Diaphragm",
         "details": "Type: BM, Code: 다이아프램(830)"
+    },
+    {
+        "timestamp": "2026-03-17T05:12:20.460Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "HPLC PUMP HEAD KIT",
+        "details": "Type: BM, Code: HPLC HEAD KIT"
     }
 ]
