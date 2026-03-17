@@ -160,5 +160,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Vacuum Pump[Thomas-P], 4/1 Connector",
         "details": "Type: BM, Code: V/P (Thomas)"
+    },
+    {
+        "timestamp": "2026-03-17T02:55:29.340Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Guard Column(2mm)",
+        "details": "Type: BM, Code: GC(2mm)"
     }
 ]
