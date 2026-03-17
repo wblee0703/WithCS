@@ -770,15 +770,15 @@
         "equip": ""
     },
     {
-        "code": "TUBE (for REACTOR)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723368522,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00001949",
+        "code": "TUBE (for REACTOR)",
         "part": "REACTOR_WF301용",
-        "partno": "",
         "spec": "내경0.03\" 3바퀴반",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "CAP (1/4)",

@@ -1138,5 +1138,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Syringe(2.5mL)",
         "details": "Type: BM, Code: Syringe_2.5mL (ILS)"
+    },
+    {
+        "timestamp": "2026-03-17T05:09:44.777Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "REACTOR_WF301용",
+        "details": "Type: BM, Code: TUBE (for REACTOR)"
     }
 ]
