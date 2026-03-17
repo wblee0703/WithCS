@@ -240,63 +240,69 @@
         "timestamp": "2026-03-17T04:19:24.922Z"
     },
     {
-        "timestamp": "2026-03-17T04:24:31.688Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3285-80021, Agilent 정품",
         "target": "Spray Chamber for Inert Kit, PFA",
-        "details": "Type: BM, Spec: G3285-80021, Agilent 정품"
+        "timestamp": "2026-03-17T04:24:31.688Z"
     },
     {
-        "timestamp": "2026-03-17T04:24:53.262Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: PFA Spray Chamber",
         "target": "Spray Chamber for Inert Kit, PFA",
-        "details": "Type: BM, Code: PFA Spray Chamber"
+        "timestamp": "2026-03-17T04:24:53.262Z"
     },
     {
-        "timestamp": "2026-03-17T04:25:13.922Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3285-80020",
         "target": "Spray Chamber End Cap for Inert Kit, PFA",
-        "details": "Type: BM, Spec: G3285-80020"
+        "timestamp": "2026-03-17T04:25:13.922Z"
     },
     {
-        "timestamp": "2026-03-17T04:25:25.934Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Spray Chamber End Cap",
         "target": "Spray Chamber End Cap for Inert Kit, PFA",
-        "details": "Type: BM, Code: Spray Chamber End Cap"
+        "timestamp": "2026-03-17T04:25:25.934Z"
     },
     {
-        "timestamp": "2026-03-17T04:25:30.808Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: PFA Spray Chamber",
         "target": "Spray Chamber for Inert Kit, PFA",
-        "details": "Type: BM, Code: PFA Spray Chamber"
+        "timestamp": "2026-03-17T04:25:30.808Z"
     },
     {
-        "timestamp": "2026-03-17T04:25:34.092Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Pt Injector",
         "target": "Platinum injector, inert torch, 2.5mm id",
-        "details": "Type: BM, Code: Pt Injector"
+        "timestamp": "2026-03-17T04:25:34.092Z"
     },
     {
-        "timestamp": "2026-03-17T04:25:37.898Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: PFA Torch",
         "target": "Torch for PFA inert kit for ICP-MS",
-        "details": "Type: BM, Code: PFA Torch"
+        "timestamp": "2026-03-17T04:25:37.898Z"
     },
     {
-        "timestamp": "2026-03-17T04:26:02.686Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3285-80024, Agilent 정품",
         "target": "Long connector tube for ICP-MS inert kit",
-        "details": "Type: BM, Spec: G3285-80024, Agilent 정품"
+        "timestamp": "2026-03-17T04:26:02.686Z"
     },
     {
-        "timestamp": "2026-03-17T04:26:19.701Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Long Connector",
         "target": "Long connector tube for ICP-MS inert kit",
-        "details": "Type: BM, Code: Long Connector"
+        "timestamp": "2026-03-17T04:26:19.701Z"
     },
     {
-        "timestamp": "2026-03-17T04:26:54.846Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Long Connector",
         "target": "Long connector tube for ICP-MS inert kit",
-        "details": "Type: BM, Code: Long Connector"
+        "timestamp": "2026-03-17T04:26:54.846Z"
+    },
+    {
+        "timestamp": "2026-03-17T04:27:13.185Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Quartz Torch Bonnet",
+        "details": "Type: PM, Spec: 31-808-2577, G1833-65421, OEM"
     }
 ]
