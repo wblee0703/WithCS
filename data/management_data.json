@@ -36,6 +36,30 @@
         "SOLA-1000::정기": [
             "PM 점검"
         ],
+        "SOLA-2000LC::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
+        "SOLA-2000LC::정기": [
+            "PM 점검"
+        ],
+        "SOLA-3000::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
+        "SOLA-3000::정기": [
+            "PM 점검"
+        ],
+        "SOLA-5000::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
         "SOLA-5000::정기": [
             "PM 점검"
         ],
@@ -56,6 +80,12 @@
         ],
         "SOMA-2000::SOMA-H19-0903::정기": [
             "PM 점검"
+        ],
+        "SOMA-2000::SOMA-HC19-1204::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
         ],
         "SOMA-2000::SOMA-HC19-1204::정기": [
             "PM 점검"
@@ -291,31 +321,7 @@
         "WIM-100::WIM1-HK24-0401::정기": [
             "PM 점검"
         ],
-        "SOLA-2000LC::정기": [
-            "PM 점검"
-        ],
-        "SOLA-2000LC::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
-        ],
-        "SOLA-3000::정기": [
-            "PM 점검"
-        ],
-        "SOLA-3000::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
-        ],
-        "SOLA-5000::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
-        ],
-        "SOMA-2000::SOMA-HC19-1204::비정기": [
+        "SOMA-2000::SOMA-HC20-0601::비정기": [
             "BM 점검",
             "Alarm",
             "Hunting",
@@ -363,6 +369,12 @@
             {
                 "content": "Extraction-omega lens assembly",
                 "id": 1773720631319
+            }
+        ],
+        "SOMA-2000::SOMA-HC19-1204::정기::PM 점검": [
+            {
+                "content": "Stadnard",
+                "id": 1773704358840
             }
         ],
         "SOMA-2000::SOMA-HC20-0601::정기::PM 점검": [
@@ -453,12 +465,6 @@
             {
                 "content": "Extraction-omega lens assembly",
                 "id": 1773720843762
-            }
-        ],
-        "SOMA-2000::SOMA-HC19-1204::정기::PM 점검": [
-            {
-                "content": "Stadnard",
-                "id": 1773704358840
             }
         ]
     }
