@@ -730,5 +730,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Syringe Pump(TECAN)",
         "details": "Type: BM, Spec: 20738421, XLP6K 3P 1/4-28"
+    },
+    {
+        "timestamp": "2026-03-17T04:54:50.782Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Syringe pump, C3000",
+        "details": "Type: BM, Spec: 10013, 3Port, PCTFE/PTFE"
     }
 ]
