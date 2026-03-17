@@ -820,5 +820,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "회로보호기",
         "details": "Type: BM, Spec: CP30-BA 1P1-M 3A / 미쯔비시"
+    },
+    {
+        "timestamp": "2026-03-17T04:59:38.766Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "SMPS:MDR-20-15(1.36A)",
+        "details": "Type: BM, Spec: 1.34A output 15V / MEAN WALL"
     }
 ]
