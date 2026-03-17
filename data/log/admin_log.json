@@ -1600,5 +1600,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "STD gas",
         "details": "Type: PM, Code: SOT 표준 가스"
+    },
+    {
+        "timestamp": "2026-03-17T05:24:45.450Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "P9 중형 표준가스",
+        "details": "Type: PM, Code: 표준가스(P9)"
     }
 ]

@@ -1133,14 +1133,14 @@
         "equip": ""
     },
     {
-        "code": "표준가스(P9)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773724742548,
-        "part": "P9 중형 표준가스",
+        "type": "PM",
+        "detailType": "가스",
         "partno": "",
+        "code": "표준가스(P9)",
+        "part": "P9 중형 표준가스",
         "spec": "P9 중형2공장 사용 10ppm",
-        "type": "PM"
+        "cycle": "",
+        "equip": ""
     }
 ]
