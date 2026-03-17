@@ -350,6 +350,20 @@
                 "id": 1773720841091,
                 "content": "Extraction-omega lens assembly"
             }
+        ],
+        "WIM-100::WIM1-HK24-0401::정기::PM 점검": [
+            {
+                "id": 1773720843760,
+                "content": "Pt Skimmer cone for 7700S"
+            },
+            {
+                "id": 1773720843761,
+                "content": "Pt Sampling cone for 7700S"
+            },
+            {
+                "id": 1773720843762,
+                "content": "Extraction-omega lens assembly"
+            }
         ]
     }
 }
