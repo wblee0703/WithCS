@@ -284,5 +284,16 @@
         "spec": "046134, AG14(4x50mm)",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722660686,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "AC(2mm)",
+        "part": "Analysis Column(2mm)",
+        "spec": "046129, AS14(2x250mm)",
+        "cycle": "",
+        "equip": ""
     }
 ]

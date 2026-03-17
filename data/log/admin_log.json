@@ -478,5 +478,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Guard Column(4mm)",
         "details": "Type: BM, Spec: 046134, AG14(4x50mm)"
+    },
+    {
+        "timestamp": "2026-03-17T04:44:20.686Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Analysis Column(2mm)",
+        "details": "Type: BM, Spec: 046129, AS14(2x250mm)"
     }
 ]
