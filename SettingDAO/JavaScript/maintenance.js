@@ -680,7 +680,7 @@ function addLogItem(e) {
 
     // [추가] BM 점검 등록 시 유지관리 물품에 자동 추가 로직
     let isMaintUpdated = false;
-    if (detailType === 'BM 점검' || type === 'BM') {
+    if (detailType === 'BM 점검') {
         const itemsList = content.split(',').map(s => s.trim()).filter(s => s);
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
         
@@ -723,8 +723,7 @@ function addLogItem(e) {
     if (mainList) {
         mainList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
     }
-    if (contentInput && type !== '프로그램변경') contentInput.value = '';
-    if (contentInput && type === '프로그램변경') contentInput.value = 'Ver. ';
+    if (contentInput) contentInput.value = '';
 
     renderLogs();
     if (isMaintUpdated) {
@@ -770,8 +769,8 @@ function renderLogs() {
     
     const getLogBadgeClass = (t, dt) => {
         if (!t) return 'default';
-        if (t === 'PM' || dt === 'PM') return 'pm';
-        if (t === 'BM' || dt === 'BM') return 'bm';
+        if (dt === 'PM 점검') return 'pm';
+        if (dt === 'BM 점검') return 'bm';
         return t.replace(/\s/g, ''); // 공백 제거하여 CSS 클래스명으로 반환
     };
 
@@ -932,7 +931,7 @@ function toggleLogEdit(id, btn) {
 
         dateCell.innerHTML = `<input type="date" id="edit-log-date-${id}" value="${escapeHtml(currentDate)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
         
-        const allCategories = ['정기', '비정기', '고객대응', '용액제조', '온라인점검', 'PM', 'BM', '장비점검', '프로그램변경', '트러블이슈'];
+        const allCategories = ['정기', '비정기', '고객대응', '용액제조', '온라인점검'];
         typeCell.innerHTML = `
             <select id="edit-log-type-${id}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()" onchange="updateEditDetailTypeOptions(${id})">
                 ${allCategories.map(c => `<option value="${c}" ${currentType === c ? 'selected' : ''}>${c}</option>`).join('')}
@@ -1306,8 +1305,8 @@ function getSubCategories(type) {
     const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
     const key = `${equipKey}::${type}`;
     const defaultSubCategories = {
-        '정기': ['PM'],
-        '비정기': ['BM', 'Alarm', 'Hunting', 'Data / Para 이상'],
+        '정기': ['PM 점검'],
+        '비정기': ['BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상'],
         '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
         '용액제조': ['용액제조'],
         '온라인점검': ['온라인점검']
@@ -1328,23 +1327,6 @@ function getCheckTypeItems(type, detailType) {
     
     // 원본 데이터 오염을 막기 위해 복사본 생성
     const items = [...(itemData[key] || [])].map(item => ({...item}));
-
-    // 구버전 호환성 (PM, BM, 트러블이슈 등)
-    const safeDetailType = detailType || '';
-    if (type === 'PM' || type === 'BM' || type === '트러블이슈' || safeDetailType.includes('PM') || safeDetailType.includes('BM')) {
-        const keyMaint = `details_${currentPath.site}_${currentPath.equip}`;
-        const dataMaint = JSON.parse(localStorage.getItem(keyMaint)) || { maint: [] };
-        let filteredItems = [];
-        if (type === '트러블이슈') {
-            filteredItems.push({ content: '설비 이상' });
-            filteredItems.push({ content: '데이터이슈' });
-            filteredItems = filteredItems.concat(dataMaint.maint.filter(item => item.type === 'PM' || item.type === 'BM'));
-        } else {
-            const targetType = (type === 'PM' || type === 'BM') ? type : (safeDetailType.includes('PM') ? 'PM' : (safeDetailType.includes('BM') ? 'BM' : safeDetailType));
-            filteredItems = dataMaint.maint.filter(item => item.type === targetType);
-        }
-        items.push(...filteredItems.map(item => ({...item})));
-    }
     
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
     
