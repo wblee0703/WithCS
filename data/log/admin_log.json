@@ -1624,5 +1624,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "9.5% HNO3",
         "details": "Type: PM, Spec: WIM-100 Cal 질산보정"
+    },
+    {
+        "timestamp": "2026-03-17T05:26:51.290Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Metal Standard Solution(1%HNO3)",
+        "details": "Type: PM, Code: Metal STD (5ppb,1%)"
     }
 ]

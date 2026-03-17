@@ -1146,13 +1146,13 @@
     {
         "id": 1773725157860,
         "type": "PM",
-        "detailType": "",
+        "detailType": "용액",
         "partno": "",
         "code": "Metal STD (5ppb,1%)",
         "part": "Metal Standard Solution(1%HNO3)",
         "spec": "5ppb Multi(4종), 1%HNO3",
         "cycle": "",
-        "equip": ""
+        "equip": "WIM-100"
     },
     {
         "id": 1773725199638,
