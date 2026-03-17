@@ -124,5 +124,11 @@
         "details": "분류명 수정: PM -> PM 점검",
         "target": "SOLA-1000",
         "timestamp": "2026-03-17T04:16:20.377Z"
+    },
+    {
+        "timestamp": "2026-03-17T04:16:47.154Z",
+        "action": "UPDATE_CHECK_CATEGORY",
+        "target": "SOMA-2000",
+        "details": "분류명 수정: PM -> PM 점검"
     }
 ]
