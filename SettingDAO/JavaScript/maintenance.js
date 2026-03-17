@@ -798,7 +798,7 @@ function renderLogs() {
             <td data-raw-date="${escapeHtml(log.date || '')}">${formattedDate}</td>
             <td><span class="badge ${getLogBadgeClass(log.type, log.detailType)}">${escapeHtml(log.type || 'PM')}</span></td>
             <td>${escapeHtml(log.detailType || '-')}</td>
-            <td title="${escapeHtml(tooltipContent)}">${escapeHtml(displayContent)}</td>
+            <td title="${escapeHtml(tooltipContent)}" data-raw-content="${escapeHtml(log.content || '')}">${escapeHtml(displayContent)}</td>
             <td>${escapeHtml(log.worker)}</td>
             <td>
                 <button class="btn-edit-sm" onclick="event.stopPropagation(); toggleLogEdit(${log.id}, this);">✏️</button>
@@ -926,7 +926,7 @@ function toggleLogEdit(id, btn) {
         const currentDate = dateCell.dataset.rawDate || dateCell.textContent.trim();
         const currentType = typeCell.textContent.trim();
         const currentDetailType = detailCell.textContent.trim() === '-' ? '' : detailCell.textContent.trim();
-        const currentContent = contentCell.textContent.trim();
+        const currentContent = contentCell.dataset.rawContent || contentCell.textContent.trim();
         const currentWorker = workerCell.textContent.trim();
 
         dateCell.innerHTML = `<input type="date" id="edit-log-date-${id}" value="${escapeHtml(currentDate)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;

@@ -613,8 +613,8 @@ function renderIntegMaintStats(mainData) {
         dateCheckFn = (d) => d && d.startsWith(targetPrefix);
     }
 
-    const typeCounts = { 'PM': 0, 'BM': 0, '트러블이슈': 0, '프로그램변경': 0, '장비점검': 0 };
-    const totalTypeCounts = { 'PM': 0, 'BM': 0, '트러블이슈': 0, '프로그램변경': 0, '장비점검': 0 };
+    const typeCounts = {};
+    const totalTypeCounts = {};
     const itemCounts = {};
     const siteCounts = {};
 
@@ -632,12 +632,10 @@ function renderIntegMaintStats(mainData) {
                         siteCounts[site] = (siteCounts[site] || 0) + 1;
                         
                         // 요약 정보용 전체 집계 (필터 무관)
-                        if (totalTypeCounts.hasOwnProperty(type)) totalTypeCounts[type]++;
-                        else totalTypeCounts['기타'] = (totalTypeCounts['기타'] || 0) + 1;
+                        totalTypeCounts[type] = (totalTypeCounts[type] || 0) + 1;
 
                         if (isSiteMatch) {
-                            if (typeCounts.hasOwnProperty(type)) typeCounts[type]++;
-                            else typeCounts['기타'] = (typeCounts['기타'] || 0) + 1;
+                            typeCounts[type] = (typeCounts[type] || 0) + 1;
                         }
                         const isTypeMatch = !integSelectedType || integSelectedType === type;
                         if (isSiteMatch && isTypeMatch && content) {
@@ -657,7 +655,8 @@ function renderIntegMaintStats(mainData) {
     // [추가] 운영 관리 요약 정보 업데이트
     const maintSummaryEl = document.getElementById('integ-maint-summary');
     if (maintSummaryEl) {
-        maintSummaryEl.textContent = `(PM : ${totalTypeCounts['PM']}, BM : ${totalTypeCounts['BM']}, 트러블이슈 : ${totalTypeCounts['트러블이슈']}, 프로그램변경 : ${totalTypeCounts['프로그램변경']}, 장비점검 : ${totalTypeCounts['장비점검']})`;
+        const summaryStr = Object.entries(totalTypeCounts).map(([t, c]) => `${t} : ${c}`).join(', ');
+        maintSummaryEl.textContent = `(${summaryStr})`;
     }
 
     // 1. 작업 유형별 차트

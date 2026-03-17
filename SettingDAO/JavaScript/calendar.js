@@ -100,7 +100,7 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false) {
             if (isDelete) {
                 delete item.scheduledDate;
                 // [추가] 일회성 일정은 삭제 시 데이터 자체를 제거하여 누적 방지
-                if (['장비점검', '프로그램변경', '트러블이슈'].includes(item.type)) {
+                if (!item.period) {
                     data.maint.splice(index, 1);
                 }
             } else {
