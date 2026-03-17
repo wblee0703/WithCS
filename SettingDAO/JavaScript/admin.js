@@ -1004,6 +1004,7 @@ function setupItemMgmt() {
                 id: Date.now(),
                 type: type,
                 detailType: '',
+                additional: '',
                 partno: '',
                 code: code,
                 part: part,
@@ -1260,6 +1261,7 @@ function loadItemDetail(item) {
 
     document.getElementById('item-info-type').value = item.type || 'PM';
     document.getElementById('item-info-detail-type').value = item.detailType || '';
+    document.getElementById('item-info-additional').value = item.additional || '';
     document.getElementById('item-info-part').value = item.part || '';
     document.getElementById('item-info-spec').value = item.spec || '';
     
@@ -1286,6 +1288,7 @@ function handleItemDetailSave() {
     
     const type = document.getElementById('item-info-type').value;
     const detailType = document.getElementById('item-info-detail-type').value.trim();
+    const additional = document.getElementById('item-info-additional').value.trim();
     const part = document.getElementById('item-info-part').value.trim();
     const spec = document.getElementById('item-info-spec').value.trim();
     const cycle = type === 'PM' ? document.getElementById('item-info-cycle').value.trim() : "";
@@ -1302,6 +1305,7 @@ function handleItemDetailSave() {
             id: adminItems[idx].id,
             type: type,
             detailType: detailType,
+            additional: additional,
             partno: partno,
             code: code,
             part: part,

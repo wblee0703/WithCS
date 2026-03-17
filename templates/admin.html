@@ -324,7 +324,7 @@
                         </div>
                         <div id="admin-item-form" class="admin-form-container" style="display:none;">
                             <div class="admin-flex-row" style="margin-bottom: 15px; gap: 10px;">
-                                <div style="flex: 0.5;">
+                                <div style="flex: 0.4;">
                                     <label
                                         style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">점검
                                         구분</label>
@@ -334,11 +334,11 @@
                                         <option value="BM">BM</option>
                                     </select>
                                 </div>
-                                <div style="flex: 0.5;">
+                                <div style="flex: 0.6;">
                                     <label
-                                        style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">점검
-                                        상세 구분</label>
-                                    <select id="item-info-detail-type" class="input-dark full-width compact-select select-padding-md">
+                                        style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">상세 구분</label>
+                                    <select id="item-info-detail-type"
+                                        class="input-dark full-width compact-select select-padding-md">
                                         <option value="">선택 안함</option>
                                         <option value="샘플링부 교체">샘플링부 교체</option>
                                         <option value="분석부 교체">분석부 교체</option>
@@ -347,7 +347,14 @@
                                         <option value="기타">기타</option>
                                     </select>
                                 </div>
-                                <div class="admin-flex-row" style="margin-bottom: 15px; gap: 10px;">
+                                <div style="flex: 1;">
+                                    <label
+                                        style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">추가정보</label>
+                                    <input type="text" id="item-info-additional" class="input-dark full-width"
+                                        placeholder="추가정보 입력">
+                                </div>
+                            </div>
+                            <div class="admin-flex-row" style="margin-bottom: 15px; gap: 10px;">
                                 <div style="flex: 0.5;">
                                     <label
                                         style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">품번</label>
@@ -361,8 +368,7 @@
                                         placeholder="코드명 입력">
                                 </div>
                             </div>
-                            </div>
-                            
+
                             <div class="admin-flex-row" style="margin-bottom: 15px; gap: 10px;">
                                 <div style="flex: 1.2;">
                                     <label
@@ -381,7 +387,7 @@
                                     <input type="number" id="item-info-cycle" class="input-dark full-width">
                                 </div>
                             </div>
-                            
+
                             <div class="form-group">
                                 <div
                                     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
@@ -394,9 +400,12 @@
                                     </div>
                                     <input type="hidden" id="item-info-equip">
                                     <div id="item-equip-suggestions-box" class="suggestion-box">
-                                        <ul id="item-equip-suggestions-list" class="suggestion-list" style="position:static; display:block; max-height:200px; border:none; margin:0; border-radius: 4px 4px 0 0;"></ul>
+                                        <ul id="item-equip-suggestions-list" class="suggestion-list"
+                                            style="position:static; display:block; max-height:200px; border:none; margin:0; border-radius: 4px 4px 0 0;">
+                                        </ul>
                                         <div class="suggestion-box-footer">
-                                            <button type="button" id="btn-apply-equip-selection" class="btn-blue-sm full-width">선택 항목 추가</button>
+                                            <button type="button" id="btn-apply-equip-selection"
+                                                class="btn-blue-sm full-width">선택 항목 추가</button>
                                         </div>
                                     </div>
                                 </div>
@@ -478,9 +487,11 @@
                     <!-- 우측: 세부 항목 관리 -->
                     <div class="admin-col-detail">
                         <div class="detail-header">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                                 <h4 style="margin: 0;">점검 항목 관리</h4>
-                                <button id="btn-import-check-items" class="btn-blue-sm" style="display: none;">물품 불러오기</button>
+                                <button id="btn-import-check-items" class="btn-blue-sm" style="display: none;">물품
+                                    불러오기</button>
                             </div>
                             <p class="detail-desc" id="check-type-detail-desc">장비와 점검 구분을 선택하면 세부 항목을 관리할 수 있습니다.</p>
                         </div>
@@ -527,7 +538,8 @@
                 </div>
                 <div class="modal-body">
                     <p class="modal-desc" style="margin-bottom: 15px; color: #8b949e; font-size: 13px;">선택한 장비의
-                        <strong>점검 구분 및 세부 항목 설정</strong>을 대상 장비로 복사(덮어쓰기)합니다.</p>
+                        <strong>점검 구분 및 세부 항목 설정</strong>을 대상 장비로 복사(덮어쓰기)합니다.
+                    </p>
                     <div class="form-group">
                         <label>원본 사업장 선택</label>
                         <select id="load-check-type-site-select" class="input-dark full-width"

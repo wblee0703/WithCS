@@ -451,7 +451,7 @@ window.updateMaintContentOptions = function() {
         }
         
         if (filteredItems.length === 0) {
-            selectEl.innerHTML = `<option value="">등록된 ${maintType} 물품이 없습니다.</option>`;
+            selectEl.innerHTML = `<option value="">등록할 ${maintType} 물품이 없음.</option>`;
         } else {
             selectEl.innerHTML = `<option value="">물품 선택</option>`;
             filteredItems.forEach(item => {
