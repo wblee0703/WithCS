@@ -438,5 +438,16 @@
         "spec": "C25Z-386_ SW/V Stator seal (C25Z용)",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722777632,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "ROTOR SEAL(INJ)",
+        "part": "Rotor seal_ Injector",
+        "spec": "C2-23R6, 1/16*0.4mm, 50C/5000psi liq",
+        "cycle": "",
+        "equip": ""
     }
 ]

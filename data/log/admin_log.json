@@ -562,5 +562,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Stator face_ Switching valve",
         "details": "Type: BM, Spec: C25Z-386_ SW/V Stator seal (C25Z용)"
+    },
+    {
+        "timestamp": "2026-03-17T04:46:17.633Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Rotor seal_ Injector",
+        "details": "Type: BM, Spec: C2-23R6, 1/16*0.4mm, 50C/5000psi liq"
     }
 ]
