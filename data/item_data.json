@@ -23,15 +23,16 @@
         "equip": "SOMA-2000, WIM-100"
     },
     {
-        "code": "Sampler Cone",
-        "cycle": "182",
-        "detailType": "분석부 교체",
-        "equip": "SOMA-2000, WIM-100",
         "id": 1773719800104,
-        "part": "Pt Sampling cone for 7700S",
+        "type": "PM",
+        "detailType": "분석부 교체",
+        "additional": "ICPMS",
         "partno": "C00004069",
+        "code": "Sampler Cone",
+        "part": "Pt Sampling cone for 7700S",
         "spec": "AT7706-Pt, G3280-67036, GE OEM",
-        "type": "PM"
+        "cycle": "182",
+        "equip": "SOMA-2000, WIM-100"
     },
     {
         "code": "Ion Lens",
