@@ -363,15 +363,15 @@
         "equip": ""
     },
     {
-        "code": "HPLC SEAL",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722720970,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000045",
+        "code": "HPLC SEAL",
         "part": "HPLC Pump Piston Seal Kit",
-        "partno": "",
         "spec": "880203, 10ML SEAL KIT, STS",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "HPLC DAMPER",

@@ -910,5 +910,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Solenoid Valve",
         "details": "Type: BM, Code: 2WAY_V(G)"
+    },
+    {
+        "timestamp": "2026-03-17T05:04:04.102Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "HPLC Pump Piston Seal Kit",
+        "details": "Type: BM, Code: HPLC SEAL"
     }
 ]
