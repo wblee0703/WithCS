@@ -1522,5 +1522,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "버퍼 용액",
         "details": "Type: PM, Code: BUFFER"
+    },
+    {
+        "timestamp": "2026-03-17T05:23:43.438Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "이소부틸렌 (0.5ppm)",
+        "details": "Type: PM, Code: TVOC STD(0.5)"
     }
 ]
