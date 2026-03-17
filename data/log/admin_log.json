@@ -982,5 +982,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "HPLC PUMP HEAD KIT",
         "details": "Type: PM, Code: HPLC HEAD KIT"
+    },
+    {
+        "timestamp": "2026-03-17T05:06:02.796Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Diaphragm",
+        "details": "Type: PM, Code: 다이아프램(830)"
     }
 ]

@@ -495,15 +495,15 @@
         "equip": ""
     },
     {
-        "code": "다이아프램(830)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723032994,
+        "type": "PM",
+        "detailType": "",
+        "partno": "A00000123",
+        "code": "다이아프램(830)",
         "part": "Diaphragm",
-        "partno": "",
         "spec": "045742 for N830 (N830부품)",
-        "type": "PM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "830PUMP",
