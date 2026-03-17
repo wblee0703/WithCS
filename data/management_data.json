@@ -1,5 +1,14 @@
 {
     "categories": {
+        "IWM-1000::W001-OK25-0801::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
+        "IWM-1000::W001-OK25-0801::정기": [
+            "PM 점검"
+        ],
         "OMS-100L::OMS1-LK22-0104::비정기": [
             "BM 점검",
             "Alarm",
@@ -8,6 +17,21 @@
         ],
         "OMS-100L::OMS1-LK22-0104::정기": [
             "PM 점검"
+        ],
+        "SOLA-1000::SOLA-1000::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
+        "SOLA-1000::SOLA-1000::정기": [
+            "PM 점검"
+        ],
+        "SOLA-1000::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
         ],
         "SOLA-1000::정기": [
             "PM 점검"
@@ -249,6 +273,15 @@
         "WAD-NH4OH::AD10-EK24-0201::정기": [
             "PM 점검"
         ],
+        "WIM-100::R24-01-01-C::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
+        "WIM-100::R24-01-01-C::정기": [
+            "PM 점검"
+        ],
         "WIM-100::WIM1-HK24-0401::비정기": [
             "BM 점검",
             "Alarm",
@@ -258,41 +291,12 @@
         "WIM-100::WIM1-HK24-0401::정기": [
             "PM 점검"
         ],
-        "IWM-1000::W001-OK25-0801::정기": [
+        "SOLA-2000LC::정기": [
             "PM 점검"
-        ],
-        "IWM-1000::W001-OK25-0801::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
-        ],
-        "SOLA-1000::SOLA-1000::정기": [
-            "PM 점검"
-        ],
-        "SOLA-1000::SOLA-1000::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
-        ],
-        "WIM-100::R24-01-01-C::정기": [
-            "PM 점검"
-        ],
-        "WIM-100::R24-01-01-C::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
-        ],
-        "SOLA-1000::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
         ]
     },
     "items": {
+        "SOLA-1000::정기::PM 점검": [],
         "SOLA-5000::정기::PM 점검": [],
         "SOMA-2000::SOMA-H19-0402::정기::PM 점검": [
             {
@@ -381,8 +385,10 @@
         ],
         "SOMA-3000E::SOMA-EK23-0401::고객대응::설비 평가": [],
         "SOMA-3000E::SOMA-EK23-0401::비정기::Alarm": [],
+        "SOMA-3000E::SOMA-EK23-0401::비정기::BM 점검": [],
         "SOMA-3000E::SOMA-EK23-0401::비정기::Data / Para 이상": [],
         "SOMA-3000E::SOMA-EK23-0401::비정기::Hunting": [],
+        "SOMA-3000E::SOMA-EK23-0401::정기::PM 점검": [],
         "SOMA-3000E::SOMA-EK23-1102::비정기::BM 점검": [],
         "SOMA-3000E::SOMA-EK23-1102::정기::PM 점검": [],
         "SOMA-3000E::SOMA-EK24-0401::고객대응::프로그램 변경 / 평가": [],
@@ -427,9 +433,6 @@
                 "content": "Extraction-omega lens assembly",
                 "id": 1773720843762
             }
-        ],
-        "SOMA-3000E::SOMA-EK23-0401::정기::PM 점검": [],
-        "SOMA-3000E::SOMA-EK23-0401::비정기::BM 점검": [],
-        "SOLA-1000::정기::PM 점검": []
+        ]
     }
 }

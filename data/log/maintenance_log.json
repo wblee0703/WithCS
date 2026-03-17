@@ -108,21 +108,21 @@
         "timestamp": "2026-03-17T04:14:57.353Z"
     },
     {
-        "timestamp": "2026-03-17T04:16:03.034Z",
         "action": "UPDATE_CHECK_CATEGORY",
+        "details": "분류명 수정: PM -> PM 점검",
         "target": "SOMA-3000E",
-        "details": "분류명 수정: PM -> PM 점검"
+        "timestamp": "2026-03-17T04:16:03.034Z"
     },
     {
-        "timestamp": "2026-03-17T04:16:08.273Z",
         "action": "UPDATE_CHECK_CATEGORY",
+        "details": "분류명 수정: BM -> BM 점검",
         "target": "SOMA-3000E",
-        "details": "분류명 수정: BM -> BM 점검"
+        "timestamp": "2026-03-17T04:16:08.273Z"
     },
     {
-        "timestamp": "2026-03-17T04:16:20.377Z",
         "action": "UPDATE_CHECK_CATEGORY",
+        "details": "분류명 수정: PM -> PM 점검",
         "target": "SOLA-1000",
-        "details": "분류명 수정: PM -> PM 점검"
+        "timestamp": "2026-03-17T04:16:20.377Z"
     }
 ]
