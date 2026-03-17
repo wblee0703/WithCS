@@ -334,5 +334,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Ar gas clean filter, Semicon App",
         "details": "Type: BM, Code: Ar gas Filter"
+    },
+    {
+        "timestamp": "2026-03-17T04:31:31.522Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Gas Clean Filter Carrier Gas",
+        "details": "Type: BM, Spec: CP17973"
     }
 ]

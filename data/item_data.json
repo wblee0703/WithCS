@@ -152,5 +152,16 @@
         "spec": "5064-8092, Agilent 정품",
         "cycle": "",
         "equip": "SOMA-2000, WIM-100"
+    },
+    {
+        "id": 1773721891522,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "He gas Filter",
+        "part": "Gas Clean Filter Carrier Gas",
+        "spec": "CP17973",
+        "cycle": "",
+        "equip": ""
     }
 ]
