@@ -383,5 +383,16 @@
         "spec": "880616, PK PULSE DAMPER W/O XDCR",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722735390,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "815PUMP",
+        "part": "Vacuum Pump",
+        "spec": "UN815KNI, 115V(미국용)",
+        "cycle": "",
+        "equip": ""
     }
 ]

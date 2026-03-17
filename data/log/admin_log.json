@@ -532,5 +532,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Pulse dampener(301)",
         "details": "Type: BM, Spec: 880616, PK PULSE DAMPER W/O XDCR"
+    },
+    {
+        "timestamp": "2026-03-17T04:45:35.390Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Vacuum Pump",
+        "details": "Type: BM, Spec: UN815KNI, 115V(미국용)"
     }
 ]
