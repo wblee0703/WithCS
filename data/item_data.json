@@ -1,14 +1,14 @@
 [
     {
-        "id": 1773718601332,
-        "type": "PM",
-        "detailType": "용액",
-        "partno": "",
         "code": "Metal STD (10ppb,3%)",
-        "part": "Metal Standard Solution(3%HNO3)",
-        "spec": "10ppb Multi(4종), 3%HNO3",
         "cycle": "30",
-        "equip": "SOMA-2000"
+        "detailType": "용액",
+        "equip": "SOMA-2000",
+        "id": 1773718601332,
+        "part": "Metal Standard Solution(3%HNO3)",
+        "partno": "",
+        "spec": "10ppb Multi(4종), 3%HNO3",
+        "type": "PM"
     },
     {
         "code": "Skimmer Cone",
@@ -1012,157 +1012,157 @@
         "type": "PM"
     },
     {
-        "id": 1773724650498,
-        "type": "PM",
-        "detailType": "용액",
-        "partno": "",
         "code": "BUFFER",
+        "cycle": "",
+        "detailType": "용액",
+        "equip": "",
+        "id": 1773724650498,
         "part": "버퍼 용액",
+        "partno": "",
         "spec": "버퍼 용액",
-        "cycle": "",
-        "equip": ""
+        "type": "PM"
     },
     {
-        "id": 1773724658263,
-        "type": "PM",
-        "detailType": "가스",
-        "partno": "",
         "code": "TVOC STD(0.5)",
+        "cycle": "",
+        "detailType": "가스",
+        "equip": "",
+        "id": 1773724658263,
         "part": "이소부틸렌 (0.5ppm)",
+        "partno": "",
         "spec": "103L-248-0.5",
-        "cycle": "",
-        "equip": ""
+        "type": "PM"
     },
     {
-        "id": 1773724671446,
-        "type": "PM",
-        "detailType": "가스",
-        "partno": "",
         "code": "TVOC STD(1)",
+        "cycle": "",
+        "detailType": "가스",
+        "equip": "",
+        "id": 1773724671446,
         "part": "이소부틸렌 (1ppm)",
+        "partno": "",
         "spec": "103L-248-1",
-        "cycle": "",
-        "equip": ""
+        "type": "PM"
     },
     {
-        "id": 1773724677316,
-        "type": "PM",
-        "detailType": "가스",
-        "partno": "",
         "code": "TVOC STD(10)",
+        "cycle": "",
+        "detailType": "가스",
+        "equip": "",
+        "id": 1773724677316,
         "part": "이소부틸렌 (10ppm)",
+        "partno": "",
         "spec": "103L-248-10",
-        "cycle": "",
-        "equip": ""
+        "type": "PM"
     },
     {
-        "id": 1773724692084,
-        "type": "PM",
-        "detailType": "가스",
-        "partno": "",
         "code": "TVOC STD(P9)",
+        "cycle": "",
+        "detailType": "가스",
+        "equip": "",
+        "id": 1773724692084,
         "part": "이소부틸렌 (10ppm)",
+        "partno": "",
         "spec": "표준가스(10) + Cal 비용",
-        "cycle": "",
-        "equip": ""
+        "type": "PM"
     },
     {
-        "id": 1773724699984,
-        "type": "PM",
-        "detailType": "용액",
-        "partno": "",
         "code": "ABS.(양)",
+        "cycle": "",
+        "detailType": "용액",
+        "equip": "",
+        "id": 1773724699984,
         "part": "흡수액(양)",
+        "partno": "",
         "spec": "양이온 흡수액",
-        "cycle": "",
-        "equip": ""
+        "type": "PM"
     },
     {
-        "id": 1773724706952,
-        "type": "PM",
-        "detailType": "용액",
-        "partno": "",
         "code": "DI",
+        "cycle": "",
+        "detailType": "용액",
+        "equip": "",
+        "id": 1773724706952,
         "part": "DI",
+        "partno": "",
         "spec": "Carrier",
-        "cycle": "",
-        "equip": ""
+        "type": "PM"
     },
     {
-        "id": 1773724714256,
-        "type": "PM",
-        "detailType": "용액",
-        "partno": "",
         "code": "ELUENT",
+        "cycle": "",
+        "detailType": "용액",
+        "equip": "",
+        "id": 1773724714256,
         "part": "ELUENT",
+        "partno": "",
         "spec": "음이온 용리액",
-        "cycle": "",
-        "equip": ""
+        "type": "PM"
     },
     {
-        "id": 1773724721548,
-        "type": "PM",
-        "detailType": "용액",
-        "partno": "",
         "code": "ABS.(음)",
+        "cycle": "",
+        "detailType": "용액",
+        "equip": "",
+        "id": 1773724721548,
         "part": "흡수액(음)",
+        "partno": "",
         "spec": "음이온 흡수액",
-        "cycle": "",
-        "equip": ""
+        "type": "PM"
     },
     {
-        "id": 1773724728514,
-        "type": "PM",
-        "detailType": "용액",
-        "partno": "",
         "code": "KOH",
+        "cycle": "",
+        "detailType": "용액",
+        "equip": "",
+        "id": 1773724728514,
         "part": "KOH",
+        "partno": "",
         "spec": "IAM7000 고농축",
-        "cycle": "",
-        "equip": ""
+        "type": "PM"
     },
     {
-        "id": 1773724735356,
-        "type": "PM",
-        "detailType": "가스",
-        "partno": "",
         "code": "SOT 표준 가스",
-        "part": "STD gas",
-        "spec": "SOT",
         "cycle": "",
-        "equip": ""
-    },
-    {
-        "id": 1773724742548,
-        "type": "PM",
         "detailType": "가스",
+        "equip": "",
+        "id": 1773724735356,
+        "part": "STD gas",
         "partno": "",
+        "spec": "SOT",
+        "type": "PM"
+    },
+    {
         "code": "표준가스(P9)",
+        "cycle": "",
+        "detailType": "가스",
+        "equip": "",
+        "id": 1773724742548,
         "part": "P9 중형 표준가스",
+        "partno": "",
         "spec": "P9 중형2공장 사용 10ppm",
-        "cycle": "",
-        "equip": ""
+        "type": "PM"
     },
     {
-        "id": 1773725157860,
-        "type": "PM",
-        "detailType": "용액",
-        "partno": "",
         "code": "Metal STD (5ppb,1%)",
-        "part": "Metal Standard Solution(1%HNO3)",
-        "spec": "5ppb Multi(4종), 1%HNO3",
         "cycle": "",
-        "equip": "WIM-100"
+        "detailType": "용액",
+        "equip": "WIM-100",
+        "id": 1773725157860,
+        "part": "Metal Standard Solution(1%HNO3)",
+        "partno": "",
+        "spec": "5ppb Multi(4종), 1%HNO3",
+        "type": "PM"
     },
     {
-        "id": 1773725199638,
-        "type": "PM",
-        "detailType": "용액",
-        "partno": "",
         "code": "9.5% HNO3",
-        "part": "9.5% HNO3",
-        "spec": "WIM-100 Cal 질산보정",
         "cycle": "",
-        "equip": "WIM-100"
+        "detailType": "용액",
+        "equip": "WIM-100",
+        "id": 1773725199638,
+        "part": "9.5% HNO3",
+        "partno": "",
+        "spec": "WIM-100 Cal 질산보정",
+        "type": "PM"
     }
 ]

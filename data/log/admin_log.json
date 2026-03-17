@@ -1518,123 +1518,123 @@
         "timestamp": "2026-03-17T05:23:24.192Z"
     },
     {
-        "timestamp": "2026-03-17T05:23:38.292Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: BUFFER",
         "target": "버퍼 용액",
-        "details": "Type: PM, Code: BUFFER"
+        "timestamp": "2026-03-17T05:23:38.292Z"
     },
     {
-        "timestamp": "2026-03-17T05:23:43.438Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(0.5)",
         "target": "이소부틸렌 (0.5ppm)",
-        "details": "Type: PM, Code: TVOC STD(0.5)"
+        "timestamp": "2026-03-17T05:23:43.438Z"
     },
     {
-        "timestamp": "2026-03-17T05:23:47.136Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(1)",
         "target": "이소부틸렌 (1ppm)",
-        "details": "Type: PM, Code: TVOC STD(1)"
+        "timestamp": "2026-03-17T05:23:47.136Z"
     },
     {
-        "timestamp": "2026-03-17T05:23:49.829Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(10)",
         "target": "이소부틸렌 (10ppm)",
-        "details": "Type: PM, Code: TVOC STD(10)"
+        "timestamp": "2026-03-17T05:23:49.829Z"
     },
     {
-        "timestamp": "2026-03-17T05:23:57.896Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(P9)",
         "target": "이소부틸렌 (10ppm)",
-        "details": "Type: PM, Code: TVOC STD(P9)"
+        "timestamp": "2026-03-17T05:23:57.896Z"
     },
     {
-        "timestamp": "2026-03-17T05:24:11.256Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(0.5)",
         "target": "이소부틸렌 (0.5ppm)",
-        "details": "Type: PM, Code: TVOC STD(0.5)"
+        "timestamp": "2026-03-17T05:24:11.256Z"
     },
     {
-        "timestamp": "2026-03-17T05:24:14.430Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(1)",
         "target": "이소부틸렌 (1ppm)",
-        "details": "Type: PM, Code: TVOC STD(1)"
+        "timestamp": "2026-03-17T05:24:14.430Z"
     },
     {
-        "timestamp": "2026-03-17T05:24:17.136Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(10)",
         "target": "이소부틸렌 (10ppm)",
-        "details": "Type: PM, Code: TVOC STD(10)"
+        "timestamp": "2026-03-17T05:24:17.136Z"
     },
     {
-        "timestamp": "2026-03-17T05:24:22.970Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ABS.(양)",
         "target": "흡수액(양)",
-        "details": "Type: PM, Code: ABS.(양)"
+        "timestamp": "2026-03-17T05:24:22.970Z"
     },
     {
-        "timestamp": "2026-03-17T05:24:25.685Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: DI",
         "target": "DI",
-        "details": "Type: PM, Code: DI"
+        "timestamp": "2026-03-17T05:24:25.685Z"
     },
     {
-        "timestamp": "2026-03-17T05:24:28.413Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ELUENT",
         "target": "ELUENT",
-        "details": "Type: PM, Code: ELUENT"
+        "timestamp": "2026-03-17T05:24:28.413Z"
     },
     {
-        "timestamp": "2026-03-17T05:24:31.375Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ABS.(음)",
         "target": "흡수액(음)",
-        "details": "Type: PM, Code: ABS.(음)"
+        "timestamp": "2026-03-17T05:24:31.375Z"
     },
     {
-        "timestamp": "2026-03-17T05:24:35.954Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: KOH",
         "target": "KOH",
-        "details": "Type: PM, Code: KOH"
+        "timestamp": "2026-03-17T05:24:35.954Z"
     },
     {
-        "timestamp": "2026-03-17T05:24:38.876Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: SOT 표준 가스",
         "target": "STD gas",
-        "details": "Type: PM, Code: SOT 표준 가스"
+        "timestamp": "2026-03-17T05:24:38.876Z"
     },
     {
-        "timestamp": "2026-03-17T05:24:45.450Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 표준가스(P9)",
         "target": "P9 중형 표준가스",
-        "details": "Type: PM, Code: 표준가스(P9)"
+        "timestamp": "2026-03-17T05:24:45.450Z"
     },
     {
-        "timestamp": "2026-03-17T05:25:06.318Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: Metal STD (10ppb,3%)",
         "target": "Metal Standard Solution(3%HNO3)",
-        "details": "Type: PM, Code: Metal STD (10ppb,3%)"
+        "timestamp": "2026-03-17T05:25:06.318Z"
     },
     {
-        "timestamp": "2026-03-17T05:25:57.860Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 5ppb Multi(4종), 1%HNO3",
         "target": "Metal Standard Solution(1%HNO3)",
-        "details": "Type: PM, Spec: 5ppb Multi(4종), 1%HNO3"
+        "timestamp": "2026-03-17T05:25:57.860Z"
     },
     {
-        "timestamp": "2026-03-17T05:26:39.639Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: WIM-100 Cal 질산보정",
         "target": "9.5% HNO3",
-        "details": "Type: PM, Spec: WIM-100 Cal 질산보정"
+        "timestamp": "2026-03-17T05:26:39.639Z"
     },
     {
-        "timestamp": "2026-03-17T05:26:51.290Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: Metal STD (5ppb,1%)",
         "target": "Metal Standard Solution(1%HNO3)",
-        "details": "Type: PM, Code: Metal STD (5ppb,1%)"
+        "timestamp": "2026-03-17T05:26:51.290Z"
     },
     {
-        "timestamp": "2026-03-17T05:26:58.260Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 9.5% HNO3",
         "target": "9.5% HNO3",
-        "details": "Type: PM, Code: 9.5% HNO3"
+        "timestamp": "2026-03-17T05:26:58.260Z"
     }
 ]
