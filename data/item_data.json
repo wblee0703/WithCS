@@ -59,15 +59,16 @@
         "equip": "SOMA-2000, WIM-100"
     },
     {
-        "code": "Pt Injector",
-        "cycle": "",
-        "detailType": "분석부 교체",
-        "equip": "SOMA-2000, WIM-100",
         "id": 1773721149658,
-        "part": "Platinum injector, inert torch, 2.5mm id",
+        "type": "BM",
+        "detailType": "분석부 교체",
+        "additional": "ICPMS",
         "partno": "M00001395",
+        "code": "Pt Injector",
+        "part": "Platinum injector, inert torch, 2.5mm id",
         "spec": "G3285-80035, Agilent",
-        "type": "BM"
+        "cycle": "",
+        "equip": "SOMA-2000, WIM-100"
     },
     {
         "code": "PFA Spray Chamber",
