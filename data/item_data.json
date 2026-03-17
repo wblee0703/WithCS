@@ -858,15 +858,15 @@
         "equip": ""
     },
     {
-        "code": "PLC386(IN8)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723544843,
+        "type": "BM",
+        "detailType": "",
+        "partno": "B00000028",
+        "code": "PLC386(IN8)",
         "part": "PLC386 IN8 Board",
-        "partno": "",
         "spec": "8비트 IN 입력 보드, MOQ(10) / 테크마스",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "LEAK BOARD",

@@ -1186,5 +1186,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "PLC386 TR8 Board",
         "details": "Type: BM, Code: PLC386(TR8)"
+    },
+    {
+        "timestamp": "2026-03-17T05:10:46.237Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "PLC386 IN8 Board",
+        "details": "Type: BM, Code: PLC386(IN8)"
     }
 ]
