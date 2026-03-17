@@ -1330,5 +1330,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "이소부틸렌 (1ppm)",
         "details": "Type: PM, Spec: 103L-248-1"
+    },
+    {
+        "timestamp": "2026-03-17T05:17:57.316Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "이소부틸렌 (10ppm)",
+        "details": "Type: PM, Spec: 103L-248-10"
     }
 ]
