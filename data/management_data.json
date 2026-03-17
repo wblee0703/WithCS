@@ -185,6 +185,12 @@
         ],
         "WIM-100::WIM1-HK24-0401::정기": [
             "PM 점검"
+        ],
+        "WIM-100::WIM1-HK24-0401::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
         ]
     },
     "items": {
