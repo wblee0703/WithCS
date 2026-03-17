@@ -1564,5 +1564,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "이소부틸렌 (10ppm)",
         "details": "Type: PM, Code: TVOC STD(10)"
+    },
+    {
+        "timestamp": "2026-03-17T05:24:22.970Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "흡수액(양)",
+        "details": "Type: PM, Code: ABS.(양)"
     }
 ]
