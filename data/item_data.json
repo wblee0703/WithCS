@@ -1010,5 +1010,16 @@
         "spec": "",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724650498,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "BUFFER",
+        "part": "버퍼 용액",
+        "spec": "버퍼 용액",
+        "cycle": "",
+        "equip": ""
     }
 ]
