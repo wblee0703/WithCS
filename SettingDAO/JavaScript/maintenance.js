@@ -877,7 +877,7 @@ function toggleLogEdit(id, btn) {
 
         dateCell.innerHTML = `<input type="date" id="edit-log-date-${id}" value="${escapeHtml(currentDate)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
         
-        const allCategories = ['정기', '비정기', '고객대응', '용액제조', '온라인 점검', 'PM', 'BM', '장비점검', '프로그램변경', '트러블이슈'];
+        const allCategories = ['정기', '비정기', '고객대응', '용액제조', '온라인점검', 'PM', 'BM', '장비점검', '프로그램변경', '트러블이슈'];
         typeCell.innerHTML = `
             <select id="edit-log-type-${id}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()" onchange="updateEditDetailTypeOptions(${id})">
                 ${allCategories.map(c => `<option value="${c}" ${currentType === c ? 'selected' : ''}>${c}</option>`).join('')}
@@ -1038,7 +1038,7 @@ window.updateLogTypeOptions = function() {
     const typeSelect = document.getElementById('log-type-select');
     if (!typeSelect) return;
     
-    const categories = ['정기', '비정기', '고객대응', '용액제조', '온라인 점검']; // Admin 기본 구분
+    const categories = ['정기', '비정기', '고객대응', '용액제조', '온라인점검']; // Admin 기본 구분
     const currentVal = typeSelect.value;
     
     typeSelect.innerHTML = '';
@@ -1227,7 +1227,7 @@ function getSubCategories(type) {
         '비정기': ['BM', 'Alarm', 'Hunting', 'Data / Para 이상'],
         '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
         '용액제조': ['용액제조'],
-        '온라인 점검': ['온라인 점검']
+        '온라인점검': ['온라인점검']
     };
 
     let subCategories = catData[key];

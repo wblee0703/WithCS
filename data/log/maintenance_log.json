@@ -66,9 +66,9 @@
         "timestamp": "2026-03-17T02:05:39.440Z"
     },
     {
-        "timestamp": "2026-03-17T02:07:08.688Z",
         "action": "DELETE_LOG",
+        "details": "삭제: 2026-03-17 Ver.",
         "target": "SOMA-2000::SOMA-H19-0402",
-        "details": "삭제: 2026-03-17 Ver."
+        "timestamp": "2026-03-17T02:07:08.688Z"
     }
 ]

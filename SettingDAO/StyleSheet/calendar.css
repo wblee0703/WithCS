@@ -201,11 +201,17 @@
 }
 
 /* Event Type Colors */
-.event-type-text.type-PM, .popup-type-badge.type-PM { color: var(--cal-green); }
-.event-type-text.type-BM, .popup-type-badge.type-BM { color: var(--cal-blue-light); }
-.event-type-text.type-장비점검, .popup-type-badge.type-장비점검 { color: var(--cal-orange); }
-.event-type-text.type-프로그램변경, .popup-type-badge.type-프로그램변경 { color: var(--cal-purple); }
-.event-type-text.type-트러블이슈, .popup-type-badge.type-트러블이슈 { color: var(--cal-red-trouble); }
+.event-type-text.type-정기, .popup-type-badge.type-정기 { color: #238636; }
+
+.event-type-text.type-비정기, .popup-type-badge.type-비정기 { color: #eb371f; }
+
+.event-type-text.type-고객대응, .popup-type-badge.type-고객대응 { color: #d29922; }
+
+.event-type-text.type-용액제조, .popup-type-badge.type-용액제조 { color: #8957e5; }
+
+.event-type-text.type-온라인점검, .popup-type-badge.type-온라인점검 { color: #0078d4; }
+
+.event-type-text.type-default, .popup-type-badge.type-default { color: #8b949e; }
 
 
 
