@@ -588,297 +588,303 @@
         "timestamp": "2026-03-17T04:46:37.922Z"
     },
     {
-        "timestamp": "2026-03-17T04:49:58.099Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 160553, HEAD KIT,PK,10ML,STD",
         "target": "HPLC PUMP HEAD KIT",
-        "details": "Type: PM, Spec: 160553, HEAD KIT,PK,10ML,STD"
+        "timestamp": "2026-03-17T04:49:58.099Z"
     },
     {
-        "timestamp": "2026-03-17T04:50:32.994Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 045742 for N830 (N830부품)",
         "target": "Diaphragm",
-        "details": "Type: PM, Spec: 045742 for N830 (N830부품)"
+        "timestamp": "2026-03-17T04:50:32.994Z"
     },
     {
-        "timestamp": "2026-03-17T04:50:44.901Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: PM27597-NMP830, 12V",
         "target": "Diaphragm Pump",
-        "details": "Type: PM, Spec: PM27597-NMP830, 12V"
+        "timestamp": "2026-03-17T04:50:44.901Z"
     },
     {
-        "timestamp": "2026-03-17T04:50:52.806Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: PM27597-NMP830, 12V",
         "target": "Diaphragm Pump",
-        "details": "Type: PM, Spec: PM27597-NMP830, 12V"
+        "timestamp": "2026-03-17T04:50:52.806Z"
     },
     {
-        "timestamp": "2026-03-17T04:51:02.806Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: SMC_ITV1030-212CL_0.5Mpa",
         "target": "ELECTRIC REGULATOR",
-        "details": "Type: BM, Spec: SMC_ITV1030-212CL_0.5Mpa"
+        "timestamp": "2026-03-17T04:51:02.806Z"
     },
     {
-        "timestamp": "2026-03-17T04:51:13.934Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 880354, 10ML SER3 REPLACEMENT PISTON",
         "target": "Piston Assembly",
-        "details": "Type: BM, Spec: 880354, 10ML SER3 REPLACEMENT PISTON"
+        "timestamp": "2026-03-17T04:51:13.934Z"
     },
     {
-        "timestamp": "2026-03-17T04:51:21.792Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 2680CGUU44,130LPM,230V,50/60Hz공용(피팅포함)",
         "target": "Vacuum Pump[Thomas-P], 4/1 Connector",
-        "details": "Type: BM, Spec: 2680CGUU44,130LPM,230V,50/60Hz공용(피팅포함)"
+        "timestamp": "2026-03-17T04:51:21.792Z"
     },
     {
-        "timestamp": "2026-03-17T04:51:29.086Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 402041, for MPC 601 E",
         "target": "Welch Part, 서비스킷",
-        "details": "Type: BM, Spec: 402041, for MPC 601 E"
+        "timestamp": "2026-03-17T04:51:29.086Z"
     },
     {
-        "timestamp": "2026-03-17T04:51:36.066Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: M3030V AIR 10SLPM (VITON,1/4\") 15Vdc",
         "target": "MFC",
-        "details": "Type: BM, Spec: M3030V AIR 10SLPM (VITON,1/4\") 15Vdc"
+        "timestamp": "2026-03-17T04:51:36.066Z"
     },
     {
-        "timestamp": "2026-03-17T04:52:21.765Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: M3030V AIR 5SLPM (VITON,1/4\") 15Vdc",
         "target": "MFC",
-        "details": "Type: BM, Spec: M3030V AIR 5SLPM (VITON,1/4\") 15Vdc"
+        "timestamp": "2026-03-17T04:52:21.765Z"
     },
     {
-        "timestamp": "2026-03-17T04:52:32.870Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: LZM-WO/1-5LPM, OEM, POC1/4-01MW",
         "target": "Flow meter(Outlet valve)",
-        "details": "Type: BM, Spec: LZM-WO/1-5LPM, OEM, POC1/4-01MW"
+        "timestamp": "2026-03-17T04:52:32.870Z"
     },
     {
-        "timestamp": "2026-03-17T04:52:39.424Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: WF301 ＆ SM301 (양)",
         "target": "Sampler body",
-        "details": "Type: BM, Spec: WF301 ＆ SM301 (양)"
+        "timestamp": "2026-03-17T04:52:39.424Z"
     },
     {
-        "timestamp": "2026-03-17T04:52:47.880Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: Ferrules for 1/16 OD tubing Blue ETFE",
         "target": "P-200",
-        "details": "Type: BM, Spec: Ferrules for 1/16 OD tubing Blue ETFE"
+        "timestamp": "2026-03-17T04:52:47.880Z"
     },
     {
-        "timestamp": "2026-03-17T04:52:54.934Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 1/4-28 Nuts for 1/16 tubing WhiteDelrin",
         "target": "P-203",
-        "details": "Type: BM, Spec: 1/4-28 Nuts for 1/16 tubing WhiteDelrin"
+        "timestamp": "2026-03-17T04:52:54.934Z"
     },
     {
-        "timestamp": "2026-03-17T04:53:03.480Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: Plug fitting, PFA",
         "target": "P-316",
-        "details": "Type: BM, Spec: Plug fitting, PFA"
+        "timestamp": "2026-03-17T04:53:03.480Z"
     },
     {
-        "timestamp": "2026-03-17T04:53:11.380Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: Flngls sys Blk Peek 1/4in",
         "target": "XU-655",
-        "details": "Type: BM, Spec: Flngls sys Blk Peek 1/4in"
+        "timestamp": "2026-03-17T04:53:11.380Z"
     },
     {
-        "timestamp": "2026-03-17T04:53:18.224Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: Headless M6 Nut, 1/16in Short",
         "target": "P-213",
-        "details": "Type: BM, Spec: Headless M6 Nut, 1/16in Short"
+        "timestamp": "2026-03-17T04:53:18.224Z"
     },
     {
-        "timestamp": "2026-03-17T04:53:25.922Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: SF Ferrule, 1/16 PEEK w/SS Ring",
         "target": "P-250",
-        "details": "Type: BM, Spec: SF Ferrule, 1/16 PEEK w/SS Ring"
+        "timestamp": "2026-03-17T04:53:25.922Z"
     },
     {
-        "timestamp": "2026-03-17T04:53:34.394Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: DCF2-2N-S",
         "target": "Fitting Female 1/8 NPT-1/8",
-        "details": "Type: BM, Spec: DCF2-2N-S"
+        "timestamp": "2026-03-17T04:53:34.394Z"
     },
     {
-        "timestamp": "2026-03-17T04:53:47.010Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: FEP 3*2*100m, NATURAL, Samplingcoil, Yodogawa",
         "target": "FEP TUBE",
-        "details": "Type: BM, Spec: FEP 3*2*100m, NATURAL, Samplingcoil, Yodogawa"
+        "timestamp": "2026-03-17T04:53:47.010Z"
     },
     {
-        "timestamp": "2026-03-17T04:53:57.280Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: MT-F-125062, 1.59mm, 1000FT",
         "target": "TUBE_1/8＂FEP(300M)",
-        "details": "Type: BM, Spec: MT-F-125062, 1.59mm, 1000FT"
+        "timestamp": "2026-03-17T04:53:57.280Z"
     },
     {
-        "timestamp": "2026-03-17T04:54:04.814Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 880469",
         "target": "10mL Self Flush ASSY",
-        "details": "Type: BM, Spec: 880469"
+        "timestamp": "2026-03-17T04:54:04.814Z"
     },
     {
-        "timestamp": "2026-03-17T04:54:12.900Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 3 WAY USG3-X1476-FL-634209-DC24V, 3.0",
         "target": "Solenoid valve",
-        "details": "Type: BM, Spec: 3 WAY USG3-X1476-FL-634209-DC24V, 3.0"
+        "timestamp": "2026-03-17T04:54:12.900Z"
     },
     {
-        "timestamp": "2026-03-17T04:54:21.766Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 20738421, XLP6K 3P 1/4-28",
         "target": "Syringe Pump(TECAN)",
-        "details": "Type: BM, Spec: 20738421, XLP6K 3P 1/4-28"
+        "timestamp": "2026-03-17T04:54:21.766Z"
     },
     {
-        "timestamp": "2026-03-17T04:54:50.782Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 10013, 3Port, PCTFE/PTFE",
         "target": "Syringe pump, C3000",
-        "details": "Type: BM, Spec: 10013, 3Port, PCTFE/PTFE"
+        "timestamp": "2026-03-17T04:54:50.782Z"
     },
     {
-        "timestamp": "2026-03-17T04:55:27.258Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 2647017, 1mL, ILS",
         "target": "Syringe(1mL)",
-        "details": "Type: BM, Spec: 2647017, 1mL, ILS"
+        "timestamp": "2026-03-17T04:55:27.258Z"
     },
     {
-        "timestamp": "2026-03-17T04:55:53.922Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 2647037, 2.5mL, ILS",
         "target": "Syringe(2.5mL)",
-        "details": "Type: BM, Spec: 2647037, 2.5mL, ILS"
+        "timestamp": "2026-03-17T04:55:53.922Z"
     },
     {
-        "timestamp": "2026-03-17T04:56:08.523Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 내경0.03\" 3바퀴반",
         "target": "REACTOR_WF301용",
-        "details": "Type: BM, Spec: 내경0.03\" 3바퀴반"
+        "timestamp": "2026-03-17T04:56:08.523Z"
     },
     {
-        "timestamp": "2026-03-17T04:56:16.264Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: SC-4-S",
         "target": "1/4 cap",
-        "details": "Type: BM, Spec: SC-4-S"
+        "timestamp": "2026-03-17T04:56:16.264Z"
     },
     {
-        "timestamp": "2026-03-17T04:57:18.610Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 3020008, 1mL, SETonic",
         "target": "Syringe(1mL)",
-        "details": "Type: BM, Spec: 3020008, 1mL, SETonic"
+        "timestamp": "2026-03-17T04:57:18.610Z"
     },
     {
-        "timestamp": "2026-03-17T04:57:55.154Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 3020009, 2.5mL, SETonic",
         "target": "Syringe(2.5mL)",
-        "details": "Type: BM, Spec: 3020009, 2.5mL, SETonic"
+        "timestamp": "2026-03-17T04:57:55.154Z"
     },
     {
-        "timestamp": "2026-03-17T04:58:04.490Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G1321-60005, 8uL",
         "target": "Agilent FLD standard flow cell(국내)",
-        "details": "Type: BM, Spec: G1321-60005, 8uL"
+        "timestamp": "2026-03-17T04:58:04.490Z"
     },
     {
-        "timestamp": "2026-03-17T04:58:41.972Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: HTV 0142-3, PTFE, DC24V, 7Bar, HSE",
         "target": "3-Way Solenoid Valve",
-        "details": "Type: BM, Spec: HTV 0142-3, PTFE, DC24V, 7Bar, HSE"
+        "timestamp": "2026-03-17T04:58:41.972Z"
     },
     {
-        "timestamp": "2026-03-17T04:58:48.800Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: TB-PLCS386 CPU 보드, MOQ(10) / 테크마스",
         "target": "PLC386 CPU Board",
-        "details": "Type: BM, Spec: TB-PLCS386 CPU 보드, MOQ(10) / 테크마스"
+        "timestamp": "2026-03-17T04:58:48.800Z"
     },
     {
-        "timestamp": "2026-03-17T04:58:55.444Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 8비트 TR 출력 보드, MOQ(10) / 테크마스",
         "target": "PLC386 TR8 Board",
-        "details": "Type: BM, Spec: 8비트 TR 출력 보드, MOQ(10) / 테크마스"
+        "timestamp": "2026-03-17T04:58:55.444Z"
     },
     {
-        "timestamp": "2026-03-17T04:59:04.843Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 8비트 IN 입력 보드, MOQ(10) / 테크마스",
         "target": "PLC386 IN8 Board",
-        "details": "Type: BM, Spec: 8비트 IN 입력 보드, MOQ(10) / 테크마스"
+        "timestamp": "2026-03-17T04:59:04.843Z"
     },
     {
-        "timestamp": "2026-03-17T04:59:14.379Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: Leak Sensor Board / 유니랩코리아",
         "target": "Leak Sensor Board",
-        "details": "Type: BM, Spec: Leak Sensor Board / 유니랩코리아"
+        "timestamp": "2026-03-17T04:59:14.379Z"
     },
     {
-        "timestamp": "2026-03-17T04:59:24.920Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 10A(240W) output 24V / MEAN WALL",
         "target": "SMPS:SDR-240-24(10A)",
-        "details": "Type: BM, Spec: 10A(240W) output 24V / MEAN WALL"
+        "timestamp": "2026-03-17T04:59:24.920Z"
     },
     {
-        "timestamp": "2026-03-17T04:59:31.952Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: CP30-BA 1P1-M 3A / 미쯔비시",
         "target": "회로보호기",
-        "details": "Type: BM, Spec: CP30-BA 1P1-M 3A / 미쯔비시"
+        "timestamp": "2026-03-17T04:59:31.952Z"
     },
     {
-        "timestamp": "2026-03-17T04:59:38.766Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 1.34A output 15V / MEAN WALL",
         "target": "SMPS:MDR-20-15(1.36A)",
-        "details": "Type: BM, Spec: 1.34A output 15V / MEAN WALL"
+        "timestamp": "2026-03-17T04:59:38.766Z"
     },
     {
-        "timestamp": "2026-03-17T04:59:46.101Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: T-PF-PC, 30*40*0.3T, C/GF/PTFE",
         "target": "Leak Sensor(감지부)",
-        "details": "Type: BM, Spec: T-PF-PC, 30*40*0.3T, C/GF/PTFE"
+        "timestamp": "2026-03-17T04:59:46.101Z"
     },
     {
-        "timestamp": "2026-03-17T04:59:53.466Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: TFE CABLE, 4SQ_내산성",
         "target": "Leak Sensor(케이블)",
-        "details": "Type: BM, Spec: TFE CABLE, 4SQ_내산성"
+        "timestamp": "2026-03-17T04:59:53.466Z"
     },
     {
-        "timestamp": "2026-03-17T05:00:00.928Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: Line connector_12mm*15mm",
         "target": "Leak Sensor(커넥터)",
-        "details": "Type: BM, Spec: Line connector_12mm*15mm"
+        "timestamp": "2026-03-17T05:00:00.928Z"
     },
     {
-        "timestamp": "2026-03-17T05:00:08.736Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: CP30-BA 1P1-M 7A / 미쯔비시",
         "target": "회로보호기",
-        "details": "Type: BM, Spec: CP30-BA 1P1-M 7A / 미쯔비시"
+        "timestamp": "2026-03-17T05:00:08.736Z"
     },
     {
-        "timestamp": "2026-03-17T05:00:21.285Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 전 장비",
         "target": "하네스 케이블",
-        "details": "Type: BM, Spec: 전 장비"
+        "timestamp": "2026-03-17T05:00:21.285Z"
     },
     {
-        "timestamp": "2026-03-17T05:01:02.271Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: GC(2mm)",
         "target": "Guard Column(2mm)",
-        "details": "Type: BM, Code: GC(2mm)"
+        "timestamp": "2026-03-17T05:01:02.271Z"
     },
     {
-        "timestamp": "2026-03-17T05:01:07.284Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: GC(4mm)",
         "target": "Guard Column(4mm)",
-        "details": "Type: BM, Code: GC(4mm)"
+        "timestamp": "2026-03-17T05:01:07.284Z"
     },
     {
-        "timestamp": "2026-03-17T05:01:14.958Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: AC(2mm)",
         "target": "Analysis Column(2mm)",
-        "details": "Type: BM, Code: AC(2mm)"
+        "timestamp": "2026-03-17T05:01:14.958Z"
     },
     {
-        "timestamp": "2026-03-17T05:01:24.155Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: AC(4mm)",
         "target": "Analysis Column(4mm)",
-        "details": "Type: BM, Code: AC(4mm)"
+        "timestamp": "2026-03-17T05:01:24.155Z"
+    },
+    {
+        "timestamp": "2026-03-17T05:03:22.971Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Suppressor(2mm 음이온)",
+        "details": "Type: BM, Code: SRS(2mm)"
     }
 ]
