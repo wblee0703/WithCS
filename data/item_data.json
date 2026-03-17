@@ -80,11 +80,11 @@
         "id": 1773721149658,
         "type": "BM",
         "detailType": "",
-        "partno": "",
+        "partno": "M00001395",
         "code": "Pt Injector",
         "part": "Platinum injector, inert torch, 2.5mm id",
         "spec": "G3285-80035, Agilent",
         "cycle": "",
-        "equip": ""
+        "equip": "SOMA-2000, WIM-100"
     }
 ]
