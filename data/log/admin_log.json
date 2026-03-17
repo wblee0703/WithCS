@@ -324,75 +324,81 @@
         "timestamp": "2026-03-17T04:28:13.527Z"
     },
     {
-        "timestamp": "2026-03-17T04:29:47.230Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 5064-8092, Agilent 정품",
         "target": "Ar gas clean filter, Semicon App",
-        "details": "Type: BM, Spec: 5064-8092, Agilent 정품"
+        "timestamp": "2026-03-17T04:29:47.230Z"
     },
     {
-        "timestamp": "2026-03-17T04:30:01.540Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Ar gas Filter",
         "target": "Ar gas clean filter, Semicon App",
-        "details": "Type: BM, Code: Ar gas Filter"
+        "timestamp": "2026-03-17T04:30:01.540Z"
     },
     {
-        "timestamp": "2026-03-17T04:31:31.522Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: CP17973",
         "target": "Gas Clean Filter Carrier Gas",
-        "details": "Type: BM, Spec: CP17973"
+        "timestamp": "2026-03-17T04:31:31.522Z"
     },
     {
-        "timestamp": "2026-03-17T04:31:43.044Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: He gas Filter",
         "target": "Gas Clean Filter Carrier Gas",
-        "details": "Type: BM, Code: He gas Filter"
+        "timestamp": "2026-03-17T04:31:43.044Z"
     },
     {
-        "timestamp": "2026-03-17T04:32:31.322Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3280-20628, 정품",
         "target": "Deflect lens for ICP-MS",
-        "details": "Type: BM, Spec: G3280-20628, 정품"
+        "timestamp": "2026-03-17T04:32:31.322Z"
     },
     {
-        "timestamp": "2026-03-17T04:32:46.084Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ORS (Deflect lens)",
         "target": "Deflect lens for ICP-MS",
-        "details": "Type: BM, Code: ORS (Deflect lens)"
+        "timestamp": "2026-03-17T04:32:46.084Z"
     },
     {
-        "timestamp": "2026-03-17T04:33:07.872Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3280-60615, 정품",
         "target": "Plate bias for ICP-MS",
-        "details": "Type: BM, Spec: G3280-60615, 정품"
+        "timestamp": "2026-03-17T04:33:07.872Z"
     },
     {
-        "timestamp": "2026-03-17T04:33:19.687Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ORS (Plate bias)",
         "target": "Plate bias for ICP-MS",
-        "details": "Type: BM, Code: ORS (Plate bias)"
+        "timestamp": "2026-03-17T04:33:19.687Z"
     },
     {
-        "timestamp": "2026-03-17T04:34:01.054Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3280-20618, 정품",
         "target": "Cell entrance lens for ICP-MS",
-        "details": "Type: BM, Spec: G3280-20618, 정품"
+        "timestamp": "2026-03-17T04:34:01.054Z"
     },
     {
-        "timestamp": "2026-03-17T04:34:16.000Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ORS (Cell entrance lens)",
         "target": "Cell entrance lens for ICP-MS",
-        "details": "Type: BM, Code: ORS (Cell entrance lens)"
+        "timestamp": "2026-03-17T04:34:16.000Z"
     },
     {
-        "timestamp": "2026-03-17T04:34:43.184Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3280-20664, 정품",
         "target": "Cell exit lens for ICP-MS",
-        "details": "Type: BM, Spec: G3280-20664, 정품"
+        "timestamp": "2026-03-17T04:34:43.184Z"
     },
     {
-        "timestamp": "2026-03-17T04:34:55.105Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ORS (Cell exit lens)",
         "target": "Cell exit lens for ICP-MS",
-        "details": "Type: BM, Code: ORS (Cell exit lens)"
+        "timestamp": "2026-03-17T04:34:55.105Z"
+    },
+    {
+        "timestamp": "2026-03-17T04:35:20.352Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Cell focus lens for ICP-MS",
+        "details": "Type: BM, Spec: G3280-20633, 정품"
     }
 ]
