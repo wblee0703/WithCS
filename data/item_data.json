@@ -1122,15 +1122,15 @@
         "equip": ""
     },
     {
-        "code": "SOT 표준 가스",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773724735356,
-        "part": "STD gas",
+        "type": "PM",
+        "detailType": "가스",
         "partno": "",
+        "code": "SOT 표준 가스",
+        "part": "STD gas",
         "spec": "SOT",
-        "type": "PM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "표준가스(P9)",

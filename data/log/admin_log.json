@@ -1594,5 +1594,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "KOH",
         "details": "Type: PM, Code: KOH"
+    },
+    {
+        "timestamp": "2026-03-17T05:24:38.876Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "STD gas",
+        "details": "Type: PM, Code: SOT 표준 가스"
     }
 ]
