@@ -101,12 +101,12 @@
     {
         "id": 1773721513922,
         "type": "BM",
-        "detailType": "",
-        "partno": "",
+        "detailType": "분석부 교체",
+        "partno": "A00002197",
         "code": "Spray Chamber End Cap",
         "part": "Spray Chamber End Cap for Inert Kit, PFA",
         "spec": "G3285-80020",
         "cycle": "",
-        "equip": ""
+        "equip": "SOMA-2000, WIM-100"
     }
 ]

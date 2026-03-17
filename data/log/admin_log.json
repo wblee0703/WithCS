@@ -256,5 +256,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Spray Chamber End Cap for Inert Kit, PFA",
         "details": "Type: BM, Spec: G3285-80020"
+    },
+    {
+        "timestamp": "2026-03-17T04:25:25.934Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Spray Chamber End Cap for Inert Kit, PFA",
+        "details": "Type: BM, Code: Spray Chamber End Cap"
     }
 ]
