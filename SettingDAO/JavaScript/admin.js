@@ -1082,21 +1082,19 @@ function setupItemMgmt() {
                     if (currentEquips.includes(m.name)) li.classList.add('selected');
 
                     li.innerHTML = `
-                        <div class="suggestion-item-content">
-                            <label style="display:flex; align-items:center; width:100%; cursor:pointer; margin:0;">
+                        <div class="suggestion-item-content" style="pointer-events: none;">
+                            <div style="display:flex; align-items:center; width:100%; margin:0;">
                                 <input type="checkbox" value="${m.name}" style="margin-right:8px;" ${currentEquips.includes(m.name) ? 'checked' : ''}>
                                 <span>${m.name}</span>
                                 <span class="abbr" style="margin-left:auto;">${m.abbr}</span>
-                            </label>
+                            </div>
                         </div>
                     `;
                     
                     li.addEventListener('click', (ev) => {
                         ev.stopPropagation();
                         const cb = li.querySelector('input[type="checkbox"]');
-                        if (ev.target !== cb) {
-                            cb.checked = !cb.checked;
-                        }
+                        cb.checked = !cb.checked;
                         if (cb.checked) {
                             li.classList.add('selected');
                         } else {

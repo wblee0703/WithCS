@@ -216,27 +216,33 @@
         "timestamp": "2026-03-17T03:57:46.404Z"
     },
     {
-        "timestamp": "2026-03-17T04:18:31.150Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G4912-80012, 정품",
         "target": "Torch for PFA inert kit for ICP-MS",
-        "details": "Type: BM, Spec: G4912-80012, 정품"
+        "timestamp": "2026-03-17T04:18:31.150Z"
     },
     {
-        "timestamp": "2026-03-17T04:18:53.358Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: PFA Torch",
         "target": "Torch for PFA inert kit for ICP-MS",
-        "details": "Type: BM, Code: PFA Torch"
+        "timestamp": "2026-03-17T04:18:53.358Z"
     },
     {
-        "timestamp": "2026-03-17T04:19:09.658Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3285-80035, Agilent",
         "target": "Platinum injector, inert torch, 2.5mm id",
-        "details": "Type: BM, Spec: G3285-80035, Agilent"
+        "timestamp": "2026-03-17T04:19:09.658Z"
     },
     {
-        "timestamp": "2026-03-17T04:19:24.922Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Pt Injector",
         "target": "Platinum injector, inert torch, 2.5mm id",
-        "details": "Type: BM, Code: Pt Injector"
+        "timestamp": "2026-03-17T04:19:24.922Z"
+    },
+    {
+        "timestamp": "2026-03-17T04:24:31.688Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Spray Chamber for Inert Kit, PFA",
+        "details": "Type: BM, Spec: G3285-80021, Agilent 정품"
     }
 ]

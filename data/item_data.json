@@ -66,25 +66,36 @@
         "type": "PM"
     },
     {
-        "id": 1773721111150,
-        "type": "BM",
-        "detailType": "",
-        "partno": "A00002051",
         "code": "PFA Torch",
-        "part": "Torch for PFA inert kit for ICP-MS",
-        "spec": "G4912-80012, 정품",
         "cycle": "",
-        "equip": "SOMA-2000, WIM-100"
+        "detailType": "",
+        "equip": "SOMA-2000, WIM-100",
+        "id": 1773721111150,
+        "part": "Torch for PFA inert kit for ICP-MS",
+        "partno": "A00002051",
+        "spec": "G4912-80012, 정품",
+        "type": "BM"
     },
     {
+        "code": "Pt Injector",
+        "cycle": "",
+        "detailType": "",
+        "equip": "SOMA-2000, WIM-100",
         "id": 1773721149658,
+        "part": "Platinum injector, inert torch, 2.5mm id",
+        "partno": "M00001395",
+        "spec": "G3285-80035, Agilent",
+        "type": "BM"
+    },
+    {
+        "id": 1773721471688,
         "type": "BM",
         "detailType": "",
-        "partno": "M00001395",
-        "code": "Pt Injector",
-        "part": "Platinum injector, inert torch, 2.5mm id",
-        "spec": "G3285-80035, Agilent",
+        "partno": "",
+        "code": "PFA Spray Chamber",
+        "part": "Spray Chamber for Inert Kit, PFA",
+        "spec": "G3285-80021, Agilent 정품",
         "cycle": "",
-        "equip": "SOMA-2000, WIM-100"
+        "equip": ""
     }
 ]
