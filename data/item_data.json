@@ -713,5 +713,16 @@
         "spec": "MT-F-125062, 1.59mm, 1000FT",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723244814,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "HPLC SELF FLUSH",
+        "part": "10mL Self Flush ASSY",
+        "spec": "880469",
+        "cycle": "",
+        "equip": ""
     }
 ]
