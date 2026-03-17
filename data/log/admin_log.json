@@ -262,5 +262,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Spray Chamber End Cap for Inert Kit, PFA",
         "details": "Type: BM, Code: Spray Chamber End Cap"
+    },
+    {
+        "timestamp": "2026-03-17T04:25:30.808Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Spray Chamber for Inert Kit, PFA",
+        "details": "Type: BM, Code: PFA Spray Chamber"
     }
 ]
