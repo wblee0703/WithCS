@@ -882,99 +882,105 @@
         "timestamp": "2026-03-17T05:01:24.155Z"
     },
     {
-        "timestamp": "2026-03-17T05:03:22.971Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SRS(2mm)",
         "target": "Suppressor(2mm 음이온)",
-        "details": "Type: BM, Code: SRS(2mm)"
+        "timestamp": "2026-03-17T05:03:22.971Z"
     },
     {
-        "timestamp": "2026-03-17T05:03:29.150Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SRS(4mm)",
         "target": "Suppressor(4mm 음이온)",
-        "details": "Type: BM, Code: SRS(4mm)"
+        "timestamp": "2026-03-17T05:03:29.150Z"
     },
     {
-        "timestamp": "2026-03-17T05:03:44.354Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: DEGASSER",
         "target": "Degasser",
-        "details": "Type: BM, Code: DEGASSER"
+        "timestamp": "2026-03-17T05:03:44.354Z"
     },
     {
-        "timestamp": "2026-03-17T05:03:52.886Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 3WAY_V(L)",
         "target": "Solenoid Valve(MHPNLBT032)",
-        "details": "Type: BM, Code: 3WAY_V(L)"
+        "timestamp": "2026-03-17T05:03:52.886Z"
     },
     {
-        "timestamp": "2026-03-17T05:03:57.820Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 2WAY_V(G)",
         "target": "Solenoid Valve",
-        "details": "Type: BM, Code: 2WAY_V(G)"
+        "timestamp": "2026-03-17T05:03:57.820Z"
     },
     {
-        "timestamp": "2026-03-17T05:04:04.102Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: HPLC SEAL",
         "target": "HPLC Pump Piston Seal Kit",
-        "details": "Type: BM, Code: HPLC SEAL"
+        "timestamp": "2026-03-17T05:04:04.102Z"
     },
     {
-        "timestamp": "2026-03-17T05:04:09.719Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: HPLC DAMPER",
         "target": "Pulse dampener(301)",
-        "details": "Type: BM, Code: HPLC DAMPER"
+        "timestamp": "2026-03-17T05:04:09.719Z"
     },
     {
-        "timestamp": "2026-03-17T05:04:15.122Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 815PUMP",
         "target": "Vacuum Pump",
-        "details": "Type: BM, Code: 815PUMP"
+        "timestamp": "2026-03-17T05:04:15.122Z"
     },
     {
-        "timestamp": "2026-03-17T05:04:22.513Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 다이아프램(815)",
         "target": "Diaphragm",
-        "details": "Type: BM, Code: 다이아프램(815)"
+        "timestamp": "2026-03-17T05:04:22.513Z"
     },
     {
-        "timestamp": "2026-03-17T05:04:27.265Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 다이아프램(838)",
         "target": "Diaphragm",
-        "details": "Type: BM, Code: 다이아프램(838)"
+        "timestamp": "2026-03-17T05:04:27.265Z"
     },
     {
-        "timestamp": "2026-03-17T05:04:31.998Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ROTOR SEAL(Sw/V)",
         "target": "Rotor seal_ Switching valve",
-        "details": "Type: BM, Code: ROTOR SEAL(Sw/V)"
+        "timestamp": "2026-03-17T05:04:31.998Z"
     },
     {
-        "timestamp": "2026-03-17T05:04:51.090Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: STATOR(Sw/V)",
         "target": "Stator face_ Switching valve",
-        "details": "Type: BM, Code: STATOR(Sw/V)"
+        "timestamp": "2026-03-17T05:04:51.090Z"
     },
     {
-        "timestamp": "2026-03-17T05:04:59.082Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ROTOR SEAL(INJ)",
         "target": "Rotor seal_ Injector",
-        "details": "Type: BM, Code: ROTOR SEAL(INJ)"
+        "timestamp": "2026-03-17T05:04:59.082Z"
     },
     {
-        "timestamp": "2026-03-17T05:05:05.880Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SYRINGE_1ML(H)",
         "target": "Syringe(1mL)",
-        "details": "Type: BM, Code: SYRINGE_1ML(H)"
+        "timestamp": "2026-03-17T05:05:05.880Z"
     },
     {
-        "timestamp": "2026-03-17T05:05:11.944Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SYRINGE_2.5ML(H)",
         "target": "Syringe(2.5mL)",
-        "details": "Type: BM, Code: SYRINGE_2.5ML(H)"
+        "timestamp": "2026-03-17T05:05:11.944Z"
     },
     {
-        "timestamp": "2026-03-17T05:05:16.853Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 레벨센서 (TYPE1)",
         "target": "레벨센서",
-        "details": "Type: BM, Code: 레벨센서 (TYPE1)"
+        "timestamp": "2026-03-17T05:05:16.853Z"
+    },
+    {
+        "timestamp": "2026-03-17T05:05:57.606Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "HPLC PUMP HEAD KIT",
+        "details": "Type: PM, Code: HPLC HEAD KIT"
     }
 ]
