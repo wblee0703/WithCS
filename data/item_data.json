@@ -559,5 +559,16 @@
         "spec": "2680CGUU44,130LPM,230V,50/60Hz공용(피팅포함)",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723089086,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "WELCH PART",
+        "part": "Welch Part, 서비스킷",
+        "spec": "402041, for MPC 601 E",
+        "cycle": "",
+        "equip": ""
     }
 ]
