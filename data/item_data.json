@@ -1098,5 +1098,16 @@
         "spec": "음이온 용리액",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724721548,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "ABS.(음)",
+        "part": "흡수액(음)",
+        "spec": "음이온 흡수액",
+        "cycle": "",
+        "equip": ""
     }
 ]

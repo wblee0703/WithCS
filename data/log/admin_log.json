@@ -1360,5 +1360,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "ELUENT",
         "details": "Type: PM, Spec: 음이온 용리액"
+    },
+    {
+        "timestamp": "2026-03-17T05:18:41.549Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "흡수액(음)",
+        "details": "Type: PM, Spec: 음이온 흡수액"
     }
 ]
