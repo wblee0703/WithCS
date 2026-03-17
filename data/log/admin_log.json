@@ -48,21 +48,27 @@
         "timestamp": "2026-03-17T00:28:19.361Z"
     },
     {
-        "timestamp": "2026-03-17T01:18:43.839Z",
         "action": "DELETE_CHECK_CATEGORY",
+        "details": "분류 삭제: PM",
         "target": "SOMA-3000E::SOMA-EK24-0401::정기",
-        "details": "분류 삭제: PM"
+        "timestamp": "2026-03-17T01:18:43.839Z"
     },
     {
-        "timestamp": "2026-03-17T01:18:48.706Z",
+        "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 정기 > PM 점검",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-17T01:18:48.706Z"
+    },
+    {
+        "action": "DELETE_CHECK_CATEGORY",
+        "details": "분류 삭제: PM 점검",
+        "target": "SOMA-3000E::SOMA-EK24-0401::정기",
+        "timestamp": "2026-03-17T01:18:51.856Z"
+    },
+    {
+        "timestamp": "2026-03-17T01:19:04.575Z",
         "action": "ADD_CHECK_CATEGORY",
         "target": "SOMA-3000E::SOMA-EK24-0401",
         "details": "분류 추가: 정기 > PM 점검"
-    },
-    {
-        "timestamp": "2026-03-17T01:18:51.856Z",
-        "action": "DELETE_CHECK_CATEGORY",
-        "target": "SOMA-3000E::SOMA-EK24-0401::정기",
-        "details": "분류 삭제: PM 점검"
     }
 ]
