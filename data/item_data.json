@@ -163,5 +163,16 @@
         "spec": "CP17973",
         "cycle": "",
         "equip": "SOMA-2000, WIM-100"
+    },
+    {
+        "id": 1773721951322,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "ORS (Deflect lens)",
+        "part": "Deflect lens for ICP-MS",
+        "spec": "G3280-20628, 정품",
+        "cycle": "",
+        "equip": ""
     }
 ]
