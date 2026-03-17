@@ -506,15 +506,15 @@
         "equip": ""
     },
     {
-        "code": "830PUMP",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723044901,
+        "type": "PM",
+        "detailType": "",
+        "partno": "A00000130",
+        "code": "830PUMP",
         "part": "Diaphragm Pump",
-        "partno": "",
         "spec": "PM27597-NMP830, 12V",
-        "type": "PM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "830PUMP",

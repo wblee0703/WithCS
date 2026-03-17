@@ -988,5 +988,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Diaphragm",
         "details": "Type: PM, Code: 다이아프램(830)"
+    },
+    {
+        "timestamp": "2026-03-17T05:06:10.067Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Diaphragm Pump",
+        "details": "Type: PM, Code: 830PUMP"
     }
 ]
