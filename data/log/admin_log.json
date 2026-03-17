@@ -1654,5 +1654,11 @@
         "action": "ADD_CHECK_ITEM",
         "target": "SOMA-2000::SOMA-H19-0402",
         "details": "항목 추가: [Alarm] GN2 Alarm"
+    },
+    {
+        "timestamp": "2026-03-17T05:55:58.717Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Alarm] Water Sensor Alarm"
     }
 ]
