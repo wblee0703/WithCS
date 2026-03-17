@@ -677,6 +677,41 @@ function addLogItem(e) {
     };
 
     data.logs.push(newLog);
+
+    // [추가] BM 점검 등록 시 유지관리 물품에 자동 추가 로직
+    let isMaintUpdated = false;
+    if (detailType === 'BM 점검' || type === 'BM') {
+        const itemsList = content.split(',').map(s => s.trim()).filter(s => s);
+        const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+        
+        itemsList.forEach((itemText, idx) => {
+            // 기존 유지관리 물품 리스트에 같은 항목(BM)이 있는지 확인
+            const exists = data.maint.some(m => m.type === 'BM' && (m.content === itemText || m.code === itemText));
+            if (!exists) {
+                let code = '';
+                let fullContent = itemText;
+                
+                // Admin 물품 관리 데이터에서 코드명과 풀네임 검색
+                const match = adminItems.find(a => a.part === itemText || a.code === itemText);
+                if (match) {
+                    code = match.code || '';
+                    fullContent = match.part || itemText;
+                }
+
+                data.maint.push({
+                    id: Date.now() + 1000 + idx, // ID 충돌 방지
+                    type: 'BM',
+                    code: code,
+                    content: fullContent,
+                    date: date,
+                    period: null
+                });
+                isMaintUpdated = true;
+                addSystemLog('ADD_MAINTENANCE', currentPath.equip, `[BM] ${fullContent} (자동 등록, 시작일: ${date})`);
+            }
+        });
+    }
+
     localStorage.setItem(key, JSON.stringify(data));
     addSystemLog('ADD_LOG', currentPath.equip, `[${type} - ${detailType}] ${content} (작업자: ${worker}, 날짜: ${date})`);
 
@@ -692,6 +727,9 @@ function addLogItem(e) {
     if (contentInput && type === '프로그램변경') contentInput.value = 'Ver. ';
 
     renderLogs();
+    if (isMaintUpdated) {
+        renderDetails(); // 유지관리 물품 리스트 갱신
+    }
     console.log("점검 일지 기록 완료");
 }
 
