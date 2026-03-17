@@ -440,15 +440,15 @@
         "equip": ""
     },
     {
-        "code": "ROTOR SEAL(INJ)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722777632,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000080",
+        "code": "ROTOR SEAL(INJ)",
         "part": "Rotor seal_ Injector",
-        "partno": "",
         "spec": "C2-23R6, 1/16*0.4mm, 50C/5000psi liq",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "SYRINGE_1ML(H)",

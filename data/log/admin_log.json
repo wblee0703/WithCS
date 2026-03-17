@@ -952,5 +952,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Stator face_ Switching valve",
         "details": "Type: BM, Code: STATOR(Sw/V)"
+    },
+    {
+        "timestamp": "2026-03-17T05:04:59.082Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Rotor seal_ Injector",
+        "details": "Type: BM, Code: ROTOR SEAL(INJ)"
     }
 ]
