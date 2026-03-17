@@ -339,5 +339,16 @@
         "spec": "9000-1292, Kit,Vac DG Ch,Sm Bore AF,14ft",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722704436,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "3WAY_V(L)",
+        "part": "Solenoid Valve(MHPNLBT032)",
+        "spec": "3Way HP M3 Threaded Valve 24VDC, Nresearch",
+        "cycle": "",
+        "equip": ""
     }
 ]
