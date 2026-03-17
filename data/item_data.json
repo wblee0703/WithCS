@@ -649,15 +649,15 @@
         "equip": ""
     },
     {
-        "code": "FITTING (P213)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723198224,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000738",
+        "code": "FITTING (P213)",
         "part": "P-213",
-        "partno": "",
         "spec": "Headless M6 Nut, 1/16in Short",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "FITTING (P250)",
