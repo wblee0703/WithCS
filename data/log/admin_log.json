@@ -466,5 +466,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Electron multiplier for ICP-MS",
         "details": "Type: BM, Code: EM"
+    },
+    {
+        "timestamp": "2026-03-17T04:44:07.308Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Guard Column(2mm)",
+        "details": "Type: BM, Spec: 046138, AG14(2x50mm)"
     }
 ]
