@@ -1482,39 +1482,45 @@
         "timestamp": "2026-03-17T05:20:55.585Z"
     },
     {
-        "timestamp": "2026-03-17T05:23:06.168Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 표준용액(양)",
         "target": "표준용액 (양)",
-        "details": "Type: PM, Code: 표준용액(양)"
+        "timestamp": "2026-03-17T05:23:06.168Z"
     },
     {
-        "timestamp": "2026-03-17T05:23:09.820Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 표준용액(음)",
         "target": "표준용액 (음)",
-        "details": "Type: PM, Code: 표준용액(음)"
+        "timestamp": "2026-03-17T05:23:09.820Z"
     },
     {
-        "timestamp": "2026-03-17T05:23:13.058Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: CRM (양)",
         "target": "CRM표준용액 (양)",
-        "details": "Type: PM, Code: CRM (양)"
+        "timestamp": "2026-03-17T05:23:13.058Z"
     },
     {
-        "timestamp": "2026-03-17T05:23:16.313Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: CRM (음)",
         "target": "CRM표준용액 (음)",
-        "details": "Type: PM, Code: CRM (음)"
+        "timestamp": "2026-03-17T05:23:16.313Z"
     },
     {
-        "timestamp": "2026-03-17T05:23:20.554Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: MAIN (양)",
         "target": "MAIN 용액 (양)",
-        "details": "Type: PM, Code: MAIN (양)"
+        "timestamp": "2026-03-17T05:23:20.554Z"
     },
     {
-        "timestamp": "2026-03-17T05:23:24.192Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: MAIN (음)",
         "target": "MAIN 용액 (음)",
-        "details": "Type: PM, Code: MAIN (음)"
+        "timestamp": "2026-03-17T05:23:24.192Z"
+    },
+    {
+        "timestamp": "2026-03-17T05:23:38.292Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "버퍼 용액",
+        "details": "Type: PM, Code: BUFFER"
     }
 ]
