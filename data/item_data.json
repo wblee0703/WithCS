@@ -944,5 +944,16 @@
         "spec": "TFE CABLE, 4SQ_내산성",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723600927,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "LEAK SENSOR(커넥터)",
+        "part": "Leak Sensor(커넥터)",
+        "spec": "Line connector_12mm*15mm",
+        "cycle": "",
+        "equip": ""
     }
 ]

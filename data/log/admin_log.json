@@ -838,5 +838,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Leak Sensor(케이블)",
         "details": "Type: BM, Spec: TFE CABLE, 4SQ_내산성"
+    },
+    {
+        "timestamp": "2026-03-17T05:00:00.928Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Leak Sensor(커넥터)",
+        "details": "Type: BM, Spec: Line connector_12mm*15mm"
     }
 ]
