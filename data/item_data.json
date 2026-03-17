@@ -53,5 +53,16 @@
         "spec": "AT7706-Pt, G3280-67036, GE OEM",
         "cycle": "182",
         "equip": "SOMA-2000, WIM-100"
+    },
+    {
+        "id": 1773719846136,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "Ion Lens",
+        "part": "Extraction-omega lens assembly",
+        "spec": "G8400-67002, lens for 7900s, Agilent 정품",
+        "cycle": "",
+        "equip": ""
     }
 ]
