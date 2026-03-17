@@ -396,195 +396,201 @@
         "timestamp": "2026-03-17T04:34:55.105Z"
     },
     {
-        "timestamp": "2026-03-17T04:35:20.352Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3280-20633, 정품",
         "target": "Cell focus lens for ICP-MS",
-        "details": "Type: BM, Spec: G3280-20633, 정품"
+        "timestamp": "2026-03-17T04:35:20.352Z"
     },
     {
-        "timestamp": "2026-03-17T04:35:36.372Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ORS (Cell focus lens)",
         "target": "Cell focus lens for ICP-MS",
-        "details": "Type: BM, Code: ORS (Cell focus lens)"
+        "timestamp": "2026-03-17T04:35:36.372Z"
     },
     {
-        "timestamp": "2026-03-17T04:35:54.820Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3280-67045, Agilent 정품",
         "target": "Octopole assembly, ICP-MS",
-        "details": "Type: BM, Spec: G3280-67045, Agilent 정품"
+        "timestamp": "2026-03-17T04:35:54.820Z"
     },
     {
-        "timestamp": "2026-03-17T04:36:07.726Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Octopole",
         "target": "Octopole assembly, ICP-MS",
-        "details": "Type: BM, Code: Octopole"
+        "timestamp": "2026-03-17T04:36:07.726Z"
     },
     {
-        "timestamp": "2026-03-17T04:36:36.069Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3139-65100, 150~200u/min, Agilent 정품",
         "target": "Micro Flow Nebulizer PFA-100",
-        "details": "Type: BM, Spec: G3139-65100, 150~200u/min, Agilent 정품"
+        "timestamp": "2026-03-17T04:36:36.069Z"
     },
     {
-        "timestamp": "2026-03-17T04:36:47.748Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Nebulizer",
         "target": "Micro Flow Nebulizer PFA-100",
-        "details": "Type: BM, Code: Nebulizer"
+        "timestamp": "2026-03-17T04:36:47.748Z"
     },
     {
-        "timestamp": "2026-03-17T04:40:20.494Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G8400-60434",
         "target": "RF coil for 7900",
-        "details": "Type: BM, Spec: G8400-60434"
+        "timestamp": "2026-03-17T04:40:20.494Z"
     },
     {
-        "timestamp": "2026-03-17T04:40:35.868Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: RF Coil",
         "target": "RF coil for 7900",
-        "details": "Type: BM, Code: RF Coil"
+        "timestamp": "2026-03-17T04:40:35.868Z"
     },
     {
-        "timestamp": "2026-03-17T04:40:44.005Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ORS (Cell exit lens)",
         "target": "Cell exit lens for ICP-MS",
-        "details": "Type: BM, Code: ORS (Cell exit lens)"
+        "timestamp": "2026-03-17T04:40:44.005Z"
     },
     {
-        "timestamp": "2026-03-17T04:40:58.440Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Nebulizer",
         "target": "Micro Flow Nebulizer PFA-100",
-        "details": "Type: BM, Code: Nebulizer"
+        "timestamp": "2026-03-17T04:40:58.440Z"
     },
     {
-        "timestamp": "2026-03-17T04:41:27.666Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G8400-60258",
         "target": "Electron multiplier for ICP-MS",
-        "details": "Type: BM, Spec: G8400-60258"
+        "timestamp": "2026-03-17T04:41:27.666Z"
     },
     {
-        "timestamp": "2026-03-17T04:41:45.126Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: EM",
         "target": "Electron multiplier for ICP-MS",
-        "details": "Type: BM, Code: EM"
+        "timestamp": "2026-03-17T04:41:45.126Z"
     },
     {
-        "timestamp": "2026-03-17T04:44:07.308Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 046138, AG14(2x50mm)",
         "target": "Guard Column(2mm)",
-        "details": "Type: BM, Spec: 046138, AG14(2x50mm)"
+        "timestamp": "2026-03-17T04:44:07.308Z"
     },
     {
-        "timestamp": "2026-03-17T04:44:14.132Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 046134, AG14(4x50mm)",
         "target": "Guard Column(4mm)",
-        "details": "Type: BM, Spec: 046134, AG14(4x50mm)"
+        "timestamp": "2026-03-17T04:44:14.132Z"
     },
     {
-        "timestamp": "2026-03-17T04:44:20.686Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 046129, AS14(2x250mm)",
         "target": "Analysis Column(2mm)",
-        "details": "Type: BM, Spec: 046129, AS14(2x250mm)"
+        "timestamp": "2026-03-17T04:44:20.686Z"
     },
     {
-        "timestamp": "2026-03-17T04:44:27.410Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: IC SI-50 4E, 5UM 4.0x250mm, Shodex",
         "target": "Analysis Column(4mm)",
-        "details": "Type: BM, Spec: IC SI-50 4E, 5UM 4.0x250mm, Shodex"
+        "timestamp": "2026-03-17T04:44:27.410Z"
     },
     {
-        "timestamp": "2026-03-17T04:44:36.571Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 088667, ADRS600, 2MM",
         "target": "Suppressor(2mm 음이온)",
-        "details": "Type: BM, Spec: 088667, ADRS600, 2MM"
+        "timestamp": "2026-03-17T04:44:36.571Z"
     },
     {
-        "timestamp": "2026-03-17T04:44:47.710Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 088666, PROD,ADRS600,4MM",
         "target": "Suppressor(4mm 음이온)",
-        "details": "Type: BM, Spec: 088666, PROD,ADRS600,4MM"
+        "timestamp": "2026-03-17T04:44:47.710Z"
     },
     {
-        "timestamp": "2026-03-17T04:44:55.625Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 9000-1292, Kit,Vac DG Ch,Sm Bore AF,14ft",
         "target": "Degasser",
-        "details": "Type: BM, Spec: 9000-1292, Kit,Vac DG Ch,Sm Bore AF,14ft"
+        "timestamp": "2026-03-17T04:44:55.625Z"
     },
     {
-        "timestamp": "2026-03-17T04:45:04.436Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 3Way HP M3 Threaded Valve 24VDC, Nresearch",
         "target": "Solenoid Valve(MHPNLBT032)",
-        "details": "Type: BM, Spec: 3Way HP M3 Threaded Valve 24VDC, Nresearch"
+        "timestamp": "2026-03-17T04:45:04.436Z"
     },
     {
-        "timestamp": "2026-03-17T04:45:13.894Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 2WAY (G) USB3-6-3-E_DC 24V_AMC용",
         "target": "Solenoid Valve",
-        "details": "Type: BM, Spec: 2WAY (G) USB3-6-3-E_DC 24V_AMC용"
+        "timestamp": "2026-03-17T04:45:13.894Z"
     },
     {
-        "timestamp": "2026-03-17T04:45:20.970Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 880203, 10ML SEAL KIT, STS",
         "target": "HPLC Pump Piston Seal Kit",
-        "details": "Type: BM, Spec: 880203, 10ML SEAL KIT, STS"
+        "timestamp": "2026-03-17T04:45:20.970Z"
     },
     {
-        "timestamp": "2026-03-17T04:45:27.321Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 880616, PK PULSE DAMPER W/O XDCR",
         "target": "Pulse dampener(301)",
-        "details": "Type: BM, Spec: 880616, PK PULSE DAMPER W/O XDCR"
+        "timestamp": "2026-03-17T04:45:27.321Z"
     },
     {
-        "timestamp": "2026-03-17T04:45:35.390Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: UN815KNI, 115V(미국용)",
         "target": "Vacuum Pump",
-        "details": "Type: BM, Spec: UN815KNI, 115V(미국용)"
+        "timestamp": "2026-03-17T04:45:35.390Z"
     },
     {
-        "timestamp": "2026-03-17T04:45:44.866Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 024489 for N815 (815 부품)",
         "target": "Diaphragm",
-        "details": "Type: BM, Spec: 024489 for N815 (815 부품)"
+        "timestamp": "2026-03-17T04:45:44.866Z"
     },
     {
-        "timestamp": "2026-03-17T04:45:52.490Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 027473 for N838 (838 부품)",
         "target": "Diaphragm",
-        "details": "Type: BM, Spec: 027473 for N838 (838 부품)"
+        "timestamp": "2026-03-17T04:45:52.490Z"
     },
     {
-        "timestamp": "2026-03-17T04:45:59.897Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: C15-310, 1/16*75mm, 75C/250psi liq",
         "target": "Rotor seal_ Switching valve",
-        "details": "Type: BM, Spec: C15-310, 1/16*75mm, 75C/250psi liq"
+        "timestamp": "2026-03-17T04:45:59.897Z"
     },
     {
-        "timestamp": "2026-03-17T04:46:10.719Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: C25Z-386_ SW/V Stator seal (C25Z용)",
         "target": "Stator face_ Switching valve",
-        "details": "Type: BM, Spec: C25Z-386_ SW/V Stator seal (C25Z용)"
+        "timestamp": "2026-03-17T04:46:10.719Z"
     },
     {
-        "timestamp": "2026-03-17T04:46:17.633Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: C2-23R6, 1/16*0.4mm, 50C/5000psi liq",
         "target": "Rotor seal_ Injector",
-        "details": "Type: BM, Spec: C2-23R6, 1/16*0.4mm, 50C/5000psi liq"
+        "timestamp": "2026-03-17T04:46:17.633Z"
     },
     {
-        "timestamp": "2026-03-17T04:46:24.364Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 81320, 1mL, Hamilton",
         "target": "Syringe(1mL)",
-        "details": "Type: BM, Spec: 81320, 1mL, Hamilton"
+        "timestamp": "2026-03-17T04:46:24.364Z"
     },
     {
-        "timestamp": "2026-03-17T04:46:30.972Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 81420, 2.5mL, Hamilton",
         "target": "Syringe(2.5mL)",
-        "details": "Type: BM, Spec: 81420, 2.5mL, Hamilton"
+        "timestamp": "2026-03-17T04:46:30.972Z"
     },
     {
-        "timestamp": "2026-03-17T04:46:37.922Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: Eluent 용, Type Ⅰ",
         "target": "레벨센서",
-        "details": "Type: BM, Spec: Eluent 용, Type Ⅰ"
+        "timestamp": "2026-03-17T04:46:37.922Z"
+    },
+    {
+        "timestamp": "2026-03-17T04:49:58.099Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "HPLC PUMP HEAD KIT",
+        "details": "Type: PM, Spec: 160553, HEAD KIT,PK,10ML,STD"
     }
 ]
