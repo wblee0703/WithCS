@@ -234,14 +234,6 @@
     "details_SKH 이천_SOMA-2000::SOMA-H19-0402": {
         "maint": [
             {
-                "code": "metal STD",
-                "content": "Stadnard",
-                "date": "2026-03-17",
-                "id": 1773707308604,
-                "period": "30",
-                "type": "PM"
-            },
-            {
                 "id": 1773728520914,
                 "type": "PM",
                 "code": "Metal STD (10ppb,3%)",
