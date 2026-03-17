@@ -1348,5 +1348,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "흡수액(양)",
         "details": "Type: PM, Spec: 양이온 흡수액"
+    },
+    {
+        "timestamp": "2026-03-17T05:18:26.952Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "DI",
+        "details": "Type: PM, Spec: Carrier"
     }
 ]

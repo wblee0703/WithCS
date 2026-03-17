@@ -1076,5 +1076,16 @@
         "spec": "양이온 흡수액",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724706952,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "DI",
+        "part": "DI",
+        "spec": "Carrier",
+        "cycle": "",
+        "equip": ""
     }
 ]
