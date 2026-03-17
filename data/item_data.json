@@ -957,14 +957,14 @@
         "equip": ""
     },
     {
-        "code": "하네스케이블",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723621285,
+        "type": "BM",
+        "detailType": "",
+        "partno": "B00000658",
+        "code": "하네스케이블",
         "part": "하네스 케이블",
-        "partno": "",
         "spec": "전 장비",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     }
 ]
