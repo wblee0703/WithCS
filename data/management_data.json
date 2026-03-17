@@ -1,5 +1,14 @@
 {
     "categories": {
+        "OMS-100L::OMS1-LK22-0104::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
+        "OMS-100L::OMS1-LK22-0104::정기": [
+            "PM 점검"
+        ],
         "SOLA-1000::정기": [
             "PM"
         ],
@@ -76,7 +85,7 @@
             "용액제조"
         ],
         "SOMA-3000E::SOMA-EK23-0401::정기": [
-            "PM"
+            "PM 점검"
         ],
         "SOMA-3000E::SOMA-EK23-1102::고객대응": [
             "순회 점검",
@@ -195,6 +204,15 @@
         "SOMA-3000E::SOMA-EK25-0401::정기": [
             "PM 점검"
         ],
+        "TDM-100::Titrator::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
+        "TDM-100::Titrator::정기": [
+            "PM 점검"
+        ],
         "WAD-10::AD10-EK24-0202::고객대응": [
             "순회 점검",
             "프로그램 변경 / 평가",
@@ -207,6 +225,12 @@
             "Cal 보정",
             "기타"
         ],
+        "WAD-10::AD10-EK24-0202::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
         "WAD-10::AD10-EK24-0202::온라인점검": [
             "온라인점검"
         ],
@@ -214,6 +238,15 @@
             "용액제조"
         ],
         "WAD-10::AD10-EK24-0202::정기": [
+            "PM 점검"
+        ],
+        "WAD-NH4OH::AD10-EK24-0201::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
+        "WAD-NH4OH::AD10-EK24-0201::정기": [
             "PM 점검"
         ],
         "WIM-100::WIM1-HK24-0401::비정기": [
@@ -224,39 +257,6 @@
         ],
         "WIM-100::WIM1-HK24-0401::정기": [
             "PM 점검"
-        ],
-        "WAD-10::AD10-EK24-0202::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
-        ],
-        "WAD-NH4OH::AD10-EK24-0201::정기": [
-            "PM 점검"
-        ],
-        "WAD-NH4OH::AD10-EK24-0201::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
-        ],
-        "TDM-100::Titrator::정기": [
-            "PM 점검"
-        ],
-        "TDM-100::Titrator::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
-        ],
-        "OMS-100L::OMS1-LK22-0104::정기": [
-            "PM 점검"
-        ],
-        "OMS-100L::OMS1-LK22-0104::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
         ]
     },
     "items": {
@@ -352,7 +352,6 @@
         "SOMA-3000E::SOMA-EK23-0401::비정기::BM": [],
         "SOMA-3000E::SOMA-EK23-0401::비정기::Data / Para 이상": [],
         "SOMA-3000E::SOMA-EK23-0401::비정기::Hunting": [],
-        "SOMA-3000E::SOMA-EK23-0401::정기::PM": [],
         "SOMA-3000E::SOMA-EK23-1102::비정기::BM 점검": [],
         "SOMA-3000E::SOMA-EK23-1102::정기::PM 점검": [],
         "SOMA-3000E::SOMA-EK24-0401::고객대응::프로그램 변경 / 평가": [],
@@ -374,6 +373,7 @@
         "SOMA-3000E::SOMA-EK24-0402::비정기::BM 점검": [],
         "SOMA-3000E::SOMA-EK24-0402::비정기::Hunting": [],
         "SOMA-3000E::SOMA-EK24-0402::용액제조::용액제조": [],
+        "SOMA-3000E::SOMA-EK24-0402::정기::PM 점검": [],
         "SOMA-3000E::SOMA-EK24-0403::고객대응::설비 평가": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::Alarm": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::BM": [],
@@ -397,6 +397,6 @@
                 "id": 1773720843762
             }
         ],
-        "SOMA-3000E::SOMA-EK24-0402::정기::PM 점검": []
+        "SOMA-3000E::SOMA-EK23-0401::정기::PM 점검": []
     }
 }
