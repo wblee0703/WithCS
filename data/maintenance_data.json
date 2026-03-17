@@ -400,7 +400,16 @@
         "files": []
     },
     "details_SKH 이천_SOMA-2000::SOMA-HK21-0202": {
-        "maint": [],
+        "maint": [
+            {
+                "id": 1773732550702,
+                "type": "PM",
+                "code": "Metal STD (10ppb,3%)",
+                "content": "Metal Standard Solution(3%HNO3)",
+                "date": "2026-03-17",
+                "period": "30"
+            }
+        ],
         "logs": [
             {
                 "content": "Standard Solution",
