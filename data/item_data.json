@@ -825,15 +825,15 @@
         "equip": ""
     },
     {
-        "code": "3WAY",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723521972,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00002378",
+        "code": "3WAY",
         "part": "3-Way Solenoid Valve",
-        "partno": "",
         "spec": "HTV 0142-3, PTFE, DC24V, 7Bar, HSE",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "PLC386(CPU)",

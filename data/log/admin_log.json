@@ -1168,5 +1168,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Agilent FLD standard flow cell(국내)",
         "details": "Type: BM, Code: AGILENT CELL"
+    },
+    {
+        "timestamp": "2026-03-17T05:10:30.888Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "3-Way Solenoid Valve",
+        "details": "Type: BM, Code: 3WAY"
     }
 ]
