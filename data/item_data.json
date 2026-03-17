@@ -847,15 +847,15 @@
         "equip": ""
     },
     {
-        "code": "PLC386(TR8)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723535444,
+        "type": "BM",
+        "detailType": "",
+        "partno": "B00000027",
+        "code": "PLC386(TR8)",
         "part": "PLC386 TR8 Board",
-        "partno": "",
         "spec": "8비트 TR 출력 보드, MOQ(10) / 테크마스",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "PLC386(IN8)",
