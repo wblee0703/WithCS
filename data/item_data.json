@@ -935,15 +935,15 @@
         "equip": ""
     },
     {
-        "code": "LEAK SENSOR(커넥터)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723600927,
+        "type": "BM",
+        "detailType": "",
+        "partno": "B00000263",
+        "code": "LEAK SENSOR(커넥터)",
         "part": "Leak Sensor(커넥터)",
-        "partno": "",
         "spec": "Line connector_12mm*15mm",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "회로보호기(7A)",
