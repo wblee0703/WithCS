@@ -616,5 +616,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "ELECTRIC REGULATOR",
         "details": "Type: BM, Spec: SMC_ITV1030-212CL_0.5Mpa"
+    },
+    {
+        "timestamp": "2026-03-17T04:51:13.934Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Piston Assembly",
+        "details": "Type: BM, Spec: 880354, 10ML SER3 REPLACEMENT PISTON"
     }
 ]

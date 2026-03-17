@@ -537,5 +537,16 @@
         "spec": "SMC_ITV1030-212CL_0.5Mpa",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723073934,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "HPLC PISTON",
+        "part": "Piston Assembly",
+        "spec": "880354, 10ML SER3 REPLACEMENT PISTON",
+        "cycle": "",
+        "equip": ""
     }
 ]
