@@ -328,5 +328,16 @@
         "spec": "088666, PROD,ADRS600,4MM",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722695624,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "DEGASSER",
+        "part": "Degasser",
+        "spec": "9000-1292, Kit,Vac DG Ch,Sm Bore AF,14ft",
+        "cycle": "",
+        "equip": ""
     }
 ]

@@ -502,5 +502,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Suppressor(4mm 음이온)",
         "details": "Type: BM, Spec: 088666, PROD,ADRS600,4MM"
+    },
+    {
+        "timestamp": "2026-03-17T04:44:55.625Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Degasser",
+        "details": "Type: BM, Spec: 9000-1292, Kit,Vac DG Ch,Sm Bore AF,14ft"
     }
 ]
