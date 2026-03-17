@@ -97,5 +97,16 @@
         "spec": "G3285-80021, Agilent 정품",
         "cycle": "",
         "equip": "SOMA-2000, WIM-100"
+    },
+    {
+        "id": 1773721513922,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "Spray Chamber End Cap",
+        "part": "Spray Chamber End Cap for Inert Kit, PFA",
+        "spec": "G3285-80020",
+        "cycle": "",
+        "equip": ""
     }
 ]
