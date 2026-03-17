@@ -215,15 +215,16 @@
         "equip": "SOMA-2000, WIM-100"
     },
     {
-        "code": "Octopole",
-        "cycle": "",
-        "detailType": "분석부 교체",
-        "equip": "SOMA-2000, WIM-100",
         "id": 1773722154820,
-        "part": "Octopole assembly, ICP-MS",
+        "type": "BM",
+        "detailType": "분석부 교체",
+        "additional": "ICPMS",
         "partno": "M00001398",
+        "code": "Octopole",
+        "part": "Octopole assembly, ICP-MS",
         "spec": "G3280-67045, Agilent 정품",
-        "type": "BM"
+        "cycle": "",
+        "equip": "SOMA-2000, WIM-100"
     },
     {
         "code": "Nebulizer",
