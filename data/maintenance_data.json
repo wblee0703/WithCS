@@ -57,44 +57,44 @@
     "details_SKH 이천_WIM-100::WIM1-HK24-0401": {
         "maint": [
             {
-                "id": 1773725551317,
-                "type": "PM",
                 "code": "Metal STD (5ppb,1%)",
                 "content": "Metal Standard Solution(1%HNO3)",
                 "date": "2026-03-17",
-                "period": "30"
+                "id": 1773725551317,
+                "period": "30",
+                "type": "PM"
             },
             {
-                "id": 1773725556150,
-                "type": "PM",
                 "code": "9.5% HNO3",
                 "content": "9.5% HNO3",
                 "date": "2026-03-17",
-                "period": "30"
+                "id": 1773725556150,
+                "period": "30",
+                "type": "PM"
             },
             {
-                "id": 1773725562427,
-                "type": "PM",
                 "code": "Skimmer Cone",
                 "content": "Pt Skimmer cone for 7700S",
                 "date": "2026-03-17",
-                "period": "182"
+                "id": 1773725562427,
+                "period": "182",
+                "type": "PM"
             },
             {
-                "id": 1773725566471,
-                "type": "PM",
                 "code": "Sampler Cone",
                 "content": "Pt Sampling cone for 7700S",
                 "date": "2026-03-17",
-                "period": "182"
+                "id": 1773725566471,
+                "period": "182",
+                "type": "PM"
             },
             {
-                "id": 1773725571402,
-                "type": "PM",
                 "code": "Ion Lens",
                 "content": "Extraction-omega lens assembly",
                 "date": "2026-03-17",
-                "period": "365"
+                "id": 1773725571402,
+                "period": "365",
+                "type": "PM"
             }
         ],
         "logs": [

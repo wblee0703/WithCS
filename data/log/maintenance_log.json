@@ -150,45 +150,45 @@
         "timestamp": "2026-03-17T05:27:29.424Z"
     },
     {
-        "timestamp": "2026-03-17T05:32:31.317Z",
         "action": "ADD_MAINTENANCE",
+        "details": "[PM] Metal Standard Solution(1%HNO3) (주기: 30일, 시작일: 2026-03-17)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "[PM] Metal Standard Solution(1%HNO3) (주기: 30일, 시작일: 2026-03-17)"
+        "timestamp": "2026-03-17T05:32:31.317Z"
     },
     {
-        "timestamp": "2026-03-17T05:32:36.150Z",
         "action": "ADD_MAINTENANCE",
+        "details": "[PM] 9.5% HNO3 (주기: 30일, 시작일: 2026-03-17)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "[PM] 9.5% HNO3 (주기: 30일, 시작일: 2026-03-17)"
+        "timestamp": "2026-03-17T05:32:36.150Z"
     },
     {
-        "timestamp": "2026-03-17T05:32:39.662Z",
         "action": "ADD_MAINTENANCE",
+        "details": "[PM] Pt Skimmer cone for 7700S (주기: 182일, 시작일: 2026-03-17)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "[PM] Pt Skimmer cone for 7700S (주기: 182일, 시작일: 2026-03-17)"
+        "timestamp": "2026-03-17T05:32:39.662Z"
     },
     {
-        "timestamp": "2026-03-17T05:32:42.427Z",
         "action": "ADD_MAINTENANCE",
+        "details": "[PM] Pt Skimmer cone for 7700S (주기: 182일, 시작일: 2026-03-17)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "[PM] Pt Skimmer cone for 7700S (주기: 182일, 시작일: 2026-03-17)"
+        "timestamp": "2026-03-17T05:32:42.427Z"
     },
     {
-        "timestamp": "2026-03-17T05:32:46.471Z",
         "action": "ADD_MAINTENANCE",
+        "details": "[PM] Pt Sampling cone for 7700S (주기: 182일, 시작일: 2026-03-17)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "[PM] Pt Sampling cone for 7700S (주기: 182일, 시작일: 2026-03-17)"
+        "timestamp": "2026-03-17T05:32:46.471Z"
     },
     {
-        "timestamp": "2026-03-17T05:32:51.402Z",
         "action": "ADD_MAINTENANCE",
+        "details": "[PM] Extraction-omega lens assembly (주기: 365일, 시작일: 2026-03-17)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "[PM] Extraction-omega lens assembly (주기: 365일, 시작일: 2026-03-17)"
+        "timestamp": "2026-03-17T05:32:51.402Z"
     },
     {
-        "timestamp": "2026-03-17T05:32:59.025Z",
         "action": "DELETE_MAINTENANCE",
+        "details": "삭제: Pt Skimmer cone for 7700S (ID: 1773725559662)",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "삭제: Pt Skimmer cone for 7700S (ID: 1773725559662)"
+        "timestamp": "2026-03-17T05:32:59.025Z"
     }
 ]

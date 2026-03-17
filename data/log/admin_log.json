@@ -1636,5 +1636,11 @@
         "details": "Type: PM, Code: 9.5% HNO3",
         "target": "9.5% HNO3",
         "timestamp": "2026-03-17T05:26:58.260Z"
+    },
+    {
+        "timestamp": "2026-03-17T05:55:41.637Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Alarm] PLC Alarm"
     }
 ]

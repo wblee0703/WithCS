@@ -331,7 +331,12 @@
     "items": {
         "SOLA-1000::정기::PM 점검": [],
         "SOLA-5000::정기::PM 점검": [],
-        "SOMA-2000::SOMA-H19-0402::비정기::Alarm": [],
+        "SOMA-2000::SOMA-H19-0402::비정기::Alarm": [
+            {
+                "id": 1773726941635,
+                "content": "PLC Alarm"
+            }
+        ],
         "SOMA-2000::SOMA-H19-0402::비정기::BM 점검": [
             {
                 "content": "Torch for PFA inert kit for ICP-MS",

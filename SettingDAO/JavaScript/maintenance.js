@@ -403,6 +403,13 @@ window.updateMaintContentOptions = function() {
     const data = JSON.parse(localStorage.getItem('admin_items')) || [];
     const equipModel = currentPath.equip ? currentPath.equip.split('::')[0] : '';
 
+    // [추가] 이미 리스트에 등록된 유지관리 물품 목록 가져오기
+    const key = `details_${currentPath.site}_${currentPath.equip}`;
+    const currentData = JSON.parse(localStorage.getItem(key)) || { maint: [] };
+    const addedParts = currentData.maint
+        .filter(item => item.type === maintType)
+        .map(item => item.content);
+
     // PM, BM일 경우 select로 전환하여 등록된 항목 표시
     if (maintType === 'PM' || maintType === 'BM') {
         const filteredItems = data.filter(item => {
@@ -414,6 +421,10 @@ window.updateMaintContentOptions = function() {
             } else {
                 return false; 
             }
+            
+            // [추가] 이미 추가된 항목은 제안(드롭다운)에서 숨김
+            if (addedParts.includes(item.part)) return false;
+            
             return true;
         });
 
