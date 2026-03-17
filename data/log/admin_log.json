@@ -978,273 +978,279 @@
         "timestamp": "2026-03-17T05:05:16.853Z"
     },
     {
-        "timestamp": "2026-03-17T05:05:57.606Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: HPLC HEAD KIT",
         "target": "HPLC PUMP HEAD KIT",
-        "details": "Type: PM, Code: HPLC HEAD KIT"
+        "timestamp": "2026-03-17T05:05:57.606Z"
     },
     {
-        "timestamp": "2026-03-17T05:06:02.796Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 다이아프램(830)",
         "target": "Diaphragm",
-        "details": "Type: PM, Code: 다이아프램(830)"
+        "timestamp": "2026-03-17T05:06:02.796Z"
     },
     {
-        "timestamp": "2026-03-17T05:06:10.067Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 830PUMP",
         "target": "Diaphragm Pump",
-        "details": "Type: PM, Code: 830PUMP"
+        "timestamp": "2026-03-17T05:06:10.067Z"
     },
     {
-        "timestamp": "2026-03-17T05:06:40.909Z",
         "action": "DELETE_ITEM_ADMIN",
+        "details": "",
         "target": "Diaphragm Pump",
-        "details": ""
+        "timestamp": "2026-03-17T05:06:40.909Z"
     },
     {
-        "timestamp": "2026-03-17T05:07:01.546Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ELEC_Regulator",
         "target": "ELECTRIC REGULATOR",
-        "details": "Type: BM, Code: ELEC_Regulator"
+        "timestamp": "2026-03-17T05:07:01.546Z"
     },
     {
-        "timestamp": "2026-03-17T05:07:06.481Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: HPLC PISTON",
         "target": "Piston Assembly",
-        "details": "Type: BM, Code: HPLC PISTON"
+        "timestamp": "2026-03-17T05:07:06.481Z"
     },
     {
-        "timestamp": "2026-03-17T05:07:15.336Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: V/P (Thomas)",
         "target": "Vacuum Pump[Thomas-P], 4/1 Connector",
-        "details": "Type: BM, Code: V/P (Thomas)"
+        "timestamp": "2026-03-17T05:07:15.336Z"
     },
     {
-        "timestamp": "2026-03-17T05:07:22.863Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: WELCH PART",
         "target": "Welch Part, 서비스킷",
-        "details": "Type: BM, Code: WELCH PART"
+        "timestamp": "2026-03-17T05:07:22.863Z"
     },
     {
-        "timestamp": "2026-03-17T05:07:42.248Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: MFC_Linetech(10LPM)",
         "target": "MFC",
-        "details": "Type: BM, Code: MFC_Linetech(10LPM)"
+        "timestamp": "2026-03-17T05:07:42.248Z"
     },
     {
-        "timestamp": "2026-03-17T05:07:49.696Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: MFC_Linetech(5LPM)",
         "target": "MFC",
-        "details": "Type: BM, Code: MFC_Linetech(5LPM)"
+        "timestamp": "2026-03-17T05:07:49.696Z"
     },
     {
-        "timestamp": "2026-03-17T05:07:56.326Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: F/M (5LPM)",
         "target": "Flow meter(Outlet valve)",
-        "details": "Type: BM, Code: F/M (5LPM)"
+        "timestamp": "2026-03-17T05:07:56.326Z"
     },
     {
-        "timestamp": "2026-03-17T05:08:00.796Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SAMPLER (양)",
         "target": "Sampler body",
-        "details": "Type: BM, Code: SAMPLER (양)"
+        "timestamp": "2026-03-17T05:08:00.796Z"
     },
     {
-        "timestamp": "2026-03-17T05:08:06.657Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: FITTING (P200)",
         "target": "P-200",
-        "details": "Type: BM, Code: FITTING (P200)"
+        "timestamp": "2026-03-17T05:08:06.657Z"
     },
     {
-        "timestamp": "2026-03-17T05:08:11.011Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: FITTING (P203)",
         "target": "P-203",
-        "details": "Type: BM, Code: FITTING (P203)"
+        "timestamp": "2026-03-17T05:08:11.011Z"
     },
     {
-        "timestamp": "2026-03-17T05:08:15.168Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: FITTING (P316)",
         "target": "P-316",
-        "details": "Type: BM, Code: FITTING (P316)"
+        "timestamp": "2026-03-17T05:08:15.168Z"
     },
     {
-        "timestamp": "2026-03-17T05:08:21.097Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: FITTING (XU655)",
         "target": "XU-655",
-        "details": "Type: BM, Code: FITTING (XU655)"
+        "timestamp": "2026-03-17T05:08:21.097Z"
     },
     {
-        "timestamp": "2026-03-17T05:08:26.873Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: FITTING (P213)",
         "target": "P-213",
-        "details": "Type: BM, Code: FITTING (P213)"
+        "timestamp": "2026-03-17T05:08:26.873Z"
     },
     {
-        "timestamp": "2026-03-17T05:08:31.932Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: FITTING (P250)",
         "target": "P-250",
-        "details": "Type: BM, Code: FITTING (P250)"
+        "timestamp": "2026-03-17T05:08:31.932Z"
     },
     {
-        "timestamp": "2026-03-17T05:08:38.480Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: FITTING (DCF-2N-S)",
         "target": "Fitting Female 1/8 NPT-1/8",
-        "details": "Type: BM, Code: FITTING (DCF-2N-S)"
+        "timestamp": "2026-03-17T05:08:38.480Z"
     },
     {
-        "timestamp": "2026-03-17T05:08:44.384Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: TUBE (FEP_Air)",
         "target": "FEP TUBE",
-        "details": "Type: BM, Code: TUBE (FEP_Air)"
+        "timestamp": "2026-03-17T05:08:44.384Z"
     },
     {
-        "timestamp": "2026-03-17T05:08:52.051Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: TUBE (FEP_Sol)",
         "target": "TUBE_1/8＂FEP(300M)",
-        "details": "Type: BM, Code: TUBE (FEP_Sol)"
+        "timestamp": "2026-03-17T05:08:52.051Z"
     },
     {
-        "timestamp": "2026-03-17T05:08:57.876Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: HPLC SELF FLUSH",
         "target": "10mL Self Flush ASSY",
-        "details": "Type: BM, Code: HPLC SELF FLUSH"
+        "timestamp": "2026-03-17T05:08:57.876Z"
     },
     {
-        "timestamp": "2026-03-17T05:09:02.832Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 3WAY_V(G)",
         "target": "Solenoid valve",
-        "details": "Type: BM, Code: 3WAY_V(G)"
+        "timestamp": "2026-03-17T05:09:02.832Z"
     },
     {
-        "timestamp": "2026-03-17T05:09:13.430Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SYRINGE PUMP (T)",
         "target": "Syringe Pump(TECAN)",
-        "details": "Type: BM, Code: SYRINGE PUMP (T)"
+        "timestamp": "2026-03-17T05:09:13.430Z"
     },
     {
-        "timestamp": "2026-03-17T05:09:25.964Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: S/P (C3000)",
         "target": "Syringe pump, C3000",
-        "details": "Type: BM, Code: S/P (C3000)"
+        "timestamp": "2026-03-17T05:09:25.964Z"
     },
     {
-        "timestamp": "2026-03-17T05:09:33.219Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Syringe_1mL (ILS)",
         "target": "Syringe(1mL)",
-        "details": "Type: BM, Code: Syringe_1mL (ILS)"
+        "timestamp": "2026-03-17T05:09:33.219Z"
     },
     {
-        "timestamp": "2026-03-17T05:09:38.825Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Syringe_2.5mL (ILS)",
         "target": "Syringe(2.5mL)",
-        "details": "Type: BM, Code: Syringe_2.5mL (ILS)"
+        "timestamp": "2026-03-17T05:09:38.825Z"
     },
     {
-        "timestamp": "2026-03-17T05:09:44.777Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: TUBE (for REACTOR)",
         "target": "REACTOR_WF301용",
-        "details": "Type: BM, Code: TUBE (for REACTOR)"
+        "timestamp": "2026-03-17T05:09:44.777Z"
     },
     {
-        "timestamp": "2026-03-17T05:09:51.168Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: CAP (1/4)",
         "target": "1/4 cap",
-        "details": "Type: BM, Code: CAP (1/4)"
+        "timestamp": "2026-03-17T05:09:51.168Z"
     },
     {
-        "timestamp": "2026-03-17T05:09:56.256Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Syringe_1mL (SETo)",
         "target": "Syringe(1mL)",
-        "details": "Type: BM, Code: Syringe_1mL (SETo)"
+        "timestamp": "2026-03-17T05:09:56.256Z"
     },
     {
-        "timestamp": "2026-03-17T05:10:10.135Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Syringe_2.5mL (SETo)",
         "target": "Syringe(2.5mL)",
-        "details": "Type: BM, Code: Syringe_2.5mL (SETo)"
+        "timestamp": "2026-03-17T05:10:10.135Z"
     },
     {
-        "timestamp": "2026-03-17T05:10:19.804Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: AGILENT CELL",
         "target": "Agilent FLD standard flow cell(국내)",
-        "details": "Type: BM, Code: AGILENT CELL"
+        "timestamp": "2026-03-17T05:10:19.804Z"
     },
     {
-        "timestamp": "2026-03-17T05:10:30.888Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 3WAY",
         "target": "3-Way Solenoid Valve",
-        "details": "Type: BM, Code: 3WAY"
+        "timestamp": "2026-03-17T05:10:30.888Z"
     },
     {
-        "timestamp": "2026-03-17T05:10:35.763Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: PLC386(CPU)",
         "target": "PLC386 CPU Board",
-        "details": "Type: BM, Code: PLC386(CPU)"
+        "timestamp": "2026-03-17T05:10:35.763Z"
     },
     {
-        "timestamp": "2026-03-17T05:10:40.690Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: PLC386(TR8)",
         "target": "PLC386 TR8 Board",
-        "details": "Type: BM, Code: PLC386(TR8)"
+        "timestamp": "2026-03-17T05:10:40.690Z"
     },
     {
-        "timestamp": "2026-03-17T05:10:46.237Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: PLC386(IN8)",
         "target": "PLC386 IN8 Board",
-        "details": "Type: BM, Code: PLC386(IN8)"
+        "timestamp": "2026-03-17T05:10:46.237Z"
     },
     {
-        "timestamp": "2026-03-17T05:10:51.550Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: LEAK BOARD",
         "target": "Leak Sensor Board",
-        "details": "Type: BM, Code: LEAK BOARD"
+        "timestamp": "2026-03-17T05:10:51.550Z"
     },
     {
-        "timestamp": "2026-03-17T05:10:57.306Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SMPS(10A)",
         "target": "SMPS:SDR-240-24(10A)",
-        "details": "Type: BM, Code: SMPS(10A)"
+        "timestamp": "2026-03-17T05:10:57.306Z"
     },
     {
-        "timestamp": "2026-03-17T05:11:02.253Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 회로보호기(3A)",
         "target": "회로보호기",
-        "details": "Type: BM, Code: 회로보호기(3A)"
+        "timestamp": "2026-03-17T05:11:02.253Z"
     },
     {
-        "timestamp": "2026-03-17T05:11:07.571Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SMPS(1.36A)",
         "target": "SMPS:MDR-20-15(1.36A)",
-        "details": "Type: BM, Code: SMPS(1.36A)"
+        "timestamp": "2026-03-17T05:11:07.571Z"
     },
     {
-        "timestamp": "2026-03-17T05:11:12.014Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: LEAK SENSOR(감지부)",
         "target": "Leak Sensor(감지부)",
-        "details": "Type: BM, Code: LEAK SENSOR(감지부)"
+        "timestamp": "2026-03-17T05:11:12.014Z"
     },
     {
-        "timestamp": "2026-03-17T05:11:17.015Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: LEAK SENSOR(케이블)",
         "target": "Leak Sensor(케이블)",
-        "details": "Type: BM, Code: LEAK SENSOR(케이블)"
+        "timestamp": "2026-03-17T05:11:17.015Z"
     },
     {
-        "timestamp": "2026-03-17T05:11:20.949Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: LEAK SENSOR(커넥터)",
         "target": "Leak Sensor(커넥터)",
-        "details": "Type: BM, Code: LEAK SENSOR(커넥터)"
+        "timestamp": "2026-03-17T05:11:20.949Z"
     },
     {
-        "timestamp": "2026-03-17T05:11:26.888Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 회로보호기(7A)",
         "target": "회로보호기",
-        "details": "Type: BM, Code: 회로보호기(7A)"
+        "timestamp": "2026-03-17T05:11:26.888Z"
     },
     {
-        "timestamp": "2026-03-17T05:11:35.084Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 하네스케이블",
         "target": "하네스 케이블",
-        "details": "Type: BM, Code: 하네스케이블"
+        "timestamp": "2026-03-17T05:11:35.084Z"
+    },
+    {
+        "timestamp": "2026-03-17T05:12:14.356Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Diaphragm Pump",
+        "details": "Type: BM, Code: 830PUMP"
     }
 ]
