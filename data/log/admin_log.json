@@ -214,5 +214,11 @@
         "details": "Type: PM, Code: Ion Lens",
         "target": "Extraction-omega lens assembly",
         "timestamp": "2026-03-17T03:57:46.404Z"
+    },
+    {
+        "timestamp": "2026-03-17T04:18:31.150Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Torch for PFA inert kit for ICP-MS",
+        "details": "Type: BM, Spec: G4912-80012, 정품"
     }
 ]

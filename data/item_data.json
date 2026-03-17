@@ -64,5 +64,16 @@
         "partno": "A00001565",
         "spec": "G8400-67002, lens for 7900s, Agilent 정품",
         "type": "PM"
+    },
+    {
+        "id": 1773721111150,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "PFA Torch",
+        "part": "Torch for PFA inert kit for ICP-MS",
+        "spec": "G4912-80012, 정품",
+        "cycle": "",
+        "equip": ""
     }
 ]
