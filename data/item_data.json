@@ -394,5 +394,16 @@
         "spec": "UN815KNI, 115V(미국용)",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722744866,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "다이아프램(815)",
+        "part": "Diaphragm",
+        "spec": "024489 for N815 (815 부품)",
+        "cycle": "",
+        "equip": ""
     }
 ]
