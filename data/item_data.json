@@ -1032,5 +1032,16 @@
         "spec": "103L-248-0.5",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724671446,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "TVOC STD(1)",
+        "part": "이소부틸렌 (1ppm)",
+        "spec": "103L-248-1",
+        "cycle": "",
+        "equip": ""
     }
 ]
