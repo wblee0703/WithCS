@@ -1024,5 +1024,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Welch Part, 서비스킷",
         "details": "Type: BM, Code: WELCH PART"
+    },
+    {
+        "timestamp": "2026-03-17T05:07:42.248Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "MFC",
+        "details": "Type: BM, Code: MFC_Linetech(10LPM)"
     }
 ]
