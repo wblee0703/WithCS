@@ -724,5 +724,16 @@
         "spec": "880469",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723252900,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "3WAY_V(G)",
+        "part": "Solenoid valve",
+        "spec": "3 WAY USG3-X1476-FL-634209-DC24V, 3.0",
+        "cycle": "",
+        "equip": ""
     }
 ]
