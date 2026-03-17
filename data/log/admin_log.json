@@ -1278,111 +1278,117 @@
         "timestamp": "2026-03-17T05:13:34.075Z"
     },
     {
-        "timestamp": "2026-03-17T05:16:45.539Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 양이온 표준용액",
         "target": "표준용액 (양)",
-        "details": "Type: PM, Spec: 양이온 표준용액"
+        "timestamp": "2026-03-17T05:16:45.539Z"
     },
     {
-        "timestamp": "2026-03-17T05:16:52.172Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 음이온 표준용액",
         "target": "표준용액 (음)",
-        "details": "Type: PM, Spec: 음이온 표준용액"
+        "timestamp": "2026-03-17T05:16:52.172Z"
     },
     {
-        "timestamp": "2026-03-17T05:16:59.151Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 양이온 고농도 표준용액",
         "target": "CRM표준용액 (양)",
-        "details": "Type: PM, Spec: 양이온 고농도 표준용액"
+        "timestamp": "2026-03-17T05:16:59.151Z"
     },
     {
-        "timestamp": "2026-03-17T05:17:06.116Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 음이온 고농도 표준용액",
         "target": "CRM표준용액 (음)",
-        "details": "Type: PM, Spec: 음이온 고농도 표준용액"
+        "timestamp": "2026-03-17T05:17:06.116Z"
     },
     {
-        "timestamp": "2026-03-17T05:17:14.294Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 양이온 고농축 용액",
         "target": "MAIN 용액 (양)",
-        "details": "Type: PM, Spec: 양이온 고농축 용액"
+        "timestamp": "2026-03-17T05:17:14.294Z"
     },
     {
-        "timestamp": "2026-03-17T05:17:22.534Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: ",
         "target": "MAIN 용액 (음)",
-        "details": "Type: PM, Spec: "
+        "timestamp": "2026-03-17T05:17:22.534Z"
     },
     {
-        "timestamp": "2026-03-17T05:17:30.498Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 버퍼 용액",
         "target": "버퍼 용액",
-        "details": "Type: PM, Spec: 버퍼 용액"
+        "timestamp": "2026-03-17T05:17:30.498Z"
     },
     {
-        "timestamp": "2026-03-17T05:17:38.263Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 103L-248-0.5",
         "target": "이소부틸렌 (0.5ppm)",
-        "details": "Type: PM, Spec: 103L-248-0.5"
+        "timestamp": "2026-03-17T05:17:38.263Z"
     },
     {
-        "timestamp": "2026-03-17T05:17:51.446Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 103L-248-1",
         "target": "이소부틸렌 (1ppm)",
-        "details": "Type: PM, Spec: 103L-248-1"
+        "timestamp": "2026-03-17T05:17:51.446Z"
     },
     {
-        "timestamp": "2026-03-17T05:17:57.316Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 103L-248-10",
         "target": "이소부틸렌 (10ppm)",
-        "details": "Type: PM, Spec: 103L-248-10"
+        "timestamp": "2026-03-17T05:17:57.316Z"
     },
     {
-        "timestamp": "2026-03-17T05:18:12.084Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 표준가스(10) + Cal 비용",
         "target": "이소부틸렌 (10ppm)",
-        "details": "Type: PM, Spec: 표준가스(10) + Cal 비용"
+        "timestamp": "2026-03-17T05:18:12.084Z"
     },
     {
-        "timestamp": "2026-03-17T05:18:19.985Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 양이온 흡수액",
         "target": "흡수액(양)",
-        "details": "Type: PM, Spec: 양이온 흡수액"
+        "timestamp": "2026-03-17T05:18:19.985Z"
     },
     {
-        "timestamp": "2026-03-17T05:18:26.952Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: Carrier",
         "target": "DI",
-        "details": "Type: PM, Spec: Carrier"
+        "timestamp": "2026-03-17T05:18:26.952Z"
     },
     {
-        "timestamp": "2026-03-17T05:18:34.257Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 음이온 용리액",
         "target": "ELUENT",
-        "details": "Type: PM, Spec: 음이온 용리액"
+        "timestamp": "2026-03-17T05:18:34.257Z"
     },
     {
-        "timestamp": "2026-03-17T05:18:41.549Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 음이온 흡수액",
         "target": "흡수액(음)",
-        "details": "Type: PM, Spec: 음이온 흡수액"
+        "timestamp": "2026-03-17T05:18:41.549Z"
     },
     {
-        "timestamp": "2026-03-17T05:18:48.515Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: IAM7000 고농축",
         "target": "KOH",
-        "details": "Type: PM, Spec: IAM7000 고농축"
+        "timestamp": "2026-03-17T05:18:48.515Z"
     },
     {
-        "timestamp": "2026-03-17T05:18:55.356Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: SOT",
         "target": "STD gas",
-        "details": "Type: PM, Spec: SOT"
+        "timestamp": "2026-03-17T05:18:55.356Z"
     },
     {
-        "timestamp": "2026-03-17T05:19:02.548Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: P9 중형2공장 사용 10ppm",
         "target": "P9 중형 표준가스",
-        "details": "Type: PM, Spec: P9 중형2공장 사용 10ppm"
+        "timestamp": "2026-03-17T05:19:02.548Z"
+    },
+    {
+        "timestamp": "2026-03-17T05:19:47.617Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "표준용액 (양)",
+        "details": "Type: PM, Code: 표준용액(양)"
     }
 ]
