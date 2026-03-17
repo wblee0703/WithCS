@@ -244,5 +244,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Spray Chamber for Inert Kit, PFA",
         "details": "Type: BM, Spec: G3285-80021, Agilent 정품"
+    },
+    {
+        "timestamp": "2026-03-17T04:24:53.262Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Spray Chamber for Inert Kit, PFA",
+        "details": "Type: BM, Code: PFA Spray Chamber"
     }
 ]
