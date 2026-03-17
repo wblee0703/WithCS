@@ -669,5 +669,16 @@
         "spec": "Headless M6 Nut, 1/16in Short",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723205922,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "FITTING (P250)",
+        "part": "P-250",
+        "spec": "SF Ferrule, 1/16 PEEK w/SS Ring",
+        "cycle": "",
+        "equip": ""
     }
 ]

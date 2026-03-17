@@ -688,5 +688,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "P-213",
         "details": "Type: BM, Spec: Headless M6 Nut, 1/16in Short"
+    },
+    {
+        "timestamp": "2026-03-17T04:53:25.922Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "P-250",
+        "details": "Type: BM, Spec: SF Ferrule, 1/16 PEEK w/SS Ring"
     }
 ]
