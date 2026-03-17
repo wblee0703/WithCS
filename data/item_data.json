@@ -781,15 +781,15 @@
         "equip": ""
     },
     {
-        "code": "CAP (1/4)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723376264,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00002032",
+        "code": "CAP (1/4)",
         "part": "1/4 cap",
-        "partno": "",
         "spec": "SC-4-S",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "Syringe_1mL (SETo)",

@@ -1144,5 +1144,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "REACTOR_WF301용",
         "details": "Type: BM, Code: TUBE (for REACTOR)"
+    },
+    {
+        "timestamp": "2026-03-17T05:09:51.168Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "1/4 cap",
+        "details": "Type: BM, Code: CAP (1/4)"
     }
 ]
