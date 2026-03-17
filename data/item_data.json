@@ -295,5 +295,16 @@
         "spec": "046129, AS14(2x250mm)",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722667410,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "AC(4mm)",
+        "part": "Analysis Column(4mm)",
+        "spec": "IC SI-50 4E, 5UM 4.0x250mm, Shodex",
+        "cycle": "",
+        "equip": ""
     }
 ]
