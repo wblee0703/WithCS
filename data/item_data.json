@@ -20,5 +20,16 @@
         "partno": "",
         "spec": "2680CGUU44,130LPM,230V,50/60Hz공용(피팅포함)",
         "type": "BM"
+    },
+    {
+        "id": 1773718601332,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "Metal STD (10ppb,3%)",
+        "part": "Metal Standard Solution(3%HNO3)",
+        "spec": "10ppb Multi(4종), 3%HNO3",
+        "cycle": "30",
+        "equip": ""
     }
 ]

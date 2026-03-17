@@ -395,7 +395,12 @@
                                     <div id="item-equip-tags" class="tag-container" style="flex: 1; min-height: 24px;">
                                     </div>
                                     <input type="hidden" id="item-info-equip">
-                                    <ul id="item-equip-suggestions" class="suggestion-list"></ul>
+                                    <div id="item-equip-suggestions-box" class="suggestion-box">
+                                        <ul id="item-equip-suggestions-list" class="suggestion-list" style="position:static; display:block; max-height:200px; border:none; margin:0; border-radius: 4px 4px 0 0;"></ul>
+                                        <div class="suggestion-box-footer">
+                                            <button type="button" id="btn-apply-equip-selection" class="btn-blue-sm full-width">선택 항목 추가</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 

@@ -57,6 +57,18 @@
         "SOMA-3000E::SOMA-EK23-0401::정기": [
             "PM"
         ],
+        "SOMA-3000E::SOMA-EK23-1102::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
+        "SOMA-3000E::SOMA-EK23-1102::용액제조": [
+            "용액제조"
+        ],
+        "SOMA-3000E::SOMA-EK23-1102::정기": [
+            "PM 점검"
+        ],
         "SOMA-3000E::SOMA-EK24-0401::고객대응": [
             "순회 점검",
             "프로그램 변경 / 평가",
@@ -146,18 +158,6 @@
         ],
         "SOMA-3000E::SOMA-EK25-0401::정기": [
             "PM 점검"
-        ],
-        "SOMA-3000E::SOMA-EK23-1102::용액제조": [
-            "용액제조"
-        ],
-        "SOMA-3000E::SOMA-EK23-1102::정기": [
-            "PM 점검"
-        ],
-        "SOMA-3000E::SOMA-EK23-1102::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
         ]
     },
     "items": {
@@ -193,6 +193,8 @@
         "SOMA-3000E::SOMA-EK23-0401::비정기::Data / Para 이상": [],
         "SOMA-3000E::SOMA-EK23-0401::비정기::Hunting": [],
         "SOMA-3000E::SOMA-EK23-0401::정기::PM": [],
+        "SOMA-3000E::SOMA-EK23-1102::비정기::BM 점검": [],
+        "SOMA-3000E::SOMA-EK23-1102::정기::PM 점검": [],
         "SOMA-3000E::SOMA-EK24-0401::고객대응::프로그램 변경 / 평가": [],
         "SOMA-3000E::SOMA-EK24-0401::비정기::Alarm": [
             {
@@ -219,8 +221,6 @@
         "SOMA-3000E::SOMA-EK24-0403::비정기::Data / Para 이상": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::Hunting": [],
         "SOMA-3000E::SOMA-EK24-0403::용액제조::용액제조": [],
-        "SOMA-3000E::SOMA-EK24-0403::정기::PM 점검": [],
-        "SOMA-3000E::SOMA-EK23-1102::정기::PM 점검": [],
-        "SOMA-3000E::SOMA-EK23-1102::비정기::BM 점검": []
+        "SOMA-3000E::SOMA-EK24-0403::정기::PM 점검": []
     }
 }

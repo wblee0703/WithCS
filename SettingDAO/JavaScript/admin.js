@@ -1077,15 +1077,17 @@ function setupItemMgmt() {
     // 장비 모델 제안 박스 설정
     const btnAddEquip = document.getElementById('btn-add-item-equip');
     const equipHiddenInput = document.getElementById('item-info-equip');
-    const equipSuggestionList = document.getElementById('item-equip-suggestions');
+    const equipSuggestionBox = document.getElementById('item-equip-suggestions-box');
+    const equipSuggestionList = document.getElementById('item-equip-suggestions-list');
+    const btnApplyEquip = document.getElementById('btn-apply-equip-selection');
 
-    if (btnAddEquip && equipSuggestionList) {
+    if (btnAddEquip && equipSuggestionBox) {
         btnAddEquip.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             
-            if (equipSuggestionList.style.display === 'block') {
-                equipSuggestionList.style.display = 'none';
+            if (equipSuggestionBox.style.display === 'flex') {
+                equipSuggestionBox.style.display = 'none';
                 return;
             }
 
@@ -1097,35 +1099,54 @@ function setupItemMgmt() {
                 matches.forEach(m => {
                     const li = document.createElement('li');
                     li.className = 'suggestion-item';
+                    if (currentEquips.includes(m.name)) li.classList.add('selected');
+
                     li.innerHTML = `
                         <div class="suggestion-item-content">
-                            <span>${m.name}</span>
-                            <span class="abbr">${m.abbr}</span>
+                            <label style="display:flex; align-items:center; width:100%; cursor:pointer; margin:0;">
+                                <input type="checkbox" value="${m.name}" style="margin-right:8px;" ${currentEquips.includes(m.name) ? 'checked' : ''}>
+                                <span>${m.name}</span>
+                                <span class="abbr" style="margin-left:auto;">${m.abbr}</span>
+                            </label>
                         </div>
                     `;
                     
-                    li.addEventListener('mousedown', (ev) => {
-                        ev.preventDefault();
-                        if (!currentEquips.includes(m.name)) {
-                            currentEquips.push(m.name);
-                            equipHiddenInput.value = currentEquips.join(', ');
-                            renderEquipTags();
+                    li.addEventListener('click', (ev) => {
+                        ev.stopPropagation();
+                        const cb = li.querySelector('input[type="checkbox"]');
+                        if (ev.target !== cb) {
+                            cb.checked = !cb.checked;
                         }
-                        equipSuggestionList.style.display = 'none';
+                        if (cb.checked) {
+                            li.classList.add('selected');
+                        } else {
+                            li.classList.remove('selected');
+                        }
                     });
                     equipSuggestionList.appendChild(li);
                 });
-                equipSuggestionList.style.display = 'block';
+                equipSuggestionBox.style.display = 'flex';
             } else {
                 equipSuggestionList.innerHTML = '<li class="suggestion-item" style="text-align:center; color:#8b949e; cursor:default;">등록된 장비가 없습니다.</li>';
-                equipSuggestionList.style.display = 'block';
+                equipSuggestionBox.style.display = 'flex';
             }
         });
 
+        if (btnApplyEquip) {
+            btnApplyEquip.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const checkboxes = equipSuggestionList.querySelectorAll('input[type="checkbox"]:checked');
+                const selectedEquips = Array.from(checkboxes).map(cb => cb.value);
+                equipHiddenInput.value = selectedEquips.join(', ');
+                renderEquipTags();
+                equipSuggestionBox.style.display = 'none';
+            });
+        }
+
         // 외부 클릭 시 제안 목록 닫기
         document.addEventListener('click', (e) => {
-            if (equipSuggestionList.style.display === 'block' && e.target !== btnAddEquip && !equipSuggestionList.contains(e.target)) {
-                equipSuggestionList.style.display = 'none';
+            if (equipSuggestionBox.style.display === 'flex' && e.target !== btnAddEquip && !equipSuggestionBox.contains(e.target)) {
+                equipSuggestionBox.style.display = 'none';
             }
         });
     }

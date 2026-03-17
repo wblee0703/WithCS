@@ -68,6 +68,31 @@
     box-sizing: border-box; /* 너비가 삐져나가지 않도록 수정 */
 }
 
+/* [추가] 복수 선택 제안 박스 스타일 */
+.suggestion-box {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 100%;
+    width: max-content;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    margin-top: 2px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.suggestion-box-footer {
+    padding: 8px;
+    border-top: 1px solid #30363d;
+    background: #21262d;
+    border-radius: 0 0 4px 4px;
+}
+
 .suggestion-item {
     padding: 8px 10px;
     cursor: pointer;
@@ -78,6 +103,10 @@
 }
 .suggestion-item:hover { background: #1f6feb; }
 .suggestion-item .abbr { color: #8b949e; font-size: 11px; margin-left: 5px; }
+
+.suggestion-item.selected {
+    background: rgba(31, 111, 235, 0.2);
+}
 
 /* 검색 제안 리스트 아이템 레이아웃 */
 .suggestion-item-content {
