@@ -850,5 +850,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "회로보호기",
         "details": "Type: BM, Spec: CP30-BA 1P1-M 7A / 미쯔비시"
+    },
+    {
+        "timestamp": "2026-03-17T05:00:21.285Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "하네스 케이블",
+        "details": "Type: BM, Spec: 전 장비"
     }
 ]

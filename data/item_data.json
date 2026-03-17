@@ -966,5 +966,16 @@
         "spec": "CP30-BA 1P1-M 7A / 미쯔비시",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723621285,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "하네스케이블",
+        "part": "하네스 케이블",
+        "spec": "전 장비",
+        "cycle": "",
+        "equip": ""
     }
 ]
