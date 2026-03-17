@@ -112,12 +112,12 @@
     {
         "id": 1773721562686,
         "type": "BM",
-        "detailType": "",
-        "partno": "",
+        "detailType": "분석부 교체",
+        "partno": "M00001397",
         "code": "Long Connector",
         "part": "Long connector tube for ICP-MS inert kit",
         "spec": "G3285-80024, Agilent 정품",
         "cycle": "",
-        "equip": ""
+        "equip": "SOMA-2000, WIM-100"
     }
 ]
