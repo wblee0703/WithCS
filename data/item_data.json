@@ -845,5 +845,16 @@
         "spec": "HTV 0142-3, PTFE, DC24V, 7Bar, HSE",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723528800,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "PLC386(CPU)",
+        "part": "PLC386 CPU Board",
+        "spec": "TB-PLCS386 CPU 보드, MOQ(10) / 테크마스",
+        "cycle": "",
+        "equip": ""
     }
 ]
