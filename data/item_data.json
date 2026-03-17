@@ -1087,5 +1087,16 @@
         "spec": "Carrier",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724714256,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "ELUENT",
+        "part": "ELUENT",
+        "spec": "음이온 용리액",
+        "cycle": "",
+        "equip": ""
     }
 ]

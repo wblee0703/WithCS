@@ -1354,5 +1354,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "DI",
         "details": "Type: PM, Spec: Carrier"
+    },
+    {
+        "timestamp": "2026-03-17T05:18:34.257Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "ELUENT",
+        "details": "Type: PM, Spec: 음이온 용리액"
     }
 ]
