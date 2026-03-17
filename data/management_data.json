@@ -230,6 +230,15 @@
             "Alarm",
             "Hunting",
             "Data / Para 이상"
+        ],
+        "WAD-NH4OH::AD10-EK24-0201::정기": [
+            "PM 점검"
+        ],
+        "WAD-NH4OH::AD10-EK24-0201::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
         ]
     },
     "items": {
