@@ -1708,5 +1708,11 @@
         "action": "ADD_CHECK_ITEM",
         "target": "SOMA-2000::SOMA-H19-0402",
         "details": "항목 추가: [Data / Para 이상] 감도 Spec. Out"
+    },
+    {
+        "timestamp": "2026-03-17T05:59:43.594Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Data / Para 이상] Parameter 값 이상"
     }
 ]
