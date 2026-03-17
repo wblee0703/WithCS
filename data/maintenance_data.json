@@ -198,6 +198,14 @@
                 "content": "Pt Skimmer cone for 7700S",
                 "date": "2026-03-17",
                 "period": "182"
+            },
+            {
+                "id": 1773732540679,
+                "type": "PM",
+                "code": "Sampler Cone",
+                "content": "Pt Sampling cone for 7700S",
+                "date": "2026-03-17",
+                "period": "182"
             }
         ],
         "logs": [
