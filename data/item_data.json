@@ -966,5 +966,16 @@
         "spec": "음이온 표준용액",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724619151,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "CRM (양)",
+        "part": "CRM표준용액 (양)",
+        "spec": "양이온 고농도 표준용액",
+        "cycle": "",
+        "equip": ""
     }
 ]

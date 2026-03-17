@@ -1288,5 +1288,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "표준용액 (음)",
         "details": "Type: PM, Spec: 음이온 표준용액"
+    },
+    {
+        "timestamp": "2026-03-17T05:16:59.151Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "CRM표준용액 (양)",
+        "details": "Type: PM, Spec: 양이온 고농도 표준용액"
     }
 ]
