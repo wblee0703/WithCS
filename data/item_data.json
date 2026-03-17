@@ -539,15 +539,15 @@
         "equip": ""
     },
     {
-        "code": "V/P (Thomas)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723081792,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000233",
+        "code": "V/P (Thomas)",
         "part": "Vacuum Pump[Thomas-P], 4/1 Connector",
-        "partno": "",
         "spec": "2680CGUU44,130LPM,230V,50/60Hz공용(피팅포함)",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "WELCH PART",
