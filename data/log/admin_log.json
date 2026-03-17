@@ -1126,5 +1126,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Syringe pump, C3000",
         "details": "Type: BM, Code: S/P (C3000)"
+    },
+    {
+        "timestamp": "2026-03-17T05:09:33.219Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Syringe(1mL)",
+        "details": "Type: BM, Code: Syringe_1mL (ILS)"
     }
 ]

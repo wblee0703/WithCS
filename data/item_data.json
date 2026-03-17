@@ -748,15 +748,15 @@
         "equip": ""
     },
     {
-        "code": "Syringe_1mL (ILS)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723327258,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00001928",
+        "code": "Syringe_1mL (ILS)",
         "part": "Syringe(1mL)",
-        "partno": "",
         "spec": "2647017, 1mL, ILS",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "Syringe_2.5mL (ILS)",
