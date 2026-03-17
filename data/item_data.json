@@ -900,5 +900,16 @@
         "spec": "10A(240W) output 24V / MEAN WALL",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723571952,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "회로보호기(3A)",
+        "part": "회로보호기",
+        "spec": "CP30-BA 1P1-M 3A / 미쯔비시",
+        "cycle": "",
+        "equip": ""
     }
 ]

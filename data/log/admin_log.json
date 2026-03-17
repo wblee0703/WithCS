@@ -814,5 +814,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "SMPS:SDR-240-24(10A)",
         "details": "Type: BM, Spec: 10A(240W) output 24V / MEAN WALL"
+    },
+    {
+        "timestamp": "2026-03-17T04:59:31.952Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "회로보호기",
+        "details": "Type: BM, Spec: CP30-BA 1P1-M 3A / 미쯔비시"
     }
 ]
