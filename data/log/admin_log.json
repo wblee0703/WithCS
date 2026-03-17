@@ -874,5 +874,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Analysis Column(2mm)",
         "details": "Type: BM, Code: AC(2mm)"
+    },
+    {
+        "timestamp": "2026-03-17T05:01:24.155Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Analysis Column(4mm)",
+        "details": "Type: BM, Code: AC(4mm)"
     }
 ]

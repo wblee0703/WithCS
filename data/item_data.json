@@ -297,15 +297,15 @@
         "equip": ""
     },
     {
-        "code": "AC(4mm)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722667410,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000028",
+        "code": "AC(4mm)",
         "part": "Analysis Column(4mm)",
-        "partno": "",
         "spec": "IC SI-50 4E, 5UM 4.0x250mm, Shodex",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "SRS(2mm)",
