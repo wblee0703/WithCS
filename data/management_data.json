@@ -332,6 +332,24 @@
         "SOMA-3000E::SOMA-EK24-0403::용액제조::용액제조": [],
         "SOMA-3000E::SOMA-EK24-0403::정기::PM 점검": [],
         "WAD-10::AD10-EK24-0202::온라인점검::온라인점검": [],
-        "WAD-10::AD10-EK24-0202::정기::PM 점검": []
+        "WAD-10::AD10-EK24-0202::정기::PM 점검": [],
+        "SOMA-2000::SOMA-HK21-0202::정기::PM 점검": [
+            {
+                "id": 1773720841088,
+                "content": "Metal Standard Solution(3%HNO3)"
+            },
+            {
+                "id": 1773720841089,
+                "content": "Pt Skimmer cone for 7700S"
+            },
+            {
+                "id": 1773720841090,
+                "content": "Pt Sampling cone for 7700S"
+            },
+            {
+                "id": 1773720841091,
+                "content": "Extraction-omega lens assembly"
+            }
+        ]
     }
 }
