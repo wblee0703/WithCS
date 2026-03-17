@@ -647,5 +647,16 @@
         "spec": "Plug fitting, PFA",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723191380,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "FITTING (XU655)",
+        "part": "XU-655",
+        "spec": "Flngls sys Blk Peek 1/4in",
+        "cycle": "",
+        "equip": ""
     }
 ]
