@@ -244,12 +244,12 @@
     {
         "id": 1773722420494,
         "type": "BM",
-        "detailType": "",
-        "partno": "",
+        "detailType": "분석부 교체",
+        "partno": "A00003373",
         "code": "RF Coil",
         "part": "RF coil for 7900",
         "spec": "G8400-60434",
         "cycle": "",
-        "equip": ""
+        "equip": "SOMA-2000, WIM-100"
     }
 ]

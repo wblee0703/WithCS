@@ -436,5 +436,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "RF coil for 7900",
         "details": "Type: BM, Spec: G8400-60434"
+    },
+    {
+        "timestamp": "2026-03-17T04:40:35.868Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "RF coil for 7900",
+        "details": "Type: BM, Code: RF Coil"
     }
 ]
