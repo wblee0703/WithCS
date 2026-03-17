@@ -1264,5 +1264,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "HPLC PUMP HEAD KIT",
         "details": "Type: BM, Code: HPLC HEAD KIT"
+    },
+    {
+        "timestamp": "2026-03-17T05:13:18.783Z",
+        "action": "DELETE_ITEM_ADMIN",
+        "target": "Vacuum Pump[Thomas-P], 4/1 Connector",
+        "details": ""
     }
 ]

@@ -11,17 +11,6 @@
         "type": "BM"
     },
     {
-        "code": "V/P (Thomas)",
-        "cycle": "",
-        "detailType": "샘플링부 교체",
-        "equip": "",
-        "id": 1773716120388,
-        "part": "Vacuum Pump[Thomas-P], 4/1 Connector",
-        "partno": "",
-        "spec": "2680CGUU44,130LPM,230V,50/60Hz공용(피팅포함)",
-        "type": "BM"
-    },
-    {
         "code": "Metal STD (10ppb,3%)",
         "cycle": "30",
         "detailType": "",
