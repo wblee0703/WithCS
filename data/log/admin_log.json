@@ -1468,5 +1468,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "ELUENT",
         "details": "Type: PM, Code: ELUENT"
+    },
+    {
+        "timestamp": "2026-03-17T05:20:48.884Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "흡수액(음)",
+        "details": "Type: PM, Code: ABS.(음)"
     }
 ]
