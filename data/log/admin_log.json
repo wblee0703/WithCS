@@ -1402,5 +1402,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "CRM표준용액 (양)",
         "details": "Type: PM, Code: CRM (양)"
+    },
+    {
+        "timestamp": "2026-03-17T05:19:58.448Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "CRM표준용액 (음)",
+        "details": "Type: PM, Code: CRM (음)"
     }
 ]
