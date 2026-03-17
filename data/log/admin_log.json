@@ -1386,99 +1386,105 @@
         "timestamp": "2026-03-17T05:19:02.548Z"
     },
     {
-        "timestamp": "2026-03-17T05:19:47.617Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 표준용액(양)",
+        "target": "표준용액 (양)",
+        "timestamp": "2026-03-17T05:19:47.617Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 표준용액(음)",
+        "target": "표준용액 (음)",
+        "timestamp": "2026-03-17T05:19:51.107Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: CRM (양)",
+        "target": "CRM표준용액 (양)",
+        "timestamp": "2026-03-17T05:19:54.586Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: CRM (음)",
+        "target": "CRM표준용액 (음)",
+        "timestamp": "2026-03-17T05:19:58.448Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: MAIN (양)",
+        "target": "MAIN 용액 (양)",
+        "timestamp": "2026-03-17T05:20:02.768Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: MAIN (음)",
+        "target": "MAIN 용액 (음)",
+        "timestamp": "2026-03-17T05:20:09.426Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: BUFFER",
+        "target": "버퍼 용액",
+        "timestamp": "2026-03-17T05:20:13.466Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(0.5)",
+        "target": "이소부틸렌 (0.5ppm)",
+        "timestamp": "2026-03-17T05:20:17.382Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(1)",
+        "target": "이소부틸렌 (1ppm)",
+        "timestamp": "2026-03-17T05:20:21.264Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(10)",
+        "target": "이소부틸렌 (10ppm)",
+        "timestamp": "2026-03-17T05:20:24.634Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(P9)",
+        "target": "이소부틸렌 (10ppm)",
+        "timestamp": "2026-03-17T05:20:28.692Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ABS.(양)",
+        "target": "흡수액(양)",
+        "timestamp": "2026-03-17T05:20:32.779Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: DI",
+        "target": "DI",
+        "timestamp": "2026-03-17T05:20:37.018Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ELUENT",
+        "target": "ELUENT",
+        "timestamp": "2026-03-17T05:20:43.770Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ABS.(음)",
+        "target": "흡수액(음)",
+        "timestamp": "2026-03-17T05:20:48.884Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: KOH",
+        "target": "KOH",
+        "timestamp": "2026-03-17T05:20:55.585Z"
+    },
+    {
+        "timestamp": "2026-03-17T05:23:06.168Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "표준용액 (양)",
         "details": "Type: PM, Code: 표준용액(양)"
-    },
-    {
-        "timestamp": "2026-03-17T05:19:51.107Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "표준용액 (음)",
-        "details": "Type: PM, Code: 표준용액(음)"
-    },
-    {
-        "timestamp": "2026-03-17T05:19:54.586Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "CRM표준용액 (양)",
-        "details": "Type: PM, Code: CRM (양)"
-    },
-    {
-        "timestamp": "2026-03-17T05:19:58.448Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "CRM표준용액 (음)",
-        "details": "Type: PM, Code: CRM (음)"
-    },
-    {
-        "timestamp": "2026-03-17T05:20:02.768Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "MAIN 용액 (양)",
-        "details": "Type: PM, Code: MAIN (양)"
-    },
-    {
-        "timestamp": "2026-03-17T05:20:09.426Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "MAIN 용액 (음)",
-        "details": "Type: PM, Code: MAIN (음)"
-    },
-    {
-        "timestamp": "2026-03-17T05:20:13.466Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "버퍼 용액",
-        "details": "Type: PM, Code: BUFFER"
-    },
-    {
-        "timestamp": "2026-03-17T05:20:17.382Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "이소부틸렌 (0.5ppm)",
-        "details": "Type: PM, Code: TVOC STD(0.5)"
-    },
-    {
-        "timestamp": "2026-03-17T05:20:21.264Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "이소부틸렌 (1ppm)",
-        "details": "Type: PM, Code: TVOC STD(1)"
-    },
-    {
-        "timestamp": "2026-03-17T05:20:24.634Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "이소부틸렌 (10ppm)",
-        "details": "Type: PM, Code: TVOC STD(10)"
-    },
-    {
-        "timestamp": "2026-03-17T05:20:28.692Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "이소부틸렌 (10ppm)",
-        "details": "Type: PM, Code: TVOC STD(P9)"
-    },
-    {
-        "timestamp": "2026-03-17T05:20:32.779Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "흡수액(양)",
-        "details": "Type: PM, Code: ABS.(양)"
-    },
-    {
-        "timestamp": "2026-03-17T05:20:37.018Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "DI",
-        "details": "Type: PM, Code: DI"
-    },
-    {
-        "timestamp": "2026-03-17T05:20:43.770Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "ELUENT",
-        "details": "Type: PM, Code: ELUENT"
-    },
-    {
-        "timestamp": "2026-03-17T05:20:48.884Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "흡수액(음)",
-        "details": "Type: PM, Code: ABS.(음)"
-    },
-    {
-        "timestamp": "2026-03-17T05:20:55.585Z",
-        "action": "UPDATE_ITEM_ADMIN_DETAIL",
-        "target": "KOH",
-        "details": "Type: PM, Code: KOH"
     }
 ]
