@@ -46,5 +46,11 @@
         "details": "Type: PM, Code: metal STD",
         "target": "Stadnard",
         "timestamp": "2026-03-17T00:28:19.361Z"
+    },
+    {
+        "timestamp": "2026-03-17T01:18:43.839Z",
+        "action": "DELETE_CHECK_CATEGORY",
+        "target": "SOMA-3000E::SOMA-EK24-0401::정기",
+        "details": "분류 삭제: PM"
     }
 ]
