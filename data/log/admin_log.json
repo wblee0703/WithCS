@@ -274,5 +274,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Platinum injector, inert torch, 2.5mm id",
         "details": "Type: BM, Code: Pt Injector"
+    },
+    {
+        "timestamp": "2026-03-17T04:25:37.898Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Torch for PFA inert kit for ICP-MS",
+        "details": "Type: BM, Code: PFA Torch"
     }
 ]

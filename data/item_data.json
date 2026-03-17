@@ -66,15 +66,15 @@
         "type": "PM"
     },
     {
-        "code": "PFA Torch",
-        "cycle": "",
-        "detailType": "",
-        "equip": "SOMA-2000, WIM-100",
         "id": 1773721111150,
-        "part": "Torch for PFA inert kit for ICP-MS",
+        "type": "BM",
+        "detailType": "분석부 교체",
         "partno": "A00002051",
+        "code": "PFA Torch",
+        "part": "Torch for PFA inert kit for ICP-MS",
         "spec": "G4912-80012, 정품",
-        "type": "BM"
+        "cycle": "",
+        "equip": "SOMA-2000, WIM-100"
     },
     {
         "id": 1773721149658,
