@@ -1157,12 +1157,12 @@
     {
         "id": 1773725199638,
         "type": "PM",
-        "detailType": "",
+        "detailType": "용액",
         "partno": "",
         "code": "9.5% HNO3",
         "part": "9.5% HNO3",
         "spec": "WIM-100 Cal 질산보정",
         "cycle": "",
-        "equip": ""
+        "equip": "WIM-100"
     }
 ]

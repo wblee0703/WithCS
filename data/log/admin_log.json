@@ -1630,5 +1630,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Metal Standard Solution(1%HNO3)",
         "details": "Type: PM, Code: Metal STD (5ppb,1%)"
+    },
+    {
+        "timestamp": "2026-03-17T05:26:58.260Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "9.5% HNO3",
+        "details": "Type: PM, Code: 9.5% HNO3"
     }
 ]
