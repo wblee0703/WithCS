@@ -119,15 +119,16 @@
         "equip": "SOMA-2000, WIM-100"
     },
     {
-        "code": "Shield plate",
-        "cycle": "",
-        "detailType": "분석부 교체",
-        "equip": "SOMA-2000, WIM-100",
         "id": 1773721673592,
-        "part": "Shield Plate for ICP-MS",
+        "type": "BM",
+        "detailType": "분석부 교체",
+        "additional": "ICPMS",
         "partno": "M00000529",
+        "code": "Shield plate",
+        "part": "Shield Plate for ICP-MS",
         "spec": "AT5004, G1833-65419, OEM",
-        "type": "BM"
+        "cycle": "",
+        "equip": "SOMA-2000, WIM-100"
     },
     {
         "code": "Ar gas Filter",
