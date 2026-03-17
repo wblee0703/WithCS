@@ -720,9 +720,10 @@ function renderLogs() {
     }
     
     const getLogBadgeClass = (t, dt) => {
+        if (!t) return 'default';
         if (t === 'PM' || dt === 'PM') return 'pm';
         if (t === 'BM' || dt === 'BM') return 'bm';
-        return 'default';
+        return t.replace(/\s/g, ''); // 공백 제거하여 CSS 클래스명으로 반환
     };
 
     logBody.innerHTML = sortedLogs.map(log => {
@@ -884,7 +885,6 @@ function toggleLogEdit(id, btn) {
 
         detailCell.innerHTML = `
             <select id="edit-log-detail-type-${id}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()" onchange="updateEditLogContentField(${id})">
-                <option value="${escapeHtml(currentDetailType)}">${escapeHtml(currentDetailType) || '세부구분 선택'}</option>
             </select>`;
 
         renderEditLogContentField(id, currentType, currentDetailType, currentContent === '-' ? '' : currentContent);
@@ -1079,7 +1079,7 @@ window.updateLogDetailTypeOptions = function() {
         detailTypeSelect.innerHTML = '<option value="">세부구분 없음 (직접입력)</option>';
         detailTypeSelect.disabled = true;
     } else {
-        detailTypeSelect.innerHTML = '<option value="">세부구분 선택</option>';
+        detailTypeSelect.innerHTML = '';
         subCategories.forEach(sub => {
             const opt = document.createElement('option');
             opt.value = sub;
@@ -1161,7 +1161,7 @@ window.updateLogContentOptions = function() {
     } else {
         contentWrapper.style.display = 'none';
         contentInput.style.display = 'inline-block';
-        contentInput.placeholder = detailType ? '등록된 점검 항목이 없습니다. 직접 입력하세요.' : '내용 (직접 입력)';
+        contentInput.placeholder = detailType ? '내용 (직접 입력)' : '내용 (직접 입력)';
     }
 };
 
@@ -1193,7 +1193,7 @@ window.updateEditDetailTypeOptions = function(id, presetVal = '') {
         detailTypeSelect.innerHTML = '<option value="">세부구분 없음</option>';
         detailTypeSelect.disabled = true;
     } else {
-        detailTypeSelect.innerHTML = '<option value="">세부구분 선택</option>';
+        detailTypeSelect.innerHTML = '';
         subCategories.forEach(sub => {
             const opt = document.createElement('option');
             opt.value = sub;

@@ -524,26 +524,35 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     font-weight: bold;
 }
 
-.badge.pm {
+.badge.pm,
+.badge.정기 {
     background: #238636;
+    color: #fff;
 }
 
-.badge.bm {
+.badge.bm,
+.badge.비정기 {
     background: #1f6feb;
+    color: #fff;
 }
 
-.badge.장비점검 {
+.badge.고객대응 {
     background: #d29922;
     color: #fff;
 }
 
-.badge.프로그램변경 {
+.badge.용액제조 {
     background: #8957e5;
     color: #fff;
 }
 
-.badge.트러블이슈 {
-    background: #da3633;
+.badge.온라인점검 {
+    background: #0078d4;
+    color: #fff;
+}
+
+.badge.default {
+    background: #30363d;
     color: #fff;
 }
 
