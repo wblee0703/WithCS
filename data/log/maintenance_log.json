@@ -118,5 +118,11 @@
         "action": "UPDATE_CHECK_CATEGORY",
         "target": "SOMA-3000E",
         "details": "분류명 수정: BM -> BM 점검"
+    },
+    {
+        "timestamp": "2026-03-17T04:16:20.377Z",
+        "action": "UPDATE_CHECK_CATEGORY",
+        "target": "SOLA-1000",
+        "details": "분류명 수정: PM -> PM 점검"
     }
 ]
