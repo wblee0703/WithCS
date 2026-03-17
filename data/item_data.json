@@ -779,5 +779,16 @@
         "spec": "2647037, 2.5mL, ILS",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723368522,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "TUBE (for REACTOR)",
+        "part": "REACTOR_WF301용",
+        "spec": "내경0.03\" 3바퀴반",
+        "cycle": "",
+        "equip": ""
     }
 ]
