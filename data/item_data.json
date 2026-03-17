@@ -603,5 +603,16 @@
         "spec": "LZM-WO/1-5LPM, OEM, POC1/4-01MW",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723159424,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "SAMPLER (양)",
+        "part": "Sampler body",
+        "spec": "WF301 ＆ SM301 (양)",
+        "cycle": "",
+        "equip": ""
     }
 ]

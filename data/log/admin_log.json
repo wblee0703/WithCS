@@ -652,5 +652,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Flow meter(Outlet valve)",
         "details": "Type: BM, Spec: LZM-WO/1-5LPM, OEM, POC1/4-01MW"
+    },
+    {
+        "timestamp": "2026-03-17T04:52:39.424Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Sampler body",
+        "details": "Type: BM, Spec: WF301 ＆ SM301 (양)"
     }
 ]
