@@ -1635,12 +1635,18 @@ function renderCheckTypeSubCategoryList() {
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                 <span style="flex: 1; display: flex; align-items: center; gap: 8px;"><span style="color: #8b949e; cursor: grab; font-size: 14px;" title="드래그하여 순서 변경">☰</span> ${cat}</span>
                 <button class="btn-del-sm" onclick="event.stopPropagation(); deleteCheckTypeSubCategory('${key}', ${index})">✕</button>
+                <span class="subcategory-text" style="flex: 1; cursor: grab;" title="드래그하여 순서 변경">${cat}</span>
+                <div style="display: flex; gap: 5px;">
+                    <button class="btn-edit-sm btn-edit-subcat" title="수정" onclick="event.stopPropagation();">✏️</button>
+                    <button class="btn-del-sm" onclick="event.stopPropagation(); deleteCheckTypeSubCategory('${key}', ${index})" title="삭제">✕</button>
+                </div>
             </div>
         `;
         
         if (currentCheckTypeSubCategory === cat) li.classList.add('active');
         
         li.addEventListener('click', () => {
+            if (li.classList.contains('editing')) return; // 수정 중일 때 클릭(선택) 방지
             currentCheckTypeSubCategory = cat;
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
@@ -1655,8 +1661,68 @@ function renderCheckTypeSubCategoryList() {
             renderCheckTypeItemList();
         });
 
+        // [추가] 세부 구분 수정 기능 이벤트 처리
+        const editBtn = li.querySelector('.btn-edit-subcat');
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isEditing = li.classList.contains('editing');
+            const textSpan = li.querySelector('.subcategory-text');
+
+            if (!isEditing) {
+                li.classList.add('editing');
+                li.draggable = false;
+                editBtn.textContent = '✅';
+                textSpan.innerHTML = `<input type="text" class="input-dark" value="${cat}" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
+                const input = textSpan.querySelector('input');
+                input.focus();
+                input.addEventListener('keypress', (ev) => {
+                    if (ev.key === 'Enter') editBtn.click();
+                });
+            } else {
+                const input = textSpan.querySelector('input');
+                const newCat = input.value.trim();
+
+                if (!newCat) return alert('분류명을 입력해주세요.');
+                if (newCat !== cat && checkTypeCategoriesData[key].includes(newCat)) return alert('이미 존재하는 분류명입니다.');
+
+                if (newCat !== cat) {
+                    checkTypeCategoriesData[key][index] = newCat;
+                    
+                    // 관련 세부 항목 데이터 키 마이그레이션
+                    const oldItemKey = `${key}::${cat}`;
+                    const newItemKey = `${key}::${newCat}`;
+                    if (checkTypeItemsData[oldItemKey]) {
+                        checkTypeItemsData[newItemKey] = checkTypeItemsData[oldItemKey];
+                        delete checkTypeItemsData[oldItemKey];
+                        saveCheckTypeItems();
+                    }
+
+                    saveCheckTypeCategories();
+                    addSystemLog('UPDATE_CHECK_CATEGORY', key.split('::')[0], `분류명 수정: ${cat} -> ${newCat}`);
+
+                    if (currentCheckTypeSubCategory === cat) {
+                        currentCheckTypeSubCategory = newCat;
+                        const desc = document.getElementById('check-type-detail-desc');
+                        if (desc) desc.textContent = `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' 세부 항목을 관리합니다.`;
+                    }
+                }
+                
+                renderCheckTypeSubCategoryList();
+                if (currentCheckTypeSubCategory === newCat) {
+                    renderCheckTypeItemList();
+                }
+            }
+        });
+
         // [추가] 드래그 앤 드롭 순서 변경 이벤트 처리
         li.addEventListener('dragstart', () => li.classList.add('dragging'));
+        li.addEventListener('dragstart', (e) => {
+            if (li.classList.contains('editing')) {
+                e.preventDefault();
+                return;
+            }
+            li.classList.add('dragging');
+        });
         li.addEventListener('dragend', () => {
             li.classList.remove('dragging');
             
