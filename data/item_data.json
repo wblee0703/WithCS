@@ -988,5 +988,16 @@
         "spec": "음이온 고농도 표준용액",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724634294,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "MAIN (양)",
+        "part": "MAIN 용액 (양)",
+        "spec": "양이온 고농축 용액",
+        "cycle": "",
+        "equip": ""
     }
 ]
