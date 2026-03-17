@@ -1396,5 +1396,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "표준용액 (음)",
         "details": "Type: PM, Code: 표준용액(음)"
+    },
+    {
+        "timestamp": "2026-03-17T05:19:54.586Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "CRM표준용액 (양)",
+        "details": "Type: PM, Code: CRM (양)"
     }
 ]
