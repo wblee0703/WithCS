@@ -196,5 +196,16 @@
         "spec": "G3280-20618, 정품",
         "cycle": "",
         "equip": "SOMA-2000, WIM-100"
+    },
+    {
+        "id": 1773722083183,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "ORS (Cell exit lens)",
+        "part": "Cell exit lens for ICP-MS",
+        "spec": "G3280-20664, 정품",
+        "cycle": "",
+        "equip": ""
     }
 ]
