@@ -370,5 +370,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Plate bias for ICP-MS",
         "details": "Type: BM, Code: ORS (Plate bias)"
+    },
+    {
+        "timestamp": "2026-03-17T04:34:01.054Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Cell entrance lens for ICP-MS",
+        "details": "Type: BM, Spec: G3280-20618, 정품"
     }
 ]
