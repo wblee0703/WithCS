@@ -166,5 +166,11 @@
         "action": "ADD_MAINTENANCE",
         "target": "WIM-100::WIM1-HK24-0401",
         "details": "[PM] Pt Skimmer cone for 7700S (주기: 182일, 시작일: 2026-03-17)"
+    },
+    {
+        "timestamp": "2026-03-17T05:32:42.427Z",
+        "action": "ADD_MAINTENANCE",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "[PM] Pt Skimmer cone for 7700S (주기: 182일, 시작일: 2026-03-17)"
     }
 ]
