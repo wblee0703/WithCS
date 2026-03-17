@@ -374,15 +374,15 @@
         "equip": ""
     },
     {
-        "code": "HPLC DAMPER",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722727321,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000050",
+        "code": "HPLC DAMPER",
         "part": "Pulse dampener(301)",
-        "partno": "",
         "spec": "880616, PK PULSE DAMPER W/O XDCR",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "815PUMP",

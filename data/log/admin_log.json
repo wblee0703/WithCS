@@ -916,5 +916,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "HPLC Pump Piston Seal Kit",
         "details": "Type: BM, Code: HPLC SEAL"
+    },
+    {
+        "timestamp": "2026-03-17T05:04:09.719Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Pulse dampener(301)",
+        "details": "Type: BM, Code: HPLC DAMPER"
     }
 ]
