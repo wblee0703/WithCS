@@ -154,5 +154,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Vacuum Pump[Thomas-P], 4/1 Connector",
         "details": "Type: BM, Spec: 2680CGUU44,130LPM,230V,50/60Hz공용(피팅포함), Cycle: "
+    },
+    {
+        "timestamp": "2026-03-17T02:55:25.836Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Vacuum Pump[Thomas-P], 4/1 Connector",
+        "details": "Type: BM, Code: V/P (Thomas)"
     }
 ]
