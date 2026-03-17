@@ -610,5 +610,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Diaphragm Pump",
         "details": "Type: PM, Spec: PM27597-NMP830, 12V"
+    },
+    {
+        "timestamp": "2026-03-17T04:51:02.806Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "ELECTRIC REGULATOR",
+        "details": "Type: BM, Spec: SMC_ITV1030-212CL_0.5Mpa"
     }
 ]

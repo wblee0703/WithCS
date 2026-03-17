@@ -526,5 +526,16 @@
         "spec": "PM27597-NMP830, 12V",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723062806,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "ELEC_Regulator",
+        "part": "ELECTRIC REGULATOR",
+        "spec": "SMC_ITV1030-212CL_0.5Mpa",
+        "cycle": "",
+        "equip": ""
     }
 ]
