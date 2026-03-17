@@ -1006,5 +1006,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "ELECTRIC REGULATOR",
         "details": "Type: BM, Code: ELEC_Regulator"
+    },
+    {
+        "timestamp": "2026-03-17T05:07:06.481Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Piston Assembly",
+        "details": "Type: BM, Code: HPLC PISTON"
     }
 ]

@@ -528,15 +528,15 @@
         "equip": ""
     },
     {
-        "code": "HPLC PISTON",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723073934,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000214",
+        "code": "HPLC PISTON",
         "part": "Piston Assembly",
-        "partno": "",
         "spec": "880354, 10ML SER3 REPLACEMENT PISTON",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "V/P (Thomas)",
