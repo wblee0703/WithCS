@@ -462,15 +462,15 @@
         "equip": ""
     },
     {
-        "code": "SYRINGE_2.5ML(H)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722790972,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000088",
+        "code": "SYRINGE_2.5ML(H)",
         "part": "Syringe(2.5mL)",
-        "partno": "",
         "spec": "81420, 2.5mL, Hamilton",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "레벨센서 (TYPE1)",
