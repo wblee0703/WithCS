@@ -328,5 +328,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Ar gas clean filter, Semicon App",
         "details": "Type: BM, Spec: 5064-8092, Agilent 정품"
+    },
+    {
+        "timestamp": "2026-03-17T04:30:01.540Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Ar gas clean filter, Semicon App",
+        "details": "Type: BM, Code: Ar gas Filter"
     }
 ]
