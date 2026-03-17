@@ -1606,5 +1606,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "P9 중형 표준가스",
         "details": "Type: PM, Code: 표준가스(P9)"
+    },
+    {
+        "timestamp": "2026-03-17T05:25:06.318Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Metal Standard Solution(3%HNO3)",
+        "details": "Type: PM, Code: Metal STD (10ppb,3%)"
     }
 ]
