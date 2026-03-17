@@ -638,15 +638,15 @@
         "equip": ""
     },
     {
-        "code": "FITTING (XU655)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723191380,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000689",
+        "code": "FITTING (XU655)",
         "part": "XU-655",
-        "partno": "",
         "spec": "Flngls sys Blk Peek 1/4in",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "FITTING (P213)",
