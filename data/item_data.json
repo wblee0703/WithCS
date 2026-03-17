@@ -627,15 +627,15 @@
         "equip": ""
     },
     {
-        "code": "FITTING (P316)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723183480,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000661",
+        "code": "FITTING (P316)",
         "part": "P-316",
-        "partno": "",
         "spec": "Plug fitting, PFA",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "FITTING (XU655)",
