@@ -143,15 +143,16 @@
         "equip": "SOMA-2000, WIM-100"
     },
     {
-        "code": "He gas Filter",
-        "cycle": "",
-        "detailType": "분석부 교체",
-        "equip": "SOMA-2000, WIM-100",
         "id": 1773721891522,
-        "part": "Gas Clean Filter Carrier Gas",
+        "type": "BM",
+        "detailType": "분석부 교체",
+        "additional": "",
         "partno": "M00000586",
+        "code": "He gas Filter",
+        "part": "Gas Clean Filter Carrier Gas",
         "spec": "CP17973",
-        "type": "BM"
+        "cycle": "",
+        "equip": "SOMA-2000, WIM-100"
     },
     {
         "code": "ORS (Deflect lens)",
