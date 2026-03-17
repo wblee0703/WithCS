@@ -385,15 +385,15 @@
         "equip": ""
     },
     {
-        "code": "815PUMP",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722735390,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000052",
+        "code": "815PUMP",
         "part": "Vacuum Pump",
-        "partno": "",
         "spec": "UN815KNI, 115V(미국용)",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "다이아프램(815)",
