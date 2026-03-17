@@ -982,6 +982,27 @@ function toggleLogEdit(id, btn) {
     }
 }
 
+function updateLogItem(id, date, type, detailType, content, worker) {
+    const key = `details_${currentPath.site}_${currentPath.equip}`;
+    let data = JSON.parse(localStorage.getItem(key));
+
+    if (data && data.logs) {
+        const idx = data.logs.findIndex(l => l.id === id);
+        if (idx > -1) {
+            data.logs[idx].date = date;
+            data.logs[idx].type = type;
+            data.logs[idx].detailType = detailType;
+            data.logs[idx].content = content;
+            data.logs[idx].worker = worker;
+            
+            localStorage.setItem(key, JSON.stringify(data));
+            if (typeof addSystemLog === 'function') addSystemLog('UPDATE_LOG', currentPath.equip, `점검 이력 수정 (LogID: ${id})`);
+            
+            renderLogs();
+        }
+    }
+}
+
 // [수정] 수정 모드에서 내용 필드 렌더링 (PM/BM일 경우 다중 선택 드롭다운)
 window.renderEditLogContentField = function(id, type, detailType, value) {
     const row = document.getElementById(`log-row-${id}`);

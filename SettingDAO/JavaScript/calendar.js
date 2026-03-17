@@ -768,7 +768,6 @@ function toggleDetailContentEdit() {
                             const isSelected = div.classList.contains('selected');
                             div.innerHTML = `
                                 <div style="display:flex; align-items:center; width:100%; pointer-events:none;">
-                                    <input type="checkbox" style="margin-right:8px;" ${isSelected ? 'checked' : ''}>
                                     <span>${mItem.content}</span>
                                 </div>
                             `;
@@ -776,8 +775,6 @@ function toggleDetailContentEdit() {
                             div.onclick = (e) => {
                                 e.stopPropagation();
                                 div.classList.toggle('selected');
-                                const cb = div.querySelector('input[type="checkbox"]');
-                                if (cb) cb.checked = div.classList.contains('selected');
                                 updateTriggerText();
                             };
                             list.appendChild(div);
@@ -1396,7 +1393,6 @@ function updateRegisterItemList(site, equip) {
             itemDiv.dataset.id = item.id;
             let html = `
                 <div style="display:flex; align-items:center; width:100%; pointer-events:none;">
-                    <input type="checkbox" style="margin-right:8px;">
                     <span>${item.content}</span>
             `;
             if (item.scheduledDate) {
@@ -1409,9 +1405,6 @@ function updateRegisterItemList(site, equip) {
                 e.stopPropagation();
                 itemDiv.classList.toggle('selected');
                 
-                const cb = itemDiv.querySelector('input[type="checkbox"]');
-                if (cb) cb.checked = itemDiv.classList.contains('selected');
-
                 // 트리거 텍스트 업데이트
                 const selected = list.querySelectorAll('.log-select-item.selected');
                 if (selected.length === 0) trigger.textContent = '항목 선택';
