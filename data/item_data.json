@@ -471,5 +471,16 @@
         "spec": "81420, 2.5mL, Hamilton",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722797922,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "레벨센서 (TYPE1)",
+        "part": "레벨센서",
+        "spec": "Eluent 용, Type Ⅰ",
+        "cycle": "",
+        "equip": ""
     }
 ]
