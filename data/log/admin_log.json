@@ -124,5 +124,11 @@
         "action": "DELETE_CHECK_CATEGORY",
         "target": "SOMA-3000E::SOMA-EK24-0403::비정기",
         "details": "분류 삭제: BM"
+    },
+    {
+        "timestamp": "2026-03-17T02:22:42.969Z",
+        "action": "ADD_CHECK_CATEGORY",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "details": "분류 추가: 비정기 > BM 점검"
     }
 ]
