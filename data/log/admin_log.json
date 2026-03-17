@@ -106,5 +106,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Guard Column(2mm)",
         "details": "Type: BM, Spec: 046138, AG14(2x50mm), Cycle: "
+    },
+    {
+        "timestamp": "2026-03-17T01:23:44.280Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Guard Column(2mm)",
+        "details": "Type: BM, Code: GC(2mm)"
     }
 ]
