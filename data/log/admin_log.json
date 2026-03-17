@@ -1414,5 +1414,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "MAIN 용액 (양)",
         "details": "Type: PM, Code: MAIN (양)"
+    },
+    {
+        "timestamp": "2026-03-17T05:20:09.426Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "MAIN 용액 (음)",
+        "details": "Type: PM, Code: MAIN (음)"
     }
 ]
