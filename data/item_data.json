@@ -372,5 +372,16 @@
         "spec": "880203, 10ML SEAL KIT, STS",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722727321,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "HPLC DAMPER",
+        "part": "Pulse dampener(301)",
+        "spec": "880616, PK PULSE DAMPER W/O XDCR",
+        "cycle": "",
+        "equip": ""
     }
 ]
