@@ -1021,5 +1021,16 @@
         "spec": "버퍼 용액",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724658263,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "TVOC STD(0.5)",
+        "part": "이소부틸렌 (0.5ppm)",
+        "spec": "103L-248-0.5",
+        "cycle": "",
+        "equip": ""
     }
 ]
