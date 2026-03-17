@@ -802,5 +802,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "PLC386 IN8 Board",
         "details": "Type: BM, Spec: 8비트 IN 입력 보드, MOQ(10) / 테크마스"
+    },
+    {
+        "timestamp": "2026-03-17T04:59:14.379Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Leak Sensor Board",
+        "details": "Type: BM, Spec: Leak Sensor Board / 유니랩코리아"
     }
 ]

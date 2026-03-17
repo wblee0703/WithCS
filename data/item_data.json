@@ -878,5 +878,16 @@
         "spec": "8비트 IN 입력 보드, MOQ(10) / 테크마스",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723554379,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "LEAK BOARD",
+        "part": "Leak Sensor Board",
+        "spec": "Leak Sensor Board / 유니랩코리아",
+        "cycle": "",
+        "equip": ""
     }
 ]
