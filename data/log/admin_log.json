@@ -778,5 +778,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Agilent FLD standard flow cell(국내)",
         "details": "Type: BM, Spec: G1321-60005, 8uL"
+    },
+    {
+        "timestamp": "2026-03-17T04:58:41.972Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "3-Way Solenoid Valve",
+        "details": "Type: BM, Spec: HTV 0142-3, PTFE, DC24V, 7Bar, HSE"
     }
 ]

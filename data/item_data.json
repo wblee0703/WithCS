@@ -834,5 +834,16 @@
         "spec": "G1321-60005, 8uL",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723521972,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "3WAY",
+        "part": "3-Way Solenoid Valve",
+        "spec": "HTV 0142-3, PTFE, DC24V, 7Bar, HSE",
+        "cycle": "",
+        "equip": ""
     }
 ]
