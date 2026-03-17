@@ -658,5 +658,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Sampler body",
         "details": "Type: BM, Spec: WF301 ＆ SM301 (양)"
+    },
+    {
+        "timestamp": "2026-03-17T04:52:47.880Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "P-200",
+        "details": "Type: BM, Spec: Ferrules for 1/16 OD tubing Blue ETFE"
     }
 ]

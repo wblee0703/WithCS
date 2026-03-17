@@ -614,5 +614,16 @@
         "spec": "WF301 ＆ SM301 (양)",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723167880,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "FITTING (P200)",
+        "part": "P-200",
+        "spec": "Ferrules for 1/16 OD tubing Blue ETFE",
+        "cycle": "",
+        "equip": ""
     }
 ]
