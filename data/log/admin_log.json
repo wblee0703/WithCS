@@ -1702,5 +1702,11 @@
         "action": "ADD_CHECK_ITEM",
         "target": "SOMA-2000::SOMA-H19-0402",
         "details": "항목 추가: [Data / Para 이상] Calibration Fail"
+    },
+    {
+        "timestamp": "2026-03-17T05:59:17.794Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Data / Para 이상] 감도 Spec. Out"
     }
 ]
