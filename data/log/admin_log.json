@@ -352,5 +352,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Deflect lens for ICP-MS",
         "details": "Type: BM, Spec: G3280-20628, 정품"
+    },
+    {
+        "timestamp": "2026-03-17T04:32:46.084Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Deflect lens for ICP-MS",
+        "details": "Type: BM, Code: ORS (Deflect lens)"
     }
 ]
