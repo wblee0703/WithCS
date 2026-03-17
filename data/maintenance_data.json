@@ -394,9 +394,9 @@
             {
                 "code": "Sampler Cone",
                 "content": "Pt Sampling cone for 7700S",
-                "date": "2026-03-17",
+                "date": "2026-02-04",
                 "id": 1773732554284,
-                "period": "182",
+                "period": 182,
                 "type": "PM"
             },
             {
