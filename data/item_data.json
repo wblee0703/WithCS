@@ -449,5 +449,16 @@
         "spec": "C2-23R6, 1/16*0.4mm, 50C/5000psi liq",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722784363,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "SYRINGE_1ML(H)",
+        "part": "Syringe(1mL)",
+        "spec": "81320, 1mL, Hamilton",
+        "cycle": "",
+        "equip": ""
     }
 ]
