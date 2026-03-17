@@ -473,15 +473,15 @@
         "equip": ""
     },
     {
-        "code": "레벨센서 (TYPE1)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722797922,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000098",
+        "code": "레벨센서 (TYPE1)",
         "part": "레벨센서",
-        "partno": "",
         "spec": "Eluent 용, Type Ⅰ",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "HPLC HEAD KIT",

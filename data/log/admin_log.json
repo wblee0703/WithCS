@@ -970,5 +970,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Syringe(2.5mL)",
         "details": "Type: BM, Code: SYRINGE_2.5ML(H)"
+    },
+    {
+        "timestamp": "2026-03-17T05:05:16.853Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "레벨센서",
+        "details": "Type: BM, Code: 레벨센서 (TYPE1)"
     }
 ]
