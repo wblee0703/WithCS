@@ -1153,5 +1153,16 @@
         "spec": "5ppb Multi(4종), 1%HNO3",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773725199638,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "9.5% HNO3",
+        "part": "9.5% HNO3",
+        "spec": "WIM-100 Cal 질산보정",
+        "cycle": "",
+        "equip": ""
     }
 ]
