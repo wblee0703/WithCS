@@ -594,15 +594,15 @@
         "equip": ""
     },
     {
-        "code": "SAMPLER (양)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723159424,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000574",
+        "code": "SAMPLER (양)",
         "part": "Sampler body",
-        "partno": "",
         "spec": "WF301 ＆ SM301 (양)",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "FITTING (P200)",

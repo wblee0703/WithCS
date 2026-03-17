@@ -1042,5 +1042,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Flow meter(Outlet valve)",
         "details": "Type: BM, Code: F/M (5LPM)"
+    },
+    {
+        "timestamp": "2026-03-17T05:08:00.796Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Sampler body",
+        "details": "Type: BM, Code: SAMPLER (양)"
     }
 ]
