@@ -13,7 +13,7 @@
             "Data / Para 이상"
         ],
         "SOMA-2000::SOMA-H19-0903::정기": [
-            "PM"
+            "PM 점검"
         ],
         "SOMA-2000::SOMA-HC19-1204::정기": [
             "PM"
@@ -190,12 +190,6 @@
         "SOMA-2000::SOMA-H19-0903::비정기::BM": [],
         "SOMA-2000::SOMA-H19-0903::비정기::Data / Para 이상": [],
         "SOMA-2000::SOMA-H19-0903::비정기::Hunting": [],
-        "SOMA-2000::SOMA-H19-0903::정기::PM": [
-            {
-                "content": "Stadnard",
-                "id": 1773704369024
-            }
-        ],
         "SOMA-2000::SOMA-HC19-1204::정기::PM": [
             {
                 "content": "Stadnard",
@@ -244,6 +238,12 @@
             {
                 "content": "Stadnard",
                 "id": 1773704364200
+            }
+        ],
+        "SOMA-2000::SOMA-H19-0903::정기::PM 점검": [
+            {
+                "content": "Stadnard",
+                "id": 1773704369024
             }
         ]
     }
