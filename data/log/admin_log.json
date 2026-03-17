@@ -148,5 +148,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Guard Column(2mm)",
         "details": "Type: BM, Code: GC(2mm)"
+    },
+    {
+        "timestamp": "2026-03-17T02:55:20.388Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Vacuum Pump[Thomas-P], 4/1 Connector",
+        "details": "Type: BM, Spec: 2680CGUU44,130LPM,230V,50/60Hz공용(피팅포함), Cycle: "
     }
 ]
