@@ -823,5 +823,16 @@
         "spec": "3020009, 2.5mL, SETonic",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723484490,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "AGILENT CELL",
+        "part": "Agilent FLD standard flow cell(국내)",
+        "spec": "G1321-60005, 8uL",
+        "cycle": "",
+        "equip": ""
     }
 ]

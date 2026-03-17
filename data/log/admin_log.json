@@ -772,5 +772,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Syringe(2.5mL)",
         "details": "Type: BM, Spec: 3020009, 2.5mL, SETonic"
+    },
+    {
+        "timestamp": "2026-03-17T04:58:04.490Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Agilent FLD standard flow cell(국내)",
+        "details": "Type: BM, Spec: G1321-60005, 8uL"
     }
 ]
