@@ -214,6 +214,12 @@ tr.dragging {
     display: table-cell;
 }
 
+/* 로그 테이블 내용 컬럼 줄바꿈 허용 (잘림 방지) */
+#log-list-wrapper .data-table td:nth-child(4) {
+    white-space: normal;
+    word-break: keep-all;
+}
+
 .log-list-container {
     height: 50%;
     border-bottom: 1px solid #30363d;
@@ -364,11 +370,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     padding: 5px;
     border-radius: 4px;
     cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    height: 30px;
-    line-height: 18px;
+    white-space: normal;
+    word-break: keep-all;
+    min-height: 30px;
+    height: auto;
+    line-height: 1.4;
     font-size: 13px;
 }
 
@@ -736,13 +742,21 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #log-date,
     #log-type-select,
     #log-detail-type-select,
-    .log-select-trigger,
     #log-worker,
     .log-content-input {
         font-size: 12px !important;
         padding-left: 2px !important;
         padding-right: 2px !important;
         height: 30px !important;
+    }
+
+    /* 모바일에서 항목 선택창 높이 유동적으로 변경 */
+    .log-select-trigger {
+        font-size: 12px !important;
+        padding-left: 2px !important;
+        padding-right: 2px !important;
+        min-height: 30px !important;
+        height: auto !important;
     }
 
     /* [요청] 모바일에서 점검일 달력 아이콘 및 구분 선택 화살표 숨김 */

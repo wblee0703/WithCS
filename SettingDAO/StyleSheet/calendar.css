@@ -521,11 +521,11 @@
     padding: 8px;
     border-radius: 4px;
     cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    height: 36px;
-    line-height: 18px;
+    white-space: normal;
+    word-break: keep-all;
+    min-height: 36px;
+    height: auto;
+    line-height: 1.4;
     font-size: 13px;
     text-align: left;
 }
