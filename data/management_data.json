@@ -99,15 +99,6 @@
         "SOMA-2000::SOMA-HC21-0101::정기": [
             "PM 점검"
         ],
-        "SOMA-2000::SOMA-HK21-0202::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
-        ],
-        "SOMA-2000::SOMA-HK21-0202::정기": [
-            "PM 점검"
-        ],
         "SOMA-3000E::SOMA-EK23-0401::고객대응": [
             "순회 점검",
             "프로그램 변경 / 평가",
@@ -361,6 +352,33 @@
             "용액제조"
         ],
         "SOMA-2000::SOMA-H19-0903::온라인점검": [
+            "온라인점검"
+        ],
+        "SOMA-2000::SOMA-HK21-0202::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
+        "SOMA-2000::SOMA-HK21-0202::정기": [
+            "PM 점검"
+        ],
+        "SOMA-2000::SOMA-HK21-0202::고객대응": [
+            "순회 점검",
+            "프로그램 변경 / 평가",
+            "설비 평가",
+            "Parts 교체",
+            "업무 협조",
+            "설비 정상화",
+            "단순조치",
+            "설비 개조",
+            "Cal 보정",
+            "기타"
+        ],
+        "SOMA-2000::SOMA-HK21-0202::용액제조": [
+            "용액제조"
+        ],
+        "SOMA-2000::SOMA-HK21-0202::온라인점검": [
             "온라인점검"
         ]
     },
@@ -626,24 +644,6 @@
         "SOMA-2000::SOMA-HC21-0101::비정기::Alarm": [],
         "SOMA-2000::SOMA-HC21-0101::비정기::BM 점검": [],
         "SOMA-2000::SOMA-HC21-0101::정기::PM 점검": [],
-        "SOMA-2000::SOMA-HK21-0202::정기::PM 점검": [
-            {
-                "content": "Metal Standard Solution(3%HNO3)",
-                "id": 1773720841088
-            },
-            {
-                "content": "Pt Skimmer cone for 7700S",
-                "id": 1773720841089
-            },
-            {
-                "content": "Pt Sampling cone for 7700S",
-                "id": 1773720841090
-            },
-            {
-                "content": "Extraction-omega lens assembly",
-                "id": 1773720841091
-            }
-        ],
         "SOMA-3000E::SOMA-EK23-0401::고객대응::설비 평가": [],
         "SOMA-3000E::SOMA-EK23-0401::비정기::Alarm": [],
         "SOMA-3000E::SOMA-EK23-0401::비정기::BM 점검": [],
@@ -959,6 +959,176 @@
         "SOMA-2000::SOMA-H19-0903::고객대응::Cal 보정": [],
         "SOMA-2000::SOMA-H19-0903::고객대응::기타": [],
         "SOMA-2000::SOMA-H19-0903::용액제조::용액제조": [],
-        "SOMA-2000::SOMA-H19-0903::온라인점검::온라인점검": []
+        "SOMA-2000::SOMA-H19-0903::온라인점검::온라인점검": [],
+        "SOMA-2000::SOMA-HK21-0202::비정기::Alarm": [
+            {
+                "content": "PLC Alarm",
+                "id": 1773727845093
+            },
+            {
+                "content": "Exhaust Alarm",
+                "id": 1773727839412
+            },
+            {
+                "content": "GN2 Alarm",
+                "id": 1773727841670
+            },
+            {
+                "content": "Water Sensor Alarm",
+                "id": 1773727848100
+            },
+            {
+                "content": "HF Sensor Alarm",
+                "id": 1773727841010
+            },
+            {
+                "content": "Mass Hunter Alarm",
+                "id": 1773727842293
+            },
+            {
+                "content": "EMS Alarm",
+                "id": 1773727840159
+            },
+            {
+                "content": "Inner Leak  Alarm",
+                "id": 1773727840263
+            },
+            {
+                "content": "External Leak Alarm",
+                "id": 1773727839984
+            },
+            {
+                "content": "Door Lock Alarm",
+                "id": 1773727842965
+            }
+        ],
+        "SOMA-2000::SOMA-HK21-0202::비정기::BM 점검": [
+            {
+                "content": "Torch for PFA inert kit for ICP-MS",
+                "id": 1773727845202
+            },
+            {
+                "content": "Platinum injector, inert torch, 2.5mm id",
+                "id": 1773727845310
+            },
+            {
+                "content": "Spray Chamber for Inert Kit, PFA",
+                "id": 1773727838467
+            },
+            {
+                "content": "Spray Chamber End Cap for Inert Kit, PFA",
+                "id": 1773727843243
+            },
+            {
+                "content": "Long connector tube for ICP-MS inert kit",
+                "id": 1773727840424
+            },
+            {
+                "content": "Quartz Torch Bonnet",
+                "id": 1773727847460
+            },
+            {
+                "content": "Shield Plate for ICP-MS",
+                "id": 1773727839607
+            },
+            {
+                "content": "Ar gas clean filter, Semicon App",
+                "id": 1773727842221
+            },
+            {
+                "content": "Gas Clean Filter Carrier Gas",
+                "id": 1773727847328
+            },
+            {
+                "content": "Deflect lens for ICP-MS",
+                "id": 1773727841714
+            },
+            {
+                "content": "Plate bias for ICP-MS",
+                "id": 1773727845400
+            },
+            {
+                "content": "Cell entrance lens for ICP-MS",
+                "id": 1773727844996
+            },
+            {
+                "content": "Cell exit lens for ICP-MS",
+                "id": 1773727842109
+            },
+            {
+                "content": "Cell focus lens for ICP-MS",
+                "id": 1773727842919
+            },
+            {
+                "content": "Octopole assembly, ICP-MS",
+                "id": 1773727842865
+            },
+            {
+                "content": "Micro Flow Nebulizer PFA-100",
+                "id": 1773727842725
+            },
+            {
+                "content": "RF coil for 7900",
+                "id": 1773727848231
+            },
+            {
+                "content": "Electron multiplier for ICP-MS",
+                "id": 1773727839517
+            }
+        ],
+        "SOMA-2000::SOMA-HK21-0202::비정기::Data / Para 이상": [
+            {
+                "content": "Calibration Fail",
+                "id": 1773727839893
+            },
+            {
+                "content": "감도 Spec. Out",
+                "id": 1773727847122
+            },
+            {
+                "content": "Parameter 값 이상",
+                "id": 1773727844648
+            },
+            {
+                "id": 1773727840494,
+                "content": "Data Trend 이상"
+            }
+        ],
+        "SOMA-2000::SOMA-HK21-0202::비정기::Hunting": [
+            {
+                "id": 1773727842706,
+                "content": "Data Hunting"
+            }
+        ],
+        "SOMA-2000::SOMA-HK21-0202::정기::PM 점검": [
+            {
+                "content": "Metal Standard Solution(3%HNO3)",
+                "id": 1773727840307
+            },
+            {
+                "content": "Pt Skimmer cone for 7700S",
+                "id": 1773727843232
+            },
+            {
+                "content": "Pt Sampling cone for 7700S",
+                "id": 1773727838790
+            },
+            {
+                "content": "Extraction-omega lens assembly",
+                "id": 1773727838906
+            }
+        ],
+        "SOMA-2000::SOMA-HK21-0202::고객대응::순회 점검": [],
+        "SOMA-2000::SOMA-HK21-0202::고객대응::프로그램 변경 / 평가": [],
+        "SOMA-2000::SOMA-HK21-0202::고객대응::설비 평가": [],
+        "SOMA-2000::SOMA-HK21-0202::고객대응::Parts 교체": [],
+        "SOMA-2000::SOMA-HK21-0202::고객대응::업무 협조": [],
+        "SOMA-2000::SOMA-HK21-0202::고객대응::설비 정상화": [],
+        "SOMA-2000::SOMA-HK21-0202::고객대응::단순조치": [],
+        "SOMA-2000::SOMA-HK21-0202::고객대응::설비 개조": [],
+        "SOMA-2000::SOMA-HK21-0202::고객대응::Cal 보정": [],
+        "SOMA-2000::SOMA-HK21-0202::고객대응::기타": [],
+        "SOMA-2000::SOMA-HK21-0202::용액제조::용액제조": [],
+        "SOMA-2000::SOMA-HK21-0202::온라인점검::온라인점검": []
     }
 }
