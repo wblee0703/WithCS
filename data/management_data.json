@@ -69,7 +69,8 @@
         "SOMA-3000E::SOMA-EK24-0401::비정기": [
             "Hunting",
             "Data / Para 이상",
-            "BM 점검"
+            "BM 점검",
+            "Alarm"
         ],
         "SOMA-3000E::SOMA-EK24-0401::온라인 점검": [
             "온라인 점검"
