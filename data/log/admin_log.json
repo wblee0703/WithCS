@@ -928,5 +928,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Vacuum Pump",
         "details": "Type: BM, Code: 815PUMP"
+    },
+    {
+        "timestamp": "2026-03-17T05:04:22.513Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Diaphragm",
+        "details": "Type: BM, Code: 다이아프램(815)"
     }
 ]

@@ -396,15 +396,15 @@
         "equip": ""
     },
     {
-        "code": "다이아프램(815)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722744866,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000054",
+        "code": "다이아프램(815)",
         "part": "Diaphragm",
-        "partno": "",
         "spec": "024489 for N815 (815 부품)",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "다이아프램(838)",
