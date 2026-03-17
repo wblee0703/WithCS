@@ -341,15 +341,15 @@
         "equip": ""
     },
     {
-        "code": "3WAY_V(L)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722704436,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00002612",
+        "code": "3WAY_V(L)",
         "part": "Solenoid Valve(MHPNLBT032)",
-        "partno": "",
         "spec": "3Way HP M3 Threaded Valve 24VDC, Nresearch",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "2WAY_V(G)",
