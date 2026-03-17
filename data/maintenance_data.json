@@ -184,36 +184,36 @@
     "details_SKH 이천_SOMA-2000::SOMA-H19-0903": {
         "maint": [
             {
-                "id": 1773732537420,
-                "type": "PM",
                 "code": "Metal STD (10ppb,3%)",
                 "content": "Metal Standard Solution(3%HNO3)",
                 "date": "2026-03-17",
-                "period": "30"
+                "id": 1773732537420,
+                "period": "30",
+                "type": "PM"
             },
             {
-                "id": 1773732539172,
-                "type": "PM",
                 "code": "Skimmer Cone",
                 "content": "Pt Skimmer cone for 7700S",
                 "date": "2026-03-17",
-                "period": "182"
+                "id": 1773732539172,
+                "period": "182",
+                "type": "PM"
             },
             {
-                "id": 1773732540679,
-                "type": "PM",
                 "code": "Sampler Cone",
                 "content": "Pt Sampling cone for 7700S",
                 "date": "2026-03-17",
-                "period": "182"
+                "id": 1773732540679,
+                "period": "182",
+                "type": "PM"
             },
             {
-                "id": 1773732542276,
-                "type": "PM",
                 "code": "Ion Lens",
                 "content": "Extraction-omega lens assembly",
                 "date": "2026-03-17",
-                "period": "365"
+                "id": 1773732542276,
+                "period": "365",
+                "type": "PM"
             }
         ],
         "logs": [
@@ -360,15 +360,6 @@
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
                 "type": "정기",
                 "worker": "이원배 진봉균"
-            },
-            {
-                "content": "Nebulizer, RF Coil",
-                "date": "2026-03-17",
-                "detailType": "BM 점검",
-                "id": 1773729617225,
-                "memo": "",
-                "type": "비정기",
-                "worker": "이원배"
             }
         ],
         "memo": "",
@@ -402,36 +393,36 @@
     "details_SKH 이천_SOMA-2000::SOMA-HK21-0202": {
         "maint": [
             {
-                "id": 1773732550702,
-                "type": "PM",
                 "code": "Metal STD (10ppb,3%)",
                 "content": "Metal Standard Solution(3%HNO3)",
                 "date": "2026-03-17",
-                "period": "30"
+                "id": 1773732550702,
+                "period": "30",
+                "type": "PM"
             },
             {
-                "id": 1773732552676,
-                "type": "PM",
                 "code": "Skimmer Cone",
                 "content": "Pt Skimmer cone for 7700S",
                 "date": "2026-03-17",
-                "period": "182"
+                "id": 1773732552676,
+                "period": "182",
+                "type": "PM"
             },
             {
-                "id": 1773732554284,
-                "type": "PM",
                 "code": "Sampler Cone",
                 "content": "Pt Sampling cone for 7700S",
                 "date": "2026-03-17",
-                "period": "182"
+                "id": 1773732554284,
+                "period": "182",
+                "type": "PM"
             },
             {
-                "id": 1773732555980,
-                "type": "PM",
                 "code": "Ion Lens",
                 "content": "Extraction-omega lens assembly",
                 "date": "2026-03-17",
-                "period": "365"
+                "id": 1773732555980,
+                "period": "365",
+                "type": "PM"
             }
         ],
         "logs": [
