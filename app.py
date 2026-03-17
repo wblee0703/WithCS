@@ -8,6 +8,7 @@ import glob
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
+from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -59,6 +60,26 @@ if os.environ.get('APP_ENV') == 'production':
 csrf = CSRFProtect(app)
 # [수정] 메모리 저장소 명시적 설정으로 경고 메시지 제거
 limiter = Limiter(get_remote_address, app=app, storage_uri="memory://", default_limits=["200 per day", "50 per hour"])
+
+# [추가] DB 설정 (SQLite)
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'data', 'withtech.db')}"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db = SQLAlchemy(app)
+
+class User(db.Model):
+    id = db.Column(db.String(50), primary_key=True)
+    pw = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), default='user')
+    failed_attempts = db.Column(db.Integer, default=0)
+    lockout_until = db.Column(db.DateTime, nullable=True)
+
+class SystemLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    action = db.Column(db.String(50))
+    target = db.Column(db.String(100))
+    details = db.Column(db.Text)
 
 # ------------------------------------------------------------------------------
 # 2. File Paths & Logging Setup
@@ -297,33 +318,6 @@ def init_data_files():
                 os.rename(old_log_path, old_log_path + '.migrated')
             except: pass
 
-    # [수정] 파일이 존재하더라도 계정 정보가 없으면(손상/삭제 등) 복구하도록 로직 개선
-    home_data = load_json_file(FILE_HOME)
-    
-    if not home_data.get('user_accounts'):
-        # 환경 변수 또는 기본값으로 계정 생성
-        admin_id = os.environ.get('APP_ADMIN_ID', 'admin')
-        admin_pw = os.environ.get('APP_ADMIN_PW')
-        if not admin_pw:
-            admin_pw = secrets.token_urlsafe(8)
-            app.logger.warning(f"Initial Admin PW generated: {admin_pw}")
-
-        user_id = os.environ.get('APP_USER_ID', 'user')
-        user_pw = os.environ.get('APP_USER_PW')
-        if not user_pw:
-            user_pw = secrets.token_urlsafe(8)
-            app.logger.warning(f"Initial User PW generated: {user_pw}")
-
-        user_accounts = []
-        if admin_id and admin_pw:
-            user_accounts.append({"id": admin_id, "pw": generate_password_hash(admin_pw), "role": "admin"})
-        if user_id and user_pw:
-            user_accounts.append({"id": user_id, "pw": generate_password_hash(user_pw), "role": "user"})
-
-        home_data['user_accounts'] = user_accounts
-        save_json_file(FILE_HOME, home_data)
-        app.logger.warning("User accounts initialized/restored to defaults.")
-
     for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH, FILE_DEVICE, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG, FILE_ADMIN_LOG]:
         if not os.path.exists(filepath):
             save_json_file(filepath, {} if 'log.json' not in filepath else [])
@@ -345,10 +339,6 @@ def load_data():
         if os.path.exists(FILE_HOME):
             home_data = load_json_file(FILE_HOME)
             if isinstance(home_data, dict):
-                # [보안] 사용자 계정 정보 제외
-                if 'user_accounts' in home_data:
-                    home_data = home_data.copy()
-                    del home_data['user_accounts']
                 data.update(home_data)
 
         # 2. 단일 키 파일 로드 (개별 파일이 우선순위를 가짐)
@@ -400,21 +390,6 @@ def load_data():
             else:
                 data['device_data'] = old_data
 
-        # 4. 3개의 로그 파일을 읽어서 하나로 합침 (프론트엔드 호환성 유지)
-        common_logs = load_json_file(FILE_COMMON_LOG)
-        if not isinstance(common_logs, list): common_logs = []
-        
-        setup_logs = load_json_file(FILE_SETUP_LOG)
-        if not isinstance(setup_logs, list): setup_logs = []
-        
-        maint_logs = load_json_file(FILE_MAINTENANCE_LOG)
-        if not isinstance(maint_logs, list): maint_logs = []
-
-        admin_logs = load_json_file(FILE_ADMIN_LOG)
-        if not isinstance(admin_logs, list): admin_logs = []
-        
-        data['system_logs'] = common_logs + admin_logs + setup_logs + maint_logs
-
         return data
 
 def save_data(full_data):
@@ -426,9 +401,7 @@ def save_data(full_data):
 
         # 2. 기존 데이터 로드 (계정 정보 보존용 등)
         home_data = load_json_file(FILE_HOME)
-        existing_accounts = home_data.get('user_accounts', [])
         home_data.clear()
-        home_data['user_accounts'] = existing_accounts
 
         existing_device = load_json_file(FILE_DEVICE)
         existing_item = load_json_file(FILE_ITEM)
@@ -460,14 +433,6 @@ def save_data(full_data):
         for key, value in full_data.items():
             if key == 'setup_data':
                 setup_data = value
-            elif key == 'system_logs':
-                if isinstance(value, list):
-                    for log in value:
-                        cat = get_log_category(log.get('action', ''))
-                        if cat == 'common': common_logs_list.append(log)
-                        elif cat == 'admin': admin_logs_list.append(log)
-                        elif cat == 'setup': setup_logs_list.append(log)
-                        else: maint_logs_list.append(log)
             elif key.startswith('site_meta_'):
                 site = key.replace('site_meta_', '')
                 if site not in withtech_data:
@@ -491,7 +456,7 @@ def save_data(full_data):
                     device_json_data['details'][site_equip] = {}
                 device_json_data['details'][site_equip]['setup'] = value.get('setup', {})
                 device_json_data['details'][site_equip]['specialNote'] = value.get('specialNote', '')
-            elif key in ['equipment_models', 'device_data', 'admin_items', 'check_type_categories', 'check_type_items', 'user_accounts']:
+            elif key in ['equipment_models', 'device_data', 'admin_items', 'check_type_categories', 'check_type_items']:
                 # 이미 각 구조체로 매핑했으므로 무시
                 pass
             else:
@@ -515,11 +480,6 @@ def save_data(full_data):
         save_json_file(FILE_ITEM, item_data)
         save_json_file(FILE_MANAGEMENT, management_data)
         
-        save_json_file(FILE_COMMON_LOG, common_logs_list)
-        save_json_file(FILE_ADMIN_LOG, admin_logs_list)
-        save_json_file(FILE_SETUP_LOG, setup_logs_list)
-        save_json_file(FILE_MAINTENANCE_LOG, maint_logs_list)
-
         # 5. Git 동기화 (비동기)
         Thread(target=git_push_data).start()
 
@@ -615,53 +575,46 @@ def login():
     user_id = data.get('id')
     user_pw = data.get('pw')
 
-    with data_lock:
-        home_data = load_json_file(FILE_HOME)
-        accounts = home_data.get('user_accounts', [])
-        
-        user = next((u for u in accounts if u['id'] == user_id), None)
-        
-        if not user:
-            return jsonify({"status": "fail", "message": "아이디 또는 비밀번호가 올바르지 않습니다."}), 401
+    user = User.query.filter_by(id=user_id).first()
 
-        # 1. 계정 잠금 확인
-        now = datetime.now()
-        lockout_until_str = user.get('lockout_until')
-        if lockout_until_str:
-            lockout_until = datetime.fromisoformat(lockout_until_str)
-            if now < lockout_until:
-                remaining_seconds = (lockout_until - now).total_seconds()
-                remaining_minutes = int(remaining_seconds // 60) + 1
-                return jsonify({"status": "fail", "message": f"비밀번호 5회 오류로 계정이 잠겼습니다.\n{remaining_minutes}분 후에 다시 시도해주세요."}), 403
-            else:
-                user['failed_attempts'] = 0
-                user['lockout_until'] = None
+    if not user:
+        return jsonify({"status": "fail", "message": "아이디 또는 비밀번호가 올바르지 않습니다."}), 401
 
-        # 2. 비밀번호 검증
-        if check_password_hash(user['pw'], user_pw):
-            # 성공: 실패 횟수 초기화 및 세션 설정
-            if user.get('failed_attempts', 0) > 0 or user.get('lockout_until'):
-                user['failed_attempts'] = 0
-                user['lockout_until'] = None
-                save_json_file(FILE_HOME, home_data)
+    # 1. 계정 잠금 확인
+    now = datetime.now()
+    if user.lockout_until:
+        if now < user.lockout_until:
+            remaining_seconds = (user.lockout_until - now).total_seconds()
+            remaining_minutes = int(remaining_seconds // 60) + 1
+            return jsonify({"status": "fail", "message": f"비밀번호 5회 오류로 계정이 잠겼습니다.\n{remaining_minutes}분 후에 다시 시도해주세요."}), 403
+        else:
+            user.failed_attempts = 0
+            user.lockout_until = None
+            db.session.commit()
 
-            session['user_id'] = user['id']
-            session['role'] = user['role']
-            return jsonify({"status": "success", "role": user['role']})
-        
-        # 3. 실패 처리
-        current_attempts = user.get('failed_attempts', 0) + 1
-        user['failed_attempts'] = current_attempts
-        
-        message = f"아이디 또는 비밀번호가 올바르지 않습니다.\n(실패 횟수: {current_attempts}/5)"
-        
-        if current_attempts >= 5:
-            lockout_time = now + timedelta(minutes=5)
-            user['lockout_until'] = lockout_time.isoformat()
-            message = f"비밀번호 5회 오류.\n계정이 5분간 잠깁니다."
-        
-        save_json_file(FILE_HOME, home_data)
-        return jsonify({"status": "fail", "message": message}), 401
+    # 2. 비밀번호 검증
+    if check_password_hash(user.pw, user_pw):
+        # 성공: 실패 횟수 초기화 및 세션 설정
+        if user.failed_attempts > 0 or user.lockout_until:
+            user.failed_attempts = 0
+            user.lockout_until = None
+            db.session.commit()
+
+        session['user_id'] = user.id
+        session['role'] = user.role
+        return jsonify({"status": "success", "role": user.role})
+
+    # 3. 실패 처리
+    user.failed_attempts += 1
+
+    message = f"아이디 또는 비밀번호가 올바르지 않습니다.\n(실패 횟수: {user.failed_attempts}/5)"
+
+    if user.failed_attempts >= 5:
+        user.lockout_until = now + timedelta(minutes=5)
+        message = f"비밀번호 5회 오류.\n계정이 5분간 잠깁니다."
+
+    db.session.commit()
+    return jsonify({"status": "fail", "message": message}), 401
 
 @app.route('/api/logout', methods=['POST'])
 def logout():
@@ -676,20 +629,16 @@ def add_user():
     new_pw = data.get('pw')
     role = data.get('role', 'user')
     
-    with data_lock:
-        if session.get('role') != 'admin':
-             return jsonify({"status": "fail", "message": "관리자 권한이 필요합니다."}), 403
+    if session.get('role') != 'admin':
+        return jsonify({"status": "fail", "message": "관리자 권한이 필요합니다."}), 403
 
-        home_data = load_json_file(FILE_HOME)
-        accounts = home_data.get('user_accounts', [])
-        
-        if any(u['id'] == new_id for u in accounts):
-            return jsonify({"status": "fail", "message": "이미 존재하는 아이디입니다."}), 400
-            
-        accounts.append({"id": new_id, "pw": generate_password_hash(new_pw), "role": role})
-        home_data['user_accounts'] = accounts
-        save_json_file(FILE_HOME, home_data)
-        
+    if User.query.filter_by(id=new_id).first():
+        return jsonify({"status": "fail", "message": "이미 존재하는 아이디입니다."}), 400
+
+    new_user = User(id=new_id, pw=generate_password_hash(new_pw), role=role)
+    db.session.add(new_user)
+    db.session.commit()
+
     return jsonify({"status": "success"})
 
 @app.route('/api/user/password', methods=['POST'])
@@ -700,28 +649,113 @@ def change_password():
     current_pw = data.get('current_pw')
     new_pw = data.get('new_pw')
     
-    with data_lock:
-        home_data = load_json_file(FILE_HOME)
-        accounts = home_data.get('user_accounts', [])
-        user = next((u for u in accounts if u['id'] == user_id), None)
-        
-        if not user:
-            return jsonify({"status": "fail", "message": "계정을 찾을 수 없습니다."}), 404
-        if not check_password_hash(user['pw'], current_pw):
-            return jsonify({"status": "fail", "message": "현재 비밀번호가 일치하지 않습니다."}), 401
-            
-        user['pw'] = generate_password_hash(new_pw)
-        home_data['user_accounts'] = accounts
-        save_json_file(FILE_HOME, home_data)
-        
+    user = User.query.filter_by(id=user_id).first()
+
+    if not user:
+        return jsonify({"status": "fail", "message": "계정을 찾을 수 없습니다."}), 404
+    if not check_password_hash(user.pw, current_pw):
+        return jsonify({"status": "fail", "message": "현재 비밀번호가 일치하지 않습니다."}), 401
+
+    user.pw = generate_password_hash(new_pw)
+    db.session.commit()
+
     return jsonify({"status": "success"})
+
+# [추가] DB 기반 로그 API
+@app.route('/api/log/add', methods=['POST'])
+@login_required
+def add_log():
+    data = request.json
+    new_log = SystemLog(
+        action=data.get('action'),
+        target=data.get('target'),
+        details=data.get('details', '')
+    )
+    db.session.add(new_log)
+    db.session.commit()
+    return jsonify({"status": "success"})
+
+@app.route('/api/logs', methods=['GET'])
+@login_required
+def get_logs():
+    logs = SystemLog.query.order_by(SystemLog.timestamp.desc()).all()
+    result = [{
+        "id": log.id,
+        "timestamp": log.timestamp.isoformat() + "Z",
+        "action": log.action,
+        "target": log.target,
+        "details": log.details
+    } for log in logs]
+    return jsonify(result)
+
+@app.route('/api/logs/clear', methods=['POST'])
+@login_required
+def clear_logs():
+    if session.get('role') != 'admin':
+         return jsonify({"status": "fail", "message": "관리자 권한이 필요합니다."}), 403
+    try:
+        db.session.query(SystemLog).delete()
+        db.session.commit()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "fail", "message": str(e)}), 500
 
 # ------------------------------------------------------------------------------
 # 8. Main Execution
 # ------------------------------------------------------------------------------
+def init_db():
+    with app.app_context():
+        db.create_all()
+        
+        # [DB 마이그레이션] 사용자 데이터
+        home_data = load_json_file(FILE_HOME)
+        accounts = home_data.get('user_accounts', [])
+        if accounts:
+            for acc in accounts:
+                if not User.query.filter_by(id=acc['id']).first():
+                    new_user = User(id=acc['id'], pw=acc['pw'], role=acc.get('role', 'user'))
+                    db.session.add(new_user)
+            db.session.commit()
+            del home_data['user_accounts']
+            save_json_file(FILE_HOME, home_data)
+            app.logger.warning("Migrated user accounts from JSON to SQLite DB.")
+            
+        # Admin 초기 계정 생성
+        if not User.query.filter_by(id='admin').first():
+            admin_pw = os.environ.get('APP_ADMIN_PW', secrets.token_urlsafe(8))
+            admin_user = User(id=os.environ.get('APP_ADMIN_ID', 'admin'), pw=generate_password_hash(admin_pw), role='admin')
+            db.session.add(admin_user)
+            db.session.commit()
+            app.logger.warning(f"Initial Admin PW generated in DB: {admin_pw}")
+            
+        # [DB 마이그레이션] 시스템 로그 데이터
+        if not SystemLog.query.first():
+            all_logs = []
+            for filepath in [FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG, FILE_ADMIN_LOG]:
+                logs = load_json_file(filepath)
+                if isinstance(logs, list):
+                    all_logs.extend(logs)
+            if all_logs:
+                for log in all_logs:
+                    try:
+                        ts_str = log.get('timestamp', '')
+                        if ts_str.endswith('Z'): ts_str = ts_str[:-1]
+                        ts = datetime.fromisoformat(ts_str) if ts_str else datetime.utcnow()
+                    except:
+                        ts = datetime.utcnow()
+                        
+                    db.session.add(SystemLog(timestamp=ts, action=log.get('action'), target=log.get('target'), details=log.get('details', '')))
+                db.session.commit()
+                app.logger.warning("Migrated system logs from JSON to SQLite DB.")
+            else:
+                db.session.add(SystemLog(action='SYSTEM_INIT', target='Database', details='Database initialized.'))
+                db.session.commit()
+
 if __name__ == '__main__':
     # 서버 시작 전 데이터 파일 초기화
     init_data_files()
+    init_db() # 데이터베이스 초기화
     
     # [추가] 서버 시작 시 GitHub에서 최신 데이터 동기화
     git_pull_data()

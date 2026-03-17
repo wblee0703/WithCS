@@ -1,16 +1,1 @@
-{
-    "user_accounts": [
-        {
-            "id": "admin",
-            "pw": "scrypt:32768:8:1$zh8H1PZreYQkNcqQ$2c0dbf0a2f1b08da70fcf67b3fbc624cfe48a579e162508c2b97bd3ae3fa6c49bc42029d1b6e0177ad9de75df4343be4e0fc74ba33e1079d6f663562ebdf2cdb",
-            "role": "admin",
-            "failed_attempts": 0,
-            "lockout_until": null
-        },
-        {
-            "id": "user",
-            "pw": "scrypt:32768:8:1$63CwfjlE6wqszd7S$a675e8c8387a5efad37bb955ddfde82f6a67b773fe7b19fb0d9685feb0762ce6a55a6069f961a31f4af455824aa2303594c6e6ada3e9dcef7f4e1459dc7dfaf2",
-            "role": "user"
-        }
-    ]
-}
+{}

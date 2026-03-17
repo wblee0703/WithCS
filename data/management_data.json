@@ -333,44 +333,44 @@
         "SOLA-5000::정기::PM 점검": [],
         "SOMA-2000::SOMA-H19-0402::비정기::Alarm": [
             {
-                "id": 1773726941635,
-                "content": "PLC Alarm"
+                "content": "PLC Alarm",
+                "id": 1773726941635
             },
             {
-                "id": 1773726949690,
-                "content": "Exhaust Alarm"
+                "content": "Exhaust Alarm",
+                "id": 1773726949690
             },
             {
-                "id": 1773726953481,
-                "content": "GN2 Alarm"
+                "content": "GN2 Alarm",
+                "id": 1773726953481
             },
             {
-                "id": 1773726958716,
-                "content": "Water Sensor Alarm"
+                "content": "Water Sensor Alarm",
+                "id": 1773726958716
             },
             {
-                "id": 1773726965145,
-                "content": "HF Sensor Alarm"
+                "content": "HF Sensor Alarm",
+                "id": 1773726965145
             },
             {
-                "id": 1773726973058,
-                "content": "Mass Hunter Alarm"
+                "content": "Mass Hunter Alarm",
+                "id": 1773726973058
             },
             {
-                "id": 1773726978930,
-                "content": "EMS Alarm"
+                "content": "EMS Alarm",
+                "id": 1773726978930
             },
             {
-                "id": 1773726985697,
-                "content": "Inner Leak  Alarm"
+                "content": "Inner Leak  Alarm",
+                "id": 1773726985697
             },
             {
-                "id": 1773726998409,
-                "content": "External Leak Alarm"
+                "content": "External Leak Alarm",
+                "id": 1773726998409
             },
             {
-                "id": 1773727006816,
-                "content": "Door Lock Alarm"
+                "content": "Door Lock Alarm",
+                "id": 1773727006816
             }
         ],
         "SOMA-2000::SOMA-H19-0402::비정기::BM 점검": [
@@ -447,6 +447,29 @@
                 "id": 1773722517498
             }
         ],
+        "SOMA-2000::SOMA-H19-0402::비정기::Data / Para 이상": [
+            {
+                "content": "Calibration Fail",
+                "id": 1773727147329
+            },
+            {
+                "content": "감도 Spec. Out",
+                "id": 1773727157793
+            },
+            {
+                "content": "Parameter 값 이상",
+                "id": 1773727183594
+            },
+            {
+                "content": "데이터 트렌드 이상",
+                "id": 1773727194738
+            },
+            {
+                "id": 1773727729858,
+                "content": "Data Trend 이상"
+            }
+        ],
+        "SOMA-2000::SOMA-H19-0402::비정기::Hunting": [],
         "SOMA-2000::SOMA-H19-0402::정기::PM 점검": [
             {
                 "content": "Metal Standard Solution(3%HNO3)",
@@ -738,25 +761,6 @@
             {
                 "content": "9.5% HNO3",
                 "id": 1773725249428
-            }
-        ],
-        "SOMA-2000::SOMA-H19-0402::비정기::Hunting": [],
-        "SOMA-2000::SOMA-H19-0402::비정기::Data / Para 이상": [
-            {
-                "id": 1773727147329,
-                "content": "Calibration Fail"
-            },
-            {
-                "id": 1773727157793,
-                "content": "감도 Spec. Out"
-            },
-            {
-                "id": 1773727183594,
-                "content": "Parameter 값 이상"
-            },
-            {
-                "id": 1773727194738,
-                "content": "데이터 트렌드 이상"
             }
         ]
     }
