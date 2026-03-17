@@ -275,15 +275,15 @@
         "equip": ""
     },
     {
-        "code": "GC(4mm)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722654132,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000030",
+        "code": "GC(4mm)",
         "part": "Guard Column(4mm)",
-        "partno": "",
         "spec": "046134, AG14(4x50mm)",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "AC(2mm)",

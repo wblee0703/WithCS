@@ -862,5 +862,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Guard Column(2mm)",
         "details": "Type: BM, Code: GC(2mm)"
+    },
+    {
+        "timestamp": "2026-03-17T05:01:07.284Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Guard Column(4mm)",
+        "details": "Type: BM, Code: GC(4mm)"
     }
 ]
