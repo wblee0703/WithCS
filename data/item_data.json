@@ -856,5 +856,16 @@
         "spec": "TB-PLCS386 CPU 보드, MOQ(10) / 테크마스",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723535444,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "PLC386(TR8)",
+        "part": "PLC386 TR8 Board",
+        "spec": "8비트 TR 출력 보드, MOQ(10) / 테크마스",
+        "cycle": "",
+        "equip": ""
     }
 ]

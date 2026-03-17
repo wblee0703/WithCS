@@ -790,5 +790,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "PLC386 CPU Board",
         "details": "Type: BM, Spec: TB-PLCS386 CPU 보드, MOQ(10) / 테크마스"
+    },
+    {
+        "timestamp": "2026-03-17T04:58:55.444Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "PLC386 TR8 Board",
+        "details": "Type: BM, Spec: 8비트 TR 출력 보드, MOQ(10) / 테크마스"
     }
 ]
