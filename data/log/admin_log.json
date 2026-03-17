@@ -1090,5 +1090,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Fitting Female 1/8 NPT-1/8",
         "details": "Type: BM, Code: FITTING (DCF-2N-S)"
+    },
+    {
+        "timestamp": "2026-03-17T05:08:44.384Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "FEP TUBE",
+        "details": "Type: BM, Code: TUBE (FEP_Air)"
     }
 ]

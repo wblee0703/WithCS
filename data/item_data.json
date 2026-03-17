@@ -682,15 +682,15 @@
         "equip": ""
     },
     {
-        "code": "TUBE (FEP_Air)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723227010,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00001166",
+        "code": "TUBE (FEP_Air)",
         "part": "FEP TUBE",
-        "partno": "",
         "spec": "FEP 3*2*100m, NATURAL, Samplingcoil, Yodogawa",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "TUBE (FEP_Sol)",
