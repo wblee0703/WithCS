@@ -16,6 +16,18 @@ let currentCheckTypeSubCategory = null; // [추가] 선택된 분류
 let checkTypeCategoriesData = {}; // [추가] 분류 저장소
 let checkTypeItemsData = {}; // [추가] 세부 항목 저장소
 
+// [추가] 드래그 앤 드롭 위치 계산 함수 폴백
+if (typeof window.getDragAfterElement !== 'function') {
+    window.getDragAfterElement = function(container, y, selector) {
+        const draggableElements = [...container.querySelectorAll(selector)];
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            return (offset < 0 && offset > closest.offset) ? { offset: offset, element: child } : closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const initAdmin = () => {
         setupAdminMenu();
@@ -1437,7 +1449,21 @@ function setupCheckTypeMgmt() {
             if (e.key === 'Enter') btnAddItem.click();
         });
     }
+        // [추가] 세부 구분 리스트 드래그 앤 드롭 (순서 변경) 이벤트
+    const subList = document.getElementById('check-type-subcategory-list');
+    if (subList) {
+        subList.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const afterElement = window.getDragAfterElement(subList, e.clientY, 'li:not(.dragging)');
+            const draggable = document.querySelector('.dragging');
+            if (draggable) {
+                if (afterElement == null) subList.appendChild(draggable);
+                else subList.insertBefore(draggable, afterElement);
+            }
+        });
+    }
 }
+
 
 function loadCheckTypeCategories() {
     try {
@@ -1604,9 +1630,10 @@ function renderCheckTypeSubCategoryList() {
     categories.forEach((cat, index) => {
         const li = document.createElement('li');
         li.dataset.sub = cat; // [추가] 연동을 위한 데이터 속성
+        li.draggable = true; // [추가] 드래그 활성화
         li.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <span>${cat}</span>
+                <span style="flex: 1; display: flex; align-items: center; gap: 8px;"><span style="color: #8b949e; cursor: grab; font-size: 14px;" title="드래그하여 순서 변경">☰</span> ${cat}</span>
                 <button class="btn-del-sm" onclick="event.stopPropagation(); deleteCheckTypeSubCategory('${key}', ${index})">✕</button>
             </div>
         `;
@@ -1626,6 +1653,20 @@ function renderCheckTypeSubCategoryList() {
             // [추가] 교체 파츠 목록 업데이트 및 리스트 렌더링
             updateCheckTypeSubCategoryDropdown();
             renderCheckTypeItemList();
+        });
+
+        // [추가] 드래그 앤 드롭 순서 변경 이벤트 처리
+        li.addEventListener('dragstart', () => li.classList.add('dragging'));
+        li.addEventListener('dragend', () => {
+            li.classList.remove('dragging');
+            
+            // 변경된 순서 취합 및 저장
+            const newOrder = Array.from(list.children).map(child => child.dataset.sub);
+            checkTypeCategoriesData[key] = newOrder;
+            saveCheckTypeCategories();
+            
+            // UI 및 내부 index 갱신을 위해 리렌더링
+            renderCheckTypeSubCategoryList();
         });
         
         list.appendChild(li);
