@@ -517,15 +517,15 @@
         "equip": ""
     },
     {
-        "code": "ELEC_Regulator",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723062806,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000187",
+        "code": "ELEC_Regulator",
         "part": "ELECTRIC REGULATOR",
-        "partno": "",
         "spec": "SMC_ITV1030-212CL_0.5Mpa",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "HPLC PISTON",
