@@ -867,5 +867,16 @@
         "spec": "8비트 TR 출력 보드, MOQ(10) / 테크마스",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723544843,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "PLC386(IN8)",
+        "part": "PLC386 IN8 Board",
+        "spec": "8비트 IN 입력 보드, MOQ(10) / 테크마스",
+        "cycle": "",
+        "equip": ""
     }
 ]
