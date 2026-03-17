@@ -1142,5 +1142,16 @@
         "spec": "P9 중형2공장 사용 10ppm",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773725157860,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "Metal STD (5ppb,1%)",
+        "part": "Metal Standard Solution(1%HNO3)",
+        "spec": "5ppb Multi(4종), 1%HNO3",
+        "cycle": "",
+        "equip": ""
     }
 ]
