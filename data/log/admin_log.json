@@ -1102,5 +1102,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "TUBE_1/8＂FEP(300M)",
         "details": "Type: BM, Code: TUBE (FEP_Sol)"
+    },
+    {
+        "timestamp": "2026-03-17T05:08:57.876Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "10mL Self Flush ASSY",
+        "details": "Type: BM, Code: HPLC SELF FLUSH"
     }
 ]

@@ -704,15 +704,15 @@
         "equip": ""
     },
     {
-        "code": "HPLC SELF FLUSH",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723244814,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00001272",
+        "code": "HPLC SELF FLUSH",
         "part": "10mL Self Flush ASSY",
-        "partno": "",
         "spec": "880469",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "3WAY_V(G)",
