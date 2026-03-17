@@ -460,5 +460,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Electron multiplier for ICP-MS",
         "details": "Type: BM, Spec: G8400-60258"
+    },
+    {
+        "timestamp": "2026-03-17T04:41:45.126Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Electron multiplier for ICP-MS",
+        "details": "Type: BM, Code: EM"
     }
 ]

@@ -255,12 +255,12 @@
     {
         "id": 1773722487666,
         "type": "BM",
-        "detailType": "",
-        "partno": "",
+        "detailType": "분석부 교체",
+        "partno": "M00000588",
         "code": "EM",
         "part": "Electron multiplier for ICP-MS",
         "spec": "G8400-60258",
         "cycle": "",
-        "equip": ""
+        "equip": "SOMA-2000, WIM-100"
     }
 ]
