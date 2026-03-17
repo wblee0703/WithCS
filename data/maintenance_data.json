@@ -190,6 +190,14 @@
                 "content": "Metal Standard Solution(3%HNO3)",
                 "date": "2026-03-17",
                 "period": "30"
+            },
+            {
+                "id": 1773732539172,
+                "type": "PM",
+                "code": "Skimmer Cone",
+                "content": "Pt Skimmer cone for 7700S",
+                "date": "2026-03-17",
+                "period": "182"
             }
         ],
         "logs": [
