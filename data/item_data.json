@@ -240,5 +240,16 @@
         "spec": "G3139-65100, 150~200u/min, Agilent 정품",
         "cycle": "",
         "equip": "SOMA-2000, WIM-100"
+    },
+    {
+        "id": 1773722420494,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "RF Coil",
+        "part": "RF coil for 7900",
+        "spec": "G8400-60434",
+        "cycle": "",
+        "equip": ""
     }
 ]

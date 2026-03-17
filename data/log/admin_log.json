@@ -430,5 +430,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Micro Flow Nebulizer PFA-100",
         "details": "Type: BM, Code: Nebulizer"
+    },
+    {
+        "timestamp": "2026-03-17T04:40:20.494Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "RF coil for 7900",
+        "details": "Type: BM, Spec: G8400-60434"
     }
 ]
