@@ -933,5 +933,16 @@
         "spec": "T-PF-PC, 30*40*0.3T, C/GF/PTFE",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723593466,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "LEAK SENSOR(케이블)",
+        "part": "Leak Sensor(케이블)",
+        "spec": "TFE CABLE, 4SQ_내산성",
+        "cycle": "",
+        "equip": ""
     }
 ]

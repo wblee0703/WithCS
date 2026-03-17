@@ -832,5 +832,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Leak Sensor(감지부)",
         "details": "Type: BM, Spec: T-PF-PC, 30*40*0.3T, C/GF/PTFE"
+    },
+    {
+        "timestamp": "2026-03-17T04:59:53.466Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Leak Sensor(케이블)",
+        "details": "Type: BM, Spec: TFE CABLE, 4SQ_내산성"
     }
 ]
