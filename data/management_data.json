@@ -100,7 +100,7 @@
             "Data / Para 이상"
         ],
         "SOMA-2000::SOMA-HC21-0101::정기": [
-            "PM"
+            "PM 점검"
         ],
         "SOMA-2000::SOMA-HK21-0202::비정기": [
             "BM 점검",
@@ -397,7 +397,6 @@
         ],
         "SOMA-2000::SOMA-HC21-0101::비정기::Alarm": [],
         "SOMA-2000::SOMA-HC21-0101::비정기::BM": [],
-        "SOMA-2000::SOMA-HC21-0101::정기::PM": [],
         "SOMA-2000::SOMA-HK21-0202::정기::PM 점검": [
             {
                 "content": "Metal Standard Solution(3%HNO3)",
@@ -466,6 +465,7 @@
                 "content": "Extraction-omega lens assembly",
                 "id": 1773720843762
             }
-        ]
+        ],
+        "SOMA-2000::SOMA-HC21-0101::정기::PM 점검": []
     }
 }
