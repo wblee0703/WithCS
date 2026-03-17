@@ -412,5 +412,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Octopole assembly, ICP-MS",
         "details": "Type: BM, Spec: G3280-67045, Agilent 정품"
+    },
+    {
+        "timestamp": "2026-03-17T04:36:07.726Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Octopole assembly, ICP-MS",
+        "details": "Type: BM, Code: Octopole"
     }
 ]

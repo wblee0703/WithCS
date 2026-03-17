@@ -222,12 +222,12 @@
     {
         "id": 1773722154820,
         "type": "BM",
-        "detailType": "",
-        "partno": "",
+        "detailType": "분석부 교체",
+        "partno": "M00001398",
         "code": "Octopole",
         "part": "Octopole assembly, ICP-MS",
         "spec": "G3280-67045, Agilent 정품",
         "cycle": "",
-        "equip": ""
+        "equip": "SOMA-2000, WIM-100"
     }
 ]
