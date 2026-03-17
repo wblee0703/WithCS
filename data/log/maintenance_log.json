@@ -144,9 +144,15 @@
         "timestamp": "2026-03-17T04:17:03.098Z"
     },
     {
-        "timestamp": "2026-03-17T05:27:29.424Z",
         "action": "LOAD_ITEM_TO_CHECK",
+        "details": "물품 불러오기: PM 점검",
         "target": "WIM-100::WIM1-HK24-0401",
-        "details": "물품 불러오기: PM 점검"
+        "timestamp": "2026-03-17T05:27:29.424Z"
+    },
+    {
+        "timestamp": "2026-03-17T05:32:31.317Z",
+        "action": "ADD_MAINTENANCE",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "[PM] Metal Standard Solution(1%HNO3) (주기: 30일, 시작일: 2026-03-17)"
     }
 ]

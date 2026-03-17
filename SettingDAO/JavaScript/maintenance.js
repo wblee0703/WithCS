@@ -447,7 +447,7 @@ window.updateMaintContentOptions = function() {
                 const option = document.createElement('option');
                 option.value = item.part;
                 option.dataset.code = item.code || '';
-                option.textContent = item.code ? `[${item.code}] ${item.part}` : item.part;
+                option.textContent = item.code ? item.code : item.part;
                 selectEl.appendChild(option);
             });
         }
