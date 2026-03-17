@@ -340,5 +340,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Gas Clean Filter Carrier Gas",
         "details": "Type: BM, Spec: CP17973"
+    },
+    {
+        "timestamp": "2026-03-17T04:31:43.044Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Gas Clean Filter Carrier Gas",
+        "details": "Type: BM, Code: He gas Filter"
     }
 ]
