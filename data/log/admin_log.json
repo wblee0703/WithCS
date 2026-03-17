@@ -694,5 +694,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "P-250",
         "details": "Type: BM, Spec: SF Ferrule, 1/16 PEEK w/SS Ring"
+    },
+    {
+        "timestamp": "2026-03-17T04:53:34.394Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Fitting Female 1/8 NPT-1/8",
+        "details": "Type: BM, Spec: DCF2-2N-S"
     }
 ]

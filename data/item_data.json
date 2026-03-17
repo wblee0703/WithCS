@@ -680,5 +680,16 @@
         "spec": "SF Ferrule, 1/16 PEEK w/SS Ring",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723214394,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "FITTING (DCF-2N-S)",
+        "part": "Fitting Female 1/8 NPT-1/8",
+        "spec": "DCF2-2N-S",
+        "cycle": "",
+        "equip": ""
     }
 ]
