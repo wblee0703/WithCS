@@ -1131,5 +1131,16 @@
         "spec": "SOT",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724742548,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "표준가스(P9)",
+        "part": "P9 중형 표준가스",
+        "spec": "P9 중형2공장 사용 10ppm",
+        "cycle": "",
+        "equip": ""
     }
 ]

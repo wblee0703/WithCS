@@ -1378,5 +1378,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "STD gas",
         "details": "Type: PM, Spec: SOT"
+    },
+    {
+        "timestamp": "2026-03-17T05:19:02.548Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "P9 중형 표준가스",
+        "details": "Type: PM, Spec: P9 중형2공장 사용 10ppm"
     }
 ]
