@@ -622,5 +622,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Piston Assembly",
         "details": "Type: BM, Spec: 880354, 10ML SER3 REPLACEMENT PISTON"
+    },
+    {
+        "timestamp": "2026-03-17T04:51:21.792Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Vacuum Pump[Thomas-P], 4/1 Connector",
+        "details": "Type: BM, Spec: 2680CGUU44,130LPM,230V,50/60Hz공용(피팅포함)"
     }
 ]
