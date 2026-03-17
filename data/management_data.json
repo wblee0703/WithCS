@@ -97,10 +97,10 @@
             "기타"
         ],
         "SOMA-3000E::SOMA-EK24-0402::비정기": [
+            "BM 점검",
             "Alarm",
             "Hunting",
-            "Data / Para 이상",
-            "BM 점검"
+            "Data / Para 이상"
         ],
         "SOMA-3000E::SOMA-EK24-0402::온라인 점검": [
             "온라인 점검"
