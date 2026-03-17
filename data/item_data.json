@@ -737,15 +737,15 @@
         "equip": ""
     },
     {
-        "code": "S/P (C3000)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723290782,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00001927",
+        "code": "S/P (C3000)",
         "part": "Syringe pump, C3000",
-        "partno": "",
         "spec": "10013, 3Port, PCTFE/PTFE",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "Syringe_1mL (ILS)",

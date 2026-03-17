@@ -1120,5 +1120,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Syringe Pump(TECAN)",
         "details": "Type: BM, Code: SYRINGE PUMP (T)"
+    },
+    {
+        "timestamp": "2026-03-17T05:09:25.964Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Syringe pump, C3000",
+        "details": "Type: BM, Code: S/P (C3000)"
     }
 ]
