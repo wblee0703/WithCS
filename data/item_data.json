@@ -460,5 +460,16 @@
         "spec": "81320, 1mL, Hamilton",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722790972,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "SYRINGE_2.5ML(H)",
+        "part": "Syringe(2.5mL)",
+        "spec": "81420, 2.5mL, Hamilton",
+        "cycle": "",
+        "equip": ""
     }
 ]

@@ -574,5 +574,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Syringe(1mL)",
         "details": "Type: BM, Spec: 81320, 1mL, Hamilton"
+    },
+    {
+        "timestamp": "2026-03-17T04:46:30.972Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Syringe(2.5mL)",
+        "details": "Type: BM, Spec: 81420, 2.5mL, Hamilton"
     }
 ]
