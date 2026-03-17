@@ -598,5 +598,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Diaphragm",
         "details": "Type: PM, Spec: 045742 for N830 (N830부품)"
+    },
+    {
+        "timestamp": "2026-03-17T04:50:44.901Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Diaphragm Pump",
+        "details": "Type: PM, Spec: PM27597-NMP830, 12V"
     }
 ]

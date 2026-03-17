@@ -504,5 +504,16 @@
         "spec": "045742 for N830 (N830부품)",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723044901,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "830PUMP",
+        "part": "Diaphragm Pump",
+        "spec": "PM27597-NMP830, 12V",
+        "cycle": "",
+        "equip": ""
     }
 ]
