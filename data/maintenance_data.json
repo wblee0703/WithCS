@@ -89,12 +89,12 @@
     "details_SKH 이천_SOMA-2000::SOMA-H19-0402": {
         "maint": [
             {
-                "id": 1773707308604,
-                "type": "PM",
                 "code": "metal STD",
                 "content": "Stadnard",
                 "date": "2026-03-17",
-                "period": "30"
+                "id": 1773707308604,
+                "period": "30",
+                "type": "PM"
             }
         ],
         "logs": [
@@ -106,6 +106,15 @@
                 "memo": "",
                 "type": "정기",
                 "worker": "이원배"
+            },
+            {
+                "id": 1773708756460,
+                "date": "2026-03-17",
+                "type": "비정기",
+                "detailType": "BM",
+                "content": "몰라",
+                "worker": "이원배",
+                "memo": ""
             }
         ],
         "memo": "",

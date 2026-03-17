@@ -646,7 +646,7 @@ function addLogItem(e) {
         content = contentInput ? contentInput.value.trim() : '';
     }
 
-    if (!date || !type || !detailType || !worker || !content) return alert('모든 항목을 올바르게 선택/입력해주세요.');
+    if (!date || !type || (!detailType && !detailTypeSelect.disabled) || !worker) return alert('필수 항목(날짜, 구분, 세부구분, 작업자)을 올바르게 입력/선택해주세요.');
 
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [], memo: "" };
@@ -879,7 +879,6 @@ function toggleLogEdit(id, btn) {
         const allCategories = ['정기', '비정기', '고객대응', '용액제조', '온라인 점검', 'PM', 'BM', '장비점검', '프로그램변경', '트러블이슈'];
         typeCell.innerHTML = `
             <select id="edit-log-type-${id}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()" onchange="updateEditDetailTypeOptions(${id})">
-                <option value="">구분</option>
                 ${allCategories.map(c => `<option value="${c}" ${currentType === c ? 'selected' : ''}>${c}</option>`).join('')}
             </select>`;
 
@@ -922,7 +921,7 @@ function toggleLogEdit(id, btn) {
 
         const newWorker = workerInput.value.trim();
 
-        if (!newDate || !newType || !newDetailType || !newWorker) return alert('빈 항목이 없도록 모두 입력해주세요.');
+        if (!newDate || !newType || (!newDetailType && detailTypeInput && !detailTypeInput.disabled) || !newWorker) return alert('필수 항목(날짜, 구분, 세부구분, 작업자)을 모두 입력해주세요.');
 
         updateLogItem(id, newDate, newType, newDetailType, newContent, newWorker);
     }
@@ -933,6 +932,17 @@ window.renderEditLogContentField = function(id, type, detailType, value) {
     const row = document.getElementById(`log-row-${id}`);
     if (!row) return;
     const contentCell = row.cells[3]; // 0: date, 1: type, 2: detailType, 3: content
+
+    if (!type) {
+        contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="" class="input-dark input-disabled" style="width: 100%; padding: 2px;" placeholder="구분을 먼저 선택하세요" disabled onclick="event.stopPropagation()">`;
+        return;
+    }
+
+    const detailTypeSelect = document.getElementById(`edit-log-detail-type-${id}`);
+    if (detailTypeSelect && !detailTypeSelect.disabled && !detailType) {
+        contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="" class="input-dark input-disabled" style="width: 100%; padding: 2px;" placeholder="세부구분을 먼저 선택하세요" disabled onclick="event.stopPropagation()">`;
+        return;
+    }
 
     const equipKey = currentPath.equip;
     const itemData = JSON.parse(localStorage.getItem('check_type_items')) || {};
@@ -954,7 +964,7 @@ window.renderEditLogContentField = function(id, type, detailType, value) {
         items.push(...filteredItems);
     }
 
-    if (items.length > 0) {
+    if (items.length > 0 && detailType) {
 
         // 커스텀 드롭다운 구조 생성
         const wrapper = document.createElement('div');
@@ -1049,7 +1059,7 @@ window.updateLogTypeOptions = function() {
     const categories = ['정기', '비정기', '고객대응', '용액제조', '온라인 점검']; // Admin 기본 구분
     const currentVal = typeSelect.value;
     
-    typeSelect.innerHTML = '<option value="">구분 선택</option>';
+    typeSelect.innerHTML = '';
     categories.forEach(cat => {
         const opt = document.createElement('option');
         opt.value = cat;
@@ -1070,9 +1080,10 @@ window.updateLogDetailTypeOptions = function() {
     if (!typeSelect || !detailTypeSelect) return;
     
     const type = typeSelect.value;
-    detailTypeSelect.innerHTML = '<option value="">세부구분 선택</option>';
+    detailTypeSelect.innerHTML = '';
     
     if (!type) {
+        detailTypeSelect.innerHTML = '<option value="">구분 먼저 선택</option>';
         detailTypeSelect.disabled = true;
         updateLogContentOptions();
         return;
@@ -1083,12 +1094,24 @@ window.updateLogDetailTypeOptions = function() {
     const equipKey = currentPath.equip;
     const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
     const key = `${equipKey}::${type}`;
-    const subCategories = catData[key] || [];
+    const defaultSubCategories = {
+            '정기': ['PM'],
+            '비정기': ['BM', 'Alarm', 'Hunting', 'Data / Para 이상'],
+            '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
+            '용액제조': ['용액제조'],
+            '온라인 점검': ['온라인 점검']
+        };
+
+        let subCategories = catData[key];
+        if (!subCategories || subCategories.length === 0) {
+            subCategories = defaultSubCategories[type] || [];
+        }
     
     if (subCategories.length === 0) {
-        detailTypeSelect.innerHTML = '<option value="">등록된 세부구분 없음</option>';
+        detailTypeSelect.innerHTML = '<option value="">세부구분 없음 (직접입력)</option>';
         detailTypeSelect.disabled = true;
     } else {
+        detailTypeSelect.innerHTML = '<option value="">세부구분 선택</option>';
         subCategories.forEach(sub => {
             const opt = document.createElement('option');
             opt.value = sub;
@@ -1115,10 +1138,19 @@ window.updateLogContentOptions = function() {
     const detailType = detailTypeSelect.value;
     const equipKey = currentPath.equip;
 
-    if (!type || !detailType) {
+    if (!type) {
         contentWrapper.style.display = 'none';
         contentInput.style.display = 'inline-block';
-        contentInput.placeholder = '내용 (세부구분을 먼저 선택하세요)';
+        contentInput.placeholder = '구분을 먼저 선택하세요';
+        contentInput.value = '';
+        contentInput.disabled = true;
+        return;
+    }
+
+    if (!detailType && !detailTypeSelect.disabled) {
+        contentWrapper.style.display = 'none';
+        contentInput.style.display = 'inline-block';
+        contentInput.placeholder = '세부구분을 먼저 선택하세요';
         contentInput.value = '';
         contentInput.disabled = true;
         return;
@@ -1130,7 +1162,7 @@ window.updateLogContentOptions = function() {
     const key = `${equipKey}::${type}::${detailType}`;
     const items = itemData[key] || [];
 
-    if (items.length > 0) {
+    if (items.length > 0 && detailType) {
         contentWrapper.style.display = 'inline-block';
         contentInput.style.display = 'none';
 
@@ -1163,8 +1195,7 @@ window.updateLogContentOptions = function() {
     } else {
         contentWrapper.style.display = 'none';
         contentInput.style.display = 'inline-block';
-        contentInput.placeholder = '등록된 점검 항목이 없습니다. 직접 입력하세요.';
-        contentInput.value = '';
+        contentInput.placeholder = detailType ? '등록된 점검 항목이 없습니다. 직접 입력하세요.' : '내용 (직접 입력)';
     }
 };
 
@@ -1174,9 +1205,10 @@ window.updateEditDetailTypeOptions = function(id, presetVal = '') {
     if (!typeSelect || !detailTypeSelect) return;
     
     const type = typeSelect.value;
-    detailTypeSelect.innerHTML = '<option value="">세부구분 선택</option>';
+    detailTypeSelect.innerHTML = '';
     
     if (!type) {
+        detailTypeSelect.innerHTML = '<option value="">구분 먼저 선택</option>';
         detailTypeSelect.disabled = true;
         updateEditLogContentField(id);
         return;
@@ -1187,7 +1219,19 @@ window.updateEditDetailTypeOptions = function(id, presetVal = '') {
     const equipKey = currentPath.equip;
     const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
     const key = `${equipKey}::${type}`;
-    const subCategories = catData[key] || [];
+    const defaultSubCategories = {
+            '정기': ['PM'],
+            '비정기': ['BM', 'Alarm', 'Hunting', 'Data / Para 이상'],
+            '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
+            '용액제조': ['용액제조'],
+            '온라인 점검': ['온라인 점검']
+        };
+
+        let subCategories = catData[key];
+        if (!subCategories || subCategories.length === 0) {
+            subCategories = defaultSubCategories[type] || [];
+        }
+
     
     // 기존 값 유지 로직
     if (presetVal && !subCategories.includes(presetVal)) {
@@ -1195,9 +1239,10 @@ window.updateEditDetailTypeOptions = function(id, presetVal = '') {
     }
     
     if (subCategories.length === 0) {
-        detailTypeSelect.innerHTML = '<option value="">등록된 세부구분 없음</option>';
+        detailTypeSelect.innerHTML = '<option value="">세부구분 없음</option>';
         detailTypeSelect.disabled = true;
     } else {
+        detailTypeSelect.innerHTML = '<option value="">세부구분 선택</option>';
         subCategories.forEach(sub => {
             const opt = document.createElement('option');
             opt.value = sub;
