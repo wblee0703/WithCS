@@ -418,5 +418,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Octopole assembly, ICP-MS",
         "details": "Type: BM, Code: Octopole"
+    },
+    {
+        "timestamp": "2026-03-17T04:36:36.069Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Micro Flow Nebulizer PFA-100",
+        "details": "Type: BM, Spec: G3139-65100, 150~200u/min, Agilent 정품"
     }
 ]
