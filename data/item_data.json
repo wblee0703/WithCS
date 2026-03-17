@@ -31,5 +31,16 @@
         "spec": "10ppb Multi(4종), 3%HNO3",
         "cycle": "30",
         "equip": "SOMA-2000"
+    },
+    {
+        "id": 1773719742511,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "Skimmer Cone",
+        "part": "Pt Skimmer cone for 7700S",
+        "spec": "AT7708S-Pt, G3280-67064, GE OEM",
+        "cycle": "",
+        "equip": ""
     }
 ]
