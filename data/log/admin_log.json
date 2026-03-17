@@ -138,9 +138,15 @@
         "timestamp": "2026-03-17T02:22:45.597Z"
     },
     {
-        "timestamp": "2026-03-17T02:34:45.209Z",
         "action": "UPDATE_EQUIP_MODEL",
+        "details": "To: SOMA-2000 / SOMA2000",
         "target": "SOMA-2000",
-        "details": "To: SOMA-2000 / SOMA2000"
+        "timestamp": "2026-03-17T02:34:45.209Z"
+    },
+    {
+        "timestamp": "2026-03-17T02:54:43.628Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Guard Column(2mm)",
+        "details": "Type: BM, Code: GC(2mm)"
     }
 ]

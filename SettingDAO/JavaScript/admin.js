@@ -1175,14 +1175,14 @@ function renderAdminItemList() {
             <div class="model-col col-item-type">
                 <span class="badge ${item.type.toLowerCase()}">${item.type}</span>
             </div>
-            <div class="model-col col-item-code">
-                ${item.code || '-'}
+            <div class="model-col col-item-code" title="${escapeHtml(item.code || '-')}">
+                ${escapeHtml(item.code || '-')}
             </div>
-            <div class="model-col col-item-part">
-                ${item.part}
+            <div class="model-col col-item-part" title="${escapeHtml(item.part)}">
+                ${escapeHtml(item.part)}
             </div>
-            <div class="model-col col-item-spec">
-                ${item.spec || '-'}
+            <div class="model-col col-item-spec" title="${escapeHtml(item.spec || '-')}">
+                ${escapeHtml(item.spec || '-')}
             </div>
             <div class="model-col col-item-cycle">
                 ${item.cycle ? item.cycle + '일' : '-'}

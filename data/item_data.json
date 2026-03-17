@@ -1,13 +1,13 @@
 [
     {
-        "code": "GC(2mm)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773710589486,
-        "part": "Guard Column(2mm)",
+        "type": "BM",
+        "detailType": "분석부 교체",
         "partno": "A00000029",
+        "code": "GC(2mm)",
+        "part": "Guard Column(2mm)",
         "spec": "046138, AG14(2x50mm)",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     }
 ]
