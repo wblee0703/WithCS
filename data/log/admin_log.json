@@ -700,5 +700,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Fitting Female 1/8 NPT-1/8",
         "details": "Type: BM, Spec: DCF2-2N-S"
+    },
+    {
+        "timestamp": "2026-03-17T04:53:47.010Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "FEP TUBE",
+        "details": "Type: BM, Spec: FEP 3*2*100m, NATURAL, Samplingcoil, Yodogawa"
     }
 ]

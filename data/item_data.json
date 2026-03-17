@@ -691,5 +691,16 @@
         "spec": "DCF2-2N-S",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723227010,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "TUBE (FEP_Air)",
+        "part": "FEP TUBE",
+        "spec": "FEP 3*2*100m, NATURAL, Samplingcoil, Yodogawa",
+        "cycle": "",
+        "equip": ""
     }
 ]
