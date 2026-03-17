@@ -130,5 +130,16 @@
         "spec": "31-808-2577, G1833-65421, OEM",
         "cycle": "",
         "equip": "SOMA-2000, WIM-100"
+    },
+    {
+        "id": 1773721673592,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "Shield plate",
+        "part": "Shield Plate for ICP-MS",
+        "spec": "AT5004, G1833-65419, OEM",
+        "cycle": "",
+        "equip": ""
     }
 ]
