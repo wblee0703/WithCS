@@ -122,13 +122,13 @@
     },
     {
         "id": 1773721633185,
-        "type": "PM",
-        "detailType": "",
-        "partno": "",
+        "type": "BM",
+        "detailType": "분석부 교체",
+        "partno": "C00004061",
         "code": "Bonnet",
         "part": "Quartz Torch Bonnet",
         "spec": "31-808-2577, G1833-65421, OEM",
         "cycle": "",
-        "equip": ""
+        "equip": "SOMA-2000, WIM-100"
     }
 ]
