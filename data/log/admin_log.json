@@ -1372,5 +1372,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "KOH",
         "details": "Type: PM, Spec: IAM7000 고농축"
+    },
+    {
+        "timestamp": "2026-03-17T05:18:55.356Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "STD gas",
+        "details": "Type: PM, Spec: SOT"
     }
 ]

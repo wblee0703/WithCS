@@ -1120,5 +1120,16 @@
         "spec": "IAM7000 고농축",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724735356,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "SOT 표준 가스",
+        "part": "STD gas",
+        "spec": "SOT",
+        "cycle": "",
+        "equip": ""
     }
 ]
