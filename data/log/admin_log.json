@@ -66,33 +66,39 @@
         "timestamp": "2026-03-17T01:18:51.856Z"
     },
     {
-        "timestamp": "2026-03-17T01:19:04.575Z",
         "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 정기 > PM 점검",
         "target": "SOMA-3000E::SOMA-EK24-0401",
-        "details": "분류 추가: 정기 > PM 점검"
+        "timestamp": "2026-03-17T01:19:04.575Z"
     },
     {
-        "timestamp": "2026-03-17T01:19:10.064Z",
         "action": "DELETE_CHECK_CATEGORY",
+        "details": "분류 삭제: BM",
         "target": "SOMA-3000E::SOMA-EK24-0401::비정기",
-        "details": "분류 삭제: BM"
+        "timestamp": "2026-03-17T01:19:10.064Z"
     },
     {
-        "timestamp": "2026-03-17T01:19:14.305Z",
         "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 비정기 > BM 점검",
         "target": "SOMA-3000E::SOMA-EK24-0401",
-        "details": "분류 추가: 비정기 > BM 점검"
+        "timestamp": "2026-03-17T01:19:14.305Z"
     },
     {
-        "timestamp": "2026-03-17T01:19:34.576Z",
         "action": "DELETE_CHECK_CATEGORY",
+        "details": "분류 삭제: Alarm",
         "target": "SOMA-3000E::SOMA-EK24-0401::비정기",
-        "details": "분류 삭제: Alarm"
+        "timestamp": "2026-03-17T01:19:34.576Z"
     },
     {
-        "timestamp": "2026-03-17T01:19:35.464Z",
         "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 비정기 > Alarm",
         "target": "SOMA-3000E::SOMA-EK24-0401",
-        "details": "분류 추가: 비정기 > Alarm"
+        "timestamp": "2026-03-17T01:19:35.464Z"
+    },
+    {
+        "timestamp": "2026-03-17T01:21:37.084Z",
+        "action": "DELETE_ITEM_ADMIN",
+        "target": "Stadnard",
+        "details": ""
     }
 ]
