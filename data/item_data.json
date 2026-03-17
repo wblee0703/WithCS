@@ -42,5 +42,16 @@
         "spec": "AT7708S-Pt, G3280-67064, GE OEM",
         "cycle": "182",
         "equip": "SOMA-2000, WIM-100"
+    },
+    {
+        "id": 1773719800104,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "Sampler Cone",
+        "part": "Pt Sampling cone for 7700S",
+        "spec": "AT7706-Pt, G3280-67036, GE OEM",
+        "cycle": "",
+        "equip": ""
     }
 ]
