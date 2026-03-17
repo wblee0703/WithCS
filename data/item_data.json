@@ -71,15 +71,16 @@
         "equip": "SOMA-2000, WIM-100"
     },
     {
-        "code": "PFA Spray Chamber",
-        "cycle": "",
-        "detailType": "분석부 교체",
-        "equip": "SOMA-2000, WIM-100",
         "id": 1773721471688,
-        "part": "Spray Chamber for Inert Kit, PFA",
+        "type": "BM",
+        "detailType": "분석부 교체",
+        "additional": "ICPMS",
         "partno": "A00002198",
+        "code": "PFA Spray Chamber",
+        "part": "Spray Chamber for Inert Kit, PFA",
         "spec": "G3285-80021, Agilent 정품",
-        "type": "BM"
+        "cycle": "",
+        "equip": "SOMA-2000, WIM-100"
     },
     {
         "code": "Spray Chamber End Cap",
