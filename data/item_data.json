@@ -759,15 +759,15 @@
         "equip": ""
     },
     {
-        "code": "Syringe_2.5mL (ILS)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723353922,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00001930",
+        "code": "Syringe_2.5mL (ILS)",
         "part": "Syringe(2.5mL)",
-        "partno": "",
         "spec": "2647037, 2.5mL, ILS",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "TUBE (for REACTOR)",

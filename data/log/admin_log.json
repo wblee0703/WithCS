@@ -1132,5 +1132,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Syringe(1mL)",
         "details": "Type: BM, Code: Syringe_1mL (ILS)"
+    },
+    {
+        "timestamp": "2026-03-17T05:09:38.825Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Syringe(2.5mL)",
+        "details": "Type: BM, Code: Syringe_2.5mL (ILS)"
     }
 ]
