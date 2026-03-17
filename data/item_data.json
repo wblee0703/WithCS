@@ -1111,15 +1111,15 @@
         "equip": ""
     },
     {
-        "code": "KOH",
-        "cycle": "",
-        "detailType": "액체 용액",
-        "equip": "",
         "id": 1773724728514,
-        "part": "KOH",
+        "type": "PM",
+        "detailType": "용액",
         "partno": "",
+        "code": "KOH",
+        "part": "KOH",
         "spec": "IAM7000 고농축",
-        "type": "PM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "SOT 표준 가스",
