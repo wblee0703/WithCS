@@ -616,15 +616,15 @@
         "equip": ""
     },
     {
-        "code": "FITTING (P203)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723174934,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000655",
+        "code": "FITTING (P203)",
         "part": "P-203",
-        "partno": "",
         "spec": "1/4-28 Nuts for 1/16 tubing WhiteDelrin",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "FITTING (P316)",
