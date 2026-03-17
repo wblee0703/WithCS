@@ -429,15 +429,15 @@
         "equip": ""
     },
     {
-        "code": "STATOR(Sw/V)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722770718,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000079",
+        "code": "STATOR(Sw/V)",
         "part": "Stator face_ Switching valve",
-        "partno": "",
         "spec": "C25Z-386_ SW/V Stator seal (C25Z용)",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "ROTOR SEAL(INJ)",
