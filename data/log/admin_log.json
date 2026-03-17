@@ -520,5 +520,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Solenoid Valve",
         "details": "Type: BM, Spec: 2WAY (G) USB3-6-3-E_DC 24V_AMC용"
+    },
+    {
+        "timestamp": "2026-03-17T04:45:20.970Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "HPLC Pump Piston Seal Kit",
+        "details": "Type: BM, Spec: 880203, 10ML SEAL KIT, STS"
     }
 ]

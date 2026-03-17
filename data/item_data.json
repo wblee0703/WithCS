@@ -361,5 +361,16 @@
         "spec": "2WAY (G) USB3-6-3-E_DC 24V_AMC용",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722720970,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "HPLC SEAL",
+        "part": "HPLC Pump Piston Seal Kit",
+        "spec": "880203, 10ML SEAL KIT, STS",
+        "cycle": "",
+        "equip": ""
     }
 ]
