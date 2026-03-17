@@ -1,4 +1,104 @@
 {
+    "SKH 이천::SOMA-2000::SOMA-H19-0402": {
+        "setupDetails": [
+            {
+                "category": "장비 반입 및 정위치",
+                "content": "장비 도면 부착",
+                "date": "",
+                "estDays": "1",
+                "id": 1773714783935,
+                "startDate": ""
+            },
+            {
+                "category": "장비 반입 및 정위치",
+                "content": "다이크 설치",
+                "date": "",
+                "estDays": "1",
+                "id": 1773714783936,
+                "startDate": ""
+            },
+            {
+                "category": "장비 반입 및 정위치",
+                "content": "장비 반입",
+                "date": "",
+                "estDays": "1",
+                "id": 1773714783937,
+                "startDate": ""
+            },
+            {
+                "category": "장비 반입 및 정위치",
+                "content": "다이크 공사 및 리크센서 설치",
+                "date": "",
+                "estDays": "2",
+                "id": 1773714783938,
+                "startDate": ""
+            },
+            {
+                "category": "통신 상태 및 유틸리티",
+                "content": "Utility 배관 공사 및 연결",
+                "date": "",
+                "estDays": "5",
+                "id": 1773714783939,
+                "startDate": ""
+            },
+            {
+                "category": "통신 상태 및 유틸리티",
+                "content": "Utility 턴온",
+                "date": "",
+                "estDays": "1",
+                "id": 1773714783940,
+                "startDate": ""
+            },
+            {
+                "category": "통신 상태 및 유틸리티",
+                "content": "인터락 Test 및 통신상태 확인 ",
+                "date": "",
+                "estDays": "2",
+                "id": 1773714783941,
+                "startDate": ""
+            },
+            {
+                "category": "셋업 평가",
+                "content": "분석부 안정화 및 오염제어",
+                "date": "",
+                "estDays": "5",
+                "id": 1773714783942,
+                "startDate": ""
+            },
+            {
+                "category": "셋업 평가",
+                "content": "Calibration 평가",
+                "date": "",
+                "estDays": "2",
+                "id": 1773714783943,
+                "startDate": ""
+            },
+            {
+                "category": "셋업 평가",
+                "content": "Sample 측정",
+                "date": "",
+                "estDays": "2",
+                "id": 1773714783944,
+                "startDate": ""
+            },
+            {
+                "category": "셋업 평가",
+                "content": "신뢰도 평가",
+                "date": "",
+                "estDays": "5",
+                "id": 1773714783945,
+                "startDate": ""
+            },
+            {
+                "category": "셋업 완료",
+                "content": "셋업 완료",
+                "date": "",
+                "estDays": "0",
+                "id": 1773714783946,
+                "startDate": ""
+            }
+        ]
+    },
     "SKH 이천::SOMA-2000::SOMA-H19-0903": {
         "setupDetails": [
             {
@@ -199,10 +299,10 @@
             }
         ]
     },
-    "SKH 이천::SOMA-2000::SOMA-H19-0402": {
+    "SKH 이천::SOMA-2000::SOMA-HK21-0202": {
         "setupDetails": [
             {
-                "id": 1773714783935,
+                "id": 1773714791858,
                 "category": "장비 반입 및 정위치",
                 "content": "장비 도면 부착",
                 "startDate": "",
@@ -210,7 +310,7 @@
                 "date": ""
             },
             {
-                "id": 1773714783936,
+                "id": 1773714791859,
                 "category": "장비 반입 및 정위치",
                 "content": "다이크 설치",
                 "startDate": "",
@@ -218,7 +318,7 @@
                 "date": ""
             },
             {
-                "id": 1773714783937,
+                "id": 1773714791860,
                 "category": "장비 반입 및 정위치",
                 "content": "장비 반입",
                 "startDate": "",
@@ -226,7 +326,7 @@
                 "date": ""
             },
             {
-                "id": 1773714783938,
+                "id": 1773714791861,
                 "category": "장비 반입 및 정위치",
                 "content": "다이크 공사 및 리크센서 설치",
                 "startDate": "",
@@ -234,7 +334,7 @@
                 "date": ""
             },
             {
-                "id": 1773714783939,
+                "id": 1773714791862,
                 "category": "통신 상태 및 유틸리티",
                 "content": "Utility 배관 공사 및 연결",
                 "startDate": "",
@@ -242,7 +342,7 @@
                 "date": ""
             },
             {
-                "id": 1773714783940,
+                "id": 1773714791863,
                 "category": "통신 상태 및 유틸리티",
                 "content": "Utility 턴온",
                 "startDate": "",
@@ -250,7 +350,7 @@
                 "date": ""
             },
             {
-                "id": 1773714783941,
+                "id": 1773714791864,
                 "category": "통신 상태 및 유틸리티",
                 "content": "인터락 Test 및 통신상태 확인 ",
                 "startDate": "",
@@ -258,7 +358,7 @@
                 "date": ""
             },
             {
-                "id": 1773714783942,
+                "id": 1773714791865,
                 "category": "셋업 평가",
                 "content": "분석부 안정화 및 오염제어",
                 "startDate": "",
@@ -266,7 +366,7 @@
                 "date": ""
             },
             {
-                "id": 1773714783943,
+                "id": 1773714791866,
                 "category": "셋업 평가",
                 "content": "Calibration 평가",
                 "startDate": "",
@@ -274,7 +374,7 @@
                 "date": ""
             },
             {
-                "id": 1773714783944,
+                "id": 1773714791867,
                 "category": "셋업 평가",
                 "content": "Sample 측정",
                 "startDate": "",
@@ -282,7 +382,7 @@
                 "date": ""
             },
             {
-                "id": 1773714783945,
+                "id": 1773714791868,
                 "category": "셋업 평가",
                 "content": "신뢰도 평가",
                 "startDate": "",
@@ -290,7 +390,7 @@
                 "date": ""
             },
             {
-                "id": 1773714783946,
+                "id": 1773714791869,
                 "category": "셋업 완료",
                 "content": "셋업 완료",
                 "startDate": "",
