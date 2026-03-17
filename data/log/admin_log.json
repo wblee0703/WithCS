@@ -442,5 +442,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "RF coil for 7900",
         "details": "Type: BM, Code: RF Coil"
+    },
+    {
+        "timestamp": "2026-03-17T04:40:44.005Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Cell exit lens for ICP-MS",
+        "details": "Type: BM, Code: ORS (Cell exit lens)"
     }
 ]
