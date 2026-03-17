@@ -766,5 +766,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Syringe(1mL)",
         "details": "Type: BM, Spec: 3020008, 1mL, SETonic"
+    },
+    {
+        "timestamp": "2026-03-17T04:57:55.154Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Syringe(2.5mL)",
+        "details": "Type: BM, Spec: 3020009, 2.5mL, SETonic"
     }
 ]
