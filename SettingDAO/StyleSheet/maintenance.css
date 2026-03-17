@@ -188,17 +188,17 @@ tr.dragging {
 
 /* 구분 */
 #log-list-wrapper .data-table th:nth-child(3) {
-    width: 100px;
+    width: 150px;
 }
 
 /* 세부구분 */
 #log-list-wrapper .data-table th:nth-child(5) {
-    width: 90px;
+    width: 150px;
 }
 
 /* 작업자 */
 #log-list-wrapper .data-table th:nth-child(6) {
-    width: 70px;
+    width: 120px;
 }
 
 /* 관리 */
