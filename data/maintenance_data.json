@@ -108,11 +108,20 @@
                 "worker": "이원배"
             },
             {
-                "id": 1773708756460,
-                "date": "2026-03-17",
-                "type": "비정기",
-                "detailType": "BM",
                 "content": "몰라",
+                "date": "2026-03-17",
+                "detailType": "BM",
+                "id": 1773708756460,
+                "memo": "",
+                "type": "비정기",
+                "worker": "이원배"
+            },
+            {
+                "id": 1773709408697,
+                "date": "2026-03-17",
+                "type": "고객대응",
+                "detailType": "프로그램 변경 / 평가",
+                "content": "Ver.",
                 "worker": "이원배",
                 "memo": ""
             }

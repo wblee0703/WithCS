@@ -944,25 +944,7 @@ window.renderEditLogContentField = function(id, type, detailType, value) {
         return;
     }
 
-    const equipKey = currentPath.equip;
-    const itemData = JSON.parse(localStorage.getItem('check_type_items')) || {};
-    const key = `${equipKey}::${type}::${detailType}`;
-    const items = itemData[key] || [];
-
-    // 구버전 호환성
-    if (type === 'PM' || type === 'BM' || type === '트러블이슈' || detailType === 'PM' || detailType === 'BM') {
-        const keyMaint = `details_${currentPath.site}_${currentPath.equip}`;
-        const dataMaint = JSON.parse(localStorage.getItem(keyMaint)) || { maint: [] };
-        let filteredItems = [];
-        if (type === '트러블이슈') {
-            filteredItems.push({ content: '설비 이상' });
-            filteredItems.push({ content: '데이터이슈' });
-            filteredItems = filteredItems.concat(dataMaint.maint.filter(item => item.type === 'PM' || item.type === 'BM'));
-        } else {
-            filteredItems = dataMaint.maint.filter(item => item.type === type || item.type === detailType);
-        }
-        items.push(...filteredItems);
-    }
+    const items = getCheckTypeItems(type, detailType);
 
     if (items.length > 0 && detailType) {
 
@@ -1091,21 +1073,7 @@ window.updateLogDetailTypeOptions = function() {
     
     detailTypeSelect.disabled = false;
     
-    const equipKey = currentPath.equip;
-    const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
-    const key = `${equipKey}::${type}`;
-    const defaultSubCategories = {
-            '정기': ['PM'],
-            '비정기': ['BM', 'Alarm', 'Hunting', 'Data / Para 이상'],
-            '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
-            '용액제조': ['용액제조'],
-            '온라인 점검': ['온라인 점검']
-        };
-
-        let subCategories = catData[key];
-        if (!subCategories || subCategories.length === 0) {
-            subCategories = defaultSubCategories[type] || [];
-        }
+    const subCategories = getSubCategories(type);
     
     if (subCategories.length === 0) {
         detailTypeSelect.innerHTML = '<option value="">세부구분 없음 (직접입력)</option>';
@@ -1158,9 +1126,7 @@ window.updateLogContentOptions = function() {
 
     contentInput.disabled = false;
     
-    const itemData = JSON.parse(localStorage.getItem('check_type_items')) || {};
-    const key = `${equipKey}::${type}::${detailType}`;
-    const items = itemData[key] || [];
+    const items = getCheckTypeItems(type, detailType);
 
     if (items.length > 0 && detailType) {
         contentWrapper.style.display = 'inline-block';
@@ -1216,22 +1182,7 @@ window.updateEditDetailTypeOptions = function(id, presetVal = '') {
     
     detailTypeSelect.disabled = false;
     
-    const equipKey = currentPath.equip;
-    const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
-    const key = `${equipKey}::${type}`;
-    const defaultSubCategories = {
-            '정기': ['PM'],
-            '비정기': ['BM', 'Alarm', 'Hunting', 'Data / Para 이상'],
-            '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
-            '용액제조': ['용액제조'],
-            '온라인 점검': ['온라인 점검']
-        };
-
-        let subCategories = catData[key];
-        if (!subCategories || subCategories.length === 0) {
-            subCategories = defaultSubCategories[type] || [];
-        }
-
+    const subCategories = getSubCategories(type);
     
     // 기존 값 유지 로직
     if (presetVal && !subCategories.includes(presetVal)) {
@@ -1265,6 +1216,65 @@ window.updateEditLogContentField = function(id) {
     
     renderEditLogContentField(id, type, detailType, '');
 };
+
+// [추가] 세부구분 목록 가져오기 헬퍼 함수 (중복 제거)
+function getSubCategories(type) {
+    const equipKey = currentPath.equip;
+    const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
+    const key = `${equipKey}::${type}`;
+    const defaultSubCategories = {
+        '정기': ['PM'],
+        '비정기': ['BM', 'Alarm', 'Hunting', 'Data / Para 이상'],
+        '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
+        '용액제조': ['용액제조'],
+        '온라인 점검': ['온라인 점검']
+    };
+
+    let subCategories = catData[key];
+    if (!subCategories || subCategories.length === 0) {
+        subCategories = defaultSubCategories[type] || [];
+    }
+    return subCategories;
+}
+
+// [추가] 점검 항목(내용) 목록 가져오기 헬퍼 함수 (중복 제거 및 호환성 유지)
+function getCheckTypeItems(type, detailType) {
+    const equipKey = currentPath.equip;
+    const itemData = JSON.parse(localStorage.getItem('check_type_items')) || {};
+    const key = `${equipKey}::${type}::${detailType}`;
+    
+    // 원본 데이터 오염을 막기 위해 복사본 생성
+    const items = [...(itemData[key] || [])];
+
+    // 구버전 호환성 (PM, BM, 트러블이슈 등)
+    if (type === 'PM' || type === 'BM' || type === '트러블이슈' || detailType === 'PM' || detailType === 'BM') {
+        const keyMaint = `details_${currentPath.site}_${currentPath.equip}`;
+        const dataMaint = JSON.parse(localStorage.getItem(keyMaint)) || { maint: [] };
+        let filteredItems = [];
+        if (type === '트러블이슈') {
+            filteredItems.push({ content: '설비 이상' });
+            filteredItems.push({ content: '데이터이슈' });
+            filteredItems = filteredItems.concat(dataMaint.maint.filter(item => item.type === 'PM' || item.type === 'BM'));
+        } else {
+            const targetType = (type === 'PM' || type === 'BM') ? type : detailType;
+            filteredItems = dataMaint.maint.filter(item => item.type === targetType);
+        }
+        items.push(...filteredItems);
+    }
+    
+    // content 필드를 기준으로 중복 항목 완벽히 제거
+    const uniqueItems = [];
+    const seenContents = new Set();
+    
+    for (const item of items) {
+        if (!seenContents.has(item.content)) {
+            seenContents.add(item.content);
+            uniqueItems.push(item);
+        }
+    }
+
+    return uniqueItems;
+}
 
 /* ==========================================================================
    4. 모달 및 팝업 (Modals & Popups)
