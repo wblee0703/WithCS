@@ -298,14 +298,6 @@
                 "type": "PM"
             },
             {
-                "code": "Nebulizer",
-                "content": "Micro Flow Nebulizer PFA-100",
-                "date": "2026-03-17",
-                "id": 1773729618225,
-                "period": null,
-                "type": "BM"
-            },
-            {
                 "code": "RF Coil",
                 "content": "RF coil for 7900",
                 "date": "2026-03-17",
