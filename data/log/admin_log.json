@@ -226,5 +226,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Torch for PFA inert kit for ICP-MS",
         "details": "Type: BM, Code: PFA Torch"
+    },
+    {
+        "timestamp": "2026-03-17T04:19:09.658Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Platinum injector, inert torch, 2.5mm id",
+        "details": "Type: BM, Spec: G3285-80035, Agilent"
     }
 ]

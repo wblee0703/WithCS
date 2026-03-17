@@ -75,5 +75,16 @@
         "spec": "G4912-80012, 정품",
         "cycle": "",
         "equip": "SOMA-2000, WIM-100"
+    },
+    {
+        "id": 1773721149658,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "Pt Injector",
+        "part": "Platinum injector, inert torch, 2.5mm id",
+        "spec": "G3285-80035, Agilent",
+        "cycle": "",
+        "equip": ""
     }
 ]
