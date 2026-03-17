@@ -35,15 +35,16 @@
         "equip": "SOMA-2000, WIM-100"
     },
     {
-        "code": "Ion Lens",
-        "cycle": "365",
-        "detailType": "분석부 교체",
-        "equip": "SOMA-2000, WIM-100",
         "id": 1773719846136,
-        "part": "Extraction-omega lens assembly",
+        "type": "PM",
+        "detailType": "분석부 교체",
+        "additional": "ICPMS",
         "partno": "A00001565",
+        "code": "Ion Lens",
+        "part": "Extraction-omega lens assembly",
         "spec": "G8400-67002, lens for 7900s, Agilent 정품",
-        "type": "PM"
+        "cycle": "365",
+        "equip": "SOMA-2000, WIM-100"
     },
     {
         "code": "PFA Torch",
