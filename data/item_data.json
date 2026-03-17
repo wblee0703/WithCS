@@ -625,5 +625,16 @@
         "spec": "Ferrules for 1/16 OD tubing Blue ETFE",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723174934,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "FITTING (P203)",
+        "part": "P-203",
+        "spec": "1/4-28 Nuts for 1/16 tubing WhiteDelrin",
+        "cycle": "",
+        "equip": ""
     }
 ]
