@@ -182,6 +182,9 @@
             "Alarm",
             "Hunting",
             "Data / Para 이상"
+        ],
+        "WIM-100::WIM1-HK24-0401::정기": [
+            "PM 점검"
         ]
     },
     "items": {
