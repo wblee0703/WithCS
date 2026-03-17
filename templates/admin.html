@@ -296,7 +296,6 @@
                             <div class="model-col col-item-code">코드명</div>
                             <div class="model-col col-item-part">물품명</div>
                             <div class="model-col col-item-spec">세부 규격</div>
-                            <div class="model-col col-item-cycle">교체주기(일)</div>
                         </div>
                         <ul id="admin-item-list" class="admin-list"></ul>
                         <div class="list-footer">
@@ -312,8 +311,6 @@
                                     class="input-dark input-item-part item-footer-input">
                                 <input type="text" id="admin-item-spec-input" placeholder="세부 규격"
                                     class="input-dark input-item-spec item-footer-input">
-                                <input type="number" id="admin-item-cycle-input" placeholder="주기(일)"
-                                    class="input-dark input-item-cycle item-footer-input">
                             </div>
                             <button id="btn-admin-add-item" class="btn-green full-width mt-10">물품 추가</button>
                         </div>
@@ -327,7 +324,7 @@
                         </div>
                         <div id="admin-item-form" class="admin-form-container" style="display:none;">
                             <div class="admin-flex-row" style="margin-bottom: 15px; gap: 10px;">
-                                <div style="flex: 1;">
+                                <div style="flex: 0.5;">
                                     <label
                                         style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">점검
                                         구분</label>
@@ -337,7 +334,7 @@
                                         <option value="BM">BM</option>
                                     </select>
                                 </div>
-                                <div style="flex: 1;">
+                                <div style="flex: 0.5;">
                                     <label
                                         style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">점검
                                         상세 구분</label>
@@ -350,34 +347,35 @@
                                         <option value="기타">기타</option>
                                     </select>
                                 </div>
-                            </div>
-                            <div class="admin-flex-row" style="margin-bottom: 15px; gap: 10px;">
-                                <div style="flex: 1;">
+                                <div class="admin-flex-row" style="margin-bottom: 15px; gap: 10px;">
+                                <div style="flex: 0.5;">
                                     <label
                                         style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">품번</label>
                                     <input type="text" id="item-info-partno" class="input-dark full-width"
                                         placeholder="품번 입력">
                                 </div>
-                                <div style="flex: 1;">
+                                <div style="flex: 0.5;">
                                     <label
                                         style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">코드명</label>
                                     <input type="text" id="item-info-code" class="input-dark full-width"
                                         placeholder="코드명 입력">
                                 </div>
                             </div>
+                            </div>
+                            
                             <div class="admin-flex-row" style="margin-bottom: 15px; gap: 10px;">
-                                <div style="flex: 1;">
+                                <div style="flex: 1.2;">
                                     <label
                                         style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">물품명</label>
                                     <input type="text" id="item-info-part" class="input-dark full-width">
                                 </div>
-                                <div style="flex: 1.5;">
+                                <div style="flex: 1.4;">
                                     <label
                                         style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">세부
                                         규격</label>
                                     <input type="text" id="item-info-spec" class="input-dark full-width">
                                 </div>
-                                <div style="flex: 0.5;">
+                                <div style="flex: 0.4;">
                                     <label
                                         style="display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px;">교체주기(일)</label>
                                     <input type="number" id="item-info-cycle" class="input-dark full-width">

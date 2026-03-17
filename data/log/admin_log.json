@@ -168,9 +168,9 @@
         "timestamp": "2026-03-17T02:55:29.340Z"
     },
     {
-        "timestamp": "2026-03-17T03:36:41.332Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 10ppb Multi(4종), 3%HNO3, Cycle: 30",
         "target": "Metal Standard Solution(3%HNO3)",
-        "details": "Type: PM, Spec: 10ppb Multi(4종), 3%HNO3, Cycle: 30"
+        "timestamp": "2026-03-17T03:36:41.332Z"
     }
 ]

@@ -379,7 +379,7 @@
    물품 관리 (Item Management) 전용 스타일
    ========================================================================== */
 .admin-item-list-container {
-    flex: 0 0 750px;
+    flex: 0 0 850px;
     border-right: none;
     padding-right: 0;
 }
@@ -399,13 +399,13 @@
 
 /* 각 컬럼별 비율 및 정렬 */
 .col-item-type {
-    flex: 1.2;
+    flex: 1.0;
     justify-content: center;
     text-align: center;
 }
 
 .col-item-code {
-    flex: 1.5;
+    flex: 2;
     justify-content: center;
     text-align: center;
     white-space: nowrap;
@@ -414,7 +414,7 @@
 }
 
 .col-item-part {
-    flex: 2.5;
+    flex: 3;
     justify-content: center;
     text-align: center;
     white-space: nowrap;
@@ -423,18 +423,12 @@
 }
 
 .col-item-spec {
-    flex: 2.5;
+    flex: 3;
     justify-content: center;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.col-item-cycle {
-    flex: 1.3;
-    justify-content: center;
-    text-align: center;
 }
 
 .col-item-actions {
@@ -449,7 +443,7 @@
 }
 
 .input-item-code {
-    flex: 1.5;
+    flex: 1.8;
     text-align: center;
 }
 
@@ -473,17 +467,12 @@ select.input-dark option {
 }
 
 .input-item-part {
-    flex: 2.5;
+    flex: 3;
     text-align: center;
 }
 
 .input-item-spec {
-    flex: 2.5;
-    text-align: center;
-}
-
-.input-item-cycle {
-    flex: 1.3;
+    flex: 3;
     text-align: center;
 }
 

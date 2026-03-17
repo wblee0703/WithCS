@@ -984,27 +984,10 @@ function setupItemMgmt() {
     const codeInput = document.getElementById('admin-item-code-input');
     const partInput = document.getElementById('admin-item-part-input');
     const specInput = document.getElementById('admin-item-spec-input');
-    const cycleInput = document.getElementById('admin-item-cycle-input');
 
     const searchInput = document.getElementById('admin-item-search');
     if (searchInput) {
         searchInput.addEventListener('input', renderAdminItemList);
-    }
-
-    // [추가] 점검 구분에 따른 교체주기 비활성화 (물품 추가 폼)
-    if (typeInput && cycleInput) {
-        typeInput.addEventListener('change', () => {
-            if (typeInput.value === 'PM') {
-                cycleInput.disabled = false;
-                cycleInput.placeholder = '주기(일)';
-            } else {
-                cycleInput.disabled = true;
-                cycleInput.value = '';
-                cycleInput.placeholder = '주기 없음';
-            }
-        });
-        // 초기 상태 반영
-        typeInput.dispatchEvent(new Event('change'));
     }
 
     if (btnAdd) {
@@ -1013,7 +996,7 @@ function setupItemMgmt() {
             const code = codeInput ? codeInput.value.trim() : "";
             const part = partInput.value.trim();
             const spec = specInput.value.trim();
-            const cycle = type === 'PM' ? cycleInput.value.trim() : "";
+            const cycle = ""; // 상세 정보에서 수정하도록 빈 값 전달
 
             if (!part) return alert('물품명을 입력해주세요.');
 
@@ -1029,12 +1012,11 @@ function setupItemMgmt() {
                 equip: ''
             });
             saveAdminItems();
-            addSystemLog('ADD_ITEM_ADMIN', part, `Type: ${type}, Spec: ${spec}, Cycle: ${cycle}`);
+            addSystemLog('ADD_ITEM_ADMIN', part, `Type: ${type}, Spec: ${spec}`);
             
             if (codeInput) codeInput.value = '';
             partInput.value = '';
             specInput.value = '';
-            if (type === 'PM') cycleInput.value = '';
             renderAdminItemList();
             partInput.focus();
         });
@@ -1043,11 +1025,9 @@ function setupItemMgmt() {
         partInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') specInput.focus(); });
         specInput.addEventListener('keypress', (e) => { 
             if (e.key === 'Enter') {
-                if (!cycleInput.disabled) cycleInput.focus();
-                else btnAdd.click();
+                btnAdd.click();
             }
         });
-        cycleInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') btnAdd.click(); });
     }
 
     // 상세 정보 폼 이벤트
@@ -1204,9 +1184,6 @@ function renderAdminItemList() {
             </div>
             <div class="model-col col-item-spec" title="${escapeHtml(item.spec || '-')}">
                 ${escapeHtml(item.spec || '-')}
-            </div>
-            <div class="model-col col-item-cycle">
-                ${item.cycle ? item.cycle + '일' : '-'}
             </div>
         `;
 
