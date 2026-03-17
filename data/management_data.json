@@ -1193,20 +1193,24 @@
         ],
         "WIM-100::WIM1-HK24-0401::정기::PM 점검": [
             {
-                "content": "Metal Standard Solution(3%HNO3)",
-                "id": 1773727856412
+                "id": 1773727862571,
+                "content": "Pt Skimmer cone for 7700S"
             },
             {
-                "content": "Pt Skimmer cone for 7700S",
-                "id": 1773727857783
+                "id": 1773727862572,
+                "content": "Pt Sampling cone for 7700S"
             },
             {
-                "content": "Pt Sampling cone for 7700S",
-                "id": 1773727863265
+                "id": 1773727862573,
+                "content": "Extraction-omega lens assembly"
             },
             {
-                "content": "Extraction-omega lens assembly",
-                "id": 1773727860353
+                "id": 1773727862574,
+                "content": "Metal Standard Solution(1%HNO3)"
+            },
+            {
+                "id": 1773727862575,
+                "content": "9.5% HNO3"
             }
         ],
         "WIM-100::WIM1-HK24-0401::고객대응::순회 점검": [],
