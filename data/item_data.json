@@ -1001,15 +1001,15 @@
         "equip": ""
     },
     {
-        "code": "MAIN (음)",
-        "cycle": "",
-        "detailType": "액체 용액",
-        "equip": "",
         "id": 1773724642534,
-        "part": "MAIN 용액 (음)",
+        "type": "PM",
+        "detailType": "용액",
         "partno": "",
+        "code": "MAIN (음)",
+        "part": "MAIN 용액 (음)",
         "spec": "",
-        "type": "PM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "BUFFER",
