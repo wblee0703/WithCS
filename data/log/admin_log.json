@@ -646,5 +646,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "MFC",
         "details": "Type: BM, Spec: M3030V AIR 5SLPM (VITON,1/4\") 15Vdc"
+    },
+    {
+        "timestamp": "2026-03-17T04:52:32.870Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Flow meter(Outlet valve)",
+        "details": "Type: BM, Spec: LZM-WO/1-5LPM, OEM, POC1/4-01MW"
     }
 ]

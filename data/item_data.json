@@ -592,5 +592,16 @@
         "spec": "M3030V AIR 5SLPM (VITON,1/4\") 15Vdc",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723152870,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "F/M (5LPM)",
+        "part": "Flow meter(Outlet valve)",
+        "spec": "LZM-WO/1-5LPM, OEM, POC1/4-01MW",
+        "cycle": "",
+        "equip": ""
     }
 ]
