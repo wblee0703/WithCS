@@ -715,15 +715,15 @@
         "equip": ""
     },
     {
-        "code": "3WAY_V(G)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723252900,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00001417",
+        "code": "3WAY_V(G)",
         "part": "Solenoid valve",
-        "partno": "",
         "spec": "3 WAY USG3-X1476-FL-634209-DC24V, 3.0",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "SYRINGE PUMP (T)",
