@@ -570,5 +570,16 @@
         "spec": "402041, for MPC 601 E",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723096066,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "MFC_Linetech(10LPM)",
+        "part": "MFC",
+        "spec": "M3030V AIR 10SLPM (VITON,1/4\") 15Vdc",
+        "cycle": "",
+        "equip": ""
     }
 ]

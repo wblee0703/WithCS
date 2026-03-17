@@ -634,5 +634,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Welch Part, 서비스킷",
         "details": "Type: BM, Spec: 402041, for MPC 601 E"
+    },
+    {
+        "timestamp": "2026-03-17T04:51:36.066Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "MFC",
+        "details": "Type: BM, Spec: M3030V AIR 10SLPM (VITON,1/4\") 15Vdc"
     }
 ]
