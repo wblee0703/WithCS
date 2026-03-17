@@ -1067,15 +1067,15 @@
         "equip": ""
     },
     {
-        "code": "ABS.(양)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773724699984,
-        "part": "흡수액(양)",
+        "type": "PM",
+        "detailType": "액체 용액",
         "partno": "",
+        "code": "ABS.(양)",
+        "part": "흡수액(양)",
         "spec": "양이온 흡수액",
-        "type": "PM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "DI",
