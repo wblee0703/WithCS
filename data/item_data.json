@@ -636,5 +636,16 @@
         "spec": "1/4-28 Nuts for 1/16 tubing WhiteDelrin",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723183480,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "FITTING (P316)",
+        "part": "P-316",
+        "spec": "Plug fitting, PFA",
+        "cycle": "",
+        "equip": ""
     }
 ]
