@@ -706,5 +706,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "FEP TUBE",
         "details": "Type: BM, Spec: FEP 3*2*100m, NATURAL, Samplingcoil, Yodogawa"
+    },
+    {
+        "timestamp": "2026-03-17T04:53:57.280Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "TUBE_1/8＂FEP(300M)",
+        "details": "Type: BM, Spec: MT-F-125062, 1.59mm, 1000FT"
     }
 ]

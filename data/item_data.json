@@ -702,5 +702,16 @@
         "spec": "FEP 3*2*100m, NATURAL, Samplingcoil, Yodogawa",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723237280,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "TUBE (FEP_Sol)",
+        "part": "TUBE_1/8＂FEP(300M)",
+        "spec": "MT-F-125062, 1.59mm, 1000FT",
+        "cycle": "",
+        "equip": ""
     }
 ]
