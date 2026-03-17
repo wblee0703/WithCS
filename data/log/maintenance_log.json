@@ -88,5 +88,11 @@
         "details": "분류명 수정: BM -> BM 점검",
         "target": "SOMA-2000",
         "timestamp": "2026-03-17T03:58:59.097Z"
+    },
+    {
+        "timestamp": "2026-03-17T04:10:31.316Z",
+        "action": "LOAD_ITEM_TO_CHECK",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "details": "물품 불러오기: PM 점검"
     }
 ]

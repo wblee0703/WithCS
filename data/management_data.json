@@ -241,8 +241,20 @@
         "SOMA-2000::SOMA-H19-0903::비정기::Hunting": [],
         "SOMA-2000::SOMA-H19-0903::정기::PM 점검": [
             {
-                "content": "Stadnard",
-                "id": 1773704369024
+                "id": 1773720631316,
+                "content": "Metal Standard Solution(3%HNO3)"
+            },
+            {
+                "id": 1773720631317,
+                "content": "Pt Skimmer cone for 7700S"
+            },
+            {
+                "id": 1773720631318,
+                "content": "Pt Sampling cone for 7700S"
+            },
+            {
+                "id": 1773720631319,
+                "content": "Extraction-omega lens assembly"
             }
         ],
         "SOMA-2000::SOMA-HC19-1204::정기::PM": [
