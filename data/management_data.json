@@ -300,15 +300,6 @@
         "WIM-100::R24-01-01-C::정기": [
             "PM 점검"
         ],
-        "WIM-100::WIM1-HK24-0401::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
-        ],
-        "WIM-100::WIM1-HK24-0401::정기": [
-            "PM 점검"
-        ],
         "SOMA-2000::SOMA-H19-0402::고객대응": [
             "순회 점검",
             "프로그램 변경 / 평가",
@@ -379,6 +370,33 @@
             "용액제조"
         ],
         "SOMA-2000::SOMA-HK21-0202::온라인점검": [
+            "온라인점검"
+        ],
+        "WIM-100::WIM1-HK24-0401::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
+        "WIM-100::WIM1-HK24-0401::정기": [
+            "PM 점검"
+        ],
+        "WIM-100::WIM1-HK24-0401::고객대응": [
+            "순회 점검",
+            "프로그램 변경 / 평가",
+            "설비 평가",
+            "Parts 교체",
+            "업무 협조",
+            "설비 정상화",
+            "단순조치",
+            "설비 개조",
+            "Cal 보정",
+            "기타"
+        ],
+        "WIM-100::WIM1-HK24-0401::용액제조": [
+            "용액제조"
+        ],
+        "WIM-100::WIM1-HK24-0401::온라인점검": [
             "온라인점검"
         ]
     },
@@ -681,103 +699,6 @@
         "SOMA-3000E::SOMA-EK24-0403::정기::PM 점검": [],
         "WAD-10::AD10-EK24-0202::온라인점검::온라인점검": [],
         "WAD-10::AD10-EK24-0202::정기::PM 점검": [],
-        "WIM-100::WIM1-HK24-0401::비정기::Alarm": [],
-        "WIM-100::WIM1-HK24-0401::비정기::BM 점검": [
-            {
-                "content": "Torch for PFA inert kit for ICP-MS",
-                "id": 1773725241418
-            },
-            {
-                "content": "Platinum injector, inert torch, 2.5mm id",
-                "id": 1773725241419
-            },
-            {
-                "content": "Spray Chamber for Inert Kit, PFA",
-                "id": 1773725241420
-            },
-            {
-                "content": "Spray Chamber End Cap for Inert Kit, PFA",
-                "id": 1773725241421
-            },
-            {
-                "content": "Long connector tube for ICP-MS inert kit",
-                "id": 1773725241422
-            },
-            {
-                "content": "Quartz Torch Bonnet",
-                "id": 1773725241423
-            },
-            {
-                "content": "Shield Plate for ICP-MS",
-                "id": 1773725241424
-            },
-            {
-                "content": "Ar gas clean filter, Semicon App",
-                "id": 1773725241425
-            },
-            {
-                "content": "Gas Clean Filter Carrier Gas",
-                "id": 1773725241426
-            },
-            {
-                "content": "Deflect lens for ICP-MS",
-                "id": 1773725241427
-            },
-            {
-                "content": "Plate bias for ICP-MS",
-                "id": 1773725241428
-            },
-            {
-                "content": "Cell entrance lens for ICP-MS",
-                "id": 1773725241429
-            },
-            {
-                "content": "Cell exit lens for ICP-MS",
-                "id": 1773725241430
-            },
-            {
-                "content": "Cell focus lens for ICP-MS",
-                "id": 1773725241431
-            },
-            {
-                "content": "Octopole assembly, ICP-MS",
-                "id": 1773725241432
-            },
-            {
-                "content": "Micro Flow Nebulizer PFA-100",
-                "id": 1773725241433
-            },
-            {
-                "content": "RF coil for 7900",
-                "id": 1773725241434
-            },
-            {
-                "content": "Electron multiplier for ICP-MS",
-                "id": 1773725241435
-            }
-        ],
-        "WIM-100::WIM1-HK24-0401::정기::PM 점검": [
-            {
-                "content": "Pt Skimmer cone for 7700S",
-                "id": 1773725249424
-            },
-            {
-                "content": "Pt Sampling cone for 7700S",
-                "id": 1773725249425
-            },
-            {
-                "content": "Extraction-omega lens assembly",
-                "id": 1773725249426
-            },
-            {
-                "content": "Metal Standard Solution(1%HNO3)",
-                "id": 1773725249427
-            },
-            {
-                "content": "9.5% HNO3",
-                "id": 1773725249428
-            }
-        ],
         "SOMA-2000::SOMA-H19-0402::고객대응::순회 점검": [],
         "SOMA-2000::SOMA-H19-0402::고객대응::프로그램 변경 / 평가": [],
         "SOMA-2000::SOMA-H19-0402::고객대응::설비 평가": [],
@@ -1129,6 +1050,176 @@
         "SOMA-2000::SOMA-HK21-0202::고객대응::Cal 보정": [],
         "SOMA-2000::SOMA-HK21-0202::고객대응::기타": [],
         "SOMA-2000::SOMA-HK21-0202::용액제조::용액제조": [],
-        "SOMA-2000::SOMA-HK21-0202::온라인점검::온라인점검": []
+        "SOMA-2000::SOMA-HK21-0202::온라인점검::온라인점검": [],
+        "WIM-100::WIM1-HK24-0401::비정기::Alarm": [
+            {
+                "content": "PLC Alarm",
+                "id": 1773727864811
+            },
+            {
+                "content": "Exhaust Alarm",
+                "id": 1773727856317
+            },
+            {
+                "content": "GN2 Alarm",
+                "id": 1773727858118
+            },
+            {
+                "content": "Water Sensor Alarm",
+                "id": 1773727862107
+            },
+            {
+                "content": "HF Sensor Alarm",
+                "id": 1773727856040
+            },
+            {
+                "content": "Mass Hunter Alarm",
+                "id": 1773727861105
+            },
+            {
+                "content": "EMS Alarm",
+                "id": 1773727861881
+            },
+            {
+                "content": "Inner Leak  Alarm",
+                "id": 1773727861006
+            },
+            {
+                "content": "External Leak Alarm",
+                "id": 1773727858050
+            },
+            {
+                "content": "Door Lock Alarm",
+                "id": 1773727865011
+            }
+        ],
+        "WIM-100::WIM1-HK24-0401::비정기::BM 점검": [
+            {
+                "content": "Torch for PFA inert kit for ICP-MS",
+                "id": 1773727864545
+            },
+            {
+                "content": "Platinum injector, inert torch, 2.5mm id",
+                "id": 1773727864794
+            },
+            {
+                "content": "Spray Chamber for Inert Kit, PFA",
+                "id": 1773727855346
+            },
+            {
+                "content": "Spray Chamber End Cap for Inert Kit, PFA",
+                "id": 1773727855673
+            },
+            {
+                "content": "Long connector tube for ICP-MS inert kit",
+                "id": 1773727862975
+            },
+            {
+                "content": "Quartz Torch Bonnet",
+                "id": 1773727862896
+            },
+            {
+                "content": "Shield Plate for ICP-MS",
+                "id": 1773727858408
+            },
+            {
+                "content": "Ar gas clean filter, Semicon App",
+                "id": 1773727856484
+            },
+            {
+                "content": "Gas Clean Filter Carrier Gas",
+                "id": 1773727857318
+            },
+            {
+                "content": "Deflect lens for ICP-MS",
+                "id": 1773727858617
+            },
+            {
+                "content": "Plate bias for ICP-MS",
+                "id": 1773727863099
+            },
+            {
+                "content": "Cell entrance lens for ICP-MS",
+                "id": 1773727856983
+            },
+            {
+                "content": "Cell exit lens for ICP-MS",
+                "id": 1773727865072
+            },
+            {
+                "content": "Cell focus lens for ICP-MS",
+                "id": 1773727862846
+            },
+            {
+                "content": "Octopole assembly, ICP-MS",
+                "id": 1773727862064
+            },
+            {
+                "content": "Micro Flow Nebulizer PFA-100",
+                "id": 1773727864730
+            },
+            {
+                "content": "RF coil for 7900",
+                "id": 1773727863194
+            },
+            {
+                "content": "Electron multiplier for ICP-MS",
+                "id": 1773727863256
+            }
+        ],
+        "WIM-100::WIM1-HK24-0401::비정기::Data / Para 이상": [
+            {
+                "content": "Calibration Fail",
+                "id": 1773727860006
+            },
+            {
+                "content": "감도 Spec. Out",
+                "id": 1773727856514
+            },
+            {
+                "content": "Parameter 값 이상",
+                "id": 1773727859715
+            },
+            {
+                "id": 1773727863445,
+                "content": "Data Trend 이상"
+            }
+        ],
+        "WIM-100::WIM1-HK24-0401::비정기::Hunting": [
+            {
+                "id": 1773727863550,
+                "content": "Data Hunting"
+            }
+        ],
+        "WIM-100::WIM1-HK24-0401::정기::PM 점검": [
+            {
+                "content": "Metal Standard Solution(3%HNO3)",
+                "id": 1773727856412
+            },
+            {
+                "content": "Pt Skimmer cone for 7700S",
+                "id": 1773727857783
+            },
+            {
+                "content": "Pt Sampling cone for 7700S",
+                "id": 1773727863265
+            },
+            {
+                "content": "Extraction-omega lens assembly",
+                "id": 1773727860353
+            }
+        ],
+        "WIM-100::WIM1-HK24-0401::고객대응::순회 점검": [],
+        "WIM-100::WIM1-HK24-0401::고객대응::프로그램 변경 / 평가": [],
+        "WIM-100::WIM1-HK24-0401::고객대응::설비 평가": [],
+        "WIM-100::WIM1-HK24-0401::고객대응::Parts 교체": [],
+        "WIM-100::WIM1-HK24-0401::고객대응::업무 협조": [],
+        "WIM-100::WIM1-HK24-0401::고객대응::설비 정상화": [],
+        "WIM-100::WIM1-HK24-0401::고객대응::단순조치": [],
+        "WIM-100::WIM1-HK24-0401::고객대응::설비 개조": [],
+        "WIM-100::WIM1-HK24-0401::고객대응::Cal 보정": [],
+        "WIM-100::WIM1-HK24-0401::고객대응::기타": [],
+        "WIM-100::WIM1-HK24-0401::용액제조::용액제조": [],
+        "WIM-100::WIM1-HK24-0401::온라인점검::온라인점검": []
     }
 }
