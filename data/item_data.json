@@ -234,11 +234,11 @@
         "id": 1773722196069,
         "type": "BM",
         "detailType": "",
-        "partno": "",
+        "partno": "C00004462",
         "code": "Nebulizer",
         "part": "Micro Flow Nebulizer PFA-100",
         "spec": "G3139-65100, 150~200u/min, Agilent 정품",
         "cycle": "",
-        "equip": ""
+        "equip": "SOMA-2000, WIM-100"
     }
 ]

@@ -424,5 +424,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Micro Flow Nebulizer PFA-100",
         "details": "Type: BM, Spec: G3139-65100, 150~200u/min, Agilent 정품"
+    },
+    {
+        "timestamp": "2026-03-17T04:36:47.748Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Micro Flow Nebulizer PFA-100",
+        "details": "Type: BM, Code: Nebulizer"
     }
 ]
