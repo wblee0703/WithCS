@@ -174,45 +174,45 @@
         "timestamp": "2026-03-17T03:36:41.332Z"
     },
     {
-        "timestamp": "2026-03-17T03:54:14.544Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: Metal STD (10ppb,3%)",
         "target": "Metal Standard Solution(3%HNO3)",
-        "details": "Type: PM, Code: Metal STD (10ppb,3%)"
+        "timestamp": "2026-03-17T03:54:14.544Z"
     },
     {
-        "timestamp": "2026-03-17T03:55:42.511Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: AT7708S-Pt, G3280-67064, GE OEM",
         "target": "Pt Skimmer cone for 7700S",
-        "details": "Type: PM, Spec: AT7708S-Pt, G3280-67064, GE OEM"
+        "timestamp": "2026-03-17T03:55:42.511Z"
     },
     {
-        "timestamp": "2026-03-17T03:56:23.774Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: Skimmer Cone",
         "target": "Pt Skimmer cone for 7700S",
-        "details": "Type: PM, Code: Skimmer Cone"
+        "timestamp": "2026-03-17T03:56:23.774Z"
     },
     {
-        "timestamp": "2026-03-17T03:56:40.104Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: AT7706-Pt, G3280-67036, GE OEM",
         "target": "Pt Sampling cone for 7700S",
-        "details": "Type: PM, Spec: AT7706-Pt, G3280-67036, GE OEM"
+        "timestamp": "2026-03-17T03:56:40.104Z"
     },
     {
-        "timestamp": "2026-03-17T03:57:09.984Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: Sampler Cone",
         "target": "Pt Sampling cone for 7700S",
-        "details": "Type: PM, Code: Sampler Cone"
+        "timestamp": "2026-03-17T03:57:09.984Z"
     },
     {
-        "timestamp": "2026-03-17T03:57:26.136Z",
         "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: G8400-67002, lens for 7900s, Agilent 정품",
         "target": "Extraction-omega lens assembly",
-        "details": "Type: PM, Spec: G8400-67002, lens for 7900s, Agilent 정품"
+        "timestamp": "2026-03-17T03:57:26.136Z"
     },
     {
-        "timestamp": "2026-03-17T03:57:46.404Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: Ion Lens",
         "target": "Extraction-omega lens assembly",
-        "details": "Type: PM, Code: Ion Lens"
+        "timestamp": "2026-03-17T03:57:46.404Z"
     }
 ]

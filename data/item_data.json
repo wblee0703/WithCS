@@ -22,47 +22,47 @@
         "type": "BM"
     },
     {
-        "id": 1773718601332,
-        "type": "PM",
-        "detailType": "",
-        "partno": "",
         "code": "Metal STD (10ppb,3%)",
-        "part": "Metal Standard Solution(3%HNO3)",
-        "spec": "10ppb Multi(4종), 3%HNO3",
         "cycle": "30",
-        "equip": "SOMA-2000"
+        "detailType": "",
+        "equip": "SOMA-2000",
+        "id": 1773718601332,
+        "part": "Metal Standard Solution(3%HNO3)",
+        "partno": "",
+        "spec": "10ppb Multi(4종), 3%HNO3",
+        "type": "PM"
     },
     {
-        "id": 1773719742511,
-        "type": "PM",
-        "detailType": "분석부 교체",
-        "partno": "C00004070",
         "code": "Skimmer Cone",
+        "cycle": "182",
+        "detailType": "분석부 교체",
+        "equip": "SOMA-2000, WIM-100",
+        "id": 1773719742511,
         "part": "Pt Skimmer cone for 7700S",
+        "partno": "C00004070",
         "spec": "AT7708S-Pt, G3280-67064, GE OEM",
-        "cycle": "182",
-        "equip": "SOMA-2000, WIM-100"
+        "type": "PM"
     },
     {
-        "id": 1773719800104,
-        "type": "PM",
-        "detailType": "분석부 교체",
-        "partno": "C00004069",
         "code": "Sampler Cone",
-        "part": "Pt Sampling cone for 7700S",
-        "spec": "AT7706-Pt, G3280-67036, GE OEM",
         "cycle": "182",
-        "equip": "SOMA-2000, WIM-100"
+        "detailType": "분석부 교체",
+        "equip": "SOMA-2000, WIM-100",
+        "id": 1773719800104,
+        "part": "Pt Sampling cone for 7700S",
+        "partno": "C00004069",
+        "spec": "AT7706-Pt, G3280-67036, GE OEM",
+        "type": "PM"
     },
     {
-        "id": 1773719846136,
-        "type": "PM",
-        "detailType": "분석부 교체",
-        "partno": "A00001565",
         "code": "Ion Lens",
-        "part": "Extraction-omega lens assembly",
-        "spec": "G8400-67002, lens for 7900s, Agilent 정품",
         "cycle": "365",
-        "equip": "SOMA-2000, WIM-100"
+        "detailType": "분석부 교체",
+        "equip": "SOMA-2000, WIM-100",
+        "id": 1773719846136,
+        "part": "Extraction-omega lens assembly",
+        "partno": "A00001565",
+        "spec": "G8400-67002, lens for 7900s, Agilent 정품",
+        "type": "PM"
     }
 ]

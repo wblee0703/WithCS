@@ -1788,10 +1788,11 @@ function renderCheckTypeItemList() {
     // [수정] 데이터가 아예 생성된 적이 없는 경우에만(처음 1회만) 물품 관리에 등록된 정보를 기본값으로 가져옴
     if (!checkTypeItemsData.hasOwnProperty(key)) {
         let defaultItems = [];
-        if (currentCheckTypeSubCategory === 'PM' || currentCheckTypeSubCategory === 'BM') {
+        if (currentCheckTypeSubCategory === 'PM 점검' || currentCheckTypeSubCategory === 'BM 점검') {
+            const targetType = currentCheckTypeSubCategory === 'PM 점검' ? 'PM' : 'BM';
             const equipName = currentCheckTypeEquipKey.split('::')[0];
             const matchedItems = adminItems.filter(item => {
-                if (item.type !== currentCheckTypeSubCategory) return false;
+                if (item.type !== targetType) return false;
                 if (!item.equip) return false;
                 const equips = item.equip.split(',').map(e => e.trim());
                 return equips.includes(equipName);
