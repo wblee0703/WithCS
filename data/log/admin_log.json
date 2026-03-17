@@ -1222,5 +1222,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Leak Sensor(감지부)",
         "details": "Type: BM, Code: LEAK SENSOR(감지부)"
+    },
+    {
+        "timestamp": "2026-03-17T05:11:17.015Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Leak Sensor(케이블)",
+        "details": "Type: BM, Code: LEAK SENSOR(케이블)"
     }
 ]

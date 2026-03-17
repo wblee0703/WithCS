@@ -924,15 +924,15 @@
         "equip": ""
     },
     {
-        "code": "LEAK SENSOR(케이블)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723593466,
+        "type": "BM",
+        "detailType": "",
+        "partno": "B00000262",
+        "code": "LEAK SENSOR(케이블)",
         "part": "Leak Sensor(케이블)",
-        "partno": "",
         "spec": "TFE CABLE, 4SQ_내산성",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "LEAK SENSOR(커넥터)",
