@@ -11,15 +11,16 @@
         "type": "PM"
     },
     {
-        "code": "Skimmer Cone",
-        "cycle": "182",
-        "detailType": "분석부 교체",
-        "equip": "SOMA-2000, WIM-100",
         "id": 1773719742511,
-        "part": "Pt Skimmer cone for 7700S",
+        "type": "PM",
+        "detailType": "분석부 교체",
+        "additional": "ICPMS",
         "partno": "C00004070",
+        "code": "Skimmer Cone",
+        "part": "Pt Skimmer cone for 7700S",
         "spec": "AT7708S-Pt, G3280-67064, GE OEM",
-        "type": "PM"
+        "cycle": "182",
+        "equip": "SOMA-2000, WIM-100"
     },
     {
         "code": "Sampler Cone",

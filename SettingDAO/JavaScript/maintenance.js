@@ -750,9 +750,15 @@ function renderLogs() {
             }
         }
 
+        let formattedDate = log.date || '-';
+        const dateMatch = formattedDate.match(/^20(\d{2})-(\d{2})-(\d{2})$/);
+        if (dateMatch) {
+            formattedDate = `${dateMatch[1]}. ${dateMatch[2]}. ${dateMatch[3]}`;
+        }
+
         return `
         <tr id="log-row-${log.id}" onclick="selectLog(${log.id})" class="${selectedLogId === log.id ? 'active-log' : ''}">
-            <td>${log.date}</td>
+            <td data-raw-date="${escapeHtml(log.date || '')}">${formattedDate}</td>
             <td><span class="badge ${getLogBadgeClass(log.type, log.detailType)}">${escapeHtml(log.type || 'PM')}</span></td>
             <td>${escapeHtml(log.detailType || '-')}</td>
             <td title="${escapeHtml(tooltipContent)}">${escapeHtml(displayContent)}</td>
@@ -880,7 +886,7 @@ function toggleLogEdit(id, btn) {
         const contentCell = row.cells[3];
         const workerCell = row.cells[4];
 
-        const currentDate = dateCell.textContent.trim();
+        const currentDate = dateCell.dataset.rawDate || dateCell.textContent.trim();
         const currentType = typeCell.textContent.trim();
         const currentDetailType = detailCell.textContent.trim() === '-' ? '' : detailCell.textContent.trim();
         const currentContent = contentCell.textContent.trim();
@@ -986,14 +992,17 @@ window.renderEditLogContentField = function(id, type, detailType, value) {
         list.className = 'log-select-list';
 
         items.forEach(item => {
+            const displayValue = item.code ? item.code : item.content;
+            
             // 중복 렌더링 방지
-            if (Array.from(list.children).some(child => child.dataset.value === item.content)) return;
+            if (Array.from(list.children).some(child => child.dataset.value === displayValue)) return;
             
                 const div = document.createElement('div');
                 div.className = 'log-select-item';
-                if (currentValues.includes(item.content)) div.classList.add('selected');
-                div.dataset.value = item.content;
-                div.innerHTML = `<span>${item.content}</span>`;
+                // 기존 값이 full content 이거나 code 인 경우 모두 대응
+                if (currentValues.includes(item.content) || currentValues.includes(displayValue)) div.classList.add('selected');
+                div.dataset.value = displayValue;
+                div.innerHTML = `<span>${displayValue}</span>`;
 
                 div.onclick = (e) => {
                     e.stopPropagation();
@@ -1149,8 +1158,12 @@ window.updateLogContentOptions = function() {
             items.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'log-select-item';
-                div.dataset.value = item.content;
-                div.innerHTML = `<span>${item.content}</span>`;
+                
+                // [수정] 약어(코드)가 있으면 약어를 value와 표시명으로 사용
+                const displayValue = item.code ? item.code : item.content;
+                div.dataset.value = displayValue;
+                div.innerHTML = `<span>${displayValue}</span>`;
+                
                 div.onclick = (e) => {
                     e.stopPropagation();
                     div.classList.toggle('selected');
@@ -1255,10 +1268,11 @@ function getCheckTypeItems(type, detailType) {
     const key = `${equipKey}::${type}::${detailType}`;
     
     // 원본 데이터 오염을 막기 위해 복사본 생성
-    const items = [...(itemData[key] || [])];
+    const items = [...(itemData[key] || [])].map(item => ({...item}));
 
     // 구버전 호환성 (PM, BM, 트러블이슈 등)
-    if (type === 'PM' || type === 'BM' || type === '트러블이슈' || detailType === 'PM' || detailType === 'BM') {
+    const safeDetailType = detailType || '';
+    if (type === 'PM' || type === 'BM' || type === '트러블이슈' || safeDetailType.includes('PM') || safeDetailType.includes('BM')) {
         const keyMaint = `details_${currentPath.site}_${currentPath.equip}`;
         const dataMaint = JSON.parse(localStorage.getItem(keyMaint)) || { maint: [] };
         let filteredItems = [];
@@ -1267,11 +1281,13 @@ function getCheckTypeItems(type, detailType) {
             filteredItems.push({ content: '데이터이슈' });
             filteredItems = filteredItems.concat(dataMaint.maint.filter(item => item.type === 'PM' || item.type === 'BM'));
         } else {
-            const targetType = (type === 'PM' || type === 'BM') ? type : detailType;
+            const targetType = (type === 'PM' || type === 'BM') ? type : (safeDetailType.includes('PM') ? 'PM' : (safeDetailType.includes('BM') ? 'BM' : safeDetailType));
             filteredItems = dataMaint.maint.filter(item => item.type === targetType);
         }
-        items.push(...filteredItems);
+        items.push(...filteredItems.map(item => ({...item})));
     }
+    
+    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
     
     // content 필드를 기준으로 중복 항목 완벽히 제거
     const uniqueItems = [];
@@ -1280,6 +1296,15 @@ function getCheckTypeItems(type, detailType) {
     for (const item of items) {
         if (!seenContents.has(item.content)) {
             seenContents.add(item.content);
+            
+            // [추가] 약어(코드명)가 없으면 admin_items에서 조회
+            if (!item.code) {
+                const match = adminItems.find(a => a.part === item.content);
+                if (match && match.code) {
+                    item.code = match.code;
+                }
+            }
+            
             uniqueItems.push(item);
         }
     }
