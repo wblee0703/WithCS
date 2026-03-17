@@ -605,15 +605,15 @@
         "equip": ""
     },
     {
-        "code": "FITTING (P200)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723167880,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000654",
+        "code": "FITTING (P200)",
         "part": "P-200",
-        "partno": "",
         "spec": "Ferrules for 1/16 OD tubing Blue ETFE",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "FITTING (P203)",

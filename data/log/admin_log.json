@@ -1048,5 +1048,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Sampler body",
         "details": "Type: BM, Code: SAMPLER (양)"
+    },
+    {
+        "timestamp": "2026-03-17T05:08:06.657Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "P-200",
+        "details": "Type: BM, Code: FITTING (P200)"
     }
 ]
