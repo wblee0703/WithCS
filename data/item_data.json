@@ -658,5 +658,16 @@
         "spec": "Flngls sys Blk Peek 1/4in",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723198224,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "FITTING (P213)",
+        "part": "P-213",
+        "spec": "Headless M6 Nut, 1/16in Short",
+        "cycle": "",
+        "equip": ""
     }
 ]
