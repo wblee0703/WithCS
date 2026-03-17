@@ -754,5 +754,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "REACTOR_WF301용",
         "details": "Type: BM, Spec: 내경0.03\" 3바퀴반"
+    },
+    {
+        "timestamp": "2026-03-17T04:56:16.264Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "1/4 cap",
+        "details": "Type: BM, Spec: SC-4-S"
     }
 ]

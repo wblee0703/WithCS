@@ -790,5 +790,16 @@
         "spec": "내경0.03\" 3바퀴반",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723376264,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "CAP (1/4)",
+        "part": "1/4 cap",
+        "spec": "SC-4-S",
+        "cycle": "",
+        "equip": ""
     }
 ]
