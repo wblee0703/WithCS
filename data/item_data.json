@@ -286,15 +286,15 @@
         "equip": ""
     },
     {
-        "code": "AC(2mm)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722660686,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000026",
+        "code": "AC(2mm)",
         "part": "Analysis Column(2mm)",
-        "partno": "",
         "spec": "046129, AS14(2x250mm)",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "AC(4mm)",
