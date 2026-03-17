@@ -231,8 +231,20 @@
         "SOLA-5000::정기::PM 점검": [],
         "SOMA-2000::SOMA-H19-0402::정기::PM 점검": [
             {
-                "content": "Stadnard",
-                "id": 1773704364200
+                "id": 1773720787116,
+                "content": "Metal Standard Solution(3%HNO3)"
+            },
+            {
+                "id": 1773720787117,
+                "content": "Pt Skimmer cone for 7700S"
+            },
+            {
+                "id": 1773720787118,
+                "content": "Pt Sampling cone for 7700S"
+            },
+            {
+                "id": 1773720787119,
+                "content": "Extraction-omega lens assembly"
             }
         ],
         "SOMA-2000::SOMA-H19-0903::비정기::Alarm": [],

@@ -94,5 +94,11 @@
         "details": "물품 불러오기: PM 점검",
         "target": "SOMA-2000::SOMA-H19-0903",
         "timestamp": "2026-03-17T04:10:31.316Z"
+    },
+    {
+        "timestamp": "2026-03-17T04:13:07.116Z",
+        "action": "LOAD_ITEM_TO_CHECK",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "물품 불러오기: PM 점검"
     }
 ]
