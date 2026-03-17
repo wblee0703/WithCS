@@ -174,5 +174,16 @@
         "spec": "G3280-20628, 정품",
         "cycle": "",
         "equip": "SOMA-2000, WIM-100"
+    },
+    {
+        "id": 1773721987872,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "ORS (Plate bias)",
+        "part": "Plate bias for ICP-MS",
+        "spec": "G3280-60615, 정품",
+        "cycle": "",
+        "equip": ""
     }
 ]

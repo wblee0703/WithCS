@@ -358,5 +358,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Deflect lens for ICP-MS",
         "details": "Type: BM, Code: ORS (Deflect lens)"
+    },
+    {
+        "timestamp": "2026-03-17T04:33:07.872Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Plate bias for ICP-MS",
+        "details": "Type: BM, Spec: G3280-60615, 정품"
     }
 ]
