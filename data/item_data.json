@@ -227,15 +227,16 @@
         "equip": "SOMA-2000, WIM-100"
     },
     {
-        "code": "Nebulizer",
-        "cycle": "",
-        "detailType": "분석부 교체",
-        "equip": "SOMA-2000, WIM-100",
         "id": 1773722196069,
-        "part": "Micro Flow Nebulizer PFA-100",
+        "type": "BM",
+        "detailType": "분석부 교체",
+        "additional": "ICPMS",
         "partno": "C00004462",
+        "code": "Nebulizer",
+        "part": "Micro Flow Nebulizer PFA-100",
         "spec": "G3139-65100, 150~200u/min, Agilent 정품",
-        "type": "BM"
+        "cycle": "",
+        "equip": "SOMA-2000, WIM-100"
     },
     {
         "code": "RF Coil",
