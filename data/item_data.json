@@ -352,15 +352,15 @@
         "equip": ""
     },
     {
-        "code": "2WAY_V(G)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722713894,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000036",
+        "code": "2WAY_V(G)",
         "part": "Solenoid Valve",
-        "partno": "",
         "spec": "2WAY (G) USB3-6-3-E_DC 24V_AMC용",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "HPLC SEAL",

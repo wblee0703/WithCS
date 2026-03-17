@@ -904,5 +904,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Solenoid Valve(MHPNLBT032)",
         "details": "Type: BM, Code: 3WAY_V(L)"
+    },
+    {
+        "timestamp": "2026-03-17T05:03:57.820Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Solenoid Valve",
+        "details": "Type: BM, Code: 2WAY_V(G)"
     }
 ]
