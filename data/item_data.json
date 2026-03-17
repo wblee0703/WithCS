@@ -757,5 +757,16 @@
         "spec": "10013, 3Port, PCTFE/PTFE",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723327258,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "Syringe_1mL (ILS)",
+        "part": "Syringe(1mL)",
+        "spec": "2647017, 1mL, ILS",
+        "cycle": "",
+        "equip": ""
     }
 ]

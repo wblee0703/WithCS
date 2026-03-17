@@ -736,5 +736,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Syringe pump, C3000",
         "details": "Type: BM, Spec: 10013, 3Port, PCTFE/PTFE"
+    },
+    {
+        "timestamp": "2026-03-17T04:55:27.258Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Syringe(1mL)",
+        "details": "Type: BM, Spec: 2647017, 1mL, ILS"
     }
 ]
