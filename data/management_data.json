@@ -284,6 +284,12 @@
             "Alarm",
             "Hunting",
             "Data / Para 이상"
+        ],
+        "SOLA-1000::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
         ]
     },
     "items": {
