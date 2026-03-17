@@ -112,5 +112,11 @@
         "details": "Type: BM, Code: GC(2mm)",
         "target": "Guard Column(2mm)",
         "timestamp": "2026-03-17T01:23:44.280Z"
+    },
+    {
+        "timestamp": "2026-03-17T02:22:15.579Z",
+        "action": "ADD_CHECK_CATEGORY",
+        "target": "SOMA-3000E::SOMA-EK24-0403",
+        "details": "분류 추가: 비정기 > BM 점검"
     }
 ]
