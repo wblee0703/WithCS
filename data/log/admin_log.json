@@ -550,5 +550,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Diaphragm",
         "details": "Type: BM, Spec: 027473 for N838 (838 부품)"
+    },
+    {
+        "timestamp": "2026-03-17T04:45:59.897Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Rotor seal_ Switching valve",
+        "details": "Type: BM, Spec: C15-310, 1/16*75mm, 75C/250psi liq"
     }
 ]

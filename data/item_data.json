@@ -416,5 +416,16 @@
         "spec": "027473 for N838 (838 부품)",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722759896,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "ROTOR SEAL(Sw/V)",
+        "part": "Rotor seal_ Switching valve",
+        "spec": "C15-310, 1/16*75mm, 75C/250psi liq",
+        "cycle": "",
+        "equip": ""
     }
 ]
