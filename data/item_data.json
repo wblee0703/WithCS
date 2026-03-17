@@ -1012,15 +1012,15 @@
         "equip": ""
     },
     {
-        "code": "BUFFER",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773724650498,
-        "part": "버퍼 용액",
+        "type": "PM",
+        "detailType": "액체 용액",
         "partno": "",
+        "code": "BUFFER",
+        "part": "버퍼 용액",
         "spec": "버퍼 용액",
-        "type": "PM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "TVOC STD(0.5)",

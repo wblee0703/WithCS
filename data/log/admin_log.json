@@ -1420,5 +1420,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "MAIN 용액 (음)",
         "details": "Type: PM, Code: MAIN (음)"
+    },
+    {
+        "timestamp": "2026-03-17T05:20:13.466Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "버퍼 용액",
+        "details": "Type: PM, Code: BUFFER"
     }
 ]
