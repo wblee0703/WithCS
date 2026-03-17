@@ -1336,5 +1336,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "이소부틸렌 (10ppm)",
         "details": "Type: PM, Spec: 103L-248-10"
+    },
+    {
+        "timestamp": "2026-03-17T05:18:12.084Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "이소부틸렌 (10ppm)",
+        "details": "Type: PM, Spec: 표준가스(10) + Cal 비용"
     }
 ]

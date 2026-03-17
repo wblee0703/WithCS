@@ -1054,5 +1054,16 @@
         "spec": "103L-248-10",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724692084,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "TVOC STD(P9)",
+        "part": "이소부틸렌 (10ppm)",
+        "spec": "표준가스(10) + Cal 비용",
+        "cycle": "",
+        "equip": ""
     }
 ]
