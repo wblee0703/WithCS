@@ -801,5 +801,16 @@
         "spec": "SC-4-S",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723438610,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "Syringe_1mL (SETo)",
+        "part": "Syringe(1mL)",
+        "spec": "3020008, 1mL, SETonic",
+        "cycle": "",
+        "equip": ""
     }
 ]
