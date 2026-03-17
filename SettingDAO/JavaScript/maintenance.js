@@ -289,7 +289,15 @@ function addDetailItem() {
     if (!currentPath.equip) return alert('장비를 선택해주세요.');
 
     const maintType = document.querySelector('#maint-type-toggle .active').dataset.type;
-    const content = document.getElementById('maint-content').value.trim();
+    const contentEl = document.getElementById('maint-content');
+    const content = contentEl.value.trim();
+    let code = '';
+
+    if (contentEl.tagName.toLowerCase() === 'select' && contentEl.selectedIndex >= 0) {
+        const selectedOpt = contentEl.options[contentEl.selectedIndex];
+        code = selectedOpt.dataset.code || '';
+    }
+    
     const date = document.getElementById('maint-date').value;
     const period = document.getElementById('maint-period').value;
 
@@ -306,6 +314,7 @@ function addDetailItem() {
     const newItem = {
         id: Date.now(),
         type: maintType,
+        code: code,
         content: content,
         date: date,
         period: maintType === 'PM' ? period : null
@@ -352,6 +361,7 @@ function renderDetails() {
 
         tr.innerHTML = `
             <td><span class="badge ${(item.type || 'PM').toLowerCase()}">${item.type || 'PM'}</span></td>
+            <td class="edit-code">${escapeHtml(item.code || '-')}</td>
             <td class="edit-content">${escapeHtml(item.content)}</td>
             <td class="edit-date">${item.date}</td>
             <td class="edit-period">${item.period ? item.period + '일' : '-'}</td>
@@ -436,7 +446,8 @@ window.updateMaintContentOptions = function() {
             filteredItems.forEach(item => {
                 const option = document.createElement('option');
                 option.value = item.part;
-                option.textContent = item.part;
+                option.dataset.code = item.code || '';
+                option.textContent = item.code ? `[${item.code}] ${item.part}` : item.part;
                 selectEl.appendChild(option);
             });
         }
@@ -510,6 +521,7 @@ function toggleEditRow(id) {
     const editBtn = row.querySelector('.btn-edit-sm');
     const isEditing = row.classList.contains('editing');
 
+    const codeCell = row.querySelector('.edit-code');
     const contentCell = row.querySelector('.edit-content');
     const dateCell = row.querySelector('.edit-date');
     const periodCell = row.querySelector('.edit-period');
@@ -519,6 +531,9 @@ function toggleEditRow(id) {
         row.classList.add('editing');
         editBtn.textContent = '✅';
         editBtn.style.color = '#238636';
+
+        codeCell.contentEditable = "true";
+        codeCell.spellcheck = false;
 
         contentCell.contentEditable = "true";
         contentCell.spellcheck = false;
@@ -540,6 +555,7 @@ function toggleEditRow(id) {
         contentCell.focus();
     } else {
         // [데이터 저장]
+        const newCode = codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim();
         const newContent = contentCell.textContent.trim();
         const dateInput = document.getElementById(`input-date-${id}`);
         const newDate = dateInput ? dateInput.value : '';
@@ -553,7 +569,7 @@ function toggleEditRow(id) {
 
         if (!newDate) return alert('날짜를 선택해주세요.');
 
-        updateRowData(id, newContent, newDate, newPeriod);
+        updateRowData(id, newCode, newContent, newDate, newPeriod);
 
         row.classList.remove('editing');
         editBtn.textContent = '✏️';
@@ -563,17 +579,18 @@ function toggleEditRow(id) {
     }
 }
 
-function updateRowData(id, content, date, period) {
+function updateRowData(id, code, content, date, period) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
     const idx = data.maint.findIndex(item => item.id === id);
 
     if (idx > -1) {
+        data.maint[idx].code = code;
         data.maint[idx].content = content;
         data.maint[idx].date = date;
         data.maint[idx].period = data.maint[idx].type === 'PM' ? (parseInt(period) || 0) : null;
         localStorage.setItem(key, JSON.stringify(data));
-        addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `수정: ${content} (날짜: ${date}, 주기: ${period || '-'})`);
+        addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `수정: [${code || '-'}] ${content} (날짜: ${date}, 주기: ${period || '-'})`);
     }
 }
 

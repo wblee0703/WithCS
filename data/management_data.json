@@ -6,6 +6,12 @@
         "SOMA-2000::SOMA-H19-0402::정기": [
             "PM"
         ],
+        "SOMA-2000::SOMA-H19-0903::비정기": [
+            "BM",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
         "SOMA-2000::SOMA-H19-0903::정기": [
             "PM"
         ],
@@ -125,12 +131,6 @@
         ],
         "SOMA-3000E::SOMA-EK24-0403::용액제조": [
             "용액제조"
-        ],
-        "SOMA-2000::SOMA-H19-0903::비정기": [
-            "BM",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
         ]
     },
     "items": {
@@ -140,6 +140,10 @@
                 "id": 1773704364200
             }
         ],
+        "SOMA-2000::SOMA-H19-0903::비정기::Alarm": [],
+        "SOMA-2000::SOMA-H19-0903::비정기::BM": [],
+        "SOMA-2000::SOMA-H19-0903::비정기::Data / Para 이상": [],
+        "SOMA-2000::SOMA-H19-0903::비정기::Hunting": [],
         "SOMA-2000::SOMA-H19-0903::정기::PM": [
             {
                 "content": "Stadnard",
@@ -179,10 +183,6 @@
         "SOMA-3000E::SOMA-EK24-0403::비정기::Alarm": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::Data / Para 이상": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::Hunting": [],
-        "SOMA-3000E::SOMA-EK24-0403::용액제조::용액제조": [],
-        "SOMA-2000::SOMA-H19-0903::비정기::BM": [],
-        "SOMA-2000::SOMA-H19-0903::비정기::Alarm": [],
-        "SOMA-2000::SOMA-H19-0903::비정기::Hunting": [],
-        "SOMA-2000::SOMA-H19-0903::비정기::Data / Para 이상": []
+        "SOMA-3000E::SOMA-EK24-0403::용액제조::용액제조": []
     }
 }

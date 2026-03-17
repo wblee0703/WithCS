@@ -969,6 +969,7 @@ function setupItemMgmt() {
 
     const btnAdd = document.getElementById('btn-admin-add-item');
     const typeInput = document.getElementById('admin-item-type-input');
+    const codeInput = document.getElementById('admin-item-code-input');
     const partInput = document.getElementById('admin-item-part-input');
     const specInput = document.getElementById('admin-item-spec-input');
     const cycleInput = document.getElementById('admin-item-cycle-input');
@@ -997,16 +998,18 @@ function setupItemMgmt() {
     if (btnAdd) {
         btnAdd.addEventListener('click', () => {
             const type = typeInput.value;
+            const code = codeInput ? codeInput.value.trim() : "";
             const part = partInput.value.trim();
             const spec = specInput.value.trim();
             const cycle = type === 'PM' ? cycleInput.value.trim() : "";
 
             if (!part) return alert('물품명을 입력해주세요.');
 
-            adminItems.push({ id: Date.now(), type, detailType: '', part, spec, cycle, code: '', partno: '', equip: '' });
+            adminItems.push({ id: Date.now(), type, detailType: '', part, spec, cycle, code, partno: '', equip: '' });
             saveAdminItems();
             addSystemLog('ADD_ITEM_ADMIN', part, `Type: ${type}, Spec: ${spec}, Cycle: ${cycle}`);
             
+            if (codeInput) codeInput.value = '';
             partInput.value = '';
             specInput.value = '';
             if (type === 'PM') cycleInput.value = '';
@@ -1014,6 +1017,7 @@ function setupItemMgmt() {
             partInput.focus();
         });
         
+        if (codeInput) codeInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') partInput.focus(); });
         partInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') specInput.focus(); });
         specInput.addEventListener('keypress', (e) => { 
             if (e.key === 'Enter') {
@@ -1148,6 +1152,9 @@ function renderAdminItemList() {
         li.innerHTML = `
             <div class="model-col col-item-type">
                 <span class="badge ${item.type.toLowerCase()}">${item.type}</span>
+            </div>
+            <div class="model-col col-item-code">
+                ${item.code || '-'}
             </div>
             <div class="model-col col-item-part">
                 ${item.part}
