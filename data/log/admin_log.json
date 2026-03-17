@@ -1030,5 +1030,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "MFC",
         "details": "Type: BM, Code: MFC_Linetech(10LPM)"
+    },
+    {
+        "timestamp": "2026-03-17T05:07:49.696Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "MFC",
+        "details": "Type: BM, Code: MFC_Linetech(5LPM)"
     }
 ]

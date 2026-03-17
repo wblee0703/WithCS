@@ -572,15 +572,15 @@
         "equip": ""
     },
     {
-        "code": "MFC_Linetech(5LPM)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723141765,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000412",
+        "code": "MFC_Linetech(5LPM)",
         "part": "MFC",
-        "partno": "",
         "spec": "M3030V AIR 5SLPM (VITON,1/4\") 15Vdc",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "F/M (5LPM)",
