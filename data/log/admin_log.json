@@ -940,5 +940,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Diaphragm",
         "details": "Type: BM, Code: 다이아프램(838)"
+    },
+    {
+        "timestamp": "2026-03-17T05:04:31.998Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Rotor seal_ Switching valve",
+        "details": "Type: BM, Code: ROTOR SEAL(Sw/V)"
     }
 ]

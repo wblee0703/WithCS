@@ -418,15 +418,15 @@
         "equip": ""
     },
     {
-        "code": "ROTOR SEAL(Sw/V)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722759896,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000078",
+        "code": "ROTOR SEAL(Sw/V)",
         "part": "Rotor seal_ Switching valve",
-        "partno": "",
         "spec": "C15-310, 1/16*75mm, 75C/250psi liq",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "STATOR(Sw/V)",
