@@ -693,15 +693,15 @@
         "equip": ""
     },
     {
-        "code": "TUBE (FEP_Sol)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723237280,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00001174",
+        "code": "TUBE (FEP_Sol)",
         "part": "TUBE_1/8＂FEP(300M)",
-        "partno": "",
         "spec": "MT-F-125062, 1.59mm, 1000FT",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "HPLC SELF FLUSH",

@@ -1096,5 +1096,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "FEP TUBE",
         "details": "Type: BM, Code: TUBE (FEP_Air)"
+    },
+    {
+        "timestamp": "2026-03-17T05:08:52.051Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "TUBE_1/8＂FEP(300M)",
+        "details": "Type: BM, Code: TUBE (FEP_Sol)"
     }
 ]
