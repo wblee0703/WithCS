@@ -465,7 +465,12 @@
                 "content": "Data Trend 이상"
             }
         ],
-        "SOMA-2000::SOMA-H19-0402::비정기::Hunting": [],
+        "SOMA-2000::SOMA-H19-0402::비정기::Hunting": [
+            {
+                "id": 1773727768673,
+                "content": "Data Hunting"
+            }
+        ],
         "SOMA-2000::SOMA-H19-0402::정기::PM 점검": [
             {
                 "content": "Metal Standard Solution(3%HNO3)",
