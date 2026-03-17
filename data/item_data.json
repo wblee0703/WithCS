@@ -107,15 +107,16 @@
         "equip": "SOMA-2000, WIM-100"
     },
     {
-        "code": "Bonnet",
-        "cycle": "",
-        "detailType": "분석부 교체",
-        "equip": "SOMA-2000, WIM-100",
         "id": 1773721633185,
-        "part": "Quartz Torch Bonnet",
+        "type": "BM",
+        "detailType": "분석부 교체",
+        "additional": "ICPMS",
         "partno": "C00004061",
+        "code": "Bonnet",
+        "part": "Quartz Torch Bonnet",
         "spec": "31-808-2577, G1833-65421, OEM",
-        "type": "BM"
+        "cycle": "",
+        "equip": "SOMA-2000, WIM-100"
     },
     {
         "code": "Shield plate",
