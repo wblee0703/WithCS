@@ -604,16 +604,24 @@
         "WAD-10::AD10-EK24-0202::정기::PM 점검": [],
         "WIM-100::WIM1-HK24-0401::정기::PM 점검": [
             {
-                "content": "Pt Skimmer cone for 7700S",
-                "id": 1773720843760
+                "id": 1773725249424,
+                "content": "Pt Skimmer cone for 7700S"
             },
             {
-                "content": "Pt Sampling cone for 7700S",
-                "id": 1773720843761
+                "id": 1773725249425,
+                "content": "Pt Sampling cone for 7700S"
             },
             {
-                "content": "Extraction-omega lens assembly",
-                "id": 1773720843762
+                "id": 1773725249426,
+                "content": "Extraction-omega lens assembly"
+            },
+            {
+                "id": 1773725249427,
+                "content": "Metal Standard Solution(1%HNO3)"
+            },
+            {
+                "id": 1773725249428,
+                "content": "9.5% HNO3"
             }
         ],
         "WIM-100::WIM1-HK24-0401::비정기::BM 점검": [

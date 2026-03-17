@@ -142,5 +142,11 @@
         "details": "분류명 수정: BM -> BM 점검",
         "target": "SOMA-2000",
         "timestamp": "2026-03-17T04:17:03.098Z"
+    },
+    {
+        "timestamp": "2026-03-17T05:27:29.424Z",
+        "action": "LOAD_ITEM_TO_CHECK",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "물품 불러오기: PM 점검"
     }
 ]
