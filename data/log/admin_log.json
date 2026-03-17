@@ -172,5 +172,11 @@
         "details": "Type: PM, Spec: 10ppb Multi(4종), 3%HNO3, Cycle: 30",
         "target": "Metal Standard Solution(3%HNO3)",
         "timestamp": "2026-03-17T03:36:41.332Z"
+    },
+    {
+        "timestamp": "2026-03-17T03:54:14.544Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Metal Standard Solution(3%HNO3)",
+        "details": "Type: PM, Code: Metal STD (10ppb,3%)"
     }
 ]
