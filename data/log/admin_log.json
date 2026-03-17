@@ -136,5 +136,11 @@
         "details": "분류 삭제: BM",
         "target": "SOMA-3000E::SOMA-EK24-0402::비정기",
         "timestamp": "2026-03-17T02:22:45.597Z"
+    },
+    {
+        "timestamp": "2026-03-17T02:34:45.209Z",
+        "action": "UPDATE_EQUIP_MODEL",
+        "target": "SOMA-2000",
+        "details": "To: SOMA-2000 / SOMA2000"
     }
 ]
