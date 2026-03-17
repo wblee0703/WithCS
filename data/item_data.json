@@ -330,15 +330,15 @@
         "equip": ""
     },
     {
-        "code": "DEGASSER",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722695624,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000033",
+        "code": "DEGASSER",
         "part": "Degasser",
-        "partno": "",
         "spec": "9000-1292, Kit,Vac DG Ch,Sm Bore AF,14ft",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "3WAY_V(L)",

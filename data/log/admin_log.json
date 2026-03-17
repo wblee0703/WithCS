@@ -892,5 +892,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Suppressor(4mm 음이온)",
         "details": "Type: BM, Code: SRS(4mm)"
+    },
+    {
+        "timestamp": "2026-03-17T05:03:44.354Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Degasser",
+        "details": "Type: BM, Code: DEGASSER"
     }
 ]
