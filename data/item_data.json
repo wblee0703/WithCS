@@ -977,5 +977,16 @@
         "spec": "양이온 고농도 표준용액",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724626115,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "CRM (음)",
+        "part": "CRM표준용액 (음)",
+        "spec": "음이온 고농도 표준용액",
+        "cycle": "",
+        "equip": ""
     }
 ]
