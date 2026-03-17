@@ -880,15 +880,15 @@
         "equip": ""
     },
     {
-        "code": "SMPS(10A)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723564920,
+        "type": "BM",
+        "detailType": "",
+        "partno": "B00000118",
+        "code": "SMPS(10A)",
         "part": "SMPS:SDR-240-24(10A)",
-        "partno": "",
         "spec": "10A(240W) output 24V / MEAN WALL",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "회로보호기(3A)",
