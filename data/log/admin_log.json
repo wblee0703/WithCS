@@ -958,5 +958,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Rotor seal_ Injector",
         "details": "Type: BM, Code: ROTOR SEAL(INJ)"
+    },
+    {
+        "timestamp": "2026-03-17T05:05:05.880Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Syringe(1mL)",
+        "details": "Type: BM, Code: SYRINGE_1ML(H)"
     }
 ]

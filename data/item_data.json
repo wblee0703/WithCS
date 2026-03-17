@@ -451,15 +451,15 @@
         "equip": ""
     },
     {
-        "code": "SYRINGE_1ML(H)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722784363,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000087",
+        "code": "SYRINGE_1ML(H)",
         "part": "Syringe(1mL)",
-        "partno": "",
         "spec": "81320, 1mL, Hamilton",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "SYRINGE_2.5ML(H)",
