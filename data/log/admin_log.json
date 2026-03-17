@@ -556,5 +556,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Rotor seal_ Switching valve",
         "details": "Type: BM, Spec: C15-310, 1/16*75mm, 75C/250psi liq"
+    },
+    {
+        "timestamp": "2026-03-17T04:46:10.719Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Stator face_ Switching valve",
+        "details": "Type: BM, Spec: C25Z-386_ SW/V Stator seal (C25Z용)"
     }
 ]

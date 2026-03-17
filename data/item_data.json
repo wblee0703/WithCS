@@ -427,5 +427,16 @@
         "spec": "C15-310, 1/16*75mm, 75C/250psi liq",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773722770718,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "STATOR(Sw/V)",
+        "part": "Stator face_ Switching valve",
+        "spec": "C25Z-386_ SW/V Stator seal (C25Z용)",
+        "cycle": "",
+        "equip": ""
     }
 ]
