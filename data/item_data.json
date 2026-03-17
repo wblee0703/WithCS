@@ -264,15 +264,15 @@
         "type": "BM"
     },
     {
-        "code": "GC(2mm)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722647308,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000029",
+        "code": "GC(2mm)",
         "part": "Guard Column(2mm)",
-        "partno": "",
         "spec": "046138, AG14(2x50mm)",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "GC(4mm)",

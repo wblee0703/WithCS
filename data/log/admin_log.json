@@ -856,5 +856,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "하네스 케이블",
         "details": "Type: BM, Spec: 전 장비"
+    },
+    {
+        "timestamp": "2026-03-17T05:01:02.271Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Guard Column(2mm)",
+        "details": "Type: BM, Code: GC(2mm)"
     }
 ]
