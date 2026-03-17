@@ -1678,5 +1678,11 @@
         "action": "ADD_CHECK_ITEM",
         "target": "SOMA-2000::SOMA-H19-0402",
         "details": "항목 추가: [Alarm] EMS Alarm"
+    },
+    {
+        "timestamp": "2026-03-17T05:56:25.698Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Alarm] Inner Leak  Alarm"
     }
 ]

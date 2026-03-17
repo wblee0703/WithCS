@@ -359,6 +359,10 @@
             {
                 "id": 1773726978930,
                 "content": "EMS Alarm"
+            },
+            {
+                "id": 1773726985697,
+                "content": "Inner Leak  Alarm"
             }
         ],
         "SOMA-2000::SOMA-H19-0402::비정기::BM 점검": [
