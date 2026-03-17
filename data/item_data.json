@@ -869,15 +869,15 @@
         "equip": ""
     },
     {
-        "code": "LEAK BOARD",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723554379,
+        "type": "BM",
+        "detailType": "",
+        "partno": "B00000030",
+        "code": "LEAK BOARD",
         "part": "Leak Sensor Board",
-        "partno": "",
         "spec": "Leak Sensor Board / 유니랩코리아",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "SMPS(10A)",

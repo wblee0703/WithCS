@@ -1192,5 +1192,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "PLC386 IN8 Board",
         "details": "Type: BM, Code: PLC386(IN8)"
+    },
+    {
+        "timestamp": "2026-03-17T05:10:51.550Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Leak Sensor Board",
+        "details": "Type: BM, Code: LEAK BOARD"
     }
 ]
