@@ -95,6 +95,14 @@
                 "content": "Pt Sampling cone for 7700S",
                 "date": "2026-03-17",
                 "period": "182"
+            },
+            {
+                "id": 1773725571402,
+                "type": "PM",
+                "code": "Ion Lens",
+                "content": "Extraction-omega lens assembly",
+                "date": "2026-03-17",
+                "period": "365"
             }
         ],
         "logs": [
