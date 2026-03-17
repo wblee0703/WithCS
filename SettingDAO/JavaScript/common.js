@@ -38,6 +38,7 @@ let syncDebounceTimer = null;
 
 // [추가] 동기화 대상 키 목록 정의 (데이터 분리 구조 완벽 대응)
 const SYNC_KEYS = ['device_data', 'system_logs', 'setup_data', 'equipment_models', 'admin_items', 'check_type_categories', 'check_type_items'];
+const SYNC_KEYS = ['device_data', 'setup_data', 'equipment_models', 'admin_items', 'check_type_categories', 'check_type_items'];
 
 function shouldSyncKey(key) {
     return SYNC_KEYS.includes(key) || key.startsWith('details_') || key.startsWith('site_meta_');
@@ -1474,6 +1475,7 @@ function importData(event) {
             const logs = JSON.parse(localStorage.getItem('system_logs')) || [];
             logs.push({ timestamp: new Date().toISOString(), action: 'BACKUP_IMPORT', target: 'System', details: '데이터 복원 완료' });
             originalSetItem.call(localStorage, 'system_logs', JSON.stringify(logs));
+            addSystemLog('BACKUP_IMPORT', 'System', '데이터 복원 완료');
 
             // 3. 서버로 데이터 즉시 전송 (페이지 리로드 전 저장 보장)
             const allData = {};
@@ -1508,6 +1510,14 @@ function addSystemLog(action, target, details = "") {
     const logs = JSON.parse(localStorage.getItem('system_logs')) || [];
     logs.push({ timestamp: new Date().toISOString(), action: action, target: target, details: details });
     localStorage.setItem('system_logs', JSON.stringify(logs));
+    fetch('/api/log/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrf_token')
+        },
+        body: JSON.stringify({ action, target, details })
+    }).catch(err => console.error('Failed to add system log:', err));
 }
 
 function openLogModal() {
@@ -1522,6 +1532,7 @@ function closeLogModal() {
 
 function renderSystemLogs() {
     const logs = JSON.parse(localStorage.getItem('system_logs')) || [];
+async function renderSystemLogs() {
     const tbody = document.getElementById('system-log-body');
     if (!tbody) return;
 
@@ -1531,10 +1542,33 @@ function renderSystemLogs() {
         const category = getLogCategory(log.action);
         return category === currentLogFilter;
     });
+    try {
+        const response = await fetch('/api/logs', {
+            headers: { 'X-CSRFToken': getCookie('csrf_token') }
+        });
+        if (!response.ok) throw new Error('Failed to fetch logs');
+        
+        const logs = await response.json();
 
     if (filteredLogs.length === 0) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: #8b949e;">로그 내역이 없습니다.</td></tr>';
         return;
+        // [추가] 필터링 로직
+        const filteredLogs = logs.filter(log => {
+            if (currentLogFilter === 'all') return true;
+            const category = getLogCategory(log.action);
+            return category === currentLogFilter;
+        });
+
+        if (filteredLogs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: #8b949e;">로그 내역이 없습니다.</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = filteredLogs.map(log => `<tr><td>${new Date(log.timestamp).toLocaleString()}</td><td><span class="badge pm" style="background: #30363d;">${log.action}</span></td><td>${log.target}</td><td>${log.details}</td></tr>`).join('');
+    } catch (err) {
+        console.error(err);
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: #f85149;">로그를 불러오는데 실패했습니다.</td></tr>';
     }
 
     filteredLogs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -1567,9 +1601,25 @@ function getLogCategory(action) {
 }
 
 function clearSystemLogs() {
+async function clearSystemLogs() {
     if (confirm('모든 시스템 로그를 삭제하시겠습니까?')) {
         localStorage.removeItem('system_logs');
         renderSystemLogs();
+        try {
+            const response = await fetch('/api/logs/clear', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrf_token') }
+            });
+            const data = await response.json();
+            if (data.status === 'success') {
+                renderSystemLogs();
+            } else {
+                alert(data.message || '로그 삭제 실패');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('로그 삭제 중 오류가 발생했습니다.');
+        }
     }
 }
 /* ==========================================================================
