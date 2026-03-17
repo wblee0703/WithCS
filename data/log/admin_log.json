@@ -196,5 +196,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Pt Sampling cone for 7700S",
         "details": "Type: PM, Spec: AT7706-Pt, G3280-67036, GE OEM"
+    },
+    {
+        "timestamp": "2026-03-17T03:57:09.984Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Pt Sampling cone for 7700S",
+        "details": "Type: PM, Code: Sampler Cone"
     }
 ]
