@@ -1552,5 +1552,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "이소부틸렌 (0.5ppm)",
         "details": "Type: PM, Code: TVOC STD(0.5)"
+    },
+    {
+        "timestamp": "2026-03-17T05:24:14.430Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "이소부틸렌 (1ppm)",
+        "details": "Type: PM, Code: TVOC STD(1)"
     }
 ]
