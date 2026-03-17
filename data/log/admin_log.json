@@ -36,15 +36,15 @@
         "timestamp": "2026-03-16T23:24:32.098Z"
     },
     {
-        "timestamp": "2026-03-17T00:28:06.096Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: metal Standard Solution",
         "target": "Stadnard",
-        "details": "Type: PM, Code: metal Standard Solution"
+        "timestamp": "2026-03-17T00:28:06.096Z"
     },
     {
-        "timestamp": "2026-03-17T00:28:19.361Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: metal STD",
         "target": "Stadnard",
-        "details": "Type: PM, Code: metal STD"
+        "timestamp": "2026-03-17T00:28:19.361Z"
     }
 ]

@@ -94,6 +94,14 @@
                 "id": 1773647948939,
                 "period": "30",
                 "type": "PM"
+            },
+            {
+                "id": 1773707308604,
+                "type": "PM",
+                "code": "metal STD",
+                "content": "Stadnard",
+                "date": "2026-03-17",
+                "period": "30"
             }
         ],
         "logs": [

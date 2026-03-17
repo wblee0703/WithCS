@@ -28,5 +28,11 @@
         "details": "[정기 - PM] Stadnard (작업자: 이원배, 날짜: 2026-03-16)",
         "target": "SOMA-2000::SOMA-H19-0402",
         "timestamp": "2026-03-16T23:42:01.377Z"
+    },
+    {
+        "timestamp": "2026-03-17T00:28:28.604Z",
+        "action": "ADD_MAINTENANCE",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "[PM] Stadnard (주기: 30일, 시작일: 2026-03-17)"
     }
 ]
