@@ -741,6 +741,11 @@
             }
         ],
         "SOMA-2000::SOMA-H19-0402::비정기::Hunting": [],
-        "SOMA-2000::SOMA-H19-0402::비정기::Data / Para 이상": []
+        "SOMA-2000::SOMA-H19-0402::비정기::Data / Para 이상": [
+            {
+                "id": 1773727147329,
+                "content": "Calibration Fail"
+            }
+        ]
     }
 }
