@@ -248,6 +248,9 @@
             "Alarm",
             "Hunting",
             "Data / Para 이상"
+        ],
+        "OMS-100L::OMS1-LK22-0104::정기": [
+            "PM 점검"
         ]
     },
     "items": {
