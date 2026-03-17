@@ -1,24 +1,24 @@
 [
     {
-        "id": 1773710589486,
-        "type": "BM",
-        "detailType": "샘플링부 교체",
-        "partno": "A00000029",
         "code": "GC(2mm)",
-        "part": "Guard Column(2mm)",
-        "spec": "046138, AG14(2x50mm)",
         "cycle": "",
-        "equip": ""
+        "detailType": "샘플링부 교체",
+        "equip": "",
+        "id": 1773710589486,
+        "part": "Guard Column(2mm)",
+        "partno": "A00000029",
+        "spec": "046138, AG14(2x50mm)",
+        "type": "BM"
     },
     {
-        "id": 1773716120388,
-        "type": "BM",
-        "detailType": "샘플링부 교체",
-        "partno": "",
         "code": "V/P (Thomas)",
-        "part": "Vacuum Pump[Thomas-P], 4/1 Connector",
-        "spec": "2680CGUU44,130LPM,230V,50/60Hz공용(피팅포함)",
         "cycle": "",
-        "equip": ""
+        "detailType": "샘플링부 교체",
+        "equip": "",
+        "id": 1773716120388,
+        "part": "Vacuum Pump[Thomas-P], 4/1 Connector",
+        "partno": "",
+        "spec": "2680CGUU44,130LPM,230V,50/60Hz공용(피팅포함)",
+        "type": "BM"
     }
 ]
