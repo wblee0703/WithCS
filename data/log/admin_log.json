@@ -826,5 +826,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "SMPS:MDR-20-15(1.36A)",
         "details": "Type: BM, Spec: 1.34A output 15V / MEAN WALL"
+    },
+    {
+        "timestamp": "2026-03-17T04:59:46.101Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Leak Sensor(감지부)",
+        "details": "Type: BM, Spec: T-PF-PC, 30*40*0.3T, C/GF/PTFE"
     }
 ]

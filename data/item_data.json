@@ -922,5 +922,16 @@
         "spec": "1.34A output 15V / MEAN WALL",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723586100,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "LEAK SENSOR(감지부)",
+        "part": "Leak Sensor(감지부)",
+        "spec": "T-PF-PC, 30*40*0.3T, C/GF/PTFE",
+        "cycle": "",
+        "equip": ""
     }
 ]
