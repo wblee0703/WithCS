@@ -157,7 +157,7 @@
             "용액제조"
         ],
         "SOMA-3000E::SOMA-EK24-0402::정기": [
-            "PM"
+            "PM 점검"
         ],
         "SOMA-3000E::SOMA-EK24-0403::고객대응": [
             "순회 점검",
@@ -231,20 +231,20 @@
         "SOLA-5000::정기::PM 점검": [],
         "SOMA-2000::SOMA-H19-0402::정기::PM 점검": [
             {
-                "id": 1773720787116,
-                "content": "Metal Standard Solution(3%HNO3)"
+                "content": "Metal Standard Solution(3%HNO3)",
+                "id": 1773720787116
             },
             {
-                "id": 1773720787117,
-                "content": "Pt Skimmer cone for 7700S"
+                "content": "Pt Skimmer cone for 7700S",
+                "id": 1773720787117
             },
             {
-                "id": 1773720787118,
-                "content": "Pt Sampling cone for 7700S"
+                "content": "Pt Sampling cone for 7700S",
+                "id": 1773720787118
             },
             {
-                "id": 1773720787119,
-                "content": "Extraction-omega lens assembly"
+                "content": "Extraction-omega lens assembly",
+                "id": 1773720787119
             }
         ],
         "SOMA-2000::SOMA-H19-0903::비정기::Alarm": [],
@@ -296,6 +296,24 @@
         "SOMA-2000::SOMA-HC21-0101::비정기::Alarm": [],
         "SOMA-2000::SOMA-HC21-0101::비정기::BM": [],
         "SOMA-2000::SOMA-HC21-0101::정기::PM": [],
+        "SOMA-2000::SOMA-HK21-0202::정기::PM 점검": [
+            {
+                "content": "Metal Standard Solution(3%HNO3)",
+                "id": 1773720841088
+            },
+            {
+                "content": "Pt Skimmer cone for 7700S",
+                "id": 1773720841089
+            },
+            {
+                "content": "Pt Sampling cone for 7700S",
+                "id": 1773720841090
+            },
+            {
+                "content": "Extraction-omega lens assembly",
+                "id": 1773720841091
+            }
+        ],
         "SOMA-3000E::SOMA-EK23-0401::고객대응::설비 평가": [],
         "SOMA-3000E::SOMA-EK23-0401::비정기::Alarm": [],
         "SOMA-3000E::SOMA-EK23-0401::비정기::BM": [],
@@ -323,7 +341,6 @@
         "SOMA-3000E::SOMA-EK24-0402::비정기::BM 점검": [],
         "SOMA-3000E::SOMA-EK24-0402::비정기::Hunting": [],
         "SOMA-3000E::SOMA-EK24-0402::용액제조::용액제조": [],
-        "SOMA-3000E::SOMA-EK24-0402::정기::PM": [],
         "SOMA-3000E::SOMA-EK24-0403::고객대응::설비 평가": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::Alarm": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::BM": [],
@@ -333,37 +350,20 @@
         "SOMA-3000E::SOMA-EK24-0403::정기::PM 점검": [],
         "WAD-10::AD10-EK24-0202::온라인점검::온라인점검": [],
         "WAD-10::AD10-EK24-0202::정기::PM 점검": [],
-        "SOMA-2000::SOMA-HK21-0202::정기::PM 점검": [
-            {
-                "id": 1773720841088,
-                "content": "Metal Standard Solution(3%HNO3)"
-            },
-            {
-                "id": 1773720841089,
-                "content": "Pt Skimmer cone for 7700S"
-            },
-            {
-                "id": 1773720841090,
-                "content": "Pt Sampling cone for 7700S"
-            },
-            {
-                "id": 1773720841091,
-                "content": "Extraction-omega lens assembly"
-            }
-        ],
         "WIM-100::WIM1-HK24-0401::정기::PM 점검": [
             {
-                "id": 1773720843760,
-                "content": "Pt Skimmer cone for 7700S"
+                "content": "Pt Skimmer cone for 7700S",
+                "id": 1773720843760
             },
             {
-                "id": 1773720843761,
-                "content": "Pt Sampling cone for 7700S"
+                "content": "Pt Sampling cone for 7700S",
+                "id": 1773720843761
             },
             {
-                "id": 1773720843762,
-                "content": "Extraction-omega lens assembly"
+                "content": "Extraction-omega lens assembly",
+                "id": 1773720843762
             }
-        ]
+        ],
+        "SOMA-3000E::SOMA-EK24-0402::정기::PM 점검": []
     }
 }
