@@ -167,15 +167,16 @@
         "equip": "SOMA-2000, WIM-100"
     },
     {
-        "code": "ORS (Plate bias)",
-        "cycle": "",
-        "detailType": "분석부 교체",
-        "equip": "SOMA-2000, WIM-100",
         "id": 1773721987872,
-        "part": "Plate bias for ICP-MS",
+        "type": "BM",
+        "detailType": "분석부 교체",
+        "additional": "ICPMS",
         "partno": "A00002047",
+        "code": "ORS (Plate bias)",
+        "part": "Plate bias for ICP-MS",
         "spec": "G3280-60615, 정품",
-        "type": "BM"
+        "cycle": "",
+        "equip": "SOMA-2000, WIM-100"
     },
     {
         "code": "ORS (Cell entrance lens)",
