@@ -946,15 +946,15 @@
         "equip": ""
     },
     {
-        "code": "회로보호기(7A)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723608736,
+        "type": "BM",
+        "detailType": "",
+        "partno": "B00000387",
+        "code": "회로보호기(7A)",
         "part": "회로보호기",
-        "partno": "",
         "spec": "CP30-BA 1P1-M 7A / 미쯔비시",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "하네스케이블",

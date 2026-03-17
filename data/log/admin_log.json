@@ -1234,5 +1234,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Leak Sensor(커넥터)",
         "details": "Type: BM, Code: LEAK SENSOR(커넥터)"
+    },
+    {
+        "timestamp": "2026-03-17T05:11:26.888Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "회로보호기",
+        "details": "Type: BM, Code: 회로보호기(7A)"
     }
 ]
