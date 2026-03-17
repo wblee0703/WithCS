@@ -1204,5 +1204,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "SMPS:SDR-240-24(10A)",
         "details": "Type: BM, Code: SMPS(10A)"
+    },
+    {
+        "timestamp": "2026-03-17T05:11:02.253Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "회로보호기",
+        "details": "Type: BM, Code: 회로보호기(3A)"
     }
 ]

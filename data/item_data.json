@@ -891,15 +891,15 @@
         "equip": ""
     },
     {
-        "code": "회로보호기(3A)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723571952,
+        "type": "BM",
+        "detailType": "",
+        "partno": "B00000135",
+        "code": "회로보호기(3A)",
         "part": "회로보호기",
-        "partno": "",
         "spec": "CP30-BA 1P1-M 3A / 미쯔비시",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "SMPS(1.36A)",
