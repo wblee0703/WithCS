@@ -517,17 +517,6 @@
         "equip": ""
     },
     {
-        "code": "830PUMP",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
-        "id": 1773723052806,
-        "part": "Diaphragm Pump",
-        "partno": "",
-        "spec": "PM27597-NMP830, 12V",
-        "type": "PM"
-    },
-    {
         "code": "ELEC_Regulator",
         "cycle": "",
         "detailType": "",

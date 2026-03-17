@@ -994,5 +994,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Diaphragm Pump",
         "details": "Type: PM, Code: 830PUMP"
+    },
+    {
+        "timestamp": "2026-03-17T05:06:40.909Z",
+        "action": "DELETE_ITEM_ADMIN",
+        "target": "Diaphragm Pump",
+        "details": ""
     }
 ]
