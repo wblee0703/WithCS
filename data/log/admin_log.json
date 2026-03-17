@@ -742,5 +742,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Syringe(1mL)",
         "details": "Type: BM, Spec: 2647017, 1mL, ILS"
+    },
+    {
+        "timestamp": "2026-03-17T04:55:53.922Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Syringe(2.5mL)",
+        "details": "Type: BM, Spec: 2647037, 2.5mL, ILS"
     }
 ]

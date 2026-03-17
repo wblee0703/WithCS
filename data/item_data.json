@@ -768,5 +768,16 @@
         "spec": "2647017, 1mL, ILS",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723353922,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "Syringe_2.5mL (ILS)",
+        "part": "Syringe(2.5mL)",
+        "spec": "2647037, 2.5mL, ILS",
+        "cycle": "",
+        "equip": ""
     }
 ]
