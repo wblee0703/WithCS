@@ -735,5 +735,16 @@
         "spec": "3 WAY USG3-X1476-FL-634209-DC24V, 3.0",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773723261766,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "SYRINGE PUMP (T)",
+        "part": "Syringe Pump(TECAN)",
+        "spec": "20738421, XLP6K 3P 1/4-28",
+        "cycle": "",
+        "equip": ""
     }
 ]

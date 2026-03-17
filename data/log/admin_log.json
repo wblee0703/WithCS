@@ -724,5 +724,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Solenoid valve",
         "details": "Type: BM, Spec: 3 WAY USG3-X1476-FL-634209-DC24V, 3.0"
+    },
+    {
+        "timestamp": "2026-03-17T04:54:21.766Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Syringe Pump(TECAN)",
+        "details": "Type: BM, Spec: 20738421, XLP6K 3P 1/4-28"
     }
 ]
