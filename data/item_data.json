@@ -1065,5 +1065,16 @@
         "spec": "표준가스(10) + Cal 비용",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724699984,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "ABS.(양)",
+        "part": "흡수액(양)",
+        "spec": "양이온 흡수액",
+        "cycle": "",
+        "equip": ""
     }
 ]
