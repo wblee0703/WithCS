@@ -999,5 +999,16 @@
         "spec": "양이온 고농축 용액",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724642534,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "MAIN (음)",
+        "part": "MAIN 용액 (음)",
+        "spec": "",
+        "cycle": "",
+        "equip": ""
     }
 ]

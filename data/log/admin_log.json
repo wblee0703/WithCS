@@ -1306,5 +1306,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "MAIN 용액 (양)",
         "details": "Type: PM, Spec: 양이온 고농축 용액"
+    },
+    {
+        "timestamp": "2026-03-17T05:17:22.534Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "MAIN 용액 (음)",
+        "details": "Type: PM, Spec: "
     }
 ]
