@@ -388,5 +388,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "Cell exit lens for ICP-MS",
         "details": "Type: BM, Spec: G3280-20664, 정품"
+    },
+    {
+        "timestamp": "2026-03-17T04:34:55.105Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Cell exit lens for ICP-MS",
+        "details": "Type: BM, Code: ORS (Cell exit lens)"
     }
 ]
