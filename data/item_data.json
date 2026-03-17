@@ -407,15 +407,15 @@
         "equip": ""
     },
     {
-        "code": "다이아프램(838)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773722752490,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000055",
+        "code": "다이아프램(838)",
         "part": "Diaphragm",
-        "partno": "",
         "spec": "027473 for N838 (838 부품)",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "ROTOR SEAL(Sw/V)",

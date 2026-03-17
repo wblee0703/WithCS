@@ -934,5 +934,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Diaphragm",
         "details": "Type: BM, Code: 다이아프램(815)"
+    },
+    {
+        "timestamp": "2026-03-17T05:04:27.265Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Diaphragm",
+        "details": "Type: BM, Code: 다이아프램(838)"
     }
 ]
