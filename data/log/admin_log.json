@@ -40,5 +40,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Stadnard",
         "details": "Type: PM, Code: metal Standard Solution"
+    },
+    {
+        "timestamp": "2026-03-17T00:28:19.361Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Stadnard",
+        "details": "Type: PM, Code: metal STD"
     }
 ]
