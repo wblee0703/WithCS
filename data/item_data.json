@@ -660,15 +660,15 @@
         "equip": ""
     },
     {
-        "code": "FITTING (P250)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723205922,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000739",
+        "code": "FITTING (P250)",
         "part": "P-250",
-        "partno": "",
         "spec": "SF Ferrule, 1/16 PEEK w/SS Ring",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "FITTING (DCF-2N-S)",
