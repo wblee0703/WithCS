@@ -1216,5 +1216,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "SMPS:MDR-20-15(1.36A)",
         "details": "Type: BM, Code: SMPS(1.36A)"
+    },
+    {
+        "timestamp": "2026-03-17T05:11:12.014Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Leak Sensor(감지부)",
+        "details": "Type: BM, Code: LEAK SENSOR(감지부)"
     }
 ]

@@ -913,15 +913,15 @@
         "equip": ""
     },
     {
-        "code": "LEAK SENSOR(감지부)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723586100,
+        "type": "BM",
+        "detailType": "",
+        "partno": "B00000261",
+        "code": "LEAK SENSOR(감지부)",
         "part": "Leak Sensor(감지부)",
-        "partno": "",
         "spec": "T-PF-PC, 30*40*0.3T, C/GF/PTFE",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "LEAK SENSOR(케이블)",
