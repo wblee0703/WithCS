@@ -318,9 +318,15 @@
         "timestamp": "2026-03-17T04:27:53.592Z"
     },
     {
-        "timestamp": "2026-03-17T04:28:13.527Z",
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Shield plate",
         "target": "Shield Plate for ICP-MS",
-        "details": "Type: BM, Code: Shield plate"
+        "timestamp": "2026-03-17T04:28:13.527Z"
+    },
+    {
+        "timestamp": "2026-03-17T04:29:47.230Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Ar gas clean filter, Semicon App",
+        "details": "Type: BM, Spec: 5064-8092, Agilent 정품"
     }
 ]
