@@ -454,5 +454,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Micro Flow Nebulizer PFA-100",
         "details": "Type: BM, Code: Nebulizer"
+    },
+    {
+        "timestamp": "2026-03-17T04:41:27.666Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "Electron multiplier for ICP-MS",
+        "details": "Type: BM, Spec: G8400-60258"
     }
 ]

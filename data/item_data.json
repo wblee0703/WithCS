@@ -251,5 +251,16 @@
         "spec": "G8400-60434",
         "cycle": "",
         "equip": "SOMA-2000, WIM-100"
+    },
+    {
+        "id": 1773722487666,
+        "type": "BM",
+        "detailType": "",
+        "partno": "",
+        "code": "EM",
+        "part": "Electron multiplier for ICP-MS",
+        "spec": "G8400-60258",
+        "cycle": "",
+        "equip": ""
     }
 ]
