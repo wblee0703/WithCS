@@ -448,5 +448,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "Cell exit lens for ICP-MS",
         "details": "Type: BM, Code: ORS (Cell exit lens)"
+    },
+    {
+        "timestamp": "2026-03-17T04:40:58.440Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Micro Flow Nebulizer PFA-100",
+        "details": "Type: BM, Code: Nebulizer"
     }
 ]
