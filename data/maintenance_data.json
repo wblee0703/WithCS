@@ -63,6 +63,14 @@
                 "content": "Metal Standard Solution(1%HNO3)",
                 "date": "2026-03-17",
                 "period": "30"
+            },
+            {
+                "id": 1773725556150,
+                "type": "PM",
+                "code": "9.5% HNO3",
+                "content": "9.5% HNO3",
+                "date": "2026-03-17",
+                "period": "30"
             }
         ],
         "logs": [

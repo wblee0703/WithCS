@@ -154,5 +154,11 @@
         "action": "ADD_MAINTENANCE",
         "target": "WIM-100::WIM1-HK24-0401",
         "details": "[PM] Metal Standard Solution(1%HNO3) (주기: 30일, 시작일: 2026-03-17)"
+    },
+    {
+        "timestamp": "2026-03-17T05:32:36.150Z",
+        "action": "ADD_MAINTENANCE",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "details": "[PM] 9.5% HNO3 (주기: 30일, 시작일: 2026-03-17)"
     }
 ]
