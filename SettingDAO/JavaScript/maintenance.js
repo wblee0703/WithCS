@@ -1671,15 +1671,12 @@ function handleFiles(files) {
     if (!files || files.length === 0) return;
 
     const key = `details_${currentPath.site}_${currentPath.equip}`;
-    // 용량 체크 (간단히 2MB 제한)
-    const MAX_SIZE = 2 * 1024 * 1024; 
-    // 용량 체크 (100KB 제한)
-    const MAX_SIZE = 100 * 1024; 
+    // 용량 체크 (200KB 제한)
+    const MAX_SIZE = 200 * 1024; 
 
     Array.from(files).forEach(file => {
         if (file.size > MAX_SIZE) {
-            alert(`파일 '${file.name}'이 너무 큽니다. (2MB 제한)`);
-            alert(`파일 '${file.name}'이 너무 큽니다. (100KB 제한)`);
+            alert(`파일 '${file.name}'이 너무 큽니다. (200KB 제한)`);
             return;
         }
 
