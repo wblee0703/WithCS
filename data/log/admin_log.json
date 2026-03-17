@@ -1366,5 +1366,11 @@
         "action": "ADD_ITEM_ADMIN",
         "target": "흡수액(음)",
         "details": "Type: PM, Spec: 음이온 흡수액"
+    },
+    {
+        "timestamp": "2026-03-17T05:18:48.515Z",
+        "action": "ADD_ITEM_ADMIN",
+        "target": "KOH",
+        "details": "Type: PM, Spec: IAM7000 고농축"
     }
 ]

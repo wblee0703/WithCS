@@ -1109,5 +1109,16 @@
         "spec": "음이온 흡수액",
         "cycle": "",
         "equip": ""
+    },
+    {
+        "id": 1773724728514,
+        "type": "PM",
+        "detailType": "",
+        "partno": "",
+        "code": "KOH",
+        "part": "KOH",
+        "spec": "IAM7000 고농축",
+        "cycle": "",
+        "equip": ""
     }
 ]
