@@ -1190,7 +1190,7 @@ function renderAdminItemList() {
     if (keyword) {
         const keywords = keyword.split(/\s+/);
         filteredItems = adminItems.filter(item => {
-            const text = `${item.type || ''} ${item.detailType || ''} ${item.part || ''} ${item.spec || ''} ${item.code || ''} ${item.partno || ''} ${item.equip || ''}`.toLowerCase();
+            const text = `${item.type || ''} ${item.detailType || ''} ${item.additional || ''} ${item.part || ''} ${item.spec || ''} ${item.code || ''} ${item.partno || ''} ${item.cycle || ''} ${item.equip || ''}`.toLowerCase();
             return keywords.every(kw => text.includes(kw));
         });
     }

@@ -359,6 +359,21 @@ function renderDetails() {
             handleMaintReorder();
         });
 
+        // [추가] 내부 입력 요소 클릭 시 드래그 간섭 방지
+        tr.addEventListener('mousedown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT') {
+                tr.draggable = false;
+            }
+        });
+        tr.addEventListener('mouseup', () => {
+            const table = tr.closest('table');
+            if (table && table.classList.contains('management-active')) tr.draggable = true;
+        });
+        tr.addEventListener('mouseleave', () => {
+            const table = tr.closest('table');
+            if (table && table.classList.contains('management-active')) tr.draggable = true;
+        });
+
         tr.innerHTML = `
             <td><span class="badge ${(item.type || 'PM').toLowerCase()}">${item.type || 'PM'}</span></td>
             <td class="edit-code">${escapeHtml(item.code || '-')}</td>
@@ -1040,11 +1055,21 @@ window.renderEditLogContentField = function(id, type, detailType, value) {
                 // 기존 값이 full content 이거나 code 인 경우 모두 대응
                 if (currentValues.includes(item.content) || currentValues.includes(displayValue)) div.classList.add('selected');
                 div.dataset.value = displayValue;
-                div.innerHTML = `<span>${displayValue}</span>`;
+                
+                const isSelected = div.classList.contains('selected');
+                div.innerHTML = `
+                    <div style="display:flex; align-items:center; width:100%; pointer-events:none;">
+                        <input type="checkbox" style="margin-right:8px;" ${isSelected ? 'checked' : ''}>
+                        <span>${displayValue}</span>
+                    </div>
+                `;
 
                 div.onclick = (e) => {
                     e.stopPropagation();
                     div.classList.toggle('selected');
+                    
+                    const cb = div.querySelector('input[type="checkbox"]');
+                    if (cb) cb.checked = div.classList.contains('selected');
 
                     const selected = list.querySelectorAll('.log-select-item.selected');
                     const values = Array.from(selected).map(el => el.dataset.value);
@@ -1200,11 +1225,20 @@ window.updateLogContentOptions = function() {
                 // [수정] 약어(코드)가 있으면 약어를 value와 표시명으로 사용
                 const displayValue = item.code ? item.code : item.content;
                 div.dataset.value = displayValue;
-                div.innerHTML = `<span>${displayValue}</span>`;
+                
+                div.innerHTML = `
+                    <div style="display:flex; align-items:center; width:100%; pointer-events:none;">
+                        <input type="checkbox" style="margin-right:8px;">
+                        <span>${displayValue}</span>
+                    </div>
+                `;
                 
                 div.onclick = (e) => {
                     e.stopPropagation();
                     div.classList.toggle('selected');
+                    
+                    const cb = div.querySelector('input[type="checkbox"]');
+                    if (cb) cb.checked = div.classList.contains('selected');
                     
                     const selected = contentList.querySelectorAll('.log-select-item.selected');
                     const values = Array.from(selected).map(el => el.dataset.value);

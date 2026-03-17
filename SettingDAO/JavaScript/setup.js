@@ -547,6 +547,21 @@ function renderSetupDetailList() {
             // 드래그 종료 시 자동 저장
             tr.addEventListener('dragend', () => { tr.classList.remove('dragging'); saveSetupDetails('REORDER_SETUP', '순서 변경'); });
             
+            // [추가] 내부 입력 요소 클릭 시 드래그 간섭 방지
+            tr.addEventListener('mousedown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT' || e.target.classList.contains('date-display-text')) {
+                    tr.draggable = false;
+                }
+            });
+            tr.addEventListener('mouseup', () => {
+                const card = document.getElementById('setup-detail-card');
+                if (card && card.classList.contains('edit-mode')) tr.draggable = true;
+            });
+            tr.addEventListener('mouseleave', () => {
+                const card = document.getElementById('setup-detail-card');
+                if (card && card.classList.contains('edit-mode')) tr.draggable = true;
+            });
+
             // 입력 변경 시 자동 저장 (텍스트는 change 이벤트로 과도한 저장 방지)
             tr.querySelectorAll('input').forEach(input => {
                 const eventType = (input.type === 'text') ? 'change' : 'change'; 
@@ -625,6 +640,21 @@ function addSetupDetailItem(category) {
     `;
     tr.addEventListener('dragstart', () => tr.classList.add('dragging'));
     tr.addEventListener('dragend', () => { tr.classList.remove('dragging'); saveSetupDetails('REORDER_SETUP', '순서 변경'); });
+    
+    // [추가] 내부 입력 요소 클릭 시 드래그 간섭 방지
+    tr.addEventListener('mousedown', (e) => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON' || e.target.tagName === 'SELECT' || e.target.classList.contains('date-display-text')) {
+            tr.draggable = false;
+        }
+    });
+    tr.addEventListener('mouseup', () => {
+        const card = document.getElementById('setup-detail-card');
+        if (card && card.classList.contains('edit-mode')) tr.draggable = true;
+    });
+    tr.addEventListener('mouseleave', () => {
+        const card = document.getElementById('setup-detail-card');
+        if (card && card.classList.contains('edit-mode')) tr.draggable = true;
+    });
     
     // 입력 변경 감지 이벤트 추가
     tr.querySelectorAll('input').forEach(input => {

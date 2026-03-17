@@ -182,7 +182,16 @@
         "files": []
     },
     "details_SKH 이천_SOMA-2000::SOMA-H19-0903": {
-        "maint": [],
+        "maint": [
+            {
+                "id": 1773732537420,
+                "type": "PM",
+                "code": "Metal STD (10ppb,3%)",
+                "content": "Metal Standard Solution(3%HNO3)",
+                "date": "2026-03-17",
+                "period": "30"
+            }
+        ],
         "logs": [
             {
                 "content": "Standard Solution, Sampling & Skimmer Cone, Ion Lens",
@@ -266,20 +275,20 @@
                 "type": "PM"
             },
             {
-                "id": 1773729618225,
-                "type": "BM",
                 "code": "Nebulizer",
                 "content": "Micro Flow Nebulizer PFA-100",
                 "date": "2026-03-17",
-                "period": null
+                "id": 1773729618225,
+                "period": null,
+                "type": "BM"
             },
             {
-                "id": 1773729618226,
-                "type": "BM",
                 "code": "RF Coil",
                 "content": "RF coil for 7900",
                 "date": "2026-03-17",
-                "period": null
+                "id": 1773729618226,
+                "period": null,
+                "type": "BM"
             }
         ],
         "logs": [
@@ -329,12 +338,12 @@
                 "worker": "이원배 진봉균"
             },
             {
-                "id": 1773729617225,
+                "content": "Nebulizer, RF Coil",
                 "date": "2026-03-17",
+                "detailType": "BM 점검",
+                "id": 1773729617225,
                 "memo": "",
                 "type": "비정기",
-                "detailType": "BM 점검",
-                "content": "Nebulizer, RF Coil",
                 "worker": "이원배"
             }
         ],
