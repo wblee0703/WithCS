@@ -1084,5 +1084,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "P-250",
         "details": "Type: BM, Code: FITTING (P250)"
+    },
+    {
+        "timestamp": "2026-03-17T05:08:38.480Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "Fitting Female 1/8 NPT-1/8",
+        "details": "Type: BM, Code: FITTING (DCF-2N-S)"
     }
 ]

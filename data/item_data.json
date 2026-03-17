@@ -671,15 +671,15 @@
         "equip": ""
     },
     {
-        "code": "FITTING (DCF-2N-S)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723214394,
+        "type": "BM",
+        "detailType": "",
+        "partno": "A00000936",
+        "code": "FITTING (DCF-2N-S)",
         "part": "Fitting Female 1/8 NPT-1/8",
-        "partno": "",
         "spec": "DCF2-2N-S",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "TUBE (FEP_Air)",
