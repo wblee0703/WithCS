@@ -1210,5 +1210,11 @@
         "action": "UPDATE_ITEM_ADMIN_DETAIL",
         "target": "회로보호기",
         "details": "Type: BM, Code: 회로보호기(3A)"
+    },
+    {
+        "timestamp": "2026-03-17T05:11:07.571Z",
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "target": "SMPS:MDR-20-15(1.36A)",
+        "details": "Type: BM, Code: SMPS(1.36A)"
     }
 ]

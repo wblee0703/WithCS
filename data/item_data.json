@@ -902,15 +902,15 @@
         "equip": ""
     },
     {
-        "code": "SMPS(1.36A)",
-        "cycle": "",
-        "detailType": "",
-        "equip": "",
         "id": 1773723578766,
+        "type": "BM",
+        "detailType": "",
+        "partno": "B00000154",
+        "code": "SMPS(1.36A)",
         "part": "SMPS:MDR-20-15(1.36A)",
-        "partno": "",
         "spec": "1.34A output 15V / MEAN WALL",
-        "type": "BM"
+        "cycle": "",
+        "equip": ""
     },
     {
         "code": "LEAK SENSOR(감지부)",
