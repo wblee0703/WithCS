@@ -1130,6 +1130,37 @@ function setupItemMgmt() {
             }
         });
     }
+
+    // [추가] 물품 불러오기 버튼 이벤트
+    const btnImportItems = document.getElementById('btn-import-check-items');
+    if (btnImportItems) {
+        btnImportItems.addEventListener('click', () => {
+            if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
+            if (currentCheckTypeSubCategory !== 'PM 점검' && currentCheckTypeSubCategory !== 'BM 점검') return;
+
+            if (!confirm(`물품 관리에 등록된 '${currentCheckTypeSubCategory}' 물품을 불러오시겠습니까?\n현재 목록이 모두 지워지고 물품 데이터로 덮어쓰기 됩니다.`)) return;
+
+            const targetType = currentCheckTypeSubCategory === 'PM 점검' ? 'PM' : 'BM';
+            const equipName = currentCheckTypeEquipKey.split('::')[0];
+            const matchedItems = adminItems.filter(item => {
+                if (item.type !== targetType) return false;
+                if (!item.equip) return false;
+                const equips = item.equip.split(',').map(e => e.trim());
+                return equips.includes(equipName);
+            });
+
+            const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}`;
+            checkTypeItemsData[key] = matchedItems.map((mItem, index) => ({
+                id: Date.now() + index,
+                content: mItem.part
+            }));
+            
+            saveCheckTypeItems();
+            addSystemLog('LOAD_ITEM_TO_CHECK', currentCheckTypeEquipKey, `물품 불러오기: ${currentCheckTypeSubCategory}`);
+            renderCheckTypeItemList();
+            alert('물품 목록을 불러왔습니다.');
+        });
+    }
 }
 
 function loadAdminItems() {
@@ -1351,6 +1382,8 @@ function setupCheckTypeMgmt() {
             subFooter.style.pointerEvents = 'auto';
             
             currentCheckTypeSubCategory = null;
+            const btnImportItems = document.getElementById('btn-import-check-items');
+            if (btnImportItems) btnImportItems.style.display = 'none';
             renderCheckTypeSubCategoryList();
             
             document.getElementById('check-type-detail-placeholder').style.display = 'flex';
@@ -1575,6 +1608,8 @@ function renderCheckTypeEquipList() {
             
             // 서브카테고리(분류) 패널 초기화
             currentCheckTypeSubCategory = null;
+            const btnImportItems = document.getElementById('btn-import-check-items');
+            if (btnImportItems) btnImportItems.style.display = 'none';
             const subList = document.getElementById('check-type-subcategory-list');
             const subFooter = document.getElementById('check-type-subcategory-footer');
             if (subList) {
@@ -1780,6 +1815,16 @@ function renderCheckTypeItemList() {
     if (!list) return;
     
     list.innerHTML = '';
+
+    // [추가] 물품 불러오기 버튼 표시 조건 처리
+    const btnImportItems = document.getElementById('btn-import-check-items');
+    if (btnImportItems) {
+        if (currentCheckTypeSubCategory === 'PM 점검' || currentCheckTypeSubCategory === 'BM 점검') {
+            btnImportItems.style.display = 'inline-block';
+        } else {
+            btnImportItems.style.display = 'none';
+        }
+    }
     
     if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
     

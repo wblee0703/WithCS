@@ -3,6 +3,9 @@
         "SOLA-1000::정기": [
             "PM"
         ],
+        "SOLA-5000::정기": [
+            "PM 점검"
+        ],
         "SOMA-2000::SOMA-H19-0402::비정기": [
             "BM 점검",
             "Alarm",
@@ -23,6 +26,9 @@
         ],
         "SOMA-2000::SOMA-HC19-1204::정기": [
             "PM"
+        ],
+        "SOMA-2000::SOMA-HC20-0601::정기": [
+            "PM 점검"
         ],
         "SOMA-2000::SOMA-HC21-0101::비정기": [
             "BM",
@@ -198,15 +204,13 @@
         "WIM-100::WIM1-HK24-0401::정기": [
             "PM 점검"
         ],
-        "SOLA-5000::정기": [
-            "PM 점검"
-        ],
-        "SOMA-2000::SOMA-HC20-0601::정기": [
-            "PM 점검"
+        "WAD-10::AD10-EK24-0202::온라인점검": [
+            "온라인점검"
         ]
     },
     "items": {
         "SOLA-1000::정기::PM": [],
+        "SOLA-5000::정기::PM 점검": [],
         "SOMA-2000::SOMA-H19-0402::정기::PM 점검": [
             {
                 "content": "Stadnard",
@@ -227,6 +231,24 @@
             {
                 "content": "Stadnard",
                 "id": 1773704358840
+            }
+        ],
+        "SOMA-2000::SOMA-HC20-0601::정기::PM 점검": [
+            {
+                "content": "Metal Standard Solution(3%HNO3)",
+                "id": 1773720311536
+            },
+            {
+                "content": "Pt Skimmer cone for 7700S",
+                "id": 1773720311537
+            },
+            {
+                "content": "Pt Sampling cone for 7700S",
+                "id": 1773720311538
+            },
+            {
+                "content": "Extraction-omega lens assembly",
+                "id": 1773720311539
             }
         ],
         "SOMA-2000::SOMA-HC21-0101::비정기::Alarm": [],
@@ -266,25 +288,6 @@
         "SOMA-3000E::SOMA-EK24-0403::비정기::Data / Para 이상": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::Hunting": [],
         "SOMA-3000E::SOMA-EK24-0403::용액제조::용액제조": [],
-        "SOMA-3000E::SOMA-EK24-0403::정기::PM 점검": [],
-        "SOLA-5000::정기::PM 점검": [],
-        "SOMA-2000::SOMA-HC20-0601::정기::PM 점검": [
-            {
-                "id": 1773720311536,
-                "content": "Metal Standard Solution(3%HNO3)"
-            },
-            {
-                "id": 1773720311537,
-                "content": "Pt Skimmer cone for 7700S"
-            },
-            {
-                "id": 1773720311538,
-                "content": "Pt Sampling cone for 7700S"
-            },
-            {
-                "id": 1773720311539,
-                "content": "Extraction-omega lens assembly"
-            }
-        ]
+        "SOMA-3000E::SOMA-EK24-0403::정기::PM 점검": []
     }
 }
