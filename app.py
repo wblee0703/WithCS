@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf.csrf import CSRFProtect, generate_csrf
+from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from datetime import datetime, timedelta
@@ -493,6 +493,18 @@ def inject_mobile_info():
     is_mobile = 'mobile' in user_agent or 'android' in user_agent or 'iphone' in user_agent
     return dict(is_mobile=is_mobile)
 
+# [추가] CSRF 토큰 오류 전용 핸들러 (원인 명확화)
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    app.logger.warning(f"CSRF Error: {e.description} (Path: {request.path})")
+    return jsonify({"status": "fail", "message": "보안 세션이 만료되었거나 유효하지 않습니다. 페이지를 새로고침 해주세요."}), 400
+
+# [추가] 잘못된 요청(Bad Request) 전용 핸들러
+@app.errorhandler(400)
+def handle_bad_request(e):
+    app.logger.warning(f"Bad Request: {e.description} (Path: {request.path})")
+    return jsonify({"status": "fail", "message": "잘못된 데이터 형식입니다."}), 400
+
 def login_required(f):
     """로그인 여부를 확인하는 데코레이터"""
     @wraps(f)
@@ -510,7 +522,8 @@ def set_security_headers(response):
     # 에러 로그 기록 (정적 파일 제외)
     if not request.path.startswith('/static') and not request.path.startswith('/favicon.ico'):
         # [수정] 401 Unauthorized는 정상적인 인증 루틴일 수 있으므로 경고 로그에서 제외
-        if response.status_code >= 400 and response.status_code != 401:
+        # [개선] 400 에러는 위의 에러 핸들러와 일반 비즈니스 로직(중복 아이디 등)에서 처리/기록하므로 포괄 로그에서 제외 (중복 방지)
+        if response.status_code > 400 and response.status_code != 401:
             app.logger.warning(f"Response Status: {response.status}")
     
     # 보안 헤더

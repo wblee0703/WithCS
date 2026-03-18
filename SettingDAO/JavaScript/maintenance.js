@@ -681,7 +681,7 @@ function addLogItem(e) {
     // [추가] BM 점검 등록 시 유지관리 물품에 자동 추가 로직
     let isMaintUpdated = false;
     if (detailType === 'BM 점검') {
-        const itemsList = content.split(',').map(s => s.trim()).filter(s => s);
+        const itemsList = content.split(', ').map(s => s.trim()).filter(s => s);
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
         
         itemsList.forEach((itemText, idx) => {
@@ -779,8 +779,8 @@ function renderLogs() {
         let tooltipContent = log.content || '';
 
         // 항목이 많은 경우 축약 표시
-        if (log.content && log.content.includes(',')) {
-            const items = log.content.split(',').map(s => s.trim());
+        if (log.content && log.content.includes(', ')) {
+            const items = log.content.split(', ').map(s => s.trim());
             if (items.length > 1) {
                 displayContent = `${items[0]} 외 ${items.length - 1}개`;
                 tooltipContent = items.join('\n');
@@ -1029,7 +1029,7 @@ window.renderEditLogContentField = function(id, type, detailType, value) {
         wrapper.style.width = '100%';
         wrapper.onclick = (e) => e.stopPropagation();
 
-        const currentValues = value ? value.split(',').map(s => s.trim()).filter(s => s) : [];
+        const currentValues = value ? value.split(', ').map(s => s.trim()).filter(s => s) : [];
         let initialText = '항목 선택';
         if (currentValues.length > 1) {
             initialText = `${currentValues[0]} 외 ${currentValues.length - 1}개`;
