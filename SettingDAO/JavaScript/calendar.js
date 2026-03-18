@@ -1050,14 +1050,6 @@ function completeScheduleWork() {
         }
     });
 
-    // [추가] 일회성 일정(트러블이슈 등)은 완료 후 리스트에서 제거하여 데이터 누적 방지
-    data.maint = data.maint.filter(item => {
-        if (['장비점검', '프로그램변경', '트러블이슈'].includes(item.type)) {
-            return item.scheduledDate; // 예정일이 남아있지 않으면 제거
-        }
-        return true;
-    });
-
     localStorage.setItem(key, JSON.stringify(data));
     
     if (typeof addSystemLog === 'function') {

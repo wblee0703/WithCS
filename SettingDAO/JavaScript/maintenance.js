@@ -55,12 +55,12 @@ function setupMaintenanceEvents() {
                 maintTypeButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
 
-                // BM일 때 입력창 비활성화
-                if (btn.dataset.type === 'BM') {
+                // 비정기(BM)일 때 입력창 비활성화
+                if (btn.dataset.type === 'BM' || btn.dataset.type === '비정기') {
                     maintPeriodInput.disabled = true;
                     maintPeriodInput.value = '';
                     maintPeriodInput.classList.add('input-disabled');
-                    maintPeriodInput.placeholder = 'BM은 주기 없음';
+                    maintPeriodInput.placeholder = '비정기는 주기 없음';
                 } else {
                     maintPeriodInput.disabled = false;
                     maintPeriodInput.classList.remove('input-disabled');
@@ -316,7 +316,7 @@ function addDetailItem() {
     if (maintType === '정기' || maintType === 'PM') {
         if (!content || !date || !period) return alert('정기는 내용, 날짜, 주기를 모두 입력해야 합니다.');
     } else {
-        if (!content || !date) return alert('BM은 내용과 날짜를 입력해야 합니다.');
+        if (!content || !date) return alert('비정기는 내용과 날짜를 입력해야 합니다.');
     }
 
     const key = `details_${currentPath.site}_${currentPath.equip}`;
@@ -356,9 +356,6 @@ function renderDetails() {
     maintBody.innerHTML = '';
 
     data.maint.forEach(item => {
-        // [추가] 장비점검, 프로그램변경 등 일회성 일정은 리스트에서 제외
-        if (item.type === '장비점검' || item.type === '프로그램변경' || item.type === '트러블이슈') return;
-
         const status = calculateStatus(item.type, item.date, item.period);
         const tr = document.createElement('tr');
         tr.id = `row-${item.id}`;
@@ -421,10 +418,15 @@ window.updateMaintContentOptions = function() {
         .filter(item => item.type === maintType)
         .map(item => item.content);
 
-    // PM, BM일 경우 select로 전환하여 등록된 항목 표시
-    if (maintType === 'PM' || maintType === 'BM' || maintType === '정기') {
+    // 정기, 비정기(PM, BM)일 경우 select로 전환하여 등록된 항목 표시
+    if (maintType === 'PM' || maintType === 'BM' || maintType === '정기' || maintType === '비정기') {
         const filteredItems = data.filter(item => {
-            if (item.type !== maintType) return false;
+            const matchType = item.type === maintType || 
+                              (maintType === '정기' && item.type === 'PM') || 
+                              (maintType === '비정기' && item.type === 'BM') ||
+                              (maintType === 'PM' && item.type === '정기') ||
+                              (maintType === 'BM' && item.type === '비정기');
+            if (!matchType) return false;
             // 현재 장비 모델과 일치하는 물품만 필터링
             if (item.equip) {
                 const equips = item.equip.split(',').map(e => e.trim());
@@ -453,7 +455,7 @@ window.updateMaintContentOptions = function() {
                 const val = e.target.value;
                 const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
                 const activeType = document.querySelector('#maint-type-toggle .active').dataset.type;
-                const match = adminItems.find(i => i.part === val && i.type === activeType);
+                const match = adminItems.find(i => i.part === val && (i.type === activeType || (activeType === '정기' && i.type === 'PM') || (activeType === '비정기' && i.type === 'BM')));
                 const periodInput = document.getElementById('maint-period');
                 if (periodInput && !periodInput.disabled) {
                     periodInput.value = (match && match.cycle) ? match.cycle : '';

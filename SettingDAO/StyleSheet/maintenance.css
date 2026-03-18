@@ -314,23 +314,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     font-size: 12px;
 }
 
-.toggle-group button.active[data-type="PM"] {
+.toggle-group button.active[data-type="정기"] {
     background: #238636;
     color: #fff;
 }
 
-.toggle-group button.active[data-type="BM"] {
-    background: #1f6feb;
-    color: #fff;
-}
-
-.toggle-group button.active[data-type="장비점검"] {
-    background: #d29922;
-    color: #fff;
-}
-
-.toggle-group button.active[data-type="프로그램변경"] {
-    background: #8957e5;
+.toggle-group button.active[data-type="비정기"] {
+    background: #eb371f;
     color: #fff;
 }
 

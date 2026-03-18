@@ -142,11 +142,10 @@
 }
 
 .list-type-badge.type-정기 { background-color: #238636; }
-.list-type-badge.type-PM { background-color: #238636; }
-.list-type-badge.type-BM { background-color: #1f6feb; }
-.list-type-badge.type-트러블이슈 { background-color: #da3633; }
-.list-type-badge.type-프로그램변경 { background-color: #8957e5; }
-.list-type-badge.type-장비점검 { background-color: #6e7681; }
+.list-type-badge.type-비정기 { background-color: #eb371f; }
+.list-type-badge.type-고객대응 { background-color: #d29922; }
+.list-type-badge.type-용액제조 { background-color: #8957e5; }
+.list-type-badge.type-온라인점검 { background-color: #0078d4; }
 
 /* 통합 관리 현황 도넛 차트 및 리스트 크기 조정 */
 .integ-dashboard-view .donut-chart-wrapper {
