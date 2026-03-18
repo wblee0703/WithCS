@@ -1301,6 +1301,15 @@ function handleItemDetailSave() {
 
     const idx = adminItems.findIndex(i => i.id === currentAdminItemId);
     if (idx > -1) {
+        const oldItem = adminItems[idx];
+        const oldPart = oldItem.part || '';
+        const oldCode = oldItem.code || '';
+        const oldDisplayValue = oldCode ? oldCode : oldPart;
+        
+        const newPart = part;
+        const newCode = code;
+        const newDisplayValue = newCode ? newCode : newPart;
+
         adminItems[idx] = {
             id: adminItems[idx].id,
             type: type,
@@ -1313,9 +1322,90 @@ function handleItemDetailSave() {
             cycle: cycle,
             equip: equip
         };
+
+        // 데이터 동기화 로직 (물품명이나 코드가 변경된 경우)
+        if (oldPart !== newPart || oldCode !== newCode) {
+            // 1. 장비별 details_ (maint, logs) 동기화
+            Object.keys(localStorage).forEach(key => {
+                if (key.startsWith('details_')) {
+                    let isModified = false;
+                    try {
+                        const detailData = JSON.parse(localStorage.getItem(key));
+                        
+                        // maint 동기화
+                        if (detailData.maint) {
+                            detailData.maint.forEach(m => {
+                                if (m.content === oldPart || (oldCode && m.code === oldCode)) {
+                                    m.content = newPart;
+                                    m.code = newCode;
+                                    isModified = true;
+                                }
+                            });
+                        }
+                        
+                        // logs 동기화
+                        if (detailData.logs) {
+                            detailData.logs.forEach(log => {
+                                if (log.content) {
+                                    let logItems = log.content.split(', ').map(s => s.trim());
+                                    let logModified = false;
+                                    for (let i = 0; i < logItems.length; i++) {
+                                        if (logItems[i] === oldDisplayValue || logItems[i] === oldPart || (oldCode && logItems[i] === oldCode)) {
+                                            logItems[i] = newDisplayValue;
+                                            logModified = true;
+                                        }
+                                    }
+                                    if (logModified) {
+                                        log.content = logItems.join(', ');
+                                        isModified = true;
+                                    }
+                                }
+                            });
+                        }
+                        
+                        if (isModified) {
+                            localStorage.setItem(key, JSON.stringify(detailData));
+                        }
+                    } catch (e) {
+                        console.error('Data migration error on key', key, e);
+                    }
+                }
+            });
+
+            // 2. check_type_items 동기화
+            try {
+                let checkTypeItemsDataStr = localStorage.getItem('check_type_items');
+                if (checkTypeItemsDataStr) {
+                    let checkTypeData = JSON.parse(checkTypeItemsDataStr);
+                    let isCheckModified = false;
+                    
+                    Object.keys(checkTypeData).forEach(catKey => {
+                        let items = checkTypeData[catKey];
+                        if (Array.isArray(items)) {
+                            items.forEach(item => {
+                                if (item.content === oldPart) {
+                                    item.content = newPart;
+                                    isCheckModified = true;
+                                }
+                            });
+                        }
+                    });
+                    
+                    if (isCheckModified) {
+                        localStorage.setItem('check_type_items', JSON.stringify(checkTypeData));
+                        if (typeof checkTypeItemsData !== 'undefined') {
+                            checkTypeItemsData = checkTypeData;
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Check type items migration error', e);
+            }
+        }
+
         saveAdminItems();
         addSystemLog('UPDATE_ITEM_ADMIN_DETAIL', part, `Type: ${type}, Code: ${code}`);
-        alert('물품 정보가 저장되었습니다.');
+        alert('물품 정보가 저장되었습니다. (연결된 점검 이력 및 유지관리 데이터도 함께 업데이트 되었습니다.)');
         renderAdminItemList();
     }
 }
