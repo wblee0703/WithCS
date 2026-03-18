@@ -419,6 +419,18 @@
         ],
         "WIM-100::WIM1-HK24-0401::정기": [
             "PM 점검"
+        ],
+        "SOMA-2000::SOMA-HC19-1204::고객대응": [
+            "순회 점검",
+            "프로그램 변경 / 평가",
+            "설비 평가",
+            "Parts 교체",
+            "업무 협조",
+            "설비 정상화",
+            "단순조치",
+            "설비 개조",
+            "Cal 보정",
+            "기타"
         ]
     },
     "items": {
@@ -856,6 +868,80 @@
                 "id": 1773818586814
             }
         ],
+        "SOMA-2000::SOMA-HC20-0601::비정기::BM 점검": [
+            {
+                "content": "Torch for PFA inert kit for ICP-MS",
+                "id": 1773822557560
+            },
+            {
+                "content": "Platinum injector, inert torch, 2.5mm id",
+                "id": 1773822557561
+            },
+            {
+                "content": "Spray Chamber for Inert Kit, PFA",
+                "id": 1773822557562
+            },
+            {
+                "content": "Spray Chamber End Cap for Inert Kit, PFA",
+                "id": 1773822557563
+            },
+            {
+                "content": "Long connector tube for ICP-MS inert kit",
+                "id": 1773822557564
+            },
+            {
+                "content": "Quartz Torch Bonnet",
+                "id": 1773822557565
+            },
+            {
+                "content": "Shield Plate for ICP-MS",
+                "id": 1773822557566
+            },
+            {
+                "content": "Ar gas clean filter, Semicon App",
+                "id": 1773822557567
+            },
+            {
+                "content": "Gas Clean Filter Carrier Gas",
+                "id": 1773822557568
+            },
+            {
+                "content": "Deflect lens for ICP-MS",
+                "id": 1773822557569
+            },
+            {
+                "content": "Plate bias for ICP-MS",
+                "id": 1773822557570
+            },
+            {
+                "content": "Cell entrance lens for ICP-MS",
+                "id": 1773822557571
+            },
+            {
+                "content": "Cell exit lens for ICP-MS",
+                "id": 1773822557572
+            },
+            {
+                "content": "Cell focus lens for ICP-MS",
+                "id": 1773822557573
+            },
+            {
+                "content": "Octopole assembly, ICP-MS",
+                "id": 1773822557574
+            },
+            {
+                "content": "Micro Flow Nebulizer PFA-100",
+                "id": 1773822557575
+            },
+            {
+                "content": "RF coil for 7900",
+                "id": 1773822557576
+            },
+            {
+                "content": "Electron multiplier for ICP-MS",
+                "id": 1773822557577
+            }
+        ],
         "SOMA-2000::SOMA-HC20-0601::정기::PM 점검": [
             {
                 "content": "Metal Standard Solution(3%HNO3)",
@@ -878,20 +964,20 @@
         "SOMA-2000::SOMA-HC21-0101::비정기::BM 점검": [],
         "SOMA-2000::SOMA-HC21-0101::정기::PM 점검": [
             {
-                "id": 1773822562153,
-                "content": "Metal Standard Solution(3%HNO3)"
+                "content": "Metal Standard Solution(3%HNO3)",
+                "id": 1773822562153
             },
             {
-                "id": 1773822562154,
-                "content": "Pt Skimmer cone for 7700S"
+                "content": "Pt Skimmer cone for 7700S",
+                "id": 1773822562154
             },
             {
-                "id": 1773822562155,
-                "content": "Pt Sampling cone for 7700S"
+                "content": "Pt Sampling cone for 7700S",
+                "id": 1773822562155
             },
             {
-                "id": 1773822562156,
-                "content": "Extraction-omega lens assembly"
+                "content": "Extraction-omega lens assembly",
+                "id": 1773822562156
             }
         ],
         "SOMA-2000::SOMA-HK21-0202::고객대응::Cal 보정": [],
@@ -1281,80 +1367,6 @@
             {
                 "content": "9.5% HNO3",
                 "id": 1773727862575
-            }
-        ],
-        "SOMA-2000::SOMA-HC20-0601::비정기::BM 점검": [
-            {
-                "id": 1773822557560,
-                "content": "Torch for PFA inert kit for ICP-MS"
-            },
-            {
-                "id": 1773822557561,
-                "content": "Platinum injector, inert torch, 2.5mm id"
-            },
-            {
-                "id": 1773822557562,
-                "content": "Spray Chamber for Inert Kit, PFA"
-            },
-            {
-                "id": 1773822557563,
-                "content": "Spray Chamber End Cap for Inert Kit, PFA"
-            },
-            {
-                "id": 1773822557564,
-                "content": "Long connector tube for ICP-MS inert kit"
-            },
-            {
-                "id": 1773822557565,
-                "content": "Quartz Torch Bonnet"
-            },
-            {
-                "id": 1773822557566,
-                "content": "Shield Plate for ICP-MS"
-            },
-            {
-                "id": 1773822557567,
-                "content": "Ar gas clean filter, Semicon App"
-            },
-            {
-                "id": 1773822557568,
-                "content": "Gas Clean Filter Carrier Gas"
-            },
-            {
-                "id": 1773822557569,
-                "content": "Deflect lens for ICP-MS"
-            },
-            {
-                "id": 1773822557570,
-                "content": "Plate bias for ICP-MS"
-            },
-            {
-                "id": 1773822557571,
-                "content": "Cell entrance lens for ICP-MS"
-            },
-            {
-                "id": 1773822557572,
-                "content": "Cell exit lens for ICP-MS"
-            },
-            {
-                "id": 1773822557573,
-                "content": "Cell focus lens for ICP-MS"
-            },
-            {
-                "id": 1773822557574,
-                "content": "Octopole assembly, ICP-MS"
-            },
-            {
-                "id": 1773822557575,
-                "content": "Micro Flow Nebulizer PFA-100"
-            },
-            {
-                "id": 1773822557576,
-                "content": "RF coil for 7900"
-            },
-            {
-                "id": 1773822557577,
-                "content": "Electron multiplier for ICP-MS"
             }
         ]
     }
