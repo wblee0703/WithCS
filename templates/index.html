@@ -480,6 +480,10 @@
                 <label class="detail-label">구분</label>
                 <div id="detail-type"></div>
             </div>
+            <div class="detail-row">
+                <label class="detail-label">세부 구분</label>
+                <div id="detail-detail-type"></div>
+            </div>
             <div class="detail-row large-margin">
                 <div class="detail-label-row">
                     <label class="detail-label">점검 항목</label>
@@ -531,14 +535,27 @@
             <div class="form-row">
                 <label class="form-label">구분</label>
                 <select id="register-type-select" class="modal-select">
-                    <option value="PM">PM</option>
-                    <option value="BM">BM</option>
-                    <option value="장비점검">장비 점검</option>
-                    <option value="프로그램변경">프로그램 변경</option>
-                    <option value="트러블이슈">트러블이슈</option>
                 </select>
             </div>
-            <div id="register-item-list"></div>
+            <div class="form-row">
+                <label class="form-label">세부 구분</label>
+                <select id="register-detail-type-select" class="modal-select" disabled></select>
+            </div>
+            <div class="form-row">
+                <label class="form-label">항목(내용)</label>
+                <div id="register-content-wrapper" class="log-select-wrapper" style="display: none; width: 100%;">
+                    <div id="register-content-trigger" class="log-select-trigger">항목 선택</div>
+                    <div id="register-content-dropdown" class="log-select-dropdown">
+                        <div id="register-content-list" class="log-select-list"></div>
+                        <div class="log-select-footer" style="padding:5px;">
+                            <button type="button" id="btn-register-content-add" class="btn-blue-sm" style="width: 100%;">추가</button>
+                        </div>
+                    </div>
+                </div>
+                <input type="text" id="register-content-input" class="input-dark" placeholder="내용" style="flex:1;">
+            </div>
+            <!-- 기존 js 에러 방지용 숨김 처리 -->
+            <div id="register-item-list" style="display: none;"></div>
             <div class="modal-btn-group-right">
                 <button class="btn-blue" id="btn-confirm-register-schedule">등록</button>
             </div>

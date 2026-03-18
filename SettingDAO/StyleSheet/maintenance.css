@@ -231,6 +231,18 @@ tr.dragging {
 /* ==========================================================================
    4. 폼 및 입력 요소 (Forms & Inputs)
    ========================================================================== */
+/* [추가] 장비 점검 이력 입력창 2줄 배치를 위한 래퍼 속성 */
+#log-window .form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.flex-break {
+    flex-basis: 100%;
+    height: 0;
+}
+
 /* 공통 버튼 스타일 */
 #maint-reg-btn,
 #log-reg-btn {
@@ -326,19 +338,23 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 #log-date {
     width: 140px;
     height: 30px;
-    flex: none;
+    flex: 1;
+    min-width: 120px;
 }
 
-#log-type-select {
+#log-type-select,
+#log-detail-type-select {
     width: 110px;
     height: 30px;
-    flex: none;
+    flex: 1;
+    min-width: 100px;
 }
 
 #log-worker {
     width: 140px;
     height: 30px;
-    flex: none;
+    flex: 1;
+    min-width: 100px;
 }
 
 .log-select {
@@ -353,7 +369,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .log-content-input {
     display: none;
     margin-right: 5px;
-    flex: 1;
+    flex: 2;
+    min-width: 150px;
+    height: 30px;
 }
 
 /* 커스텀 드롭다운 (로그 항목 선택) */
@@ -362,7 +380,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: inline-block;
     width: 200px;
     margin-right: 5px;
-    flex: none;
+    flex: 2;
+    min-width: 150px;
 }
 
 .log-select-trigger {
@@ -810,4 +829,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         order: -1 !important;
     }
 
+    /* [추가] 모바일에서는 강제로 1줄 배치를 유지하기 위해 줄바꿈 요소 숨김 */
+    .flex-break {
+        display: none !important;
+    }
 }

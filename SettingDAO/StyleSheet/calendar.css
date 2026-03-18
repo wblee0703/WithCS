@@ -350,11 +350,11 @@
 
 #register-schedule-modal .modal-window {
     width: 500px;
-    height: 600px;
+    height: 650px;
     resize: both;
     overflow: auto;
     min-width: 450px;
-    min-height: 600px;
+    min-height: 650px;
 }
 
 /* 모달 내부 버튼 */

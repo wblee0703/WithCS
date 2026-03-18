@@ -846,6 +846,45 @@ body {
 }
 
 /* ==========================================================
+   14. 모달용 커스텀 드롭다운 (Custom Dropdown)
+   ========================================================================== */
+.log-select-wrapper { position: relative; display: inline-block; }
+.log-select-trigger {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: normal !important;
+    word-break: break-all !important;
+    min-height: 30px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+}
+.log-select-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+.log-select-dropdown.show { display: block; }
+.log-select-list { max-height: 200px; overflow-y: auto; padding: 5px; }
+.log-select-item {
+    display: flex; font-size: 12px; padding: 6px 8px; cursor: pointer; border-radius: 4px; margin-bottom: 2px;
+}
+.log-select-item:hover { background: #21262d; }
+.log-select-item.selected { background: #1f6feb; color: #fff; }
+.log-select-item span { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ==========================================================
    모바일 반응형 스타일 (Mobile Responsive Styles)
    ========================================================== */
 

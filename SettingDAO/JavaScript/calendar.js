@@ -632,11 +632,12 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     document.getElementById('detail-equip-info').textContent = `${site} > ${parts[0]}`;
     document.getElementById('detail-serial-no').textContent = parts.length > 1 ? parts[1] : '-';
     document.getElementById('detail-type').textContent = item.type || 'PM';
+    document.getElementById('detail-detail-type').textContent = item.detailType || '-';
 
-    // [수정] 같은 날짜에 예정된 항목들을 모두 표시
+    // [수정] 같은 날짜, 같은 타입, 세부구분에 예정된 항목들을 모두 표시
     let displayContent = item.content || '';
     if (!isCompleted && item.scheduledDate) {
-        const sameDayItems = data.maint.filter(i => i.scheduledDate === item.scheduledDate && i.type === item.type);
+        const sameDayItems = data.maint.filter(i => i.scheduledDate === item.scheduledDate && i.type === item.type && (i.detailType || '') === (item.detailType || ''));
         if (sameDayItems.length > 0) {
             displayContent = sameDayItems.map(i => i.content).join(', ');
         }
@@ -722,18 +723,44 @@ function toggleDetailContentEdit() {
     if (contentDiv.style.display !== 'none') {
         // [수정 모드 진입]
         if (!currentDetailTarget) return;
-        const { site, equip, id } = currentDetailTarget;
+        const { site, equip, id, isCompleted } = currentDetailTarget;
         const key = `details_${site}_${equip}`;
         const data = JSON.parse(localStorage.getItem(key)) || {};
-        const item = data.maint ? data.maint.find(i => i.id == id) : null;
+        let item = null;
+        if (isCompleted) {
+            item = data.logs ? data.logs.find(i => i.id == id) : null;
+        } else {
+            item = data.maint ? data.maint.find(i => i.id == id) : null;
+        }
         
         if (!item) return;
 
-        const type = item.type || 'PM';
+        const type = item.type || '';
+        const detailType = item.detailType || '';
         const currentContent = contentDiv.innerText.trim();
 
-        if (type === 'PM' || type === 'BM') {
-            // PM/BM일 경우 드롭다운 생성
+        // 선택 가능한 항목 가져오기 (admin.js에서 설정한 값)
+        const equipKey = equip; // "Name::Serial"
+        const itemData = JSON.parse(localStorage.getItem('check_type_items')) || {};
+        const chkKey = `${equipKey}::${type}::${detailType}`;
+        const availableItems = itemData[chkKey] || [];
+        const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+
+        const uniqueItems = [];
+        const seenContents = new Set();
+        availableItems.forEach(ai => {
+            if (!seenContents.has(ai.content)) {
+                seenContents.add(ai.content);
+                if (!ai.code) {
+                    const match = adminItems.find(a => a.part === ai.content);
+                    if (match && match.code) ai.code = match.code;
+                }
+                uniqueItems.push(ai);
+            }
+        });
+
+        // 세부구분이 있고, 항목 리스트가 존재하면 드롭다운 생성
+        if (uniqueItems.length > 0 && detailType) {
             contentDiv.style.display = 'none';
             contentInput.style.display = 'none';
 
@@ -753,43 +780,35 @@ function toggleDetailContentEdit() {
 
                 const selectedValues = currentContent ? currentContent.split('\n').map(s => s.replace(/^- /, '').trim()) : [];
 
-                if (data.maint) {
-                    const filteredItems = data.maint.filter(m => m.type === type);
-                    if (filteredItems.length === 0) {
-                        list.innerHTML = '<div class="log-select-empty-msg">등록된 항목이 없습니다.</div>';
-                    } else {
-                        filteredItems.forEach(mItem => {
-                            const div = document.createElement('div');
-                            div.className = 'log-select-item';
-                            if (selectedValues.includes(mItem.content)) {
-                                div.classList.add('selected');
-                            }
-                            div.dataset.value = mItem.content;
-                            const isSelected = div.classList.contains('selected');
-                            div.innerHTML = `
-                                <div style="display:flex; align-items:center; width:100%; pointer-events:none;">
-                                    <span>${mItem.content}</span>
-                                </div>
-                            `;
-                            
-                            div.onclick = (e) => {
-                                e.stopPropagation();
-                                div.classList.toggle('selected');
-                                updateTriggerText();
-                            };
-                            list.appendChild(div);
-                        });
+                uniqueItems.forEach(mItem => {
+                    const div = document.createElement('div');
+                    div.className = 'log-select-item';
+                    const val = mItem.code ? mItem.code : mItem.content;
+                    if (selectedValues.includes(val) || selectedValues.includes(mItem.content)) {
+                        div.classList.add('selected');
                     }
-                }
+                    div.dataset.value = val;
+                    div.innerHTML = `
+                        <div style="display:flex; align-items:center; width:100%; pointer-events:none;">
+                            <span>${val}</span>
+                        </div>
+                    `;
+                    
+                    div.onclick = (e) => {
+                        e.stopPropagation();
+                        div.classList.toggle('selected');
+                        updateTriggerText();
+                    };
+                    list.appendChild(div);
+                });
 
                 dropdown.appendChild(list);
 
-                // [추가] 드롭다운 하단 추가 버튼
                 const footer = document.createElement('div');
                 footer.className = 'log-select-footer';
                 const addBtn = document.createElement('button');
                 addBtn.className = 'btn-blue-sm';
-                addBtn.classList.add('btn-full-width');
+                addBtn.style.width = '100%';
                 addBtn.textContent = '선택 완료';
                 addBtn.onclick = (e) => {
                     e.stopPropagation();
@@ -823,7 +842,8 @@ function toggleDetailContentEdit() {
             }
         } else {
             // 그 외 타입은 텍스트 입력
-            contentInput.value = item.content || '';
+            // 이미 완료된 경우 텍스트를 그대로 넘겨줌
+            contentInput.value = isCompleted ? item.content : currentContent.split('\n').map(s => s.replace(/^- /, '').trim()).join(', ');
             contentDiv.style.display = 'none';
             contentInput.style.display = 'block';
             contentInput.focus();
@@ -846,50 +866,96 @@ function toggleDetailContentEdit() {
 
         const newContent = isDropdownMode ? dropdownValues.join(', ') : contentInput.value.trim();
         if (!newContent && !isDropdownMode) return alert('내용을 입력해주세요.');
+        if (isDropdownMode && dropdownValues.length === 0) return alert('최소 1개 이상의 항목을 선택해주세요.');
         
         if (currentDetailTarget) {
-            const { site, equip, id } = currentDetailTarget;
+            const { site, equip, id, isCompleted } = currentDetailTarget;
             const key = `details_${site}_${equip}`;
             let data = JSON.parse(localStorage.getItem(key)) || {};
             
-            if (data.maint) {
+            if (isCompleted && data.logs) {
+                // 이미 완료된 로그 수정
+                const item = data.logs.find(i => i.id == id);
+                if (item) {
+                    item.content = newContent;
+                    contentDiv.innerText = isDropdownMode ? dropdownValues.map(s => `- ${s.trim()}`).join('\n') : newContent.split(', ').map(s => `- ${s.trim()}`).join('\n');
+                }
+            } else if (!isCompleted && data.maint) {
+                // 예정된 유지관리(maint) 항목 수정
                 const item = data.maint.find(i => i.id === id);
                 if (item) {
                     if (isDropdownMode && item.scheduledDate) {
-                        // [수정] 병합 방지: 선택된 항목들의 예정일을 업데이트 (항목 내용은 변경 안 함)
                         const targetDate = item.scheduledDate;
-                        data.maint.forEach(m => {
-                            if (m.type === item.type) {
-                                if (dropdownValues.includes(m.content)) {
-                                    m.scheduledDate = targetDate;
-                                } else if (m.scheduledDate === targetDate) {
-                                    // 현재 날짜에 있었지만 선택 해제된 항목은 예정일 제거
-                                    delete m.scheduledDate;
-                                }
+                        const itemType = item.type;
+                        const itemDetailType = item.detailType || '';
+                        
+                        let remainingIds = [];
+                        const sameDayItems = data.maint.filter(m => m.scheduledDate === targetDate && m.type === itemType && (m.detailType || '') === itemDetailType);
+                        
+                        dropdownValues.forEach((val, idx) => {
+                            let existing = sameDayItems.find(m => m.content === val);
+                            if (existing) {
+                                remainingIds.push(existing.id);
+                            } else {
+                                const newId = Date.now() + idx;
+                                data.maint.push({
+                                    id: newId,
+                                    type: itemType,
+                                    detailType: itemDetailType,
+                                    content: val,
+                                    date: "",
+                                    period: null,
+                                    scheduledDate: targetDate,
+                                    worker: item.worker || '',
+                                    memo: item.memo || ''
+                                });
+                                remainingIds.push(newId);
                             }
                         });
-                        // UI 업데이트용 텍스트
+
+                        data.maint = data.maint.filter(m => {
+                            if (m.scheduledDate === targetDate && m.type === itemType && (m.detailType || '') === itemDetailType) {
+                                return remainingIds.includes(m.id);
+                            }
+                            return true;
+                        });
+
+                        if (remainingIds.length > 0) {
+                            currentDetailTarget.id = remainingIds[0];
+                        }
+                        
                         contentDiv.innerText = dropdownValues.map(s => `- ${s.trim()}`).join('\n');
                     } else {
-                        // 텍스트 입력 모드 (장비점검 등)는 기존대로 내용 수정
                         item.content = newContent;
                         contentDiv.innerText = newContent.split(',').map(s => `- ${s.trim()}`).join('\n');
                     }
+                }
+            }
 
-                    localStorage.setItem(key, JSON.stringify(data));
-                    
-                    // UI 업데이트
-                    contentDiv.style.display = 'block';
-                    contentInput.style.display = 'none';
-                    editBtn.textContent = '수정';
-                    editBtn.classList.add('btn-blue');
-                    editBtn.classList.remove('btn-save-state');
-                    
-                    // 캘린더 및 대시보드 갱신
-                    renderCalendar();
-                    if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
-                    
-                    alert('수정되었습니다.');
+            localStorage.setItem(key, JSON.stringify(data));
+            
+            // UI 업데이트
+            contentDiv.style.display = 'block';
+            contentInput.style.display = 'none';
+            editBtn.textContent = '수정';
+            editBtn.classList.add('btn-blue');
+            editBtn.classList.remove('btn-save-state');
+            
+            // 캘린더 갱신
+            renderCalendar();
+            if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+            
+            alert('수정되었습니다.');
+            
+            // [추가] 캘린더 팝업 내용 갱신
+            const popup = document.getElementById('calendar-popup');
+            if (popup && popup.style.display !== 'none') {
+                const dateTitle = document.getElementById('popup-date-title');
+                if (dateTitle) {
+                    const dateStr = dateTitle.textContent;
+                    const allEvents = typeof getPmScheduleForCalendar === 'function' ? getPmScheduleForCalendar() : {};
+                    let dayEvents = allEvents[dateStr] || [];
+                    if (typeof openCalendarPopup === 'function') openCalendarPopup(dateStr, dayEvents);
                 }
             }
         }
@@ -958,8 +1024,8 @@ function completeScheduleWork() {
 
     if (!data.logs) data.logs = [];
     
-    // [수정] 같은 날짜, 같은 타입의 모든 항목 완료 처리
-    const sameDayItems = data.maint.filter(i => i.scheduledDate === maintItem.scheduledDate && i.type === maintItem.type);
+    // [수정] 같은 날짜, 같은 타입, 세부구분의 모든 항목 완료 처리
+    const sameDayItems = data.maint.filter(i => i.scheduledDate === maintItem.scheduledDate && i.type === maintItem.type && (i.detailType || '') === (maintItem.detailType || ''));
     const combinedContent = sameDayItems.map(i => i.content).join(', ');
     const completeDate = maintItem.scheduledDate || new Date().toISOString().split('T')[0];
     
@@ -967,6 +1033,7 @@ function completeScheduleWork() {
         id: Date.now(),
         date: completeDate,
         type: maintItem.type || 'PM',
+        detailType: maintItem.detailType || '',
         content: combinedContent,
         worker: worker,
         memo: memo
@@ -1081,6 +1148,7 @@ function cancelScheduleCompletion() {
             data.maint.push({
                 id: newId,
                 type: logType,
+                detailType: logItem.detailType || '',
                 content: content,
                 date: "", // 수행되지 않은 상태로 초기화
                 period: null,
@@ -1176,6 +1244,7 @@ function setupRegisterScheduleModal() {
     const siteSelect = document.getElementById('register-site-select');
     const equipSelect = document.getElementById('register-equip-select');
     const typeSelect = document.getElementById('register-type-select');
+    const detailTypeSelect = document.getElementById('register-detail-type-select');
 
     if (!modal) return;
 
@@ -1189,19 +1258,35 @@ function setupRegisterScheduleModal() {
 
     if (equipSelect) {
         equipSelect.onchange = () => {
-            updateRegisterItemList(siteSelect.value, equipSelect.value);
+            if(typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
         };
     }
 
     if (typeSelect) {
         typeSelect.onchange = () => {
-            updateRegisterItemList(siteSelect.value, equipSelect.value);
+            if(typeof updateRegisterDetailTypeOptions === 'function') updateRegisterDetailTypeOptions();
+        };
+    }
+
+    if (detailTypeSelect) {
+        detailTypeSelect.onchange = () => {
+            if(typeof updateRegisterContentOptions === 'function') updateRegisterContentOptions();
         };
     }
 
     if (confirmBtn) {
         confirmBtn.onclick = confirmRegisterSchedule;
     }
+
+    const rTrigger = document.getElementById('register-content-trigger');
+    const rDropdown = document.getElementById('register-content-dropdown');
+    if (rTrigger && rDropdown) rTrigger.onclick = (e) => { 
+        e.stopPropagation(); 
+        document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== rDropdown) d.classList.remove('show'); });
+        rDropdown.classList.toggle('show'); 
+    };
+    const btnAdd = document.getElementById('btn-register-content-add');
+    if (btnAdd && rDropdown) btnAdd.addEventListener('click', () => rDropdown.classList.remove('show'));
 }
 
 function openRegisterScheduleModal(dateStr) {
@@ -1209,7 +1294,6 @@ function openRegisterScheduleModal(dateStr) {
     const dateDisplay = document.getElementById('register-date-display');
     const siteSelect = document.getElementById('register-site-select');
     const equipSelect = document.getElementById('register-equip-select');
-    const itemList = document.getElementById('register-item-list');
     const typeSelect = document.getElementById('register-type-select');
 
     if (!modal) return;
@@ -1227,9 +1311,6 @@ function openRegisterScheduleModal(dateStr) {
 
     equipSelect.innerHTML = '<option value="">장비 선택</option>';
     equipSelect.disabled = true;
-    itemList.innerHTML = '';
-
-    if (typeSelect) typeSelect.value = 'PM';
 
     // [추가] 현재 검색 필터가 적용되어 있다면 해당 사업장/장비 자동 선택
     if (currentSearchFilters.site) {
@@ -1253,20 +1334,19 @@ function openRegisterScheduleModal(dateStr) {
 
             if (hasOption) {
                 equipSelect.value = targetValue;
-                updateRegisterItemList(currentSearchFilters.site, targetValue);
             }
         }
     }
+
+    if(typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
 
     modal.style.display = 'flex';
 }
 
 function updateRegisterEquipSelect(site) {
     const equipSelect = document.getElementById('register-equip-select');
-    const itemList = document.getElementById('register-item-list');
     
     equipSelect.innerHTML = '<option value="">장비 선택</option>';
-    itemList.innerHTML = '';
     
     if (!site) {
         equipSelect.disabled = true;
@@ -1285,248 +1365,59 @@ function updateRegisterEquipSelect(site) {
     });
     
     equipSelect.disabled = false;
-}
-
-function updateRegisterItemList(site, equip) {
-    const itemList = document.getElementById('register-item-list');
-    const typeSelect = document.getElementById('register-type-select');
-    const selectedType = typeSelect ? typeSelect.value : 'PM';
-    itemList.innerHTML = '';
-
-    if (!site || !equip) return;
-
-    // [추가] 항목 줄 생성 (form-row)
-    const row = document.createElement('div');
-    row.className = 'form-row';
-    
-    const label = document.createElement('label');
-    label.className = 'form-label';
-    label.textContent = '항목';
-    row.appendChild(label);
-
-    const container = document.createElement('div');
-    container.className = 'register-item-container';
-    row.appendChild(container);
-    
-    itemList.appendChild(row);
-
-    const key = `details_${site}_${equip}`;
-    const data = JSON.parse(localStorage.getItem(key)) || {};
-    const maintItems = data.maint || [];
-    
-    const createManualInput = (initialValue = '', placeholder = '') => {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.id = 'register-manual-input';
-        input.className = 'manual-input';
-        
-        if (initialValue) input.value = initialValue;
-        if (placeholder) input.placeholder = placeholder;
-        
-        container.innerHTML = '';
-        container.appendChild(input);
-        setTimeout(() => input.focus(), 0);
-    };
-
-    // [수정] 장비점검, 프로그램변경은 텍스트 입력창 표시
-    if (selectedType === '장비점검' || selectedType === '프로그램변경') {
-        if (selectedType === '프로그램변경') {
-            createManualInput('Ver. ');
-        } else {
-            createManualInput('', '점검 내용을 입력하세요');
-        }
-        return;
-    }
-
-    // [수정] PM/BM인 경우 드롭다운 바 생성
-    let filteredItems = [];
-    if (selectedType === '트러블이슈') {
-        filteredItems.push({ id: 'default_1', content: '데이터이슈' });
-        filteredItems.push({ id: 'default_2', content: '설비 이상' });
-        // PM/BM 항목 추가
-        const pmBmItems = maintItems.filter(item => item.type === 'PM' || item.type === 'BM');
-        filteredItems = filteredItems.concat(pmBmItems);
-    } else {
-        filteredItems = maintItems.filter(item => item.type === selectedType);
-    }
-
-    const wrapper = document.createElement('div');
-    wrapper.className = 'log-select-wrapper';
-    
-    const trigger = document.createElement('div');
-    trigger.className = 'log-select-trigger';
-    trigger.textContent = '항목 선택';
-
-    const dropdown = document.createElement('div');
-    dropdown.className = 'log-select-dropdown';
-
-    const searchContainer = document.createElement('div');
-    searchContainer.className = 'log-select-search-container';
-
-    const searchInput = document.createElement('input');
-    searchInput.type = 'text';
-    searchInput.placeholder = '항목 검색...';
-    searchInput.className = 'log-select-search-input';
-    
-    searchInput.onclick = (e) => e.stopPropagation();
-    searchInput.oninput = (e) => {
-        const val = e.target.value.toLowerCase();
-        const items = list.querySelectorAll('.log-select-item');
-        items.forEach(item => {
-            const text = item.textContent.toLowerCase();
-            item.style.display = text.includes(val) ? 'block' : 'none';
-        });
-    };
-
-    searchContainer.appendChild(searchInput);
-    dropdown.appendChild(searchContainer);
-
-    const list = document.createElement('div');
-    list.className = 'log-select-list';
-
-    if (filteredItems.length === 0) {
-        list.innerHTML = '<div class="log-select-empty-msg">등록된 항목이 없습니다.</div>';
-    } else {
-        filteredItems.forEach(item => {
-            const itemDiv = document.createElement('div');
-            itemDiv.className = 'log-select-item';
-            itemDiv.dataset.id = item.id;
-            let html = `
-                <div style="display:flex; align-items:center; width:100%; pointer-events:none;">
-                    <span>${item.content}</span>
-            `;
-            if (item.scheduledDate) {
-                html += ` <span class="scheduled-date-text" style="margin-left:5px;">(예정: ${item.scheduledDate})</span>`;
-            }
-            html += `</div>`;
-            itemDiv.innerHTML = html;
-            
-            itemDiv.onclick = (e) => {
-                e.stopPropagation();
-                itemDiv.classList.toggle('selected');
-                
-                // 트리거 텍스트 업데이트
-                const selected = list.querySelectorAll('.log-select-item.selected');
-                if (selected.length === 0) trigger.textContent = '항목 선택';
-                else if (selected.length === 1) trigger.textContent = selected[0].textContent.replace(/\(예정:.*\)/, '').trim();
-                else trigger.textContent = `${selected[0].textContent.replace(/\(예정:.*\)/, '').trim()} 외 ${selected.length - 1}개`;
-            };
-            list.appendChild(itemDiv);
-        });
-    }
-
-    dropdown.appendChild(list);
-
-    // [추가] 드롭다운 하단 추가 버튼
-    const footer = document.createElement('div');
-    footer.className = 'log-select-footer';
-    const addBtn = document.createElement('button');
-    addBtn.className = 'btn-blue-sm';
-    addBtn.classList.add('btn-full-width');
-    addBtn.textContent = '선택 완료';
-    addBtn.onclick = (e) => {
-        e.stopPropagation();
-        dropdown.classList.remove('show');
-    };
-    footer.appendChild(addBtn);
-    dropdown.appendChild(footer);
-
-    wrapper.appendChild(trigger);
-    wrapper.appendChild(dropdown);
-    
-    trigger.onclick = (e) => {
-        e.stopPropagation();
-        dropdown.classList.toggle('show');
-        if (dropdown.classList.contains('show')) {
-            searchInput.value = '';
-            const items = list.querySelectorAll('.log-select-item');
-            items.forEach(item => item.style.display = 'block');
-            setTimeout(() => searchInput.focus(), 0);
-        }
-    };
-
-    container.appendChild(wrapper);
+    if(typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
 }
 
 function confirmRegisterSchedule() {
     const dateStr = document.getElementById('register-date-display').value;
     const site = document.getElementById('register-site-select').value;
     const equip = document.getElementById('register-equip-select').value;
-    const itemList = document.getElementById('register-item-list');
     const typeSelect = document.getElementById('register-type-select');
-    const selectedType = typeSelect ? typeSelect.value : 'PM';
+    const type = typeSelect ? typeSelect.value : '';
+    const detailTypeSelect = document.getElementById('register-detail-type-select');
+    const detailType = detailTypeSelect ? detailTypeSelect.value : '';
 
     let lastProcessedId = null; // [추가] 등록된 작업 ID 추적
     
-    if (!dateStr || !site || !equip) return alert('사업장과 장비를 선택해주세요.');
+    if (!dateStr || !site || !equip || !type) return alert('사업장, 장비, 구분을 모두 선택해주세요.');
+    if (!detailType && detailTypeSelect && !detailTypeSelect.disabled) return alert('세부구분을 선택해주세요.');
 
-    // [수정] 수동 입력 확인 (PM/BM 직접 입력 포함)
-    const manualInput = document.getElementById('register-manual-input');
+    let content = '';
+    const wrapper = document.getElementById('register-content-wrapper');
+    if (wrapper && wrapper.style.display !== 'none') {
+        const selected = document.querySelectorAll('#register-content-list .log-select-item.selected');
+        content = Array.from(selected).map(el => el.dataset.value).join(', ');
+    } else {
+        const input = document.getElementById('register-content-input');
+        if (input) content = input.value.trim();
+    }
     
-    if (manualInput) {
-        const content = manualInput.value.trim();
+    if (!content) return alert('항목(내용)을 선택하거나 입력해주세요.');
         
-        if (!content) return alert('내용을 입력해주세요.');
-        
-        const key = `details_${site}_${equip}`;
-        let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
-        if (!data.maint) data.maint = [];
+    const key = `details_${site}_${equip}`;
+    let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
+    if (!data.maint) data.maint = [];
 
+    const itemsList = content.split(', ').map(s => s.trim()).filter(s => s);
+
+    itemsList.forEach((itemText, idx) => {
         const newItem = {
-            id: Date.now(),
-            type: selectedType,
-            content: content,
-            date: "", // 아직 수행되지 않음
+            id: Date.now() + idx,
+            type: type,
+            detailType: detailType,
+            content: itemText,
+            date: "",
             period: null,
             scheduledDate: dateStr
         };
-
-        lastProcessedId = newItem.id;
-
+        if (idx === 0) lastProcessedId = newItem.id;
         data.maint.push(newItem);
-        localStorage.setItem(key, JSON.stringify(data));
+    });
 
-        if (typeof addSystemLog === 'function') {
-            addSystemLog('ADD_SCHEDULE_MANUAL', equip, `Type: ${selectedType}, Date: ${dateStr}, Content: ${content}`);
-        }
-    } else if (selectedType === '트러블이슈') {
-        // [추가] 트러블이슈 선택 (새 항목 생성)
-        const selectedItems = itemList.querySelectorAll('.log-select-item.selected');
-        if (selectedItems.length === 0) return alert('등록할 항목을 선택해주세요.');
+    localStorage.setItem(key, JSON.stringify(data));
 
-        const key = `details_${site}_${equip}`;
-        let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
-        if (!data.maint) data.maint = [];
-
-        selectedItems.forEach((el, index) => {
-            let content = el.textContent.replace(/\(예정:.*\)/, '').trim();
-            const newItem = {
-                id: Date.now() + index,
-                type: selectedType,
-                content: content,
-                date: "",
-                period: null,
-                scheduledDate: dateStr
-            };
-            if (index === 0) lastProcessedId = newItem.id;
-            data.maint.push(newItem);
-        });
-        localStorage.setItem(key, JSON.stringify(data));
-        
-        if (typeof addSystemLog === 'function') {
-            addSystemLog('ADD_SCHEDULE_TROUBLE', equip, `Date: ${dateStr}, Count: ${selectedItems.length}`);
-        }
-    } else if (selectedType === 'PM' || selectedType === 'BM') {
-        // 드롭다운 선택
-        const selectedItems = itemList.querySelectorAll('.log-select-item.selected');
-        if (selectedItems.length === 0) return alert('등록할 항목을 선택해주세요.');
-
-        const ids = Array.from(selectedItems).map(el => parseInt(el.dataset.id));
-        
-        ids.forEach(id => {
-            setScheduleDate(site, equip, id, dateStr);
-            if (!lastProcessedId) lastProcessedId = id;
-        });
+    if (typeof addSystemLog === 'function') {
+        addSystemLog('ADD_SCHEDULE', equip, `Date: ${dateStr}, Type: ${type}, Content: ${content}`);
     }
 
     alert('일정이 등록되었습니다.');
@@ -1544,6 +1435,127 @@ function confirmRegisterSchedule() {
         }, 100);
     }
 }
+
+// [추가] 팝업 연동을 위한 함수
+window.updateRegisterTypeOptions = function() {
+    const rTypeSelect = document.getElementById('register-type-select');
+    if (!rTypeSelect) return;
+    const categories = ['정기', '비정기', '고객대응', '용액제조', '온라인점검'];
+    const currentVal = rTypeSelect.value;
+
+    rTypeSelect.innerHTML = '<option value="">선택</option>';
+    categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        rTypeSelect.appendChild(opt);
+    });
+    if (currentVal && categories.includes(currentVal)) rTypeSelect.value = currentVal;
+    updateRegisterDetailTypeOptions();
+};
+
+window.updateRegisterDetailTypeOptions = function() {
+    const rEquipSelect = document.getElementById('register-equip-select');
+    const rTypeSelect = document.getElementById('register-type-select');
+    const rDetailTypeSelect = document.getElementById('register-detail-type-select');
+
+    if (!rTypeSelect || !rDetailTypeSelect) return;
+    const type = rTypeSelect.value;
+    rDetailTypeSelect.innerHTML = '';
+
+    if (!type) {
+        rDetailTypeSelect.innerHTML = '<option value="">구분 먼저 선택</option>';
+        rDetailTypeSelect.disabled = true;
+        updateRegisterContentOptions();
+        return;
+    }
+
+    rDetailTypeSelect.disabled = false;
+    const equipKey = rEquipSelect ? rEquipSelect.value : '';
+    const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
+    const key = `${equipKey}::${type}`;
+    const defaultSubCategories = {
+        '정기': ['PM 점검'],
+        '비정기': ['BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상'],
+        '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
+        '용액제조': ['용액제조'],
+        '온라인점검': ['온라인점검']
+    };
+
+    let subCategories = catData[key] && catData[key].length > 0 ? catData[key] : defaultSubCategories[type] || [];
+
+    if (subCategories.length === 0) {
+        rDetailTypeSelect.innerHTML = '<option value="">세부구분 없음 (직접입력)</option>';
+        rDetailTypeSelect.disabled = true;
+    } else {
+        rDetailTypeSelect.innerHTML = '<option value="">선택</option>';
+        subCategories.forEach(sub => {
+            const opt = document.createElement('option');
+            opt.value = sub;
+            opt.textContent = sub;
+            rDetailTypeSelect.appendChild(opt);
+        });
+    }
+    updateRegisterContentOptions();
+};
+
+window.updateRegisterContentOptions = function() {
+    const rEquipSelect = document.getElementById('register-equip-select');
+    const rTypeSelect = document.getElementById('register-type-select');
+    const rDetailTypeSelect = document.getElementById('register-detail-type-select');
+    const wrapper = document.getElementById('register-content-wrapper');
+    const list = document.getElementById('register-content-list');
+    const trigger = document.getElementById('register-content-trigger');
+    const input = document.getElementById('register-content-input');
+
+    if (!wrapper || !list || !trigger || !input) return;
+
+    const equipKey = rEquipSelect ? rEquipSelect.value : '';
+    const type = rTypeSelect ? rTypeSelect.value : '';
+    const detailType = rDetailTypeSelect ? rDetailTypeSelect.value : '';
+
+    if (!type || (!detailType && !rDetailTypeSelect.disabled)) {
+        wrapper.style.display = 'none';
+        input.style.display = 'inline-block';
+        input.placeholder = type ? '세부구분을 먼저 선택하세요' : '구분을 먼저 선택하세요';
+        input.value = '';
+        input.disabled = true;
+        return;
+    }
+
+    input.disabled = false;
+    const itemData = JSON.parse(localStorage.getItem('check_type_items')) || {};
+    const key = `${equipKey}::${type}::${detailType}`;
+    const items = itemData[key] || [];
+    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+
+    const uniqueItems = [];
+    const seenContents = new Set();
+    items.forEach(item => {
+        if (!seenContents.has(item.content)) {
+            seenContents.add(item.content);
+            if (!item.code) {
+                const match = adminItems.find(a => a.part === item.content);
+                if (match && match.code) item.code = match.code;
+            }
+            uniqueItems.push(item);
+        }
+    });
+
+    if (uniqueItems.length > 0 && detailType) {
+        wrapper.style.display = 'inline-block';
+        input.style.display = 'none';
+        trigger.textContent = '항목 선택';
+        list.innerHTML = uniqueItems.map(item => {
+            const val = item.code ? item.code : item.content;
+            return `<div class="log-select-item" data-value="${val}" onclick="this.classList.toggle('selected'); const sels = Array.from(this.parentElement.querySelectorAll('.selected')).map(e=>e.dataset.value); document.getElementById('register-content-trigger').textContent = sels.length > 1 ? sels[0] + ' 외 ' + (sels.length-1) + '개' : (sels.length === 1 ? sels[0] : '항목 선택');"><span>${val}</span></div>`;
+        }).join('');
+    } else {
+        wrapper.style.display = 'none';
+        input.style.display = 'inline-block';
+        input.placeholder = detailType ? '내용 (직접 입력)' : '내용 (직접 입력)';
+    }
+};
 
 /* ==========================================================================
    [8] 모달: 검색 필터 (Search Filter Modal)

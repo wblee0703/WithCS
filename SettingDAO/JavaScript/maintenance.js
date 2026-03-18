@@ -204,6 +204,17 @@ function setupLogEvents() {
     if (btnLogSettings) {
         btnLogSettings.onclick = toggleLogManagementMode;
     }
+
+    // [추가] 장비 점검 이력 입력 폼 2줄 배치 (점검일/구분/세부구분 | 항목/작업자/기록)
+    const logDetailTypeNode = document.getElementById('log-detail-type-select');
+    if (logDetailTypeNode) {
+        const rowContainer = logDetailTypeNode.closest('.form-row');
+        if (rowContainer && !rowContainer.querySelector('.flex-break')) {
+            const breakDiv = document.createElement('div');
+            breakDiv.className = 'flex-break';
+            rowContainer.insertBefore(breakDiv, logDetailTypeNode.nextSibling);
+        }
+    }
 }
 
 function setupUIEvents() {
