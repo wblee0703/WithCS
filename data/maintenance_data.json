@@ -184,7 +184,7 @@
     "details_SKH 이천_SOMA-2000::SOMA-H19-0903": {
         "maint": [
             {
-                "code": "Metal STD (10ppb,3%)",
+                "code": "Metal STD (10ppb, 5%)",
                 "content": "Metal Standard Solution(3%HNO3)",
                 "date": "2026-03-04",
                 "id": 1773732537420,
@@ -266,7 +266,7 @@
     "details_SKH 이천_SOMA-2000::SOMA-H19-0402": {
         "maint": [
             {
-                "code": "Metal STD (10ppb,3%)",
+                "code": "Metal STD (10ppb, 5%)",
                 "content": "Metal Standard Solution(3%HNO3)",
                 "date": "2026-03-04",
                 "id": 1773728520914,
@@ -376,7 +376,7 @@
     "details_SKH 이천_SOMA-2000::SOMA-HK21-0202": {
         "maint": [
             {
-                "code": "Metal STD (10ppb,3%)",
+                "code": "Metal STD (10ppb, 5%)",
                 "content": "Metal Standard Solution(3%HNO3)",
                 "date": "2026-03-17",
                 "id": 1773732550702,
