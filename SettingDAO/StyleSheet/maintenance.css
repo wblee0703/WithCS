@@ -188,29 +188,29 @@ tr.dragging {
 
 /* 구분 */
 #log-list-wrapper .data-table th:nth-child(3) {
-    width: 150px;
+    width: 120px;
 }
 
-/* 세부구분 */
+/* 비용처리 */
 #log-list-wrapper .data-table th:nth-child(5) {
-    width: 150px;
+    width: 90px;
 }
 
 /* 작업자 */
 #log-list-wrapper .data-table th:nth-child(6) {
-    width: 120px;
+    width: 100px;
 }
 
 /* 관리 */
 
 /* 로그 테이블 관리 모드 (삭제 컬럼 제어) */
-#log-list-wrapper .data-table th:nth-child(6),
-#log-list-wrapper .data-table td:nth-child(6) {
+#log-list-wrapper .data-table th:nth-child(7),
+#log-list-wrapper .data-table td:nth-child(7) {
     display: none;
 }
 
-#log-list-wrapper .data-table.management-active th:nth-child(6),
-#log-list-wrapper .data-table.management-active td:nth-child(6) {
+#log-list-wrapper .data-table.management-active th:nth-child(7),
+#log-list-wrapper .data-table.management-active td:nth-child(7) {
     display: table-cell;
 }
 
@@ -262,6 +262,7 @@ tr.dragging {
 /* 드롭다운(select) 공통 다크 테마 디자인 적용 */
 select.input-dark,
 select#log-type-select,
+select#log-cost-type,
 select#log-detail-type-select,
 select#maint-content {
     background-color: #0d1117;
@@ -274,6 +275,7 @@ select#maint-content {
 
 select.input-dark:focus,
 select#log-type-select:focus,
+select#log-cost-type:focus,
 select#log-detail-type-select:focus,
 select#maint-content:focus {
     border-color: #58a6ff;
@@ -281,6 +283,7 @@ select#maint-content:focus {
 
 select.input-dark option,
 select#log-type-select option,
+select#log-cost-type option,
 select#log-detail-type-select option,
 select#maint-content option {
     background-color: #161b22;
@@ -750,6 +753,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         -webkit-appearance: none;
     }
 
+#log-cost-type {
+    width: auto !important;
+    flex: 1 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
     #log-worker {
         width: auto !important;
         flex: 0.7 !important;
@@ -761,6 +773,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #log-date,
     #log-type-select,
     #log-detail-type-select,
+#log-cost-type,
     #log-worker,
     .log-content-input {
         font-size: 12px !important;

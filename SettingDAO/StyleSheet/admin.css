@@ -542,3 +542,41 @@ select.input-dark option {
 .mt-10 {
     margin-top: 10px;
 }
+
+/* ==========================================================================
+   모바일 반응형 (Mobile Responsive)
+   ========================================================================== */
+@media (max-width: 950px) {
+    .admin-split-view {
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .admin-col-list, .wide-col, .admin-item-list-container {
+        flex: none;
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #30363d;
+        padding-right: 0;
+        padding-left: 0;
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+        max-height: 350px;
+    }
+
+    .admin-col-detail {
+        flex: none;
+        width: 100%;
+        padding-left: 0;
+        overflow-y: visible;
+    }
+
+    /* 폼 그룹 1열 배치 */
+    .form-group-half {
+        width: 100%;
+    }
+    
+    .form-group.admin-flex-row {
+        flex-direction: column;
+    }
+}

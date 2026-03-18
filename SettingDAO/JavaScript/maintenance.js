@@ -112,6 +112,30 @@ function setupMaintenanceEvents() {
 }
 
 function setupLogEvents() {
+    // [추가] 비용처리 입력 드롭다운 동적 생성 (작업자 입력창 앞)
+    const workerInput = document.getElementById('log-worker');
+    if (workerInput && !document.getElementById('log-cost-type')) {
+        const costSelect = document.createElement('select');
+        costSelect.id = 'log-cost-type';
+        costSelect.className = 'input-dark';
+        costSelect.innerHTML = `
+            <option value="">비용처리</option>
+            <option value="유상">유상</option>
+            <option value="무상(보증)">무상(보증)</option>
+            <option value="무상(중고)">무상(중고)</option>
+            <option value="기타">기타</option>
+        `;
+        workerInput.parentNode.insertBefore(costSelect, workerInput);
+    }
+
+    // [추가] 비용처리 테이블 헤더 동적 추가 (내용과 작업자 사이)
+    const logTableTheadTr = document.querySelector('#log-list-wrapper .data-table thead tr');
+    if (logTableTheadTr && logTableTheadTr.children.length === 6) {
+        const costTh = document.createElement('th');
+        costTh.textContent = '비용처리';
+        logTableTheadTr.insertBefore(costTh, logTableTheadTr.children[4]);
+    }
+
     const logAddBtn = document.getElementById('log-add-btn') || document.getElementById('log-reg-btn');
     if (logAddBtn) logAddBtn.onclick = addLogItem;
 
@@ -651,6 +675,10 @@ function addLogItem(e) {
     const detailType = detailTypeSelect ? detailTypeSelect.value : '';
     const worker = workerInput.value.trim();
 
+    // [추가] 비용처리 값 가져오기
+    const costSelect = document.getElementById('log-cost-type');
+    const costType = costSelect ? costSelect.value : '';
+
     let content = '';
     const contentInput = document.getElementById('log-content-input');
     const contentWrapper = document.getElementById('log-content-wrapper');
@@ -681,6 +709,7 @@ function addLogItem(e) {
         type: type,
         detailType: detailType,
         content: content,
+        costType: costType,
         worker: worker,
     };
 
@@ -725,6 +754,7 @@ function addLogItem(e) {
 
     // 입력창 초기화 및 리스트 갱신
     workerInput.value = '';
+    if (costSelect) costSelect.value = '';
     const contentTrigger = document.getElementById('log-content-trigger');
     if (contentTrigger) contentTrigger.textContent = '항목 선택';
     const mainList = document.getElementById('log-content-list');
@@ -805,6 +835,7 @@ function renderLogs() {
             <td><span class="badge ${getLogBadgeClass(log.type, log.detailType)}">${escapeHtml(log.type || '정기')}</span></td>
             <td>${escapeHtml(log.detailType || '-')}</td>
             <td title="${escapeHtml(tooltipContent)}" data-raw-content="${escapeHtml(log.content || '')}">${escapeHtml(displayContent)}</td>
+            <td>${escapeHtml(log.costType || '-')}</td>
             <td>${escapeHtml(log.worker)}</td>
             <td>
                 <button class="btn-edit-sm" onclick="event.stopPropagation(); toggleLogEdit(${log.id}, this);">✏️</button>
@@ -927,12 +958,14 @@ function toggleLogEdit(id, btn) {
         const typeCell = row.cells[1];
         const detailCell = row.cells[2];
         const contentCell = row.cells[3];
-        const workerCell = row.cells[4];
+        const costCell = row.cells[4];
+        const workerCell = row.cells[5];
 
         const currentDate = dateCell.dataset.rawDate || dateCell.textContent.trim();
         const currentType = typeCell.textContent.trim();
         const currentDetailType = detailCell.textContent.trim() === '-' ? '' : detailCell.textContent.trim();
         const currentContent = contentCell.dataset.rawContent || contentCell.textContent.trim();
+        const currentCost = costCell.textContent.trim() === '-' ? '' : costCell.textContent.trim();
         const currentWorker = workerCell.textContent.trim();
 
         dateCell.innerHTML = `<input type="date" id="edit-log-date-${id}" value="${escapeHtml(currentDate)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
@@ -950,19 +983,29 @@ function toggleLogEdit(id, btn) {
         renderEditLogContentField(id, currentType, currentDetailType, currentContent === '-' ? '' : currentContent);
         updateEditDetailTypeOptions(id, currentDetailType);
 
+        // [추가] 비용처리 수정 폼
+        const costOptions = ['유상', '무상(보증)', '무상(중고)', '기타'];
+        costCell.innerHTML = `
+            <select id="edit-log-cost-${id}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">
+                <option value="">선택</option>
+                ${costOptions.map(c => `<option value="${c}" ${currentCost === c ? 'selected' : ''}>${c}</option>`).join('')}
+            </select>`;
+
         workerCell.innerHTML = `<input type="text" id="edit-log-worker-${id}" value="${escapeHtml(currentWorker)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
 
     } else {
         const dateInput = document.getElementById(`edit-log-date-${id}`);
         const typeInput = document.getElementById(`edit-log-type-${id}`);
         const detailTypeInput = document.getElementById(`edit-log-detail-type-${id}`);
+        const costInput = document.getElementById(`edit-log-cost-${id}`);
         const workerInput = document.getElementById(`edit-log-worker-${id}`);
 
-        if (!dateInput || !typeInput || !detailTypeInput || !workerInput) return alert('입력 필드를 찾을 수 없습니다. 다시 시도해주세요.');
+        if (!dateInput || !typeInput || !detailTypeInput || !costInput || !workerInput) return alert('입력 필드를 찾을 수 없습니다. 다시 시도해주세요.');
 
         const newDate = dateInput.value;
         const newType = typeInput.value;
         const newDetailType = detailTypeInput.value;
+        const newCost = costInput.value;
 
         // [수정] 내용 가져오기 (입력창 또는 드롭다운 트리거)
         let newContent = '';
@@ -983,11 +1026,11 @@ function toggleLogEdit(id, btn) {
 
         if (!newDate || !newType || (!newDetailType && detailTypeInput && !detailTypeInput.disabled) || !newWorker) return alert('필수 항목(날짜, 구분, 세부구분, 작업자)을 모두 입력해주세요.');
 
-        updateLogItem(id, newDate, newType, newDetailType, newContent, newWorker);
+        updateLogItem(id, newDate, newType, newDetailType, newContent, newCost, newWorker);
     }
 }
 
-function updateLogItem(id, date, type, detailType, content, worker) {
+function updateLogItem(id, date, type, detailType, content, costType, worker) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
 
@@ -998,6 +1041,7 @@ function updateLogItem(id, date, type, detailType, content, worker) {
             data.logs[idx].type = type;
             data.logs[idx].detailType = detailType;
             data.logs[idx].content = content;
+            data.logs[idx].costType = costType;
             data.logs[idx].worker = worker;
             
             localStorage.setItem(key, JSON.stringify(data));

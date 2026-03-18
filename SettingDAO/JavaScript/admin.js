@@ -28,6 +28,18 @@ if (typeof window.getDragAfterElement !== 'function') {
     };
 }
 
+// [추가] 모바일 환경에서 상세 폼으로 부드럽게 스크롤 이동하는 함수
+function scrollToAdminDetail(targetId) {
+    if (window.innerWidth <= 950) {
+        const target = document.getElementById(targetId);
+        if (target) {
+            setTimeout(() => {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const initAdmin = () => {
         setupAdminMenu();
@@ -187,6 +199,7 @@ function renderAdminSiteList() {
             li.classList.add('active');
             // 상세 정보 로드
             loadSiteDetail(site);
+            scrollToAdminDetail('admin-site-form'); // [추가] 모바일 스크롤 이동
         });
 
         list.appendChild(li);
@@ -560,6 +573,7 @@ function setupEquipMgmt() {
             } else {
                 nameInput.value = '';
             }
+            scrollToAdminDetail('admin-equip-form'); // [추가] 모바일 스크롤 이동
         });
     }
 
@@ -792,6 +806,7 @@ function renderAdminEquipList() {
             document.getElementById('equip-info-cust-contact').value = setupInfo.custContact || '';
             document.getElementById('equip-info-cust-email').value = setupInfo.custEmail || '';
             document.getElementById('equip-info-special-note').value = detailData.specialNote || '';
+            scrollToAdminDetail('admin-equip-form'); // [추가] 모바일 스크롤 이동
         });
 
         list.appendChild(li);
@@ -1248,6 +1263,7 @@ function renderAdminItemList() {
             li.classList.add('active');
             
             loadItemDetail(item);
+            scrollToAdminDetail('admin-item-form'); // [추가] 모바일 스크롤 이동
         });
 
         list.appendChild(li);
@@ -1516,6 +1532,7 @@ function setupCheckTypeMgmt() {
             document.getElementById('check-type-detail-placeholder').style.display = 'flex';
             document.getElementById('check-type-detail-container').style.display = 'none';
             document.getElementById('check-type-detail-desc').textContent = '장비, 점검 구분, 분류를 순서대로 선택해주세요.';
+            scrollToAdminDetail('check-type-subcategory-list'); // [추가] 모바일 스크롤 이동
         });
     });
 
@@ -1752,6 +1769,7 @@ function renderCheckTypeEquipList() {
             document.getElementById('check-type-detail-placeholder').style.display = 'flex';
             document.getElementById('check-type-detail-container').style.display = 'none';
             document.getElementById('check-type-detail-desc').textContent = '장비, 점검 구분, 분류를 순서대로 선택해주세요.';
+            scrollToAdminDetail('check-type-category-list'); // [추가] 모바일 스크롤 이동
         });
 
         list.appendChild(li);
@@ -1817,6 +1835,7 @@ function renderCheckTypeSubCategoryList() {
             // [추가] 교체 파츠 목록 업데이트 및 리스트 렌더링
             updateCheckTypeSubCategoryDropdown();
             renderCheckTypeItemList();
+            scrollToAdminDetail('check-type-detail-container'); // [추가] 모바일 스크롤 이동
         });
 
         // [추가] 세부 구분 수정 기능 이벤트 처리
