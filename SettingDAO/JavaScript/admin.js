@@ -1335,7 +1335,7 @@ function handleItemDetailSave() {
                         // maint 동기화
                         if (detailData.maint) {
                             detailData.maint.forEach(m => {
-                                if (m.content === oldPart || (oldCode && m.code === oldCode)) {
+                                if (m.content === oldPart || (oldCode && m.code === oldCode) || m.content === oldDisplayValue) {
                                     m.content = newPart;
                                     m.code = newCode;
                                     isModified = true;
@@ -1347,16 +1347,21 @@ function handleItemDetailSave() {
                         if (detailData.logs) {
                             detailData.logs.forEach(log => {
                                 if (log.content) {
-                                    let logItems = log.content.split(', ').map(s => s.trim());
-                                    let logModified = false;
-                                    for (let i = 0; i < logItems.length; i++) {
-                                        if (logItems[i] === oldDisplayValue || logItems[i] === oldPart || (oldCode && logItems[i] === oldCode)) {
-                                            logItems[i] = newDisplayValue;
-                                            logModified = true;
+                                    let originalContent = log.content;
+                                    
+                                    // 긴 문자열부터 우선 치환하여 중복 변경 방지
+                                    const targets = [oldDisplayValue, oldPart, oldCode].filter(Boolean);
+                                    targets.sort((a, b) => b.length - a.length);
+                                    const uniqueTargets = [...new Set(targets)];
+                                    
+                                    for (const target of uniqueTargets) {
+                                        if (log.content.includes(target)) {
+                                            log.content = log.content.split(target).join(newDisplayValue);
+                                            break; // 하나라도 찾아서 바꿨으면 중단
                                         }
                                     }
-                                    if (logModified) {
-                                        log.content = logItems.join(', ');
+                                    
+                                    if (originalContent !== log.content) {
                                         isModified = true;
                                     }
                                 }
@@ -1383,7 +1388,7 @@ function handleItemDetailSave() {
                         let items = checkTypeData[catKey];
                         if (Array.isArray(items)) {
                             items.forEach(item => {
-                                if (item.content === oldPart) {
+                                if (item.content === oldPart || item.content === oldDisplayValue || (oldCode && item.content === oldCode)) {
                                     item.content = newPart;
                                     isCheckModified = true;
                                 }
