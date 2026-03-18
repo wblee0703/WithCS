@@ -132,6 +132,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // [중요] 데이터 로드 완료 상태로 변경 (이제부터 saveAllToServer 작동 허용)
             window.isDataLoaded = true;
 
+            // [추가] 서버 데이터 로드 후 PM -> 정기 일괄 마이그레이션
+            migratePmToJunggi();
+
             // [추가] 데이터 갱신 후 UI 리프레시 (화면 깜빡임 없이 데이터만 최신화)
             refreshAppViews();
             
@@ -145,8 +148,59 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 });
 
+// [추가] 기존에 PM으로 저장된 모든 데이터를 '정기'로 자동 변환하는 함수
+function migratePmToJunggi() {
+    let isModified = false;
+    
+    // 1. admin_items 마이그레이션
+    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+    adminItems.forEach(item => {
+        if (item.type === 'PM') {
+            item.type = '정기';
+            isModified = true;
+        }
+    });
+    if (isModified) localStorage.setItem('admin_items', JSON.stringify(adminItems));
+
+    // 2. details_* 마이그레이션 (유지관리 및 이력)
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('details_')) {
+            try {
+                let detailData = JSON.parse(localStorage.getItem(key));
+                let detailModified = false;
+                
+                if (detailData.maint) {
+                    detailData.maint.forEach(m => {
+                        if (m.type === 'PM') { m.type = '정기'; detailModified = true; }
+                    });
+                }
+                if (detailData.logs) {
+                    detailData.logs.forEach(l => {
+                        if (l.type === 'PM') { l.type = '정기'; detailModified = true; }
+                    });
+                }
+                
+                if (detailModified) {
+                    localStorage.setItem(key, JSON.stringify(detailData));
+                    isModified = true; // 저장 감지 트리거
+                }
+            } catch(e) {}
+        }
+    }
+}
+
 function initializeApp() {
     // 2-1. 초기 설정
+    // [추가] 하드코딩된 HTML의 PM 속성을 정기로 일괄 변환 (UI 호환성)
+    document.querySelectorAll('option[value="PM"]').forEach(opt => {
+        opt.value = '정기';
+        opt.textContent = '정기';
+    });
+    document.querySelectorAll('button[data-type="PM"]').forEach(btn => {
+        btn.dataset.type = '정기';
+        if (btn.textContent.trim() === 'PM') btn.textContent = '정기';
+    });
     // 2-2. 로그인 및 사용자 관리 이벤트
     setupAuthEvents();
     setupMobileNav(); // [이동] 페이지 접근 제어 전에 실행하여 홈 화면에서도 메뉴 작동하도록 수정

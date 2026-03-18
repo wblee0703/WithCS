@@ -9,7 +9,7 @@
         "part": "Metal Standard Solution(3%HNO3)",
         "partno": "",
         "spec": "10ppb Multi(4종), 3%HNO3",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "additional": "ICPMS",
@@ -21,7 +21,7 @@
         "part": "Pt Skimmer cone for 7700S",
         "partno": "C00004070",
         "spec": "AT7708S-Pt, G3280-67064, GE OEM",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "additional": "ICPMS",
@@ -33,7 +33,7 @@
         "part": "Pt Sampling cone for 7700S",
         "partno": "C00004069",
         "spec": "AT7706-Pt, G3280-67036, GE OEM",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "additional": "ICPMS",
@@ -45,7 +45,7 @@
         "part": "Extraction-omega lens assembly",
         "partno": "A00001565",
         "spec": "G8400-67002, lens for 7900s, Agilent 정품",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "additional": "ICPMS",
@@ -976,7 +976,7 @@
         "part": "표준용액 (양)",
         "partno": "",
         "spec": "양이온 표준용액",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "표준용액(음)",
@@ -987,7 +987,7 @@
         "part": "표준용액 (음)",
         "partno": "",
         "spec": "음이온 표준용액",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "CRM (양)",
@@ -998,7 +998,7 @@
         "part": "CRM표준용액 (양)",
         "partno": "",
         "spec": "양이온 고농도 표준용액",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "CRM (음)",
@@ -1009,7 +1009,7 @@
         "part": "CRM표준용액 (음)",
         "partno": "",
         "spec": "음이온 고농도 표준용액",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "MAIN (양)",
@@ -1020,7 +1020,7 @@
         "part": "MAIN 용액 (양)",
         "partno": "",
         "spec": "양이온 고농축 용액",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "MAIN (음)",
@@ -1031,7 +1031,7 @@
         "part": "MAIN 용액 (음)",
         "partno": "",
         "spec": "",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "BUFFER",
@@ -1042,7 +1042,7 @@
         "part": "버퍼 용액",
         "partno": "",
         "spec": "버퍼 용액",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "TVOC STD(0.5)",
@@ -1053,7 +1053,7 @@
         "part": "이소부틸렌 (0.5ppm)",
         "partno": "",
         "spec": "103L-248-0.5",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "TVOC STD(1)",
@@ -1064,7 +1064,7 @@
         "part": "이소부틸렌 (1ppm)",
         "partno": "",
         "spec": "103L-248-1",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "TVOC STD(10)",
@@ -1075,7 +1075,7 @@
         "part": "이소부틸렌 (10ppm)",
         "partno": "",
         "spec": "103L-248-10",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "TVOC STD(P9)",
@@ -1086,7 +1086,7 @@
         "part": "이소부틸렌 (10ppm)",
         "partno": "",
         "spec": "표준가스(10) + Cal 비용",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "ABS.(양)",
@@ -1097,7 +1097,7 @@
         "part": "흡수액(양)",
         "partno": "",
         "spec": "양이온 흡수액",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "DI",
@@ -1108,7 +1108,7 @@
         "part": "DI",
         "partno": "",
         "spec": "Carrier",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "ELUENT",
@@ -1119,7 +1119,7 @@
         "part": "ELUENT",
         "partno": "",
         "spec": "음이온 용리액",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "ABS.(음)",
@@ -1130,7 +1130,7 @@
         "part": "흡수액(음)",
         "partno": "",
         "spec": "음이온 흡수액",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "KOH",
@@ -1141,7 +1141,7 @@
         "part": "KOH",
         "partno": "",
         "spec": "IAM7000 고농축",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "SOT 표준 가스",
@@ -1152,7 +1152,7 @@
         "part": "STD gas",
         "partno": "",
         "spec": "SOT",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "표준가스(P9)",
@@ -1163,7 +1163,7 @@
         "part": "P9 중형 표준가스",
         "partno": "",
         "spec": "P9 중형2공장 사용 10ppm",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "additional": "",
@@ -1175,7 +1175,7 @@
         "part": "Metal Standard Solution(1%HNO3)",
         "partno": "",
         "spec": "5ppb Multi(4종), 1%HNO3",
-        "type": "PM"
+        "type": "정기"
     },
     {
         "code": "9.5% HNO3",
@@ -1186,6 +1186,6 @@
         "part": "9.5% HNO3",
         "partno": "",
         "spec": "WIM-100 Cal 질산보정",
-        "type": "PM"
+        "type": "정기"
     }
 ]

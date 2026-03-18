@@ -59,7 +59,7 @@ function getPmScheduleForCalendar() {
                             }
                             if (targetDateStr) {
                                 if (!events[targetDateStr]) events[targetDateStr] = [];
-                                events[targetDateStr].push({ site, equip, type: item.type || 'PM', content: item.content, id: item.id });
+                            events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.content, id: item.id });
                             }
                         });
                     }
@@ -71,7 +71,7 @@ function getPmScheduleForCalendar() {
                                 events[log.date].push({
                                     site,
                                     equip,
-                                    type: log.type || 'PM',
+                                type: log.type || '정기',
                                     content: log.content || log.memo || '내용 없음',
                                     id: log.id,
                                     isCompleted: true
@@ -631,7 +631,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     const parts = equip.split('::');
     document.getElementById('detail-equip-info').textContent = `${site} > ${parts[0]}`;
     document.getElementById('detail-serial-no').textContent = parts.length > 1 ? parts[1] : '-';
-    document.getElementById('detail-type').textContent = item.type || 'PM';
+    document.getElementById('detail-type').textContent = item.type || '정기';
     document.getElementById('detail-detail-type').textContent = item.detailType || '-';
 
     // [수정] 같은 날짜, 같은 타입, 세부구분에 예정된 항목들을 모두 표시
@@ -1032,7 +1032,7 @@ function completeScheduleWork() {
     data.logs.push({
         id: Date.now(),
         date: completeDate,
-        type: maintItem.type || 'PM',
+        type: maintItem.type || '정기',
         detailType: maintItem.detailType || '',
         content: combinedContent,
         worker: worker,
@@ -1045,7 +1045,7 @@ function completeScheduleWork() {
         delete i.worker;
         delete i.memo;
         // [추가] PM/BM 항목은 완료 시 시작일(마지막 점검일) 갱신
-        if (i.type === 'PM' || i.type === 'BM') {
+        if (i.type === '정기' || i.type === 'PM' || i.type === 'BM') {
             i.date = completeDate;
         }
     });

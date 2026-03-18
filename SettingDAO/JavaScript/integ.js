@@ -661,7 +661,8 @@ function renderIntegMaintStats(mainData) {
 
     // 1. 작업 유형별 차트
     const typeGradients = { 
-        'PM': 'linear-gradient(to top, #238636, #3fb950)', 
+        '정기': 'linear-gradient(to top, #238636, #3fb950)', 
+        'PM': 'linear-gradient(to top, #238636, #3fb950)', // 하위 호환용
         'BM': 'linear-gradient(to top, #1f6feb, #58a6ff)', 
         '트러블이슈': 'linear-gradient(to top, #da3633, #ff7b72)', 
         '프로그램변경': 'linear-gradient(to top, #8957e5, #a371f7)',
@@ -693,7 +694,7 @@ function renderIntegMaintStats(mainData) {
 
 function renderMaintItemList(listEl, chartEl, centerText, itemCounts) {
     listEl.innerHTML = '';
-    const typeOrder = ['PM', 'BM', '트러블이슈', '프로그램변경', '장비점검'];
+    const typeOrder = ['정기', 'PM', 'BM', '트러블이슈', '프로그램변경', '장비점검'];
     
     const sortedItems = Object.keys(itemCounts).map(key => {
         const parts = key.split('::');

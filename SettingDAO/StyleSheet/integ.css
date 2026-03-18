@@ -141,6 +141,7 @@
     flex-shrink: 0;
 }
 
+.list-type-badge.type-정기 { background-color: #238636; }
 .list-type-badge.type-PM { background-color: #238636; }
 .list-type-badge.type-BM { background-color: #1f6feb; }
 .list-type-badge.type-트러블이슈 { background-color: #da3633; }

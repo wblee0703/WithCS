@@ -1061,7 +1061,7 @@ function setupItemMgmt() {
 
     if (detailTypeInput && detailCycleInput) {
         detailTypeInput.addEventListener('change', () => {
-            if (detailTypeInput.value === 'PM') {
+            if (detailTypeInput.value === '정기' || detailTypeInput.value === 'PM') {
                 detailCycleInput.disabled = false;
                 detailCycleInput.placeholder = '';
             } else {
@@ -1159,10 +1159,10 @@ function setupItemMgmt() {
 
             if (!confirm(`물품 관리에 등록된 '${currentCheckTypeSubCategory}' 물품을 불러오시겠습니까?\n현재 목록이 모두 지워지고 물품 데이터로 덮어쓰기 됩니다.`)) return;
 
-            const targetType = currentCheckTypeSubCategory === 'PM 점검' ? 'PM' : 'BM';
+        const targetType = currentCheckTypeSubCategory === 'PM 점검' ? '정기' : 'BM';
             const equipName = currentCheckTypeEquipKey.split('::')[0];
             const matchedItems = adminItems.filter(item => {
-                if (item.type !== targetType) return false;
+            if (item.type !== targetType && item.type !== (targetType === '정기' ? 'PM' : targetType)) return false;
                 if (!item.equip) return false;
                 const equips = item.equip.split(',').map(e => e.trim());
                 return equips.includes(equipName);
@@ -1311,7 +1311,7 @@ function handleItemDetailSave() {
     const additional = document.getElementById('item-info-additional').value.trim();
     const part = document.getElementById('item-info-part').value.trim();
     const spec = document.getElementById('item-info-spec').value.trim();
-    const cycle = type === 'PM' ? document.getElementById('item-info-cycle').value.trim() : "";
+    const cycle = (type === '정기' || type === 'PM') ? document.getElementById('item-info-cycle').value.trim() : "";
     const code = document.getElementById('item-info-code').value.trim();
     const partno = document.getElementById('item-info-partno').value.trim();
     const equipRaw = document.getElementById('item-info-equip').value;
@@ -1952,10 +1952,10 @@ function renderCheckTypeItemList() {
     if (!checkTypeItemsData.hasOwnProperty(key)) {
         let defaultItems = [];
         if (currentCheckTypeSubCategory === 'PM 점검' || currentCheckTypeSubCategory === 'BM 점검') {
-            const targetType = currentCheckTypeSubCategory === 'PM 점검' ? 'PM' : 'BM';
+            const targetType = currentCheckTypeSubCategory === 'PM 점검' ? '정기' : 'BM';
             const equipName = currentCheckTypeEquipKey.split('::')[0];
             const matchedItems = adminItems.filter(item => {
-                if (item.type !== targetType) return false;
+                if (item.type !== targetType && item.type !== (targetType === '정기' ? 'PM' : targetType)) return false;
                 if (!item.equip) return false;
                 const equips = item.equip.split(',').map(e => e.trim());
                 return equips.includes(equipName);

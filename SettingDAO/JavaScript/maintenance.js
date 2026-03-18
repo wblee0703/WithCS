@@ -313,8 +313,8 @@ function addDetailItem() {
     const period = document.getElementById('maint-period').value;
 
     // 유효성 검사
-    if (maintType === 'PM') {
-        if (!content || !date || !period) return alert('PM은 내용, 날짜, 주기를 모두 입력해야 합니다.');
+    if (maintType === '정기' || maintType === 'PM') {
+        if (!content || !date || !period) return alert('정기는 내용, 날짜, 주기를 모두 입력해야 합니다.');
     } else {
         if (!content || !date) return alert('BM은 내용과 날짜를 입력해야 합니다.');
     }
@@ -328,7 +328,7 @@ function addDetailItem() {
         code: code,
         content: content,
         date: date,
-        period: maintType === 'PM' ? period : null
+        period: (maintType === '정기' || maintType === 'PM') ? period : null
     };
 
     data.maint.push(newItem);
@@ -338,7 +338,7 @@ function addDetailItem() {
 
     // 입력창 초기화
     document.getElementById('maint-content').value = '';
-    if (maintType === 'PM') document.getElementById('maint-period').value = '';
+    if (maintType === '정기' || maintType === 'PM') document.getElementById('maint-period').value = '';
 
     renderDetails(); // 등록 후 화면 갱신
 }
@@ -371,7 +371,7 @@ function renderDetails() {
         });
 
         tr.innerHTML = `
-            <td><span class="badge ${(item.type || 'PM').toLowerCase()}">${item.type || 'PM'}</span></td>
+            <td><span class="badge ${(item.type || '정기').toLowerCase()}">${item.type || '정기'}</span></td>
             <td class="edit-code">${escapeHtml(item.code || '-')}</td>
             <td class="edit-content">${escapeHtml(item.content)}</td>
             <td class="edit-date">${item.date}</td>
@@ -422,7 +422,7 @@ window.updateMaintContentOptions = function() {
         .map(item => item.content);
 
     // PM, BM일 경우 select로 전환하여 등록된 항목 표시
-    if (maintType === 'PM' || maintType === 'BM') {
+    if (maintType === 'PM' || maintType === 'BM' || maintType === '정기') {
         const filteredItems = data.filter(item => {
             if (item.type !== maintType) return false;
             // 현재 장비 모델과 일치하는 물품만 필터링
@@ -497,7 +497,7 @@ function calculateStatus(type, start, period) {
     const startDate = new Date(y, m - 1, d);
     const oneDay = 24 * 60 * 60 * 1000;
 
-    if (type === 'PM') {
+    if (type === '정기' || type === 'PM') {
         const targetDate = new Date(startDate);
         targetDate.setDate(startDate.getDate() + parseInt(period || 0));
         const diffDays = Math.round((targetDate - today) / oneDay);
@@ -561,7 +561,7 @@ function toggleEditRow(id) {
         contentCell.spellcheck = false;
 
         // [수정] 주기(Period) 입력창을 number 타입으로 변경하여 숫자만 입력 가능하게 함
-        if (row.querySelector('.badge').textContent === 'PM') {
+        if (row.querySelector('.badge').textContent === 'PM' || row.querySelector('.badge').textContent === '정기') {
             const currentPeriod = periodCell.textContent.replace('일', '').trim();
             periodCell.innerHTML = `<input type="number" id="input-period-${id}" value="${escapeHtml(currentPeriod)}" class="edit-period-input">`;
         }
@@ -610,7 +610,7 @@ function updateRowData(id, code, content, date, period) {
         data.maint[idx].code = code;
         data.maint[idx].content = content;
         data.maint[idx].date = date;
-        data.maint[idx].period = data.maint[idx].type === 'PM' ? (parseInt(period) || 0) : null;
+        data.maint[idx].period = (data.maint[idx].type === '정기' || data.maint[idx].type === 'PM') ? (parseInt(period) || 0) : null;
         localStorage.setItem(key, JSON.stringify(data));
         addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `수정: [${code || '-'}] ${content} (날짜: ${date}, 주기: ${period || '-'})`);
     }

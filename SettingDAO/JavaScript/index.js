@@ -313,7 +313,7 @@ function updateMaintenanceDashboard() {
             if (detailData && detailData.maint) {
                 let hasUpcoming = false;
                 detailData.maint.forEach(item => {
-                    if (item.type === 'PM') {
+                     if (item.type === 'PM' || item.type === '정기') {
                         totalPmItems++;
                         if (item.date && item.period) {
                             const [y, m, d] = item.date.split('-').map(Number);
@@ -719,10 +719,13 @@ function renderUpcomingList(data) {
         const siteInfo = clone.querySelector('.upcoming-info-site');
         siteInfo.innerHTML = `${escapeHtml(site)} > ${escapeHtml(name)} ${serial ? `<span class="upcoming-info-sn">(${escapeHtml(serial)})</span>` : ''}`;
 
+        const displayType = item.type === 'PM' ? '정기' : item.type;
+        const contentText = `[${displayType}] ${escapeHtml(item.content)}`;
+
         if (item.scheduledDate) {
-            clone.querySelector('.upcoming-info-content').innerHTML = `${escapeHtml(item.content)} <span class="scheduled-date-text">(예정: ${item.scheduledDate})</span>`;
+            clone.querySelector('.upcoming-info-content').innerHTML = `${contentText} <span class="scheduled-date-text">(예정: ${item.scheduledDate})</span>`;
         } else {
-            clone.querySelector('.upcoming-info-content').textContent = item.content;
+            clone.querySelector('.upcoming-info-content').innerHTML = contentText;
         }
 
         const badge = clone.querySelector('.d-day-badge');

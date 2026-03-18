@@ -62,7 +62,7 @@
                 "date": "2026-03-05",
                 "id": 1773725551317,
                 "period": 30,
-                "type": "PM"
+                "type": "정기"
             },
             {
                 "code": "9.5% HNO3",
@@ -70,7 +70,7 @@
                 "date": "2026-03-05",
                 "id": 1773725556150,
                 "period": 30,
-                "type": "PM"
+                "type": "정기"
             },
             {
                 "code": "Skimmer Cone",
@@ -78,7 +78,7 @@
                 "date": "2025-11-05",
                 "id": 1773725562427,
                 "period": 182,
-                "type": "PM"
+                "type": "정기"
             },
             {
                 "code": "Sampler Cone",
@@ -86,7 +86,7 @@
                 "date": "2025-11-05",
                 "id": 1773725566471,
                 "period": 182,
-                "type": "PM"
+                "type": "정기"
             },
             {
                 "code": "Ion Lens",
@@ -94,7 +94,7 @@
                 "date": "2025-05-07",
                 "id": 1773725571402,
                 "period": 365,
-                "type": "PM"
+                "type": "정기"
             }
         ],
         "logs": [
@@ -188,7 +188,7 @@
                 "date": "2026-03-04",
                 "id": 1773732537420,
                 "period": 30,
-                "type": "PM"
+                "type": "정기"
             },
             {
                 "code": "Skimmer Cone",
@@ -196,7 +196,7 @@
                 "date": "2026-02-04",
                 "id": 1773732539172,
                 "period": 182,
-                "type": "PM"
+                "type": "정기"
             },
             {
                 "code": "Sampler Cone",
@@ -204,7 +204,7 @@
                 "date": "2026-02-04",
                 "id": 1773732540679,
                 "period": 182,
-                "type": "PM"
+                "type": "정기"
             },
             {
                 "code": "Ion Lens",
@@ -212,7 +212,7 @@
                 "date": "2026-02-04",
                 "id": 1773732542276,
                 "period": 365,
-                "type": "PM"
+                "type": "정기"
             }
         ],
         "logs": [
@@ -270,7 +270,7 @@
                 "date": "2026-03-04",
                 "id": 1773728520914,
                 "period": 30,
-                "type": "PM"
+                "type": "정기"
             },
             {
                 "code": "Skimmer Cone",
@@ -278,7 +278,7 @@
                 "date": "2026-02-04",
                 "id": 1773728523008,
                 "period": 182,
-                "type": "PM"
+                "type": "정기"
             },
             {
                 "code": "Sampler Cone",
@@ -286,7 +286,7 @@
                 "date": "2026-02-04",
                 "id": 1773728525186,
                 "period": 182,
-                "type": "PM"
+                "type": "정기"
             },
             {
                 "code": "Ion Lens",
@@ -294,16 +294,16 @@
                 "date": "2026-02-04",
                 "id": 1773728529916,
                 "period": 365,
-                "type": "PM"
+                "type": "정기"
             },
             {
-                "id": 1773815902195,
-                "type": "정기",
-                "detailType": "PM 점검",
                 "content": "Metal STD (10ppb 3%)",
                 "date": "",
+                "detailType": "PM 점검",
+                "id": 1773815902195,
                 "period": null,
-                "scheduledDate": "2026-04-01"
+                "scheduledDate": "2026-04-01",
+                "type": "정기"
             }
         ],
         "logs": [
@@ -389,7 +389,7 @@
                 "date": "2026-03-17",
                 "id": 1773732550702,
                 "period": "30",
-                "type": "PM"
+                "type": "정기"
             },
             {
                 "code": "Skimmer Cone",
@@ -397,7 +397,7 @@
                 "date": "2025-11-04",
                 "id": 1773732552676,
                 "period": 182,
-                "type": "PM"
+                "type": "정기"
             },
             {
                 "code": "Sampler Cone",
@@ -405,7 +405,7 @@
                 "date": "2025-11-04",
                 "id": 1773732554284,
                 "period": 182,
-                "type": "PM"
+                "type": "정기"
             },
             {
                 "code": "Ion Lens",
@@ -413,7 +413,7 @@
                 "date": "2025-05-07",
                 "id": 1773732555980,
                 "period": 365,
-                "type": "PM"
+                "type": "정기"
             }
         ],
         "logs": [
