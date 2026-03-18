@@ -216,8 +216,10 @@ tr.dragging {
 
 /* 로그 테이블 내용 컬럼 줄바꿈 허용 (잘림 방지) */
 #log-list-wrapper .data-table td:nth-child(4) {
-    white-space: normal;
-    word-break: keep-all;
+    white-space: normal !important;
+    word-break: break-all !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
 }
 
 .log-list-container {
@@ -370,8 +372,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     padding: 5px;
     border-radius: 4px;
     cursor: pointer;
-    white-space: normal;
-    word-break: keep-all;
+    white-space: normal !important;
+    word-break: break-all !important;
     min-height: 30px;
     height: auto;
     line-height: 1.4;
@@ -757,6 +759,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         padding-right: 2px !important;
         min-height: 30px !important;
         height: auto !important;
+        white-space: normal !important;
+        word-break: break-all !important;
     }
 
     /* [요청] 모바일에서 점검일 달력 아이콘 및 구분 선택 화살표 숨김 */
