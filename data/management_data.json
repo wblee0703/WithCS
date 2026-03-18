@@ -876,7 +876,24 @@
         ],
         "SOMA-2000::SOMA-HC21-0101::비정기::Alarm": [],
         "SOMA-2000::SOMA-HC21-0101::비정기::BM 점검": [],
-        "SOMA-2000::SOMA-HC21-0101::정기::PM 점검": [],
+        "SOMA-2000::SOMA-HC21-0101::정기::PM 점검": [
+            {
+                "id": 1773822562153,
+                "content": "Metal Standard Solution(3%HNO3)"
+            },
+            {
+                "id": 1773822562154,
+                "content": "Pt Skimmer cone for 7700S"
+            },
+            {
+                "id": 1773822562155,
+                "content": "Pt Sampling cone for 7700S"
+            },
+            {
+                "id": 1773822562156,
+                "content": "Extraction-omega lens assembly"
+            }
+        ],
         "SOMA-2000::SOMA-HK21-0202::고객대응::Cal 보정": [],
         "SOMA-2000::SOMA-HK21-0202::고객대응::Parts 교체": [],
         "SOMA-2000::SOMA-HK21-0202::고객대응::기타": [],
