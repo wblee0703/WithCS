@@ -985,6 +985,25 @@ function setupItemMgmt() {
     const partInput = document.getElementById('admin-item-part-input');
     const specInput = document.getElementById('admin-item-spec-input');
 
+    // [추가] 코드명에 쉼표(,) 입력 실시간 차단
+    if (codeInput) {
+        codeInput.addEventListener('input', function() {
+            if (this.value.includes(',')) {
+                this.value = this.value.replace(/,/g, '');
+                alert('코드명에는 쉼표(,)를 입력할 수 없습니다.');
+            }
+        });
+    }
+    const detailCodeInput = document.getElementById('item-info-code');
+    if (detailCodeInput) {
+        detailCodeInput.addEventListener('input', function() {
+            if (this.value.includes(',')) {
+                this.value = this.value.replace(/,/g, '');
+                alert('코드명에는 쉼표(,)를 입력할 수 없습니다.');
+            }
+        });
+    }
+
     const searchInput = document.getElementById('admin-item-search');
     if (searchInput) {
         searchInput.addEventListener('input', renderAdminItemList);
@@ -998,6 +1017,7 @@ function setupItemMgmt() {
             const spec = specInput.value.trim();
             const cycle = ""; // 상세 정보에서 수정하도록 빈 값 전달
 
+            if (code.includes(',')) return alert('코드명에는 쉼표(,)를 입력할 수 없습니다.');
             if (!part) return alert('물품명을 입력해주세요.');
 
             adminItems.push({
@@ -1297,6 +1317,7 @@ function handleItemDetailSave() {
     const equipRaw = document.getElementById('item-info-equip').value;
     const equip = equipRaw.split(',').map(e => e.trim()).filter(e => e).join(', '); // 불필요한 빈칸 및 쉼표 제거
 
+    if (code.includes(',')) return alert('코드명에는 쉼표(,)를 입력할 수 없습니다.');
     if (!part) return alert('물품명을 입력해주세요.');
 
     const idx = adminItems.findIndex(i => i.id === currentAdminItemId);
