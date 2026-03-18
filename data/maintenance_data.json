@@ -295,15 +295,6 @@
                 "id": 1773728529916,
                 "period": 365,
                 "type": "정기"
-            },
-            {
-                "content": "Metal STD (10ppb 3%)",
-                "date": "",
-                "detailType": "PM 점검",
-                "id": 1773815902195,
-                "period": null,
-                "scheduledDate": "2026-04-01",
-                "type": "정기"
             }
         ],
         "logs": [
