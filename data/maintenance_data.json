@@ -188,7 +188,8 @@
                 "date": "2026-03-04",
                 "id": 1773732537420,
                 "period": 30,
-                "type": "PM"
+                "type": "PM",
+                "scheduledDate": "2026-04-01"
             },
             {
                 "code": "Skimmer Cone",
