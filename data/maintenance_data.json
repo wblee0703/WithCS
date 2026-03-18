@@ -156,7 +156,7 @@
             {
                 "id": 1773812196807,
                 "date": "2026-01-26",
-                "memo": "",
+                "memo": "1. 분석 Sequence 확인\n - Chemical Port 동시에 열리는게 있는지 확인\n - Port2 LW NormalA에 Port1,2가 동시에 열림(수정완료)",
                 "type": "온라인점검",
                 "detailType": "온라인점검",
                 "content": "분석 Sequence 확인",
