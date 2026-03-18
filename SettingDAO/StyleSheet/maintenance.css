@@ -193,7 +193,7 @@ tr.dragging {
 
 /* 비용처리 */
 #log-list-wrapper .data-table th:nth-child(5) {
-    width: 90px;
+    width: 110px;
 }
 
 /* 작업자 */
@@ -346,7 +346,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 #log-type-select,
-#log-detail-type-select {
+#log-detail-type-select,
+#log-cost-type {
     width: 110px;
     height: 30px;
     flex: 1;
@@ -755,7 +756,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 #log-cost-type {
     width: auto !important;
-    flex: 1 !important;
+    flex: 1.2 !important;
     min-width: 0 !important;
     padding: 0 !important;
     appearance: none;

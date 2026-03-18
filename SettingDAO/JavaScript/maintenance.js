@@ -1157,7 +1157,11 @@ window.renderEditLogContentField = function(id, type, detailType, value) {
         contentCell.innerHTML = '';
         contentCell.appendChild(wrapper);
     } else {
-        contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="${escapeHtml(value)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
+        if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+            contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="" class="input-dark input-disabled" style="width: 100%; padding: 2px;" placeholder="항목을 추가해 주세요" disabled onclick="event.stopPropagation()">`;
+        } else {
+            contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="${escapeHtml(value)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
+        }
     }
 }
 
@@ -1240,6 +1244,7 @@ window.updateLogContentOptions = function() {
         contentInput.placeholder = '구분을 먼저 선택하세요';
         contentInput.value = '';
         contentInput.disabled = true;
+        contentInput.classList.add('input-disabled');
         return;
     }
 
@@ -1249,10 +1254,12 @@ window.updateLogContentOptions = function() {
         contentInput.placeholder = '세부구분을 먼저 선택하세요';
         contentInput.value = '';
         contentInput.disabled = true;
+        contentInput.classList.add('input-disabled');
         return;
     }
 
     contentInput.disabled = false;
+    contentInput.classList.remove('input-disabled');
     
     const items = getCheckTypeItems(type, detailType);
 
@@ -1293,7 +1300,16 @@ window.updateLogContentOptions = function() {
     } else {
         contentWrapper.style.display = 'none';
         contentInput.style.display = 'inline-block';
-        contentInput.placeholder = detailType ? '내용 (직접 입력)' : '내용 (직접 입력)';
+        if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+            contentInput.placeholder = '항목을 추가해 주세요';
+            contentInput.value = '';
+            contentInput.disabled = true;
+            contentInput.classList.add('input-disabled');
+        } else {
+            contentInput.placeholder = '내용 (직접 입력)';
+            contentInput.disabled = false;
+            contentInput.classList.remove('input-disabled');
+        }
     }
 };
 
