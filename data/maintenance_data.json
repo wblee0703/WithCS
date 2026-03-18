@@ -99,16 +99,6 @@
         ],
         "logs": [
             {
-                "content": "분석 Sequence 확인",
-                "date": "2026-01-26",
-                "detailType": "온라인점검",
-                "id": 1769759385361.5334,
-                "maintItem": "설비 점검",
-                "memo": "1. 분석 Sequence 확인\n - Chemical Port 동시에 열리는게 있는지 확인\n - Port2 LW NormalA에 Port1,2가 동시에 열림(수정완료)",
-                "type": "온라인점검",
-                "worker": "이원배 진봉균"
-            },
-            {
                 "content": "Metal STD (5ppb 1%), 9.5% HNO3",
                 "date": "2026-01-07",
                 "detailType": "PM 점검",
