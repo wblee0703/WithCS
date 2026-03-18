@@ -693,7 +693,7 @@ function renderIntegMaintStats(mainData) {
 
 function renderMaintItemList(listEl, chartEl, centerText, itemCounts) {
     listEl.innerHTML = '';
-    const typeOrder = ['정기', 'PM', '비정기', 'BM', '고객대응', '용액제조', '온라인점검'];
+    const typeOrder = ['정기', '비정기', '고객대응', '용액제조', '온라인점검'];
     
     const sortedItems = Object.keys(itemCounts).map(key => {
         const parts = key.split('::');

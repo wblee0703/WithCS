@@ -324,6 +324,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     color: #fff;
 }
 
+.toggle-group button.active[data-type="장비점검"] {
+    background: #d29922;
+    color: #fff;
+}
+
+.toggle-group button.active[data-type="프로그램변경"] {
+    background: #8957e5;
+    color: #fff;
+}
+
 /* 로그 입력 */
 #log-date {
     width: 140px;
@@ -541,13 +551,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     font-weight: bold;
 }
 
-.badge.pm,
 .badge.정기 {
     background: #238636;
     color: #fff;
 }
 
-.badge.bm,
 .badge.비정기 {
     background: #eb371f;
     color: #fff;

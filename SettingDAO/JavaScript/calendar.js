@@ -37,9 +37,9 @@ document.addEventListener('DOMContentLoaded', () => {
    ========================================================================== */
 
 /**
- * 캘린더 표시용 PM/BM 일정 데이터 수집
+ * 캘린더 표시용 일정 데이터 수집
  */
-function getPmScheduleForCalendar() {
+function getScheduleForCalendar() {
     const events = {};
     const mainData = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
 
@@ -259,7 +259,7 @@ function renderMonthGrid(year, month, titleId, gridId) {
     const searchInput = document.getElementById('calendar-search');
     const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
-    const pmEvents = getPmScheduleForCalendar();
+    const pmEvents = getScheduleForCalendar();
     titleEl.style.color = '';
     titleEl.textContent = `${year}년 ${month + 1}월`;
     gridEl.innerHTML = '';
@@ -456,7 +456,7 @@ function openCalendarPopup(dateStr, events) {
 
                         // 팝업 닫지 않고 내용만 갱신
                         const dateStr = document.getElementById('popup-date-title').textContent;
-                        const allEvents = getPmScheduleForCalendar();
+                        const allEvents = getScheduleForCalendar();
                         let dayEvents = allEvents[dateStr] || [];
 
                         // 필터 재적용
@@ -953,7 +953,7 @@ function toggleDetailContentEdit() {
                 const dateTitle = document.getElementById('popup-date-title');
                 if (dateTitle) {
                     const dateStr = dateTitle.textContent;
-                    const allEvents = typeof getPmScheduleForCalendar === 'function' ? getPmScheduleForCalendar() : {};
+                    const allEvents = typeof getScheduleForCalendar === 'function' ? getScheduleForCalendar() : {};
                     let dayEvents = allEvents[dateStr] || [];
                     if (typeof openCalendarPopup === 'function') openCalendarPopup(dateStr, dayEvents);
                 }
@@ -977,7 +977,7 @@ function updateScheduleDateFromDetail() {
         const dateTitle = document.getElementById('popup-date-title');
         if (dateTitle) {
             const dateStr = dateTitle.textContent;
-            const allEvents = getPmScheduleForCalendar();
+            const allEvents = getScheduleForCalendar();
             let dayEvents = allEvents[dateStr] || [];
             
             // 필터 재적용
@@ -1044,8 +1044,8 @@ function completeScheduleWork() {
         // [추가] 완료 처리 시 임시 저장된 작업자/메모 삭제 (다음 예정일 때 초기화된 상태로 시작)
         delete i.worker;
         delete i.memo;
-        // [추가] PM/BM 항목은 완료 시 시작일(마지막 점검일) 갱신
-        if (i.type === '정기' || i.type === 'PM' || i.type === 'BM') {
+        // [추가] 정기/비정기 항목은 완료 시 시작일(마지막 점검일) 갱신
+        if (i.type === '정기' || i.type === '비정기') {
             i.date = completeDate;
         }
     });
@@ -1067,7 +1067,7 @@ function completeScheduleWork() {
         const dateTitle = document.getElementById('popup-date-title');
         if (dateTitle) {
             const dateStr = dateTitle.textContent;
-            const allEvents = getPmScheduleForCalendar();
+            const allEvents = getScheduleForCalendar();
             let dayEvents = allEvents[dateStr] || [];
             
             // 필터 재적용
@@ -1124,7 +1124,7 @@ function cancelScheduleCompletion() {
     let recoveredMaintId = null; // 복구된 메인 ID 추적
 
     contents.forEach((content, idx) => {
-        // 기존 maint 리스트에 같은 내용과 타입의 항목이 있는지 확인 (PM 등 유지되는 항목)
+        // 기존 maint 리스트에 같은 내용과 타입의 항목이 있는지 확인 (정기 등 유지되는 항목)
         // 예정일(scheduledDate)만 다시 세팅하여 달력에 표시되게 함
         let existingItem = data.maint.find(m => m.type === logType && m.content === content);
         
@@ -1171,7 +1171,7 @@ function cancelScheduleCompletion() {
         const dateTitle = document.getElementById('popup-date-title');
         if (dateTitle) {
             const dateStr = dateTitle.textContent;
-            const allEvents = getPmScheduleForCalendar();
+            const allEvents = getScheduleForCalendar();
             let dayEvents = allEvents[dateStr] || [];
             
             // 필터 재적용

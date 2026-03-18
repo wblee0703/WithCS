@@ -1,15 +1,15 @@
 [
     {
-        "additional": "",
-        "code": "Metal STD (10ppb 3%)",
-        "cycle": "30",
-        "detailType": "용액",
-        "equip": "SOMA-2000",
         "id": 1773718601332,
-        "part": "Metal Standard Solution(3%HNO3)",
+        "type": "정기",
+        "detailType": "용액",
+        "additional": "ICPMS",
         "partno": "",
+        "code": "Metal STD (10ppb 3%)",
+        "part": "Metal Standard Solution(3%HNO3)",
         "spec": "10ppb Multi(4종), 3%HNO3",
-        "type": "정기"
+        "cycle": "30",
+        "equip": "SOMA-2000"
     },
     {
         "additional": "ICPMS",
@@ -57,7 +57,7 @@
         "part": "Torch for PFA inert kit for ICP-MS",
         "partno": "A00002051",
         "spec": "G4912-80012, 정품",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -69,7 +69,7 @@
         "part": "Platinum injector, inert torch, 2.5mm id",
         "partno": "M00001395",
         "spec": "G3285-80035, Agilent",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -81,7 +81,7 @@
         "part": "Spray Chamber for Inert Kit, PFA",
         "partno": "A00002198",
         "spec": "G3285-80021, Agilent 정품",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -93,7 +93,7 @@
         "part": "Spray Chamber End Cap for Inert Kit, PFA",
         "partno": "A00002197",
         "spec": "G3285-80020",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -105,7 +105,7 @@
         "part": "Long connector tube for ICP-MS inert kit",
         "partno": "M00001397",
         "spec": "G3285-80024, Agilent 정품",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -117,7 +117,7 @@
         "part": "Quartz Torch Bonnet",
         "partno": "C00004061",
         "spec": "31-808-2577, G1833-65421, OEM",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -129,7 +129,7 @@
         "part": "Shield Plate for ICP-MS",
         "partno": "M00000529",
         "spec": "AT5004, G1833-65419, OEM",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -141,7 +141,7 @@
         "part": "Ar gas clean filter, Semicon App",
         "partno": "A00002263",
         "spec": "5064-8092, Agilent 정품",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -153,7 +153,7 @@
         "part": "Gas Clean Filter Carrier Gas",
         "partno": "M00000586",
         "spec": "CP17973",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -165,7 +165,7 @@
         "part": "Deflect lens for ICP-MS",
         "partno": "A00002046",
         "spec": "G3280-20628, 정품",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -177,7 +177,7 @@
         "part": "Plate bias for ICP-MS",
         "partno": "A00002047",
         "spec": "G3280-60615, 정품",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -189,7 +189,7 @@
         "part": "Cell entrance lens for ICP-MS",
         "partno": "A00002048",
         "spec": "G3280-20618, 정품",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -201,7 +201,7 @@
         "part": "Cell exit lens for ICP-MS",
         "partno": "A00002049",
         "spec": "G3280-20664, 정품",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -213,7 +213,7 @@
         "part": "Cell focus lens for ICP-MS",
         "partno": "A00002050",
         "spec": "G3280-20633, 정품",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -225,7 +225,7 @@
         "part": "Octopole assembly, ICP-MS",
         "partno": "M00001398",
         "spec": "G3280-67045, Agilent 정품",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -237,7 +237,7 @@
         "part": "Micro Flow Nebulizer PFA-100",
         "partno": "C00004462",
         "spec": "G3139-65100, 150~200u/min, Agilent 정품",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -249,7 +249,7 @@
         "part": "RF coil for 7900",
         "partno": "A00003373",
         "spec": "G8400-60434",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "additional": "ICPMS",
@@ -261,7 +261,7 @@
         "part": "Electron multiplier for ICP-MS",
         "partno": "M00000588",
         "spec": "G8400-60258",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "GC(2mm)",
@@ -272,7 +272,7 @@
         "part": "Guard Column(2mm)",
         "partno": "A00000029",
         "spec": "046138, AG14(2x50mm)",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "GC(4mm)",
@@ -283,7 +283,7 @@
         "part": "Guard Column(4mm)",
         "partno": "A00000030",
         "spec": "046134, AG14(4x50mm)",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "AC(2mm)",
@@ -294,7 +294,7 @@
         "part": "Analysis Column(2mm)",
         "partno": "A00000026",
         "spec": "046129, AS14(2x250mm)",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "AC(4mm)",
@@ -305,7 +305,7 @@
         "part": "Analysis Column(4mm)",
         "partno": "A00000028",
         "spec": "IC SI-50 4E, 5UM 4.0x250mm, Shodex",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "SRS(2mm)",
@@ -316,7 +316,7 @@
         "part": "Suppressor(2mm 음이온)",
         "partno": "A00000219",
         "spec": "088667, ADRS600, 2MM",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "SRS(4mm)",
@@ -327,7 +327,7 @@
         "part": "Suppressor(4mm 음이온)",
         "partno": "A00000207",
         "spec": "088666, PROD,ADRS600,4MM",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "DEGASSER",
@@ -338,7 +338,7 @@
         "part": "Degasser",
         "partno": "A00000033",
         "spec": "9000-1292, Kit,Vac DG Ch,Sm Bore AF,14ft",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "3WAY_V(L)",
@@ -349,7 +349,7 @@
         "part": "Solenoid Valve(MHPNLBT032)",
         "partno": "A00002612",
         "spec": "3Way HP M3 Threaded Valve 24VDC, Nresearch",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "2WAY_V(G)",
@@ -360,7 +360,7 @@
         "part": "Solenoid Valve",
         "partno": "A00000036",
         "spec": "2WAY (G) USB3-6-3-E_DC 24V_AMC용",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "HPLC SEAL",
@@ -371,7 +371,7 @@
         "part": "HPLC Pump Piston Seal Kit",
         "partno": "A00000045",
         "spec": "880203, 10ML SEAL KIT, STS",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "HPLC DAMPER",
@@ -382,7 +382,7 @@
         "part": "Pulse dampener(301)",
         "partno": "A00000050",
         "spec": "880616, PK PULSE DAMPER W/O XDCR",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "815PUMP",
@@ -393,7 +393,7 @@
         "part": "Vacuum Pump",
         "partno": "A00000052",
         "spec": "UN815KNI, 115V(미국용)",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "다이아프램(815)",
@@ -404,7 +404,7 @@
         "part": "Diaphragm",
         "partno": "A00000054",
         "spec": "024489 for N815 (815 부품)",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "다이아프램(838)",
@@ -415,7 +415,7 @@
         "part": "Diaphragm",
         "partno": "A00000055",
         "spec": "027473 for N838 (838 부품)",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "ROTOR SEAL(Sw/V)",
@@ -426,7 +426,7 @@
         "part": "Rotor seal_ Switching valve",
         "partno": "A00000078",
         "spec": "C15-310, 1/16*75mm, 75C/250psi liq",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "STATOR(Sw/V)",
@@ -437,7 +437,7 @@
         "part": "Stator face_ Switching valve",
         "partno": "A00000079",
         "spec": "C25Z-386_ SW/V Stator seal (C25Z용)",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "ROTOR SEAL(INJ)",
@@ -448,7 +448,7 @@
         "part": "Rotor seal_ Injector",
         "partno": "A00000080",
         "spec": "C2-23R6, 1/16*0.4mm, 50C/5000psi liq",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "SYRINGE_1ML(H)",
@@ -459,7 +459,7 @@
         "part": "Syringe(1mL)",
         "partno": "A00000087",
         "spec": "81320, 1mL, Hamilton",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "SYRINGE_2.5ML(H)",
@@ -470,7 +470,7 @@
         "part": "Syringe(2.5mL)",
         "partno": "A00000088",
         "spec": "81420, 2.5mL, Hamilton",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "레벨센서 (TYPE1)",
@@ -481,7 +481,7 @@
         "part": "레벨센서",
         "partno": "A00000098",
         "spec": "Eluent 용, Type Ⅰ",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "HPLC HEAD KIT",
@@ -492,7 +492,7 @@
         "part": "HPLC PUMP HEAD KIT",
         "partno": "A00000119",
         "spec": "160553, HEAD KIT,PK,10ML,STD",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "다이아프램(830)",
@@ -503,7 +503,7 @@
         "part": "Diaphragm",
         "partno": "A00000123",
         "spec": "045742 for N830 (N830부품)",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "830PUMP",
@@ -514,7 +514,7 @@
         "part": "Diaphragm Pump",
         "partno": "A00000130",
         "spec": "PM27597-NMP830, 12V",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "ELEC_Regulator",
@@ -525,7 +525,7 @@
         "part": "ELECTRIC REGULATOR",
         "partno": "A00000187",
         "spec": "SMC_ITV1030-212CL_0.5Mpa",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "HPLC PISTON",
@@ -536,7 +536,7 @@
         "part": "Piston Assembly",
         "partno": "A00000214",
         "spec": "880354, 10ML SER3 REPLACEMENT PISTON",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "V/P (Thomas)",
@@ -547,7 +547,7 @@
         "part": "Vacuum Pump[Thomas-P], 4/1 Connector",
         "partno": "A00000233",
         "spec": "2680CGUU44,130LPM,230V,50/60Hz공용(피팅포함)",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "WELCH PART",
@@ -558,7 +558,7 @@
         "part": "Welch Part, 서비스킷",
         "partno": "A00000326",
         "spec": "402041, for MPC 601 E",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "MFC_Linetech(10LPM)",
@@ -569,7 +569,7 @@
         "part": "MFC",
         "partno": "A00000411",
         "spec": "M3030V AIR 10SLPM (VITON,1/4\") 15Vdc",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "MFC_Linetech(5LPM)",
@@ -580,7 +580,7 @@
         "part": "MFC",
         "partno": "A00000412",
         "spec": "M3030V AIR 5SLPM (VITON,1/4\") 15Vdc",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "F/M (5LPM)",
@@ -591,7 +591,7 @@
         "part": "Flow meter(Outlet valve)",
         "partno": "A00000451",
         "spec": "LZM-WO/1-5LPM, OEM, POC1/4-01MW",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "SAMPLER (양)",
@@ -602,7 +602,7 @@
         "part": "Sampler body",
         "partno": "A00000574",
         "spec": "WF301 ＆ SM301 (양)",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "FITTING (P200)",
@@ -613,7 +613,7 @@
         "part": "P-200",
         "partno": "A00000654",
         "spec": "Ferrules for 1/16 OD tubing Blue ETFE",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "FITTING (P203)",
@@ -624,7 +624,7 @@
         "part": "P-203",
         "partno": "A00000655",
         "spec": "1/4-28 Nuts for 1/16 tubing WhiteDelrin",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "FITTING (P316)",
@@ -635,7 +635,7 @@
         "part": "P-316",
         "partno": "A00000661",
         "spec": "Plug fitting, PFA",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "FITTING (XU655)",
@@ -646,7 +646,7 @@
         "part": "XU-655",
         "partno": "A00000689",
         "spec": "Flngls sys Blk Peek 1/4in",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "FITTING (P213)",
@@ -657,7 +657,7 @@
         "part": "P-213",
         "partno": "A00000738",
         "spec": "Headless M6 Nut, 1/16in Short",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "FITTING (P250)",
@@ -668,7 +668,7 @@
         "part": "P-250",
         "partno": "A00000739",
         "spec": "SF Ferrule, 1/16 PEEK w/SS Ring",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "FITTING (DCF-2N-S)",
@@ -679,7 +679,7 @@
         "part": "Fitting Female 1/8 NPT-1/8",
         "partno": "A00000936",
         "spec": "DCF2-2N-S",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "TUBE (FEP_Air)",
@@ -690,7 +690,7 @@
         "part": "FEP TUBE",
         "partno": "A00001166",
         "spec": "FEP 3*2*100m, NATURAL, Samplingcoil, Yodogawa",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "TUBE (FEP_Sol)",
@@ -701,7 +701,7 @@
         "part": "TUBE_1/8＂FEP(300M)",
         "partno": "A00001174",
         "spec": "MT-F-125062, 1.59mm, 1000FT",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "HPLC SELF FLUSH",
@@ -712,7 +712,7 @@
         "part": "10mL Self Flush ASSY",
         "partno": "A00001272",
         "spec": "880469",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "3WAY_V(G)",
@@ -723,7 +723,7 @@
         "part": "Solenoid valve",
         "partno": "A00001417",
         "spec": "3 WAY USG3-X1476-FL-634209-DC24V, 3.0",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "SYRINGE PUMP (T)",
@@ -734,7 +734,7 @@
         "part": "Syringe Pump(TECAN)",
         "partno": "A00001574",
         "spec": "20738421, XLP6K 3P 1/4-28",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "S/P (C3000)",
@@ -745,7 +745,7 @@
         "part": "Syringe pump, C3000",
         "partno": "A00001927",
         "spec": "10013, 3Port, PCTFE/PTFE",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "Syringe_1mL (ILS)",
@@ -756,7 +756,7 @@
         "part": "Syringe(1mL)",
         "partno": "A00001928",
         "spec": "2647017, 1mL, ILS",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "Syringe_2.5mL (ILS)",
@@ -767,7 +767,7 @@
         "part": "Syringe(2.5mL)",
         "partno": "A00001930",
         "spec": "2647037, 2.5mL, ILS",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "TUBE (for REACTOR)",
@@ -778,7 +778,7 @@
         "part": "REACTOR_WF301용",
         "partno": "A00001949",
         "spec": "내경0.03\" 3바퀴반",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "CAP (1/4)",
@@ -789,7 +789,7 @@
         "part": "1/4 cap",
         "partno": "A00002032",
         "spec": "SC-4-S",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "Syringe_1mL (SETo)",
@@ -800,7 +800,7 @@
         "part": "Syringe(1mL)",
         "partno": "A00002251",
         "spec": "3020008, 1mL, SETonic",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "Syringe_2.5mL (SETo)",
@@ -811,7 +811,7 @@
         "part": "Syringe(2.5mL)",
         "partno": "A00002252",
         "spec": "3020009, 2.5mL, SETonic",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "AGILENT CELL",
@@ -822,7 +822,7 @@
         "part": "Agilent FLD standard flow cell(국내)",
         "partno": "A00002331",
         "spec": "G1321-60005, 8uL",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "3WAY",
@@ -833,7 +833,7 @@
         "part": "3-Way Solenoid Valve",
         "partno": "A00002378",
         "spec": "HTV 0142-3, PTFE, DC24V, 7Bar, HSE",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "PLC386(CPU)",
@@ -844,7 +844,7 @@
         "part": "PLC386 CPU Board",
         "partno": "B00000023",
         "spec": "TB-PLCS386 CPU 보드, MOQ(10) / 테크마스",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "PLC386(TR8)",
@@ -855,7 +855,7 @@
         "part": "PLC386 TR8 Board",
         "partno": "B00000027",
         "spec": "8비트 TR 출력 보드, MOQ(10) / 테크마스",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "PLC386(IN8)",
@@ -866,7 +866,7 @@
         "part": "PLC386 IN8 Board",
         "partno": "B00000028",
         "spec": "8비트 IN 입력 보드, MOQ(10) / 테크마스",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "LEAK BOARD",
@@ -877,7 +877,7 @@
         "part": "Leak Sensor Board",
         "partno": "B00000030",
         "spec": "Leak Sensor Board / 유니랩코리아",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "SMPS(10A)",
@@ -888,7 +888,7 @@
         "part": "SMPS:SDR-240-24(10A)",
         "partno": "B00000118",
         "spec": "10A(240W) output 24V / MEAN WALL",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "회로보호기(3A)",
@@ -899,7 +899,7 @@
         "part": "회로보호기",
         "partno": "B00000135",
         "spec": "CP30-BA 1P1-M 3A / 미쯔비시",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "SMPS(1.36A)",
@@ -910,7 +910,7 @@
         "part": "SMPS:MDR-20-15(1.36A)",
         "partno": "B00000154",
         "spec": "1.34A output 15V / MEAN WALL",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "LEAK SENSOR(감지부)",
@@ -921,7 +921,7 @@
         "part": "Leak Sensor(감지부)",
         "partno": "B00000261",
         "spec": "T-PF-PC, 30*40*0.3T, C/GF/PTFE",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "LEAK SENSOR(케이블)",
@@ -932,7 +932,7 @@
         "part": "Leak Sensor(케이블)",
         "partno": "B00000262",
         "spec": "TFE CABLE, 4SQ_내산성",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "LEAK SENSOR(커넥터)",
@@ -943,7 +943,7 @@
         "part": "Leak Sensor(커넥터)",
         "partno": "B00000263",
         "spec": "Line connector_12mm*15mm",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "회로보호기(7A)",
@@ -954,7 +954,7 @@
         "part": "회로보호기",
         "partno": "B00000387",
         "spec": "CP30-BA 1P1-M 7A / 미쯔비시",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "하네스케이블",
@@ -965,7 +965,7 @@
         "part": "하네스 케이블",
         "partno": "B00000658",
         "spec": "전 장비",
-        "type": "BM"
+        "type": "비정기"
     },
     {
         "code": "표준용액(양)",

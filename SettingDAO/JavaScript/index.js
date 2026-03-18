@@ -313,7 +313,7 @@ function updateMaintenanceDashboard() {
             if (detailData && detailData.maint) {
                 let hasUpcoming = false;
                 detailData.maint.forEach(item => {
-                     if (item.type === 'PM' || item.type === '정기') {
+                     if (item.type === '정기') {
                         totalPmItems++;
                         if (item.date && item.period) {
                             const [y, m, d] = item.date.split('-').map(Number);
@@ -653,7 +653,7 @@ function renderUpcomingList(data) {
                     const detailData = JSON.parse(localStorage.getItem(key));
                     if (detailData && detailData.maint) {
                         detailData.maint.forEach(item => {
-                            if (item.type === 'PM' && item.date && item.period) {
+                            if (item.type === '정기' && item.date && item.period) {
                                 const [y, m, d] = item.date.split('-').map(Number);
                                 const targetDate = new Date(y, m - 1, d);
                                 targetDate.setDate(targetDate.getDate() + parseInt(item.period));
@@ -719,8 +719,7 @@ function renderUpcomingList(data) {
         const siteInfo = clone.querySelector('.upcoming-info-site');
         siteInfo.innerHTML = `${escapeHtml(site)} > ${escapeHtml(name)} ${serial ? `<span class="upcoming-info-sn">(${escapeHtml(serial)})</span>` : ''}`;
 
-        const displayType = item.type === 'PM' ? '정기' : item.type;
-        const contentText = `[${displayType}] ${escapeHtml(item.content)}`;
+        const contentText = escapeHtml(item.content);
 
         if (item.scheduledDate) {
             clone.querySelector('.upcoming-info-content').innerHTML = `${contentText} <span class="scheduled-date-text">(예정: ${item.scheduledDate})</span>`;

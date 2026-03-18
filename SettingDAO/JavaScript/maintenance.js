@@ -55,8 +55,8 @@ function setupMaintenanceEvents() {
                 maintTypeButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
 
-                // 비정기(BM)일 때 입력창 비활성화
-                if (btn.dataset.type === 'BM' || btn.dataset.type === '비정기') {
+                // 비정기일 때 입력창 비활성화
+                if (btn.dataset.type === '비정기') {
                     maintPeriodInput.disabled = true;
                     maintPeriodInput.value = '';
                     maintPeriodInput.classList.add('input-disabled');
@@ -313,8 +313,8 @@ function addDetailItem() {
     const period = document.getElementById('maint-period').value;
 
     // 유효성 검사
-    if (maintType === '정기' || maintType === 'PM') {
-        if (!content || !date || !period) return alert('정기는 내용, 날짜, 주기를 모두 입력해야 합니다.');
+    if (maintType === '정기') {
+        if (!content || !date || !period) return alert('정기는 내용, 날짜, 교체 주기를 모두 입력해야 합니다.');
     } else {
         if (!content || !date) return alert('비정기는 내용과 날짜를 입력해야 합니다.');
     }
@@ -328,7 +328,7 @@ function addDetailItem() {
         code: code,
         content: content,
         date: date,
-        period: (maintType === '정기' || maintType === 'PM') ? period : null
+        period: (maintType === '정기') ? period : null
     };
 
     data.maint.push(newItem);
@@ -338,7 +338,7 @@ function addDetailItem() {
 
     // 입력창 초기화
     document.getElementById('maint-content').value = '';
-    if (maintType === '정기' || maintType === 'PM') document.getElementById('maint-period').value = '';
+    if (maintType === '정기') document.getElementById('maint-period').value = '';
 
     renderDetails(); // 등록 후 화면 갱신
 }
@@ -418,15 +418,10 @@ window.updateMaintContentOptions = function() {
         .filter(item => item.type === maintType)
         .map(item => item.content);
 
-    // 정기, 비정기(PM, BM)일 경우 select로 전환하여 등록된 항목 표시
-    if (maintType === 'PM' || maintType === 'BM' || maintType === '정기' || maintType === '비정기') {
+    // 정기, 비정기일 경우 select로 전환하여 등록된 항목 표시
+    if (maintType === '정기' || maintType === '비정기') {
         const filteredItems = data.filter(item => {
-            const matchType = item.type === maintType || 
-                              (maintType === '정기' && item.type === 'PM') || 
-                              (maintType === '비정기' && item.type === 'BM') ||
-                              (maintType === 'PM' && item.type === '정기') ||
-                              (maintType === 'BM' && item.type === '비정기');
-            if (!matchType) return false;
+            if (item.type !== maintType) return false;
             // 현재 장비 모델과 일치하는 물품만 필터링
             if (item.equip) {
                 const equips = item.equip.split(',').map(e => e.trim());
@@ -455,7 +450,7 @@ window.updateMaintContentOptions = function() {
                 const val = e.target.value;
                 const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
                 const activeType = document.querySelector('#maint-type-toggle .active').dataset.type;
-                const match = adminItems.find(i => i.part === val && (i.type === activeType || (activeType === '정기' && i.type === 'PM') || (activeType === '비정기' && i.type === 'BM')));
+                const match = adminItems.find(i => i.part === val && i.type === activeType);
                 const periodInput = document.getElementById('maint-period');
                 if (periodInput && !periodInput.disabled) {
                     periodInput.value = (match && match.cycle) ? match.cycle : '';
@@ -477,7 +472,7 @@ window.updateMaintContentOptions = function() {
         }
         
     } else {
-        // PM, BM이 아닌 기타 타입일 경우 자유 입력 텍스트창으로 복구
+        // 정기, 비정기가 아닌 기타 타입일 경우 자유 입력 텍스트창으로 복구
         if (contentElement.tagName.toLowerCase() !== 'input') {
             const inputEl = document.createElement('input');
             inputEl.type = 'text';
@@ -499,7 +494,7 @@ function calculateStatus(type, start, period) {
     const startDate = new Date(y, m - 1, d);
     const oneDay = 24 * 60 * 60 * 1000;
 
-    if (type === '정기' || type === 'PM') {
+    if (type === '정기') {
         const targetDate = new Date(startDate);
         targetDate.setDate(startDate.getDate() + parseInt(period || 0));
         const diffDays = Math.round((targetDate - today) / oneDay);
@@ -563,7 +558,7 @@ function toggleEditRow(id) {
         contentCell.spellcheck = false;
 
         // [수정] 주기(Period) 입력창을 number 타입으로 변경하여 숫자만 입력 가능하게 함
-        if (row.querySelector('.badge').textContent === 'PM' || row.querySelector('.badge').textContent === '정기') {
+        if (row.querySelector('.badge').textContent === '정기') {
             const currentPeriod = periodCell.textContent.replace('일', '').trim();
             periodCell.innerHTML = `<input type="number" id="input-period-${id}" value="${escapeHtml(currentPeriod)}" class="edit-period-input">`;
         }
@@ -612,7 +607,7 @@ function updateRowData(id, code, content, date, period) {
         data.maint[idx].code = code;
         data.maint[idx].content = content;
         data.maint[idx].date = date;
-        data.maint[idx].period = (data.maint[idx].type === '정기' || data.maint[idx].type === 'PM') ? (parseInt(period) || 0) : null;
+        data.maint[idx].period = (data.maint[idx].type === '정기') ? (parseInt(period) || 0) : null;
         localStorage.setItem(key, JSON.stringify(data));
         addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `수정: [${code || '-'}] ${content} (날짜: ${date}, 주기: ${period || '-'})`);
     }
@@ -698,8 +693,8 @@ function addLogItem(e) {
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
         
         itemsList.forEach((itemText, idx) => {
-            // 기존 유지관리 물품 리스트에 같은 항목(BM)이 있는지 확인
-            const exists = data.maint.some(m => m.type === 'BM' && (m.content === itemText || m.code === itemText));
+            // 기존 유지관리 물품 리스트에 같은 항목(비정기)이 있는지 확인
+            const exists = data.maint.some(m => m.type === '비정기' && (m.content === itemText || m.code === itemText));
             if (!exists) {
                 let code = '';
                 let fullContent = itemText;
@@ -713,14 +708,14 @@ function addLogItem(e) {
 
                 data.maint.push({
                     id: Date.now() + 1000 + idx, // ID 충돌 방지
-                    type: 'BM',
+                    type: '비정기',
                     code: code,
                     content: fullContent,
                     date: date,
                     period: null
                 });
                 isMaintUpdated = true;
-                addSystemLog('ADD_MAINTENANCE', currentPath.equip, `[BM] ${fullContent} (자동 등록, 시작일: ${date})`);
+                addSystemLog('ADD_MAINTENANCE', currentPath.equip, `[비정기] ${fullContent} (자동 등록, 시작일: ${date})`);
             }
         });
     }
@@ -782,8 +777,6 @@ function renderLogs() {
     
     const getLogBadgeClass = (t, dt) => {
         if (!t) return 'default';
-        if (dt === 'PM 점검') return 'pm';
-        if (dt === 'BM 점검') return 'bm';
         return t.replace(/\s/g, ''); // 공백 제거하여 CSS 클래스명으로 반환
     };
 
@@ -809,7 +802,7 @@ function renderLogs() {
         return `
         <tr id="log-row-${log.id}" onclick="selectLog(${log.id})" class="${selectedLogId === log.id ? 'active-log' : ''}">
             <td data-raw-date="${escapeHtml(log.date || '')}">${formattedDate}</td>
-            <td><span class="badge ${getLogBadgeClass(log.type, log.detailType)}">${escapeHtml(log.type || 'PM')}</span></td>
+            <td><span class="badge ${getLogBadgeClass(log.type, log.detailType)}">${escapeHtml(log.type || '정기')}</span></td>
             <td>${escapeHtml(log.detailType || '-')}</td>
             <td title="${escapeHtml(tooltipContent)}" data-raw-content="${escapeHtml(log.content || '')}">${escapeHtml(displayContent)}</td>
             <td>${escapeHtml(log.worker)}</td>
@@ -1015,7 +1008,7 @@ function updateLogItem(id, date, type, detailType, content, worker) {
     }
 }
 
-// [수정] 수정 모드에서 내용 필드 렌더링 (PM/BM일 경우 다중 선택 드롭다운)
+// [수정] 수정 모드에서 내용 필드 렌더링 (다중 선택 드롭다운)
 window.renderEditLogContentField = function(id, type, detailType, value) {
     const row = document.getElementById(`log-row-${id}`);
     if (!row) return;
