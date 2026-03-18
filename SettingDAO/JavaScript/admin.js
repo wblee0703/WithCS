@@ -1160,9 +1160,12 @@ function setupItemMgmt() {
             if (!confirm(`물품 관리에 등록된 '${currentCheckTypeSubCategory}' 물품을 불러오시겠습니까?\n현재 목록이 모두 지워지고 물품 데이터로 덮어쓰기 됩니다.`)) return;
 
         const targetType = currentCheckTypeSubCategory === 'PM 점검' ? '정기' : 'BM';
+            const targetType = currentCheckTypeSubCategory === 'PM 점검' ? '정기' : '비정기';
             const equipName = currentCheckTypeEquipKey.split('::')[0];
             const matchedItems = adminItems.filter(item => {
             if (item.type !== targetType && item.type !== (targetType === '정기' ? 'PM' : targetType)) return false;
+                const normalizedType = item.type === 'PM' ? '정기' : (item.type === 'BM' ? '비정기' : item.type);
+                if (normalizedType !== targetType) return false;
                 if (!item.equip) return false;
                 const equips = item.equip.split(',').map(e => e.trim());
                 return equips.includes(equipName);
@@ -1222,9 +1225,15 @@ function renderAdminItemList() {
         if (currentAdminItemId === item.id) {
             li.classList.add('active');
         }
+            
+            let displayType = item.type || '정기';
+            if (displayType === 'PM') displayType = '정기';
+            if (displayType === 'BM') displayType = '비정기';
+
         li.innerHTML = `
             <div class="model-col col-item-type">
                 <span class="badge ${item.type.toLowerCase()}">${item.type}</span>
+                    <span class="badge ${displayType.toLowerCase()}">${displayType}</span>
             </div>
             <div class="model-col col-item-code" title="${escapeHtml(item.code || '-')}">
                 ${escapeHtml(item.code || '-')}
@@ -1280,6 +1289,11 @@ function loadItemDetail(item) {
     if (placeholder) placeholder.style.display = 'none';
 
     document.getElementById('item-info-type').value = item.type || 'PM';
+    let itemType = item.type || '정기';
+    if (itemType === 'PM') itemType = '정기';
+    if (itemType === 'BM') itemType = '비정기';
+
+    document.getElementById('item-info-type').value = itemType;
     document.getElementById('item-info-detail-type').value = item.detailType || '';
     document.getElementById('item-info-additional').value = item.additional || '';
     document.getElementById('item-info-part').value = item.part || '';
@@ -1287,6 +1301,7 @@ function loadItemDetail(item) {
     
     const cycleInput = document.getElementById('item-info-cycle');
     if ((item.type || 'PM') === 'PM') {
+    if (itemType === '정기') {
         cycleInput.disabled = false;
         cycleInput.value = item.cycle || '';
         cycleInput.placeholder = '';
@@ -1953,9 +1968,12 @@ function renderCheckTypeItemList() {
         let defaultItems = [];
         if (currentCheckTypeSubCategory === 'PM 점검' || currentCheckTypeSubCategory === 'BM 점검') {
             const targetType = currentCheckTypeSubCategory === 'PM 점검' ? '정기' : 'BM';
+            const targetType = currentCheckTypeSubCategory === 'PM 점검' ? '정기' : '비정기';
             const equipName = currentCheckTypeEquipKey.split('::')[0];
             const matchedItems = adminItems.filter(item => {
                 if (item.type !== targetType && item.type !== (targetType === '정기' ? 'PM' : targetType)) return false;
+                const normalizedType = item.type === 'PM' ? '정기' : (item.type === 'BM' ? '비정기' : item.type);
+                if (normalizedType !== targetType) return false;
                 if (!item.equip) return false;
                 const equips = item.equip.split(',').map(e => e.trim());
                 return equips.includes(equipName);

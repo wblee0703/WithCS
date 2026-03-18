@@ -840,20 +840,20 @@
         ],
         "SOMA-2000::SOMA-HC19-1204::정기::PM 점검": [
             {
-                "id": 1773818586811,
-                "content": "Metal Standard Solution(3%HNO3)"
+                "content": "Metal Standard Solution(3%HNO3)",
+                "id": 1773818586811
             },
             {
-                "id": 1773818586812,
-                "content": "Pt Skimmer cone for 7700S"
+                "content": "Pt Skimmer cone for 7700S",
+                "id": 1773818586812
             },
             {
-                "id": 1773818586813,
-                "content": "Pt Sampling cone for 7700S"
+                "content": "Pt Sampling cone for 7700S",
+                "id": 1773818586813
             },
             {
-                "id": 1773818586814,
-                "content": "Extraction-omega lens assembly"
+                "content": "Extraction-omega lens assembly",
+                "id": 1773818586814
             }
         ],
         "SOMA-2000::SOMA-HC20-0601::정기::PM 점검": [
