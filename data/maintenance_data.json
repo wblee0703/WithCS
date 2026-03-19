@@ -338,28 +338,6 @@
                 "scheduledDate": "2026-03-19",
                 "type": "정기",
                 "worker": "이원배"
-            },
-            {
-                "id": 1773911811596,
-                "type": "비정기",
-                "detailType": "BM 점검 > BM 물품 교체",
-                "code": "Pt Injector",
-                "content": "Platinum injector, inert torch, 2.5mm id",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "costType": "무상(보증)"
-            },
-            {
-                "id": 1773911811597,
-                "type": "비정기",
-                "detailType": "BM 점검 > BM 물품 교체",
-                "code": "PFA Spray Chamber",
-                "content": "Spray Chamber for Inert Kit, PFA",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "costType": "무상(보증)"
             }
         ],
         "logs": [
@@ -442,24 +420,24 @@
             {
                 "code": "Metal STD (10ppb 3%)",
                 "content": "Metal Standard Solution(3%HNO3)",
+                "costType": "무상(보증)",
                 "date": "2026-03-17",
+                "detailType": "PM 점검",
                 "id": 1773732550702,
                 "period": "30",
-                "type": "정기",
                 "scheduledDate": "2026-03-19",
-                "detailType": "PM 점검",
-                "costType": "무상(보증)"
+                "type": "정기"
             },
             {
                 "code": "Skimmer Cone",
                 "content": "Pt Skimmer cone for 7700S",
+                "costType": "무상(보증)",
                 "date": "2025-11-04",
+                "detailType": "PM 점검",
                 "id": 1773732552676,
                 "period": 182,
-                "type": "정기",
                 "scheduledDate": "2026-03-19",
-                "detailType": "PM 점검",
-                "costType": "무상(보증)"
+                "type": "정기"
             },
             {
                 "code": "Sampler Cone",
