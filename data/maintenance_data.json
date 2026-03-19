@@ -235,7 +235,9 @@
                 "date": "",
                 "period": null,
                 "scheduledDate": "2026-03-19",
-                "costType": "무상(보증)"
+                "costType": "무상(보증)",
+                "worker": "",
+                "memo": ""
             },
             {
                 "id": 1773911600470,
@@ -246,7 +248,21 @@
                 "date": "",
                 "period": null,
                 "scheduledDate": "2026-03-19",
-                "costType": "무상(보증)"
+                "costType": "무상(보증)",
+                "worker": "",
+                "memo": ""
+            },
+            {
+                "id": 1773911615893,
+                "type": "비정기",
+                "detailType": "BM 점검 > BM 물품 교체",
+                "code": "PFA Spray Chamber",
+                "content": "Spray Chamber for Inert Kit, PFA",
+                "date": "",
+                "period": null,
+                "scheduledDate": "2026-03-19",
+                "worker": "",
+                "memo": ""
             }
         ],
         "logs": [
