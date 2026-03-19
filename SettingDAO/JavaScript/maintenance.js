@@ -1581,8 +1581,39 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
         key = `${equipKey}::${type}::${detailType}`;
     }
 
+    let rawItems = [];
+    if (itemData.hasOwnProperty(key)) {
+        rawItems = itemData[key] || [];
+    } else {
+        // 기본값 동적 생성 (Admin 방문 전 바로 사용할 경우 대비)
+        if (type === '비정기' && ['Alarm', 'Hunting', 'Data / Para 이상'].includes(detailType)) {
+            const defaultList = [
+                "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 / 용자 이상",
+                "파트 이상 (교체)", "파트 이상 (수리)", "프로그램 이상", "단순조치", "기타"
+            ];
+            rawItems = defaultList.map((content, index) => ({
+                id: Date.now() + index,
+                content: content
+            }));
+        } else if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+            const targetType = detailType === 'PM 점검' ? '정기' : '비정기';
+            const equipName = equipKey.split('::')[0];
+            const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+            const matchedItems = adminItems.filter(item => {
+                if (item.type !== targetType) return false;
+                if (!item.equip) return false;
+                const equips = item.equip.split(',').map(e => e.trim());
+                return equips.includes(equipName);
+            });
+            rawItems = matchedItems.map((mItem, index) => ({
+                id: Date.now() + index,
+                content: mItem.part
+            }));
+        }
+    }
+
     // 원본 데이터 오염을 막기 위해 복사본 생성
-    const items = [...(itemData[key] || [])].map(item => ({ ...item }));
+    const items = [...rawItems].map(item => ({ ...item }));
 
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 

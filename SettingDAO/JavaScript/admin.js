@@ -2391,6 +2391,15 @@ function renderCheckTypeItemList() {
                     content: mItem.part
                 }));
             }
+        } else if (currentCheckTypeCategory === '비정기' && ['Alarm', 'Hunting', 'Data / Para 이상'].includes(currentCheckTypeSubCategory)) {
+            const defaultList = [
+                "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 / 용자 이상",
+                "파트 이상 (교체)", "파트 이상 (수리)", "프로그램 이상", "단순조치", "기타"
+            ];
+            defaultItems = defaultList.map((content, index) => ({
+                id: Date.now() + index,
+                content: content
+            }));
         }
         // 항목이 있든 없든 배열을 저장해두어, 이후에 전부 지우더라도 다시 불러오지 않도록 함
         checkTypeItemsData[key] = defaultItems;
