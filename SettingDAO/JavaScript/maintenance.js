@@ -113,7 +113,7 @@ function setupMaintenanceEvents() {
 
 function setupLogEvents() {
     // [추가] 비용처리 입력 드롭다운 동적 생성 (작업자 입력창 앞)
-    const workerInput = document.getElementById('log-worker');
+    const workerInput = document.getElementById('log-worker') || document.getElementById('log-mh');
     if (workerInput && !document.getElementById('log-cost-type')) {
         const costSelect = document.createElement('select');
         costSelect.id = 'log-cost-type';
@@ -134,6 +134,22 @@ function setupLogEvents() {
         const costTh = document.createElement('th');
         costTh.textContent = '비용처리';
         logTableTheadTr.insertBefore(costTh, logTableTheadTr.children[4]);
+        
+        // 5번째(원래 작업자) 헤더를 공수로 변경
+        if (logTableTheadTr.children[5]) {
+            logTableTheadTr.children[5].textContent = '공수';
+        }
+    } else if (logTableTheadTr && logTableTheadTr.children.length >= 6) {
+        if (logTableTheadTr.children[5]) {
+            logTableTheadTr.children[5].textContent = '공수';
+        }
+    }
+
+    // [수정] log-worker를 log-mh로 변경하고 속성 적용
+    if (workerInput && workerInput.id === 'log-worker') {
+        workerInput.id = 'log-mh';
+        workerInput.placeholder = '공수(M/H)';
+        workerInput.type = 'number';
     }
 
     const logAddBtn = document.getElementById('log-add-btn') || document.getElementById('log-reg-btn');
@@ -147,9 +163,9 @@ function setupLogEvents() {
     const logDateInput = document.getElementById('log-date');
     if (logDateInput) logDateInput.value = new Date().toISOString().substring(0, 10);
 
-    const logWorkerInput = document.getElementById('log-worker');
-    if (logWorkerInput) logWorkerInput.onkeypress = (e) => { if (e.key === 'Enter') { e.preventDefault(); addLogItem(); } };
-    if (logWorkerInput) logWorkerInput.spellcheck = false;
+    const logMhInput = document.getElementById('log-mh');
+    if (logMhInput) logMhInput.onkeypress = (e) => { if (e.key === 'Enter') { e.preventDefault(); addLogItem(); } };
+    if (logMhInput) logMhInput.spellcheck = false;
 
     const logSearchInput = document.getElementById('log-search');
     if (logSearchInput) logSearchInput.addEventListener('keypress', (e) => {
@@ -208,26 +224,54 @@ function setupLogEvents() {
         };
     }
 
-    // 메모 입력 감지 (버튼 색상 변경)
+    // 메모 입력 감지 (버튼 색상 변경) 및 작업자 필드 동적 생성
     const memoInput = document.getElementById('device-memo');
     const memoBtn = document.getElementById('memo-save-btn');
 
-    if (memoInput) memoInput.spellcheck = false;
-    if (memoInput && memoBtn) {
-        memoInput.addEventListener('input', () => {
-            if (memoInput.value !== originalMemo) {
-                memoBtn.classList.remove('btn-green-sm', 'btn-blue-sm');
-                memoBtn.classList.add('btn-orange-sm');
-            } else {
-                memoBtn.classList.remove('btn-orange-sm', 'btn-blue-sm');
-                memoBtn.classList.add('btn-green-sm');
-            }
-        });
+    if (memoInput && !document.getElementById('memo-worker')) {
+        const workerContainer = document.createElement('div');
+        workerContainer.style.display = 'flex';
+        workerContainer.style.alignItems = 'center';
+        workerContainer.style.gap = '10px';
+        workerContainer.style.marginBottom = '10px';
+        workerContainer.innerHTML = `
+            <label for="memo-worker" style="color: #8b949e; font-size: 13px; min-width: 50px;">작업자 <span style="color:#f85149;">*</span></label>
+            <input type="text" id="memo-worker" class="input-dark" style="width: 150px; padding: 4px; height: 30px;" spellcheck="false" placeholder="작업자 입력">
+        `;
+        memoInput.parentNode.insertBefore(workerContainer, memoInput);
+    }
 
+    const memoWorkerInput = document.getElementById('memo-worker');
+
+    if (memoInput) memoInput.spellcheck = false;
+    if (memoWorkerInput) memoWorkerInput.spellcheck = false;
+
+    const checkMemoChanges = () => {
+        if (memoInput.value !== originalMemo || (memoWorkerInput && memoWorkerInput.value !== originalWorker)) {
+            memoBtn.classList.remove('btn-green-sm', 'btn-blue-sm');
+            memoBtn.classList.add('btn-orange-sm');
+        } else {
+            memoBtn.classList.remove('btn-orange-sm', 'btn-blue-sm');
+            memoBtn.classList.add('btn-green-sm');
+        }
+    };
+
+    if (memoInput && memoBtn) {
+        memoInput.addEventListener('input', checkMemoChanges);
         memoInput.addEventListener('click', () => {
             if (selectedLogId === null) {
                 alert('리스트를 먼저 선택해주세요.');
                 memoInput.blur(); // 포커스 해제하여 입력 방지
+            }
+        });
+    }
+
+    if (memoWorkerInput && memoBtn) {
+        memoWorkerInput.addEventListener('input', checkMemoChanges);
+        memoWorkerInput.addEventListener('click', () => {
+            if (selectedLogId === null) {
+                alert('리스트를 먼저 선택해주세요.');
+                memoWorkerInput.blur();
             }
         });
     }
@@ -252,7 +296,7 @@ function setupLogEvents() {
 
 function setupUIEvents() {
     // [추가] 비용처리 입력 드롭다운 동적 생성 (작업자 입력창 앞)
-    const workerInput = document.getElementById('log-worker');
+    const workerInput = document.getElementById('log-worker') || document.getElementById('log-mh');
     if (workerInput && !document.getElementById('log-cost-type')) {
         const costSelect = document.createElement('select');
         costSelect.id = 'log-cost-type';
@@ -314,7 +358,9 @@ function setupUIEvents() {
 
 function setupPageProtection() {
     window.addEventListener('beforeunload', (e) => {
-        if ((selectedLogId !== null && document.getElementById('device-memo').value !== originalMemo)) {
+        const currentMemo = document.getElementById('device-memo') ? document.getElementById('device-memo').value : "";
+        const currentWorker = document.getElementById('memo-worker') ? document.getElementById('memo-worker').value : "";
+        if (selectedLogId !== null && (currentMemo !== originalMemo || currentWorker !== originalWorker)) {
             e.preventDefault();
             e.returnValue = '';
         }
@@ -697,16 +743,16 @@ function addLogItem(e) {
 
     // HTML 요소 안전하게 가져오기
     const dateInput = document.getElementById('log-date');
-    const workerInput = document.getElementById('log-worker');
+    const mhInput = document.getElementById('log-mh');
 
-    if (!dateInput || !workerInput) return alert('입력창(ID: log-date 또는 log-worker)을 찾을 수 없습니다.');
+    if (!dateInput || !mhInput) return alert('입력창(ID: log-date 또는 log-mh)을 찾을 수 없습니다.');
 
     const date = dateInput.value;
     const typeSelect = document.getElementById('log-type-select');
     const detailTypeSelect = document.getElementById('log-detail-type-select');
     const type = typeSelect ? typeSelect.value : '';
     const detailType = detailTypeSelect ? detailTypeSelect.value : '';
-    const worker = workerInput.value.trim();
+    const mh = mhInput.value.trim();
 
     // [추가] 비용처리 값 가져오기
     const costSelect = document.getElementById('log-cost-type');
@@ -729,8 +775,8 @@ function addLogItem(e) {
     const detailType2Select = document.getElementById('log-detail-type2-select');
     const detailType2 = detailType2Select && detailType2Select.style.display !== 'none' ? detailType2Select.value : '';
 
-    if (!date || !type || (!detailType && !detailTypeSelect.disabled) || !costType || !worker) {
-        return alert('필수 항목(날짜, 구분, 세부구분, 비용처리, 작업자)을 올바르게 입력/선택해주세요.');
+    if (!date || !type || (!detailType && !detailTypeSelect.disabled) || !costType || !mh) {
+        return alert('필수 항목(날짜, 구분, 세부구분, 비용처리, 공수)을 올바르게 입력/선택해주세요.');
     }
     if (type === '비정기' && !detailType2 && detailType2Select && !detailType2Select.disabled) {
         return alert('세부 구분을 선택해주세요.');
@@ -755,7 +801,8 @@ function addLogItem(e) {
         detailType2: finalDetailType,
         content: content,
         costType: costType,
-        worker: worker,
+        worker: sessionStorage.getItem('userId') || '', // 초기값, 상세에서 수정
+        mh: mh
     };
 
     data.logs.push(newLog);
@@ -802,10 +849,10 @@ function addLogItem(e) {
     }
 
     localStorage.setItem(key, JSON.stringify(data));
-    addSystemLog('ADD_LOG', currentPath.equip, `[${type} - ${finalDetailType}] ${content} (작업자: ${worker}, 날짜: ${date})`);
+    addSystemLog('ADD_LOG', currentPath.equip, `[${type} - ${finalDetailType}] ${content} (공수: ${mh}, 날짜: ${date})`);
 
     // 입력창 초기화 및 리스트 갱신
-    workerInput.value = '';
+    mhInput.value = '';
     if (costSelect) costSelect.value = '';
     if (detailType2Select) detailType2Select.value = '';
     const contentTrigger = document.getElementById('log-content-trigger');
@@ -853,7 +900,8 @@ function renderLogs() {
                 (log.content && log.content.toLowerCase().includes(keyword)) ||
                 (log.memo && log.memo.toLowerCase().includes(keyword)) ||
                 (log.type && log.type.toLowerCase().includes(keyword)) ||
-                (log.detailType && log.detailType.toLowerCase().includes(keyword))
+                (log.detailType && log.detailType.toLowerCase().includes(keyword)) ||
+                (log.mh && log.mh.includes(keyword))
             );
         }
     }
@@ -898,7 +946,7 @@ function renderLogs() {
             <td title="${escapeHtml(displayDetailType)}">${escapeHtml(displayDetailType)}</td>
             <td title="${escapeHtml(tooltipContent)}" data-raw-content="${escapeHtml(log.content || '')}">${escapeHtml(displayContent)}</td>
             <td>${escapeHtml(log.costType || '-')}</td>
-            <td title="${escapeHtml(log.worker)}">${escapeHtml(log.worker)}</td>
+            <td title="${escapeHtml(log.mh || '')}">${escapeHtml(log.mh || '')}</td>
             <td>
                 <button class="btn-edit-sm" onclick="event.stopPropagation(); toggleLogEdit(${log.id}, this);">✏️</button>
                 <button class="btn-del-sm" onclick="event.stopPropagation(); deleteLogItem(${log.id});">✕</button>
@@ -911,8 +959,9 @@ function selectLog(id, focus = true) {
     // 다른 로그 선택 시 저장되지 않은 메모 확인
     if (selectedLogId !== null) {
         const memoInput = document.getElementById('device-memo');
-        if (memoInput && memoInput.value !== originalMemo) {
-            return alert('작성 중인 메모가 저장되지 않았습니다. 저장 버튼을 눌러주세요.');
+        const workerInput = document.getElementById('memo-worker');
+        if ((memoInput && memoInput.value !== originalMemo) || (workerInput && workerInput.value !== originalWorker)) {
+            return alert('작성 중인 작업 내용(메모)이 저장되지 않았습니다. 저장 버튼을 눌러주세요.');
         }
     }
 
@@ -930,8 +979,14 @@ function selectLog(id, focus = true) {
 
     if (logItem) {
         const memo = logItem.memo || "";
+        const worker = logItem.worker || "";
+        
         document.getElementById('device-memo').value = memo;
+        const workerInput = document.getElementById('memo-worker');
+        if (workerInput) workerInput.value = worker;
+
         originalMemo = memo; // 원본 저장
+        originalWorker = worker; // 원본 저장
 
         // 버튼 상태 초기화 (녹색)
         const memoBtn = document.getElementById('memo-save-btn');
@@ -948,16 +1003,23 @@ function saveMemo() {
     if (!selectedLogId) return;
 
     const memoContent = document.getElementById('device-memo').value;
+    const workerInput = document.getElementById('memo-worker');
+    const workerContent = workerInput ? workerInput.value.trim() : "";
+
+    if (!workerContent) return alert('작업자를 입력해주세요.');
+
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
 
     const logIdx = data.logs.findIndex(l => l.id === selectedLogId);
     if (logIdx > -1) {
         data.logs[logIdx].memo = memoContent; // 메모 업데이트
+        data.logs[logIdx].worker = workerContent; // 작업자 업데이트
         localStorage.setItem(key, JSON.stringify(data));
-        addSystemLog('UPDATE_MEMO', currentPath.equip, `메모 수정 (LogID: ${selectedLogId})`);
+        addSystemLog('UPDATE_MEMO', currentPath.equip, `작업 내용 및 작업자 수정 (LogID: ${selectedLogId})`);
 
         originalMemo = memoContent; // 원본 업데이트
+        originalWorker = workerContent;
 
         // 버튼 상태 초기화 (녹색)
         const memoBtn = document.getElementById('memo-save-btn');
@@ -988,7 +1050,9 @@ function deleteLogItem(id) {
     if (selectedLogId === id) {
         selectedLogId = null;
         document.getElementById('device-memo').value = '';
+            if(document.getElementById('memo-worker')) document.getElementById('memo-worker').value = '';
         originalMemo = "";
+            originalWorker = "";
 
         const memoBtn = document.getElementById('memo-save-btn');
         if (memoBtn) {
@@ -1021,7 +1085,7 @@ function toggleLogEdit(id, btn) {
         const detailCell = row.cells[2];
         const contentCell = row.cells[3];
         const costCell = row.cells[4];
-        const workerCell = row.cells[5];
+        const mhCell = row.cells[5];
 
         const currentDate = dateCell.dataset.rawDate || dateCell.textContent.trim();
         const currentType = typeCell.textContent.trim();
@@ -1041,7 +1105,7 @@ function toggleLogEdit(id, btn) {
 
         const currentContent = contentCell.dataset.rawContent || contentCell.textContent.trim();
         const currentCost = costCell.textContent.trim() === '-' ? '' : costCell.textContent.trim();
-        const currentWorker = workerCell.textContent.trim();
+        const currentMh = mhCell.textContent.trim();
 
         dateCell.innerHTML = `<input type="date" id="edit-log-date-${id}" value="${escapeHtml(currentDate)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
 
@@ -1082,7 +1146,7 @@ function toggleLogEdit(id, btn) {
                 ${costOptions.map(c => `<option value="${c}" ${currentCost === c ? 'selected' : ''}>${c}</option>`).join('')}
             </select>`;
 
-        workerCell.innerHTML = `<input type="text" id="edit-log-worker-${id}" value="${escapeHtml(currentWorker)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
+        mhCell.innerHTML = `<input type="number" id="edit-log-mh-${id}" value="${escapeHtml(currentMh)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
 
     } else {
         const dateInput = document.getElementById(`edit-log-date-${id}`);
@@ -1091,9 +1155,9 @@ function toggleLogEdit(id, btn) {
         const detailType2Input = document.getElementById(`edit-log-detail-type2-${id}`);
         const newDetailType2 = detailType2Input && detailType2Input.style.display !== 'none' ? detailType2Input.value : '';
         const costInput = document.getElementById(`edit-log-cost-${id}`);
-        const workerInput = document.getElementById(`edit-log-worker-${id}`);
+        const mhInput = document.getElementById(`edit-log-mh-${id}`);
 
-        if (!dateInput || !typeInput || !detailTypeInput || !costInput || !workerInput) return alert('입력 필드를 찾을 수 없습니다. 다시 시도해주세요.');
+        if (!dateInput || !typeInput || !detailTypeInput || !costInput || !mhInput) return alert('입력 필드를 찾을 수 없습니다. 다시 시도해주세요.');
         const newDate = dateInput.value;
         const newType = typeInput.value;
         const newDetailType = detailTypeInput.value;
@@ -1114,17 +1178,17 @@ function toggleLogEdit(id, btn) {
             if (contentInput) newContent = contentInput.value.trim();
         }
 
-        const newWorker = workerInput.value.trim();
+        const newMh = mhInput.value.trim();
 
-        if (!newDate || !newType || (!newDetailType && detailTypeInput && !detailTypeInput.disabled) || !newCost || !newWorker) {
-            return alert('필수 항목(날짜, 구분, 세부구분, 비용처리, 작업자)을 모두 입력해주세요.');
+        if (!newDate || !newType || (!newDetailType && detailTypeInput && !detailTypeInput.disabled) || !newCost || !newMh) {
+            return alert('필수 항목(날짜, 구분, 세부구분, 비용처리, 공수)을 모두 입력해주세요.');
         }
         const newDetailTypeFull = (newType === '비정기' && newDetailType2) ? `${newDetailType} > ${newDetailType2}` : newDetailType;
-        updateLogItem(id, newDate, newType, newDetailTypeFull, newContent, newCost, newWorker);
+        updateLogItem(id, newDate, newType, newDetailTypeFull, newContent, newCost, newMh);
     }
 }
 
-function updateLogItem(id, date, type, detailType, content, costType, worker) {
+function updateLogItem(id, date, type, detailType, content, costType, mh) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
 
@@ -1136,7 +1200,7 @@ function updateLogItem(id, date, type, detailType, content, costType, worker) {
             data.logs[idx].detailType = detailType;
             data.logs[idx].content = content;
             data.logs[idx].costType = costType;
-            data.logs[idx].worker = worker;
+            data.logs[idx].mh = mh;
 
             localStorage.setItem(key, JSON.stringify(data));
             if (typeof addSystemLog === 'function') addSystemLog('UPDATE_LOG', currentPath.equip, `점검 이력 수정 (LogID: ${id})`);

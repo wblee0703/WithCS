@@ -197,9 +197,9 @@ tr.dragging {
     width: 90px;
 }
 
-/* 작업자 */
+/* 공수 */
 #log-list-wrapper .data-table th:nth-child(6) {
-    width: 100px;
+    width: 80px;
 }
 
 /* 관리 */
@@ -365,11 +365,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     min-width: 120px;
 }
 
-#log-worker {
-    width: 140px;
+#log-worker,
+#log-mh {
+    width: 100px;
     height: 30px;
-    flex: 1;
-    min-width: 100px;
+    flex: 0.8;
+    min-width: 80px;
 }
 
 .log-select {
@@ -783,10 +784,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     -webkit-appearance: none;
 }
 
-    #log-worker {
+    #log-worker,
+    #log-mh {
         width: auto !important;
         flex: 0.7 !important;
-        /* [수정] 작업자 입력창 너비 비율 할당 */
+        /* [수정] 공수 입력창 너비 비율 할당 */
         min-width: 0 !important;
     }
 
@@ -797,6 +799,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #log-detail-type2-select,
 #log-cost-type,
     #log-worker,
+    #log-mh,
     .log-content-input {
         font-size: 12px !important;
         padding-left: 2px !important;
