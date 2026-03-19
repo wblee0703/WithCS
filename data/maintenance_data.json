@@ -371,6 +371,17 @@
                 "memo": "",
                 "type": "비정기",
                 "worker": "이원배"
+            },
+            {
+                "id": 1773897096728,
+                "date": "2026-03-20",
+                "memo": "",
+                "type": "비정기",
+                "detailType": "Data / Para 이상",
+                "detailType2": "Data / Para 이상 > 딜리버리펌프_이슈",
+                "content": "용액 / 용자 이상",
+                "costType": "무상(보증)",
+                "worker": "이원배"
             }
         ],
         "memo": "",

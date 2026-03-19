@@ -1781,7 +1781,7 @@ function ensureSubCategory2Panel() {
         
         panel2.innerHTML = `
             <div class="list-header">
-                <span>세부구분 2 관리</span>
+                <span>세부 구분2</span>
             </div>
             <ul id="check-type-subcategory2-list" class="admin-list"></ul>
             <div id="check-type-subcategory2-footer" class="list-footer">

@@ -177,18 +177,19 @@ tr.dragging {
     table-layout: fixed;
 }
 
+/* 점검일 */
 #log-list-wrapper .data-table th:nth-child(1) {
     width: 100px;
 }
 
-/* 점검일 */
+/* 구분 */
 #log-list-wrapper .data-table th:nth-child(2) {
     width: 100px;
 }
 
-/* 구분 */
+/* 세부구분 */
 #log-list-wrapper .data-table th:nth-child(3) {
-    width: 90px;
+    width: 180px;
 }
 
 /* 비용처리 */

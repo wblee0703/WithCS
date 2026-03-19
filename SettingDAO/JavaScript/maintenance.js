@@ -169,7 +169,7 @@ function setupLogEvents() {
         detail2Select.id = 'log-detail-type2-select';
         detail2Select.className = 'input-dark';
         detail2Select.style.display = 'none'; // 초기엔 숨김
-        detail2Select.innerHTML = `<option value="" disabled selected hidden>세부구분 2</option>`;
+        detail2Select.innerHTML = `<option value="" disabled selected hidden>세부 구분</option>`;
         logDetailTypeSelect.parentNode.insertBefore(detail2Select, logDetailTypeSelect.nextSibling);
 
         detail2Select.addEventListener('change', updateLogContentOptions);
@@ -733,7 +733,7 @@ function addLogItem(e) {
         return alert('필수 항목(날짜, 구분, 세부구분, 비용처리, 작업자)을 올바르게 입력/선택해주세요.');
     }
     if (type === '비정기' && !detailType2 && detailType2Select && !detailType2Select.disabled) {
-        return alert('세부구분 2를 선택해주세요.');
+        return alert('세부 구분을 선택해주세요.');
     }
 
     const key = `details_${currentPath.site}_${currentPath.equip}`;
@@ -875,11 +875,20 @@ function renderLogs() {
             formattedDate = `${dateMatch[1]}. ${dateMatch[2]}. ${dateMatch[3]}`;
         }
 
+         let displayDetailType = log.detailType || '-';
+        if (displayDetailType.includes(' > ')) {
+            const parts = displayDetailType.split(' > ');
+            displayDetailType = `${parts[0].trim()} [${parts[1].trim()}]`;
+        } else if (log.detailType2 && log.detailType2.includes(' > ')) {
+            const parts = log.detailType2.split(' > ');
+            displayDetailType = `${parts[0].trim()} [${parts[1].trim()}]`;
+        }
+
         return `
         <tr id="log-row-${log.id}" onclick="selectLog(${log.id})" class="${selectedLogId === log.id ? 'active-log' : ''}">
             <td data-raw-date="${escapeHtml(log.date || '')}">${formattedDate}</td>
             <td><span class="badge ${getLogBadgeClass(log.type, log.detailType)}">${escapeHtml(log.type || '정기')}</span></td>
-            <td>${escapeHtml(log.detailType || '-')}</td>
+            <td>${escapeHtml(displayDetailType)}</td>
             <td title="${escapeHtml(tooltipContent)}" data-raw-content="${escapeHtml(log.content || '')}">${escapeHtml(displayContent)}</td>
             <td>${escapeHtml(log.costType || '-')}</td>
             <td>${escapeHtml(log.worker)}</td>
@@ -1013,7 +1022,11 @@ function toggleLogEdit(id, btn) {
         const currentDetailTypeFull = detailCell.textContent.trim() === '-' ? '' : detailCell.textContent.trim();
         let currentDetailType = currentDetailTypeFull;
         let currentDetailType2 = '';
-        if (currentDetailTypeFull.includes(' > ')) {
+        if (currentDetailTypeFull.includes('[')) {
+            const parts = currentDetailTypeFull.split('[');
+            currentDetailType = parts[0].trim();
+            currentDetailType2 = parts[1].replace(']', '').trim();
+        } else if (currentDetailTypeFull.includes(' > ')) {
             const parts = currentDetailTypeFull.split(' > ');
             currentDetailType = parts[0].trim();
             currentDetailType2 = parts[1].trim();
@@ -1133,19 +1146,19 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
     const contentCell = row.cells[3]; // 0: date, 1: type, 2: detailType, 3: content
 
     if (!type) {
-        contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="" class="input-dark input-disabled" style="width: 100%; padding: 2px;" placeholder="구분을 먼저 선택하세요" disabled onclick="event.stopPropagation()">`;
+        contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="" class="input-dark input-disabled" style="width: 100%; padding: 2px;" placeholder="구분을 먼저 선택" disabled onclick="event.stopPropagation()">`;
         return;
     }
 
     const detailTypeSelect = document.getElementById(`edit-log-detail-type-${id}`);
     if (detailTypeSelect && !detailTypeSelect.disabled && !detailType) {
-        contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="" class="input-dark input-disabled" style="width: 100%; padding: 2px;" placeholder="세부구분을 먼저 선택하세요" disabled onclick="event.stopPropagation()">`;
+        contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="" class="input-dark input-disabled" style="width: 100%; padding: 2px;" placeholder="세부 구분을 먼저 선택" disabled onclick="event.stopPropagation()">`;
         return;
     }
 
     const detailType2Select = document.getElementById(`edit-log-detail-type2-${id}`);
     if (type === '비정기' && (!detailType2 && detailType2Select && !detailType2Select.disabled)) {
-        contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="" class="input-dark input-disabled" style="width: 100%; padding: 2px;" placeholder="세부구분 2를 먼저 선택하세요" disabled onclick="event.stopPropagation()">`;
+        contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="" class="input-dark input-disabled" style="width: 100%; padding: 2px;" placeholder="세부 구분을 먼저 선택" disabled onclick="event.stopPropagation()">`;
         return;
     }
 
@@ -1343,7 +1356,7 @@ window.updateLogDetailType2Options = function (presetVal = '') {
     if (!typeSelect || !detailTypeSelect || !detail2Select) return;
     const type = typeSelect.value;
     const detailType = detailTypeSelect.value;
-    detail2Select.innerHTML = '<option value="" disabled selected hidden>세부구분 2 먼저 선택</option>';
+    detail2Select.innerHTML = '<option value="" disabled selected hidden>세부 구분 먼저 선택</option>';
     if (type !== '비정기' || !detailType) {
         detail2Select.disabled = true;
         updateLogContentOptions();
@@ -1353,10 +1366,10 @@ window.updateLogDetailType2Options = function (presetVal = '') {
     const equipKey = currentPath.equip;
     const subCategories2 = getSubCategories2(equipKey, type, detailType);
     if (subCategories2.length === 0) {
-        detail2Select.innerHTML = '<option value="" disabled selected hidden>세부구분 2 없음</option>';
+        detail2Select.innerHTML = '<option value="" disabled selected hidden>세부 구분 없음</option>';
         detail2Select.disabled = true;
     } else {
-        detail2Select.innerHTML = '<option value="" disabled selected hidden>세부구분 2 선택</option>';
+        detail2Select.innerHTML = '<option value="" disabled selected hidden>세부 구분</option>';
         subCategories2.forEach(sub => { detail2Select.insertAdjacentHTML('beforeend', `<option value="${sub}" ${sub === presetVal ? 'selected' : ''}>${sub}</option>`); });
     }
     updateLogContentOptions();
@@ -1382,7 +1395,7 @@ window.updateLogContentOptions = function () {
     if (!type) {
         contentWrapper.style.display = 'none';
         contentInput.style.display = 'inline-block';
-        contentInput.placeholder = '구분을 먼저 선택하세요';
+        contentInput.placeholder = '구분을 먼저 선택';
         contentInput.value = '';
         contentInput.disabled = true;
         contentInput.classList.add('input-disabled');
@@ -1392,7 +1405,7 @@ window.updateLogContentOptions = function () {
     if (!detailType && !detailTypeSelect.disabled) {
         contentWrapper.style.display = 'none';
         contentInput.style.display = 'inline-block';
-        contentInput.placeholder = '세부구분을 먼저 선택하세요';
+        contentInput.placeholder = '세부구분을 먼저 선택';
         contentInput.value = '';
         contentInput.disabled = true;
         contentInput.classList.add('input-disabled');
@@ -1402,7 +1415,7 @@ window.updateLogContentOptions = function () {
     if (type === '비정기' && (!detailType2 && !detailType2Select.disabled)) {
         contentWrapper.style.display = 'none';
         contentInput.style.display = 'inline-block';
-        contentInput.placeholder = '세부구분 2를 먼저 선택하세요';
+        contentInput.placeholder = '세부 구분을 먼저 선택';
         contentInput.value = '';
         contentInput.disabled = true;
         contentInput.classList.add('input-disabled');
@@ -1548,7 +1561,7 @@ window.updateEditDetailType2Options = function(id, presetVal = '') {
     if (!typeSelect || !detailTypeSelect || !detail2Select) return;
     const type = typeSelect.value;
     const detailType = detailTypeSelect.value;
-    detail2Select.innerHTML = '<option value="" disabled selected hidden>세부구분 2 먼저 선택</option>';
+    detail2Select.innerHTML = '<option value="" disabled selected hidden>세부 구분 먼저 선택</option>';
     if (type !== '비정기' || !detailType) {
         detail2Select.disabled = true;
         updateEditLogContentField(id);
@@ -1557,10 +1570,10 @@ window.updateEditDetailType2Options = function(id, presetVal = '') {
     detail2Select.disabled = false;
     const subCategories2 = getSubCategories2(currentPath.equip, type, detailType);
     if (subCategories2.length === 0) {
-        detail2Select.innerHTML = '<option value="" disabled selected hidden>세부구분 2 없음</option>';
+        detail2Select.innerHTML = '<option value="" disabled selected hidden>세부 구분 없음</option>';
         detail2Select.disabled = true;
     } else {
-        detail2Select.innerHTML = `<option value="" disabled hidden ${!presetVal ? 'selected' : ''}>세부구분 2 선택</option>`;
+        detail2Select.innerHTML = `<option value="" disabled hidden ${!presetVal ? 'selected' : ''}>세부 구분</option>`;
         if (presetVal && !subCategories2.includes(presetVal)) subCategories2.unshift(presetVal);
         subCategories2.forEach(sub => { detail2Select.insertAdjacentHTML('beforeend', `<option value="${sub}" ${sub === presetVal ? 'selected' : ''}>${sub}</option>`); });
     }
