@@ -269,12 +269,12 @@
     "details_SKH 이천_SOMA-2000::SOMA-H19-0402": {
         "maint": [
             {
-                "id": 1773910187433,
-                "type": "정기",
                 "code": "Metal STD (10ppb 3%)",
                 "content": "Metal Standard Solution(3%HNO3)",
                 "date": "2026-03-19",
-                "period": "30"
+                "id": 1773910187433,
+                "period": "30",
+                "type": "정기"
             },
             {
                 "code": "Skimmer Cone",
