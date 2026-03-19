@@ -309,7 +309,7 @@
                 "content": "Metal STD (10ppb 3%)",
                 "date": "",
                 "period": null,
-                "scheduledDate": "2026-04-05",
+                "scheduledDate": "2026-04-01",
                 "costType": "무상(보증)"
             },
             {
@@ -319,7 +319,7 @@
                 "content": "Skimmer Cone",
                 "date": "",
                 "period": null,
-                "scheduledDate": "2026-04-05",
+                "scheduledDate": "2026-04-01",
                 "costType": "무상(보증)"
             },
             {
@@ -329,7 +329,7 @@
                 "content": "Sampler Cone",
                 "date": "",
                 "period": null,
-                "scheduledDate": "2026-04-05",
+                "scheduledDate": "2026-04-01",
                 "costType": "무상(보증)"
             },
             {
@@ -339,7 +339,7 @@
                 "content": "Ion Lens",
                 "date": "",
                 "period": null,
-                "scheduledDate": "2026-04-05",
+                "scheduledDate": "2026-04-01",
                 "costType": "무상(보증)"
             }
         ],
