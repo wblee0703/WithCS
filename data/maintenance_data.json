@@ -213,18 +213,6 @@
                 "id": 1773732542276,
                 "period": 365,
                 "type": "정기"
-            },
-            {
-                "id": 1773902345905,
-                "type": "온라인점검",
-                "detailType": "온라인점검",
-                "content": "Ver.",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "costType": "기타",
-                "worker": "이원배",
-                "memo": ""
             }
         ],
         "logs": [
@@ -313,18 +301,6 @@
                 "id": 1773728529916,
                 "period": 365,
                 "type": "정기"
-            },
-            {
-                "content": "용액 / 용자 이상",
-                "costType": "유상",
-                "date": "",
-                "detailType": "Alarm",
-                "id": 1773902332417,
-                "memo": "",
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "type": "비정기",
-                "worker": "이원배"
             }
         ],
         "logs": [
