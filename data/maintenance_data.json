@@ -301,15 +301,6 @@
                 "id": 1773728529916,
                 "period": 365,
                 "type": "정기"
-            },
-            {
-                "code": "Sampler Cone",
-                "content": "Pt Sampling cone for 7700S",
-                "date": "2026-03-19",
-                "detailType": "PM 점검",
-                "id": 1773910116753,
-                "period": "182",
-                "type": "정기"
             }
         ],
         "logs": [
