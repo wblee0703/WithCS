@@ -105,6 +105,8 @@ function goToSetupPage() {
     let fullEquipName = '';
 
     const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
+    const data = typeof storageData !== 'undefined' && Object.keys(storageData).length > 0 ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
 
     if (targetSite && targetEquipName) {
         if (data[targetSite]) {
@@ -141,6 +143,8 @@ function goToMaintenancePage() {
 
     let fullEquipName = '';
     const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
+    const data = typeof storageData !== 'undefined' && Object.keys(storageData).length > 0 ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
 
     if (targetSerial) {
         fullEquipName = targetSerial;
@@ -276,6 +280,8 @@ function saveMaintFilters() {
 function updateMaintenanceDashboard() {
     // 데이터 로드 (common.js의 storageData가 있다면 사용, 없으면 직접 로드)
     let data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
+    let data = typeof storageData !== 'undefined' && Object.keys(storageData).length > 0 ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
 
     let totalEquip = 0;
     const siteStats = [];
@@ -758,6 +764,8 @@ function updateSetupDashboard() {
     localStorage.setItem('currentGanttFilters', JSON.stringify(currentGanttFilters));
 
     let data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
+    let data = typeof storageData !== 'undefined' && Object.keys(storageData).length > 0 ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
 
     // 활성 셋업 장비 데이터 집계
     let activeSetupEquips = [];
@@ -779,6 +787,7 @@ function updateSetupDashboard() {
                     const hasScheduledDate = completeItem && completeItem.startDate;
 
                     if (hasScheduledDate) {
+                    if (!isCompleted) {
                         activeSetupEquips.push({ site, equip });
 
                         // 통계 집계
@@ -800,6 +809,7 @@ function updateSetupDashboard() {
     renderSetupEquipDetailList(activeSetupEquips);
     renderSetupUpcomingList(activeSetupEquips);
     renderGanttChart();
+    if (typeof renderGanttChart === 'function') renderGanttChart();
 }
 
 function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {

@@ -119,7 +119,7 @@ function setupLogEvents() {
         costSelect.id = 'log-cost-type';
         costSelect.className = 'input-dark';
         costSelect.innerHTML = `
-            <option value="" disabled selected>비용처리</option>
+            <option value="" disabled selected hidden>비용처리</option>
             <option value="유상">유상</option>
             <option value="무상(보증)">무상(보증)</option>
             <option value="무상(중고)">무상(중고)</option>
@@ -258,7 +258,7 @@ function setupUIEvents() {
         costSelect.id = 'log-cost-type';
         costSelect.className = 'input-dark';
         costSelect.innerHTML = `
-            <option value="" disabled selected>비용처리</option>
+            <option value="" disabled selected hidden>비용처리</option>
             <option value="유상">유상</option>
             <option value="무상(보증)">무상(보증)</option>
             <option value="무상(중고)">무상(중고)</option>
@@ -1058,7 +1058,7 @@ function toggleLogEdit(id, btn) {
         const costOptions = ['유상', '무상(보증)', '무상(중고)', '기타'];
         costCell.innerHTML = `
             <select id="edit-log-cost-${id}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">
-                <option value="" disabled ${!currentCost ? 'selected' : ''}>비용처리</option>
+                <option value="" disabled hidden ${!currentCost ? 'selected' : ''}>비용처리</option>
                 ${costOptions.map(c => `<option value="${c}" ${currentCost === c ? 'selected' : ''}>${c}</option>`).join('')}
             </select>`;
 
