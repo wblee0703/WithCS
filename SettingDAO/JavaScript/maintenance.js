@@ -888,10 +888,10 @@ function renderLogs() {
         <tr id="log-row-${log.id}" onclick="selectLog(${log.id})" class="${selectedLogId === log.id ? 'active-log' : ''}">
             <td data-raw-date="${escapeHtml(log.date || '')}">${formattedDate}</td>
             <td><span class="badge ${getLogBadgeClass(log.type, log.detailType)}">${escapeHtml(log.type || '정기')}</span></td>
-            <td>${escapeHtml(displayDetailType)}</td>
+            <td title="${escapeHtml(displayDetailType)}">${escapeHtml(displayDetailType)}</td>
             <td title="${escapeHtml(tooltipContent)}" data-raw-content="${escapeHtml(log.content || '')}">${escapeHtml(displayContent)}</td>
             <td>${escapeHtml(log.costType || '-')}</td>
-            <td>${escapeHtml(log.worker)}</td>
+            <td title="${escapeHtml(log.worker)}">${escapeHtml(log.worker)}</td>
             <td>
                 <button class="btn-edit-sm" onclick="event.stopPropagation(); toggleLogEdit(${log.id}, this);">✏️</button>
                 <button class="btn-del-sm" onclick="event.stopPropagation(); deleteLogItem(${log.id});">✕</button>

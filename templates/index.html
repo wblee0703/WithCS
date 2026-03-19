@@ -539,7 +539,8 @@
             </div>
             <div class="form-row">
                 <label class="form-label">세부 구분</label>
-                <select id="register-detail-type-select" class="modal-select" disabled></select>
+                <select id="register-detail-type-select" class="modal-select" disabled style="flex: 1;"></select>
+                <select id="register-detail-type2-select" class="modal-select" style="display: none; flex: 1; margin-left: 5px;"></select>
             </div>
             <div class="form-row">
                 <label class="form-label">항목(내용)</label>
@@ -553,6 +554,16 @@
                     </div>
                 </div>
                 <input type="text" id="register-content-input" class="input-dark" placeholder="내용" style="flex:1;">
+            </div>
+            <div class="form-row">
+                <label class="form-label">비용처리</label>
+                <select id="register-cost-type" class="modal-select">
+                    <option value="" disabled selected hidden>비용처리</option>
+                    <option value="유상">유상</option>
+                    <option value="무상(보증)">무상(보증)</option>
+                    <option value="무상(중고)">무상(중고)</option>
+                    <option value="기타">기타</option>
+                </select>
             </div>
             <!-- 기존 js 에러 방지용 숨김 처리 -->
             <div id="register-item-list" style="display: none;"></div>
