@@ -301,18 +301,6 @@
                 "id": 1773728529916,
                 "period": 365,
                 "type": "정기"
-            },
-            {
-                "id": 1773902374305,
-                "type": "비정기",
-                "detailType": "Data / Para 이상",
-                "content": "용액 / 용자 이상",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-03-20",
-                "costType": "무상(보증)",
-                "worker": "이원배",
-                "memo": ""
             }
         ],
         "logs": [
