@@ -225,25 +225,6 @@
                 "id": 1773732542276,
                 "period": 365,
                 "type": "정기"
-            },
-            {
-                "code": "Pt Injector",
-                "content": "Platinum injector, inert torch, 2.5mm id",
-                "costType": "무상(보증)",
-                "date": "2026-03-19",
-                "detailType": "BM 점검 > BM 물품 교체",
-                "id": 1773911600470,
-                "period": null,
-                "type": "비정기"
-            },
-            {
-                "code": "PFA Spray Chamber",
-                "content": "Spray Chamber for Inert Kit, PFA",
-                "date": "2026-03-19",
-                "detailType": "BM 점검 > BM 물품 교체",
-                "id": 1773911615893,
-                "period": null,
-                "type": "비정기"
             }
         ],
         "logs": [
