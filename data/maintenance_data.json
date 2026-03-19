@@ -291,9 +291,10 @@
                 "id": 1773910187433,
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
                 "period": "30",
-                "scheduledDate": "2026-04-01",
+                "scheduledDate": "2026-03-13",
                 "type": "정기",
-                "worker": "이원배"
+                "worker": "이원배",
+                "costType": "유상"
             },
             {
                 "code": "Skimmer Cone",
