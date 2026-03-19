@@ -1548,6 +1548,7 @@
         "SOMA-3000E::SOMA-EK24-0403::비정기::Hunting::Air Peak_헌팅": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::BM 점검::BM 물품 교체": [],
         "SOMA-3000E::SOMA-EK24-0403::비정기::Alarm::MFC(Flow)_알람": [],
-        "SOMA-3000E::SOMA-EK24-0403::비정기::Alarm::HPLC_알람": []
+        "SOMA-3000E::SOMA-EK24-0403::비정기::Alarm::HPLC_알람": [],
+        "SOMA-3000E::SOMA-EK24-0403::비정기::Alarm::AUTOSOL_알람": []
     }
 }
