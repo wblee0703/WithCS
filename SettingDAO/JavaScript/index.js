@@ -104,7 +104,6 @@ function goToSetupPage() {
     let targetEquipName = setupDashboardFilter.equip;
     let fullEquipName = '';
 
-    const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
     let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
     const data = typeof storageData !== 'undefined' && Object.keys(storageData).length > 0 ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
 
@@ -142,7 +141,6 @@ function goToMaintenancePage() {
     }
 
     let fullEquipName = '';
-    const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
     let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
     const data = typeof storageData !== 'undefined' && Object.keys(storageData).length > 0 ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
 
@@ -279,7 +277,6 @@ function saveMaintFilters() {
    ========================================================================== */
 function updateMaintenanceDashboard() {
     // 데이터 로드 (common.js의 storageData가 있다면 사용, 없으면 직접 로드)
-    let data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
     let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
     let data = typeof storageData !== 'undefined' && Object.keys(storageData).length > 0 ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
 
@@ -763,7 +760,6 @@ function updateSetupDashboard() {
     localStorage.setItem('setupDashboardFilter', JSON.stringify(setupDashboardFilter));
     localStorage.setItem('currentGanttFilters', JSON.stringify(currentGanttFilters));
 
-    let data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
     let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
     let data = typeof storageData !== 'undefined' && Object.keys(storageData).length > 0 ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
 
@@ -784,9 +780,7 @@ function updateSetupDashboard() {
                     // "셋업 완료" 항목이 체크되어 있는지 확인
                     const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
                     const isCompleted = completeItem && completeItem.completed;
-                    const hasScheduledDate = completeItem && completeItem.startDate;
 
-                    if (hasScheduledDate) {
                     if (!isCompleted) {
                         activeSetupEquips.push({ site, equip });
 
@@ -808,7 +802,6 @@ function updateSetupDashboard() {
     renderSetupEquipChart(equipStatsArr, totalActive, activeSetupEquips);
     renderSetupEquipDetailList(activeSetupEquips);
     renderSetupUpcomingList(activeSetupEquips);
-    renderGanttChart();
     if (typeof renderGanttChart === 'function') renderGanttChart();
 }
 

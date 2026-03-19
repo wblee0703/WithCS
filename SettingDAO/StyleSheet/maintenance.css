@@ -183,17 +183,17 @@ tr.dragging {
 
 /* 점검일 */
 #log-list-wrapper .data-table th:nth-child(2) {
-    width: 90px;
+    width: 100px;
 }
 
 /* 구분 */
 #log-list-wrapper .data-table th:nth-child(3) {
-    width: 120px;
+    width: 90px;
 }
 
 /* 비용처리 */
 #log-list-wrapper .data-table th:nth-child(5) {
-    width: 110px;
+    width: 90px;
 }
 
 /* 작업자 */

@@ -257,14 +257,14 @@
                 "worker": "이원배 진봉균 박강민"
             },
             {
-                "id": 1773894107123,
-                "date": "2026-03-19",
-                "memo": "",
-                "type": "온라인점검",
-                "detailType": "온라인점검",
-                "detailType2": "온라인점검",
                 "content": "Ver.",
                 "costType": "기타",
+                "date": "2026-03-19",
+                "detailType": "온라인점검",
+                "detailType2": "온라인점검",
+                "id": 1773894107123,
+                "memo": "",
+                "type": "온라인점검",
                 "worker": "이원배"
             }
         ],
