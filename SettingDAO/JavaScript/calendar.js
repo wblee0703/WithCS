@@ -1073,6 +1073,7 @@ function updateScheduleDateFromDetail() {
 
     setScheduleDate(currentDetailTarget.site, currentDetailTarget.equip, currentDetailTarget.id, newDate);
     renderCalendar();
+    if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
 
     // [추가] 캘린더 팝업이 열려있다면 내용 갱신 (변경된 항목 제거)
     const popup = document.getElementById('calendar-popup');
@@ -1598,6 +1599,7 @@ function confirmRegisterSchedule() {
     if (costTypeSelect) costTypeSelect.value = '';
 
     renderCalendar();
+    if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
     const popup = document.getElementById('calendar-popup');
     if (popup) popup.style.display = 'none';
 
