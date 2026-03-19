@@ -172,14 +172,14 @@
         "maint": [],
         "logs": [
             {
-                "id": 1773918950662,
-                "date": "2026-03-19",
-                "memo": "",
-                "type": "비정기",
-                "detailType": "Alarm",
-                "detailType2": "Alarm > OVERFLOW_알람",
                 "content": "파트 이상 (수리)",
                 "costType": "무상(보증)",
+                "date": "2026-03-19",
+                "detailType": "Alarm",
+                "detailType2": "Alarm > OVERFLOW_알람",
+                "id": 1773918950662,
+                "memo": "",
+                "type": "비정기",
                 "worker": "이원배"
             }
         ],
