@@ -344,6 +344,30 @@
                 "content": "Extraction-omega lens assembly",
                 "date": "2026-03-19",
                 "period": "365"
+            },
+            {
+                "id": 1773910147192,
+                "type": "비정기",
+                "detailType": "BM 점검 > BM 물품 교체",
+                "code": "Spray Chamber End Cap",
+                "content": "Spray Chamber End Cap for Inert Kit, PFA",
+                "date": "",
+                "period": null,
+                "scheduledDate": "2026-03-19",
+                "worker": "",
+                "memo": ""
+            },
+            {
+                "id": 1773910147193,
+                "type": "비정기",
+                "detailType": "BM 점검 > BM 물품 교체",
+                "code": "Long Connector",
+                "content": "Long connector tube for ICP-MS inert kit",
+                "date": "",
+                "period": null,
+                "scheduledDate": "2026-03-19",
+                "worker": "",
+                "memo": ""
             }
         ],
         "logs": [
