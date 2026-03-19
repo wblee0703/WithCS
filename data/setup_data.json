@@ -161,9 +161,9 @@
             },
             {
                 "category": "장비 반입 및 정위치",
-                "completed": false,
+                "completed": true,
                 "content": "장비 반입",
-                "date": "",
+                "date": "2026-03-23",
                 "delayReason": "",
                 "estDays": "1",
                 "execStartDate": "2026-03-23",
@@ -286,6 +286,14 @@
                 "id": 1773903849281,
                 "memo": "",
                 "worker": "admin"
+            },
+            {
+                "id": 1773903875983,
+                "date": "2026-03-23",
+                "worker": "admin",
+                "content": "장비 반입",
+                "company": "위드텍",
+                "memo": ""
             }
         ]
     },
