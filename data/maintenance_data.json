@@ -356,7 +356,9 @@
                 "id": 1770860873343,
                 "memo": "1. ICPMS 감도 저하관련 확인\n - 현상 : ICPMS PM 이후 지속적으로 감도 저하됨\n - 조치 : Tuning 진행 후 감도 정상 수준으로 측정\n 1) Omega Bias, Omega Lens 조절\n - 원인 : Cone, Lens 세척이후 보관을 길게 할수록 안정화하는데 시간이 좀 걸리는 것 같음\n - 향후 조치 : Cone, Lens 교체후 감도 저하 모니터링후 한번더 튜닝 진행 필요\n\n2. 장비 상태 온라인 점검\n - Calibration 적용 산태 확인 : 특이사항 없음\n - 데이터 Tend 확인 : 특이사항 없음",
                 "type": "고객대응",
-                "worker": "이원배"
+                "worker": "이원배",
+                "costType": "기타",
+                "mh": "2"
             },
             {
                 "content": "Reflected Power Spec Over",
