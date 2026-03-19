@@ -305,31 +305,39 @@
                 "type": "비정기"
             },
             {
-                "id": 1773910116753,
-                "type": "정기",
-                "detailType": "PM 점검",
                 "code": "Sampler Cone",
                 "content": "Pt Sampling cone for 7700S",
                 "date": "2026-03-19",
-                "period": "182"
+                "detailType": "PM 점검",
+                "id": 1773910116753,
+                "period": "182",
+                "type": "정기"
             },
             {
-                "id": 1773910116754,
-                "type": "정기",
-                "detailType": "PM 점검",
                 "code": "Ion Lens",
                 "content": "Extraction-omega lens assembly",
                 "date": "2026-03-19",
-                "period": "365"
+                "detailType": "PM 점검",
+                "id": 1773910116754,
+                "period": "365",
+                "type": "정기"
             },
             {
-                "id": 1773910147193,
-                "type": "비정기",
-                "detailType": "BM 점검 > BM 물품 교체",
                 "code": "Long Connector",
                 "content": "Long connector tube for ICP-MS inert kit",
                 "date": "2026-03-19",
-                "period": null
+                "detailType": "BM 점검 > BM 물품 교체",
+                "id": 1773910147193,
+                "period": null,
+                "type": "비정기"
+            },
+            {
+                "id": 1773910187433,
+                "type": "정기",
+                "code": "Metal STD (10ppb 3%)",
+                "content": "Metal Standard Solution(3%HNO3)",
+                "date": "2026-03-19",
+                "period": "30"
             }
         ],
         "logs": [
@@ -379,24 +387,24 @@
                 "worker": "이원배 진봉균"
             },
             {
-                "id": 1773910118396,
-                "date": "2026-03-19",
-                "type": "정기",
-                "detailType": "PM 점검",
                 "content": "Pt Skimmer cone for 7700S, Pt Sampling cone for 7700S, Extraction-omega lens assembly",
                 "costType": "무상(보증)",
-                "worker": "이원배",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
+                "date": "2026-03-19",
+                "detailType": "PM 점검",
+                "id": 1773910118396,
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
+                "type": "정기",
+                "worker": "이원배"
             },
             {
-                "id": 1773910157401,
-                "date": "2026-03-19",
-                "type": "비정기",
-                "detailType": "BM 점검 > BM 물품 교체",
                 "content": "Spray Chamber for Inert Kit, PFA, Long connector tube for ICP-MS inert kit",
                 "costType": "무상(보증)",
-                "worker": "이원배",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
+                "date": "2026-03-19",
+                "detailType": "BM 점검 > BM 물품 교체",
+                "id": 1773910157401,
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
+                "type": "비정기",
+                "worker": "이원배"
             }
         ],
         "memo": "",
