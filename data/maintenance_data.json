@@ -303,44 +303,44 @@
                 "type": "정기"
             },
             {
-                "id": 1773906570636,
-                "type": "정기",
-                "detailType": "PM 점검",
                 "content": "Metal STD (10ppb 3%)",
+                "costType": "무상(보증)",
                 "date": "",
+                "detailType": "PM 점검",
+                "id": 1773906570636,
                 "period": null,
                 "scheduledDate": "2026-04-01",
-                "costType": "무상(보증)"
+                "type": "정기"
             },
             {
-                "id": 1773906570637,
-                "type": "정기",
-                "detailType": "PM 점검",
                 "content": "Skimmer Cone",
+                "costType": "무상(보증)",
                 "date": "",
+                "detailType": "PM 점검",
+                "id": 1773906570637,
                 "period": null,
                 "scheduledDate": "2026-04-01",
-                "costType": "무상(보증)"
+                "type": "정기"
             },
             {
-                "id": 1773906570638,
-                "type": "정기",
-                "detailType": "PM 점검",
                 "content": "Sampler Cone",
+                "costType": "무상(보증)",
                 "date": "",
+                "detailType": "PM 점검",
+                "id": 1773906570638,
                 "period": null,
                 "scheduledDate": "2026-04-01",
-                "costType": "무상(보증)"
+                "type": "정기"
             },
             {
-                "id": 1773906570639,
-                "type": "정기",
-                "detailType": "PM 점검",
                 "content": "Ion Lens",
+                "costType": "무상(보증)",
                 "date": "",
+                "detailType": "PM 점검",
+                "id": 1773906570639,
                 "period": null,
                 "scheduledDate": "2026-04-01",
-                "costType": "무상(보증)"
+                "type": "정기"
             }
         ],
         "logs": [
