@@ -644,7 +644,18 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     }
 
     const contentEl = document.getElementById('detail-content');
-    contentEl.innerText = displayContent.split(',').map(s => `- ${s.trim()}`).join('\n');
+    contentEl.dataset.rawContent = displayContent; // 원본 데이터 저장
+    const itemsArr = displayContent.split(',').map(s => s.trim()).filter(s => s);
+    if (itemsArr.length > 1) {
+        contentEl.innerText = `${itemsArr[0]} 외 ${itemsArr.length - 1}개`;
+        contentEl.title = itemsArr.join('\n');
+    } else if (itemsArr.length === 1) {
+        contentEl.innerText = itemsArr[0];
+        contentEl.title = itemsArr[0];
+    } else {
+        contentEl.innerText = '내용 없음';
+        contentEl.title = '';
+    }
     
     const workerInput = document.getElementById('detail-worker');
     const memoInput = document.getElementById('detail-work-memo');
@@ -750,7 +761,7 @@ function toggleDetailContentEdit() {
             detailType2 = parts[1].trim();
         }
 
-        const currentContent = contentDiv.innerText.trim();
+        const currentContent = contentDiv.dataset.rawContent || contentDiv.innerText.trim();
 
         // 선택 가능한 항목 가져오기 (admin.js에서 설정한 값)
         const equipKey = equip; // "Name::Serial"
@@ -816,7 +827,7 @@ function toggleDetailContentEdit() {
                 const list = document.createElement('div');
                 list.className = 'log-select-list';
 
-                const selectedValues = currentContent ? currentContent.split('\n').map(s => s.replace(/^- /, '').trim()) : [];
+                const selectedValues = currentContent ? currentContent.split(',').map(s => s.trim()).filter(s => s) : [];
 
                 uniqueItems.forEach(mItem => {
                     const div = document.createElement('div');
@@ -881,8 +892,14 @@ function toggleDetailContentEdit() {
                     const selected = list.querySelectorAll('.log-select-item.selected');
                     const values = Array.from(selected).map(el => el.dataset.value);
                     
-                    trigger.innerText = values.length > 0 ? values.map(v => `- ${v}`).join('\n') : '항목 선택';
-                    trigger.classList.add('multi-line');
+                    if (values.length > 1) {
+                        trigger.innerText = `${values[0]} 외 ${values.length - 1}개`;
+                    } else if (values.length === 1) {
+                        trigger.innerText = values[0];
+                    } else {
+                        trigger.innerText = '항목 선택';
+                    }
+                    trigger.classList.remove('multi-line');
                     trigger.title = values.join('\n');
                 }
                 
@@ -891,8 +908,7 @@ function toggleDetailContentEdit() {
             }
         } else {
             // 그 외 타입은 텍스트 입력
-            // 이미 완료된 경우 텍스트를 그대로 넘겨줌
-            contentInput.value = isCompleted ? item.content : currentContent.split('\n').map(s => s.replace(/^- /, '').trim()).join(', ');
+            contentInput.value = currentContent;
             contentDiv.style.display = 'none';
             contentInput.style.display = 'block';
             contentInput.focus();
@@ -927,7 +943,10 @@ function toggleDetailContentEdit() {
                 const item = data.logs.find(i => i.id == id);
                 if (item) {
                     item.content = newContent;
-                    contentDiv.innerText = isDropdownMode ? dropdownValues.map(s => `- ${s.trim()}`).join('\n') : newContent.split(', ').map(s => `- ${s.trim()}`).join('\n');
+                    contentDiv.dataset.rawContent = newContent;
+                    const arr = newContent.split(',').map(s => s.trim()).filter(s => s);
+                    contentDiv.innerText = arr.length > 1 ? `${arr[0]} 외 ${arr.length - 1}개` : (arr[0] || '내용 없음');
+                    contentDiv.title = arr.join('\n');
                 }
             } else if (!isCompleted && data.maint) {
                 // 예정된 유지관리(maint) 항목 수정
@@ -973,10 +992,15 @@ function toggleDetailContentEdit() {
                             currentDetailTarget.id = remainingIds[0];
                         }
                         
-                        contentDiv.innerText = dropdownValues.map(s => `- ${s.trim()}`).join('\n');
+                        contentDiv.dataset.rawContent = dropdownValues.join(', ');
+                        contentDiv.innerText = dropdownValues.length > 1 ? `${dropdownValues[0]} 외 ${dropdownValues.length - 1}개` : (dropdownValues[0] || '내용 없음');
+                        contentDiv.title = dropdownValues.join('\n');
                     } else {
                         item.content = newContent;
-                        contentDiv.innerText = newContent.split(',').map(s => `- ${s.trim()}`).join('\n');
+                        contentDiv.dataset.rawContent = newContent;
+                        const arr = newContent.split(',').map(s => s.trim()).filter(s => s);
+                        contentDiv.innerText = arr.length > 1 ? `${arr[0]} 외 ${arr.length - 1}개` : (arr[0] || '내용 없음');
+                        contentDiv.title = arr.join('\n');
                     }
                 }
             }

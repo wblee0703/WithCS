@@ -548,18 +548,7 @@
         "files": []
     },
     "details_ENF 천안_SOMA-3000E::SOMA-EK25-0401": {
-        "maint": [
-            {
-                "id": 1773901957202,
-                "type": "비정기",
-                "detailType": "Alarm > MFC(Flow)_알람",
-                "content": "용액 / 용자 이상",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "costType": "무상(중고)"
-            }
-        ],
+        "maint": [],
         "logs": [
             {
                 "content": "분석 시퀀스 수정",
