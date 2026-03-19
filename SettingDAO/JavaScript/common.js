@@ -106,6 +106,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (sessionStorage.getItem('isLoggedIn') !== 'true') return;
 
     // 2. 서버 데이터 비동기 로드 (백그라운드 동기화)
+    fetchServerData();
+});
+
+// [추가] 서버 데이터 로드 및 UI 갱신 함수 (로그인 직후 재사용 가능하도록 분리)
+function fetchServerData(callback) {
     fetch('/api/data')
         .then(response => {
             if (!response.ok) throw new Error('Network response was not ok');
@@ -139,14 +144,16 @@ document.addEventListener('DOMContentLoaded', () => {
             refreshAppViews();
             
             window.dispatchEvent(new Event('DataLoaded'));
+            if (callback) callback();
         })
         .catch(err => {
             console.error('Failed to load data from server:', err);
             // 실패해도 이미 로컬 데이터로 초기화되었으므로 추가 조치 불필요
             window.isDataLoaded = true;
             window.dispatchEvent(new Event('DataLoaded'));
+            if (callback) callback();
         });
-});
+}
 
 // [추가] 기존에 PM으로 저장된 모든 데이터를 '정기'로 자동 변환하는 함수
 function migratePmToJunggi() {
@@ -245,7 +252,12 @@ function refreshAppViews() {
     renderSites();
     
     // 2. 현재 화면 상태에 따라 뷰 갱신
-    // Home 화면은 DataLoaded 이벤트에 의해 index.js가 처리하므로 여기서는 자동 처리됨
+    // Home 화면인 경우 대시보드 갱신
+    if (document.getElementById('home-welcome-container') && sessionStorage.getItem('isLoggedIn') === 'true') {
+        if (typeof updateHomeDashboard === 'function') {
+            updateHomeDashboard();
+        }
+    }
     
     // Setup/Maintenance 화면인 경우: 선택 상태 복원 및 상세 내용 갱신
     if (currentPath.site) {
@@ -850,8 +862,10 @@ function attemptLogin(id, pw, context) {
             if (homeLoginContainer) {
                 document.getElementById('home-login-container').style.display = 'none';
                 document.getElementById('home-welcome-container').style.display = 'flex';
-                updateHomeDashboard();
-                checkLoginStatus();
+                // [수정] 로그인 완료 후 서버에서 최신 데이터를 가져온 뒤 대시보드를 렌더링
+                fetchServerData(() => {
+                    checkLoginStatus();
+                });
             } else {
                 location.reload();
             }

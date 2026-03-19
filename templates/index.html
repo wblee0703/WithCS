@@ -499,6 +499,10 @@
                 <input type="text" id="detail-worker" placeholder="작업자 성명">
             </div>
             <div class="detail-row">
+                <label class="detail-label">공수</label>
+                <input type="number" id="detail-mh" placeholder="공수(M/H)" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)">
+            </div>
+            <div class="detail-row">
                 <label class="detail-label">점검 결과 / 메모</label>
                 <textarea id="detail-work-memo" placeholder="작업 내용을 입력하세요" spellcheck="false"></textarea>
             </div>
@@ -564,6 +568,10 @@
                     <option value="무상(중고)">무상(중고)</option>
                     <option value="기타">기타</option>
                 </select>
+            </div>
+            <div class="form-row">
+                <label class="form-label">공수</label>
+                <input type="number" id="register-mh" class="input-dark" placeholder="공수(M/H)" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)" style="flex:1;">
             </div>
             <!-- 기존 js 에러 방지용 숨김 처리 -->
             <div id="register-item-list" style="display: none;"></div>
