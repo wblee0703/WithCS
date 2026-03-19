@@ -298,11 +298,10 @@
                 "code": "PFA Spray Chamber",
                 "content": "Spray Chamber for Inert Kit, PFA",
                 "costType": "무상(보증)",
-                "date": "",
+                "date": "2026-03-19",
                 "detailType": "BM 점검 > BM 물품 교체",
                 "id": 1773910053806,
                 "period": null,
-                "scheduledDate": "2026-03-19",
                 "type": "비정기"
             },
             {
@@ -329,11 +328,8 @@
                 "detailType": "BM 점검 > BM 물품 교체",
                 "code": "Long Connector",
                 "content": "Long connector tube for ICP-MS inert kit",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "worker": "",
-                "memo": ""
+                "date": "2026-03-19",
+                "period": null
             }
         ],
         "logs": [
@@ -388,6 +384,16 @@
                 "type": "정기",
                 "detailType": "PM 점검",
                 "content": "Pt Skimmer cone for 7700S, Pt Sampling cone for 7700S, Extraction-omega lens assembly",
+                "costType": "무상(보증)",
+                "worker": "이원배",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
+            },
+            {
+                "id": 1773910157401,
+                "date": "2026-03-19",
+                "type": "비정기",
+                "detailType": "BM 점검 > BM 물품 교체",
+                "content": "Spray Chamber for Inert Kit, PFA, Long connector tube for ICP-MS inert kit",
                 "costType": "무상(보증)",
                 "worker": "이원배",
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
