@@ -1336,9 +1336,7 @@ window.updateLogDetailType2Options = function (presetVal = '') {
     }
     detail2Select.disabled = false;
     const equipKey = currentPath.equip;
-    const catData = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
-    const key = `${equipKey}::${type}::${detailType}`;
-    const subCategories2 = catData[key] || [];
+    const subCategories2 = getSubCategories2(equipKey, type, detailType);
     if (subCategories2.length === 0) {
         detail2Select.innerHTML = '<option value="">세부구분 2 없음</option>';
         detail2Select.disabled = true;
@@ -1519,9 +1517,7 @@ window.updateEditDetailType2Options = function(id, presetVal = '') {
         return;
     }
     detail2Select.disabled = false;
-    const catData = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
-    const key = `${currentPath.equip}::${type}::${detailType}`;
-    const subCategories2 = catData[key] || [];
+    const subCategories2 = getSubCategories2(currentPath.equip, type, detailType);
     if (subCategories2.length === 0) {
         detail2Select.innerHTML = '<option value="">세부구분 2 없음</option>';
         detail2Select.disabled = true;
@@ -1551,6 +1547,28 @@ function getSubCategories(type) {
         subCategories = defaultSubCategories[type] || [];
     }
     return subCategories;
+}
+
+// [추가] 세부구분 2 목록 가져오기 헬퍼 함수 (초기값 연동)
+function getSubCategories2(equipKey, type, detailType) {
+    const catData = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
+    const key = `${equipKey}::${type}::${detailType}`;
+    const defaultSubCategories2 = {
+        'BM 점검': ['BM 물품 교체'],
+        'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
+        'Hunting': ['Air Peak_헌팅', 'HPLC_헌팅', 'Flow_헌팅', 'WD_헌팅', 'BASE_헌팅', 'ETC_헌팅'],
+        'Data / Para 이상': ['REF_PORT', 'RT_흔들림', 'HPLC 압력변동', '에어 유량 변동', '미지피크_발생', '콤플렉스_피크', '프로그램_오류', '베이스 값 이상', 'Data 변동', 'Data 전송 이슈', '딜리버리펌프_이슈', '클리닝펌프_이슈', '용액 이슈']
+    };
+
+    let subCategories2 = catData[key];
+    if (!subCategories2 || subCategories2.length === 0) {
+        if (type === '비정기' && defaultSubCategories2[detailType]) {
+            subCategories2 = [...defaultSubCategories2[detailType]];
+        } else {
+            subCategories2 = [];
+        }
+    }
+    return subCategories2;
 }
 
 // [추가] 점검 항목(내용) 목록 가져오기 헬퍼 함수 (중복 제거 및 호환성 유지)
