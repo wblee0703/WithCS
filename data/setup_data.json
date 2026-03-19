@@ -216,13 +216,13 @@
             },
             {
                 "id": 1773714783942,
-                "completed": false,
+                "completed": true,
                 "content": "분석부 안정화 및 오염제어",
                 "date": "2026-04-15",
                 "startDate": "2026-04-07",
                 "estDays": "5",
                 "category": "셋업 평가",
-                "delayReason": "",
+                "delayReason": "지연",
                 "execStartDate": "2026-04-07"
             },
             {
@@ -326,6 +326,14 @@
                 "content": "인터락 Test 및 통신상태 확인 ",
                 "company": "위드텍",
                 "memo": ""
+            },
+            {
+                "id": 1773903968308,
+                "date": "2026-04-15",
+                "worker": "admin",
+                "content": "[지연] 분석부 안정화 및 오염제어",
+                "company": "위드텍",
+                "memo": "[지연 사유]\n지연"
             }
         ]
     },
