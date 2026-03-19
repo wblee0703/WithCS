@@ -150,6 +150,7 @@ function setupLogEvents() {
         workerInput.id = 'log-mh';
         workerInput.placeholder = '공수(M/H)';
         workerInput.type = 'number';
+        workerInput.min = '0';
     }
 
     const logAddBtn = document.getElementById('log-add-btn') || document.getElementById('log-reg-btn');
@@ -164,8 +165,13 @@ function setupLogEvents() {
     if (logDateInput) logDateInput.value = new Date().toISOString().substring(0, 10);
 
     const logMhInput = document.getElementById('log-mh');
-    if (logMhInput) logMhInput.onkeypress = (e) => { if (e.key === 'Enter') { e.preventDefault(); addLogItem(); } };
-    if (logMhInput) logMhInput.spellcheck = false;
+    if (logMhInput) {
+        logMhInput.onkeypress = (e) => { if (e.key === 'Enter') { e.preventDefault(); addLogItem(); } };
+        logMhInput.addEventListener('input', function() {
+            if (this.value < 0) this.value = Math.abs(this.value);
+        });
+        logMhInput.spellcheck = false;
+    }
 
     const logSearchInput = document.getElementById('log-search');
     if (logSearchInput) logSearchInput.addEventListener('keypress', (e) => {
@@ -778,6 +784,9 @@ function addLogItem(e) {
     if (!date || !type || (!detailType && !detailTypeSelect.disabled) || !costType || !mh) {
         return alert('필수 항목(날짜, 구분, 세부구분, 비용처리, 공수)을 올바르게 입력/선택해주세요.');
     }
+    if (parseFloat(mh) < 0) {
+        return alert('공수(M/H)는 0 이상이어야 합니다.');
+    }
     if (type === '비정기' && !detailType2 && detailType2Select && !detailType2Select.disabled) {
         return alert('세부 구분을 선택해주세요.');
     }
@@ -1146,7 +1155,7 @@ function toggleLogEdit(id, btn) {
                 ${costOptions.map(c => `<option value="${c}" ${currentCost === c ? 'selected' : ''}>${c}</option>`).join('')}
             </select>`;
 
-        mhCell.innerHTML = `<input type="number" id="edit-log-mh-${id}" value="${escapeHtml(currentMh)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
+        mhCell.innerHTML = `<input type="number" id="edit-log-mh-${id}" value="${escapeHtml(currentMh)}" class="input-dark" style="width: 100%; padding: 2px;" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)" onclick="event.stopPropagation()">`;
 
     } else {
         const dateInput = document.getElementById(`edit-log-date-${id}`);
@@ -1182,6 +1191,9 @@ function toggleLogEdit(id, btn) {
 
         if (!newDate || !newType || (!newDetailType && detailTypeInput && !detailTypeInput.disabled) || !newCost || !newMh) {
             return alert('필수 항목(날짜, 구분, 세부구분, 비용처리, 공수)을 모두 입력해주세요.');
+        }
+        if (parseFloat(newMh) < 0) {
+            return alert('공수(M/H)는 0 이상이어야 합니다.');
         }
         const newDetailTypeFull = (newType === '비정기' && newDetailType2) ? `${newDetailType} > ${newDetailType2}` : newDetailType;
         updateLogItem(id, newDate, newType, newDetailTypeFull, newContent, newCost, newMh);

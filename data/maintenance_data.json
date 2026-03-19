@@ -333,47 +333,47 @@
         "logs": [
             {
                 "content": "Metal STD (10ppb 3%), Skimmer Cone, Sampler Cone, Ion Lens",
+                "costType": "무상(보증)",
                 "date": "2026-02-04",
                 "detailType": "PM 점검",
                 "id": 1770796632765,
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 유지 관리 진행\n - Tuning 진행 : 특이사항 없음\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음",
+                "mh": "2",
                 "type": "정기",
-                "worker": "이원배 진봉균 박강민",
-                "costType": "무상(보증)",
-                "mh": "2"
+                "worker": "이원배 진봉균 박강민"
             },
             {
                 "content": "Metal STD (10ppb 3%)",
+                "costType": "유상",
                 "date": "2026-01-06",
                 "detailType": "PM 점검",
                 "id": 1770858585424,
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
+                "mh": "2",
                 "type": "정기",
-                "worker": "이원배 진봉균",
-                "costType": "유상",
-                "mh": "2"
+                "worker": "이원배 진봉균"
             },
             {
                 "content": "명절 전 장비 점검",
+                "costType": "유상",
                 "date": "2026-02-11",
                 "detailType": "기타",
                 "id": 1770860873343,
                 "memo": "1. ICPMS 감도 저하관련 확인\n - 현상 : ICPMS PM 이후 지속적으로 감도 저하됨\n - 조치 : Tuning 진행 후 감도 정상 수준으로 측정\n 1) Omega Bias, Omega Lens 조절\n - 원인 : Cone, Lens 세척이후 보관을 길게 할수록 안정화하는데 시간이 좀 걸리는 것 같음\n - 향후 조치 : Cone, Lens 교체후 감도 저하 모니터링후 한번더 튜닝 진행 필요\n\n2. 장비 상태 온라인 점검\n - Calibration 적용 산태 확인 : 특이사항 없음\n - 데이터 Tend 확인 : 특이사항 없음",
+                "mh": "2",
                 "type": "고객대응",
-                "worker": "이원배",
-                "costType": "유상",
-                "mh": "2"
+                "worker": "이원배"
             },
             {
                 "content": "Reflected Power Spec Over",
+                "costType": "유상",
                 "date": "2026-02-24",
                 "detailType": "온라인점검",
                 "id": 1771977892350,
                 "memo": "1. Reflected Power Spec Over 조치\n - 정상 Spec. : 0 ~ 10\n - 설비값 : 9.5 ~ 11.5\n - ICPMS Tuning : RF Matching 조절 (1.05 - >1.15)\n - 조치후 : Reflected Power 7 ~ 8 수준 \n (이전 Work Coil 교체후 Cool Mode Reflected Power가 높아짐 - Plasma 흔들림 없어 정상으로 판단)",
+                "mh": "2",
                 "type": "온라인점검",
-                "worker": "이원배",
-                "costType": "유상",
-                "mh": "2"
+                "worker": "이원배"
             },
             {
                 "content": "Metal STD (10ppb 3%)",
