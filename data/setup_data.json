@@ -142,9 +142,9 @@
                 "content": "장비 도면 부착",
                 "date": "",
                 "estDays": "1",
+                "execStartDate": "2026-03-19",
                 "id": 1773919064603,
-                "startDate": "",
-                "execStartDate": "2026-03-19"
+                "startDate": ""
             },
             {
                 "category": "장비 반입 및 정위치",
