@@ -264,6 +264,7 @@ select.input-dark,
 select#log-type-select,
 select#log-cost-type,
 select#log-detail-type-select,
+select#log-detail-type2-select,
 select#maint-content {
     background-color: #0d1117;
     border: 1px solid #30363d;
@@ -277,6 +278,7 @@ select.input-dark:focus,
 select#log-type-select:focus,
 select#log-cost-type:focus,
 select#log-detail-type-select:focus,
+select#log-detail-type2-select:focus,
 select#maint-content:focus {
     border-color: #58a6ff;
 }
@@ -285,6 +287,7 @@ select.input-dark option,
 select#log-type-select option,
 select#log-cost-type option,
 select#log-detail-type-select option,
+select#log-detail-type2-select option,
 select#maint-content option {
     background-color: #161b22;
     color: #e6edf3;
@@ -352,6 +355,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     height: 30px;
     flex: 1;
     min-width: 100px;
+}
+
+#log-detail-type2-select {
+    width: 130px;
+    height: 30px;
+    flex: 1.2;
+    min-width: 120px;
 }
 
 #log-worker {
@@ -754,6 +764,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         -webkit-appearance: none;
     }
 
+#log-detail-type2-select {
+    width: auto !important;
+    flex: 1.2 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
 #log-cost-type {
     width: auto !important;
     flex: 1.2 !important;
@@ -774,6 +793,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #log-date,
     #log-type-select,
     #log-detail-type-select,
+    #log-detail-type2-select,
 #log-cost-type,
     #log-worker,
     .log-content-input {
