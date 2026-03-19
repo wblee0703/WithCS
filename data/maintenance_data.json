@@ -295,28 +295,6 @@
                 "type": "정기"
             },
             {
-                "code": "PFA Torch",
-                "content": "Torch for PFA inert kit for ICP-MS",
-                "costType": "무상(보증)",
-                "date": "",
-                "detailType": "BM 점검 > BM 물품 교체",
-                "id": 1773910053804,
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "type": "비정기"
-            },
-            {
-                "code": "Pt Injector",
-                "content": "Platinum injector, inert torch, 2.5mm id",
-                "costType": "무상(보증)",
-                "date": "",
-                "detailType": "BM 점검 > BM 물품 교체",
-                "id": 1773910053805,
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "type": "비정기"
-            },
-            {
                 "code": "PFA Spray Chamber",
                 "content": "Spray Chamber for Inert Kit, PFA",
                 "costType": "무상(보증)",
@@ -344,18 +322,6 @@
                 "content": "Extraction-omega lens assembly",
                 "date": "2026-03-19",
                 "period": "365"
-            },
-            {
-                "id": 1773910147192,
-                "type": "비정기",
-                "detailType": "BM 점검 > BM 물품 교체",
-                "code": "Spray Chamber End Cap",
-                "content": "Spray Chamber End Cap for Inert Kit, PFA",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "worker": "",
-                "memo": ""
             },
             {
                 "id": 1773910147193,
