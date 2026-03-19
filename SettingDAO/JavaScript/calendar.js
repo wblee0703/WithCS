@@ -975,8 +975,14 @@ function toggleDetailContentEdit() {
                                 period = match.cycle || null;
                             }
 
-                            let existing = sameDayItems.find(m => m.content === fullContent || (code && m.code === code) || m.content === val);
+                            // sameDayItems 뿐만 아니라 maint 전체에서 중복 확인
+                            let existing = data.maint.find(m => m.type === itemType && (m.content === fullContent || (code && m.code === code) || m.content === val));
+                            
                             if (existing) {
+                                existing.scheduledDate = targetDate;
+                                existing.detailType = itemDetailType;
+                                if (!existing.worker) existing.worker = item.worker || '';
+                                if (!existing.memo) existing.memo = item.memo || '';
                                 remainingIds.push(existing.id);
                             } else {
                                 const newId = Date.now() + idx;
@@ -996,11 +1002,11 @@ function toggleDetailContentEdit() {
                             }
                         });
 
-                        data.maint = data.maint.filter(m => {
-                            if (m.scheduledDate === targetDate && m.type === itemType && (m.detailType || '') === itemDetailType) {
-                                return remainingIds.includes(m.id);
+                        // 수정 모드에서 선택 해제된(제외된) 항목들은 리스트에서 완전히 삭제하지 않고 예정일만 제거
+                        sameDayItems.forEach(m => {
+                            if (!remainingIds.includes(m.id)) {
+                                delete m.scheduledDate;
                             }
-                            return true;
                         });
 
                         if (remainingIds.length > 0) {
