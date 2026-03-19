@@ -781,7 +781,10 @@ function updateSetupDashboard() {
                     const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
                     const isCompleted = completeItem && completeItem.completed;
 
-                    if (!isCompleted) {
+                    // [추가] 셋업 일정(startDate)이 하나라도 입력된 장비만 필터링
+                    const hasScheduledDate = detailData.setupDetails.some(d => d.startDate);
+
+                    if (!isCompleted && hasScheduledDate) {
                         activeSetupEquips.push({ site, equip });
 
                         // 통계 집계
