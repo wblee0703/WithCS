@@ -1776,6 +1776,7 @@ function ensureSubCategory2Panel() {
         panel2.id = 'check-type-subcategory2-container';
         panel2.className = 'admin-col-list';
         panel2.style.display = 'none';
+        panel2.style.flex = '0 0 160px';
         
         panel2.innerHTML = `
             <div class="list-header">
