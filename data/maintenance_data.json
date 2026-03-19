@@ -303,30 +303,50 @@
                 "type": "정기"
             },
             {
-                "id": 1773909570562,
-                "type": "정기",
-                "detailType": "PM 점검",
                 "content": "Metal STD (10ppb 3%)",
+                "costType": "무상(보증)",
                 "date": "",
+                "detailType": "PM 점검",
+                "id": 1773909570562,
                 "period": null,
                 "scheduledDate": "2026-03-19",
-                "costType": "무상(보증)"
+                "type": "정기"
             },
             {
-                "id": 1773909570563,
-                "type": "정기",
-                "detailType": "PM 점검",
                 "content": "Skimmer Cone",
+                "costType": "무상(보증)",
+                "date": "",
+                "detailType": "PM 점검",
+                "id": 1773909570563,
+                "period": null,
+                "scheduledDate": "2026-03-19",
+                "type": "정기"
+            },
+            {
+                "content": "Sampler Cone",
+                "costType": "무상(보증)",
+                "date": "",
+                "detailType": "PM 점검",
+                "id": 1773909570564,
+                "period": null,
+                "scheduledDate": "2026-03-19",
+                "type": "정기"
+            },
+            {
+                "id": 1773909746500,
+                "type": "비정기",
+                "detailType": "BM 점검 > BM 물품 교체",
+                "content": "PFA Torch",
                 "date": "",
                 "period": null,
                 "scheduledDate": "2026-03-19",
                 "costType": "무상(보증)"
             },
             {
-                "id": 1773909570564,
-                "type": "정기",
-                "detailType": "PM 점검",
-                "content": "Sampler Cone",
+                "id": 1773909746501,
+                "type": "비정기",
+                "detailType": "BM 점검 > BM 물품 교체",
+                "content": "Pt Injector",
                 "date": "",
                 "period": null,
                 "scheduledDate": "2026-03-19",
