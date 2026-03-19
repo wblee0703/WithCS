@@ -1120,7 +1120,7 @@ function completeScheduleWork() {
 
     // [수정] 같은 날짜, 같은 타입, 세부구분의 모든 항목 완료 처리
     const sameDayItems = data.maint.filter(i => i.scheduledDate === maintItem.scheduledDate && i.type === maintItem.type && (i.detailType || '') === (maintItem.detailType || ''));
-    const combinedContent = sameDayItems.map(i => i.content).join(', ');
+    const combinedContent = sameDayItems.map(i => i.code ? i.code : i.content).join(', ');
     const completeDate = maintItem.scheduledDate || new Date().toISOString().split('T')[0];
 
     data.logs.push({
@@ -1148,7 +1148,7 @@ function completeScheduleWork() {
     localStorage.setItem(key, JSON.stringify(data));
 
     if (typeof addSystemLog === 'function') {
-        addSystemLog('COMPLETE_SCHEDULE', equip, `Content: ${maintItem.content}`);
+        addSystemLog('COMPLETE_SCHEDULE', equip, `Content: ${combinedContent}`);
     }
 
     alert('작업이 완료되었습니다.');
