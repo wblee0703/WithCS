@@ -213,26 +213,6 @@
                 "id": 1773732542276,
                 "period": 365,
                 "type": "정기"
-            },
-            {
-                "content": "PFA Torch",
-                "costType": "무상(중고)",
-                "date": "",
-                "detailType": "BM 점검 > BM 물품 교체",
-                "id": 1773901817502,
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "type": "비정기"
-            },
-            {
-                "content": "Pt Injector",
-                "costType": "무상(중고)",
-                "date": "",
-                "detailType": "BM 점검 > BM 물품 교체",
-                "id": 1773901817503,
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "type": "비정기"
             }
         ],
         "logs": [
@@ -331,46 +311,6 @@
                 "date": "2026-02-04",
                 "id": 1773728529916,
                 "period": 365,
-                "type": "정기"
-            },
-            {
-                "content": "Metal STD (10ppb 3%)",
-                "costType": "무상(보증)",
-                "date": "",
-                "detailType": "PM 점검",
-                "id": 1773901790782,
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "type": "정기"
-            },
-            {
-                "content": "Skimmer Cone",
-                "costType": "무상(보증)",
-                "date": "",
-                "detailType": "PM 점검",
-                "id": 1773901790783,
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "type": "정기"
-            },
-            {
-                "content": "Sampler Cone",
-                "costType": "무상(보증)",
-                "date": "",
-                "detailType": "PM 점검",
-                "id": 1773901790784,
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "type": "정기"
-            },
-            {
-                "content": "Ion Lens",
-                "costType": "무상(보증)",
-                "date": "",
-                "detailType": "PM 점검",
-                "id": 1773901790785,
-                "period": null,
-                "scheduledDate": "2026-03-19",
                 "type": "정기"
             }
         ],
