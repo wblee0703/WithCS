@@ -1250,6 +1250,8 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
         const wrapper = document.createElement('div');
         wrapper.className = 'log-select-wrapper';
         wrapper.style.width = '100%';
+        wrapper.style.margin = '0';
+        wrapper.style.minWidth = '0';
         wrapper.onclick = (e) => e.stopPropagation();
 
         const currentValues = value ? value.split(', ').map(s => s.trim()).filter(s => s) : [];
@@ -1263,6 +1265,9 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
         const trigger = document.createElement('div');
         trigger.id = `edit-log-content-trigger-${id}`;
         trigger.className = 'log-select-trigger';
+        trigger.style.padding = '2px';
+        trigger.style.minHeight = 'auto';
+        trigger.style.justifyContent = 'center'; // 텍스트 중앙 정렬
         trigger.textContent = initialText;
         trigger.title = currentValues.join('\n');
 
