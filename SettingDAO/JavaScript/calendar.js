@@ -59,7 +59,7 @@ function getScheduleForCalendar() {
                             }
                             if (targetDateStr) {
                                 if (!events[targetDateStr]) events[targetDateStr] = [];
-                                events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.content, id: item.id });
+                                events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.code ? item.code : item.content, id: item.id });
                             }
                         });
                     }
@@ -638,11 +638,11 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     document.getElementById('detail-detail-type').textContent = item.detailType || '-';
 
     // [수정] 같은 날짜, 같은 타입, 세부구분에 예정된 항목들을 모두 표시
-    let displayContent = item.content || '';
+    let displayContent = item.code ? item.code : (item.content || '');
     if (!isCompleted && item.scheduledDate) {
         const sameDayItems = data.maint.filter(i => i.scheduledDate === item.scheduledDate && i.type === item.type && (i.detailType || '') === (item.detailType || ''));
         if (sameDayItems.length > 0) {
-            displayContent = sameDayItems.map(i => i.content).join(', ');
+            displayContent = sameDayItems.map(i => i.code ? i.code : i.content).join(', ');
         }
     }
 
