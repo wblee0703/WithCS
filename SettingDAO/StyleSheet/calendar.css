@@ -200,6 +200,13 @@
     display: block;
 }
 
+/* [추가] 1달 보기(확장) 시 이벤트 아이템 텍스트 크기 확대 */
+.calendars-wrapper.single-month-mode .calendar-event-item {
+    font-size: 12px;
+    padding: 3px 5px;
+    margin-bottom: 2px;
+}
+
 /* Event Type Colors */
 .event-type-text.type-정기, .popup-type-badge.type-정기 { color: #238636; }
 
@@ -596,9 +603,10 @@
         margin-bottom: 2px;
     }
 
+    .calendars-wrapper.single-month-mode .calendar-event-item,
     .calendar-event-item {
-        font-size: 8px;
-        padding: 1px 2px;
+        font-size: 9px !important;
+        padding: 1px 2px !important;
     }
 
     /* [추가] 캘린더 목록 팝업 모바일 최적화 */

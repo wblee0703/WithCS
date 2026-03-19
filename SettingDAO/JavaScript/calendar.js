@@ -177,10 +177,12 @@ function setupCalendar() {
 function toggleCalendarExpand(viewId) {
     const views = document.querySelectorAll('.calendar-view');
     const divider = document.querySelector('.calendar-divider');
+    const wrapper = document.querySelector('.calendars-wrapper');
     
     if (expandedViewId === viewId) {
         // 이미 확장된 상태면 원래대로 복귀
         expandedViewId = null;
+        if (wrapper) wrapper.classList.remove('single-month-mode');
         views.forEach(v => {
             v.style.display = '';
             v.style.flex = '';
@@ -191,6 +193,7 @@ function toggleCalendarExpand(viewId) {
     } else {
         // 해당 뷰 확장
         expandedViewId = viewId;
+        if (wrapper) wrapper.classList.add('single-month-mode');
         views.forEach((v, index) => {
             // viewId는 1부터 시작, index는 0부터 시작
             if (index + 1 === viewId) {
