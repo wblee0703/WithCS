@@ -418,7 +418,6 @@
                 "detailType": "PM 점검",
                 "id": 1773732550702,
                 "period": "30",
-                "scheduledDate": "2026-03-19",
                 "type": "정기"
             },
             {
@@ -429,7 +428,6 @@
                 "detailType": "PM 점검",
                 "id": 1773732552676,
                 "period": 182,
-                "scheduledDate": "2026-03-19",
                 "type": "정기"
             },
             {
