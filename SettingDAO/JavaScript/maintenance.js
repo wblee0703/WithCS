@@ -3,7 +3,7 @@
    ========================================================================== */
 // [추가] 공통 함수 폴백 (common.js 누락 대비)
 if (typeof window.getDragAfterElement !== 'function') {
-    window.getDragAfterElement = function(container, y, selector) {
+    window.getDragAfterElement = function (container, y, selector) {
         const draggableElements = [...container.querySelectorAll(selector)];
         return draggableElements.reduce((closest, child) => {
             const box = child.getBoundingClientRect();
@@ -15,7 +15,7 @@ if (typeof window.getDragAfterElement !== 'function') {
 
 // [추가] escapeHtml 함수 폴백 (common.js 누락 또는 로드 실패 대비)
 if (typeof window.escapeHtml !== 'function') {
-    window.escapeHtml = function(text) {
+    window.escapeHtml = function (text) {
         if (text === null || text === undefined) {
             return '';
         }
@@ -162,7 +162,7 @@ function setupLogEvents() {
     }
 
     const logDetailTypeSelect = document.getElementById('log-detail-type-select');
-    
+
     // [추가] 세부구분 2 입력 드롭다운 동적 생성
     if (logDetailTypeSelect && !document.getElementById('log-detail-type2-select')) {
         const detail2Select = document.createElement('select');
@@ -365,7 +365,7 @@ function addDetailItem() {
         const selectedOpt = contentEl.options[contentEl.selectedIndex];
         code = selectedOpt.dataset.code || '';
     }
-    
+
     const date = document.getElementById('maint-date').value;
     const period = document.getElementById('maint-period').value;
 
@@ -456,11 +456,11 @@ function renderDetails() {
 }
 
 // [추가] 유지관리 물품 입력창을 등록된 물품 관리 데이터로 갱신하는 함수
-window.updateMaintContentOptions = function() {
+window.updateMaintContentOptions = function () {
     const activeBtn = document.querySelector('#maint-type-toggle .active');
     if (!activeBtn) return;
     const maintType = activeBtn.dataset.type;
-    
+
     let contentElement = document.getElementById('maint-content');
     if (!contentElement) return;
 
@@ -484,12 +484,12 @@ window.updateMaintContentOptions = function() {
                 const equips = item.equip.split(',').map(e => e.trim());
                 if (!equips.includes(equipModel)) return false;
             } else {
-                return false; 
+                return false;
             }
-            
+
             // [추가] 이미 추가된 항목은 제안(드롭다운)에서 숨김
             if (addedParts.includes(item.part)) return false;
-            
+
             return true;
         });
 
@@ -501,7 +501,7 @@ window.updateMaintContentOptions = function() {
             if (!selectEl.classList.contains('input-dark')) selectEl.classList.add('input-dark');
             selectEl.style.cssText = contentElement.style.cssText;
             contentElement.parentNode.replaceChild(selectEl, contentElement);
-            
+
             // 항목 선택 시 교체주기 자동 입력
             selectEl.addEventListener('change', (e) => {
                 const val = e.target.value;
@@ -514,7 +514,7 @@ window.updateMaintContentOptions = function() {
                 }
             });
         }
-        
+
         if (filteredItems.length === 0) {
             selectEl.innerHTML = `<option value="">등록할 ${maintType} 물품이 없음.</option>`;
         } else {
@@ -527,7 +527,7 @@ window.updateMaintContentOptions = function() {
                 selectEl.appendChild(option);
             });
         }
-        
+
     } else {
         // 정기, 비정기가 아닌 기타 타입일 경우 자유 입력 텍스트창으로 복구
         if (contentElement.tagName.toLowerCase() !== 'input') {
@@ -712,10 +712,6 @@ function addLogItem(e) {
     const costSelect = document.getElementById('log-cost-type');
     const costType = costSelect ? costSelect.value : '';
 
-    // [추가] 비용처리 값 가져오기
-    const costSelect = document.getElementById('log-cost-type');
-    const costType = costSelect ? costSelect.value : '';
-
     let content = '';
     const contentInput = document.getElementById('log-content-input');
     const contentWrapper = document.getElementById('log-content-wrapper');
@@ -756,6 +752,7 @@ function addLogItem(e) {
         memo: "", // 상세 메모 초기값
         type: type,
         detailType: detailType,
+        detailType2: finalDetailType,
         content: content,
         costType: costType,
         worker: worker,
@@ -768,14 +765,14 @@ function addLogItem(e) {
     if (detailType === 'BM 점검') {
         const itemsList = content.split(', ').map(s => s.trim()).filter(s => s);
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-        
+
         itemsList.forEach((itemText, idx) => {
             // 기존 유지관리 물품 리스트에 같은 항목(비정기)이 있는지 확인
             const exists = data.maint.some(m => m.type === '비정기' && (m.content === itemText || m.code === itemText));
             if (!exists) {
                 let code = '';
                 let fullContent = itemText;
-                
+
                 // Admin 물품 관리 데이터에서 코드명과 풀네임 검색
                 const match = adminItems.find(a => a.part === itemText || a.code === itemText);
                 if (match) {
@@ -853,7 +850,7 @@ function renderLogs() {
             );
         }
     }
-    
+
     const getLogBadgeClass = (t, dt) => {
         if (!t) return 'default';
         return t.replace(/\s/g, ''); // 공백 제거하여 CSS 클래스명으로 반환
@@ -964,7 +961,7 @@ function deleteLogItem(id) {
     let data = JSON.parse(localStorage.getItem(key));
 
     if (!data || !data.logs) return; // 데이터 안전장치
-    
+
     // [추가] 삭제될 로그 정보 미리 저장
     const targetLog = data.logs.find(l => l.id === id);
     const deletedInfo = targetLog ? `${targetLog.date} ${targetLog.content}` : 'Unknown';
@@ -1013,7 +1010,7 @@ function toggleLogEdit(id, btn) {
 
         const currentDate = dateCell.dataset.rawDate || dateCell.textContent.trim();
         const currentType = typeCell.textContent.trim();
-        
+
         const currentDetailTypeFull = detailCell.textContent.trim() === '-' ? '' : detailCell.textContent.trim();
         let currentDetailType = currentDetailTypeFull;
         let currentDetailType2 = '';
@@ -1022,14 +1019,13 @@ function toggleLogEdit(id, btn) {
             currentDetailType = parts[0].trim();
             currentDetailType2 = parts[1].trim();
         }
-        
+
         const currentContent = contentCell.dataset.rawContent || contentCell.textContent.trim();
-        const currentCost = costCell.textContent.trim() === '-' ? '' : costCell.textContent.trim();
         const currentCost = costCell.textContent.trim() === '-' ? '' : costCell.textContent.trim();
         const currentWorker = workerCell.textContent.trim();
 
         dateCell.innerHTML = `<input type="date" id="edit-log-date-${id}" value="${escapeHtml(currentDate)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
-        
+
         const allCategories = ['정기', '비정기', '고객대응', '용액제조', '온라인점검'];
         typeCell.innerHTML = `
             <select id="edit-log-type-${id}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()" onchange="updateEditDetailTypeOptions(${id})">
@@ -1043,7 +1039,7 @@ function toggleLogEdit(id, btn) {
             </select>`;
 
         updateEditDetailTypeOptions(id, currentDetailType);
-        
+
         const detailSelect = document.getElementById(`edit-log-detail-type-${id}`);
         const detail2Select = document.getElementById(`edit-log-detail-type2-${id}`);
         detailSelect.addEventListener('change', () => {
@@ -1067,14 +1063,6 @@ function toggleLogEdit(id, btn) {
                 ${costOptions.map(c => `<option value="${c}" ${currentCost === c ? 'selected' : ''}>${c}</option>`).join('')}
             </select>`;
 
-        // [추가] 비용처리 수정 폼
-        const costOptions = ['유상', '무상(보증)', '무상(중고)', '기타'];
-        costCell.innerHTML = `
-            <select id="edit-log-cost-${id}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">
-                <option value="">선택</option>
-                ${costOptions.map(c => `<option value="${c}" ${currentCost === c ? 'selected' : ''}>${c}</option>`).join('')}
-            </select>`;
-
         workerCell.innerHTML = `<input type="text" id="edit-log-worker-${id}" value="${escapeHtml(currentWorker)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
 
     } else {
@@ -1084,15 +1072,12 @@ function toggleLogEdit(id, btn) {
         const detailType2Input = document.getElementById(`edit-log-detail-type2-${id}`);
         const newDetailType2 = detailType2Input && detailType2Input.style.display !== 'none' ? detailType2Input.value : '';
         const costInput = document.getElementById(`edit-log-cost-${id}`);
-        const costInput = document.getElementById(`edit-log-cost-${id}`);
         const workerInput = document.getElementById(`edit-log-worker-${id}`);
 
         if (!dateInput || !typeInput || !detailTypeInput || !costInput || !workerInput) return alert('입력 필드를 찾을 수 없습니다. 다시 시도해주세요.');
-
         const newDate = dateInput.value;
         const newType = typeInput.value;
         const newDetailType = detailTypeInput.value;
-        const newCost = costInput.value;
         const newCost = costInput.value;
 
         // [수정] 내용 가져오기 (입력창 또는 드롭다운 트리거)
@@ -1132,19 +1117,18 @@ function updateLogItem(id, date, type, detailType, content, costType, worker) {
             data.logs[idx].detailType = detailType;
             data.logs[idx].content = content;
             data.logs[idx].costType = costType;
-            data.logs[idx].costType = costType;
             data.logs[idx].worker = worker;
-            
+
             localStorage.setItem(key, JSON.stringify(data));
             if (typeof addSystemLog === 'function') addSystemLog('UPDATE_LOG', currentPath.equip, `점검 이력 수정 (LogID: ${id})`);
-            
+
             renderLogs();
         }
     }
 }
 
 // [수정] 수정 모드에서 내용 필드 렌더링 (다중 선택 드롭다운)
-window.renderEditLogContentField = function(id, type, detailType, detailType2, value) {
+window.renderEditLogContentField = function (id, type, detailType, detailType2, value) {
     const row = document.getElementById(`log-row-${id}`);
     if (!row) return;
     const contentCell = row.cells[3]; // 0: date, 1: type, 2: detailType, 3: content
@@ -1198,34 +1182,34 @@ window.renderEditLogContentField = function(id, type, detailType, detailType2, v
 
         items.forEach(item => {
             const displayValue = item.code ? item.code : item.content;
-            
+
             // 중복 렌더링 방지
             if (Array.from(list.children).some(child => child.dataset.value === displayValue)) return;
-            
-                const div = document.createElement('div');
-                div.className = 'log-select-item';
-                // 기존 값이 full content 이거나 code 인 경우 모두 대응
-                if (currentValues.includes(item.content) || currentValues.includes(displayValue)) div.classList.add('selected');
-                div.dataset.value = displayValue;
-                div.innerHTML = `<span>${displayValue}</span>`;
 
-                div.onclick = (e) => {
-                    e.stopPropagation();
-                    div.classList.toggle('selected');
-                    
-                    const selected = list.querySelectorAll('.log-select-item.selected');
-                    const values = Array.from(selected).map(el => el.dataset.value);
+            const div = document.createElement('div');
+            div.className = 'log-select-item';
+            // 기존 값이 full content 이거나 code 인 경우 모두 대응
+            if (currentValues.includes(item.content) || currentValues.includes(displayValue)) div.classList.add('selected');
+            div.dataset.value = displayValue;
+            div.innerHTML = `<span>${displayValue}</span>`;
 
-                    if (values.length > 1) {
-                        trigger.textContent = `${values[0]} 외 ${values.length - 1}개`;
-                    } else if (values.length === 1) {
-                        trigger.textContent = values[0];
-                    } else {
-                        trigger.textContent = '항목 선택';
-                    }
-                    trigger.title = values.join('\n');
-                };
-                list.appendChild(div);
+            div.onclick = (e) => {
+                e.stopPropagation();
+                div.classList.toggle('selected');
+
+                const selected = list.querySelectorAll('.log-select-item.selected');
+                const values = Array.from(selected).map(el => el.dataset.value);
+
+                if (values.length > 1) {
+                    trigger.textContent = `${values[0]} 외 ${values.length - 1}개`;
+                } else if (values.length === 1) {
+                    trigger.textContent = values[0];
+                } else {
+                    trigger.textContent = '항목 선택';
+                }
+                trigger.title = values.join('\n');
+            };
+            list.appendChild(div);
         });
 
         dropdown.appendChild(list);
@@ -1264,13 +1248,13 @@ window.renderEditLogContentField = function(id, type, detailType, detailType2, v
 }
 
 // [추가] Admin 점검 구분 연동 동적 생성 함수
-window.updateLogTypeOptions = function() {
+window.updateLogTypeOptions = function () {
     const typeSelect = document.getElementById('log-type-select');
     if (!typeSelect) return;
-    
+
     const categories = ['정기', '비정기', '고객대응', '용액제조', '온라인점검']; // Admin 기본 구분
     const currentVal = typeSelect.value;
-    
+
     typeSelect.innerHTML = '';
     categories.forEach(cat => {
         const opt = document.createElement('option');
@@ -1278,31 +1262,31 @@ window.updateLogTypeOptions = function() {
         opt.textContent = cat;
         typeSelect.appendChild(opt);
     });
-    
+
     if (currentVal && categories.includes(currentVal)) {
         typeSelect.value = currentVal;
     }
-    
+
     updateLogDetailTypeOptions();
 };
 
-window.updateLogDetailTypeOptions = function() {
+window.updateLogDetailTypeOptions = function () {
     const typeSelect = document.getElementById('log-type-select');
     const detailTypeSelect = document.getElementById('log-detail-type-select');
     if (!typeSelect || !detailTypeSelect) return;
-    
+
     const type = typeSelect.value;
     detailTypeSelect.innerHTML = '';
-    
+
     if (!type) {
         detailTypeSelect.innerHTML = '<option value="">구분 먼저 선택</option>';
         detailTypeSelect.disabled = true;
         updateLogContentOptions();
         return;
     }
-    
+
     detailTypeSelect.disabled = false;
-    
+
     const detail2Select = document.getElementById('log-detail-type2-select');
     if (type === '비정기') {
         if (detail2Select) detail2Select.style.display = 'inline-block';
@@ -1312,9 +1296,9 @@ window.updateLogDetailTypeOptions = function() {
             detail2Select.value = '';
         }
     }
-    
+
     const subCategories = getSubCategories(type);
-    
+
     if (subCategories.length === 0) {
         detailTypeSelect.innerHTML = '<option value="">세부구분 없음 (직접입력)</option>';
         detailTypeSelect.disabled = true;
@@ -1327,17 +1311,17 @@ window.updateLogDetailTypeOptions = function() {
             detailTypeSelect.appendChild(opt);
         });
     }
-    
+
     detailTypeSelect.onchange = () => {
         if (type === '비정기') updateLogDetailType2Options();
         updateLogContentOptions();
     };
-    
+
     if (type === '비정기') updateLogDetailType2Options();
     else updateLogContentOptions();
 };
 
-window.updateLogDetailType2Options = function(presetVal = '') {
+window.updateLogDetailType2Options = function (presetVal = '') {
     const typeSelect = document.getElementById('log-type-select');
     const detailTypeSelect = document.getElementById('log-detail-type-select');
     const detail2Select = document.getElementById('log-detail-type2-select');
@@ -1366,7 +1350,7 @@ window.updateLogDetailType2Options = function(presetVal = '') {
 };
 
 // [추가] 로그 입력 폼 항목 업데이트 함수
-window.updateLogContentOptions = function() {
+window.updateLogContentOptions = function () {
     const typeSelect = document.getElementById('log-type-select');
     const detailTypeSelect = document.getElementById('log-detail-type-select');
     const contentWrapper = document.getElementById('log-content-wrapper');
@@ -1414,7 +1398,7 @@ window.updateLogContentOptions = function() {
 
     contentInput.disabled = false;
     contentInput.classList.remove('input-disabled');
-    
+
     const items = getCheckTypeItems(type, detailType, detailType2);
 
     if (items.length > 0 && detailType) {
@@ -1427,16 +1411,16 @@ window.updateLogContentOptions = function() {
             items.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'log-select-item';
-                
+
                 // [수정] 약어(코드)가 있으면 약어를 value와 표시명으로 사용
                 const displayValue = item.code ? item.code : item.content;
                 div.dataset.value = displayValue;
                 div.innerHTML = `<span>${displayValue}</span>`;
-                
+
                 div.onclick = (e) => {
                     e.stopPropagation();
                     div.classList.toggle('selected');
-                    
+
                     const selected = contentList.querySelectorAll('.log-select-item.selected');
                     const values = Array.from(selected).map(el => el.dataset.value);
                     if (values.length > 1) {
@@ -1468,30 +1452,31 @@ window.updateLogContentOptions = function() {
     }
 };
 
-window.updateEditDetailTypeOptions = function(id, presetVal = '') {
+window.updateEditDetailTypeOptions = function (id, presetVal = '') {
     const typeSelect = document.getElementById(`edit-log-type-${id}`);
     const detailTypeSelect = document.getElementById(`edit-log-detail-type-${id}`);
+    const detailType2Select = document.getElementById(`edit-log-detail-type2-${id}`);
     if (!typeSelect || !detailTypeSelect) return;
-    
+
     const type = typeSelect.value;
     detailTypeSelect.innerHTML = '';
-    
+
     if (!type) {
         detailTypeSelect.innerHTML = '<option value="">구분 먼저 선택</option>';
         detailTypeSelect.disabled = true;
         updateEditLogContentField(id);
         return;
     }
-    
+
     detailTypeSelect.disabled = false;
-    
+
     const subCategories = getSubCategories(type);
-    
+
     // 기존 값 유지 로직
     if (presetVal && !subCategories.includes(presetVal)) {
         subCategories.unshift(presetVal);
     }
-    
+
     if (subCategories.length === 0) {
         detailTypeSelect.innerHTML = '<option value="">세부구분 없음</option>';
         detailTypeSelect.disabled = true;
@@ -1505,19 +1490,47 @@ window.updateEditDetailTypeOptions = function(id, presetVal = '') {
             detailTypeSelect.appendChild(opt);
         });
     }
-    
+
     if (!presetVal && type !== '비정기') updateEditLogContentField(id);
 };
 
-window.updateEditLogContentField = function(id) {
+window.updateEditLogContentField = function (id) {
     const typeSelect = document.getElementById(`edit-log-type-${id}`);
     const detailTypeSelect = document.getElementById(`edit-log-detail-type-${id}`);
     if (!typeSelect || !detailTypeSelect) return;
-    
+
     const type = typeSelect.value;
     const detailType = detailTypeSelect.value;
-    
-    renderEditLogContentField(id, type, detailType, '');
+    const detailType2 = detailType2Select ? detailType2Select.value : '';
+    renderEditLogContentField(id, type, detailType, detailType2, '');
+};
+
+window.updateEditDetailType2Options = function(id, presetVal = '') {
+    const typeSelect = document.getElementById(`edit-log-type-${id}`);
+    const detailTypeSelect = document.getElementById(`edit-log-detail-type-${id}`);
+    const detail2Select = document.getElementById(`edit-log-detail-type2-${id}`);
+    if (!typeSelect || !detailTypeSelect || !detail2Select) return;
+    const type = typeSelect.value;
+    const detailType = detailTypeSelect.value;
+    detail2Select.innerHTML = '<option value="">세부구분 2 먼저 선택</option>';
+    if (type !== '비정기' || !detailType) {
+        detail2Select.disabled = true;
+        updateEditLogContentField(id);
+        return;
+    }
+    detail2Select.disabled = false;
+    const catData = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
+    const key = `${currentPath.equip}::${type}::${detailType}`;
+    const subCategories2 = catData[key] || [];
+    if (subCategories2.length === 0) {
+        detail2Select.innerHTML = '<option value="">세부구분 2 없음</option>';
+        detail2Select.disabled = true;
+    } else {
+        detail2Select.innerHTML = '<option value="">세부구분 2 선택</option>';
+        if (presetVal && !subCategories2.includes(presetVal)) subCategories2.unshift(presetVal);
+        subCategories2.forEach(sub => { detail2Select.insertAdjacentHTML('beforeend', `<option value="${sub}" ${sub === presetVal ? 'selected' : ''}>${sub}</option>`); });
+    }
+    if (!presetVal) updateEditLogContentField(id);
 };
 
 // [추가] 세부구분 목록 가져오기 헬퍼 함수 (중복 제거)
@@ -1550,20 +1563,20 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
     } else {
         key = `${equipKey}::${type}::${detailType}`;
     }
-    
+
     // 원본 데이터 오염을 막기 위해 복사본 생성
-    const items = [...(itemData[key] || [])].map(item => ({...item}));
-    
+    const items = [...(itemData[key] || [])].map(item => ({ ...item }));
+
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-    
+
     // content 필드를 기준으로 중복 항목 완벽히 제거
     const uniqueItems = [];
     const seenContents = new Set();
-    
+
     for (const item of items) {
         if (!seenContents.has(item.content)) {
             seenContents.add(item.content);
-            
+
             // [추가] 약어(코드명)가 없으면 admin_items에서 조회
             if (!item.code) {
                 const match = adminItems.find(a => a.part === item.content);
@@ -1571,7 +1584,7 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
                     item.code = match.code;
                 }
             }
-            
+
             uniqueItems.push(item);
         }
     }
@@ -1898,7 +1911,7 @@ function handleFiles(files) {
 
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     // 용량 체크 (200KB 제한)
-    const MAX_SIZE = 200 * 1024; 
+    const MAX_SIZE = 200 * 1024;
 
     Array.from(files).forEach(file => {
         if (file.size > MAX_SIZE) {
@@ -1907,7 +1920,7 @@ function handleFiles(files) {
         }
 
         const reader = new FileReader();
-        reader.onload = function(evt) {
+        reader.onload = function (evt) {
             const fileData = {
                 id: Date.now() + Math.random(),
                 name: file.name,
@@ -1916,13 +1929,13 @@ function handleFiles(files) {
                 content: evt.target.result, // Base64
                 date: new Date().toISOString().split('T')[0]
             };
-            
+
             // 데이터 다시 로드 (비동기 처리 중 변경 대비)
             let currentData = JSON.parse(localStorage.getItem(key)) || {};
             if (!currentData.files) currentData.files = [];
-            
+
             currentData.files.push(fileData);
-            
+
             try {
                 localStorage.setItem(key, JSON.stringify(currentData));
                 renderFiles();
@@ -1948,7 +1961,7 @@ function isTextFile(filename) {
 function renderFiles() {
     const listEl = document.getElementById('file-list');
     if (!listEl) return;
-    
+
     if (!currentPath.site || !currentPath.equip) {
         listEl.innerHTML = '<li class="list-empty-msg">장비를 선택해주세요.</li>';
         return;
@@ -1959,7 +1972,7 @@ function renderFiles() {
     const files = data.files || [];
 
     listEl.innerHTML = '';
-    
+
     if (files.length === 0) {
         listEl.innerHTML = '<li class="list-empty-msg">등록된 파일이 없습니다.</li>';
         return;
@@ -1980,11 +1993,11 @@ function renderFiles() {
     });
 }
 
-window.downloadFile = function(id) {
+window.downloadFile = function (id) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     const data = JSON.parse(localStorage.getItem(key)) || {};
     const file = data.files ? data.files.find(f => f.id === id) : null;
-    
+
     if (file) {
         const a = document.createElement('a');
         a.href = file.content;
@@ -1995,11 +2008,11 @@ window.downloadFile = function(id) {
     }
 };
 
-window.deleteFile = function(id) {
+window.deleteFile = function (id) {
     if (!confirm('파일을 삭제하시겠습니까?')) return;
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
-    
+
     if (data.files) {
         data.files = data.files.filter(f => f.id !== id);
         localStorage.setItem(key, JSON.stringify(data));
@@ -2015,7 +2028,7 @@ window.deleteFile = function(id) {
    ========================================================================== */
 let currentEditingFileId = null;
 
-window.editFile = function(id) {
+window.editFile = function (id) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     const data = JSON.parse(localStorage.getItem(key)) || {};
     const file = data.files ? data.files.find(f => f.id === id) : null;
@@ -2033,7 +2046,7 @@ window.editFile = function(id) {
         const text = new TextDecoder().decode(bytes);
 
         document.getElementById('file-edit-title').textContent = `파일 편집: ${file.name}`;
-        
+
         const textEditor = document.getElementById('file-edit-content');
         textEditor.value = text;
 
@@ -2046,12 +2059,12 @@ window.editFile = function(id) {
     }
 };
 
-window.saveFileContent = function() {
+window.saveFileContent = function () {
     if (!currentEditingFileId) return;
 
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
-    
+
     if (data.files) {
         const fileIdx = data.files.findIndex(f => f.id === currentEditingFileId);
         if (fileIdx > -1) {
@@ -2065,7 +2078,7 @@ window.saveFileContent = function() {
                 }
                 const base64 = window.btoa(binaryString);
                 const size = bytes.byteLength;
-                
+
                 // 기존 MIME 타입 유지
                 const originalHeader = data.files[fileIdx].content.split(',')[0];
                 data.files[fileIdx].content = `${originalHeader},${base64}`;
@@ -2073,7 +2086,7 @@ window.saveFileContent = function() {
 
                 localStorage.setItem(key, JSON.stringify(data));
                 addSystemLog('UPDATE_FILE', currentPath.equip, `FileID: ${currentEditingFileId}`);
-                
+
                 alert('저장되었습니다.');
                 closeFileEditModal();
             } catch (e) {
@@ -2084,7 +2097,7 @@ window.saveFileContent = function() {
     }
 };
 
-window.closeFileEditModal = function() {
+window.closeFileEditModal = function () {
     document.getElementById('file-edit-modal').style.display = 'none';
     currentEditingFileId = null;
 };
