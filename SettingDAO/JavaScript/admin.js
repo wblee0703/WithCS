@@ -15,6 +15,8 @@ let currentCheckTypeCategory = null;
 let currentCheckTypeSubCategory = null; // [추가] 선택된 분류
 let checkTypeCategoriesData = {}; // [추가] 분류 저장소
 let checkTypeItemsData = {}; // [추가] 세부 항목 저장소
+let currentCheckTypeSubCategory2 = null; // [추가] 선택된 세부구분 2
+let checkTypeCategories2Data = {}; // [추가] 세부구분 2 저장소
 
 // [추가] 드래그 앤 드롭 위치 계산 함수 폴백
 if (typeof window.getDragAfterElement !== 'function') {
@@ -1485,6 +1487,7 @@ function handleItemDetailDelete() {
    ========================================================================== */
 function setupCheckTypeMgmt() {
     loadCheckTypeCategories();
+    loadCheckTypeCategories2();
     loadCheckTypeItems();
 
     const siteSelect = document.getElementById('check-type-site-filter');
@@ -1529,10 +1532,26 @@ function setupCheckTypeMgmt() {
             if (btnImportItems) btnImportItems.style.display = 'none';
             renderCheckTypeSubCategoryList();
             
-            document.getElementById('check-type-detail-placeholder').style.display = 'flex';
-            document.getElementById('check-type-detail-container').style.display = 'none';
-            document.getElementById('check-type-detail-desc').textContent = '장비, 점검 구분, 분류를 순서대로 선택해주세요.';
-            scrollToAdminDetail('check-type-subcategory-list'); // [추가] 모바일 스크롤 이동
+            if (currentCheckTypeCategory === '비정기') {
+                const p2 = ensureSubCategory2Panel();
+                if (p2) {
+                    p2.style.display = 'flex';
+                    p2.style.opacity = '0.5';
+                    p2.style.pointerEvents = 'none';
+                }
+                document.getElementById('check-type-detail-placeholder').style.display = 'flex';
+                document.getElementById('check-type-detail-container').style.display = 'none';
+                document.getElementById('check-type-detail-desc').textContent = '세부구분 2를 선택해주세요.';
+                scrollToAdminDetail('check-type-subcategory-list');
+            } else {
+                const p2 = document.getElementById('check-type-subcategory2-container');
+                if (p2) p2.style.display = 'none';
+                
+                document.getElementById('check-type-detail-placeholder').style.display = 'flex';
+                document.getElementById('check-type-detail-container').style.display = 'none';
+                document.getElementById('check-type-detail-desc').textContent = '장비, 점검 구분, 분류를 순서대로 선택해주세요.';
+                scrollToAdminDetail('check-type-subcategory-list'); // [추가] 모바일 스크롤 이동
+            }
         });
     });
 
@@ -1598,7 +1617,13 @@ function setupCheckTypeMgmt() {
                 return alert('작업 세부 내용을 입력해주세요.');
             }
             
-            const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${subCat}`;
+            let key;
+            if (currentCheckTypeCategory === '비정기') {
+                key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}::${subCat}`;
+            } else {
+                key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${subCat}`;
+            }
+            
             if (!checkTypeItemsData[key]) checkTypeItemsData[key] = [];
             
             checkTypeItemsData[key].push({
@@ -1611,7 +1636,13 @@ function setupCheckTypeMgmt() {
             
             inputContent.value = '';
             
-            if (currentCheckTypeSubCategory !== subCat) {
+            let shouldTrigger = false;
+            if (currentCheckTypeCategory === '비정기') {
+                shouldTrigger = currentCheckTypeSubCategory2 !== subCat;
+            } else {
+                shouldTrigger = currentCheckTypeSubCategory !== subCat;
+            }
+            if (shouldTrigger) {
                 selectSub.value = subCat;
                 selectSub.dispatchEvent(new Event('change'));
             } else {
@@ -1743,6 +1774,12 @@ function renderCheckTypeEquipList() {
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
             
+            const p2 = document.getElementById('check-type-subcategory2-container');
+            if (p2) {
+                p2.style.opacity = '0.5';
+                p2.style.pointerEvents = 'none';
+            }
+
             const categoryList = document.getElementById('check-type-category-list');
             categoryList.style.opacity = '1';
             categoryList.style.pointerEvents = 'auto';
@@ -1832,6 +1869,11 @@ function renderCheckTypeSubCategoryList() {
             document.getElementById('check-type-detail-container').style.display = 'block';
             document.getElementById('check-type-detail-desc').textContent = `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' 세부 항목을 관리합니다.`;
             
+            if (currentCheckTypeCategory === '비정기') {
+                currentCheckTypeSubCategory2 = e.target.value;
+                document.getElementById('check-type-detail-desc').textContent = `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' > '${currentCheckTypeSubCategory2}' 세부 항목을 관리합니다.`;
+            }
+            
             // [추가] 교체 파츠 목록 업데이트 및 리스트 렌더링
             updateCheckTypeSubCategoryDropdown();
             renderCheckTypeItemList();
@@ -1885,6 +1927,9 @@ function renderCheckTypeSubCategoryList() {
                 }
                 
                 renderCheckTypeSubCategoryList();
+                if (currentCheckTypeCategory === '비정기') {
+                    renderCheckTypeSubCategory2List();
+                }
                 if (currentCheckTypeSubCategory === newCat) {
                     renderCheckTypeItemList();
                 }
@@ -1915,6 +1960,130 @@ function renderCheckTypeSubCategoryList() {
     });
     
     updateCheckTypeSubCategoryDropdown();
+}
+
+function renderCheckTypeSubCategory2List() {
+    const list = document.getElementById('check-type-subcategory2-list');
+    if (!list) return;
+    list.innerHTML = '';
+    
+    if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
+    
+    const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}`;
+    const categories = checkTypeCategories2Data[key] || [];
+    
+    categories.forEach((cat, index) => {
+        const li = document.createElement('li');
+        li.dataset.sub2 = cat;
+        li.draggable = true;
+        li.innerHTML = `
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <span class="subcategory-text" style="flex: 1; cursor: grab;" title="드래그하여 순서 변경">${cat}</span>
+                <div style="display: flex; gap: 5px;">
+                    <button class="btn-edit-sm btn-edit-subcat2" title="수정" onclick="event.stopPropagation();">✏️</button>
+                    <button class="btn-del-sm" onclick="event.stopPropagation(); deleteCheckTypeSubCategory2('${key}', ${index})" title="삭제">✕</button>
+                </div>
+            </div>
+        `;
+        
+        if (currentCheckTypeSubCategory2 === cat) li.classList.add('active');
+        
+        li.addEventListener('click', () => {
+            if (li.classList.contains('editing')) return;
+            currentCheckTypeSubCategory2 = cat;
+            list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
+            li.classList.add('active');
+            
+            document.getElementById('check-type-detail-placeholder').style.display = 'none';
+            document.getElementById('check-type-detail-container').style.display = 'block';
+            document.getElementById('check-type-detail-desc').textContent = `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' > '${currentCheckTypeSubCategory2}' 세부 항목을 관리합니다.`;
+            
+            updateCheckTypeSubCategoryDropdown();
+            renderCheckTypeItemList();
+            scrollToAdminDetail('check-type-detail-container');
+        });
+
+        const editBtn = li.querySelector('.btn-edit-subcat2');
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isEditing = li.classList.contains('editing');
+            const textSpan = li.querySelector('.subcategory-text');
+
+            if (!isEditing) {
+                li.classList.add('editing');
+                li.draggable = false;
+                editBtn.textContent = '✅';
+                textSpan.innerHTML = `<input type="text" class="input-dark" value="${cat}" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
+                const input = textSpan.querySelector('input');
+                input.focus();
+                input.addEventListener('keypress', (ev) => {
+                    if (ev.key === 'Enter') editBtn.click();
+                });
+            } else {
+                const input = textSpan.querySelector('input');
+                const newCat = input.value.trim();
+
+                if (!newCat) return alert('분류명을 입력해주세요.');
+                if (newCat !== cat && checkTypeCategories2Data[key].includes(newCat)) return alert('이미 존재하는 분류명입니다.');
+
+                if (newCat !== cat) {
+                    checkTypeCategories2Data[key][index] = newCat;
+                    
+                    const oldItemKey = `${key}::${cat}`;
+                    const newItemKey = `${key}::${newCat}`;
+                    if (checkTypeItemsData[oldItemKey]) {
+                        checkTypeItemsData[newItemKey] = checkTypeItemsData[oldItemKey];
+                        delete checkTypeItemsData[oldItemKey];
+                        saveCheckTypeItems();
+                    }
+                    saveCheckTypeCategories2();
+                    addSystemLog('UPDATE_CHECK_CATEGORY', key.split('::')[0], `세부구분2 수정: ${cat} -> ${newCat}`);
+
+                    if (currentCheckTypeSubCategory2 === cat) {
+                        currentCheckTypeSubCategory2 = newCat;
+                        const desc = document.getElementById('check-type-detail-desc');
+                        if (desc) desc.textContent = `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' > '${currentCheckTypeSubCategory2}' 세부 항목을 관리합니다.`;
+                    }
+                }
+                
+                renderCheckTypeSubCategory2List();
+                if (currentCheckTypeSubCategory2 === newCat) {
+                    renderCheckTypeItemList();
+                }
+            }
+        });
+
+        li.addEventListener('dragstart', (e) => {
+            if (li.classList.contains('editing')) { e.preventDefault(); return; }
+            li.classList.add('dragging');
+        });
+        li.addEventListener('dragend', () => {
+            li.classList.remove('dragging');
+            const newOrder = Array.from(list.children).map(child => child.dataset.sub2);
+            checkTypeCategories2Data[key] = newOrder;
+            saveCheckTypeCategories2();
+            renderCheckTypeSubCategory2List();
+        });
+        
+        list.appendChild(li);
+    });
+}
+
+window.deleteCheckTypeSubCategory2 = function(key, index) {
+    if (!confirm('이 세부구분 2를 삭제하시겠습니까?\n하위 점검 항목 데이터도 함께 연결이 끊어질 수 있습니다.')) return;
+    
+    const catName = checkTypeCategories2Data[key][index];
+    checkTypeCategories2Data[key].splice(index, 1);
+    saveCheckTypeCategories2();
+    addSystemLog('DELETE_CHECK_CATEGORY', key, `세부구분2 삭제: ${catName}`);
+    
+    if (currentCheckTypeSubCategory2 === catName) {
+        currentCheckTypeSubCategory2 = null;
+        document.getElementById('check-type-detail-placeholder').style.display = 'flex';
+        document.getElementById('check-type-detail-container').style.display = 'none';
+    }
+    
+    renderCheckTypeSubCategory2List();
 }
 
 function updateCheckTypeSubCategoryDropdown() {
@@ -1974,7 +2143,13 @@ function renderCheckTypeItemList() {
     
     if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
     
-    const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}`;
+    let key;
+    if (currentCheckTypeCategory === '비정기') {
+        if (!currentCheckTypeSubCategory2) return;
+        key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}::${currentCheckTypeSubCategory2}`;
+    } else {
+        key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}`;
+    }
     
     // [수정] 데이터가 아예 생성된 적이 없는 경우에만(처음 1회만) 물품 관리에 등록된 정보를 기본값으로 가져옴
     if (!checkTypeItemsData.hasOwnProperty(key)) {
@@ -2140,6 +2315,15 @@ function loadCheckTypeDataFromTarget() {
         }
     });
     
+    // 3. 비정기 3뎁스(세부구분2) 데이터 복사
+    Object.keys(checkTypeCategories2Data).forEach(k => {
+        if (k.startsWith(`${sourceEquipKey}::`)) {
+            const suffix = k.substring(sourceEquipKey.length);
+            const newKey = currentCheckTypeEquipKey + suffix;
+            checkTypeCategories2Data[newKey] = JSON.parse(JSON.stringify(checkTypeCategories2Data[k]));
+        }
+    });
+
     Object.keys(checkTypeItemsData).forEach(k => {
         if (k.startsWith(`${sourceEquipKey}::`)) {
             const suffix = k.substring(sourceEquipKey.length);
@@ -2154,6 +2338,7 @@ function loadCheckTypeDataFromTarget() {
     });
 
     saveCheckTypeCategories();
+    saveCheckTypeCategories2();
     saveCheckTypeItems();
     addSystemLog('LOAD_CHECK_TYPE', currentCheckTypeEquipKey, `From: ${sourceEquipKey}`);
 
@@ -2167,6 +2352,80 @@ function loadCheckTypeDataFromTarget() {
     }
 }
 
+function ensureSubCategory2Panel() {
+    let panel2 = document.getElementById('check-type-subcategory2-container');
+    if (!panel2) {
+        const subList = document.getElementById('check-type-subcategory-list');
+        if (!subList) return null;
+        const panel1 = subList.closest('.admin-col-list');
+        
+        panel2 = document.createElement('div');
+        panel2.id = 'check-type-subcategory2-container';
+        panel2.className = 'admin-col-list';
+        panel2.style.display = 'none';
+        
+        panel2.innerHTML = `
+            <div class="list-header">
+                <span>세부구분 2 관리</span>
+            </div>
+            <ul id="check-type-subcategory2-list" class="admin-list"></ul>
+            <div id="check-type-subcategory2-footer" class="list-footer">
+                <input type="text" id="check-type-subcategory2-input" class="input-dark full-width" placeholder="분류명 입력">
+                <button id="btn-add-check-type-subcategory2" class="btn-blue full-width mt-10">추가</button>
+            </div>
+        `;
+        
+        panel1.parentNode.insertBefore(panel2, panel1.nextSibling);
+        
+        const btnAdd = panel2.querySelector('#btn-add-check-type-subcategory2');
+        const input = panel2.querySelector('#check-type-subcategory2-input');
+        
+        btnAdd.addEventListener('click', () => {
+            if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
+            const val = input.value.trim();
+            if (!val) return alert('분류명을 입력해주세요.');
+            
+            const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}`;
+            if (!checkTypeCategories2Data[key]) checkTypeCategories2Data[key] = [];
+            
+            if (checkTypeCategories2Data[key].includes(val)) return alert('이미 존재하는 분류입니다.');
+            
+            checkTypeCategories2Data[key].push(val);
+            saveCheckTypeCategories2();
+            addSystemLog('ADD_CHECK_CATEGORY', currentCheckTypeEquipKey, `세부구분2 추가: ${currentCheckTypeCategory} > ${currentCheckTypeSubCategory} > ${val}`);
+            renderCheckTypeSubCategory2List();
+            input.value = '';
+            input.focus();
+        });
+        
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') btnAdd.click();
+        });
+
+        const listEl = panel2.querySelector('#check-type-subcategory2-list');
+        listEl.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const afterElement = window.getDragAfterElement(listEl, e.clientY, 'li:not(.dragging)');
+            const draggable = document.querySelector('.dragging');
+            if (draggable && draggable.parentElement === listEl) {
+                if (afterElement == null) listEl.appendChild(draggable);
+                else listEl.insertBefore(draggable, afterElement);
+            }
+        });
+    }
+    return panel2;
+}
+
+function loadCheckTypeCategories2() {
+    try {
+        const data = localStorage.getItem('check_type_categories2');
+        checkTypeCategories2Data = data ? JSON.parse(data) : {};
+    } catch(e) { checkTypeCategories2Data = {}; }
+}
+function saveCheckTypeCategories2() {
+    localStorage.setItem('check_type_categories2', JSON.stringify(checkTypeCategories2Data));
+    if (typeof saveData === 'function') saveData();
+}
 // [추가] 초기화 시 장비 관리 이벤트 등록
 const originalSetupAdminMenu = setupAdminMenu; // 기존 함수 보존
 setupAdminMenu = function() {

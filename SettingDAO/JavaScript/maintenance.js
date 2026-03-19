@@ -162,8 +162,17 @@ function setupLogEvents() {
     }
 
     const logDetailTypeSelect = document.getElementById('log-detail-type-select');
-    if (logDetailTypeSelect) {
-        logDetailTypeSelect.addEventListener('change', updateLogContentOptions);
+    
+    // [추가] 세부구분 2 입력 드롭다운 동적 생성
+    if (logDetailTypeSelect && !document.getElementById('log-detail-type2-select')) {
+        const detail2Select = document.createElement('select');
+        detail2Select.id = 'log-detail-type2-select';
+        detail2Select.className = 'input-dark';
+        detail2Select.style.display = 'none'; // 초기엔 숨김
+        detail2Select.innerHTML = `<option value="">세부구분 2</option>`;
+        logDetailTypeSelect.parentNode.insertBefore(detail2Select, logDetailTypeSelect.nextSibling);
+
+        detail2Select.addEventListener('change', updateLogContentOptions);
     }
 
     // [추가] 커스텀 드롭다운 이벤트 핸들링
@@ -242,6 +251,30 @@ function setupLogEvents() {
 }
 
 function setupUIEvents() {
+    // [추가] 비용처리 입력 드롭다운 동적 생성 (작업자 입력창 앞)
+    const workerInput = document.getElementById('log-worker');
+    if (workerInput && !document.getElementById('log-cost-type')) {
+        const costSelect = document.createElement('select');
+        costSelect.id = 'log-cost-type';
+        costSelect.className = 'input-dark';
+        costSelect.innerHTML = `
+            <option value="">비용처리</option>
+            <option value="유상">유상</option>
+            <option value="무상(보증)">무상(보증)</option>
+            <option value="무상(중고)">무상(중고)</option>
+            <option value="기타">기타</option>
+        `;
+        workerInput.parentNode.insertBefore(costSelect, workerInput);
+    }
+
+    // [추가] 비용처리 테이블 헤더 동적 추가 (내용과 작업자 사이)
+    const logTableTheadTr = document.querySelector('#log-list-wrapper .data-table thead tr');
+    if (logTableTheadTr && logTableTheadTr.children.length === 6) {
+        const costTh = document.createElement('th');
+        costTh.textContent = '비용처리';
+        logTableTheadTr.insertBefore(costTh, logTableTheadTr.children[4]);
+    }
+
     const logResizer = document.getElementById('log-memo-resizer');
 
     if (logResizer) {
@@ -679,6 +712,10 @@ function addLogItem(e) {
     const costSelect = document.getElementById('log-cost-type');
     const costType = costSelect ? costSelect.value : '';
 
+    // [추가] 비용처리 값 가져오기
+    const costSelect = document.getElementById('log-cost-type');
+    const costType = costSelect ? costSelect.value : '';
+
     let content = '';
     const contentInput = document.getElementById('log-content-input');
     const contentWrapper = document.getElementById('log-content-wrapper');
@@ -693,13 +730,24 @@ function addLogItem(e) {
         content = contentInput ? contentInput.value.trim() : '';
     }
 
-    if (!date || !type || (!detailType && !detailTypeSelect.disabled) || !worker) return alert('필수 항목(날짜, 구분, 세부구분, 작업자)을 올바르게 입력/선택해주세요.');
+    const detailType2Select = document.getElementById('log-detail-type2-select');
+    const detailType2 = detailType2Select && detailType2Select.style.display !== 'none' ? detailType2Select.value : '';
+
+    if (!date || !type || (!detailType && !detailTypeSelect.disabled) || !worker) {
+        return alert('필수 항목(날짜, 구분, 세부구분, 작업자)을 올바르게 입력/선택해주세요.');
+    }
+    if (type === '비정기' && !detailType2 && detailType2Select && !detailType2Select.disabled) {
+        return alert('세부구분 2를 선택해주세요.');
+    }
 
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [], memo: "" };
     if (!data.logs) data.logs = []; // 기존 데이터 호환성 처리
 
     // [수정] 중복 검사 제거 (같은 날짜에 여러 항목 기록 허용)
+
+    // 테이블과 데이터에 깔끔하게 표시하기 위해 세부구분 2를 병합
+    const finalDetailType = (type === '비정기' && detailType2) ? `${detailType} > ${detailType2}` : detailType;
 
     // 새 점검 기록 객체 생성
     const newLog = {
@@ -750,11 +798,12 @@ function addLogItem(e) {
     }
 
     localStorage.setItem(key, JSON.stringify(data));
-    addSystemLog('ADD_LOG', currentPath.equip, `[${type} - ${detailType}] ${content} (작업자: ${worker}, 날짜: ${date})`);
+    addSystemLog('ADD_LOG', currentPath.equip, `[${type} - ${finalDetailType}] ${content} (작업자: ${worker}, 날짜: ${date})`);
 
     // 입력창 초기화 및 리스트 갱신
     workerInput.value = '';
     if (costSelect) costSelect.value = '';
+    if (detailType2Select) detailType2Select.value = '';
     const contentTrigger = document.getElementById('log-content-trigger');
     if (contentTrigger) contentTrigger.textContent = '항목 선택';
     const mainList = document.getElementById('log-content-list');
@@ -835,6 +884,7 @@ function renderLogs() {
             <td><span class="badge ${getLogBadgeClass(log.type, log.detailType)}">${escapeHtml(log.type || '정기')}</span></td>
             <td>${escapeHtml(log.detailType || '-')}</td>
             <td title="${escapeHtml(tooltipContent)}" data-raw-content="${escapeHtml(log.content || '')}">${escapeHtml(displayContent)}</td>
+            <td>${escapeHtml(log.costType || '-')}</td>
             <td>${escapeHtml(log.costType || '-')}</td>
             <td>${escapeHtml(log.worker)}</td>
             <td>
@@ -963,8 +1013,18 @@ function toggleLogEdit(id, btn) {
 
         const currentDate = dateCell.dataset.rawDate || dateCell.textContent.trim();
         const currentType = typeCell.textContent.trim();
-        const currentDetailType = detailCell.textContent.trim() === '-' ? '' : detailCell.textContent.trim();
+        
+        const currentDetailTypeFull = detailCell.textContent.trim() === '-' ? '' : detailCell.textContent.trim();
+        let currentDetailType = currentDetailTypeFull;
+        let currentDetailType2 = '';
+        if (currentDetailTypeFull.includes(' > ')) {
+            const parts = currentDetailTypeFull.split(' > ');
+            currentDetailType = parts[0].trim();
+            currentDetailType2 = parts[1].trim();
+        }
+        
         const currentContent = contentCell.dataset.rawContent || contentCell.textContent.trim();
+        const currentCost = costCell.textContent.trim() === '-' ? '' : costCell.textContent.trim();
         const currentCost = costCell.textContent.trim() === '-' ? '' : costCell.textContent.trim();
         const currentWorker = workerCell.textContent.trim();
 
@@ -978,10 +1038,34 @@ function toggleLogEdit(id, btn) {
 
         detailCell.innerHTML = `
             <select id="edit-log-detail-type-${id}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()" onchange="updateEditLogContentField(${id})">
+            </select>
+            <select id="edit-log-detail-type2-${id}" class="input-dark mt-10" style="width: 100%; padding: 2px; display: none;" onclick="event.stopPropagation()">
             </select>`;
 
-        renderEditLogContentField(id, currentType, currentDetailType, currentContent === '-' ? '' : currentContent);
         updateEditDetailTypeOptions(id, currentDetailType);
+        
+        const detailSelect = document.getElementById(`edit-log-detail-type-${id}`);
+        const detail2Select = document.getElementById(`edit-log-detail-type2-${id}`);
+        detailSelect.addEventListener('change', () => {
+            const typeVal = document.getElementById(`edit-log-type-${id}`).value;
+            if (typeVal === '비정기') updateEditDetailType2Options(id);
+            else updateEditLogContentField(id);
+        });
+        detail2Select.addEventListener('change', () => updateEditLogContentField(id));
+
+        if (currentType === '비정기') {
+            detail2Select.style.display = 'block';
+            updateEditDetailType2Options(id, currentDetailType2);
+        }
+        renderEditLogContentField(id, currentType, currentDetailType, currentDetailType2, currentContent === '-' ? '' : currentContent);
+
+        // [추가] 비용처리 수정 폼
+        const costOptions = ['유상', '무상(보증)', '무상(중고)', '기타'];
+        costCell.innerHTML = `
+            <select id="edit-log-cost-${id}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">
+                <option value="">선택</option>
+                ${costOptions.map(c => `<option value="${c}" ${currentCost === c ? 'selected' : ''}>${c}</option>`).join('')}
+            </select>`;
 
         // [추가] 비용처리 수정 폼
         const costOptions = ['유상', '무상(보증)', '무상(중고)', '기타'];
@@ -997,6 +1081,9 @@ function toggleLogEdit(id, btn) {
         const dateInput = document.getElementById(`edit-log-date-${id}`);
         const typeInput = document.getElementById(`edit-log-type-${id}`);
         const detailTypeInput = document.getElementById(`edit-log-detail-type-${id}`);
+        const detailType2Input = document.getElementById(`edit-log-detail-type2-${id}`);
+        const newDetailType2 = detailType2Input && detailType2Input.style.display !== 'none' ? detailType2Input.value : '';
+        const costInput = document.getElementById(`edit-log-cost-${id}`);
         const costInput = document.getElementById(`edit-log-cost-${id}`);
         const workerInput = document.getElementById(`edit-log-worker-${id}`);
 
@@ -1005,6 +1092,7 @@ function toggleLogEdit(id, btn) {
         const newDate = dateInput.value;
         const newType = typeInput.value;
         const newDetailType = detailTypeInput.value;
+        const newCost = costInput.value;
         const newCost = costInput.value;
 
         // [수정] 내용 가져오기 (입력창 또는 드롭다운 트리거)
@@ -1024,9 +1112,11 @@ function toggleLogEdit(id, btn) {
 
         const newWorker = workerInput.value.trim();
 
-        if (!newDate || !newType || (!newDetailType && detailTypeInput && !detailTypeInput.disabled) || !newWorker) return alert('필수 항목(날짜, 구분, 세부구분, 작업자)을 모두 입력해주세요.');
-
-        updateLogItem(id, newDate, newType, newDetailType, newContent, newCost, newWorker);
+        if (!newDate || !newType || (!newDetailType && detailTypeInput && !detailTypeInput.disabled) || !newWorker) {
+            return alert('필수 항목(날짜, 구분, 세부구분, 작업자)을 모두 입력해주세요.');
+        }
+        const newDetailTypeFull = (newType === '비정기' && newDetailType2) ? `${newDetailType} > ${newDetailType2}` : newDetailType;
+        updateLogItem(id, newDate, newType, newDetailTypeFull, newContent, newCost, newWorker);
     }
 }
 
@@ -1042,6 +1132,7 @@ function updateLogItem(id, date, type, detailType, content, costType, worker) {
             data.logs[idx].detailType = detailType;
             data.logs[idx].content = content;
             data.logs[idx].costType = costType;
+            data.logs[idx].costType = costType;
             data.logs[idx].worker = worker;
             
             localStorage.setItem(key, JSON.stringify(data));
@@ -1053,7 +1144,7 @@ function updateLogItem(id, date, type, detailType, content, costType, worker) {
 }
 
 // [수정] 수정 모드에서 내용 필드 렌더링 (다중 선택 드롭다운)
-window.renderEditLogContentField = function(id, type, detailType, value) {
+window.renderEditLogContentField = function(id, type, detailType, detailType2, value) {
     const row = document.getElementById(`log-row-${id}`);
     if (!row) return;
     const contentCell = row.cells[3]; // 0: date, 1: type, 2: detailType, 3: content
@@ -1069,7 +1160,13 @@ window.renderEditLogContentField = function(id, type, detailType, value) {
         return;
     }
 
-    const items = getCheckTypeItems(type, detailType);
+    const detailType2Select = document.getElementById(`edit-log-detail-type2-${id}`);
+    if (type === '비정기' && (!detailType2 && detailType2Select && !detailType2Select.disabled)) {
+        contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="" class="input-dark input-disabled" style="width: 100%; padding: 2px;" placeholder="세부구분 2를 먼저 선택하세요" disabled onclick="event.stopPropagation()">`;
+        return;
+    }
+
+    const items = getCheckTypeItems(type, detailType, detailType2);
 
     if (items.length > 0 && detailType) {
 
@@ -1157,6 +1254,7 @@ window.renderEditLogContentField = function(id, type, detailType, value) {
         contentCell.innerHTML = '';
         contentCell.appendChild(wrapper);
     } else {
+        contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="${escapeHtml(value)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
         if (detailType === 'PM 점검' || detailType === 'BM 점검') {
             contentCell.innerHTML = `<input type="text" id="edit-log-content-${id}" value="" class="input-dark input-disabled" style="width: 100%; padding: 2px;" placeholder="항목을 추가해 주세요" disabled onclick="event.stopPropagation()">`;
         } else {
@@ -1205,6 +1303,16 @@ window.updateLogDetailTypeOptions = function() {
     
     detailTypeSelect.disabled = false;
     
+    const detail2Select = document.getElementById('log-detail-type2-select');
+    if (type === '비정기') {
+        if (detail2Select) detail2Select.style.display = 'inline-block';
+    } else {
+        if (detail2Select) {
+            detail2Select.style.display = 'none';
+            detail2Select.value = '';
+        }
+    }
+    
     const subCategories = getSubCategories(type);
     
     if (subCategories.length === 0) {
@@ -1220,6 +1328,40 @@ window.updateLogDetailTypeOptions = function() {
         });
     }
     
+    detailTypeSelect.onchange = () => {
+        if (type === '비정기') updateLogDetailType2Options();
+        updateLogContentOptions();
+    };
+    
+    if (type === '비정기') updateLogDetailType2Options();
+    else updateLogContentOptions();
+};
+
+window.updateLogDetailType2Options = function(presetVal = '') {
+    const typeSelect = document.getElementById('log-type-select');
+    const detailTypeSelect = document.getElementById('log-detail-type-select');
+    const detail2Select = document.getElementById('log-detail-type2-select');
+    if (!typeSelect || !detailTypeSelect || !detail2Select) return;
+    const type = typeSelect.value;
+    const detailType = detailTypeSelect.value;
+    detail2Select.innerHTML = '<option value="">세부구분 2 먼저 선택</option>';
+    if (type !== '비정기' || !detailType) {
+        detail2Select.disabled = true;
+        updateLogContentOptions();
+        return;
+    }
+    detail2Select.disabled = false;
+    const equipKey = currentPath.equip;
+    const catData = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
+    const key = `${equipKey}::${type}::${detailType}`;
+    const subCategories2 = catData[key] || [];
+    if (subCategories2.length === 0) {
+        detail2Select.innerHTML = '<option value="">세부구분 2 없음</option>';
+        detail2Select.disabled = true;
+    } else {
+        detail2Select.innerHTML = '<option value="">세부구분 2 선택</option>';
+        subCategories2.forEach(sub => { detail2Select.insertAdjacentHTML('beforeend', `<option value="${sub}" ${sub === presetVal ? 'selected' : ''}>${sub}</option>`); });
+    }
     updateLogContentOptions();
 };
 
@@ -1236,6 +1378,8 @@ window.updateLogContentOptions = function() {
 
     const type = typeSelect.value;
     const detailType = detailTypeSelect.value;
+    const detailType2Select = document.getElementById('log-detail-type2-select');
+    const detailType2 = detailType2Select && detailType2Select.style.display !== 'none' ? detailType2Select.value : '';
     const equipKey = currentPath.equip;
 
     if (!type) {
@@ -1258,10 +1402,20 @@ window.updateLogContentOptions = function() {
         return;
     }
 
+    if (type === '비정기' && (!detailType2 && !detailType2Select.disabled)) {
+        contentWrapper.style.display = 'none';
+        contentInput.style.display = 'inline-block';
+        contentInput.placeholder = '세부구분 2를 먼저 선택하세요';
+        contentInput.value = '';
+        contentInput.disabled = true;
+        contentInput.classList.add('input-disabled');
+        return;
+    }
+
     contentInput.disabled = false;
     contentInput.classList.remove('input-disabled');
     
-    const items = getCheckTypeItems(type, detailType);
+    const items = getCheckTypeItems(type, detailType, detailType2);
 
     if (items.length > 0 && detailType) {
         contentWrapper.style.display = 'inline-block';
@@ -1300,6 +1454,7 @@ window.updateLogContentOptions = function() {
     } else {
         contentWrapper.style.display = 'none';
         contentInput.style.display = 'inline-block';
+        contentInput.placeholder = detailType ? '내용 (직접 입력)' : '내용 (직접 입력)';
         if (detailType === 'PM 점검' || detailType === 'BM 점검') {
             contentInput.placeholder = '항목을 추가해 주세요';
             contentInput.value = '';
@@ -1351,7 +1506,7 @@ window.updateEditDetailTypeOptions = function(id, presetVal = '') {
         });
     }
     
-    if (!presetVal) updateEditLogContentField(id);
+    if (!presetVal && type !== '비정기') updateEditLogContentField(id);
 };
 
 window.updateEditLogContentField = function(id) {
@@ -1386,10 +1541,15 @@ function getSubCategories(type) {
 }
 
 // [추가] 점검 항목(내용) 목록 가져오기 헬퍼 함수 (중복 제거 및 호환성 유지)
-function getCheckTypeItems(type, detailType) {
+function getCheckTypeItems(type, detailType, detailType2 = '') {
     const equipKey = currentPath.equip;
     const itemData = JSON.parse(localStorage.getItem('check_type_items')) || {};
-    const key = `${equipKey}::${type}::${detailType}`;
+    let key;
+    if (type === '비정기') {
+        key = `${equipKey}::${type}::${detailType}::${detailType2}`;
+    } else {
+        key = `${equipKey}::${type}::${detailType}`;
+    }
     
     // 원본 데이터 오염을 막기 위해 복사본 생성
     const items = [...(itemData[key] || [])].map(item => ({...item}));
