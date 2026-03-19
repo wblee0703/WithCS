@@ -188,7 +188,10 @@
                 "date": "2026-03-04",
                 "id": 1773732537420,
                 "period": 30,
-                "type": "정기"
+                "type": "정기",
+                "scheduledDate": "2026-03-19",
+                "detailType": "PM 점검",
+                "costType": "무상(중고)"
             },
             {
                 "code": "Skimmer Cone",
@@ -196,7 +199,10 @@
                 "date": "2026-02-04",
                 "id": 1773732539172,
                 "period": 182,
-                "type": "정기"
+                "type": "정기",
+                "scheduledDate": "2026-03-19",
+                "detailType": "PM 점검",
+                "costType": "무상(중고)"
             },
             {
                 "code": "Sampler Cone",
@@ -204,7 +210,10 @@
                 "date": "2026-02-04",
                 "id": 1773732540679,
                 "period": 182,
-                "type": "정기"
+                "type": "정기",
+                "scheduledDate": "2026-03-19",
+                "detailType": "PM 점검",
+                "costType": "무상(중고)"
             },
             {
                 "code": "Ion Lens",
@@ -212,7 +221,10 @@
                 "date": "2026-02-04",
                 "id": 1773732542276,
                 "period": 365,
-                "type": "정기"
+                "type": "정기",
+                "scheduledDate": "2026-03-19",
+                "detailType": "PM 점검",
+                "costType": "무상(중고)"
             }
         ],
         "logs": [
@@ -272,13 +284,13 @@
                 "code": "Metal STD (10ppb 3%)",
                 "content": "Metal Standard Solution(3%HNO3)",
                 "date": "2026-03-19",
-                "id": 1773910187433,
-                "period": "30",
-                "type": "정기",
                 "detailType": "PM 점검",
+                "id": 1773910187433,
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
+                "period": "30",
                 "scheduledDate": "2026-03-19",
-                "worker": "이원배",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
+                "type": "정기",
+                "worker": "이원배"
             },
             {
                 "code": "Skimmer Cone",
@@ -287,35 +299,35 @@
                 "date": "2026-03-19",
                 "detailType": "PM 점검",
                 "id": 1773728523008,
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
                 "period": 182,
-                "type": "정기",
                 "scheduledDate": "2026-03-19",
-                "worker": "이원배",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
+                "type": "정기",
+                "worker": "이원배"
             },
             {
                 "code": "Sampler Cone",
                 "content": "Pt Sampling cone for 7700S",
                 "date": "2026-03-19",
-                "id": 1773728525186,
-                "period": 182,
-                "type": "정기",
                 "detailType": "PM 점검",
+                "id": 1773728525186,
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
+                "period": 182,
                 "scheduledDate": "2026-03-19",
-                "worker": "이원배",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
+                "type": "정기",
+                "worker": "이원배"
             },
             {
                 "code": "Ion Lens",
                 "content": "Extraction-omega lens assembly",
                 "date": "2026-03-19",
-                "id": 1773728529916,
-                "period": 365,
-                "type": "정기",
                 "detailType": "PM 점검",
+                "id": 1773728529916,
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
+                "period": 365,
                 "scheduledDate": "2026-03-19",
-                "worker": "이원배",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
+                "type": "정기",
+                "worker": "이원배"
             }
         ],
         "logs": [

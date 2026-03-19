@@ -760,36 +760,43 @@ function addLogItem(e) {
 
     data.logs.push(newLog);
 
-    // [추가] BM 점검 등록 시 유지관리 물품에 자동 추가 로직
+    // [추가] PM/BM 점검 등록 시 유지관리 물품에 자동 추가 및 갱신 로직
     let isMaintUpdated = false;
-    if (detailType === 'BM 점검') {
+    if (detailType === 'BM 점검' || detailType === 'PM 점검') {
         const itemsList = content.split(', ').map(s => s.trim()).filter(s => s);
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
         itemsList.forEach((itemText, idx) => {
-            // 기존 유지관리 물품 리스트에 같은 항목(비정기)이 있는지 확인
-            const exists = data.maint.some(m => m.type === '비정기' && (m.content === itemText || m.code === itemText));
-            if (!exists) {
-                let code = '';
-                let fullContent = itemText;
+            let code = '';
+            let fullContent = itemText;
+            let period = null;
 
-                // Admin 물품 관리 데이터에서 코드명과 풀네임 검색
-                const match = adminItems.find(a => a.part === itemText || a.code === itemText);
-                if (match) {
-                    code = match.code || '';
-                    fullContent = match.part || itemText;
-                }
+            // Admin 물품 관리 데이터에서 코드명과 풀네임 검색
+            const match = adminItems.find(a => a.part === itemText || a.code === itemText);
+            if (match) {
+                code = match.code || '';
+                fullContent = match.part || itemText;
+                period = match.cycle || null;
+            }
 
+            // 기존 유지관리 물품 리스트에 같은 항목이 있는지 확인 (풀네임 및 코드명 포함 매칭)
+            let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || (code && m.code === code) || m.content === itemText));
+
+            if (existingItem) {
+                // 이미 존재하면 완료 기준이므로 시작일(date)을 갱신
+                existingItem.date = date;
+                isMaintUpdated = true;
+            } else {
                 data.maint.push({
                     id: Date.now() + 1000 + idx, // ID 충돌 방지
-                    type: '비정기',
+                    type: type,
                     code: code,
                     content: fullContent,
                     date: date,
-                    period: null
+                    period: (type === '정기') ? period : null
                 });
                 isMaintUpdated = true;
-                addSystemLog('ADD_MAINTENANCE', currentPath.equip, `[비정기] ${fullContent} (자동 등록, 시작일: ${date})`);
+                addSystemLog('ADD_MAINTENANCE', currentPath.equip, `[${type}] ${fullContent} (자동 등록, 시작일: ${date})`);
             }
         });
     }
