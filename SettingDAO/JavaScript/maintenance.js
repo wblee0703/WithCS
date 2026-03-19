@@ -882,7 +882,6 @@ function renderLogs() {
             <td>${escapeHtml(log.detailType || '-')}</td>
             <td title="${escapeHtml(tooltipContent)}" data-raw-content="${escapeHtml(log.content || '')}">${escapeHtml(displayContent)}</td>
             <td>${escapeHtml(log.costType || '-')}</td>
-            <td>${escapeHtml(log.costType || '-')}</td>
             <td>${escapeHtml(log.worker)}</td>
             <td>
                 <button class="btn-edit-sm" onclick="event.stopPropagation(); toggleLogEdit(${log.id}, this);">✏️</button>
