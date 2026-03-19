@@ -184,22 +184,22 @@ tr.dragging {
 
 /* 구분 */
 #log-list-wrapper .data-table th:nth-child(2) {
-    width: 100px;
+    width: 90px;
 }
 
 /* 세부구분 */
 #log-list-wrapper .data-table th:nth-child(3) {
-    width: 180px;
+    width: 200px;
 }
 
 /* 비용처리 */
 #log-list-wrapper .data-table th:nth-child(5) {
-    width: 90px;
+    width: 80px;
 }
 
 /* 공수 */
 #log-list-wrapper .data-table th:nth-child(6) {
-    width: 80px;
+    width: 60px;
 }
 
 /* 관리 */
@@ -208,6 +208,7 @@ tr.dragging {
 #log-list-wrapper .data-table th:nth-child(7),
 #log-list-wrapper .data-table td:nth-child(7) {
     display: none;
+    width: 70px;
 }
 
 #log-list-wrapper .data-table.management-active th:nth-child(7),
@@ -766,23 +767,23 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         -webkit-appearance: none;
     }
 
-#log-detail-type2-select {
-    width: auto !important;
-    flex: 1.2 !important;
-    min-width: 0 !important;
-    padding: 0 !important;
-    appearance: none;
-    -webkit-appearance: none;
-}
+    #log-detail-type2-select {
+        width: auto !important;
+        flex: 1.2 !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        appearance: none;
+        -webkit-appearance: none;
+    }
 
-#log-cost-type {
-    width: auto !important;
-    flex: 1.2 !important;
-    min-width: 0 !important;
-    padding: 0 !important;
-    appearance: none;
-    -webkit-appearance: none;
-}
+    #log-cost-type {
+        width: auto !important;
+        flex: 1.2 !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        appearance: none;
+        -webkit-appearance: none;
+    }
 
     #log-worker,
     #log-mh {
@@ -797,7 +798,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #log-type-select,
     #log-detail-type-select,
     #log-detail-type2-select,
-#log-cost-type,
+    #log-cost-type,
     #log-worker,
     #log-mh,
     .log-content-input {

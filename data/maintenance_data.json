@@ -369,13 +369,25 @@
             },
             {
                 "content": "Metal STD (10ppb 3%)",
+                "costType": "유상",
                 "date": "2026-03-04",
                 "detailType": "PM 점검",
                 "id": 1772763597855,
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
+                "mh": "2",
                 "type": "정기",
-                "worker": "이원배 진봉균",
-                "costType": "유상",
+                "worker": "이원배 진봉균"
+            },
+            {
+                "id": 1773962077908,
+                "date": "2026-03-19",
+                "memo": "",
+                "type": "비정기",
+                "detailType": "Data / Para 이상",
+                "detailType2": "Data / Para 이상 > 딜리버리펌프_이슈",
+                "content": "파트 이상 (교체)",
+                "costType": "무상(보증)",
+                "worker": "admin",
                 "mh": "2"
             }
         ],
