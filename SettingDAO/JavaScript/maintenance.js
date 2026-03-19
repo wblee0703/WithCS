@@ -119,7 +119,7 @@ function setupLogEvents() {
         costSelect.id = 'log-cost-type';
         costSelect.className = 'input-dark';
         costSelect.innerHTML = `
-            <option value="">비용처리</option>
+            <option value="" disabled selected>비용처리</option>
             <option value="유상">유상</option>
             <option value="무상(보증)">무상(보증)</option>
             <option value="무상(중고)">무상(중고)</option>
@@ -258,7 +258,7 @@ function setupUIEvents() {
         costSelect.id = 'log-cost-type';
         costSelect.className = 'input-dark';
         costSelect.innerHTML = `
-            <option value="">비용처리</option>
+            <option value="" disabled selected>비용처리</option>
             <option value="유상">유상</option>
             <option value="무상(보증)">무상(보증)</option>
             <option value="무상(중고)">무상(중고)</option>
@@ -729,8 +729,8 @@ function addLogItem(e) {
     const detailType2Select = document.getElementById('log-detail-type2-select');
     const detailType2 = detailType2Select && detailType2Select.style.display !== 'none' ? detailType2Select.value : '';
 
-    if (!date || !type || (!detailType && !detailTypeSelect.disabled) || !worker) {
-        return alert('필수 항목(날짜, 구분, 세부구분, 작업자)을 올바르게 입력/선택해주세요.');
+    if (!date || !type || (!detailType && !detailTypeSelect.disabled) || !costType || !worker) {
+        return alert('필수 항목(날짜, 구분, 세부구분, 비용처리, 작업자)을 올바르게 입력/선택해주세요.');
     }
     if (type === '비정기' && !detailType2 && detailType2Select && !detailType2Select.disabled) {
         return alert('세부구분 2를 선택해주세요.');
@@ -1058,7 +1058,7 @@ function toggleLogEdit(id, btn) {
         const costOptions = ['유상', '무상(보증)', '무상(중고)', '기타'];
         costCell.innerHTML = `
             <select id="edit-log-cost-${id}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">
-                <option value="">선택</option>
+                <option value="" disabled ${!currentCost ? 'selected' : ''}>비용처리</option>
                 ${costOptions.map(c => `<option value="${c}" ${currentCost === c ? 'selected' : ''}>${c}</option>`).join('')}
             </select>`;
 
@@ -1096,8 +1096,8 @@ function toggleLogEdit(id, btn) {
 
         const newWorker = workerInput.value.trim();
 
-        if (!newDate || !newType || (!newDetailType && detailTypeInput && !detailTypeInput.disabled) || !newWorker) {
-            return alert('필수 항목(날짜, 구분, 세부구분, 작업자)을 모두 입력해주세요.');
+        if (!newDate || !newType || (!newDetailType && detailTypeInput && !detailTypeInput.disabled) || !newCost || !newWorker) {
+            return alert('필수 항목(날짜, 구분, 세부구분, 비용처리, 작업자)을 모두 입력해주세요.');
         }
         const newDetailTypeFull = (newType === '비정기' && newDetailType2) ? `${newDetailType} > ${newDetailType2}` : newDetailType;
         updateLogItem(id, newDate, newType, newDetailTypeFull, newContent, newCost, newWorker);
