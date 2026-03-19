@@ -1777,7 +1777,7 @@ function ensureSubCategory2Panel() {
         panel2.id = 'check-type-subcategory2-container';
         panel2.className = 'admin-col-list';
         panel2.style.display = 'none';
-        panel2.className = 'admin-col-list col-list-320';
+        panel2.className = 'admin-col-list col-list-250';
         
         panel2.innerHTML = `
             <div class="list-header">
@@ -1785,8 +1785,10 @@ function ensureSubCategory2Panel() {
             </div>
             <ul id="check-type-subcategory2-list" class="admin-list"></ul>
             <div id="check-type-subcategory2-footer" class="list-footer">
-                <input type="text" id="check-type-subcategory2-input" class="input-dark full-width" placeholder="분류명 입력">
-                <button id="btn-add-check-type-subcategory2" class="btn-blue full-width mt-10">추가</button>
+                <div class="admin-flex-row">
+                    <input type="text" id="check-type-subcategory2-input" class="input-dark flex-1" placeholder="분류명 추가">
+                    <button id="btn-add-check-type-subcategory2" class="btn-green-sm no-wrap">추가</button>
+                </div>
             </div>
         `;
         

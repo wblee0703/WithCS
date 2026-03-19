@@ -611,7 +611,7 @@ select.input-dark option {
 .static-suggestion-list { position: static; display: block; max-height: 200px; border: none; margin: 0; border-radius: 4px 4px 0 0; }
 
 .col-list-350 { flex: 0 0 350px; }
-.col-list-320 { flex: 0 0 320px; }
+.col-list-320 { flex: 0 0 250px; }
 .col-list-160 { flex: 0 0 160px; }
 
 .col-center-1 { flex: 1; justify-content: center; text-align: center; }

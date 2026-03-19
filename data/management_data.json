@@ -1342,6 +1342,7 @@
         "SOMA-3000E::SOMA-EK24-0401::정기::PM": [],
         "SOMA-3000E::SOMA-EK24-0401::정기::PM 점검": [],
         "SOMA-3000E::SOMA-EK24-0402::비정기::Alarm": [],
+        "SOMA-3000E::SOMA-EK24-0402::비정기::Alarm::HPLC_알람": [],
         "SOMA-3000E::SOMA-EK24-0402::비정기::BM": [],
         "SOMA-3000E::SOMA-EK24-0402::비정기::BM 점검": [],
         "SOMA-3000E::SOMA-EK24-0402::비정기::Hunting": [],
@@ -1538,7 +1539,6 @@
                 "content": "9.5% HNO3",
                 "id": 1773727862575
             }
-        ],
-        "SOMA-3000E::SOMA-EK24-0402::비정기::Alarm::HPLC_알람": []
+        ]
     }
 }
