@@ -329,7 +329,7 @@
     padding: 2px 8px;
     font-size: 12px;
     cursor: pointer;
-    margin-right: 5px;
+    margin-left: 5px;
 }
 .btn-reset:hover { background: #da3633; color: #fff; }
 
@@ -607,6 +607,7 @@
         order: 5;
         margin-top: 5px;
         margin-right: auto;
+        margin-left: 0;
     }
 
     /* 불러오기 버튼: 다음 줄 우측 정렬 (진행률 아래) */

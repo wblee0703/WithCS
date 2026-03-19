@@ -2092,8 +2092,8 @@ function setupSetupResetButton() {
         resetBtn.style.display = 'none'; // 초기엔 숨김
         resetBtn.onclick = resetSetupDates;
         
-        // 톱니바퀴 버튼 앞에 추가
-        settingsBtn.parentNode.insertBefore(resetBtn, settingsBtn);
+        // 톱니바퀴 버튼 뒤(오른쪽)에 추가
+        settingsBtn.parentNode.insertBefore(resetBtn, settingsBtn.nextSibling);
     }
 }
 
