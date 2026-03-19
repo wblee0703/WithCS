@@ -301,36 +301,6 @@
                 "id": 1773728529916,
                 "period": 365,
                 "type": "정기"
-            },
-            {
-                "id": 1773902422030,
-                "type": "정기",
-                "detailType": "PM 점검",
-                "content": "Metal STD (10ppb 3%)",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-03-20",
-                "costType": "무상(보증)"
-            },
-            {
-                "id": 1773902422031,
-                "type": "정기",
-                "detailType": "PM 점검",
-                "content": "Skimmer Cone",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-03-20",
-                "costType": "무상(보증)"
-            },
-            {
-                "id": 1773902422032,
-                "type": "정기",
-                "detailType": "PM 점검",
-                "content": "Sampler Cone",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-03-20",
-                "costType": "무상(보증)"
             }
         ],
         "logs": [
