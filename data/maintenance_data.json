@@ -232,12 +232,9 @@
                 "detailType": "BM 점검 > BM 물품 교체",
                 "code": "PFA Torch",
                 "content": "Torch for PFA inert kit for ICP-MS",
-                "date": "",
+                "date": "2026-03-19",
                 "period": null,
-                "scheduledDate": "2026-03-19",
-                "costType": "무상(보증)",
-                "worker": "",
-                "memo": ""
+                "costType": "무상(보증)"
             },
             {
                 "id": 1773911600470,
@@ -245,12 +242,9 @@
                 "detailType": "BM 점검 > BM 물품 교체",
                 "code": "Pt Injector",
                 "content": "Platinum injector, inert torch, 2.5mm id",
-                "date": "",
+                "date": "2026-03-19",
                 "period": null,
-                "scheduledDate": "2026-03-19",
-                "costType": "무상(보증)",
-                "worker": "",
-                "memo": ""
+                "costType": "무상(보증)"
             },
             {
                 "id": 1773911615893,
@@ -258,11 +252,8 @@
                 "detailType": "BM 점검 > BM 물품 교체",
                 "code": "PFA Spray Chamber",
                 "content": "Spray Chamber for Inert Kit, PFA",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-03-19",
-                "worker": "",
-                "memo": ""
+                "date": "2026-03-19",
+                "period": null
             }
         ],
         "logs": [
@@ -315,6 +306,16 @@
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
                 "type": "정기",
                 "worker": "이원배"
+            },
+            {
+                "id": 1773911618332,
+                "date": "2026-03-19",
+                "type": "비정기",
+                "detailType": "BM 점검 > BM 물품 교체",
+                "content": "PFA Torch, Pt Injector, PFA Spray Chamber",
+                "costType": "무상(보증)",
+                "worker": "이원배",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
             }
         ],
         "memo": "",
