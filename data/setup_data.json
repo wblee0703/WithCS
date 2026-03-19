@@ -288,18 +288,26 @@
                 "worker": "admin"
             },
             {
-                "id": 1773903875983,
-                "date": "2026-03-23",
-                "worker": "admin",
-                "content": "장비 반입",
                 "company": "위드텍",
-                "memo": ""
+                "content": "장비 반입",
+                "date": "2026-03-23",
+                "id": 1773903875983,
+                "memo": "",
+                "worker": "admin"
             },
             {
-                "id": 1773903883329,
-                "date": "2026-03-25",
-                "worker": "admin",
+                "company": "위드텍",
                 "content": "다이크 공사 및 리크센서 설치",
+                "date": "2026-03-25",
+                "id": 1773903883329,
+                "memo": "",
+                "worker": "admin"
+            },
+            {
+                "id": 1773903894913,
+                "date": "2026-03-19",
+                "worker": "이원배",
+                "content": "장비 도면 부착",
                 "company": "위드텍",
                 "memo": ""
             }
