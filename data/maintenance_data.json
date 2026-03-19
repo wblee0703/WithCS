@@ -362,14 +362,14 @@
                 "worker": "이원배 진봉균"
             },
             {
-                "id": 1773895429054,
-                "date": "2026-03-19",
-                "memo": "",
-                "type": "비정기",
-                "detailType": "Alarm",
-                "detailType2": "Alarm > HPLC_알람",
                 "content": "용액 / 용자 이상",
                 "costType": "유상",
+                "date": "2026-03-19",
+                "detailType": "Alarm",
+                "detailType2": "Alarm > HPLC_알람",
+                "id": 1773895429054,
+                "memo": "",
+                "type": "비정기",
                 "worker": "이원배"
             }
         ],

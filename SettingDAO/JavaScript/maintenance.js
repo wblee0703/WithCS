@@ -169,7 +169,7 @@ function setupLogEvents() {
         detail2Select.id = 'log-detail-type2-select';
         detail2Select.className = 'input-dark';
         detail2Select.style.display = 'none'; // 초기엔 숨김
-        detail2Select.innerHTML = `<option value="">세부구분 2</option>`;
+        detail2Select.innerHTML = `<option value="" disabled selected hidden>세부구분 2</option>`;
         logDetailTypeSelect.parentNode.insertBefore(detail2Select, logDetailTypeSelect.nextSibling);
 
         detail2Select.addEventListener('change', updateLogContentOptions);
@@ -1194,6 +1194,14 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
 
             div.onclick = (e) => {
                 e.stopPropagation();
+
+                // [추가] 비정기일 경우 단일 선택만 허용
+                if (type === '비정기' && detailType !== 'BM 점검') {
+                    list.querySelectorAll('.log-select-item.selected').forEach(el => {
+                        if (el !== div) el.classList.remove('selected');
+                    });
+                }
+
                 div.classList.toggle('selected');
 
                 const selected = list.querySelectorAll('.log-select-item.selected');
@@ -1207,6 +1215,11 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
                     trigger.textContent = '항목 선택';
                 }
                 trigger.title = values.join('\n');
+
+                // [추가] 비정기(단일 선택) 항목 선택 시 드롭다운 자동 닫기
+                if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
+                    dropdown.classList.remove('show');
+                }
             };
             list.appendChild(div);
         });
@@ -1221,6 +1234,9 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
         addBtn.textContent = '추가';
         addBtn.onclick = (e) => { e.stopPropagation(); dropdown.classList.remove('show'); };
         footer.appendChild(addBtn);
+        if (type === '비정기' && detailType !== 'BM 점검') {
+            footer.style.display = 'none'; // 단일 선택 시 하단 버튼 숨김
+        }
         dropdown.appendChild(footer);
 
         wrapper.appendChild(trigger);
@@ -1327,7 +1343,7 @@ window.updateLogDetailType2Options = function (presetVal = '') {
     if (!typeSelect || !detailTypeSelect || !detail2Select) return;
     const type = typeSelect.value;
     const detailType = detailTypeSelect.value;
-    detail2Select.innerHTML = '<option value="">세부구분 2 먼저 선택</option>';
+    detail2Select.innerHTML = '<option value="" disabled selected hidden>세부구분 2 먼저 선택</option>';
     if (type !== '비정기' || !detailType) {
         detail2Select.disabled = true;
         updateLogContentOptions();
@@ -1337,10 +1353,10 @@ window.updateLogDetailType2Options = function (presetVal = '') {
     const equipKey = currentPath.equip;
     const subCategories2 = getSubCategories2(equipKey, type, detailType);
     if (subCategories2.length === 0) {
-        detail2Select.innerHTML = '<option value="">세부구분 2 없음</option>';
+        detail2Select.innerHTML = '<option value="" disabled selected hidden>세부구분 2 없음</option>';
         detail2Select.disabled = true;
     } else {
-        detail2Select.innerHTML = '<option value="">세부구분 2 선택</option>';
+        detail2Select.innerHTML = '<option value="" disabled selected hidden>세부구분 2 선택</option>';
         subCategories2.forEach(sub => { detail2Select.insertAdjacentHTML('beforeend', `<option value="${sub}" ${sub === presetVal ? 'selected' : ''}>${sub}</option>`); });
     }
     updateLogContentOptions();
@@ -1416,6 +1432,14 @@ window.updateLogContentOptions = function () {
 
                 div.onclick = (e) => {
                     e.stopPropagation();
+
+                // [추가] 비정기일 경우 단일 선택만 허용
+                    if (type === '비정기' && detailType !== 'BM 점검') {
+                        contentList.querySelectorAll('.log-select-item.selected').forEach(el => {
+                            if (el !== div) el.classList.remove('selected');
+                        });
+                    }
+
                     div.classList.toggle('selected');
 
                     const selected = contentList.querySelectorAll('.log-select-item.selected');
@@ -1428,9 +1452,24 @@ window.updateLogContentOptions = function () {
                         contentTrigger.textContent = '항목 선택';
                     }
                     contentTrigger.title = values.join('\n');
+
+                    // [추가] 비정기(단일 선택) 항목 선택 시 드롭다운 자동 닫기
+                    if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
+                        const dropdown = document.getElementById('log-content-dropdown');
+                        if (dropdown) dropdown.classList.remove('show');
+                    }
                 };
                 contentList.appendChild(div);
             });
+        }
+
+        // [추가] 단일 선택 시 하단 추가 버튼 숨김
+        const dropdown = document.getElementById('log-content-dropdown');
+        if (dropdown) {
+            const footer = dropdown.querySelector('.log-select-footer');
+            if (footer) {
+                footer.style.display = (type === '비정기' && detailType !== 'BM 점검') ? 'none' : 'block';
+            }
         }
     } else {
         contentWrapper.style.display = 'none';
@@ -1509,7 +1548,7 @@ window.updateEditDetailType2Options = function(id, presetVal = '') {
     if (!typeSelect || !detailTypeSelect || !detail2Select) return;
     const type = typeSelect.value;
     const detailType = detailTypeSelect.value;
-    detail2Select.innerHTML = '<option value="">세부구분 2 먼저 선택</option>';
+    detail2Select.innerHTML = '<option value="" disabled selected hidden>세부구분 2 먼저 선택</option>';
     if (type !== '비정기' || !detailType) {
         detail2Select.disabled = true;
         updateEditLogContentField(id);
@@ -1518,10 +1557,10 @@ window.updateEditDetailType2Options = function(id, presetVal = '') {
     detail2Select.disabled = false;
     const subCategories2 = getSubCategories2(currentPath.equip, type, detailType);
     if (subCategories2.length === 0) {
-        detail2Select.innerHTML = '<option value="">세부구분 2 없음</option>';
+        detail2Select.innerHTML = '<option value="" disabled selected hidden>세부구분 2 없음</option>';
         detail2Select.disabled = true;
     } else {
-        detail2Select.innerHTML = '<option value="">세부구분 2 선택</option>';
+        detail2Select.innerHTML = `<option value="" disabled hidden ${!presetVal ? 'selected' : ''}>세부구분 2 선택</option>`;
         if (presetVal && !subCategories2.includes(presetVal)) subCategories2.unshift(presetVal);
         subCategories2.forEach(sub => { detail2Select.insertAdjacentHTML('beforeend', `<option value="${sub}" ${sub === presetVal ? 'selected' : ''}>${sub}</option>`); });
     }
