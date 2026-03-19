@@ -303,6 +303,15 @@
                 "type": "정기"
             },
             {
+                "code": "Sampler Cone",
+                "content": "Pt Sampling cone for 7700S",
+                "date": "2026-03-19",
+                "detailType": "PM 점검",
+                "id": 1773910116753,
+                "period": "182",
+                "type": "정기"
+            },
+            {
                 "code": "PFA Spray Chamber",
                 "content": "Spray Chamber for Inert Kit, PFA",
                 "costType": "무상(보증)",
@@ -311,15 +320,6 @@
                 "id": 1773910053806,
                 "period": null,
                 "type": "비정기"
-            },
-            {
-                "code": "Sampler Cone",
-                "content": "Pt Sampling cone for 7700S",
-                "date": "2026-03-19",
-                "detailType": "PM 점검",
-                "id": 1773910116753,
-                "period": "182",
-                "type": "정기"
             },
             {
                 "code": "Long Connector",
