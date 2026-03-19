@@ -1674,6 +1674,69 @@ function setupCheckTypeMgmt() {
             if (e.key === 'Enter') btnAddItem.click();
         });
     }
+
+    // [추가] 신규 점검 항목 추가 시 PM/BM 점검일 경우 물품관리 제안 박스 표시
+    const suggestionList = document.getElementById('check-type-item-suggestions');
+    if (inputContent && suggestionList) {
+        const showItemSuggestions = () => {
+            if (currentCheckTypeSubCategory !== 'PM 점검' && currentCheckTypeSubCategory !== 'BM 점검') {
+                suggestionList.style.display = 'none';
+                return;
+            }
+
+            const targetType = currentCheckTypeSubCategory === 'PM 점검' ? '정기' : '비정기';
+            const query = inputContent.value.trim().toLowerCase();
+            const keywords = query ? query.split(/\s+/) : [];
+
+            // 물품 관리 데이터에서 해당 타입의 항목 최신 데이터로 가져오기
+            const currentItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+            let matches = currentItems.filter(item => {
+                let type = item.type || '정기';
+                if (type === 'PM') type = '정기';
+                if (type === 'BM') type = '비정기';
+                return type === targetType;
+            });
+
+            // 검색어 필터링
+            if (query) {
+                matches = matches.filter(m => {
+                    const text = `${m.part || ''} ${m.code || ''}`.toLowerCase();
+                    return keywords.every(kw => text.includes(kw));
+                });
+            }
+
+            suggestionList.innerHTML = '';
+            if (matches.length > 0) {
+                matches.forEach(m => {
+                    const li = document.createElement('li');
+                    li.className = 'suggestion-item';
+                    li.innerHTML = `
+                        <div class="suggestion-item-content">
+                            <span>${escapeHtml(m.part)}</span>
+                            ${m.code ? `<span class="abbr">${escapeHtml(m.code)}</span>` : ''}
+                        </div>
+                    `;
+                    li.addEventListener('mousedown', (ev) => {
+                        ev.preventDefault();
+                        inputContent.value = m.part;
+                        suggestionList.style.display = 'none';
+                    });
+                    suggestionList.appendChild(li);
+                });
+                suggestionList.style.display = 'block';
+            } else {
+                suggestionList.style.display = 'none';
+            }
+        };
+
+        inputContent.addEventListener('click', showItemSuggestions);
+        inputContent.addEventListener('input', showItemSuggestions);
+        inputContent.addEventListener('focus', showItemSuggestions);
+        inputContent.addEventListener('blur', () => {
+            setTimeout(() => { suggestionList.style.display = 'none'; }, 150);
+        });
+    }
+
         // [추가] 세부 구분 리스트 드래그 앤 드롭 (순서 변경) 이벤트
     const subList = document.getElementById('check-type-subcategory-list');
     if (subList) {

@@ -514,8 +514,11 @@
                                 <div style="display: flex; gap: 5px;">
                                     <select id="check-type-item-subcategory-select" class="input-dark"
                                         style="flex: 1; text-align: center; height: 35px; border-radius: 4px;"></select>
-                                    <input type="text" id="check-type-item-content" class="input-dark"
-                                        style="flex: 3; padding-left: 10px; height: 35px;" placeholder="작업 세부 내용 입력">
+                                    <div class="autocomplete-wrapper" style="flex: 3;">
+                                        <input type="text" id="check-type-item-content" class="input-dark full-width"
+                                            style="padding-left: 10px; height: 35px;" placeholder="작업 세부 내용 입력" autocomplete="off">
+                                        <ul id="check-type-item-suggestions" class="suggestion-list"></ul>
+                                    </div>
                                     <button id="btn-add-check-type-item" class="btn-green-sm"
                                         style="width: 60px; height: 35px;">추가</button>
                                 </div>
