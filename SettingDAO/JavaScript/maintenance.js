@@ -1598,11 +1598,24 @@ window.updateEditDetailTypeOptions = function (id, presetVal = '') {
     if (!type) {
         detailTypeSelect.innerHTML = '<option value="">구분 먼저 선택</option>';
         detailTypeSelect.disabled = true;
+        if (detailType2Select) {
+            detailType2Select.style.display = 'none';
+            detailType2Select.value = '';
+        }
         updateEditLogContentField(id);
         return;
     }
 
     detailTypeSelect.disabled = false;
+
+    if (detailType2Select) {
+        if (type === '비정기') {
+            detailType2Select.style.display = 'block';
+        } else {
+            detailType2Select.style.display = 'none';
+            detailType2Select.value = '';
+        }
+    }
 
     const subCategories = getSubCategories(type);
 
@@ -1625,17 +1638,24 @@ window.updateEditDetailTypeOptions = function (id, presetVal = '') {
         });
     }
 
-    if (!presetVal && type !== '비정기') updateEditLogContentField(id);
+    if (!presetVal) {
+        if (type === '비정기') {
+            updateEditDetailType2Options(id);
+        } else {
+            updateEditLogContentField(id);
+        }
+    }
 };
 
 window.updateEditLogContentField = function (id) {
     const typeSelect = document.getElementById(`edit-log-type-${id}`);
     const detailTypeSelect = document.getElementById(`edit-log-detail-type-${id}`);
+    const detailType2Select = document.getElementById(`edit-log-detail-type2-${id}`);
     if (!typeSelect || !detailTypeSelect) return;
 
     const type = typeSelect.value;
     const detailType = detailTypeSelect.value;
-    const detailType2 = detailType2Select ? detailType2Select.value : '';
+    const detailType2 = detailType2Select && detailType2Select.style.display !== 'none' ? detailType2Select.value : '';
     renderEditLogContentField(id, type, detailType, detailType2, '');
 };
 

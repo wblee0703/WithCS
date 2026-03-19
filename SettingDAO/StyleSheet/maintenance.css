@@ -189,7 +189,7 @@ tr.dragging {
 
 /* 세부구분 */
 #log-list-wrapper .data-table th:nth-child(3) {
-    width: 200px;
+    width: 180px;
 }
 
 /* 비용처리 */
