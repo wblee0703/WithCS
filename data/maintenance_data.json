@@ -322,15 +322,6 @@
                 "type": "정기"
             },
             {
-                "code": "Ion Lens",
-                "content": "Extraction-omega lens assembly",
-                "date": "2026-03-19",
-                "detailType": "PM 점검",
-                "id": 1773910116754,
-                "period": "365",
-                "type": "정기"
-            },
-            {
                 "code": "Long Connector",
                 "content": "Long connector tube for ICP-MS inert kit",
                 "date": "2026-03-19",
@@ -338,6 +329,15 @@
                 "id": 1773910147193,
                 "period": null,
                 "type": "비정기"
+            },
+            {
+                "code": "Ion Lens",
+                "content": "Extraction-omega lens assembly",
+                "date": "2026-03-19",
+                "detailType": "PM 점검",
+                "id": 1773910116754,
+                "period": "365",
+                "type": "정기"
             }
         ],
         "logs": [
