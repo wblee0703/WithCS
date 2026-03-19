@@ -213,6 +213,18 @@
                 "id": 1773732542276,
                 "period": 365,
                 "type": "정기"
+            },
+            {
+                "id": 1773902345905,
+                "type": "온라인점검",
+                "detailType": "온라인점검",
+                "content": "Ver.",
+                "date": "",
+                "period": null,
+                "scheduledDate": "2026-03-19",
+                "costType": "기타",
+                "worker": "이원배",
+                "memo": ""
             }
         ],
         "logs": [
@@ -255,17 +267,6 @@
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 유지 관리 진행\n - Tuning 진행 : 특이사항 없음\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음",
                 "type": "정기",
                 "worker": "이원배 진봉균 박강민"
-            },
-            {
-                "content": "Ver.",
-                "costType": "기타",
-                "date": "2026-03-19",
-                "detailType": "온라인점검",
-                "detailType2": "온라인점검",
-                "id": 1773894107123,
-                "memo": "",
-                "type": "온라인점검",
-                "worker": "이원배"
             }
         ],
         "memo": "",
@@ -314,16 +315,16 @@
                 "type": "정기"
             },
             {
-                "id": 1773902332417,
-                "type": "비정기",
-                "detailType": "Alarm",
                 "content": "용액 / 용자 이상",
+                "costType": "유상",
                 "date": "",
+                "detailType": "Alarm",
+                "id": 1773902332417,
+                "memo": "",
                 "period": null,
                 "scheduledDate": "2026-03-19",
-                "costType": "유상",
-                "worker": "이원배",
-                "memo": ""
+                "type": "비정기",
+                "worker": "이원배"
             }
         ],
         "logs": [
