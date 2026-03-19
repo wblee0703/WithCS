@@ -736,15 +736,53 @@ function toggleDetailContentEdit() {
         if (!item) return;
 
         const type = item.type || '';
-        const detailType = item.detailType || '';
+        const detailTypeFull = item.detailType || '';
+        let detailType = detailTypeFull;
+        let detailType2 = '';
+
+        if (detailTypeFull.includes('[')) {
+            const parts = detailTypeFull.split('[');
+            detailType = parts[0].trim();
+            detailType2 = parts[1].replace(']', '').trim();
+        } else if (detailTypeFull.includes(' > ')) {
+            const parts = detailTypeFull.split(' > ');
+            detailType = parts[0].trim();
+            detailType2 = parts[1].trim();
+        }
+
         const currentContent = contentDiv.innerText.trim();
 
         // 선택 가능한 항목 가져오기 (admin.js에서 설정한 값)
         const equipKey = equip; // "Name::Serial"
         const itemData = JSON.parse(localStorage.getItem('check_type_items')) || {};
-        const chkKey = `${equipKey}::${type}::${detailType}`;
-        const availableItems = itemData[chkKey] || [];
+        let chkKey;
+        if (type === '비정기') {
+            chkKey = `${equipKey}::${type}::${detailType}::${detailType2}`;
+        } else {
+            chkKey = `${equipKey}::${type}::${detailType}`;
+        }
+        let availableItems = itemData[chkKey] || [];
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+
+        if (availableItems.length === 0) {
+            if (type === '비정기' && ['Alarm', 'Hunting', 'Data / Para 이상'].includes(detailType)) {
+                const defaultList = [
+                    "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 / 용자 이상",
+                    "파트 이상 (교체)", "파트 이상 (수리)", "프로그램 이상", "단순조치", "기타"
+                ];
+                availableItems = defaultList.map(content => ({ content: content }));
+            } else if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+                const targetType = detailType === 'PM 점검' ? '정기' : '비정기';
+                const equipName = equipKey.split('::')[0];
+                const matchedItems = adminItems.filter(ai => {
+                    if (ai.type !== targetType) return false;
+                    if (!ai.equip) return false;
+                    const equips = ai.equip.split(',').map(e => e.trim());
+                    return equips.includes(equipName);
+                });
+                availableItems = matchedItems.map(mItem => ({ content: mItem.part, code: mItem.code }));
+            }
+        }
 
         const uniqueItems = [];
         const seenContents = new Set();
@@ -796,8 +834,16 @@ function toggleDetailContentEdit() {
                     
                     div.onclick = (e) => {
                         e.stopPropagation();
+                        if (type === '비정기' && detailType !== 'BM 점검') {
+                            list.querySelectorAll('.log-select-item.selected').forEach(el => {
+                                if (el !== div) el.classList.remove('selected');
+                            });
+                        }
                         div.classList.toggle('selected');
                         updateTriggerText();
+                        if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
+                            dropdown.classList.remove('show');
+                        }
                     };
                     list.appendChild(div);
                 });
@@ -815,6 +861,9 @@ function toggleDetailContentEdit() {
                     dropdown.classList.remove('show');
                 };
                 footer.appendChild(addBtn);
+                if (type === '비정기' && detailType !== 'BM 점검') {
+                    footer.style.display = 'none';
+                }
                 dropdown.appendChild(footer);
 
                 dropdownWrapper.appendChild(trigger);
@@ -1566,6 +1615,8 @@ window.updateRegisterDetailType2Options = function() {
     if (subCategories2.length === 0) {
         rDetailType2Select.innerHTML = '<option value="" disabled selected hidden>세부 구분 없음</option>';
         rDetailType2Select.disabled = true;
+    } else if (subCategories2.length === 1) {
+        rDetailType2Select.innerHTML = `<option value="${subCategories2[0]}" selected>${subCategories2[0]}</option>`;
     } else {
         rDetailType2Select.innerHTML = '<option value="" disabled selected hidden>세부 구분</option>';
         subCategories2.forEach(sub => { rDetailType2Select.insertAdjacentHTML('beforeend', `<option value="${sub}">${sub}</option>`); });
@@ -1577,7 +1628,6 @@ window.updateRegisterContentOptions = function() {
     const rEquipSelect = document.getElementById('register-equip-select');
     const rTypeSelect = document.getElementById('register-type-select');
     const rDetailTypeSelect = document.getElementById('register-detail-type-select');
-    const rDetailType2Select = document.getElementById('register-detail-type2-select');
     const rDetailType2Select = document.getElementById('register-detail-type2-select');
     const wrapper = document.getElementById('register-content-wrapper');
     const list = document.getElementById('register-content-list');
@@ -1593,7 +1643,7 @@ window.updateRegisterContentOptions = function() {
 
     if (!type || (!detailType && !rDetailTypeSelect.disabled)) {
         wrapper.style.display = 'none';
-        input.style.display = 'inline-block';
+        input.style.display = 'block';
         input.placeholder = type ? '세부구분을 먼저 선택하세요' : '구분을 먼저 선택하세요';
         input.value = '';
         input.disabled = true;
@@ -1602,7 +1652,7 @@ window.updateRegisterContentOptions = function() {
 
     if (type === '비정기' && (!detailType2 && !rDetailType2Select.disabled)) {
         wrapper.style.display = 'none';
-        input.style.display = 'inline-block';
+        input.style.display = 'block';
         input.placeholder = '세부 구분을 먼저 선택하세요';
         input.value = '';
         input.disabled = true;
@@ -1656,7 +1706,7 @@ window.updateRegisterContentOptions = function() {
     });
 
     if (uniqueItems.length > 0 && detailType) {
-        wrapper.style.display = 'inline-block';
+        wrapper.style.display = 'block';
         input.style.display = 'none';
         trigger.textContent = '항목 선택';
         
@@ -1688,10 +1738,24 @@ window.updateRegisterContentOptions = function() {
                 }
             };
         });
+
+        // [추가] PM 점검이나 BM 점검 선택 시 드롭다운(제안 박스) 자동 열기
+        if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+            if (dropdown) dropdown.classList.add('show');
+        }
     } else {
         wrapper.style.display = 'none';
-        input.style.display = 'inline-block';
-        input.placeholder = detailType ? '내용 (직접 입력)' : '내용 (직접 입력)';
+        input.style.display = 'block';
+        if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+            input.placeholder = '항목을 추가해 주세요';
+            input.value = '';
+            input.disabled = true;
+            input.classList.add('input-disabled');
+        } else {
+            input.placeholder = detailType ? '내용 (직접 입력)' : '내용 (직접 입력)';
+            input.disabled = false;
+            input.classList.remove('input-disabled');
+        }
     }
 };
 
