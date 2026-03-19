@@ -656,15 +656,27 @@ function renderUpcomingList(data) {
                     const detailData = JSON.parse(localStorage.getItem(key));
                     if (detailData && detailData.maint) {
                         detailData.maint.forEach(item => {
-                            if (item.type === '정기' && item.date && item.period) {
-                                const [y, m, d] = item.date.split('-').map(Number);
-                                const targetDate = new Date(y, m - 1, d);
-                                targetDate.setDate(targetDate.getDate() + parseInt(item.period));
-                                const diffDays = Math.round((targetDate - today) / (1000 * 60 * 60 * 24));
+                            if (item.type === '정기') {
+                                let targetDiffDays = null;
 
-                                if (diffDays <= 30) {
+                                // 1. 예정일(scheduledDate)이 있는 경우 (예정일 최우선)
+                                if (item.scheduledDate) {
+                                    const [y, m, d] = item.scheduledDate.split('-').map(Number);
+                                    const schedDate = new Date(y, m - 1, d);
+                                    targetDiffDays = Math.round((schedDate - today) / (1000 * 60 * 60 * 24));
+                                } 
+                                // 2. 예정일이 없으면 기본 교체주기(시작일 + 주기) 적용
+                                else if (item.date && item.period) {
+                                    const [y, m, d] = item.date.split('-').map(Number);
+                                    const cycleDate = new Date(y, m - 1, d);
+                                    cycleDate.setDate(cycleDate.getDate() + parseInt(item.period));
+                                    targetDiffDays = Math.round((cycleDate - today) / (1000 * 60 * 60 * 24));
+                                }
+
+                                // 30일 이내인 경우만 리스트에 표시
+                                if (targetDiffDays !== null && targetDiffDays <= 30) {
                                     upcomingItems.push({
-                                        diffDays: diffDays,
+                                        diffDays: targetDiffDays,
                                         site: site,
                                         equip: equip,
                                         item: item

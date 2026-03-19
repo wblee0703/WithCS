@@ -294,10 +294,10 @@
                 "date": "2026-03-13",
                 "detailType": "PM 점검",
                 "id": 1773910187433,
+                "mh": "2",
                 "period": "30",
-                "type": "정기",
                 "scheduledDate": "2026-03-14",
-                "mh": "2"
+                "type": "정기"
             },
             {
                 "code": "Skimmer Cone",
@@ -434,12 +434,14 @@
             {
                 "code": "Metal STD (10ppb 3%)",
                 "content": "Metal Standard Solution(3%HNO3)",
-                "costType": "무상(보증)",
+                "costType": "유상",
                 "date": "2026-03-17",
                 "detailType": "PM 점검",
                 "id": 1773732550702,
                 "period": "30",
-                "type": "정기"
+                "type": "정기",
+                "scheduledDate": "2026-04-01",
+                "mh": "2"
             },
             {
                 "code": "Skimmer Cone",
