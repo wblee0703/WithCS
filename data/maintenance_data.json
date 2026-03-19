@@ -213,6 +213,26 @@
                 "id": 1773732542276,
                 "period": 365,
                 "type": "정기"
+            },
+            {
+                "id": 1773901817502,
+                "type": "비정기",
+                "detailType": "BM 점검 > BM 물품 교체",
+                "content": "PFA Torch",
+                "date": "",
+                "period": null,
+                "scheduledDate": "2026-03-19",
+                "costType": "무상(중고)"
+            },
+            {
+                "id": 1773901817503,
+                "type": "비정기",
+                "detailType": "BM 점검 > BM 물품 교체",
+                "content": "Pt Injector",
+                "date": "",
+                "period": null,
+                "scheduledDate": "2026-03-19",
+                "costType": "무상(중고)"
             }
         ],
         "logs": [
