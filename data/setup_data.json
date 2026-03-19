@@ -449,99 +449,135 @@
         "setupDetails": [
             {
                 "id": 1773902859108,
-                "category": "장비 반입 및 정위치",
+                "completed": false,
                 "content": "장비 도면 부착",
+                "date": "",
                 "startDate": "",
                 "estDays": "1",
-                "date": ""
+                "category": "장비 반입 및 정위치",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
                 "id": 1773902859109,
-                "category": "장비 반입 및 정위치",
+                "completed": false,
                 "content": "다이크 설치",
+                "date": "",
                 "startDate": "",
                 "estDays": "1",
-                "date": ""
+                "category": "장비 반입 및 정위치",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
                 "id": 1773902859110,
-                "category": "장비 반입 및 정위치",
+                "completed": false,
                 "content": "장비 반입",
+                "date": "",
                 "startDate": "",
                 "estDays": "1",
-                "date": ""
+                "category": "장비 반입 및 정위치",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
                 "id": 1773902859111,
-                "category": "장비 반입 및 정위치",
+                "completed": false,
                 "content": "다이크 공사 및 리크센서 설치",
+                "date": "",
                 "startDate": "",
                 "estDays": "2",
-                "date": ""
+                "category": "장비 반입 및 정위치",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
                 "id": 1773902859112,
-                "category": "통신 상태 및 유틸리티",
+                "completed": false,
                 "content": "Utility 배관 공사 및 연결",
+                "date": "",
                 "startDate": "",
                 "estDays": "5",
-                "date": ""
+                "category": "통신 상태 및 유틸리티",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
                 "id": 1773902859113,
-                "category": "통신 상태 및 유틸리티",
+                "completed": false,
                 "content": "Utility 턴온",
+                "date": "",
                 "startDate": "",
                 "estDays": "1",
-                "date": ""
+                "category": "통신 상태 및 유틸리티",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
                 "id": 1773902859114,
-                "category": "통신 상태 및 유틸리티",
+                "completed": false,
                 "content": "인터락 Test 및 통신상태 확인 ",
+                "date": "",
                 "startDate": "",
                 "estDays": "2",
-                "date": ""
+                "category": "통신 상태 및 유틸리티",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
                 "id": 1773902859115,
-                "category": "셋업 평가",
+                "completed": false,
                 "content": "분석부 안정화 및 오염제어",
+                "date": "",
                 "startDate": "",
                 "estDays": "5",
-                "date": ""
+                "category": "셋업 평가",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
                 "id": 1773902859116,
-                "category": "셋업 평가",
+                "completed": false,
                 "content": "Calibration 평가",
+                "date": "",
                 "startDate": "",
                 "estDays": "2",
-                "date": ""
+                "category": "셋업 평가",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
                 "id": 1773902859117,
-                "category": "셋업 평가",
+                "completed": false,
                 "content": "Sample 측정",
+                "date": "",
                 "startDate": "",
                 "estDays": "2",
-                "date": ""
+                "category": "셋업 평가",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
                 "id": 1773902859118,
-                "category": "셋업 평가",
+                "completed": false,
                 "content": "신뢰도 평가",
+                "date": "",
                 "startDate": "",
                 "estDays": "5",
-                "date": ""
+                "category": "셋업 평가",
+                "delayReason": "",
+                "execStartDate": ""
             },
             {
                 "id": 1773902859119,
-                "category": "셋업 완료",
+                "completed": false,
                 "content": "셋업 완료",
+                "date": "",
                 "startDate": "",
                 "estDays": "0",
-                "date": ""
+                "category": "셋업 완료",
+                "delayReason": "",
+                "execStartDate": ""
             }
         ]
     }
