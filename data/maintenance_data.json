@@ -301,6 +301,39 @@
                 "id": 1773728529916,
                 "period": 365,
                 "type": "정기"
+            },
+            {
+                "id": 1773910053804,
+                "type": "비정기",
+                "detailType": "BM 점검 > BM 물품 교체",
+                "code": "PFA Torch",
+                "content": "Torch for PFA inert kit for ICP-MS",
+                "date": "",
+                "period": null,
+                "scheduledDate": "2026-03-19",
+                "costType": "무상(보증)"
+            },
+            {
+                "id": 1773910053805,
+                "type": "비정기",
+                "detailType": "BM 점검 > BM 물품 교체",
+                "code": "Pt Injector",
+                "content": "Platinum injector, inert torch, 2.5mm id",
+                "date": "",
+                "period": null,
+                "scheduledDate": "2026-03-19",
+                "costType": "무상(보증)"
+            },
+            {
+                "id": 1773910053806,
+                "type": "비정기",
+                "detailType": "BM 점검 > BM 물품 교체",
+                "code": "PFA Spray Chamber",
+                "content": "Spray Chamber for Inert Kit, PFA",
+                "date": "",
+                "period": null,
+                "scheduledDate": "2026-03-19",
+                "costType": "무상(보증)"
             }
         ],
         "logs": [

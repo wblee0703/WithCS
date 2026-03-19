@@ -12,7 +12,7 @@ let expandedViewId = null;
 
 // [추가] 공통 함수 폴백 (common.js 누락 대비)
 if (typeof window.getHolidayName !== 'function') {
-    window.getHolidayName = function(year, month, day) { return null; };
+    window.getHolidayName = function (year, month, day) { return null; };
 }
 
 // [2] 초기화 (Initialization)
@@ -59,7 +59,7 @@ function getScheduleForCalendar() {
                             }
                             if (targetDateStr) {
                                 if (!events[targetDateStr]) events[targetDateStr] = [];
-                            events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.content, id: item.id });
+                                events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.content, id: item.id });
                             }
                         });
                     }
@@ -71,7 +71,7 @@ function getScheduleForCalendar() {
                                 events[log.date].push({
                                     site,
                                     equip,
-                                type: log.type || '정기',
+                                    type: log.type || '정기',
                                     content: log.content || log.memo || '내용 없음',
                                     id: log.id,
                                     isCompleted: true
@@ -92,7 +92,7 @@ function getScheduleForCalendar() {
 function setScheduleDate(site, equip, id, dateStr, isDelete = false) {
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
-    
+
     if (data.maint) {
         const index = data.maint.findIndex(i => i.id === id);
         if (index > -1) {
@@ -107,7 +107,7 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false) {
                 item.scheduledDate = dateStr;
             }
             localStorage.setItem(key, JSON.stringify(data));
-            
+
             if (typeof addSystemLog === 'function') {
                 const action = isDelete ? 'DELETE_SCHEDULE' : 'ADD_SCHEDULE';
                 addSystemLog(action, equip, `Date: ${dateStr}, Content: ${item.content}`);
@@ -132,7 +132,7 @@ function setupCalendar() {
     // [추가] 캘린더 타이틀 클릭 이벤트 (확장/축소)
     const title1 = document.getElementById('calendar-title-1');
     const title2 = document.getElementById('calendar-title-2');
-    
+
     if (title1) {
         title1.style.cursor = 'pointer';
         title1.title = '클릭하여 확대/축소';
@@ -178,7 +178,7 @@ function toggleCalendarExpand(viewId) {
     const views = document.querySelectorAll('.calendar-view');
     const divider = document.querySelector('.calendar-divider');
     const wrapper = document.querySelector('.calendars-wrapper');
-    
+
     if (expandedViewId === viewId) {
         // 이미 확장된 상태면 원래대로 복귀
         expandedViewId = null;
@@ -333,7 +333,7 @@ function renderMonthGrid(year, month, titleId, gridId) {
                 const equipName = group.equip.split('::')[0];
                 const typeClass = `type-${group.type}`;
                 const completedClass = group.isCompleted ? 'completed' : '';
-                
+
                 // 드래그 속성 추가 (완료되지 않은 항목만)
                 let dragAttr = '';
                 if (!group.isCompleted) {
@@ -362,13 +362,13 @@ function renderMonthGrid(year, month, titleId, gridId) {
         cell.className = `date-cell ${isToday} ${dayClass}`;
         cell.innerHTML = `${dateHeader}<div class="events-container">${eventsHtml}</div>`;
         // 클릭 이벤트는 유지하되, 드롭 이벤트 추가
-        cell.onclick = (e) => { if(!e.defaultPrevented) openCalendarPopup(dateStr, dayEvents); };
-        
+        cell.onclick = (e) => { if (!e.defaultPrevented) openCalendarPopup(dateStr, dayEvents); };
+
         // 드롭 핸들러 연결
         cell.ondragover = (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); };
         cell.ondragleave = (e) => { e.currentTarget.classList.remove('drag-over'); };
         cell.ondrop = (e) => handleCalendarDrop(e, dateStr);
-        
+
         gridEl.appendChild(cell);
     }
 
@@ -452,7 +452,7 @@ function openCalendarPopup(dateStr, events) {
                         group.items.forEach(item => {
                             setScheduleDate(item.site, item.equip, item.id, '', true);
                         });
-                        
+
                         // UI 갱신 (배경 캘린더 및 대시보드)
                         renderCalendar();
                         if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
@@ -474,7 +474,7 @@ function openCalendarPopup(dateStr, events) {
                                 return matchKeyword && matchSite && matchEquip;
                             });
                         }
-                        
+
                         openCalendarPopup(dateStr, dayEvents);
                     }
                 };
@@ -509,7 +509,7 @@ function setupScheduleModal() {
     if (!modal) return;
 
     if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
-    
+
     if (saveBtn) {
         saveBtn.onclick = () => {
             if (currentScheduleTarget) {
@@ -545,18 +545,18 @@ function openScheduleModal(site, equip, id) {
     const modal = document.getElementById('schedule-modal');
     if (!modal) return;
     currentScheduleTarget = { site, equip, id };
-    
+
     const key = `details_${site}_${equip}`;
     const data = JSON.parse(localStorage.getItem(key)) || {};
     const item = data.maint ? data.maint.find(i => i.id === id) : null;
-    
+
     const dateInput = document.getElementById('schedule-date-input');
     if (item && item.scheduledDate) {
         dateInput.value = item.scheduledDate;
     } else {
         dateInput.value = new Date().toISOString().split('T')[0];
     }
-    
+
     modal.style.display = 'flex';
 }
 
@@ -599,7 +599,7 @@ function setupEventDetailModal() {
     if (dateInput) {
         dateInput.addEventListener('change', updateScheduleDateFromDetail);
     }
-    
+
     if (moveToEquipBtn) {
         moveToEquipBtn.onclick = () => {
             if (currentDetailTarget) {
@@ -621,7 +621,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
     const key = `details_${site}_${equip}`;
     const data = JSON.parse(localStorage.getItem(key)) || {};
-    
+
     let item = null;
     if (isCompleted) {
         item = data.logs ? data.logs.find(l => l.id == id) : null;
@@ -659,7 +659,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         contentEl.innerText = '내용 없음';
         contentEl.title = '';
     }
-    
+
     const workerInput = document.getElementById('detail-worker');
     const memoInput = document.getElementById('detail-work-memo');
     const dateRow = document.getElementById('detail-date-row');
@@ -672,7 +672,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
     // UI 초기화 (수정 모드 해제)
     if (contentDiv) contentDiv.style.display = 'block';
-    if (contentInput) contentInput.style.display = 'none'; 
+    if (contentInput) contentInput.style.display = 'none';
     if (editContentBtn) {
         editContentBtn.textContent = '수정';
         editContentBtn.classList.add('btn-blue');
@@ -699,7 +699,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         // [수정] 저장된 작업자(취소된 내용)가 있으면 우선 사용
         workerInput.value = item.worker || localStorage.getItem('lastWorkerName') || sessionStorage.getItem('userId') || '';
         workerInput.disabled = false;
-        
+
         // [추가] 이전 점검 결과(메모) 불러오기
         let lastMemo = '';
         if (data.logs && data.logs.length > 0) {
@@ -712,11 +712,11 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         // [수정] 저장된 메모(취소된 내용)가 있으면 우선 사용, 없으면 이전 이력 메모 사용
         memoInput.value = item.memo || lastMemo;
         memoInput.disabled = false;
-        
+
         dateRow.style.display = 'block';
         document.getElementById('detail-scheduled-date').value = item.scheduledDate || '';
         document.getElementById('detail-scheduled-date').disabled = false;
-        
+
         completeBtn.style.display = 'block';
         completeBtn.textContent = '작업 완료';
         saveMemoBtn.style.display = 'none';
@@ -733,7 +733,7 @@ function toggleDetailContentEdit() {
     const editBtn = document.getElementById('btn-edit-detail-content');
     const dropdownWrapperId = 'detail-content-dropdown-wrapper';
     let dropdownWrapper = document.getElementById(dropdownWrapperId);
-    
+
     if (contentDiv.style.display !== 'none') {
         // [수정 모드 진입]
         if (!currentDetailTarget) return;
@@ -746,7 +746,7 @@ function toggleDetailContentEdit() {
         } else {
             item = data.maint ? data.maint.find(i => i.id == id) : null;
         }
-        
+
         if (!item) return;
 
         const type = item.type || '';
@@ -820,13 +820,13 @@ function toggleDetailContentEdit() {
                 dropdownWrapper = document.createElement('div');
                 dropdownWrapper.id = dropdownWrapperId;
                 dropdownWrapper.className = 'log-select-wrapper';
-                
+
                 const trigger = document.createElement('div');
                 trigger.className = 'log-select-trigger';
-                
+
                 const dropdown = document.createElement('div');
                 dropdown.className = 'log-select-dropdown';
-                
+
                 const list = document.createElement('div');
                 list.className = 'log-select-list';
 
@@ -845,7 +845,7 @@ function toggleDetailContentEdit() {
                             <span>${val}</span>
                         </div>
                     `;
-                    
+
                     div.onclick = (e) => {
                         e.stopPropagation();
                         if (type === '비정기' && detailType !== 'BM 점검') {
@@ -894,7 +894,7 @@ function toggleDetailContentEdit() {
                 function updateTriggerText() {
                     const selected = list.querySelectorAll('.log-select-item.selected');
                     const values = Array.from(selected).map(el => el.dataset.value);
-                    
+
                     if (values.length > 1) {
                         trigger.innerText = `${values[0]} 외 ${values.length - 1}개`;
                     } else if (values.length === 1) {
@@ -905,7 +905,7 @@ function toggleDetailContentEdit() {
                     trigger.classList.remove('multi-line');
                     trigger.title = values.join('\n');
                 }
-                
+
                 updateTriggerText();
                 contentInput.parentNode.insertBefore(dropdownWrapper, contentInput.nextSibling);
             }
@@ -935,12 +935,12 @@ function toggleDetailContentEdit() {
         const newContent = isDropdownMode ? dropdownValues.join(', ') : contentInput.value.trim();
         if (!newContent && !isDropdownMode) return alert('내용을 입력해주세요.');
         if (isDropdownMode && dropdownValues.length === 0) return alert('최소 1개 이상의 항목을 선택해주세요.');
-        
+
         if (currentDetailTarget) {
             const { site, equip, id, isCompleted } = currentDetailTarget;
             const key = `details_${site}_${equip}`;
             let data = JSON.parse(localStorage.getItem(key)) || {};
-            
+
             if (isCompleted && data.logs) {
                 // 이미 완료된 로그 수정
                 const item = data.logs.find(i => i.id == id);
@@ -959,12 +959,23 @@ function toggleDetailContentEdit() {
                         const targetDate = item.scheduledDate;
                         const itemType = item.type;
                         const itemDetailType = item.detailType || '';
-                        
+
                         let remainingIds = [];
                         const sameDayItems = data.maint.filter(m => m.scheduledDate === targetDate && m.type === itemType && (m.detailType || '') === itemDetailType);
-                        
+                        const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+
                         dropdownValues.forEach((val, idx) => {
-                            let existing = sameDayItems.find(m => m.content === val);
+                            let code = '';
+                            let fullContent = val;
+                            let period = null;
+                            const match = adminItems.find(a => a.part === val || a.code === val);
+                            if (match) {
+                                code = match.code || '';
+                                fullContent = match.part || val;
+                                period = match.cycle || null;
+                            }
+
+                            let existing = sameDayItems.find(m => m.content === fullContent || (code && m.code === code) || m.content === val);
                             if (existing) {
                                 remainingIds.push(existing.id);
                             } else {
@@ -973,9 +984,10 @@ function toggleDetailContentEdit() {
                                     id: newId,
                                     type: itemType,
                                     detailType: itemDetailType,
-                                    content: val,
+                                    code: code,
+                                    content: fullContent,
                                     date: "",
-                                    period: null,
+                                    period: (itemType === '정기') ? period : null,
                                     scheduledDate: targetDate,
                                     worker: item.worker || '',
                                     memo: item.memo || ''
@@ -994,7 +1006,7 @@ function toggleDetailContentEdit() {
                         if (remainingIds.length > 0) {
                             currentDetailTarget.id = remainingIds[0];
                         }
-                        
+
                         contentDiv.dataset.rawContent = dropdownValues.join(', ');
                         contentDiv.innerText = dropdownValues.length > 1 ? `${dropdownValues[0]} 외 ${dropdownValues.length - 1}개` : (dropdownValues[0] || '내용 없음');
                         contentDiv.title = dropdownValues.join('\n');
@@ -1009,20 +1021,20 @@ function toggleDetailContentEdit() {
             }
 
             localStorage.setItem(key, JSON.stringify(data));
-            
+
             // UI 업데이트
             contentDiv.style.display = 'block';
             contentInput.style.display = 'none';
             editBtn.textContent = '수정';
             editBtn.classList.add('btn-blue');
             editBtn.classList.remove('btn-save-state');
-            
+
             // 캘린더 갱신
             renderCalendar();
             if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
-            
+
             alert('수정되었습니다.');
-            
+
             // [추가] 캘린더 팝업 내용 갱신
             const popup = document.getElementById('calendar-popup');
             if (popup && popup.style.display !== 'none') {
@@ -1040,10 +1052,10 @@ function toggleDetailContentEdit() {
 
 function updateScheduleDateFromDetail() {
     if (!currentDetailTarget || currentDetailTarget.isCompleted) return;
-    
+
     const newDate = document.getElementById('detail-scheduled-date').value;
     if (!newDate) return alert('날짜를 선택해주세요.');
-    
+
     setScheduleDate(currentDetailTarget.site, currentDetailTarget.equip, currentDetailTarget.id, newDate);
     renderCalendar();
 
@@ -1055,7 +1067,7 @@ function updateScheduleDateFromDetail() {
             const dateStr = dateTitle.textContent;
             const allEvents = getScheduleForCalendar();
             let dayEvents = allEvents[dateStr] || [];
-            
+
             // 필터 재적용
             const searchInput = document.getElementById('calendar-search');
             const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
@@ -1068,7 +1080,7 @@ function updateScheduleDateFromDetail() {
                     return matchKeyword && matchSite && matchEquip;
                 });
             }
-            
+
             openCalendarPopup(dateStr, dayEvents);
         }
     }
@@ -1085,7 +1097,7 @@ function completeScheduleWork() {
 
     const worker = document.getElementById('detail-worker').value.trim();
     const memo = document.getElementById('detail-work-memo').value.trim();
-    
+
     if (!worker) return alert('작업자를 입력해주세요.');
     if (!memo) return alert('점검 결과 / 메모를 입력해주세요.');
 
@@ -1094,17 +1106,17 @@ function completeScheduleWork() {
     const { site, equip, id } = currentDetailTarget;
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
-    
+
     const maintItem = data.maint ? data.maint.find(i => i.id == id) : null;
     if (!maintItem) return;
 
     if (!data.logs) data.logs = [];
-    
+
     // [수정] 같은 날짜, 같은 타입, 세부구분의 모든 항목 완료 처리
     const sameDayItems = data.maint.filter(i => i.scheduledDate === maintItem.scheduledDate && i.type === maintItem.type && (i.detailType || '') === (maintItem.detailType || ''));
     const combinedContent = sameDayItems.map(i => i.content).join(', ');
     const completeDate = maintItem.scheduledDate || new Date().toISOString().split('T')[0];
-    
+
     data.logs.push({
         id: Date.now(),
         date: completeDate,
@@ -1128,7 +1140,7 @@ function completeScheduleWork() {
     });
 
     localStorage.setItem(key, JSON.stringify(data));
-    
+
     if (typeof addSystemLog === 'function') {
         addSystemLog('COMPLETE_SCHEDULE', equip, `Content: ${maintItem.content}`);
     }
@@ -1146,7 +1158,7 @@ function completeScheduleWork() {
             const dateStr = dateTitle.textContent;
             const allEvents = getScheduleForCalendar();
             let dayEvents = allEvents[dateStr] || [];
-            
+
             // 필터 재적용
             const searchInput = document.getElementById('calendar-search');
             const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
@@ -1159,7 +1171,7 @@ function completeScheduleWork() {
                     return matchKeyword && matchSite && matchEquip;
                 });
             }
-            
+
             openCalendarPopup(dateStr, dayEvents);
         }
     }
@@ -1167,44 +1179,54 @@ function completeScheduleWork() {
 
 function cancelScheduleCompletion() {
     if (!currentDetailTarget || !currentDetailTarget.isCompleted) return;
-    
+
     if (!confirm('작업 완료를 취소하고 예정 상태로 되돌리시겠습니까?')) return;
 
     const { site, equip, id } = currentDetailTarget;
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
-    
+
     if (!data.logs) return;
-    
+
     // 로그에서 해당 항목 찾기
     const logIndex = data.logs.findIndex(l => l.id == id);
     if (logIndex === -1) return;
-    
+
     const logItem = data.logs[logIndex];
     const logContent = logItem.content;
     const logType = logItem.type;
     const logDate = logItem.date;
-    
+
     // [추가] 값 복구를 위해 저장
     const recoveredWorker = logItem.worker || '';
     const recoveredMemo = logItem.memo || '';
-    
+
     // 1. 로그 삭제
     data.logs.splice(logIndex, 1);
-    
+
     // 2. 예정 일정(maint) 복구
     // 로그 내용은 콤마로 구분되어 있을 수 있으므로 분리하여 처리
     const contents = logContent.split(',').map(s => s.trim());
-    
+
     if (!data.maint) data.maint = [];
 
     let recoveredMaintId = null; // 복구된 메인 ID 추적
 
-    contents.forEach((content, idx) => {
-        // 기존 maint 리스트에 같은 내용과 타입의 항목이 있는지 확인 (정기 등 유지되는 항목)
-        // 예정일(scheduledDate)만 다시 세팅하여 달력에 표시되게 함
-        let existingItem = data.maint.find(m => m.type === logType && m.content === content);
-        
+    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+
+    contents.forEach((itemText, idx) => {
+        let code = '';
+        let fullContent = itemText;
+
+        const match = adminItems.find(a => a.part === itemText || a.code === itemText);
+        if (match) {
+            code = match.code || '';
+            fullContent = match.part || itemText;
+        }
+
+        let existingItem = data.maint.find(m => m.type === logType && (m.content === fullContent || (code && m.code === code) || m.content === itemText));
+
+
         if (existingItem) {
             existingItem.scheduledDate = logDate;
             // [추가] 취소 시 입력했던 내용 복구 저장
@@ -1218,9 +1240,10 @@ function cancelScheduleCompletion() {
                 id: newId,
                 type: logType,
                 detailType: logItem.detailType || '',
-                content: content,
+                code: code,
+                content: fullContent,
                 date: "", // 수행되지 않은 상태로 초기화
-                period: null,
+                period: (logType === '정기' && match) ? match.cycle : null,
                 scheduledDate: logDate,
                 costType: logItem.costType || '',
                 worker: recoveredWorker, // [추가]
@@ -1229,16 +1252,16 @@ function cancelScheduleCompletion() {
             if (idx === 0) recoveredMaintId = newId;
         }
     });
-    
+
     localStorage.setItem(key, JSON.stringify(data));
-    
+
     if (typeof addSystemLog === 'function') {
         addSystemLog('CANCEL_COMPLETION', equip, `Reverted: ${logContent}`);
     }
-    
+
     alert('작업 완료가 취소되었습니다.');
     // document.getElementById('event-detail-modal').style.display = 'none'; // [수정] 팝업 닫지 않음
-    
+
     // 배경 데이터 및 캘린더 갱신
     renderCalendar();
     if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
@@ -1251,7 +1274,7 @@ function cancelScheduleCompletion() {
             const dateStr = dateTitle.textContent;
             const allEvents = getScheduleForCalendar();
             let dayEvents = allEvents[dateStr] || [];
-            
+
             // 필터 재적용
             const searchInput = document.getElementById('calendar-search');
             const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
@@ -1264,7 +1287,7 @@ function cancelScheduleCompletion() {
                     return matchKeyword && matchSite && matchEquip;
                 });
             }
-            
+
             openCalendarPopup(dateStr, dayEvents);
         }
     }
@@ -1319,7 +1342,7 @@ function setupRegisterScheduleModal() {
     if (!modal) return;
 
     if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
-    
+
     if (siteSelect) {
         siteSelect.onchange = () => {
             updateRegisterEquipSelect(siteSelect.value);
@@ -1328,13 +1351,13 @@ function setupRegisterScheduleModal() {
 
     if (equipSelect) {
         equipSelect.onchange = () => {
-            if(typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
+            if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
         };
     }
 
     if (typeSelect) {
         typeSelect.onchange = () => {
-            if(typeof updateRegisterDetailTypeOptions === 'function') updateRegisterDetailTypeOptions();
+            if (typeof updateRegisterDetailTypeOptions === 'function') updateRegisterDetailTypeOptions();
         };
     }
 
@@ -1352,7 +1375,7 @@ function setupRegisterScheduleModal() {
     const detailType2Select = document.getElementById('register-detail-type2-select');
     if (detailType2Select) {
         detailType2Select.onchange = () => {
-            if(typeof updateRegisterContentOptions === 'function') updateRegisterContentOptions();
+            if (typeof updateRegisterContentOptions === 'function') updateRegisterContentOptions();
         };
     }
 
@@ -1362,10 +1385,10 @@ function setupRegisterScheduleModal() {
 
     const rTrigger = document.getElementById('register-content-trigger');
     const rDropdown = document.getElementById('register-content-dropdown');
-    if (rTrigger && rDropdown) rTrigger.onclick = (e) => { 
-        e.stopPropagation(); 
+    if (rTrigger && rDropdown) rTrigger.onclick = (e) => {
+        e.stopPropagation();
         document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== rDropdown) d.classList.remove('show'); });
-        rDropdown.classList.toggle('show'); 
+        rDropdown.classList.toggle('show');
     };
     const btnAdd = document.getElementById('btn-register-content-add');
     if (btnAdd && rDropdown) btnAdd.addEventListener('click', () => rDropdown.classList.remove('show'));
@@ -1381,7 +1404,7 @@ function openRegisterScheduleModal(dateStr) {
     if (!modal) return;
 
     if (dateDisplay) dateDisplay.value = dateStr;
-    
+
     const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
     siteSelect.innerHTML = '<option value="">사업장 선택</option>';
     Object.keys(data).forEach(site => {
@@ -1420,16 +1443,16 @@ function openRegisterScheduleModal(dateStr) {
         }
     }
 
-    if(typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
+    if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
 
     modal.style.display = 'flex';
 }
 
 function updateRegisterEquipSelect(site) {
     const equipSelect = document.getElementById('register-equip-select');
-    
+
     equipSelect.innerHTML = '<option value="">장비 선택</option>';
-    
+
     if (!site) {
         equipSelect.disabled = true;
         return;
@@ -1437,7 +1460,7 @@ function updateRegisterEquipSelect(site) {
 
     const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
     const equips = data[site] || [];
-    
+
     equips.forEach(equip => {
         const option = document.createElement('option');
         option.value = equip;
@@ -1445,9 +1468,9 @@ function updateRegisterEquipSelect(site) {
         option.textContent = parts.length > 1 ? `${parts[0]} (${parts[1]})` : parts[0];
         equipSelect.appendChild(option);
     });
-    
+
     equipSelect.disabled = false;
-    if(typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
+    if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
 }
 
 function confirmRegisterSchedule() {
@@ -1464,7 +1487,7 @@ function confirmRegisterSchedule() {
     const costType = costTypeSelect ? costTypeSelect.value : '';
 
     let lastProcessedId = null; // [추가] 등록된 작업 ID 추적
-    
+
     if (!dateStr || !site || !equip || !type) return alert('사업장, 장비, 구분을 모두 선택해주세요.');
     if (!detailType && detailTypeSelect && !detailTypeSelect.disabled) return alert('세부구분을 선택해주세요.');
     if (type === '비정기' && !detailType2 && detailType2Select && !detailType2Select.disabled) return alert('세부 구분을 선택해주세요.');
@@ -1479,9 +1502,9 @@ function confirmRegisterSchedule() {
         const input = document.getElementById('register-content-input');
         if (input) content = input.value.trim();
     }
-    
+
     if (!content) return alert('항목(내용)을 선택하거나 입력해주세요.');
-        
+
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
     if (!data.maint) data.maint = [];
@@ -1489,19 +1512,42 @@ function confirmRegisterSchedule() {
     const itemsList = content.split(', ').map(s => s.trim()).filter(s => s);
     const finalDetailType = (type === '비정기' && detailType2) ? `${detailType} > ${detailType2}` : detailType;
 
+    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+
     itemsList.forEach((itemText, idx) => {
-        const newItem = {
-            id: Date.now() + idx,
-            type: type,
-            detailType: finalDetailType,
-            content: itemText,
-            date: "",
-            period: null,
-            scheduledDate: dateStr,
-            costType: costType
-        };
-        if (idx === 0) lastProcessedId = newItem.id;
-        data.maint.push(newItem);
+        let code = '';
+        let fullContent = itemText;
+        let period = null;
+
+        const match = adminItems.find(a => a.part === itemText || a.code === itemText);
+        if (match) {
+            code = match.code || '';
+            fullContent = match.part || itemText;
+            period = match.cycle || null;
+        }
+
+        let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || (code && m.code === code) || m.content === itemText));
+
+        if (existingItem) {
+            existingItem.scheduledDate = dateStr;
+            existingItem.detailType = finalDetailType;
+            if (costType) existingItem.costType = costType;
+            if (idx === 0) lastProcessedId = existingItem.id;
+        } else {
+            const newItem = {
+                id: Date.now() + idx,
+                type: type,
+                detailType: finalDetailType,
+                code: code,
+                content: fullContent,
+                date: "",
+                period: (type === '정기') ? period : null,
+                scheduledDate: dateStr,
+                costType: costType
+            };
+            if (idx === 0) lastProcessedId = newItem.id;
+            data.maint.push(newItem);
+        }
     });
 
     localStorage.setItem(key, JSON.stringify(data));
@@ -1512,9 +1558,9 @@ function confirmRegisterSchedule() {
 
     alert('일정이 등록되었습니다.');
     document.getElementById('register-schedule-modal').style.display = 'none';
-    
+
     if (costTypeSelect) costTypeSelect.value = '';
-    
+
     renderCalendar();
     const popup = document.getElementById('calendar-popup');
     if (popup) popup.style.display = 'none';
@@ -1529,7 +1575,7 @@ function confirmRegisterSchedule() {
 }
 
 // [추가] 팝업 연동을 위한 함수
-window.updateRegisterTypeOptions = function() {
+window.updateRegisterTypeOptions = function () {
     const rTypeSelect = document.getElementById('register-type-select');
     if (!rTypeSelect) return;
     const categories = ['정기', '비정기', '고객대응', '용액제조', '온라인점검'];
@@ -1546,7 +1592,7 @@ window.updateRegisterTypeOptions = function() {
     updateRegisterDetailTypeOptions();
 };
 
-window.updateRegisterDetailTypeOptions = function() {
+window.updateRegisterDetailTypeOptions = function () {
     const rEquipSelect = document.getElementById('register-equip-select');
     const rTypeSelect = document.getElementById('register-type-select');
     const rDetailTypeSelect = document.getElementById('register-detail-type-select');
@@ -1606,7 +1652,7 @@ window.updateRegisterDetailTypeOptions = function() {
     updateRegisterContentOptions();
 };
 
-window.updateRegisterDetailType2Options = function() {
+window.updateRegisterDetailType2Options = function () {
     const rEquipSelect = document.getElementById('register-equip-select');
     const rTypeSelect = document.getElementById('register-type-select');
     const rDetailTypeSelect = document.getElementById('register-detail-type-select');
@@ -1624,7 +1670,7 @@ window.updateRegisterDetailType2Options = function() {
     }
     rDetailType2Select.disabled = false;
     const equipKey = rEquipSelect ? rEquipSelect.value : '';
-    
+
     const catData = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
     const key = `${equipKey}::${type}::${detailType}`;
     const defaultSubCategories2 = {
@@ -1651,7 +1697,7 @@ window.updateRegisterDetailType2Options = function() {
     updateRegisterContentOptions();
 };
 
-window.updateRegisterContentOptions = function() {
+window.updateRegisterContentOptions = function () {
     const rEquipSelect = document.getElementById('register-equip-select');
     const rTypeSelect = document.getElementById('register-type-select');
     const rDetailTypeSelect = document.getElementById('register-detail-type-select');
@@ -1736,7 +1782,7 @@ window.updateRegisterContentOptions = function() {
         wrapper.style.display = 'block';
         input.style.display = 'none';
         trigger.textContent = '항목 선택';
-        
+
         list.innerHTML = uniqueItems.map(item => {
             const val = item.code ? item.code : item.content;
             return `<div class="log-select-item" data-value="${val}"><span>${val}</span></div>`;
@@ -1755,11 +1801,11 @@ window.updateRegisterContentOptions = function() {
                     });
                 }
                 div.classList.toggle('selected');
-                
+
                 const sels = Array.from(list.querySelectorAll('.selected')).map(el => el.dataset.value);
-                trigger.textContent = sels.length > 1 ? sels[0] + ' 외 ' + (sels.length-1) + '개' : (sels.length === 1 ? sels[0] : '항목 선택');
+                trigger.textContent = sels.length > 1 ? sels[0] + ' 외 ' + (sels.length - 1) + '개' : (sels.length === 1 ? sels[0] : '항목 선택');
                 trigger.title = sels.join('\n');
-                
+
                 if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
                     if (dropdown) dropdown.classList.remove('show');
                 }
@@ -1853,7 +1899,7 @@ function openSearchModal() {
 function updateSearchEquipSelect(site) {
     const equipSelect = document.getElementById('search-equip-select');
     equipSelect.innerHTML = '<option value="">전체 장비</option>';
-    
+
     if (!site) {
         equipSelect.disabled = true;
         return;
@@ -1861,7 +1907,7 @@ function updateSearchEquipSelect(site) {
 
     const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
     const equips = data[site] || [];
-    
+
     equips.forEach(equip => {
         const option = document.createElement('option');
         option.value = equip;
@@ -1869,27 +1915,27 @@ function updateSearchEquipSelect(site) {
         option.textContent = parts.length > 1 ? `${parts[0]} (${parts[1]})` : parts[0];
         equipSelect.appendChild(option);
     });
-    
+
     equipSelect.disabled = false;
 }
 
 /* ==========================================================================
    [9] 드래그 앤 드롭 (Drag & Drop)
    ========================================================================== */
-window.handleCalendarDragStartFromData = function(e) {
+window.handleCalendarDragStartFromData = function (e) {
     e.stopPropagation();
     const target = e.currentTarget;
     target.classList.add('dragging');
     const site = target.dataset.dragSite;
     const equip = target.dataset.dragEquip;
     const idsStr = target.dataset.dragIds;
-    
+
     const ids = JSON.parse(idsStr);
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', JSON.stringify({ site, equip, ids }));
 };
 
-window.handleCalendarDrop = function(e, newDate) {
+window.handleCalendarDrop = function (e, newDate) {
     e.preventDefault();
     e.stopPropagation();
     e.currentTarget.classList.remove('drag-over');
