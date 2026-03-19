@@ -377,18 +377,6 @@
                 "mh": "2",
                 "type": "정기",
                 "worker": "이원배 진봉균"
-            },
-            {
-                "id": 1773962077908,
-                "date": "2026-03-19",
-                "memo": "",
-                "type": "비정기",
-                "detailType": "Data / Para 이상",
-                "detailType2": "Data / Para 이상 > 딜리버리펌프_이슈",
-                "content": "파트 이상 (교체)",
-                "costType": "무상(보증)",
-                "worker": "admin",
-                "mh": "2"
             }
         ],
         "memo": "",
