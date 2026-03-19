@@ -1119,18 +1119,19 @@ function setupItemMgmt() {
                 matches.forEach(m => {
                     const li = document.createElement('li');
                     li.className = 'suggestion-item';
-                    if (currentEquips.includes(m.name)) li.classList.add('selected');
 
                     li.innerHTML = `
-                        <div class="suggestion-item-content" style="pointer-events: none;">
-                            <div style="display:flex; align-items:center; width:100%; margin:0;">
-                                <input type="checkbox" value="${m.name}" style="margin-right:8px;" ${currentEquips.includes(m.name) ? 'checked' : ''}>
+                        <div class="suggestion-item-content pointer-events-none">
+                            <div class="flex-between-center m-0">
+                                <input type="checkbox" value="${m.name}" class="mr-8" ${currentEquips.includes(m.name) ? 'checked' : ''}>
                                 <span>${m.name}</span>
-                                <span class="abbr" style="margin-left:auto;">${m.abbr}</span>
+                                <span class="abbr ml-auto">${m.abbr}</span>
                             </div>
                         </div>
                     `;
                     
+                    if (currentEquips.includes(m.name)) li.classList.add('selected');
+
                     li.addEventListener('click', (ev) => {
                         ev.stopPropagation();
                         const cb = li.querySelector('input[type="checkbox"]');
@@ -1145,7 +1146,7 @@ function setupItemMgmt() {
                 });
                 equipSuggestionBox.style.display = 'flex';
             } else {
-                equipSuggestionList.innerHTML = '<li class="suggestion-item" style="text-align:center; color:#8b949e; cursor:default;">등록된 장비가 없습니다.</li>';
+                equipSuggestionList.innerHTML = '<li class="suggestion-item list-empty-msg">등록된 장비가 없습니다.</li>';
                 equipSuggestionBox.style.display = 'flex';
             }
         });
@@ -1776,7 +1777,7 @@ function ensureSubCategory2Panel() {
         panel2.id = 'check-type-subcategory2-container';
         panel2.className = 'admin-col-list';
         panel2.style.display = 'none';
-        panel2.style.flex = '0 0 160px';
+        panel2.className = 'admin-col-list col-list-160';
         
         panel2.innerHTML = `
             <div class="list-header">
@@ -2006,9 +2007,9 @@ function renderCheckTypeSubCategoryList() {
         li.dataset.sub = cat; // [추가] 연동을 위한 데이터 속성
         li.draggable = true; // [추가] 드래그 활성화
         li.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <span class="subcategory-text" style="flex: 1; cursor: grab;" title="드래그하여 순서 변경">${cat}</span>
-                <div style="display: flex; gap: 5px;">
+            <div class="flex-between-center">
+                <span class="subcategory-text flex-1-grab" title="드래그하여 순서 변경">${cat}</span>
+                <div class="flex-gap-5">
                     <button class="btn-edit-sm btn-edit-subcat" title="수정" onclick="event.stopPropagation();">✏️</button>
                     <button class="btn-del-sm" onclick="event.stopPropagation(); deleteCheckTypeSubCategory('${key}', ${index})" title="삭제">✕</button>
                 </div>
@@ -2058,7 +2059,7 @@ function renderCheckTypeSubCategoryList() {
                 li.classList.add('editing');
                 li.draggable = false;
                 editBtn.textContent = '✅';
-                textSpan.innerHTML = `<input type="text" class="input-dark" value="${cat}" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
+                textSpan.innerHTML = `<input type="text" class="input-dark input-edit-small" value="${cat}" onclick="event.stopPropagation()">`;
                 const input = textSpan.querySelector('input');
                 input.focus();
                 input.addEventListener('keypress', (ev) => {
@@ -2183,9 +2184,9 @@ function renderCheckTypeSubCategory2List() {
         li.dataset.sub2 = cat;
         li.draggable = true;
         li.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <span class="subcategory-text" style="flex: 1; cursor: grab;" title="드래그하여 순서 변경">${cat}</span>
-                <div style="display: flex; gap: 5px;">
+            <div class="flex-between-center">
+                <span class="subcategory-text flex-1-grab" title="드래그하여 순서 변경">${cat}</span>
+                <div class="flex-gap-5">
                     <button class="btn-edit-sm btn-edit-subcat2" title="수정" onclick="event.stopPropagation();">✏️</button>
                     <button class="btn-del-sm" onclick="event.stopPropagation(); deleteCheckTypeSubCategory2('${key}', ${index})" title="삭제">✕</button>
                 </div>
@@ -2219,7 +2220,7 @@ function renderCheckTypeSubCategory2List() {
                 li.classList.add('editing');
                 li.draggable = false;
                 editBtn.textContent = '✅';
-                textSpan.innerHTML = `<input type="text" class="input-dark" value="${cat}" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
+                textSpan.innerHTML = `<input type="text" class="input-dark input-edit-small" value="${cat}" onclick="event.stopPropagation()">`;
                 const input = textSpan.querySelector('input');
                 input.focus();
                 input.addEventListener('keypress', (ev) => {
@@ -2397,22 +2398,21 @@ function renderCheckTypeItemList() {
     let items = checkTypeItemsData[key] || [];
     
     if (items.length === 0) {
-        list.innerHTML = '<li style="justify-content: center; color: #8b949e; cursor: default; hover:none;">등록된 항목이 없습니다.</li>';
+        list.innerHTML = '<li class="list-empty-msg">등록된 항목이 없습니다.</li>';
         return;
     }
     
     items.forEach(item => {
         const li = document.createElement('li');
-        li.style.cursor = 'default';
-        li.style.fontSize = '12px';
+        li.className = 'check-item-row';
         li.innerHTML = `
-            <div class="model-col" style="flex: 1; justify-content: center; align-items: center; text-align: center; color: #8b949e;">
+            <div class="model-col check-item-col-1">
                 ${currentCheckTypeSubCategory}
             </div>
-            <div class="model-col" style="flex: 3; justify-content: center; align-items: center; text-align: center; white-space: normal; word-break: break-all;">
+            <div class="model-col check-item-col-3">
                 ${item.content}
             </div>
-            <div class="model-col" style="flex: 0 0 60px; justify-content: center; align-items: center;">
+            <div class="model-col check-item-col-action">
                 <button class="btn-del-sm" onclick="deleteCheckTypeItem('${key}', ${item.id})">✕</button>
             </div>
         `;

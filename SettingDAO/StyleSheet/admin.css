@@ -580,3 +580,61 @@ select.input-dark option {
         flex-direction: column;
     }
 }
+
+/* ==========================================================================
+   유틸리티 및 리팩토링된 스타일 (Refactored Inline Styles)
+   ========================================================================== */
+.mb-0 { margin-bottom: 0 !important; }
+.mb-5 { margin-bottom: 5px; }
+.mb-10 { margin-bottom: 10px; }
+.mb-15 { margin-bottom: 15px; }
+.m-0 { margin: 0; }
+.mr-8 { margin-right: 8px; }
+.ml-auto { margin-left: auto; }
+
+.flex-row-gap-10 { display: flex; gap: 10px; margin-bottom: 15px; }
+.flex-04 { flex: 0.4; }
+.flex-05 { flex: 0.5; }
+.flex-08 { flex: 0.8; }
+.flex-10 { flex: 1; }
+.flex-12 { flex: 1.2; }
+.flex-14 { flex: 1.4; }
+.flex-30 { flex: 3; }
+
+.form-label-custom { display: block; color: #8b949e; margin-bottom: 5px; font-size: 13px; }
+.form-section-divider { border-top: 1px solid #30363d; padding-top: 15px; margin-bottom: 15px; }
+.section-subtitle { display: block; margin-bottom: 10px; color: #e6edf3; font-size: 13px; font-weight: bold; }
+
+.search-input-right { width: 240px; min-width: 200px; margin-left: auto; }
+.btn-green-micro { padding: 2px 8px; font-size: 11px; }
+
+.static-suggestion-list { position: static; display: block; max-height: 200px; border: none; margin: 0; border-radius: 4px 4px 0 0; }
+
+.col-list-350 { flex: 0 0 350px; }
+.col-list-160 { flex: 0 0 160px; }
+
+.col-center-1 { flex: 1; justify-content: center; text-align: center; }
+.col-center-3 { flex: 3; justify-content: center; text-align: center; }
+.col-center-60 { flex: 0 0 60px; justify-content: center; text-align: center; }
+
+.check-type-item-list { border-top: none; border-top-left-radius: 0; border-top-right-radius: 0; max-height: 400px; margin-bottom: 15px; }
+.select-add-item { flex: 1; text-align: center; height: 35px; border-radius: 4px; }
+.input-add-item { padding-left: 10px; height: 35px; }
+.btn-add-item { width: 60px; height: 35px; }
+
+.modal-load-setting { width: 450px; height: 350px; }
+.modal-desc { margin-bottom: 15px; color: #8b949e; font-size: 13px; }
+.modal-select-lg { height: 30px; font-size: 14px; }
+
+/* JS 동적 요소용 클래스 */
+.flex-between-center { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+.flex-1-grab { flex: 1; cursor: grab; }
+.flex-gap-5 { display: flex; gap: 5px; }
+.input-edit-small { width: 100%; padding: 2px; }
+.check-item-row { cursor: default; font-size: 12px; }
+.check-item-col-1 { flex: 1; justify-content: center; align-items: center; text-align: center; color: #8b949e; }
+.check-item-col-3 { flex: 3; justify-content: center; align-items: center; text-align: center; white-space: normal; word-break: break-all; }
+.check-item-col-action { flex: 0 0 60px; justify-content: center; align-items: center; }
+.max-w-100 { max-width: 100%; }
+.opacity-50 { opacity: 0.5; }
+.pointer-events-none { pointer-events: none; }
