@@ -1016,6 +1016,12 @@ function renderSetupEquipDetailList(activeEquips) {
 
         const li = document.createElement('li');
         li.className = 'status-list-item';
+        
+        // [추가] 현재 간트 차트 필터(선택된 장비)와 일치하면 활성화(파란색) 스타일 적용
+        if (currentGanttFilters.site === item.site && currentGanttFilters.equip === item.equip) {
+            li.classList.add('active');
+        }
+        
         li.innerHTML = `
             <span class="status-color equip-bar"></span>
             <span class="status-name no-margin-right">
@@ -1023,10 +1029,23 @@ function renderSetupEquipDetailList(activeEquips) {
                 ${serial ? `<span class="equip-serial">${escapeHtml(serial)}</span>` : ''}
             </span>
         `;
-        // [수정] 클릭 시 간트 차트 필터 적용 및 표시
         li.onclick = () => {
-            currentGanttFilters.site = item.site;
-            currentGanttFilters.equip = item.equip; // [수정] 전체 장비명(Serial 포함)으로 필터링
+            // [수정] 이미 선택된 항목을 클릭하면 선택 해제(토글), 아니면 선택 적용
+            if (currentGanttFilters.site === item.site && currentGanttFilters.equip === item.equip) {
+                currentGanttFilters.site = '';
+                currentGanttFilters.equip = '';
+            } else {
+                currentGanttFilters.site = item.site;
+                currentGanttFilters.equip = item.equip;
+                
+                // [추가] 간트 차트 영역으로 부드럽게 화면 자동 스크롤
+                setTimeout(() => {
+                    const ganttWrapper = document.getElementById('gantt-wrapper');
+                    if (ganttWrapper) {
+                        ganttWrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                }, 100);
+            }
             updateSetupDashboard();
         };
         listEl.appendChild(li);
