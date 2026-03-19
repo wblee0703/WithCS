@@ -238,9 +238,9 @@
                 "detailType": "PM 점검",
                 "id": 1770797670592,
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
+                "mh": "2",
                 "type": "정기",
-                "worker": "이원배 진봉균",
-                "mh": "2"
+                "worker": "이원배 진봉균"
             },
             {
                 "content": "명절 전 장비 점검",
@@ -249,9 +249,9 @@
                 "detailType": "기타",
                 "id": 1770860887834,
                 "memo": "1. ICPMS 감도 저하관련 확인\n - 현상 : ICPMS PM 이후 지속적으로 감도 저하됨\n - 조치 : Tuning 진행 후 감도 정상 수준으로 측정\n 1) Omega Bias, Omega Lens 조절\n - 원인 : Cone, Lens 세척이후 보관을 길게 할수록 안정화하는데 시간이 좀 걸리는 것 같음\n - 향후 조치 : Cone, Lens 교체후 감도 저하 모니터링후 한번더 튜닝 진행 필요\n\n2. 장비 상태 온라인 점검\n - Calibration 적용 산태 확인 : 특이사항 없음\n - 데이터 Tend 확인 : 특이사항 없음",
+                "mh": "1",
                 "type": "고객대응",
-                "worker": "이원배",
-                "mh": "1"
+                "worker": "이원배"
             },
             {
                 "content": "Metal STD (10ppb 3%)",
@@ -260,9 +260,9 @@
                 "detailType": "PM 점검",
                 "id": 1772763029157,
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
+                "mh": "2",
                 "type": "정기",
-                "worker": "-",
-                "mh": "2"
+                "worker": "-"
             },
             {
                 "content": "Metal STD (10ppb 3%), Skimmer Cone, Sampler Cone, Ion Lens",
@@ -271,9 +271,9 @@
                 "detailType": "PM 점검",
                 "id": 1773734760827,
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 유지 관리 진행\n - Tuning 진행 : 특이사항 없음\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음",
+                "mh": "3",
                 "type": "정기",
-                "worker": "이원배 진봉균 박강민",
-                "mh": "3"
+                "worker": "이원배 진봉균 박강민"
             }
         ],
         "memo": "",

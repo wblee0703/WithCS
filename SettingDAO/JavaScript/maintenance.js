@@ -660,11 +660,7 @@ function toggleEditRow(id) {
         editBtn.textContent = '✅';
         editBtn.style.color = '#238636';
 
-        codeCell.contentEditable = "true";
-        codeCell.spellcheck = false;
-
-        contentCell.contentEditable = "true";
-        contentCell.spellcheck = false;
+        // [수정] 코드명, 물품명은 수정 불가하도록 contentEditable 속성 적용 제거
 
         // [수정] 주기(Period) 입력창을 number 타입으로 변경하여 숫자만 입력 가능하게 함
         if (row.querySelector('.badge').textContent === '정기') {
@@ -680,7 +676,8 @@ function toggleEditRow(id) {
                 <button type="button" onclick="try{document.getElementById('input-date-${id}').showPicker()}catch(e){document.getElementById('input-date-${id}').focus()}" class="btn-calendar-picker">📅</button>
             </div>
         `;
-        contentCell.focus();
+        const dateInput = document.getElementById(`input-date-${id}`);
+        if (dateInput) dateInput.focus();
     } else {
         // [데이터 저장]
         const newCode = codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim();
