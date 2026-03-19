@@ -185,46 +185,45 @@
             {
                 "code": "Metal STD (10ppb 3%)",
                 "content": "Metal Standard Solution(3%HNO3)",
+                "costType": "무상(중고)",
                 "date": "2026-03-04",
+                "detailType": "PM 점검",
                 "id": 1773732537420,
                 "period": 30,
-                "type": "정기",
                 "scheduledDate": "2026-03-19",
-                "detailType": "PM 점검",
-                "costType": "무상(중고)"
+                "type": "정기",
+                "worker": "",
+                "memo": ""
             },
             {
                 "code": "Skimmer Cone",
                 "content": "Pt Skimmer cone for 7700S",
+                "costType": "무상(중고)",
                 "date": "2026-02-04",
+                "detailType": "PM 점검",
                 "id": 1773732539172,
                 "period": 182,
-                "type": "정기",
-                "scheduledDate": "2026-03-19",
-                "detailType": "PM 점검",
-                "costType": "무상(중고)"
+                "type": "정기"
             },
             {
                 "code": "Sampler Cone",
                 "content": "Pt Sampling cone for 7700S",
+                "costType": "무상(중고)",
                 "date": "2026-02-04",
+                "detailType": "PM 점검",
                 "id": 1773732540679,
                 "period": 182,
-                "type": "정기",
-                "scheduledDate": "2026-03-19",
-                "detailType": "PM 점검",
-                "costType": "무상(중고)"
+                "type": "정기"
             },
             {
                 "code": "Ion Lens",
                 "content": "Extraction-omega lens assembly",
+                "costType": "무상(중고)",
                 "date": "2026-02-04",
+                "detailType": "PM 점검",
                 "id": 1773732542276,
                 "period": 365,
-                "type": "정기",
-                "scheduledDate": "2026-03-19",
-                "detailType": "PM 점검",
-                "costType": "무상(중고)"
+                "type": "정기"
             }
         ],
         "logs": [
