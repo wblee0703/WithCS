@@ -423,7 +423,10 @@
                 "date": "2026-03-17",
                 "id": 1773732550702,
                 "period": "30",
-                "type": "정기"
+                "type": "정기",
+                "scheduledDate": "2026-03-19",
+                "detailType": "PM 점검",
+                "costType": "무상(보증)"
             },
             {
                 "code": "Skimmer Cone",
@@ -431,7 +434,10 @@
                 "date": "2025-11-04",
                 "id": 1773732552676,
                 "period": 182,
-                "type": "정기"
+                "type": "정기",
+                "scheduledDate": "2026-03-19",
+                "detailType": "PM 점검",
+                "costType": "무상(보증)"
             },
             {
                 "code": "Sampler Cone",
