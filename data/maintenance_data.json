@@ -281,12 +281,6 @@
         "memo": "",
         "files": []
     },
-    "details_LGD 구미_OMS-100L::OMS1-LK22-0104": {
-        "maint": [],
-        "logs": [],
-        "memo": "",
-        "files": []
-    },
     "details_SKH 이천_SOMA-2000::SOMA-H19-0402": {
         "maint": [
             {
@@ -552,6 +546,12 @@
         "files": []
     },
     "details_ENF 천안_WAD-10::AD10-EK24-0202": {
+        "maint": [],
+        "logs": [],
+        "memo": "",
+        "files": []
+    },
+    "details_LGD 구미_OMS-100::OMS1-LK22-0104": {
         "maint": [],
         "logs": [],
         "memo": "",
