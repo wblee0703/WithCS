@@ -43,70 +43,8 @@
         "files": []
     },
     "details_SEC 평택_WIM-100::R24-01-01-C": {
-        "maint": [
-            {
-                "id": 1773971781129,
-                "type": "정기",
-                "detailType": "PM 점검",
-                "code": "Skimmer Cone",
-                "content": "Pt Skimmer cone for 7700S",
-                "date": "2026-04-03",
-                "period": 182
-            },
-            {
-                "id": 1773971781130,
-                "type": "정기",
-                "detailType": "PM 점검",
-                "code": "Sampler Cone",
-                "content": "Pt Sampling cone for 7700S",
-                "date": "2026-04-03",
-                "period": "182"
-            },
-            {
-                "id": 1773971781131,
-                "type": "정기",
-                "detailType": "PM 점검",
-                "code": "Metal STD (5ppb 1%)",
-                "content": "Metal Standard Solution(1%HNO3)",
-                "date": "2026-04-23",
-                "period": "30"
-            },
-            {
-                "id": 1773971781132,
-                "type": "정기",
-                "detailType": "PM 점검",
-                "code": "9.5% HNO3",
-                "content": "9.5% HNO3",
-                "date": "2026-04-23",
-                "period": "30"
-            }
-        ],
-        "logs": [
-            {
-                "id": 1773971802543,
-                "date": "2026-04-03",
-                "type": "정기",
-                "detailType": "PM 점검",
-                "detailType2": "",
-                "content": "Skimmer Cone, Sampler Cone, Metal STD (5ppb 1%), 9.5% HNO3",
-                "costType": "유상",
-                "mh": "2",
-                "worker": "이원배",
-                "memo": "작업 진행 완료"
-            },
-            {
-                "id": 1773972096230,
-                "date": "2026-04-23",
-                "type": "정기",
-                "detailType": "PM 점검",
-                "detailType2": "",
-                "content": "Metal STD (5ppb 1%), 9.5% HNO3",
-                "costType": "유상",
-                "mh": "2",
-                "worker": "이원배",
-                "memo": "작업 진행 완료 굿"
-            }
-        ],
+        "maint": [],
+        "logs": [],
         "memo": "",
         "files": []
     },
@@ -130,8 +68,7 @@
                 "code": "Metal STD (5ppb 1%)",
                 "content": "Metal Standard Solution(1%HNO3)",
                 "date": "2026-03-05",
-                "period": 30,
-                "scheduledDate": "2026-04-02"
+                "period": 30
             },
             {
                 "id": 1773725556150,
@@ -139,8 +76,7 @@
                 "code": "9.5% HNO3",
                 "content": "9.5% HNO3",
                 "date": "2026-03-05",
-                "period": 30,
-                "scheduledDate": "2026-04-02"
+                "period": 30
             },
             {
                 "id": 1773725562427,
@@ -221,18 +157,6 @@
                 "content": "분석 Sequence 확인",
                 "worker": "이원배 진봉균",
                 "memo": "1. 분석 Sequence 확인\n - Chemical Port 동시에 열리는게 있는지 확인\n - Port2 LW NormalA에 Port1,2가 동시에 열림(수정완료)"
-            },
-            {
-                "id": 1773980833620,
-                "date": "2026-03-20",
-                "type": "비정기",
-                "detailType": "Data / Para 이상",
-                "detailType2": "Data / Para 이상 > 딜리버리펌프_이슈",
-                "content": "용액 / 용자 이상",
-                "costType": "무상(보증)",
-                "mh": "2",
-                "worker": "admin",
-                "memo": ""
             }
         ],
         "memo": "",
@@ -246,20 +170,7 @@
     },
     "details_ENF 천안_SOMA-3000E::SOMA-EK23-1102": {
         "maint": [],
-        "logs": [
-            {
-                "id": 1773977270021,
-                "date": "2026-03-20",
-                "type": "비정기",
-                "detailType": "Data / Para 이상",
-                "detailType2": "Data / Para 이상 > 딜리버리펌프_이슈",
-                "content": "용액 / 용자 이상",
-                "costType": "무상(보증)",
-                "mh": "2",
-                "worker": "admin",
-                "memo": ""
-            }
-        ],
+        "logs": [],
         "memo": "",
         "files": []
     },
@@ -289,7 +200,7 @@
                 "detailType": "PM 점검",
                 "code": "Metal STD (10ppb 3%)",
                 "content": "Metal Standard Solution(3%HNO3)",
-                "date": "2026-03-04",
+                "date": "2026-03-19",
                 "period": 30,
                 "scheduledDate": "2026-04-01",
                 "costType": "무상(중고)",
@@ -339,7 +250,6 @@
                 "detailType": "PM 점검",
                 "content": "Metal STD (10ppb 3%)",
                 "costType": "유상",
-                "mh": "2",
                 "worker": "이원배 진봉균",
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
             },
@@ -350,7 +260,6 @@
                 "detailType": "기타",
                 "content": "명절 전 장비 점검",
                 "costType": "유상",
-                "mh": "1",
                 "worker": "이원배",
                 "memo": "1. ICPMS 감도 저하관련 확인\n - 현상 : ICPMS PM 이후 지속적으로 감도 저하됨\n - 조치 : Tuning 진행 후 감도 정상 수준으로 측정\n 1) Omega Bias, Omega Lens 조절\n - 원인 : Cone, Lens 세척이후 보관을 길게 할수록 안정화하는데 시간이 좀 걸리는 것 같음\n - 향후 조치 : Cone, Lens 교체후 감도 저하 모니터링후 한번더 튜닝 진행 필요\n\n2. 장비 상태 온라인 점검\n - Calibration 적용 산태 확인 : 특이사항 없음\n - 데이터 Tend 확인 : 특이사항 없음"
             },
@@ -361,8 +270,7 @@
                 "detailType": "PM 점검",
                 "content": "Metal STD (10ppb 3%)",
                 "costType": "유상",
-                "mh": "2",
-                "worker": "이원배 진봉균",
+                "worker": "-",
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
             },
             {
@@ -372,11 +280,16 @@
                 "detailType": "PM 점검",
                 "content": "Metal STD (10ppb 3%), Skimmer Cone, Sampler Cone, Ion Lens",
                 "costType": "유상",
-                "mh": "3",
                 "worker": "이원배 진봉균 박강민",
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 유지 관리 진행\n - Tuning 진행 : 특이사항 없음\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음"
             }
         ],
+        "memo": "",
+        "files": []
+    },
+    "details_LGD 구미_OMS-100L::OMS1-LK22-0104": {
+        "maint": [],
+        "logs": [],
         "memo": "",
         "files": []
     },
@@ -388,11 +301,9 @@
                 "detailType": "PM 점검",
                 "code": "Metal STD (10ppb 3%)",
                 "content": "Metal Standard Solution(3%HNO3)",
-                "date": "2026-03-13",
+                "date": "2026-03-19",
                 "period": "30",
                 "scheduledDate": "2026-04-01",
-                "costType": "유상",
-                "mh": "2",
                 "worker": "이원배",
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
             },
@@ -438,8 +349,6 @@
                 "type": "정기",
                 "detailType": "PM 점검",
                 "content": "Metal STD (10ppb 3%), Skimmer Cone, Sampler Cone, Ion Lens",
-                "costType": "무상(보증)",
-                "mh": "3",
                 "worker": "이원배 진봉균 박강민",
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 유지 관리 진행\n - Tuning 진행 : 특이사항 없음\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음"
             },
@@ -449,8 +358,6 @@
                 "type": "정기",
                 "detailType": "PM 점검",
                 "content": "Metal STD (10ppb 3%)",
-                "costType": "유상",
-                "mh": "2",
                 "worker": "이원배 진봉균",
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
             },
@@ -460,8 +367,6 @@
                 "type": "고객대응",
                 "detailType": "기타",
                 "content": "명절 전 장비 점검",
-                "costType": "유상",
-                "mh": "2",
                 "worker": "이원배",
                 "memo": "1. ICPMS 감도 저하관련 확인\n - 현상 : ICPMS PM 이후 지속적으로 감도 저하됨\n - 조치 : Tuning 진행 후 감도 정상 수준으로 측정\n 1) Omega Bias, Omega Lens 조절\n - 원인 : Cone, Lens 세척이후 보관을 길게 할수록 안정화하는데 시간이 좀 걸리는 것 같음\n - 향후 조치 : Cone, Lens 교체후 감도 저하 모니터링후 한번더 튜닝 진행 필요\n\n2. 장비 상태 온라인 점검\n - Calibration 적용 산태 확인 : 특이사항 없음\n - 데이터 Tend 확인 : 특이사항 없음"
             },
@@ -471,8 +376,6 @@
                 "type": "온라인점검",
                 "detailType": "온라인점검",
                 "content": "Reflected Power Spec Over",
-                "costType": "유상",
-                "mh": "2",
                 "worker": "이원배",
                 "memo": "1. Reflected Power Spec Over 조치\n - 정상 Spec. : 0 ~ 10\n - 설비값 : 9.5 ~ 11.5\n - ICPMS Tuning : RF Matching 조절 (1.05 - >1.15)\n - 조치후 : Reflected Power 7 ~ 8 수준 \n (이전 Work Coil 교체후 Cool Mode Reflected Power가 높아짐 - Plasma 흔들림 없어 정상으로 판단)"
             },
@@ -482,8 +385,6 @@
                 "type": "정기",
                 "detailType": "PM 점검",
                 "content": "Metal STD (10ppb 3%)",
-                "costType": "유상",
-                "mh": "2",
                 "worker": "이원배 진봉균",
                 "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
             }
@@ -526,9 +427,7 @@
                 "content": "Metal Standard Solution(3%HNO3)",
                 "date": "2026-03-17",
                 "period": "30",
-                "scheduledDate": "2026-04-01",
-                "costType": "유상",
-                "mh": "2"
+                "costType": "무상(보증)"
             },
             {
                 "id": 1773732552676,

@@ -148,7 +148,7 @@ function setupLogEvents() {
     // [수정] log-worker를 log-mh로 변경하고 속성 적용
     if (workerInput && workerInput.id === 'log-worker') {
         workerInput.id = 'log-mh';
-        workerInput.placeholder = '공수(M/H)';
+        workerInput.placeholder = '공수(M/D)';
         workerInput.type = 'number';
         workerInput.min = '0';
     }
@@ -850,7 +850,7 @@ function addLogItem(e) {
         return alert('필수 항목(날짜, 구분, 세부구분, 비용처리, 공수)을 올바르게 입력/선택해주세요.');
     }
     if (parseFloat(mh) < 0) {
-        return alert('공수(M/H)는 0 이상이어야 합니다.');
+        return alert('공수(M/D)는 0 이상이어야 합니다.');
     }
     if (type === '비정기' && !detailType2 && detailType2Select && !detailType2Select.disabled) {
         return alert('세부 구분을 선택해주세요.');
@@ -1259,7 +1259,7 @@ function toggleLogEdit(id, btn) {
             return alert('필수 항목(날짜, 구분, 세부구분, 비용처리, 공수)을 모두 입력해주세요.');
         }
         if (parseFloat(newMh) < 0) {
-            return alert('공수(M/H)는 0 이상이어야 합니다.');
+            return alert('공수(M/D)는 0 이상이어야 합니다.');
         }
         const newDetailTypeFull = (newType === '비정기' && newDetailType2) ? `${newDetailType} > ${newDetailType2}` : newDetailType;
         updateLogItem(id, newDate, newType, newDetailTypeFull, newContent, newCost, newMh);

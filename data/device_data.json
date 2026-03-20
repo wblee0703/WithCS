@@ -346,6 +346,10 @@
             },
             "specialNote": ""
         },
+        "LGD 구미_OMS-100L::OMS1-LK22-0104": {
+            "setup": {},
+            "specialNote": ""
+        },
         "SKH 이천_SOMA-2000::SOMA-H19-0402": {
             "setup": {
                 "building": "M14",

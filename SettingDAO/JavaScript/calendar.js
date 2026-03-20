@@ -59,7 +59,7 @@ function getScheduleForCalendar() {
                             }
                             if (targetDateStr) {
                                 if (!events[targetDateStr]) events[targetDateStr] = [];
-                                events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.code ? item.code : item.content, id: item.id });
+                                events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.code ? item.code : item.content, id: item.id, mh: item.mh || 0 });
                             }
                         });
                     }
@@ -74,7 +74,8 @@ function getScheduleForCalendar() {
                                     type: log.type || '정기',
                                     content: log.content || log.memo || '내용 없음',
                                     id: log.id,
-                                    isCompleted: true
+                                    isCompleted: true,
+                                    mh: log.mh || 0
                                 });
                             }
                         });
@@ -134,6 +135,7 @@ function setupCalendar() {
     const popup = document.getElementById('calendar-popup');
     const searchInput = document.getElementById('calendar-search');
     const filterBtn = document.getElementById('btn-search-filter');
+    const targetInfoEl = document.getElementById('calendar-target-info');
 
     // [추가] 캘린더 타이틀 클릭 이벤트 (확장/축소)
     const title1 = document.getElementById('calendar-title-1');
@@ -177,6 +179,11 @@ function setupCalendar() {
     }
     if (filterBtn) {
         filterBtn.onclick = () => openSearchModal();
+    }
+    if (targetInfoEl) {
+        targetInfoEl.onclick = () => openSearchModal();
+        targetInfoEl.style.cursor = 'pointer';
+        targetInfoEl.title = '클릭하여 상세 검색 열기';
     }
 }
 
@@ -269,8 +276,6 @@ function renderMonthGrid(year, month, titleId, gridId) {
     const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
     const pmEvents = getScheduleForCalendar();
-    titleEl.style.color = '';
-    titleEl.textContent = `${year}년 ${month + 1}월`;
     gridEl.innerHTML = '';
 
     const firstDay = new Date(year, month, 1).getDay();
@@ -287,6 +292,11 @@ function renderMonthGrid(year, month, titleId, gridId) {
 
     // Current month's dates
     const today = new Date();
+
+    let monthTotalTasks = 0;
+    let monthCompletedTasks = 0;
+    let monthTotalMh = 0;
+
     for (let i = 1; i <= lastDate; i++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
         let isToday = (i === today.getDate() && month === today.getMonth() && year === today.getFullYear()) ? 'today' : '';
@@ -315,6 +325,14 @@ function renderMonthGrid(year, month, titleId, gridId) {
                     return matchKeyword && matchSite && matchEquip;
                 });
             }
+
+            // [추가] 통계 계산
+            dayEvents.forEach(event => {
+                monthTotalTasks++;
+                if (event.isCompleted) monthCompletedTasks++;
+                const mhVal = parseFloat(event.mh);
+                if (!isNaN(mhVal)) monthTotalMh += mhVal;
+            });
 
             // 그룹화 로직
             const groupedEvents = {};
@@ -386,6 +404,11 @@ function renderMonthGrid(year, month, titleId, gridId) {
         cell.innerHTML = `<span class="date-num">${i}</span>`;
         gridEl.appendChild(cell);
     }
+
+    // [추가] 통계 정보 포함하여 타이틀 업데이트
+    const formattedMh = Number.isInteger(monthTotalMh) ? monthTotalMh : monthTotalMh.toFixed(1);
+    titleEl.style.color = '';
+    titleEl.innerHTML = `${year}년 ${month + 1}월 <span style="font-size:12px; color:var(--cal-text-secondary); font-weight:normal; margin-left:10px; word-break:keep-all;">(작업수: ${monthTotalTasks}건, 완료: ${monthCompletedTasks}건, 공수: ${formattedMh}M/D)</span>`;
 }
 
 function openCalendarPopup(dateStr, events) {
@@ -522,7 +545,7 @@ function setupScheduleModal() {
                 const mhInput = document.getElementById('schedule-mh-input');
                 const mh = mhInput ? mhInput.value.trim() : '';
                 if (!date) return alert('날짜를 선택해주세요.');
-                if (!mh) return alert('공수(M/H)를 입력해주세요.');
+                if (!mh) return alert('공수(M/D)를 입력해주세요.');
                 if (parseFloat(mh) < 0) return alert('공수는 0 이상이어야 합니다.');
                 setScheduleDate(currentScheduleTarget.site, currentScheduleTarget.equip, currentScheduleTarget.id, date, false, mh);
                 modal.style.display = 'none';
@@ -1140,7 +1163,7 @@ function completeScheduleWork() {
     const memo = document.getElementById('detail-work-memo').value.trim();
 
     if (!worker) return alert('작업자를 입력해주세요.');
-    if (!mh) return alert('공수(M/H)를 입력해주세요.');
+    if (!mh) return alert('공수(M/D)를 입력해주세요.');
     if (!memo) return alert('점검 결과 / 메모를 입력해주세요.');
 
     localStorage.setItem('lastWorkerName', worker);
@@ -1557,8 +1580,8 @@ function confirmRegisterSchedule() {
     if (!detailType && detailTypeSelect && !detailTypeSelect.disabled) return alert('세부구분을 선택해주세요.');
     if (type === '비정기' && !detailType2 && detailType2Select && !detailType2Select.disabled) return alert('세부 구분을 선택해주세요.');
     if (!costType) return alert('비용처리를 선택해주세요.');
-    if (!mh) return alert('공수(M/H)를 입력해주세요.');
-    if (parseFloat(mh) < 0) return alert('공수(M/H)는 0 이상이어야 합니다.');
+    if (!mh) return alert('공수(M/D)를 입력해주세요.');
+    if (parseFloat(mh) < 0) return alert('공수(M/D)는 0 이상이어야 합니다.');
 
     let content = '';
     const wrapper = document.getElementById('register-content-wrapper');
@@ -1926,8 +1949,9 @@ function setupSearchModal() {
 
     if (resetBtn) {
         resetBtn.onclick = () => {
+            if (siteSelect) siteSelect.value = '';
+            updateSearchEquipSelect('');
             currentSearchFilters = { site: '', equip: '' };
-            modal.style.display = 'none';
             renderCalendar();
         };
     }

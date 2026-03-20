@@ -421,7 +421,7 @@
     }
 
     .gantt__sidebar {
-        width: 100px !important; /* 세로 모드에서 사이드바 축소 (약 4~5글자 표시) */
+        width: 200px !important; /* 세로 모드에서 사이드바 너비 확대 */
         border-right: 1px solid var(--gantt-border);
         border-bottom: none;
         height: auto;
@@ -463,7 +463,7 @@
         /* .gantt__resizer { display: block; } */
 
         .gantt__sidebar {
-            width: 150px !important; /* 가로 모드에서는 조금 더 넓게 */
+            width: 250px !important; /* 가로 모드에서는 조금 더 넓게 */
         }
         .gantt__timeline-container {
             height: auto;
