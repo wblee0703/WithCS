@@ -2132,3 +2132,24 @@ function resetSetupDates() {
         alert("초기화되었습니다.");
     }
 }
+
+// [추가] 간트뷰 이동 로직
+window.moveToGanttView = function() {
+    if (!currentPath.site || !currentPath.equip) {
+        alert('장비를 선택해주세요.');
+        return;
+    }
+    
+    // 저장되지 않은 변경사항 확인
+    if (typeof window.checkUnsavedChanges === 'function' && !window.checkUnsavedChanges()) {
+        return;
+    }
+
+    // 간트 차트 필터 설정 및 홈 화면 셋업 탭 지정
+    const ganttFilter = { site: currentPath.site, equip: currentPath.equip };
+    localStorage.setItem('currentGanttFilters', JSON.stringify(ganttFilter));
+    localStorage.setItem('lastHomeSection', 'setup');
+    
+    // 홈 화면으로 이동
+    window.location.href = 'index.html';
+};

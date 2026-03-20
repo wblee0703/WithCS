@@ -2399,3 +2399,30 @@ window.closeFileEditModal = function () {
     document.getElementById('file-edit-modal').style.display = 'none';
     currentEditingFileId = null;
 };
+
+// [추가] 캘린더뷰 이동 로직
+window.moveToCalendarView = function() {
+    if (!currentPath.site || !currentPath.equip) {
+        alert('장비를 선택해주세요.');
+        return;
+    }
+
+    // 저장되지 않은 변경사항 확인
+    const currentMemo = document.getElementById('device-memo') ? document.getElementById('device-memo').value : "";
+    const currentWorker = document.getElementById('memo-worker') ? document.getElementById('memo-worker').value : "";
+    if (selectedLogId !== null && (currentMemo !== originalMemo || currentWorker !== originalWorker)) {
+        if (!confirm('작성 중인 작업 내용(메모)이 저장되지 않았습니다. 저장하지 않고 이동하시겠습니까?')) {
+            return;
+        }
+    }
+
+    const equipName = currentPath.equip.split('::')[0];
+    
+    // 운영 관리 대시보드 및 캘린더 필터 설정
+    const maintFilter = { site: currentPath.site, equip: equipName, serial: currentPath.equip, search: { site: currentPath.site, equip: currentPath.equip } };
+    localStorage.setItem('maintDashboardFilter', JSON.stringify(maintFilter));
+    localStorage.setItem('lastHomeSection', 'maint');
+    
+    // 홈 화면으로 이동
+    window.location.href = 'index.html';
+};

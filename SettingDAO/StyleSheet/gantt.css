@@ -410,9 +410,9 @@
         padding: 5px;
     }
 
-    /* [추가] 모바일 기본 레이아웃 (세로 배치) */
+    /* [추가] 모바일 기본 레이아웃 (가로 배치 유지, 스크롤 활용) */
     .gantt__wrapper {
-        flex-direction: column;
+        flex-direction: row;
     }
 
     /* [추가] 모바일에서 리사이저 숨김 */
@@ -421,12 +421,12 @@
     }
 
     .gantt__sidebar {
-        width: 100% !important; /* JS style override */
-        border-right: none;
-        border-bottom: 1px solid var(--gantt-border);
+        width: 100px !important; /* 세로 모드에서 사이드바 축소 (약 4~5글자 표시) */
+        border-right: 1px solid var(--gantt-border);
+        border-bottom: none;
         height: auto;
-        max-height: 40vh; /* 높이 제한 및 스크롤 */
-        overflow-y: auto;
+        max-height: none; 
+        overflow-y: visible;
     }
 /* [요청] 셋업 일정 검색된 내용 글씨 크기 조정 */
     .gantt__target-info {
@@ -434,47 +434,43 @@
     }
     
     #gantt-task-list {
-        overflow-y: auto;
+        overflow-y: visible;
     }
 
     .gantt__timeline-container {
-        height: 50vh; /* 남은 공간 차지 */
+        height: auto; /* 남은 공간 차지 */
+        overflow-x: auto;
     }
 
     /* [요청] 모바일 가로 모드에서 1달치(약 30일) 보여주고 나머지는 스크롤 */
     .gantt__date-cell--day,
     .gantt__header-row--fixed .gantt__date-cell {
         flex-shrink: 0;
+        width: 35px !important; /* 좁은 화면에서 약 7일 표시를 위한 셀 너비 강제 조정 */
     }
  
     /* [요청] 모바일 세로 모드일 때 간트 뷰 안내 메시지 표시 */
     @media (orientation: portrait) {
         .gantt-mobile-guide {
-            display: block;
-            width: 100%;
-            text-align: center;
-            color: var(--gantt-text-secondary);
-            font-size: 12px;
-            margin-top: 10px;
+            display: none !important; /* 세로 모드에서도 간트뷰가 보이므로 안내문 숨김 */
         }
     }
     
     @media (orientation: landscape) {
         .gantt__wrapper {
-            flex-direction: row !important;
-            gap: 0 !important;
         }
         /* [추가] 가로 모드에서 리사이저 복구 (필요시) - 터치 조작 어려움으로 일단 숨김 유지하거나 필요시 주석 해제 */
         /* .gantt__resizer { display: block; } */
 
         .gantt__sidebar {
-            width: 250px !important;
-            max-height: none;
-            border-right: 1px solid var(--gantt-border);
-            border-bottom: none;
+            width: 150px !important; /* 가로 모드에서는 조금 더 넓게 */
         }
         .gantt__timeline-container {
             height: auto;
+        }
+        .gantt__date-cell--day,
+        .gantt__header-row--fixed .gantt__date-cell {
+            width: 40px !important; /* 가로 모드에서는 기본 너비(40px) 복구 */
         }
     }
 }

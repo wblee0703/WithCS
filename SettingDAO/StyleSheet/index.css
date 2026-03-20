@@ -999,9 +999,6 @@ body {
 
     /* [요청] 모바일 세로 모드에서 간트 차트 숨김 */
     @media (orientation: portrait) {
-        #gantt-wrapper {
-            display: none !important;
-        }
 
         /* [요청] 세로 모드에서 장비 정보와 예정 작업은 한 줄에 하나씩 배치 */
         .maint-left-charts .status-group:nth-child(3) {

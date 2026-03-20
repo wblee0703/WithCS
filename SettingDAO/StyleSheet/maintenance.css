@@ -5,6 +5,7 @@
     display: flex;
     align-items: center;
     margin-bottom: 8px;
+    flex-wrap: wrap; /* 모바일 줄바꿈 지원 */
 }
 
 .content-body {
@@ -623,6 +624,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     font-weight: bold;
 }
 
+/* [추가] 캘린더뷰 이동 버튼 */
+.btn-calendar-move {
+    margin-left: auto;
+    margin-right: 5px;
+    padding: 2px 10px;
+    font-size: 11px;
+}
+
 /* [추가] 파일 리스트 스타일 */
 .file-list {
     list-style: none;
@@ -731,6 +740,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     .breadcrumb {
         font-size: 12px;
+    }
+
+    /* [요청] 모바일 캘린더 이동 버튼 하단 전체 너비 배치 */
+    .btn-calendar-move {
+        width: 100%;
+        order: 3;
+        margin: 8px 0 0 0 !important;
+        padding: 8px 0 !important;
+        font-size: 14px !important;
+        font-weight: bold;
+    }
+    .btn-header-setting {
+        margin-left: auto !important;
     }
 
     /* [요청] 모바일에서 카드 접기 시 제목만 남기기 (높이 자동) */
@@ -886,17 +908,70 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         order: -1 !important;
     }
 
-    /* [요청] 모바일에서 장비 점검 이력 리스트 컬럼 제어 (구분, 공수 숨김) */
-    #log-list-wrapper .data-table th:nth-child(2),
-    #log-list-wrapper .data-table td:nth-child(2),
-    #log-list-wrapper .data-table th:nth-child(6),
-    #log-list-wrapper .data-table td:nth-child(6) {
-        display: none !important;
+    /* [요청] 모바일 유지관리 물품 등록 폼 2줄 배치 */
+    #maint-window .form-row {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 5px !important;
     }
 
-    /* 남은 컬럼 너비 재조정 (점검일, 세부구분, 내용, 비용처리) */
-    #log-list-wrapper .data-table th:nth-child(1) { width: 70px !important; }
-    #log-list-wrapper .data-table th:nth-child(3) { width: 100px !important; }
-    #log-list-wrapper .data-table th:nth-child(4) { width: auto !important; }
-    #log-list-wrapper .data-table th:nth-child(5) { width: 55px !important; }
+    /* 1번째 줄 (토글 + 자동완성 입력창) */
+    #maint-type-toggle {
+        flex: 0 0 100px !important; /* 토글 너비 고정 */
+        width: 100px !important;
+    }
+    
+    #maint-type-toggle button {
+        padding: 0 10px !important;
+    }
+
+    #maint-window .autocomplete-wrapper,
+    #maint-window > .form-row > #maint-content {
+        flex: 0 0 calc(100% - 105px) !important; /* 남은 너비 모두 차지하여 다음 줄로 밀어냄 */
+        width: calc(100% - 105px) !important;
+    }
+
+    /* 2번째 줄 (날짜 + 주기 + 등록 버튼) */
+    #maint-date {
+        flex: 1.5 !important;
+        width: auto !important;
+        min-width: 0 !important;
+    }
+
+    #maint-period {
+        flex: 1 !important;
+        width: auto !important;
+        min-width: 0 !important;
+    }
+
+    #maint-reg-btn {
+        flex: 0.8 !important;
+        width: auto !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        justify-content: center;
+    }
+
+    /* [요청] 모바일에서 장비 점검 이력 리스트 좌우 스크롤 및 전체 표시 */
+    #log-list-wrapper {
+        overflow-x: auto !important;
+    }
+
+    #log-list-wrapper .data-table {
+        min-width: 600px !important; /* 모든 컬럼이 찌그러지지 않도록 최소 너비 지정 (가로 스크롤 활성화) */
+    }
+
+    #log-list-wrapper .data-table th,
+    #log-list-wrapper .data-table td {
+        font-size: 11px !important; /* 글자 크기 축소 */
+        padding: 6px 4px !important; /* 여백 축소로 더 많은 내용 표시 */
+    }
+
+    /* 모든 컬럼 표시 및 너비 재조정 */
+    #log-list-wrapper .data-table th:nth-child(1) { width: 80px !important; } /* 점검일 */
+    #log-list-wrapper .data-table th:nth-child(2) { width: 60px !important; } /* 구분 */
+    #log-list-wrapper .data-table th:nth-child(3) { width: 120px !important; } /* 세부구분 */
+    #log-list-wrapper .data-table th:nth-child(4) { width: auto !important; } /* 내용 */
+    #log-list-wrapper .data-table th:nth-child(5) { width: 60px !important; } /* 비용처리 */
+    #log-list-wrapper .data-table th:nth-child(6) { width: 45px !important; } /* 공수 */
 }
