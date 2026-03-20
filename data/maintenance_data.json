@@ -91,6 +91,15 @@
                 "content": "Torch for PFA inert kit for ICP-MS",
                 "date": "2026-03-20",
                 "period": null
+            },
+            {
+                "id": 1774018108470,
+                "type": "비정기",
+                "detailType": "BM 점검",
+                "code": "Pt Injector",
+                "content": "Platinum injector, inert torch, 2.5mm id",
+                "date": "2026-03-20",
+                "period": null
             }
         ],
         "logs": [
