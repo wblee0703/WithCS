@@ -11,6 +11,253 @@
         "memo": "",
         "files": []
     },
+    "details_SEC 평택_WIM-100::WIM-100": {
+        "maint": [],
+        "logs": [],
+        "memo": "",
+        "files": []
+    },
+    "details_SKH 이천_SOMA-20::SOMA-H19-0903": {
+        "maint": [],
+        "logs": [],
+        "memo": "",
+        "files": []
+    },
+    "details_SEC 평택_SOLA-3000": {
+        "maint": [],
+        "logs": [],
+        "memo": "",
+        "files": []
+    },
+    "details_LGD 구미_OMS-100L::OMS1-LK22-0104": {
+        "maint": [],
+        "logs": [],
+        "memo": "",
+        "files": []
+    },
+    "details_SKH 이천_SOMA-2000::SOMA-H19-0402": {
+        "maint": [
+            {
+                "id": 1773910187433,
+                "type": "정기",
+                "detailType": "PM 점검",
+                "code": "Metal STD (10ppb 3%)",
+                "content": "Metal Standard Solution(3%HNO3)",
+                "date": "2026-03-19",
+                "period": "30",
+                "scheduledDate": "2026-04-01",
+                "worker": "이원배",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
+            },
+            {
+                "id": 1773728523008,
+                "type": "정기",
+                "detailType": "PM 점검",
+                "code": "Skimmer Cone",
+                "content": "Pt Skimmer cone for 7700S",
+                "date": "2026-03-19",
+                "period": 182,
+                "costType": "무상(보증)",
+                "worker": "이원배",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
+            },
+            {
+                "id": 1773728525186,
+                "type": "정기",
+                "detailType": "PM 점검",
+                "code": "Sampler Cone",
+                "content": "Pt Sampling cone for 7700S",
+                "date": "2026-03-19",
+                "period": 182,
+                "worker": "이원배",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
+            },
+            {
+                "id": 1773728529916,
+                "type": "정기",
+                "detailType": "PM 점검",
+                "code": "Ion Lens",
+                "content": "Extraction-omega lens assembly",
+                "date": "2026-03-19",
+                "period": 365,
+                "worker": "이원배",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
+            }
+        ],
+        "logs": [
+            {
+                "id": 1770796632765,
+                "date": "2026-02-04",
+                "type": "정기",
+                "detailType": "PM 점검",
+                "content": "Metal STD (10ppb 3%), Skimmer Cone, Sampler Cone, Ion Lens",
+                "worker": "이원배 진봉균 박강민",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 유지 관리 진행\n - Tuning 진행 : 특이사항 없음\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음"
+            },
+            {
+                "id": 1770858585424,
+                "date": "2026-01-06",
+                "type": "정기",
+                "detailType": "PM 점검",
+                "content": "Metal STD (10ppb 3%)",
+                "worker": "이원배 진봉균",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
+            },
+            {
+                "id": 1770860873343,
+                "date": "2026-02-11",
+                "type": "고객대응",
+                "detailType": "기타",
+                "content": "명절 전 장비 점검",
+                "worker": "이원배",
+                "memo": "1. ICPMS 감도 저하관련 확인\n - 현상 : ICPMS PM 이후 지속적으로 감도 저하됨\n - 조치 : Tuning 진행 후 감도 정상 수준으로 측정\n 1) Omega Bias, Omega Lens 조절\n - 원인 : Cone, Lens 세척이후 보관을 길게 할수록 안정화하는데 시간이 좀 걸리는 것 같음\n - 향후 조치 : Cone, Lens 교체후 감도 저하 모니터링후 한번더 튜닝 진행 필요\n\n2. 장비 상태 온라인 점검\n - Calibration 적용 산태 확인 : 특이사항 없음\n - 데이터 Tend 확인 : 특이사항 없음"
+            },
+            {
+                "id": 1771977892350,
+                "date": "2026-02-24",
+                "type": "온라인점검",
+                "detailType": "온라인점검",
+                "content": "Reflected Power Spec Over",
+                "worker": "이원배",
+                "memo": "1. Reflected Power Spec Over 조치\n - 정상 Spec. : 0 ~ 10\n - 설비값 : 9.5 ~ 11.5\n - ICPMS Tuning : RF Matching 조절 (1.05 - >1.15)\n - 조치후 : Reflected Power 7 ~ 8 수준 \n (이전 Work Coil 교체후 Cool Mode Reflected Power가 높아짐 - Plasma 흔들림 없어 정상으로 판단)"
+            },
+            {
+                "id": 1772763597855,
+                "date": "2026-03-04",
+                "type": "정기",
+                "detailType": "PM 점검",
+                "content": "Metal STD (10ppb 3%)",
+                "costType": "유상",
+                "md": "2",
+                "worker": "이원배 진봉균",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
+            }
+        ],
+        "memo": "",
+        "files": []
+    },
+    "details_SKH 이천_SOMA-2000::SOMA-HK21-0202": {
+        "maint": [
+            {
+                "id": 1773732550702,
+                "type": "정기",
+                "detailType": "PM 점검",
+                "code": "Metal STD (10ppb 3%)",
+                "content": "Metal Standard Solution(3%HNO3)",
+                "date": "2026-03-17",
+                "period": "30",
+                "costType": "무상(보증)",
+                "scheduledDate": "2026-04-01",
+                "md": "2"
+            },
+            {
+                "id": 1773732552676,
+                "type": "정기",
+                "detailType": "PM 점검",
+                "code": "Skimmer Cone",
+                "content": "Pt Skimmer cone for 7700S",
+                "date": "2025-11-04",
+                "period": 182,
+                "costType": "무상(보증)"
+            },
+            {
+                "id": 1773732554284,
+                "type": "정기",
+                "code": "Sampler Cone",
+                "content": "Pt Sampling cone for 7700S",
+                "date": "2025-11-04",
+                "period": 182
+            },
+            {
+                "id": 1773732555980,
+                "type": "정기",
+                "code": "Ion Lens",
+                "content": "Extraction-omega lens assembly",
+                "date": "2025-05-07",
+                "period": 365
+            }
+        ],
+        "logs": [
+            {
+                "id": 1770797597715,
+                "date": "2026-02-03",
+                "type": "정기",
+                "detailType": "PM 점검",
+                "content": "Metal STD (10ppb 3%)",
+                "worker": "이원배 박강민",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음"
+            },
+            {
+                "id": 1770859221065,
+                "date": "2026-01-07",
+                "type": "정기",
+                "detailType": "PM 점검",
+                "content": "Metal STD (10ppb 3%)",
+                "worker": "이원배 진봉균",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음"
+            },
+            {
+                "id": 1770860955016,
+                "date": "2026-02-11",
+                "type": "고객대응",
+                "detailType": "기타",
+                "content": "명절 전 장비 점검",
+                "worker": "이원배",
+                "memo": "1. 장비 상태 온라인 점검\n - Calibration 적용 산태 확인 : 특이사항 없음\n - 데이터 Tend 확인 : 특이사항 없음"
+            },
+            {
+                "id": 1772763056596,
+                "date": "2026-03-05",
+                "type": "정기",
+                "detailType": "PM 점검",
+                "content": "Metal STD (10ppb 3%)",
+                "worker": "이원배 진봉균",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
+            }
+        ],
+        "memo": "",
+        "files": []
+    },
+    "details_ENF 천안_SOMA-3000E::SOMA-EK25-0401": {
+        "maint": [],
+        "logs": [
+            {
+                "id": 1771919944757,
+                "date": "2026-02-24",
+                "type": "온라인점검",
+                "detailType": "온라인점검",
+                "content": "분석 시퀀스 수정",
+                "worker": "이원배",
+                "memo": "1. S, P Calibration Sequence 추가\n - 위치 : Normal, Addition, Dilution5 \n - Mother Solution : 500ppb\n - 특이 사항 : STD Syringe Pump 가 아닌 ISTD S/P 사용 \n"
+            },
+            {
+                "id": 1772765702439,
+                "date": "2026-03-06",
+                "type": "고객대응",
+                "detailType": "프로그램 변경 / 평가",
+                "content": "Ver. 1.0.1.20",
+                "worker": "이원배",
+                "memo": "1. SOMA-3000E - 1.0.1.20\n 1) 적정기 혼합모드시 STD Add 칸이 그룹6개가 되면 크기조정 필요하여 자동으로 맞춰지게 수정\n 2) PortSetting 페이지의 헌팅 관련 UI를 Agilent MS 뿐만 아니라 PerkinElmer MS도 보여지도록 수정\n 3) Admin 적정기 페이지 View 정렬 및 툴팁 추가\n 4) 적정기 분석결과 소수점 자리수 설정 추가\n 5) 적정기 결과 계산시 Span Factor(Adjustment Factor) 적용하여 계산하도록 수정\n 6) 적정기 번호 변경 후 스케줄 추가하고 저장할 때 추가된 항목이 아닌 기본 AddList에서의 적정기 값이 초기화 되는 부분 수정\n 7) 적정기 데이터 저장시 사이트네임을 '사이트네임/시리얼'로 표기(메탈데이터와 동일시)\n 8) 페어적정기 번호 및 Enable 추가하여 하드코딩된 내역 변경, 아산1호기 1~2, 아산2호기 1~12로 숫자 변경 (실제 설비는 admin페이지에서 변경 가능)\n 9) 적정기 Enable화를 통해 False된 적정기는 포트 및 스케줄에서 안나오도록 처리\n 10) 데이터뷰 연동하는 Spec, SpecOffset 추가"
+            },
+            {
+                "id": 1773098623491,
+                "date": "2026-03-09",
+                "type": "고객대응",
+                "detailType": "프로그램 변경 / 평가",
+                "content": "Ver. 1.0.1.21",
+                "worker": "이원배",
+                "memo": "1. BOE 분석시 HF, NH4F로 저장되기에 각각의 Spec, SpecOffset을 추가\n\n<Data Viewer> 1.0.2.9 \n1. 적정기 데이터 리포트 할 때 Port 추가 표시(매뉴얼/인라인 표기)\n2. Reference Value를 전체 1개로 계산이 아닌 성상별로 입력하게 Column에 추가\n3. BOE와 페어 적정기의 Spec, SpecOffset을 구분하여 적용"
+            }
+        ],
+        "memo": "",
+        "files": []
+    },
+    "details_ENF 천안_WAD-10::AD10-EK24-0202": {
+        "maint": [],
+        "logs": [],
+        "memo": "",
+        "files": []
+    },
     "details_NES 여수_SOMA-3000E::SOMA-EK23-0401": {
         "maint": [],
         "logs": [],
@@ -49,12 +296,6 @@
         "files": []
     },
     "details_SKH 이천_SOMA-20::SOMA-H19-0402": {
-        "maint": [],
-        "logs": [],
-        "memo": "",
-        "files": []
-    },
-    "details_SEC 평택_WIM-100::WIM-100": {
         "maint": [],
         "logs": [],
         "memo": "",
@@ -181,19 +422,7 @@
         "memo": "",
         "files": []
     },
-    "details_SKH 이천_SOMA-20::SOMA-H19-0903": {
-        "maint": [],
-        "logs": [],
-        "memo": "",
-        "files": []
-    },
     "details_SEC 평택_SOLA-1000": {
-        "maint": [],
-        "logs": [],
-        "memo": "",
-        "files": []
-    },
-    "details_SEC 평택_SOLA-3000": {
         "maint": [],
         "logs": [],
         "memo": "",
@@ -294,113 +523,6 @@
         "memo": "",
         "files": []
     },
-    "details_LGD 구미_OMS-100L::OMS1-LK22-0104": {
-        "maint": [],
-        "logs": [],
-        "memo": "",
-        "files": []
-    },
-    "details_SKH 이천_SOMA-2000::SOMA-H19-0402": {
-        "maint": [
-            {
-                "id": 1773910187433,
-                "type": "정기",
-                "detailType": "PM 점검",
-                "code": "Metal STD (10ppb 3%)",
-                "content": "Metal Standard Solution(3%HNO3)",
-                "date": "2026-03-19",
-                "period": "30",
-                "scheduledDate": "2026-04-01",
-                "worker": "이원배",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
-            },
-            {
-                "id": 1773728523008,
-                "type": "정기",
-                "detailType": "PM 점검",
-                "code": "Skimmer Cone",
-                "content": "Pt Skimmer cone for 7700S",
-                "date": "2026-03-19",
-                "period": 182,
-                "costType": "무상(보증)",
-                "worker": "이원배",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
-            },
-            {
-                "id": 1773728525186,
-                "type": "정기",
-                "detailType": "PM 점검",
-                "code": "Sampler Cone",
-                "content": "Pt Sampling cone for 7700S",
-                "date": "2026-03-19",
-                "period": 182,
-                "worker": "이원배",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
-            },
-            {
-                "id": 1773728529916,
-                "type": "정기",
-                "detailType": "PM 점검",
-                "code": "Ion Lens",
-                "content": "Extraction-omega lens assembly",
-                "date": "2026-03-19",
-                "period": 365,
-                "worker": "이원배",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
-            }
-        ],
-        "logs": [
-            {
-                "id": 1770796632765,
-                "date": "2026-02-04",
-                "type": "정기",
-                "detailType": "PM 점검",
-                "content": "Metal STD (10ppb 3%), Skimmer Cone, Sampler Cone, Ion Lens",
-                "worker": "이원배 진봉균 박강민",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 유지 관리 진행\n - Tuning 진행 : 특이사항 없음\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음"
-            },
-            {
-                "id": 1770858585424,
-                "date": "2026-01-06",
-                "type": "정기",
-                "detailType": "PM 점검",
-                "content": "Metal STD (10ppb 3%)",
-                "worker": "이원배 진봉균",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
-            },
-            {
-                "id": 1770860873343,
-                "date": "2026-02-11",
-                "type": "고객대응",
-                "detailType": "기타",
-                "content": "명절 전 장비 점검",
-                "worker": "이원배",
-                "memo": "1. ICPMS 감도 저하관련 확인\n - 현상 : ICPMS PM 이후 지속적으로 감도 저하됨\n - 조치 : Tuning 진행 후 감도 정상 수준으로 측정\n 1) Omega Bias, Omega Lens 조절\n - 원인 : Cone, Lens 세척이후 보관을 길게 할수록 안정화하는데 시간이 좀 걸리는 것 같음\n - 향후 조치 : Cone, Lens 교체후 감도 저하 모니터링후 한번더 튜닝 진행 필요\n\n2. 장비 상태 온라인 점검\n - Calibration 적용 산태 확인 : 특이사항 없음\n - 데이터 Tend 확인 : 특이사항 없음"
-            },
-            {
-                "id": 1771977892350,
-                "date": "2026-02-24",
-                "type": "온라인점검",
-                "detailType": "온라인점검",
-                "content": "Reflected Power Spec Over",
-                "worker": "이원배",
-                "memo": "1. Reflected Power Spec Over 조치\n - 정상 Spec. : 0 ~ 10\n - 설비값 : 9.5 ~ 11.5\n - ICPMS Tuning : RF Matching 조절 (1.05 - >1.15)\n - 조치후 : Reflected Power 7 ~ 8 수준 \n (이전 Work Coil 교체후 Cool Mode Reflected Power가 높아짐 - Plasma 흔들림 없어 정상으로 판단)"
-            },
-            {
-                "id": 1772763597855,
-                "date": "2026-03-04",
-                "type": "정기",
-                "detailType": "PM 점검",
-                "content": "Metal STD (10ppb 3%)",
-                "costType": "유상",
-                "md": "2",
-                "worker": "이원배 진봉균",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
-            }
-        ],
-        "memo": "",
-        "files": []
-    },
     "details_ENF 아산_SOMA-3000E::SOMA-EK24-0401": {
         "maint": [],
         "logs": [
@@ -426,120 +548,6 @@
         "memo": "",
         "files": []
     },
-    "details_SKH 이천_SOMA-2000::SOMA-HK21-0202": {
-        "maint": [
-            {
-                "id": 1773732550702,
-                "type": "정기",
-                "detailType": "PM 점검",
-                "code": "Metal STD (10ppb 3%)",
-                "content": "Metal Standard Solution(3%HNO3)",
-                "date": "2026-03-17",
-                "period": "30",
-                "costType": "무상(보증)"
-            },
-            {
-                "id": 1773732552676,
-                "type": "정기",
-                "detailType": "PM 점검",
-                "code": "Skimmer Cone",
-                "content": "Pt Skimmer cone for 7700S",
-                "date": "2025-11-04",
-                "period": 182,
-                "costType": "무상(보증)"
-            },
-            {
-                "id": 1773732554284,
-                "type": "정기",
-                "code": "Sampler Cone",
-                "content": "Pt Sampling cone for 7700S",
-                "date": "2025-11-04",
-                "period": 182
-            },
-            {
-                "id": 1773732555980,
-                "type": "정기",
-                "code": "Ion Lens",
-                "content": "Extraction-omega lens assembly",
-                "date": "2025-05-07",
-                "period": 365
-            }
-        ],
-        "logs": [
-            {
-                "id": 1770797597715,
-                "date": "2026-02-03",
-                "type": "정기",
-                "detailType": "PM 점검",
-                "content": "Metal STD (10ppb 3%)",
-                "worker": "이원배 박강민",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음"
-            },
-            {
-                "id": 1770859221065,
-                "date": "2026-01-07",
-                "type": "정기",
-                "detailType": "PM 점검",
-                "content": "Metal STD (10ppb 3%)",
-                "worker": "이원배 진봉균",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음"
-            },
-            {
-                "id": 1770860955016,
-                "date": "2026-02-11",
-                "type": "고객대응",
-                "detailType": "기타",
-                "content": "명절 전 장비 점검",
-                "worker": "이원배",
-                "memo": "1. 장비 상태 온라인 점검\n - Calibration 적용 산태 확인 : 특이사항 없음\n - 데이터 Tend 확인 : 특이사항 없음"
-            },
-            {
-                "id": 1772763056596,
-                "date": "2026-03-05",
-                "type": "정기",
-                "detailType": "PM 점검",
-                "content": "Metal STD (10ppb 3%)",
-                "worker": "이원배 진봉균",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
-            }
-        ],
-        "memo": "",
-        "files": []
-    },
-    "details_ENF 천안_SOMA-3000E::SOMA-EK25-0401": {
-        "maint": [],
-        "logs": [
-            {
-                "id": 1771919944757,
-                "date": "2026-02-24",
-                "type": "온라인점검",
-                "detailType": "온라인점검",
-                "content": "분석 시퀀스 수정",
-                "worker": "이원배",
-                "memo": "1. S, P Calibration Sequence 추가\n - 위치 : Normal, Addition, Dilution5 \n - Mother Solution : 500ppb\n - 특이 사항 : STD Syringe Pump 가 아닌 ISTD S/P 사용 \n"
-            },
-            {
-                "id": 1772765702439,
-                "date": "2026-03-06",
-                "type": "고객대응",
-                "detailType": "프로그램 변경 / 평가",
-                "content": "Ver. 1.0.1.20",
-                "worker": "이원배",
-                "memo": "1. SOMA-3000E - 1.0.1.20\n 1) 적정기 혼합모드시 STD Add 칸이 그룹6개가 되면 크기조정 필요하여 자동으로 맞춰지게 수정\n 2) PortSetting 페이지의 헌팅 관련 UI를 Agilent MS 뿐만 아니라 PerkinElmer MS도 보여지도록 수정\n 3) Admin 적정기 페이지 View 정렬 및 툴팁 추가\n 4) 적정기 분석결과 소수점 자리수 설정 추가\n 5) 적정기 결과 계산시 Span Factor(Adjustment Factor) 적용하여 계산하도록 수정\n 6) 적정기 번호 변경 후 스케줄 추가하고 저장할 때 추가된 항목이 아닌 기본 AddList에서의 적정기 값이 초기화 되는 부분 수정\n 7) 적정기 데이터 저장시 사이트네임을 '사이트네임/시리얼'로 표기(메탈데이터와 동일시)\n 8) 페어적정기 번호 및 Enable 추가하여 하드코딩된 내역 변경, 아산1호기 1~2, 아산2호기 1~12로 숫자 변경 (실제 설비는 admin페이지에서 변경 가능)\n 9) 적정기 Enable화를 통해 False된 적정기는 포트 및 스케줄에서 안나오도록 처리\n 10) 데이터뷰 연동하는 Spec, SpecOffset 추가"
-            },
-            {
-                "id": 1773098623491,
-                "date": "2026-03-09",
-                "type": "고객대응",
-                "detailType": "프로그램 변경 / 평가",
-                "content": "Ver. 1.0.1.21",
-                "worker": "이원배",
-                "memo": "1. BOE 분석시 HF, NH4F로 저장되기에 각각의 Spec, SpecOffset을 추가\n\n<Data Viewer> 1.0.2.9 \n1. 적정기 데이터 리포트 할 때 Port 추가 표시(매뉴얼/인라인 표기)\n2. Reference Value를 전체 1개로 계산이 아닌 성상별로 입력하게 Column에 추가\n3. BOE와 페어 적정기의 Spec, SpecOffset을 구분하여 적용"
-            }
-        ],
-        "memo": "",
-        "files": []
-    },
     "details_SKH 우시_SOMA-2000::SOMA-HC19-1204": {
         "maint": [],
         "logs": [],
@@ -547,12 +555,6 @@
         "files": []
     },
     "details_SKH 우시_SOMA-20::SOMA-HC19-1204": {
-        "maint": [],
-        "logs": [],
-        "memo": "",
-        "files": []
-    },
-    "details_ENF 천안_WAD-10::AD10-EK24-0202": {
         "maint": [],
         "logs": [],
         "memo": "",

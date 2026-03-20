@@ -1,11 +1,37 @@
 {
-    "DUPONT": {
-        "buildings": []
-    },
     "SEC 천안": {
         "buildings": []
     },
     "SK KEY_FOUNDRY": {
+        "buildings": []
+    },
+    "SK SILTRON": {
+        "buildings": []
+    },
+    "ENF 아산": {
+        "buildings": []
+    },
+    "LSE 안성": {
+        "buildings": []
+    },
+    "DB HITEK 부천": {
+        "buildings": []
+    },
+    "ENF 천안": {
+        "buildings": []
+    },
+    "TEKSCEND": {
+        "buildings": []
+    },
+    "SEC 평택": {
+        "buildings": []
+    },
+    "SKH 이천": {
+        "buildings": [
+            "m16"
+        ]
+    },
+    "DUPONT": {
         "buildings": []
     },
     "LGD 파주": {
@@ -32,16 +58,7 @@
     "NES 여수": {
         "buildings": []
     },
-    "SK SILTRON": {
-        "buildings": []
-    },
-    "ENF 아산": {
-        "buildings": []
-    },
     "LGD 구미": {
-        "buildings": []
-    },
-    "LSE 안성": {
         "buildings": []
     },
     "DB HITEK 상우": {
@@ -53,28 +70,11 @@
     "SKH 우시": {
         "buildings": []
     },
-    "DB HITEK 부천": {
-        "buildings": []
-    },
-    "ENF 천안": {
-        "buildings": []
-    },
-    "TEKSCEND": {
-        "buildings": []
-    },
     "ECOPRO_NH": {
         "buildings": []
     },
     "SEC 화성": {
         "buildings": []
-    },
-    "SEC 평택": {
-        "buildings": []
-    },
-    "SKH 이천": {
-        "buildings": [
-            "m16"
-        ]
     },
     "SKH 청주": {
         "buildings": []
