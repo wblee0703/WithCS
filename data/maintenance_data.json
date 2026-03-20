@@ -68,11 +68,8 @@
                 "detailType": "PM 점검",
                 "code": "Metal STD (5ppb 1%)",
                 "content": "Metal Standard Solution(1%HNO3)",
-                "date": "2026-04-03",
-                "period": 30,
-                "scheduledDate": "2026-04-23",
-                "costType": "유상",
-                "mh": "2"
+                "date": "2026-04-23",
+                "period": 30
             },
             {
                 "id": 1773971781132,
@@ -80,11 +77,8 @@
                 "detailType": "PM 점검",
                 "code": "9.5% HNO3",
                 "content": "9.5% HNO3",
-                "date": "2026-04-03",
-                "period": 30,
-                "scheduledDate": "2026-04-23",
-                "costType": "유상",
-                "mh": "2"
+                "date": "2026-04-23",
+                "period": 30
             }
         ],
         "logs": [
@@ -99,6 +93,18 @@
                 "mh": "2",
                 "worker": "이원배",
                 "memo": "작업 진행 완료"
+            },
+            {
+                "id": 1773972096230,
+                "date": "2026-04-23",
+                "type": "정기",
+                "detailType": "PM 점검",
+                "detailType2": "",
+                "content": "Metal STD (5ppb 1%), 9.5% HNO3",
+                "costType": "유상",
+                "mh": "2",
+                "worker": "이원배",
+                "memo": "작업 진행 완료 굿"
             }
         ],
         "memo": "",
