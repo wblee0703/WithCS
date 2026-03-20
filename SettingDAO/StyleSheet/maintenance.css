@@ -20,6 +20,7 @@
     display: flex;
     flex-direction: column;
     min-height: 0;
+    min-width: 0;
     gap: 15px;
 }
 
@@ -39,6 +40,7 @@
 #log-window {
     flex: 1;
     min-height: 0;
+    min-width: 0;
 }
 
 /* ==========================================================================
@@ -88,6 +90,7 @@
 .data-table-wrapper {
     flex: 1;
     overflow-y: auto;
+    overflow-x: auto;
     margin-top: 5px;
     min-height: 0;
     padding-bottom: 10px;
@@ -96,6 +99,7 @@
 .data-table {
     width: 100%;
     border-collapse: collapse;
+    min-width: max-content;
 }
 
 .data-table th {
@@ -215,14 +219,6 @@ tr.dragging {
 #log-list-wrapper .data-table.management-active th:nth-child(7),
 #log-list-wrapper .data-table.management-active td:nth-child(7) {
     display: table-cell;
-}
-
-/* 로그 테이블 내용 컬럼 줄바꿈 허용 (잘림 방지) */
-#log-list-wrapper .data-table td:nth-child(4) {
-    white-space: normal !important;
-    word-break: break-all !important;
-    overflow: visible !important;
-    text-overflow: clip !important;
 }
 
 .log-list-container {
@@ -969,8 +965,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     /* 모든 컬럼 표시 및 너비 재조정 */
     #log-list-wrapper .data-table th:nth-child(1) { width: 80px !important; } /* 점검일 */
-    #log-list-wrapper .data-table th:nth-child(2) { width: 60px !important; } /* 구분 */
-    #log-list-wrapper .data-table th:nth-child(3) { width: 120px !important; } /* 세부구분 */
+    #log-list-wrapper .data-table th:nth-child(2) { width: 80px !important; } /* 구분 */
+    #log-list-wrapper .data-table th:nth-child(3) { width: 140px !important; } /* 세부구분 */
     #log-list-wrapper .data-table th:nth-child(4) { width: auto !important; } /* 내용 */
     #log-list-wrapper .data-table th:nth-child(5) { width: 60px !important; } /* 비용처리 */
     #log-list-wrapper .data-table th:nth-child(6) { width: 45px !important; } /* 공수 */

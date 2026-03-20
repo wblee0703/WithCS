@@ -63,6 +63,7 @@
 .setup-card-body-scroll {
     padding: 0;
     overflow-y: auto;
+    overflow-x: auto;
 }
 
 /* ==========================================================================
@@ -71,6 +72,7 @@
 .data-table {
     width: 100%;
     border-collapse: collapse;
+    min-width: max-content;
 }
 
 .data-table th {
@@ -83,12 +85,14 @@
     top: 0;
     background: #161b22;
     z-index: 1;
+    white-space: nowrap;
 }
 
 .data-table td {
     padding: 8px 10px;
     font-size: 13px;
     border-bottom: 1px solid #21262d;
+    white-space: nowrap;
 }
 
 .data-table input[type="text"] {
@@ -241,6 +245,7 @@
 .log-list-wrapper {
     height: 50%;
     overflow-y: auto;
+    overflow-x: auto;
     border-bottom: 1px solid #30363d;
 }
 

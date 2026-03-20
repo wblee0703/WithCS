@@ -2424,5 +2424,5 @@ window.moveToCalendarView = function() {
     localStorage.setItem('lastHomeSection', 'maint');
     
     // 홈 화면으로 이동
-    window.location.href = 'index.html';
+    window.location.href = 'index.html?scrollTo=calendar';
 };

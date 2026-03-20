@@ -446,7 +446,7 @@
     .gantt__date-cell--day,
     .gantt__header-row--fixed .gantt__date-cell {
         flex-shrink: 0;
-        width: 35px !important; /* 좁은 화면에서 약 7일 표시를 위한 셀 너비 강제 조정 */
+        /* JS에서 inline style로 제어하므로 !important 제거 (틀어짐 방지) */
     }
  
     /* [요청] 모바일 세로 모드일 때 간트 뷰 안내 메시지 표시 */
@@ -467,10 +467,6 @@
         }
         .gantt__timeline-container {
             height: auto;
-        }
-        .gantt__date-cell--day,
-        .gantt__header-row--fixed .gantt__date-cell {
-            width: 40px !important; /* 가로 모드에서는 기본 너비(40px) 복구 */
         }
     }
 }

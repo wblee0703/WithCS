@@ -371,15 +371,10 @@ function renderGanttChart() {
 
     const container = document.getElementById('gantt-timeline-container');
     if (container && container.clientWidth > 0 && ganttValidDates.length > 0) {
-        // [수정] 모바일(950px 이하)에서만 초기에 약 1달(22 영업일)치가 보이도록 설정
         if (window.innerWidth <= 950) {
-            const daysToShow = 22;
-            ganttDayWidth = container.clientWidth / daysToShow;
-
-            // 단, 전체 일정이 한 화면에 들어올 경우 억지로 늘리지 않고 딱 맞게 표시
-            if (ganttValidDates.length < daysToShow) {
-                ganttDayWidth = container.clientWidth / ganttValidDates.length;
-            }
+            // [수정] 모바일에서는 화면 방향(가로/세로)에 맞춰 고정 너비를 사용하여 컬럼 틀어짐 방지
+            const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+            ganttDayWidth = isLandscape ? 40 : 35;
         } else {
             // 데스크톱에서는 전체 일정을 화면에 맞춤
             ganttDayWidth = container.clientWidth / ganttValidDates.length;

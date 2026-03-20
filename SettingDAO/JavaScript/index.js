@@ -260,6 +260,23 @@ function updateHomeDashboard() {
 
     updateMaintenanceDashboard();
     updateSetupDashboard();
+
+    // [추가] 간트뷰 또는 캘린더뷰 이동 버튼을 통해 접근 시 자동 스크롤
+    const urlParams = new URLSearchParams(window.location.search);
+    const scrollToTarget = urlParams.get('scrollTo');
+    if (scrollToTarget) {
+        setTimeout(() => {
+            let targetEl = null;
+            if (scrollToTarget === 'gantt') targetEl = document.getElementById('gantt-chart-area');
+            else if (scrollToTarget === 'calendar') targetEl = document.querySelector('.calendar-container');
+            
+            if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            
+            // URL에서 파라미터 제거 (새로고침 시 방지)
+            const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+            window.history.replaceState({path: newUrl}, '', newUrl);
+        }, 200); // UI 렌더링 후 약간의 대기 시간 적용
+    }
 }
 
 function saveMaintFilters() {
