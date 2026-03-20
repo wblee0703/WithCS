@@ -81,12 +81,12 @@
             {
                 "id": 1773725562427,
                 "type": "정기",
+                "detailType": "PM 점검",
                 "code": "Skimmer Cone",
                 "content": "Pt Skimmer cone for 7700S",
                 "date": "2025-11-05",
                 "period": 182,
                 "scheduledDate": "2026-03-12",
-                "detailType": "PM 점검",
                 "costType": "무상(보증)",
                 "md": "2"
             },
@@ -187,13 +187,13 @@
         "memo": "",
         "files": []
     },
-    "details_SEC 평택_SOLA-3000": {
+    "details_SEC 평택_SOLA-1000": {
         "maint": [],
         "logs": [],
         "memo": "",
         "files": []
     },
-    "details_SEC 평택_SOLA-1000": {
+    "details_SEC 평택_SOLA-3000": {
         "maint": [],
         "logs": [],
         "memo": "",
