@@ -802,14 +802,14 @@ function addLogItem(e) {
     const newLog = {
         id: Date.now(), // 고유 식별자
         date: date,
-        memo: "", // 상세 메모 초기값
         type: type,
         detailType: detailType,
         detailType2: finalDetailType,
         content: content,
         costType: costType,
+        mh: mh,
         worker: sessionStorage.getItem('userId') || '', // 초기값, 상세에서 수정
-        mh: mh
+        memo: "" // 상세 메모 초기값
     };
 
     data.logs.push(newLog);

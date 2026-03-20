@@ -137,8 +137,8 @@ function fetchServerData(callback) {
             // [중요] 데이터 로드 완료 상태로 변경 (이제부터 saveAllToServer 작동 허용)
             window.isDataLoaded = true;
 
-            // [추가] 서버 데이터 로드 후 PM -> 정기 일괄 마이그레이션
-            migratePmToJunggi();
+            // [추가] 데이터 로드 후 기존 데이터 마이그레이션 및 JSON 키 순서 정렬
+            migrateDataFormat();
 
             // [추가] 데이터 갱신 후 UI 리프레시 (화면 깜빡임 없이 데이터만 최신화)
             refreshAppViews();
@@ -155,8 +155,8 @@ function fetchServerData(callback) {
         });
 }
 
-// [추가] 기존에 PM으로 저장된 모든 데이터를 '정기'로 자동 변환하는 함수
-function migratePmToJunggi() {
+// [수정] 기존 PM 데이터 변환 및 JSON 저장 시 원하는 키 순서로 자동 재정렬하는 함수
+function migrateDataFormat() {
     let isModified = false;
     
     // 1. admin_items 마이그레이션
@@ -169,7 +169,17 @@ function migratePmToJunggi() {
     });
     if (isModified) localStorage.setItem('admin_items', JSON.stringify(adminItems));
 
-    // 2. details_* 마이그레이션 (유지관리 및 이력)
+    // 2. details_* 마이그레이션 (유지관리, 이력 변환 및 키 순서 정렬)
+    const maintKeyOrder = ['id', 'type', 'detailType', 'code', 'content', 'date', 'period', 'scheduledDate', 'costType', 'mh', 'worker', 'memo'];
+    const logKeyOrder = ['id', 'date', 'type', 'detailType', 'detailType2', 'content', 'costType', 'mh', 'worker', 'memo'];
+
+    const reorderObject = (obj, order) => {
+        const newObj = {};
+        order.forEach(k => { if (obj.hasOwnProperty(k)) newObj[k] = obj[k]; });
+        Object.keys(obj).forEach(k => { if (!order.includes(k)) newObj[k] = obj[k]; });
+        return newObj;
+    };
+
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key.startsWith('details_')) {
@@ -178,14 +188,24 @@ function migratePmToJunggi() {
                 let detailModified = false;
                 
                 if (detailData.maint) {
-                    detailData.maint.forEach(m => {
-                        if (m.type === 'PM') { m.type = '정기'; detailModified = true; }
+                    const newMaint = detailData.maint.map(m => {
+                        if (m.type === 'PM') m.type = '정기';
+                        return reorderObject(m, maintKeyOrder);
                     });
+                    if (JSON.stringify(detailData.maint) !== JSON.stringify(newMaint)) {
+                        detailData.maint = newMaint;
+                        detailModified = true;
+                    }
                 }
                 if (detailData.logs) {
-                    detailData.logs.forEach(l => {
-                        if (l.type === 'PM') { l.type = '정기'; detailModified = true; }
+                    const newLogs = detailData.logs.map(l => {
+                        if (l.type === 'PM') l.type = '정기';
+                        return reorderObject(l, logKeyOrder);
                     });
+                    if (JSON.stringify(detailData.logs) !== JSON.stringify(newLogs)) {
+                        detailData.logs = newLogs;
+                        detailModified = true;
+                    }
                 }
                 
                 if (detailModified) {

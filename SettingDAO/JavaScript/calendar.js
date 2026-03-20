@@ -1160,11 +1160,12 @@ function completeScheduleWork() {
         date: completeDate,
         type: maintItem.type || '정기',
         detailType: maintItem.detailType || '',
+        detailType2: '',
         content: combinedContent,
         costType: maintItem.costType || '',
+        mh: mh,
         worker: worker,
-        memo: memo,
-        mh: mh
+        memo: memo
     });
 
     sameDayItems.forEach(i => {

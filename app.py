@@ -53,6 +53,10 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
+# [추가] JSON 데이터 저장 및 응답 시 키(Key)가 알파벳순으로 자동 정렬되는 것을 방지
+app.config['JSON_SORT_KEYS'] = False
+if hasattr(app, 'json'): app.json.sort_keys = False
+
 if os.environ.get('APP_ENV') == 'production':
     app.config['SESSION_COOKIE_SECURE'] = True
 

@@ -1,5 +1,5 @@
 {
-    "SKH 청주": {
+    "DUPONT": {
         "buildings": []
     },
     "SEC 천안": {
@@ -23,10 +23,10 @@
     "원익IPS": {
         "buildings": []
     },
-    "Onsemi 부천": {
+    "SEC 온양": {
         "buildings": []
     },
-    "SEC 온양": {
+    "Onsemi 부천": {
         "buildings": []
     },
     "NES 여수": {
@@ -76,7 +76,7 @@
             "m16"
         ]
     },
-    "DUPONT": {
+    "SKH 청주": {
         "buildings": []
     }
 }
