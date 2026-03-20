@@ -669,14 +669,8 @@ function toggleEditRow(id) {
             periodCell.innerHTML = `<input type="number" id="input-period-${id}" value="${escapeHtml(currentPeriod)}" class="edit-period-input">`;
         }
 
-        // [수정] 날짜 입력창 옆에 달력 아이콘 버튼 추가 (가독성 개선)
         const currentDate = dateCell.textContent.trim();
-        dateCell.innerHTML = `
-            <div class="edit-date-wrapper">
-                <input type="date" id="input-date-${id}" value="${escapeHtml(currentDate)}" class="edit-date-input">
-                <button type="button" onclick="try{document.getElementById('input-date-${id}').showPicker()}catch(e){document.getElementById('input-date-${id}').focus()}" class="btn-calendar-picker">📅</button>
-            </div>
-        `;
+        dateCell.innerHTML = `<input type="date" id="input-date-${id}" value="${escapeHtml(currentDate)}" class="edit-date-input" style="width: 100%; box-sizing: border-box;">`;
         const dateInput = document.getElementById(`input-date-${id}`);
         if (dateInput) dateInput.focus();
     } else {

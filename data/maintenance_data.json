@@ -51,7 +51,7 @@
                 "code": "Skimmer Cone",
                 "content": "Pt Skimmer cone for 7700S",
                 "date": "2026-04-03",
-                "period": "182"
+                "period": 182
             },
             {
                 "id": 1773971781130,
@@ -238,13 +238,13 @@
         "memo": "",
         "files": []
     },
-    "details_SEC 평택_SOLA-1000": {
+    "details_SEC 평택_SOLA-3000": {
         "maint": [],
         "logs": [],
         "memo": "",
         "files": []
     },
-    "details_SEC 평택_SOLA-3000": {
+    "details_SEC 평택_SOLA-1000": {
         "maint": [],
         "logs": [],
         "memo": "",
