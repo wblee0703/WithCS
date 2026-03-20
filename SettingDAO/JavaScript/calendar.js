@@ -89,7 +89,7 @@ function getScheduleForCalendar() {
 /**
  * 일정 날짜 설정 (등록/수정/삭제)
  */
-function setScheduleDate(site, equip, id, dateStr, isDelete = false) {
+function setScheduleDate(site, equip, id, dateStr, isDelete = false, mh = '') {
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
 
@@ -99,12 +99,16 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false) {
             const item = data.maint[index];
             if (isDelete) {
                 delete item.scheduledDate;
+                delete item.mh;
                 // [추가] 일회성 일정은 삭제 시 데이터 자체를 제거하여 누적 방지
                 if (!item.period) {
                     data.maint.splice(index, 1);
                 }
             } else {
                 item.scheduledDate = dateStr;
+                if (mh !== '') {
+                    item.mh = mh;
+                }
             }
             localStorage.setItem(key, JSON.stringify(data));
 
@@ -503,7 +507,6 @@ function setupScheduleModal() {
     const closeBtn = document.getElementById('btn-close-schedule-modal');
     const saveBtn = document.getElementById('btn-save-schedule');
     const delBtn = document.getElementById('btn-delete-schedule');
-    const calendarBtn = document.getElementById('btn-schedule-calendar');
     const dateInput = document.getElementById('schedule-date-input');
 
     if (!modal) return;
@@ -514,8 +517,12 @@ function setupScheduleModal() {
         saveBtn.onclick = () => {
             if (currentScheduleTarget) {
                 const date = dateInput.value;
+                const mhInput = document.getElementById('schedule-mh-input');
+                const mh = mhInput ? mhInput.value.trim() : '';
                 if (!date) return alert('날짜를 선택해주세요.');
-                setScheduleDate(currentScheduleTarget.site, currentScheduleTarget.equip, currentScheduleTarget.id, date);
+                if (!mh) return alert('공수(M/H)를 입력해주세요.');
+                if (parseFloat(mh) < 0) return alert('공수는 0 이상이어야 합니다.');
+                setScheduleDate(currentScheduleTarget.site, currentScheduleTarget.equip, currentScheduleTarget.id, date, false, mh);
                 modal.style.display = 'none';
                 if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
                 renderCalendar();
@@ -533,12 +540,6 @@ function setupScheduleModal() {
             }
         };
     }
-
-    if (calendarBtn && dateInput) {
-        calendarBtn.onclick = () => {
-            try { dateInput.showPicker(); } catch (e) { dateInput.focus(); }
-        };
-    }
 }
 
 function openScheduleModal(site, equip, id) {
@@ -551,10 +552,15 @@ function openScheduleModal(site, equip, id) {
     const item = data.maint ? data.maint.find(i => i.id === id) : null;
 
     const dateInput = document.getElementById('schedule-date-input');
+    const mhInput = document.getElementById('schedule-mh-input');
     if (item && item.scheduledDate) {
         dateInput.value = item.scheduledDate;
     } else {
         dateInput.value = new Date().toISOString().split('T')[0];
+    }
+
+    if (mhInput) {
+        mhInput.value = item ? (item.mh || '') : '';
     }
 
     modal.style.display = 'flex';
@@ -635,7 +641,11 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     document.getElementById('detail-equip-info').textContent = `${site} > ${parts[0]}`;
     document.getElementById('detail-serial-no').textContent = parts.length > 1 ? parts[1] : '-';
     document.getElementById('detail-type').textContent = item.type || '정기';
-    document.getElementById('detail-detail-type').textContent = item.detailType || '-';
+    let displayDetailType = item.detailType;
+    if (!displayDetailType) {
+        displayDetailType = (item.type === '정기') ? 'PM 점검' : 'BM 점검';
+    }
+    document.getElementById('detail-detail-type').textContent = displayDetailType;
 
     // [수정] 같은 날짜, 같은 타입, 세부구분에 예정된 항목들을 모두 표시
     let displayContent = item.code ? item.code : (item.content || '');

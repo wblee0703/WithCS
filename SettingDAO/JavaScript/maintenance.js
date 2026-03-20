@@ -434,6 +434,7 @@ function addDetailItem() {
     const newItem = {
         id: Date.now(),
         type: maintType,
+        detailType: maintType === '정기' ? 'PM 점검' : 'BM 점검',
         code: code,
         content: content,
         date: date,
@@ -843,6 +844,7 @@ function addLogItem(e) {
                 data.maint.push({
                     id: Date.now() + 1000 + idx, // ID 충돌 방지
                     type: type,
+                    detailType: detailType,
                     code: code,
                     content: fullContent,
                     date: date,

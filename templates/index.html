@@ -439,9 +439,13 @@
             <button class="btn-del-sm" id="btn-close-schedule-modal">✕</button>
         </div>
         <div class="modal-body">
-            <div class="form-row">
-                <input type="date" id="schedule-date-input">
-                <button id="btn-schedule-calendar" class="btn-gray" title="달력 열기">📅</button>
+            <div class="form-row" style="margin-bottom: 10px;">
+                <label class="form-label" style="width: 50px;">예정일</label>
+                <input type="date" id="schedule-date-input" class="input-date-dark" style="flex: 1;">
+            </div>
+            <div class="form-row" style="margin-bottom: 15px;">
+                <label class="form-label" style="width: 50px;">공수</label>
+                <input type="number" id="schedule-mh-input" class="input-dark" placeholder="공수(M/H)" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)" style="flex: 1;">
             </div>
             <div class="modal-btn-group">
                 <button class="btn-del" id="btn-delete-schedule">일정 삭제</button>
