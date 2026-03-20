@@ -632,6 +632,29 @@ select.input-dark option {
         overflow-y: visible;
     }
 
+    /* [요청] 점검 구분 관리 모바일 가로 1줄 배치 */
+    .check-type-categories-wrapper {
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 10px;
+        width: 100%;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #30363d;
+    }
+
+    .check-type-categories-wrapper .admin-col-list {
+        flex: 1 !important;
+        width: auto !important;
+        min-width: 130px !important;
+        max-width: none !important;
+        border-right: 1px solid #30363d !important;
+        border-bottom: none !important;
+        padding-right: 10px !important;
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important;
+    }
+
     /* 폼 그룹 1열 배치 */
     .form-group-half {
         width: 100%;
@@ -701,6 +724,11 @@ select.input-dark option {
 .modal-load-setting { width: 450px; height: 350px; }
 .modal-desc { margin-bottom: 15px; color: #8b949e; font-size: 13px; }
 .modal-select-lg { height: 30px; font-size: 14px; }
+
+.check-type-categories-wrapper {
+    display: flex;
+    gap: 20px;
+}
 
 /* JS 동적 요소용 클래스 */
 .flex-between-center { display: flex; justify-content: space-between; align-items: center; width: 100%; }

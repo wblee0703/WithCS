@@ -416,35 +416,37 @@
                         </div>
                     </div>
 
-                    <!-- 중앙: 점검 구분 선택 -->
-                    <div class="admin-col-list col-list-200">
-                        <div class="list-header">
-                            <span>점검 구분</span>
-                        </div>
-                        <ul id="check-type-category-list" class="admin-list opacity-50">
-                            <li data-type="정기">정기</li>
-                            <li data-type="비정기">비정기</li>
-                            <li data-type="고객대응">고객대응</li>
-                            <li data-type="용액제조">용액제조</li>
-                            <li data-type="온라인점검">온라인점검</li>
-                        </ul>
-                    </div>
-
-                    <!-- 중앙2: 분류 선택 -->
-                    <!-- [수정] 아래 style 속성에서 250px 값을 변경하여 세부 구분 리스트 너비를 고정으로 조절할 수 있습니다. -->
-                    <div class="admin-col-list" id="check-type-subcategory-panel" style="flex: 0 0 220px; max-width: 220px;">
-                        <div class="list-header">
-                            <div style="display: flex; align-items: center; gap: 5px;">
-                                <span>세부 구분</span>
-                                <button id="btn-subcategory-settings" class="btn-settings" title="관리 모드 토글">⚙️</button>
+                    <div class="check-type-categories-wrapper">
+                        <!-- 중앙: 점검 구분 선택 -->
+                        <div class="admin-col-list col-list-200">
+                            <div class="list-header">
+                                <span>점검 구분</span>
                             </div>
+                            <ul id="check-type-category-list" class="admin-list opacity-50">
+                                <li data-type="정기">정기</li>
+                                <li data-type="비정기">비정기</li>
+                                <li data-type="고객대응">고객대응</li>
+                                <li data-type="용액제조">용액제조</li>
+                                <li data-type="온라인점검">온라인점검</li>
+                            </ul>
                         </div>
-                        <ul id="check-type-subcategory-list" class="admin-list opacity-50">
-                        </ul>
-                        <div class="list-footer opacity-50" id="check-type-subcategory-footer" style="display: none;">
-                            <input type="text" id="check-type-subcategory-input" placeholder="분류명 추가"
-                                class="input-dark full-width">
-                            <button id="btn-add-check-type-subcategory" class="btn-green full-width">추가</button>
+    
+                        <!-- 중앙2: 분류 선택 -->
+                        <!-- [수정] 아래 style 속성에서 250px 값을 변경하여 세부 구분 리스트 너비를 고정으로 조절할 수 있습니다. -->
+                        <div class="admin-col-list" id="check-type-subcategory-panel" style="flex: 0 0 220px; max-width: 220px;">
+                            <div class="list-header">
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <span>세부 구분</span>
+                                    <button id="btn-subcategory-settings" class="btn-settings" title="관리 모드 토글">⚙️</button>
+                                </div>
+                            </div>
+                            <ul id="check-type-subcategory-list" class="admin-list opacity-50">
+                            </ul>
+                            <div class="list-footer opacity-50" id="check-type-subcategory-footer" style="display: none;">
+                                <input type="text" id="check-type-subcategory-input" placeholder="분류명 추가"
+                                    class="input-dark full-width">
+                                <button id="btn-add-check-type-subcategory" class="btn-green full-width">추가</button>
+                            </div>
                         </div>
                     </div>
 
