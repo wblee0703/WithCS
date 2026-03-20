@@ -105,6 +105,10 @@
             "name": "SOMA-2000"
         },
         {
+            "name": "SOMA-3000E",
+            "abbr": "SOMA-3000E"
+        },
+        {
             "abbr": "SOT-100B",
             "name": "SOT-100B"
         },
@@ -129,8 +133,8 @@
             "name": "WOA-683"
         },
         {
-            "name": "SOMA-3000E",
-            "abbr": "SOMA-3000E"
+            "name": "SOMA-3000I",
+            "abbr": "SOMA-3000I"
         }
     ],
     "equipments": {
