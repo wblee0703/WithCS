@@ -49,6 +49,14 @@ function setupMaintenanceEvents() {
     const maintTypeButtons = document.querySelectorAll('#maint-type-toggle button');
     const maintPeriodInput = document.getElementById('maint-period');
 
+    if (maintPeriodInput) {
+        maintPeriodInput.type = 'number';
+        maintPeriodInput.min = '0';
+        maintPeriodInput.addEventListener('input', function() {
+            if (this.value < 0) this.value = Math.abs(this.value);
+        });
+    }
+
     if (maintTypeButtons.length > 0 && maintPeriodInput) {
         maintTypeButtons.forEach(btn => {
             btn.onclick = () => {
@@ -740,7 +748,7 @@ function toggleEditRow(id) {
         // [수정] 주기(Period) 입력창을 number 타입으로 변경하여 숫자만 입력 가능하게 함
         if (row.querySelector('.badge').textContent === '정기') {
             const currentPeriod = periodCell.textContent.replace('일', '').trim();
-            periodCell.innerHTML = `<input type="number" id="input-period-${id}" value="${escapeHtml(currentPeriod)}" class="edit-period-input">`;
+            periodCell.innerHTML = `<input type="number" id="input-period-${id}" value="${escapeHtml(currentPeriod)}" class="edit-period-input" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)">`;
         }
 
         const currentDate = dateCell.textContent.trim();
