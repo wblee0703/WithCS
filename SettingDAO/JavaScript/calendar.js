@@ -89,7 +89,7 @@ function getScheduleForCalendar() {
 /**
  * 일정 날짜 설정 (등록/수정/삭제)
  */
-function setScheduleDate(site, equip, id, dateStr, isDelete = false, mh = '') {
+function setScheduleDate(site, equip, id, dateStr, isDelete = false, mh = null) {
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
 
@@ -106,7 +106,7 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, mh = '') {
                 }
             } else {
                 item.scheduledDate = dateStr;
-                if (mh !== '') {
+                if (mh !== null) {
                     item.mh = mh;
                 }
             }
@@ -728,7 +728,14 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         memoInput.value = item.memo || lastMemo;
         memoInput.disabled = false;
         if (mhInput) {
-            mhInput.value = item.mh || '';
+            let displayMh = item.mh || '';
+            // [추가] 같은 날짜에 묶인 항목 중 공수 데이터가 있는지 우선 검색 (그룹화 시 데이터 유실 방지)
+            if (!displayMh && item.scheduledDate) {
+                const sameDayItems = data.maint.filter(i => i.scheduledDate === item.scheduledDate && i.type === item.type && (i.detailType || '') === (item.detailType || ''));
+                const itemWithMh = sameDayItems.find(i => i.mh);
+                if (itemWithMh) displayMh = itemWithMh.mh;
+            }
+            mhInput.value = displayMh;
             mhInput.disabled = false;
         }
 
@@ -1002,6 +1009,7 @@ function toggleDetailContentEdit() {
                                 existing.detailType = itemDetailType;
                                 if (!existing.worker) existing.worker = item.worker || '';
                                 if (!existing.memo) existing.memo = item.memo || '';
+                                if (!existing.mh) existing.mh = item.mh || '';
                                 remainingIds.push(existing.id);
                             } else {
                                 const newId = Date.now() + idx;
@@ -1015,7 +1023,8 @@ function toggleDetailContentEdit() {
                                     period: (itemType === '정기') ? period : null,
                                     scheduledDate: targetDate,
                                     worker: item.worker || '',
-                                    memo: item.memo || ''
+                                    memo: item.memo || '',
+                                    mh: item.mh || ''
                                 });
                                 remainingIds.push(newId);
                             }
