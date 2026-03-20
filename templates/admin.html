@@ -353,7 +353,7 @@
                                 </div>
                                 <div class="flex-04">
                                     <label class="form-label-custom">주기(일)</label>
-                                    <input type="number" id="item-info-cycle" class="input-dark full-width">
+                                    <input type="number" id="item-info-cycle" class="input-dark full-width" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)">
                                 </div>
                             </div>
 

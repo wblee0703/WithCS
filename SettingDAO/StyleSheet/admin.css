@@ -239,8 +239,9 @@
 }
 
 .admin-list li.active {
-    background: #1f6feb;
-    color: #fff;
+    background-color: rgba(35, 134, 54, 0.1);
+    border-left: 4px solid #238636;
+    color: #e6edf3;
     font-weight: bold;
 }
 
@@ -373,8 +374,9 @@
 
 /* Sidebar Menu Active State Override */
 #admin-menu-list li.active {
-    background: #1f6feb;
-    color: #fff;
+    background-color: rgba(35, 134, 54, 0.1);
+    border-left: 4px solid #238636;
+    color: #e6edf3;
     font-weight: bold;
 }
 
