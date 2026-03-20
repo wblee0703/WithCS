@@ -125,6 +125,10 @@
             "name": "SOT-200B"
         },
         {
+            "name": "WAD-10",
+            "abbr": "WAD-10"
+        },
+        {
             "abbr": "WiDGA",
             "name": "WiDGA-100"
         },
@@ -137,8 +141,8 @@
             "name": "WOA-683"
         },
         {
-            "name": "WAD-10",
-            "abbr": "WAD-10"
+            "name": "WAD-NH4OH",
+            "abbr": "WAD-NH4OH"
         }
     ],
     "equipments": {
