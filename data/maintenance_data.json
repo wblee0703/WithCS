@@ -50,11 +50,8 @@
                 "detailType": "PM 점검",
                 "code": "Skimmer Cone",
                 "content": "Pt Skimmer cone for 7700S",
-                "date": "",
-                "period": "182",
-                "scheduledDate": "2026-04-03",
-                "costType": "유상",
-                "mh": "2"
+                "date": "2026-04-03",
+                "period": "182"
             },
             {
                 "id": 1773971781130,
@@ -62,11 +59,8 @@
                 "detailType": "PM 점검",
                 "code": "Sampler Cone",
                 "content": "Pt Sampling cone for 7700S",
-                "date": "",
-                "period": "182",
-                "scheduledDate": "2026-04-03",
-                "costType": "유상",
-                "mh": "2"
+                "date": "2026-04-03",
+                "period": "182"
             },
             {
                 "id": 1773971781131,
@@ -74,11 +68,8 @@
                 "detailType": "PM 점검",
                 "code": "Metal STD (5ppb 1%)",
                 "content": "Metal Standard Solution(1%HNO3)",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-04-03",
-                "costType": "유상",
-                "mh": "2"
+                "date": "2026-04-03",
+                "period": null
             },
             {
                 "id": 1773971781132,
@@ -86,14 +77,24 @@
                 "detailType": "PM 점검",
                 "code": "9.5% HNO3",
                 "content": "9.5% HNO3",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-04-03",
-                "costType": "유상",
-                "mh": "2"
+                "date": "2026-04-03",
+                "period": null
             }
         ],
-        "logs": [],
+        "logs": [
+            {
+                "id": 1773971802543,
+                "date": "2026-04-03",
+                "type": "정기",
+                "detailType": "PM 점검",
+                "detailType2": "",
+                "content": "Skimmer Cone, Sampler Cone, Metal STD (5ppb 1%), 9.5% HNO3",
+                "costType": "유상",
+                "mh": "2",
+                "worker": "이원배",
+                "memo": "작업 진행 완료"
+            }
+        ],
         "memo": "",
         "files": []
     },
