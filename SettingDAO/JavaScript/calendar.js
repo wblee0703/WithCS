@@ -220,6 +220,9 @@ function toggleCalendarExpand(viewId) {
         });
         if (divider) divider.style.display = 'none';
     }
+
+    // [추가] 뷰 모드 변경 시 표시 항목 제한(개수) 적용을 위해 달력 재렌더링
+    renderCalendar();
 }
 
 function goToTodayMonth() {
@@ -353,7 +356,17 @@ function renderMonthGrid(year, month, titleId, gridId) {
             const groups = Object.values(groupedEvents);
             displayCount = groups.length;
 
-            groups.forEach(group => {
+            // [추가] 1달/2달 보기에 따른 최대 표시 항목 수 제한
+            const isSingleMonthMode = (expandedViewId !== null);
+            const maxAllowed = isSingleMonthMode ? 3 : 4;
+            const visibleCount = isSingleMonthMode ? 2 : 3;
+
+            let renderGroups = groups;
+            if (groups.length > maxAllowed) {
+                renderGroups = groups.slice(0, visibleCount);
+            }
+
+            renderGroups.forEach(group => {
                 const equipName = group.equip.split('::')[0];
                 const typeClass = `type-${group.type}`;
                 const completedClass = group.isCompleted ? 'completed' : '';
@@ -369,6 +382,11 @@ function renderMonthGrid(year, month, titleId, gridId) {
                     ${escapeHtml(group.site)} ${escapeHtml(equipName)} <span class="event-type-text ${typeClass}">${group.type}</span>
                 </div>`;
             });
+
+            // [추가] 제한된 개수를 초과한 경우 생략(...) 표시
+            if (groups.length > maxAllowed) {
+                eventsHtml += `<div class="more-events" style="display: block; width: 100%; text-align: center; font-weight: bold; color: var(--cal-text-secondary); line-height: 1; margin-top: 2px; pointer-events: none;">...</div>`;
+            }
         }
 
         // 공휴일 및 요일 체크
