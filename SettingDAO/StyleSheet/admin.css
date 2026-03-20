@@ -402,18 +402,21 @@
 .admin-item-scroll-wrapper #admin-item-list {
     border: none;
     border-radius: 0;
-    border-bottom: 1px solid #30363d; /* 입력창과 구분 선 */
+    border-bottom: none;
 }
 
 .list-footer-inputs {
-    padding: 10px;
-    background: #0d1117;
-    border-radius: 0 0 6px 6px;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+}
+
+.list-footer-inputs > * {
+    min-width: 0; /* 부모 크기 변화에 맞춰 입력창 너비 자동 축소 (비율 유지) */
 }
 
 .admin-item-scroll-wrapper .admin-list-header,
-.admin-item-scroll-wrapper #admin-item-list,
-.admin-item-scroll-wrapper .list-footer-inputs {
+.admin-item-scroll-wrapper #admin-item-list {
     min-width: 750px; /* [수정] 리스트 전체의 최소 너비 보장 */
 }
 
