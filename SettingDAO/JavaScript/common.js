@@ -1151,10 +1151,15 @@ function createListItem(id, text, type, onSelect, subText = '') {
                 const currentModel = parts.length > 1 ? parts[1] : '';
 
                 const wrapper = li.querySelector('.item-wrapper');
+                
+                // [수정] 부모 요소의 숨김 속성 때문에 제안 박스가 잘리는 현상 방지
+                wrapper.style.overflow = 'visible';
+                li.style.overflow = 'visible';
+
                 wrapper.innerHTML = `
                     <div class="autocomplete-wrapper" style="flex: 1; margin-right: 5px;">
                         <input type="text" class="edit-name-input" value="${currentName}" style="width: 100%;">
-                        <ul class="suggestion-list edit-equip-suggestions"></ul>
+                        <ul class="suggestion-list edit-equip-suggestions" style="z-index: 9999;"></ul>
                     </div>
                     <input type="text" class="edit-model-input" value="${currentModel}" placeholder="Serial No." style="width: 80px;">
                 `;
@@ -1203,13 +1208,18 @@ function createListItem(id, text, type, onSelect, subText = '') {
                         });
                         suggestionList.style.display = 'block';
                     } else {
-                        suggestionList.style.display = 'none';
+                        // [추가] 매칭 결과가 없을 때 빈 목록 표시 (가시성 확보)
+                        suggestionList.innerHTML = '<li class="suggestion-item" style="color:#8b949e; cursor:default; text-align:center; padding: 8px;">검색 결과 없음</li>';
+                        suggestionList.style.display = 'block';
                     }
                 };
 
                 nameInput.addEventListener('click', showEquipSuggestions);
                 nameInput.addEventListener('input', showEquipSuggestions);
-                nameInput.addEventListener('focus', showEquipSuggestions);
+                nameInput.addEventListener('focus', () => {
+                    showEquipSuggestions();
+                    setTimeout(() => li.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+                });
                 nameInput.addEventListener('blur', () => {
                     setTimeout(() => { suggestionList.style.display = 'none'; }, 150);
                 });
@@ -1235,6 +1245,7 @@ function createListItem(id, text, type, onSelect, subText = '') {
         li.draggable = true;
         editBtn.textContent = '✏️';
         li.classList.remove('editing-mode');
+        li.style.overflow = ''; // [추가] 원래 속성으로 복구
 
         let newId = id;
 
