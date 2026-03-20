@@ -351,6 +351,24 @@ function setupMobileNav() {
         header.insertBefore(hamburger, header.firstChild);
     }
 
+    // [추가] 모바일 현재 페이지 타이틀 텍스트 요소 생성
+    let mobilePageTitle = document.getElementById('mobile-page-title');
+    if (!mobilePageTitle) {
+        mobilePageTitle = document.createElement('div');
+        mobilePageTitle.id = 'mobile-page-title';
+        mobilePageTitle.className = 'mobile-page-title';
+        
+        // 현재 활성화된 메뉴 텍스트 찾기
+        const activeLink = document.querySelector('.header .container .nav-links a.active');
+        let titleText = 'HOME';
+        if (activeLink) {
+            titleText = activeLink.textContent.trim();
+        }
+        mobilePageTitle.textContent = titleText;
+        
+        header.insertBefore(mobilePageTitle, hamburger);
+    }
+
     let navOverlay = document.getElementById('nav-overlay');
     if (!navOverlay) {
         navOverlay = document.createElement('div');

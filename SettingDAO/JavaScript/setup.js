@@ -1073,50 +1073,52 @@ function calculateScheduleForward(startRow, skipSave = false) {
 function calculateScheduleBackward(startRow, skipSave = false) {
     const rows = Array.from(document.querySelectorAll('#setup-detail-body tr.item-row'));
     const startIndex = rows.indexOf(startRow);
-    if (startIndex <= 0) return; // 첫 번째 항목이거나 찾을 수 없으면 종료
+    if (startIndex < 0) return; // 찾을 수 없으면 종료
 
-    let nextTaskStartDate = null;
-    
-    // 변경된 행(기준점)의 시작일 가져오기
-    const startInput = startRow.querySelector('.detail-start-date-input');
-    if (startInput && startInput.value) {
-        const [y, m, d] = startInput.value.split('-').map(Number);
-        nextTaskStartDate = new Date(y, m - 1, d);
-    } else {
-        return;
-    }
-
-    // 위쪽으로 역순 순회
-    for (let i = startIndex - 1; i >= 0; i--) {
-        const row = rows[i];
-        const checkbox = row.querySelector('.detail-complete-checkbox');
-        const isCompleted = checkbox ? checkbox.checked : false;
-
-        if (isCompleted) break; // 완료된 작업을 만나면 역산 중단 (고정점)
-
-        const rowStartInput = row.querySelector('.detail-start-date-input');
-        const rowEstInput = row.querySelector('.detail-est-days-input');
-
-        if (rowStartInput && rowEstInput) {
-            let estDays = parseInt(rowEstInput.value);
-            if (isNaN(estDays) || estDays <= 0) estDays = 1; // [수정] 최소 1일 보장
-            // 현재 행 완료일 = 다음 행 시작일 - 1일 (영업일 기준)
-            const currentEndDate = window.addBusinessDays(nextTaskStartDate, -1);
-            // 현재 행 시작일 = 현재 행 완료일 - (작업일수 - 1)
-            const currentStartDate = window.addBusinessDays(currentEndDate, -(estDays - 1));
+    // [수정] startIndex가 0(첫 번째 항목)일 때도 저장이 누락되지 않도록 로직 개선
+    if (startIndex > 0) {
+        let nextTaskStartDate = null;
+        
+        // 변경된 행(기준점)의 시작일 가져오기
+        const startInput = startRow.querySelector('.detail-start-date-input');
+        if (startInput && startInput.value) {
+            const [y, m, d] = startInput.value.split('-').map(Number);
+            nextTaskStartDate = new Date(y, m - 1, d);
             
-            rowStartInput.value = formatLocalDate(currentStartDate);
+            // 위쪽으로 역순 순회
+            for (let i = startIndex - 1; i >= 0; i--) {
+                const row = rows[i];
+                const checkbox = row.querySelector('.detail-complete-checkbox');
+                const isCompleted = checkbox ? checkbox.checked : false;
 
-            // [추가] 모바일 뷰 텍스트 갱신 (자동 계산 결과 반영)
-            const textDiv = rowStartInput.previousElementSibling;
-            if (textDiv && textDiv.classList.contains('date-display-text')) {
-                textDiv.textContent = formatDateYYMMDD(rowStartInput.value);
+                if (isCompleted) break; // 완료된 작업을 만나면 역산 중단 (고정점)
+
+                const rowStartInput = row.querySelector('.detail-start-date-input');
+                const rowEstInput = row.querySelector('.detail-est-days-input');
+
+                if (rowStartInput && rowEstInput) {
+                    let estDays = parseInt(rowEstInput.value);
+                    if (isNaN(estDays) || estDays <= 0) estDays = 1; // 최소 1일 보장
+                    // 현재 행 완료일 = 다음 행 시작일 - 1일 (영업일 기준)
+                    const currentEndDate = window.addBusinessDays(nextTaskStartDate, -1);
+                    // 현재 행 시작일 = 현재 행 완료일 - (작업일수 - 1)
+                    const currentStartDate = window.addBusinessDays(currentEndDate, -(estDays - 1));
+                    
+                    rowStartInput.value = formatLocalDate(currentStartDate);
+
+                    // [추가] 모바일 뷰 텍스트 갱신 (자동 계산 결과 반영)
+                    const textDiv = rowStartInput.previousElementSibling;
+                    if (textDiv && textDiv.classList.contains('date-display-text')) {
+                        textDiv.textContent = formatDateYYMMDD(rowStartInput.value);
+                    }
+                    
+                    // 다음 반복(더 위쪽)을 위해 기준 날짜 갱신
+                    nextTaskStartDate = currentStartDate;
+                }
             }
-            
-            // 다음 반복(더 위쪽)을 위해 기준 날짜 갱신
-            nextTaskStartDate = currentStartDate;
         }
     }
+
     if (!skipSave) saveSetupDetails('CALC_SETUP_SCHEDULE', '일정 자동 계산 (역방향)');
 }
 
@@ -1836,6 +1838,11 @@ function openSetupExecStartModal(id) {
 }
 
 function startSetupTask(id) {
+    // [추가] 화면에 계산되었으나 아직 스토리지에 저장되지 않은 데이터가 있을 경우를 대비해,
+    // 팝업을 열고 리렌더링하기 전에 현재 화면의 DOM 상태를 강제로 저장하여 초기화 방지
+    if (typeof saveSetupDetails === 'function') {
+        saveSetupDetails('UPDATE_SETUP_BEFORE_EXEC', '실행 전 화면 상태 자동 저장');
+    }
     openSetupExecStartModal(id);
 }
 // [추가] 인라인 onclick에서 호출될 수 있도록 전역 객체에 명시적 할당

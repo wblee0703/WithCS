@@ -717,6 +717,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         padding: 10px;
     }
 
+    /* [요청] 모바일에서 사업장, 장비 목록 최대 6개 노출 및 스크롤 */
+    #site-list,
+    #equip-list {
+        max-height: 210px !important;
+        overflow-y: auto !important;
+    }
+
     /* [요청] 모바일 소분류 제목 글자 크기 축소 */
     .card-header h3 {
         font-size: 12px;
@@ -749,11 +756,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         margin-right: 0 !important;
     }
 
-    /* [요청] 장비 점검 이력 입력창 한 줄 배치 */
+    /* [요청] 장비 점검 이력 입력창 2줄 배치 (웹과 동일) */
     #log-window .form-row {
         flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        gap: 3px !important;
+        flex-wrap: wrap !important;
+        gap: 5px !important;
     }
 
     #log-date {
@@ -791,7 +798,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     #log-cost-type {
         width: auto !important;
-        flex: 1.2 !important;
+        flex: 1 !important;
         min-width: 0 !important;
         padding: 0 !important;
         appearance: none;
@@ -879,8 +886,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         order: -1 !important;
     }
 
-    /* [추가] 모바일에서는 강제로 1줄 배치를 유지하기 위해 줄바꿈 요소 숨김 */
-    .flex-break {
+    /* [요청] 모바일에서 장비 점검 이력 리스트 컬럼 제어 (구분, 공수 숨김) */
+    #log-list-wrapper .data-table th:nth-child(2),
+    #log-list-wrapper .data-table td:nth-child(2),
+    #log-list-wrapper .data-table th:nth-child(6),
+    #log-list-wrapper .data-table td:nth-child(6) {
         display: none !important;
     }
+
+    /* 남은 컬럼 너비 재조정 (점검일, 세부구분, 내용, 비용처리) */
+    #log-list-wrapper .data-table th:nth-child(1) { width: 70px !important; }
+    #log-list-wrapper .data-table th:nth-child(3) { width: 100px !important; }
+    #log-list-wrapper .data-table th:nth-child(4) { width: auto !important; }
+    #log-list-wrapper .data-table th:nth-child(5) { width: 55px !important; }
 }

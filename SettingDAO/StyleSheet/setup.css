@@ -454,6 +454,13 @@
         overflow-y: auto;
     }
 
+    /* [요청] 모바일에서 사업장, 장비 목록 최대 6개 노출 및 스크롤 */
+    #site-list,
+    #equip-list {
+        max-height: 210px !important;
+        overflow-y: auto !important;
+    }
+
     .scrollable-content {
         overflow-x: auto;
         white-space: nowrap;

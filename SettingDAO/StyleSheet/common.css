@@ -169,6 +169,7 @@ body {
 
 .hamburger-menu,
 .mobile-nav,
+.mobile-page-title,
 .nav-overlay {
     display: none;
     /* 데스크탑에서는 숨김 */
@@ -870,7 +871,7 @@ body.role-user select {
     /* 2. 헤더 및 네비게이션 */
     .header {
         height: 60px;
-        justify-content: space-between;
+        justify-content: flex-end; /* [수정] 우측 정렬 (로고를 좌측으로 밀어냄) */
         align-items: center;
         padding: 0 15px;
         gap: 0;
@@ -881,7 +882,20 @@ body.role-user select {
         height: 30px;
         left: auto;
         transform: none;
-        margin-right: 0;
+        margin-right: auto; /* [추가] 로고를 가장 왼쪽으로 밈 */
+        order: 1; /* [추가] 첫 번째 순서 */
+    }
+
+    /* [추가] 모바일 현재 페이지 타이틀 스타일 */
+    .mobile-page-title {
+        display: block !important;
+        order: 2; /* [추가] 로고 다음, 햄버거 전 */
+        color: #e6edf3;
+        font-size: 16px;
+        font-weight: 800;
+        font-family: 'Montserrat', 'Noto Sans KR', sans-serif;
+        margin-right: 15px; /* 햄버거 메뉴와의 간격 */
+        letter-spacing: 1px;
     }
 
     .header .container {
@@ -914,7 +928,7 @@ body.role-user select {
     /* 햄버거 메뉴 버튼 */
     .hamburger-menu {
         display: flex;
-        order: 1;
+        order: 3; /* [수정] 가장 우측으로 배치 */
         flex-direction: column;
         justify-content: space-around;
         width: 24px;
