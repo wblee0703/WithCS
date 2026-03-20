@@ -1843,9 +1843,33 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
 
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
+    // [추가] 현재 장비의 유지관리 물품에서 우선순위 항목 가져오기 (BM 점검/비정기)
+    let priorityItems = [];
+    if (type === '비정기' && detailType === 'BM 점검') {
+        const maintKey = `details_${currentPath.site}_${currentPath.equip}`;
+        const maintData = JSON.parse(localStorage.getItem(maintKey)) || {};
+        if (maintData.maint) {
+            priorityItems = maintData.maint
+                .filter(m => m.type === '비정기')
+                .map(m => ({ content: m.content, code: m.code || '' }));
+        }
+    }
+
     // content 필드를 기준으로 중복 항목 완벽히 제거
     const uniqueItems = [];
     const seenContents = new Set();
+
+    // 1. 우선순위 항목(유지관리 물품 - 비정기) 먼저 추가
+    for (const item of priorityItems) {
+        if (!seenContents.has(item.content)) {
+            seenContents.add(item.content);
+            if (!item.code) {
+                const match = adminItems.find(a => a.part === item.content);
+                if (match && match.code) item.code = match.code;
+            }
+            uniqueItems.push(item);
+        }
+    }
 
     for (const item of items) {
         if (!seenContents.has(item.content)) {
