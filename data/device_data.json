@@ -132,7 +132,9 @@
     "equipments": {
         "DB HITEK 부천": [],
         "DB HITEK 상우": [],
-        "DUPONT": [],
+        "DUPONT": [
+            "ㅁㄴㅇㅁㄴㅇㅁㄴ::ㅇㅁㄴ"
+        ],
         "ECOPRO_NH": [],
         "ENF 아산": [
             "SOMA-3000E::SOMA-EK24-0401",
@@ -321,6 +323,12 @@
         "LGD 구미_OMS-100L::OMS1-LK22-0104": {
             "setup": {
                 "model": "OMS1-LK22-0104"
+            },
+            "specialNote": ""
+        },
+        "DUPONT_ㅁㄴㅇㅁㄴㅇㅁㄴ::ㅇㅁㄴ": {
+            "setup": {
+                "model": "ㅇㅁㄴ"
             },
             "specialNote": ""
         },

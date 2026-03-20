@@ -333,6 +333,14 @@
 }
 .btn-reset:hover { background: #da3633; color: #fff; }
 
+/* 제안 박스 (Autocomplete) */
+.autocomplete-wrapper { position: relative; width: 100%; display: flex; }
+.suggestion-list { position: absolute; top: 100%; left: 0; min-width: 100%; width: max-content; background: #161b22; border: 1px solid #30363d; border-radius: 4px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none; list-style: none; padding: 0; margin-top: 2px; margin-bottom: 0; box-sizing: border-box; }
+.suggestion-item { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #21262d; color: #e6edf3; font-size: 13px; white-space: nowrap; }
+.suggestion-item:hover { background: #1f6feb; }
+.suggestion-item .abbr { color: #8b949e; font-size: 11px; margin-left: 5px; }
+.suggestion-item-content { display: flex; justify-content: space-between; align-items: center; }
+
 /* ==========================================================================
    6. 모달 (Modals)
    ========================================================================== */

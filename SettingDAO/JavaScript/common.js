@@ -521,7 +521,7 @@ function setupSidebarEvents() {
     const equipSettingBtn = document.getElementById('equip-setting-btn');
     // [추가] 장비 추가 입력창 그룹 (초기 숨김 처리)
     const equipInputEl = document.getElementById('equip-input');
-    const equipInputGroup = equipInputEl ? equipInputEl.parentElement : null;
+    const equipInputGroup = equipInputEl ? equipInputEl.closest('.sidebar-input-group') : null;
     if (equipInputGroup) {
         equipInputGroup.style.display = 'none';
     }
@@ -573,6 +573,60 @@ function setupSidebarEvents() {
         };
         equipInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') equipAddBtn.click(); });
         if (equipModelInput) equipModelInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') equipAddBtn.click(); });
+    }
+
+    // [추가] 장비 추가 시 장비 모델 제안 박스 (자동완성)
+    const equipSuggestionList = document.getElementById('equip-input-suggestions');
+    if (equipInput && equipSuggestionList) {
+        const showEquipSuggestions = () => {
+            if (equipInput.disabled) return;
+            const query = equipInput.value.trim().toLowerCase();
+            const keywords = query ? query.split(/\s+/) : [];
+            
+            let equipmentModels = [];
+            try {
+                equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+            } catch(e) {}
+
+            let matches = equipmentModels;
+            if (query) {
+                matches = equipmentModels.filter(m => {
+                    const text = `${m.name} ${m.abbr}`.toLowerCase();
+                    return keywords.every(kw => text.includes(kw));
+                });
+            }
+
+            equipSuggestionList.innerHTML = '';
+            if (matches.length > 0) {
+                matches.forEach(m => {
+                    const li = document.createElement('li');
+                    li.className = 'suggestion-item';
+                    li.innerHTML = `
+                        <div class="suggestion-item-content">
+                            <span>${escapeHtml(m.name)}</span>
+                            ${m.abbr ? `<span class="abbr">${escapeHtml(m.abbr)}</span>` : ''}
+                        </div>
+                    `;
+                    li.addEventListener('mousedown', (ev) => {
+                        ev.preventDefault();
+                        equipInput.value = m.name;
+                        equipSuggestionList.style.display = 'none';
+                        if(equipModelInput) equipModelInput.focus();
+                    });
+                    equipSuggestionList.appendChild(li);
+                });
+                equipSuggestionList.style.display = 'block';
+            } else {
+                equipSuggestionList.style.display = 'none';
+            }
+        };
+
+        equipInput.addEventListener('click', showEquipSuggestions);
+        equipInput.addEventListener('input', showEquipSuggestions);
+        equipInput.addEventListener('focus', showEquipSuggestions);
+        equipInput.addEventListener('blur', () => {
+            setTimeout(() => { equipSuggestionList.style.display = 'none'; }, 150);
+        });
     }
 
     // 검색 및 드래그 앤 드롭

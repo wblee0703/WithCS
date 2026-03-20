@@ -31,7 +31,10 @@
                         <input type="text" id="equip-search" class="search-input-mini" placeholder="검색" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
                     </div>
                     <div class="sidebar-input-group">
-                        <input type="text" id="equip-input" placeholder="장비 명" disabled>
+                        <div class="autocomplete-wrapper" style="flex: 1;">
+                            <input type="text" id="equip-input" placeholder="장비 명" disabled style="width: 100%;">
+                            <ul id="equip-input-suggestions" class="suggestion-list"></ul>
+                        </div>
                         <input type="text" id="equip-model-input" placeholder="Serial No." disabled>
                         <button class="btn-add" id="equip-add-btn" disabled>+</button>
                     </div>
