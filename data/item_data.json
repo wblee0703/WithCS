@@ -1178,14 +1178,15 @@
         "equip": "WIM-100"
     },
     {
-        "code": "9.5% HNO3",
-        "cycle": "",
-        "detailType": "용액",
-        "equip": "WIM-100",
         "id": 1773725199638,
-        "part": "9.5% HNO3",
+        "type": "정기",
+        "detailType": "용액",
+        "additional": "",
         "partno": "",
+        "code": "9.5% HNO3",
+        "part": "9.5% HNO3",
         "spec": "WIM-100 Cal 질산보정",
-        "type": "정기"
+        "cycle": "30",
+        "equip": "WIM-100"
     }
 ]
