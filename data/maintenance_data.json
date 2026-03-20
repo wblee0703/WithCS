@@ -69,7 +69,10 @@
                 "code": "Metal STD (5ppb 1%)",
                 "content": "Metal Standard Solution(1%HNO3)",
                 "date": "2026-04-03",
-                "period": 30
+                "period": 30,
+                "scheduledDate": "2026-04-23",
+                "costType": "유상",
+                "mh": "2"
             },
             {
                 "id": 1773971781132,
@@ -78,7 +81,10 @@
                 "code": "9.5% HNO3",
                 "content": "9.5% HNO3",
                 "date": "2026-04-03",
-                "period": 30
+                "period": 30,
+                "scheduledDate": "2026-04-23",
+                "costType": "유상",
+                "mh": "2"
             }
         ],
         "logs": [
@@ -226,13 +232,13 @@
         "memo": "",
         "files": []
     },
-    "details_SEC 평택_SOLA-1000": {
+    "details_SEC 평택_SOLA-3000": {
         "maint": [],
         "logs": [],
         "memo": "",
         "files": []
     },
-    "details_SEC 평택_SOLA-3000": {
+    "details_SEC 평택_SOLA-1000": {
         "maint": [],
         "logs": [],
         "memo": "",
