@@ -263,6 +263,12 @@ tr.dragging {
     padding: 4px 8px;
 }
 
+/* [요청] 주기 입력 박스 크기 축소 (데스크탑) */
+#maint-period {
+    flex: 0 0 80px !important;
+    min-width: 60px !important;
+}
+
 /* 드롭다운(select) 공통 다크 테마 디자인 적용 */
 select.input-dark,
 select#log-type-select,
@@ -940,7 +946,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
 
     #maint-period {
-        flex: 1 !important;
+        flex: 0.8 !important; /* [요청] 주기 입력 박스 비율 축소 (모바일) */
         width: auto !important;
         min-width: 0 !important;
     }
