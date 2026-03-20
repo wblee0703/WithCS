@@ -132,9 +132,7 @@
     "equipments": {
         "DB HITEK 부천": [],
         "DB HITEK 상우": [],
-        "DUPONT": [
-            "ㄹㅇㄴㅁ"
-        ],
+        "DUPONT": [],
         "ECOPRO_NH": [],
         "ENF 아산": [
             "SOMA-3000E::SOMA-EK24-0401",
@@ -339,12 +337,6 @@
             "specialNote": "- Sampling Module 2개 사용\n- Sampling Module 1 : Port4 미사용\n"
         },
         "SEC 평택_SOLA-2000LC": {
-            "setup": {
-                "model": ""
-            },
-            "specialNote": ""
-        },
-        "DUPONT_ㄹㅇㄴㅁ": {
             "setup": {
                 "model": ""
             },
