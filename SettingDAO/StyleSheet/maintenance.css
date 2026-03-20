@@ -318,8 +318,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .toggle-group button {
     background: none;
     color: #8b949e;
-    padding: 5px 15px;
+    padding: 0 15px;
     font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    border: none;
+    border-radius: 2px;
 }
 
 .toggle-group button.active[data-type="정기"] {
