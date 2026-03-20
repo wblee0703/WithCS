@@ -429,8 +429,8 @@
                     </div>
 
                     <!-- 중앙2: 분류 선택 -->
-                    <!-- [수정] 아래 style 속성에서 160px 값을 변경하여 세부 구분 리스트 너비를 고정으로 조절할 수 있습니다. -->
-                    <div class="admin-col-list" id="check-type-subcategory-panel" style="flex: 0 0 160px; max-width: 160px;">
+                    <!-- [수정] 아래 style 속성에서 250px 값을 변경하여 세부 구분 리스트 너비를 고정으로 조절할 수 있습니다. -->
+                    <div class="admin-col-list" id="check-type-subcategory-panel" style="flex: 0 0 220px; max-width: 220px;">
                         <div class="list-header">
                             <div style="display: flex; align-items: center; gap: 5px;">
                                 <span>세부 구분</span>
@@ -449,7 +449,8 @@
                     </div>
 
                     <!-- 우측: 세부 항목 관리 -->
-                    <div class="admin-col-detail">
+                    <!-- [수정] 아래 style 속성에서 flex: 1을 유지하면 남은 공간을 모두 채웁니다. 고정 너비로 변경하려면 flex: 0 0 500px; max-width: 500px; 와 같이 수정하세요. -->
+                    <div class="admin-col-detail" style="flex: 1; min-width: 400px;">
                         <div class="detail-header">
                             <div class="flex-between-center mb-5">
                                 <h4 class="m-0">점검 항목 관리</h4>
