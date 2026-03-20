@@ -1513,6 +1513,25 @@ function setupCheckTypeMgmt() {
         searchInput.addEventListener('input', renderCheckTypeEquipList);
     }
 
+    // [추가] 세부 구분 관리 모드 토글 이벤트 연결
+    const btnSubCategorySettings = document.getElementById('btn-subcategory-settings');
+    const subCategoryContainer = document.querySelector('.col-list-160');
+    const subCategoryFooter = document.getElementById('check-type-subcategory-footer');
+
+    if (btnSubCategorySettings && subCategoryContainer && subCategoryFooter) {
+        btnSubCategorySettings.addEventListener('click', () => {
+            subCategoryContainer.classList.toggle('management-active');
+            if (subCategoryContainer.classList.contains('management-active')) {
+                btnSubCategorySettings.classList.add('active');
+                if (currentCheckTypeCategory) subCategoryFooter.style.display = 'block';
+            } else {
+                btnSubCategorySettings.classList.remove('active');
+                subCategoryFooter.style.display = 'none';
+            }
+            renderCheckTypeSubCategoryList();
+        });
+    }
+
     const categoryItems = document.querySelectorAll('#check-type-category-list li');
     categoryItems.forEach(li => {
         li.addEventListener('click', () => {
@@ -1530,6 +1549,13 @@ function setupCheckTypeMgmt() {
             const subFooter = document.getElementById('check-type-subcategory-footer');
             subList.style.opacity = '1';
             subFooter.style.opacity = '1';
+
+            const subContainer = document.querySelector('.col-list-160');
+            if (subContainer && subContainer.classList.contains('management-active')) {
+                subFooter.style.display = 'block';
+            } else {
+                subFooter.style.display = 'none';
+            }
             
             currentCheckTypeSubCategory = null;
             const btnImportItems = document.getElementById('btn-import-check-items');
@@ -1781,10 +1807,13 @@ function ensureSubCategory2Panel() {
         
         panel2.innerHTML = `
             <div class="list-header">
-                <span>세부 구분2</span>
+                <div style="display: flex; align-items: center; gap: 5px;">
+                    <span>세부 구분2</span>
+                    <button id="btn-subcategory2-settings" class="btn-settings" title="관리 모드 토글">⚙️</button>
+                </div>
             </div>
             <ul id="check-type-subcategory2-list" class="admin-list"></ul>
-            <div id="check-type-subcategory2-footer" class="list-footer">
+            <div id="check-type-subcategory2-footer" class="list-footer" style="display: none;">
                 <div class="admin-flex-row">
                     <input type="text" id="check-type-subcategory2-input" class="input-dark flex-1" placeholder="분류명 추가">
                     <button id="btn-add-check-type-subcategory2" class="btn-green-sm no-wrap">추가</button>
@@ -1796,6 +1825,21 @@ function ensureSubCategory2Panel() {
         
         const btnAdd = panel2.querySelector('#btn-add-check-type-subcategory2');
         const input = panel2.querySelector('#check-type-subcategory2-input');
+        const btnSubCategory2Settings = panel2.querySelector('#btn-subcategory2-settings');
+        const subCategory2Footer = panel2.querySelector('#check-type-subcategory2-footer');
+        
+        // [추가] 세부 구분 2 관리 모드 토글 이벤트 연결
+        btnSubCategory2Settings.addEventListener('click', () => {
+            panel2.classList.toggle('management-active');
+            if (panel2.classList.contains('management-active')) {
+                btnSubCategory2Settings.classList.add('active');
+                if (currentCheckTypeSubCategory) subCategory2Footer.style.display = 'block';
+            } else {
+                btnSubCategory2Settings.classList.remove('active');
+                subCategory2Footer.style.display = 'none';
+            }
+            renderCheckTypeSubCategory2List();
+        });
         
         btnAdd.addEventListener('click', () => {
             if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
@@ -2003,15 +2047,17 @@ function renderCheckTypeSubCategoryList() {
     }
 
     const categories = checkTypeCategoriesData[key] || [];
+    const container = list.closest('.admin-col-list');
+    const isMgmtActive = container ? container.classList.contains('management-active') : false;
     
     categories.forEach((cat, index) => {
         const li = document.createElement('li');
         li.dataset.sub = cat; // [추가] 연동을 위한 데이터 속성
-        li.draggable = true; // [추가] 드래그 활성화
+        li.draggable = isMgmtActive; // [수정] 관리 모드일 때만 드래그 활성화
         li.innerHTML = `
             <div class="flex-between-center">
-                <span class="subcategory-text flex-1-grab" title="드래그하여 순서 변경">${cat}</span>
-                <div class="flex-gap-5">
+                <span class="subcategory-text flex-1-grab" title="${isMgmtActive ? '드래그하여 순서 변경' : ''}">${cat}</span>
+                <div class="flex-gap-5 subcat-controls" style="display: ${isMgmtActive ? 'flex' : 'none'};">
                     <button class="btn-edit-sm btn-edit-subcat" title="수정" onclick="event.stopPropagation();">✏️</button>
                     <button class="btn-del-sm" onclick="event.stopPropagation(); deleteCheckTypeSubCategory('${key}', ${index})" title="삭제">✕</button>
                 </div>
@@ -2032,6 +2078,12 @@ function renderCheckTypeSubCategoryList() {
                 if (p2) {
                     p2.style.opacity = '1';
                     p2.style.pointerEvents = 'auto';
+                    const sub2Footer = p2.querySelector('#check-type-subcategory2-footer');
+                    if (p2.classList.contains('management-active')) {
+                        sub2Footer.style.display = 'block';
+                    } else {
+                        sub2Footer.style.display = 'none';
+                    }
                 }
                 renderCheckTypeSubCategory2List();
 
@@ -2180,15 +2232,17 @@ function renderCheckTypeSubCategory2List() {
     }
 
     const categories = checkTypeCategories2Data[key] || [];
+    const container = list.closest('.admin-col-list');
+    const isMgmtActive = container ? container.classList.contains('management-active') : false;
     
     categories.forEach((cat, index) => {
         const li = document.createElement('li');
         li.dataset.sub2 = cat;
-        li.draggable = true;
+        li.draggable = isMgmtActive; // [수정] 관리 모드일 때만 드래그 활성화
         li.innerHTML = `
             <div class="flex-between-center">
-                <span class="subcategory-text flex-1-grab" title="드래그하여 순서 변경">${cat}</span>
-                <div class="flex-gap-5">
+                <span class="subcategory-text flex-1-grab" title="${isMgmtActive ? '드래그하여 순서 변경' : ''}">${cat}</span>
+                <div class="flex-gap-5 subcat-controls" style="display: ${isMgmtActive ? 'flex' : 'none'};">
                     <button class="btn-edit-sm btn-edit-subcat2" title="수정" onclick="event.stopPropagation();">✏️</button>
                     <button class="btn-del-sm" onclick="event.stopPropagation(); deleteCheckTypeSubCategory2('${key}', ${index})" title="삭제">✕</button>
                 </div>
