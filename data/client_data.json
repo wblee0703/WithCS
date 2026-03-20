@@ -14,6 +14,9 @@
     "SDC 기흥": {
         "buildings": []
     },
+    "사업장 추가": {
+        "buildings": []
+    },
     "SDC 탕정": {
         "buildings": []
     },
@@ -74,9 +77,6 @@
         ]
     },
     "DUPONT": {
-        "buildings": []
-    },
-    "사업장 추가": {
         "buildings": []
     }
 }
