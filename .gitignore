@@ -6,3 +6,7 @@ __pycache__/
 *.pyc
 logs/
 backups/
+
+# 데이터베이스 파일 무시
+withtech.db
+*.db
