@@ -268,13 +268,15 @@
                             <input type="text" id="admin-item-search" class="input-dark compact-select search-input-right" placeholder="전체 정보 검색"
                                 autocomplete="off">
                         </div>
-                        <div class="admin-list-header">
-                            <div class="model-col col-item-type">점검 구분</div>
-                            <div class="model-col col-item-code">코드명</div>
-                            <div class="model-col col-item-part">물품명</div>
-                            <div class="model-col col-item-spec">세부 규격</div>
+                        <div class="admin-item-scroll-wrapper">
+                            <div class="admin-list-header">
+                                <div class="model-col col-item-type">점검 구분</div>
+                                <div class="model-col col-item-code">코드명</div>
+                                <div class="model-col col-item-part">물품명</div>
+                                <div class="model-col col-item-spec">세부 규격</div>
+                            </div>
+                            <ul id="admin-item-list" class="admin-list"></ul>
                         </div>
-                        <ul id="admin-item-list" class="admin-list"></ul>
                         <div class="list-footer">
                             <div class="admin-flex-row">
                                 <select id="admin-item-type-input"
@@ -350,7 +352,7 @@
                                     <input type="text" id="item-info-spec" class="input-dark full-width">
                                 </div>
                                 <div class="flex-04">
-                                    <label class="form-label-custom">교체주기(일)</label>
+                                    <label class="form-label-custom">주기(일)</label>
                                     <input type="number" id="item-info-cycle" class="input-dark full-width">
                                 </div>
                             </div>

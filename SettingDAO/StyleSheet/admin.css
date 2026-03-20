@@ -375,6 +375,20 @@
     background: #21262d;
 }
 
+/* [추가] Admin 물품 관리 스크롤 래퍼 */
+.admin-item-scroll-wrapper {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-x: auto; /* [수정] 창이 좁아질 때 가로 스크롤 자동 생성 */
+}
+
+.admin-item-scroll-wrapper .admin-list-header,
+.admin-item-scroll-wrapper #admin-item-list {
+    min-width: 750px; /* [수정] 리스트 전체의 최소 너비 보장 */
+}
+
 /* ==========================================================================
    물품 관리 (Item Management) 전용 스타일
    ========================================================================== */
@@ -400,12 +414,14 @@
 /* 각 컬럼별 비율 및 정렬 */
 .col-item-type {
     flex: 1.0;
+    min-width: 80px; /* [수정] 컬럼 최소 너비 고정 */
     justify-content: center;
     text-align: center;
 }
 
 .col-item-code {
     flex: 2;
+    min-width: 120px; /* [수정] 컬럼 최소 너비 고정 */
     justify-content: center;
     text-align: center;
     white-space: nowrap;
@@ -415,6 +431,7 @@
 
 .col-item-part {
     flex: 3;
+    min-width: 200px; /* [수정] 컬럼 최소 너비 고정 */
     justify-content: center;
     text-align: center;
     white-space: nowrap;
@@ -424,6 +441,7 @@
 
 .col-item-spec {
     flex: 3;
+    min-width: 200px; /* [수정] 컬럼 최소 너비 고정 */
     justify-content: center;
     text-align: center;
     white-space: nowrap;
@@ -433,6 +451,7 @@
 
 .col-item-actions {
     flex: 1;
+    min-width: 80px; /* [수정] 컬럼 최소 너비 고정 */
     justify-content: center;
 }
 
@@ -578,6 +597,19 @@ select.input-dark option {
     
     .form-group.admin-flex-row {
         flex-direction: column;
+    }
+
+    #section-item-mgmt .list-footer .admin-flex-row {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 4px !important;
+    }
+    #section-item-mgmt .list-footer .admin-flex-row > * {
+        width: auto !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        padding: 4px 2px !important;
+        font-size: 11px !important;
     }
 }
 

@@ -407,8 +407,9 @@ function renderMonthGrid(year, month, titleId, gridId) {
 
     // [추가] 통계 정보 포함하여 타이틀 업데이트
     const formattedMd = Number.isInteger(monthTotalMd) ? monthTotalMd : monthTotalMd.toFixed(1);
+    const progressRate = monthTotalTasks === 0 ? 0 : Math.round((monthCompletedTasks / monthTotalTasks) * 100);
     titleEl.style.color = '';
-    titleEl.innerHTML = `${year}년 ${month + 1}월 <div style="font-size:12px; color:var(--cal-text-secondary); font-weight:normal; margin-top:5px; word-break:keep-all;">(작업수: ${monthTotalTasks}건, 완료: ${monthCompletedTasks}건, 공수: ${formattedMd}M/D)</div>`;
+    titleEl.innerHTML = `${year}년 ${month + 1}월 <div style="font-size:12px; color:var(--cal-text-secondary); font-weight:normal; margin-top:5px; word-break:keep-all;">(진행률: ${progressRate}%, 작업수: ${monthTotalTasks}건, 완료: ${monthCompletedTasks}건, 공수: ${formattedMd}M/D)</div>`;
 }
 
 function openCalendarPopup(dateStr, events) {

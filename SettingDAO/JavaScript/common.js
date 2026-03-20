@@ -763,6 +763,9 @@ function setupResizers() {
 
 // [추가] 소분류 카드 접기 기능 (위아래 화살표 버튼 추가)
 function setupCollapsibleCards() {
+    // [요청] 관리자(admin) 페이지에서는 접기 기능 비활성화
+    if (window.location.pathname.indexOf('admin') !== -1) return;
+
     const cards = document.querySelectorAll('.card, .setup-card');
     cards.forEach(card => {
         const header = card.querySelector('.card-header, .setup-card-header');
