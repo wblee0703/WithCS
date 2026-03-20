@@ -1,5 +1,12 @@
 /* Admin Page Styles */
 
+/* [요청] Admin Menu(사이드바) 너비 절반(150px)으로 축소 */
+@media (min-width: 951px) {
+    .dashboard-sidebar {
+        width: 200px !important;
+    }
+}
+
 .admin-section {
     flex: 1;
     display: flex;
@@ -22,7 +29,7 @@
 .admin-split-view {
     display: flex;
     gap: 20px;
-    flex: 1; /* [수정] flex로 높이 채움 (스크롤 보장) */
+    flex: 1;
     overflow: hidden;
 }
 
@@ -382,10 +389,31 @@
     flex: 1;
     min-height: 0;
     overflow-x: auto; /* [수정] 창이 좁아질 때 가로 스크롤 자동 생성 */
+    border: 1px solid #30363d;
+    border-radius: 6px;
+}
+
+.admin-item-scroll-wrapper .admin-list-header {
+    border: none;
+    border-bottom: 1px solid #30363d;
+    border-radius: 0;
+}
+
+.admin-item-scroll-wrapper #admin-item-list {
+    border: none;
+    border-radius: 0;
+    border-bottom: 1px solid #30363d; /* 입력창과 구분 선 */
+}
+
+.list-footer-inputs {
+    padding: 10px;
+    background: #0d1117;
+    border-radius: 0 0 6px 6px;
 }
 
 .admin-item-scroll-wrapper .admin-list-header,
-.admin-item-scroll-wrapper #admin-item-list {
+.admin-item-scroll-wrapper #admin-item-list,
+.admin-item-scroll-wrapper .list-footer-inputs {
     min-width: 750px; /* [수정] 리스트 전체의 최소 너비 보장 */
 }
 
@@ -393,9 +421,16 @@
    물품 관리 (Item Management) 전용 스타일
    ========================================================================== */
 .admin-item-list-container {
-    flex: 0 0 850px;
+    flex: 1.5; /* 창 축소 시 유동적으로 함께 줄어듦 */
+    min-width: 300px; /* 너무 작아지지 않게 최소 너비 설정 */
     border-right: none;
     padding-right: 0;
+}
+
+/* [추가] 물품 관리 우측 상세 영역 최소 너비 고정 */
+#section-item-mgmt .admin-col-detail {
+    flex: 1;
+    min-width: 350px;
 }
 
 #admin-item-list li,
@@ -457,12 +492,12 @@
 
 /* 입력창 비율 및 텍스트 정렬 */
 .input-item-type {
-    flex: 1.2;
+    flex: 1.0; /* 상단 컬럼의 1.0 비율과 일치 */
     text-align: center;
 }
 
 .input-item-code {
-    flex: 1.8;
+    flex: 2; /* 상단 컬럼의 2 비율과 일치 */
     text-align: center;
 }
 
@@ -575,6 +610,7 @@ select.input-dark option {
         flex: none !important;
         width: 100% !important;
         max-width: 100% !important;
+        min-width: 0 !important; /* 모바일에서는 고정 너비 해제 */
         border-right: none;
         border-bottom: 1px solid #30363d;
         padding-right: 0;
@@ -588,6 +624,7 @@ select.input-dark option {
         flex: none !important;
         width: 100% !important;
         max-width: 100% !important;
+        min-width: 0 !important; /* 모바일에서는 고정 너비 해제 */
         padding-left: 0;
         overflow-y: visible;
     }
@@ -601,12 +638,12 @@ select.input-dark option {
         flex-direction: column;
     }
 
-    #section-item-mgmt .list-footer .admin-flex-row {
+    #section-item-mgmt .list-footer-inputs {
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         gap: 4px !important;
     }
-    #section-item-mgmt .list-footer .admin-flex-row > * {
+    #section-item-mgmt .list-footer-inputs > * {
         width: auto !important;
         flex: 1 !important;
         min-width: 0 !important;

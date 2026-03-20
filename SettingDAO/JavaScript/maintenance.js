@@ -295,7 +295,8 @@ function setupLogEvents() {
         if (rowContainer && !rowContainer.querySelector('.flex-break')) {
             const breakDiv = document.createElement('div');
             breakDiv.className = 'flex-break';
-            rowContainer.insertBefore(breakDiv, logDetailTypeNode.nextSibling);
+                const targetNode = document.getElementById('log-detail-type2-select') || logDetailTypeNode;
+                rowContainer.insertBefore(breakDiv, targetNode.nextSibling);
         }
     }
 }
