@@ -1166,16 +1166,16 @@
         "type": "정기"
     },
     {
-        "additional": "",
-        "code": "Metal STD (5ppb 1%)",
-        "cycle": "",
-        "detailType": "용액",
-        "equip": "WIM-100",
         "id": 1773725157860,
-        "part": "Metal Standard Solution(1%HNO3)",
+        "type": "정기",
+        "detailType": "용액",
+        "additional": "",
         "partno": "",
+        "code": "Metal STD (5ppb 1%)",
+        "part": "Metal Standard Solution(1%HNO3)",
         "spec": "5ppb Multi(4종), 1%HNO3",
-        "type": "정기"
+        "cycle": "30",
+        "equip": "WIM-100"
     },
     {
         "code": "9.5% HNO3",
