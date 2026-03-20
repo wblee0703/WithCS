@@ -1515,7 +1515,7 @@ function setupCheckTypeMgmt() {
 
     // [추가] 세부 구분 관리 모드 토글 이벤트 연결
     const btnSubCategorySettings = document.getElementById('btn-subcategory-settings');
-    const subCategoryContainer = document.querySelector('.col-list-160');
+    const subCategoryContainer = document.getElementById('check-type-subcategory-panel');
     const subCategoryFooter = document.getElementById('check-type-subcategory-footer');
 
     if (btnSubCategorySettings && subCategoryContainer && subCategoryFooter) {
@@ -1550,7 +1550,7 @@ function setupCheckTypeMgmt() {
             subList.style.opacity = '1';
             subFooter.style.opacity = '1';
 
-            const subContainer = document.querySelector('.col-list-160');
+            const subContainer = document.getElementById('check-type-subcategory-panel');
             if (subContainer && subContainer.classList.contains('management-active')) {
                 subFooter.style.display = 'block';
             } else {
