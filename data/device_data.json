@@ -127,6 +127,10 @@
         {
             "abbr": "WOA683",
             "name": "WOA-683"
+        },
+        {
+            "name": "SOMA-3000E",
+            "abbr": "SOMA-3000E"
         }
     ],
     "equipments": {
