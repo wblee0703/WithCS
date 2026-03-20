@@ -240,6 +240,10 @@
             "setup": {},
             "specialNote": ""
         },
+        "SEC 평택_WIM-100::R24-01-01-C": {
+            "setup": {},
+            "specialNote": ""
+        },
         "SKH 이천_SOMA-20::SOMA-H19-0402": {
             "setup": {
                 "building": "M14",
@@ -310,13 +314,13 @@
             },
             "specialNote": ""
         },
-        "SEC 평택_SOLA-1000": {
+        "SEC 평택_SOLA-3000": {
             "setup": {
                 "model": ""
             },
             "specialNote": ""
         },
-        "SEC 평택_SOLA-3000": {
+        "SEC 평택_SOLA-1000": {
             "setup": {
                 "model": ""
             },

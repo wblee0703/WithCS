@@ -100,7 +100,9 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, mh = null) 
             if (isDelete) {
                 delete item.scheduledDate;
                 delete item.mh;
-                // [추가] 일회성 일정은 삭제 시 데이터 자체를 제거하여 누적 방지
+                delete item.costType;
+                delete item.worker;
+                delete item.memo;
                 if (!item.period) {
                     data.maint.splice(index, 1);
                 }
@@ -1010,6 +1012,7 @@ function toggleDetailContentEdit() {
                                 if (!existing.worker) existing.worker = item.worker || '';
                                 if (!existing.memo) existing.memo = item.memo || '';
                                 if (!existing.mh) existing.mh = item.mh || '';
+                                if (!existing.costType) existing.costType = item.costType || '';
                                 remainingIds.push(existing.id);
                             } else {
                                 const newId = Date.now() + idx;
@@ -1022,6 +1025,7 @@ function toggleDetailContentEdit() {
                                     date: "",
                                     period: (itemType === '정기') ? period : null,
                                     scheduledDate: targetDate,
+                                    costType: item.costType || '',
                                     worker: item.worker || '',
                                     memo: item.memo || '',
                                     mh: item.mh || ''
@@ -1170,13 +1174,20 @@ function completeScheduleWork() {
 
     sameDayItems.forEach(i => {
         delete i.scheduledDate;
-        // [추가] 완료 처리 시 임시 저장된 작업자/메모 삭제 (다음 예정일 때 초기화된 상태로 시작)
         delete i.worker;
         delete i.memo;
-        // [추가] 정기/비정기 항목은 완료 시 시작일(마지막 점검일) 갱신
+        delete i.costType;
+        delete i.mh;
         if (i.type === '정기' || i.type === '비정기') {
             i.date = completeDate;
         }
+    });
+
+    // [추가] 일회성 작업(고객대응, 용액제조 등)은 완료 후 maint 배열에서 완전히 제거하여 데이터 누적 방지
+    data.maint = data.maint.filter(i => {
+        const isCompletedItem = sameDayItems.some(s => s.id === i.id);
+        if (isCompletedItem && i.type !== '정기' && i.type !== '비정기') return false;
+        return true;
     });
 
     localStorage.setItem(key, JSON.stringify(data));
@@ -1274,6 +1285,7 @@ function cancelScheduleCompletion() {
             existingItem.worker = recoveredWorker;
             existingItem.mh = recoveredMh;
             existingItem.memo = recoveredMemo;
+            existingItem.costType = logItem.costType || '';
             if (idx === 0) recoveredMaintId = existingItem.id;
         } else {
             // 일회성 항목 등으로 인해 maint에서 삭제된 경우 재생성

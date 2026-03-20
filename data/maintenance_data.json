@@ -42,6 +42,61 @@
         "memo": "",
         "files": []
     },
+    "details_SEC 평택_WIM-100::R24-01-01-C": {
+        "maint": [
+            {
+                "id": 1773971781129,
+                "type": "정기",
+                "detailType": "PM 점검",
+                "code": "Skimmer Cone",
+                "content": "Pt Skimmer cone for 7700S",
+                "date": "",
+                "period": "182",
+                "scheduledDate": "2026-04-03",
+                "costType": "유상",
+                "mh": "2"
+            },
+            {
+                "id": 1773971781130,
+                "type": "정기",
+                "detailType": "PM 점검",
+                "code": "Sampler Cone",
+                "content": "Pt Sampling cone for 7700S",
+                "date": "",
+                "period": "182",
+                "scheduledDate": "2026-04-03",
+                "costType": "유상",
+                "mh": "2"
+            },
+            {
+                "id": 1773971781131,
+                "type": "정기",
+                "detailType": "PM 점검",
+                "code": "Metal STD (5ppb 1%)",
+                "content": "Metal Standard Solution(1%HNO3)",
+                "date": "",
+                "period": null,
+                "scheduledDate": "2026-04-03",
+                "costType": "유상",
+                "mh": "2"
+            },
+            {
+                "id": 1773971781132,
+                "type": "정기",
+                "detailType": "PM 점검",
+                "code": "9.5% HNO3",
+                "content": "9.5% HNO3",
+                "date": "",
+                "period": null,
+                "scheduledDate": "2026-04-03",
+                "costType": "유상",
+                "mh": "2"
+            }
+        ],
+        "logs": [],
+        "memo": "",
+        "files": []
+    },
     "details_SKH 이천_SOMA-20::SOMA-H19-0402": {
         "maint": [],
         "logs": [],
@@ -170,13 +225,13 @@
         "memo": "",
         "files": []
     },
-    "details_SEC 평택_SOLA-1000": {
+    "details_SEC 평택_SOLA-3000": {
         "maint": [],
         "logs": [],
         "memo": "",
         "files": []
     },
-    "details_SEC 평택_SOLA-3000": {
+    "details_SEC 평택_SOLA-1000": {
         "maint": [],
         "logs": [],
         "memo": "",
