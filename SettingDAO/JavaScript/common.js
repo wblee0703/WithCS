@@ -159,26 +159,29 @@ function fetchServerData(callback) {
 function migrateDataFormat() {
     let isModified = false;
     
-    // 1. admin_items 마이그레이션
-    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-    adminItems.forEach(item => {
-        if (item.type === 'PM') {
-            item.type = '정기';
-            isModified = true;
-        }
-    });
-    if (isModified) localStorage.setItem('admin_items', JSON.stringify(adminItems));
-
-    // 2. details_* 마이그레이션 (유지관리, 이력 변환 및 키 순서 정렬)
-    const maintKeyOrder = ['id', 'type', 'detailType', 'code', 'content', 'date', 'period', 'scheduledDate', 'costType', 'mh', 'worker', 'memo'];
-    const logKeyOrder = ['id', 'date', 'type', 'detailType', 'detailType2', 'content', 'costType', 'mh', 'worker', 'memo'];
-
     const reorderObject = (obj, order) => {
         const newObj = {};
         order.forEach(k => { if (obj.hasOwnProperty(k)) newObj[k] = obj[k]; });
         Object.keys(obj).forEach(k => { if (!order.includes(k)) newObj[k] = obj[k]; });
         return newObj;
     };
+
+    // 1. admin_items 마이그레이션 및 키 순서 정렬 (item_data.json)
+    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+    const itemKeyOrder = ['id', 'type', 'detailType', 'additional', 'partno', 'code', 'part', 'spec', 'cycle', 'equip'];
+    
+    const newAdminItems = adminItems.map(item => {
+        if (item.type === 'PM') item.type = '정기';
+        return reorderObject(item, itemKeyOrder);
+    });
+    if (JSON.stringify(adminItems) !== JSON.stringify(newAdminItems)) {
+        localStorage.setItem('admin_items', JSON.stringify(newAdminItems));
+        isModified = true;
+    }
+
+    // 2. details_* 마이그레이션 (유지관리, 이력 변환 및 키 순서 정렬)
+    const maintKeyOrder = ['id', 'type', 'detailType', 'code', 'content', 'date', 'period', 'scheduledDate', 'costType', 'mh', 'worker', 'memo'];
+    const logKeyOrder = ['id', 'date', 'type', 'detailType', 'detailType2', 'content', 'costType', 'mh', 'worker', 'memo'];
 
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
