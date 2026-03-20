@@ -113,7 +113,7 @@ function setupMaintenanceEvents() {
 
 function setupLogEvents() {
     // [추가] 비용처리 입력 드롭다운 동적 생성 (작업자 입력창 앞)
-    const workerInput = document.getElementById('log-worker') || document.getElementById('log-mh');
+    const workerInput = document.getElementById('log-worker') || document.getElementById('log-md');
     if (workerInput && !document.getElementById('log-cost-type')) {
         const costSelect = document.createElement('select');
         costSelect.id = 'log-cost-type';
@@ -145,9 +145,9 @@ function setupLogEvents() {
         }
     }
 
-    // [수정] log-worker를 log-mh로 변경하고 속성 적용
+    // [수정] log-worker를 log-md로 변경하고 속성 적용
     if (workerInput && workerInput.id === 'log-worker') {
-        workerInput.id = 'log-mh';
+        workerInput.id = 'log-md';
         workerInput.placeholder = '공수(M/D)';
         workerInput.type = 'number';
         workerInput.min = '0';
@@ -164,13 +164,13 @@ function setupLogEvents() {
     const logDateInput = document.getElementById('log-date');
     if (logDateInput) logDateInput.value = new Date().toISOString().substring(0, 10);
 
-    const logMhInput = document.getElementById('log-mh');
-    if (logMhInput) {
-        logMhInput.onkeypress = (e) => { if (e.key === 'Enter') { e.preventDefault(); addLogItem(); } };
-        logMhInput.addEventListener('input', function() {
+    const logMdInput = document.getElementById('log-md');
+    if (logMdInput) {
+        logMdInput.onkeypress = (e) => { if (e.key === 'Enter') { e.preventDefault(); addLogItem(); } };
+        logMdInput.addEventListener('input', function() {
             if (this.value < 0) this.value = Math.abs(this.value);
         });
-        logMhInput.spellcheck = false;
+        logMdInput.spellcheck = false;
     }
 
     const logSearchInput = document.getElementById('log-search');
@@ -302,7 +302,7 @@ function setupLogEvents() {
 
 function setupUIEvents() {
     // [추가] 비용처리 입력 드롭다운 동적 생성 (작업자 입력창 앞)
-    const workerInput = document.getElementById('log-worker') || document.getElementById('log-mh');
+    const workerInput = document.getElementById('log-worker') || document.getElementById('log-md');
     if (workerInput && !document.getElementById('log-cost-type')) {
         const costSelect = document.createElement('select');
         costSelect.id = 'log-cost-type';
@@ -814,16 +814,16 @@ function addLogItem(e) {
 
     // HTML 요소 안전하게 가져오기
     const dateInput = document.getElementById('log-date');
-    const mhInput = document.getElementById('log-mh');
+    const mdInput = document.getElementById('log-md');
 
-    if (!dateInput || !mhInput) return alert('입력창(ID: log-date 또는 log-mh)을 찾을 수 없습니다.');
+    if (!dateInput || !mdInput) return alert('입력창(ID: log-date 또는 log-md)을 찾을 수 없습니다.');
 
     const date = dateInput.value;
     const typeSelect = document.getElementById('log-type-select');
     const detailTypeSelect = document.getElementById('log-detail-type-select');
     const type = typeSelect ? typeSelect.value : '';
     const detailType = detailTypeSelect ? detailTypeSelect.value : '';
-    const mh = mhInput.value.trim();
+    const md = mdInput.value.trim();
 
     // [추가] 비용처리 값 가져오기
     const costSelect = document.getElementById('log-cost-type');
@@ -846,10 +846,10 @@ function addLogItem(e) {
     const detailType2Select = document.getElementById('log-detail-type2-select');
     const detailType2 = detailType2Select && detailType2Select.style.display !== 'none' ? detailType2Select.value : '';
 
-    if (!date || !type || (!detailType && !detailTypeSelect.disabled) || !costType || !mh) {
+    if (!date || !type || (!detailType && !detailTypeSelect.disabled) || !costType || !md) {
         return alert('필수 항목(날짜, 구분, 세부구분, 비용처리, 공수)을 올바르게 입력/선택해주세요.');
     }
-    if (parseFloat(mh) < 0) {
+    if (parseFloat(md) < 0) {
         return alert('공수(M/D)는 0 이상이어야 합니다.');
     }
     if (type === '비정기' && !detailType2 && detailType2Select && !detailType2Select.disabled) {
@@ -874,7 +874,7 @@ function addLogItem(e) {
         detailType2: finalDetailType,
         content: content,
         costType: costType,
-        mh: mh,
+        md: md,
         worker: sessionStorage.getItem('userId') || '', // 초기값, 상세에서 수정
         memo: "" // 상세 메모 초기값
     };
@@ -924,10 +924,10 @@ function addLogItem(e) {
     }
 
     localStorage.setItem(key, JSON.stringify(data));
-    addSystemLog('ADD_LOG', currentPath.equip, `[${type} - ${finalDetailType}] ${content} (공수: ${mh}, 날짜: ${date})`);
+    addSystemLog('ADD_LOG', currentPath.equip, `[${type} - ${finalDetailType}] ${content} (공수: ${md}, 날짜: ${date})`);
 
     // 입력창 초기화 및 리스트 갱신
-    mhInput.value = '';
+    mdInput.value = '';
     if (costSelect) costSelect.value = '';
     if (detailType2Select) detailType2Select.value = '';
     const contentTrigger = document.getElementById('log-content-trigger');
@@ -976,7 +976,7 @@ function renderLogs() {
                 (log.memo && log.memo.toLowerCase().includes(keyword)) ||
                 (log.type && log.type.toLowerCase().includes(keyword)) ||
                 (log.detailType && log.detailType.toLowerCase().includes(keyword)) ||
-                (log.mh && log.mh.includes(keyword))
+                (log.md && log.md.includes(keyword))
             );
         }
     }
@@ -1021,7 +1021,7 @@ function renderLogs() {
             <td title="${escapeHtml(displayDetailType)}">${escapeHtml(displayDetailType)}</td>
             <td title="${escapeHtml(tooltipContent)}" data-raw-content="${escapeHtml(log.content || '')}">${escapeHtml(displayContent)}</td>
             <td>${escapeHtml(log.costType || '-')}</td>
-            <td title="${escapeHtml(log.mh || '')}">${escapeHtml(log.mh || '')}</td>
+            <td title="${escapeHtml(log.md || '')}">${escapeHtml(log.md || '')}</td>
             <td>
                 <button class="btn-edit-sm" onclick="event.stopPropagation(); toggleLogEdit(${log.id}, this);">✏️</button>
                 <button class="btn-del-sm" onclick="event.stopPropagation(); deleteLogItem(${log.id});">✕</button>
@@ -1160,7 +1160,7 @@ function toggleLogEdit(id, btn) {
         const detailCell = row.cells[2];
         const contentCell = row.cells[3];
         const costCell = row.cells[4];
-        const mhCell = row.cells[5];
+        const mdCell = row.cells[5];
 
         const currentDate = dateCell.dataset.rawDate || dateCell.textContent.trim();
         const currentType = typeCell.textContent.trim();
@@ -1180,7 +1180,7 @@ function toggleLogEdit(id, btn) {
 
         const currentContent = contentCell.dataset.rawContent || contentCell.textContent.trim();
         const currentCost = costCell.textContent.trim() === '-' ? '' : costCell.textContent.trim();
-        const currentMh = mhCell.textContent.trim();
+        const currentMd = mdCell.textContent.trim();
 
         dateCell.innerHTML = `<input type="date" id="edit-log-date-${id}" value="${escapeHtml(currentDate)}" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">`;
 
@@ -1221,7 +1221,7 @@ function toggleLogEdit(id, btn) {
                 ${costOptions.map(c => `<option value="${c}" ${currentCost === c ? 'selected' : ''}>${c}</option>`).join('')}
             </select>`;
 
-        mhCell.innerHTML = `<input type="number" id="edit-log-mh-${id}" value="${escapeHtml(currentMh)}" class="input-dark" style="width: 100%; padding: 2px;" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)" onclick="event.stopPropagation()">`;
+        mdCell.innerHTML = `<input type="number" id="edit-log-md-${id}" value="${escapeHtml(currentMd)}" class="input-dark" style="width: 100%; padding: 2px;" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)" onclick="event.stopPropagation()">`;
 
     } else {
         const dateInput = document.getElementById(`edit-log-date-${id}`);
@@ -1230,9 +1230,9 @@ function toggleLogEdit(id, btn) {
         const detailType2Input = document.getElementById(`edit-log-detail-type2-${id}`);
         const newDetailType2 = detailType2Input && detailType2Input.style.display !== 'none' ? detailType2Input.value : '';
         const costInput = document.getElementById(`edit-log-cost-${id}`);
-        const mhInput = document.getElementById(`edit-log-mh-${id}`);
+        const mdInput = document.getElementById(`edit-log-md-${id}`);
 
-        if (!dateInput || !typeInput || !detailTypeInput || !costInput || !mhInput) return alert('입력 필드를 찾을 수 없습니다. 다시 시도해주세요.');
+        if (!dateInput || !typeInput || !detailTypeInput || !costInput || !mdInput) return alert('입력 필드를 찾을 수 없습니다. 다시 시도해주세요.');
         const newDate = dateInput.value;
         const newType = typeInput.value;
         const newDetailType = detailTypeInput.value;
@@ -1253,20 +1253,20 @@ function toggleLogEdit(id, btn) {
             if (contentInput) newContent = contentInput.value.trim();
         }
 
-        const newMh = mhInput.value.trim();
+        const newMd = mdInput.value.trim();
 
-        if (!newDate || !newType || (!newDetailType && detailTypeInput && !detailTypeInput.disabled) || !newCost || !newMh) {
+        if (!newDate || !newType || (!newDetailType && detailTypeInput && !detailTypeInput.disabled) || !newCost || !newMd) {
             return alert('필수 항목(날짜, 구분, 세부구분, 비용처리, 공수)을 모두 입력해주세요.');
         }
-        if (parseFloat(newMh) < 0) {
+        if (parseFloat(newMd) < 0) {
             return alert('공수(M/D)는 0 이상이어야 합니다.');
         }
         const newDetailTypeFull = (newType === '비정기' && newDetailType2) ? `${newDetailType} > ${newDetailType2}` : newDetailType;
-        updateLogItem(id, newDate, newType, newDetailTypeFull, newContent, newCost, newMh);
+        updateLogItem(id, newDate, newType, newDetailTypeFull, newContent, newCost, newMd);
     }
 }
 
-function updateLogItem(id, date, type, detailType, content, costType, mh) {
+function updateLogItem(id, date, type, detailType, content, costType, md) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
 
@@ -1278,7 +1278,7 @@ function updateLogItem(id, date, type, detailType, content, costType, mh) {
             data.logs[idx].detailType = detailType;
             data.logs[idx].content = content;
             data.logs[idx].costType = costType;
-            data.logs[idx].mh = mh;
+            data.logs[idx].md = md;
 
             localStorage.setItem(key, JSON.stringify(data));
             if (typeof addSystemLog === 'function') addSystemLog('UPDATE_LOG', currentPath.equip, `점검 이력 수정 (LogID: ${id})`);

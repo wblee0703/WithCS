@@ -384,7 +384,7 @@
 #detail-type { font-weight: bold; font-size: 14px; }
 
 #detail-worker,
-#detail-mh {
+#detail-md {
     width: 100%;
     background: var(--cal-bg-dark);
     border: 1px solid var(--cal-border);

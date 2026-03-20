@@ -59,7 +59,7 @@ function getScheduleForCalendar() {
                             }
                             if (targetDateStr) {
                                 if (!events[targetDateStr]) events[targetDateStr] = [];
-                                events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.code ? item.code : item.content, id: item.id, mh: item.mh || 0 });
+                                events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.code ? item.code : item.content, id: item.id, md: item.md || 0 });
                             }
                         });
                     }
@@ -75,7 +75,7 @@ function getScheduleForCalendar() {
                                     content: log.content || log.memo || '내용 없음',
                                     id: log.id,
                                     isCompleted: true,
-                                    mh: log.mh || 0
+                                    md: log.md || 0
                                 });
                             }
                         });
@@ -90,7 +90,7 @@ function getScheduleForCalendar() {
 /**
  * 일정 날짜 설정 (등록/수정/삭제)
  */
-function setScheduleDate(site, equip, id, dateStr, isDelete = false, mh = null) {
+function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null) {
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
 
@@ -100,7 +100,7 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, mh = null) 
             const item = data.maint[index];
             if (isDelete) {
                 delete item.scheduledDate;
-                delete item.mh;
+                delete item.md;
                 delete item.costType;
                 delete item.worker;
                 delete item.memo;
@@ -109,8 +109,8 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, mh = null) 
                 }
             } else {
                 item.scheduledDate = dateStr;
-                if (mh !== null) {
-                    item.mh = mh;
+                if (md !== null) {
+                    item.md = md;
                 }
             }
             localStorage.setItem(key, JSON.stringify(data));
@@ -295,7 +295,7 @@ function renderMonthGrid(year, month, titleId, gridId) {
 
     let monthTotalTasks = 0;
     let monthCompletedTasks = 0;
-    let monthTotalMh = 0;
+    let monthTotalMd = 0;
 
     for (let i = 1; i <= lastDate; i++) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
@@ -330,8 +330,8 @@ function renderMonthGrid(year, month, titleId, gridId) {
             dayEvents.forEach(event => {
                 monthTotalTasks++;
                 if (event.isCompleted) monthCompletedTasks++;
-                const mhVal = parseFloat(event.mh);
-                if (!isNaN(mhVal)) monthTotalMh += mhVal;
+                const mdVal = parseFloat(event.md);
+                if (!isNaN(mdVal)) monthTotalMd += mdVal;
             });
 
             // 그룹화 로직
@@ -406,9 +406,9 @@ function renderMonthGrid(year, month, titleId, gridId) {
     }
 
     // [추가] 통계 정보 포함하여 타이틀 업데이트
-    const formattedMh = Number.isInteger(monthTotalMh) ? monthTotalMh : monthTotalMh.toFixed(1);
+    const formattedMd = Number.isInteger(monthTotalMd) ? monthTotalMd : monthTotalMd.toFixed(1);
     titleEl.style.color = '';
-    titleEl.innerHTML = `${year}년 ${month + 1}월 <span style="font-size:12px; color:var(--cal-text-secondary); font-weight:normal; margin-left:10px; word-break:keep-all;">(작업수: ${monthTotalTasks}건, 완료: ${monthCompletedTasks}건, 공수: ${formattedMh}M/D)</span>`;
+    titleEl.innerHTML = `${year}년 ${month + 1}월 <span style="font-size:12px; color:var(--cal-text-secondary); font-weight:normal; margin-left:10px; word-break:keep-all;">(작업수: ${monthTotalTasks}건, 완료: ${monthCompletedTasks}건, 공수: ${formattedMd}M/D)</span>`;
 }
 
 function openCalendarPopup(dateStr, events) {
@@ -542,12 +542,12 @@ function setupScheduleModal() {
         saveBtn.onclick = () => {
             if (currentScheduleTarget) {
                 const date = dateInput.value;
-                const mhInput = document.getElementById('schedule-mh-input');
-                const mh = mhInput ? mhInput.value.trim() : '';
+                const mdInput = document.getElementById('schedule-md-input');
+                const md = mdInput ? mdInput.value.trim() : '';
                 if (!date) return alert('날짜를 선택해주세요.');
-                if (!mh) return alert('공수(M/D)를 입력해주세요.');
-                if (parseFloat(mh) < 0) return alert('공수는 0 이상이어야 합니다.');
-                setScheduleDate(currentScheduleTarget.site, currentScheduleTarget.equip, currentScheduleTarget.id, date, false, mh);
+                if (!md) return alert('공수(M/D)를 입력해주세요.');
+                if (parseFloat(md) < 0) return alert('공수는 0 이상이어야 합니다.');
+                setScheduleDate(currentScheduleTarget.site, currentScheduleTarget.equip, currentScheduleTarget.id, date, false, md);
                 modal.style.display = 'none';
                 if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
                 renderCalendar();
@@ -577,15 +577,15 @@ function openScheduleModal(site, equip, id) {
     const item = data.maint ? data.maint.find(i => i.id === id) : null;
 
     const dateInput = document.getElementById('schedule-date-input');
-    const mhInput = document.getElementById('schedule-mh-input');
+    const mdInput = document.getElementById('schedule-md-input');
     if (item && item.scheduledDate) {
         dateInput.value = item.scheduledDate;
     } else {
         dateInput.value = new Date().toISOString().split('T')[0];
     }
 
-    if (mhInput) {
-        mhInput.value = item ? (item.mh || '') : '';
+    if (mdInput) {
+        mdInput.value = item ? (item.md || '') : '';
     }
 
     modal.style.display = 'flex';
@@ -696,7 +696,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     }
 
     const workerInput = document.getElementById('detail-worker');
-    const mhInput = document.getElementById('detail-mh');
+    const mdInput = document.getElementById('detail-md');
     const memoInput = document.getElementById('detail-work-memo');
     const dateRow = document.getElementById('detail-date-row');
     const completeBtn = document.getElementById('btn-complete-work');
@@ -724,9 +724,9 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         workerInput.disabled = true;
         memoInput.value = item.memo || '';
         memoInput.disabled = true;
-        if (mhInput) {
-            mhInput.value = item.mh || '';
-            mhInput.disabled = true;
+        if (mdInput) {
+            mdInput.value = item.md || '';
+            mdInput.disabled = true;
         }
         dateRow.style.display = 'block';
         document.getElementById('detail-scheduled-date').value = item.date || '';
@@ -752,16 +752,16 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         // [수정] 저장된 메모(취소된 내용)가 있으면 우선 사용, 없으면 이전 이력 메모 사용
         memoInput.value = item.memo || lastMemo;
         memoInput.disabled = false;
-        if (mhInput) {
-            let displayMh = item.mh || '';
+        if (mdInput) {
+            let displayMd = item.md || '';
             // [추가] 같은 날짜에 묶인 항목 중 공수 데이터가 있는지 우선 검색 (그룹화 시 데이터 유실 방지)
             if (!displayMh && item.scheduledDate) {
                 const sameDayItems = data.maint.filter(i => i.scheduledDate === item.scheduledDate && i.type === item.type && (i.detailType || '') === (item.detailType || ''));
-                const itemWithMh = sameDayItems.find(i => i.mh);
-                if (itemWithMh) displayMh = itemWithMh.mh;
+                const itemWithMd = sameDayItems.find(i => i.md);
+                if (itemWithMd) displayMd = itemWithMd.md;
             }
-            mhInput.value = displayMh;
-            mhInput.disabled = false;
+            mdInput.value = displayMd;
+            mdInput.disabled = false;
         }
 
         dateRow.style.display = 'block';
@@ -1034,7 +1034,7 @@ function toggleDetailContentEdit() {
                                 existing.detailType = itemDetailType;
                                 if (!existing.worker) existing.worker = item.worker || '';
                                 if (!existing.memo) existing.memo = item.memo || '';
-                                if (!existing.mh) existing.mh = item.mh || '';
+                                if (!existing.md) existing.md = item.md || '';
                                 if (!existing.costType) existing.costType = item.costType || '';
                                 remainingIds.push(existing.id);
                             } else {
@@ -1051,7 +1051,7 @@ function toggleDetailContentEdit() {
                                     costType: item.costType || '',
                                     worker: item.worker || '',
                                     memo: item.memo || '',
-                                    mh: item.mh || ''
+                                    md: item.md || ''
                                 });
                                 remainingIds.push(newId);
                             }
@@ -1158,12 +1158,12 @@ function completeScheduleWork() {
     }
 
     const worker = document.getElementById('detail-worker').value.trim();
-    const mhInput = document.getElementById('detail-mh');
-    const mh = mhInput ? mhInput.value.trim() : '';
+    const mdInput = document.getElementById('detail-md');
+    const md = mdInput ? mdInput.value.trim() : '';
     const memo = document.getElementById('detail-work-memo').value.trim();
 
     if (!worker) return alert('작업자를 입력해주세요.');
-    if (!mh) return alert('공수(M/D)를 입력해주세요.');
+    if (!md) return alert('공수(M/D)를 입력해주세요.');
     if (!memo) return alert('점검 결과 / 메모를 입력해주세요.');
 
     localStorage.setItem('lastWorkerName', worker);
@@ -1190,7 +1190,7 @@ function completeScheduleWork() {
         detailType2: '',
         content: combinedContent,
         costType: maintItem.costType || '',
-        mh: mh,
+        md: md,
         worker: worker,
         memo: memo
     });
@@ -1200,7 +1200,7 @@ function completeScheduleWork() {
         delete i.worker;
         delete i.memo;
         delete i.costType;
-        delete i.mh;
+        delete i.md;
         if (i.type === '정기' || i.type === '비정기') {
             i.date = completeDate;
         }
@@ -1273,7 +1273,7 @@ function cancelScheduleCompletion() {
 
     // [추가] 값 복구를 위해 저장
     const recoveredWorker = logItem.worker || '';
-    const recoveredMh = logItem.mh || '';
+    const recoveredMd = logItem.md || '';
     const recoveredMemo = logItem.memo || '';
 
     // 1. 로그 삭제
@@ -1306,7 +1306,7 @@ function cancelScheduleCompletion() {
             existingItem.scheduledDate = logDate;
             // [추가] 취소 시 입력했던 내용 복구 저장
             existingItem.worker = recoveredWorker;
-            existingItem.mh = recoveredMh;
+            existingItem.md = recoveredMd;
             existingItem.memo = recoveredMemo;
             existingItem.costType = logItem.costType || '';
             if (idx === 0) recoveredMaintId = existingItem.id;
@@ -1324,7 +1324,7 @@ function cancelScheduleCompletion() {
                 scheduledDate: logDate,
                 costType: logItem.costType || '',
                 worker: recoveredWorker, // [추가]
-                mh: recoveredMh,         // [추가]
+                md: recoveredMd,         // [추가]
                 memo: recoveredMemo      // [추가]
             });
             if (idx === 0) recoveredMaintId = newId;
@@ -1375,7 +1375,7 @@ function cancelScheduleCompletion() {
     if (recoveredMaintId) currentDetailTarget.id = recoveredMaintId;
 
     const workerInput = document.getElementById('detail-worker');
-    const mhInput = document.getElementById('detail-mh');
+    const mdInput = document.getElementById('detail-md');
     const memoInput = document.getElementById('detail-work-memo');
     const dateInput = document.getElementById('detail-scheduled-date');
     const completeBtn = document.getElementById('btn-complete-work');
@@ -1387,9 +1387,9 @@ function cancelScheduleCompletion() {
         workerInput.disabled = false;
         workerInput.value = recoveredWorker; // 기존 값 복구
     }
-    if (mhInput) {
-        mhInput.disabled = false;
-        mhInput.value = recoveredMh; // 기존 값 복구
+    if (mdInput) {
+        mdInput.disabled = false;
+        mdInput.value = recoveredMd; // 기존 값 복구
     }
     if (memoInput) {
         memoInput.disabled = false;
@@ -1489,8 +1489,8 @@ function openRegisterScheduleModal(dateStr) {
     if (dateDisplay) dateDisplay.value = dateStr;
 
     const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
-    const mhInput = document.getElementById('register-mh');
-    if (mhInput) mhInput.value = '';
+    const mdInput = document.getElementById('register-md');
+    if (mdInput) mdInput.value = '';
 
     siteSelect.innerHTML = '<option value="">사업장 선택</option>';
     Object.keys(data).forEach(site => {
@@ -1571,8 +1571,8 @@ function confirmRegisterSchedule() {
     const detailType2 = detailType2Select && detailType2Select.style.display !== 'none' ? detailType2Select.value : '';
     const costTypeSelect = document.getElementById('register-cost-type');
     const costType = costTypeSelect ? costTypeSelect.value : '';
-    const mhInput = document.getElementById('register-mh');
-    const mh = mhInput ? mhInput.value.trim() : '';
+    const mdInput = document.getElementById('register-md');
+    const md = mdInput ? mdInput.value.trim() : '';
 
     let lastProcessedId = null; // [추가] 등록된 작업 ID 추적
 
@@ -1580,8 +1580,8 @@ function confirmRegisterSchedule() {
     if (!detailType && detailTypeSelect && !detailTypeSelect.disabled) return alert('세부구분을 선택해주세요.');
     if (type === '비정기' && !detailType2 && detailType2Select && !detailType2Select.disabled) return alert('세부 구분을 선택해주세요.');
     if (!costType) return alert('비용처리를 선택해주세요.');
-    if (!mh) return alert('공수(M/D)를 입력해주세요.');
-    if (parseFloat(mh) < 0) return alert('공수(M/D)는 0 이상이어야 합니다.');
+    if (!md) return alert('공수(M/D)를 입력해주세요.');
+    if (parseFloat(md) < 0) return alert('공수(M/D)는 0 이상이어야 합니다.');
 
     let content = '';
     const wrapper = document.getElementById('register-content-wrapper');
@@ -1622,7 +1622,7 @@ function confirmRegisterSchedule() {
             existingItem.scheduledDate = dateStr;
             existingItem.detailType = finalDetailType;
             if (costType) existingItem.costType = costType;
-            existingItem.mh = mh;
+            existingItem.md = md;
             if (idx === 0) lastProcessedId = existingItem.id;
         } else {
             const newItem = {
@@ -1635,7 +1635,7 @@ function confirmRegisterSchedule() {
                 period: (type === '정기') ? period : null,
                 scheduledDate: dateStr,
                 costType: costType,
-                mh: mh
+                md: md
             };
             if (idx === 0) lastProcessedId = newItem.id;
             data.maint.push(newItem);

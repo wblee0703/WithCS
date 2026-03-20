@@ -375,7 +375,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 #log-worker,
-#log-mh {
+#log-md {
     width: 100px;
     height: 30px;
     flex: 0.8;
@@ -829,7 +829,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
 
     #log-worker,
-    #log-mh {
+    #log-md {
         width: auto !important;
         flex: 0.7 !important;
         /* [수정] 공수 입력창 너비 비율 할당 */
@@ -843,7 +843,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #log-detail-type2-select,
     #log-cost-type,
     #log-worker,
-    #log-mh,
+    #log-md,
     .log-content-input {
         font-size: 12px !important;
         padding-left: 2px !important;

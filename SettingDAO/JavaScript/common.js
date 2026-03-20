@@ -180,8 +180,8 @@ function migrateDataFormat() {
     }
 
     // 2. details_* 마이그레이션 (유지관리, 이력 변환 및 키 순서 정렬)
-    const maintKeyOrder = ['id', 'type', 'detailType', 'code', 'content', 'date', 'period', 'scheduledDate', 'costType', 'mh', 'worker', 'memo'];
-    const logKeyOrder = ['id', 'date', 'type', 'detailType', 'detailType2', 'content', 'costType', 'mh', 'worker', 'memo'];
+    const maintKeyOrder = ['id', 'type', 'detailType', 'code', 'content', 'date', 'period', 'scheduledDate', 'costType', 'md', 'worker', 'memo'];
+    const logKeyOrder = ['id', 'date', 'type', 'detailType', 'detailType2', 'content', 'costType', 'md', 'worker', 'memo'];
 
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
