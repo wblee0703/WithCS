@@ -68,7 +68,12 @@
                 "code": "Metal STD (5ppb 1%)",
                 "content": "Metal Standard Solution(1%HNO3)",
                 "date": "2026-03-05",
-                "period": 30
+                "period": 30,
+                "scheduledDate": "2026-03-05",
+                "worker": "이원배 진봉균",
+                "md": "",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
+                "costType": ""
             },
             {
                 "id": 1773725556150,
@@ -76,7 +81,12 @@
                 "code": "9.5% HNO3",
                 "content": "9.5% HNO3",
                 "date": "2026-03-05",
-                "period": 30
+                "period": 30,
+                "scheduledDate": "2026-03-05",
+                "worker": "이원배 진봉균",
+                "md": "",
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료",
+                "costType": ""
             },
             {
                 "id": 1773725562427,
@@ -143,15 +153,6 @@
                 "content": "헌팅스펙 적용",
                 "worker": "이원배",
                 "memo": "1. Hunting Spec 적용\n - 고객사 담당자 : 김대욱 TL님 대응\n - 요청 사항 : Sample Repeat ,Control Limit, Spec Limit Spec.설정\n - WIM-100은 Hunting Spec 설정 밖에 없어 Sample Repeat Spec을 적용 시켜 놓음\n - 추후 SKHynix 내부 협의 후 프로그램 변경 요청예정"
-            },
-            {
-                "id": 1772763064801,
-                "date": "2026-03-05",
-                "type": "정기",
-                "detailType": "PM 점검",
-                "content": "Metal STD (5ppb 1%), 9.5% HNO3",
-                "worker": "이원배 진봉균",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음\n\n4.고객사 점검일지 작성\n - GIPMS 작성 완료"
             },
             {
                 "id": 1773812196807,
