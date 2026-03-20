@@ -1814,10 +1814,8 @@ function ensureSubCategory2Panel() {
             </div>
             <ul id="check-type-subcategory2-list" class="admin-list"></ul>
             <div id="check-type-subcategory2-footer" class="list-footer" style="display: none;">
-                <div class="admin-flex-row">
-                    <input type="text" id="check-type-subcategory2-input" class="input-dark flex-1" placeholder="분류명 추가">
-                    <button id="btn-add-check-type-subcategory2" class="btn-green-sm no-wrap">추가</button>
-                </div>
+                <input type="text" id="check-type-subcategory2-input" class="input-dark full-width" placeholder="분류명 추가">
+                <button id="btn-add-check-type-subcategory2" class="btn-green full-width">추가</button>
             </div>
         `;
         

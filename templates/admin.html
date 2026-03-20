@@ -440,17 +440,17 @@
                         <ul id="check-type-subcategory-list" class="admin-list opacity-50">
                         </ul>
                         <div class="list-footer opacity-50" id="check-type-subcategory-footer" style="display: none;">
-                            <div class="admin-flex-row">
-                                <input type="text" id="check-type-subcategory-input" placeholder="분류명 추가"
-                                    class="input-dark flex-1">
-                                <button id="btn-add-check-type-subcategory" class="btn-green-sm no-wrap">추가</button>
-                            </div>
+                            <input type="text" id="check-type-subcategory-input" placeholder="분류명 추가"
+                                class="input-dark full-width">
+                            <button id="btn-add-check-type-subcategory" class="btn-green full-width">추가</button>
                         </div>
                     </div>
 
                     <!-- 우측: 세부 항목 관리 -->
                     <!-- [수정] 아래 style 속성에서 flex: 1을 유지하면 남은 공간을 모두 채웁니다. 고정 너비로 변경하려면 flex: 0 0 500px; max-width: 500px; 와 같이 수정하세요. -->
                     <div class="admin-col-detail" style="flex: 1; min-width: 400px;">
+                    <!-- [수정] 아래 style 속성에서 600px 값을 변경하여 고정 너비를 설정할 수 있습니다. 창 크기가 작아지면 화면 밖으로 넘어가지 않고 자동으로 축소됩니다. -->
+                    <div class="admin-col-detail" style="flex: 0 1 600px; max-width: 100%;">
                         <div class="detail-header">
                             <div class="flex-between-center mb-5">
                                 <h4 class="m-0">점검 항목 관리</h4>
