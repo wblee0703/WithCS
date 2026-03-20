@@ -1802,8 +1802,8 @@ function ensureSubCategory2Panel() {
         panel2 = document.createElement('div');
         panel2.id = 'check-type-subcategory2-container';
         panel2.className = 'admin-col-list';
-        panel2.style.display = 'none';
-        panel2.className = 'admin-col-list col-list-220';
+        // [수정] 아래 cssText에서 220px 값을 변경하여 세부 구분 2 리스트 너비를 고정으로 조절할 수 있습니다.
+        panel2.style.cssText = 'display: none; flex: 0 0 220px; max-width: 220px;';
         
         panel2.innerHTML = `
             <div class="list-header">
