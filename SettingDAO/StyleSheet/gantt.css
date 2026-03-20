@@ -48,6 +48,7 @@
     overflow: hidden;
     border: 1px solid var(--gantt-border);
     border-radius: 6px;
+    gap: 0 !important; /* 모바일 공통 스타일에서 넘어오는 간격 강제 제거 */
 }
 
 /* 사이드바 (Task List) */
@@ -321,7 +322,7 @@
     background-color: transparent;
     flex-shrink: 0;
     z-index: 10;
-    margin-left: -2px;
+    margin-left: -5px; /* 리사이저가 차지하는 3px의 시각적 여백 제거 */
     transition: background-color 0.2s;
     pointer-events: auto;
 }

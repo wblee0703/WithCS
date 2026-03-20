@@ -409,6 +409,7 @@ function renderMonthGrid(year, month, titleId, gridId) {
     const formattedMd = Number.isInteger(monthTotalMd) ? monthTotalMd : monthTotalMd.toFixed(1);
     titleEl.style.color = '';
     titleEl.innerHTML = `${year}년 ${month + 1}월 <span style="font-size:12px; color:var(--cal-text-secondary); font-weight:normal; margin-left:10px; word-break:keep-all;">(작업수: ${monthTotalTasks}건, 완료: ${monthCompletedTasks}건, 공수: ${formattedMd}M/D)</span>`;
+    titleEl.innerHTML = `${year}년 ${month + 1}월 <div style="font-size:12px; color:var(--cal-text-secondary); font-weight:normal; margin-top:5px; word-break:keep-all;">(작업수: ${monthTotalTasks}건, 완료: ${monthCompletedTasks}건, 공수: ${formattedMd}M/D)</div>`;
 }
 
 function openCalendarPopup(dateStr, events) {

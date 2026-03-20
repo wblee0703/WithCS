@@ -864,7 +864,9 @@ body.role-user select {
     .resizer,
     .resizer-vertical,
     .gantt__resizer,
-    #setup-log-resizer {
+    #setup-log-resizer,
+    #log-memo-resizer,
+    .width-resizer {
         display: none !important;
     }
 
