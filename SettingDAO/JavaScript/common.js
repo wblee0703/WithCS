@@ -551,6 +551,16 @@ function setupSidebarEvents() {
             const equipModelVal = equipModelInput ? equipModelInput.value.trim() : '';
 
             if (equipVal) {
+                // [추가] 장비 모델 제안 박스에 있는 항목인지 검증 (선택 강제)
+                let equipmentModels = [];
+                try {
+                    equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+                } catch(e) {}
+
+                if (!equipmentModels.some(m => m.name === equipVal)) {
+                    return alert('등록되지 않은 장비 명입니다. 검색 제안 박스에서 항목을 선택해주세요.');
+                }
+
                 const fullEquipName = equipModelVal ? `${equipVal}::${equipModelVal}` : equipVal;
                 if (!storageData[siteName]) storageData[siteName] = [];
                 if (storageData[siteName].includes(fullEquipName)) return alert('이미 존재하는 장비(Serial No.)입니다.');
@@ -1142,16 +1152,70 @@ function createListItem(id, text, type, onSelect, subText = '') {
 
                 const wrapper = li.querySelector('.item-wrapper');
                 wrapper.innerHTML = `
-                    <input type="text" class="edit-name-input" value="${currentName}" style="width: 100px;">
+                    <div class="autocomplete-wrapper" style="flex: 1; margin-right: 5px;">
+                        <input type="text" class="edit-name-input" value="${currentName}" style="width: 100%;">
+                        <ul class="suggestion-list edit-equip-suggestions"></ul>
+                    </div>
                     <input type="text" class="edit-model-input" value="${currentModel}" placeholder="Serial No." style="width: 80px;">
                 `;
 
                 const nameInput = wrapper.querySelector('.edit-name-input');
                 const modelInput = wrapper.querySelector('.edit-model-input');
+                const suggestionList = wrapper.querySelector('.edit-equip-suggestions');
 
                 nameInput.focus();
 
+                const showEquipSuggestions = () => {
+                    const query = nameInput.value.trim().toLowerCase();
+                    const keywords = query ? query.split(/\s+/) : [];
+                    
+                    let equipmentModels = [];
+                    try {
+                        equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+                    } catch(e) {}
+
+                    let matches = equipmentModels;
+                    if (query) {
+                        matches = equipmentModels.filter(m => {
+                            const text = `${m.name} ${m.abbr}`.toLowerCase();
+                            return keywords.every(kw => text.includes(kw));
+                        });
+                    }
+
+                    suggestionList.innerHTML = '';
+                    if (matches.length > 0) {
+                        matches.forEach(m => {
+                            const sugLi = document.createElement('li');
+                            sugLi.className = 'suggestion-item';
+                            sugLi.innerHTML = `
+                                <div class="suggestion-item-content">
+                                    <span>${escapeHtml(m.name)}</span>
+                                    ${m.abbr ? `<span class="abbr">${escapeHtml(m.abbr)}</span>` : ''}
+                                </div>
+                            `;
+                            sugLi.addEventListener('mousedown', (ev) => {
+                                ev.preventDefault();
+                                nameInput.value = m.name;
+                                suggestionList.style.display = 'none';
+                                if (modelInput) modelInput.focus();
+                            });
+                            suggestionList.appendChild(sugLi);
+                        });
+                        suggestionList.style.display = 'block';
+                    } else {
+                        suggestionList.style.display = 'none';
+                    }
+                };
+
+                nameInput.addEventListener('click', showEquipSuggestions);
+                nameInput.addEventListener('input', showEquipSuggestions);
+                nameInput.addEventListener('focus', showEquipSuggestions);
+                nameInput.addEventListener('blur', () => {
+                    setTimeout(() => { suggestionList.style.display = 'none'; }, 150);
+                });
+
                 [nameInput, modelInput].forEach(input => {
+                    input.onmousedown = (ev) => ev.stopPropagation();
                     input.onclick = (ev) => ev.stopPropagation();
                     input.onkeypress = (ev) => {
                         if (ev.key === 'Enter') finalizeEdit();
@@ -1192,7 +1256,14 @@ function createListItem(id, text, type, onSelect, subText = '') {
                 }
 
                 if (newName) {
-                    newId = newModel ? `${newName}::${newModel}` : newName;
+                    // [추가] 리스트에서 직접 장비명 수정 시 유효한 모델명인지 검증
+                    let equipmentModels = [];
+                    try { equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || []; } catch(e) {}
+                    if (!equipmentModels.some(m => m.name === newName)) {
+                        alert('등록되지 않은 장비 모델명입니다. 수정이 취소됩니다.');
+                    } else {
+                        newId = newModel ? `${newName}::${newModel}` : newName;
+                    }
                 }
             }
         } else {

@@ -212,90 +212,6 @@
             },
             "specialNote": ""
         },
-        "SEC 평택_WIM-100::WIM-100": {
-            "setup": {
-                "building": "",
-                "contact": "",
-                "custContact": "",
-                "custEmail": "",
-                "custEquipName": "",
-                "custManager": "",
-                "detailLoc": "",
-                "email": "",
-                "floor": "",
-                "manager": "",
-                "model": "WIM-100"
-            },
-            "specialNote": ""
-        },
-        "SKH 이천_SOMA-20::SOMA-H19-0903": {
-            "setup": {
-                "building": "M14",
-                "contact": "010-9885-0393",
-                "custContact": "010-4690-5424",
-                "custEmail": "jun54.kim@sk.com",
-                "custEquipName": "4OGIM02",
-                "custManager": "김준",
-                "detailLoc": "X2 Y15",
-                "email": "wblee@withtech.co.kr",
-                "floor": "2층 Plenum",
-                "manager": "이원배",
-                "model": "SOMA-H19-0903"
-            },
-            "specialNote": ""
-        },
-        "SEC 평택_SOLA-3000": {
-            "setup": {
-                "model": ""
-            },
-            "specialNote": ""
-        },
-        "LGD 구미_OMS-100L::OMS1-LK22-0104": {
-            "setup": {
-                "model": "OMS1-LK22-0104"
-            },
-            "specialNote": ""
-        },
-        "SKH 이천_SOMA-2000::SOMA-H19-0402": {
-            "setup": {
-                "building": "M14",
-                "contact": "010-9885-0393",
-                "custContact": "010-4690-5424",
-                "custEmail": "jun54.kim@sk.com",
-                "custEquipName": "4OGIM01",
-                "custManager": "김준",
-                "detailLoc": "X25 Y8",
-                "email": "wblee@withtech.co.kr",
-                "floor": "2층 Plenum",
-                "manager": "이원배",
-                "model": "SOMA-H19-0402"
-            },
-            "specialNote": "자연배수가 없어 배수 펌프 사용"
-        },
-        "SKH 이천_SOMA-2000::SOMA-HK21-0202": {
-            "setup": {
-                "building": "M16",
-                "contact": "010-9885-0393",
-                "custContact": "010-4690-5424",
-                "custEmail": "jun54.kim@sk.com",
-                "custEquipName": "6CGM5001",
-                "custManager": "김준",
-                "detailLoc": "X12 Y8",
-                "email": "wblee@withtech.co.kr",
-                "floor": "5층 Plenum",
-                "manager": "이원배1",
-                "model": "SOMA-HK21-0202"
-            },
-            "specialNote": ""
-        },
-        "ENF 천안_SOMA-3000E::SOMA-EK25-0401": {
-            "setup": {},
-            "specialNote": ""
-        },
-        "ENF 천안_WAD-10::AD10-EK24-0202": {
-            "setup": {},
-            "specialNote": ""
-        },
         "NES 여수_SOMA-3000E::SOMA-EK23-0401": {
             "setup": {},
             "specialNote": ""
@@ -320,6 +236,22 @@
             },
             "specialNote": "자연배수가 없어 배수 펌프 사용"
         },
+        "SEC 평택_WIM-100::WIM-100": {
+            "setup": {
+                "building": "",
+                "contact": "",
+                "custContact": "",
+                "custEmail": "",
+                "custEquipName": "",
+                "custManager": "",
+                "detailLoc": "",
+                "email": "",
+                "floor": "",
+                "manager": "",
+                "model": "WIM-100"
+            },
+            "specialNote": ""
+        },
         "SKH 이천_WIM-100::WIM1-HK24-0401": {
             "setup": {
                 "building": "M16",
@@ -337,6 +269,28 @@
             "specialNote": "- Sampling Module 2개 사용\n- Sampling Module 1 : Port4 미사용\n"
         },
         "SEC 평택_SOLA-2000LC": {
+            "setup": {
+                "model": ""
+            },
+            "specialNote": ""
+        },
+        "SKH 이천_SOMA-20::SOMA-H19-0903": {
+            "setup": {
+                "building": "M14",
+                "contact": "010-9885-0393",
+                "custContact": "010-4690-5424",
+                "custEmail": "jun54.kim@sk.com",
+                "custEquipName": "4OGIM02",
+                "custManager": "김준",
+                "detailLoc": "X2 Y15",
+                "email": "wblee@withtech.co.kr",
+                "floor": "2층 Plenum",
+                "manager": "이원배",
+                "model": "SOMA-H19-0903"
+            },
+            "specialNote": ""
+        },
+        "SEC 평택_SOLA-3000": {
             "setup": {
                 "model": ""
             },
@@ -364,6 +318,28 @@
             },
             "specialNote": ""
         },
+        "LGD 구미_OMS-100L::OMS1-LK22-0104": {
+            "setup": {
+                "model": "OMS1-LK22-0104"
+            },
+            "specialNote": ""
+        },
+        "SKH 이천_SOMA-2000::SOMA-H19-0402": {
+            "setup": {
+                "building": "M14",
+                "contact": "010-9885-0393",
+                "custContact": "010-4690-5424",
+                "custEmail": "jun54.kim@sk.com",
+                "custEquipName": "4OGIM01",
+                "custManager": "김준",
+                "detailLoc": "X25 Y8",
+                "email": "wblee@withtech.co.kr",
+                "floor": "2층 Plenum",
+                "manager": "이원배",
+                "model": "SOMA-H19-0402"
+            },
+            "specialNote": "자연배수가 없어 배수 펌프 사용"
+        },
         "ENF 아산_SOMA-3000E::SOMA-EK24-0401": {
             "setup": {
                 "building": "",
@@ -380,11 +356,35 @@
             },
             "specialNote": ""
         },
+        "SKH 이천_SOMA-2000::SOMA-HK21-0202": {
+            "setup": {
+                "building": "M16",
+                "contact": "010-9885-0393",
+                "custContact": "010-4690-5424",
+                "custEmail": "jun54.kim@sk.com",
+                "custEquipName": "6CGM5001",
+                "custManager": "김준",
+                "detailLoc": "X12 Y8",
+                "email": "wblee@withtech.co.kr",
+                "floor": "5층 Plenum",
+                "manager": "이원배1",
+                "model": "SOMA-HK21-0202"
+            },
+            "specialNote": ""
+        },
+        "ENF 천안_SOMA-3000E::SOMA-EK25-0401": {
+            "setup": {},
+            "specialNote": ""
+        },
         "SKH 우시_SOMA-2000::SOMA-HC19-1204": {
             "setup": {},
             "specialNote": ""
         },
         "SKH 우시_SOMA-20::SOMA-HC19-1204": {
+            "setup": {},
+            "specialNote": ""
+        },
+        "ENF 천안_WAD-10::AD10-EK24-0202": {
             "setup": {},
             "specialNote": ""
         },
