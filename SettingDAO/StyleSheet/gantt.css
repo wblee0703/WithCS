@@ -416,7 +416,8 @@
     }
 
     /* [추가] 모바일에서 리사이저 숨김 */
-    .gantt__resizer {
+    .gantt__resizer,
+    .width-resizer {
         display: none !important;
     }
 
