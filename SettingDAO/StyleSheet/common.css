@@ -705,34 +705,11 @@ input:disabled {
 /* ==========================================================================
    9. 사용자 권한 스타일 (User Roles)
    ========================================================================== */
-body.role-user .btn-add,
-body.role-user .btn-edit,
-body.role-user .btn-del,
-body.role-user .btn-del-sm,
-body.role-user .btn-blue,
-body.role-user .btn-green,
-body.role-user .btn-blue-sm,
-body.role-user .btn-green-sm,
-body.role-user .btn-orange-sm,
+/* 일반 사용자도 모든 입력/등록이 가능하도록 제한 해제. 단, 톱니바퀴(설정) 및 관리자 데이터 기능은 숨김 유지 */
 body.role-user #btn-import,
 body.role-user #btn-clear-logs,
 body.role-user .btn-list-setting {
     display: none !important;
-}
-
-body.role-user .user-controls button,
-body.role-user .modal-window button,
-body.role-user #btn-change-pw,
-body.role-user #btn-special-note {
-    display: inline-block !important;
-}
-
-body.role-user input:not(.search-input):not(.search-input-mini):not(#change-pw-current):not(#change-pw-new),
-body.role-user textarea,
-body.role-user select {
-    pointer-events: none;
-    opacity: 0.6;
-    background: #161b22;
 }
 
 /* ==========================================================================
