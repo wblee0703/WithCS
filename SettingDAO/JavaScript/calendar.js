@@ -37,11 +37,22 @@ document.addEventListener('DOMContentLoaded', () => {
    ========================================================================== */
 
 /**
+ * 공통: 사업장 및 장비 매핑 데이터 가져오기 (데이터 구조 변경(device_data) 대응)
+ */
+function getDeviceDataMap() {
+    if (typeof storageData !== 'undefined') {
+        if (storageData.device_data) return storageData.device_data;
+        return storageData;
+    }
+    return JSON.parse(localStorage.getItem('device_data')) || JSON.parse(localStorage.getItem('withtech_data')) || {};
+}
+
+/**
  * 캘린더 표시용 일정 데이터 수집
  */
 function getScheduleForCalendar() {
     const events = {};
-    const mainData = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    const mainData = getDeviceDataMap();
 
     Object.keys(mainData).forEach(site => {
         if (mainData[site]) {
@@ -1507,7 +1518,7 @@ function openRegisterScheduleModal(dateStr) {
 
     if (dateDisplay) dateDisplay.value = dateStr;
 
-    const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    const data = getDeviceDataMap();
     const mdInput = document.getElementById('register-md');
     if (mdInput) mdInput.value = '';
 
@@ -1563,7 +1574,7 @@ function updateRegisterEquipSelect(site) {
         return;
     }
 
-    const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    const data = getDeviceDataMap();
     const equips = data[site] || [];
 
     equips.forEach(equip => {
@@ -1993,7 +2004,7 @@ function openSearchModal() {
 
     if (!modal) return;
 
-    const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    const data = getDeviceDataMap();
     siteSelect.innerHTML = '<option value="">전체 사업장</option>';
     Object.keys(data).forEach(site => {
         const option = document.createElement('option');
@@ -2018,7 +2029,7 @@ function updateSearchEquipSelect(site) {
         return;
     }
 
-    const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    const data = getDeviceDataMap();
     const equips = data[site] || [];
 
     equips.forEach(equip => {

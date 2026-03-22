@@ -3,7 +3,7 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/index.css') }}">
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/calendar.css') }}?v=6">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/calendar.css') }}?v=7">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/gantt.css') }}">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/integ.css') }}">
 {% endblock %}
@@ -456,7 +456,7 @@
 </div>
 
 <!-- 3.4 일정 상세 및 작업 완료 모달 -->
-<div id="event-detail-modal" class="modal-overlay" style="display: none;">
+<div id="event-detail-modal" class="modal-overlay" style="display: none; z-index: 9999;">
     <div class="modal-window">
         <div class="modal-header">
             <h3>작업 상세 정보</h3>
@@ -521,7 +521,7 @@
 </div>
 
 <!-- 3.5 작업 예정일 등록 모달 (달력에서 호출) -->
-<div id="register-schedule-modal" class="modal-overlay" style="display: none;">
+<div id="register-schedule-modal" class="modal-overlay" style="display: none; z-index: 9999;">
     <div class="modal-window">
         <div class="modal-header">
             <h3>작업 등록</h3>

@@ -364,6 +364,14 @@
     min-height: 650px;
 }
 
+/* 팝업 위에 뜨는 2차 팝업 모달 z-index 충돌 방지 */
+#schedule-modal,
+#event-detail-modal,
+#register-schedule-modal {
+    z-index: 9999 !important;
+    pointer-events: auto !important;
+}
+
 /* 모달 내부 버튼 */
 #btn-schedule-calendar { padding: 8px 12px; }
 #btn-confirm-register-schedule { width: 100%; }
