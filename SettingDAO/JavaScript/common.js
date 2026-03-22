@@ -892,11 +892,6 @@ function checkLoginStatus() {
         if (dashboardWrapper) dashboardWrapper.style.filter = 'none';
         document.body.classList.remove('role-admin', 'role-user');
         document.body.classList.add(`role-${role}`);
-        // [추가] 관리자 계정일 때만 홈 화면의 시스템 관리 메인 버튼 표시
-        const adminHomeBtn = document.querySelector('.btn-admin');
-        if (adminHomeBtn) {
-            adminHomeBtn.style.display = (role === 'admin') ? 'flex' : 'none';
-        }
     } else {
         if (loginModal && !homeLoginContainer) loginModal.style.display = 'flex';
         if (userInfo) userInfo.style.display = 'none';
@@ -915,10 +910,6 @@ function checkLoginStatus() {
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'none';
 
         document.body.classList.remove('role-admin', 'role-user');
-        
-        // [추가] 로그아웃 시 시스템 관리 버튼 숨김
-        const adminHomeBtn = document.querySelector('.btn-admin');
-        if (adminHomeBtn) adminHomeBtn.style.display = 'none';
     }
 
     // [추가] 모바일 메뉴 링크 제어 (로그인 상태에 따라 표시/숨김)
