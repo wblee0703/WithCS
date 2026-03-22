@@ -785,7 +785,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         if (mdInput) {
             let displayMd = item.md || '';
             // [추가] 같은 날짜에 묶인 항목 중 공수 데이터가 있는지 우선 검색 (그룹화 시 데이터 유실 방지)
-            if (!displayMh && item.scheduledDate) {
+            if (!displayMd && item.scheduledDate) {
                 const sameDayItems = data.maint.filter(i => i.scheduledDate === item.scheduledDate && i.type === item.type && (i.detailType || '') === (item.detailType || ''));
                 const itemWithMd = sameDayItems.find(i => i.md);
                 if (itemWithMd) displayMd = itemWithMd.md;
