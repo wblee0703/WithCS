@@ -1196,6 +1196,9 @@ function completeScheduleWork() {
     if (!md) return alert('공수(M/D)를 입력해주세요.');
     if (!memo) return alert('점검 결과 / 메모를 입력해주세요.');
 
+    // [추가] 작업 완료 전 확인 팝업
+    if (!confirm('해당 작업을 완료 처리하시겠습니까?')) return;
+
     localStorage.setItem('lastWorkerName', worker);
 
     const { site, equip, id } = currentDetailTarget;
