@@ -197,13 +197,13 @@
         "memo": "",
         "files": []
     },
-    "details_SEC 평택_SOLA-1000": {
+    "details_SEC 평택_SOLA-3000": {
         "maint": [],
         "logs": [],
         "memo": "",
         "files": []
     },
-    "details_SEC 평택_SOLA-3000": {
+    "details_SEC 평택_SOLA-1000": {
         "maint": [],
         "logs": [],
         "memo": "",
@@ -324,7 +324,7 @@
                 "content": "Metal Standard Solution(3%HNO3)",
                 "date": "2026-03-04",
                 "period": 30,
-                "scheduledDate": "2026-03-13",
+                "scheduledDate": "2026-03-14",
                 "costType": "유상",
                 "md": "2",
                 "worker": "이원배",
@@ -338,7 +338,7 @@
                 "content": "Pt Skimmer cone for 7700S",
                 "date": "2026-02-04",
                 "period": 182,
-                "scheduledDate": "2026-03-13",
+                "scheduledDate": "2026-03-14",
                 "costType": "유상",
                 "md": "2",
                 "worker": "이원배",
@@ -352,7 +352,7 @@
                 "content": "Pt Sampling cone for 7700S",
                 "date": "2026-02-04",
                 "period": 182,
-                "scheduledDate": "2026-03-13",
+                "scheduledDate": "2026-03-14",
                 "costType": "유상",
                 "md": "2",
                 "worker": "이원배",
@@ -366,7 +366,7 @@
                 "content": "Extraction-omega lens assembly",
                 "date": "2026-02-04",
                 "period": 365,
-                "scheduledDate": "2026-03-13",
+                "scheduledDate": "2026-03-14",
                 "costType": "유상",
                 "md": "2",
                 "worker": "이원배",
