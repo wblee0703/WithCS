@@ -242,11 +242,18 @@ def git_push_data():
         if not status.stdout.strip():
             return
 
-        # [수정] 데이터 파일뿐만 아니라 소스 코드 등 모든 변경 사항을 Commit & Push
-        subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(["git", "commit", "-m", f"Auto-save: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"], check=True)
-        subprocess.run(["git", "push"], check=True)
-        app.logger.info("GitHub sync successful")
+        # [개선] Push 전 충돌 방지를 위해 Pull(rebase)을 먼저 수행하고, 실패 시 상세 로그(stderr) 캡처
+        subprocess.run(["git", "pull", "--rebase"], capture_output=True, text=True)
+        
+        subprocess.run(["git", "add", "."], check=True, capture_output=True)
+        subprocess.run(["git", "commit", "-m", f"Auto-save: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"], check=True, capture_output=True)
+        
+        push_res = subprocess.run(["git", "push"], capture_output=True, text=True)
+        if push_res.returncode != 0:
+            # 에러 발생 시 원인을 정확히 로그에 기록
+            app.logger.error(f"GitHub push failed: {push_res.stderr.strip()}")
+        else:
+            app.logger.info("GitHub sync successful")
     except Exception as e:
         app.logger.error(f"GitHub sync failed: {e}")
 
@@ -506,7 +513,8 @@ def inject_mobile_info():
 # [추가] CSRF 토큰 오류 전용 핸들러 (원인 명확화)
 @app.errorhandler(CSRFError)
 def handle_csrf_error(e):
-    app.logger.warning(f"CSRF Error: {e.description} (Path: {request.path})")
+    # [개선] 세션 만료 후 자동 저장 요청 등에 의한 자연스러운 현상이므로 INFO 레벨로 낮춰 로그 도배 방지
+    app.logger.info(f"CSRF Expected Error (Session Expired): {e.description} (Path: {request.path})")
     return jsonify({"status": "fail", "message": "보안 세션이 만료되었거나 유효하지 않습니다. 페이지를 새로고침 해주세요."}), 400
 
 # [추가] 잘못된 요청(Bad Request) 전용 핸들러
@@ -849,16 +857,17 @@ def init_db():
         
         # [마이그레이션] 기존 user 테이블에 site 컬럼 추가 (DB 업데이트)
         try:
-            db.session.execute(text("ALTER TABLE user ADD COLUMN site VARCHAR(100)"))
+            # [개선] 예약어 충돌 방지를 위해 테이블명을 큰따옴표로 감쌈
+            db.session.execute(text('ALTER TABLE "user" ADD COLUMN site VARCHAR(100)'))
             db.session.commit()
         except:
             db.session.rollback()
             
         # [마이그레이션] 기존 user 테이블에 추가 정보 컬럼 추가
         try:
-            db.session.execute(text("ALTER TABLE user ADD COLUMN department VARCHAR(100)"))
-            db.session.execute(text("ALTER TABLE user ADD COLUMN position VARCHAR(100)"))
-            db.session.execute(text("ALTER TABLE user ADD COLUMN name VARCHAR(100)"))
+            db.session.execute(text('ALTER TABLE "user" ADD COLUMN department VARCHAR(100)'))
+            db.session.execute(text('ALTER TABLE "user" ADD COLUMN position VARCHAR(100)'))
+            db.session.execute(text('ALTER TABLE "user" ADD COLUMN name VARCHAR(100)'))
             db.session.commit()
         except:
             db.session.rollback()
