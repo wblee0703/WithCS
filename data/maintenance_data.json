@@ -579,14 +579,24 @@
                 "detailType": "Alarm > MFC(Flow)_알람",
                 "code": "",
                 "content": "현장 이슈",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-05-04",
-                "costType": "무상(보증)",
-                "md": "2"
+                "date": "2026-05-04",
+                "period": null
             }
         ],
-        "logs": [],
+        "logs": [
+            {
+                "id": 1774245304627,
+                "date": "2026-05-04",
+                "type": "비정기",
+                "detailType": "Alarm > MFC(Flow)_알람",
+                "detailType2": "",
+                "content": "현장 이슈",
+                "costType": "무상(보증)",
+                "md": "2",
+                "worker": "admin",
+                "memo": "1ㄴㅇㅁ"
+            }
+        ],
         "memo": "",
         "files": []
     },
