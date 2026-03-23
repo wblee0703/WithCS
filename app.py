@@ -932,10 +932,11 @@ def init_db():
                 db.session.add(SystemLog(action='SYSTEM_INIT', target='Database', details='Database initialized.'))
                 db.session.commit()
 
+# WSGI 서버(PythonAnywhere 등) 환경에서도 앱 구동 시 초기화가 실행되도록 __main__ 블록 밖으로 이동
+init_data_files()
+init_db()
+
 if __name__ == '__main__':
-    # 서버 시작 전 데이터 파일 초기화
-    init_data_files()
-    init_db() # 데이터베이스 초기화
     
     # [추가] 서버 시작 시 GitHub에서 최신 데이터 동기화
     git_pull_data()
