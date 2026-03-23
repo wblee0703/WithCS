@@ -142,7 +142,9 @@
                 "detailType": "온라인점검",
                 "content": "헌팅스펙 적용",
                 "worker": "이원배",
-                "memo": "1. Hunting Spec 적용\n - 고객사 담당자 : 김대욱 TL님 대응\n - 요청 사항 : Sample Repeat ,Control Limit, Spec Limit Spec.설정\n - WIM-100은 Hunting Spec 설정 밖에 없어 Sample Repeat Spec을 적용 시켜 놓음\n - 추후 SKHynix 내부 협의 후 프로그램 변경 요청예정"
+                "memo": "1. Hunting Spec 적용\n - 고객사 담당자 : 김대욱 TL님 대응\n - 요청 사항 : Sample Repeat ,Control Limit, Spec Limit Spec.설정\n - WIM-100은 Hunting Spec 설정 밖에 없어 Sample Repeat Spec을 적용 시켜 놓음\n - 추후 SKHynix 내부 협의 후 프로그램 변경 요청예정",
+                "costType": "유상",
+                "md": "1"
             },
             {
                 "id": 1773812196807,
