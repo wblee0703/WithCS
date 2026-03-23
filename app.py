@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -76,6 +77,10 @@ class User(db.Model):
     id = db.Column(db.String(50), primary_key=True)
     pw = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default='user')
+    site = db.Column(db.String(100), nullable=True) # [추가] 사업장 필드
+    department = db.Column(db.String(100), nullable=True) # [추가] 소속
+    position = db.Column(db.String(100), nullable=True) # [추가] 직급
+    name = db.Column(db.String(100), nullable=True) # [추가] 이름
     failed_attempts = db.Column(db.Integer, default=0)
     lockout_until = db.Column(db.DateTime, nullable=True)
 
@@ -620,7 +625,8 @@ def login():
 
         session['user_id'] = user.id
         session['role'] = user.role
-        return jsonify({"status": "success", "role": user.role})
+        session['site'] = user.site # [추가]
+        return jsonify({"status": "success", "role": user.role, "site": user.site})
 
     # 3. 실패 처리
     user.failed_attempts += 1
@@ -639,6 +645,60 @@ def logout():
     session.clear()
     return jsonify({"status": "success"})
 
+# [추가] 계정 정보 조회 API
+@app.route('/api/user/info', methods=['GET'])
+@login_required
+def get_user_info():
+    user = User.query.filter_by(id=session.get('user_id')).first()
+    if not user:
+        return jsonify({"status": "fail", "message": "사용자를 찾을 수 없습니다."}), 404
+    return jsonify({
+        "status": "success",
+        "user": {
+            "id": user.id,
+            "role": user.role,
+            "site": user.site or "",
+            "department": user.department or "",
+            "position": user.position or "",
+            "name": user.name or ""
+        }
+    })
+
+# [추가] 비밀번호 확인 API (수정 전 인증용)
+@app.route('/api/user/verify', methods=['POST'])
+@login_required
+def verify_user_pw():
+    data = request.json
+    pw = data.get('pw')
+    user = User.query.filter_by(id=session.get('user_id')).first()
+    if not user or not check_password_hash(user.pw, pw):
+        return jsonify({"status": "fail", "message": "비밀번호가 일치하지 않습니다."}), 401
+    return jsonify({"status": "success"})
+
+# [추가] 계정 정보 수정 API
+@app.route('/api/user/update', methods=['POST'])
+@login_required
+def update_user_info():
+    data = request.json
+    user = User.query.filter_by(id=session.get('user_id')).first()
+    if not user: return jsonify({"status": "fail", "message": "사용자를 찾을 수 없습니다."}), 404
+    if 'department' in data: user.department = data['department']
+    if 'position' in data: user.position = data['position']
+    if 'name' in data: user.name = data['name']
+    if 'site' in data: user.site = data['site']
+    if 'role' in data and session.get('role') == 'admin':
+        if user.id != 'admin' and user.id != os.environ.get('APP_ADMIN_ID', 'admin'): user.role = data['role']
+    db.session.commit()
+    session['role'] = user.role
+    session['site'] = user.site
+    return jsonify({"status": "success"})
+
+@app.route('/api/session/extend', methods=['POST'])
+@login_required
+def extend_session():
+    session.modified = True
+    return jsonify({"status": "success", "message": "세션이 연장되었습니다."})
+
 @app.route('/api/user/add', methods=['POST'])
 @login_required
 def add_user():
@@ -646,6 +706,10 @@ def add_user():
     new_id = data.get('id')
     new_pw = data.get('pw')
     role = data.get('role', 'user')
+    site = data.get('site', '') # [추가]
+    department = data.get('department', '') # [추가]
+    position = data.get('position', '') # [추가]
+    name = data.get('name', '') # [추가]
     
     if session.get('role') != 'admin':
         return jsonify({"status": "fail", "message": "관리자 권한이 필요합니다."}), 403
@@ -653,7 +717,7 @@ def add_user():
     if User.query.filter_by(id=new_id).first():
         return jsonify({"status": "fail", "message": "이미 존재하는 아이디입니다."}), 400
 
-    new_user = User(id=new_id, pw=generate_password_hash(new_pw), role=role)
+    new_user = User(id=new_id, pw=generate_password_hash(new_pw), role=role, site=site, department=department, position=position, name=name)
     db.session.add(new_user)
     db.session.commit()
 
@@ -677,6 +741,58 @@ def change_password():
     user.pw = generate_password_hash(new_pw)
     db.session.commit()
 
+    return jsonify({"status": "success"})
+
+# [추가] 계정 삭제 API
+@app.route('/api/user/delete', methods=['POST'])
+@login_required
+def delete_account():
+    data = request.json
+    user_id = data.get('id')
+    pw = data.get('pw')
+    
+    if session.get('user_id') != user_id:
+        return jsonify({"status": "fail", "message": "권한이 없습니다."}), 403
+
+    if user_id == 'admin' or user_id == os.environ.get('APP_ADMIN_ID', 'admin'):
+        return jsonify({"status": "fail", "message": "시스템 보호를 위해 최고 관리자 계정은 삭제할 수 없습니다."}), 403
+
+    user = User.query.filter_by(id=user_id).first()
+    if not user or not check_password_hash(user.pw, pw):
+        return jsonify({"status": "fail", "message": "비밀번호가 일치하지 않습니다."}), 401
+
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"status": "success"})
+
+# [추가] 관리자용 일반 사용자 목록 조회 API
+@app.route('/api/users/deletable', methods=['GET'])
+@login_required
+def get_deletable_users():
+    if session.get('role') != 'admin':
+        return jsonify({"status": "fail", "message": "권한이 없습니다."}), 403
+    
+    users = User.query.filter(User.role != 'admin').all()
+    user_list = [{"id": u.id, "name": u.name or '', "department": u.department or '', "position": u.position or ''} for u in users]
+    return jsonify({"status": "success", "users": user_list})
+
+# [추가] 관리자용 특정 사용자 삭제 API
+@app.route('/api/admin/user/delete', methods=['POST'])
+@login_required
+def admin_delete_target_user():
+    if session.get('role') != 'admin':
+        return jsonify({"status": "fail", "message": "권한이 없습니다."}), 403
+    
+    target_id = request.json.get('target_id')
+    target_user = User.query.filter_by(id=target_id).first()
+    
+    if not target_user:
+        return jsonify({"status": "fail", "message": "사용자를 찾을 수 없습니다."}), 404
+    if target_user.role == 'admin' or target_id == 'admin':
+        return jsonify({"status": "fail", "message": "관리자 계정은 삭제할 수 없습니다."}), 403
+        
+    db.session.delete(target_user)
+    db.session.commit()
     return jsonify({"status": "success"})
 
 # [추가] DB 기반 로그 API
@@ -725,6 +841,22 @@ def clear_logs():
 def init_db():
     with app.app_context():
         db.create_all()
+        
+        # [마이그레이션] 기존 user 테이블에 site 컬럼 추가 (DB 업데이트)
+        try:
+            db.session.execute(text("ALTER TABLE user ADD COLUMN site VARCHAR(100)"))
+            db.session.commit()
+        except:
+            db.session.rollback()
+            
+        # [마이그레이션] 기존 user 테이블에 추가 정보 컬럼 추가
+        try:
+            db.session.execute(text("ALTER TABLE user ADD COLUMN department VARCHAR(100)"))
+            db.session.execute(text("ALTER TABLE user ADD COLUMN position VARCHAR(100)"))
+            db.session.execute(text("ALTER TABLE user ADD COLUMN name VARCHAR(100)"))
+            db.session.commit()
+        except:
+            db.session.rollback()
         
         # [DB 마이그레이션] 사용자 데이터
         home_data = load_json_file(FILE_HOME)

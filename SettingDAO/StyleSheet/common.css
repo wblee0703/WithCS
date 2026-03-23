@@ -98,6 +98,13 @@ body {
     font-weight: bold;
 }
 
+/* [추가] 데스크톱 화면(951px 이상)에서는 햄버거 메뉴 옆의 모바일용 타이머를 강제로 숨김 */
+@media (min-width: 951px) {
+    .mobile-header-timer {
+        display: none !important;
+    }
+}
+
 /* ==========================================================================
    3. 레이아웃 (Layout - Shared with Maintenance)
    ========================================================================== */
@@ -492,11 +499,53 @@ body {
     font-size: 16px;
     font-weight: bold;
 }
+
+/* [추가] 관리자 계정 삭제용 제안 박스 스타일 */
+.user-suggestion-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    max-height: 155px; /* 약 5개 항목 높이 */
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    list-style: none;
+    padding: 0;
+    margin: 2px 0 0 0;
+    box-sizing: border-box;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+}
+.user-suggestion-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #21262d;
+    color: #e6edf3;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.user-suggestion-item:hover {
+    background: #1f6feb;
+}
+.user-suggestion-item .user-id {
+    color: #8b949e;
+    font-size: 11px;
+}
+
 /* [요청] 계정 관리 팝업창 크기 자동 조절 (여백 축소) */
 #user-modal .modal-window {
     width: 500px !important;
     height: auto !important;
     min-height: 0 !important;
+}
+/* [추가] 계정 관리 모달 내부 내용(제안 박스 등)이 모달창 밖으로 튀어나올 수 있도록 오버플로우 허용 */
+#user-modal .modal-body {
+    overflow: visible !important;
 }
 /* ==========================================================================
    7. 버튼 (Buttons)
@@ -882,8 +931,22 @@ body.role-user .btn-list-setting {
         font-size: 16px;
         font-weight: 800;
         font-family: 'Montserrat', 'Noto Sans KR', sans-serif;
-        margin-right: 15px; /* 햄버거 메뉴와의 간격 */
+        margin-right: 10px; /* 타이머와의 간격 */
         letter-spacing: 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 1; /* 공간 부족 시 페이지 제목 너비 축소 */
+    }
+
+    /* [추가] 모바일 타이머 헤더 배치 스타일 (줄바꿈 방지) */
+    .mobile-header-timer {
+        display: none; /* 기본 숨김, JS에서 flex로 활성화 */
+        order: 3;
+        margin-right: 15px; /* 햄버거 메뉴와의 간격 */
+        white-space: nowrap;
+        align-items: center;
+        flex-shrink: 0; /* 타이머와 버튼의 찌그러짐/줄바꿈 완벽 방지 */
     }
 
     .header .container {
@@ -916,7 +979,7 @@ body.role-user .btn-list-setting {
     /* 햄버거 메뉴 버튼 */
     .hamburger-menu {
         display: flex;
-        order: 3; /* [수정] 가장 우측으로 배치 */
+        order: 4; /* [수정] 타이머 다음 가장 우측으로 배치 */
         flex-direction: column;
         justify-content: space-around;
         width: 24px;

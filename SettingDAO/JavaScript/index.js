@@ -234,13 +234,22 @@ function updateHomeDashboard() {
     // [추가] 첫 로드 시 마지막 화면 상태 및 필터 복원
     if (isFirstLoad) {
         const lastSection = localStorage.getItem('lastHomeSection');
+        const userSite = sessionStorage.getItem('userSite'); // [추가] 계정 사업장 확인
 
         try {
             const savedSetupFilter = JSON.parse(localStorage.getItem('setupDashboardFilter'));
-            if (savedSetupFilter) setupDashboardFilter = savedSetupFilter;
+            if (savedSetupFilter) {
+                setupDashboardFilter = savedSetupFilter;
+            } else if (userSite) {
+                setupDashboardFilter = { site: userSite, equip: '' }; // [추가] 기본 필터
+            }
 
             const savedGanttFilter = JSON.parse(localStorage.getItem('currentGanttFilters'));
-            if (savedGanttFilter) currentGanttFilters = savedGanttFilter;
+            if (savedGanttFilter) {
+                currentGanttFilters = savedGanttFilter;
+            } else if (userSite) {
+                currentGanttFilters = { site: userSite, equip: '' }; // [추가] 기본 필터
+            }
 
             // [추가] 운영 관리 필터 복원
             const savedMaintFilter = JSON.parse(localStorage.getItem('maintDashboardFilter'));
@@ -249,6 +258,9 @@ function updateHomeDashboard() {
                 selectedEquipFilter = savedMaintFilter.equip;
                 selectedSerialFilter = savedMaintFilter.serial;
                 if (savedMaintFilter.search) currentSearchFilters = savedMaintFilter.search;
+            } else if (userSite) {
+                selectedSiteFilter = userSite;
+                currentSearchFilters = { site: userSite, equip: '' };
             }
         } catch (e) { console.error("Failed to restore filters", e); }
 
