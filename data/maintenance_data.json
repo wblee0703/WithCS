@@ -507,7 +507,9 @@
                 "detailType": "기타",
                 "content": "명절 전 장비 점검",
                 "worker": "이원배",
-                "memo": "1. 장비 상태 온라인 점검\n - Calibration 적용 산태 확인 : 특이사항 없음\n - 데이터 Tend 확인 : 특이사항 없음"
+                "memo": "1. 장비 상태 온라인 점검\n - Calibration 적용 산태 확인 : 특이사항 없음\n - 데이터 Tend 확인 : 특이사항 없음",
+                "costType": "유상",
+                "md": "1"
             },
             {
                 "id": 1772763056596,
