@@ -386,7 +386,7 @@
                 "detailType": "온라인점검",
                 "content": "Reflected Power Spec Over",
                 "worker": "이원배",
-                "memo": "1. Reflected Power Spec Over 조치\n - 정상 Spec. : 0 ~ 10\n - 설비값 : 9.5 ~ 11.5\n - ICPMS Tuning : RF Matching 조절 (1.05 - >1.15)\n - 조치후 : Reflected Power 7 ~ 8 수준 \n (이전 Work Coil 교체후 Cool Mode Reflected Power가 높아짐 - Plasma 흔들림 없어 정상으로 판단)2",
+                "memo": "1. Reflected Power Spec Over 조치\n - 정상 Spec. : 0 ~ 10\n - 설비값 : 9.5 ~ 11.5\n - ICPMS Tuning : RF Matching 조절 (1.05 - >1.15)\n - 조치후 : Reflected Power 7 ~ 8 수준 \n (이전 Work Coil 교체후 Cool Mode Reflected Power가 높아짐 - Plasma 흔들림 없어 정상으로 판단)21",
                 "costType": "유상",
                 "md": "1"
             },
