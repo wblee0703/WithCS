@@ -647,7 +647,9 @@ function renderIntegMaintStats(mainData) {
                 };
 
                 if (detailData.maint) detailData.maint.forEach(i => processItem(i.type, i.content, i.scheduledDate));
-                if (detailData.logs) detailData.logs.forEach(l => processItem(l.type, l.content, l.date));
+                if (detailData.logs) detailData.logs.forEach(l => {
+                    if (l.detailType !== '일정변경') processItem(l.type, l.content, l.date);
+                });
             });
         }
     });

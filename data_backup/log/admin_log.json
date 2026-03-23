@@ -1,0 +1,1724 @@
+[
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: Stadnard, Cycle: 300",
+        "target": "Stadnard",
+        "timestamp": "2026-03-16T06:44:58.984Z"
+    },
+    {
+        "action": "ADD_CHECK_ITEM",
+        "details": "항목 추가: [Alarm] alarm",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-16T06:45:13.669Z"
+    },
+    {
+        "action": "DELETE_CHECK_ITEM",
+        "details": "항목 삭제: alarm",
+        "target": "SOMA-3000E",
+        "timestamp": "2026-03-16T06:52:50.301Z"
+    },
+    {
+        "action": "ADD_CHECK_ITEM",
+        "details": "항목 추가: [Alarm] interlock",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-16T07:33:01.562Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ",
+        "target": "Stadnard",
+        "timestamp": "2026-03-16T07:56:07.365Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ",
+        "target": "Stadnard",
+        "timestamp": "2026-03-16T23:24:32.098Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: metal Standard Solution",
+        "target": "Stadnard",
+        "timestamp": "2026-03-17T00:28:06.096Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: metal STD",
+        "target": "Stadnard",
+        "timestamp": "2026-03-17T00:28:19.361Z"
+    },
+    {
+        "action": "DELETE_CHECK_CATEGORY",
+        "details": "분류 삭제: PM",
+        "target": "SOMA-3000E::SOMA-EK24-0401::정기",
+        "timestamp": "2026-03-17T01:18:43.839Z"
+    },
+    {
+        "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 정기 > PM 점검",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-17T01:18:48.706Z"
+    },
+    {
+        "action": "DELETE_CHECK_CATEGORY",
+        "details": "분류 삭제: PM 점검",
+        "target": "SOMA-3000E::SOMA-EK24-0401::정기",
+        "timestamp": "2026-03-17T01:18:51.856Z"
+    },
+    {
+        "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 정기 > PM 점검",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-17T01:19:04.575Z"
+    },
+    {
+        "action": "DELETE_CHECK_CATEGORY",
+        "details": "분류 삭제: BM",
+        "target": "SOMA-3000E::SOMA-EK24-0401::비정기",
+        "timestamp": "2026-03-17T01:19:10.064Z"
+    },
+    {
+        "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 비정기 > BM 점검",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-17T01:19:14.305Z"
+    },
+    {
+        "action": "DELETE_CHECK_CATEGORY",
+        "details": "분류 삭제: Alarm",
+        "target": "SOMA-3000E::SOMA-EK24-0401::비정기",
+        "timestamp": "2026-03-17T01:19:34.576Z"
+    },
+    {
+        "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 비정기 > Alarm",
+        "target": "SOMA-3000E::SOMA-EK24-0401",
+        "timestamp": "2026-03-17T01:19:35.464Z"
+    },
+    {
+        "action": "DELETE_ITEM_ADMIN",
+        "details": "",
+        "target": "Stadnard",
+        "timestamp": "2026-03-17T01:21:37.084Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 046138, AG14(2x50mm), Cycle: ",
+        "target": "Guard Column(2mm)",
+        "timestamp": "2026-03-17T01:23:09.486Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: GC(2mm)",
+        "target": "Guard Column(2mm)",
+        "timestamp": "2026-03-17T01:23:44.280Z"
+    },
+    {
+        "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 비정기 > BM 점검",
+        "target": "SOMA-3000E::SOMA-EK24-0403",
+        "timestamp": "2026-03-17T02:22:15.579Z"
+    },
+    {
+        "action": "DELETE_CHECK_CATEGORY",
+        "details": "분류 삭제: BM",
+        "target": "SOMA-3000E::SOMA-EK24-0403::비정기",
+        "timestamp": "2026-03-17T02:22:18.574Z"
+    },
+    {
+        "action": "ADD_CHECK_CATEGORY",
+        "details": "분류 추가: 비정기 > BM 점검",
+        "target": "SOMA-3000E::SOMA-EK24-0402",
+        "timestamp": "2026-03-17T02:22:42.969Z"
+    },
+    {
+        "action": "DELETE_CHECK_CATEGORY",
+        "details": "분류 삭제: BM",
+        "target": "SOMA-3000E::SOMA-EK24-0402::비정기",
+        "timestamp": "2026-03-17T02:22:45.597Z"
+    },
+    {
+        "action": "UPDATE_EQUIP_MODEL",
+        "details": "To: SOMA-2000 / SOMA2000",
+        "target": "SOMA-2000",
+        "timestamp": "2026-03-17T02:34:45.209Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: GC(2mm)",
+        "target": "Guard Column(2mm)",
+        "timestamp": "2026-03-17T02:54:43.628Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 2680CGUU44,130LPM,230V,50/60Hz공용(피팅포함), Cycle: ",
+        "target": "Vacuum Pump[Thomas-P], 4/1 Connector",
+        "timestamp": "2026-03-17T02:55:20.388Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: V/P (Thomas)",
+        "target": "Vacuum Pump[Thomas-P], 4/1 Connector",
+        "timestamp": "2026-03-17T02:55:25.836Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: GC(2mm)",
+        "target": "Guard Column(2mm)",
+        "timestamp": "2026-03-17T02:55:29.340Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 10ppb Multi(4종), 3%HNO3, Cycle: 30",
+        "target": "Metal Standard Solution(3%HNO3)",
+        "timestamp": "2026-03-17T03:36:41.332Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: Metal STD (10ppb,3%)",
+        "target": "Metal Standard Solution(3%HNO3)",
+        "timestamp": "2026-03-17T03:54:14.544Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: AT7708S-Pt, G3280-67064, GE OEM",
+        "target": "Pt Skimmer cone for 7700S",
+        "timestamp": "2026-03-17T03:55:42.511Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: Skimmer Cone",
+        "target": "Pt Skimmer cone for 7700S",
+        "timestamp": "2026-03-17T03:56:23.774Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: AT7706-Pt, G3280-67036, GE OEM",
+        "target": "Pt Sampling cone for 7700S",
+        "timestamp": "2026-03-17T03:56:40.104Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: Sampler Cone",
+        "target": "Pt Sampling cone for 7700S",
+        "timestamp": "2026-03-17T03:57:09.984Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: G8400-67002, lens for 7900s, Agilent 정품",
+        "target": "Extraction-omega lens assembly",
+        "timestamp": "2026-03-17T03:57:26.136Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: Ion Lens",
+        "target": "Extraction-omega lens assembly",
+        "timestamp": "2026-03-17T03:57:46.404Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G4912-80012, 정품",
+        "target": "Torch for PFA inert kit for ICP-MS",
+        "timestamp": "2026-03-17T04:18:31.150Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: PFA Torch",
+        "target": "Torch for PFA inert kit for ICP-MS",
+        "timestamp": "2026-03-17T04:18:53.358Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3285-80035, Agilent",
+        "target": "Platinum injector, inert torch, 2.5mm id",
+        "timestamp": "2026-03-17T04:19:09.658Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Pt Injector",
+        "target": "Platinum injector, inert torch, 2.5mm id",
+        "timestamp": "2026-03-17T04:19:24.922Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3285-80021, Agilent 정품",
+        "target": "Spray Chamber for Inert Kit, PFA",
+        "timestamp": "2026-03-17T04:24:31.688Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: PFA Spray Chamber",
+        "target": "Spray Chamber for Inert Kit, PFA",
+        "timestamp": "2026-03-17T04:24:53.262Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3285-80020",
+        "target": "Spray Chamber End Cap for Inert Kit, PFA",
+        "timestamp": "2026-03-17T04:25:13.922Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Spray Chamber End Cap",
+        "target": "Spray Chamber End Cap for Inert Kit, PFA",
+        "timestamp": "2026-03-17T04:25:25.934Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: PFA Spray Chamber",
+        "target": "Spray Chamber for Inert Kit, PFA",
+        "timestamp": "2026-03-17T04:25:30.808Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Pt Injector",
+        "target": "Platinum injector, inert torch, 2.5mm id",
+        "timestamp": "2026-03-17T04:25:34.092Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: PFA Torch",
+        "target": "Torch for PFA inert kit for ICP-MS",
+        "timestamp": "2026-03-17T04:25:37.898Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3285-80024, Agilent 정품",
+        "target": "Long connector tube for ICP-MS inert kit",
+        "timestamp": "2026-03-17T04:26:02.686Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Long Connector",
+        "target": "Long connector tube for ICP-MS inert kit",
+        "timestamp": "2026-03-17T04:26:19.701Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Long Connector",
+        "target": "Long connector tube for ICP-MS inert kit",
+        "timestamp": "2026-03-17T04:26:54.846Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 31-808-2577, G1833-65421, OEM",
+        "target": "Quartz Torch Bonnet",
+        "timestamp": "2026-03-17T04:27:13.185Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Bonnet",
+        "target": "Quartz Torch Bonnet",
+        "timestamp": "2026-03-17T04:27:29.614Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: AT5004, G1833-65419, OEM",
+        "target": "Shield Plate for ICP-MS",
+        "timestamp": "2026-03-17T04:27:53.592Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Shield plate",
+        "target": "Shield Plate for ICP-MS",
+        "timestamp": "2026-03-17T04:28:13.527Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 5064-8092, Agilent 정품",
+        "target": "Ar gas clean filter, Semicon App",
+        "timestamp": "2026-03-17T04:29:47.230Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Ar gas Filter",
+        "target": "Ar gas clean filter, Semicon App",
+        "timestamp": "2026-03-17T04:30:01.540Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: CP17973",
+        "target": "Gas Clean Filter Carrier Gas",
+        "timestamp": "2026-03-17T04:31:31.522Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: He gas Filter",
+        "target": "Gas Clean Filter Carrier Gas",
+        "timestamp": "2026-03-17T04:31:43.044Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3280-20628, 정품",
+        "target": "Deflect lens for ICP-MS",
+        "timestamp": "2026-03-17T04:32:31.322Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ORS (Deflect lens)",
+        "target": "Deflect lens for ICP-MS",
+        "timestamp": "2026-03-17T04:32:46.084Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3280-60615, 정품",
+        "target": "Plate bias for ICP-MS",
+        "timestamp": "2026-03-17T04:33:07.872Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ORS (Plate bias)",
+        "target": "Plate bias for ICP-MS",
+        "timestamp": "2026-03-17T04:33:19.687Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3280-20618, 정품",
+        "target": "Cell entrance lens for ICP-MS",
+        "timestamp": "2026-03-17T04:34:01.054Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ORS (Cell entrance lens)",
+        "target": "Cell entrance lens for ICP-MS",
+        "timestamp": "2026-03-17T04:34:16.000Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3280-20664, 정품",
+        "target": "Cell exit lens for ICP-MS",
+        "timestamp": "2026-03-17T04:34:43.184Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ORS (Cell exit lens)",
+        "target": "Cell exit lens for ICP-MS",
+        "timestamp": "2026-03-17T04:34:55.105Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3280-20633, 정품",
+        "target": "Cell focus lens for ICP-MS",
+        "timestamp": "2026-03-17T04:35:20.352Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ORS (Cell focus lens)",
+        "target": "Cell focus lens for ICP-MS",
+        "timestamp": "2026-03-17T04:35:36.372Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3280-67045, Agilent 정품",
+        "target": "Octopole assembly, ICP-MS",
+        "timestamp": "2026-03-17T04:35:54.820Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Octopole",
+        "target": "Octopole assembly, ICP-MS",
+        "timestamp": "2026-03-17T04:36:07.726Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G3139-65100, 150~200u/min, Agilent 정품",
+        "target": "Micro Flow Nebulizer PFA-100",
+        "timestamp": "2026-03-17T04:36:36.069Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Nebulizer",
+        "target": "Micro Flow Nebulizer PFA-100",
+        "timestamp": "2026-03-17T04:36:47.748Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G8400-60434",
+        "target": "RF coil for 7900",
+        "timestamp": "2026-03-17T04:40:20.494Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: RF Coil",
+        "target": "RF coil for 7900",
+        "timestamp": "2026-03-17T04:40:35.868Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ORS (Cell exit lens)",
+        "target": "Cell exit lens for ICP-MS",
+        "timestamp": "2026-03-17T04:40:44.005Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Nebulizer",
+        "target": "Micro Flow Nebulizer PFA-100",
+        "timestamp": "2026-03-17T04:40:58.440Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G8400-60258",
+        "target": "Electron multiplier for ICP-MS",
+        "timestamp": "2026-03-17T04:41:27.666Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: EM",
+        "target": "Electron multiplier for ICP-MS",
+        "timestamp": "2026-03-17T04:41:45.126Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 046138, AG14(2x50mm)",
+        "target": "Guard Column(2mm)",
+        "timestamp": "2026-03-17T04:44:07.308Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 046134, AG14(4x50mm)",
+        "target": "Guard Column(4mm)",
+        "timestamp": "2026-03-17T04:44:14.132Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 046129, AS14(2x250mm)",
+        "target": "Analysis Column(2mm)",
+        "timestamp": "2026-03-17T04:44:20.686Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: IC SI-50 4E, 5UM 4.0x250mm, Shodex",
+        "target": "Analysis Column(4mm)",
+        "timestamp": "2026-03-17T04:44:27.410Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 088667, ADRS600, 2MM",
+        "target": "Suppressor(2mm 음이온)",
+        "timestamp": "2026-03-17T04:44:36.571Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 088666, PROD,ADRS600,4MM",
+        "target": "Suppressor(4mm 음이온)",
+        "timestamp": "2026-03-17T04:44:47.710Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 9000-1292, Kit,Vac DG Ch,Sm Bore AF,14ft",
+        "target": "Degasser",
+        "timestamp": "2026-03-17T04:44:55.625Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 3Way HP M3 Threaded Valve 24VDC, Nresearch",
+        "target": "Solenoid Valve(MHPNLBT032)",
+        "timestamp": "2026-03-17T04:45:04.436Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 2WAY (G) USB3-6-3-E_DC 24V_AMC용",
+        "target": "Solenoid Valve",
+        "timestamp": "2026-03-17T04:45:13.894Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 880203, 10ML SEAL KIT, STS",
+        "target": "HPLC Pump Piston Seal Kit",
+        "timestamp": "2026-03-17T04:45:20.970Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 880616, PK PULSE DAMPER W/O XDCR",
+        "target": "Pulse dampener(301)",
+        "timestamp": "2026-03-17T04:45:27.321Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: UN815KNI, 115V(미국용)",
+        "target": "Vacuum Pump",
+        "timestamp": "2026-03-17T04:45:35.390Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 024489 for N815 (815 부품)",
+        "target": "Diaphragm",
+        "timestamp": "2026-03-17T04:45:44.866Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 027473 for N838 (838 부품)",
+        "target": "Diaphragm",
+        "timestamp": "2026-03-17T04:45:52.490Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: C15-310, 1/16*75mm, 75C/250psi liq",
+        "target": "Rotor seal_ Switching valve",
+        "timestamp": "2026-03-17T04:45:59.897Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: C25Z-386_ SW/V Stator seal (C25Z용)",
+        "target": "Stator face_ Switching valve",
+        "timestamp": "2026-03-17T04:46:10.719Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: C2-23R6, 1/16*0.4mm, 50C/5000psi liq",
+        "target": "Rotor seal_ Injector",
+        "timestamp": "2026-03-17T04:46:17.633Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 81320, 1mL, Hamilton",
+        "target": "Syringe(1mL)",
+        "timestamp": "2026-03-17T04:46:24.364Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 81420, 2.5mL, Hamilton",
+        "target": "Syringe(2.5mL)",
+        "timestamp": "2026-03-17T04:46:30.972Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: Eluent 용, Type Ⅰ",
+        "target": "레벨센서",
+        "timestamp": "2026-03-17T04:46:37.922Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 160553, HEAD KIT,PK,10ML,STD",
+        "target": "HPLC PUMP HEAD KIT",
+        "timestamp": "2026-03-17T04:49:58.099Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 045742 for N830 (N830부품)",
+        "target": "Diaphragm",
+        "timestamp": "2026-03-17T04:50:32.994Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: PM27597-NMP830, 12V",
+        "target": "Diaphragm Pump",
+        "timestamp": "2026-03-17T04:50:44.901Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: PM27597-NMP830, 12V",
+        "target": "Diaphragm Pump",
+        "timestamp": "2026-03-17T04:50:52.806Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: SMC_ITV1030-212CL_0.5Mpa",
+        "target": "ELECTRIC REGULATOR",
+        "timestamp": "2026-03-17T04:51:02.806Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 880354, 10ML SER3 REPLACEMENT PISTON",
+        "target": "Piston Assembly",
+        "timestamp": "2026-03-17T04:51:13.934Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 2680CGUU44,130LPM,230V,50/60Hz공용(피팅포함)",
+        "target": "Vacuum Pump[Thomas-P], 4/1 Connector",
+        "timestamp": "2026-03-17T04:51:21.792Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 402041, for MPC 601 E",
+        "target": "Welch Part, 서비스킷",
+        "timestamp": "2026-03-17T04:51:29.086Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: M3030V AIR 10SLPM (VITON,1/4\") 15Vdc",
+        "target": "MFC",
+        "timestamp": "2026-03-17T04:51:36.066Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: M3030V AIR 5SLPM (VITON,1/4\") 15Vdc",
+        "target": "MFC",
+        "timestamp": "2026-03-17T04:52:21.765Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: LZM-WO/1-5LPM, OEM, POC1/4-01MW",
+        "target": "Flow meter(Outlet valve)",
+        "timestamp": "2026-03-17T04:52:32.870Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: WF301 ＆ SM301 (양)",
+        "target": "Sampler body",
+        "timestamp": "2026-03-17T04:52:39.424Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: Ferrules for 1/16 OD tubing Blue ETFE",
+        "target": "P-200",
+        "timestamp": "2026-03-17T04:52:47.880Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 1/4-28 Nuts for 1/16 tubing WhiteDelrin",
+        "target": "P-203",
+        "timestamp": "2026-03-17T04:52:54.934Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: Plug fitting, PFA",
+        "target": "P-316",
+        "timestamp": "2026-03-17T04:53:03.480Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: Flngls sys Blk Peek 1/4in",
+        "target": "XU-655",
+        "timestamp": "2026-03-17T04:53:11.380Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: Headless M6 Nut, 1/16in Short",
+        "target": "P-213",
+        "timestamp": "2026-03-17T04:53:18.224Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: SF Ferrule, 1/16 PEEK w/SS Ring",
+        "target": "P-250",
+        "timestamp": "2026-03-17T04:53:25.922Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: DCF2-2N-S",
+        "target": "Fitting Female 1/8 NPT-1/8",
+        "timestamp": "2026-03-17T04:53:34.394Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: FEP 3*2*100m, NATURAL, Samplingcoil, Yodogawa",
+        "target": "FEP TUBE",
+        "timestamp": "2026-03-17T04:53:47.010Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: MT-F-125062, 1.59mm, 1000FT",
+        "target": "TUBE_1/8＂FEP(300M)",
+        "timestamp": "2026-03-17T04:53:57.280Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 880469",
+        "target": "10mL Self Flush ASSY",
+        "timestamp": "2026-03-17T04:54:04.814Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 3 WAY USG3-X1476-FL-634209-DC24V, 3.0",
+        "target": "Solenoid valve",
+        "timestamp": "2026-03-17T04:54:12.900Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 20738421, XLP6K 3P 1/4-28",
+        "target": "Syringe Pump(TECAN)",
+        "timestamp": "2026-03-17T04:54:21.766Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 10013, 3Port, PCTFE/PTFE",
+        "target": "Syringe pump, C3000",
+        "timestamp": "2026-03-17T04:54:50.782Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 2647017, 1mL, ILS",
+        "target": "Syringe(1mL)",
+        "timestamp": "2026-03-17T04:55:27.258Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 2647037, 2.5mL, ILS",
+        "target": "Syringe(2.5mL)",
+        "timestamp": "2026-03-17T04:55:53.922Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 내경0.03\" 3바퀴반",
+        "target": "REACTOR_WF301용",
+        "timestamp": "2026-03-17T04:56:08.523Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: SC-4-S",
+        "target": "1/4 cap",
+        "timestamp": "2026-03-17T04:56:16.264Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 3020008, 1mL, SETonic",
+        "target": "Syringe(1mL)",
+        "timestamp": "2026-03-17T04:57:18.610Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 3020009, 2.5mL, SETonic",
+        "target": "Syringe(2.5mL)",
+        "timestamp": "2026-03-17T04:57:55.154Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: G1321-60005, 8uL",
+        "target": "Agilent FLD standard flow cell(국내)",
+        "timestamp": "2026-03-17T04:58:04.490Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: HTV 0142-3, PTFE, DC24V, 7Bar, HSE",
+        "target": "3-Way Solenoid Valve",
+        "timestamp": "2026-03-17T04:58:41.972Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: TB-PLCS386 CPU 보드, MOQ(10) / 테크마스",
+        "target": "PLC386 CPU Board",
+        "timestamp": "2026-03-17T04:58:48.800Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 8비트 TR 출력 보드, MOQ(10) / 테크마스",
+        "target": "PLC386 TR8 Board",
+        "timestamp": "2026-03-17T04:58:55.444Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 8비트 IN 입력 보드, MOQ(10) / 테크마스",
+        "target": "PLC386 IN8 Board",
+        "timestamp": "2026-03-17T04:59:04.843Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: Leak Sensor Board / 유니랩코리아",
+        "target": "Leak Sensor Board",
+        "timestamp": "2026-03-17T04:59:14.379Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 10A(240W) output 24V / MEAN WALL",
+        "target": "SMPS:SDR-240-24(10A)",
+        "timestamp": "2026-03-17T04:59:24.920Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: CP30-BA 1P1-M 3A / 미쯔비시",
+        "target": "회로보호기",
+        "timestamp": "2026-03-17T04:59:31.952Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 1.34A output 15V / MEAN WALL",
+        "target": "SMPS:MDR-20-15(1.36A)",
+        "timestamp": "2026-03-17T04:59:38.766Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: T-PF-PC, 30*40*0.3T, C/GF/PTFE",
+        "target": "Leak Sensor(감지부)",
+        "timestamp": "2026-03-17T04:59:46.101Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: TFE CABLE, 4SQ_내산성",
+        "target": "Leak Sensor(케이블)",
+        "timestamp": "2026-03-17T04:59:53.466Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: Line connector_12mm*15mm",
+        "target": "Leak Sensor(커넥터)",
+        "timestamp": "2026-03-17T05:00:00.928Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: CP30-BA 1P1-M 7A / 미쯔비시",
+        "target": "회로보호기",
+        "timestamp": "2026-03-17T05:00:08.736Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: BM, Spec: 전 장비",
+        "target": "하네스 케이블",
+        "timestamp": "2026-03-17T05:00:21.285Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: GC(2mm)",
+        "target": "Guard Column(2mm)",
+        "timestamp": "2026-03-17T05:01:02.271Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: GC(4mm)",
+        "target": "Guard Column(4mm)",
+        "timestamp": "2026-03-17T05:01:07.284Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: AC(2mm)",
+        "target": "Analysis Column(2mm)",
+        "timestamp": "2026-03-17T05:01:14.958Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: AC(4mm)",
+        "target": "Analysis Column(4mm)",
+        "timestamp": "2026-03-17T05:01:24.155Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SRS(2mm)",
+        "target": "Suppressor(2mm 음이온)",
+        "timestamp": "2026-03-17T05:03:22.971Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SRS(4mm)",
+        "target": "Suppressor(4mm 음이온)",
+        "timestamp": "2026-03-17T05:03:29.150Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: DEGASSER",
+        "target": "Degasser",
+        "timestamp": "2026-03-17T05:03:44.354Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 3WAY_V(L)",
+        "target": "Solenoid Valve(MHPNLBT032)",
+        "timestamp": "2026-03-17T05:03:52.886Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 2WAY_V(G)",
+        "target": "Solenoid Valve",
+        "timestamp": "2026-03-17T05:03:57.820Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: HPLC SEAL",
+        "target": "HPLC Pump Piston Seal Kit",
+        "timestamp": "2026-03-17T05:04:04.102Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: HPLC DAMPER",
+        "target": "Pulse dampener(301)",
+        "timestamp": "2026-03-17T05:04:09.719Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 815PUMP",
+        "target": "Vacuum Pump",
+        "timestamp": "2026-03-17T05:04:15.122Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 다이아프램(815)",
+        "target": "Diaphragm",
+        "timestamp": "2026-03-17T05:04:22.513Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 다이아프램(838)",
+        "target": "Diaphragm",
+        "timestamp": "2026-03-17T05:04:27.265Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ROTOR SEAL(Sw/V)",
+        "target": "Rotor seal_ Switching valve",
+        "timestamp": "2026-03-17T05:04:31.998Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: STATOR(Sw/V)",
+        "target": "Stator face_ Switching valve",
+        "timestamp": "2026-03-17T05:04:51.090Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ROTOR SEAL(INJ)",
+        "target": "Rotor seal_ Injector",
+        "timestamp": "2026-03-17T05:04:59.082Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SYRINGE_1ML(H)",
+        "target": "Syringe(1mL)",
+        "timestamp": "2026-03-17T05:05:05.880Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SYRINGE_2.5ML(H)",
+        "target": "Syringe(2.5mL)",
+        "timestamp": "2026-03-17T05:05:11.944Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 레벨센서 (TYPE1)",
+        "target": "레벨센서",
+        "timestamp": "2026-03-17T05:05:16.853Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: HPLC HEAD KIT",
+        "target": "HPLC PUMP HEAD KIT",
+        "timestamp": "2026-03-17T05:05:57.606Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 다이아프램(830)",
+        "target": "Diaphragm",
+        "timestamp": "2026-03-17T05:06:02.796Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 830PUMP",
+        "target": "Diaphragm Pump",
+        "timestamp": "2026-03-17T05:06:10.067Z"
+    },
+    {
+        "action": "DELETE_ITEM_ADMIN",
+        "details": "",
+        "target": "Diaphragm Pump",
+        "timestamp": "2026-03-17T05:06:40.909Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: ELEC_Regulator",
+        "target": "ELECTRIC REGULATOR",
+        "timestamp": "2026-03-17T05:07:01.546Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: HPLC PISTON",
+        "target": "Piston Assembly",
+        "timestamp": "2026-03-17T05:07:06.481Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: V/P (Thomas)",
+        "target": "Vacuum Pump[Thomas-P], 4/1 Connector",
+        "timestamp": "2026-03-17T05:07:15.336Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: WELCH PART",
+        "target": "Welch Part, 서비스킷",
+        "timestamp": "2026-03-17T05:07:22.863Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: MFC_Linetech(10LPM)",
+        "target": "MFC",
+        "timestamp": "2026-03-17T05:07:42.248Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: MFC_Linetech(5LPM)",
+        "target": "MFC",
+        "timestamp": "2026-03-17T05:07:49.696Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: F/M (5LPM)",
+        "target": "Flow meter(Outlet valve)",
+        "timestamp": "2026-03-17T05:07:56.326Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SAMPLER (양)",
+        "target": "Sampler body",
+        "timestamp": "2026-03-17T05:08:00.796Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: FITTING (P200)",
+        "target": "P-200",
+        "timestamp": "2026-03-17T05:08:06.657Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: FITTING (P203)",
+        "target": "P-203",
+        "timestamp": "2026-03-17T05:08:11.011Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: FITTING (P316)",
+        "target": "P-316",
+        "timestamp": "2026-03-17T05:08:15.168Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: FITTING (XU655)",
+        "target": "XU-655",
+        "timestamp": "2026-03-17T05:08:21.097Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: FITTING (P213)",
+        "target": "P-213",
+        "timestamp": "2026-03-17T05:08:26.873Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: FITTING (P250)",
+        "target": "P-250",
+        "timestamp": "2026-03-17T05:08:31.932Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: FITTING (DCF-2N-S)",
+        "target": "Fitting Female 1/8 NPT-1/8",
+        "timestamp": "2026-03-17T05:08:38.480Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: TUBE (FEP_Air)",
+        "target": "FEP TUBE",
+        "timestamp": "2026-03-17T05:08:44.384Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: TUBE (FEP_Sol)",
+        "target": "TUBE_1/8＂FEP(300M)",
+        "timestamp": "2026-03-17T05:08:52.051Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: HPLC SELF FLUSH",
+        "target": "10mL Self Flush ASSY",
+        "timestamp": "2026-03-17T05:08:57.876Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 3WAY_V(G)",
+        "target": "Solenoid valve",
+        "timestamp": "2026-03-17T05:09:02.832Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SYRINGE PUMP (T)",
+        "target": "Syringe Pump(TECAN)",
+        "timestamp": "2026-03-17T05:09:13.430Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: S/P (C3000)",
+        "target": "Syringe pump, C3000",
+        "timestamp": "2026-03-17T05:09:25.964Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Syringe_1mL (ILS)",
+        "target": "Syringe(1mL)",
+        "timestamp": "2026-03-17T05:09:33.219Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Syringe_2.5mL (ILS)",
+        "target": "Syringe(2.5mL)",
+        "timestamp": "2026-03-17T05:09:38.825Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: TUBE (for REACTOR)",
+        "target": "REACTOR_WF301용",
+        "timestamp": "2026-03-17T05:09:44.777Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: CAP (1/4)",
+        "target": "1/4 cap",
+        "timestamp": "2026-03-17T05:09:51.168Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Syringe_1mL (SETo)",
+        "target": "Syringe(1mL)",
+        "timestamp": "2026-03-17T05:09:56.256Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: Syringe_2.5mL (SETo)",
+        "target": "Syringe(2.5mL)",
+        "timestamp": "2026-03-17T05:10:10.135Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: AGILENT CELL",
+        "target": "Agilent FLD standard flow cell(국내)",
+        "timestamp": "2026-03-17T05:10:19.804Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 3WAY",
+        "target": "3-Way Solenoid Valve",
+        "timestamp": "2026-03-17T05:10:30.888Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: PLC386(CPU)",
+        "target": "PLC386 CPU Board",
+        "timestamp": "2026-03-17T05:10:35.763Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: PLC386(TR8)",
+        "target": "PLC386 TR8 Board",
+        "timestamp": "2026-03-17T05:10:40.690Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: PLC386(IN8)",
+        "target": "PLC386 IN8 Board",
+        "timestamp": "2026-03-17T05:10:46.237Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: LEAK BOARD",
+        "target": "Leak Sensor Board",
+        "timestamp": "2026-03-17T05:10:51.550Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SMPS(10A)",
+        "target": "SMPS:SDR-240-24(10A)",
+        "timestamp": "2026-03-17T05:10:57.306Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 회로보호기(3A)",
+        "target": "회로보호기",
+        "timestamp": "2026-03-17T05:11:02.253Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: SMPS(1.36A)",
+        "target": "SMPS:MDR-20-15(1.36A)",
+        "timestamp": "2026-03-17T05:11:07.571Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: LEAK SENSOR(감지부)",
+        "target": "Leak Sensor(감지부)",
+        "timestamp": "2026-03-17T05:11:12.014Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: LEAK SENSOR(케이블)",
+        "target": "Leak Sensor(케이블)",
+        "timestamp": "2026-03-17T05:11:17.015Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: LEAK SENSOR(커넥터)",
+        "target": "Leak Sensor(커넥터)",
+        "timestamp": "2026-03-17T05:11:20.949Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 회로보호기(7A)",
+        "target": "회로보호기",
+        "timestamp": "2026-03-17T05:11:26.888Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 하네스케이블",
+        "target": "하네스 케이블",
+        "timestamp": "2026-03-17T05:11:35.084Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 830PUMP",
+        "target": "Diaphragm Pump",
+        "timestamp": "2026-03-17T05:12:14.356Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: 다이아프램(830)",
+        "target": "Diaphragm",
+        "timestamp": "2026-03-17T05:12:17.422Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: BM, Code: HPLC HEAD KIT",
+        "target": "HPLC PUMP HEAD KIT",
+        "timestamp": "2026-03-17T05:12:20.460Z"
+    },
+    {
+        "action": "DELETE_ITEM_ADMIN",
+        "details": "",
+        "target": "Vacuum Pump[Thomas-P], 4/1 Connector",
+        "timestamp": "2026-03-17T05:13:18.783Z"
+    },
+    {
+        "action": "DELETE_ITEM_ADMIN",
+        "details": "",
+        "target": "Guard Column(2mm)",
+        "timestamp": "2026-03-17T05:13:34.075Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 양이온 표준용액",
+        "target": "표준용액 (양)",
+        "timestamp": "2026-03-17T05:16:45.539Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 음이온 표준용액",
+        "target": "표준용액 (음)",
+        "timestamp": "2026-03-17T05:16:52.172Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 양이온 고농도 표준용액",
+        "target": "CRM표준용액 (양)",
+        "timestamp": "2026-03-17T05:16:59.151Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 음이온 고농도 표준용액",
+        "target": "CRM표준용액 (음)",
+        "timestamp": "2026-03-17T05:17:06.116Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 양이온 고농축 용액",
+        "target": "MAIN 용액 (양)",
+        "timestamp": "2026-03-17T05:17:14.294Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: ",
+        "target": "MAIN 용액 (음)",
+        "timestamp": "2026-03-17T05:17:22.534Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 버퍼 용액",
+        "target": "버퍼 용액",
+        "timestamp": "2026-03-17T05:17:30.498Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 103L-248-0.5",
+        "target": "이소부틸렌 (0.5ppm)",
+        "timestamp": "2026-03-17T05:17:38.263Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 103L-248-1",
+        "target": "이소부틸렌 (1ppm)",
+        "timestamp": "2026-03-17T05:17:51.446Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 103L-248-10",
+        "target": "이소부틸렌 (10ppm)",
+        "timestamp": "2026-03-17T05:17:57.316Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 표준가스(10) + Cal 비용",
+        "target": "이소부틸렌 (10ppm)",
+        "timestamp": "2026-03-17T05:18:12.084Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 양이온 흡수액",
+        "target": "흡수액(양)",
+        "timestamp": "2026-03-17T05:18:19.985Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: Carrier",
+        "target": "DI",
+        "timestamp": "2026-03-17T05:18:26.952Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 음이온 용리액",
+        "target": "ELUENT",
+        "timestamp": "2026-03-17T05:18:34.257Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 음이온 흡수액",
+        "target": "흡수액(음)",
+        "timestamp": "2026-03-17T05:18:41.549Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: IAM7000 고농축",
+        "target": "KOH",
+        "timestamp": "2026-03-17T05:18:48.515Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: SOT",
+        "target": "STD gas",
+        "timestamp": "2026-03-17T05:18:55.356Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: P9 중형2공장 사용 10ppm",
+        "target": "P9 중형 표준가스",
+        "timestamp": "2026-03-17T05:19:02.548Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 표준용액(양)",
+        "target": "표준용액 (양)",
+        "timestamp": "2026-03-17T05:19:47.617Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 표준용액(음)",
+        "target": "표준용액 (음)",
+        "timestamp": "2026-03-17T05:19:51.107Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: CRM (양)",
+        "target": "CRM표준용액 (양)",
+        "timestamp": "2026-03-17T05:19:54.586Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: CRM (음)",
+        "target": "CRM표준용액 (음)",
+        "timestamp": "2026-03-17T05:19:58.448Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: MAIN (양)",
+        "target": "MAIN 용액 (양)",
+        "timestamp": "2026-03-17T05:20:02.768Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: MAIN (음)",
+        "target": "MAIN 용액 (음)",
+        "timestamp": "2026-03-17T05:20:09.426Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: BUFFER",
+        "target": "버퍼 용액",
+        "timestamp": "2026-03-17T05:20:13.466Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(0.5)",
+        "target": "이소부틸렌 (0.5ppm)",
+        "timestamp": "2026-03-17T05:20:17.382Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(1)",
+        "target": "이소부틸렌 (1ppm)",
+        "timestamp": "2026-03-17T05:20:21.264Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(10)",
+        "target": "이소부틸렌 (10ppm)",
+        "timestamp": "2026-03-17T05:20:24.634Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(P9)",
+        "target": "이소부틸렌 (10ppm)",
+        "timestamp": "2026-03-17T05:20:28.692Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ABS.(양)",
+        "target": "흡수액(양)",
+        "timestamp": "2026-03-17T05:20:32.779Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: DI",
+        "target": "DI",
+        "timestamp": "2026-03-17T05:20:37.018Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ELUENT",
+        "target": "ELUENT",
+        "timestamp": "2026-03-17T05:20:43.770Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ABS.(음)",
+        "target": "흡수액(음)",
+        "timestamp": "2026-03-17T05:20:48.884Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: KOH",
+        "target": "KOH",
+        "timestamp": "2026-03-17T05:20:55.585Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 표준용액(양)",
+        "target": "표준용액 (양)",
+        "timestamp": "2026-03-17T05:23:06.168Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 표준용액(음)",
+        "target": "표준용액 (음)",
+        "timestamp": "2026-03-17T05:23:09.820Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: CRM (양)",
+        "target": "CRM표준용액 (양)",
+        "timestamp": "2026-03-17T05:23:13.058Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: CRM (음)",
+        "target": "CRM표준용액 (음)",
+        "timestamp": "2026-03-17T05:23:16.313Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: MAIN (양)",
+        "target": "MAIN 용액 (양)",
+        "timestamp": "2026-03-17T05:23:20.554Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: MAIN (음)",
+        "target": "MAIN 용액 (음)",
+        "timestamp": "2026-03-17T05:23:24.192Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: BUFFER",
+        "target": "버퍼 용액",
+        "timestamp": "2026-03-17T05:23:38.292Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(0.5)",
+        "target": "이소부틸렌 (0.5ppm)",
+        "timestamp": "2026-03-17T05:23:43.438Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(1)",
+        "target": "이소부틸렌 (1ppm)",
+        "timestamp": "2026-03-17T05:23:47.136Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(10)",
+        "target": "이소부틸렌 (10ppm)",
+        "timestamp": "2026-03-17T05:23:49.829Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(P9)",
+        "target": "이소부틸렌 (10ppm)",
+        "timestamp": "2026-03-17T05:23:57.896Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(0.5)",
+        "target": "이소부틸렌 (0.5ppm)",
+        "timestamp": "2026-03-17T05:24:11.256Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(1)",
+        "target": "이소부틸렌 (1ppm)",
+        "timestamp": "2026-03-17T05:24:14.430Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: TVOC STD(10)",
+        "target": "이소부틸렌 (10ppm)",
+        "timestamp": "2026-03-17T05:24:17.136Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ABS.(양)",
+        "target": "흡수액(양)",
+        "timestamp": "2026-03-17T05:24:22.970Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: DI",
+        "target": "DI",
+        "timestamp": "2026-03-17T05:24:25.685Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ELUENT",
+        "target": "ELUENT",
+        "timestamp": "2026-03-17T05:24:28.413Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: ABS.(음)",
+        "target": "흡수액(음)",
+        "timestamp": "2026-03-17T05:24:31.375Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: KOH",
+        "target": "KOH",
+        "timestamp": "2026-03-17T05:24:35.954Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: SOT 표준 가스",
+        "target": "STD gas",
+        "timestamp": "2026-03-17T05:24:38.876Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 표준가스(P9)",
+        "target": "P9 중형 표준가스",
+        "timestamp": "2026-03-17T05:24:45.450Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: Metal STD (10ppb,3%)",
+        "target": "Metal Standard Solution(3%HNO3)",
+        "timestamp": "2026-03-17T05:25:06.318Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: 5ppb Multi(4종), 1%HNO3",
+        "target": "Metal Standard Solution(1%HNO3)",
+        "timestamp": "2026-03-17T05:25:57.860Z"
+    },
+    {
+        "action": "ADD_ITEM_ADMIN",
+        "details": "Type: PM, Spec: WIM-100 Cal 질산보정",
+        "target": "9.5% HNO3",
+        "timestamp": "2026-03-17T05:26:39.639Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: Metal STD (5ppb,1%)",
+        "target": "Metal Standard Solution(1%HNO3)",
+        "timestamp": "2026-03-17T05:26:51.290Z"
+    },
+    {
+        "action": "UPDATE_ITEM_ADMIN_DETAIL",
+        "details": "Type: PM, Code: 9.5% HNO3",
+        "target": "9.5% HNO3",
+        "timestamp": "2026-03-17T05:26:58.260Z"
+    },
+    {
+        "timestamp": "2026-03-17T05:55:41.637Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Alarm] PLC Alarm"
+    },
+    {
+        "timestamp": "2026-03-17T05:55:49.691Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Alarm] Exhaust Alarm"
+    },
+    {
+        "timestamp": "2026-03-17T05:55:53.482Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Alarm] GN2 Alarm"
+    },
+    {
+        "timestamp": "2026-03-17T05:55:58.717Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Alarm] Water Sensor Alarm"
+    },
+    {
+        "timestamp": "2026-03-17T05:56:05.145Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Alarm] HF Sensor Alarm"
+    },
+    {
+        "timestamp": "2026-03-17T05:56:13.058Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Alarm] Mass Hunter Alarm"
+    },
+    {
+        "timestamp": "2026-03-17T05:56:18.930Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Alarm] EMS Alarm"
+    },
+    {
+        "timestamp": "2026-03-17T05:56:25.698Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Alarm] Inner Leak  Alarm"
+    },
+    {
+        "timestamp": "2026-03-17T05:56:38.409Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Alarm] External Leak Alarm"
+    },
+    {
+        "timestamp": "2026-03-17T05:56:46.817Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Alarm] Door Lock Alarm"
+    },
+    {
+        "timestamp": "2026-03-17T05:59:07.330Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Data / Para 이상] Calibration Fail"
+    },
+    {
+        "timestamp": "2026-03-17T05:59:17.794Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Data / Para 이상] 감도 Spec. Out"
+    },
+    {
+        "timestamp": "2026-03-17T05:59:43.594Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Data / Para 이상] Parameter 값 이상"
+    },
+    {
+        "timestamp": "2026-03-17T05:59:54.738Z",
+        "action": "ADD_CHECK_ITEM",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "details": "항목 추가: [Data / Para 이상] 데이터 트렌드 이상"
+    }
+]

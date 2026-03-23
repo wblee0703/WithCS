@@ -1,0 +1,194 @@
+[
+    {
+        "action": "ADD_LOG",
+        "details": "[장비점검] ad (작업자: asdsad, 날짜: 2026-03-16)",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-16T07:02:17.768Z"
+    },
+    {
+        "action": "UPDATE_MEMO",
+        "details": "메모 수정 (LogID: 1773644537768)",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-16T07:02:20.008Z"
+    },
+    {
+        "action": "UPDATE_MEMO",
+        "details": "메모 수정 (LogID: 1773644537768)",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-16T07:02:23.778Z"
+    },
+    {
+        "action": "ADD_MAINTENANCE",
+        "details": "[PM] Stadnard (주기: 30일, 시작일: 2026-03-16)",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-16T07:59:08.939Z"
+    },
+    {
+        "action": "ADD_LOG",
+        "details": "[정기 - PM] Stadnard (작업자: 이원배, 날짜: 2026-03-16)",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-16T23:42:01.377Z"
+    },
+    {
+        "action": "ADD_MAINTENANCE",
+        "details": "[PM] Stadnard (주기: 30일, 시작일: 2026-03-17)",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-17T00:28:28.604Z"
+    },
+    {
+        "action": "DELETE_MAINTENANCE",
+        "details": "삭제: Stadnard (ID: 1773647948939)",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-17T00:28:33.832Z"
+    },
+    {
+        "action": "ADD_LOG",
+        "details": "[비정기 - BM] 몰라 (작업자: 이원배, 날짜: 2026-03-17)",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-17T00:52:36.460Z"
+    },
+    {
+        "action": "ADD_LOG",
+        "details": "[고객대응 - 프로그램 변경 / 평가] Ver. (작업자: 이원배, 날짜: 2026-03-17)",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-17T01:03:28.698Z"
+    },
+    {
+        "action": "ADD_LOG",
+        "details": "[비정기 - Data / Para 이상] 데이ㅓ라ㅣㅇ나ㅣㅓ라ㅣㄴ엄런ㅇ라ㅣㅇㅇㄴ (작업자: 이원배 진봉균, 날짜: 2026-03-17)",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-17T01:05:00.450Z"
+    },
+    {
+        "action": "ADD_LOG",
+        "details": "[비정기 - BM] Ver. (작업자: 이원배, 날짜: 2026-03-17)",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-17T02:05:39.440Z"
+    },
+    {
+        "action": "DELETE_LOG",
+        "details": "삭제: 2026-03-17 Ver.",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-17T02:07:08.688Z"
+    },
+    {
+        "action": "UPDATE_CHECK_CATEGORY",
+        "details": "분류명 수정: PM -> PM 점검",
+        "target": "SOMA-2000",
+        "timestamp": "2026-03-17T03:58:35.897Z"
+    },
+    {
+        "action": "UPDATE_CHECK_CATEGORY",
+        "details": "분류명 수정: PM -> PM 점검",
+        "target": "SOMA-2000",
+        "timestamp": "2026-03-17T03:58:42.545Z"
+    },
+    {
+        "action": "UPDATE_CHECK_CATEGORY",
+        "details": "분류명 수정: BM -> BM 점검",
+        "target": "SOMA-2000",
+        "timestamp": "2026-03-17T03:58:59.097Z"
+    },
+    {
+        "action": "LOAD_ITEM_TO_CHECK",
+        "details": "물품 불러오기: PM 점검",
+        "target": "SOMA-2000::SOMA-H19-0903",
+        "timestamp": "2026-03-17T04:10:31.316Z"
+    },
+    {
+        "action": "LOAD_ITEM_TO_CHECK",
+        "details": "물품 불러오기: PM 점검",
+        "target": "SOMA-2000::SOMA-H19-0402",
+        "timestamp": "2026-03-17T04:13:07.116Z"
+    },
+    {
+        "action": "UPDATE_CHECK_CATEGORY",
+        "details": "분류명 수정: PM -> PM 점검",
+        "target": "SOMA-3000E",
+        "timestamp": "2026-03-17T04:14:57.353Z"
+    },
+    {
+        "action": "UPDATE_CHECK_CATEGORY",
+        "details": "분류명 수정: PM -> PM 점검",
+        "target": "SOMA-3000E",
+        "timestamp": "2026-03-17T04:16:03.034Z"
+    },
+    {
+        "action": "UPDATE_CHECK_CATEGORY",
+        "details": "분류명 수정: BM -> BM 점검",
+        "target": "SOMA-3000E",
+        "timestamp": "2026-03-17T04:16:08.273Z"
+    },
+    {
+        "action": "UPDATE_CHECK_CATEGORY",
+        "details": "분류명 수정: PM -> PM 점검",
+        "target": "SOLA-1000",
+        "timestamp": "2026-03-17T04:16:20.377Z"
+    },
+    {
+        "action": "UPDATE_CHECK_CATEGORY",
+        "details": "분류명 수정: PM -> PM 점검",
+        "target": "SOMA-2000",
+        "timestamp": "2026-03-17T04:16:47.154Z"
+    },
+    {
+        "action": "UPDATE_CHECK_CATEGORY",
+        "details": "분류명 수정: PM -> PM 점검",
+        "target": "SOMA-2000",
+        "timestamp": "2026-03-17T04:16:59.179Z"
+    },
+    {
+        "action": "UPDATE_CHECK_CATEGORY",
+        "details": "분류명 수정: BM -> BM 점검",
+        "target": "SOMA-2000",
+        "timestamp": "2026-03-17T04:17:03.098Z"
+    },
+    {
+        "action": "LOAD_ITEM_TO_CHECK",
+        "details": "물품 불러오기: PM 점검",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-17T05:27:29.424Z"
+    },
+    {
+        "action": "ADD_MAINTENANCE",
+        "details": "[PM] Metal Standard Solution(1%HNO3) (주기: 30일, 시작일: 2026-03-17)",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-17T05:32:31.317Z"
+    },
+    {
+        "action": "ADD_MAINTENANCE",
+        "details": "[PM] 9.5% HNO3 (주기: 30일, 시작일: 2026-03-17)",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-17T05:32:36.150Z"
+    },
+    {
+        "action": "ADD_MAINTENANCE",
+        "details": "[PM] Pt Skimmer cone for 7700S (주기: 182일, 시작일: 2026-03-17)",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-17T05:32:39.662Z"
+    },
+    {
+        "action": "ADD_MAINTENANCE",
+        "details": "[PM] Pt Skimmer cone for 7700S (주기: 182일, 시작일: 2026-03-17)",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-17T05:32:42.427Z"
+    },
+    {
+        "action": "ADD_MAINTENANCE",
+        "details": "[PM] Pt Sampling cone for 7700S (주기: 182일, 시작일: 2026-03-17)",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-17T05:32:46.471Z"
+    },
+    {
+        "action": "ADD_MAINTENANCE",
+        "details": "[PM] Extraction-omega lens assembly (주기: 365일, 시작일: 2026-03-17)",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-17T05:32:51.402Z"
+    },
+    {
+        "action": "DELETE_MAINTENANCE",
+        "details": "삭제: Pt Skimmer cone for 7700S (ID: 1773725559662)",
+        "target": "WIM-100::WIM1-HK24-0401",
+        "timestamp": "2026-03-17T05:32:59.025Z"
+    }
+]

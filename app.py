@@ -233,6 +233,8 @@ def create_daily_backup(filepath):
 
 # GitHub 자동 동기화
 def git_push_data():
+    # [비활성화] 데이터는 PythonAnywhere 서버에만 저장하고 GitHub에는 올리지 않음
+    return
     try:
         if not os.path.exists(os.path.join(BASE_DIR, '.git')):
             return
@@ -259,6 +261,8 @@ def git_push_data():
 
 # [추가] GitHub 데이터 가져오기 (Pull)
 def git_pull_data():
+    # [비활성화] 데이터는 PythonAnywhere 서버에만 저장하고 GitHub에는 올리지 않음
+    return
     try:
         if not os.path.exists(os.path.join(BASE_DIR, '.git')):
             return
@@ -497,8 +501,8 @@ def save_data(full_data):
         save_json_file(FILE_ITEM, item_data)
         save_json_file(FILE_MANAGEMENT, management_data)
         
-        # 5. Git 동기화 (비동기)
-        Thread(target=git_push_data).start()
+        # 5. Git 동기화 (비동기) - 비활성화됨
+        # Thread(target=git_push_data).start()
 
 # ------------------------------------------------------------------------------
 # 5. Decorators & Middlewares
@@ -947,8 +951,8 @@ init_db()
 
 if __name__ == '__main__':
     
-    # [추가] 서버 시작 시 GitHub에서 최신 데이터 동기화
-    git_pull_data()
+    # [추가] 서버 시작 시 GitHub에서 최신 데이터 동기화 - 비활성화됨
+    # git_pull_data()
     
     port = int(os.environ.get("APP_PORT", 5500))
     if not os.environ.get("WERKZEUG_RUN_MAIN"):

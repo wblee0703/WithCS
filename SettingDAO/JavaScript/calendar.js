@@ -9,6 +9,7 @@ var currentSearchFilters = { site: '', equip: '' };
 let currentScheduleTarget = null;
 let currentDetailTarget = null;
 let expandedViewId = null;
+let currentNextScheduleTarget = null; // [추가] 다음 작업 예정일 타겟
 
 // [추가] 공통 함수 폴백 (common.js 누락 대비)
 if (typeof window.getHolidayName !== 'function') {
@@ -22,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventDetailModal();
     setupRegisterScheduleModal();
     setupSearchModal();
+    setupNextScheduleModal(); // [추가]
 
     // 드롭다운 외부 클릭 시 닫기
     document.addEventListener('click', (e) => {
@@ -79,13 +81,15 @@ function getScheduleForCalendar() {
                         data.logs.forEach(log => {
                             if (log.date) {
                                 if (!events[log.date]) events[log.date] = [];
+                                const isChanged = log.detailType === '일정변경';
                                 events[log.date].push({
                                     site,
                                     equip,
                                     type: log.type || '정기',
                                     content: log.content || log.memo || '내용 없음',
                                     id: log.id,
-                                    isCompleted: true,
+                                    isCompleted: !isChanged,
+                                    isChanged: isChanged,
                                     md: log.md || 0
                                 });
                             }
@@ -101,7 +105,7 @@ function getScheduleForCalendar() {
 /**
  * 일정 날짜 설정 (등록/수정/삭제)
  */
-function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null) {
+function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null, providedReason = undefined) {
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
 
@@ -109,6 +113,42 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null) 
         const index = data.maint.findIndex(i => i.id === id);
         if (index > -1) {
             const item = data.maint[index];
+            const oldDate = item.scheduledDate;
+
+            // [추가] 확정된 월의 일정이 변경/삭제되는 경우 사유 확인 및 이력 생성
+            if (item.scheduledDate && (isDelete || item.scheduledDate !== dateStr)) {
+                const [y, m] = item.scheduledDate.split('-').map(Number);
+                const confs = JSON.parse(localStorage.getItem('calendar_confirmations')) || {};
+                const yyyyMm = `${y}-${String(m).padStart(2, '0')}`;
+                const monthConf = confs[yyyyMm];
+
+                const isGlobalConfirmed = monthConf && monthConf.count !== undefined;
+                const isSiteConfirmed = monthConf && (monthConf[site] !== undefined || (monthConf.siteCounts && monthConf.siteCounts[site] !== undefined));
+
+                if (isGlobalConfirmed || isSiteConfirmed) {
+                    let reason = providedReason;
+                    if (reason === undefined) {
+                        reason = prompt(`[${yyyyMm} 예정 확정됨]\n해당 월은 일정이 확정된 상태입니다.\n일정 ${isDelete ? '삭제' : '변경'} 사유를 입력해주세요:`);
+                        if (reason === null) return false; // 취소 시 중단
+                    }
+                    const actualReason = (reason && reason.trim()) ? reason.trim() : '사유 미입력';
+
+                    if (!data.logs) data.logs = [];
+                    data.logs.push({
+                        id: Date.now() + Math.floor(Math.random() * 10000), // 중복 방지
+                        date: item.scheduledDate, // 기존 날짜에 변경 이력 남김
+                        type: item.type || '정기',
+                        detailType: '일정변경',
+                        detailType2: '',
+                        content: `[변경] ${item.code ? item.code : item.content}`,
+                        costType: item.costType || '',
+                        md: '0',
+                        worker: sessionStorage.getItem('userId') || '',
+                        memo: `[일정 ${isDelete ? '삭제' : '변경'} 사유]\n${actualReason}\n\n[변경 내역]\n기존: ${item.scheduledDate}\n변경: ${isDelete ? '삭제됨' : dateStr}`
+                    });
+                }
+            }
+
             if (isDelete) {
                 delete item.scheduledDate;
                 delete item.md;
@@ -123,6 +163,12 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null) 
                 if (md !== null) {
                     item.md = md;
                 }
+                
+                const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
+                const newMonth = dateStr.substring(0, 7);
+                if (oldMonth !== newMonth) {
+                    if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
+                }
             }
             localStorage.setItem(key, JSON.stringify(data));
 
@@ -130,8 +176,10 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null) 
                 const action = isDelete ? 'DELETE_SCHEDULE' : 'ADD_SCHEDULE';
                 addSystemLog(action, equip, `Date: ${dateStr}, Content: ${item.content}`);
             }
+            return true;
         }
     }
+    return false;
 }
 
 /* ==========================================================================
@@ -340,8 +388,9 @@ function renderMonthGrid(year, month, titleId, gridId) {
                 });
             }
 
-            // [추가] 통계 계산
+            // [추가] 통계 계산 (일정 변경 이력은 카운트에서 제외하여 통계 왜곡 방지)
             dayEvents.forEach(event => {
+                if (event.content && event.content.startsWith('[변경]')) return;
                 monthTotalTasks++;
                 if (event.isCompleted) monthCompletedTasks++;
                 const mdVal = parseFloat(event.md);
@@ -351,12 +400,13 @@ function renderMonthGrid(year, month, titleId, gridId) {
             // 그룹화 로직
             const groupedEvents = {};
             dayEvents.forEach(event => {
-                const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.type}`;
+                const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}`;
                 if (!groupedEvents[key]) {
                     groupedEvents[key] = {
                         site: event.site,
                         equip: event.equip,
                         isCompleted: event.isCompleted,
+                        isChanged: event.isChanged,
                         type: event.type,
                         ids: [] // ID 목록 저장을 위해 배열 초기화
                     };
@@ -380,11 +430,11 @@ function renderMonthGrid(year, month, titleId, gridId) {
             renderGroups.forEach(group => {
                 const equipName = group.equip.split('::')[0];
                 const typeClass = `type-${group.type}`;
-                const completedClass = group.isCompleted ? 'completed' : '';
+                const completedClass = (group.isCompleted || group.isChanged) ? 'completed' : '';
 
                 // 드래그 속성 추가 (완료되지 않은 항목만)
                 let dragAttr = '';
-                if (!group.isCompleted) {
+                if (!group.isCompleted && !group.isChanged) {
                     const idsJson = JSON.stringify(group.ids).replace(/"/g, '&quot;');
                     dragAttr = `draggable="true" data-drag-site="${escapeHtml(group.site)}" data-drag-equip="${escapeHtml(group.equip)}" data-drag-ids="${idsJson}" ondragstart="handleCalendarDragStartFromData(event)" ondragend="this.classList.remove('dragging')"`;
                 }
@@ -434,11 +484,56 @@ function renderMonthGrid(year, month, titleId, gridId) {
         gridEl.appendChild(cell);
     }
 
-    // [추가] 통계 정보 포함하여 타이틀 업데이트
+    // [추가] 통계 정보 및 예정 확정 상태 업데이트
+    const confs = JSON.parse(localStorage.getItem('calendar_confirmations')) || {};
+    const yyyyMm = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const confirmedInfo = confs[yyyyMm];
+    
+    // [수정] 검색 필터에서 사업장이 "전체" (선택 안됨) 상태인지 확인
+    const isSiteAll = !currentSearchFilters.site;
+    const selectedSite = currentSearchFilters.site;
+
+    let baseTotal = monthTotalTasks;
+    let confirmBtnHtml = '';
+    let isConfirmedStatus = false;
+
+    if (isSiteAll) {
+        // 전체 사업장일 때는 버튼을 숨김 (개별 사업장 단위로만 확정 가능)
+        confirmBtnHtml = '';
+        if (confirmedInfo && confirmedInfo.count !== undefined) {
+            baseTotal = confirmedInfo.count; // 구버전 전체 확정 데이터 호환
+            isConfirmedStatus = true;
+        } else {
+            baseTotal = monthTotalTasks;
+        }
+    } else {
+        // 특정 사업장이 선택된 경우에만 버튼 표시 및 확정수 적용
+        let siteConfirmedCount = undefined;
+        if (confirmedInfo) {
+            if (confirmedInfo[selectedSite] && typeof confirmedInfo[selectedSite] === 'object') {
+                siteConfirmedCount = confirmedInfo[selectedSite].count;
+            } else if (confirmedInfo.siteCounts && confirmedInfo.siteCounts[selectedSite] !== undefined) {
+                siteConfirmedCount = confirmedInfo.siteCounts[selectedSite];
+            } else if (confirmedInfo.count !== undefined) {
+                // 구버전 글로벌 확정 상태일 때 호환성 처리
+                siteConfirmedCount = monthTotalTasks;
+            }
+        }
+
+        if (siteConfirmedCount !== undefined) {
+            baseTotal = siteConfirmedCount;
+            isConfirmedStatus = true;
+            confirmBtnHtml = `<button class="btn-gray" style="margin-left:10px; padding:2px 8px; font-size:11px; border-radius:4px; border:1px solid #30363d; background:#21262d; cursor:default;" onclick="event.stopPropagation();" disabled>예정 확정됨</button>`;
+        } else {
+            baseTotal = monthTotalTasks;
+            confirmBtnHtml = `<button class="btn-blue" style="margin-left:10px; padding:2px 8px; font-size:11px; border-radius:4px; font-weight:bold;" onclick="event.stopPropagation(); confirmMonthSchedule('${selectedSite}', ${year}, ${month}, ${monthTotalTasks})">예정 확정</button>`;
+        }
+    }
+
     const formattedMd = Number.isInteger(monthTotalMd) ? monthTotalMd : monthTotalMd.toFixed(1);
-    const progressRate = monthTotalTasks === 0 ? 0 : Math.round((monthCompletedTasks / monthTotalTasks) * 100);
+    const progressRate = baseTotal === 0 ? 0 : Math.round((monthCompletedTasks / baseTotal) * 100);
     titleEl.style.color = '';
-    titleEl.innerHTML = `${year}년 ${month + 1}월 <div style="font-size:12px; color:var(--cal-text-secondary); font-weight:normal; margin-top:5px; word-break:keep-all;">(진행률: ${progressRate}%, 작업수: ${monthTotalTasks}건, 완료: ${monthCompletedTasks}건, 공수: ${formattedMd}M/D)</div>`;
+    titleEl.innerHTML = `<div style="display:flex; align-items:center; justify-content:center;">${year}년 ${month + 1}월 ${confirmBtnHtml}</div><div style="font-size:12px; color:var(--cal-text-secondary); font-weight:normal; margin-top:5px; word-break:keep-all;">(진행률: ${progressRate}%, ${isConfirmedStatus ? '확정' : '작업'}수: ${baseTotal}건, 완료: ${monthCompletedTasks}건, 공수: ${formattedMd}M/D)</div>`;
 }
 
 function openCalendarPopup(dateStr, events) {
@@ -457,12 +552,13 @@ function openCalendarPopup(dateStr, events) {
     } else {
         const groupedEvents = {};
         events.forEach(event => {
-            const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.type}`;
+            const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}`;
             if (!groupedEvents[key]) {
                 groupedEvents[key] = {
                     site: event.site,
                     equip: event.equip,
                     isCompleted: event.isCompleted,
+                    isChanged: event.isChanged,
                     type: event.type,
                     items: []
                 };
@@ -471,13 +567,18 @@ function openCalendarPopup(dateStr, events) {
         });
 
         const groupedList = Object.values(groupedEvents);
-        groupedList.sort((a, b) => (a.isCompleted === b.isCompleted) ? 0 : a.isCompleted ? 1 : -1);
+        groupedList.sort((a, b) => {
+            const aDone = a.isCompleted || a.isChanged;
+            const bDone = b.isCompleted || b.isChanged;
+            if (aDone === bDone) return 0;
+            return aDone ? 1 : -1;
+        });
 
         groupedList.forEach(group => {
             const li = document.createElement('li');
             li.className = 'popup-event-item';
 
-            const textClass = group.isCompleted ? 'completed' : '';
+            const textClass = (group.isCompleted || group.isChanged) ? 'completed' : ''; // 변동 항목도 완료처럼 취소선 처리
             const parts = group.equip.split('::');
             const equipName = parts[0];
             const serialNo = parts.length > 1 ? parts[1] : '';
@@ -498,9 +599,17 @@ function openCalendarPopup(dateStr, events) {
                 completedSpan.textContent = '<완료>';
                 completedSpan.className = 'popup-completed-badge';
                 li.appendChild(completedSpan);
+            } else if (group.isChanged) {
+                const changedSpan = document.createElement('span');
+                changedSpan.textContent = '<변동>';
+                changedSpan.style.color = '#f0883e'; // 주황색 강조
+                changedSpan.style.marginLeft = 'auto';
+                changedSpan.style.fontWeight = 'bold';
+                changedSpan.style.fontSize = '12px';
+                li.appendChild(changedSpan);
             }
 
-            if (!group.isCompleted) {
+            if (!group.isCompleted && !group.isChanged) {
                 const delBtn = document.createElement('button');
                 delBtn.className = 'btn-calendar-del';
                 delBtn.textContent = '✕';
@@ -508,8 +617,26 @@ function openCalendarPopup(dateStr, events) {
                 delBtn.onclick = (e) => {
                     e.stopPropagation();
                     if (confirm('이 작업 예정일을 삭제하시겠습니까?')) {
+                        let reason = undefined;
+                        const sampleItem = group.items[0];
+                        if (sampleItem && sampleItem.scheduledDate) {
+                            const [y, m] = sampleItem.scheduledDate.split('-').map(Number);
+                            const confs = JSON.parse(localStorage.getItem('calendar_confirmations')) || {};
+                            const yyyyMm = `${y}-${String(m).padStart(2, '0')}`;
+                            const monthConf = confs[yyyyMm];
+                            if (monthConf) {
+                                const isGlobalConfirmed = monthConf.count !== undefined;
+                                const isSiteConfirmed = monthConf[sampleItem.site] !== undefined || (monthConf.siteCounts && monthConf.siteCounts[sampleItem.site] !== undefined);
+                                
+                                if (isGlobalConfirmed || isSiteConfirmed) {
+                                    reason = prompt(`[${yyyyMm} 예정 확정됨]\n해당 월은 일정이 확정되었습니다.\n일정 삭제 사유를 입력해주세요:`);
+                                    if (reason === null) return;
+                                }
+                            }
+                        }
+
                         group.items.forEach(item => {
-                            setScheduleDate(item.site, item.equip, item.id, '', true);
+                            setScheduleDate(item.site, item.equip, item.id, '', true, null, reason);
                         });
 
                         // UI 갱신 (배경 캘린더 및 대시보드)
@@ -541,7 +668,7 @@ function openCalendarPopup(dateStr, events) {
             }
 
             li.onclick = () => {
-                openEventDetailModal(group.site, group.equip, group.items[0].id, group.isCompleted);
+                openEventDetailModal(group.site, group.equip, group.items[0].id, group.isCompleted || group.isChanged);
             };
             list.appendChild(li);
         });
@@ -577,7 +704,8 @@ function setupScheduleModal() {
                 if (!date) return alert('날짜를 선택해주세요.');
                 if (!md) return alert('공수(M/D)를 입력해주세요.');
                 if (parseFloat(md) < 0) return alert('공수는 0 이상이어야 합니다.');
-                setScheduleDate(currentScheduleTarget.site, currentScheduleTarget.equip, currentScheduleTarget.id, date, false, md);
+                const success = setScheduleDate(currentScheduleTarget.site, currentScheduleTarget.equip, currentScheduleTarget.id, date, false, md);
+                if (success === false) return; // 사용자가 사유 입력을 취소한 경우 중단
                 modal.style.display = 'none';
                 if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
                 renderCalendar();
@@ -588,7 +716,8 @@ function setupScheduleModal() {
     if (delBtn) {
         delBtn.onclick = () => {
             if (currentScheduleTarget && confirm('일정을 삭제하시겠습니까?')) {
-                setScheduleDate(currentScheduleTarget.site, currentScheduleTarget.equip, currentScheduleTarget.id, '', true);
+                const success = setScheduleDate(currentScheduleTarget.site, currentScheduleTarget.equip, currentScheduleTarget.id, '', true);
+                if (success === false) return;
                 modal.style.display = 'none';
                 if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
                 renderCalendar();
@@ -764,7 +893,13 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         completeBtn.style.display = 'none';
         saveMemoBtn.style.display = 'none';
         if (editContentBtn) editContentBtn.style.display = 'none';
-        if (cancelBtn) cancelBtn.style.display = 'block'; // 완료된 상태면 취소 버튼 표시
+        if (cancelBtn) {
+            if (item.detailType === '일정변경') {
+                cancelBtn.style.display = 'none'; // 일정 변경 이력은 완료 취소 불가
+            } else {
+                cancelBtn.style.display = 'block'; // 일반 완료 상태면 취소 버튼 표시
+            }
+        }
     } else {
         // [수정] 저장된 작업자(취소된 내용)가 있으면 우선 사용
         workerInput.value = item.worker || localStorage.getItem('lastWorkerName') || sessionStorage.getItem('userId') || '';
@@ -773,7 +908,8 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         // [추가] 이전 점검 결과(메모) 불러오기
         let lastMemo = '';
         if (data.logs && data.logs.length > 0) {
-            const sortedLogs = [...data.logs].sort((a, b) => {
+            const validLogs = data.logs.filter(l => l.detailType !== '일정변경');
+            const sortedLogs = [...validLogs].sort((a, b) => {
                 if (b.date !== a.date) return b.date.localeCompare(a.date);
                 return b.id - a.id;
             });
@@ -1060,6 +1196,7 @@ function toggleDetailContentEdit() {
                             let existing = data.maint.find(m => m.type === itemType && (m.content === fullContent || (code && m.code === code) || m.content === val));
                             
                             if (existing) {
+                                const oldDate = existing.scheduledDate;
                                 existing.scheduledDate = targetDate;
                                 existing.detailType = itemDetailType;
                                 if (!existing.worker) existing.worker = item.worker || '';
@@ -1067,6 +1204,12 @@ function toggleDetailContentEdit() {
                                 if (!existing.md) existing.md = item.md || '';
                                 if (!existing.costType) existing.costType = item.costType || '';
                                 remainingIds.push(existing.id);
+                                
+                                const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
+                                const newMonth = targetDate.substring(0, 7);
+                                if (oldMonth !== newMonth) {
+                                    if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, targetDate, 1);
+                                }
                             } else {
                                 const newId = Date.now() + idx;
                                 data.maint.push({
@@ -1084,6 +1227,7 @@ function toggleDetailContentEdit() {
                                     md: item.md || ''
                                 });
                                 remainingIds.push(newId);
+                                if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, targetDate, 1);
                             }
                         });
 
@@ -1147,7 +1291,16 @@ function updateScheduleDateFromDetail() {
     const newDate = document.getElementById('detail-scheduled-date').value;
     if (!newDate) return alert('날짜를 선택해주세요.');
 
-    setScheduleDate(currentDetailTarget.site, currentDetailTarget.equip, currentDetailTarget.id, newDate);
+    const success = setScheduleDate(currentDetailTarget.site, currentDetailTarget.equip, currentDetailTarget.id, newDate);
+    if (success === false) {
+        const key = `details_${currentDetailTarget.site}_${currentDetailTarget.equip}`;
+        const data = JSON.parse(localStorage.getItem(key)) || {};
+        const item = data.maint ? data.maint.find(i => i.id === currentDetailTarget.id) : null;
+        if (item && item.scheduledDate) {
+            document.getElementById('detail-scheduled-date').value = item.scheduledDate;
+        }
+        return;
+    }
     renderCalendar();
     if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
 
@@ -1252,12 +1405,102 @@ function completeScheduleWork() {
         addSystemLog('COMPLETE_SCHEDULE', equip, `Content: ${combinedContent}`);
     }
 
-    alert('작업이 완료되었습니다.');
     document.getElementById('event-detail-modal').style.display = 'none';
+
+    // [추가] 완료 후 다음 예정일 등록 모달 띄우기
+    const remainingIds = data.maint.filter(i => sameDayItems.some(s => s.id === i.id)).map(i => i.id);
+
+    if (remainingIds.length > 0) {
+        currentNextScheduleTarget = { site, equip, ids: remainingIds };
+        
+        let defaultNextDate = '';
+        const maxPeriod = Math.max(...sameDayItems.map(i => parseInt(i.period) || 0));
+        if (maxPeriod > 0) {
+            const dateObj = new Date(completeDate);
+            dateObj.setDate(dateObj.getDate() + maxPeriod);
+            defaultNextDate = dateObj.toISOString().split('T')[0];
+        }
+
+        const nextModal = document.getElementById('next-schedule-modal');
+        if (nextModal) {
+            const nextDateInput = document.getElementById('next-schedule-date-input');
+            nextDateInput.value = defaultNextDate;
+            nextDateInput.min = completeDate; // 작업 완료일 이전 날짜 선택 방지
+            document.getElementById('next-schedule-md-input').value = md; // 이전 공수 유지
+            nextModal.style.display = 'flex';
+        } else {
+            alert('작업이 완료되었습니다.');
+            window.refreshCalendarPopupAfterCompletion();
+        }
+    } else {
+        alert('작업이 완료되었습니다.');
+        window.refreshCalendarPopupAfterCompletion();
+    }
+}
+
+function setupNextScheduleModal() {
+    const modal = document.getElementById('next-schedule-modal');
+    const skipBtn = document.getElementById('btn-skip-next-schedule');
+    const saveBtn = document.getElementById('btn-save-next-schedule');
+
+    if (!modal) return;
+
+    if (skipBtn) {
+        skipBtn.onclick = () => {
+            modal.style.display = 'none';
+            window.refreshCalendarPopupAfterCompletion();
+        };
+    }
+
+    if (saveBtn) {
+        saveBtn.onclick = () => {
+            if (!currentNextScheduleTarget) return;
+
+            const dateInput = document.getElementById('next-schedule-date-input');
+            const mdInput = document.getElementById('next-schedule-md-input');
+            const newDate = dateInput.value;
+            const newMd = mdInput.value.trim();
+
+            if (!newDate) return alert('날짜를 선택해주세요.');
+            if (dateInput.min && newDate < dateInput.min) return alert('다음 예정일은 이전 작업일 이후 날짜로 선택해주세요.');
+
+            const { site, equip, ids } = currentNextScheduleTarget;
+            const key = `details_${site}_${equip}`;
+            let data = JSON.parse(localStorage.getItem(key)) || {};
+
+            if (data.maint) {
+                ids.forEach(id => {
+                    const item = data.maint.find(i => i.id === id);
+                    if (item) {
+                        const oldDate = item.scheduledDate;
+                        item.scheduledDate = newDate;
+                        if (newMd) item.md = newMd;
+                        
+                        const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
+                        const newMonth = newDate.substring(0, 7);
+                        if (oldMonth !== newMonth) {
+                            if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, newDate, 1);
+                        }
+                    }
+                });
+                localStorage.setItem(key, JSON.stringify(data));
+
+                if (typeof addSystemLog === 'function') {
+                    addSystemLog('ADD_SCHEDULE', equip, `Date: ${newDate}, Next Schedule Registered`);
+                }
+            }
+
+            modal.style.display = 'none';
+            alert('작업 완료 및 다음 예정일이 등록되었습니다.');
+            window.refreshCalendarPopupAfterCompletion();
+        };
+    }
+}
+
+window.refreshCalendarPopupAfterCompletion = function() {
     renderCalendar();
     if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
 
-    // [추가] 캘린더 팝업이 열려있다면 내용 갱신 (완료 상태 반영)
     const popup = document.getElementById('calendar-popup');
     if (popup && popup.style.display !== 'none') {
         const dateTitle = document.getElementById('popup-date-title');
@@ -1266,7 +1509,6 @@ function completeScheduleWork() {
             const allEvents = getScheduleForCalendar();
             let dayEvents = allEvents[dateStr] || [];
 
-            // 필터 재적용
             const searchInput = document.getElementById('calendar-search');
             const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
@@ -1282,7 +1524,7 @@ function completeScheduleWork() {
             openCalendarPopup(dateStr, dayEvents);
         }
     }
-}
+};
 
 function cancelScheduleCompletion() {
     if (!currentDetailTarget || !currentDetailTarget.isCompleted) return;
@@ -1652,11 +1894,18 @@ function confirmRegisterSchedule() {
         let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || (code && m.code === code) || m.content === itemText));
 
         if (existingItem) {
+            const oldDate = existingItem.scheduledDate;
             existingItem.scheduledDate = dateStr;
             existingItem.detailType = finalDetailType;
             if (costType) existingItem.costType = costType;
             existingItem.md = md;
             if (idx === 0) lastProcessedId = existingItem.id;
+            
+            const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
+            const newMonth = dateStr.substring(0, 7);
+            if (oldMonth !== newMonth) {
+                if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
+            }
         } else {
             const newItem = {
                 id: Date.now() + idx,
@@ -1672,6 +1921,8 @@ function confirmRegisterSchedule() {
             };
             if (idx === 0) lastProcessedId = newItem.id;
             data.maint.push(newItem);
+            
+            if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
         }
     });
 
@@ -2075,14 +2326,87 @@ window.handleCalendarDrop = function (e, newDate) {
         if (!ids || ids.length === 0) return;
 
         if (confirm(`${ids.length}건의 일정을 ${newDate}로 이동하시겠습니까?`)) {
+            const key = `details_${site}_${equip}`;
+            const data = JSON.parse(localStorage.getItem(key)) || {};
+            const firstItem = data.maint ? data.maint.find(i => i.id === ids[0]) : null;
+            let reason = undefined;
+            if (firstItem && firstItem.scheduledDate) {
+                const [y, m] = firstItem.scheduledDate.split('-').map(Number);
+                const confs = JSON.parse(localStorage.getItem('calendar_confirmations')) || {};
+                const yyyyMm = `${y}-${String(m).padStart(2, '0')}`;
+                const monthConf = confs[yyyyMm];
+                if (monthConf) {
+                    const isGlobalConfirmed = monthConf.count !== undefined;
+                    const isSiteConfirmed = monthConf[site] !== undefined || (monthConf.siteCounts && monthConf.siteCounts[site] !== undefined);
+                    
+                    if (isGlobalConfirmed || isSiteConfirmed) {
+                        reason = prompt(`[예정 확정됨]\n기존 예정일이 포함된 월은 일정이 확정되었습니다.\n일정 변경 사유를 입력해주세요:`);
+                        if (reason === null) return;
+                    }
+                }
+            }
+
             ids.forEach(id => {
-                setScheduleDate(site, equip, id, newDate);
+                setScheduleDate(site, equip, id, newDate, false, null, reason);
             });
             renderCalendar();
             if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
         }
     } catch (err) {
         console.error('Drop error:', err);
+    }
+};
+
+// [수정] 월별 작업 예정 확정 함수 (사업장별)
+window.confirmMonthSchedule = function(site, year, month, count) {
+    if (!confirm(`[${site}] ${year}년 ${month + 1}월의 예정 작업을 확정하시겠습니까?\n\n[확정 기준: ${count}건]\n확정 이후 해당 사업장의 일정을 변경하거나 삭제하면 사유를 입력해야 하며, 변경 이력이 로그에 남습니다.`)) {
+        return;
+    }
+
+    const confs = JSON.parse(localStorage.getItem('calendar_confirmations')) || {};
+    const yyyyMm = `${year}-${String(month + 1).padStart(2, '0')}`;
+    
+    if (!confs[yyyyMm]) confs[yyyyMm] = {};
+    
+    // 구버전 데이터(전체 통합)가 있을 경우, 구조를 분리형으로 변환
+    if (confs[yyyyMm].count !== undefined) {
+        const oldSiteCounts = confs[yyyyMm].siteCounts || {};
+        confs[yyyyMm] = oldSiteCounts;
+    }
+
+    confs[yyyyMm][site] = { count: count, confirmedAt: new Date().toISOString() };
+    localStorage.setItem('calendar_confirmations', JSON.stringify(confs));
+
+    if (typeof addSystemLog === 'function') {
+        addSystemLog('CONFIRM_SCHEDULE', yyyyMm, `[${site}] 작업수 ${count}건 확정`);
+    }
+    renderCalendar();
+};
+
+// [추가] 확정된 월의 작업수 누적 함수 (추가 등록 시 기준값 증가)
+window.incrementConfirmedCount = function(site, dateStr, delta) {
+    if (!dateStr || !site || !delta) return;
+    const [y, m] = dateStr.split('-').map(Number);
+    const yyyyMm = `${y}-${String(m).padStart(2, '0')}`;
+    const confs = JSON.parse(localStorage.getItem('calendar_confirmations')) || {};
+    const monthConf = confs[yyyyMm];
+
+    if (monthConf) {
+        let updated = false;
+        if (monthConf[site] && monthConf[site].count !== undefined) {
+            monthConf[site].count += delta;
+            updated = true;
+        } else if (monthConf.siteCounts && monthConf.siteCounts[site] !== undefined) {
+            monthConf.siteCounts[site] += delta;
+            monthConf.count += delta;
+            updated = true;
+        } else if (monthConf.count !== undefined && !monthConf.siteCounts) {
+            monthConf.count += delta;
+            updated = true;
+        }
+        if (updated) {
+            localStorage.setItem('calendar_confirmations', JSON.stringify(confs));
+        }
     }
 };
 

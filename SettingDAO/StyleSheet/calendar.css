@@ -355,6 +355,12 @@
     height: auto;
 }
 
+/* 다음 작업 예정일 등록 모달 전용 사이즈 (아담한 크기) */
+#next-schedule-modal .modal-window {
+    width: 350px;
+    height: auto;
+}
+
 #register-schedule-modal .modal-window {
     width: 500px;
     height: 650px;
@@ -367,7 +373,8 @@
 /* 팝업 위에 뜨는 2차 팝업 모달 z-index 충돌 방지 */
 #schedule-modal,
 #event-detail-modal,
-#register-schedule-modal {
+#register-schedule-modal,
+#next-schedule-modal {
     z-index: 9999 !important;
     pointer-events: auto !important;
 }
@@ -640,7 +647,8 @@
     }
 
     /* [요청] 점검 상세 정보 팝업 모바일 최적화 */
-    #event-detail-modal .modal-window {
+    #event-detail-modal .modal-window,
+    #next-schedule-modal .modal-window {
         width: 90% !important;
         height: auto !important;
         max-height: 80vh !important;
@@ -648,7 +656,8 @@
         min-height: 0 !important;
         resize: none;
     }
-    #event-detail-modal .modal-body { overflow-y: auto; }
+    #event-detail-modal .modal-body,
+    #next-schedule-modal .modal-body { overflow-y: auto; }
 
     /* [요청] 모바일 가로 모드(회전) 대응 */
     @media (orientation: landscape) {

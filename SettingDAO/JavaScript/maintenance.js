@@ -965,8 +965,11 @@ function renderLogs() {
         return;
     }
 
+    // [수정] 일정 변경(<변동>)으로 자동 생성된 이력은 장비 점검 이력 화면에서 숨김 처리
+    let displayLogs = data.logs.filter(log => log.detailType !== '일정변경');
+
     // 1. 최신순 정렬
-    let sortedLogs = data.logs.sort((a, b) => {
+    let sortedLogs = displayLogs.sort((a, b) => {
         if (b.date !== a.date) {
             return b.date.localeCompare(a.date); // 점검일 기준 내림차순 (최신 날짜 먼저)
         }

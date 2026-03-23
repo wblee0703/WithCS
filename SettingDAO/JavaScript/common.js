@@ -39,7 +39,7 @@ const originalRemoveItem = localStorage.removeItem;
 let syncDebounceTimer = null;
 
 // [추가] 동기화 대상 키 목록 정의 (데이터 분리 구조 완벽 대응)
-const SYNC_KEYS = ['device_data', 'setup_data', 'equipment_models', 'admin_items', 'check_type_categories', 'check_type_items'];
+const SYNC_KEYS = ['device_data', 'setup_data', 'equipment_models', 'admin_items', 'check_type_categories', 'check_type_items', 'calendar_confirmations'];
 
 function shouldSyncKey(key) {
     return SYNC_KEYS.includes(key) || key.startsWith('details_') || key.startsWith('site_meta_');
