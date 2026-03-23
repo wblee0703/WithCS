@@ -384,27 +384,6 @@
         "SOMA-3000E::SOMA-EK24-0403::정기": [
             "PM 점검"
         ],
-        "SOMA-3000E::SOMA-EK25-0401::고객대응": [
-            "순회 점검",
-            "프로그램 변경 / 평가",
-            "설비 평가",
-            "Parts 교체",
-            "업무 협조",
-            "설비 정상화",
-            "단순조치",
-            "설비 개조",
-            "Cal 보정",
-            "기타"
-        ],
-        "SOMA-3000E::SOMA-EK25-0401::비정기": [
-            "BM 점검",
-            "Alarm",
-            "Hunting",
-            "Data / Para 이상"
-        ],
-        "SOMA-3000E::SOMA-EK25-0401::정기": [
-            "PM 점검"
-        ],
         "TDM-100::Titrator::비정기": [
             "BM 점검",
             "Alarm",
@@ -490,6 +469,33 @@
             "용액제조"
         ],
         "WIM-100::WIM1-HK24-0401::정기": [
+            "PM 점검"
+        ],
+        "SOMA-3000E::SOMA-EK25-0401::고객대응": [
+            "순회 점검",
+            "프로그램 변경 / 평가",
+            "설비 평가",
+            "Parts 교체",
+            "업무 협조",
+            "설비 정상화",
+            "단순조치",
+            "설비 개조",
+            "Cal 보정",
+            "기타"
+        ],
+        "SOMA-3000E::SOMA-EK25-0401::비정기": [
+            "BM 점검",
+            "Alarm",
+            "Hunting",
+            "Data / Para 이상"
+        ],
+        "SOMA-3000E::SOMA-EK25-0401::온라인점검": [
+            "온라인점검"
+        ],
+        "SOMA-3000E::SOMA-EK25-0401::용액제조": [
+            "용액제조"
+        ],
+        "SOMA-3000E::SOMA-EK25-0401::정기": [
             "PM 점검"
         ]
     },
@@ -3977,141 +3983,6 @@
         "SOMA-3000E::SOMA-EK24-0403::비정기::Hunting::Air Peak_헌팅": [],
         "SOMA-3000E::SOMA-EK24-0403::용액제조::용액제조": [],
         "SOMA-3000E::SOMA-EK24-0403::정기::PM 점검": [],
-        "SOMA-3000E::SOMA-EK25-0401::고객대응::Cal 보정": [],
-        "SOMA-3000E::SOMA-EK25-0401::고객대응::Parts 교체": [],
-        "SOMA-3000E::SOMA-EK25-0401::고객대응::단순조치": [],
-        "SOMA-3000E::SOMA-EK25-0401::고객대응::설비 개조": [],
-        "SOMA-3000E::SOMA-EK25-0401::고객대응::설비 정상화": [],
-        "SOMA-3000E::SOMA-EK25-0401::고객대응::설비 평가": [],
-        "SOMA-3000E::SOMA-EK25-0401::고객대응::업무 협조": [],
-        "SOMA-3000E::SOMA-EK25-0401::비정기::Alarm::HPLC_알람": [
-            {
-                "content": "현장 이슈",
-                "id": 1773966287404
-            },
-            {
-                "content": "PC 이상",
-                "id": 1773966287405
-            },
-            {
-                "content": "작업자 실수",
-                "id": 1773966287406
-            },
-            {
-                "content": "통신 이상",
-                "id": 1773966287407
-            },
-            {
-                "content": "용액 / 용자 이상",
-                "id": 1773966287408
-            },
-            {
-                "content": "파트 이상 (교체)",
-                "id": 1773966287409
-            },
-            {
-                "content": "파트 이상 (수리)",
-                "id": 1773966287410
-            },
-            {
-                "content": "프로그램 이상",
-                "id": 1773966287411
-            },
-            {
-                "content": "단순조치",
-                "id": 1773966287412
-            },
-            {
-                "content": "기타",
-                "id": 1773966287413
-            }
-        ],
-        "SOMA-3000E::SOMA-EK25-0401::비정기::Alarm::MFC(Flow)_알람": [
-            {
-                "content": "현장 이슈",
-                "id": 1773967604980
-            },
-            {
-                "content": "PC 이상",
-                "id": 1773967604981
-            },
-            {
-                "content": "작업자 실수",
-                "id": 1773967604982
-            },
-            {
-                "content": "통신 이상",
-                "id": 1773967604983
-            },
-            {
-                "content": "용액 / 용자 이상",
-                "id": 1773967604984
-            },
-            {
-                "content": "파트 이상 (교체)",
-                "id": 1773967604985
-            },
-            {
-                "content": "파트 이상 (수리)",
-                "id": 1773967604986
-            },
-            {
-                "content": "프로그램 이상",
-                "id": 1773967604987
-            },
-            {
-                "content": "단순조치",
-                "id": 1773967604988
-            },
-            {
-                "content": "기타",
-                "id": 1773967604989
-            }
-        ],
-        "SOMA-3000E::SOMA-EK25-0401::비정기::Alarm::OVERFLOW_알람": [
-            {
-                "content": "현장 이슈",
-                "id": 1773967605383
-            },
-            {
-                "content": "PC 이상",
-                "id": 1773967605384
-            },
-            {
-                "content": "작업자 실수",
-                "id": 1773967605385
-            },
-            {
-                "content": "통신 이상",
-                "id": 1773967605386
-            },
-            {
-                "content": "용액 / 용자 이상",
-                "id": 1773967605387
-            },
-            {
-                "content": "파트 이상 (교체)",
-                "id": 1773967605388
-            },
-            {
-                "content": "파트 이상 (수리)",
-                "id": 1773967605389
-            },
-            {
-                "content": "프로그램 이상",
-                "id": 1773967605390
-            },
-            {
-                "content": "단순조치",
-                "id": 1773967605391
-            },
-            {
-                "content": "기타",
-                "id": 1773967605392
-            }
-        ],
-        "SOMA-3000E::SOMA-EK25-0401::비정기::BM 점검::BM 물품 교체": [],
-        "SOMA-3000E::SOMA-EK25-0401::정기::PM 점검": [],
         "TDM-100::Titrator::비정기::BM 점검::BM 물품 교체": [],
         "TDM-100::Titrator::정기::PM 점검": [],
         "WAD-10::AD10-EK24-0202::온라인점검::온라인점검": [],
@@ -4531,6 +4402,250 @@
             {
                 "id": 1773993752195,
                 "content": "기타"
+            }
+        ],
+        "SOMA-3000E::SOMA-EK25-0401::고객대응::Cal 보정": [],
+        "SOMA-3000E::SOMA-EK25-0401::고객대응::Parts 교체": [],
+        "SOMA-3000E::SOMA-EK25-0401::고객대응::기타": [],
+        "SOMA-3000E::SOMA-EK25-0401::고객대응::단순조치": [],
+        "SOMA-3000E::SOMA-EK25-0401::고객대응::설비 개조": [],
+        "SOMA-3000E::SOMA-EK25-0401::고객대응::설비 정상화": [],
+        "SOMA-3000E::SOMA-EK25-0401::고객대응::설비 평가": [],
+        "SOMA-3000E::SOMA-EK25-0401::고객대응::순회 점검": [],
+        "SOMA-3000E::SOMA-EK25-0401::고객대응::업무 협조": [],
+        "SOMA-3000E::SOMA-EK25-0401::고객대응::프로그램 변경 / 평가": [],
+        "SOMA-3000E::SOMA-EK25-0401::비정기::Alarm": [
+            {
+                "content": "PLC Alarm",
+                "id": 1774251447065
+            },
+            {
+                "content": "Exhaust Alarm",
+                "id": 1774251443997
+            },
+            {
+                "content": "GN2 Alarm",
+                "id": 1774251441793
+            },
+            {
+                "content": "Water Sensor Alarm",
+                "id": 1774251442063
+            },
+            {
+                "content": "HF Sensor Alarm",
+                "id": 1774251437947
+            },
+            {
+                "content": "Mass Hunter Alarm",
+                "id": 1774251441733
+            },
+            {
+                "content": "EMS Alarm",
+                "id": 1774251442779
+            },
+            {
+                "content": "Inner Leak  Alarm",
+                "id": 1774251441627
+            },
+            {
+                "content": "External Leak Alarm",
+                "id": 1774251440177
+            },
+            {
+                "content": "Door Lock Alarm",
+                "id": 1774251440441
+            }
+        ],
+        "SOMA-3000E::SOMA-EK25-0401::비정기::BM 점검": [
+            {
+                "id": 1774251444159,
+                "content": "Torch for PFA inert kit for ICP-MS"
+            },
+            {
+                "id": 1774251443383,
+                "content": "Platinum injector, inert torch, 2.5mm id"
+            },
+            {
+                "id": 1774251446682,
+                "content": "Spray Chamber for Inert Kit, PFA"
+            },
+            {
+                "id": 1774251444880,
+                "content": "Spray Chamber End Cap for Inert Kit, PFA"
+            },
+            {
+                "id": 1774251440437,
+                "content": "Long connector tube for ICP-MS inert kit"
+            },
+            {
+                "id": 1774251441927,
+                "content": "Quartz Torch Bonnet"
+            },
+            {
+                "id": 1774251443432,
+                "content": "Shield Plate for ICP-MS"
+            },
+            {
+                "id": 1774251444289,
+                "content": "Ar gas clean filter, Semicon App"
+            },
+            {
+                "id": 1774251446417,
+                "content": "Gas Clean Filter Carrier Gas"
+            },
+            {
+                "id": 1774251439045,
+                "content": "Deflect lens for ICP-MS"
+            },
+            {
+                "id": 1774251447384,
+                "content": "Plate bias for ICP-MS"
+            },
+            {
+                "id": 1774251437754,
+                "content": "Cell entrance lens for ICP-MS"
+            },
+            {
+                "id": 1774251442699,
+                "content": "Cell exit lens for ICP-MS"
+            },
+            {
+                "id": 1774251440663,
+                "content": "Cell focus lens for ICP-MS"
+            },
+            {
+                "id": 1774251438790,
+                "content": "Octopole assembly, ICP-MS"
+            },
+            {
+                "id": 1774251441624,
+                "content": "Micro Flow Nebulizer PFA-100"
+            },
+            {
+                "id": 1774251441328,
+                "content": "RF coil for 7900"
+            },
+            {
+                "id": 1774251445364,
+                "content": "Electron multiplier for ICP-MS"
+            }
+        ],
+        "SOMA-3000E::SOMA-EK25-0401::비정기::BM 점검::BM 물품 교체": [
+            {
+                "content": "Torch for PFA inert kit for ICP-MS",
+                "id": 1774251444115
+            },
+            {
+                "content": "Platinum injector, inert torch, 2.5mm id",
+                "id": 1774251445615
+            },
+            {
+                "content": "Spray Chamber for Inert Kit, PFA",
+                "id": 1774251438135
+            },
+            {
+                "content": "Spray Chamber End Cap for Inert Kit, PFA",
+                "id": 1774251445093
+            },
+            {
+                "content": "Long connector tube for ICP-MS inert kit",
+                "id": 1774251444000
+            },
+            {
+                "content": "Quartz Torch Bonnet",
+                "id": 1774251443824
+            },
+            {
+                "content": "Shield Plate for ICP-MS",
+                "id": 1774251438334
+            },
+            {
+                "content": "Ar gas clean filter, Semicon App",
+                "id": 1774251443865
+            },
+            {
+                "content": "Gas Clean Filter Carrier Gas",
+                "id": 1774251440594
+            },
+            {
+                "content": "Deflect lens for ICP-MS",
+                "id": 1774251446670
+            },
+            {
+                "content": "Plate bias for ICP-MS",
+                "id": 1774251441145
+            },
+            {
+                "content": "Cell entrance lens for ICP-MS",
+                "id": 1774251438503
+            },
+            {
+                "content": "Cell exit lens for ICP-MS",
+                "id": 1774251438072
+            },
+            {
+                "content": "Cell focus lens for ICP-MS",
+                "id": 1774251445128
+            },
+            {
+                "content": "Octopole assembly, ICP-MS",
+                "id": 1774251437506
+            },
+            {
+                "content": "Micro Flow Nebulizer PFA-100",
+                "id": 1774251444554
+            },
+            {
+                "content": "RF coil for 7900",
+                "id": 1774251446547
+            },
+            {
+                "content": "Electron multiplier for ICP-MS",
+                "id": 1774251437960
+            }
+        ],
+        "SOMA-3000E::SOMA-EK25-0401::비정기::Data / Para 이상": [
+            {
+                "content": "Calibration Fail",
+                "id": 1774251443038
+            },
+            {
+                "content": "감도 Spec. Out",
+                "id": 1774251441113
+            },
+            {
+                "content": "Parameter 값 이상",
+                "id": 1774251445833
+            },
+            {
+                "content": "Data Trend 이상",
+                "id": 1774251447213
+            }
+        ],
+        "SOMA-3000E::SOMA-EK25-0401::비정기::Hunting": [
+            {
+                "content": "Data Hunting",
+                "id": 1774251447002
+            }
+        ],
+        "SOMA-3000E::SOMA-EK25-0401::온라인점검::온라인점검": [],
+        "SOMA-3000E::SOMA-EK25-0401::용액제조::용액제조": [],
+        "SOMA-3000E::SOMA-EK25-0401::정기::PM 점검": [
+            {
+                "content": "Metal Standard Solution(3%HNO3)",
+                "id": 1774251446501
+            },
+            {
+                "content": "Pt Skimmer cone for 7700S",
+                "id": 1774251437677
+            },
+            {
+                "content": "Pt Sampling cone for 7700S",
+                "id": 1774251446047
+            },
+            {
+                "content": "Extraction-omega lens assembly",
+                "id": 1774251442064
             }
         ]
     }
