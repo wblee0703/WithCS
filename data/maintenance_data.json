@@ -247,18 +247,6 @@
                 "date": "2026-02-04",
                 "period": 365,
                 "costType": "무상(중고)"
-            },
-            {
-                "id": 1774223911883,
-                "type": "비정기",
-                "detailType": "Alarm > MFC(Flow)_알람",
-                "code": "",
-                "content": "파트 이상 (수리)",
-                "date": "",
-                "period": null,
-                "scheduledDate": "2026-03-21",
-                "costType": "무상(보증)",
-                "md": "2"
             }
         ],
         "logs": [
