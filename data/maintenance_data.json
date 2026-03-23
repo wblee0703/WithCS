@@ -187,13 +187,13 @@
         "memo": "",
         "files": []
     },
-    "details_SEC 평택_SOLA-1000": {
+    "details_SEC 평택_SOLA-3000": {
         "maint": [],
         "logs": [],
         "memo": "",
         "files": []
     },
-    "details_SEC 평택_SOLA-3000": {
+    "details_SEC 평택_SOLA-1000": {
         "maint": [],
         "logs": [],
         "memo": "",
@@ -322,7 +322,7 @@
                 "content": "Metal Standard Solution(3%HNO3)",
                 "date": "2026-03-20",
                 "period": "30",
-                "scheduledDate": "2026-03-20",
+                "scheduledDate": "2026-04-01",
                 "costType": "무상(보증)",
                 "md": "2",
                 "worker": "이원배",
