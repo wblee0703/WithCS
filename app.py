@@ -515,6 +515,11 @@ def handle_bad_request(e):
     app.logger.warning(f"Bad Request: {e.description} (Path: {request.path})")
     return jsonify({"status": "fail", "message": "잘못된 데이터 형식입니다."}), 400
 
+# [추가] 무차별 대입 방지(Limiter) 429 에러 발생 시 프론트엔드 크래시 방지용 JSON 핸들러
+@app.errorhandler(429)
+def handle_too_many_requests(e):
+    return jsonify({"status": "fail", "message": "짧은 시간에 너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요."}), 429
+
 def login_required(f):
     """로그인 여부를 확인하는 데코레이터"""
     @wraps(f)
@@ -595,8 +600,8 @@ def handle_data():
 @limiter.limit("5 per minute")
 def login():
     data = request.json
-    user_id = data.get('id')
-    user_pw = data.get('pw')
+    user_id = data.get('id', '').strip()  # [수정] 모바일/복붙 시 발생하는 보이지 않는 끝 공백 제거
+    user_pw = data.get('pw', '').strip()
 
     user = User.query.filter_by(id=user_id).first()
 
@@ -896,10 +901,11 @@ def init_db():
             app.logger.warning(f"Initial User PW generated in DB: {user_pw}")
             print(f"[*] User Account Created -> ID: {user_id} / PW: {user_pw}")
 
-        # [복구 로직] 이미 DB에 평문으로 잘못 저장된 이전 비밀번호가 있다면 찾아내서 해시 암호화 처리
+        # [수정] 이중 해싱 방지: Werkzeug 해시는 방식(scrypt, pbkdf2, sha256 등)과 무관하게 반드시 '$' 기호를 포함합니다. 
+        # '$'가 없는 경우에만 평문으로 간주하고 해시하도록 강력하게 제한합니다.
         all_users = User.query.all()
         for u in all_users:
-            if not (u.pw.startswith('scrypt:') or u.pw.startswith('pbkdf2:')):
+            if u.pw and '$' not in u.pw:
                 u.pw = generate_password_hash(u.pw)
         db.session.commit()
 
