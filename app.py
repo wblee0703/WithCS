@@ -864,7 +864,12 @@ def init_db():
         if accounts:
             for acc in accounts:
                 if not User.query.filter_by(id=acc['id']).first():
-                    new_user = User(id=acc['id'], pw=acc['pw'], role=acc.get('role', 'user'))
+                    pw_val = acc['pw']
+                    # 기존 JSON에 저장된 비밀번호가 평문인 경우 해시로 변환하여 삽입
+                    if not (pw_val.startswith('scrypt:') or pw_val.startswith('pbkdf2:')):
+                        pw_val = generate_password_hash(pw_val)
+                        
+                    new_user = User(id=acc['id'], pw=pw_val, role=acc.get('role', 'user'))
                     db.session.add(new_user)
             db.session.commit()
             del home_data['user_accounts']
@@ -879,7 +884,25 @@ def init_db():
             db.session.add(admin_user)
             db.session.commit()
             app.logger.warning(f"Initial Admin PW generated in DB: {admin_pw}")
+            print(f"[*] Admin Account Created -> ID: {admin_id} / PW: {admin_pw}")
             
+        # 일반 사용자(User) 초기 계정 자동 생성
+        user_id = os.environ.get('APP_USER_ID', 'user')
+        if not User.query.filter_by(id=user_id).first():
+            user_pw = os.environ.get('APP_USER_PW', secrets.token_urlsafe(8))
+            normal_user = User(id=user_id, pw=generate_password_hash(user_pw), role='user')
+            db.session.add(normal_user)
+            db.session.commit()
+            app.logger.warning(f"Initial User PW generated in DB: {user_pw}")
+            print(f"[*] User Account Created -> ID: {user_id} / PW: {user_pw}")
+
+        # [복구 로직] 이미 DB에 평문으로 잘못 저장된 이전 비밀번호가 있다면 찾아내서 해시 암호화 처리
+        all_users = User.query.all()
+        for u in all_users:
+            if not (u.pw.startswith('scrypt:') or u.pw.startswith('pbkdf2:')):
+                u.pw = generate_password_hash(u.pw)
+        db.session.commit()
+
         # [DB 마이그레이션] 시스템 로그 데이터
         if not SystemLog.query.first():
             all_logs = []
