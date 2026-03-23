@@ -1036,7 +1036,7 @@
             },
             {
                 "id": 1774239649990,
-                "completed": false,
+                "completed": true,
                 "content": "장비 반입",
                 "date": "2026-03-24",
                 "startDate": "2026-03-24",
@@ -1161,6 +1161,14 @@
                 "content": "[지연] 다이크 설치",
                 "company": "위드텍",
                 "memo": "[지연 사유]\nfdsf"
+            },
+            {
+                "id": 1774239786699,
+                "date": "2026-03-24",
+                "worker": "admin",
+                "content": "장비 반입",
+                "company": "위드텍",
+                "memo": ""
             }
         ]
     }
