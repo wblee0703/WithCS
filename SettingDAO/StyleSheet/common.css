@@ -89,6 +89,15 @@ body {
     cursor: pointer;
 }
 
+/* [추가] 세션 타이머 컨테이너 */
+.session-timer-container {
+    display: flex;
+    align-items: center;
+    color: #e3b341;
+    font-size: 13px;
+    font-weight: bold;
+}
+
 /* ==========================================================================
    3. 레이아웃 (Layout - Shared with Maintenance)
    ========================================================================== */

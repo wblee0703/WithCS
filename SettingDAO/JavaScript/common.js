@@ -7,6 +7,8 @@ let selectedLogId = null;
 let originalMemo = "";
 let originalSetupData = null;
 let currentLogFilter = 'all'; // [추가] 현재 로그 필터 상태
+let sessionTimer = null; // [추가] 세션 타이머
+let sessionTimeLeft = 1800; // [추가] 세션 유지 시간 (초) - 30분
 
 const setupInputIds = [
     'DeviceID-cust-equip-name', 'DeviceID-building', 'DeviceID-floor', 'DeviceID-detail-loc',
@@ -70,8 +72,12 @@ function saveAllToServer() {
                 'X-CSRFToken': getCookie('csrf_token') // [보안] CSRF 토큰 추가
             },
             body: JSON.stringify(allData)
-        }).catch(err => console.error('Server sync failed:', err));
-    }, 500); // 0.5초 지연 후 전송
+        })
+        .then(() => {
+            if (sessionStorage.getItem('isLoggedIn') === 'true') startSessionTimer(); // [추가] 통신 성공 시 타이머 자동 리셋
+        })
+        .catch(err => console.error('Server sync failed:', err));
+    }, 2000); // 2초 지연 후 전송
 }
 
 localStorage.setItem = function(key, value) {
@@ -846,6 +852,64 @@ function restoreLastState() {
     }
 }
 
+// [추가] 세션 타이머 관련 함수
+function startSessionTimer() {
+    stopSessionTimer(); // 기존 타이머 중지
+    sessionTimeLeft = 1800; // 30분 리셋 (1800초)
+    updateTimerUI();
+    
+    sessionTimer = setInterval(() => {
+        sessionTimeLeft--;
+        updateTimerUI();
+        
+        if (sessionTimeLeft <= 0) {
+            stopSessionTimer();
+            alert('보안을 위해 세션이 만료되었습니다.\n다시 로그인해주세요.');
+            // 강제 로그아웃 후 로그인 화면으로 즉시 전환
+            fetch('/api/logout', { 
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrf_token') }
+            }).then(() => {
+                sessionStorage.clear();
+                location.reload();
+            });
+        }
+    }, 1000);
+}
+
+function stopSessionTimer() {
+    if (sessionTimer) {
+        clearInterval(sessionTimer);
+        sessionTimer = null;
+    }
+}
+
+function updateTimerUI() {
+    const minutes = Math.floor(sessionTimeLeft / 60);
+    const seconds = sessionTimeLeft % 60;
+    const displayStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    
+    document.querySelectorAll('.session-time-display').forEach(el => {
+        el.textContent = displayStr;
+        // 시간이 5분(300초) 이하로 남으면 빨간색으로 경고 표시
+        el.style.color = sessionTimeLeft <= 300 ? '#f85149' : '';
+    });
+}
+
+window.extendSession = function() {
+    fetch('/api/session/extend', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': getCookie('csrf_token') }
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === 'success') {
+            startSessionTimer(); // 타이머 리셋
+        }
+    })
+    .catch(err => console.error('Session extend failed', err));
+}
+
 /* ==========================================================================
    3. 인증 및 사용자 관리 (Authentication)
    ========================================================================== */
@@ -878,6 +942,22 @@ function checkLoginStatus() {
         }
         if (btnUserSettings) btnUserSettings.style.display = 'inline-block';
         
+        // [추가] 데스크톱 타이머 UI 동적 생성
+        let desktopTimerContainer = document.getElementById('desktop-session-timer');
+        const userControls = document.querySelector('.user-controls');
+        if (!desktopTimerContainer && userControls) {
+            desktopTimerContainer = document.createElement('div');
+            desktopTimerContainer.id = 'desktop-session-timer';
+            desktopTimerContainer.className = 'session-timer-container';
+            desktopTimerContainer.innerHTML = `
+                <span class="session-time-display">30:00</span>
+                <button class="btn-gray" onclick="extendSession()" style="padding:2px 6px; font-size:11px; margin-left:5px; margin-right:15px; border-radius:3px;">연장</button>
+            `;
+            userControls.insertBefore(desktopTimerContainer, userControls.firstChild);
+        } else if (desktopTimerContainer) {
+            desktopTimerContainer.style.display = 'flex';
+        }
+
         // [추가] 모바일 업데이트
         if (mobileUserInfo) {
             mobileUserInfo.textContent = `${userId} (${role === 'admin' ? '관리자' : '일반'})`;
@@ -889,9 +969,28 @@ function checkLoginStatus() {
         }
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'block';
 
+        // [추가] 모바일 타이머 UI 동적 생성
+        let mobileTimerContainer = document.getElementById('mobile-session-timer');
+        const mobileControls = document.querySelector('.mobile-user-controls');
+        if (!mobileTimerContainer && mobileControls) {
+            mobileTimerContainer = document.createElement('div');
+            mobileTimerContainer.id = 'mobile-session-timer';
+            mobileTimerContainer.className = 'session-timer-container';
+            mobileTimerContainer.style.marginBottom = '15px';
+            mobileTimerContainer.innerHTML = `
+                <span>남은 시간: <span class="session-time-display" style="color:#e3b341;">30:00</span></span>
+                <button class="btn-gray" onclick="extendSession()" style="padding:4px 10px; font-size:12px; margin-left:10px; border-radius:3px;">연장</button>
+            `;
+            mobileControls.insertBefore(mobileTimerContainer, mobileControls.firstChild);
+        } else if (mobileTimerContainer) {
+            mobileTimerContainer.style.display = 'flex';
+        }
+
         if (dashboardWrapper) dashboardWrapper.style.filter = 'none';
         document.body.classList.remove('role-admin', 'role-user');
         document.body.classList.add(`role-${role}`);
+        
+        startSessionTimer(); // [추가] 타이머 작동 시작
     } else {
         if (loginModal && !homeLoginContainer) loginModal.style.display = 'flex';
         if (userInfo) userInfo.style.display = 'none';
@@ -910,6 +1009,11 @@ function checkLoginStatus() {
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'none';
 
         document.body.classList.remove('role-admin', 'role-user');
+        
+        // [추가] 로그아웃 시 타이머 UI 숨김 및 중지
+        if (document.getElementById('desktop-session-timer')) document.getElementById('desktop-session-timer').style.display = 'none';
+        if (document.getElementById('mobile-session-timer')) document.getElementById('mobile-session-timer').style.display = 'none';
+        stopSessionTimer();
     }
 
     // [추가] 모바일 메뉴 링크 제어 (로그인 상태에 따라 표시/숨김)

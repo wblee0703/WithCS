@@ -62,8 +62,9 @@ if os.environ.get('APP_ENV') == 'production':
 
 # Security Extensions
 csrf = CSRFProtect(app)
-# [수정] 메모리 저장소 명시적 설정으로 경고 메시지 제거
-limiter = Limiter(get_remote_address, app=app, storage_uri="memory://", default_limits=["200 per day", "50 per hour"])
+# [수정] 메모리 저장소 명시적 설정
+# 잦은 자동 저장 및 API 호출 시 429 에러(Too Many Requests)가 발생하는 것을 막기 위해 전역 제한 해제(, default_limits=["200 per day", "50 per hour"]추가하면 보안 강화됨)
+limiter = Limiter(get_remote_address, app=app, storage_uri="memory://")
 
 # [추가] DB 설정 (SQLite)
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'data', 'withtech.db')}"
