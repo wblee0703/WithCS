@@ -124,7 +124,9 @@
                 "detailType": "PM 점검",
                 "content": "Metal STD (5ppb 1%), 9.5% HNO3",
                 "worker": "이원배 박강민 진봉균",
-                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음"
+                "memo": "1. 정기 용액 교체 \n - 용액 상태 : STD3 감도 정상\n\n2. PC 재부팅 및 설비 정상화\n\n3. ICPMS 상태 확인\n - Parameter 값 정상 범위\n - Mode 별 Metal 감도 특이사항 없음",
+                "costType": "유상",
+                "md": "2"
             },
             {
                 "id": 1770860993664,
