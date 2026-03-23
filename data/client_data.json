@@ -1,5 +1,5 @@
 {
-    "DUPONT": {
+    "SKH 청주": {
         "buildings": []
     },
     "SEC 천안": {
@@ -76,7 +76,10 @@
             "m16"
         ]
     },
-    "SKH 청주": {
+    "DUPONT": {
+        "buildings": []
+    },
+    "SEC 평택 본사": {
         "buildings": []
     }
 }

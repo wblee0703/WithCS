@@ -207,7 +207,8 @@
         ],
         "SKH 청주": [],
         "TEKSCEND": [],
-        "원익IPS": []
+        "원익IPS": [],
+        "SEC 평택 본사": []
     },
     "details": {
         "SKH 이천_SOMA-20::SOMA-HK21-0202": {
@@ -318,13 +319,13 @@
             },
             "specialNote": ""
         },
-        "SEC 평택_SOLA-3000": {
+        "SEC 평택_SOLA-1000": {
             "setup": {
                 "model": ""
             },
             "specialNote": ""
         },
-        "SEC 평택_SOLA-1000": {
+        "SEC 평택_SOLA-3000": {
             "setup": {
                 "model": ""
             },
