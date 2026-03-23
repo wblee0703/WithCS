@@ -1,5 +1,5 @@
 {
-    "SKH 청주": {
+    "DUPONT": {
         "buildings": []
     },
     "SEC 천안": {
@@ -62,13 +62,13 @@
     "TEKSCEND": {
         "buildings": []
     },
-    "ECOPRO_NH": {
-        "buildings": []
-    },
     "SEC 화성": {
         "buildings": []
     },
     "SEC 평택": {
+        "buildings": []
+    },
+    "ECOPRO_NH": {
         "buildings": []
     },
     "SKH 이천": {
@@ -76,7 +76,7 @@
             "m16"
         ]
     },
-    "DUPONT": {
+    "SKH 청주": {
         "buildings": []
     }
 }
