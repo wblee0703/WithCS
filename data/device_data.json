@@ -49,7 +49,7 @@
             "name": "NaVi-TM(MG200H-2)"
         },
         {
-            "abbr": "WF301",
+            "abbr": "TM(WF)",
             "name": "NaVi-TM(WF)"
         },
         {
@@ -125,6 +125,10 @@
             "name": "SOT-200B"
         },
         {
+            "name": "TDM-100",
+            "abbr": "TDM-100"
+        },
+        {
             "abbr": "WAD-10",
             "name": "WAD-10"
         },
@@ -143,10 +147,6 @@
         {
             "abbr": "WOA683",
             "name": "WOA-683"
-        },
-        {
-            "name": "TDM-100",
-            "abbr": "TDM-100"
         }
     ],
     "equipments": {
