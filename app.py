@@ -872,9 +872,10 @@ def init_db():
             app.logger.warning("Migrated user accounts from JSON to SQLite DB.")
             
         # Admin 초기 계정 생성
-        if not User.query.filter_by(id='admin').first():
+        admin_id = os.environ.get('APP_ADMIN_ID', 'admin')
+        if not User.query.filter_by(id=admin_id).first():
             admin_pw = os.environ.get('APP_ADMIN_PW', secrets.token_urlsafe(8))
-            admin_user = User(id=os.environ.get('APP_ADMIN_ID', 'admin'), pw=generate_password_hash(admin_pw), role='admin')
+            admin_user = User(id=admin_id, pw=generate_password_hash(admin_pw), role='admin')
             db.session.add(admin_user)
             db.session.commit()
             app.logger.warning(f"Initial Admin PW generated in DB: {admin_pw}")
