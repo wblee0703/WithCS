@@ -1,5 +1,5 @@
 {
-    "SKH 청주": {
+    "DUPONT": {
         "buildings": []
     },
     "SEC 천안": {
@@ -32,7 +32,7 @@
     "NES 여수": {
         "buildings": []
     },
-    "SK SILTRON": {
+    "SK SILTRON 구미": {
         "buildings": []
     },
     "ENF 아산": {
@@ -71,15 +71,15 @@
     "SEC 평택": {
         "buildings": []
     },
+    "SEC 평택 본사": {
+        "buildings": []
+    },
     "SKH 이천": {
         "buildings": [
             "m16"
         ]
     },
-    "DUPONT": {
-        "buildings": []
-    },
-    "SEC 평택 본사": {
+    "SKH 청주": {
         "buildings": []
     }
 }

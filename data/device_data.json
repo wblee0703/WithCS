@@ -193,7 +193,6 @@
         ],
         "SEC 화성": [],
         "SK KEY_FOUNDRY": [],
-        "SK SILTRON": [],
         "SKH 우시": [
             "SOMA-2000::SOMA-HC19-1204",
             "SOMA-2000::SOMA-HC20-0601",
@@ -208,7 +207,8 @@
         "SKH 청주": [],
         "TEKSCEND": [],
         "원익IPS": [],
-        "SEC 평택 본사": []
+        "SEC 평택 본사": [],
+        "SK SILTRON 구미": []
     },
     "details": {
         "SKH 이천_SOMA-20::SOMA-HK21-0202": {
@@ -319,13 +319,13 @@
             },
             "specialNote": ""
         },
-        "SEC 평택_SOLA-1000": {
+        "SEC 평택_SOLA-3000": {
             "setup": {
                 "model": ""
             },
             "specialNote": ""
         },
-        "SEC 평택_SOLA-3000": {
+        "SEC 평택_SOLA-1000": {
             "setup": {
                 "model": ""
             },
