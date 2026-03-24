@@ -593,9 +593,11 @@ function renderEquipModelList() {
                 // 신규 등록 모드(장비 미선택)일 때만 모델명 자동 입력 및 읽기 전용 처리
                 const nameInput = document.getElementById('equip-info-name');
                 if (currentAdminModel) {
-                    nameInput.value = currentAdminModel.name;
+                    nameInput.value = currentAdminModel.abbr || currentAdminModel.name;
+                    nameInput.dataset.fullName = currentAdminModel.name;
                 } else {
                     nameInput.value = '';
+                    delete nameInput.dataset.fullName;
                 }
             }
         });
@@ -724,10 +726,12 @@ function setupEquipMgmt() {
 
             const nameInput = document.getElementById('equip-info-name');
             if (currentAdminModel) {
-                nameInput.value = currentAdminModel.name;
+                nameInput.value = currentAdminModel.abbr || currentAdminModel.name;
+                nameInput.dataset.fullName = currentAdminModel.name;
                 document.getElementById('equip-info-serial').focus();
             } else {
                 nameInput.value = '';
+                delete nameInput.dataset.fullName;
             }
             scrollToAdminDetail('admin-equip-form'); // [추가] 모바일 스크롤 이동
         });
@@ -822,8 +826,9 @@ function setupEquipMgmt() {
                     
                     li.addEventListener('mousedown', (ev) => {
                         ev.preventDefault();
-                        nameInput.value = m.name;
-                        lastValidModel = m.name;
+                        nameInput.value = m.abbr || m.name;
+                        nameInput.dataset.fullName = m.name;
+                        lastValidModel = nameInput.value;
                         suggestionList.style.display = 'none';
                     });
                     suggestionList.appendChild(li);
@@ -851,11 +856,13 @@ function setupEquipMgmt() {
         nameInput.addEventListener('blur', () => {
             setTimeout(() => {
                 const currentVal = nameInput.value.trim();
-                const isValid = equipmentModels.some(m => m.name === currentVal);
-                if (!isValid) {
+                const matched = equipmentModels.find(m => m.name === currentVal || m.abbr === currentVal);
+                if (!matched) {
                     nameInput.value = lastValidModel;
                 } else {
-                    lastValidModel = currentVal;
+                    nameInput.value = matched.abbr || matched.name;
+                    nameInput.dataset.fullName = matched.name;
+                    lastValidModel = nameInput.value;
                 }
                 suggestionList.style.display = 'none';
             }, 150);
@@ -864,8 +871,10 @@ function setupEquipMgmt() {
         // 폼 초기화나 다른 장비 선택 시 lastValidModel 동기화를 위해 focus 시 값 업데이트
         nameInput.addEventListener('focus', () => {
             const currentVal = nameInput.value.trim();
-            if (equipmentModels.some(m => m.name === currentVal)) {
-                lastValidModel = currentVal;
+            const matched = equipmentModels.find(m => m.name === currentVal || m.abbr === currentVal);
+            if (matched) {
+                lastValidModel = matched.abbr || matched.name;
+                nameInput.dataset.fullName = matched.name;
             }
         });
 
@@ -1105,7 +1114,9 @@ function renderAdminEquipList() {
             const parts = item.key.split('::');
             const name = parts[0] || '';
             const serial = parts.length > 1 ? parts[1] : '';
-            const text = `${item.site} ${name} ${serial}`.toLowerCase();
+            const matchedModel = equipmentModels.find(m => m.name === name);
+            const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+            const text = `${item.site} ${name} ${displayName} ${serial}`.toLowerCase();
             return keywords.every(kw => text.includes(kw));
         });
     }
@@ -1118,10 +1129,12 @@ function renderAdminEquipList() {
         const parts = fullKey.split('::');
         const name = parts[0];
         const serial = parts.length > 1 ? parts[1] : '';
+        const matchedModel = equipmentModels.find(m => m.name === name);
+        const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
 
         const li = document.createElement('li');
         
-        let content = `<span>${name}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
+        let content = `<span>${displayName}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
         if (!currentAdminEquipSite) {
             content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:#8b949e;">${site}</span><div>${content}</div></div>`;
         } else {
@@ -1144,7 +1157,8 @@ function renderAdminEquipList() {
             document.getElementById('admin-equip-placeholder').style.display = 'none';
             document.getElementById('equip-info-site').value = site; // [수정] 아이템의 실제 사업장 입력
             document.getElementById('equip-info-site').disabled = true; // [추가] 기존 장비 수정 시 사업장 변경 불가
-            document.getElementById('equip-info-name').value = name;
+            document.getElementById('equip-info-name').value = displayName;
+            document.getElementById('equip-info-name').dataset.fullName = name;
             document.getElementById('equip-info-serial').value = serial;
 
             // [추가] 건물명 및 세부위치 렌더링
@@ -1184,6 +1198,7 @@ function resetEquipForm() {
     document.getElementById('admin-equip-placeholder').style.display = 'flex';
     const nameInput = document.getElementById('equip-info-name');
     nameInput.value = '';
+    delete nameInput.dataset.fullName;
     document.getElementById('equip-info-serial').value = '';
 
     // [추가] 필드 초기화
@@ -1214,7 +1229,7 @@ function handleEquipSave() {
     if (!storageData[targetSite]) return alert('존재하지 않는 사업장입니다. 사업장 관리에서 먼저 등록해주세요.');
 
     const nameInput = document.getElementById('equip-info-name');
-    const name = nameInput.value.trim();
+    const nameVal = nameInput.value.trim();
     const serial = document.getElementById('equip-info-serial').value.trim();
     
     // [추가]
@@ -1238,13 +1253,24 @@ function handleEquipSave() {
     const custEmail = document.getElementById('equip-info-cust-email').value.trim();
     const specialNote = document.getElementById('equip-info-special-note').value.trim();
 
-    if (!name) return alert('장비명(모델)을 입력해주세요.');
+    if (!nameVal) return alert('장비명(모델)을 입력해주세요.');
 
-    if (!equipmentModels.some(m => m.name === name)) {
+    let matchedModel = null;
+    if (nameInput.dataset.fullName) {
+        matchedModel = equipmentModels.find(m => m.name === nameInput.dataset.fullName);
+        if (matchedModel && matchedModel.name !== nameVal && matchedModel.abbr !== nameVal) {
+            matchedModel = null;
+        }
+    }
+    if (!matchedModel) {
+        matchedModel = equipmentModels.find(m => m.name === nameVal || m.abbr === nameVal);
+    }
+    if (!matchedModel) {
         return alert('장비명은 제안 박스에서 검색하여 선택해야만 등록할 수 있습니다.');
     }
     
-    const newKey = serial ? `${name}::${serial}` : name;
+    const finalName = matchedModel.name;
+    const newKey = serial ? `${finalName}::${serial}` : finalName;
     
     // 중복 체크 (수정이면 자기 자신 제외)
     if (currentAdminEquipKey !== newKey && storageData[targetSite].includes(newKey)) {
@@ -2294,7 +2320,9 @@ function renderCheckTypeEquipList() {
             const parts = item.key.split('::');
             const name = parts[0] || '';
             const serial = parts.length > 1 ? parts[1] : '';
-            const text = `${item.site} ${name} ${serial}`.toLowerCase();
+            const matchedModel = equipmentModels.find(m => m.name === name);
+            const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+            const text = `${item.site} ${name} ${displayName} ${serial}`.toLowerCase();
             return keywords.every(kw => text.includes(kw));
         });
     }
@@ -2307,10 +2335,12 @@ function renderCheckTypeEquipList() {
         const parts = fullKey.split('::');
         const name = parts[0];
         const serial = parts.length > 1 ? parts[1] : '';
+        const matchedModel = equipmentModels.find(m => m.name === name);
+        const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
 
         const li = document.createElement('li');
         
-        let content = `<span>${name}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
+        let content = `<span>${displayName}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
         if (!currentCheckTypeSiteContext) {
             content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:#8b949e;">${site}</span><div>${content}</div></div>`;
         } else {
