@@ -434,6 +434,7 @@ def save_data(full_data):
         existing_item = load_json_file(FILE_ITEM)
         existing_mgmt = load_json_file(FILE_MANAGEMENT)
         existing_withtech = load_json_file(FILE_WITHTECH)
+        existing_maint = load_json_file(FILE_MAINTENANCE) # [추가] 기존 유지관리 데이터 로드
 
         # 각 저장소 컨테이너 초기화
         setup_data = {}
@@ -489,6 +490,24 @@ def save_data(full_data):
             else:
                 # 위 분류에 속하지 않는 나머지 (예: 대시보드 기타 설정 등)는 home_data에 저장
                 home_data[key] = value
+
+        # [강력한 데이터 보호 로직] 프론트엔드 통신 누락/네트워크 지연으로 인한 장비 상세 데이터 소실 방지
+        for site, equips in device_json_data['equipments'].items():
+            for equip in equips:
+                site_equip = f"{site}_{equip}"
+                detail_key = f"details_{site_equip}"
+                
+                # Device_data (장비 설정, 특이사항) 누락 시 기존 서버 데이터로 복원
+                if site_equip not in device_json_data['details']:
+                    if site_equip in existing_device.get('details', {}):
+                        device_json_data['details'][site_equip] = existing_device['details'][site_equip]
+                    else:
+                        device_json_data['details'][site_equip] = {"setup": {}, "specialNote": ""}
+                        
+                # Maintenance_data (점검 이력, 일지, 파일 등) 누락 시 기존 서버 데이터로 복원
+                if detail_key not in maintenance_data:
+                    if detail_key in existing_maint:
+                        maintenance_data[detail_key] = existing_maint[detail_key]
 
         # [보완] 사업장 기본 골격 생성 및 기존 건물명 데이터 보호 (방어 로직)
         for site in device_json_data['equipments'].keys():
