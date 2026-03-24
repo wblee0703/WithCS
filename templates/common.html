@@ -112,22 +112,71 @@
             </div>
             <div class="modal-body">
                 <div class="sidebar-group" id="admin-panel" style="display: none; margin-bottom: 20px;">
-                    <h4 class="modal-section-title modal-section-title-blue">계정 추가 (관리자 전용)</h4>
-                    <div class="form-row">
-                        <input type="text" id="new-user-id" placeholder="아이디">
-                        <input type="password" id="new-user-pw" placeholder="비밀번호">
-                        <select id="new-user-role" class="modal-select">
-                            <option value="user">일반</option>
-                            <option value="admin">관리자</option>
-                        </select>
-                        <button class="btn-add" id="btn-add-user">+</button>
+                    <h4 class="modal-section-title modal-section-title-blue" style="margin: 0 0 12px 0;">계정 추가 (관리자 전용)</h4>
+                    <div class="form-row" style="flex-direction: column; gap: 10px;">
+                        <div style="display: flex; width: 100%; height: 30px;">
+                            <input type="text" id="new-user-id" class="input-dark" placeholder="아이디" style="flex: 1; min-width: 0; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box;">
+                        </div>
+                        <div id="new-user-pw-wrapper" style="display: flex; gap: 10px; width: 100%; height: 30px;">
+                            <input type="password" id="new-user-pw" class="input-dark" placeholder="비밀번호" style="flex: 1; min-width: 0; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box;">
+                            <input type="password" id="new-user-pw-confirm" class="input-dark" placeholder="비밀번호 확인" style="flex: 1; min-width: 0; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box;">
+                        </div>
+                        <div id="new-user-extra-wrapper" style="display: flex; flex-direction: row; gap: 10px; width: 100%; height: 30px;">
+                            <input type="text" id="new-user-department" class="input-dark" placeholder="소속 (필수)" style="flex: 1; min-width: 0; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box;">
+                            <input type="text" id="new-user-position" class="input-dark" placeholder="직급 (필수)" style="flex: 1; min-width: 0; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box;">
+                            <input type="text" id="new-user-name" class="input-dark" placeholder="이름 (필수)" style="flex: 1; min-width: 0; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box;">
+                        </div>
+                        <div id="new-user-site-wrapper" style="display: flex; gap: 10px; width: 100%; height: 30px;">
+                            <select id="new-user-role" class="modal-select" style="flex: 1; min-width: 0; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box; margin: 0;">
+                                <option value="user">일반</option>
+                                <option value="admin">관리자</option>
+                            </select>
+                            <div class="autocomplete-wrapper" style="flex: 1; min-width: 0; height: 100%;">
+                                <input type="text" id="new-user-site-input" class="input-dark" placeholder="사업장 미지정 (전체)" style="width: 100%; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box; cursor: pointer;" readonly>
+                                <ul id="new-user-site-suggestions" class="user-suggestion-list" style="top: 100%; bottom: auto; max-height: 250px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);"></ul>
+                                <input type="hidden" id="new-user-site" value="">
+                            </div>
+                            <button class="btn-green" id="btn-add-user" style="width: auto; height: 100%; padding: 0 15px; margin: 0; font-size: 13px; font-weight: normal; border-radius: 4px; box-sizing: border-box;">추가</button>
+                        </div>
                     </div>
                 </div>
-                <h4 class="modal-section-title modal-section-title-blue">비밀번호 변경</h4>
-                <div class="form-row">
-                    <input type="password" id="change-pw-current" placeholder="현재 비밀번호">
-                    <input type="password" id="change-pw-new" placeholder="새 비밀번호">
-                    <button class="btn-blue" id="btn-change-pw">변경</button>
+
+                <hr style="border-color: #30363d; border-width: 1px 0 0 0; margin: 10px 0 15px 0;">
+                <h4 class="modal-section-title-blue" style="font-size: 14px; margin: 0 0 12px 0;">계정 정보</h4>
+                <div id="my-info-wrapper" style="width: 100%;">
+                    <div id="my-info-content" style="display: flex; flex-direction: column; gap: 10px;">
+                        <!-- JS로 렌더링 -->
+                    </div>
+                </div>
+
+                <hr style="border-color: #30363d; border-width: 1px 0 0 0; margin: 25px 0 20px 0;">
+                <h4 class="modal-section-title modal-section-title-blue" style="font-size: 14px; margin: 0 0 12px 0;">비밀번호 변경</h4>
+                <div class="form-row" style="flex-direction: column; gap: 10px;">
+                    <div style="display: flex; width: 100%; height: 30px;">
+                        <input type="password" id="change-pw-current" class="input-dark" placeholder="현재 비밀번호" style="flex: 1; min-width: 0; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box;">
+                    </div>
+                    <div id="change-pw-new-wrapper" style="display: flex; gap: 10px; width: 100%; height: 30px;">
+                        <input type="password" id="change-pw-new" class="input-dark" placeholder="새 비밀번호" style="flex: 1; min-width: 0; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box;">
+                        <input type="password" id="change-pw-confirm" class="input-dark" placeholder="새 비밀번호 확인" style="flex: 1; min-width: 0; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box;">
+                        <button class="btn-blue" id="btn-change-pw" style="width: auto; height: 100%; padding: 0 15px; margin: 0; font-size: 13px; font-weight: normal; border-radius: 4px; box-sizing: border-box;">변경</button>
+                    </div>
+                </div>
+
+                <hr style="border-color: #30363d; border-width: 1px 0 0 0; margin: 25px 0 15px 0;">
+                <h4 class="modal-section-title-blue" style="font-size: 14px; margin: 0 0 12px 0;">계정 삭제</h4>
+                <div id="delete-account-wrapper" style="display: flex; gap: 10px; width: 100%; height: 30px; margin-bottom: 10px;">
+                    <input type="password" id="delete-account-pw" class="input-dark" placeholder="현재 비밀번호 입력 (계정 삭제용)" style="flex: 1; min-width: 0; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box;">
+                    <button id="btn-delete-account" class="btn-del" style="width: auto; height: 100%; padding: 0 15px; margin: 0; font-size: 13px; font-weight: normal; border-radius: 4px; box-sizing: border-box;">삭제</button>
+                </div>
+                
+                <div id="admin-user-delete-wrapper" style="display: none; width: 100%; margin-top: 10px;">
+                    <div style="display: flex; gap: 10px; width: 100%; height: 30px;">
+                        <div style="position: relative; flex: 1; min-width: 0; height: 100%;">
+                            <input type="text" id="admin-delete-user-input" class="input-dark" placeholder="삭제할 일반 계정 검색 (이름, 소속, 아이디)" style="width: 100%; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box;" autocomplete="off">
+                            <ul id="admin-delete-user-suggestions" class="user-suggestion-list"></ul>
+                        </div>
+                        <button id="btn-admin-delete-user" class="btn-del" style="width: auto; height: 100%; padding: 0 15px; margin: 0; font-size: 13px; font-weight: normal; border-radius: 4px; box-sizing: border-box;">삭제</button>
+                    </div>
                 </div>
             </div>
         </div>

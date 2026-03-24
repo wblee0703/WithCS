@@ -489,25 +489,26 @@ function renderMonthGrid(year, month, titleId, gridId) {
     const yyyyMm = `${year}-${String(month + 1).padStart(2, '0')}`;
     const confirmedInfo = confs[yyyyMm];
     
-    // [수정] 검색 필터에서 사업장이 "전체" (선택 안됨) 상태인지 확인
+    // [수정] 검색 필터 상태 확인 (사업장 전체 여부 및 특정 장비 선택 여부)
     const isSiteAll = !currentSearchFilters.site;
     const selectedSite = currentSearchFilters.site;
+    const isEquipSelected = !!currentSearchFilters.equip;
 
     let baseTotal = monthTotalTasks;
     let confirmBtnHtml = '';
     let isConfirmedStatus = false;
 
-    if (isSiteAll) {
-        // 전체 사업장일 때는 버튼을 숨김 (개별 사업장 단위로만 확정 가능)
+    if (isSiteAll || isEquipSelected) {
+        // 전체 사업장이거나 특정 장비가 선택된 경우에는 확정 기능 및 UI 비활성화
         confirmBtnHtml = '';
-        if (confirmedInfo && confirmedInfo.count !== undefined) {
+        if (isSiteAll && !isEquipSelected && confirmedInfo && confirmedInfo.count !== undefined) {
             baseTotal = confirmedInfo.count; // 구버전 전체 확정 데이터 호환
             isConfirmedStatus = true;
         } else {
             baseTotal = monthTotalTasks;
         }
     } else {
-        // 특정 사업장이 선택된 경우에만 버튼 표시 및 확정수 적용
+        // 특정 사업장이 선택되고 장비가 전체(미선택)인 경우에만 버튼 표시 및 확정수 적용
         let siteConfirmedCount = undefined;
         if (confirmedInfo) {
             if (confirmedInfo[selectedSite] && typeof confirmedInfo[selectedSite] === 'object') {
@@ -523,10 +524,10 @@ function renderMonthGrid(year, month, titleId, gridId) {
         if (siteConfirmedCount !== undefined) {
             baseTotal = siteConfirmedCount;
             isConfirmedStatus = true;
-            confirmBtnHtml = `<button class="btn-gray" style="margin-left:10px; padding:2px 8px; font-size:11px; border-radius:4px; border:1px solid #30363d; background:#21262d; cursor:default;" onclick="event.stopPropagation();" disabled>예정 확정됨</button>`;
+            confirmBtnHtml = `<button class="btn-green" style="margin-left:10px; padding:2px 8px; font-size:11px; border-radius:4px; font-weight:bold; cursor:default;" onclick="event.stopPropagation();" disabled>확정 완료</button>`;
         } else {
             baseTotal = monthTotalTasks;
-            confirmBtnHtml = `<button class="btn-blue" style="margin-left:10px; padding:2px 8px; font-size:11px; border-radius:4px; font-weight:bold;" onclick="event.stopPropagation(); confirmMonthSchedule('${selectedSite}', ${year}, ${month}, ${monthTotalTasks})">예정 확정</button>`;
+            confirmBtnHtml = `<button class="btn-blue" style="margin-left:10px; padding:2px 8px; font-size:11px; border-radius:4px; font-weight:bold;" onclick="event.stopPropagation(); confirmMonthSchedule('${selectedSite}', ${year}, ${month}, ${monthTotalTasks})">확정 전</button>`;
         }
     }
 
@@ -831,12 +832,21 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     }
     document.getElementById('detail-detail-type').textContent = displayDetailType;
 
-    // [수정] 같은 날짜, 같은 타입, 세부구분에 예정된 항목들을 모두 표시
-    let displayContent = item.code ? item.code : (item.content || '');
-    if (!isCompleted && item.scheduledDate) {
-        const sameDayItems = data.maint.filter(i => i.scheduledDate === item.scheduledDate && i.type === item.type && (i.detailType || '') === (item.detailType || ''));
-        if (sameDayItems.length > 0) {
-            displayContent = sameDayItems.map(i => i.code ? i.code : i.content).join(', ');
+    // [수정] 같은 날짜, 같은 타입, 세부구분에 예정된 항목들을 모두 표시 (비용처리 포함)
+    let displayContent = item.content || '';
+    if (!isCompleted) {
+        displayContent = item.code ? item.code : (item.content || '');
+        if (item.itemCost) displayContent = `[${item.itemCost}] ${displayContent}`;
+
+        if (item.scheduledDate) {
+            const sameDayItems = data.maint.filter(i => i.scheduledDate === item.scheduledDate && i.type === item.type && (i.detailType || '') === (item.detailType || ''));
+            if (sameDayItems.length > 0) {
+                const contentArr = sameDayItems.map(i => {
+                    const val = i.code ? i.code : i.content;
+                    return i.itemCost ? `[${i.itemCost}] ${val}` : val;
+                });
+                displayContent = [...new Set(contentArr)].join(', ');
+            }
         }
     }
 
@@ -983,6 +993,17 @@ function toggleDetailContentEdit() {
 
         const currentContent = contentDiv.dataset.rawContent || contentDiv.innerText.trim();
 
+        const currentValues = currentContent ? currentContent.split(',').map(s => s.trim()).filter(s => s) : [];
+        const selectedMap = {};
+        currentValues.forEach(val => {
+            const match = val.match(/^\[(.*?)\] (.*)$/);
+            if (match) {
+                selectedMap[match[2]] = match[1];
+            } else {
+                selectedMap[val] = '유상';
+            }
+        });
+
         // 선택 가능한 항목 가져오기 (admin.js에서 설정한 값)
         const equipKey = equip; // "Name::Serial"
         const itemData = JSON.parse(localStorage.getItem('check_type_items')) || {};
@@ -1004,25 +1025,52 @@ function toggleDetailContentEdit() {
                 availableItems = defaultList.map(content => ({ content: content }));
             } else if (detailType === 'PM 점검' || detailType === 'BM 점검') {
                 const equipName = equipKey.split('::')[0];
-                const matchedItems = adminItems.filter(ai => {
+                let matchedItems = adminItems.filter(ai => {
                     if (!ai.equip) return false;
                     const equips = ai.equip.split(',').map(e => e.trim());
                     return equips.includes(equipName);
                 });
+                
+                // [수정] 매칭되는 아이템이 없으면 전체 물품을 가져옴 (빈 리스트 방지)
+                if (matchedItems.length === 0) {
+                    matchedItems = adminItems;
+                }
                 availableItems = matchedItems.map(mItem => ({ content: mItem.part, code: mItem.code }));
             }
         }
 
         const uniqueItems = [];
         const seenContents = new Set();
+        
+        // [추가] 현재 선택된 항목을 무조건 첫 번째로 추가 (목록에서 사라지는 현상 방지)
+        Object.keys(selectedMap).forEach(content => {
+            let code = '';
+            let realContent = content;
+            const match = adminItems.find(a => a.part === content || a.code === content);
+            if (match) {
+                code = match.code || '';
+                realContent = match.part || content;
+            }
+            
+            const displayValue = code ? code : realContent;
+            if (!seenContents.has(displayValue)) {
+                seenContents.add(displayValue);
+                uniqueItems.push({ content: realContent, code: code });
+            }
+        });
+
         availableItems.forEach(ai => {
-            if (!seenContents.has(ai.content)) {
-                seenContents.add(ai.content);
-                if (!ai.code) {
-                    const match = adminItems.find(a => a.part === ai.content);
-                    if (match && match.code) ai.code = match.code;
-                }
-                uniqueItems.push(ai);
+            let code = ai.code;
+            let realContent = ai.content;
+            if (!code) {
+                const match = adminItems.find(a => a.part === realContent);
+                if (match && match.code) code = match.code;
+            }
+            const displayValue = code ? code : realContent;
+            
+            if (!seenContents.has(displayValue)) {
+                seenContents.add(displayValue);
+                uniqueItems.push({ content: realContent, code: code });
             }
         });
 
@@ -1031,35 +1079,84 @@ function toggleDetailContentEdit() {
             contentDiv.style.display = 'none';
             contentInput.style.display = 'none';
 
-            if (!dropdownWrapper) {
-                dropdownWrapper = document.createElement('div');
-                dropdownWrapper.id = dropdownWrapperId;
-                dropdownWrapper.className = 'log-select-wrapper';
+            // 매번 DOM을 새로 생성하여 DOM 노드 꼬임(렌더링 불가) 방지
+            if (dropdownWrapper) {
+                dropdownWrapper.remove();
+            }
+            dropdownWrapper = document.createElement('div');
+            dropdownWrapper.id = dropdownWrapperId;
+            dropdownWrapper.className = 'log-select-wrapper';
 
-                const trigger = document.createElement('div');
-                trigger.className = 'log-select-trigger';
+            const trigger = document.createElement('div');
+            trigger.className = 'log-select-trigger';
 
-                const dropdown = document.createElement('div');
-                dropdown.className = 'log-select-dropdown';
+            const actualValues = Object.keys(selectedMap);
+            let initialText = '항목 선택';
+            if (actualValues.length > 1) {
+                initialText = `${actualValues[0]} 외 ${actualValues.length - 1}개`;
+            } else if (actualValues.length === 1) {
+                initialText = actualValues[0];
+            }
+            trigger.innerText = initialText;
+            trigger.title = currentValues.join('\n');
 
-                const list = document.createElement('div');
-                list.className = 'log-select-list';
+            const dropdown = document.createElement('div');
+            dropdown.className = 'log-select-dropdown';
 
-                const selectedValues = currentContent ? currentContent.split(',').map(s => s.trim()).filter(s => s) : [];
+            const list = document.createElement('div');
+            list.className = 'log-select-list';
 
-                uniqueItems.forEach(mItem => {
-                    const div = document.createElement('div');
-                    div.className = 'log-select-item';
-                    const val = mItem.code ? mItem.code : mItem.content;
-                    if (selectedValues.includes(val) || selectedValues.includes(mItem.content)) {
+            uniqueItems.forEach(mItem => {
+                const div = document.createElement('div');
+                div.className = 'log-select-item';
+                const val = mItem.code ? mItem.code : mItem.content;
+                
+                const isSelected = selectedMap.hasOwnProperty(val) || selectedMap.hasOwnProperty(mItem.content);
+                    const itemCost = isSelected ? (selectedMap[val] || selectedMap[mItem.content] || '유상') : '유상';
+
+                    if (isSelected) {
                         div.classList.add('selected');
                     }
                     div.dataset.value = val;
-                    div.innerHTML = `
-                        <div style="display:flex; align-items:center; width:100%; pointer-events:none;">
-                            <span>${val}</span>
-                        </div>
-                    `;
+                    
+                    if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+                        div.innerHTML = `
+                            <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${val}</span>
+                            <select class="item-cost-select input-dark" style="width: 85px; font-size: 11px; padding: 2px; margin-left: 5px;" onclick="event.stopPropagation()">
+                                <option value="유상" ${itemCost === '유상' ? 'selected' : ''}>유상</option>
+                                <option value="무상(보증)" ${itemCost === '무상(보증)' ? 'selected' : ''}>무상(보증)</option>
+                                <option value="무상(중고)" ${itemCost === '무상(중고)' ? 'selected' : ''}>무상(중고)</option>
+                                <option value="기타" ${itemCost === '기타' ? 'selected' : ''}>기타</option>
+                            </select>
+                        `;
+                    } else {
+                        div.innerHTML = `<span>${val}</span>`;
+                    }
+
+                    const updateTriggerText = () => {
+                        const selected = list.querySelectorAll('.log-select-item.selected');
+                        const values = Array.from(selected).map(el => {
+                            const cSel = el.querySelector('.item-cost-select');
+                            return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+                        });
+
+                        if (values.length > 1) {
+                            trigger.innerText = `${values[0]} 외 ${values.length - 1}개`;
+                        } else if (values.length === 1) {
+                            trigger.innerText = values[0];
+                        } else {
+                            trigger.innerText = '항목 선택';
+                        }
+                        trigger.title = values.join('\n');
+                    };
+
+                    const cSel = div.querySelector('.item-cost-select');
+                    if (cSel) {
+                        cSel.addEventListener('change', (e) => {
+                            e.stopPropagation();
+                            if (div.classList.contains('selected')) updateTriggerText();
+                        });
+                    }
 
                     div.onclick = (e) => {
                         e.stopPropagation();
@@ -1079,51 +1176,34 @@ function toggleDetailContentEdit() {
 
                 dropdown.appendChild(list);
 
-                const footer = document.createElement('div');
-                footer.className = 'log-select-footer';
-                const addBtn = document.createElement('button');
-                addBtn.className = 'btn-blue-sm';
-                addBtn.style.width = '100%';
-                addBtn.textContent = '선택 완료';
-                addBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    dropdown.classList.remove('show');
-                };
-                footer.appendChild(addBtn);
-                if (type === '비정기' && detailType !== 'BM 점검') {
-                    footer.style.display = 'none';
-                }
-                dropdown.appendChild(footer);
-
-                dropdownWrapper.appendChild(trigger);
-                dropdownWrapper.appendChild(dropdown);
-
-                trigger.onclick = (e) => {
-                    e.stopPropagation();
-                    document.querySelectorAll('.log-select-dropdown.show').forEach(d => {
-                        if (d !== dropdown) d.classList.remove('show');
-                    });
-                    dropdown.classList.toggle('show');
-                };
-
-                function updateTriggerText() {
-                    const selected = list.querySelectorAll('.log-select-item.selected');
-                    const values = Array.from(selected).map(el => el.dataset.value);
-
-                    if (values.length > 1) {
-                        trigger.innerText = `${values[0]} 외 ${values.length - 1}개`;
-                    } else if (values.length === 1) {
-                        trigger.innerText = values[0];
-                    } else {
-                        trigger.innerText = '항목 선택';
-                    }
-                    trigger.classList.remove('multi-line');
-                    trigger.title = values.join('\n');
-                }
-
-                updateTriggerText();
-                contentInput.parentNode.insertBefore(dropdownWrapper, contentInput.nextSibling);
+            const footer = document.createElement('div');
+            footer.className = 'log-select-footer';
+            const addBtn = document.createElement('button');
+            addBtn.className = 'btn-blue-sm';
+            addBtn.style.width = '100%';
+            addBtn.textContent = '선택 완료';
+            addBtn.onclick = (e) => {
+                e.stopPropagation();
+                dropdown.classList.remove('show');
+            };
+            footer.appendChild(addBtn);
+            if (type === '비정기' && detailType !== 'BM 점검') {
+                footer.style.display = 'none';
             }
+            dropdown.appendChild(footer);
+
+            dropdownWrapper.appendChild(trigger);
+            dropdownWrapper.appendChild(dropdown);
+
+            trigger.onclick = (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.log-select-dropdown.show').forEach(d => {
+                    if (d !== dropdown) d.classList.remove('show');
+                });
+                dropdown.classList.toggle('show');
+            };
+
+            contentInput.parentNode.insertBefore(dropdownWrapper, contentInput.nextSibling);
         } else {
             // 그 외 타입은 텍스트 입력
             contentInput.value = currentContent;
@@ -1142,7 +1222,10 @@ function toggleDetailContentEdit() {
         if (dropdownWrapper) {
             const list = dropdownWrapper.querySelector('.log-select-list');
             const selected = list.querySelectorAll('.log-select-item.selected');
-            dropdownValues = Array.from(selected).map(el => el.dataset.value);
+            dropdownValues = Array.from(selected).map(el => {
+                const cSel = el.querySelector('.item-cost-select');
+                return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+            });
             isDropdownMode = true;
             dropdownWrapper.remove();
         }
@@ -1180,6 +1263,13 @@ function toggleDetailContentEdit() {
                         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
                         dropdownValues.forEach((val, idx) => {
+                            let itemCost = '';
+                            const costMatch = val.match(/^\[(.*?)\] (.*)$/);
+                            if (costMatch) {
+                                itemCost = costMatch[1];
+                                val = costMatch[2];
+                            }
+
                             let code = '';
                             let fullContent = val;
                             const match = adminItems.find(a => a.part === val || a.code === val);
@@ -1199,6 +1289,7 @@ function toggleDetailContentEdit() {
                                 if (!existing.memo) existing.memo = item.memo || '';
                                 if (!existing.md) existing.md = item.md || '';
                                 if (!existing.costType) existing.costType = item.costType || '';
+                                if (itemCost) existing.itemCost = itemCost;
                                 remainingIds.push(existing.id);
                                 
                                 const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
@@ -1220,7 +1311,8 @@ function toggleDetailContentEdit() {
                                     costType: item.costType || '',
                                     worker: item.worker || '',
                                     memo: item.memo || '',
-                                    md: item.md || ''
+                                    md: item.md || '',
+                                    itemCost: itemCost
                                 });
                                 remainingIds.push(newId);
                                 if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, targetDate, 1);
@@ -1359,9 +1451,13 @@ function completeScheduleWork() {
 
     if (!data.logs) data.logs = [];
 
-    // [수정] 같은 날짜, 같은 타입, 세부구분의 모든 항목 완료 처리
+    // [수정] 같은 날짜, 같은 타입, 세부구분의 모든 항목 완료 처리 (비용처리 포함하여 로그에 기록)
     const sameDayItems = data.maint.filter(i => i.scheduledDate === maintItem.scheduledDate && i.type === maintItem.type && (i.detailType || '') === (maintItem.detailType || ''));
-    const combinedContent = sameDayItems.map(i => i.code ? i.code : i.content).join(', ');
+    const contentArr = sameDayItems.map(i => {
+        const val = i.code ? i.code : i.content;
+        return i.itemCost ? `[${i.itemCost}] ${val}` : val;
+    });
+    const combinedContent = [...new Set(contentArr)].join(', ');
     const completeDate = maintItem.scheduledDate || new Date().toISOString().split('T')[0];
 
     data.logs.push({
@@ -1407,22 +1503,48 @@ function completeScheduleWork() {
     const remainingIds = data.maint.filter(i => sameDayItems.some(s => s.id === i.id)).map(i => i.id);
 
     if (remainingIds.length > 0) {
-        currentNextScheduleTarget = { site, equip, ids: remainingIds };
-        
-        let defaultNextDate = '';
-        const maxPeriod = Math.max(...sameDayItems.map(i => parseInt(i.period) || 0));
-        if (maxPeriod > 0) {
-            const dateObj = new Date(completeDate);
-            dateObj.setDate(dateObj.getDate() + maxPeriod);
-            defaultNextDate = dateObj.toISOString().split('T')[0];
-        }
+        const remainingItems = data.maint.filter(i => remainingIds.includes(i.id));
+        currentNextScheduleTarget = { site, equip, items: remainingItems, completeDate: completeDate };
 
         const nextModal = document.getElementById('next-schedule-modal');
         if (nextModal) {
-            const nextDateInput = document.getElementById('next-schedule-date-input');
-            nextDateInput.value = defaultNextDate;
-            nextDateInput.min = completeDate; // 작업 완료일 이전 날짜 선택 방지
-            document.getElementById('next-schedule-md-input').value = md; // 이전 공수 유지
+            const listContainer = document.getElementById('next-schedule-list-container');
+            if (listContainer) {
+                listContainer.innerHTML = '';
+                remainingItems.forEach(item => {
+                    let defaultNextDate = '';
+                    const period = parseInt(item.period) || 0;
+                    if (period > 0) {
+                        const dateObj = new Date(completeDate);
+                        dateObj.setDate(dateObj.getDate() + period);
+                        defaultNextDate = dateObj.toISOString().split('T')[0];
+                    }
+
+                    const div = document.createElement('div');
+                    div.style.marginBottom = '10px';
+                    div.style.padding = '10px';
+                    div.style.backgroundColor = '#21262d';
+                    div.style.borderRadius = '4px';
+                    div.style.border = '1px solid #30363d';
+                    
+                    const itemName = item.code ? item.code : item.content;
+                    
+                    div.innerHTML = `
+                        <div style="font-weight: bold; margin-bottom: 8px; color: #58a6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(itemName)}</div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div style="display: flex; align-items: center; flex: 1; min-width: 0;">
+                                <label class="form-label" style="width: 45px; margin-bottom: 0; flex-shrink: 0; text-align: left; font-size: 14px; color: #8b949e;">예정일</label>
+                                <input type="date" class="input-date-dark next-date-input" data-id="${item.id}" value="${defaultNextDate}" min="${completeDate}" style="flex: 1; min-width: 0; padding: 4px; font-size: 14px;">
+                            </div>
+                            <div style="display: flex; align-items: center; flex: 0.6; min-width: 0;">
+                                <label class="form-label" style="width: 35px; margin-bottom: 0; flex-shrink: 0; text-align: left; font-size: 14px; color: #8b949e;">공수</label>
+                                <input type="number" class="input-dark next-md-input" data-id="${item.id}" value="${item.md || md}" placeholder="M/D" min="0" style="flex: 1; min-width: 0; padding: 4px; font-size: 14px;">
+                            </div>
+                        </div>
+                    `;
+                    listContainer.appendChild(div);
+                });
+            }
             nextModal.style.display = 'flex';
         } else {
             alert('작업이 완료되었습니다.');
@@ -1452,20 +1574,32 @@ function setupNextScheduleModal() {
         saveBtn.onclick = () => {
             if (!currentNextScheduleTarget) return;
 
-            const dateInput = document.getElementById('next-schedule-date-input');
-            const mdInput = document.getElementById('next-schedule-md-input');
-            const newDate = dateInput.value;
-            const newMd = mdInput.value.trim();
-
-            if (!newDate) return alert('날짜를 선택해주세요.');
-            if (dateInput.min && newDate < dateInput.min) return alert('다음 예정일은 이전 작업일 이후 날짜로 선택해주세요.');
-
-            const { site, equip, ids } = currentNextScheduleTarget;
+            const { site, equip, items, completeDate } = currentNextScheduleTarget;
             const key = `details_${site}_${equip}`;
             let data = JSON.parse(localStorage.getItem(key)) || {};
+            let isUpdated = false;
 
             if (data.maint) {
-                ids.forEach(id => {
+                const listContainer = document.getElementById('next-schedule-list-container');
+                const dateInputs = listContainer.querySelectorAll('.next-date-input');
+                const mdInputs = listContainer.querySelectorAll('.next-md-input');
+                
+                let hasError = false;
+
+                for(let i=0; i<dateInputs.length; i++) {
+                    const dateInput = dateInputs[i];
+                    const mdInput = mdInputs[i];
+                    const id = parseInt(dateInput.dataset.id);
+                    const newDate = dateInput.value;
+                    const newMd = mdInput.value.trim();
+
+                    if (newDate) {
+                        if (dateInput.min && newDate < dateInput.min) {
+                            alert('다음 예정일은 이전 작업일 이후 날짜로 선택해주세요.');
+                            hasError = true;
+                            break;
+                        }
+                        
                     const item = data.maint.find(i => i.id === id);
                     if (item) {
                         const oldDate = item.scheduledDate;
@@ -1477,17 +1611,24 @@ function setupNextScheduleModal() {
                         if (oldMonth !== newMonth) {
                             if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, newDate, 1);
                         }
-                    }
-                });
-                localStorage.setItem(key, JSON.stringify(data));
+                            isUpdated = true;
 
-                if (typeof addSystemLog === 'function') {
-                    addSystemLog('ADD_SCHEDULE', equip, `Date: ${newDate}, Next Schedule Registered`);
+                            if (typeof addSystemLog === 'function') {
+                                addSystemLog('ADD_SCHEDULE', equip, `Date: ${newDate}, Content: ${item.content}, Next Schedule`);
+                            }
+                        }
+                    }
+                }
+
+                if (hasError) return;
+
+                if (isUpdated) {
+                localStorage.setItem(key, JSON.stringify(data));
                 }
             }
 
             modal.style.display = 'none';
-            alert('작업 완료 및 다음 예정일이 등록되었습니다.');
+            alert('작업 완료 및 다음 예정일 처리가 완료되었습니다.');
             window.refreshCalendarPopupAfterCompletion();
         };
     }
@@ -1561,6 +1702,13 @@ function cancelScheduleCompletion() {
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
     contents.forEach((itemText, idx) => {
+        let itemCost = '';
+        const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
+        if (costMatch) {
+            itemCost = costMatch[1];
+            itemText = costMatch[2];
+        }
+
         let code = '';
         let fullContent = itemText;
 
@@ -1580,6 +1728,7 @@ function cancelScheduleCompletion() {
             existingItem.md = recoveredMd;
             existingItem.memo = recoveredMemo;
             existingItem.costType = logItem.costType || '';
+            if (itemCost) existingItem.itemCost = itemCost;
             if (idx === 0) recoveredMaintId = existingItem.id;
         } else {
             // 일회성 항목 등으로 인해 maint에서 삭제된 경우 재생성
@@ -1596,7 +1745,8 @@ function cancelScheduleCompletion() {
                 costType: logItem.costType || '',
                 worker: recoveredWorker, // [추가]
                 md: recoveredMd,         // [추가]
-                memo: recoveredMemo      // [추가]
+                memo: recoveredMemo,     // [추가]
+                itemCost: itemCost
             });
             if (idx === 0) recoveredMaintId = newId;
         }
@@ -1858,7 +2008,10 @@ function confirmRegisterSchedule() {
     const wrapper = document.getElementById('register-content-wrapper');
     if (wrapper && wrapper.style.display !== 'none') {
         const selected = document.querySelectorAll('#register-content-list .log-select-item.selected');
-        content = Array.from(selected).map(el => el.dataset.value).join(', ');
+        content = Array.from(selected).map(el => {
+            const costSelect = el.querySelector('.item-cost-select');
+            return costSelect ? `[${costSelect.value}] ${el.dataset.value}` : el.dataset.value;
+        }).join(', ');
     } else {
         const input = document.getElementById('register-content-input');
         if (input) content = input.value.trim();
@@ -1876,6 +2029,13 @@ function confirmRegisterSchedule() {
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
     itemsList.forEach((itemText, idx) => {
+        let itemCost = '';
+        const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
+        if (costMatch) {
+            itemCost = costMatch[1];
+            itemText = costMatch[2];
+        }
+
         let code = '';
         let fullContent = itemText;
         let period = null;
@@ -1895,6 +2055,7 @@ function confirmRegisterSchedule() {
             existingItem.detailType = finalDetailType;
             if (costType) existingItem.costType = costType;
             existingItem.md = md;
+            if (itemCost) existingItem.itemCost = itemCost;
             if (idx === 0) lastProcessedId = existingItem.id;
             
             const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
@@ -1913,7 +2074,8 @@ function confirmRegisterSchedule() {
                 period: (type === '정기') ? period : null,
                 scheduledDate: dateStr,
                 costType: costType,
-                md: md
+                md: md,
+                itemCost: itemCost
             };
             if (idx === 0) lastProcessedId = newItem.id;
             data.maint.push(newItem);
@@ -2123,15 +2285,17 @@ window.updateRegisterContentOptions = function () {
             ];
             items = defaultList.map(content => ({ content: content }));
         } else if (detailType === 'PM 점검' || detailType === 'BM 점검') {
-            const targetType = detailType === 'PM 점검' ? '정기' : '비정기';
             const equipName = equipKey.split('::')[0];
             const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-            const matchedItems = adminItems.filter(item => {
-                if (item.type !== targetType) return false;
+            let matchedItems = adminItems.filter(item => {
                 if (!item.equip) return false;
                 const equips = item.equip.split(',').map(e => e.trim());
                 return equips.includes(equipName);
             });
+            
+            if (matchedItems.length === 0) {
+                matchedItems = adminItems;
+            }
             items = matchedItems.map(mItem => ({ content: mItem.part, code: mItem.code }));
         }
     }
@@ -2156,14 +2320,45 @@ window.updateRegisterContentOptions = function () {
         input.style.display = 'none';
         trigger.textContent = '항목 선택';
 
+        const updateTriggerText = () => {
+            const sels = Array.from(list.querySelectorAll('.selected')).map(el => {
+                const cSel = el.querySelector('.item-cost-select');
+                return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+            });
+            trigger.textContent = sels.length > 1 ? sels[0] + ' 외 ' + (sels.length - 1) + '개' : (sels.length === 1 ? sels[0] : '항목 선택');
+            trigger.title = sels.join('\n');
+        };
+
         list.innerHTML = uniqueItems.map(item => {
             const val = item.code ? item.code : item.content;
-            return `<div class="log-select-item" data-value="${val}"><span>${val}</span></div>`;
+            
+            if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+                return `
+                    <div class="log-select-item" data-value="${val}">
+                        <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${val}</span>
+                        <select class="item-cost-select input-dark" style="width: 85px; font-size: 11px; padding: 2px; margin-left: 5px;" onclick="event.stopPropagation()">
+                            <option value="유상">유상</option>
+                            <option value="무상(보증)">무상(보증)</option>
+                            <option value="무상(중고)">무상(중고)</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>`;
+            } else {
+                return `<div class="log-select-item" data-value="${val}"><span>${val}</span></div>`;
+            }
         }).join('');
 
         const dropdown = document.getElementById('register-content-dropdown');
         const footer = dropdown ? dropdown.querySelector('.log-select-footer') : null;
         if (footer) footer.style.display = (type === '비정기' && detailType !== 'BM 점검') ? 'none' : 'block';
+
+        list.querySelectorAll('.item-cost-select').forEach(cSel => {
+            cSel.addEventListener('change', (e) => {
+                e.stopPropagation();
+                const parentDiv = cSel.closest('.log-select-item');
+                if (parentDiv && parentDiv.classList.contains('selected')) updateTriggerText();
+            });
+        });
 
         list.querySelectorAll('.log-select-item').forEach(div => {
             div.onclick = (e) => {
@@ -2174,10 +2369,7 @@ window.updateRegisterContentOptions = function () {
                     });
                 }
                 div.classList.toggle('selected');
-
-                const sels = Array.from(list.querySelectorAll('.selected')).map(el => el.dataset.value);
-                trigger.textContent = sels.length > 1 ? sels[0] + ' 외 ' + (sels.length - 1) + '개' : (sels.length === 1 ? sels[0] : '항목 선택');
-                trigger.title = sels.join('\n');
+                updateTriggerText();
 
                 if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
                     if (dropdown) dropdown.classList.remove('show');

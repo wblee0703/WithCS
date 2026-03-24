@@ -419,14 +419,14 @@
 
 .admin-item-scroll-wrapper .admin-list-header,
 .admin-item-scroll-wrapper #admin-item-list {
-    min-width: 750px; /* [수정] 리스트 전체의 최소 너비 보장 */
+    min-width: 500px; /* [수정] 리스트 전체의 최소 너비 보장 (너비 축소) */
 }
 
 /* ==========================================================================
    물품 관리 (Item Management) 전용 스타일
    ========================================================================== */
 .admin-item-list-container {
-    flex: 1.5; /* 창 축소 시 유동적으로 함께 줄어듦 */
+    flex: 1.1; /* 창 축소 시 유동적으로 함께 줄어듦 (너비 비율 축소) */
     min-width: 300px; /* 너무 작아지지 않게 최소 너비 설정 */
     border-right: none;
     padding-right: 0;
@@ -460,8 +460,8 @@
 }
 
 .col-item-code {
-    flex: 2;
-    min-width: 120px; /* [수정] 컬럼 최소 너비 고정 */
+    flex: 1.5;
+    min-width: 90px; /* [수정] 컬럼 최소 너비 고정 */
     justify-content: center;
     text-align: center;
     white-space: nowrap;
@@ -470,8 +470,8 @@
 }
 
 .col-item-part {
-    flex: 3;
-    min-width: 200px; /* [수정] 컬럼 최소 너비 고정 */
+    flex: 2.5;
+    min-width: 150px; /* [수정] 컬럼 최소 너비 고정 */
     justify-content: center;
     text-align: center;
     white-space: nowrap;
@@ -480,8 +480,8 @@
 }
 
 .col-item-spec {
-    flex: 3;
-    min-width: 200px; /* [수정] 컬럼 최소 너비 고정 */
+    flex: 2.5;
+    min-width: 150px; /* [수정] 컬럼 최소 너비 고정 */
     justify-content: center;
     text-align: center;
     white-space: nowrap;
@@ -502,7 +502,7 @@
 }
 
 .input-item-code {
-    flex: 2; /* 상단 컬럼의 2 비율과 일치 */
+    flex: 1.5; /* 상단 컬럼의 비율과 일치 */
     text-align: center;
 }
 
@@ -526,12 +526,12 @@ select.input-dark option {
 }
 
 .input-item-part {
-    flex: 3;
+    flex: 2.5;
     text-align: center;
 }
 
 .input-item-spec {
-    flex: 3;
+    flex: 2.5;
     text-align: center;
 }
 
@@ -689,6 +689,28 @@ select.input-dark option {
     #check-type-item-suggestions {
         width: 100% !important;
         overflow-x: auto !important;
+    }
+
+    /* [요청] 모바일 항목 선택 제안박스 확장 및 비용처리 드롭다운 축소 */
+    .log-select-dropdown {
+        width: 100% !important; /* 부모 입력창 너비에 정확히 맞춤 */
+        min-width: 100% !important;
+        max-width: none !important;
+    }
+    .log-select-item {
+        display: flex !important;
+        align-items: center !important;
+    }
+    .log-select-item span {
+        flex: 1;
+        min-width: 0; /* 항목명이 넘칠 경우 말줄임표 처리되도록 설정 */
+    }
+    .item-cost-select {
+        width: 60px !important; /* 비용처리 선택창 크기 축소 */
+        flex: 0 0 60px !important; /* 공간 축소 방지 */
+        font-size: 10px !important;
+        padding: 0px 2px !important;
+        margin-left: 5px !important;
     }
 }
 

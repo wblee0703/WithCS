@@ -357,8 +357,11 @@
 
 /* 다음 작업 예정일 등록 모달 전용 사이즈 (아담한 크기) */
 #next-schedule-modal .modal-window {
-    width: 350px;
+    width: 420px;
     height: auto;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
 }
 
 #register-schedule-modal .modal-window {
@@ -571,7 +574,7 @@
 
 .log-select-list { max-height: 200px; overflow-y: auto; padding: 5px; }
 
-.log-select-item { display: block; font-size: 13px; padding: 8px; cursor: pointer; border-radius: 4px; color: var(--cal-text-primary); margin-bottom: 2px; }
+.log-select-item { display: flex; align-items: center; justify-content: space-between; font-size: 13px; padding: 8px; cursor: pointer; border-radius: 4px; color: var(--cal-text-primary); margin-bottom: 2px; }
 .log-select-item:hover { background: var(--cal-bg-element); }
 .log-select-item.selected { background: var(--cal-blue); color: var(--cal-text-white); }
 
@@ -650,8 +653,9 @@
     #event-detail-modal .modal-window,
     #next-schedule-modal .modal-window {
         width: 90% !important;
-        height: auto !important;
         max-height: 80vh !important;
+        display: flex;
+        flex-direction: column;
         min-width: 0 !important;
         min-height: 0 !important;
         resize: none;
@@ -680,5 +684,26 @@
     /* [요청] 모바일 캘린더 일자 컬럼 미완료 작업 글자색 변경 (연월 제목과 동일) */
     .calendar-event-item:not(.completed) {
         color: var(--cal-text-primary);
+    }
+    /* [요청] 모바일 항목 선택 제안박스 확장 및 비용처리 드롭다운 축소 */
+    .log-select-dropdown {
+        width: 100% !important; /* 부모 입력창 너비에 정확히 맞춤 */
+        min-width: 100% !important;
+        max-width: none !important;
+    }
+    .log-select-item {
+        display: flex !important;
+        align-items: center !important;
+    }
+    .log-select-item span {
+        flex: 1;
+        min-width: 0; /* 항목명이 넘칠 경우 말줄임표 처리되도록 설정 */
+    }
+    .item-cost-select {
+        width: 60px !important;
+        flex: 0 0 60px !important; /* 공간 축소 방지 */
+        font-size: 10px !important;
+        padding: 0 2px !important;
+        margin-left: 5px !important;
     }
 }

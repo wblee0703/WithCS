@@ -396,6 +396,9 @@ function setupAuthEvents() {
     if (btnAddUser) btnAddUser.addEventListener('click', addNewUser);
     if (btnChangePw) btnChangePw.addEventListener('click', changePassword);
 
+    const btnDeleteAccount = document.getElementById('btn-delete-account');
+    if (btnDeleteAccount) btnDeleteAccount.addEventListener('click', deleteAccount);
+
     if (btnLoginLogout) btnLoginLogout.addEventListener('click', handleLoginLogoutClick);
     if (btnLoginSubmit) btnLoginSubmit.addEventListener('click', () => attemptLogin(loginIdInput.value, loginPwInput.value, 'Modal'));
     if (loginPwInput) {
@@ -1179,379 +1182,72 @@ function openUserModal() {
         if (adminPanel) {
             adminPanel.style.display = (role === 'admin') ? 'block' : 'none';
 
-            // [추가] 계정 추가 시 사업장 선택 드롭다운 동적 생성 및 데이터 갱신
-            const roleSelect = document.getElementById('new-user-role');
-            let siteSelectWrapper = document.getElementById('new-user-site-wrapper');
-            let siteSelect = document.getElementById('new-user-site');
-            const btnAddUser = document.getElementById('btn-add-user');
-
-            const idInput = document.getElementById('new-user-id');
-            const pwInput = document.getElementById('new-user-pw');
-
-            if (idInput) {
-                idInput.style.height = '30px';
-                idInput.style.padding = '0 8px';
-                idInput.style.fontSize = '13px';
-                idInput.style.boxSizing = 'border-box';
-            }
-
-            // [수정] 비밀번호 확인창 추가 및 같은 줄 배치
-            let pwWrapper = document.getElementById('new-user-pw-wrapper');
-            if (pwInput && !pwWrapper) {
-                pwWrapper = document.createElement('div');
-                pwWrapper.id = 'new-user-pw-wrapper';
-                pwWrapper.style.display = 'flex';
-                pwWrapper.style.gap = '10px';
-                pwWrapper.style.width = '100%';
-
-                pwInput.parentNode.insertBefore(pwWrapper, pwInput);
-                pwWrapper.appendChild(pwInput);
-
-                pwInput.style.flex = '1';
-                pwInput.style.margin = '0';
-                pwInput.style.height = '30px';
-                pwInput.style.padding = '0 8px';
-                pwInput.style.fontSize = '13px';
-                pwInput.style.boxSizing = 'border-box';
-
-                const pwConfirmInput = document.createElement('input');
-                pwConfirmInput.type = 'password';
-                pwConfirmInput.id = 'new-user-pw-confirm';
-                pwConfirmInput.placeholder = '비밀번호 확인';
-                pwConfirmInput.style.flex = '1';
-                pwConfirmInput.style.height = '30px';
-                pwConfirmInput.style.padding = '0 8px';
-                pwConfirmInput.style.fontSize = '13px';
-                pwConfirmInput.style.background = '#0d1117';
-                pwConfirmInput.style.border = '1px solid #30363d';
-                pwConfirmInput.style.color = '#fff';
-                pwConfirmInput.style.borderRadius = '4px';
-                pwConfirmInput.style.boxSizing = 'border-box';
-
-                pwWrapper.appendChild(pwConfirmInput);
-            }
-
-            let extraInfoWrapper = document.getElementById('new-user-extra-wrapper');
-
-            if (pwWrapper && !extraInfoWrapper) {
-                extraInfoWrapper = document.createElement('div');
-                extraInfoWrapper.id = 'new-user-extra-wrapper';
-                extraInfoWrapper.style.display = 'flex';
-                extraInfoWrapper.style.flexDirection = 'row';
-                extraInfoWrapper.style.gap = '10px';
-                extraInfoWrapper.style.width = '100%';
-                extraInfoWrapper.style.marginTop = '10px';
-
-                extraInfoWrapper.innerHTML = `
-                    <input type="text" id="new-user-department" placeholder="소속 (필수)" style="flex: 1; min-width: 0; height: 30px; padding: 0 8px; font-size: 13px; background: #0d1117; border: 1px solid #30363d; color: #fff; border-radius: 4px; box-sizing: border-box;">
-                    <input type="text" id="new-user-position" placeholder="직급 (필수)" style="flex: 1; min-width: 0; height: 30px; padding: 0 8px; font-size: 13px; background: #0d1117; border: 1px solid #30363d; color: #fff; border-radius: 4px; box-sizing: border-box;">
-                    <input type="text" id="new-user-name" placeholder="이름 (필수)" style="flex: 1; min-width: 0; height: 30px; padding: 0 8px; font-size: 13px; background: #0d1117; border: 1px solid #30363d; color: #fff; border-radius: 4px; box-sizing: border-box;">
-                `;
-                pwWrapper.parentNode.insertBefore(extraInfoWrapper, pwWrapper.nextSibling);
-            }
-
-            if (roleSelect && !siteSelectWrapper) {
-                siteSelectWrapper = document.createElement('div');
-                siteSelectWrapper.id = 'new-user-site-wrapper';
-                siteSelectWrapper.style.display = 'flex';
-                siteSelectWrapper.style.gap = '10px';
-                siteSelectWrapper.style.marginTop = '10px'; // 위아래 간격 추가
-                siteSelectWrapper.style.width = '100%';
-                siteSelectWrapper.style.height = '30px'; // 높이를 2/3 수준(30px)으로 축소
-
-                // [수정] 기존 권한 선택 요소를 Wrapper(가로 1열) 안으로 이동
-                roleSelect.parentNode.insertBefore(siteSelectWrapper, roleSelect);
-                siteSelectWrapper.appendChild(roleSelect);
-
-                roleSelect.style.flex = '1';
-                roleSelect.style.minWidth = '0';
-                roleSelect.style.height = '100%';
-                roleSelect.style.padding = '0 8px';
-                roleSelect.style.fontSize = '13px';
-                roleSelect.style.boxSizing = 'border-box';
-                roleSelect.style.margin = '0'; // 기존 마진 제거
-
-                siteSelect = document.createElement('select');
-                siteSelect.id = 'new-user-site';
-                siteSelect.style.flex = '1';
-                siteSelect.style.minWidth = '0';
-                siteSelect.style.padding = '0 8px';
-                siteSelect.style.fontSize = '13px';
-                siteSelect.style.backgroundColor = '#0d1117';
-                siteSelect.style.color = '#fff';
-                siteSelect.style.border = '1px solid #30363d';
-                siteSelect.style.borderRadius = '4px';
-                siteSelect.style.height = '100%';
-                siteSelect.style.boxSizing = 'border-box';
-
-                siteSelectWrapper.appendChild(siteSelect);
-
-                if (btnAddUser) {
-                    btnAddUser.className = 'btn-green'; // 녹색 버튼 스타일 적용
-                    btnAddUser.textContent = '추가';
-                    btnAddUser.style.width = 'auto';
-                    btnAddUser.style.height = '100%';
-                    btnAddUser.style.padding = '0 15px'; // 버튼 좌우 여백 축소
-                    btnAddUser.style.margin = '0';
-                    btnAddUser.style.fontSize = '13px'; // 버튼 폰트 크기 축소
-                    btnAddUser.style.fontWeight = 'normal'; // 굵기 조절
-                    btnAddUser.style.borderRadius = '4px';
-                    btnAddUser.style.boxSizing = 'border-box';
-                    siteSelectWrapper.appendChild(btnAddUser);
-                }
-            }
-
-            if (siteSelect) {
+            // 사업장 선택 드롭다운 데이터 갱신
+            const siteSelect = document.getElementById('new-user-site');
+            const siteInput = document.getElementById('new-user-site-input');
+            const siteSuggestions = document.getElementById('new-user-site-suggestions');
+            
+            if (siteInput && siteSuggestions && siteSelect) {
                 const data = JSON.parse(localStorage.getItem('device_data')) || {};
                 const equipments = data.equipments || data || {};
-                siteSelect.innerHTML = '<option value="">사업장 미지정 (전체)</option>';
-                Object.keys(equipments).sort().forEach(site => {
-                    const opt = document.createElement('option');
-                    opt.value = site;
-                    opt.textContent = site;
-                    siteSelect.appendChild(opt);
+                const sites = Object.keys(equipments).sort();
+                
+                const renderSites = () => {
+                    siteSuggestions.innerHTML = '';
+                    
+                    const defLi = document.createElement('li');
+                    defLi.className = 'user-suggestion-item';
+                    defLi.innerHTML = `<span>사업장 미지정 (전체)</span>`;
+                    defLi.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        siteInput.value = '';
+                        siteSelect.value = '';
+                        siteSuggestions.style.display = 'none';
+                    });
+                    siteSuggestions.appendChild(defLi);
+
+                    sites.forEach(site => {
+                        const li = document.createElement('li');
+                        li.className = 'user-suggestion-item';
+                        li.innerHTML = `<span>${escapeHtml(site)}</span>`;
+                        li.addEventListener('mousedown', (e) => {
+                            e.preventDefault();
+                            siteInput.value = site;
+                            siteSelect.value = site;
+                            siteSuggestions.style.display = 'none';
+                        });
+                        siteSuggestions.appendChild(li);
+                    });
+                };
+
+                siteInput.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    if (siteSuggestions.style.display === 'block') {
+                        siteSuggestions.style.display = 'none';
+                    } else {
+                        renderSites();
+                        siteSuggestions.style.display = 'block';
+                    }
+                });
+
+                siteInput.addEventListener('blur', () => {
+                    setTimeout(() => { siteSuggestions.style.display = 'none'; }, 150);
                 });
             }
         }
 
-        // [추가] 일반/관리자 공통 비밀번호 변경 폼에 '새 비밀번호 확인' 1열 동적 추가
-        const changePwCurrent = document.getElementById('change-pw-current');
-        const changePwNew = document.getElementById('change-pw-new');
-
-        if (changePwCurrent) {
-            changePwCurrent.style.height = '30px';
-            changePwCurrent.style.padding = '0 8px';
-            changePwCurrent.style.fontSize = '13px';
-            changePwCurrent.style.boxSizing = 'border-box';
-
-            // [추가] 내 계정 정보 표시 및 수정 영역 동적 생성
-            let myInfoWrapper = document.getElementById('my-info-wrapper');
-            if (!myInfoWrapper) {
-                const sep1 = document.createElement('hr');
-                sep1.style.borderColor = '#30363d';
-                sep1.style.borderWidth = '1px 0 0 0';
-                sep1.style.margin = '25px 0 15px 0';
-
-                const infoTitle = document.createElement('h3');
-                infoTitle.textContent = '계정 정보';
-                infoTitle.className = 'modal-section-title-blue';
-                infoTitle.style.fontSize = '14px';
-                infoTitle.style.margin = '0 0 12px 0';
-
-                myInfoWrapper = document.createElement('div');
-                myInfoWrapper.id = 'my-info-wrapper';
-                myInfoWrapper.style.width = '100%';
-
-                const infoContent = document.createElement('div');
-                infoContent.id = 'my-info-content';
-                infoContent.style.display = 'flex';
-                infoContent.style.flexDirection = 'column';
-                infoContent.style.gap = '10px';
-                myInfoWrapper.appendChild(infoContent);
-
-                const sep2 = document.createElement('hr');
-                sep2.style.borderColor = '#30363d';
-                sep2.style.borderWidth = '1px 0 0 0';
-                sep2.style.margin = '35px 0 20px 0';
-                // [수정] '비밀번호 변경' 제목(H3)을 찾아서 그 위로 계정 정보 영역을 삽입합니다.
-                let targetNode = changePwCurrent;
-                let prevNode = changePwCurrent.previousElementSibling;
-                while (prevNode) {
-                    if (prevNode.tagName === 'H3') {
-                        targetNode = prevNode;
-                        // 제목 바로 위에 구분선(HR)이 있다면 그 위로 타겟을 한 번 더 올립니다.
-                        if (targetNode.previousElementSibling && targetNode.previousElementSibling.tagName === 'HR') {
-                            targetNode = targetNode.previousElementSibling;
-                        }
-                        break;
-                    }
-                    prevNode = prevNode.previousElementSibling;
-                }
-
-                changePwCurrent.parentNode.insertBefore(sep1, targetNode);
-                changePwCurrent.parentNode.insertBefore(infoTitle, targetNode);
-                changePwCurrent.parentNode.insertBefore(myInfoWrapper, targetNode);
-                changePwCurrent.parentNode.insertBefore(sep2, targetNode);
-            }
-            if (myInfoWrapper && typeof window.renderMyInfo === 'function') window.renderMyInfo();
-        }
-
-        let changePwWrapper = document.getElementById('change-pw-new-wrapper');
-        if (changePwNew && !changePwWrapper) {
-            changePwWrapper = document.createElement('div');
-            changePwWrapper.id = 'change-pw-new-wrapper';
-            changePwWrapper.style.display = 'flex';
-            changePwWrapper.style.gap = '10px';
-            changePwWrapper.style.width = '100%';
-            changePwWrapper.style.marginTop = '10px';
-            changePwWrapper.style.height = '30px';
-
-            changePwNew.parentNode.insertBefore(changePwWrapper, changePwNew);
-            changePwWrapper.appendChild(changePwNew);
-
-            changePwNew.style.flex = '1';
-            changePwNew.style.minWidth = '0';
-            changePwNew.style.margin = '0';
-            changePwNew.style.height = '100%';
-            changePwNew.style.padding = '0 8px';
-            changePwNew.style.fontSize = '13px';
-            changePwNew.style.boxSizing = 'border-box';
-
-            const changePwConfirmInput = document.createElement('input');
-            changePwConfirmInput.type = 'password';
-            changePwConfirmInput.id = 'change-pw-confirm';
-            changePwConfirmInput.placeholder = '새 비밀번호 확인';
-            changePwConfirmInput.style.flex = '1';
-            changePwConfirmInput.style.minWidth = '0';
-            changePwConfirmInput.style.height = '100%';
-            changePwConfirmInput.style.padding = '0 8px';
-            changePwConfirmInput.style.fontSize = '13px';
-            changePwConfirmInput.style.background = '#0d1117';
-            changePwConfirmInput.style.border = '1px solid #30363d';
-            changePwConfirmInput.style.color = '#fff';
-            changePwConfirmInput.style.borderRadius = '4px';
-            changePwConfirmInput.style.boxSizing = 'border-box';
-
-            changePwWrapper.appendChild(changePwConfirmInput);
-
-            const btnChangePw = document.getElementById('btn-change-pw');
-            if (btnChangePw) {
-                btnChangePw.style.width = 'auto';
-                btnChangePw.style.height = '100%';
-                btnChangePw.style.padding = '0 15px';
-                btnChangePw.style.margin = '0';
-                btnChangePw.style.fontSize = '13px';
-                btnChangePw.style.fontWeight = 'normal';
-                btnChangePw.style.borderRadius = '4px';
-                btnChangePw.style.boxSizing = 'border-box';
-                changePwWrapper.appendChild(btnChangePw);
-            }
-        }
-
-        // [추가] 계정 삭제 기능 UI 동적 생성 (비밀번호 변경 아래에 구분선과 함께 추가)
-        let deleteAccountWrapper = document.getElementById('delete-account-wrapper');
-        const changePwWrapperRef = document.getElementById('change-pw-new-wrapper');
-
-        if (changePwWrapperRef && !deleteAccountWrapper) {
-            const separator = document.createElement('hr');
-            separator.style.borderColor = '#30363d';
-            separator.style.borderWidth = '1px 0 0 0';
-            separator.style.margin = '35px 0 0 0'; // [수정] 윗 여백을 대폭 늘려 이전 섹션(비밀번호 변경)과 완벽하게 분리
-            if (changePwWrapperRef.parentNode) changePwWrapperRef.parentNode.insertBefore(separator, changePwWrapperRef.nextSibling);
-
-            // [추가] 계정 삭제 제목
-            const sectionTitle = document.createElement('h3');
-            sectionTitle.textContent = '계정 삭제';
-            sectionTitle.className = 'modal-section-title-blue';
-            sectionTitle.style.fontSize = '14px';
-            sectionTitle.style.margin = '0 0 3px 0'; // [수정] 제목과 아래 입력창 사이의 숨쉴 공간 추가
-            separator.parentNode.insertBefore(sectionTitle, separator.nextSibling);
-
-            deleteAccountWrapper = document.createElement('div');
-            deleteAccountWrapper.id = 'delete-account-wrapper';
-            deleteAccountWrapper.style.display = 'flex';
-            deleteAccountWrapper.style.gap = '10px';
-            deleteAccountWrapper.style.width = '100%';
-            deleteAccountWrapper.style.height = '30px';
-
-            const deletePwInput = document.createElement('input');
-            deletePwInput.type = 'password';
-            deletePwInput.id = 'delete-account-pw';
-            deletePwInput.placeholder = '현재 비밀번호 입력 (계정 삭제용)';
-            deletePwInput.style.flex = '1';
-            deletePwInput.style.height = '100%';
-            deletePwInput.style.padding = '0 8px';
-            deletePwInput.style.fontSize = '13px';
-            deletePwInput.style.background = '#0d1117';
-            deletePwInput.style.border = '1px solid #30363d';
-            deletePwInput.style.color = '#fff';
-            deletePwInput.style.borderRadius = '4px';
-            deletePwInput.style.boxSizing = 'border-box';
-
-            const btnDeleteAccount = document.createElement('button');
-            btnDeleteAccount.id = 'btn-delete-account';
-            btnDeleteAccount.className = 'btn-del';
-            btnDeleteAccount.textContent = '삭제';
-            btnDeleteAccount.style.width = 'auto';
-            btnDeleteAccount.style.height = '100%';
-            btnDeleteAccount.style.padding = '0 15px';
-            btnDeleteAccount.style.margin = '0';
-            btnDeleteAccount.style.fontSize = '13px';
-            btnDeleteAccount.style.fontWeight = 'normal';
-            btnDeleteAccount.style.borderRadius = '4px';
-            btnDeleteAccount.style.boxSizing = 'border-box';
-
-            deleteAccountWrapper.appendChild(deletePwInput);
-            deleteAccountWrapper.appendChild(btnDeleteAccount);
-
-            sectionTitle.parentNode.insertBefore(deleteAccountWrapper, sectionTitle.nextSibling);
-
-            btnDeleteAccount.addEventListener('click', deleteAccount);
-        }
-
-        // [이동 및 추가] 타 계정 삭제 기능을 본인 계정 삭제 폼 아래로 이동 (관리자 전용)
-        let adminDeleteWrapper = document.getElementById('admin-user-delete-wrapper');
+        // 내 계정 정보 렌더링
+        if (typeof window.renderMyInfo === 'function') window.renderMyInfo();
+        
+        const adminDeleteWrapper = document.getElementById('admin-user-delete-wrapper');
         if (role === 'admin') {
-            if (deleteAccountWrapper && !adminDeleteWrapper) {
-                adminDeleteWrapper = document.createElement('div');
-                adminDeleteWrapper.id = 'admin-user-delete-wrapper';
-                adminDeleteWrapper.style.width = '100%';
-                adminDeleteWrapper.style.marginTop = '10px';
-
-                const inputWrapper = document.createElement('div');
-                inputWrapper.style.display = 'flex';
-                inputWrapper.style.gap = '10px';
-                inputWrapper.style.width = '100%';
-                inputWrapper.style.height = '30px';
-
-                // [추가] 입력창과 제안 박스의 너비를 맞추기 위한 래퍼 생성
-                const searchContainer = document.createElement('div');
-                searchContainer.style.position = 'relative';
-                searchContainer.style.flex = '1';
-                searchContainer.style.minWidth = '0';
-                searchContainer.style.height = '100%';
-
-                const searchInput = document.createElement('input');
-                searchInput.type = 'text';
-                searchInput.id = 'admin-delete-user-input';
-                searchInput.placeholder = '삭제할 일반 계정 검색 (이름, 소속, 아이디)';
-                searchInput.style.width = '100%';
-                searchInput.style.height = '100%';
-                searchInput.style.padding = '0 8px';
-                searchInput.style.fontSize = '13px';
-                searchInput.style.background = '#0d1117';
-                searchInput.style.border = '1px solid #30363d';
-                searchInput.style.color = '#fff';
-                searchInput.style.borderRadius = '4px';
-                searchInput.style.boxSizing = 'border-box';
-                searchInput.autocomplete = 'off';
-
-                const suggestionList = document.createElement('ul');
-                suggestionList.id = 'admin-delete-user-suggestions';
-                suggestionList.className = 'user-suggestion-list';
-
-                searchContainer.appendChild(searchInput);
-                searchContainer.appendChild(suggestionList);
-
-                const delBtn = document.createElement('button');
-                delBtn.id = 'btn-admin-delete-user';
-                delBtn.className = 'btn-del';
-                delBtn.textContent = '삭제';
-                delBtn.style.width = 'auto';
-                delBtn.style.height = '100%';
-                delBtn.style.padding = '0 15px';
-                delBtn.style.margin = '0';
-                delBtn.style.fontSize = '13px';
-                delBtn.style.fontWeight = 'normal';
-                delBtn.style.borderRadius = '4px';
-                delBtn.style.boxSizing = 'border-box';
-
-                inputWrapper.appendChild(searchContainer);
-                inputWrapper.appendChild(delBtn);
-                adminDeleteWrapper.appendChild(inputWrapper);
-
-                deleteAccountWrapper.parentNode.insertBefore(adminDeleteWrapper, deleteAccountWrapper.nextSibling);
-
+            if (adminDeleteWrapper) {
+                adminDeleteWrapper.style.display = 'block';
+                
+                const searchInput = document.getElementById('admin-delete-user-input');
+                const suggestionList = document.getElementById('admin-delete-user-suggestions');
+                const delBtn = document.getElementById('btn-admin-delete-user');
+                
                 let deletableUsers = [];
 
                 adminDeleteWrapper.fetchDeletableUsers = () => {
@@ -1561,7 +1257,10 @@ function openUserModal() {
                         .catch(err => console.error(err));
                 };
 
+                adminDeleteWrapper.fetchDeletableUsers();
+
                 const showSuggestions = () => {
+                    if (!searchInput || !suggestionList) return;
                     const query = searchInput.value.trim().toLowerCase();
                     suggestionList.innerHTML = '';
                     let matches = query ? deletableUsers.filter(u => {
@@ -1588,39 +1287,40 @@ function openUserModal() {
                     suggestionList.style.display = 'block';
                 };
 
-                searchInput.addEventListener('focus', showSuggestions);
-                searchInput.addEventListener('input', showSuggestions);
-                searchInput.addEventListener('blur', () => { setTimeout(() => { suggestionList.style.display = 'none'; }, 150); });
+                if (searchInput) {
+                    searchInput.addEventListener('focus', showSuggestions);
+                    searchInput.addEventListener('input', showSuggestions);
+                    searchInput.addEventListener('blur', () => { setTimeout(() => { suggestionList.style.display = 'none'; }, 150); });
+                }
 
-                delBtn.addEventListener('click', () => {
-                    const targetId = searchInput.value.trim();
-                    if (!targetId) return alert('삭제할 계정 아이디를 입력하거나 선택해주세요.');
-                    if (!confirm(`'${targetId}' 계정을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+                if (delBtn) {
+                    // 이벤트 리스너 중복 추가 방지
+                    const newDelBtn = delBtn.cloneNode(true);
+                    delBtn.parentNode.replaceChild(newDelBtn, delBtn);
+                    
+                    newDelBtn.addEventListener('click', () => {
+                        const targetId = searchInput.value.trim();
+                        if (!targetId) return alert('삭제할 계정 아이디를 입력하거나 선택해주세요.');
+                        if (!confirm(`'${targetId}' 계정을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
 
-                    fetch('/api/admin/user/delete', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
-                        body: JSON.stringify({ target_id: targetId })
-                    })
-                        .then(res => res.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                addSystemLog('DELETE_USER', targetId, '관리자에 의한 타 계정 삭제');
-                                alert('계정이 삭제되었습니다.');
-                                searchInput.value = '';
-                                adminDeleteWrapper.fetchDeletableUsers();
-                            } else {
-                                alert(data.message || '계정 삭제 실패');
-                            }
-                        }).catch(err => console.error(err));
-                });
-            }
-
-            if (adminDeleteWrapper) {
-                adminDeleteWrapper.style.display = 'block';
-                if (adminDeleteWrapper.fetchDeletableUsers) adminDeleteWrapper.fetchDeletableUsers();
-                const searchInput = document.getElementById('admin-delete-user-input');
-                if (searchInput) searchInput.value = '';
+                        fetch('/api/admin/user/delete', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+                            body: JSON.stringify({ target_id: targetId })
+                        })
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    addSystemLog('DELETE_USER', targetId, '관리자에 의한 타 계정 삭제');
+                                    alert('계정이 삭제되었습니다.');
+                                    searchInput.value = '';
+                                    adminDeleteWrapper.fetchDeletableUsers();
+                                } else {
+                                    alert(data.message || '계정 삭제 실패');
+                                }
+                            }).catch(err => console.error(err));
+                    });
+                }
             }
         } else {
             if (adminDeleteWrapper) adminDeleteWrapper.style.display = 'none';
@@ -1631,7 +1331,7 @@ function openUserModal() {
 function closeUserModal() {
     const modal = document.getElementById('user-modal');
     if (modal) modal.style.display = 'none';
-    ['new-user-id', 'new-user-pw', 'new-user-pw-confirm', 'new-user-department', 'new-user-position', 'new-user-name', 'change-pw-current', 'change-pw-new', 'change-pw-confirm', 'delete-account-pw'].forEach(id => {
+    ['new-user-id', 'new-user-pw', 'new-user-pw-confirm', 'new-user-department', 'new-user-position', 'new-user-name', 'new-user-site-input', 'new-user-site', 'change-pw-current', 'change-pw-new', 'change-pw-confirm', 'delete-account-pw', 'admin-delete-user-input'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });

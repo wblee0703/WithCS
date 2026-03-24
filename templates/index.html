@@ -527,19 +527,14 @@
             <h3>다음 작업 예정일 등록</h3>
             <button class="btn-del-sm" onclick="document.getElementById('next-schedule-modal').style.display='none'; if(typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();">✕</button>
         </div>
-        <div class="modal-body">
-            <p style="color: #e6edf3; font-size: 13px; margin-bottom: 15px; text-align: center; word-break: keep-all;">
+        <div class="modal-body" style="display: flex; flex-direction: column; overflow: hidden; padding: 15px;">
+            <p style="color: #e6edf3; font-size: 13px; margin-bottom: 15px; text-align: center; word-break: keep-all; flex-shrink: 0;">
                 작업이 완료되었습니다.<br><span style="color:#58a6ff; font-weight:bold;">다음 작업 예정일</span>을 등록하시겠습니까?
             </p>
-            <div class="form-row" style="margin-bottom: 10px;">
-                <label class="form-label" style="width: 50px;">예정일</label>
-                <input type="date" id="next-schedule-date-input" class="input-date-dark" style="flex: 1;">
+            <div id="next-schedule-list-container" style="flex: 1; min-height: 50px; overflow-y: auto; padding-right: 5px;">
+                <!-- JS 동적 렌더링 -->
             </div>
-            <div class="form-row" style="margin-bottom: 15px;">
-                <label class="form-label" style="width: 50px;">공수</label>
-                <input type="number" id="next-schedule-md-input" class="input-dark" placeholder="공수(M/D)" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)" style="flex: 1;">
-            </div>
-            <div class="modal-btn-group">
+            <div class="modal-btn-group" style="margin-top: 15px; flex-shrink: 0;">
                 <button class="btn-gray" id="btn-skip-next-schedule">건너뛰기</button>
                 <button class="btn-blue" id="btn-save-next-schedule">등록</button>
             </div>

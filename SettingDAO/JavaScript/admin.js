@@ -765,6 +765,18 @@ function setupEquipMgmt() {
                     listHeader.appendChild(controlsDiv);
                 }
 
+                const btnCsvExport = document.createElement('button');
+                btnCsvExport.className = 'btn-settings';
+                btnCsvExport.style.fontSize = '12px';
+                btnCsvExport.style.padding = '2px 6px';
+                btnCsvExport.style.borderRadius = '4px';
+                btnCsvExport.style.cursor = 'pointer';
+                btnCsvExport.style.border = '1px solid #30363d';
+                btnCsvExport.style.background = '#21262d';
+                btnCsvExport.style.color = '#e6edf3';
+                btnCsvExport.textContent = 'CSV 내보내기';
+                btnCsvExport.title = '등록된 전체 장비 데이터를 CSV 양식으로 내보냅니다.';
+
                 const btnCsvImport = document.createElement('button');
                 btnCsvImport.className = 'btn-settings';
                 btnCsvImport.style.fontSize = '12px';
@@ -782,9 +794,11 @@ function setupEquipMgmt() {
                 csvInput.accept = '.csv';
                 csvInput.style.display = 'none';
 
+                btnCsvExport.addEventListener('click', exportEquipCsv);
                 csvInput.addEventListener('change', handleEquipCsvImport);
                 btnCsvImport.addEventListener('click', () => csvInput.click());
 
+                controlsDiv.appendChild(btnCsvExport);
                 controlsDiv.appendChild(btnCsvImport);
                 controlsDiv.appendChild(csvInput);
             }
@@ -934,6 +948,55 @@ function setupEquipMgmt() {
             }, 150); 
         });
     }
+}
+
+// [추가] CSV 기반 장비 내보내기 로직
+function exportEquipCsv() {
+    let hasData = false;
+    if (typeof storageData !== 'undefined') {
+        for (let site in storageData) {
+            if (storageData[site] && storageData[site].length > 0) {
+                hasData = true;
+                break;
+            }
+        }
+    }
+    if (!hasData) return alert('내보낼 장비 데이터가 없습니다.');
+
+    let csvContent = '\uFEFF'; 
+    csvContent += '사업장,장비명,Serial No,고객사 장비명,장비 구분,납품일,워런티시작일,워런티 기한,건물,층,세부위치,담당자,연락처,E-mail\n';
+
+    Object.keys(storageData).sort().forEach(site => {
+        const equips = storageData[site] || [];
+        equips.forEach(equipKey => {
+            const parts = equipKey.split('::');
+            const name = parts[0] || '';
+            const serial = parts.length > 1 ? parts[1] : '';
+
+            const detailData = JSON.parse(localStorage.getItem(`details_${site}_${equipKey}`)) || {};
+            const setup = detailData.setup || {};
+
+            const row = [
+                site, name, serial,
+                setup.custEquipName || '', setup.equipStatus || '', setup.deliveryDate || '',
+                setup.warrantyStart || '', setup.warrantyPeriod || '', setup.building || '',
+                setup.floor || '', setup.detailLoc || '', setup.manager || '',
+                setup.contact || '', setup.email || ''
+            ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+
+            csvContent += row + '\n';
+        });
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `장비_목록_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 // [추가] CSV 기반 장비 일괄 등록 로직

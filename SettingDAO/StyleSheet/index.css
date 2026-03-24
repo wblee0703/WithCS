@@ -1232,7 +1232,7 @@ body {
         margin-bottom: 5px;
     }
 }
-
+ 
 /* 일반 사용자(user) 로그인 시 글로벌 CSS(.role-user)에 의해 작업 상세 정보 팝업의 기능 버튼이 강제로 숨겨지는 현상 완벽 방지 */
 body.role-user #event-detail-modal button[style*="display: block"],
 body.role-user #event-detail-modal button[style*="display: inline-block"] {

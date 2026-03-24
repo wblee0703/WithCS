@@ -503,7 +503,7 @@ body {
 /* [추가] 관리자 계정 삭제용 제안 박스 스타일 */
 .user-suggestion-list {
     position: absolute;
-    top: 100%;
+    bottom: 100%;
     left: 0;
     width: 100%;
     background: #161b22;
@@ -515,9 +515,9 @@ body {
     display: none;
     list-style: none;
     padding: 0;
-    margin: 2px 0 0 0;
+    margin: 0 0 2px 0;
     box-sizing: border-box;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    box-shadow: 0 -4px 12px rgba(0,0,0,0.5);
 }
 .user-suggestion-item {
     padding: 8px 10px;
@@ -1125,6 +1125,20 @@ body.role-user .btn-list-setting {
 
     .modal-body {
         overflow-y: auto;
+    }
+
+    /* [요청] 모바일에서 계정 관리 모달 스크롤 허용 및 최대 크기 제한 */
+    #user-modal .modal-window {
+        width: 95vw !important;
+        max-height: 85vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    #user-modal .modal-body {
+        overflow-y: auto !important;
+        flex: 1 !important;
+        padding: 15px !important;
+        overflow-x: auto !important; /* 가로로 넓어질 경우 스크롤 허용 */
     }
 
     /* 5. 테이블 */

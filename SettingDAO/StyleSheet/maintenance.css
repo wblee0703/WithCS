@@ -867,6 +867,28 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         white-space: normal !important;
         word-break: break-all !important;
     }
+    
+    /* [요청] 모바일 항목 선택 제안박스 확장 및 비용처리 드롭다운 축소 */
+    .log-select-dropdown {
+        width: 100% !important; /* 부모 입력창 너비에 정확히 맞춤 */
+        min-width: 100% !important;
+        max-width: none !important;
+    }
+    .log-select-item {
+        display: flex !important;
+        align-items: center !important;
+    }
+    .log-select-item span {
+        flex: 1;
+        min-width: 0; /* 항목명이 넘칠 경우 말줄임표 처리되도록 설정 */
+    }
+    .item-cost-select {
+        width: 60px !important; /* 비용처리 선택창 크기 축소 */
+        flex: 0 0 60px !important; /* 공간 축소 방지 */
+        font-size: 10px !important;
+        padding: 0px 2px !important;
+        margin-left: 5px !important;
+    }
 
     /* [요청] 모바일에서 점검일 달력 아이콘 및 구분 선택 화살표 숨김 */
     #log-date::-webkit-calendar-picker-indicator {

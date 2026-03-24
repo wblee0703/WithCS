@@ -429,7 +429,11 @@ function addDetailItem() {
         // 타이핑 입력인 경우 admin_items에서 코드 검색
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
         const match = adminItems.find(a => a.part === content);
-        if (match) code = match.code || '';
+        if (match) {
+            code = match.code || '';
+        } else if (maintType === '정기' || maintType === '비정기') {
+            return alert('물품명은 제안 박스에서 검색하여 선택해야만 등록할 수 있습니다.');
+        }
     }
 
     const date = document.getElementById('maint-date').value;
@@ -568,7 +572,34 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
             contentElement.removeAttribute('data-code'); // 타이핑 시 코드 초기화
             window.renderMaintSuggestions(false, true);
         });
-        contentElement.addEventListener('focus', () => window.renderMaintSuggestions());
+        contentElement.addEventListener('focus', () => {
+            const currentVal = contentElement.value.trim();
+            const data = JSON.parse(localStorage.getItem('admin_items')) || [];
+            if (data.some(item => item.part === currentVal)) {
+                contentElement.dataset.lastValid = currentVal;
+            }
+            window.renderMaintSuggestions();
+        });
+        
+        // 포커스를 잃을 때 목록에 없는 임의의 텍스트가 입력되어 있다면 이전 유효값으로 롤백
+        contentElement.addEventListener('blur', () => {
+            setTimeout(() => {
+                const activeBtn = document.querySelector('#maint-type-toggle .active');
+                if (activeBtn && (activeBtn.dataset.type === '정기' || activeBtn.dataset.type === '비정기')) {
+                    const currentVal = contentElement.value.trim();
+                    const data = JSON.parse(localStorage.getItem('admin_items')) || [];
+                    const isValid = data.some(item => item.part === currentVal);
+                    if (!isValid) {
+                        contentElement.value = contentElement.dataset.lastValid || '';
+                        if (!contentElement.value) contentElement.removeAttribute('data-code');
+                    } else {
+                        contentElement.dataset.lastValid = currentVal;
+                    }
+                }
+                ul.style.display = 'none';
+            }, 150);
+        });
+
         document.addEventListener('click', (e) => {
             if (e.target !== contentElement && !wrapper.contains(e.target)) {
                 ul.style.display = 'none';
@@ -576,7 +607,7 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
         });
     }
 
-    contentElement.placeholder = (maintType === '정기' || maintType === '비정기') ? '물품 검색 또는 선택' : '항목 내용 입력';
+    contentElement.placeholder = (maintType === '정기' || maintType === '비정기') ? '검색 후 선택 (직접 입력 불가)' : '항목 내용 입력';
 
     // 렌더링 함수 전역 연결
     window.renderMaintSuggestions = function(showAll = forceShowAll, isInput = false) {
@@ -640,6 +671,7 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
                         ev.preventDefault();
                         contentElement.value = item.part;
                         contentElement.dataset.code = item.code || '';
+                        contentElement.dataset.lastValid = item.part;
                         ul.style.display = 'none';
                     });
                     ul.appendChild(li);
@@ -840,7 +872,10 @@ function addLogItem(e) {
         const list = document.getElementById('log-content-list');
         const selected = list ? list.querySelectorAll('.log-select-item.selected') : [];
         if (selected.length > 0) {
-            content = Array.from(selected).map(el => el.dataset.value).join(', ');
+            content = Array.from(selected).map(el => {
+                const costSelect = el.querySelector('.item-cost-select');
+                return costSelect ? `[${costSelect.value}] ${el.dataset.value}` : el.dataset.value;
+            }).join(', ');
         }
     } else {
         content = contentInput ? contentInput.value.trim() : '';
@@ -894,6 +929,15 @@ function addLogItem(e) {
             let code = '';
             let fullContent = itemText;
             let period = null;
+            let itemCost = '';
+
+            // [비용] 물품명 파싱
+            const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
+            if (costMatch) {
+                itemCost = costMatch[1];
+                itemText = costMatch[2];
+                fullContent = itemText;
+            }
 
             // Admin 물품 관리 데이터에서 코드명과 풀네임 검색
             const match = adminItems.find(a => a.part === itemText || a.code === itemText);
@@ -908,6 +952,7 @@ function addLogItem(e) {
             if (existingItem) {
                 // 이미 존재하면 완료 기준이므로 시작일(date)을 갱신
                 existingItem.date = date;
+                if (itemCost) existingItem.itemCost = itemCost;
                 isMaintUpdated = true;
             } else {
                 data.maint.push({
@@ -917,7 +962,8 @@ function addLogItem(e) {
                     code: code,
                     content: fullContent,
                     date: date,
-                    period: null
+                    period: null,
+                    itemCost: itemCost
                 });
                 isMaintUpdated = true;
                 addSystemLog('ADD_MAINTENANCE', currentPath.equip, `[${type}] ${fullContent} (자동 등록, 시작일: ${date})`);
@@ -1318,6 +1364,20 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
 
     const items = getCheckTypeItems(type, detailType, detailType2);
 
+    // [추가] 현재 선택된 항목이 기존 목록에 없으면 강제 추가 (선택 항목 사라짐 방지)
+    const currentValues = value ? value.split(',').map(s => s.trim()).filter(s => s) : [];
+    const selectedMap = {}; // 비용 처리를 파싱하여 분리된 키 맵 생성
+    currentValues.forEach(val => {
+        const match = val.match(/^\[(.*?)\] (.*)$/);
+        const actualVal = match ? match[2] : val;
+        const costVal = match ? match[1] : '유상';
+        selectedMap[actualVal] = costVal;
+
+        if (!items.some(item => item.content === actualVal || item.code === actualVal)) {
+            items.unshift({ content: actualVal, code: '' });
+        }
+    });
+
     if (items.length > 0 && detailType) {
 
         // 커스텀 드롭다운 구조 생성
@@ -1328,12 +1388,12 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
         wrapper.style.minWidth = '0';
         wrapper.onclick = (e) => e.stopPropagation();
 
-        const currentValues = value ? value.split(', ').map(s => s.trim()).filter(s => s) : [];
+        const actualValues = Object.keys(selectedMap);
         let initialText = '항목 선택';
-        if (currentValues.length > 1) {
-            initialText = `${currentValues[0]} 외 ${currentValues.length - 1}개`;
-        } else if (currentValues.length === 1) {
-            initialText = currentValues[0];
+        if (actualValues.length > 1) {
+            initialText = `${actualValues[0]} 외 ${actualValues.length - 1}개`;
+        } else if (actualValues.length === 1) {
+            initialText = actualValues[0];
         }
 
         const trigger = document.createElement('div');
@@ -1359,10 +1419,26 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
 
             const div = document.createElement('div');
             div.className = 'log-select-item';
-            // 기존 값이 full content 이거나 code 인 경우 모두 대응
-            if (currentValues.includes(item.content) || currentValues.includes(displayValue)) div.classList.add('selected');
+            
+            const isSelected = selectedMap.hasOwnProperty(displayValue) || selectedMap.hasOwnProperty(item.content);
+            const itemCost = isSelected ? (selectedMap[displayValue] || selectedMap[item.content] || '유상') : '유상';
+            
+            if (isSelected) div.classList.add('selected');
             div.dataset.value = displayValue;
-            div.innerHTML = `<span>${displayValue}</span>`;
+            
+            if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+                div.innerHTML = `
+                    <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayValue}</span>
+                    <select class="item-cost-select input-dark" style="width: 85px; font-size: 11px; padding: 2px; margin-left: 5px;" onclick="event.stopPropagation()">
+                        <option value="유상" ${itemCost === '유상' ? 'selected' : ''}>유상</option>
+                        <option value="무상(보증)" ${itemCost === '무상(보증)' ? 'selected' : ''}>무상(보증)</option>
+                        <option value="무상(중고)" ${itemCost === '무상(중고)' ? 'selected' : ''}>무상(중고)</option>
+                        <option value="기타" ${itemCost === '기타' ? 'selected' : ''}>기타</option>
+                    </select>
+                `;
+            } else {
+                div.innerHTML = `<span>${displayValue}</span>`;
+            }
 
             div.onclick = (e) => {
                 e.stopPropagation();
@@ -1600,7 +1676,44 @@ window.updateLogContentOptions = function () {
                 // [수정] 약어(코드)가 있으면 약어를 value와 표시명으로 사용
                 const displayValue = item.code ? item.code : item.content;
                 div.dataset.value = displayValue;
-                div.innerHTML = `<span>${displayValue}</span>`;
+                
+                if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+                    div.innerHTML = `
+                        <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayValue}</span>
+                        <select class="item-cost-select input-dark" style="width: 85px; font-size: 11px; padding: 2px; margin-left: 5px;" onclick="event.stopPropagation()">
+                            <option value="유상">유상</option>
+                            <option value="무상(보증)">무상(보증)</option>
+                            <option value="무상(중고)">무상(중고)</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    `;
+                } else {
+                    div.innerHTML = `<span>${displayValue}</span>`;
+                }
+                
+                const updateTriggerText = () => {
+                    const selected = contentList.querySelectorAll('.log-select-item.selected');
+                    const values = Array.from(selected).map(el => {
+                        const cSel = el.querySelector('.item-cost-select');
+                        return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+                    });
+                    if (values.length > 1) {
+                        contentTrigger.textContent = `${values[0]} 외 ${values.length - 1}개`;
+                    } else if (values.length === 1) {
+                        contentTrigger.textContent = values[0];
+                    } else {
+                        contentTrigger.textContent = '항목 선택';
+                    }
+                    contentTrigger.title = values.join('\n');
+                };
+
+                const cSel = div.querySelector('.item-cost-select');
+                if (cSel) {
+                    cSel.addEventListener('change', (e) => {
+                        e.stopPropagation();
+                        if (div.classList.contains('selected')) updateTriggerText();
+                    });
+                }
 
                 div.onclick = (e) => {
                     e.stopPropagation();
@@ -1613,17 +1726,7 @@ window.updateLogContentOptions = function () {
                     }
 
                     div.classList.toggle('selected');
-
-                    const selected = contentList.querySelectorAll('.log-select-item.selected');
-                    const values = Array.from(selected).map(el => el.dataset.value);
-                    if (values.length > 1) {
-                        contentTrigger.textContent = `${values[0]} 외 ${values.length - 1}개`;
-                    } else if (values.length === 1) {
-                        contentTrigger.textContent = values[0];
-                    } else {
-                        contentTrigger.textContent = '항목 선택';
-                    }
-                    contentTrigger.title = values.join('\n');
+                    updateTriggerText();
 
                     // [추가] 비정기(단일 선택) 항목 선택 시 드롭다운 자동 닫기
                     if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
@@ -1829,11 +1932,14 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
         } else if (detailType === 'PM 점검' || detailType === 'BM 점검') {
             const equipName = equipKey.split('::')[0];
             const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-            const matchedItems = adminItems.filter(item => {
+            let matchedItems = adminItems.filter(item => {
                 if (!item.equip) return false;
                 const equips = item.equip.split(',').map(e => e.trim());
                 return equips.includes(equipName);
             });
+            if (matchedItems.length === 0) {
+                matchedItems = adminItems;
+            }
             rawItems = matchedItems.map((mItem, index) => ({
                 id: Date.now() + index,
                 content: mItem.part
