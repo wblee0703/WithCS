@@ -36,9 +36,15 @@
                 <div class="admin-split-view">
                     <!-- 좌측: 사업장 목록 -->
                     <div class="admin-col-list">
-                        <div class="list-header">
-                            <span>등록된 사업장</span>
-                            <span id="admin-site-count" class="badge">0</span>
+                        <div class="list-header column-header">
+                            <div class="header-title-row mb-5">
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <span>등록된 사업장</span>
+                                    <span id="admin-site-count" class="badge">0</span>
+                                </div>
+                                <button id="btn-export-site-csv" class="btn-settings" title="CSV 내보내기" style="font-size: 12px; padding: 2px 6px; border-radius: 4px; border: 1px solid #30363d; background: #21262d; color: #e6edf3;">CSV 내보내기</button>
+                            </div>
+                            <input type="text" id="admin-site-search" class="input-dark full-width compact-select" placeholder="사업장명 검색" autocomplete="off">
                         </div>
                         <ul id="admin-site-list" class="admin-list">
                             <!-- JS로 렌더링 -->
@@ -93,14 +99,17 @@
                 <div class="admin-split-view">
                     <!-- 좌측: 장비 모델 목록 -->
                     <div class="admin-col-list wide-col" id="admin-model-container">
-                        <div class="list-header">
-                            <div style="display: flex; align-items: center; gap: 5px;">
-                                <span>장비 모델</span>
-                                <span id="admin-model-count" class="badge">0</span>
-                                <button id="btn-model-settings" class="btn-settings" title="관리 모드 토글">⚙️</button>
+                        <div class="list-header column-header">
+                            <div class="header-title-row mb-5">
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <span>장비 모델</span>
+                                    <span id="admin-model-count" class="badge">0</span>
+                                    <button id="btn-model-settings" class="btn-settings" title="관리 모드 토글">⚙️</button>
+                                    <button id="btn-export-model-csv" class="btn-settings" title="CSV 내보내기" style="font-size: 12px; padding: 2px 6px; border-radius: 4px; border: 1px solid #30363d; background: #21262d; color: #e6edf3;">CSV 내보내기</button>
+                                </div>
                             </div>
-                            <input type="text" id="admin-model-search" class="input-dark compact-select"
-                                placeholder="모델명 또는 약어 검색" autocomplete="off" style="flex: 1; margin-left: 15px;">
+                            <input type="text" id="admin-model-search" class="input-dark compact-select full-width"
+                                placeholder="모델명 또는 약어 검색" autocomplete="off">
                         </div>
                         <div class="admin-list-header">
                             <div class="model-col model-name-col">모델명</div>
@@ -159,7 +168,7 @@
                                     <label class="form-label-custom">장비명 (모델)</label>
                                     <div class="autocomplete-wrapper">
                                         <input type="text" id="equip-info-name" class="input-dark full-width cursor-pointer"
-                                            placeholder="선택 (클릭)" autocomplete="off" readonly>
+                                            placeholder="검색 후 선택 (직접 입력 불가)" autocomplete="off">
                                         <ul id="equip-model-suggestions" class="suggestion-list"></ul>
                                     </div>
                                 </div>

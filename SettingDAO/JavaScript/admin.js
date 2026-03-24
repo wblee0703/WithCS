@@ -121,6 +121,12 @@ function setupSiteMgmt() {
     // 초기 리스트 렌더링
     renderAdminSiteList();
 
+    // 검색 필터
+    const searchInput = document.getElementById('admin-site-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', renderAdminSiteList);
+    }
+
     // 신규 등록 버튼
     const btnAdd = document.getElementById('btn-admin-add-site');
     const inputAdd = document.getElementById('admin-site-add-input');
@@ -175,15 +181,64 @@ function setupSiteMgmt() {
             if (e.key === 'Enter') btnAddBuilding.click();
         });
     }
+
+    // [추가] 사업장 CSV 추출 이벤트
+    const btnExportCsv = document.getElementById('btn-export-site-csv');
+    if (btnExportCsv) {
+        btnExportCsv.addEventListener('click', exportSitesToCsv);
+    }
+}
+
+// [추가] 사업장 CSV 추출 로직
+function exportSitesToCsv() {
+    const sites = Object.keys(storageData).sort();
+    if (sites.length === 0) {
+        alert('추출할 사업장 데이터가 없습니다.');
+        return;
+    }
+
+    // 엑셀에서 한글 깨짐 방지를 위한 BOM 문자 추가
+    let csvContent = '\uFEFF'; 
+    csvContent += '사업장,건물목록\n';
+
+    sites.forEach(site => {
+        const metaKey = `site_meta_${site}`;
+        const metaData = JSON.parse(localStorage.getItem(metaKey)) || {};
+        const buildings = metaData.buildings || [];
+        
+        const siteName = site.replace(/"/g, '""');
+        const buildingStr = buildings.join(', ').replace(/"/g, '""');
+        csvContent += `"${siteName}","${buildingStr}"\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `사업장_목록_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 function renderAdminSiteList() {
     const list = document.getElementById('admin-site-list');
     const countEl = document.getElementById('admin-site-count');
+    const searchInput = document.getElementById('admin-site-search');
+    const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
     if (!list) return;
 
     list.innerHTML = '';
-    const sites = Object.keys(storageData).sort(); // 가나다순 정렬
+    let sites = Object.keys(storageData).sort(); // 가나다순 정렬
+
+    // 검색어 필터링 적용 (띄어쓰기 조합 검색 지원)
+    if (keyword) {
+        const keywords = keyword.split(/\s+/);
+        sites = sites.filter(site => {
+            return keywords.every(kw => site.toLowerCase().includes(kw));
+        });
+    }
 
     if (countEl) countEl.textContent = sites.length;
 
@@ -420,6 +475,12 @@ function setupEquipModelMgmt() {
         });
     }
 
+    // [추가] 장비 모델 CSV 추출 이벤트
+    const btnExportCsv = document.getElementById('btn-export-model-csv');
+    if (btnExportCsv) {
+        btnExportCsv.addEventListener('click', exportEquipmentModelsToCsv);
+    }
+
     if (btnAdd) {
         const addModel = () => {
             const name = nameInput.value.trim();
@@ -439,6 +500,34 @@ function setupEquipModelMgmt() {
         nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') abbrInput.focus(); });
         abbrInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addModel(); });
     }
+}
+
+// [추가] 장비 모델 CSV 추출 로직
+function exportEquipmentModelsToCsv() {
+    if (!equipmentModels || equipmentModels.length === 0) {
+        alert('추출할 장비 모델 데이터가 없습니다.');
+        return;
+    }
+
+    // 엑셀에서 한글 깨짐 방지를 위한 BOM 문자 추가
+    let csvContent = '\uFEFF'; 
+    csvContent += '모델명,약어\n';
+
+    equipmentModels.forEach(model => {
+        const name = model.name ? model.name.replace(/"/g, '""') : '';
+        const abbr = model.abbr ? model.abbr.replace(/"/g, '""') : '';
+        csvContent += `"${name}","${abbr}"\n`;
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `장비모델_목록_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 function loadEquipmentModels() {
@@ -703,18 +792,23 @@ function setupEquipMgmt() {
     const suggestionList = document.getElementById('equip-model-suggestions');
 
     if (nameInput && suggestionList) {
+        let lastValidModel = ''; // 유효한 선택값 보존
+
         const showList = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (suggestionList.style.display === 'block') {
-                suggestionList.style.display = 'none';
-                return;
-            }
+            const query = nameInput.value.trim().toLowerCase();
+            const keywords = query ? query.split(/\s+/) : [];
 
             suggestionList.innerHTML = '';
-            const matches = equipmentModels;
+            let matches = equipmentModels;
             
+            // input 이벤트 발생 시 검색어 기반 필터링
+            if (e && e.type === 'input' && query) {
+                matches = equipmentModels.filter(m => {
+                    const text = `${m.name} ${m.abbr}`.toLowerCase();
+                    return keywords.every(kw => text.includes(kw));
+                });
+            }
+
             if (matches.length > 0) {
                 matches.forEach(m => {
                     const li = document.createElement('li');
@@ -729,18 +823,51 @@ function setupEquipMgmt() {
                     li.addEventListener('mousedown', (ev) => {
                         ev.preventDefault();
                         nameInput.value = m.name;
+                        lastValidModel = m.name;
                         suggestionList.style.display = 'none';
                     });
                     suggestionList.appendChild(li);
                 });
                 suggestionList.style.display = 'block';
             } else {
-                suggestionList.innerHTML = '<li class="suggestion-item" style="text-align:center; color:#8b949e; cursor:default;">등록된 장비 모델이 없습니다.</li>';
+                suggestionList.innerHTML = '<li class="suggestion-item" style="text-align:center; color:#8b949e; cursor:default;">검색 결과가 없습니다.</li>';
                 suggestionList.style.display = 'block';
             }
         };
 
-        nameInput.addEventListener('click', showList);
+        nameInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (suggestionList.style.display === 'block') {
+                suggestionList.style.display = 'none';
+            } else {
+                showList(e);
+            }
+        });
+
+        nameInput.addEventListener('input', showList);
+        nameInput.addEventListener('focus', showList);
+
+        // 포커스를 잃을 때 목록에 없는 임의의 텍스트가 입력되어 있다면 이전 유효값으로 롤백
+        nameInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                const currentVal = nameInput.value.trim();
+                const isValid = equipmentModels.some(m => m.name === currentVal);
+                if (!isValid) {
+                    nameInput.value = lastValidModel;
+                } else {
+                    lastValidModel = currentVal;
+                }
+                suggestionList.style.display = 'none';
+            }, 150);
+        });
+
+        // 폼 초기화나 다른 장비 선택 시 lastValidModel 동기화를 위해 focus 시 값 업데이트
+        nameInput.addEventListener('focus', () => {
+            const currentVal = nameInput.value.trim();
+            if (equipmentModels.some(m => m.name === currentVal)) {
+                lastValidModel = currentVal;
+            }
+        });
 
         // 외부 클릭 시 제안 목록 닫기
         document.addEventListener('click', (e) => {
@@ -1112,6 +1239,10 @@ function handleEquipSave() {
     const specialNote = document.getElementById('equip-info-special-note').value.trim();
 
     if (!name) return alert('장비명(모델)을 입력해주세요.');
+
+    if (!equipmentModels.some(m => m.name === name)) {
+        return alert('장비명은 제안 박스에서 검색하여 선택해야만 등록할 수 있습니다.');
+    }
     
     const newKey = serial ? `${name}::${serial}` : name;
     
