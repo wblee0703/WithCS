@@ -449,12 +449,19 @@ def save_data(full_data):
             "items": full_data.get('check_type_items', {})
         }
 
+        # [추가] 유효한 사업장 및 장비 목록 추출 (가비지/고아 데이터 필터링 방어막)
+        valid_sites = set(device_json_data['equipments'].keys())
+        valid_site_equips = {f"{site}_{equip}" for site, equips in device_json_data['equipments'].items() for equip in equips}
+
         # 3. 데이터 분류 및 병합
         for key, value in full_data.items():
             if key == 'setup_data':
                 setup_data = value
             elif key.startswith('site_meta_'):
                 site = key.replace('site_meta_', '')
+                # [핵심] 실제 목록에 없는 사업장 메타데이터 무시
+                if site not in valid_sites:
+                    continue
                 if site not in withtech_data:
                     withtech_data[site] = {}
                 withtech_data[site]['buildings'] = value.get('buildings', [])
@@ -463,6 +470,10 @@ def save_data(full_data):
                 if not isinstance(value, dict):
                     continue
                 
+                # [핵심] 장비 트리 목록에 존재하지 않는 외계어/찌꺼기 상세 데이터는 즉시 버림
+                if site_equip not in valid_site_equips:
+                    continue
+
                 # maintenance_data.json 에는 운영 정보만 저장
                 if key not in maintenance_data:
                     maintenance_data[key] = {}
