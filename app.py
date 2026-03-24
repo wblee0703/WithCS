@@ -420,42 +420,34 @@ def load_data():
         return data
 
 def save_data(full_data):
-    """데이터를 분류하여 각 파일에 저장하고 백업 및 Git 동기화를 수행합니다."""
+    """데이터를 분류하여 각 파일에 저장합니다. (클라이언트 상태 우선 신뢰)"""
     with data_lock:
         # 1. 백업 수행
         for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_HOME, FILE_WITHTECH, FILE_DEVICE, FILE_ITEM, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG, FILE_ADMIN_LOG]:
             create_daily_backup(filepath)
 
-        # 2. 기존 데이터 로드 (계정 정보 보존용 등)
+        # 2. 기존 데이터 로드
         home_data = load_json_file(FILE_HOME)
         home_data.clear()
-
-        existing_device = load_json_file(FILE_DEVICE)
-        existing_item = load_json_file(FILE_ITEM)
-        existing_mgmt = load_json_file(FILE_MANAGEMENT)
-        existing_withtech = load_json_file(FILE_WITHTECH)
-        existing_maint = load_json_file(FILE_MAINTENANCE) # [추가] 기존 유지관리 데이터 로드
+        
+        if not full_data:
+            return
 
         # 각 저장소 컨테이너 초기화
         setup_data = {}
         maintenance_data = {}
         withtech_data = {}
-         # [수정] 프론트엔드에서 데이터가 누락되어 도착했을 경우를 대비한 방어 코드 (기존 데이터 유지)
+        # [수정] 클라이언트 상태를 신뢰하여 즉각 삭제 반영 (기존 서버 데이터 부활 로직 제거)
         device_json_data = {
-            "models": full_data.get('equipment_models', existing_device.get('models', [])),
-            "equipments": full_data.get('device_data', existing_device.get('equipments', {})),
+            "models": full_data.get('equipment_models', []),
+            "equipments": full_data.get('device_data', {}),
             "details": {}
         }
-        item_data = full_data.get('admin_items', existing_item if isinstance(existing_item, list) else [])
+        item_data = full_data.get('admin_items', [])
         management_data = {
-            "categories": full_data.get('check_type_categories', existing_mgmt.get('categories', {})),
-            "items": full_data.get('check_type_items', existing_mgmt.get('items', {}))
+            "categories": full_data.get('check_type_categories', {}),
+            "items": full_data.get('check_type_items', {})
         }
-        
-        common_logs_list = []
-        admin_logs_list = []
-        setup_logs_list = []
-        maint_logs_list = []
 
         # 3. 데이터 분류 및 병합
         for key, value in full_data.items():
@@ -491,31 +483,23 @@ def save_data(full_data):
                 # 위 분류에 속하지 않는 나머지 (예: 대시보드 기타 설정 등)는 home_data에 저장
                 home_data[key] = value
 
-        # [강력한 데이터 보호 로직] 프론트엔드 통신 누락/네트워크 지연으로 인한 장비 상세 데이터 소실 방지
+        # [수정] 클라이언트에서 완전히 삭제된 데이터는 서버 JSON에서도 소멸되도록 처리
+        # 장비 트리에 등록되어 있으나 상세 데이터가 누락된 경우에만 빈 껍데기로 초기화 (찌꺼기 방지)
         for site, equips in device_json_data['equipments'].items():
             for equip in equips:
                 site_equip = f"{site}_{equip}"
                 detail_key = f"details_{site_equip}"
                 
-                # Device_data (장비 설정, 특이사항) 누락 시 기존 서버 데이터로 복원
                 if site_equip not in device_json_data['details']:
-                    if site_equip in existing_device.get('details', {}):
-                        device_json_data['details'][site_equip] = existing_device['details'][site_equip]
-                    else:
-                        device_json_data['details'][site_equip] = {"setup": {}, "specialNote": ""}
+                    device_json_data['details'][site_equip] = {"setup": {}, "specialNote": ""}
                         
-                # Maintenance_data (점검 이력, 일지, 파일 등) 누락 시 기존 서버 데이터로 복원
                 if detail_key not in maintenance_data:
-                    if detail_key in existing_maint:
-                        maintenance_data[detail_key] = existing_maint[detail_key]
+                    maintenance_data[detail_key] = {"maint": [], "logs": [], "memo": "", "files": []}
 
         # [보완] 사업장 기본 골격 생성 및 기존 건물명 데이터 보호 (방어 로직)
         for site in device_json_data['equipments'].keys():
             if site not in withtech_data:
-                if isinstance(existing_withtech, dict) and site in existing_withtech:
-                    withtech_data[site] = existing_withtech[site] # 기존에 저장된 건물 데이터가 있으면 보존
-                else:
-                    withtech_data[site] = {"buildings": []}
+                withtech_data[site] = {"buildings": []}
 
         # 4. 파일 저장
         save_json_file(FILE_SETUP, setup_data)
