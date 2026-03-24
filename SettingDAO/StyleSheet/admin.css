@@ -540,6 +540,12 @@ select.input-dark option {
     height: 35px;
 }
 
+/* [추가] 달력 아이콘 회색 변경 */
+.custom-date-icon::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    cursor: pointer;
+}
+
 .item-edit-input {
     height: 30px;
     width: 100%;

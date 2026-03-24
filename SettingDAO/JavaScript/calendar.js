@@ -1003,10 +1003,8 @@ function toggleDetailContentEdit() {
                 ];
                 availableItems = defaultList.map(content => ({ content: content }));
             } else if (detailType === 'PM 점검' || detailType === 'BM 점검') {
-                const targetType = detailType === 'PM 점검' ? '정기' : '비정기';
                 const equipName = equipKey.split('::')[0];
                 const matchedItems = adminItems.filter(ai => {
-                    if (ai.type !== targetType) return false;
                     if (!ai.equip) return false;
                     const equips = ai.equip.split(',').map(e => e.trim());
                     return equips.includes(equipName);
@@ -1184,12 +1182,10 @@ function toggleDetailContentEdit() {
                         dropdownValues.forEach((val, idx) => {
                             let code = '';
                             let fullContent = val;
-                            let period = null;
                             const match = adminItems.find(a => a.part === val || a.code === val);
                             if (match) {
                                 code = match.code || '';
                                 fullContent = match.part || val;
-                                period = match.cycle || null;
                             }
 
                             // sameDayItems 뿐만 아니라 maint 전체에서 중복 확인
@@ -1219,7 +1215,7 @@ function toggleDetailContentEdit() {
                                     code: code,
                                     content: fullContent,
                                     date: "",
-                                    period: (itemType === '정기') ? period : null,
+                                    period: null,
                                     scheduledDate: targetDate,
                                     costType: item.costType || '',
                                     worker: item.worker || '',

@@ -600,7 +600,6 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
         if (currentType === '정기' || currentType === '비정기') {
             
             let filteredItems = data.filter(item => {
-                if (item.type !== currentType) return false;
                 if (addedParts.includes(item.part)) return false; 
                 return true;
             });
@@ -641,11 +640,6 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
                         ev.preventDefault();
                         contentElement.value = item.part;
                         contentElement.dataset.code = item.code || '';
-                        
-                        const periodInput = document.getElementById('maint-period');
-                        if (periodInput && !periodInput.disabled) {
-                            periodInput.value = item.cycle || '';
-                        }
                         ul.style.display = 'none';
                     });
                     ul.appendChild(li);
@@ -906,7 +900,6 @@ function addLogItem(e) {
             if (match) {
                 code = match.code || '';
                 fullContent = match.part || itemText;
-                period = match.cycle || null;
             }
 
             // 기존 유지관리 물품 리스트에 같은 항목이 있는지 확인 (풀네임 및 코드명 포함 매칭)
@@ -924,7 +917,7 @@ function addLogItem(e) {
                     code: code,
                     content: fullContent,
                     date: date,
-                    period: (type === '정기') ? period : null
+                    period: null
                 });
                 isMaintUpdated = true;
                 addSystemLog('ADD_MAINTENANCE', currentPath.equip, `[${type}] ${fullContent} (자동 등록, 시작일: ${date})`);
@@ -1834,11 +1827,9 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
                 content: content
             }));
         } else if (detailType === 'PM 점검' || detailType === 'BM 점검') {
-            const targetType = detailType === 'PM 점검' ? '정기' : '비정기';
             const equipName = equipKey.split('::')[0];
             const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
             const matchedItems = adminItems.filter(item => {
-                if (item.type !== targetType) return false;
                 if (!item.equip) return false;
                 const equips = item.equip.split(',').map(e => e.trim());
                 return equips.includes(equipName);
@@ -1927,7 +1918,7 @@ function openMaintEquipModal() {
 
     // 상세 정보 필드 매핑
     const fields = [
-        'custEquipName', 'building', 'floor', 'detailLoc',
+        'custEquipName', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod', 'building', 'floor', 'detailLoc',
         'manager', 'contact', 'email',
         'custManager', 'custContact', 'custEmail'
     ];
@@ -1947,14 +1938,20 @@ function saveMaintEquipModal() {
     if (!data.setup) data.setup = {};
 
     const fields = [
-        'custEquipName', 'building', 'floor', 'detailLoc',
+        'custEquipName', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod', 'building', 'floor', 'detailLoc',
         'manager', 'contact', 'email',
         'custManager', 'custContact', 'custEmail'
     ];
+
+    const newSetup = {};
     fields.forEach(field => {
         const el = document.getElementById(`maint-modal-${field}`);
-        if (el) data.setup[field] = el.value;
+        newSetup[field] = el ? el.value : (data.setup[field] || "");
     });
+    Object.keys(data.setup).forEach(k => {
+        if (!fields.includes(k)) newSetup[k] = data.setup[k];
+    });
+    data.setup = newSetup;
 
     localStorage.setItem(key, JSON.stringify(data));
     addSystemLog('UPDATE_SETUP', equip, '장비 정보 수정 (Maintenance Page)');

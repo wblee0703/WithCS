@@ -235,12 +235,75 @@ function renderBuildingList() {
 
     currentBuildingList.forEach((building, index) => {
         const li = document.createElement('li');
-        li.innerHTML = `<span class="item-text">${building}</span><span class="del-btn" style="float: right;">✕</span>`;
+        li.style.display = 'flex';
+        li.style.justifyContent = 'space-between';
+        li.style.alignItems = 'center';
+
+        li.innerHTML = `
+            <span class="item-text flex-1">${building}</span>
+            <div class="flex-gap-5">
+                <button class="btn-edit-sm btn-edit-building" title="수정" style="background:none; border:none; cursor:pointer;">✏️</button>
+                <span class="del-btn" style="cursor: pointer;">✕</span>
+            </div>
+        `;
+        
         li.querySelector('.del-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             currentBuildingList.splice(index, 1);
             renderBuildingList();
         });
+
+        const editBtn = li.querySelector('.btn-edit-building');
+        editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isEditing = li.classList.contains('editing');
+            const textSpan = li.querySelector('.item-text');
+
+            if (!isEditing) {
+                li.classList.add('editing');
+                editBtn.textContent = '✅';
+                textSpan.innerHTML = `<input type="text" class="input-dark input-edit-small" value="${building}" onclick="event.stopPropagation()">`;
+                const input = textSpan.querySelector('input');
+                input.focus();
+                input.addEventListener('keypress', (ev) => {
+                    if (ev.key === 'Enter') editBtn.click();
+                });
+            } else {
+                const input = textSpan.querySelector('input');
+                const newBuilding = input.value.trim();
+
+                if (!newBuilding) return alert('건물명을 입력해주세요.');
+                if (newBuilding !== building && currentBuildingList.includes(newBuilding)) return alert('이미 존재하는 건물명입니다.');
+
+                if (newBuilding !== building) {
+                    if (confirm(`건물명을 '${building}'에서 '${newBuilding}'(으)로 변경하시겠습니까?\n이 건물을 사용하는 장비들의 정보도 함께 업데이트됩니다.`)) {
+                        currentBuildingList[index] = newBuilding;
+                        
+                        // 장비 데이터 건물명 일괄 업데이트
+                        if (currentAdminSite && storageData[currentAdminSite]) {
+                            let isModified = false;
+                            storageData[currentAdminSite].forEach(equipKey => {
+                                const dataKey = `details_${currentAdminSite}_${equipKey}`;
+                                let detailData = JSON.parse(localStorage.getItem(dataKey));
+                                if (detailData && detailData.setup && detailData.setup.building === building) {
+                                    detailData.setup.building = newBuilding;
+                                    localStorage.setItem(dataKey, JSON.stringify(detailData));
+                                    isModified = true;
+                                }
+                            });
+                            if (isModified && typeof saveData === 'function') saveData();
+                        }
+                    } else {
+                        renderBuildingList();
+                        return;
+                    }
+                }
+                
+                li.classList.remove('editing');
+                renderBuildingList();
+            }
+        });
+
         list.appendChild(li);
     });
 }
@@ -587,6 +650,54 @@ function setupEquipMgmt() {
     if (btnSave) btnSave.addEventListener('click', handleEquipSave);
     if (btnDel) btnDel.addEventListener('click', handleEquipDelete);
 
+    // [추가] CSV 불러오기 버튼 동적 생성 및 처리
+    const equipListEl = document.getElementById('admin-equip-list');
+    if (equipListEl) {
+        const colListEl = equipListEl.closest('.admin-col-list');
+        if (colListEl) {
+            const listHeader = colListEl.querySelector('.list-header');
+            if (listHeader) {
+                if (getComputedStyle(listHeader).display !== 'flex') {
+                    listHeader.style.display = 'flex';
+                    listHeader.style.justifyContent = 'space-between';
+                    listHeader.style.alignItems = 'center';
+                }
+
+                let controlsDiv = listHeader.querySelector('.header-controls');
+                if (!controlsDiv) {
+                    controlsDiv = document.createElement('div');
+                    controlsDiv.className = 'header-controls';
+                    controlsDiv.style.display = 'flex';
+                    controlsDiv.style.gap = '5px';
+                    listHeader.appendChild(controlsDiv);
+                }
+
+                const btnCsvImport = document.createElement('button');
+                btnCsvImport.className = 'btn-settings';
+                btnCsvImport.style.fontSize = '12px';
+                btnCsvImport.style.padding = '2px 6px';
+                btnCsvImport.style.borderRadius = '4px';
+                btnCsvImport.style.cursor = 'pointer';
+                btnCsvImport.style.border = '1px solid #30363d';
+                btnCsvImport.style.background = '#21262d';
+                btnCsvImport.style.color = '#e6edf3';
+                btnCsvImport.textContent = 'CSV 불러오기';
+                btnCsvImport.title = 'CSV 양식: 사업장, 장비명, Serial No, 고객사 장비명, 장비 구분, 납품일, 워런티시작일, 워런티 기한, 건물, 층, 세부위치, 담당자, 연락처, E-mail';
+
+                const csvInput = document.createElement('input');
+                csvInput.type = 'file';
+                csvInput.accept = '.csv';
+                csvInput.style.display = 'none';
+
+                csvInput.addEventListener('change', handleEquipCsvImport);
+                btnCsvImport.addEventListener('click', () => csvInput.click());
+
+                controlsDiv.appendChild(btnCsvImport);
+                controlsDiv.appendChild(csvInput);
+            }
+        }
+    }
+
     // [추가] 장비명(모델) 자동완성 검색
     const nameInput = document.getElementById('equip-info-name');
     const suggestionList = document.getElementById('equip-model-suggestions');
@@ -687,6 +798,120 @@ function setupEquipMgmt() {
             }, 150); 
         });
     }
+}
+
+// [추가] CSV 기반 장비 일괄 등록 로직
+function handleEquipCsvImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const buffer = e.target.result;
+            let text = new TextDecoder('utf-8').decode(buffer);
+            if (text.includes('')) {
+                // 엑셀에서 저장한 기본 CSV 파일의 인코딩(EUC-KR) 지원
+                text = new TextDecoder('euc-kr').decode(buffer);
+            }
+
+            const lines = text.split(/\r?\n/);
+            if (lines.length < 2) {
+                alert('데이터가 없거나 잘못된 형식입니다. (첫 줄은 제목/헤더여야 합니다)');
+                return;
+            }
+
+            let importedCount = 0;
+            let skippedCount = 0;
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                const cols = line.split(',');
+                const site = cols[0] ? cols[0].trim() : '';
+                const name = cols[1] ? cols[1].trim() : '';
+                const serial = cols[2] ? cols[2].trim() : '';
+                const custEquipName = cols[3] ? cols[3].trim() : '';
+                const equipStatus = cols[4] ? cols[4].trim() : '';
+                const deliveryDate = cols[5] ? cols[5].trim() : '';
+                const warrantyStart = cols[6] ? cols[6].trim() : '';
+                const warrantyPeriod = cols[7] ? cols[7].trim() : '';
+                const building = cols[8] ? cols[8].trim() : '';
+                const floor = cols[9] ? cols[9].trim() : '';
+                const location = cols[10] ? cols[10].trim() : '';
+                const manager = cols[11] ? cols[11].trim() : '';
+                const contact = cols[12] ? cols[12].trim() : '';
+                const email = cols[13] ? cols[13].trim() : '';
+
+                if (!site || !name) {
+                    skippedCount++;
+                    continue;
+                }
+
+                if (!storageData[site]) {
+                    storageData[site] = [];
+                    addSystemLog('ADD_SITE', site, 'CSV 일괄 등록으로 사업장 자동 생성');
+                }
+
+                // [추가] CSV로 들어온 건물명이 해당 사업장에 없으면 자동 추가
+                if (building) {
+                    const metaKey = `site_meta_${site}`;
+                    let metaData = JSON.parse(localStorage.getItem(metaKey)) || { buildings: [] };
+                    if (!metaData.buildings) metaData.buildings = [];
+                    if (!metaData.buildings.includes(building)) {
+                        metaData.buildings.push(building);
+                        localStorage.setItem(metaKey, JSON.stringify(metaData));
+                    }
+                }
+
+                const newKey = serial ? `${name}::${serial}` : name;
+                
+                if (!storageData[site].includes(newKey)) {
+                    storageData[site].push(newKey);
+                    const initData = { 
+                        maint: [], logs: [], memo: "", specialNote: "", 
+                        setup: { 
+                            custEquipName: custEquipName,
+                            equipStatus: equipStatus,
+                            deliveryDate: deliveryDate,
+                            warrantyStart: warrantyStart,
+                            warrantyPeriod: warrantyPeriod,
+                            building: building,
+                            floor: floor,
+                            detailLoc: location,
+                            manager: manager,
+                            contact: contact,
+                            email: email,
+                            custManager: "",
+                            custContact: "",
+                            custEmail: "",
+                            model: serial 
+                        } 
+                    }; 
+                    localStorage.setItem(`details_${site}_${newKey}`, JSON.stringify(initData));
+                    importedCount++;
+                } else {
+                    skippedCount++;
+                }
+            }
+
+            if (importedCount > 0) {
+                if (typeof saveData === 'function') saveData();
+                addSystemLog('IMPORT_EQUIP_CSV', `총 ${importedCount}건 장비 등록`, `Skipped/Duplicated: ${skippedCount}건`);
+                alert(`${importedCount}건의 장비가 신규 등록되었습니다.\n(건너뜀/중복: ${skippedCount}건)`);
+                updateEquipSiteSelect();
+                renderAdminEquipList();
+            } else {
+                alert(`신규로 등록할 장비 데이터가 없습니다.\n(건너뜀/중복: ${skippedCount}건)`);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('파일을 읽는 중 오류가 발생했습니다.');
+        }
+        event.target.value = ''; // Input 초기화 (동일한 파일 재선택 가능하게 함)
+    };
+    reader.readAsArrayBuffer(file);
 }
 
 function updateEquipBuildingDropdown(siteName, selectedValue = '') {
@@ -803,6 +1028,14 @@ function renderAdminEquipList() {
             document.getElementById('equip-info-cust-equip-name').value = setupInfo.custEquipName || '';
             document.getElementById('equip-info-floor').value = setupInfo.floor || '';
             document.getElementById('equip-info-location').value = setupInfo.detailLoc || '';
+            const statusEl = document.getElementById('equip-info-status');
+            if (statusEl) statusEl.value = setupInfo.equipStatus || '';
+            const deliveryDateEl = document.getElementById('equip-info-delivery-date');
+            if (deliveryDateEl) deliveryDateEl.value = setupInfo.deliveryDate || '';
+            const wStartEl = document.getElementById('equip-info-warranty-start');
+            if (wStartEl) wStartEl.value = setupInfo.warrantyStart || '';
+            const wPeriodEl = document.getElementById('equip-info-warranty-period');
+            if (wPeriodEl) wPeriodEl.value = setupInfo.warrantyPeriod || '';
             document.getElementById('equip-info-manager').value = setupInfo.manager || '';
             document.getElementById('equip-info-contact').value = setupInfo.contact || '';
             document.getElementById('equip-info-email').value = setupInfo.email || '';
@@ -830,7 +1063,7 @@ function resetEquipForm() {
     const bSelect = document.getElementById('equip-info-building');
     if (bSelect) bSelect.innerHTML = '<option value="">건물 선택</option>';
 
-    ['equip-info-location', 'equip-info-cust-equip-name', 'equip-info-floor', 
+    ['equip-info-location', 'equip-info-status', 'equip-info-delivery-date', 'equip-info-warranty-start', 'equip-info-warranty-period', 'equip-info-cust-equip-name', 'equip-info-floor', 
      'equip-info-manager', 'equip-info-contact', 'equip-info-email', 
      'equip-info-cust-manager', 'equip-info-cust-contact', 'equip-info-cust-email', 'equip-info-special-note'].forEach(id => {
         const el = document.getElementById(id);
@@ -860,6 +1093,14 @@ function handleEquipSave() {
     // [추가]
     const building = document.getElementById('equip-info-building').value;
     const location = document.getElementById('equip-info-location').value.trim();
+    const statusEl = document.getElementById('equip-info-status');
+    const equipStatus = statusEl ? statusEl.value : '';
+    const deliveryDateEl = document.getElementById('equip-info-delivery-date');
+    const deliveryDate = deliveryDateEl ? deliveryDateEl.value : '';
+    const wStartEl = document.getElementById('equip-info-warranty-start');
+    const warrantyStart = wStartEl ? wStartEl.value : '';
+    const wPeriodEl = document.getElementById('equip-info-warranty-period');
+    const warrantyPeriod = wPeriodEl ? wPeriodEl.value : '';
     const custEquipName = document.getElementById('equip-info-cust-equip-name').value.trim();
     const floor = document.getElementById('equip-info-floor').value.trim();
     const manager = document.getElementById('equip-info-manager').value.trim();
@@ -891,18 +1132,23 @@ function handleEquipSave() {
         const oldData = localStorage.getItem(`details_${targetSite}_${currentAdminEquipKey}`);
         let parsedData = oldData ? JSON.parse(oldData) : { maint: [], logs: [], memo: "", setup: {} };
         
-        if (!parsedData.setup) parsedData.setup = {};
-        parsedData.setup.model = serial;
-        parsedData.setup.building = building;
-        parsedData.setup.detailLoc = location;
-        parsedData.setup.custEquipName = custEquipName;
-        parsedData.setup.floor = floor;
-        parsedData.setup.manager = manager;
-        parsedData.setup.contact = contact;
-        parsedData.setup.email = email;
-        parsedData.setup.custManager = custManager;
-        parsedData.setup.custContact = custContact;
-        parsedData.setup.custEmail = custEmail;
+        parsedData.setup = {
+            custEquipName: custEquipName,
+            equipStatus: equipStatus,
+            deliveryDate: deliveryDate,
+            warrantyStart: warrantyStart,
+            warrantyPeriod: warrantyPeriod,
+            building: building,
+            floor: floor,
+            detailLoc: location,
+            manager: manager,
+            contact: contact,
+            email: email,
+            custManager: custManager,
+            custContact: custContact,
+            custEmail: custEmail,
+            model: serial
+        };
         parsedData.specialNote = specialNote;
 
         localStorage.setItem(`details_${targetSite}_${newKey}`, JSON.stringify(parsedData));
@@ -925,18 +1171,23 @@ function handleEquipSave() {
     else if (currentAdminEquipKey && currentAdminEquipKey === newKey) {
         const dataKey = `details_${targetSite}_${newKey}`;
         let parsedData = JSON.parse(localStorage.getItem(dataKey)) || { maint: [], logs: [], memo: "", setup: {} };
-        if (!parsedData.setup) parsedData.setup = {};
-        parsedData.setup.model = serial;
-        parsedData.setup.building = building;
-        parsedData.setup.detailLoc = location;
-        parsedData.setup.custEquipName = custEquipName;
-        parsedData.setup.floor = floor;
-        parsedData.setup.manager = manager;
-        parsedData.setup.contact = contact;
-        parsedData.setup.email = email;
-        parsedData.setup.custManager = custManager;
-        parsedData.setup.custContact = custContact;
-        parsedData.setup.custEmail = custEmail;
+        parsedData.setup = {
+            custEquipName: custEquipName,
+            equipStatus: equipStatus,
+            deliveryDate: deliveryDate,
+            warrantyStart: warrantyStart,
+            warrantyPeriod: warrantyPeriod,
+            building: building,
+            floor: floor,
+            detailLoc: location,
+            manager: manager,
+            contact: contact,
+            email: email,
+            custManager: custManager,
+            custContact: custContact,
+            custEmail: custEmail,
+            model: serial
+        };
         parsedData.specialNote = specialNote;
         localStorage.setItem(dataKey, JSON.stringify(parsedData));
     }
@@ -945,20 +1196,35 @@ function handleEquipSave() {
         storageData[targetSite].push(newKey);
         // 초기 데이터 생성
         const initData = { maint: [], logs: [], memo: "", specialNote: specialNote, setup: { 
-            model: serial, 
-            building: building, 
-            detailLoc: location,
             custEquipName: custEquipName,
+            equipStatus: equipStatus,
+            deliveryDate: deliveryDate,
+            warrantyStart: warrantyStart,
+            warrantyPeriod: warrantyPeriod,
+            building: building,
             floor: floor,
+            detailLoc: location,
             manager: manager,
             contact: contact,
             email: email,
             custManager: custManager,
             custContact: custContact,
-            custEmail: custEmail
+            custEmail: custEmail,
+            model: serial
         } }; 
         localStorage.setItem(`details_${targetSite}_${newKey}`, JSON.stringify(initData));
         addSystemLog('ADD_EQUIP', newKey, `Site: ${targetSite}`);
+    }
+
+    // [추가] 폼에서 저장된 건물명이 해당 사업장의 건물 목록에 없으면 자동 추가
+    if (building) {
+        const metaKey = `site_meta_${targetSite}`;
+        let metaData = JSON.parse(localStorage.getItem(metaKey)) || { buildings: [] };
+        if (!metaData.buildings) metaData.buildings = [];
+        if (!metaData.buildings.includes(building)) {
+            metaData.buildings.push(building);
+            localStorage.setItem(metaKey, JSON.stringify(metaData));
+        }
     }
 
     if (typeof saveData === 'function') saveData();
@@ -999,7 +1265,6 @@ function setupItemMgmt() {
     loadAdminItems();
 
     const btnAdd = document.getElementById('btn-admin-add-item');
-    const typeInput = document.getElementById('admin-item-type-input');
     const codeInput = document.getElementById('admin-item-code-input');
     const partInput = document.getElementById('admin-item-part-input');
     const specInput = document.getElementById('admin-item-spec-input');
@@ -1030,29 +1295,27 @@ function setupItemMgmt() {
 
     if (btnAdd) {
         btnAdd.addEventListener('click', () => {
-            const type = typeInput.value;
             const code = codeInput ? codeInput.value.trim() : "";
             const part = partInput.value.trim();
             const spec = specInput.value.trim();
-            const cycle = ""; // 상세 정보에서 수정하도록 빈 값 전달
 
             if (code.includes(',')) return alert('코드명에는 쉼표(,)를 입력할 수 없습니다.');
             if (!part) return alert('물품명을 입력해주세요.');
 
             adminItems.push({
                 id: Date.now(),
-                type: type,
+                type: "",
                 detailType: '',
                 additional: '',
                 partno: '',
                 code: code,
                 part: part,
                 spec: spec,
-                cycle: cycle,
+                cycle: "",
                 equip: ''
             });
             saveAdminItems();
-            addSystemLog('ADD_ITEM_ADMIN', part, `Type: ${type}, Spec: ${spec}`);
+            addSystemLog('ADD_ITEM_ADMIN', part, `Spec: ${spec}`);
             
             if (codeInput) codeInput.value = '';
             partInput.value = '';
@@ -1073,23 +1336,6 @@ function setupItemMgmt() {
     // 상세 정보 폼 이벤트
     const btnSaveDetail = document.getElementById('btn-admin-save-item-detail');
     const btnDelDetail = document.getElementById('btn-admin-del-item-detail');
-
-    // [추가] 점검 구분에 따른 교체주기 비활성화 (물품 상세 정보 폼)
-    const detailTypeInput = document.getElementById('item-info-type');
-    const detailCycleInput = document.getElementById('item-info-cycle');
-
-    if (detailTypeInput && detailCycleInput) {
-        detailTypeInput.addEventListener('change', () => {
-            if (detailTypeInput.value === '정기' || detailTypeInput.value === 'PM') {
-                detailCycleInput.disabled = false;
-                detailCycleInput.placeholder = '';
-            } else {
-                detailCycleInput.disabled = true;
-                detailCycleInput.value = '';
-                detailCycleInput.placeholder = '주기 없음';
-            }
-        });
-    }
 
     if (btnSaveDetail) btnSaveDetail.addEventListener('click', handleItemDetailSave);
     if (btnDelDetail) btnDelDetail.addEventListener('click', handleItemDetailDelete);
@@ -1179,10 +1425,8 @@ function setupItemMgmt() {
 
             if (!confirm(`물품 관리에 등록된 '${currentCheckTypeSubCategory}' 물품을 불러오시겠습니까?\n현재 목록이 모두 지워지고 물품 데이터로 덮어쓰기 됩니다.`)) return;
 
-            const targetType = currentCheckTypeSubCategory === 'PM 점검' ? '정기' : '비정기';
             const equipName = currentCheckTypeEquipKey.split('::')[0];
             const matchedItems = adminItems.filter(item => {
-                if (item.type !== targetType) return false;
                 if (!item.equip) return false;
                 const equips = item.equip.split(',').map(e => e.trim());
                 return equips.includes(equipName);
@@ -1230,7 +1474,7 @@ function renderAdminItemList() {
     if (keyword) {
         const keywords = keyword.split(/\s+/);
         filteredItems = adminItems.filter(item => {
-            const text = `${item.type || ''} ${item.detailType || ''} ${item.additional || ''} ${item.part || ''} ${item.spec || ''} ${item.code || ''} ${item.partno || ''} ${item.cycle || ''} ${item.equip || ''}`.toLowerCase();
+            const text = `${item.detailType || ''} ${item.additional || ''} ${item.part || ''} ${item.spec || ''} ${item.code || ''} ${item.partno || ''} ${item.equip || ''}`.toLowerCase();
             return keywords.every(kw => text.includes(kw));
         });
     }
@@ -1243,14 +1487,7 @@ function renderAdminItemList() {
             li.classList.add('active');
         }
             
-            let displayType = item.type || '정기';
-            if (displayType === 'PM') displayType = '정기';
-            if (displayType === 'BM') displayType = '비정기';
-
         li.innerHTML = `
-            <div class="model-col col-item-type">
-                    <span class="badge ${displayType.toLowerCase()}">${displayType}</span>
-            </div>
             <div class="model-col col-item-code" title="${escapeHtml(item.code || '-')}">
                 ${escapeHtml(item.code || '-')}
             </div>
@@ -1305,27 +1542,11 @@ function loadItemDetail(item) {
     if (form) form.style.display = 'block';
     if (placeholder) placeholder.style.display = 'none';
 
-    let itemType = item.type || '정기';
-    if (itemType === 'PM') itemType = '정기';
-    if (itemType === 'BM') itemType = '비정기';
-
-    document.getElementById('item-info-type').value = itemType;
     document.getElementById('item-info-detail-type').value = item.detailType || '';
     document.getElementById('item-info-additional').value = item.additional || '';
     document.getElementById('item-info-part').value = item.part || '';
     document.getElementById('item-info-spec').value = item.spec || '';
     
-    const cycleInput = document.getElementById('item-info-cycle');
-    if (itemType === '정기') {
-        cycleInput.disabled = false;
-        cycleInput.value = item.cycle || '';
-        cycleInput.placeholder = '';
-    } else {
-        cycleInput.disabled = true;
-        cycleInput.value = '';
-        cycleInput.placeholder = '주기 없음';
-    }
-
     document.getElementById('item-info-code').value = item.code || '';
     document.getElementById('item-info-partno').value = item.partno || '';
     document.getElementById('item-info-equip').value = item.equip || '';
@@ -1336,12 +1557,10 @@ function loadItemDetail(item) {
 function handleItemDetailSave() {
     if (!currentAdminItemId) return;
     
-    const type = document.getElementById('item-info-type').value;
     const detailType = document.getElementById('item-info-detail-type').value.trim();
     const additional = document.getElementById('item-info-additional').value.trim();
     const part = document.getElementById('item-info-part').value.trim();
     const spec = document.getElementById('item-info-spec').value.trim();
-    const cycle = (type === '정기' || type === 'PM') ? document.getElementById('item-info-cycle').value.trim() : "";
     const code = document.getElementById('item-info-code').value.trim();
     const partno = document.getElementById('item-info-partno').value.trim();
     const equipRaw = document.getElementById('item-info-equip').value;
@@ -1363,14 +1582,14 @@ function handleItemDetailSave() {
 
         adminItems[idx] = {
             id: adminItems[idx].id,
-            type: type,
+            type: "",
             detailType: detailType,
             additional: additional,
             partno: partno,
             code: code,
             part: part,
             spec: spec,
-            cycle: cycle,
+            cycle: "",
             equip: equip
         };
 
@@ -1460,7 +1679,7 @@ function handleItemDetailSave() {
         }
 
         saveAdminItems();
-        addSystemLog('UPDATE_ITEM_ADMIN_DETAIL', part, `Type: ${type}, Code: ${code}`);
+        addSystemLog('UPDATE_ITEM_ADMIN_DETAIL', part, `Code: ${code}`);
         alert('물품 정보가 저장되었습니다. (연결된 점검 이력 및 유지관리 데이터도 함께 업데이트 되었습니다.)');
         renderAdminItemList();
     }
@@ -1717,12 +1936,7 @@ function setupCheckTypeMgmt() {
 
             // 물품 관리 데이터에서 해당 타입의 항목 최신 데이터로 가져오기
             const currentItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-            let matches = currentItems.filter(item => {
-                let type = item.type || '정기';
-                if (type === 'PM') type = '정기';
-                if (type === 'BM') type = '비정기';
-                return type === targetType;
-            });
+            let matches = currentItems;
 
             // 검색어 필터링
             if (query) {
@@ -2428,10 +2642,8 @@ function renderCheckTypeItemList() {
     if (!checkTypeItemsData.hasOwnProperty(key)) {
         let defaultItems = [];
         if (currentCheckTypeSubCategory === 'PM 점검' || currentCheckTypeSubCategory === 'BM 점검') {
-            const targetType = currentCheckTypeSubCategory === 'PM 점검' ? '정기' : '비정기';
             const equipName = currentCheckTypeEquipKey.split('::')[0];
             const matchedItems = adminItems.filter(item => {
-                if (item.type !== targetType) return false;
                 if (!item.equip) return false;
                 const equips = item.equip.split(',').map(e => e.trim());
                 return equips.includes(equipName);

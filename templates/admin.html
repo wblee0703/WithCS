@@ -174,26 +174,49 @@
                                         placeholder="고객사 장비명">
                                 </div>
                             </div>
+
+                            <div class="flex-row-gap-10" style="margin-top: 10px;">
+                                <div class="flex-10">
+                                    <label class="form-label-custom">장비 구분</label>
+                                    <select id="equip-info-status" class="input-dark full-width" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
+                                        <option value="">장비 구분 선택</option>
+                                        <option value="셋업 장비">셋업 장비</option>
+                                        <option value="가동 장비">가동 장비</option>
+                                        <option value="워런티">워런티</option>
+                                        <option value="유휴장비">유휴장비</option>
+                                    </select>
+                                </div>
+                                <div class="flex-10">
+                                    <label class="form-label-custom">납품일</label>
+                                    <input type="date" id="equip-info-delivery-date" class="input-dark full-width custom-date-icon" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
+                                </div>
+                                <div class="flex-10">
+                                    <label class="form-label-custom">워런티 시작일</label>
+                                    <input type="date" id="equip-info-warranty-start" class="input-dark full-width custom-date-icon" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
+                                </div>
+                                <div class="flex-10">
+                                    <label class="form-label-custom">워런티 기간(개월)</label>
+                                    <input type="number" id="equip-info-warranty-period" class="input-dark full-width" min="0" placeholder="개월 수 입력" oninput="if(this.value < 0) this.value = Math.abs(this.value)" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
+                                </div>
+                            </div>
+
                             <div class="form-group form-section-divider">
                                 <label class="section-subtitle">[추가 상세 정보]</label>
 
                                 <div class="flex-row-gap-10">
                                     <div class="flex-10">
                                         <label class="form-label-custom">건물명</label>
-                                        <select id="equip-info-building"
-                                            class="input-dark full-width compact-select select-padding-md">
+                                        <select id="equip-info-building" class="input-dark full-width" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                             <option value="">건물 선택</option>
                                         </select>
                                     </div>
                                     <div class="flex-05">
                                         <label class="form-label-custom">층</label>
-                                        <input type="text" id="equip-info-floor" class="input-dark full-width"
-                                            placeholder="층수">
+                                        <input type="text" id="equip-info-floor" class="input-dark full-width" placeholder="층수" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                     </div>
                                     <div class="flex-10">
                                         <label class="form-label-custom">세부 위치</label>
-                                        <input type="text" id="equip-info-location" class="input-dark full-width"
-                                            placeholder="세부 위치">
+                                        <input type="text" id="equip-info-location" class="input-dark full-width" placeholder="세부 위치" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                     </div>
                                 </div>
 
@@ -270,7 +293,6 @@
                         </div>
                         <div class="admin-item-scroll-wrapper">
                             <div class="admin-list-header">
-                                <div class="model-col col-item-type">점검 구분</div>
                                 <div class="model-col col-item-code">코드명</div>
                                 <div class="model-col col-item-part">물품명</div>
                                 <div class="model-col col-item-spec">세부 규격</div>
@@ -279,11 +301,6 @@
                         </div>
                         <div class="list-footer">
                             <div class="admin-flex-row list-footer-inputs">
-                                <select id="admin-item-type-input"
-                                    class="input-dark compact-select input-item-type item-footer-input">
-                                    <option value="정기">정기</option>
-                                    <option value="비정기">비정기</option>
-                                </select>
                                 <input type="text" id="admin-item-code-input" placeholder="코드명"
                                     class="input-dark input-item-code item-footer-input">
                                 <input type="text" id="admin-item-part-input" placeholder="물품명"
@@ -303,14 +320,6 @@
                         </div>
                         <div id="admin-item-form" class="admin-form-container" style="display:none;">
                             <div class="flex-row-gap-10">
-                                <div class="flex-10">
-                                    <label class="form-label-custom">점검 구분</label>
-                                    <select id="item-info-type"
-                                        class="input-dark full-width compact-select select-padding-md">
-                                        <option value="정기">정기</option>
-                                        <option value="비정기">비정기</option>
-                                    </select>
-                                </div>
                                 <div class="flex-10">
                                     <label class="form-label-custom">상세 구분</label>
                                     <select id="item-info-detail-type"
@@ -350,10 +359,6 @@
                                 <div class="flex-14">
                                     <label class="form-label-custom">세부 규격</label>
                                     <input type="text" id="item-info-spec" class="input-dark full-width">
-                                </div>
-                                <div class="flex-04">
-                                    <label class="form-label-custom">주기(일)</label>
-                                    <input type="number" id="item-info-cycle" class="input-dark full-width" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)">
                                 </div>
                             </div>
 

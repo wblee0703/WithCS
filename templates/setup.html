@@ -3,6 +3,13 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/setup.css') }}">
+    <style>
+        /* 달력 아이콘 회색 변경 */
+        .custom-date-icon::-webkit-calendar-picker-indicator {
+            filter: invert(0.5);
+            cursor: pointer;
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
@@ -283,6 +290,22 @@
                     <label class="form-label">Serial</label><input type="text" id="setup-modal-serial" disabled>
                     <label class="form-label">관리번호</label><input type="text" id="setup-modal-custEquipName"
                         placeholder="고객사 장비명">
+                </div>
+                <div class="form-row">
+                    <label class="form-label">장비 구분</label>
+                    <select id="setup-modal-equipStatus" class="input-dark" style="flex: 1; height: 30px; padding: 4px 8px; box-sizing: border-box;">
+                        <option value="">장비 구분 선택</option>
+                        <option value="셋업 장비">셋업 장비</option>
+                        <option value="가동 장비">가동 장비</option>
+                        <option value="워런티">워런티</option>
+                        <option value="유류장비">유류장비</option>
+                    </select>
+                    <label class="form-label" style="width: 80px; text-align: center; padding-left: 5px;">납품일</label>
+                    <input type="date" id="setup-modal-deliveryDate" class="input-dark custom-date-icon" style="flex: 1; height: 30px; padding: 4px 8px; box-sizing: border-box;">
+                </div>
+                <div class="form-row">
+                    <label class="form-label">워런티 시작일</label><input type="date" id="setup-modal-warrantyStart" class="input-dark custom-date-icon" style="flex: 1; height: 30px; padding: 4px 8px; box-sizing: border-box;">
+                    <label class="form-label" style="width: 80px; text-align: center; padding-left: 5px;">기간(개월)</label><input type="number" id="setup-modal-warrantyPeriod" class="input-dark" min="0" placeholder="개월" oninput="if(this.value < 0) this.value = Math.abs(this.value)" style="flex: 1; height: 30px; padding: 4px 8px; box-sizing: border-box;">
                 </div>
                 <hr style="border: 0; border-top: 1px solid #30363d; margin: 10px 0;">
                 <div class="form-row">

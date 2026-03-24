@@ -543,7 +543,7 @@ function renderEquipChart(equipStats, totalEquip, allData) {
         allLi.onclick = () => {
             selectedEquipFilter = null;
             selectedSerialFilter = null;
-            currentSearchFilters = { site: '', equip: '' };
+            currentSearchFilters.equip = ''; // 사업장 필터는 유지하고 장비 필터만 초기화
             saveMaintFilters(); // [추가] 상태 저장
             renderCalendar();
             renderEquipChart(equipStats, totalEquip, allData);
@@ -1010,8 +1010,8 @@ function renderSetupEquipChart(equipStats, totalEquip, activeEquips) {
     allLi.innerHTML = `<span class="status-color status-color-all"></span><span class="status-name">전체</span><span class="status-count">${filteredTotal}</span>`;
     allLi.onclick = () => {
         setupDashboardFilter.equip = '';
-        currentGanttFilters = { site: '', equip: '' }; // 간트 차트 숨김
-        currentSearchFilters = { site: '', equip: '' };
+        currentGanttFilters.equip = ''; // 간트 차트 숨김 (site 필터는 유지)
+        currentSearchFilters.equip = ''; // 사업장 필터는 유지하고 장비 필터만 초기화
         renderCalendar();
         updateSetupDashboard();
     };

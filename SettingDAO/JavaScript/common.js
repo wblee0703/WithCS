@@ -12,6 +12,7 @@ let sessionTimeLeft = 1800; // [추가] 세션 유지 시간 (초) - 30분
 
 const setupInputIds = [
     'DeviceID-cust-equip-name', 'DeviceID-building', 'DeviceID-floor', 'DeviceID-detail-loc',
+    'DeviceID-equip-status', 'DeviceID-delivery-date', 'DeviceID-warranty-start', 'DeviceID-warranty-period',
     'DeviceID-manager', 'DeviceID-contact', 'DeviceID-email',
     'DeviceID-cust-manager', 'DeviceID-cust-contact', 'DeviceID-cust-email'
 ];
@@ -143,6 +144,9 @@ function fetchServerData(callback) {
             // [추가] 데이터 로드 후 기존 데이터 마이그레이션 및 JSON 키 순서 정렬
             migrateDataFormat();
 
+            // [추가] 워런티 만료 장비 자동 전환
+            updateWarrantyStatusAutomatically();
+
             // [추가] 데이터 갱신 후 UI 리프레시 (화면 깜빡임 없이 데이터만 최신화)
             refreshAppViews();
 
@@ -162,19 +166,21 @@ function fetchServerData(callback) {
 function migrateDataFormat() {
     let isModified = false;
 
-    const reorderObject = (obj, order) => {
+    const reorderObject = (obj, order, fillEmpty = false) => {
         const newObj = {};
-        order.forEach(k => { if (obj.hasOwnProperty(k)) newObj[k] = obj[k]; });
+        order.forEach(k => { 
+            if (obj.hasOwnProperty(k) && obj[k] !== undefined && obj[k] !== null) newObj[k] = obj[k]; 
+            else if (fillEmpty) newObj[k] = ""; 
+        });
         Object.keys(obj).forEach(k => { if (!order.includes(k)) newObj[k] = obj[k]; });
         return newObj;
     };
 
     // 1. admin_items 마이그레이션 및 키 순서 정렬 (item_data.json)
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-    const itemKeyOrder = ['id', 'type', 'detailType', 'additional', 'partno', 'code', 'part', 'spec', 'cycle', 'equip'];
+    const itemKeyOrder = ['id', 'detailType', 'additional', 'partno', 'code', 'part', 'spec', 'equip'];
 
     const newAdminItems = adminItems.map(item => {
-        if (item.type === 'PM') item.type = '정기';
         return reorderObject(item, itemKeyOrder);
     });
     if (JSON.stringify(adminItems) !== JSON.stringify(newAdminItems)) {
@@ -185,6 +191,12 @@ function migrateDataFormat() {
     // 2. details_* 마이그레이션 (유지관리, 이력 변환 및 키 순서 정렬)
     const maintKeyOrder = ['id', 'type', 'detailType', 'code', 'content', 'date', 'period', 'scheduledDate', 'costType', 'md', 'worker', 'memo'];
     const logKeyOrder = ['id', 'date', 'type', 'detailType', 'detailType2', 'content', 'costType', 'md', 'worker', 'memo'];
+    const setupKeyOrder = [
+        'custEquipName', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod',
+        'building', 'floor', 'detailLoc',
+        'manager', 'contact', 'email',
+        'custManager', 'custContact', 'custEmail'
+    ];
 
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -214,11 +226,62 @@ function migrateDataFormat() {
                     }
                 }
 
+            // [추가] 셋업(장비 마스터) 정보 정렬 및 빈 값 채우기
+            if (!detailData.setup) detailData.setup = {};
+            const oldSetupStr = JSON.stringify(detailData.setup);
+            const newSetup = reorderObject(detailData.setup, setupKeyOrder, true);
+            if (oldSetupStr !== JSON.stringify(newSetup)) {
+                detailData.setup = newSetup;
+                detailModified = true;
+            }
+
                 if (detailModified) {
                     localStorage.setItem(key, JSON.stringify(detailData));
                     isModified = true; // 저장 감지 트리거
                 }
             } catch (e) { }
+        }
+    }
+}
+
+// [추가] 워런티 기간 만료 시 '가동 장비'로 자동 전환하는 함수
+function updateWarrantyStatusAutomatically() {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key.startsWith('details_')) {
+            try {
+                let detailData = JSON.parse(localStorage.getItem(key));
+                if (detailData && detailData.setup) {
+                    if (detailData.setup.equipStatus === '워런티' && detailData.setup.warrantyStart && detailData.setup.warrantyPeriod) {
+                        const startStr = detailData.setup.warrantyStart;
+                        const period = parseInt(detailData.setup.warrantyPeriod);
+                        
+                        if (!isNaN(period) && startStr) {
+                            const [y, m, d] = startStr.split('-').map(Number);
+                            const startDate = new Date(y, m - 1, d);
+                            
+                            const endDate = new Date(startDate);
+                            endDate.setMonth(endDate.getMonth() + period);
+                            
+                            if (endDate < today) {
+                                detailData.setup.equipStatus = '가동 장비';
+                                localStorage.setItem(key, JSON.stringify(detailData));
+                                
+                                const parts = key.split('_');
+                                if (parts.length >= 3) {
+                                    const equipName = parts.slice(2).join('_');
+                                    if (typeof addSystemLog === 'function') {
+                                        addSystemLog('UPDATE_EQUIP_STATUS', equipName, '워런티 기간 만료에 따른 가동 장비 자동 전환');
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e) {}
         }
     }
 }
@@ -234,6 +297,7 @@ function initializeApp() {
         btn.dataset.type = '정기';
         if (btn.textContent.trim() === 'PM') btn.textContent = '정기';
     });
+    
     // 2-2. 로그인 및 사용자 관리 이벤트
     setupAuthEvents();
     setupMobileNav(); // [이동] 페이지 접근 제어 전에 실행하여 홈 화면에서도 메뉴 작동하도록 수정
@@ -2339,6 +2403,12 @@ function onEquipClick(site, equip) {
         document.getElementById('DeviceID-building').value = setup.building || '';
         document.getElementById('DeviceID-floor').value = setup.floor || '';
         document.getElementById('DeviceID-detail-loc').value = setup.detailLoc || '';
+        const equipStatusEl = document.getElementById('DeviceID-equip-status');
+        if (equipStatusEl) equipStatusEl.value = setup.equipStatus || '';
+        const warrantyStartEl = document.getElementById('DeviceID-warranty-start');
+        if (warrantyStartEl) warrantyStartEl.value = setup.warrantyStart || '';
+        const warrantyPeriodEl = document.getElementById('DeviceID-warranty-period');
+        if (warrantyPeriodEl) warrantyPeriodEl.value = setup.warrantyPeriod || '';
         document.getElementById('DeviceID-manager').value = setup.manager || '';
         document.getElementById('DeviceID-contact').value = setup.contact || '';
         document.getElementById('DeviceID-email').value = setup.email || '';

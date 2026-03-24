@@ -1439,7 +1439,7 @@ function openSetupEquipModal() {
 
     // 상세 정보 필드 매핑
     const fields = [
-        'custEquipName', 'building', 'floor', 'detailLoc',
+        'custEquipName', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod', 'building', 'floor', 'detailLoc',
         'manager', 'contact', 'email',
         'custManager', 'custContact', 'custEmail'
     ];
@@ -1459,14 +1459,20 @@ function saveSetupEquipModal() {
     if (!data.setup) data.setup = {};
 
     const fields = [
-        'custEquipName', 'building', 'floor', 'detailLoc',
+        'custEquipName', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod', 'building', 'floor', 'detailLoc',
         'manager', 'contact', 'email',
         'custManager', 'custContact', 'custEmail'
     ];
+
+    const newSetup = {};
     fields.forEach(field => {
         const el = document.getElementById(`setup-modal-${field}`);
-        if (el) data.setup[field] = el.value;
+        newSetup[field] = el ? el.value : (data.setup[field] || "");
     });
+    Object.keys(data.setup).forEach(k => {
+        if (!fields.includes(k)) newSetup[k] = data.setup[k];
+    });
+    data.setup = newSetup;
 
     localStorage.setItem(key, JSON.stringify(data));
 

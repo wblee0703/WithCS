@@ -20,6 +20,7 @@ from logging.handlers import TimedRotatingFileHandler
 import shutil
 import subprocess
 import secrets
+import uuid
 
 app = Flask(__name__)
 
@@ -190,7 +191,8 @@ def load_json_file(filepath):
 
 # Atomic Write: 저장 중 오류 발생 시 데이터 깨짐 방지
 def save_json_file(filepath, data):
-    tmp_path = filepath + '.tmp'
+    # [수정] 다중 프로세스(PythonAnywhere 워커) 환경에서 임시 파일 충돌로 인한 JSON 데이터 깨짐 방지
+    tmp_path = f"{filepath}.{uuid.uuid4().hex}.tmp"
     try:
         with open(tmp_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
@@ -199,7 +201,8 @@ def save_json_file(filepath, data):
         os.replace(tmp_path, filepath) # 원자적 교체
     except Exception as e:
         if os.path.exists(tmp_path):
-            os.remove(tmp_path)
+            try: os.remove(tmp_path)
+            except: pass
         app.logger.error(f"Failed to save file {filepath}: {e}")
         raise e
 
@@ -216,7 +219,10 @@ def create_daily_backup(filepath):
 
         # 오늘자 백업이 없으면 생성
         if not os.path.exists(backup_path):
-            shutil.copy2(filepath, backup_path)
+            # [수정] 백업 파일 생성 시에도 임시 파일을 사용하여 충돌 방지
+            tmp_backup = f"{backup_path}.{uuid.uuid4().hex}.tmp"
+            shutil.copy2(filepath, tmp_backup)
+            os.replace(tmp_backup, backup_path)
             
             # 30일 지난 백업 삭제
             cutoff_date = datetime.now() - timedelta(days=30)
@@ -252,8 +258,8 @@ def git_push_data():
         
         push_res = subprocess.run(["git", "push"], capture_output=True, text=True)
         if push_res.returncode != 0:
-            # 에러 발생 시 원인을 정확히 로그에 기록
-            app.logger.error(f"GitHub push failed: {push_res.stderr.strip()}")
+            # [수정] 원격 저장소 동시 접근(Lock/Rejected) 오류는 시스템 장애가 아니므로 WARNING으로 변경
+            app.logger.warning(f"GitHub push collision (ignored): {push_res.stderr.strip()}")
         else:
             app.logger.info("GitHub sync successful")
     except Exception as e:
