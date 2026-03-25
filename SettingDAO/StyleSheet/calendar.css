@@ -593,6 +593,38 @@
 
 .btn-blue-sm:hover { background: #1a5cce; }
 
+/* 다음 예정일 등록 드롭다운 및 입력창 */
+.next-type-select {
+    background-color: var(--cal-bg-dark);
+    border: 1px solid var(--cal-border);
+    color: var(--cal-text-primary);
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 12px;
+    cursor: pointer;
+    outline: none;
+}
+.next-type-select:disabled {
+    background-color: var(--cal-bg-element);
+    color: var(--cal-text-secondary);
+    cursor: not-allowed;
+}
+.next-date-input,
+.next-md-input {
+    background-color: var(--cal-bg-dark);
+    border: 1px solid var(--cal-border);
+    color: var(--cal-text-primary);
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 13px;
+    outline: none;
+}
+.next-type-select:focus,
+.next-date-input:focus,
+.next-md-input:focus {
+    border-color: var(--cal-blue-light);
+}
+
 /* ==========================================================
    작업 등록 팝업 입력창 상태 스타일 (Input States)
    ========================================================== */

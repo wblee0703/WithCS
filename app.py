@@ -605,7 +605,7 @@ def maintenance():
 def admin():
     if 'user_id' not in session:
         return render_template('index.html')
-    if session.get('role') != 'admin':
+    if session.get('role') not in ['admin', 'superadmin']:
         return render_template('index.html')
     return render_template('admin.html')
 
@@ -663,7 +663,14 @@ def login():
         session['user_id'] = user.id
         session['role'] = user.role
         session['site'] = user.site # [추가]
-        return jsonify({"status": "success", "role": user.role, "site": user.site})
+        return jsonify({
+            "status": "success", 
+            "role": user.role, 
+            "site": user.site,
+            "department": user.department or "",
+            "position": user.position or "",
+            "name": user.name or ""
+        })
 
     # 3. 실패 처리
     user.failed_attempts += 1
@@ -723,12 +730,35 @@ def update_user_info():
     if 'position' in data: user.position = data['position']
     if 'name' in data: user.name = data['name']
     if 'site' in data: user.site = data['site']
-    if 'role' in data and session.get('role') == 'admin':
-        if user.id != 'admin' and user.id != os.environ.get('APP_ADMIN_ID', 'admin'): user.role = data['role']
+    if 'role' in data and session.get('role') in ['admin', 'superadmin']:
+        if user.role != 'superadmin' and user.id != 'admin' and user.id != os.environ.get('APP_ADMIN_ID', 'admin'): 
+            user.role = data['role']
     db.session.commit()
     session['role'] = user.role
     session['site'] = user.site
     return jsonify({"status": "success"})
+
+# [추가] 작업자 선택용 사용자 이름 목록 조회 API
+@app.route('/api/users/names', methods=['GET'])
+@login_required
+def get_user_names():
+    excluded_ids = ['admin', 'user', os.environ.get('APP_ADMIN_ID', 'admin'), os.environ.get('APP_USER_ID', 'user')]
+    users = User.query.filter(~User.id.in_(excluded_ids)).all()
+    
+    workers = []
+    seen = set()
+    for u in users:
+        name = u.name if u.name else u.id
+        if name not in seen:
+            seen.add(name)
+            workers.append({
+                "name": name,
+                "department": u.department or "",
+                "position": u.position or ""
+            })
+            
+    workers = sorted(workers, key=lambda x: x["name"])
+    return jsonify({"status": "success", "workers": workers})
 
 @app.route('/api/session/extend', methods=['POST'])
 @login_required
@@ -748,8 +778,10 @@ def add_user():
     position = data.get('position', '') # [추가]
     name = data.get('name', '') # [추가]
     
-    if session.get('role') != 'admin':
+    if session.get('role') not in ['admin', 'superadmin']:
         return jsonify({"status": "fail", "message": "관리자 권한이 필요합니다."}), 403
+    if role == 'superadmin':
+        return jsonify({"status": "fail", "message": "최종 관리자 계정은 생성할 수 없습니다."}), 403
 
     if User.query.filter_by(id=new_id).first():
         return jsonify({"status": "fail", "message": "이미 존재하는 아이디입니다."}), 400
@@ -806,10 +838,14 @@ def delete_account():
 @app.route('/api/users/deletable', methods=['GET'])
 @login_required
 def get_deletable_users():
-    if session.get('role') != 'admin':
+    if session.get('role') not in ['admin', 'superadmin']:
         return jsonify({"status": "fail", "message": "권한이 없습니다."}), 403
     
-    users = User.query.filter(User.role != 'admin').all()
+    if session.get('role') == 'superadmin':
+        users = User.query.filter(User.role != 'superadmin').all()
+    else:
+        users = User.query.filter(~User.role.in_(['admin', 'superadmin'])).all()
+        
     user_list = [{"id": u.id, "name": u.name or '', "department": u.department or '', "position": u.position or ''} for u in users]
     return jsonify({"status": "success", "users": user_list})
 
@@ -817,7 +853,7 @@ def get_deletable_users():
 @app.route('/api/admin/user/delete', methods=['POST'])
 @login_required
 def admin_delete_target_user():
-    if session.get('role') != 'admin':
+    if session.get('role') not in ['admin', 'superadmin']:
         return jsonify({"status": "fail", "message": "권한이 없습니다."}), 403
     
     target_id = request.json.get('target_id')
@@ -825,8 +861,10 @@ def admin_delete_target_user():
     
     if not target_user:
         return jsonify({"status": "fail", "message": "사용자를 찾을 수 없습니다."}), 404
-    if target_user.role == 'admin' or target_id == 'admin':
-        return jsonify({"status": "fail", "message": "관리자 계정은 삭제할 수 없습니다."}), 403
+    if target_user.role == 'superadmin' or target_id == 'admin' or target_id == os.environ.get('APP_ADMIN_ID', 'admin'):
+        return jsonify({"status": "fail", "message": "최종 관리자 계정은 삭제할 수 없습니다."}), 403
+    if session.get('role') == 'admin' and target_user.role == 'admin':
+        return jsonify({"status": "fail", "message": "일반 관리자는 다른 관리자 계정을 삭제할 수 없습니다."}), 403
         
     db.session.delete(target_user)
     db.session.commit()
@@ -862,7 +900,7 @@ def get_logs():
 @app.route('/api/logs/clear', methods=['POST'])
 @login_required
 def clear_logs():
-    if session.get('role') != 'admin':
+    if session.get('role') not in ['admin', 'superadmin']:
          return jsonify({"status": "fail", "message": "관리자 권한이 필요합니다."}), 403
     try:
         db.session.query(SystemLog).delete()
@@ -916,13 +954,18 @@ def init_db():
             
         # Admin 초기 계정 생성
         admin_id = os.environ.get('APP_ADMIN_ID', 'admin')
-        if not User.query.filter_by(id=admin_id).first():
+        admin_user = User.query.filter_by(id=admin_id).first()
+        if not admin_user:
             admin_pw = os.environ.get('APP_ADMIN_PW', secrets.token_urlsafe(8))
-            admin_user = User(id=admin_id, pw=generate_password_hash(admin_pw), role='admin')
+            admin_user = User(id=admin_id, pw=generate_password_hash(admin_pw), role='superadmin')
             db.session.add(admin_user)
             db.session.commit()
             app.logger.warning(f"Initial Admin PW generated in DB: {admin_pw}")
-            print(f"[*] Admin Account Created -> ID: {admin_id} / PW: {admin_pw}")
+            print(f"[*] Super Admin Account Created -> ID: {admin_id} / PW: {admin_pw}")
+        elif admin_user.role == 'admin':
+            admin_user.role = 'superadmin'
+            db.session.commit()
+            print(f"[*] Admin Account '{admin_id}' elevated to 'superadmin'")
             
         # 일반 사용자(User) 초기 계정 자동 생성
         user_id = os.environ.get('APP_USER_ID', 'user')

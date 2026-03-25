@@ -32,6 +32,25 @@ if (typeof window.removeErrorBorder !== 'function') {
     };
 }
 
+// [추가] 작업자(사용자) 목록 조회 함수 폴백
+if (typeof window.fetchWorkerNames !== 'function') {
+    window.workerNamesCache = [];
+    window.fetchWorkerNames = async function() {
+        if (window.workerNamesCache.length > 0) return window.workerNamesCache;
+        try {
+            const res = await fetch('/api/users/names');
+            if (res.ok) {
+                const data = await res.json();
+                if (data.status === 'success') {
+                    window.workerNamesCache = data.workers || data.names || [];
+                    return window.workerNamesCache;
+                }
+            }
+        } catch (e) { console.error("fetchWorkerNames Error:", e); }
+        return [];
+    };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const initMaint = () => {
         setupMaintenanceEvents();
@@ -249,17 +268,95 @@ function setupLogEvents() {
     const memoInput = document.getElementById('device-memo');
     const memoBtn = document.getElementById('memo-save-btn');
 
-    if (memoInput && !document.getElementById('memo-worker')) {
+    // [수정] 텍스트 입력창 대신 커스텀 다중 선택 드롭다운 생성
+    if (memoInput && !document.getElementById('memo-worker-wrapper')) {
         const workerContainer = document.createElement('div');
+        workerContainer.id = 'memo-worker-wrapper';
         workerContainer.style.display = 'flex';
         workerContainer.style.alignItems = 'center';
         workerContainer.style.gap = '10px';
         workerContainer.style.marginBottom = '10px';
         workerContainer.innerHTML = `
             <label for="memo-worker" style="color: #8b949e; font-size: 13px; min-width: 50px;">작업자 <span style="color:#f85149;">*</span></label>
-            <input type="text" id="memo-worker" class="input-dark" style="width: 150px; padding: 4px; height: 30px;" spellcheck="false" placeholder="작업자 입력">
+            <div class="log-select-wrapper" style="width: 250px; margin: 0; flex: none;">
+                <div id="memo-worker-trigger" class="log-select-trigger" style="min-height: 30px; height: 30px; padding: 4px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">작업자 선택</div>
+                <div id="memo-worker-dropdown" class="log-select-dropdown">
+                    <input type="text" id="memo-worker-search" class="dropdown-search-input" placeholder="이름 검색..." spellcheck="false">
+                    <div id="memo-worker-list" class="log-select-list"></div>
+                    <div class="log-select-footer">
+                        <button type="button" id="btn-memo-worker-confirm" class="btn-blue-sm" style="width: 100%;">선택 완료</button>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" id="memo-worker" value="">
         `;
         memoInput.parentNode.insertBefore(workerContainer, memoInput);
+
+        const trigger = document.getElementById('memo-worker-trigger');
+        const dropdown = document.getElementById('memo-worker-dropdown');
+        const searchInput = document.getElementById('memo-worker-search');
+        const listContainer = document.getElementById('memo-worker-list');
+        const confirmBtn = document.getElementById('btn-memo-worker-confirm');
+        const hiddenInput = document.getElementById('memo-worker');
+
+        const renderWorkers = async (searchTerm = '') => {
+            const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
+            const currentSelected = hiddenInput.value ? hiddenInput.value.split(',').map(s => s.trim()) : [];
+            let displayWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            
+            if (searchTerm) {
+                const kw = searchTerm.toLowerCase();
+                displayWorkers = displayWorkers.filter(w => 
+                    w.name.toLowerCase().includes(kw) || 
+                    w.department.toLowerCase().includes(kw) || 
+                    w.position.toLowerCase().includes(kw)
+                );
+            }
+            
+            // [추가] 선택된 이름이 최상단으로 오도록 정렬
+            displayWorkers.sort((a, b) => {
+                const aSelected = currentSelected.includes(a.name);
+                const bSelected = currentSelected.includes(b.name);
+                if (aSelected && !bSelected) return -1;
+                if (!aSelected && bSelected) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            listContainer.innerHTML = displayWorkers.map(w => {
+                const isSelected = currentSelected.includes(w.name);
+                const subInfo = (w.department || w.position) ? ` <span style="font-size:11px; color:#8b949e;">(${escapeHtml(w.department)} ${escapeHtml(w.position)})</span>` : '';
+                return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${subInfo}</span></div>`;
+            }).join('');
+            if (displayWorkers.length === 0) listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
+            listContainer.querySelectorAll('.log-select-item').forEach(item => {
+                item.onclick = (e) => { e.stopPropagation(); item.classList.toggle('selected'); updateWorkerSelection(); };
+            });
+        };
+
+        const updateWorkerSelection = () => {
+            const selected = Array.from(listContainer.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
+            hiddenInput.value = selected.join(', ');
+            if (selected.length > 0) trigger.textContent = selected.join(' ');
+            else trigger.textContent = '작업자 선택';
+            trigger.title = selected.join(', ');
+            hiddenInput.dispatchEvent(new Event('input'));
+        };
+
+        trigger.onclick = (e) => {
+            e.stopPropagation();
+            if (selectedLogId === null) { alert('리스트를 먼저 선택해주세요.'); return; }
+            document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== dropdown) d.classList.remove('show'); });
+            dropdown.classList.toggle('show');
+            if (dropdown.classList.contains('show')) renderWorkers(searchInput.value.trim());
+        };
+
+        searchInput.onclick = (e) => e.stopPropagation();
+        searchInput.oninput = (e) => renderWorkers(e.target.value.trim());
+
+        confirmBtn.onclick = (e) => {
+            e.stopPropagation();
+            dropdown.classList.remove('show');
+        };
     }
 
     const memoWorkerInput = document.getElementById('memo-worker');
@@ -470,6 +567,11 @@ function addDetailItem() {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [], memo: "" };
 
+    // 동일한 타입 내에서만 중복 확인 (정기/비정기 개별 관리)
+    if (data.maint.some(m => m.type === maintType && (m.content === content || (code && m.code === code)))) {
+        return alert(`이미 유지관리 물품에 등록된 항목입니다. (${maintType})`);
+    }
+
     const newItem = {
         id: Date.now(),
         type: maintType,
@@ -505,6 +607,9 @@ function renderDetails() {
     maintBody.innerHTML = '';
 
     data.maint.forEach(item => {
+        // [추가] 비정기 예정 항목(완료일이 없는 상태)은 유지관리 리스트에서 숨김 처리
+        if (item.type === '비정기' && !item.date) return;
+
         const status = calculateStatus(item.type, item.date, item.period);
         const tr = document.createElement('tr');
         tr.id = `row-${item.id}`;
@@ -642,9 +747,7 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
         // 이미 등록된 목록
         const key = `details_${currentPath.site}_${currentPath.equip}`;
         const currentData = JSON.parse(localStorage.getItem(key)) || { maint: [] };
-        const addedParts = currentData.maint
-            .filter(item => item.type === currentType)
-            .map(item => item.content);
+        const addedParts = currentData.maint.map(item => item.content);
 
         const query = contentElement.value.trim().toLowerCase();
         const keywords = query ? query.split(/\s+/) : [];
@@ -1006,18 +1109,32 @@ function addLogItem(e) {
                 if (itemCost) existingItem.itemCost = itemCost;
                 isMaintUpdated = true;
             } else {
-                data.maint.push({
-                    id: Date.now() + 1000 + idx, // ID 충돌 방지
-                    type: type,
-                    detailType: detailType,
-                    code: code,
-                    content: fullContent,
-                    date: date,
-                    period: null,
-                    itemCost: itemCost
-                });
-                isMaintUpdated = true;
-                addSystemLog('ADD_MAINTENANCE', currentPath.equip, `[${type}] ${fullContent} (자동 등록, 시작일: ${date})`);
+                let isAdded = false;
+                // [추가] 비정기 작업 시 기존 '정기' 항목이 있으면 날짜만 갱신하고 구분을 유지
+                if (type === '비정기') {
+                    let regItem = data.maint.find(m => m.type === '정기' && (m.content === fullContent || (code && m.code === code) || m.content === itemText));
+                    if (regItem) {
+                        regItem.date = date;
+                        if (itemCost) regItem.itemCost = itemCost;
+                        isMaintUpdated = true;
+                        isAdded = true;
+                    }
+                }
+
+                if (!isAdded) {
+                    data.maint.push({
+                        id: Date.now() + 1000 + idx, // ID 충돌 방지
+                        type: type,
+                        detailType: detailType,
+                        code: code,
+                        content: fullContent,
+                        date: date,
+                        period: null,
+                        itemCost: itemCost
+                    });
+                    isMaintUpdated = true;
+                    addSystemLog('ADD_MAINTENANCE', currentPath.equip, `[${type}] ${fullContent} (자동 등록, 시작일: ${date})`);
+                }
             }
         });
     }
@@ -1160,7 +1277,16 @@ function selectLog(id, focus = true) {
         
         document.getElementById('device-memo').value = memo;
         const workerInput = document.getElementById('memo-worker');
-        if (workerInput) workerInput.value = worker;
+        if (workerInput) {
+            workerInput.value = worker;
+            const trigger = document.getElementById('memo-worker-trigger');
+            if (trigger) {
+                const arr = worker ? worker.split(',').map(s => s.trim()).filter(Boolean) : [];
+                if (arr.length > 0) trigger.textContent = arr.join(' ');
+                else trigger.textContent = '작업자 선택';
+                trigger.title = arr.join(', ');
+            }
+        }
 
         originalMemo = memo; // 원본 저장
         originalWorker = worker; // 원본 저장
@@ -1227,9 +1353,13 @@ function deleteLogItem(id) {
     if (selectedLogId === id) {
         selectedLogId = null;
         document.getElementById('device-memo').value = '';
-            if(document.getElementById('memo-worker')) document.getElementById('memo-worker').value = '';
+        if(document.getElementById('memo-worker')) {
+            document.getElementById('memo-worker').value = '';
+            const trigger = document.getElementById('memo-worker-trigger');
+            if (trigger) { trigger.textContent = '작업자 선택'; trigger.title = ''; }
+        }
         originalMemo = "";
-            originalWorker = "";
+        originalWorker = "";
 
         const memoBtn = document.getElementById('memo-save-btn');
         if (memoBtn) {
@@ -1488,12 +1618,32 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
         let otherItems = [];
         const defaultSet = new Set(items.map(i => i.code ? i.code : i.content));
         
+        let maintSet = new Set();
+        if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+            const maintKey = `details_${currentPath.site}_${currentPath.equip}`;
+            const maintData = JSON.parse(localStorage.getItem(maintKey)) || {};
+            if (maintData.maint) {
+                maintData.maint.forEach(m => {
+                    maintSet.add(m.content);
+                    if (m.code) maintSet.add(m.code);
+                });
+            }
+        }
+
         poolItems.forEach(item => {
             const val = item.code ? item.code : item.content;
-            if (defaultSet.has(val) || defaultSet.has(item.content) || selectedMap.hasOwnProperty(val) || selectedMap.hasOwnProperty(item.content)) {
-                registeredItems.push(item);
+            if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+                if (maintSet.has(val) || maintSet.has(item.content) || selectedMap.hasOwnProperty(val) || selectedMap.hasOwnProperty(item.content)) {
+                    registeredItems.push(item);
+                } else {
+                    otherItems.push(item);
+                }
             } else {
-                otherItems.push(item);
+                if (defaultSet.has(val) || defaultSet.has(item.content) || selectedMap.hasOwnProperty(val) || selectedMap.hasOwnProperty(item.content)) {
+                    registeredItems.push(item);
+                } else {
+                    otherItems.push(item);
+                }
             }
         });
 
@@ -1826,13 +1976,33 @@ window.updateLogContentOptions = function () {
             let registeredItems = [];
             let otherItems = [];
             const defaultSet = new Set(items.map(i => i.code ? i.code : i.content));
+            
+            let maintSet = new Set();
+            if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+                const maintKey = `details_${currentPath.site}_${currentPath.equip}`;
+                const maintData = JSON.parse(localStorage.getItem(maintKey)) || {};
+                if (maintData.maint) {
+                    maintData.maint.forEach(m => {
+                        maintSet.add(m.content);
+                        if (m.code) maintSet.add(m.code);
+                    });
+                }
+            }
 
             poolItems.forEach(item => {
                 const val = item.code ? item.code : item.content;
-                if (defaultSet.has(val) || defaultSet.has(item.content)) {
-                    registeredItems.push(item);
+                if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+                    if (maintSet.has(val) || maintSet.has(item.content)) {
+                        registeredItems.push(item);
+                    } else {
+                        otherItems.push(item);
+                    }
                 } else {
-                    otherItems.push(item);
+                    if (defaultSet.has(val) || defaultSet.has(item.content)) {
+                        registeredItems.push(item);
+                    } else {
+                        otherItems.push(item);
+                    }
                 }
             });
 
@@ -2160,14 +2330,13 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
 
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
-    // [추가] 현재 장비의 유지관리 물품에서 우선순위 항목 가져오기 (BM 점검/비정기)
+    // [추가] 현재 장비의 유지관리 물품에서 우선순위 항목 가져오기 (PM 점검/BM 점검)
     let priorityItems = [];
-    if (type === '비정기' && detailType === 'BM 점검') {
+    if (detailType === 'PM 점검' || detailType === 'BM 점검') {
         const maintKey = `details_${currentPath.site}_${currentPath.equip}`;
         const maintData = JSON.parse(localStorage.getItem(maintKey)) || {};
         if (maintData.maint) {
             priorityItems = maintData.maint
-                .filter(m => m.type === '비정기')
                 .map(m => ({ content: m.content, code: m.code || '' }));
         }
     }
@@ -2176,7 +2345,7 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
     const uniqueItems = [];
     const seenContents = new Set();
 
-    // 1. 우선순위 항목(유지관리 물품 - 비정기) 먼저 추가
+    // 1. 우선순위 항목(유지관리 물품) 먼저 추가
     for (const item of priorityItems) {
         if (!seenContents.has(item.content)) {
             seenContents.add(item.content);

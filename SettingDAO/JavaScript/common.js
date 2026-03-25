@@ -150,6 +150,19 @@ function fetchServerData(callback) {
             // [추가] 데이터 갱신 후 UI 리프레시 (화면 깜빡임 없이 데이터만 최신화)
             refreshAppViews();
 
+            // [추가] 백그라운드 사용자 정보 갱신 (새로고침 등 상태 유지)
+            if (sessionStorage.getItem('isLoggedIn') === 'true') {
+                fetch('/api/user/info')
+                    .then(res => res.json())
+                    .then(uData => {
+                        if (uData.status === 'success') {
+                            sessionStorage.setItem('userDepartment', uData.user.department || '');
+                            sessionStorage.setItem('userPosition', uData.user.position || '');
+                            sessionStorage.setItem('userName', uData.user.name || '');
+                        }
+                    }).catch(e => console.error(e));
+            }
+
             window.dispatchEvent(new Event('DataLoaded'));
             if (callback) callback();
         })
@@ -979,7 +992,10 @@ function checkLoginStatus() {
     if (isLoggedIn) {
         if (loginModal) loginModal.style.display = 'none';
         if (userInfo) {
-            userInfo.textContent = `${userId} (${role === 'admin' ? '관리자' : '일반'})`;
+            let roleDisplay = '일반';
+            if (role === 'superadmin') roleDisplay = '최종관리자';
+            else if (role === 'admin') roleDisplay = '관리자';
+            userInfo.textContent = `${userId} (${roleDisplay})`;
             userInfo.style.display = 'inline';
         }
         if (btnLoginLogout) {
@@ -989,10 +1005,10 @@ function checkLoginStatus() {
         if (btnUserSettings) btnUserSettings.style.display = 'inline-block';
 
         const btnHeaderAddUser = document.getElementById('btn-header-add-user');
-        if (btnHeaderAddUser) btnHeaderAddUser.style.display = (role === 'admin') ? 'inline-block' : 'none';
+        if (btnHeaderAddUser) btnHeaderAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
 
         const adminItems = document.querySelectorAll('.nav-admin-item');
-        adminItems.forEach(el => el.style.display = (role === 'admin') ? 'block' : 'none');
+        adminItems.forEach(el => el.style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none');
 
         // [추가] 데스크톱 타이머 UI 표시 (common.html 템플릿 사용)
         let desktopTimerContainer = document.getElementById('desktop-session-timer');
@@ -1002,7 +1018,10 @@ function checkLoginStatus() {
 
         // [추가] 모바일 업데이트
         if (mobileUserInfo) {
-            mobileUserInfo.textContent = `${userId} (${role === 'admin' ? '관리자' : '일반'})`;
+            let roleDisplay = '일반';
+            if (role === 'superadmin') roleDisplay = '최종관리자';
+            else if (role === 'admin') roleDisplay = '관리자';
+            mobileUserInfo.textContent = `${userId} (${roleDisplay})`;
             mobileUserInfo.style.display = 'block';
         }
         if (mobileBtnLogin) {
@@ -1012,7 +1031,7 @@ function checkLoginStatus() {
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'block';
 
         const mobileBtnAddUser = document.getElementById('mobile-btn-add-user');
-        if (mobileBtnAddUser) mobileBtnAddUser.style.display = (role === 'admin') ? 'block' : 'none';
+        if (mobileBtnAddUser) mobileBtnAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none';
 
         // [추가] 모바일 타이머 UI 표시 (common.html 템플릿 사용)
         let mobileTimerContainer = document.getElementById('mobile-session-timer');
@@ -1021,7 +1040,7 @@ function checkLoginStatus() {
         }
 
         if (dashboardWrapper) dashboardWrapper.style.filter = 'none';
-        document.body.classList.remove('role-admin', 'role-user');
+        document.body.classList.remove('role-superadmin', 'role-admin', 'role-user');
         document.body.classList.add(`role-${role}`);
 
         startSessionTimer(); // [추가] 타이머 작동 시작
@@ -1051,7 +1070,7 @@ function checkLoginStatus() {
         const mobileBtnAddUser = document.getElementById('mobile-btn-add-user');
         if (mobileBtnAddUser) mobileBtnAddUser.style.display = 'none';
 
-        document.body.classList.remove('role-admin', 'role-user');
+        document.body.classList.remove('role-superadmin', 'role-admin', 'role-user');
 
         // [추가] 로그아웃 시 타이머 UI 숨김 및 중지
         if (document.getElementById('desktop-session-timer')) document.getElementById('desktop-session-timer').style.display = 'none';
@@ -1113,6 +1132,9 @@ function attemptLogin(id, pw, context) {
                 sessionStorage.setItem('userId', id);
                 sessionStorage.setItem('userRole', data.role);
                 sessionStorage.setItem('userSite', data.site || ''); // [추가]
+                sessionStorage.setItem('userDepartment', data.department || '');
+                sessionStorage.setItem('userPosition', data.position || '');
+                sessionStorage.setItem('userName', data.name || '');
                 addSystemLog('LOGIN', id, `로그인 성공 (${context})`);
 
                 const homeLoginContainer = document.getElementById('home-login-container');
@@ -1144,7 +1166,7 @@ function openAddUserModal() {
     const modal = modals[modals.length - 1]; 
     const role = sessionStorage.getItem('userRole');
 
-    if (role !== 'admin') {
+    if (role !== 'admin' && role !== 'superadmin') {
         alert('관리자 권한이 필요합니다.');
         return;
     }
@@ -1168,6 +1190,14 @@ function openAddUserModal() {
         const siteSuggestions = modal.querySelector('#new-user-site-suggestions');
 
         if (siteInput && siteSuggestions && siteSelect) {
+            // [추가] 관리자 본인의 사업장을 기본값으로 자동 입력
+            const adminSite = sessionStorage.getItem('userSite');
+            if (adminSite && !siteInput.value) {
+                siteInput.value = adminSite;
+                siteInput.dataset.lastValid = adminSite;
+                siteSelect.value = adminSite;
+            }
+
             // [핵심 해결] 비동기 화면 전환 시 꼬여버린 이벤트를 초기화하기 위해 노드를 완전히 새로 복제하여 교체
             const newSiteInput = siteInput.cloneNode(true);
             siteInput.parentNode.replaceChild(newSiteInput, siteInput);
@@ -1320,7 +1350,7 @@ function openUserModal() {
         if (typeof window.renderMyInfo === 'function') window.renderMyInfo();
 
         const adminDeleteWrapper = document.getElementById('admin-user-delete-wrapper');
-        if (role === 'admin') {
+        if (role === 'admin' || role === 'superadmin') {
             if (adminDeleteWrapper) {
                 adminDeleteWrapper.style.display = 'block';
 
@@ -1580,7 +1610,10 @@ window.renderMyInfo = function () {
                 clone.getElementById('view-my-dept').value = user.department || '';
                 clone.getElementById('view-my-pos').value = user.position || '';
                 clone.getElementById('view-my-name').value = user.name || '';
-                clone.getElementById('view-my-role').value = user.role === 'admin' ? '관리자' : '일반';
+                let roleDisplay = '일반';
+                if (user.role === 'superadmin') roleDisplay = '최종관리자';
+                else if (user.role === 'admin') roleDisplay = '관리자';
+                clone.getElementById('view-my-role').value = roleDisplay;
                 clone.getElementById('view-my-site').value = user.site || '전체 사업장';
 
                 const btnEdit = clone.getElementById('btn-edit-my-info');
@@ -1618,7 +1651,7 @@ window.renderMyInfoEdit = function (user) {
     content.innerHTML = '';
     const clone = template.content.cloneNode(true);
 
-    const isRoleEditable = sessionStorage.getItem('userRole') === 'admin' && user.id !== 'admin';
+    const isRoleEditable = (sessionStorage.getItem('userRole') === 'superadmin' && user.id !== 'admin') || (sessionStorage.getItem('userRole') === 'admin' && user.role !== 'superadmin' && user.id !== 'admin');
 
     const deptInput = clone.getElementById('edit-my-dept');
     const posInput = clone.getElementById('edit-my-pos');
@@ -1632,7 +1665,15 @@ window.renderMyInfoEdit = function (user) {
 
     if (roleSelect) {
         if (!isRoleEditable) roleSelect.disabled = true;
-        roleSelect.value = user.role === 'admin' ? 'admin' : 'user';
+        if (user.role === 'superadmin') {
+            if (!Array.from(roleSelect.options).some(opt => opt.value === 'superadmin')) {
+                roleSelect.insertAdjacentHTML('afterbegin', '<option value="superadmin">최종관리자</option>');
+            }
+        }
+        if (!Array.from(roleSelect.options).some(opt => opt.value === 'admin')) {
+            roleSelect.insertAdjacentHTML('afterbegin', '<option value="admin">관리자</option>');
+        }
+        roleSelect.value = user.role;
     }
     if (siteSelect) {
         let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
@@ -1673,6 +1714,9 @@ window.renderMyInfoEdit = function (user) {
                         alert('계정 정보가 수정되었습니다.');
                         sessionStorage.setItem('userRole', role);
                         sessionStorage.setItem('userSite', site);
+                        sessionStorage.setItem('userDepartment', dept);
+                        sessionStorage.setItem('userPosition', pos);
+                        sessionStorage.setItem('userName', name);
                         addSystemLog('UPDATE_USER', user.id, '본인 계정 정보 수정');
                         window.renderMyInfo();
                     } else {
@@ -2254,15 +2298,35 @@ function onEquipClick(site, equip) {
         renderLogs();
         // [추가] 최신 로그 자동 선택 (마지막 작업 내용 표시)
         if (typeof selectLog === 'function') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetLogId = urlParams.get('logId');
+
             const key = `details_${site}_${equip}`;
             const data = JSON.parse(localStorage.getItem(key)) || {};
             if (data.logs && data.logs.length > 0) {
-                // 최신순 정렬
-                data.logs.sort((a, b) => {
-                    if (b.date !== a.date) return b.date.localeCompare(a.date);
-                    return b.id - a.id;
-                });
-                selectLog(data.logs[0].id, false); // 포커스 없이 선택
+                if (targetLogId) {
+                    const matchedLog = data.logs.find(l => l.id == targetLogId);
+                    if (matchedLog) {
+                        setTimeout(() => {
+                            selectLog(matchedLog.id, false);
+                            const row = document.getElementById(`log-row-${matchedLog.id}`);
+                            if (row) {
+                                row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }
+                        }, 50);
+                    } else {
+                        data.logs.sort((a, b) => { if (b.date !== a.date) return b.date.localeCompare(a.date); return b.id - a.id; });
+                        selectLog(data.logs[0].id, false);
+                    }
+                    
+                    // 새로고침 시 다시 선택되는 것을 방지하기 위해 URL에서 logId 파라미터 제거
+                    const newUrl = new URL(window.location);
+                    newUrl.searchParams.delete('logId');
+                    window.history.replaceState({}, '', newUrl);
+                } else {
+                    data.logs.sort((a, b) => { if (b.date !== a.date) return b.date.localeCompare(a.date); return b.id - a.id; });
+                    selectLog(data.logs[0].id, false); // 포커스 없이 선택
+                }
             }
         }
     }
