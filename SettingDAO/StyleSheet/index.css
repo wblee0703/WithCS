@@ -1079,6 +1079,16 @@ body {
         flex: none !important;
     }
 
+    /* [추가] 장비 이슈 공유 카드 모바일 고정 높이 및 스크롤 (약 3개 항목 표시) */
+    #home-issue-card {
+        height: 300px !important;
+    }
+    
+    #home-issue-card .status-list-container {
+        height: auto !important;
+        max-height: none !important;
+    }
+
     /* [요청] 예정 작업 카드 크기 고정 및 스크롤 */
     .upcoming-container {
         width: 100% !important;

@@ -1337,8 +1337,8 @@ window.restructureHomeMaintenance = function () {
     issueCard.className = 'status-group card-like';
     issueCard.innerHTML = `
         <h3 class="status-group-title" style="color: #eb371f;">장비 이슈 공유</h3>
-        <div class="status-list-container" style="flex: 1; width: 100%; border: none; height: 100%; overflow: hidden; display: flex; flex-direction: column;">
-            <ul id="home-issue-list" class="upcoming-list" style="padding: 0; margin: 0; list-style: none; flex: 1; overflow-y: auto;"></ul>
+        <div class="status-list-container" style="flex: 1; min-height: 0; width: 100%; border: none; overflow: hidden; display: flex; flex-direction: column;">
+            <ul id="home-issue-list" class="upcoming-list" style="padding: 0 5px; margin: 0; list-style: none; flex: 1; min-height: 0; overflow-y: auto;"></ul>
         </div>
     `;
     
@@ -1392,18 +1392,18 @@ window.populateEquipmentIssues = function () {
         const matchedModel = equipmentModels.find(m => m.name === rawModelName);
         const modelName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawModelName;
 
-        let detailType2 = '';
+        let detailStr = '';
         if (log.detailType2 && log.detailType2.includes('>')) {
-            detailType2 = log.detailType2.split('>')[1].trim();
-        } else if (log.detailType2) {
-            detailType2 = log.detailType2.trim();
+            detailStr = log.detailType2.trim();
         } else if (log.detailType && log.detailType.includes('>')) {
-            detailType2 = log.detailType.split('>')[1].trim();
+            detailStr = log.detailType.trim();
+        } else if (log.detailType2) {
+            detailStr = `${log.detailType ? log.detailType.trim() + ' > ' : ''}${log.detailType2.trim()}`;
         } else {
-            detailType2 = log.detailType || '내용 없음';
+            detailStr = log.detailType ? log.detailType.trim() : '내용 없음';
         }
 
-        const displayText = `${site} > ${modelName} : ${detailType2}`;
+        const line1Text = `${site} > ${modelName}${serial ? ` (${serial})` : ''}`;
         const dateStr = log.date || '';
 
         let displayContent = log.content || '';
@@ -1413,20 +1413,22 @@ window.populateEquipmentIssues = function () {
                 displayContent = `${items[0]} 외 ${items.length - 1}개`;
             }
         }
+        
+        const line2Text = `${detailStr} : ${displayContent}`;
 
         const li = document.createElement('li');
         li.className = 'upcoming-item';
         li.style.borderLeft = '4px solid #eb371f';
         li.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden; flex: 1; padding-right: 10px;">
-                <span style="font-size: 13px; font-weight: bold; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(displayText)}">${escapeHtml(displayText)}</span>
-                <span style="font-size: 11px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(log.content)}">${escapeHtml(displayContent)}</span>
+                <span style="font-size: 13px; font-weight: bold; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(line1Text)}">${escapeHtml(line1Text)}</span>
+                <span style="font-size: 11px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(detailStr)} : ${escapeHtml(log.content)}">${escapeHtml(line2Text)}</span>
             </div>
             <div style="font-size: 11px; color: #8b949e; white-space: nowrap; flex-shrink: 0;">${dateStr}</div>
         `;
 
         li.onclick = () => {
-            if (confirm(`해당 장비의 점검 이력 상세 내용을 확인하시겠습니까?\n\n[${site}] ${modelName} ${serial ? '('+serial+')' : ''}\n이슈: ${detailType2}\n내용: ${log.content}`)) {
+            if (confirm(`해당 장비의 점검 이력 상세 내용을 확인하시겠습니까?\n\n[${site}] ${modelName} ${serial ? '('+serial+')' : ''}\n이슈: ${detailStr}\n내용: ${log.content}`)) {
                 let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equipKey)}&logId=${log.id}`;
                 window.location.href = targetUrl;
             }
