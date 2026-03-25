@@ -408,27 +408,14 @@ function setupAuthEvents() {
 
 // [추가] 모바일 네비게이션 설정 함수
 function setupMobileNav() {
-    // [수정] 요소가 없으면 동적으로 생성 (setup.html, maintenance.html 등에서 헤더 구조 보완)
-    const header = document.querySelector('.header');
-    if (!header) return;
+    const hamburger = document.getElementById('hamburger-menu');
+    const mobilePageTitle = document.getElementById('mobile-page-title');
+    const navOverlay = document.getElementById('nav-overlay');
+    const mobileNav = document.getElementById('mobile-nav');
 
-    let hamburger = document.getElementById('hamburger-menu');
-    if (!hamburger) {
-        hamburger = document.createElement('button');
-        hamburger.className = 'hamburger-menu';
-        hamburger.id = 'hamburger-menu';
-        hamburger.innerHTML = '<div class="bar"></div><div class="bar"></div><div class="bar"></div>';
-        // 헤더의 첫 번째 자식으로 추가
-        header.insertBefore(hamburger, header.firstChild);
-    }
+    if (!hamburger || !mobileNav || !navOverlay) return;
 
-    // [추가] 모바일 현재 페이지 타이틀 텍스트 요소 생성
-    let mobilePageTitle = document.getElementById('mobile-page-title');
-    if (!mobilePageTitle) {
-        mobilePageTitle = document.createElement('div');
-        mobilePageTitle.id = 'mobile-page-title';
-        mobilePageTitle.className = 'mobile-page-title';
-
+    if (mobilePageTitle) {
         // 현재 활성화된 메뉴 텍스트 찾기
         const activeLink = document.querySelector('.header .container .nav-links a.active');
         let titleText = 'HOME';
@@ -436,66 +423,37 @@ function setupMobileNav() {
             titleText = activeLink.textContent.trim();
         }
         mobilePageTitle.textContent = titleText;
-
-        header.insertBefore(mobilePageTitle, hamburger);
-    }
-
-    let navOverlay = document.getElementById('nav-overlay');
-    if (!navOverlay) {
-        navOverlay = document.createElement('div');
-        navOverlay.className = 'nav-overlay';
-        navOverlay.id = 'nav-overlay';
-        header.appendChild(navOverlay);
-    }
-
-    let mobileNav = document.getElementById('mobile-nav');
-    if (!mobileNav) {
-        mobileNav = document.createElement('nav');
-        mobileNav.className = 'mobile-nav';
-        mobileNav.id = 'mobile-nav';
-        header.appendChild(mobileNav);
     }
 
     const mainNav = document.querySelector('.header .container .nav-links');
-    if (!mainNav) return;
-
-    // 메인 네비게이션 복제
-    mobileNav.innerHTML = `<ul class="mobile-nav-links">${mainNav.innerHTML}</ul>`;
-
-    // [추가] 유저 컨트롤 복제 및 모바일 메뉴 하단에 추가
-    const userControls = document.querySelector('.user-controls');
-    if (userControls) {
-        const mobileControls = userControls.cloneNode(true);
-        mobileControls.className = 'mobile-user-controls';
-
-        // ID 변경 및 이벤트 연결
-        const btnLogin = mobileControls.querySelector('#btn-login-logout');
-        if (btnLogin) {
-            btnLogin.id = 'mobile-btn-login-logout';
-            btnLogin.addEventListener('click', () => {
-                toggleNav(); // 메뉴 닫기
-                handleLoginLogoutClick();
-            });
+    if (mainNav) {
+        const mobileNavLinks = mobileNav.querySelector('.mobile-nav-links');
+        if (mobileNavLinks) {
+            mobileNavLinks.innerHTML = mainNav.innerHTML;
         }
+    }
 
-        const btnSettings = mobileControls.querySelector('#btn-user-settings');
-        if (btnSettings) {
-            btnSettings.id = 'mobile-btn-user-settings';
-            btnSettings.addEventListener('click', () => {
-                toggleNav(); // 메뉴 닫기
-                openUserModal();
-            });
-        }
+    const btnLogin = document.getElementById('mobile-btn-login-logout');
+    if (btnLogin) {
+        btnLogin.addEventListener('click', () => {
+            toggleNav(); // 메뉴 닫기
+            handleLoginLogoutClick();
+        });
+    }
 
-        const userInfo = mobileControls.querySelector('#user-info');
-        if (userInfo) {
-            userInfo.id = 'mobile-user-info';
-            // [요청] 모바일 사용자 정보 클릭 시 로그아웃
-            userInfo.addEventListener('click', () => {
-                handleLoginLogoutClick();
-            });
-        }
-        mobileNav.appendChild(mobileControls);
+    const btnSettings = document.getElementById('mobile-btn-user-settings');
+    if (btnSettings) {
+        btnSettings.addEventListener('click', () => {
+            toggleNav(); // 메뉴 닫기
+            openUserModal();
+        });
+    }
+
+    const userInfo = document.getElementById('mobile-user-info');
+    if (userInfo) {
+        userInfo.addEventListener('click', () => {
+            handleLoginLogoutClick();
+        });
     }
 
     const toggleNav = () => {
@@ -508,13 +466,12 @@ function setupMobileNav() {
     navOverlay.addEventListener('click', toggleNav);
 
     // [추가] 모바일 메뉴의 링크 클릭 시, 메뉴를 닫고 해당 페이지로 이동
-    // innerHTML로 복제된 노드에 이벤트 리스너를 다시 연결합니다. (이벤트 위임 방식 사용)
     mobileNav.addEventListener('click', function (e) {
         const link = e.target.closest('a');
         if (link && link.href) {
             // [개선] 페이지 이동 전, 저장되지 않은 변경사항이 있는지 확인합니다.
             if (!checkUnsavedChanges()) {
-                e.preventDefault(); // 사용자가 '취소'를 누르면 페이지 이동을 막습니다.
+                e.preventDefault();
                 return;
             }
 
@@ -525,7 +482,7 @@ function setupMobileNav() {
                 return;
             }
 
-            e.preventDefault(); // 기본 링크 동작을 막고, 애니메이션 후 수동으로 이동합니다.
+            e.preventDefault();
             const destination = link.href;
             toggleNav();
             setTimeout(() => { window.location.href = destination; }, 300);
@@ -1017,19 +974,9 @@ function checkLoginStatus() {
         }
         if (btnUserSettings) btnUserSettings.style.display = 'inline-block';
 
-        // [추가] 데스크톱 타이머 UI 동적 생성
+        // [추가] 데스크톱 타이머 UI 표시 (common.html 템플릿 사용)
         let desktopTimerContainer = document.getElementById('desktop-session-timer');
-        const userControls = document.querySelector('.user-controls');
-        if (!desktopTimerContainer && userControls) {
-            desktopTimerContainer = document.createElement('div');
-            desktopTimerContainer.id = 'desktop-session-timer';
-            desktopTimerContainer.className = 'session-timer-container';
-            desktopTimerContainer.innerHTML = `
-                <span class="session-time-display">30:00</span>
-                <button class="btn-gray" onclick="extendSession()" style="padding:2px 6px; font-size:11px; margin-left:5px; margin-right:15px; border-radius:3px;">연장</button>
-            `;
-            userControls.insertBefore(desktopTimerContainer, userControls.firstChild);
-        } else if (desktopTimerContainer) {
+        if (desktopTimerContainer) {
             desktopTimerContainer.style.display = 'flex';
         }
 
@@ -1044,24 +991,9 @@ function checkLoginStatus() {
         }
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'block';
 
-        // [추가] 모바일 타이머 UI 동적 생성
+        // [추가] 모바일 타이머 UI 표시 (common.html 템플릿 사용)
         let mobileTimerContainer = document.getElementById('mobile-session-timer');
-        const header = document.querySelector('.header');
-        if (!mobileTimerContainer && header) {
-            mobileTimerContainer = document.createElement('div');
-            mobileTimerContainer.id = 'mobile-session-timer';
-            mobileTimerContainer.className = 'session-timer-container mobile-header-timer';
-            mobileTimerContainer.innerHTML = `
-                <span class="session-time-display" style="color:#e3b341; font-size:14px;">30:00</span>
-                <button class="btn-blue" onclick="extendSession()" style="padding:2px 8px; font-size:11px; margin-left:8px; border-radius:4px; font-weight:bold; white-space:nowrap; height:24px;">연장</button>
-            `;
-            const hamburger = document.getElementById('hamburger-menu');
-            if (hamburger) {
-                header.insertBefore(mobileTimerContainer, hamburger);
-            } else {
-                header.appendChild(mobileTimerContainer);
-            }
-        } else if (mobileTimerContainer) {
+        if (mobileTimerContainer) {
             mobileTimerContainer.style.display = 'flex';
         }
 
@@ -1179,6 +1111,7 @@ function openUserModal() {
 
     if (modal) {
         modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden'; // [요청] 팝업 시 배경 스크롤 방지
         if (adminPanel) {
             adminPanel.style.display = (role === 'admin') ? 'block' : 'none';
 
@@ -1188,51 +1121,105 @@ function openUserModal() {
             const siteSuggestions = document.getElementById('new-user-site-suggestions');
             
             if (siteInput && siteSuggestions && siteSelect) {
-                const data = JSON.parse(localStorage.getItem('device_data')) || {};
-                const equipments = data.equipments || data || {};
-                const sites = Object.keys(equipments).sort();
-                
-                const renderSites = () => {
-                    siteSuggestions.innerHTML = '';
+                if (!siteInput.dataset.initialized) {
+                    siteInput.style.color = '#e6edf3';
                     
-                    const defLi = document.createElement('li');
-                    defLi.className = 'user-suggestion-item';
-                    defLi.innerHTML = `<span>사업장 미지정 (전체)</span>`;
-                    defLi.addEventListener('mousedown', (e) => {
-                        e.preventDefault();
-                        siteInput.value = '';
-                        siteSelect.value = '';
-                        siteSuggestions.style.display = 'none';
-                    });
-                    siteSuggestions.appendChild(defLi);
+                    const renderSites = () => {
+                        const data = JSON.parse(localStorage.getItem('device_data')) || {};
+                        const equipments = data.equipments || data || {};
+                        const sites = Object.keys(equipments).sort();
 
-                    sites.forEach(site => {
-                        const li = document.createElement('li');
-                        li.className = 'user-suggestion-item';
-                        li.innerHTML = `<span>${escapeHtml(site)}</span>`;
-                        li.addEventListener('mousedown', (e) => {
-                            e.preventDefault();
-                            siteInput.value = site;
-                            siteSelect.value = site;
+                        siteSuggestions.innerHTML = '';
+                        const query = siteInput.value.trim().toLowerCase();
+                        const matches = query ? sites.filter(s => s.toLowerCase().includes(query)) : sites;
+
+                        if (!query) {
+                            const defLi = document.createElement('li');
+                            defLi.className = 'suggestion-item';
+                            defLi.innerHTML = `<div class="suggestion-item-content"><span style="color: #e6edf3;">사업장 미지정 (전체)</span></div>`;
+                            defLi.addEventListener('mousedown', (e) => {
+                                e.preventDefault();
+                                siteInput.value = '';
+                                siteSelect.value = '';
+                                siteInput.dataset.lastValid = '';
+                                siteSuggestions.style.display = 'none';
+                            });
+                            siteSuggestions.appendChild(defLi);
+                        }
+
+                        if (matches.length > 0) {
+                            matches.forEach(site => {
+                                const li = document.createElement('li');
+                                li.className = 'suggestion-item';
+                                li.innerHTML = `<div class="suggestion-item-content"><span style="color: #e6edf3;">${escapeHtml(site)}</span></div>`;
+                                li.addEventListener('mousedown', (e) => {
+                                    e.preventDefault();
+                                    siteInput.value = site;
+                                    siteSelect.value = site;
+                                    siteInput.dataset.lastValid = site;
+                                    siteSuggestions.style.display = 'none';
+                                });
+                                siteSuggestions.appendChild(li);
+                            });
+                        } else {
+                            const emptyLi = document.createElement('li');
+                            emptyLi.className = 'suggestion-item';
+                            emptyLi.style.cssText = 'color:#8b949e; cursor:default; text-align:center;';
+                            emptyLi.innerHTML = `<div class="suggestion-item-content" style="justify-content:center;"><span>검색 결과 없음</span></div>`;
+                            siteSuggestions.appendChild(emptyLi);
+                        }
+                    };
+
+                    siteInput.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (siteSuggestions.style.display === 'block') {
                             siteSuggestions.style.display = 'none';
-                        });
-                        siteSuggestions.appendChild(li);
+                        } else {
+                            renderSites();
+                            siteSuggestions.style.display = 'block';
+                        }
                     });
-                };
 
-                siteInput.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    if (siteSuggestions.style.display === 'block') {
-                        siteSuggestions.style.display = 'none';
-                    } else {
+                    siteInput.addEventListener('input', () => {
                         renderSites();
                         siteSuggestions.style.display = 'block';
-                    }
-                });
+                    });
 
-                siteInput.addEventListener('blur', () => {
-                    setTimeout(() => { siteSuggestions.style.display = 'none'; }, 150);
-                });
+                    siteInput.addEventListener('focus', () => {
+                        renderSites();
+                        siteSuggestions.style.display = 'block';
+                    });
+
+                    siteInput.addEventListener('blur', () => {
+                        setTimeout(() => {
+                            const currentVal = siteInput.value.trim();
+                            const data = JSON.parse(localStorage.getItem('device_data')) || {};
+                            const equipments = data.equipments || data || {};
+                            const sites = Object.keys(equipments);
+                            
+                            if (currentVal === '') {
+                                siteInput.dataset.lastValid = '';
+                                siteSelect.value = '';
+                            } else if (sites.includes(currentVal)) {
+                                siteInput.dataset.lastValid = currentVal;
+                                siteSelect.value = currentVal;
+                            } else {
+                                siteInput.value = siteInput.dataset.lastValid || '';
+                                siteSelect.value = siteInput.dataset.lastValid || '';
+                            }
+                            siteSuggestions.style.display = 'none'; 
+                        }, 150);
+                    });
+                    
+                    document.addEventListener('click', (e) => {
+                        if (siteSuggestions && siteSuggestions.style.display === 'block' && e.target !== siteInput && !siteSuggestions.contains(e.target)) {
+                            siteSuggestions.style.display = 'none';
+                        }
+                    });
+
+                    siteInput.dataset.initialized = "true";
+                    siteInput.dataset.lastValid = "";
+                }
             }
         }
 
@@ -1273,10 +1260,11 @@ function openUserModal() {
                             const li = document.createElement('li');
                             li.className = 'user-suggestion-item';
                             const namePart = u.name ? `${escapeHtml(u.name)} (${escapeHtml(u.department)} ${escapeHtml(u.position)})` : '이름 없음';
-                            li.innerHTML = `<span>${namePart}</span><span class="user-id">${escapeHtml(u.id)}</span>`;
+                            li.innerHTML = `<span style="color: #e6edf3;">${namePart}</span><span class="user-id" style="color: #8b949e;">${escapeHtml(u.id)}</span>`;
                             li.addEventListener('mousedown', (e) => {
                                 e.preventDefault();
-                                searchInput.value = u.id;
+                                searchInput.value = u.name ? `${u.name} (${u.department} ${u.position}) - ${u.id}` : u.id;
+                                searchInput.dataset.selectedId = u.id;
                                 suggestionList.style.display = 'none';
                             });
                             suggestionList.appendChild(li);
@@ -1288,10 +1276,28 @@ function openUserModal() {
                 };
 
                 if (searchInput) {
+                    searchInput.style.color = '#e6edf3';
+                    searchInput.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        if (suggestionList.style.display === 'block') {
+                            suggestionList.style.display = 'none';
+                        } else {
+                            showSuggestions();
+                        }
+                    });
                     searchInput.addEventListener('focus', showSuggestions);
-                    searchInput.addEventListener('input', showSuggestions);
+                    searchInput.addEventListener('input', () => {
+                        delete searchInput.dataset.selectedId;
+                        showSuggestions();
+                    });
                     searchInput.addEventListener('blur', () => { setTimeout(() => { suggestionList.style.display = 'none'; }, 150); });
                 }
+                
+                document.addEventListener('click', (e) => {
+                    if (suggestionList && suggestionList.style.display === 'block' && e.target !== searchInput && !suggestionList.contains(e.target)) {
+                        suggestionList.style.display = 'none';
+                    }
+                });
 
                 if (delBtn) {
                     // 이벤트 리스너 중복 추가 방지
@@ -1299,9 +1305,17 @@ function openUserModal() {
                     delBtn.parentNode.replaceChild(newDelBtn, delBtn);
                     
                     newDelBtn.addEventListener('click', () => {
-                        const targetId = searchInput.value.trim();
+                        let targetId = searchInput.dataset.selectedId || searchInput.value.trim();
+                        
+                        // 수동으로 텍스트를 조작했을 경우를 대비한 안전장치
+                        if (!searchInput.dataset.selectedId && targetId.includes(' - ')) {
+                            targetId = targetId.split(' - ').pop().trim();
+                        }
+
                         if (!targetId) return alert('삭제할 계정 아이디를 입력하거나 선택해주세요.');
-                        if (!confirm(`'${targetId}' 계정을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+                        
+                        const displayTarget = searchInput.value.trim();
+                        if (!confirm(`'${displayTarget}' 계정을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
 
                         fetch('/api/admin/user/delete', {
                             method: 'POST',
@@ -1331,6 +1345,7 @@ function openUserModal() {
 function closeUserModal() {
     const modal = document.getElementById('user-modal');
     if (modal) modal.style.display = 'none';
+    document.body.style.overflow = ''; // [요청] 팝업 닫을 시 배경 스크롤 복구
     ['new-user-id', 'new-user-pw', 'new-user-pw-confirm', 'new-user-department', 'new-user-position', 'new-user-name', 'new-user-site-input', 'new-user-site', 'change-pw-current', 'change-pw-new', 'change-pw-confirm', 'delete-account-pw', 'admin-delete-user-input'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
@@ -1458,39 +1473,40 @@ window.renderMyInfo = function () {
             if (data.status === 'success') {
                 const user = data.user;
                 const content = document.getElementById('my-info-content');
-                if (!content) return;
+                const template = document.getElementById('my-info-view-template');
+                if (!content || !template) return;
 
-                content.innerHTML = `
-                <div style="display: flex; gap: 10px; width: 100%; height: 30px;">
-                    <input type="text" value="${escapeHtml(user.department)}" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px;" disabled title="소속" placeholder="소속 미지정">
-                    <input type="text" value="${escapeHtml(user.position)}" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px;" disabled title="직급" placeholder="직급 미지정">
-                    <input type="text" value="${escapeHtml(user.name)}" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px;" disabled title="이름" placeholder="이름 미지정">
-                </div>
-                <div style="display: flex; gap: 10px; width: 100%; height: 30px;">
-                    <input type="text" value="${user.role === 'admin' ? '관리자' : '일반'}" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px;" disabled title="권한">
-                    <input type="text" value="${escapeHtml(user.site || '전체 사업장')}" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px;" disabled title="사업장">
-                    <button id="btn-edit-my-info" class="btn-blue" style="width: auto; height: 100%; padding: 0 15px; margin: 0; font-size: 13px; font-weight: normal; border-radius: 4px; box-sizing: border-box;">수정</button>
-                </div>
-            `;
+                content.innerHTML = '';
+                const clone = template.content.cloneNode(true);
 
-                document.getElementById('btn-edit-my-info').onclick = () => {
-                    const pw = prompt('정보를 수정하려면 현재 비밀번호를 입력하세요.');
-                    if (!pw) return;
+                clone.getElementById('view-my-dept').value = user.department || '';
+                clone.getElementById('view-my-pos').value = user.position || '';
+                clone.getElementById('view-my-name').value = user.name || '';
+                clone.getElementById('view-my-role').value = user.role === 'admin' ? '관리자' : '일반';
+                clone.getElementById('view-my-site').value = user.site || '전체 사업장';
 
-                    fetch('/api/user/verify', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
-                        body: JSON.stringify({ pw: pw })
-                    })
-                        .then(res => res.json())
-                        .then(vData => {
-                            if (vData.status === 'success') {
-                                window.renderMyInfoEdit(user);
-                            } else {
-                                alert(vData.message || '비밀번호가 일치하지 않습니다.');
-                            }
-                        });
-                };
+                const btnEdit = clone.getElementById('btn-edit-my-info');
+                if (btnEdit) {
+                    btnEdit.onclick = () => {
+                        const pw = prompt('정보를 수정하려면 현재 비밀번호를 입력하세요.');
+                        if (!pw) return;
+
+                        fetch('/api/user/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+                            body: JSON.stringify({ pw: pw })
+                        })
+                            .then(res => res.json())
+                            .then(vData => {
+                                if (vData.status === 'success') {
+                                    window.renderMyInfoEdit(user);
+                                } else {
+                                    alert(vData.message || '비밀번호가 일치하지 않습니다.');
+                                }
+                            });
+                    };
+                }
+                content.appendChild(clone);
             }
         });
 };
@@ -1498,65 +1514,77 @@ window.renderMyInfo = function () {
 // [추가] 내 계정 정보 수정 모드 렌더링 함수
 window.renderMyInfoEdit = function (user) {
     const content = document.getElementById('my-info-content');
-    if (!content) return;
+    const template = document.getElementById('my-info-edit-template');
+    if (!content || !template) return;
 
-    const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
-    const equipments = deviceData.equipments || deviceData || {};
-    let siteOptions = '<option value="">전체 사업장</option>';
-    Object.keys(equipments).sort().forEach(s => {
-        siteOptions += `<option value="${escapeHtml(s)}" ${user.site === s ? 'selected' : ''}>${escapeHtml(s)}</option>`;
-    });
+    content.innerHTML = '';
+    const clone = template.content.cloneNode(true);
 
     const isRoleEditable = sessionStorage.getItem('userRole') === 'admin' && user.id !== 'admin';
 
-    content.innerHTML = `
-        <div style="display: flex; gap: 10px; width: 100%; height: 30px;">
-            <input type="text" id="edit-my-dept" value="${escapeHtml(user.department)}" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px;" placeholder="소속 (필수)">
-            <input type="text" id="edit-my-pos" value="${escapeHtml(user.position)}" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px;" placeholder="직급 (필수)">
-            <input type="text" id="edit-my-name" value="${escapeHtml(user.name)}" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px;" placeholder="이름 (필수)">
-        </div>
-        <div style="display: flex; gap: 10px; width: 100%; height: 30px;">
-            <select id="edit-my-role" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px; background: #0d1117;" ${isRoleEditable ? '' : 'disabled'}>
-                <option value="user" ${user.role === 'user' ? 'selected' : ''}>일반</option>
-                <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>관리자</option>
-            </select>
-            <select id="edit-my-site" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px; background: #0d1117;">
-                ${siteOptions}
-            </select>
-            <button id="btn-save-my-info" class="btn-green" style="width: auto; height: 100%; padding: 0 15px; margin: 0; font-size: 13px; font-weight: normal; border-radius: 4px; box-sizing: border-box;">저장</button>
-            <button id="btn-cancel-my-info" class="btn-gray" style="width: auto; height: 100%; padding: 0 15px; margin: 0; font-size: 13px; font-weight: normal; border-radius: 4px; box-sizing: border-box;">취소</button>
-        </div>
-    `;
+    const deptInput = clone.getElementById('edit-my-dept');
+    const posInput = clone.getElementById('edit-my-pos');
+    const nameInput = clone.getElementById('edit-my-name');
+    const roleSelect = clone.getElementById('edit-my-role');
+    const siteSelect = clone.getElementById('edit-my-site');
 
-    document.getElementById('btn-cancel-my-info').onclick = () => window.renderMyInfo();
-    document.getElementById('btn-save-my-info').onclick = () => {
-        const dept = document.getElementById('edit-my-dept').value.trim();
-        const pos = document.getElementById('edit-my-pos').value.trim();
-        const name = document.getElementById('edit-my-name').value.trim();
-        const role = document.getElementById('edit-my-role').value;
-        const site = document.getElementById('edit-my-site').value;
+    if (deptInput) deptInput.value = user.department || '';
+    if (posInput) posInput.value = user.position || '';
+    if (nameInput) nameInput.value = user.name || '';
+    
+    if (roleSelect) {
+        if (!isRoleEditable) roleSelect.disabled = true;
+        roleSelect.value = user.role === 'admin' ? 'admin' : 'user';
+    }
+if (siteSelect) {
+        const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
+        const equipments = deviceData.equipments || deviceData || {};
+        Object.keys(equipments).sort().forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s;
+            siteSelect.appendChild(opt);
+        });
+        siteSelect.value = user.site || '';
+    }
 
-        if (!dept || !pos || !name) return alert("소속, 직급, 이름을 모두 입력해주세요.");
+    const btnSave = clone.getElementById('btn-save-my-info');
+    const btnCancel = clone.getElementById('btn-cancel-my-info');
 
-        fetch('/api/user/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
-            body: JSON.stringify({ department: dept, position: pos, name: name, role: role, site: site })
-        })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert('계정 정보가 수정되었습니다.');
-                    sessionStorage.setItem('userRole', role);
-                    sessionStorage.setItem('userSite', site);
-                    addSystemLog('UPDATE_USER', user.id, '본인 계정 정보 수정');
-                    window.renderMyInfo();
-                } else {
-                    alert(data.message || '수정 실패');
-                }
-            });
-    };
+    if (btnCancel) btnCancel.onclick = () => window.renderMyInfo();
+    if (btnSave) {
+        btnSave.onclick = () => {
+            const dept = document.getElementById('edit-my-dept').value.trim();
+            const pos = document.getElementById('edit-my-pos').value.trim();
+            const name = document.getElementById('edit-my-name').value.trim();
+            const role = document.getElementById('edit-my-role').value;
+            const site = document.getElementById('edit-my-site').value;
+
+            if (!dept || !pos || !name) return alert("소속, 직급, 이름을 모두 입력해주세요.");
+
+            fetch('/api/user/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+                body: JSON.stringify({ department: dept, position: pos, name: name, role: role, site: site })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('계정 정보가 수정되었습니다.');
+                        sessionStorage.setItem('userRole', role);
+                        sessionStorage.setItem('userSite', site);
+                        addSystemLog('UPDATE_USER', user.id, '본인 계정 정보 수정');
+                        window.renderMyInfo();
+                    } else {
+                        alert(data.message || '수정 실패');
+                    }
+                });
+        };
+    }
+
+    content.appendChild(clone);
 };
+    
 /* ==========================================================================
    4. 사이드바 및 리스트 관리 (Sidebar & List)
    ========================================================================== */

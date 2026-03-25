@@ -94,20 +94,50 @@ document.addEventListener('DOMContentLoaded', () => {
    2. 네비게이션 및 뷰 전환 (Navigation & View Switching)
    ========================================================================== */
 function goToSetupPage() {
-    // [추가] 간트 차트 필터(검색된 장비)가 있으면 우선 이동
-    if (currentGanttFilters.site && currentGanttFilters.equip) {
-        location.href = `setup.html?site=${encodeURIComponent(currentGanttFilters.site)}&equip=${encodeURIComponent(currentGanttFilters.equip)}`;
-        return;
-    }
-
     let targetSite = setupDashboardFilter.site;
     let targetEquipName = setupDashboardFilter.equip;
-    let fullEquipName = '';
+    let targetSerial = '';
+
+    // [추가] 간트 차트 필터가 있으면 우선 적용
+    if (currentGanttFilters.site) {
+        targetSite = currentGanttFilters.site;
+    }
+    if (currentGanttFilters.equip) {
+        targetSerial = currentGanttFilters.equip;
+    }
 
     let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
     const data = typeof storageData !== 'undefined' && Object.keys(storageData).length > 0 ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
 
-    if (targetSite && targetEquipName) {
+    // 간트 차트 검색창 키워드 적용
+    const ganttSearchInput = document.getElementById('gantt-search');
+    const keyword = ganttSearchInput ? ganttSearchInput.value.trim().toLowerCase() : '';
+
+    if (keyword && !targetSerial) {
+        for (const site in data) {
+            if (targetSite && site !== targetSite) continue;
+            const equips = data[site];
+            if (equips) {
+                const found = equips.find(e => e.toLowerCase().includes(keyword));
+                if (found) {
+                    targetSite = site;
+                    targetSerial = found;
+                    break;
+                }
+            }
+        }
+    }
+
+    let fullEquipName = '';
+
+    if (targetSerial) {
+        fullEquipName = targetSerial;
+        if (!targetSite) {
+            for (const site in data) {
+                if (data[site] && data[site].includes(fullEquipName)) { targetSite = site; break; }
+            }
+        }
+    } else if (targetSite && targetEquipName) {
         if (data[targetSite]) {
             const found = data[targetSite].find(e => e.split('::')[0] === targetEquipName);
             if (found) fullEquipName = found;
@@ -116,6 +146,8 @@ function goToSetupPage() {
 
     if (targetSite && fullEquipName) {
         location.href = `setup.html?site=${encodeURIComponent(targetSite)}&equip=${encodeURIComponent(fullEquipName)}`;
+    } else if (targetSite) {
+        location.href = `setup.html?site=${encodeURIComponent(targetSite)}`;
     } else {
         try {
             const lastState = JSON.parse(sessionStorage.getItem('lastSetupPath'));
@@ -134,21 +166,43 @@ function goToMaintenancePage() {
     let targetEquipName = selectedEquipFilter;
     let targetSerial = selectedSerialFilter;
 
-    // 캘린더 검색 필터가 있다면 우선 적용
-    if (currentSearchFilters.site && currentSearchFilters.equip) {
+    // 1. 캘린더 상세 검색 필터(Select 박스) 적용
+    if (currentSearchFilters.site) {
         targetSite = currentSearchFilters.site;
+    }
+    if (currentSearchFilters.equip) {
         targetSerial = currentSearchFilters.equip;
     }
 
-    let fullEquipName = '';
     let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
     const data = typeof storageData !== 'undefined' && Object.keys(storageData).length > 0 ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
+
+    // 2. 캘린더 텍스트 검색창(Keyword) 적용
+    const calendarSearchInput = document.getElementById('calendar-search');
+    const keyword = calendarSearchInput ? calendarSearchInput.value.trim().toLowerCase() : '';
+
+    if (keyword && !targetSerial) {
+        for (const site in data) {
+            if (targetSite && site !== targetSite) continue;
+            const equips = data[site];
+            if (equips) {
+                const found = equips.find(e => e.toLowerCase().includes(keyword));
+                if (found) {
+                    targetSite = site;
+                    targetSerial = found;
+                    break;
+                }
+            }
+        }
+    }
+
+    let fullEquipName = '';
 
     if (targetSerial) {
         fullEquipName = targetSerial;
         if (!targetSite) {
             for (const site in data) {
-                if (data[site].includes(fullEquipName)) { targetSite = site; break; }
+                if (data[site] && data[site].includes(fullEquipName)) { targetSite = site; break; }
             }
         }
     } else if (targetSite && targetEquipName) {
@@ -160,6 +214,9 @@ function goToMaintenancePage() {
 
     if (targetSite && fullEquipName) {
         location.href = `maintenance.html?site=${encodeURIComponent(targetSite)}&equip=${encodeURIComponent(fullEquipName)}`;
+    } else if (targetSite) {
+        // 장비가 특정되지 않았으나 사업장 필터가 있는 경우 사업장으로 이동
+        location.href = `maintenance.html?site=${encodeURIComponent(targetSite)}`;
     } else {
         try {
             const lastState = JSON.parse(sessionStorage.getItem('lastMaintPath'));

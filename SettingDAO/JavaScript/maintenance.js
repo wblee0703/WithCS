@@ -1408,53 +1408,104 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
         const dropdown = document.createElement('div');
         dropdown.className = 'log-select-dropdown';
 
+        // [추가] 검색 입력창 생성
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'dropdown-search-input';
+        searchInput.placeholder = '텍스트로 항목 검색...';
+        searchInput.autocomplete = 'off';
+        searchInput.addEventListener('click', e => e.stopPropagation());
+        dropdown.appendChild(searchInput);
+
         const list = document.createElement('div');
         list.className = 'log-select-list';
 
-        items.forEach(item => {
-            const displayValue = item.code ? item.code : item.content;
+        let poolItems = items;
+        if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+            const poolMap = new Map();
+            items.forEach(i => poolMap.set(i.content, i));
+            const allAdminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+            allAdminItems.forEach(a => {
+                if (!poolMap.has(a.part)) {
+                    poolMap.set(a.part, { content: a.part, code: a.code });
+                }
+            });
+            poolItems = Array.from(poolMap.values());
+        }
 
-            // 중복 렌더링 방지
-            if (Array.from(list.children).some(child => child.dataset.value === displayValue)) return;
-
-            const div = document.createElement('div');
-            div.className = 'log-select-item';
-            
-            const isSelected = selectedMap.hasOwnProperty(displayValue) || selectedMap.hasOwnProperty(item.content);
-            const itemCost = isSelected ? (selectedMap[displayValue] || selectedMap[item.content] || '유상') : '유상';
-            
-            if (isSelected) div.classList.add('selected');
-            div.dataset.value = displayValue;
-            
-            if (detailType === 'PM 점검' || detailType === 'BM 점검') {
-                div.innerHTML = `
-                    <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayValue}</span>
-                    <select class="item-cost-select input-dark" style="width: 85px; font-size: 11px; padding: 2px; margin-left: 5px;" onclick="event.stopPropagation()">
-                        <option value="유상" ${itemCost === '유상' ? 'selected' : ''}>유상</option>
-                        <option value="무상(보증)" ${itemCost === '무상(보증)' ? 'selected' : ''}>무상(보증)</option>
-                        <option value="무상(중고)" ${itemCost === '무상(중고)' ? 'selected' : ''}>무상(중고)</option>
-                        <option value="기타" ${itemCost === '기타' ? 'selected' : ''}>기타</option>
-                    </select>
-                `;
+        let registeredItems = [];
+        let otherItems = [];
+        const defaultSet = new Set(items.map(i => i.code ? i.code : i.content));
+        
+        poolItems.forEach(item => {
+            const val = item.code ? item.code : item.content;
+            if (defaultSet.has(val) || defaultSet.has(item.content) || selectedMap.hasOwnProperty(val) || selectedMap.hasOwnProperty(item.content)) {
+                registeredItems.push(item);
             } else {
-                div.innerHTML = `<span>${displayValue}</span>`;
+                otherItems.push(item);
+            }
+        });
+
+        let showAll = registeredItems.length === 0;
+
+        const renderDropdownItems = (searchTerm = '') => {
+            const currentSelections = { ...selectedMap };
+            list.querySelectorAll('.log-select-item.selected').forEach(el => {
+                const cSel = el.querySelector('.item-cost-select');
+                currentSelections[el.dataset.value] = cSel ? cSel.value : '유상';
+            });
+
+            let displayItems = showAll ? [...registeredItems, ...otherItems] : registeredItems;
+
+            if (searchTerm) {
+                const kws = searchTerm.toLowerCase().split(/\s+/);
+                displayItems = [...registeredItems, ...otherItems].filter(item => {
+                    const txt = `${item.content} ${item.code || ''}`.toLowerCase();
+                    return kws.every(kw => txt.includes(kw));
+                });
             }
 
-            div.onclick = (e) => {
-                e.stopPropagation();
+            list.innerHTML = displayItems.map(item => {
+                const displayValue = item.code ? item.code : item.content;
+                const isSelected = currentSelections.hasOwnProperty(displayValue) || currentSelections.hasOwnProperty(item.content);
+                const selClass = isSelected ? 'selected' : '';
+                const itemCost = isSelected ? (currentSelections[displayValue] || currentSelections[item.content] || '유상') : '유상';
 
-                // [추가] 비정기일 경우 단일 선택만 허용
-                if (type === '비정기' && detailType !== 'BM 점검') {
-                    list.querySelectorAll('.log-select-item.selected').forEach(el => {
-                        if (el !== div) el.classList.remove('selected');
-                    });
+                if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+                    return `<div class="log-select-item ${selClass}" data-value="${displayValue}">
+                        <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayValue}</span>
+                        <select class="item-cost-select input-dark" style="width: 85px; font-size: 11px; padding: 2px; margin-left: 5px; color: #e6edf3; color-scheme: dark;" onclick="event.stopPropagation()">
+                            <option value="유상" ${itemCost === '유상' ? 'selected' : ''}>유상</option>
+                            <option value="무상(보증)" ${itemCost === '무상(보증)' ? 'selected' : ''}>무상(보증)</option>
+                            <option value="무상(중고)" ${itemCost === '무상(중고)' ? 'selected' : ''}>무상(중고)</option>
+                            <option value="기타" ${itemCost === '기타' ? 'selected' : ''}>기타</option>
+                        </select>
+                    </div>`;
+                } else {
+                    return `<div class="log-select-item ${selClass}" data-value="${displayValue}"><span>${displayValue}</span></div>`;
                 }
+            }).join('');
 
-                div.classList.toggle('selected');
+            if (!showAll && !searchTerm && otherItems.length > 0) {
+                const moreBtn = document.createElement('button');
+                moreBtn.className = 'show-all-btn';
+                moreBtn.innerHTML = '⬇️ 더보기 (전체 물품)';
+                moreBtn.type = 'button';
+                moreBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showAll = true;
+                    renderDropdownItems(searchInput.value);
+                };
+                list.appendChild(moreBtn);
+            }
 
+            const updateTriggerText = () => {
                 const selected = list.querySelectorAll('.log-select-item.selected');
-                const values = Array.from(selected).map(el => el.dataset.value);
-
+                const values = Array.from(selected).map(el => {
+                    const cSel = el.querySelector('.item-cost-select');
+                    return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+                });
                 if (values.length > 1) {
                     trigger.textContent = `${values[0]} 외 ${values.length - 1}개`;
                 } else if (values.length === 1) {
@@ -1463,14 +1514,41 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
                     trigger.textContent = '항목 선택';
                 }
                 trigger.title = values.join('\n');
-
-                // [추가] 비정기(단일 선택) 항목 선택 시 드롭다운 자동 닫기
-                if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
-                    dropdown.classList.remove('show');
-                }
             };
-            list.appendChild(div);
-        });
+
+            list.querySelectorAll('.item-cost-select').forEach(cSel => {
+                cSel.addEventListener('change', (e) => {
+                    e.stopPropagation();
+                    const parentDiv = cSel.closest('.log-select-item');
+                    if (parentDiv && parentDiv.classList.contains('selected')) updateTriggerText();
+                });
+            });
+
+            list.querySelectorAll('.log-select-item').forEach(div => {
+                div.onclick = (e) => {
+                    e.stopPropagation();
+
+                    if (type === '비정기' && detailType !== 'BM 점검') {
+                        list.querySelectorAll('.log-select-item.selected').forEach(el => {
+                            if (el !== div) el.classList.remove('selected');
+                        });
+                    }
+
+                    div.classList.toggle('selected');
+                    updateTriggerText();
+
+                    if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
+                        dropdown.classList.remove('show');
+                    }
+                };
+            });
+        };
+
+        searchInput.oninput = (e) => {
+            renderDropdownItems(e.target.value.trim());
+        };
+
+        renderDropdownItems();
 
         dropdown.appendChild(list);
 
@@ -1668,29 +1746,101 @@ window.updateLogContentOptions = function () {
 
         if (contentTrigger) contentTrigger.textContent = '항목 선택';
         if (contentList) {
-            contentList.innerHTML = '';
-            items.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'log-select-item';
+            const dropdown = document.getElementById('log-content-dropdown');
+            let searchInput = document.getElementById('log-content-search');
+            if (!searchInput && dropdown) {
+                searchInput = document.createElement('input');
+                searchInput.type = 'text';
+                searchInput.id = 'log-content-search';
+                searchInput.className = 'dropdown-search-input';
+                searchInput.placeholder = '텍스트로 항목 검색...';
+                searchInput.autocomplete = 'off';
+                searchInput.addEventListener('click', e => e.stopPropagation());
+                dropdown.insertBefore(searchInput, contentList);
+            }
 
-                // [수정] 약어(코드)가 있으면 약어를 value와 표시명으로 사용
-                const displayValue = item.code ? item.code : item.content;
-                div.dataset.value = displayValue;
-                
-                if (detailType === 'PM 점검' || detailType === 'BM 점검') {
-                    div.innerHTML = `
-                        <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayValue}</span>
-                        <select class="item-cost-select input-dark" style="width: 85px; font-size: 11px; padding: 2px; margin-left: 5px;" onclick="event.stopPropagation()">
-                            <option value="유상">유상</option>
-                            <option value="무상(보증)">무상(보증)</option>
-                            <option value="무상(중고)">무상(중고)</option>
-                            <option value="기타">기타</option>
-                        </select>
-                    `;
+            let poolItems = items;
+            if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+                const poolMap = new Map();
+                items.forEach(i => poolMap.set(i.content, i));
+                const allAdminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+                allAdminItems.forEach(a => {
+                    if (!poolMap.has(a.part)) {
+                        poolMap.set(a.part, { content: a.part, code: a.code });
+                    }
+                });
+                poolItems = Array.from(poolMap.values());
+            }
+
+            let registeredItems = [];
+            let otherItems = [];
+            const defaultSet = new Set(items.map(i => i.code ? i.code : i.content));
+
+            poolItems.forEach(item => {
+                const val = item.code ? item.code : item.content;
+                if (defaultSet.has(val) || defaultSet.has(item.content)) {
+                    registeredItems.push(item);
                 } else {
-                    div.innerHTML = `<span>${displayValue}</span>`;
+                    otherItems.push(item);
                 }
-                
+            });
+
+            let showAll = registeredItems.length === 0;
+
+            const renderDropdownItems = (searchTerm = '') => {
+                const currentSelections = {};
+                contentList.querySelectorAll('.log-select-item.selected').forEach(el => {
+                    const cSel = el.querySelector('.item-cost-select');
+                    currentSelections[el.dataset.value] = cSel ? cSel.value : '유상';
+                });
+
+                let displayItems = showAll ? [...registeredItems, ...otherItems] : registeredItems;
+
+                if (searchTerm) {
+                    const kws = searchTerm.toLowerCase().split(/\s+/);
+                    displayItems = [...registeredItems, ...otherItems].filter(item => {
+                        const txt = `${item.content} ${item.code || ''}`.toLowerCase();
+                        return kws.every(kw => txt.includes(kw));
+                    });
+                }
+
+                contentList.innerHTML = displayItems.map(item => {
+                    const displayValue = item.code ? item.code : item.content;
+                    const isSelected = currentSelections.hasOwnProperty(displayValue);
+                    const selClass = isSelected ? 'selected' : '';
+                    const itemCost = isSelected ? currentSelections[displayValue] : '유상';
+
+                    if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+                        return `
+                            <div class="log-select-item ${selClass}" data-value="${displayValue}">
+                                <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayValue}</span>
+                                <select class="item-cost-select input-dark" style="width: 85px; font-size: 11px; padding: 2px; margin-left: 5px; color: #e6edf3; color-scheme: dark;" onclick="event.stopPropagation()">
+                                    <option value="유상" ${itemCost === '유상' ? 'selected' : ''}>유상</option>
+                                    <option value="무상(보증)" ${itemCost === '무상(보증)' ? 'selected' : ''}>무상(보증)</option>
+                                    <option value="무상(중고)" ${itemCost === '무상(중고)' ? 'selected' : ''}>무상(중고)</option>
+                                    <option value="기타" ${itemCost === '기타' ? 'selected' : ''}>기타</option>
+                                </select>
+                            </div>
+                        `;
+                    } else {
+                        return `<div class="log-select-item ${selClass}" data-value="${displayValue}"><span>${displayValue}</span></div>`;
+                    }
+                }).join('');
+
+                if (!showAll && !searchTerm && otherItems.length > 0) {
+                    const moreBtn = document.createElement('button');
+                    moreBtn.className = 'show-all-btn';
+                    moreBtn.innerHTML = '⬇️ 더보기 (전체 물품)';
+                    moreBtn.type = 'button';
+                    moreBtn.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        showAll = true;
+                        renderDropdownItems(searchInput ? searchInput.value : '');
+                    };
+                    contentList.appendChild(moreBtn);
+                }
+
                 const updateTriggerText = () => {
                     const selected = contentList.querySelectorAll('.log-select-item.selected');
                     const values = Array.from(selected).map(el => {
@@ -1707,35 +1857,40 @@ window.updateLogContentOptions = function () {
                     contentTrigger.title = values.join('\n');
                 };
 
-                const cSel = div.querySelector('.item-cost-select');
-                if (cSel) {
+                contentList.querySelectorAll('.item-cost-select').forEach(cSel => {
                     cSel.addEventListener('change', (e) => {
                         e.stopPropagation();
-                        if (div.classList.contains('selected')) updateTriggerText();
+                        const parentDiv = cSel.closest('.log-select-item');
+                        if (parentDiv && parentDiv.classList.contains('selected')) updateTriggerText();
                     });
-                }
+                });
 
-                div.onclick = (e) => {
-                    e.stopPropagation();
+                contentList.querySelectorAll('.log-select-item').forEach(div => {
+                    div.onclick = (e) => {
+                        e.stopPropagation();
+                        if (type === '비정기' && detailType !== 'BM 점검') {
+                            contentList.querySelectorAll('.log-select-item.selected').forEach(el => {
+                                if (el !== div) el.classList.remove('selected');
+                            });
+                        }
+                        div.classList.toggle('selected');
+                        updateTriggerText();
+                        if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
+                            const dropdownObj = document.getElementById('log-content-dropdown');
+                            if (dropdownObj) dropdownObj.classList.remove('show');
+                        }
+                    };
+                });
+            };
 
-                // [추가] 비정기일 경우 단일 선택만 허용
-                    if (type === '비정기' && detailType !== 'BM 점검') {
-                        contentList.querySelectorAll('.log-select-item.selected').forEach(el => {
-                            if (el !== div) el.classList.remove('selected');
-                        });
-                    }
-
-                    div.classList.toggle('selected');
-                    updateTriggerText();
-
-                    // [추가] 비정기(단일 선택) 항목 선택 시 드롭다운 자동 닫기
-                    if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
-                        const dropdown = document.getElementById('log-content-dropdown');
-                        if (dropdown) dropdown.classList.remove('show');
-                    }
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.oninput = (e) => {
+                    renderDropdownItems(e.target.value.trim());
                 };
-                contentList.appendChild(div);
-            });
+            }
+
+            renderDropdownItems();
         }
 
         // [추가] 단일 선택 시 하단 추가 버튼 숨김

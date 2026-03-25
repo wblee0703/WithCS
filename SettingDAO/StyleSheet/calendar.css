@@ -593,6 +593,50 @@
 .btn-blue-sm:hover { background: #1a5cce; }
 
 /* ==========================================================
+   작업 등록 팝업 입력창 상태 스타일 (Input States)
+   ========================================================== */
+#register-schedule-modal input:not(.has-value):not(#register-content-search),
+#register-schedule-modal select:not(.has-value),
+#register-schedule-modal .log-select-trigger:not(.has-value) {
+    background-color: var(--cal-bg-dark) !important;
+}
+
+#register-schedule-modal input.has-value,
+#register-schedule-modal select.has-value,
+#register-schedule-modal .log-select-trigger.has-value {
+    background-color: var(--cal-bg-element) !important;
+}
+
+.error-border {
+    border: 1px solid var(--cal-red-btn) !important;
+}
+
+.dropdown-search-input {
+    width: calc(100% - 10px);
+    margin: 5px;
+    padding: 6px 10px;
+    background: var(--cal-bg-dark);
+    border: 1px solid var(--cal-border);
+    color: var(--cal-text-primary);
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.show-all-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--cal-bg-element);
+    color: var(--cal-blue-light);
+    border: none;
+    border-top: 1px solid var(--cal-border);
+    cursor: pointer;
+    font-weight: bold;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
+
+/* ==========================================================
    모바일 반응형 스타일 (Mobile Responsive Styles)
    ========================================================== */
 
@@ -687,8 +731,8 @@
     }
     /* [요청] 모바일 항목 선택 제안박스 확장 및 비용처리 드롭다운 축소 */
     .log-select-dropdown {
-        width: 100% !important; /* 부모 입력창 너비에 정확히 맞춤 */
-        min-width: 100% !important;
+        width: 200% !important; /* [요청] 부모 입력창 너비의 2배로 확장 */
+        min-width: 200% !important;
         max-width: none !important;
     }
     .log-select-item {

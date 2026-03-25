@@ -518,6 +518,8 @@ body {
     margin: 0 0 2px 0;
     box-sizing: border-box;
     box-shadow: 0 -4px 12px rgba(0,0,0,0.5);
+    -webkit-overflow-scrolling: touch; /* [요청] 모바일 터치 스크롤 개선 */
+    overscroll-behavior: contain; /* [요청] 스크롤 체인 현상 방지 */
 }
 .user-suggestion-item {
     padding: 8px 10px;
@@ -1135,10 +1137,9 @@ body.role-user .btn-list-setting {
         flex-direction: column !important;
     }
     #user-modal .modal-body {
-        overflow-y: auto !important;
+        overflow: visible !important; /* [요청] 모바일 제안박스 스크롤 오류 개선을 위해 오버플로우 노출 */
         flex: 1 !important;
         padding: 15px !important;
-        overflow-x: auto !important; /* 가로로 넓어질 경우 스크롤 허용 */
     }
 
     /* 5. 테이블 */
@@ -1173,5 +1174,17 @@ body.role-user .btn-list-setting {
     .sidebar-header-row h3 {
         font-size: 14px !important;
     }
+    /* [요청] 모바일 계정 권한 선택창 너비 축소 및 가로 배치 유지 */
+    #new-user-role,
+    #edit-my-role,
+    #view-my-role {
+        width: auto !important;
+        flex: 0 0 75px !important;
+    }
 
+    #new-user-site-wrapper,
+    #my-info-content > div {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+    }
 }

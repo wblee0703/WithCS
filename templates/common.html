@@ -15,12 +15,21 @@
 <body>
     <!-- 1. 공통 헤더 (Header) -->
     <header class="header">
+        <!-- 모바일 세션 타이머 -->
+        <div id="mobile-session-timer" class="session-timer-container mobile-header-timer" style="display: none;">
+            <span class="session-time-display" style="color:#e3b341; font-size:14px;">30:00</span>
+            <button class="btn-blue" onclick="extendSession()" style="padding:2px 8px; font-size:11px; margin-left:8px; border-radius:4px; font-weight:bold; white-space:nowrap; height:24px;">연장</button>
+        </div>
+
         <!-- 모바일 햄버거 메뉴 -->
         <button class="hamburger-menu" id="hamburger-menu">
             <div class="bar"></div>
             <div class="bar"></div>
             <div class="bar"></div>
         </button>
+
+        <!-- 모바일 현재 페이지 타이틀 -->
+        <div id="mobile-page-title" class="mobile-page-title"></div>
 
         <img src="{{ url_for('SettingDAO', filename='LOGO+WITHTECH.png') }}" alt="WITHTECH Logo" class="header-logo">
         
@@ -39,9 +48,23 @@
 
         <!-- 모바일 네비게이션 패널 -->
         <div class="nav-overlay" id="nav-overlay"></div>
-        <nav class="mobile-nav" id="mobile-nav"></nav>
+        <nav class="mobile-nav" id="mobile-nav">
+            <ul class="mobile-nav-links">
+                <!-- JS에서 메인 네비게이션 링크가 복제됨 -->
+            </ul>
+            <div class="mobile-user-controls">
+                <span class="user-info" id="mobile-user-info" style="display: none;"></span>
+                <button id="mobile-btn-user-settings" class="btn-gray" style="display: none;">⚙️ 설정</button>
+                <button id="mobile-btn-login-logout" class="btn-blue">로그인</button>
+            </div>
+        </nav>
 
         <div class="user-controls">
+            <!-- 데스크톱 세션 타이머 -->
+            <div id="desktop-session-timer" class="session-timer-container" style="display: none;">
+                <span class="session-time-display">30:00</span>
+                <button class="btn-gray" onclick="extendSession()" style="padding:2px 6px; font-size:11px; margin-left:5px; margin-right:15px; border-radius:3px;">연장</button>
+            </div>
             <span id="user-info" class="user-info" style="display: none;"></span>
             <button id="btn-login-logout" class="btn-gray">로그인</button>
             <button id="btn-user-settings" class="btn-gray" style="display: none;">⚙️ 설정</button>
@@ -132,7 +155,7 @@
                                 <option value="admin">관리자</option>
                             </select>
                             <div class="autocomplete-wrapper" style="flex: 1; min-width: 0; height: 100%;">
-                                <input type="text" id="new-user-site-input" class="input-dark" placeholder="사업장 미지정 (전체)" style="width: 100%; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box; cursor: pointer;" readonly>
+                                <input type="text" id="new-user-site-input" class="input-dark" placeholder="사업장 미지정 (전체)" autocomplete="off" style="width: 100%; height: 100%; padding: 0 8px; font-size: 13px; box-sizing: border-box;">
                                 <ul id="new-user-site-suggestions" class="user-suggestion-list" style="top: 100%; bottom: auto; max-height: 250px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);"></ul>
                                 <input type="hidden" id="new-user-site" value="">
                             </div>
@@ -187,6 +210,39 @@
     </div>
 
     <!-- 4. 스크립트 (Scripts) -->
+    <!-- 계정 정보 조회 모드 템플릿 -->
+    <template id="my-info-view-template">
+        <div style="display: flex; gap: 10px; width: 100%; height: 30px;">
+            <input type="text" id="view-my-dept" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px; color: #e6edf3;" disabled title="소속" placeholder="소속 미지정">
+            <input type="text" id="view-my-pos" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px; color: #e6edf3;" disabled title="직급" placeholder="직급 미지정">
+            <input type="text" id="view-my-name" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px; color: #e6edf3;" disabled title="이름" placeholder="이름 미지정">
+        </div>
+        <div style="display: flex; gap: 10px; width: 100%; height: 30px;">
+            <input type="text" id="view-my-role" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px; color: #e6edf3;" disabled title="권한">
+            <input type="text" id="view-my-site" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px; color: #e6edf3;" disabled title="사업장">
+            <button id="btn-edit-my-info" class="btn-blue" style="width: auto; height: 100%; padding: 0 15px; margin: 0; font-size: 13px; font-weight: normal; border-radius: 4px; box-sizing: border-box;">수정</button>
+        </div>
+    </template>
+
+    <!-- 계정 정보 수정 모드 템플릿 -->
+    <template id="my-info-edit-template">
+        <div style="display: flex; gap: 10px; width: 100%; height: 30px;">
+            <input type="text" id="edit-my-dept" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px; color: #e6edf3;" placeholder="소속 (필수)">
+            <input type="text" id="edit-my-pos" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px; color: #e6edf3;" placeholder="직급 (필수)">
+            <input type="text" id="edit-my-name" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px; color: #e6edf3;" placeholder="이름 (필수)">
+        </div>
+        <div style="display: flex; gap: 10px; width: 100%; height: 30px;">
+            <select id="edit-my-role" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px; background: #0d1117; color: #e6edf3;">
+                <option value="user">일반</option>
+                <option value="admin">관리자</option>
+            </select>
+            <select id="edit-my-site" class="input-dark" style="flex:1; min-width:0; height:100%; padding: 0 8px; font-size: 13px; background: #0d1117; color: #e6edf3;">
+                <option value="">전체 사업장</option>
+            </select>
+            <button id="btn-save-my-info" class="btn-green" style="width: auto; height: 100%; padding: 0 15px; margin: 0; font-size: 13px; font-weight: normal; border-radius: 4px; box-sizing: border-box;">저장</button>
+            <button id="btn-cancel-my-info" class="btn-gray" style="width: auto; height: 100%; padding: 0 15px; margin: 0; font-size: 13px; font-weight: normal; border-radius: 4px; box-sizing: border-box;">취소</button>
+        </div>
+    </template>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}"></script>
     <!-- 페이지별 추가 스크립트 -->
     {% block extra_js %}{% endblock %}
