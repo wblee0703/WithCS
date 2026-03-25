@@ -346,19 +346,20 @@ body {
 .maint-split-view {
     display: flex;
     width: 100%;
-    gap: 20px;
+    gap: 15px;
     overflow: hidden;
     padding-bottom: 10px;
     height: 330px;
+    box-sizing: border-box;
 }
 
 .maint-left-charts {
-    flex: 3;
-    /* 좌측 3개 패널(사업장, 장비, 정보)과 우측 1개 패널(점검임박)의 비율을 3:1로 설정하여 전체 1:1:1:1 구현 */
+    flex: 0 0 calc(75% - 11.25px);
+    min-width: 0;
     display: flex;
     flex-direction: row;
     gap: 15px;
-    padding-right: 5px;
+    padding-right: 0;
 }
 
 .status-group {
@@ -377,6 +378,7 @@ body {
     border: 1px solid #30363d;
     border-radius: 8px;
     padding: 15px;
+    box-sizing: border-box;
 }
 
 .status-group-title {
@@ -525,7 +527,7 @@ body {
    8. 점검 임박 리스트 (Upcoming List)
    ========================================================================== */
 .upcoming-container {
-    flex: 1;
+    flex: 0 0 calc(25% - 3.75px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -533,6 +535,7 @@ body {
     border-radius: 8px;
     border: 1px solid #30363d;
     padding: 15px;
+    box-sizing: border-box;
 }
 
 .upcoming-title {

@@ -541,7 +541,11 @@ function handlePageAccess() {
         if (isLoggedIn) {
             homeWelcomeContainer.style.display = 'flex';
             if (homeLoginContainer) homeLoginContainer.style.display = 'none';
-            updateHomeDashboard();
+                if (typeof updateHomeDashboard === 'function') {
+                    updateHomeDashboard();
+                } else {
+                    try { updateHomeDashboard(); } catch(e){}
+                }
         } else {
             homeWelcomeContainer.style.display = 'none';
             if (homeLoginContainer) homeLoginContainer.style.display = 'flex';

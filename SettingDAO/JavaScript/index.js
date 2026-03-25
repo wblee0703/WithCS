@@ -431,6 +431,9 @@ function updateMaintenanceDashboard() {
 
     // 점검 임박 리스트 업데이트
     renderUpcomingList(data);
+
+    // [추가] 렌더링 완료 후 UI 재배치 (에러 방지를 위해 딜레이 적용)
+    setTimeout(window.restructureHomeMaintenance, 50);
 }
 
 function renderSiteStatus(siteStats, totalEquip, allData) {
@@ -1240,3 +1243,193 @@ function renderSetupUpcomingList(activeEquips) {
         listEl.appendChild(clone);
     });
 }
+// index.js 하단에 추가할 내용
+window.restructureHomeMaintenance = function () {
+    const allLeftCharts = document.querySelectorAll('.maint-left-charts');
+    let maintLeftCharts = null;
+
+    for (let el of allLeftCharts) {
+        const parent = el.closest('div[id*="maint"], div[id*="Maint"], .dashboard-col, .home-dashboard');
+        if (parent) {
+            if (parent.id && parent.id.toLowerCase().includes('maint')) {
+                maintLeftCharts = el;
+                break;
+            }
+            const titleEl = parent.querySelector('.section-title');
+            if (titleEl && titleEl.textContent.includes('운영')) {
+                maintLeftCharts = el;
+                break;
+            }
+        }
+    }
+
+    if (!maintLeftCharts && allLeftCharts.length > 1) {
+        maintLeftCharts = allLeftCharts[1];
+    } else if (!maintLeftCharts && allLeftCharts.length === 1) {
+        maintLeftCharts = allLeftCharts[0];
+    }
+
+    if (!maintLeftCharts) return;
+
+    if (maintLeftCharts.querySelector('#home-issue-card')) {
+        window.populateEquipmentIssues(); 
+        return;
+    }
+
+    const existingCard = document.getElementById('home-issue-card');
+    if (existingCard && !maintLeftCharts.contains(existingCard)) {
+        existingCard.remove();
+    }
+
+    const cards = maintLeftCharts.querySelectorAll('.status-group.card-like');
+    let siteCard = null;
+    let equipCard = null;
+
+    cards.forEach(card => {
+        const titleEl = card.querySelector('.status-group-title');
+        if (!titleEl) return;
+        const title = titleEl.textContent.trim();
+        if (title.includes('사업장 현황')) siteCard = card;
+        if (title.includes('장비 현황')) equipCard = card;
+    });
+
+    [siteCard, equipCard].forEach(card => {
+        if (card) {
+            const donut = card.querySelector('.donut-chart-wrapper');
+            if (donut) donut.style.display = 'none';
+        }
+    });
+
+    if (siteCard && equipCard) {
+        const title = siteCard.querySelector('.status-group-title');
+        if (title) title.textContent = '사업장 및 장비 현황';
+
+        const siteRow = siteCard.querySelector('.chart-row');
+        const equipRow = equipCard.querySelector('.chart-row');
+
+        if (siteRow && equipRow) {
+            siteRow.style.display = 'flex';
+            siteRow.style.flexDirection = 'row';
+            siteRow.style.gap = '15px';
+            siteRow.style.width = '100%';
+            
+            const siteListFlex = siteRow.querySelector('.status-list-flex') || siteRow.querySelector('.status-list-container');
+            const equipListFlex = equipRow.querySelector('.status-list-flex') || equipRow.querySelector('.status-list-container');
+            
+            if (siteListFlex) {
+                siteListFlex.style.flex = '1';
+                siteListFlex.style.minWidth = '0';
+            }
+            if (equipListFlex) {
+                equipListFlex.style.flex = '1';
+                equipListFlex.style.minWidth = '0';
+                siteRow.appendChild(equipListFlex);
+            }
+        }
+        
+        // 장비 현황 카드 자체를 화면에서 숨기되, DOM 트리에는 유지 (에러 방지)
+        equipCard.style.display = 'none'; 
+        equipCard.classList.remove('card-like'); 
+    }
+
+    const issueCard = document.createElement('div');
+    issueCard.id = 'home-issue-card';
+    issueCard.className = 'status-group card-like';
+    issueCard.innerHTML = `
+        <h3 class="status-group-title" style="color: #eb371f;">장비 이슈 공유</h3>
+        <div class="status-list-container" style="flex: 1; width: 100%; border: none; height: 100%; overflow: hidden; display: flex; flex-direction: column;">
+            <ul id="home-issue-list" class="upcoming-list" style="padding: 0; margin: 0; list-style: none; flex: 1; overflow-y: auto;"></ul>
+        </div>
+    `;
+    
+    maintLeftCharts.insertBefore(issueCard, maintLeftCharts.firstChild);
+    window.populateEquipmentIssues();
+};
+
+window.populateEquipmentIssues = function () {
+    const issueList = document.getElementById('home-issue-list');
+    if (!issueList) return;
+
+    issueList.innerHTML = '';
+    let issues = [];
+
+    const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
+    let dataMap = (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) ? storageData : (deviceData.equipments || deviceData);
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+
+    Object.keys(dataMap).forEach(site => {
+        if (!dataMap[site] || !Array.isArray(dataMap[site])) return;
+        dataMap[site].forEach(equipKey => {
+            const key = `details_${site}_${equipKey}`;
+            const details = JSON.parse(localStorage.getItem(key)) || {};
+            if (details.logs) {
+                details.logs.forEach(log => {
+                    if (log.type === '비정기' && log.detailType !== '일정변경') {
+                        issues.push({ site, equipKey, log });
+                    }
+                });
+            }
+        });
+    });
+
+    issues.sort((a, b) => {
+        if (b.log.date !== a.log.date) return b.log.date.localeCompare(a.log.date);
+        return b.log.id - a.log.id;
+    });
+
+    if (issues.length === 0) {
+        issueList.innerHTML = '<li class="list-empty-msg">공유된 장비 이슈가 없습니다.</li>';
+        return;
+    }
+
+    issues.forEach(issue => {
+        const { site, equipKey, log } = issue;
+        const parts = equipKey.split('::');
+        const rawModelName = parts[0];
+        const serial = parts.length > 1 ? parts[1] : '';
+
+        const matchedModel = equipmentModels.find(m => m.name === rawModelName);
+        const modelName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawModelName;
+
+        let detailType2 = '';
+        if (log.detailType2 && log.detailType2.includes('>')) {
+            detailType2 = log.detailType2.split('>')[1].trim();
+        } else if (log.detailType2) {
+            detailType2 = log.detailType2.trim();
+        } else if (log.detailType && log.detailType.includes('>')) {
+            detailType2 = log.detailType.split('>')[1].trim();
+        } else {
+            detailType2 = log.detailType || '내용 없음';
+        }
+
+        const displayText = `${site} > ${modelName} : ${detailType2}`;
+        const dateStr = log.date || '';
+
+        const li = document.createElement('li');
+        li.className = 'upcoming-item';
+        li.style.borderLeft = '4px solid #eb371f';
+        li.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden; flex: 1; padding-right: 10px;">
+                <span style="font-size: 13px; font-weight: bold; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(displayText)}">${escapeHtml(displayText)}</span>
+                <span style="font-size: 11px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(log.content)}">${escapeHtml(log.content)}</span>
+            </div>
+            <div style="font-size: 11px; color: #8b949e; white-space: nowrap; flex-shrink: 0;">${dateStr}</div>
+        `;
+
+        li.onclick = () => {
+            if (confirm(`해당 장비의 점검 이력 상세 내용을 확인하시겠습니까?\n\n[${site}] ${modelName} ${serial ? '('+serial+')' : ''}\n이슈: ${detailType2}\n내용: ${log.content}`)) {
+                let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equipKey)}&logId=${log.id}`;
+                window.location.href = targetUrl;
+            }
+        };
+
+        issueList.appendChild(li);
+    });
+};
+
+// [수정] common.js의 이벤트 리스너 대신, index.js에서 페이지를 렌더링한 직후에 호출하도록 설정
+window.addEventListener('DataLoaded', () => {
+    if (document.getElementById('home-welcome-container') && sessionStorage.getItem('isLoggedIn') === 'true') {
+        setTimeout(window.restructureHomeMaintenance, 100);
+    }
+});
