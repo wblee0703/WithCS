@@ -18,6 +18,89 @@ let checkTypeItemsData = {}; // [추가] 세부 항목 저장소
 let currentCheckTypeSubCategory2 = null; // [추가] 선택된 세부구분 2
 let checkTypeCategories2Data = {}; // [추가] 세부구분 2 저장소
 
+// [추가] 저장 여부 확인 및 폼 수정 감지용 변수 및 함수
+let adminFormDirty = false;
+let currentDirtyContext = null;
+let initialAdminFormData = { site: null, equip: null, item: null };
+
+function getSiteFormState() {
+    return JSON.stringify({
+        name: document.getElementById('site-info-name') ? document.getElementById('site-info-name').value : '',
+        buildings: currentBuildingList
+    });
+}
+
+function getEquipFormState() {
+    const getVal = id => document.getElementById(id) ? document.getElementById(id).value : '';
+    return JSON.stringify({
+        site: getVal('equip-info-site'), name: getVal('equip-info-name'), serial: getVal('equip-info-serial'),
+        building: getVal('equip-info-building'), location: getVal('equip-info-location'), status: getVal('equip-info-status'),
+        deliveryDate: getVal('equip-info-delivery-date'), warrantyStart: getVal('equip-info-warranty-start'),
+        warrantyPeriod: getVal('equip-info-warranty-period'), custEquipName: getVal('equip-info-cust-equip-name'),
+        floor: getVal('equip-info-floor'), manager: getVal('equip-info-manager'), contact: getVal('equip-info-contact'),
+        email: getVal('equip-info-email'), custManager: getVal('equip-info-cust-manager'), custContact: getVal('equip-info-cust-contact'),
+        custEmail: getVal('equip-info-cust-email'), specialNote: getVal('equip-info-special-note')
+    });
+}
+
+function getItemFormState() {
+    const getVal = id => document.getElementById(id) ? document.getElementById(id).value : '';
+    return JSON.stringify({
+        detailType: getVal('item-info-detail-type'), additional: getVal('item-info-additional'), part: getVal('item-info-part'),
+        spec: getVal('item-info-spec'), code: getVal('item-info-code'), partno: getVal('item-info-partno'), equip: getVal('item-info-equip')
+    });
+}
+
+function checkAdminFormDirty(context) {
+    if (!initialAdminFormData[context]) return;
+    let currentState = "";
+    if (context === 'site') currentState = getSiteFormState();
+    else if (context === 'equip') currentState = getEquipFormState();
+    else if (context === 'item') currentState = getItemFormState();
+    
+    setAdminFormDirty(currentState !== initialAdminFormData[context], context);
+}
+
+function setAdminFormDirty(isDirty, context) {
+    adminFormDirty = isDirty;
+    currentDirtyContext = isDirty ? context : null;
+
+    const btnMap = {
+        'site': 'btn-admin-save-site',
+        'equip': 'btn-admin-save-equip',
+        'item': 'btn-admin-save-item-detail'
+    };
+
+    if (context && btnMap[context]) {
+        const btn = document.getElementById(btnMap[context]);
+        if (btn) {
+            if (isDirty) {
+                btn.classList.remove('btn-green', 'btn-blue');
+                btn.classList.add('btn-orange'); // 변경 사항 발생 시 주황색
+            } else {
+                btn.classList.remove('btn-orange', 'btn-blue');
+                btn.classList.add('btn-green'); // 저장 완료 시 원래 색상 복귀
+            }
+        }
+    }
+}
+
+function checkAdminUnsavedChanges() {
+    if (adminFormDirty) {
+        if (confirm("저장되지 않은 변경사항이 있습니다.\n[확인]을 누르면 '저장 후' 화면을 이동합니다.\n[취소]를 누르면 변경사항을 무시하고 그대로 이동합니다.")) {
+            if (currentDirtyContext === 'site') { if (handleSiteSave() === false) return false; }
+            else if (currentDirtyContext === 'equip') { if (handleEquipSave() === false) return false; }
+            else if (currentDirtyContext === 'item') { if (handleItemDetailSave() === false) return false; }
+            return true;
+        } else {
+            // [요청] 취소 클릭 시 변경사항을 무시(초기화)하고 다른 작업(이동)을 허용
+            setAdminFormDirty(false, currentDirtyContext);
+            return true;
+        }
+    }
+    return true;
+}
+
 // [추가] 드래그 앤 드롭 위치 계산 함수 폴백
 if (typeof window.getDragAfterElement !== 'function') {
     window.getDragAfterElement = function(container, y, selector) {
@@ -51,6 +134,29 @@ document.addEventListener('DOMContentLoaded', () => {
         setupItemMgmt();
         setupCheckTypeMgmt();
         
+        // [추가] 폼 변경 감지 이벤트 위임 등록 (입력창 타이핑 및 드롭다운 선택 감지)
+        const siteForm = document.getElementById('admin-site-form');
+        if (siteForm) siteForm.addEventListener('input', () => checkAdminFormDirty('site'));
+
+        const equipForm = document.getElementById('admin-equip-form');
+        if (equipForm) {
+            equipForm.addEventListener('input', () => checkAdminFormDirty('equip'));
+            equipForm.addEventListener('change', () => checkAdminFormDirty('equip'));
+        }
+
+        const itemForm = document.getElementById('admin-item-form');
+        if (itemForm) {
+            itemForm.addEventListener('input', () => checkAdminFormDirty('item'));
+            itemForm.addEventListener('change', () => checkAdminFormDirty('item'));
+        }
+
+        window.addEventListener('beforeunload', (e) => {
+            if (adminFormDirty) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+        
         // 모든 설정 완료 후 마지막 작업 탭 복원
         restoreLastAdminSection();
     };
@@ -69,6 +175,10 @@ function setupAdminMenu() {
 
     menuItems.forEach(item => {
         item.addEventListener('click', () => {
+            if (item.classList.contains('active')) return;
+            // [추가] 다른 탭으로 이동할 때 저장 확인
+            if (!checkAdminUnsavedChanges()) return;
+            
             // 1. 메뉴 활성화 상태 변경
             menuItems.forEach(li => li.classList.remove('active'));
             item.classList.add('active');
@@ -174,6 +284,7 @@ function setupSiteMgmt() {
             if (currentBuildingList.includes(val)) return alert('이미 존재하는 건물입니다.');
             currentBuildingList.push(val);
             renderBuildingList();
+            checkAdminFormDirty('site'); // [수정] 건물 추가 감지
             inputBuilding.value = '';
             inputBuilding.focus();
         });
@@ -252,6 +363,10 @@ function renderAdminSiteList() {
         }
 
         li.addEventListener('click', () => {
+            if (currentAdminSite === site) return;
+            if (!checkAdminUnsavedChanges()) return; // [추가] 리스트 다른 항목 이동 시 저장 확인
+            setAdminFormDirty(false, 'site');
+            
             currentAdminSite = site;
             // 활성화 스타일 갱신
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
@@ -281,6 +396,7 @@ function loadSiteDetail(siteName) {
 
     currentBuildingList = metaData.buildings || [];
     renderBuildingList();
+    initialAdminFormData.site = getSiteFormState(); // [추가] 초기 상태 스냅샷 저장
 }
 
 function renderBuildingList() {
@@ -306,6 +422,7 @@ function renderBuildingList() {
             e.stopPropagation();
             currentBuildingList.splice(index, 1);
             renderBuildingList();
+            checkAdminFormDirty('site'); // [수정] 건물 삭제 감지
         });
 
         const editBtn = li.querySelector('.btn-edit-building');
@@ -334,6 +451,8 @@ function renderBuildingList() {
                     if (confirm(`건물명을 '${building}'에서 '${newBuilding}'(으)로 변경하시겠습니까?\n이 건물을 사용하는 장비들의 정보도 함께 업데이트됩니다.`)) {
                         currentBuildingList[index] = newBuilding;
                         
+                        renderBuildingList();
+                        checkAdminFormDirty('site'); // [수정] 건물명 변경 감지
                         // 장비 데이터 건물명 일괄 업데이트
                         if (currentAdminSite && storageData[currentAdminSite]) {
                             let isModified = false;
@@ -355,7 +474,6 @@ function renderBuildingList() {
                 }
                 
                 li.classList.remove('editing');
-                renderBuildingList();
             }
         });
 
@@ -364,15 +482,15 @@ function renderBuildingList() {
 }
 
 function handleSiteSave() {
-    if (!currentAdminSite) return;
+    if (!currentAdminSite) return false;
     
     const newName = document.getElementById('site-info-name').value.trim();
-    if (!newName) return alert('사업장 이름을 입력해주세요.');
+    if (!newName) { alert('사업장 이름을 입력해주세요.'); return false; }
 
     // 1. 이름 변경 시 처리
     if (newName !== currentAdminSite) {
-        if (storageData[newName]) return alert('이미 존재하는 사업장 이름입니다.');
-        if (!confirm(`사업장 이름을 '${currentAdminSite}'에서 '${newName}'(으)로 변경하시겠습니까?\n관련된 모든 장비 및 데이터가 이동됩니다.`)) return;
+        if (storageData[newName]) { alert('이미 존재하는 사업장 이름입니다.'); return false; }
+        if (!confirm(`사업장 이름을 '${currentAdminSite}'에서 '${newName}'(으)로 변경하시겠습니까?\n관련된 모든 장비 및 데이터가 이동됩니다.`)) return false;
 
         // 데이터 마이그레이션 (handleRename 로직 응용)
         storageData[newName] = storageData[currentAdminSite];
@@ -404,14 +522,18 @@ function handleSiteSave() {
 
     if (typeof saveData === 'function') saveData(); // 전체 동기화
     alert('저장되었습니다.');
+    
+    setAdminFormDirty(false, 'site'); // [추가] 저장 상태 리셋
+    initialAdminFormData.site = getSiteFormState(); // [추가] 갱신된 초기 상태 저장
     renderAdminSiteList(); // 리스트 갱신 (이름 변경 반영)
+    return true;
 }
 
 function handleSiteDelete() {
-    if (!currentAdminSite) return;
+    if (!currentAdminSite) return false;
     
     // common.js 의 로직은 사이드바 UI에 의존하므로, 여기서는 데이터 처리만 수행 후 UI 갱신
-    if (!confirm(`'${currentAdminSite}' 사업장을 삭제하시겠습니까?\n포함된 장비와 모든 데이터가 영구 삭제됩니다.`)) return;
+    if (!confirm(`'${currentAdminSite}' 사업장을 삭제하시겠습니까?\n포함된 장비와 모든 데이터가 영구 삭제됩니다.`)) return false;
 
     // 1. details_ 데이터 삭제
     const prefix = `details_${currentAdminSite}_`;
@@ -437,6 +559,7 @@ function handleSiteDelete() {
 
     alert('삭제되었습니다.');
     currentAdminSite = null;
+    setAdminFormDirty(false, 'site'); // [추가]
     
     // UI 초기화
     document.getElementById('admin-site-form').style.display = 'none';
@@ -712,6 +835,9 @@ function setupEquipMgmt() {
     const btnNew = document.getElementById('btn-admin-new-equip');
     if (btnNew) {
         btnNew.addEventListener('click', () => {
+            if (!checkAdminUnsavedChanges()) return;
+            setAdminFormDirty(false, 'equip');
+            
             resetEquipForm();
             document.getElementById('admin-equip-form').style.display = 'block';
             document.getElementById('admin-equip-placeholder').style.display = 'none';
@@ -734,6 +860,7 @@ function setupEquipMgmt() {
                 delete nameInput.dataset.fullName;
             }
             scrollToAdminDetail('admin-equip-form'); // [추가] 모바일 스크롤 이동
+            setTimeout(() => { initialAdminFormData.equip = getEquipFormState(); }, 50); // [추가] 폼 로드 후 스냅샷 
         });
     }
 
@@ -844,6 +971,7 @@ function setupEquipMgmt() {
                         nameInput.dataset.fullName = m.name;
                         lastValidModel = nameInput.value;
                         suggestionList.style.display = 'none';
+                        checkAdminFormDirty('equip'); // [수정] 제안 박스 선택 감지
                     });
                     suggestionList.appendChild(li);
                 });
@@ -879,6 +1007,7 @@ function setupEquipMgmt() {
                     lastValidModel = nameInput.value;
                 }
                 suggestionList.style.display = 'none';
+                checkAdminFormDirty('equip'); // [수정] 제안 박스 포커스 아웃 블러 감지
             }, 150);
         });
 
@@ -930,6 +1059,7 @@ function setupEquipMgmt() {
                         siteInput.value = site;
                         siteSuggestionList.style.display = 'none';
                         updateEquipBuildingDropdown(site); // [추가]
+                        setTimeout(() => checkAdminFormDirty('equip'), 50); // [수정] 사업장 제안 박스 선택 감지
                     });
                     siteSuggestionList.appendChild(li);
                 });
@@ -1209,6 +1339,10 @@ function renderAdminEquipList() {
         if (currentAdminEquipKey === fullKey && (!currentAdminEquipSiteContext || currentAdminEquipSiteContext === site)) li.classList.add('active');
 
         li.addEventListener('click', () => {
+            if (currentAdminEquipKey === fullKey && (!currentAdminEquipSiteContext || currentAdminEquipSiteContext === site)) return;
+            if (!checkAdminUnsavedChanges()) return; // [추가] 리스트 다른 항목 이동 시 저장 확인
+            setAdminFormDirty(false, 'equip');
+            
             currentAdminEquipKey = fullKey;
             currentAdminEquipSiteContext = site; // 컨텍스트 저장
             // UI 업데이트
@@ -1248,6 +1382,7 @@ function renderAdminEquipList() {
             document.getElementById('equip-info-cust-email').value = setupInfo.custEmail || '';
             document.getElementById('equip-info-special-note').value = detailData.specialNote || '';
             scrollToAdminDetail('admin-equip-form'); // [추가] 모바일 스크롤 이동
+            setTimeout(() => { initialAdminFormData.equip = getEquipFormState(); }, 50); // [추가] 폼 로드 후 스냅샷
         });
 
         list.appendChild(li);
@@ -1288,8 +1423,8 @@ function resetEquipForm() {
 function handleEquipSave() {
     // [수정] 현재 필터값이 없어도(전체보기) 폼에 입력된 사업장 기준으로 저장 수행
     const targetSite = document.getElementById('equip-info-site').value.trim();
-    if (!targetSite) return alert('사업장을 선택하거나 목록에서 장비를 선택해주세요.');
-    if (!storageData[targetSite]) return alert('존재하지 않는 사업장입니다. 사업장 관리에서 먼저 등록해주세요.');
+    if (!targetSite) { alert('사업장을 선택하거나 목록에서 장비를 선택해주세요.'); return false; }
+    if (!storageData[targetSite]) { alert('존재하지 않는 사업장입니다. 사업장 관리에서 먼저 등록해주세요.'); return false; }
 
     const nameInput = document.getElementById('equip-info-name');
     const nameVal = nameInput.value.trim();
@@ -1316,7 +1451,7 @@ function handleEquipSave() {
     const custEmail = document.getElementById('equip-info-cust-email').value.trim();
     const specialNote = document.getElementById('equip-info-special-note').value.trim();
 
-    if (!nameVal) return alert('장비명(모델)을 입력해주세요.');
+    if (!nameVal) { alert('장비명(모델)을 입력해주세요.'); return false; }
 
     let matchedModel = null;
     if (nameInput.dataset.fullName) {
@@ -1329,7 +1464,7 @@ function handleEquipSave() {
         matchedModel = equipmentModels.find(m => m.name === nameVal || m.abbr === nameVal);
     }
     if (!matchedModel) {
-        return alert('장비명은 제안 박스에서 검색하여 선택해야만 등록할 수 있습니다.');
+        alert('장비명은 제안 박스에서 검색하여 선택해야만 등록할 수 있습니다.'); return false;
     }
     
     const finalName = matchedModel.name;
@@ -1337,12 +1472,12 @@ function handleEquipSave() {
     
     // 중복 체크 (수정이면 자기 자신 제외)
     if (currentAdminEquipKey !== newKey && storageData[targetSite].includes(newKey)) {
-        return alert('해당 사업장에 이미 동일한 장비가 존재합니다.');
+        alert('해당 사업장에 이미 동일한 장비가 존재합니다.'); return false;
     }
 
     // 수정 (Rename) 처리
     if (currentAdminEquipKey && currentAdminEquipKey !== newKey) {
-        if(!confirm('장비 정보를 변경하시겠습니까?\n기존 데이터가 새 정보로 이동됩니다.')) return;
+        if(!confirm('장비 정보를 변경하시겠습니까?\n기존 데이터가 새 정보로 이동됩니다.')) return false;
         
         // 리스트 내 키 변경
         const idx = storageData[targetSite].indexOf(currentAdminEquipKey);
@@ -1449,15 +1584,18 @@ function handleEquipSave() {
 
     if (typeof saveData === 'function') saveData();
     alert('저장되었습니다.');
+    setAdminFormDirty(false, 'equip'); // [추가] 저장 완료 후 상태 리셋
+    initialAdminFormData.equip = getEquipFormState(); // [추가] 스냅샷 갱신
     currentAdminEquipKey = newKey; // 키 갱신
     renderAdminEquipList();
+    return true;
 }
 
 function handleEquipDelete() {
     const targetSite = document.getElementById('equip-info-site').value;
-    if (!targetSite || !currentAdminEquipKey) return;
+    if (!targetSite || !currentAdminEquipKey) return false;
     
-    if (!confirm(`'${currentAdminEquipKey}' 장비를 삭제하시겠습니까?\n모든 점검 이력과 데이터가 삭제됩니다.`)) return;
+    if (!confirm(`'${currentAdminEquipKey}' 장비를 삭제하시겠습니까?\n모든 점검 이력과 데이터가 삭제됩니다.`)) return false;
 
     // 리스트에서 제거
     storageData[targetSite] = storageData[targetSite].filter(k => k !== currentAdminEquipKey);
@@ -1474,6 +1612,7 @@ function handleEquipDelete() {
     
     if (typeof saveData === 'function') saveData();
     alert('삭제되었습니다.');
+    setAdminFormDirty(false, 'equip'); // [추가]
     resetEquipForm();
     renderAdminEquipList();
 }
@@ -1625,6 +1764,7 @@ function setupItemMgmt() {
                 equipHiddenInput.value = selectedEquips.join(', ');
                 renderEquipTags();
                 equipSuggestionBox.style.display = 'none';
+                checkAdminFormDirty('item'); // [수정] 장비 적용 태그 변경 감지
             });
         }
 
@@ -1720,6 +1860,10 @@ function renderAdminItemList() {
         `;
 
         li.addEventListener('click', () => {
+            if (currentAdminItemId === item.id) return;
+            if (!checkAdminUnsavedChanges()) return; // [추가] 리스트 다른 항목 이동 시 저장 확인
+            setAdminFormDirty(false, 'item');
+            
             currentAdminItemId = item.id;
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
@@ -1750,6 +1894,7 @@ function renderEquipTags() {
             const newEquips = currentEquips.filter(e => e !== equip);
             equipHiddenInput.value = newEquips.join(', ');
             renderEquipTags();
+            checkAdminFormDirty('item'); // [수정] 태그 삭제 감지
         });
         equipTagsContainer.appendChild(tag);
     });
@@ -1772,10 +1917,11 @@ function loadItemDetail(item) {
     document.getElementById('item-info-equip').value = item.equip || '';
     
     renderEquipTags(); // 기존 저장된 장비 데이터들을 태그로 변환하여 표시
+    initialAdminFormData.item = getItemFormState(); // [추가] 스냅샷 저장
 }
 
 function handleItemDetailSave() {
-    if (!currentAdminItemId) return;
+    if (!currentAdminItemId) return false;
     
     const detailType = document.getElementById('item-info-detail-type').value.trim();
     const additional = document.getElementById('item-info-additional').value.trim();
@@ -1786,8 +1932,8 @@ function handleItemDetailSave() {
     const equipRaw = document.getElementById('item-info-equip').value;
     const equip = equipRaw.split(',').map(e => e.trim()).filter(e => e).join(', '); // 불필요한 빈칸 및 쉼표 제거
 
-    if (code.includes(',')) return alert('코드명에는 쉼표(,)를 입력할 수 없습니다.');
-    if (!part) return alert('물품명을 입력해주세요.');
+    if (code.includes(',')) { alert('코드명에는 쉼표(,)를 입력할 수 없습니다.'); return false; }
+    if (!part) { alert('물품명을 입력해주세요.'); return false; }
 
     const idx = adminItems.findIndex(i => i.id === currentAdminItemId);
     if (idx > -1) {
@@ -1901,23 +2047,28 @@ function handleItemDetailSave() {
         saveAdminItems();
         addSystemLog('UPDATE_ITEM_ADMIN_DETAIL', part, `Code: ${code}`);
         alert('물품 정보가 저장되었습니다. (연결된 점검 이력 및 유지관리 데이터도 함께 업데이트 되었습니다.)');
+        setAdminFormDirty(false, 'item'); // [추가]
+        initialAdminFormData.item = getItemFormState(); // [추가] 스냅샷 갱신
         renderAdminItemList();
+        return true;
     }
+    return false;
 }
 
 function handleItemDetailDelete() {
-    if (!currentAdminItemId) return;
+    if (!currentAdminItemId) return false;
     
     const item = adminItems.find(i => i.id === currentAdminItemId);
-    if (!item) return;
+    if (!item) return false;
 
-    if (!confirm(`'${item.part}' 물품을 삭제하시겠습니까?`)) return;
+    if (!confirm(`'${item.part}' 물품을 삭제하시겠습니까?`)) return false;
 
     adminItems = adminItems.filter(i => i.id !== currentAdminItemId);
     saveAdminItems();
     addSystemLog('DELETE_ITEM_ADMIN', item.part);
     
     currentAdminItemId = null;
+    setAdminFormDirty(false, 'item'); // [추가]
     document.getElementById('admin-item-form').style.display = 'none';
     document.getElementById('admin-item-placeholder').style.display = 'flex';
     

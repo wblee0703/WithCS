@@ -25,6 +25,13 @@ if (typeof window.escapeHtml !== 'function') {
     };
 }
 
+// [추가] 에러 테두리 제거 헬퍼 함수
+if (typeof window.removeErrorBorder !== 'function') {
+    window.removeErrorBorder = function(e) {
+        if (e.target) e.target.classList.remove('error-border');
+    };
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const initMaint = () => {
         setupMaintenanceEvents();
@@ -436,14 +443,28 @@ function addDetailItem() {
         }
     }
 
-    const date = document.getElementById('maint-date').value;
-    const period = document.getElementById('maint-period').value;
+    const dateEl = document.getElementById('maint-date');
+    const periodEl = document.getElementById('maint-period');
+    const date = dateEl ? dateEl.value : '';
+    const period = periodEl ? periodEl.value : '';
 
-    // 유효성 검사
-    if (maintType === '정기') {
-        if (!content || !date || !period) return alert('정기는 내용, 날짜, 교체 주기를 모두 입력해야 합니다.');
-    } else {
-        if (!content || !date) return alert('비정기는 내용과 날짜를 입력해야 합니다.');
+    // [추가] 에러 테두리 초기화 및 유효성 검사
+    [contentEl, dateEl, periodEl].forEach(el => {
+        if (el) {
+            el.classList.remove('error-border');
+            el.removeEventListener('input', window.removeErrorBorder);
+            el.addEventListener('input', window.removeErrorBorder);
+            el.removeEventListener('change', window.removeErrorBorder);
+            el.addEventListener('change', window.removeErrorBorder);
+        }
+    });
+
+    let hasError = false;
+    if (!content) { contentEl.classList.add('error-border'); hasError = true; }
+    if (!date) { if(dateEl) dateEl.classList.add('error-border'); hasError = true; }
+    if (maintType === '정기' && !period) { if(periodEl) periodEl.classList.add('error-border'); hasError = true; }
+    if (hasError) {
+        return alert(maintType === '정기' ? '정기는 내용, 날짜, 교체 주기를 모두 입력해야 합니다.\n빨간색 테두리로 표시된 항목을 확인해주세요.' : '비정기는 내용과 날짜를 입력해야 합니다.\n빨간색 테두리로 표시된 항목을 확인해주세요.');
     }
 
     const key = `details_${currentPath.site}_${currentPath.equip}`;
@@ -663,8 +684,8 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
                     li.className = 'suggestion-item';
                     li.innerHTML = `
                         <div class="suggestion-item-content">
-                            <span>${escapeHtml(item.part)}</span>
-                            ${item.code ? `<span class="abbr">${escapeHtml(item.code)}</span>` : ''}
+                            <span>${item.code ? escapeHtml(item.code) : escapeHtml(item.part)}</span>
+                            ${item.code ? `<span class="abbr">${escapeHtml(item.part)}</span>` : ''}
                         </div>
                     `;
                     li.addEventListener('mousedown', (ev) => {
@@ -672,6 +693,7 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
                         contentElement.value = item.part;
                         contentElement.dataset.code = item.code || '';
                         contentElement.dataset.lastValid = item.part;
+                        contentElement.classList.remove('error-border');
                         ul.style.display = 'none';
                     });
                     ul.appendChild(li);
@@ -884,14 +906,43 @@ function addLogItem(e) {
     const detailType2Select = document.getElementById('log-detail-type2-select');
     const detailType2 = detailType2Select && detailType2Select.style.display !== 'none' ? detailType2Select.value : '';
 
-    if (!date || !type || (!detailType && !detailTypeSelect.disabled) || !costType || !md) {
-        return alert('필수 항목(날짜, 구분, 세부구분, 비용처리, 공수)을 올바르게 입력/선택해주세요.');
+    // [추가] 에러 테두리 초기화 및 유효성 검사
+    const elementsToCheck = [dateInput, typeSelect, detailTypeSelect, detailType2Select, costSelect, mdInput, contentInput, contentTrigger];
+    elementsToCheck.forEach(el => {
+        if (el) {
+            el.classList.remove('error-border');
+            el.removeEventListener('input', window.removeErrorBorder);
+            el.addEventListener('input', window.removeErrorBorder);
+            el.removeEventListener('change', window.removeErrorBorder);
+            el.addEventListener('change', window.removeErrorBorder);
+        }
+    });
+
+    let hasError = false;
+
+    if (!date) { dateInput.classList.add('error-border'); hasError = true; }
+    if (!type) { if(typeSelect) typeSelect.classList.add('error-border'); hasError = true; }
+    if (!detailType && detailTypeSelect && !detailTypeSelect.disabled) { detailTypeSelect.classList.add('error-border'); hasError = true; }
+    if (type === '비정기' && !detailType2 && detailType2Select && !detailType2Select.disabled) { detailType2Select.classList.add('error-border'); hasError = true; }
+    if (!costType) { if(costSelect) costSelect.classList.add('error-border'); hasError = true; }
+    if (!md) { mdInput.classList.add('error-border'); hasError = true; }
+    
+    if (!content) {
+        if (contentWrapper && contentWrapper.style.display !== 'none') {
+            if (contentTrigger) contentTrigger.classList.add('error-border');
+        } else {
+            if (contentInput && !contentInput.disabled) contentInput.classList.add('error-border');
+        }
+        hasError = true;
     }
+
+    if (hasError) {
+        return alert('빨간색 테두리로 표시된 필수 항목을 모두 입력/선택해주세요.');
+    }
+
     if (parseFloat(md) < 0) {
+        mdInput.classList.add('error-border');
         return alert('공수(M/D)는 0 이상이어야 합니다.');
-    }
-    if (type === '비정기' && !detailType2 && detailType2Select && !detailType2Select.disabled) {
-        return alert('세부 구분을 선택해주세요.');
     }
 
     const key = `details_${currentPath.site}_${currentPath.equip}`;
@@ -1868,6 +1919,8 @@ window.updateLogContentOptions = function () {
                 contentList.querySelectorAll('.log-select-item').forEach(div => {
                     div.onclick = (e) => {
                         e.stopPropagation();
+                        if (contentTrigger) contentTrigger.classList.remove('error-border');
+
                         if (type === '비정기' && detailType !== 'BM 점검') {
                             contentList.querySelectorAll('.log-select-item.selected').forEach(el => {
                                 if (el !== div) el.classList.remove('selected');

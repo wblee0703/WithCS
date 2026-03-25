@@ -419,7 +419,7 @@
 
 .admin-item-scroll-wrapper .admin-list-header,
 .admin-item-scroll-wrapper #admin-item-list {
-    min-width: 500px; /* [수정] 리스트 전체의 최소 너비 보장 (너비 축소) */
+    min-width: 750px; /* [수정] 창이 줄어들면 내용이 찌그러지지 않고 바로 가로 스크롤이 생기도록 최소 너비 대폭 확대 */
 }
 
 /* ==========================================================================
@@ -461,7 +461,7 @@
 
 .col-item-code {
     flex: 1.5;
-    min-width: 90px; /* [수정] 컬럼 최소 너비 고정 */
+    min-width: 150px; /* [수정] 컬럼 너비 유지 및 스크롤 유도 */
     justify-content: center;
     text-align: center;
     white-space: nowrap;
@@ -471,7 +471,7 @@
 
 .col-item-part {
     flex: 2.5;
-    min-width: 150px; /* [수정] 컬럼 최소 너비 고정 */
+    min-width: 250px; /* [수정] 컬럼 너비 유지 및 스크롤 유도 */
     justify-content: center;
     text-align: center;
     white-space: nowrap;
@@ -481,7 +481,7 @@
 
 .col-item-spec {
     flex: 2.5;
-    min-width: 150px; /* [수정] 컬럼 최소 너비 고정 */
+    min-width: 250px; /* [수정] 컬럼 너비 유지 및 스크롤 유도 */
     justify-content: center;
     text-align: center;
     white-space: nowrap;
