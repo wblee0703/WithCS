@@ -1364,7 +1364,8 @@ window.populateEquipmentIssues = function () {
             const details = JSON.parse(localStorage.getItem(key)) || {};
             if (details.logs) {
                 details.logs.forEach(log => {
-                    if (log.type === '비정기' && log.detailType !== '일정변경') {
+                    // [수정] 이슈 공유 체크된 항목만 표시
+                    if (log.isIssueShared === true) {
                         issues.push({ site, equipKey, log });
                     }
                 });
@@ -1405,13 +1406,21 @@ window.populateEquipmentIssues = function () {
         const displayText = `${site} > ${modelName} : ${detailType2}`;
         const dateStr = log.date || '';
 
+        let displayContent = log.content || '';
+        if (displayContent.includes(',')) {
+            const items = displayContent.split(',').map(s => s.trim()).filter(Boolean);
+            if (items.length > 1) {
+                displayContent = `${items[0]} 외 ${items.length - 1}개`;
+            }
+        }
+
         const li = document.createElement('li');
         li.className = 'upcoming-item';
         li.style.borderLeft = '4px solid #eb371f';
         li.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden; flex: 1; padding-right: 10px;">
                 <span style="font-size: 13px; font-weight: bold; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(displayText)}">${escapeHtml(displayText)}</span>
-                <span style="font-size: 11px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(log.content)}">${escapeHtml(log.content)}</span>
+                <span style="font-size: 11px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(log.content)}">${escapeHtml(displayContent)}</span>
             </div>
             <div style="font-size: 11px; color: #8b949e; white-space: nowrap; flex-shrink: 0;">${dateStr}</div>
         `;

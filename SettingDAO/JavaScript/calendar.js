@@ -1012,6 +1012,22 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     const contentInput = document.getElementById('detail-content-input');
     const cancelBtn = document.getElementById('btn-cancel-completion');
 
+    // [추가] 특이 이슈 공유 체크박스 래퍼 동적 생성
+    let issueShareWrapper = document.getElementById('detail-issue-share-wrapper');
+    if (!issueShareWrapper && memoInput) {
+        issueShareWrapper = document.createElement('div');
+        issueShareWrapper.id = 'detail-issue-share-wrapper';
+        issueShareWrapper.style.marginTop = '10px';
+        issueShareWrapper.style.display = 'flex';
+        issueShareWrapper.style.alignItems = 'center';
+        issueShareWrapper.innerHTML = `
+            <input type="checkbox" id="detail-issue-share-checkbox" style="transform: scale(1.2); margin-right: 8px;">
+            <label for="detail-issue-share-checkbox" style="color: #e6edf3; font-size: 13px; cursor: pointer;">특이 이슈 공유 (홈 대시보드 노출)</label>
+        `;
+        memoInput.parentNode.insertBefore(issueShareWrapper, memoInput.nextSibling);
+    }
+    const issueShareCb = document.getElementById('detail-issue-share-checkbox');
+
     // UI 초기화 (수정 모드 해제)
     if (contentDiv) contentDiv.style.display = 'block';
     if (contentInput) contentInput.style.display = 'none';
@@ -1052,6 +1068,10 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             } else {
                 cancelBtn.style.display = 'block'; // 일반 완료 상태면 취소 버튼 표시
             }
+        }
+        if (issueShareCb) {
+            issueShareCb.checked = !!item.isIssueShared;
+            issueShareCb.disabled = true;
         }
     } else {
         // [수정] 저장된 작업자(취소된 내용)가 있으면 우선 사용
@@ -1098,6 +1118,10 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         saveMemoBtn.style.display = 'none';
         if (editContentBtn) editContentBtn.style.display = 'block';
         if (cancelBtn) cancelBtn.style.display = 'none'; // 미완료 상태면 취소 버튼 숨김
+        if (issueShareCb) {
+            issueShareCb.checked = false;
+            issueShareCb.disabled = false;
+        }
     }
     if (workerInput) workerInput.dispatchEvent(new Event('updateTrigger'));
 
@@ -1671,6 +1695,8 @@ function completeScheduleWork() {
     const mdInput = document.getElementById('detail-md');
     const md = mdInput ? mdInput.value.trim() : '';
     const memo = document.getElementById('detail-work-memo').value.trim();
+    const issueShareCb = document.getElementById('detail-issue-share-checkbox');
+    const isIssueShared = issueShareCb ? issueShareCb.checked : false;
 
     if (!worker) return alert('작업자를 입력해주세요.');
     if (!md) return alert('공수(M/D)를 입력해주세요.');
@@ -1712,7 +1738,8 @@ function completeScheduleWork() {
         costType: maintItem.costType || '',
         md: md,
         worker: worker,
-        memo: memo
+        memo: memo,
+        isIssueShared: isIssueShared
     });
 
     sameDayItems.forEach(i => {
@@ -1741,11 +1768,15 @@ function completeScheduleWork() {
         }
     });
 
-    // [추가] 일회성 작업(고객대응, 용액제조 등)은 완료 후 maint 배열에서 완전히 제거하여 데이터 누적 방지
+    // [수정] 일회성 작업 및 PM/BM 점검이 아닌 항목(Alarm, 고객대응 등)은 완료 후 maint 배열에서 완전히 제거하여 유지관리 목록 누적 방지
     data.maint = data.maint.filter(i => {
         if (idsToRemove.has(i.id)) return false;
         const isCompletedItem = sameDayItems.some(s => s.id === i.id);
-        if (isCompletedItem && i.type !== '정기' && i.type !== '비정기') return false;
+        if (isCompletedItem) {
+            const dt = i.detailType || '';
+            const isPmBm = dt === 'PM 점검' || dt === 'BM 점검' || dt.startsWith('PM 점검 >') || dt.startsWith('BM 점검 >');
+            if (!isPmBm) return false;
+        }
         return true;
     });
 
@@ -2090,6 +2121,7 @@ function cancelScheduleCompletion() {
     const cancelBtn = document.getElementById('btn-cancel-completion');
     const saveMemoBtn = document.getElementById('btn-save-detail-memo');
     const editContentBtn = document.getElementById('btn-edit-detail-content');
+    const issueShareCb = document.getElementById('detail-issue-share-checkbox');
 
     if (workerInput) {
         workerInput.disabled = false;
@@ -2113,6 +2145,10 @@ function cancelScheduleCompletion() {
     if (dateInput) {
         dateInput.disabled = false;
         dateInput.value = logDate; // 완료일 -> 예정일로 설정
+    }
+    if (issueShareCb) {
+        issueShareCb.disabled = false;
+        issueShareCb.checked = false;
     }
 
     if (completeBtn) {

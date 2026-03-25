@@ -25,6 +25,9 @@ if (typeof window.escapeHtml !== 'function') {
     };
 }
 
+let originalWorker = "";
+let originalIssueShared = false;
+
 // [추가] 에러 테두리 제거 헬퍼 함수
 if (typeof window.removeErrorBorder !== 'function') {
     window.removeErrorBorder = function(e) {
@@ -289,6 +292,10 @@ function setupLogEvents() {
                 </div>
             </div>
             <input type="hidden" id="memo-worker" value="">
+            <div style="margin-left: 20px; display: flex; align-items: center; flex-shrink: 0;">
+                <input type="checkbox" id="memo-issue-share" style="transform: scale(1.2); margin-right: 8px; cursor: pointer;">
+                <label for="memo-issue-share" style="color: #e6edf3; font-size: 13px; cursor: pointer;">특이 이슈 공유</label>
+            </div>
         `;
         memoInput.parentNode.insertBefore(workerContainer, memoInput);
 
@@ -360,12 +367,14 @@ function setupLogEvents() {
     }
 
     const memoWorkerInput = document.getElementById('memo-worker');
+    const issueShareCb = document.getElementById('memo-issue-share');
 
     if (memoInput) memoInput.spellcheck = false;
     if (memoWorkerInput) memoWorkerInput.spellcheck = false;
 
     const checkMemoChanges = () => {
-        if (memoInput.value !== originalMemo || (memoWorkerInput && memoWorkerInput.value !== originalWorker)) {
+        const currentIssueShared = issueShareCb ? issueShareCb.checked : false;
+        if (memoInput.value !== originalMemo || (memoWorkerInput && memoWorkerInput.value !== originalWorker) || currentIssueShared !== originalIssueShared) {
             memoBtn.classList.remove('btn-green-sm', 'btn-blue-sm');
             memoBtn.classList.add('btn-orange-sm');
         } else {
@@ -392,6 +401,10 @@ function setupLogEvents() {
                 memoWorkerInput.blur();
             }
         });
+    }
+
+    if (issueShareCb && memoBtn) {
+        issueShareCb.addEventListener('change', checkMemoChanges);
     }
 
     // [수정] 로그 관리 모드 토글 버튼 이벤트 연결
@@ -479,7 +492,8 @@ function setupPageProtection() {
     window.addEventListener('beforeunload', (e) => {
         const currentMemo = document.getElementById('device-memo') ? document.getElementById('device-memo').value : "";
         const currentWorker = document.getElementById('memo-worker') ? document.getElementById('memo-worker').value : "";
-        if (selectedLogId !== null && (currentMemo !== originalMemo || currentWorker !== originalWorker)) {
+        const currentIssueShared = document.getElementById('memo-issue-share') ? document.getElementById('memo-issue-share').checked : false;
+        if (selectedLogId !== null && (currentMemo !== originalMemo || currentWorker !== originalWorker || currentIssueShared !== originalIssueShared)) {
             e.preventDefault();
             e.returnValue = '';
         }
@@ -1068,7 +1082,8 @@ function addLogItem(e) {
         costType: costType,
         md: md,
         worker: sessionStorage.getItem('userId') || '', // 초기값, 상세에서 수정
-        memo: "" // 상세 메모 초기값
+        memo: "", // 상세 메모 초기값
+        isIssueShared: false
     };
 
     data.logs.push(newLog);
@@ -1288,8 +1303,13 @@ function selectLog(id, focus = true) {
             }
         }
 
+        const issueShareCb = document.getElementById('memo-issue-share');
+        const isIssueShared = !!logItem.isIssueShared;
+        if (issueShareCb) issueShareCb.checked = isIssueShared;
+
         originalMemo = memo; // 원본 저장
         originalWorker = worker; // 원본 저장
+        originalIssueShared = isIssueShared;
 
         // 버튼 상태 초기화 (녹색)
         const memoBtn = document.getElementById('memo-save-btn');
@@ -1308,6 +1328,8 @@ function saveMemo() {
     const memoContent = document.getElementById('device-memo').value;
     const workerInput = document.getElementById('memo-worker');
     const workerContent = workerInput ? workerInput.value.trim() : "";
+    const issueShareCb = document.getElementById('memo-issue-share');
+    const isIssueShared = issueShareCb ? issueShareCb.checked : false;
 
     if (!workerContent) return alert('작업자를 입력해주세요.');
 
@@ -1318,11 +1340,13 @@ function saveMemo() {
     if (logIdx > -1) {
         data.logs[logIdx].memo = memoContent; // 메모 업데이트
         data.logs[logIdx].worker = workerContent; // 작업자 업데이트
+        data.logs[logIdx].isIssueShared = isIssueShared; // 공유 상태 업데이트
         localStorage.setItem(key, JSON.stringify(data));
         addSystemLog('UPDATE_MEMO', currentPath.equip, `작업 내용 및 작업자 수정 (LogID: ${selectedLogId})`);
 
         originalMemo = memoContent; // 원본 업데이트
         originalWorker = workerContent;
+        originalIssueShared = isIssueShared;
 
         // 버튼 상태 초기화 (녹색)
         const memoBtn = document.getElementById('memo-save-btn');
@@ -1358,8 +1382,12 @@ function deleteLogItem(id) {
             const trigger = document.getElementById('memo-worker-trigger');
             if (trigger) { trigger.textContent = '작업자 선택'; trigger.title = ''; }
         }
+        if(document.getElementById('memo-issue-share')) {
+            document.getElementById('memo-issue-share').checked = false;
+        }
         originalMemo = "";
         originalWorker = "";
+        originalIssueShared = false;
 
         const memoBtn = document.getElementById('memo-save-btn');
         if (memoBtn) {

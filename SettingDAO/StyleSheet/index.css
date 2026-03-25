@@ -1061,26 +1061,27 @@ body {
 
     /* [요청] 모바일에서 셋업/운영 현황 컨테이너 높이 자동 조절 (겹침 방지) */
     .maint-split-view {
-        flex-direction: row !important;
-        flex-wrap: wrap;
+        flex-direction: column !important;
         gap: 10px;
         height: auto !important;
-        /* 데스크탑의 고정 높이(330px) 무시 */
+        /* 데스크탑의 고정 높이 무시 */
     }
 
-    /* [요청] 모바일 2x2 그리드 배치 (사업장/장비 현황 | 장비 정보/점검 임박) */
+    /* [요청] 모바일 1줄 배치 (100% 너비) */
     .maint-left-charts {
-        display: contents !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 10px;
     }
 
     .maint-left-charts .status-group {
-        width: calc(50% - 5px) !important;
+        width: 100% !important;
         flex: none !important;
     }
 
     /* [요청] 예정 작업 카드 크기 고정 및 스크롤 */
     .upcoming-container {
-        width: calc(50% - 5px) !important;
+        width: 100% !important;
         height: 300px !important;
         /* [수정] 카드 높이 고정 */
         flex: none;
@@ -1095,18 +1096,6 @@ body {
         overflow-y: auto !important;
     }
 
-    /* [요청] 모바일 세로 모드에서 간트 차트 숨김 */
-    @media (orientation: portrait) {
-
-        /* [요청] 세로 모드에서 장비 정보와 예정 작업은 한 줄에 하나씩 배치 */
-        .maint-left-charts .status-group:nth-child(3) {
-            width: 100% !important;
-        }
-
-        .upcoming-container {
-            width: 100% !important;
-        }
-    }
 
     /* [요청] 간트 실행 완료 팝업 모바일 최적화 */
     #exec-completion-modal .modal-window {
