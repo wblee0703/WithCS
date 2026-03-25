@@ -443,6 +443,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     z-index: 1000;
     margin-top: 2px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
 }
 
 .log-select-dropdown.show {
@@ -466,8 +467,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .dropdown-search-input {
-    width: calc(100% - 10px);
-    margin: 5px;
+    width: calc(100% - 12px) !important;
+    max-width: calc(100% - 12px) !important;
+    margin: 5px 6px !important;
+    display: block !important;
     padding: 6px 10px;
     background: #0d1117;
     border: 1px solid #30363d;
@@ -895,7 +898,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     
     /* [요청] 모바일 항목 선택 제안박스 확장 및 비용처리 드롭다운 축소 */
     .log-select-dropdown {
-        width: 200% !important; /* [요청] 부모 입력창 너비의 2배로 확장 */
+        width: 200% !important; /* 부모 입력창 너비에 정확히 맞춤 */
         min-width: 200% !important;
         max-width: none !important;
     }

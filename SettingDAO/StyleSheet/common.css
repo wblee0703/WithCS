@@ -540,13 +540,15 @@ body {
 }
 
 /* [요청] 계정 관리 팝업창 크기 자동 조절 (여백 축소) */
-#user-modal .modal-window {
+#user-modal .modal-window,
+#add-user-modal .modal-window {
     width: 500px !important;
     height: auto !important;
     min-height: 0 !important;
 }
 /* [추가] 계정 관리 모달 내부 내용(제안 박스 등)이 모달창 밖으로 튀어나올 수 있도록 오버플로우 허용 */
-#user-modal .modal-body {
+#user-modal .modal-body,
+#add-user-modal .modal-body {
     overflow: visible !important;
 }
 /* ==========================================================================
@@ -1130,14 +1132,20 @@ body.role-user .btn-list-setting {
     }
 
     /* [요청] 모바일에서 계정 관리 모달 스크롤 허용 및 최대 크기 제한 */
-    #user-modal .modal-window {
+    #user-modal .modal-window,
+    #add-user-modal .modal-window {
         width: 95vw !important;
         max-height: 85vh !important;
         display: flex !important;
         flex-direction: column !important;
     }
     #user-modal .modal-body {
-        overflow: visible !important; /* [요청] 모바일 제안박스 스크롤 오류 개선을 위해 오버플로우 노출 */
+        overflow-y: auto !important; /* [요청] 모바일에서 하단 내용(계정 삭제 등)이 잘리지 않도록 스크롤 복구 */
+        flex: 1 !important;
+        padding: 15px !important;
+    }
+    #add-user-modal .modal-body {
+        overflow: visible !important; /* [추가] 계정 추가 모달은 제안박스 잘림 방지 우선 */
         flex: 1 !important;
         padding: 15px !important;
     }

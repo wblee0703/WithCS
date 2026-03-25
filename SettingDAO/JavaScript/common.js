@@ -433,6 +433,14 @@ function setupMobileNav() {
         }
     }
 
+    const btnAddUserMobile = document.getElementById('mobile-btn-add-user');
+    if (btnAddUserMobile) {
+        btnAddUserMobile.addEventListener('click', () => {
+            toggleNav();
+            openAddUserModal();
+        });
+    }
+
     const btnLogin = document.getElementById('mobile-btn-login-logout');
     if (btnLogin) {
         btnLogin.addEventListener('click', () => {
@@ -448,6 +456,12 @@ function setupMobileNav() {
             openUserModal();
         });
     }
+
+    const btnHeaderAddUser = document.getElementById('btn-header-add-user');
+    if (btnHeaderAddUser) btnHeaderAddUser.addEventListener('click', openAddUserModal);
+
+    const btnCloseAddUserModal = document.getElementById('btn-close-add-user-modal');
+    if (btnCloseAddUserModal) btnCloseAddUserModal.addEventListener('click', closeAddUserModal);
 
     const userInfo = document.getElementById('mobile-user-info');
     if (userInfo) {
@@ -973,6 +987,9 @@ function checkLoginStatus() {
             btnLoginLogout.classList.replace('btn-blue', 'btn-gray');
         }
         if (btnUserSettings) btnUserSettings.style.display = 'inline-block';
+        
+        const btnHeaderAddUser = document.getElementById('btn-header-add-user');
+        if (btnHeaderAddUser) btnHeaderAddUser.style.display = (role === 'admin') ? 'inline-block' : 'none';
 
         // [추가] 데스크톱 타이머 UI 표시 (common.html 템플릿 사용)
         let desktopTimerContainer = document.getElementById('desktop-session-timer');
@@ -990,6 +1007,9 @@ function checkLoginStatus() {
             mobileBtnLogin.classList.replace('btn-blue', 'btn-gray');
         }
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'block';
+        
+        const mobileBtnAddUser = document.getElementById('mobile-btn-add-user');
+        if (mobileBtnAddUser) mobileBtnAddUser.style.display = (role === 'admin') ? 'block' : 'none';
 
         // [추가] 모바일 타이머 UI 표시 (common.html 템플릿 사용)
         let mobileTimerContainer = document.getElementById('mobile-session-timer');
@@ -1010,6 +1030,9 @@ function checkLoginStatus() {
             btnLoginLogout.classList.replace('btn-gray', 'btn-blue');
         }
         if (btnUserSettings) btnUserSettings.style.display = 'none';
+        
+        const btnHeaderAddUser = document.getElementById('btn-header-add-user');
+        if (btnHeaderAddUser) btnHeaderAddUser.style.display = 'none';
 
         // [추가] 모바일 업데이트
         if (mobileUserInfo) mobileUserInfo.style.display = 'none';
@@ -1018,6 +1041,9 @@ function checkLoginStatus() {
             mobileBtnLogin.classList.replace('btn-gray', 'btn-blue');
         }
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'none';
+        
+        const mobileBtnAddUser = document.getElementById('mobile-btn-add-user');
+        if (mobileBtnAddUser) mobileBtnAddUser.style.display = 'none';
 
         document.body.classList.remove('role-admin', 'role-user');
 
@@ -1104,124 +1130,137 @@ function attemptLogin(id, pw, context) {
         });
 }
 
+function openAddUserModal() {
+    const modal = document.getElementById('add-user-modal');
+    const role = sessionStorage.getItem('userRole');
+
+    if (role !== 'admin') {
+        alert('관리자 권한이 필요합니다.');
+        return;
+    }
+
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+
+        // 사업장 선택 드롭다운 데이터 갱신
+        const siteSelect = document.getElementById('new-user-site');
+        const siteInput = document.getElementById('new-user-site-input');
+        const siteSuggestions = document.getElementById('new-user-site-suggestions');
+        
+        if (siteInput && siteSuggestions && siteSelect) {
+            if (!siteInput.dataset.initialized) {
+                siteInput.style.color = '#e6edf3';
+                
+                const renderSites = () => {
+                    const sites = Object.keys(storageData).sort();
+
+                    siteSuggestions.innerHTML = '';
+                    const query = siteInput.value.trim().toLowerCase();
+                    const matches = query ? sites.filter(s => s.toLowerCase().includes(query)) : sites;
+
+                    if (!query) {
+                        const defLi = document.createElement('li');
+                        defLi.className = 'user-suggestion-item';
+                        defLi.innerHTML = `<span style="color: #e6edf3;">사업장 미지정 (전체)</span>`;
+                        defLi.addEventListener('pointerdown', (e) => {
+                            e.preventDefault();
+                            siteInput.value = '';
+                            siteSelect.value = '';
+                            siteInput.dataset.lastValid = '';
+                            siteSuggestions.style.display = 'none';
+                        });
+                        siteSuggestions.appendChild(defLi);
+                    }
+
+                    if (matches.length > 0) {
+                        matches.forEach(site => {
+                            const li = document.createElement('li');
+                            li.className = 'user-suggestion-item';
+                            li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(site)}</span>`;
+                            li.addEventListener('pointerdown', (e) => {
+                                e.preventDefault();
+                                siteInput.value = site;
+                                siteSelect.value = site;
+                                siteInput.dataset.lastValid = site;
+                                siteSuggestions.style.display = 'none';
+                            });
+                            siteSuggestions.appendChild(li);
+                        });
+                    } else {
+                        const emptyLi = document.createElement('li');
+                        emptyLi.className = 'user-suggestion-item';
+                        emptyLi.style.cssText = 'color:#8b949e; cursor:default; justify-content:center;';
+                        emptyLi.innerHTML = `<span>검색 결과 없음</span>`;
+                        siteSuggestions.appendChild(emptyLi);
+                    }
+                };
+
+                siteInput.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    renderSites();
+                    siteSuggestions.style.display = 'block';
+                });
+
+                siteInput.addEventListener('input', () => {
+                    renderSites();
+                    siteSuggestions.style.display = 'block';
+                });
+
+                siteInput.addEventListener('focus', () => {
+                    renderSites();
+                    siteSuggestions.style.display = 'block';
+                });
+
+                siteInput.addEventListener('blur', () => {
+                    setTimeout(() => {
+                        const currentVal = siteInput.value.trim();
+                        const sites = Object.keys(storageData);
+                        
+                        if (currentVal === '') {
+                            siteInput.dataset.lastValid = '';
+                            siteSelect.value = '';
+                        } else if (sites.includes(currentVal)) {
+                            siteInput.dataset.lastValid = currentVal;
+                            siteSelect.value = currentVal;
+                        } else {
+                            siteInput.value = siteInput.dataset.lastValid || '';
+                            siteSelect.value = siteInput.dataset.lastValid || '';
+                        }
+                        siteSuggestions.style.display = 'none'; 
+                    }, 250);
+                });
+                
+                document.addEventListener('click', (e) => {
+                    if (siteSuggestions && siteSuggestions.style.display === 'block' && e.target !== siteInput && !siteSuggestions.contains(e.target)) {
+                        siteSuggestions.style.display = 'none';
+                    }
+                });
+
+                siteInput.dataset.initialized = "true";
+                siteInput.dataset.lastValid = "";
+            }
+        }
+    }
+}
+
+function closeAddUserModal() {
+    const modal = document.getElementById('add-user-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+    ['new-user-id', 'new-user-pw', 'new-user-pw-confirm', 'new-user-department', 'new-user-position', 'new-user-name', 'new-user-site-input', 'new-user-site'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+}
+
 function openUserModal() {
     const modal = document.getElementById('user-modal');
-    const adminPanel = document.getElementById('admin-panel');
     const role = sessionStorage.getItem('userRole');
 
     if (modal) {
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden'; // [요청] 팝업 시 배경 스크롤 방지
-        if (adminPanel) {
-            adminPanel.style.display = (role === 'admin') ? 'block' : 'none';
-
-            // 사업장 선택 드롭다운 데이터 갱신
-            const siteSelect = document.getElementById('new-user-site');
-            const siteInput = document.getElementById('new-user-site-input');
-            const siteSuggestions = document.getElementById('new-user-site-suggestions');
-            
-            if (siteInput && siteSuggestions && siteSelect) {
-                if (!siteInput.dataset.initialized) {
-                    siteInput.style.color = '#e6edf3';
-                    
-                    const renderSites = () => {
-                        const data = JSON.parse(localStorage.getItem('device_data')) || {};
-                        const equipments = data.equipments || data || {};
-                        const sites = Object.keys(equipments).sort();
-
-                        siteSuggestions.innerHTML = '';
-                        const query = siteInput.value.trim().toLowerCase();
-                        const matches = query ? sites.filter(s => s.toLowerCase().includes(query)) : sites;
-
-                        if (!query) {
-                            const defLi = document.createElement('li');
-                            defLi.className = 'suggestion-item';
-                            defLi.innerHTML = `<div class="suggestion-item-content"><span style="color: #e6edf3;">사업장 미지정 (전체)</span></div>`;
-                            defLi.addEventListener('mousedown', (e) => {
-                                e.preventDefault();
-                                siteInput.value = '';
-                                siteSelect.value = '';
-                                siteInput.dataset.lastValid = '';
-                                siteSuggestions.style.display = 'none';
-                            });
-                            siteSuggestions.appendChild(defLi);
-                        }
-
-                        if (matches.length > 0) {
-                            matches.forEach(site => {
-                                const li = document.createElement('li');
-                                li.className = 'suggestion-item';
-                                li.innerHTML = `<div class="suggestion-item-content"><span style="color: #e6edf3;">${escapeHtml(site)}</span></div>`;
-                                li.addEventListener('mousedown', (e) => {
-                                    e.preventDefault();
-                                    siteInput.value = site;
-                                    siteSelect.value = site;
-                                    siteInput.dataset.lastValid = site;
-                                    siteSuggestions.style.display = 'none';
-                                });
-                                siteSuggestions.appendChild(li);
-                            });
-                        } else {
-                            const emptyLi = document.createElement('li');
-                            emptyLi.className = 'suggestion-item';
-                            emptyLi.style.cssText = 'color:#8b949e; cursor:default; text-align:center;';
-                            emptyLi.innerHTML = `<div class="suggestion-item-content" style="justify-content:center;"><span>검색 결과 없음</span></div>`;
-                            siteSuggestions.appendChild(emptyLi);
-                        }
-                    };
-
-                    siteInput.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        if (siteSuggestions.style.display === 'block') {
-                            siteSuggestions.style.display = 'none';
-                        } else {
-                            renderSites();
-                            siteSuggestions.style.display = 'block';
-                        }
-                    });
-
-                    siteInput.addEventListener('input', () => {
-                        renderSites();
-                        siteSuggestions.style.display = 'block';
-                    });
-
-                    siteInput.addEventListener('focus', () => {
-                        renderSites();
-                        siteSuggestions.style.display = 'block';
-                    });
-
-                    siteInput.addEventListener('blur', () => {
-                        setTimeout(() => {
-                            const currentVal = siteInput.value.trim();
-                            const data = JSON.parse(localStorage.getItem('device_data')) || {};
-                            const equipments = data.equipments || data || {};
-                            const sites = Object.keys(equipments);
-                            
-                            if (currentVal === '') {
-                                siteInput.dataset.lastValid = '';
-                                siteSelect.value = '';
-                            } else if (sites.includes(currentVal)) {
-                                siteInput.dataset.lastValid = currentVal;
-                                siteSelect.value = currentVal;
-                            } else {
-                                siteInput.value = siteInput.dataset.lastValid || '';
-                                siteSelect.value = siteInput.dataset.lastValid || '';
-                            }
-                            siteSuggestions.style.display = 'none'; 
-                        }, 150);
-                    });
-                    
-                    document.addEventListener('click', (e) => {
-                        if (siteSuggestions && siteSuggestions.style.display === 'block' && e.target !== siteInput && !siteSuggestions.contains(e.target)) {
-                            siteSuggestions.style.display = 'none';
-                        }
-                    });
-
-                    siteInput.dataset.initialized = "true";
-                    siteInput.dataset.lastValid = "";
-                }
-            }
-        }
 
         // 내 계정 정보 렌더링
         if (typeof window.renderMyInfo === 'function') window.renderMyInfo();
@@ -1261,7 +1300,7 @@ function openUserModal() {
                             li.className = 'user-suggestion-item';
                             const namePart = u.name ? `${escapeHtml(u.name)} (${escapeHtml(u.department)} ${escapeHtml(u.position)})` : '이름 없음';
                             li.innerHTML = `<span style="color: #e6edf3;">${namePart}</span><span class="user-id" style="color: #8b949e;">${escapeHtml(u.id)}</span>`;
-                            li.addEventListener('mousedown', (e) => {
+                            li.addEventListener('pointerdown', (e) => {
                                 e.preventDefault();
                                 searchInput.value = u.name ? `${u.name} (${u.department} ${u.position}) - ${u.id}` : u.id;
                                 searchInput.dataset.selectedId = u.id;
@@ -1279,18 +1318,14 @@ function openUserModal() {
                     searchInput.style.color = '#e6edf3';
                     searchInput.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        if (suggestionList.style.display === 'block') {
-                            suggestionList.style.display = 'none';
-                        } else {
-                            showSuggestions();
-                        }
+                        showSuggestions();
                     });
                     searchInput.addEventListener('focus', showSuggestions);
                     searchInput.addEventListener('input', () => {
                         delete searchInput.dataset.selectedId;
                         showSuggestions();
                     });
-                    searchInput.addEventListener('blur', () => { setTimeout(() => { suggestionList.style.display = 'none'; }, 150); });
+                    searchInput.addEventListener('blur', () => { setTimeout(() => { suggestionList.style.display = 'none'; }, 250); });
                 }
                 
                 document.addEventListener('click', (e) => {
@@ -1346,7 +1381,7 @@ function closeUserModal() {
     const modal = document.getElementById('user-modal');
     if (modal) modal.style.display = 'none';
     document.body.style.overflow = ''; // [요청] 팝업 닫을 시 배경 스크롤 복구
-    ['new-user-id', 'new-user-pw', 'new-user-pw-confirm', 'new-user-department', 'new-user-position', 'new-user-name', 'new-user-site-input', 'new-user-site', 'change-pw-current', 'change-pw-new', 'change-pw-confirm', 'delete-account-pw', 'admin-delete-user-input'].forEach(id => {
+    ['change-pw-current', 'change-pw-new', 'change-pw-confirm', 'delete-account-pw', 'admin-delete-user-input'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
