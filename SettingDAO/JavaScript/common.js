@@ -168,9 +168,9 @@ function migrateDataFormat() {
 
     const reorderObject = (obj, order, fillEmpty = false) => {
         const newObj = {};
-        order.forEach(k => { 
-            if (obj.hasOwnProperty(k) && obj[k] !== undefined && obj[k] !== null) newObj[k] = obj[k]; 
-            else if (fillEmpty) newObj[k] = ""; 
+        order.forEach(k => {
+            if (obj.hasOwnProperty(k) && obj[k] !== undefined && obj[k] !== null) newObj[k] = obj[k];
+            else if (fillEmpty) newObj[k] = "";
         });
         Object.keys(obj).forEach(k => { if (!order.includes(k)) newObj[k] = obj[k]; });
         return newObj;
@@ -226,14 +226,14 @@ function migrateDataFormat() {
                     }
                 }
 
-            // [추가] 셋업(장비 마스터) 정보 정렬 및 빈 값 채우기
-            if (!detailData.setup) detailData.setup = {};
-            const oldSetupStr = JSON.stringify(detailData.setup);
-            const newSetup = reorderObject(detailData.setup, setupKeyOrder, true);
-            if (oldSetupStr !== JSON.stringify(newSetup)) {
-                detailData.setup = newSetup;
-                detailModified = true;
-            }
+                // [추가] 셋업(장비 마스터) 정보 정렬 및 빈 값 채우기
+                if (!detailData.setup) detailData.setup = {};
+                const oldSetupStr = JSON.stringify(detailData.setup);
+                const newSetup = reorderObject(detailData.setup, setupKeyOrder, true);
+                if (oldSetupStr !== JSON.stringify(newSetup)) {
+                    detailData.setup = newSetup;
+                    detailModified = true;
+                }
 
                 if (detailModified) {
                     localStorage.setItem(key, JSON.stringify(detailData));
@@ -258,18 +258,18 @@ function updateWarrantyStatusAutomatically() {
                     if (detailData.setup.equipStatus === '워런티' && detailData.setup.warrantyStart && detailData.setup.warrantyPeriod) {
                         const startStr = detailData.setup.warrantyStart;
                         const period = parseInt(detailData.setup.warrantyPeriod);
-                        
+
                         if (!isNaN(period) && startStr) {
                             const [y, m, d] = startStr.split('-').map(Number);
                             const startDate = new Date(y, m - 1, d);
-                            
+
                             const endDate = new Date(startDate);
                             endDate.setMonth(endDate.getMonth() + period);
-                            
+
                             if (endDate < today) {
                                 detailData.setup.equipStatus = '가동 장비';
                                 localStorage.setItem(key, JSON.stringify(detailData));
-                                
+
                                 const parts = key.split('_');
                                 if (parts.length >= 3) {
                                     const equipName = parts.slice(2).join('_');
@@ -281,7 +281,7 @@ function updateWarrantyStatusAutomatically() {
                         }
                     }
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
     }
 }
@@ -297,7 +297,7 @@ function initializeApp() {
         btn.dataset.type = '정기';
         if (btn.textContent.trim() === 'PM') btn.textContent = '정기';
     });
-    
+
     // 2-2. 로그인 및 사용자 관리 이벤트
     setupAuthEvents();
     setupMobileNav(); // [이동] 페이지 접근 제어 전에 실행하여 홈 화면에서도 메뉴 작동하도록 수정
@@ -987,9 +987,12 @@ function checkLoginStatus() {
             btnLoginLogout.classList.replace('btn-blue', 'btn-gray');
         }
         if (btnUserSettings) btnUserSettings.style.display = 'inline-block';
-        
+
         const btnHeaderAddUser = document.getElementById('btn-header-add-user');
         if (btnHeaderAddUser) btnHeaderAddUser.style.display = (role === 'admin') ? 'inline-block' : 'none';
+
+        const adminItems = document.querySelectorAll('.nav-admin-item');
+        adminItems.forEach(el => el.style.display = (role === 'admin') ? 'block' : 'none');
 
         // [추가] 데스크톱 타이머 UI 표시 (common.html 템플릿 사용)
         let desktopTimerContainer = document.getElementById('desktop-session-timer');
@@ -1007,7 +1010,7 @@ function checkLoginStatus() {
             mobileBtnLogin.classList.replace('btn-blue', 'btn-gray');
         }
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'block';
-        
+
         const mobileBtnAddUser = document.getElementById('mobile-btn-add-user');
         if (mobileBtnAddUser) mobileBtnAddUser.style.display = (role === 'admin') ? 'block' : 'none';
 
@@ -1030,9 +1033,12 @@ function checkLoginStatus() {
             btnLoginLogout.classList.replace('btn-gray', 'btn-blue');
         }
         if (btnUserSettings) btnUserSettings.style.display = 'none';
-        
+
         const btnHeaderAddUser = document.getElementById('btn-header-add-user');
         if (btnHeaderAddUser) btnHeaderAddUser.style.display = 'none';
+
+        const adminItems = document.querySelectorAll('.nav-admin-item');
+        adminItems.forEach(el => el.style.display = 'none');
 
         // [추가] 모바일 업데이트
         if (mobileUserInfo) mobileUserInfo.style.display = 'none';
@@ -1041,7 +1047,7 @@ function checkLoginStatus() {
             mobileBtnLogin.classList.replace('btn-gray', 'btn-blue');
         }
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'none';
-        
+
         const mobileBtnAddUser = document.getElementById('mobile-btn-add-user');
         if (mobileBtnAddUser) mobileBtnAddUser.style.display = 'none';
 
@@ -1131,7 +1137,11 @@ function attemptLogin(id, pw, context) {
 }
 
 function openAddUserModal() {
-    const modal = document.getElementById('add-user-modal');
+    const modals = document.querySelectorAll('#add-user-modal');
+    if (modals.length === 0) return;
+    
+    // [핵심] 여러 개의 중복 HTML 중 항상 사용자가 보고 있는 마지막(최신) 모달을 선택
+    const modal = modals[modals.length - 1]; 
     const role = sessionStorage.getItem('userRole');
 
     if (role !== 'admin') {
@@ -1140,118 +1150,162 @@ function openAddUserModal() {
     }
 
     if (modal) {
+        // 혹시 모를 중복 팝업들은 강제 숨김 처리
+        modals.forEach(m => { if (m !== modal) m.style.display = 'none'; });
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
 
-        // 사업장 선택 드롭다운 데이터 갱신
-        const siteSelect = document.getElementById('new-user-site');
-        const siteInput = document.getElementById('new-user-site-input');
-        const siteSuggestions = document.getElementById('new-user-site-suggestions');
+        // [추가] 모달 내 버튼 이벤트 확실하게 바인딩 (ID 중복으로 인한 버튼 먹통 방지)
+        const btnAddUser = modal.querySelector('#btn-add-user');
+        if (btnAddUser) btnAddUser.onclick = addNewUser;
         
+        const btnClose = modal.querySelector('#btn-close-add-user-modal');
+        if (btnClose) btnClose.onclick = closeAddUserModal;
+
+        // 사업장 선택 드롭다운 데이터 갱신
+        const siteSelect = modal.querySelector('#new-user-site');
+        let siteInput = modal.querySelector('#new-user-site-input');
+        const siteSuggestions = modal.querySelector('#new-user-site-suggestions');
+
         if (siteInput && siteSuggestions && siteSelect) {
-            if (!siteInput.dataset.initialized) {
-                siteInput.style.color = '#e6edf3';
-                
-                const renderSites = () => {
-                    const sites = Object.keys(storageData).sort();
+            // [핵심 해결] 비동기 화면 전환 시 꼬여버린 이벤트를 초기화하기 위해 노드를 완전히 새로 복제하여 교체
+            const newSiteInput = siteInput.cloneNode(true);
+            siteInput.parentNode.replaceChild(newSiteInput, siteInput);
+            siteInput = newSiteInput;
 
-                    siteSuggestions.innerHTML = '';
-                    const query = siteInput.value.trim().toLowerCase();
-                    const matches = query ? sites.filter(s => s.toLowerCase().includes(query)) : sites;
+            siteInput.style.color = '#e6edf3';
+            siteSuggestions.style.zIndex = '99999'; // 혹시 모를 가림 현상 완벽 차단
 
-                    if (!query) {
-                        const defLi = document.createElement('li');
-                        defLi.className = 'user-suggestion-item';
-                        defLi.innerHTML = `<span style="color: #e6edf3;">사업장 미지정 (전체)</span>`;
-                        defLi.addEventListener('pointerdown', (e) => {
+            const renderAddUserSites = () => {
+                let dataMap = {};
+                try {
+                    const parsed = JSON.parse(localStorage.getItem('device_data'));
+                    if (parsed) {
+                        if (parsed.equipments) dataMap = parsed.equipments;
+                        else dataMap = parsed;
+                    }
+                } catch (e) { }
+
+                if (Object.keys(dataMap).length === 0 && typeof storageData !== 'undefined') {
+                    dataMap = storageData;
+                }
+
+                const sites = Object.keys(dataMap).filter(k => k !== 'models' && k !== 'details').sort();
+
+
+                siteSuggestions.innerHTML = '';
+                const query = siteInput.value.trim().toLowerCase();
+                const matches = query ? sites.filter(s => s.toLowerCase().includes(query)) : sites;
+
+                if (!query) {
+                    const defLi = document.createElement('li');
+                    defLi.className = 'user-suggestion-item';
+                    defLi.innerHTML = `<span style="color: #e6edf3;">사업장 미지정 (전체)</span>`;
+                    defLi.addEventListener('pointerdown', (e) => {
+                        e.preventDefault();
+                        siteInput.value = '';
+                        siteSelect.value = '';
+                        siteInput.dataset.lastValid = '';
+                        siteSuggestions.style.display = 'none';
+                    });
+                    siteSuggestions.appendChild(defLi);
+                }
+
+                if (matches.length > 0) {
+                    matches.forEach(site => {
+                        const li = document.createElement('li');
+                        li.className = 'user-suggestion-item';
+                        li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(site)}</span>`;
+                        li.addEventListener('pointerdown', (e) => {
                             e.preventDefault();
-                            siteInput.value = '';
-                            siteSelect.value = '';
-                            siteInput.dataset.lastValid = '';
+                            siteInput.value = site;
+                            siteSelect.value = site;
+                            siteInput.dataset.lastValid = site;
                             siteSuggestions.style.display = 'none';
                         });
-                        siteSuggestions.appendChild(defLi);
-                    }
+                        siteSuggestions.appendChild(li);
+                    });
+                } else {
+                    const emptyLi = document.createElement('li');
+                    emptyLi.className = 'user-suggestion-item';
+                    emptyLi.style.cssText = 'color:#8b949e; cursor:default; justify-content:center;';
+                    emptyLi.innerHTML = `<span>검색 결과 없음</span>`;
+                    siteSuggestions.appendChild(emptyLi);
+                }
+            };
 
-                    if (matches.length > 0) {
-                        matches.forEach(site => {
-                            const li = document.createElement('li');
-                            li.className = 'user-suggestion-item';
-                            li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(site)}</span>`;
-                            li.addEventListener('pointerdown', (e) => {
-                                e.preventDefault();
-                                siteInput.value = site;
-                                siteSelect.value = site;
-                                siteInput.dataset.lastValid = site;
-                                siteSuggestions.style.display = 'none';
-                            });
-                            siteSuggestions.appendChild(li);
-                        });
-                    } else {
-                        const emptyLi = document.createElement('li');
-                        emptyLi.className = 'user-suggestion-item';
-                        emptyLi.style.cssText = 'color:#8b949e; cursor:default; justify-content:center;';
-                        emptyLi.innerHTML = `<span>검색 결과 없음</span>`;
-                        siteSuggestions.appendChild(emptyLi);
-                    }
-                };
+            siteInput.addEventListener('click', (e) => {
+                e.stopPropagation();
+                renderAddUserSites();
+                siteSuggestions.style.display = 'block';
+            });
 
-                siteInput.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    renderSites();
-                    siteSuggestions.style.display = 'block';
-                });
+            siteInput.addEventListener('input', () => {
+                renderAddUserSites();
+                siteSuggestions.style.display = 'block';
+            });
 
-                siteInput.addEventListener('input', () => {
-                    renderSites();
-                    siteSuggestions.style.display = 'block';
-                });
+            siteInput.addEventListener('focus', () => {
+                renderAddUserSites();
+                siteSuggestions.style.display = 'block';
+            });
 
-                siteInput.addEventListener('focus', () => {
-                    renderSites();
-                    siteSuggestions.style.display = 'block';
-                });
+            siteInput.addEventListener('blur', () => {
+                setTimeout(() => {
+                    const currentVal = siteInput.value.trim();
 
-                siteInput.addEventListener('blur', () => {
-                    setTimeout(() => {
-                        const currentVal = siteInput.value.trim();
-                        const sites = Object.keys(storageData);
-                        
-                        if (currentVal === '') {
-                            siteInput.dataset.lastValid = '';
-                            siteSelect.value = '';
-                        } else if (sites.includes(currentVal)) {
-                            siteInput.dataset.lastValid = currentVal;
-                            siteSelect.value = currentVal;
-                        } else {
-                            siteInput.value = siteInput.dataset.lastValid || '';
-                            siteSelect.value = siteInput.dataset.lastValid || '';
+                    let dataMap = {};
+                    try {
+                        const parsed = JSON.parse(localStorage.getItem('device_data'));
+                        if (parsed) {
+                            if (parsed.equipments) dataMap = parsed.equipments;
+                            else dataMap = parsed;
                         }
-                        siteSuggestions.style.display = 'none'; 
-                    }, 250);
-                });
-                
-                document.addEventListener('click', (e) => {
-                    if (siteSuggestions && siteSuggestions.style.display === 'block' && e.target !== siteInput && !siteSuggestions.contains(e.target)) {
-                        siteSuggestions.style.display = 'none';
+                    } catch (e) { }
+                    if (Object.keys(dataMap).length === 0 && typeof storageData !== 'undefined') {
+                        dataMap = storageData;
                     }
-                });
+                    const sites = Object.keys(dataMap).filter(k => k !== 'models' && k !== 'details');
 
-                siteInput.dataset.initialized = "true";
-                siteInput.dataset.lastValid = "";
-            }
+                    if (currentVal === '') {
+                        siteInput.dataset.lastValid = '';
+                        siteSelect.value = '';
+                    } else if (sites.includes(currentVal)) {
+                        siteInput.dataset.lastValid = currentVal;
+                        siteSelect.value = currentVal;
+                    } else {
+                        siteInput.value = siteInput.dataset.lastValid || '';
+                        siteSelect.value = siteInput.dataset.lastValid || '';
+                    }
+                    siteSuggestions.style.display = 'none';
+                }, 250);
+            });
+
+            // 기존 document 리스너가 중복 누적되는 것을 방지하기 위한 외부 클릭 감지 처리
+            const outsideClickListener = (e) => {
+                if (siteSuggestions.style.display === 'block' && e.target !== siteInput && !siteSuggestions.contains(e.target)) {
+                    siteSuggestions.style.display = 'none';
+                }
+            };
+            document.removeEventListener('mousedown', window._siteSuggestionOutsideClick);
+            window._siteSuggestionOutsideClick = outsideClickListener;
+            document.addEventListener('mousedown', outsideClickListener);
+
+
         }
     }
 }
 
 function closeAddUserModal() {
-    const modal = document.getElementById('add-user-modal');
-    if (modal) modal.style.display = 'none';
-    document.body.style.overflow = '';
-    ['new-user-id', 'new-user-pw', 'new-user-pw-confirm', 'new-user-department', 'new-user-position', 'new-user-name', 'new-user-site-input', 'new-user-site'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
+    document.querySelectorAll('#add-user-modal').forEach(m => {
+        m.style.display = 'none';
+        ['new-user-id', 'new-user-pw', 'new-user-pw-confirm', 'new-user-department', 'new-user-position', 'new-user-name', 'new-user-site-input', 'new-user-site'].forEach(id => {
+            const el = m.querySelector('#' + id);
+            if (el) el.value = '';
+        });
     });
+    document.body.style.overflow = '';
+    
 }
 
 function openUserModal() {
@@ -1264,16 +1318,16 @@ function openUserModal() {
 
         // 내 계정 정보 렌더링
         if (typeof window.renderMyInfo === 'function') window.renderMyInfo();
-        
+
         const adminDeleteWrapper = document.getElementById('admin-user-delete-wrapper');
         if (role === 'admin') {
             if (adminDeleteWrapper) {
                 adminDeleteWrapper.style.display = 'block';
-                
+
                 const searchInput = document.getElementById('admin-delete-user-input');
                 const suggestionList = document.getElementById('admin-delete-user-suggestions');
                 const delBtn = document.getElementById('btn-admin-delete-user');
-                
+
                 let deletableUsers = [];
 
                 adminDeleteWrapper.fetchDeletableUsers = () => {
@@ -1327,7 +1381,7 @@ function openUserModal() {
                     });
                     searchInput.addEventListener('blur', () => { setTimeout(() => { suggestionList.style.display = 'none'; }, 250); });
                 }
-                
+
                 document.addEventListener('click', (e) => {
                     if (suggestionList && suggestionList.style.display === 'block' && e.target !== searchInput && !suggestionList.contains(e.target)) {
                         suggestionList.style.display = 'none';
@@ -1338,17 +1392,17 @@ function openUserModal() {
                     // 이벤트 리스너 중복 추가 방지
                     const newDelBtn = delBtn.cloneNode(true);
                     delBtn.parentNode.replaceChild(newDelBtn, delBtn);
-                    
+
                     newDelBtn.addEventListener('click', () => {
                         let targetId = searchInput.dataset.selectedId || searchInput.value.trim();
-                        
+
                         // 수동으로 텍스트를 조작했을 경우를 대비한 안전장치
                         if (!searchInput.dataset.selectedId && targetId.includes(' - ')) {
                             targetId = targetId.split(' - ').pop().trim();
                         }
 
                         if (!targetId) return alert('삭제할 계정 아이디를 입력하거나 선택해주세요.');
-                        
+
                         const displayTarget = searchInput.value.trim();
                         if (!confirm(`'${displayTarget}' 계정을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
 
@@ -1388,17 +1442,23 @@ function closeUserModal() {
 }
 
 function addNewUser() {
-    const id = document.getElementById('new-user-id').value.trim();
-    const pw = document.getElementById('new-user-pw').value.trim();
-    const pwConfirmEl = document.getElementById('new-user-pw-confirm');
-    const pwConfirm = pwConfirmEl ? pwConfirmEl.value.trim() : '';
-    const role = document.getElementById('new-user-role').value;
-    const siteSelect = document.getElementById('new-user-site');
-    const site = siteSelect ? siteSelect.value : ''; // [추가]
+    const modals = document.querySelectorAll('#add-user-modal');
+    const modal = modals.length > 0 ? modals[modals.length - 1] : document;
 
-    const deptInput = document.getElementById('new-user-department');
-    const posInput = document.getElementById('new-user-position');
-    const nameInput = document.getElementById('new-user-name');
+    const idInput = modal.querySelector('#new-user-id');
+    const pwInput = modal.querySelector('#new-user-pw');
+    const pwConfirmEl = modal.querySelector('#new-user-pw-confirm');
+    const roleSelect = modal.querySelector('#new-user-role');
+    const siteSelect = modal.querySelector('#new-user-site');
+    const deptInput = modal.querySelector('#new-user-department');
+    const posInput = modal.querySelector('#new-user-position');
+    const nameInput = modal.querySelector('#new-user-name');
+
+    const id = idInput ? idInput.value.trim() : '';
+    const pw = pwInput ? pwInput.value.trim() : '';
+    const pwConfirm = pwConfirmEl ? pwConfirmEl.value.trim() : '';
+    const role = roleSelect ? roleSelect.value : 'user';
+    const site = siteSelect ? siteSelect.value : ''; // [추가]
 
     const department = deptInput ? deptInput.value.trim() : '';
     const position = posInput ? posInput.value.trim() : '';
@@ -1424,12 +1484,15 @@ function addNewUser() {
             if (data.status === 'success') {
                 addSystemLog('ADD_USER', id, `Name: ${name}, Role: ${role}, Site: ${site || '전체'}`);
                 alert('계정이 추가되었습니다.');
-                document.getElementById('new-user-id').value = '';
-                document.getElementById('new-user-pw').value = '';
+                
+                if (idInput) idInput.value = '';
+                if (pwInput) pwInput.value = '';
                 if (pwConfirmEl) pwConfirmEl.value = '';
                 if (deptInput) deptInput.value = '';
                 if (posInput) posInput.value = '';
                 if (nameInput) nameInput.value = '';
+                if (modal.querySelector('#new-user-site-input')) modal.querySelector('#new-user-site-input').value = '';
+                if (siteSelect) siteSelect.value = '';
             } else {
                 alert(data.message || '계정 추가 실패');
             }
@@ -1566,15 +1629,17 @@ window.renderMyInfoEdit = function (user) {
     if (deptInput) deptInput.value = user.department || '';
     if (posInput) posInput.value = user.position || '';
     if (nameInput) nameInput.value = user.name || '';
-    
+
     if (roleSelect) {
         if (!isRoleEditable) roleSelect.disabled = true;
         roleSelect.value = user.role === 'admin' ? 'admin' : 'user';
     }
-if (siteSelect) {
-        const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
-        const equipments = deviceData.equipments || deviceData || {};
-        Object.keys(equipments).sort().forEach(s => {
+    if (siteSelect) {
+        let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
+        let withtechData = JSON.parse(localStorage.getItem('withtech_data')) || {};
+        let dataMap = (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) ? storageData : (deviceData.equipments || deviceData);
+        if (!dataMap || Object.keys(dataMap).length === 0) dataMap = withtechData;
+        Object.keys(dataMap).sort().forEach(s => {
             const opt = document.createElement('option');
             opt.value = s;
             opt.textContent = s;
@@ -1619,7 +1684,7 @@ if (siteSelect) {
 
     content.appendChild(clone);
 };
-    
+
 /* ==========================================================================
    4. 사이드바 및 리스트 관리 (Sidebar & List)
    ========================================================================== */

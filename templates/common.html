@@ -39,9 +39,7 @@
                     <li><a href="{{ url_for('home') }}" class="{% if active_page == 'home' %}active{% endif %}">HOME</a></li>
                     <li><a href="{{ url_for('setup') }}" class="{% if active_page == 'setup' %}active{% endif %}">SETUP</a></li>
                     <li><a href="{{ url_for('maintenance') }}" class="{% if active_page == 'maintenance' %}active{% endif %}">MAINT</a></li>
-                    {% if session.get('role') == 'admin' %}
-                    <li><a href="{{ url_for('admin') }}" class="{% if active_page == 'admin' %}active{% endif %}">ADMIN</a></li>
-                    {% endif %}
+                    <li class="nav-admin-item" style="display: none;"><a href="{{ url_for('admin') }}" class="{% if active_page == 'admin' %}active{% endif %}">ADMIN</a></li>
                 </ul>
             </nav>
         </div>
