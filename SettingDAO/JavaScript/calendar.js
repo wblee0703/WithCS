@@ -160,6 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventDetailModal();
     setupRegisterScheduleModal();
     setupSearchModal();
+    setupTaskSearchModal(); // [추가]
     setupNextScheduleModal(); // [추가]
 
     // 드롭다운 외부 클릭 시 닫기
@@ -700,6 +701,25 @@ function openCalendarPopup(dateStr, events) {
     const registerBtn = document.getElementById('btn-open-register-modal');
 
     if (!popup || !title || !list) return;
+
+    // [추가] 모바일 작업 검색 버튼 추가
+    if (window.innerWidth <= 950 && registerBtn) {
+        const existingSearchBtn = document.getElementById('btn-task-search');
+        if (existingSearchBtn) existingSearchBtn.remove();
+
+        const searchBtn = document.createElement('a');
+        searchBtn.href = '#';
+        searchBtn.id = 'btn-task-search';
+        searchBtn.className = 'btn-blue-sm';
+        searchBtn.textContent = '작업 검색';
+        searchBtn.style.marginRight = '10px';
+        searchBtn.style.padding = '8px 12px';
+        searchBtn.onclick = (e) => {
+            e.preventDefault();
+            openTaskSearchModal();
+        };
+        registerBtn.parentNode.insertBefore(searchBtn, registerBtn);
+    }
 
     title.textContent = dateStr;
     list.innerHTML = '';
@@ -3505,3 +3525,156 @@ window.renderCalendar = renderCalendar;
 window.goToTodayMonth = goToTodayMonth;
 window.openScheduleModal = openScheduleModal;
 window.openRegisterScheduleModal = openRegisterScheduleModal;
+
+/* ==========================================================================
+   [10] 모달: 작업 검색 (Task Search Modal)
+   ========================================================================== */
+function setupTaskSearchModal() {
+    if (document.getElementById('task-search-modal')) return;
+
+    const modalHtml = `
+        <div id="task-search-modal" class="modal-overlay" style="display: none; z-index: 10001;">
+            <div class="modal-window" style="width: 90%; max-width: 500px; height: 70vh;">
+                <div class="modal-header">
+                    <h3>작업 검색</h3>
+                    <button id="btn-close-task-search-modal" class="btn-close">✕</button>
+                </div>
+                <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div class="form-row" style="margin-bottom: 0; flex-shrink: 0;">
+                        <input type="text" id="task-search-worker-input" class="input-dark" placeholder="작업자 이름으로 검색..." style="flex: 1;">
+                        <button id="btn-do-task-search" class="btn-blue-sm" style="padding: 8px 15px;">검색</button>
+                    </div>
+                    <div id="task-search-results-container" class="data-table-wrapper" style="border: 1px solid var(--cal-border); border-radius: 4px; background: var(--cal-bg-dark);">
+                        <ul id="task-search-results-list" style="list-style: none; padding: 0; margin: 0;">
+                            <!-- Search results will be appended here -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    document.getElementById('btn-close-task-search-modal').onclick = () => {
+        document.getElementById('task-search-modal').style.display = 'none';
+    };
+    document.getElementById('btn-do-task-search').onclick = doTaskSearch;
+    document.getElementById('task-search-worker-input').onkeypress = (e) => {
+        if (e.key === 'Enter') doTaskSearch();
+    };
+}
+
+function openTaskSearchModal() {
+    const modal = document.getElementById('task-search-modal');
+    const searchInput = document.getElementById('task-search-worker-input');
+    const resultsList = document.getElementById('task-search-results-list');
+    
+    if (modal) {
+        resultsList.innerHTML = '<li class="list-empty-msg">작업자 이름을 입력하고 검색하세요.</li>';
+        const userName = sessionStorage.getItem('userName') || sessionStorage.getItem('userId');
+        searchInput.value = userName || '';
+        modal.style.display = 'flex';
+        doTaskSearch(); // Open and search immediately
+    }
+}
+
+function doTaskSearch() {
+    const searchInput = document.getElementById('task-search-worker-input');
+    const workerName = searchInput.value.trim().toLowerCase();
+    const resultsList = document.getElementById('task-search-results-list');
+
+    if (!workerName) {
+        resultsList.innerHTML = '<li class="list-empty-msg">작업자 이름을 입력해주세요.</li>';
+        return;
+    }
+
+    let allTasks = [];
+    const mainData = getDeviceDataMap();
+
+    Object.keys(mainData).forEach(site => {
+        if (mainData[site]) {
+            mainData[site].forEach(equip => {
+                const key = `details_${site}_${equip}`;
+                try {
+                    const data = JSON.parse(localStorage.getItem(key));
+                    if (!data) return;
+
+                    // 1. Completed tasks from logs
+                    if (data.logs) {
+                        data.logs.forEach(log => {
+                            if (log.worker && log.worker.toLowerCase().includes(workerName) && log.detailType !== '일정변경') {
+                                allTasks.push({ site, equip, item: log, isCompleted: true });
+                            }
+                        });
+                    }
+
+                    // 2. Scheduled tasks from maint
+                    if (data.maint) {
+                        data.maint.forEach(item => {
+                            if (item.scheduledDate && item.worker && item.worker.toLowerCase().includes(workerName)) {
+                                const isDone = data.logs && data.logs.some(l => 
+                                    l.date === item.scheduledDate && 
+                                    l.content.includes(item.content) &&
+                                    l.worker.includes(item.worker)
+                                );
+                                if (!isDone) {
+                                    allTasks.push({ site, equip, item: item, isCompleted: false });
+                                }
+                            }
+                        });
+                    }
+                } catch (e) { console.error(`Error parsing data for key ${key}:`, e); }
+            });
+        }
+    });
+
+    // Sort by date, descending
+    allTasks.sort((a, b) => {
+        const dateA = a.isCompleted ? a.item.date : a.item.scheduledDate;
+        const dateB = b.isCompleted ? b.item.date : b.item.scheduledDate;
+        return new Date(dateB) - new Date(dateA);
+    });
+
+    if (allTasks.length === 0) {
+        resultsList.innerHTML = '<li class="list-empty-msg">검색된 작업이 없습니다.</li>';
+        return;
+    }
+
+    resultsList.innerHTML = allTasks.map(task => {
+        const { site, equip, item, isCompleted } = task;
+        const date = isCompleted ? item.date : item.scheduledDate;
+        const parts = equip.split('::');
+        const equipName = parts[0];
+        const serialNo = parts.length > 1 ? `(${parts[1]})` : '';
+        const content = item.content || '내용 없음';
+        const type = item.type || '정기';
+        
+        const typeClass = `type-${type}`;
+        const completedClass = isCompleted ? 'completed' : '';
+
+        return `
+            <li class="popup-event-item" 
+                onclick="openTaskFromSearch('${site}', '${equip}', ${item.id}, ${isCompleted})"
+                style="flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px; border-bottom: 1px solid var(--cal-border);">
+                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                    <span class="item-text ${completedClass}" style="font-weight: bold; font-size: 14px;">
+                        <span class="popup-type-badge ${typeClass}">[${type}]</span>
+                        ${escapeHtml(site)} > ${escapeHtml(equipName)} ${escapeHtml(serialNo)}
+                    </span>
+                    <span style="font-size: 12px; color: var(--cal-text-secondary);">${date}</span>
+                </div>
+                <div style="font-size: 12px; color: #e6edf3; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(content)}">
+                    ${escapeHtml(content)}
+                </div>
+            </li>
+        `;
+    }).join('');
+}
+
+function openTaskFromSearch(site, equip, id, isCompleted) {
+    const searchModal = document.getElementById('task-search-modal');
+    if (searchModal) searchModal.style.display = 'none';
+    
+    openEventDetailModal(site, equip, id, isCompleted);
+}
+window.openTaskFromSearch = openTaskFromSearch;

@@ -1239,6 +1239,18 @@ body {
         display: block;
         margin-top: 3px;
     }
+    /* [추가] 작업 검색 모달 모바일 최적화 */
+    #task-search-modal .modal-window {
+        width: 90% !important;
+        max-width: 500px !important;
+        height: 70vh !important;
+    }
+}
+
+/* [추가] 작업 검색 결과 리스트 스타일 */
+#task-search-results-list .popup-event-item.completed .item-text {
+    text-decoration: line-through;
+    color: var(--cal-text-secondary);
 }
  
 /* 일반 사용자(user) 로그인 시 글로벌 CSS(.role-user)에 의해 작업 상세 정보 팝업의 기능 버튼이 강제로 숨겨지는 현상 완벽 방지 */
