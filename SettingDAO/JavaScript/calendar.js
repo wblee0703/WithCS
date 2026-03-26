@@ -2443,6 +2443,17 @@ function setupRegisterScheduleModal() {
 
     window.updateRegisterInputStates();
 
+    // [추가] 세부구분 2 입력창을 세부구분 1 우측으로 이동시키고 제목(Row) 숨김
+    const detailType2Row = document.getElementById('register-detail-type2-row');
+    
+    if (detailTypeSelect && detailType2Select && detailTypeSelect.parentNode !== detailType2Select.parentNode) {
+        detailTypeSelect.parentNode.insertBefore(detailType2Select, detailTypeSelect.nextSibling);
+        detailTypeSelect.style.flex = '1';
+        detailType2Select.style.flex = '1';
+        detailType2Select.style.marginLeft = '5px';
+        if (detailType2Row) detailType2Row.style.display = 'none';
+    }
+
     // [추가] 파트 선택 래퍼 동적으로 등록 (모달 내부)
     let partWrapper = document.getElementById('register-part-wrapper');
     if (!partWrapper) {
@@ -2605,6 +2616,7 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
                         } else {
                             contentTrigger.textContent = '항목 선택';
                             contentTrigger.title = '';
+                            contentTrigger.classList.remove('has-value'); // [추가] 초기 상태로 리셋
                         }
                         // 드롭다운 리스트의 실제 항목 선택은 복잡하므로, 여기서는 트리거 텍스트만 설정
                     }
@@ -2883,7 +2895,7 @@ window.updateRegisterDetailTypeOptions = function () {
     if (rDetailType2Select) {
         if (type === '비정기') {
             rDetailType2Select.style.display = 'inline-block';
-            if (rDetailType2Row) rDetailType2Row.style.display = 'flex';
+            if (rDetailType2Row) rDetailType2Row.style.display = 'none'; // [수정] 폼 합치면서 기존 행 숨김 유지
         } else {
             rDetailType2Select.style.display = 'none';
             rDetailType2Select.value = '';
@@ -3016,7 +3028,7 @@ window.updateRegisterContentOptions = function () {
                 "파트 이상 (교체)", "파트 이상 (수리)", "프로그램 이상", "단순조치", "기타"
             ];
             items = defaultList.map(content => ({ content: content }));
-    } else if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+        } else if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
             const equipName = equipKey.split('::')[0];
             const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
             let matchedItems = adminItems.filter(item => {

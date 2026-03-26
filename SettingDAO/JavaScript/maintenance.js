@@ -3454,7 +3454,7 @@ window.openAddWorkModal = function(logId, dateStr) {
             type: logItem.type,
             detailType: logItem.detailType,
             detailType2: logItem.detailType2,
-            content: logItem.content + ' - 추가작업' // 기존 내용에 ' - 추가작업'을 붙여 제안
+            content: '' // [수정] '항목 선택' 초기 상태로 나타나게 하려고 빈 값 전달
         };
 
         window.isMobileRegisterFlow = true; // 등록 후 상세 팝업을 열도록 플래그 설정
