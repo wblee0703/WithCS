@@ -2,347 +2,572 @@
 {% set active_page = 'maintenance' %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/maintenance.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/maintenance.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/calendar.css') }}">
 {% endblock %}
 
 {% block content %}
-    <div class="dashboard-wrapper hierarchy-mode">
-        <aside class="dashboard-sidebar">
-            <section class="sidebar-group main-category">
-                <div class="group-header">
-                    <div class="sidebar-header-row">
-                        <h3>대분류: 사업장 <span id="site-count" class="count-badge">0</span> <button class="btn-list-setting"
-                                id="site-setting-btn" title="목록 편집">⚙️</button>
-                        </h3>
-                        <input type="text" id="site-search" class="search-input-mini" placeholder="검색"
-                            autocomplete="off">
-                    </div>
-                    <div class="input-with-btn">
-                        <input type="text" id="site-input" placeholder="사업장 추가">
-                        <button class="btn-add" id="site-add-btn">+</button>
-                    </div>
+<div class="dashboard-wrapper hierarchy-mode">
+    <aside class="dashboard-sidebar">
+        <section class="sidebar-group main-category">
+            <div class="group-header">
+                <div class="sidebar-header-row">
+                    <h3>대분류: 사업장 <span id="site-count" class="count-badge">0</span> <button class="btn-list-setting"
+                            id="site-setting-btn" title="목록 편집">⚙️</button>
+                    </h3>
+                    <input type="text" id="site-search" class="search-input-mini" placeholder="검색" autocomplete="off">
                 </div>
-                <ul class="list-data" id="site-list"></ul>
-            </section>
+                <div class="input-with-btn">
+                    <input type="text" id="site-input" placeholder="사업장 추가">
+                    <button class="btn-add" id="site-add-btn">+</button>
+                </div>
+            </div>
+            <ul class="list-data" id="site-list"></ul>
+        </section>
 
-            <section class="sidebar-group disabled" id="equip-section">
-                <div class="group-header">
-                    <div class="sidebar-header-row">
-                        <h3>중분류: 장비목록 <span id="equip-count" class="count-badge">0</span> <button
-                                class="btn-list-setting" id="equip-setting-btn" title="목록 편집">⚙️</button>
-                        </h3>
-                        <input type="text" id="equip-search" class="search-input-mini" placeholder="검색"
-                            autocomplete="off" readonly onfocus="this.removeAttribute('readonly');">
+        <section class="sidebar-group disabled" id="equip-section">
+            <div class="group-header">
+                <div class="sidebar-header-row">
+                    <h3>중분류: 장비목록 <span id="equip-count" class="count-badge">0</span> <button class="btn-list-setting"
+                            id="equip-setting-btn" title="목록 편집">⚙️</button>
+                    </h3>
+                    <input type="text" id="equip-search" class="search-input-mini" placeholder="검색" autocomplete="off"
+                        readonly onfocus="this.removeAttribute('readonly');">
+                </div>
+                <div class="sidebar-input-group">
+                    <div class="autocomplete-wrapper" style="flex: 1;">
+                        <input type="text" id="equip-input" placeholder="장비 명" disabled style="width: 100%;">
+                        <ul id="equip-input-suggestions" class="suggestion-list"></ul>
                     </div>
-                    <div class="sidebar-input-group">
-                        <div class="autocomplete-wrapper" style="flex: 1;">
-                            <input type="text" id="equip-input" placeholder="장비 명" disabled style="width: 100%;">
-                            <ul id="equip-input-suggestions" class="suggestion-list"></ul>
-                        </div>
-                        <input type="text" id="equip-model-input" placeholder="Serial No." disabled>
-                        <button class="btn-add" id="equip-add-btn" disabled>+</button>
-                    </div>
+                    <input type="text" id="equip-model-input" placeholder="Serial No." disabled>
+                    <button class="btn-add" id="equip-add-btn" disabled>+</button>
                 </div>
-                <ul class="list-data" id="equip-list"></ul>
-            </section>
+            </div>
+            <ul class="list-data" id="equip-list"></ul>
+        </section>
 
-            <section class="sidebar-group backup-section">
-                <div class="group-header">
-                    <h3>데이터 관리</h3>
-                </div>
-                <div class="backup-controls">
-                    <button class="btn-gray" id="btn-export">백업 저장</button>
-                    <button class="btn-gray" id="btn-import">백업 불러오기</button>
-                    <button class="btn-gray" id="btn-view-logs">로그 보기</button>
-                    <input type="file" id="file-import" style="display: none;" accept=".json">
-                </div>
-            </section>
-        </aside>
-        <div class="resizer" id="sidebar-resizer"></div>
+        <section class="sidebar-group backup-section">
+            <div class="group-header">
+                <h3>데이터 관리</h3>
+            </div>
+            <div class="backup-controls">
+                <button class="btn-gray" id="btn-export">백업 저장</button>
+                <button class="btn-gray" id="btn-import">백업 불러오기</button>
+                <button class="btn-gray" id="btn-view-logs">로그 보기</button>
+                <input type="file" id="file-import" style="display: none;" accept=".json">
+            </div>
+        </section>
+    </aside>
+    <div class="resizer" id="sidebar-resizer"></div>
 
-        <main class="dashboard-main sub-category disabled" id="detail-window">
-            <div class="placeholder-view">
-                <p>장비를 선택하면 상세 내역이 표시됩니다.</p>
+    <main class="dashboard-main sub-category disabled" id="detail-window">
+        <div class="placeholder-view">
+            <p>장비를 선택하면 상세 내역이 표시됩니다.</p>
+        </div>
+
+        <div class="detail-content" style="display: none;">
+            <div class="breadcrumb-header">
+                <header class="breadcrumb breadcrumb-no-margin" id="current-path" style="margin-bottom: 0;">📍 사업장 > 장비명
+                    > Serial No.</header>
+                <button class="btn-blue-sm btn-calendar-move" onclick="moveToCalendarView()">📅 캘린더 이동</button>
+                <button class="btn-gray btn-header-setting" onclick="openMaintEquipModal()">장비 정보</button>
             </div>
 
-            <div class="detail-content" style="display: none;">
-                <div class="breadcrumb-header">
-                    <header class="breadcrumb breadcrumb-no-margin" id="current-path" style="margin-bottom: 0;">📍 사업장 > 장비명 > Serial No.</header>
-                    <button class="btn-blue-sm btn-calendar-move" onclick="moveToCalendarView()">📅 캘린더 이동</button>
-                    <button class="btn-gray btn-header-setting" onclick="openMaintEquipModal()">장비 정보</button>
-                </div>
-
-                <div class="content-body">
-                    <div class="left-panel">
-                        <section class="card" id="maint-window">
-                            <div class="card-header">
-                                <h3>유지관리 물품
-                                    <button id="btn-special-note" class="btn-list-setting" title="특이사항 입력"
-                                        style="font-size: 14px; margin-left: 8px;">📝</button>
-                                    <button id="btn-maint-settings" class="btn-list-setting" title="관리 모드 (순서 변경/삭제)"
-                                        style="font-size: 14px;">⚙️</button>
-                                </h3>
-                                <button class="btn-gray" id="btn-load-maint-list"
-                                    style="display: none; padding: 2px 10px; font-size: 12px; margin-left: auto; margin-right: 5px;">리스트
-                                    불러오기</button>
-                                <span class="badge" id="maint-count" style="background: #30363d;">항목: 0건</span>
-                            </div>
-                            <div class="card-body">
-                                <div class="form-row">
-                                    <div class="toggle-group" id="maint-type-toggle">
-                                        <button class="active" data-type="정기">정기</button>
-                                        <button data-type="비정기">비정기</button>
-                                    </div>
-                                    <input type="text" id="maint-content" placeholder="유지관리 물품" class="flex-grow">
-                                    <input type="date" id="maint-date">
-                                    <input type="number" id="maint-period" placeholder="주기(일)"
-                                        class="maint-period-input">
-                                    <button class="btn-blue" id="maint-reg-btn">등록</button>
+            <div class="content-body">
+                <div class="left-panel">
+                    <section class="card" id="maint-window">
+                        <div class="card-header">
+                            <h3>유지관리 물품
+                                <button id="btn-special-note" class="btn-list-setting" title="특이사항 입력"
+                                    style="font-size: 14px; margin-left: 8px;">📝</button>
+                                <button id="btn-maint-settings" class="btn-list-setting" title="관리 모드 (순서 변경/삭제)"
+                                    style="font-size: 14px;">⚙️</button>
+                            </h3>
+                            <button class="btn-gray" id="btn-load-maint-list"
+                                style="display: none; padding: 2px 10px; font-size: 12px; margin-left: auto; margin-right: 5px;">리스트
+                                불러오기</button>
+                            <span class="badge" id="maint-count" style="background: #30363d;">항목: 0건</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-row">
+                                <div class="toggle-group" id="maint-type-toggle">
+                                    <button class="active" data-type="정기">정기</button>
+                                    <button data-type="비정기">비정기</button>
                                 </div>
-                                <div class="data-table-wrapper">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>분류</th>
-                                                <th>코드명</th>
-                                                <th>물품명</th>
-                                                <th>시작일</th>
-                                                <th>주기</th>
-                                                <th>상태</th>
-                                                <th>관리</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="maint-table-body"></tbody>
-                                    </table>
-                                </div>
+                                <input type="text" id="maint-content" placeholder="유지관리 물품" class="flex-grow">
+                                <input type="date" id="maint-date">
+                                <input type="number" id="maint-period" placeholder="주기(일)" class="maint-period-input">
+                                <button class="btn-blue" id="maint-reg-btn">등록</button>
                             </div>
-                        </section>
-                        <!-- 파일 관리 카드 -->
-                        <div class="card" style="flex: 0 0 200px;">
-                            <div class="card-header">
-                                <h3>📁 관련 파일 (200kb 제한)</h3>
-                                <input type="file" id="file-upload-input" style="display: none;" multiple>
-                                <button id="btn-upload-file" class="btn-blue-sm"
-                                    style="padding: 4px 10px; font-size: 12px;">업로드</button>
-                            </div>
-                            <div class="card-body">
-                                <ul id="file-list" class="file-list">
-                                    <li class="list-empty-msg">장비를 선택해주세요.</li>
-                                </ul>
+                            <div class="data-table-wrapper">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>분류</th>
+                                            <th>코드명</th>
+                                            <th>물품명</th>
+                                            <th>시작일</th>
+                                            <th>주기</th>
+                                            <th>상태</th>
+                                            <th>관리</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="maint-table-body"></tbody>
+                                </table>
                             </div>
                         </div>
-                    </div>
-                        <section class="card" id="log-window">
-                            <div class="card-header">
-                                <h3>장비 점검 이력
-                                    <button id="btn-log-settings" class="btn-list-setting" title="관리 모드 (삭제)"
-                                        style="font-size: 14px;">⚙️</button>
-                                </h3>
-                                <input type="text" id="log-search" placeholder="검색 (작업자, 날짜, 메모 내용)">
-                            </div>
-                            <div class="card-body">
-                                <div class="form-row">
-                                    <input type="date" id="log-date">
-                                    <select id="log-type-select" class="log-select">
-                                    </select>
-                                    <select id="log-detail-type-select" class="log-select" disabled>
-                                    </select>
-                                    <div id="log-content-wrapper" class="log-select-wrapper" style="display: none;">
-                                        <div id="log-content-trigger" class="log-select-trigger">항목 선택</div>
-                                        <div id="log-content-dropdown" class="log-select-dropdown">
-                                            <div id="log-content-list" class="log-select-list"></div>
-                                            <div class="log-select-footer">
-                                                <button id="btn-log-content-add" class="btn-blue-sm"
-                                                    style="width: 100%;">추가</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <input type="text" id="log-content-input" class="log-content-input"
-                                        placeholder="내용">
-                                    <input type="text" id="log-worker" placeholder="작업자">
-                                    <button class="btn-blue" id="log-reg-btn">기록</button>
-                                </div>
-                                <div class="data-table-wrapper log-list-container" id="log-list-wrapper">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>점검일</th>
-                                                <th>구분</th>
-                                                <th>세부구분</th>
-                                                <th>내용</th>
-                                                <th>작업자</th>
-                                                <th>관리</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="log-table-body"></tbody>
-                                    </table>
-                                </div>
-                                <div class="resizer-vertical" id="log-memo-resizer"></div>
-                                <div class="memo-section">
-                                    <div class="memo-header">
-                                        <h4 class="memo-title">작업 내용</h4>
-                                        <button class="btn-blue-sm" id="memo-save-btn">저장</button>
-                                    </div>
-                                    <textarea id="device-memo" placeholder="상세 내용을 입력하세요."
-                                        class="memo-textarea"></textarea>
-                                </div>
-                            </div>
-                        </section>
+                    </section>
+                    <!-- 파일 관리 카드 -->
+                    <div class="card" style="flex: 0 0 200px;">
+                        <div class="card-header">
+                            <h3>📁 관련 파일 (200kb 제한)</h3>
+                            <input type="file" id="file-upload-input" style="display: none;" multiple>
+                            <button id="btn-upload-file" class="btn-blue-sm"
+                                style="padding: 4px 10px; font-size: 12px;">업로드</button>
+                        </div>
+                        <div class="card-body">
+                            <ul id="file-list" class="file-list">
+                                <li class="list-empty-msg">장비를 선택해주세요.</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
+                <section class="card" id="log-window">
+                    <div class="card-header">
+                        <h3>장비 점검 이력
+                            <button id="btn-log-settings" class="btn-list-setting" title="관리 모드 (삭제)"
+                                style="font-size: 14px;">⚙️</button>
+                        </h3>
+                        <input type="text" id="log-search" placeholder="검색 (작업자, 날짜, 메모 내용)">
+                    </div>
+                    <div class="card-body">
+                        <div class="form-row">
+                            <input type="date" id="log-date">
+                            <select id="log-type-select" class="log-select">
+                            </select>
+                            <select id="log-detail-type-select" class="log-select" disabled>
+                            </select>
+                            <div id="log-content-wrapper" class="log-select-wrapper" style="display: none;">
+                                <div id="log-content-trigger" class="log-select-trigger">항목 선택</div>
+                                <div id="log-content-dropdown" class="log-select-dropdown">
+                                    <div id="log-content-list" class="log-select-list"></div>
+                                    <div class="log-select-footer">
+                                        <button id="btn-log-content-add" class="btn-blue-sm"
+                                            style="width: 100%;">추가</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="text" id="log-content-input" class="log-content-input" placeholder="내용">
+                            <input type="text" id="log-worker" placeholder="작업자">
+                            <button class="btn-blue" id="log-reg-btn">기록</button>
+                        </div>
+                        <div class="data-table-wrapper log-list-container" id="log-list-wrapper">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>점검일</th>
+                                        <th>구분</th>
+                                        <th>세부구분</th>
+                                        <th>내용</th>
+                                        <th>추가작업</th> <!-- 신규 추가 -->
+                                        <th></th> <!-- 삭제/수정 버튼용 빈 헤더 -->
+                                    </tr>
+                                </thead>
+                                <tbody id="log-table-body"></tbody>
+                            </table>
+                        </div>
+                        <div class="resizer-vertical" id="log-memo-resizer"></div>
+                        <div class="memo-section">
+                            <div class="memo-header">
+                                <h4 class="memo-title">작업 내용</h4>
+                                <button class="btn-blue-sm" id="memo-save-btn">저장</button>
+                            </div>
+                            <textarea id="device-memo" placeholder="상세 내용을 입력하세요." class="memo-textarea"></textarea>
+                        </div>
+                    </div>
+                </section>
             </div>
-        </main>
-    </div>
+        </div>
+</div>
+</main>
+</div>
 
-    <!-- 3.4 유지관리 리스트 불러오기 모달 -->
-    <div id="maint-load-list-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window" style="width: 400px; height: auto;">
-            <div class="modal-header">
-                <h3>유지관리 리스트 불러오기</h3>
-                <button class="btn-del-sm" id="btn-close-maint-load-list">✕</button>
+<!-- 3.4 유지관리 리스트 불러오기 모달 -->
+<div id="maint-load-list-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window" style="width: 400px; height: auto;">
+        <div class="modal-header">
+            <h3>유지관리 리스트 불러오기</h3>
+            <button class="btn-del-sm" id="btn-close-maint-load-list">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <label class="form-label" style="width: 60px;">사업장</label>
+                <select id="maint-load-list-site-select" class="modal-select"
+                    style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
             </div>
-            <div class="modal-body">
-                <div class="form-row">
-                    <label class="form-label" style="width: 60px;">사업장</label>
-                    <select id="maint-load-list-site-select" class="modal-select"
-                        style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
-                </div>
-                <div class="form-row">
-                    <label class="form-label" style="width: 60px;">장비</label>
-                    <select id="maint-load-list-equip-select" class="modal-select" disabled
-                        style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
-                </div>
-                <div
-                    style="margin-top: 20px; padding: 10px; background: rgba(248, 81, 73, 0.1); border: 1px solid rgba(248, 81, 73, 0.4); border-radius: 4px;">
-                    <p class="info-text-gray" style="color: #ff7b72; margin: 0; font-size: 12px; line-height: 1.4;">⚠️
-                        <strong>주의:</strong> 불러오기 시 현재 작성된 유지관리 물품 리스트는 모두 삭제되고 선택한 장비의 리스트로 대체됩니다.</p>
-                </div>
+            <div class="form-row">
+                <label class="form-label" style="width: 60px;">장비</label>
+                <select id="maint-load-list-equip-select" class="modal-select" disabled
+                    style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
             </div>
-            <div class="modal-footer">
-                <button class="btn-blue" id="btn-confirm-maint-load-list">불러오기</button>
-                <button class="btn-gray" id="btn-cancel-maint-load-list">취소</button>
+            <div
+                style="margin-top: 20px; padding: 10px; background: rgba(248, 81, 73, 0.1); border: 1px solid rgba(248, 81, 73, 0.4); border-radius: 4px;">
+                <p class="info-text-gray" style="color: #ff7b72; margin: 0; font-size: 12px; line-height: 1.4;">⚠️
+                    <strong>주의:</strong> 불러오기 시 현재 작성된 유지관리 물품 리스트는 모두 삭제되고 선택한 장비의 리스트로 대체됩니다.
+                </p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-blue" id="btn-confirm-maint-load-list">불러오기</button>
+            <button class="btn-gray" id="btn-cancel-maint-load-list">취소</button>
+        </div>
+    </div>
+</div>
+
+<!-- 3.5 유지관리 정보 불러오기 모달 -->
+<div id="maint-load-info-modal" class="modal-overlay" style="display: none; z-index: 2000;">
+    <div class="modal-window" style="width: 400px; height: auto;">
+        <div class="modal-header">
+            <h3>장비 정보 불러오기</h3>
+            <button class="btn-del-sm" id="btn-close-maint-load-info">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-row">
+                <label class="form-label" style="width: 60px;">사업장</label>
+                <select id="maint-load-info-site-select" class="modal-select"
+                    style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
+            </div>
+            <div class="form-row">
+                <label class="form-label" style="width: 60px;">장비</label>
+                <select id="maint-load-info-equip-select" class="modal-select" disabled
+                    style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
+            </div>
+            <div
+                style="margin-top: 20px; padding: 10px; background: rgba(31, 111, 235, 0.1); border: 1px solid rgba(31, 111, 235, 0.4); border-radius: 4px;">
+                <p class="info-text-gray" style="color: #58a6ff; margin: 0; font-size: 12px; line-height: 1.4;">ℹ️
+                    <strong>알림:</strong> 선택한 장비의 정보(위치, 담당자 등)를 불러와 현재 화면에 적용합니다. (저장 버튼을 눌러야 반영됩니다.)
+                </p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-blue" id="btn-confirm-maint-load-info">불러오기</button>
+            <button class="btn-gray" id="btn-cancel-maint-load-info">취소</button>
+        </div>
+    </div>
+</div>
+
+<!-- 3.6 장비 정보 설정 모달 (Maintenance 전용) -->
+<div id="maint-equip-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window" style="width: 600px; height: auto; max-height: 90vh;">
+        <div class="modal-header">
+            <h3>장비 정보 설정</h3>
+            <div style="display: flex; align-items: center;">
+                <button class="btn-gray" id="btn-load-maint-info"
+                    style="padding: 2px 10px; font-size: 12px; margin-right: 5px;">정보 불러오기</button>
+                <button class="btn-del-sm"
+                    onclick="document.getElementById('maint-equip-modal').style.display='none'">✕</button>
+            </div>
+        </div>
+        <div class="modal-body" style="overflow-y: auto;">
+            <div class="form-row">
+                <label class="form-label">사업장</label><input type="text" id="maint-modal-site" disabled>
+                <label class="form-label">장비명</label><input type="text" id="maint-modal-equip" disabled>
+            </div>
+            <div class="form-row">
+                <label class="form-label">Serial</label><input type="text" id="maint-modal-serial" disabled>
+                <label class="form-label">관리번호</label><input type="text" id="maint-modal-custEquipName"
+                    placeholder="고객사 장비명">
+            </div>
+            <hr style="border: 0; border-top: 1px solid #30363d; margin: 10px 0;">
+            <div class="form-row">
+                <label class="form-label">위치</label>
+                <input type="text" id="maint-modal-building" placeholder="건물명">
+                <input type="text" id="maint-modal-floor" placeholder="층">
+                <input type="text" id="maint-modal-detailLoc" placeholder="상세위치">
+            </div>
+            <h4 style="color: #58a6ff; margin: 15px 0 5px;">관리자 정보 (WITHTECH)</h4>
+            <div class="form-row">
+                <label class="form-label">담당자</label><input type="text" id="maint-modal-manager">
+                <label class="form-label">연락처</label><input type="text" id="maint-modal-contact">
+            </div>
+            <div class="form-row"><label class="form-label">이메일</label><input type="text" id="maint-modal-email"
+                    class="flex-grow"></div>
+            <h4 style="color: #58a6ff; margin: 15px 0 5px;">고객사 정보</h4>
+            <div class="form-row">
+                <label class="form-label">담당자</label><input type="text" id="maint-modal-custManager">
+                <label class="form-label">연락처</label><input type="text" id="maint-modal-custContact">
+            </div>
+            <div class="form-row"><label class="form-label">이메일</label><input type="text" id="maint-modal-custEmail"
+                    class="flex-grow"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-blue" onclick="saveMaintEquipModal()">저장</button>
+            <button class="btn-gray"
+                onclick="document.getElementById('maint-equip-modal').style.display='none'">닫기</button>
+        </div>
+    </div>
+</div>
+
+<!-- 3.7 특이사항 모달 -->
+<div id="special-note-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window" style="width: 500px; height: 400px;">
+        <div class="modal-header">
+            <h3>장비 특이사항</h3>
+            <button class="btn-del-sm" id="btn-close-special-note">✕</button>
+        </div>
+        <div class="modal-body">
+            <textarea id="special-note-textarea" spellcheck="false" placeholder="장비에 대한 특이사항을 입력하세요..."
+                style="flex: 1; resize: none; margin-bottom: 10px; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 10px; border-radius: 4px;"></textarea>
+            <div class="modal-btn-group-right">
+                <button class="btn-blue" id="btn-save-special-note">저장</button>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- 3.5 유지관리 정보 불러오기 모달 -->
-    <div id="maint-load-info-modal" class="modal-overlay" style="display: none; z-index: 2000;">
-        <div class="modal-window" style="width: 400px; height: auto;">
-            <div class="modal-header">
-                <h3>장비 정보 불러오기</h3>
-                <button class="btn-del-sm" id="btn-close-maint-load-info">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-row">
-                    <label class="form-label" style="width: 60px;">사업장</label>
-                    <select id="maint-load-info-site-select" class="modal-select"
-                        style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
-                </div>
-                <div class="form-row">
-                    <label class="form-label" style="width: 60px;">장비</label>
-                    <select id="maint-load-info-equip-select" class="modal-select" disabled
-                        style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
-                </div>
-                <div
-                    style="margin-top: 20px; padding: 10px; background: rgba(31, 111, 235, 0.1); border: 1px solid rgba(31, 111, 235, 0.4); border-radius: 4px;">
-                    <p class="info-text-gray" style="color: #58a6ff; margin: 0; font-size: 12px; line-height: 1.4;">ℹ️
-                        <strong>알림:</strong> 선택한 장비의 정보(위치, 담당자 등)를 불러와 현재 화면에 적용합니다. (저장 버튼을 눌러야 반영됩니다.)</p>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-blue" id="btn-confirm-maint-load-info">불러오기</button>
-                <button class="btn-gray" id="btn-cancel-maint-load-info">취소</button>
-            </div>
+<!-- 3.8 파일 편집 모달 (텍스트 파일 전용) -->
+<div id="file-edit-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window" style="width: 800px; height: 600px;">
+        <div class="modal-header">
+            <h3 id="file-edit-title">파일 편집</h3>
+            <button class="btn-del-sm" onclick="closeFileEditModal()">✕</button>
+        </div>
+        <div class="modal-body">
+            <textarea id="file-edit-content" spellcheck="false"
+                style="width: 100%; height: 100%; resize: none; background: #0d1117; color: #e6edf3; border: 1px solid #30363d; padding: 10px; font-family: monospace; line-height: 1.5;"></textarea>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-blue" id="btn-save-file-content">저장</button>
+            <button class="btn-gray" onclick="closeFileEditModal()">닫기</button>
         </div>
     </div>
+</div>
 
-    <!-- 3.6 장비 정보 설정 모달 (Maintenance 전용) -->
-    <div id="maint-equip-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window" style="width: 600px; height: auto; max-height: 90vh;">
-            <div class="modal-header">
-                <h3>장비 정보 설정</h3>
-                <div style="display: flex; align-items: center;">
-                    <button class="btn-gray" id="btn-load-maint-info"
-                        style="padding: 2px 10px; font-size: 12px; margin-right: 5px;">정보 불러오기</button>
-                    <button class="btn-del-sm"
-                        onclick="document.getElementById('maint-equip-modal').style.display='none'">✕</button>
+<!-- [추가] 작업 등록 모달 (추가작업 연동용) -->
+<div id="register-schedule-modal" class="modal-overlay" style="display: none; z-index: 3000;">
+    <div class="modal-window" style="width: 500px; height: auto;">
+        <div class="modal-header">
+            <h3>작업 등록</h3>
+            <button class="btn-del-sm" id="btn-close-register-modal">✕</button>
+        </div>
+        <div class="modal-body" style="overflow-y: auto; max-height: 70vh;">
+            <div class="form-row">
+                <label class="form-label" style="width: 80px;">예정일</label>
+                <input type="date" id="register-date-display" class="input-dark" style="flex: 1;">
+            </div>
+            <div class="form-row">
+                <label class="form-label" style="width: 80px;">사업장</label>
+                <select id="register-site-select" class="modal-select" style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
+            </div>
+            <div class="form-row">
+                <label class="form-label" style="width: 80px;">장비</label>
+                <select id="register-equip-select" class="modal-select" disabled style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
+            </div>
+            <div class="form-row">
+                <label class="form-label" style="width: 80px;">구분</label>
+                <select id="register-type-select" class="modal-select" style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
+            </div>
+            <div class="form-row">
+                <label class="form-label" style="width: 80px;">세부구분</label>
+                <select id="register-detail-type-select" class="modal-select" disabled style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;"></select>
+            </div>
+            <div class="form-row" id="register-detail-type2-row" style="display: none;">
+                <label class="form-label" style="width: 80px;">세부구분 2</label>
+                <select id="register-detail-type2-select" class="modal-select" disabled style="flex: 1; display: none; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px; margin-top: 0;"></select>
+            </div>
+            <div class="form-row">
+                <label class="form-label" style="width: 80px;">내용</label>
+                <input type="text" id="register-content-input" class="input-dark" style="flex: 1; display: none;" placeholder="내용을 입력하세요">
+                <div id="register-content-wrapper" class="log-select-wrapper" style="flex: 1; margin-right: 0; min-width: 0; width: 100%;">
+                    <div id="register-content-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 5px; border-radius: 4px; min-height: 30px;">항목 선택</div>
+                    <div id="register-content-dropdown" class="log-select-dropdown">
+                        <div id="register-content-list" class="log-select-list"></div>
+                        <div class="log-select-footer">
+                            <button type="button" id="btn-register-content-add" class="btn-blue-sm" style="width: 100%;">선택 완료</button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="modal-body" style="overflow-y: auto;">
-                <div class="form-row">
-                    <label class="form-label">사업장</label><input type="text" id="maint-modal-site" disabled>
-                    <label class="form-label">장비명</label><input type="text" id="maint-modal-equip" disabled>
-                </div>
-                <div class="form-row">
-                    <label class="form-label">Serial</label><input type="text" id="maint-modal-serial" disabled>
-                    <label class="form-label">관리번호</label><input type="text" id="maint-modal-custEquipName"
-                        placeholder="고객사 장비명">
-                </div>
-                <hr style="border: 0; border-top: 1px solid #30363d; margin: 10px 0;">
-                <div class="form-row">
-                    <label class="form-label">위치</label>
-                    <input type="text" id="maint-modal-building" placeholder="건물명">
-                    <input type="text" id="maint-modal-floor" placeholder="층">
-                    <input type="text" id="maint-modal-detailLoc" placeholder="상세위치">
-                </div>
-                <h4 style="color: #58a6ff; margin: 15px 0 5px;">관리자 정보 (WITHTECH)</h4>
-                <div class="form-row">
-                    <label class="form-label">담당자</label><input type="text" id="maint-modal-manager">
-                    <label class="form-label">연락처</label><input type="text" id="maint-modal-contact">
-                </div>
-                <div class="form-row"><label class="form-label">이메일</label><input type="text" id="maint-modal-email"
-                        class="flex-grow"></div>
-                <h4 style="color: #58a6ff; margin: 15px 0 5px;">고객사 정보</h4>
-                <div class="form-row">
-                    <label class="form-label">담당자</label><input type="text" id="maint-modal-custManager">
-                    <label class="form-label">연락처</label><input type="text" id="maint-modal-custContact">
-                </div>
-                <div class="form-row"><label class="form-label">이메일</label><input type="text" id="maint-modal-custEmail"
-                        class="flex-grow"></div>
+            <div class="form-row">
+                <label class="form-label" style="width: 80px;">비용처리</label>
+                <select id="register-cost-type" class="modal-select" style="flex: 1; background: #0d1117; color: #fff; border: 1px solid #30363d; padding: 5px; border-radius: 4px;">
+                    <option value="" disabled selected hidden>비용처리 선택</option>
+                    <option value="유상">유상</option>
+                    <option value="무상(보증)">무상(보증)</option>
+                    <option value="무상(중고)">무상(중고)</option>
+                    <option value="기타">기타</option>
+                </select>
             </div>
-            <div class="modal-footer">
-                <button class="btn-blue" onclick="saveMaintEquipModal()">저장</button>
-                <button class="btn-gray"
-                    onclick="document.getElementById('maint-equip-modal').style.display='none'">닫기</button>
+            <div class="form-row">
+                <label class="form-label" style="width: 80px;">공수</label>
+                <input type="number" id="register-md" class="input-dark" style="flex: 1;" placeholder="M/D 입력" min="0" step="0.5">
             </div>
         </div>
+        <div class="modal-footer">
+            <button class="btn-blue" id="btn-confirm-register-schedule">등록</button>
+        </div>
     </div>
+</div>
 
-    <!-- 3.7 특이사항 모달 -->
-    <div id="special-note-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window" style="width: 500px; height: 400px;">
-            <div class="modal-header">
-                <h3>장비 특이사항</h3>
-                <button class="btn-del-sm" id="btn-close-special-note">✕</button>
-            </div>
-            <div class="modal-body">
-                <textarea id="special-note-textarea" spellcheck="false" placeholder="장비에 대한 특이사항을 입력하세요..."
-                    style="flex: 1; resize: none; margin-bottom: 10px; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 10px; border-radius: 4px;"></textarea>
-                <div class="modal-btn-group-right">
-                    <button class="btn-blue" id="btn-save-special-note">저장</button>
+<!-- ==========================================================================
+       [추가] JS 리팩토링용 HTML 템플릿
+       ========================================================================== -->
+<template id="log-cost-type-options-template">
+    <option value="" disabled selected hidden>비용처리</option>
+    <option value="유상">유상</option>
+    <option value="무상(보증)">무상(보증)</option>
+    <option value="무상(중고)">무상(중고)</option>
+    <option value="기타">기타</option>
+</template>
+
+<template id="log-part-wrapper-template">
+    <div id="log-part-trigger" class="log-select-trigger"
+        style="min-height: 30px; height: 30px; padding: 4px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+        물품 선택</div>
+    <div id="log-part-dropdown" class="log-select-dropdown">
+        <input type="text" id="log-part-search" class="dropdown-search-input" placeholder="물품 검색..." autocomplete="off">
+        <div id="log-part-list" class="log-select-list"></div>
+        <div class="log-select-footer">
+            <button type="button" id="btn-log-part-add" class="btn-blue-sm" style="width: 100%;">선택 완료</button>
+        </div>
+    </div>
+</template>
+
+<template id="memo-worker-wrapper-template">
+    <div class="memo-row-top">
+        <label for="memo-cost-type" style="color: #8b949e; font-size: 13px; min-width: 50px;">비용처리</label>
+        <select id="memo-cost-type" class="input-dark"
+            style="width: 80px; height: 30px; font-size: 13px; padding: 0 4px; margin-right: 15px;">
+            <option value="유상">유상</option>
+            <option value="무상(보증)">무상(보증)</option>
+            <option value="무상(중고)">무상(중고)</option>
+            <option value="기타">기타</option>
+        </select>
+    </div>
+    <div class="memo-row-bottom">
+        <label for="memo-md" style="color: #8b949e; font-size: 13px; min-width: 30px;">공수</label>
+        <input type="number" id="memo-md" class="input-dark"
+            style="width: 50px; height: 30px; font-size: 13px; padding: 0 8px; margin-right: 15px;" min="0" step="0.5">
+        <label for="memo-worker" style="color: #8b949e; font-size: 13px; min-width: 50px;">작업자 <span
+                style="color:#f85149;">*</span></label>
+        <div class="log-select-wrapper memo-worker-select" style="margin: 0; flex: none;">
+            <div id="memo-worker-trigger" class="log-select-trigger"
+                style="min-height: 30px; height: 30px; padding: 4px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                작업자 선택</div>
+            <div id="memo-worker-dropdown" class="log-select-dropdown">
+                <input type="text" id="memo-worker-search" class="dropdown-search-input" placeholder="이름 검색..."
+                    spellcheck="false">
+                <div id="memo-worker-list" class="log-select-list"></div>
+                <div class="log-select-footer">
+                    <button type="button" id="btn-memo-worker-confirm" class="btn-blue-sm" style="width: 100%;">선택
+                        완료</button>
                 </div>
             </div>
         </div>
+        <input type="hidden" id="memo-worker" value="">
     </div>
+</template>
 
-    <!-- 3.8 파일 편집 모달 (텍스트 파일 전용) -->
-    <div id="file-edit-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window" style="width: 800px; height: 600px;">
-            <div class="modal-header">
-                <h3 id="file-edit-title">파일 편집</h3>
-                <button class="btn-del-sm" onclick="closeFileEditModal()">✕</button>
+<template id="memo-issue-share-wrapper-template">
+    <input type="checkbox" id="memo-issue-share" style="transform: scale(1.2); margin-right: 8px; cursor: pointer;">
+    <label for="memo-issue-share" style="color: #e6edf3; font-size: 13px; cursor: pointer; margin-bottom: 0;">특이 이슈
+        공유</label>
+</template>
+
+<template id="maint-table-row-template">
+    <tr>
+        <td><span class="badge"></span></td>
+        <td class="edit-code"></td>
+        <td class="edit-content"></td>
+        <td class="edit-date"></td>
+        <td class="edit-period"></td>
+        <td class="status-cell"></td>
+        <td>
+            <div class="manage-btns">
+                <button class="btn-edit-sm">✏️</button>
+                <button class="btn-del-sm">✕</button>
             </div>
-            <div class="modal-body">
-                <textarea id="file-edit-content" spellcheck="false" style="width: 100%; height: 100%; resize: none; background: #0d1117; color: #e6edf3; border: 1px solid #30363d; padding: 10px; font-family: monospace; line-height: 1.5;"></textarea>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-blue" id="btn-save-file-content">저장</button>
-                <button class="btn-gray" onclick="closeFileEditModal()">닫기</button>
-            </div>
+        </td>
+    </tr>
+</template>
+
+<template id="log-table-row-template">
+    <tr>
+        <td class="log-date"></td>
+        <td><span class="badge"></span></td>
+        <td class="log-detail-type"></td>
+        <td class="log-content"></td>
+        <td class="log-add-work"></td> <!-- 신규 추가 -->
+        <td>
+            <button class="btn-edit-sm">✏️</button>
+            <button class="btn-del-sm">✕</button>
+        </td>
+    </tr>
+</template>
+
+<template id="file-list-item-template">
+    <li class="file-item">
+        <span class="file-name"></span>
+        <span class="file-info"></span>
+        <button class="btn-del-sm">✕</button>
+    </li>
+</template>
+
+<template id="log-part-item-template">
+    <div class="log-select-item">
+        <span class="item-name" style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+        <select class="item-cost-select input-dark"
+            style="width: 85px; font-size: 11px; padding: 2px; margin-left: 5px; color: #e6edf3; color-scheme: dark;"
+            onclick="event.stopPropagation()">
+            <option value="유상">유상</option>
+            <option value="무상(보증)">무상(보증)</option>
+            <option value="무상(중고)">무상(중고)</option>
+            <option value="기타">기타</option>
+        </select>
+    </div>
+</template>
+
+<template id="memo-worker-item-template">
+    <div class="log-select-item">
+        <span>
+            <span class="worker-name"></span>
+            <span class="worker-sub-info" style="font-size:11px; color:#8b949e;"></span>
+        </span>
+    </div>
+</template>
+
+<!-- [추가] 로그 수정 모드용 템플릿 -->
+<template id="edit-log-date-input-template">
+    <input type="date" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">
+</template>
+
+<template id="edit-log-type-select-template">
+    <select class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()"></select>
+</template>
+
+<template id="edit-log-detail-type-container-template">
+    <select class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()"></select>
+    <select class="input-dark mt-10" style="width: 100%; padding: 2px; display: none;" onclick="event.stopPropagation()"></select>
+</template>
+
+<template id="edit-log-content-input-template">
+    <input type="text" class="input-dark" style="width: 100%; padding: 2px;" onclick="event.stopPropagation()">
+</template>
+
+<template id="edit-log-part-wrapper-template">
+    <div class="log-select-trigger" style="padding: 2px; min-height: auto; justify-content: center;">물품 선택</div>
+    <div class="log-select-dropdown">
+        <input type="text" class="dropdown-search-input" placeholder="물품 검색..." autocomplete="off">
+        <div class="log-select-list"></div>
+        <div class="log-select-footer">
+            <button type="button" class="btn-blue-sm" style="width: 100%;">선택 완료</button>
         </div>
     </div>
+</template>
+
 {% endblock %}
 
-{% block extra_js %}
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/maintenance.js') }}"></script>
+{% block extra_js %}    
+<script src="{{ url_for('SettingDAO', filename='JavaScript/maintenance.js') }}"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/calendar.js') }}"></script>
 {% endblock %}

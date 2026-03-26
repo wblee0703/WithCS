@@ -468,6 +468,12 @@ body {
     background: #161b22;
 }
 
+/* [추가] 공통 자동완성 래퍼 (HOME 화면 제안박스 표시 오류 해결) */
+.autocomplete-wrapper {
+    position: relative;
+    width: 100%;
+}
+
 /* Modal Select */
 .modal-select {
     background: #0d1117;

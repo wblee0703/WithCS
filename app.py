@@ -137,10 +137,10 @@ class RequestInfoFilter(logging.Filter):
 file_handler = TimedRotatingFileHandler(os.path.join(LOG_DIR, 'server.log'), when='midnight', interval=1, backupCount=30, encoding='utf-8')
 file_handler.addFilter(RequestInfoFilter())
 file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s [%(ip)s] %(method)s %(url)s: %(message)s [in %(pathname)s:%(lineno)d]'))
-file_handler.setLevel(logging.WARNING)
+file_handler.setLevel(logging.INFO) # [수정] INFO 레벨 로그도 기록하도록 변경
 
 app.logger.addHandler(file_handler)
-app.logger.setLevel(logging.WARNING)
+app.logger.setLevel(logging.INFO) # [수정] INFO 레벨 로그도 기록하도록 변경
 app.logger.warning('Server startup')
 
 # ------------------------------------------------------------------------------
@@ -566,9 +566,9 @@ def set_security_headers(response):
     """모든 응답에 보안 헤더 및 CSRF 토큰 설정"""
     response.set_cookie('csrf_token', generate_csrf())
     
-    # 에러 로그 기록 (정적 파일 제외)
-    if not request.path.startswith('/static') and not request.path.startswith('/favicon.ico'):
-        # [수정] 401 Unauthorized는 정상적인 인증 루틴일 수 있으므로 경고 로그에서 제외
+    # 에러 로그 기록 (정적 파일 경로 제외)
+    if not request.path.startswith(('/static', '/SettingDAO', '/favicon.ico')):
+        # [수정] 401 Unauthorized는 정상적인 인증 루틴일 수 있으므로 경고 로그에서 제외 (로그인 실패 등)
         # [개선] 400 에러는 위의 에러 핸들러와 일반 비즈니스 로직(중복 아이디 등)에서 처리/기록하므로 포괄 로그에서 제외 (중복 방지)
         if response.status_code > 400 and response.status_code != 401:
             app.logger.warning(f"Response Status: {response.status}")

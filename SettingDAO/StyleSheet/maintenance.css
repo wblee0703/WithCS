@@ -189,40 +189,35 @@ tr.dragging {
 
 /* 구분 */
 #log-list-wrapper .data-table th:nth-child(2) {
-    width: 90px;
+    width: 70px;
 }
 
 /* 세부구분 */
 #log-list-wrapper .data-table th:nth-child(3) {
-    width: 180px;
+    width: 160px;
 }
 
 /* 내용 */
 #log-list-wrapper .data-table th:nth-child(4) {
-    width: 220px;
+    width: 200px;
 }
 
-/* 비용처리 */
+/* 추가작업 (신규) */
 #log-list-wrapper .data-table th:nth-child(5) {
     width: 80px;
-}
-
-/* 공수 */
-#log-list-wrapper .data-table th:nth-child(6) {
-    width: 60px;
 }
 
 /* 관리 */
 
 /* 로그 테이블 관리 모드 (삭제 컬럼 제어) */
-#log-list-wrapper .data-table th:nth-child(7),
-#log-list-wrapper .data-table td:nth-child(7) {
+#log-list-wrapper .data-table th:nth-child(6),
+#log-list-wrapper .data-table td:nth-child(6) {
     display: none;
     width: 70px;
 }
 
-#log-list-wrapper .data-table.management-active th:nth-child(7),
-#log-list-wrapper .data-table.management-active td:nth-child(7) {
+#log-list-wrapper .data-table.management-active th:nth-child(6),
+#log-list-wrapper .data-table.management-active td:nth-child(6) {
     display: table-cell;
 }
 
@@ -405,6 +400,27 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     height: 30px;
 }
 
+/* [추가] 작업 등록 모달 폼 정렬 및 높이 통일 */
+#register-schedule-modal .form-row {
+    display: flex;
+    align-items: center !important;
+}
+
+#register-schedule-modal .form-label {
+    margin-bottom: 0 !important;
+}
+
+#register-schedule-modal .input-dark,
+#register-schedule-modal .modal-select,
+#register-schedule-modal .log-select-trigger {
+    height: 30px !important;
+    min-height: 30px !important;
+    box-sizing: border-box !important;
+    padding: 4px 8px !important;
+    margin-top: 0 !important;
+    line-height: normal;
+}
+
 /* 커스텀 드롭다운 (로그 항목 선택) */
 .log-select-wrapper {
     position: relative;
@@ -419,14 +435,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     background: #0d1117;
     border: 1px solid #30363d;
     color: #fff;
-    padding: 5px;
+    padding: 4px 8px;
     border-radius: 4px;
     cursor: pointer;
-    white-space: normal !important;
-    word-break: break-all !important;
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
     min-height: 30px;
-    height: auto;
-    line-height: 1.4;
+    height: 30px;
+    box-sizing: border-box;
+    line-height: 20px;
     font-size: 13px;
 }
 
@@ -554,6 +572,35 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     color: #e6edf3;
     font-size: 13px;
     margin: 0;
+}
+
+.memo-worker-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.memo-row-top {
+    display: flex;
+    align-items: center;
+}
+
+.issue-share-wrapper {
+    margin-left: 20px;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.memo-row-bottom {
+    display: flex;
+    align-items: center;
+}
+
+.memo-worker-select {
+    width: 250px;
 }
 
 .memo-textarea {
@@ -810,6 +857,55 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         min-width: 0 !important;
     }
 
+    /* [요청] 모바일에서 물품 선택창 너비 확대 */
+    #log-part-wrapper {
+        flex: 2.0 !important;
+    }
+
+    /* [요청] 모바일 메모 영역 작업자/비용처리 1줄 배치 */
+    .memo-worker-wrapper {
+        flex-direction: row !important;
+        align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 5px !important;
+    }
+    
+    .memo-row-top,
+    .memo-row-bottom {
+        width: auto !important;
+        flex-wrap: nowrap;
+        align-items: center;
+        gap: 5px !important;
+    }
+
+    .memo-row-top label,
+    .memo-row-bottom label {
+        min-width: auto !important;
+        white-space: nowrap;
+    }
+
+    .issue-share-wrapper {
+        margin-left: 5px !important; /* 모바일에서 간격 축소 */
+    }
+
+    .memo-worker-select {
+        flex: 1 !important;
+        min-width: 150px !important;
+    }
+
+    #memo-cost-type {
+        width: 65px !important;
+        margin-right: 10px !important;
+        padding: 0 2px !important;
+    }
+
+    #memo-md {
+        width: 45px !important;
+        margin-right: 10px !important;
+        padding: 0  !important;
+        padding: 0 4px !important;
+    }
+
     /* [추가] 텍스트 입력창(프로그램변경 등) 너비 및 높이 맞춤 */
     .log-content-input {
         width: auto !important;
@@ -896,15 +992,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         padding-left: 2px !important;
         padding-right: 2px !important;
         min-height: 30px !important;
-        height: auto !important;
-        white-space: normal !important;
-        word-break: break-all !important;
+        height: 30px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
     }
     
     /* [요청] 모바일 항목 선택 제안박스 확장 및 비용처리 드롭다운 축소 */
     .log-select-dropdown {
-        width: 200% !important; /* 부모 입력창 너비에 정확히 맞춤 */
-        min-width: 200% !important;
+        width: 150% !important; /* 부모 입력창 너비에 정확히 맞춤 */
+        min-width: 150% !important;
         max-width: none !important;
     }
     .log-select-item {
@@ -1037,9 +1134,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     /* 모든 컬럼 표시 및 너비 재조정 */
     #log-list-wrapper .data-table th:nth-child(1) { width: 80px !important; } /* 점검일 */
-    #log-list-wrapper .data-table th:nth-child(2) { width: 80px !important; } /* 구분 */
-    #log-list-wrapper .data-table th:nth-child(3) { width: 140px !important; } /* 세부구분 */
-    #log-list-wrapper .data-table th:nth-child(4) { width: auto !important; } /* 내용 */
-    #log-list-wrapper .data-table th:nth-child(5) { width: 60px !important; } /* 비용처리 */
-    #log-list-wrapper .data-table th:nth-child(6) { width: 45px !important; } /* 공수 */
+    #log-list-wrapper .data-table th:nth-child(2) { width: 60px !important; } /* 구분 */
+    #log-list-wrapper .data-table th:nth-child(3) { width: 120px !important; } /* 세부구분 */
+    #log-list-wrapper .data-table th:nth-child(4) { width: 160px !important; } /* 내용 */
+    #log-list-wrapper .data-table th:nth-child(5) { width: 80px !important; } /* 추가작업 */
 }
