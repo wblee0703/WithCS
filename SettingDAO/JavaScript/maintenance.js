@@ -2231,7 +2231,14 @@ window.openAddWorkModal = function(logId, dateStr) {
             currentSearchFilters.site = currentPath.site;
             currentSearchFilters.equip = currentPath.equip;
         }
-        openRegisterScheduleModal(dateStr);
+
+        // [추가] 추가 작업을 위해 원본 로그 데이터 가져오기
+        const key = `details_${currentPath.site}_${currentPath.equip}`;
+        const data = JSON.parse(localStorage.getItem(key));
+        const logItem = data.logs.find(l => l.id === logId);
+        
+        // [수정] 원본 로그 데이터를 presetData로 전달
+        openRegisterScheduleModal(dateStr, logItem);
     } else {
         alert('작업 등록 팝업창을 열 수 없습니다. (팝업 스크립트 없음)');
     }
@@ -3424,6 +3431,57 @@ window.saveFileContent = function () {
     }
 };
 
+// [추가] 추가작업 팝업 호출 및 콜백 처리
+window.openAddWorkModal = function(logId, dateStr) {
+    if (typeof openRegisterScheduleModal === 'function') {
+        window.currentAddWorkLogId = logId; // 현재 작업 중인 로그 ID 임시 저장
+        
+        // currentSearchFilters는 calendar.js에서 사용되므로, 현재 장비 정보로 업데이트
+        if (typeof currentSearchFilters === 'undefined') {
+            window.currentSearchFilters = { site: currentPath.site, equip: currentPath.equip };
+        } else {
+            currentSearchFilters.site = currentPath.site;
+            currentSearchFilters.equip = currentPath.equip;
+        }
+
+        // [추가] 추가 작업을 위해 원본 로그 데이터 가져오기
+        const key = `details_${currentPath.site}_${currentPath.equip}`;
+        const data = JSON.parse(localStorage.getItem(key));
+        const logItem = data.logs.find(l => l.id === logId);
+        
+        // [수정] 원본 로그 데이터를 presetData로 전달
+        const presetData = {
+            type: logItem.type,
+            detailType: logItem.detailType,
+            detailType2: logItem.detailType2,
+            content: logItem.content + ' - 추가작업' // 기존 내용에 ' - 추가작업'을 붙여 제안
+        };
+
+        window.isMobileRegisterFlow = true; // 등록 후 상세 팝업을 열도록 플래그 설정
+        openRegisterScheduleModal(dateStr, presetData);
+    } else {
+        alert('작업 등록 팝업창을 열 수 없습니다. (팝업 스크립트 없음)');
+    }
+};
+
+// [추가] calendar.js에서 호출되어 원본 로그의 메모를 업데이트하는 함수
+window.updateLogAddWork = function(originalLogId, newWorkContent) {
+    const key = `details_${currentPath.site}_${currentPath.equip}`;
+    let data = JSON.parse(localStorage.getItem(key));
+    if (data && data.logs) {
+        const logItem = data.logs.find(l => l.id === originalLogId);
+        if (logItem) {
+            const currentMemo = logItem.memo || '';
+            const newMemoEntry = `\n\n--- 추가작업 ---\n${newWorkContent}`;
+            logItem.memo = currentMemo + newMemoEntry;
+            localStorage.setItem(key, JSON.stringify(data));
+            renderLogs(); // 로그 리스트를 다시 렌더링하여 업데이트된 메모 표시
+            if (typeof addSystemLog === 'function') {
+                addSystemLog('UPDATE_LOG_ADD_WORK', currentPath.equip, `로그 ID ${originalLogId}에 추가작업 내용 업데이트`);
+            }
+        }
+    }
+};
 window.closeFileEditModal = function () {
     document.getElementById('file-edit-modal').style.display = 'none';
     currentEditingFileId = null;

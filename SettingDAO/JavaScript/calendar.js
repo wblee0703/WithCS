@@ -1616,7 +1616,7 @@ function toggleDetailContentEdit() {
                 pWrapper.className = 'log-select-wrapper';
                 pWrapper.id = 'detail-edit-part-wrapper';
                 pWrapper.style.width = '100%';
-                pWrapper.style.margin = '4px 0 0 0';
+                pWrapper.style.margin = '0';
                 pWrapper.innerHTML = `
                     <div id="detail-edit-part-trigger" class="log-select-trigger" style="padding: 5px; min-height: 30px; box-sizing: border-box; background: #0d1117; border: 1px solid #30363d; color: #fff; border-radius: 4px;">물품 선택</div>
                     <div id="detail-edit-part-dropdown" class="log-select-dropdown">
@@ -2453,7 +2453,7 @@ function setupRegisterScheduleModal() {
             partWrapper.className = 'log-select-wrapper';
             partWrapper.style.display = 'none';
             partWrapper.style.flex = '1';
-            partWrapper.style.marginTop = '5px';
+            partWrapper.style.marginTop = '0';
             partWrapper.style.marginRight = '0';
             partWrapper.style.minWidth = '0';
             partWrapper.style.width = '100%';
@@ -2475,7 +2475,7 @@ function setupRegisterScheduleModal() {
     }
 }
 
-function openRegisterScheduleModal(dateStr) {
+function openRegisterScheduleModal(dateStr, presetData = null) {
     const modal = document.getElementById('register-schedule-modal');
     const dateDisplay = document.getElementById('register-date-display');
     const siteSelect = document.getElementById('register-site-select');
@@ -2528,6 +2528,99 @@ function openRegisterScheduleModal(dateStr) {
     }
 
     if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
+
+    // [추가] presetData가 있으면 폼 필드 미리 채우기
+    if (presetData) {
+        const rTypeSelect = document.getElementById('register-type-select');
+        const rDetailTypeSelect = document.getElementById('register-detail-type-select');
+        const rDetailType2Select = document.getElementById('register-detail-type2-select');
+
+        if (rTypeSelect && presetData.type) {
+            rTypeSelect.value = presetData.type; // [수정] presetData.type으로 초기화
+            rTypeSelect.dispatchEvent(new Event('change'));
+        }
+
+        setTimeout(() => {
+            let targetDetailType = presetData.detailType || '';
+            let targetDetailType2 = presetData.detailType2 || '';
+
+            // [추가] 괄호 [ ] 또는 부등호 > 가 포함된 경우 파싱하여 분리
+            if (targetDetailType.includes('[')) {
+                const parts = targetDetailType.split('[');
+                targetDetailType = parts[0].trim();
+                targetDetailType2 = parts[1].replace(']', '').trim();
+            } else if (targetDetailType.includes(' > ')) {
+                const parts = targetDetailType.split(' > ');
+                targetDetailType = parts[0].trim();
+                targetDetailType2 = parts[1].trim();
+            }
+
+            if (targetDetailType2.includes('[')) {
+                const parts = targetDetailType2.split('[');
+                if (!targetDetailType || targetDetailType === targetDetailType2) targetDetailType = parts[0].trim();
+                targetDetailType2 = parts[1].replace(']', '').trim();
+            } else if (targetDetailType2.includes(' > ')) {
+                const parts = targetDetailType2.split(' > ');
+                if (!targetDetailType || targetDetailType === targetDetailType2) targetDetailType = parts[0].trim();
+                targetDetailType2 = parts[1].trim();
+            }
+
+            if (rDetailTypeSelect && targetDetailType) {
+                // [추가] 세부 구분 옵션에 없는 경우 강제 추가하여 데이터 유실 방지
+                let hasOption = Array.from(rDetailTypeSelect.options).some(opt => opt.value === targetDetailType);
+                if (!hasOption) {
+                    const opt = document.createElement('option');
+                    opt.value = targetDetailType;
+                    opt.textContent = targetDetailType;
+                    rDetailTypeSelect.appendChild(opt);
+                }
+                rDetailTypeSelect.value = targetDetailType;
+                rDetailTypeSelect.dispatchEvent(new Event('change'));
+            }
+
+            setTimeout(() => {
+                if (rDetailType2Select && targetDetailType2) {
+                    let hasOption2 = Array.from(rDetailType2Select.options).some(opt => opt.value === targetDetailType2);
+                    if (!hasOption2) {
+                        const opt = document.createElement('option');
+                        opt.value = targetDetailType2;
+                        opt.textContent = targetDetailType2;
+                        rDetailType2Select.appendChild(opt);
+                    }
+                    rDetailType2Select.value = targetDetailType2;
+                    rDetailType2Select.dispatchEvent(new Event('change'));
+                }
+
+                // [수정] presetData.content로 내용 필드 미리 채우기
+                const contentInput = document.getElementById('register-content-input');
+                const contentWrapper = document.getElementById('register-content-wrapper');
+                const contentTrigger = document.getElementById('register-content-trigger');
+                
+                if (contentWrapper && contentWrapper.style.display !== 'none') {
+                    if (contentTrigger) {
+                        if (presetData.content) {
+                            contentTrigger.textContent = presetData.content;
+                            contentTrigger.title = presetData.content;
+                            contentTrigger.classList.add('has-value'); // [추가] 색상 변경 트리거
+                        } else {
+                            contentTrigger.textContent = '항목 선택';
+                            contentTrigger.title = '';
+                        }
+                        // 드롭다운 리스트의 실제 항목 선택은 복잡하므로, 여기서는 트리거 텍스트만 설정
+                    }
+                } else if (contentInput) {
+                    contentInput.value = presetData.content || '';
+                }
+                
+                const partWrapper = document.getElementById('register-part-wrapper');
+                if (partWrapper) {
+                    partWrapper.style.display = 'none';
+                    const partTrigger = document.getElementById('register-part-trigger');
+                    if (partTrigger) partTrigger.textContent = '물품 선택';
+                }
+            }, 100);
+        }, 100);
+    }
 
     modal.style.display = 'flex';
 

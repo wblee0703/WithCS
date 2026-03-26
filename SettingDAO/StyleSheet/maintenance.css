@@ -202,9 +202,23 @@ tr.dragging {
     width: 200px;
 }
 
+/* [요청] 점검 이력의 '내용' 컬럼을 좌측 정렬하여 가독성 향상 */
+#log-list-wrapper .data-table td:nth-child(4) {
+    text-align: left;
+    padding-left: 15px;
+    box-sizing: border-box; /* 패딩이 너비에 포함되도록 설정 */
+}
+
 /* 추가작업 (신규) */
 #log-list-wrapper .data-table th:nth-child(5) {
     width: 80px;
+}
+
+/* [요청] 추가작업 버튼 표시를 위해 5번째 컬럼 스타일 조정 */
+#log-list-wrapper .data-table td:nth-child(5) {
+    white-space: normal; /* 버튼이 잘리지 않도록 */
+    overflow: visible;   /* 버튼이 잘리지 않도록 */
+    text-overflow: clip; /* 말줄임표 제거 */
 }
 
 /* 관리 */
@@ -234,6 +248,7 @@ tr.dragging {
 #log-window .form-row {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 10px;
 }
 
@@ -401,9 +416,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* [추가] 작업 등록 모달 폼 정렬 및 높이 통일 */
-#register-schedule-modal .form-row {
+#register-schedule-modal .form-row,
+#event-detail-modal .detail-row {
     display: flex;
     align-items: center !important;
+    gap: 10px;
+}
+
+#register-schedule-modal .form-row .log-select-wrapper,
+#event-detail-modal .detail-row .log-select-wrapper {
+    margin: 0 !important;
 }
 
 #register-schedule-modal .form-label {
@@ -431,7 +453,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     min-width: 150px;
 }
 
-.log-select-trigger {
+#log-window .form-row .log-select-wrapper {
+    margin-bottom: 0;
+}
+
+/* [수정] calendar.css와 충돌 방지를 위해 셀렉터 구체화 */
+#log-window .log-select-trigger {
     background: #0d1117;
     border: 1px solid #30363d;
     color: #fff;
@@ -444,8 +471,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     min-height: 30px;
     height: 30px;
     box-sizing: border-box;
-    line-height: 20px;
     font-size: 13px;
+    display: flex; /* [추가] 텍스트 수직 중앙 정렬 */
+    align-items: center; /* [추가] 텍스트 수직 중앙 정렬 */
 }
 
 .log-select-dropdown {
@@ -855,6 +883,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         /* [수정] 항목 선택창 너비 비율 확대 (유동적) */
         margin-right: 0 !important;
         min-width: 0 !important;
+        margin-bottom: 0 !important;
     }
 
     /* [요청] 모바일에서 물품 선택창 너비 확대 */
@@ -919,6 +948,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         flex-direction: row !important;
         flex-wrap: wrap !important;
         gap: 5px !important;
+        align-items: center !important;
     }
 
     #log-date {
@@ -987,7 +1017,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
 
     /* 모바일에서 항목 선택창 높이 유동적으로 변경 */
-    .log-select-trigger {
+    #log-window .log-select-trigger {
         font-size: 12px !important;
         padding-left: 2px !important;
         padding-right: 2px !important;
@@ -996,6 +1026,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
+        display: flex !important; /* [추가] 텍스트 수직 중앙 정렬 */
+        align-items: center !important; /* [추가] 텍스트 수직 중앙 정렬 */
     }
     
     /* [요청] 모바일 항목 선택 제안박스 확장 및 비용처리 드롭다운 축소 */
@@ -1138,4 +1170,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #log-list-wrapper .data-table th:nth-child(3) { width: 120px !important; } /* 세부구분 */
     #log-list-wrapper .data-table th:nth-child(4) { width: 160px !important; } /* 내용 */
     #log-list-wrapper .data-table th:nth-child(5) { width: 80px !important; } /* 추가작업 */
+
+    /* [요청] 모바일에서 '내용' 컬럼 좌측 정렬 및 여백 조정 */
+    #log-list-wrapper .data-table td:nth-child(4) {
+        padding-left: 8px !important;
+    }
 }
