@@ -446,7 +446,25 @@ function setupLogEvents() {
     const memoInput = document.getElementById('device-memo');
     const memoBtn = document.getElementById('memo-save-btn');
 
-    // [수정] 텍스트 입력창 대신 커스텀 다중 선택 드롭다운 생성
+    // [수정] 저장 버튼을 수정/저장 토글 버튼으로 변경
+    if (memoSaveBtn) {
+        memoSaveBtn.textContent = '수정';
+        memoSaveBtn.classList.remove('btn-green-sm', 'btn-orange-sm');
+        memoSaveBtn.classList.add('btn-blue-sm');
+
+        memoSaveBtn.onclick = () => {
+            if (memoSaveBtn.textContent === '수정') {
+                if (!selectedLogId) return alert('수정할 로그 항목을 먼저 선택해주세요.');
+                setMemoFieldsDisabled(false);
+                memoSaveBtn.textContent = '저장';
+                memoSaveBtn.classList.replace('btn-blue-sm', 'btn-green-sm');
+                if (memoInput) memoInput.focus();
+            } else {
+                saveMemo();
+            }
+        };
+    }
+
     if (memoInput && !document.getElementById('memo-worker-wrapper')) {
         const workerContainer = document.createElement('div');
         workerContainer.id = 'memo-worker-wrapper';
@@ -564,7 +582,7 @@ function setupLogEvents() {
     const memoCostTypeInput = document.getElementById('memo-cost-type');
     const issueShareCb = document.getElementById('memo-issue-share');
 
-    if (memoInput) memoInput.spellcheck = false;
+    if (memoInput) { memoInput.spellcheck = false; memoInput.readOnly = true; } // [수정] 초기 상태 읽기 전용
     if (memoWorkerInput) memoWorkerInput.spellcheck = false;
 
     const checkMemoChanges = () => {
@@ -572,7 +590,8 @@ function setupLogEvents() {
         const currentMd = memoMdInput ? memoMdInput.value.trim() : "";
         const currentCostType = memoCostTypeInput ? memoCostTypeInput.value : "유상";
         if (memoInput.value !== originalMemo || (memoWorkerInput && memoWorkerInput.value !== originalWorker) || currentIssueShared !== originalIssueShared || currentMd !== originalMd || currentCostType !== originalCostType) {
-            memoBtn.classList.remove('btn-green-sm', 'btn-blue-sm');
+            // [수정] 저장 버튼이 '저장' 상태일 때만 색상 변경
+            if (memoBtn.textContent === '저장') memoBtn.classList.remove('btn-green-sm', 'btn-blue-sm');
             memoBtn.classList.add('btn-orange-sm');
         } else {
             memoBtn.classList.remove('btn-orange-sm', 'btn-blue-sm');
@@ -580,7 +599,7 @@ function setupLogEvents() {
         }
     };
 
-    if (memoInput && memoBtn) {
+    if (memoInput) {
         memoInput.addEventListener('input', checkMemoChanges);
         memoInput.addEventListener('click', () => {
             if (selectedLogId === null) {
@@ -590,7 +609,7 @@ function setupLogEvents() {
         });
     }
 
-    if (memoWorkerInput && memoBtn) {
+    if (memoWorkerInput) {
         memoWorkerInput.addEventListener('input', checkMemoChanges);
         memoWorkerInput.addEventListener('click', () => {
             if (selectedLogId === null) {
@@ -600,7 +619,7 @@ function setupLogEvents() {
         });
     }
 
-    if (memoMdInput && memoBtn) {
+    if (memoMdInput) {
         memoMdInput.addEventListener('input', checkMemoChanges);
         memoMdInput.addEventListener('click', () => {
             if (selectedLogId === null) {
@@ -610,7 +629,7 @@ function setupLogEvents() {
         });
     }
 
-    if (memoCostTypeInput && memoBtn) {
+    if (memoCostTypeInput) {
         memoCostTypeInput.addEventListener('change', checkMemoChanges);
         memoCostTypeInput.addEventListener('click', () => {
             if (selectedLogId === null) {
@@ -620,7 +639,7 @@ function setupLogEvents() {
         });
     }
 
-    if (issueShareCb && memoBtn) {
+    if (issueShareCb) {
         issueShareCb.addEventListener('change', checkMemoChanges);
     }
 
@@ -629,9 +648,7 @@ function setupLogEvents() {
 
     // [수정] 로그 관리 모드 토글 버튼 이벤트 연결
     const btnLogSettings = document.getElementById('btn-log-settings');
-    if (btnLogSettings) {
-        btnLogSettings.onclick = toggleLogManagementMode;
-    }
+    if (btnLogSettings) btnLogSettings.onclick = toggleLogManagementMode;
 
     // [추가] 장비 점검 이력 입력 폼 2줄 배치 (점검일/구분/세부구분 | 항목/작업자/기록)
     const logDetailTypeNode = document.getElementById('log-detail-type-select');
@@ -713,10 +730,9 @@ function setupUIEvents() {
 
 function setupPageProtection() {
     window.addEventListener('beforeunload', (e) => {
-        const currentMemo = document.getElementById('device-memo') ? document.getElementById('device-memo').value : "";
-        const currentWorker = document.getElementById('memo-worker') ? document.getElementById('memo-worker').value : "";
-        const currentIssueShared = document.getElementById('memo-issue-share') ? document.getElementById('memo-issue-share').checked : false;
-        if (selectedLogId !== null && (currentMemo !== originalMemo || currentWorker !== originalWorker || currentIssueShared !== originalIssueShared)) {
+        const memoSaveBtn = document.getElementById('memo-save-btn');
+        // [수정] 수정 모드이고, 변경사항이 있을 때만 페이지 이탈 방지 경고 표시
+        if (memoSaveBtn && memoSaveBtn.textContent === '저장' && memoSaveBtn.classList.contains('btn-orange-sm')) {
             e.preventDefault();
             e.returnValue = '';
         }
@@ -1210,6 +1226,50 @@ function handleMaintReorder() {
 /* ==========================================================================
    3. 점검 이력 및 메모 (Inspection Logs & Memo)
    ========================================================================== */
+
+// [추가] 다른 작업 수행 전, 저장되지 않은 메모 변경사항을 확인하고 처리하는 함수
+function checkMemoUnsavedChanges() {
+    const memoSaveBtn = document.getElementById('memo-save-btn');
+    // "수정" 모드가 아니거나, 변경사항이 없으면 즉시 통과
+    if (!memoSaveBtn || memoSaveBtn.textContent !== '저장' || !memoSaveBtn.classList.contains('btn-orange-sm')) {
+        return true;
+    }
+
+    if (confirm("작업 내용에 저장되지 않은 변경사항이 있습니다. 저장하시겠습니까?")) {
+        // "확인" 클릭: 저장 후 진행
+        saveMemo();
+    } else {
+        // "취소" 클릭: 변경사항 원상복구 후 진행
+        const memoInput = document.getElementById('device-memo');
+        const workerInput = document.getElementById('memo-worker');
+        const issueShareCb = document.getElementById('memo-issue-share');
+        const memoMdInput = document.getElementById('memo-md');
+        const memoCostTypeInput = document.getElementById('memo-cost-type');
+
+        if (memoInput) memoInput.value = originalMemo;
+        if (workerInput) {
+            workerInput.value = originalWorker;
+            const trigger = document.getElementById('memo-worker-trigger');
+            if (trigger) {
+                const arr = originalWorker ? originalWorker.split(',').map(s => s.trim()).filter(Boolean) : [];
+                if (arr.length > 0) trigger.textContent = arr.join(' ');
+                else trigger.textContent = '작업자 선택';
+                trigger.title = arr.join(', ');
+            }
+        }
+        if (issueShareCb) issueShareCb.checked = originalIssueShared;
+        if (memoMdInput) memoMdInput.value = originalMd;
+        if (memoCostTypeInput) memoCostTypeInput.value = originalCostType;
+
+        // 버튼 및 필드 상태 원상복구
+        memoSaveBtn.textContent = '수정';
+        memoSaveBtn.classList.remove('btn-green-sm', 'btn-orange-sm');
+        memoSaveBtn.classList.add('btn-blue-sm');
+        setMemoFieldsDisabled(true);
+    }
+    return true; // 항상 다음 작업을 허용
+}
+
 function addLogItem(e) {
     // 버튼이 form 내부에 있을 경우 페이지 리로드 방지
     if (e && typeof e.preventDefault === 'function') {
@@ -1567,13 +1627,12 @@ function renderLogs() {
 
 function selectLog(id, focus = true) {
     // 다른 로그 선택 시 저장되지 않은 메모 확인
-    if (selectedLogId !== null) {
-        const memoInput = document.getElementById('device-memo');
-        const workerInput = document.getElementById('memo-worker');
-        if ((memoInput && memoInput.value !== originalMemo) || (workerInput && workerInput.value !== originalWorker)) {
-            return alert('작성 중인 작업 내용(메모)이 저장되지 않았습니다. 저장 버튼을 눌러주세요.');
-        }
+    if (selectedLogId !== null && selectedLogId !== id) {
+        checkMemoUnsavedChanges();
     }
+
+    // 이미 선택된 항목을 다시 클릭하면 무시
+    if (selectedLogId === id) return;
 
     selectedLogId = id; // 전역 변수에 현재 선택된 ID 저장
 
@@ -1622,14 +1681,14 @@ function selectLog(id, focus = true) {
         originalMd = md;
         originalCostType = costType;
 
-        // 버튼 상태 초기화 (녹색)
+        // [수정] 버튼 및 필드 상태를 '수정' 모드로 초기화
+        setMemoFieldsDisabled(true);
         const memoBtn = document.getElementById('memo-save-btn');
         if (memoBtn) {
-            memoBtn.classList.remove('btn-orange-sm', 'btn-blue-sm');
-            memoBtn.classList.add('btn-green-sm');
+            memoBtn.textContent = '수정';
+            memoBtn.classList.remove('btn-green-sm', 'btn-orange-sm');
+            memoBtn.classList.add('btn-blue-sm');
         }
-
-        if (focus) document.getElementById('device-memo').focus();
     }
 }
 
@@ -1668,12 +1727,14 @@ function saveMemo() {
         originalMd = mdContent;
         originalCostType = costTypeContent;
 
-        // 버튼 상태 초기화 (녹색)
+        // [수정] 저장 후 '수정' 모드로 전환
         const memoBtn = document.getElementById('memo-save-btn');
         if (memoBtn) {
-            memoBtn.classList.remove('btn-orange-sm');
-            memoBtn.classList.add('btn-green-sm');
+            memoBtn.textContent = '수정';
+            memoBtn.classList.remove('btn-green-sm', 'btn-orange-sm');
+            memoBtn.classList.add('btn-blue-sm');
         }
+        setMemoFieldsDisabled(true);
 
         renderLogs(); // 테이블에 변경된 공수 즉시 반영
     }
@@ -1717,10 +1778,11 @@ function deleteLogItem(id) {
         originalMd = "";
         originalCostType = "";
 
+        // [수정] 버튼 상태를 '수정' 모드로 초기화
         const memoBtn = document.getElementById('memo-save-btn');
         if (memoBtn) {
-            memoBtn.classList.remove('btn-orange-sm', 'btn-blue-sm');
-            memoBtn.classList.add('btn-green-sm');
+            memoBtn.textContent = '수정';
+            memoBtn.classList.replace('btn-green-sm', 'btn-blue-sm');
         }
     }
     renderLogs();
@@ -3119,7 +3181,18 @@ window.renderSpecialNote = function () {
    [추가] 메모/작업내용 필드 비활성화 제어 (Memo Fields State Control)
    ========================================================================== */
 function setMemoFieldsDisabled(disabled) {
-    const fields = ['memo-cost-type', 'memo-md', 'memo-issue-share']; // 'device-memo'는 항상 활성화
+       // [수정] device-memo는 readonly로 제어하여 스크롤 가능하도록 함
+    const memoInput = document.getElementById('device-memo');
+    if (memoInput) {
+        memoInput.readOnly = disabled;
+        if (disabled) {
+            memoInput.classList.add('input-disabled');
+        } else {
+            memoInput.classList.remove('input-disabled');
+        }
+    }
+
+    const fields = ['memo-cost-type', 'memo-md', 'memo-issue-share'];// 'device-memo'는 항상 활성화
     fields.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -3178,8 +3251,7 @@ function toggleLogManagementMode() {
     if (btn) btn.classList.toggle('active');
 
     // [추가] 하단 메모/작업내용 영역 활성/비활성 연동
-    const isActive = btn ? btn.classList.contains('active') : false;
-    setMemoFieldsDisabled(!isActive);
+    // [제거] 메모 영역 활성화는 이제 '수정' 버튼으로 제어
 }
 
 /* ==========================================================================

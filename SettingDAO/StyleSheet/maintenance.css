@@ -893,6 +893,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     /* [요청] 모바일 메모 영역 작업자/비용처리 1줄 배치 */
     .memo-worker-wrapper {
+        display: flex !important;
         flex-direction: row !important;
         align-items: center !important;
         flex-wrap: wrap !important;
@@ -902,6 +903,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .memo-row-top,
     .memo-row-bottom {
         width: auto !important;
+        display: flex;
         flex-wrap: nowrap;
         align-items: center;
         gap: 5px !important;
