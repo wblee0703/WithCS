@@ -921,7 +921,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     .memo-worker-select {
         flex: 1 !important;
-        min-width: 150px !important;
+        min-width: 140px !important;
     }
 
     #memo-cost-type {
@@ -931,7 +931,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
 
     #memo-md {
-        width: 45px !important;
+        width: 30px !important;
         margin-right: 10px !important;
         padding: 0  !important;
         padding: 0 4px !important;

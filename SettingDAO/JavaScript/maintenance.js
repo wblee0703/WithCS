@@ -327,6 +327,19 @@ function setupLogEvents() {
                 });
             }
 
+            // [요청] 검색 시에도 기존 선택 항목이 사라지지 않도록 보정
+            const displayItemValues = new Set(displayItems.map(i => i.code ? i.code : i.part));
+            Object.keys(currentSelections).forEach(selectedValue => {
+                if (!displayItemValues.has(selectedValue)) {
+                    const originalItem = [...matchedItems, ...otherItems].find(i => (i.code ? i.code : i.part) === selectedValue);
+                    if (originalItem) {
+                        displayItems.unshift(originalItem); // 검색 결과에 없으면 맨 위에 추가
+                    } else {
+                        displayItems.unshift({ part: selectedValue, code: '' }); // 원본 데이터를 못찾으면 플레이스홀더 추가
+                    }
+                }
+            });
+
             const uniqueItems = [];
             const seen = new Set();
             displayItems.forEach(item => {
@@ -2121,6 +2134,17 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
                 });
             }
 
+            // [요청] 검색 시에도 기존 선택 항목이 사라지지 않도록 보정
+            const displayItemValues = new Set(displayItems.map(i => i.code ? i.code : i.content));
+            Object.keys(currentSelections).forEach(selectedValue => {
+                if (!displayItemValues.has(selectedValue)) {
+                    const originalItem = [...registeredItems, ...otherItems].find(i => (i.code ? i.code : i.content) === selectedValue);
+                    if (originalItem) {
+                        displayItems.unshift(originalItem); // 검색 결과에 없으면 맨 위에 추가
+                    }
+                }
+            });
+
             list.innerHTML = displayItems.map(item => {
                 const displayValue = item.code ? item.code : item.content;
                 const isSelected = currentSelections.hasOwnProperty(displayValue) || currentSelections.hasOwnProperty(item.content);
@@ -2568,6 +2592,17 @@ window.updateLogContentOptions = function () {
                         return kws.every(kw => txt.includes(kw));
                     });
                 }
+
+                // [요청] 검색 시에도 기존 선택 항목이 사라지지 않도록 보정
+                const displayItemValues = new Set(displayItems.map(i => i.code ? i.code : i.content));
+                Object.keys(currentSelections).forEach(selectedValue => {
+                    if (!displayItemValues.has(selectedValue)) {
+                        const originalItem = [...registeredItems, ...otherItems].find(i => (i.code ? i.code : i.content) === selectedValue);
+                        if (originalItem) {
+                            displayItems.unshift(originalItem); // 검색 결과에 없으면 맨 위에 추가
+                        }
+                    }
+                });
 
                 contentList.innerHTML = displayItems.map(item => {
                     const displayValue = item.code ? item.code : item.content;
