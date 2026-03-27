@@ -10,6 +10,7 @@ let currentScheduleTarget = null;
 let currentDetailTarget = null;
 let expandedViewId = null;
 let currentNextScheduleTarget = null; // [추가] 다음 작업 예정일 타겟
+let cameFromTaskSearch = false; // [추가] 작업 검색에서 상세 정보로 이동했는지 여부
 
 // [추가] 공통 함수 폴백 (common.js 누락 대비)
 if (typeof window.getHolidayName !== 'function') {
@@ -962,6 +963,15 @@ function setupEventDetailModal() {
             }
         }
         modal.style.display = 'none';
+
+        // [추가] 작업 검색에서 왔다면 검색 모달 다시 표시
+        if (cameFromTaskSearch) {
+            const searchModal = document.getElementById('task-search-modal');
+            if (searchModal) {
+                searchModal.style.display = 'flex';
+            }
+            cameFromTaskSearch = false; // 플래그 리셋
+        }
     };
 
     if (closeBtn) closeBtn.onclick = closeModal;
@@ -3559,14 +3569,14 @@ function setupTaskSearchModal() {
             <div class="modal-window" style="width: 90%; max-width: 500px; height: 70vh;">
                 <div class="modal-header">
                     <h3>작업 검색</h3>
-                    <button id="btn-close-task-search-modal" class="btn-close">✕</button>
+                    <button id="btn-close-task-search-modal" class="btn-del-sm">✕</button>
                 </div>
                 <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
-                    <div class="form-row" style="margin-bottom: 0; flex-shrink: 0; flex-wrap: wrap;">
-                        <label class="form-label" style="width: auto; margin-bottom: 0;">기간</label>
-                        <input type="date" id="task-search-start-date" class="input-dark" style="flex: 1; min-width: 120px;">
+                    <div class="form-row" style="margin-bottom: 0; flex-shrink: 0; gap: 5px;">
+                        <label class="form-label" style="width: auto; margin-bottom: 0; flex-shrink: 0;">기간</label>
+                        <input type="date" id="task-search-start-date" class="input-dark" style="flex: 1; min-width: 110px;">
                         <span style="color: #e6edf3; align-self: center;">~</span>
-                        <input type="date" id="task-search-end-date" class="input-dark" style="flex: 1; min-width: 120px;">
+                        <input type="date" id="task-search-end-date" class="input-dark" style="flex: 1; min-width: 110px;">
                     </div>
                     <div class="form-row" style="margin-bottom: 0; flex-shrink: 0;">
                         <input type="text" id="task-search-keyword-input" class="input-dark" placeholder="작업자, 장비, 내용 검색..." style="flex: 1;">
@@ -3710,44 +3720,64 @@ function doTaskSearch() {
         }
     });
 
-    // Sort by date, descending
-    allTasks.sort((a, b) => {
-        const dateA = a.isCompleted ? a.item.date : a.item.scheduledDate;
-        const dateB = b.isCompleted ? b.item.date : b.item.scheduledDate;
-        return new Date(dateB) - new Date(dateA);
+    // [수정] 같은 날, 같은 장비 작업 그룹화
+    const groupedTasks = {};
+    allTasks.forEach(task => {
+        const date = task.isCompleted ? task.item.date : task.item.scheduledDate;
+        const key = `${date}_${task.site}_${task.equip}`;
+        if (!groupedTasks[key]) {
+            groupedTasks[key] = {
+                site: task.site,
+                equip: task.equip,
+                date: date,
+                items: [],
+                isCompleted: true // Assume completed, set to false if any item is not
+            };
+        }
+        groupedTasks[key].items.push(task.item);
+        if (!task.isCompleted) {
+            groupedTasks[key].isCompleted = false;
+        }
     });
 
-    if (allTasks.length === 0) {
+    const displayTasks = Object.values(groupedTasks);
+
+    // Sort by date, descending
+    displayTasks.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (displayTasks.length === 0) {
         resultsList.innerHTML = '<li class="list-empty-msg">검색된 작업이 없습니다.</li>';
         return;
     }
 
-    resultsList.innerHTML = allTasks.map(task => {
-        const { site, equip, item, isCompleted } = task;
-        const date = isCompleted ? item.date : item.scheduledDate;
+    resultsList.innerHTML = displayTasks.map(group => {
+        const { site, equip, date, items, isCompleted } = group;
         const parts = equip.split('::');
         const equipName = parts[0];
         const serialNo = parts.length > 1 ? `(${parts[1]})` : '';
-        const content = item.content || '내용 없음';
-        const type = item.type || '정기';
-        
-        // Format detailType
-        let displayDetailType = '';
-        if (item.detailType2) { // If detailType2 is explicitly present (mostly for logs)
-            displayDetailType = item.detailType2;
-        } else if (item.detailType) { // Otherwise, use detailType
-            displayDetailType = item.detailType;
-        } else if (item.type) { // Fallback to main type if no detail
-            displayDetailType = item.type;
-        }
 
+        // Combine unique values
+        const contents = [...new Set(items.map(item => item.content || '내용 없음'))];
+        const types = [...new Set(items.map(item => item.type || '정기'))];
+        const detailTypes = [...new Set(items.map(item => {
+            if (item.detailType2) return item.detailType2;
+            if (item.detailType) return item.detailType;
+            return item.type || '정기';
+        }))];
 
-        const typeClass = `type-${type}`;
+        const displayContent = contents.join(', ');
+        const displayType = types.join(', ');
+        const displayDetailType = detailTypes.join(' | ');
+
+        const typeClass = `type-${types[0]}`; // Use first type for badge color
         const completedStatusText = isCompleted ? `<span style="color: var(--cal-green); font-weight: bold; margin-left: 5px;">완료</span>` : '';
+
+        // Use the ID of the first item in the group for the click action
+        const firstItemId = items[0].id;
 
         return `
             <li class="popup-event-item" 
-                onclick="openTaskFromSearch('${site}', '${equip}', ${item.id}, ${isCompleted})"
+                onclick="openTaskFromSearch('${site}', '${equip}', ${firstItemId}, ${isCompleted})"
                 style="flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px; border-bottom: 1px solid var(--cal-border);">
                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                     <span style="font-size: 12px; color: var(--cal-text-secondary);">${date}</span>
@@ -3755,12 +3785,12 @@ function doTaskSearch() {
                 </div>
                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                     <span class="item-text" style="font-weight: bold; font-size: 14px;">
-                        <span class="popup-type-badge ${typeClass}">[${type}]</span>
+                        <span class="popup-type-badge ${typeClass}">[${displayType}]</span>
                         ${escapeHtml(equipName)} ${escapeHtml(serialNo)}
                     </span>
                 </div>
-                <div style="font-size: 12px; color: #e6edf3; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(displayDetailType)} : ${escapeHtml(content)}">
-                    ${escapeHtml(displayDetailType)} : ${escapeHtml(content)}
+                <div style="font-size: 12px; color: #e6edf3; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(displayDetailType)} : ${escapeHtml(displayContent)}">
+                    ${escapeHtml(displayDetailType)} : ${escapeHtml(displayContent)}
                 </div>
             </li>
         `;
@@ -3771,6 +3801,7 @@ function openTaskFromSearch(site, equip, id, isCompleted) {
     const searchModal = document.getElementById('task-search-modal');
     if (searchModal) searchModal.style.display = 'none';
     
+    cameFromTaskSearch = true; // [추가] 플래그 설정
     openEventDetailModal(site, equip, id, isCompleted);
 }
 window.openTaskFromSearch = openTaskFromSearch;
