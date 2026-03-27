@@ -1235,8 +1235,7 @@ function openAddUserModal() {
                     const defLi = document.createElement('li');
                     defLi.className = 'user-suggestion-item';
                     defLi.innerHTML = `<span style="color: #e6edf3;">사업장 미지정 (전체)</span>`;
-                    defLi.addEventListener('pointerdown', (e) => {
-                        e.preventDefault();
+                    defLi.addEventListener('click', (e) => {
                         siteInput.value = '';
                         siteSelect.value = '';
                         siteInput.dataset.lastValid = '';
@@ -1250,8 +1249,7 @@ function openAddUserModal() {
                         const li = document.createElement('li');
                         li.className = 'user-suggestion-item';
                         li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(site)}</span>`;
-                        li.addEventListener('pointerdown', (e) => {
-                            e.preventDefault();
+                        li.addEventListener('click', (e) => {
                             siteInput.value = site;
                             siteSelect.value = site;
                             siteInput.dataset.lastValid = site;
@@ -1388,8 +1386,7 @@ function openUserModal() {
                             li.className = 'user-suggestion-item';
                             const namePart = u.name ? `${escapeHtml(u.name)} (${escapeHtml(u.department)} ${escapeHtml(u.position)})` : '이름 없음';
                             li.innerHTML = `<span style="color: #e6edf3;">${namePart}</span><span class="user-id" style="color: #8b949e;">${escapeHtml(u.id)}</span>`;
-                            li.addEventListener('pointerdown', (e) => {
-                                e.preventDefault();
+                            li.addEventListener('click', (e) => {
                                 searchInput.value = u.name ? `${u.name} (${u.department} ${u.position}) - ${u.id}` : u.id;
                                 searchInput.dataset.selectedId = u.id;
                                 suggestionList.style.display = 'none';

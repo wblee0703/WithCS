@@ -965,8 +965,7 @@ function setupEquipMgmt() {
                         </div>
                     `;
                     
-                    li.addEventListener('mousedown', (ev) => {
-                        ev.preventDefault();
+                    li.addEventListener('click', (ev) => {
                         nameInput.value = m.abbr || m.name;
                         nameInput.dataset.fullName = m.name;
                         lastValidModel = nameInput.value;
@@ -1054,8 +1053,7 @@ function setupEquipMgmt() {
                     const li = document.createElement('li');
                     li.className = 'suggestion-item';
                     li.textContent = site;
-                    li.addEventListener('mousedown', (e) => {
-                        e.preventDefault();
+                    li.addEventListener('click', (e) => {
                         siteInput.value = site;
                         siteSuggestionList.style.display = 'none';
                         updateEquipBuildingDropdown(site); // [추가]
@@ -2328,8 +2326,7 @@ function setupCheckTypeMgmt() {
                             ${m.code ? `<span class="abbr">${escapeHtml(m.code)}</span>` : ''}
                         </div>
                     `;
-                    li.addEventListener('mousedown', (ev) => {
-                        ev.preventDefault();
+                    li.addEventListener('click', (ev) => {
                         inputContent.value = m.part;
                         suggestionList.style.display = 'none';
                     });

@@ -740,6 +740,36 @@
         flex-shrink: 0 !important;
     }
 
+/* [요청] 작업 등록 팝업창 입력창 높이 통일 */
+#register-schedule-modal .input-dark,
+#register-schedule-modal .modal-select,
+#register-schedule-modal .log-select-trigger {
+    height: 30px !important;
+    min-height: 30px !important;
+    box-sizing: border-box !important;
+    padding: 5px 8px !important;
+    margin-top: 0 !important;
+    line-height: normal;
+}
+
+/* [추가] 항목 선택(드롭다운 트리거)에만 수직 중앙 정렬 적용 */
+#register-schedule-modal .log-select-trigger {
+    display: flex !important;
+    align-items: center !important;
+}
+
+/* [요청] 작업 등록 팝업창 라벨-입력창 수직 가운데 정렬 */
+#register-schedule-modal .form-label {
+    height: 30px;
+    display: flex;
+    align-items: center;
+}
+
+/* [요청] 작업 등록 팝업 내용 입력창 정렬 유지 */
+#register-schedule-modal .log-select-wrapper {
+    display: flex;
+}
+
     /* [요청] 점검 상세 정보 팝업 모바일 최적화 */
     #event-detail-modal .modal-window,
     #next-schedule-modal .modal-window {

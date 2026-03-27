@@ -2475,28 +2475,27 @@ function setupRegisterScheduleModal() {
     }
 
     // [추가] 파트 선택 래퍼 동적으로 등록 (모달 내부)
-    let partWrapper = document.getElementById('register-part-wrapper');
-    if (!partWrapper) {
+    let partRow = document.getElementById('register-part-row');
+    if (!partRow) {
         const contentWrapper = document.getElementById('register-content-wrapper');
         if (contentWrapper) {
-            partWrapper = document.createElement('div');
-            partWrapper.id = 'register-part-wrapper';
-            partWrapper.className = 'log-select-wrapper';
-            partWrapper.style.display = 'none';
-            partWrapper.style.flex = '1';
-            partWrapper.style.marginTop = '0';
-            partWrapper.style.marginRight = '0';
-            partWrapper.style.minWidth = '0';
-            partWrapper.style.width = '100%';
-            partWrapper.innerHTML = `
-                <div id="register-part-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 5px; border-radius: 4px; min-height: 30px;">물품 선택</div>
-                <div id="register-part-dropdown" class="log-select-dropdown" style="width: 200%; left: auto; right: 0;">
-                    <input type="text" id="register-part-search" class="dropdown-search-input" placeholder="물품 검색..." autocomplete="off">
-                    <div id="register-part-list" class="log-select-list"></div>
-                    <div class="log-select-footer" style="padding: 5px;"><button type="button" id="btn-register-part-add" class="btn-blue-sm" style="width: 100%;">선택 완료</button></div>
+            const formRow = contentWrapper.closest('.form-row');
+            partRow = document.createElement('div');
+            partRow.id = 'register-part-row';
+            partRow.className = 'form-row';
+            partRow.style.display = 'none';
+            partRow.innerHTML = `
+                <label class="form-label"></label>
+                <div id="register-part-wrapper" class="log-select-wrapper" style="flex: 1; margin: 0; min-width: 0; width: 100%;">
+                    <div id="register-part-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 5px; border-radius: 4px; min-height: 30px;">물품 선택</div>
+                    <div id="register-part-dropdown" class="log-select-dropdown" style="width: 200%; left: auto; right: 0;">
+                        <input type="text" id="register-part-search" class="dropdown-search-input" placeholder="물품 검색..." autocomplete="off">
+                        <div id="register-part-list" class="log-select-list"></div>
+                        <div class="log-select-footer" style="padding: 5px;"><button type="button" id="btn-register-part-add" class="btn-blue-sm" style="width: 100%;">선택 완료</button></div>
+                    </div>
                 </div>
             `;
-            contentWrapper.parentNode.insertBefore(partWrapper, contentWrapper.nextSibling);
+            formRow.parentNode.insertBefore(partRow, formRow.nextSibling);
             const pt = document.getElementById('register-part-trigger');
             const pd = document.getElementById('register-part-dropdown');
             const pa = document.getElementById('btn-register-part-add');
@@ -2644,9 +2643,9 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
                     contentInput.value = presetData.content || '';
                 }
                 
-                const partWrapper = document.getElementById('register-part-wrapper');
-                if (partWrapper) {
-                    partWrapper.style.display = 'none';
+                const partRow = document.getElementById('register-part-row');
+                if (partRow) {
+                    partRow.style.display = 'none';
                     const partTrigger = document.getElementById('register-part-trigger');
                     if (partTrigger) partTrigger.textContent = '물품 선택';
                 }
@@ -2757,8 +2756,8 @@ function confirmRegisterSchedule() {
     }
 
     // [추가] 파트 내용 병합
-    const partWrapper = document.getElementById('register-part-wrapper');
-    if (partWrapper && partWrapper.style.display !== 'none') {
+    const partRow = document.getElementById('register-part-row');
+    if (partRow && partRow.style.display !== 'none') {
         const partList = document.getElementById('register-part-list');
         if (partList) {
             const selectedParts = partList.querySelectorAll('.log-select-item.selected');
@@ -3243,11 +3242,11 @@ window.updateRegisterContentOptions = function () {
                     }
                     
                     // [추가] 파트 연동 처리
-                    const partWrapper = document.getElementById('register-part-wrapper');
-                    if (partWrapper) {
+                    const partRow = document.getElementById('register-part-row');
+                    if (partRow) {
                         const selectedItems = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
                         const isPartIssue = selectedItems.some(v => v.includes('파트 이상 (교체)') || v.includes('파트 이상 (수리)') || v.includes('용액 / 용자 이상'));
-                        partWrapper.style.display = isPartIssue ? 'block' : 'none';
+                        partRow.style.display = isPartIssue ? 'flex' : 'none';
                         if (isPartIssue && typeof window.renderLogPartOptions === 'function') {
                             window.renderLogPartOptions('register-part-wrapper', 'register-part-trigger', 'register-part-list', 'register-part-search');
                         }

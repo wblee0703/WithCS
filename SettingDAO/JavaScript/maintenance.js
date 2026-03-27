@@ -3185,10 +3185,12 @@ function setMemoFieldsDisabled(disabled) {
     const memoInput = document.getElementById('device-memo');
     if (memoInput) {
         memoInput.readOnly = disabled;
-        if (disabled) {
-            memoInput.classList.add('input-disabled');
+        if (disabled) { // [수정] 배경색 변경 없이 투명도와 커서만 변경
+            memoInput.style.opacity = '0.6';
+            memoInput.style.cursor = 'not-allowed';
         } else {
-            memoInput.classList.remove('input-disabled');
+            memoInput.style.opacity = '';
+            memoInput.style.cursor = '';
         }
     }
 
