@@ -1282,8 +1282,17 @@ function openAddUserModal() {
                 siteSuggestions.style.display = 'block';
             });
 
+            // [추가] 모바일 스크롤 시 blur 이벤트로 인해 창이 닫히는 현상 방지
+            let isSuggestionActive = false;
+            siteSuggestions.addEventListener('mouseenter', () => isSuggestionActive = true);
+            siteSuggestions.addEventListener('mouseleave', () => isSuggestionActive = false);
+            siteSuggestions.addEventListener('touchstart', () => isSuggestionActive = true, {passive: true});
+            siteSuggestions.addEventListener('touchend', () => setTimeout(() => isSuggestionActive = false, 500));
+
             siteInput.addEventListener('blur', () => {
                 setTimeout(() => {
+                    if (isSuggestionActive) return; // 모바일 터치/스크롤 중이면 무시
+
                     const currentVal = siteInput.value.trim();
 
                     let dataMap = {};
@@ -1320,8 +1329,10 @@ function openAddUserModal() {
                 }
             };
             document.removeEventListener('mousedown', window._siteSuggestionOutsideClick);
+            document.removeEventListener('touchstart', window._siteSuggestionOutsideClick);
             window._siteSuggestionOutsideClick = outsideClickListener;
             document.addEventListener('mousedown', outsideClickListener);
+            document.addEventListener('touchstart', outsideClickListener, {passive: true});
 
 
         }
@@ -1399,6 +1410,13 @@ function openUserModal() {
                     suggestionList.style.display = 'block';
                 };
 
+                // [추가] 모바일 스크롤 시 blur 이벤트로 인해 창이 닫히는 현상 방지
+                let isSuggestionActive = false;
+                suggestionList.addEventListener('mouseenter', () => isSuggestionActive = true);
+                suggestionList.addEventListener('mouseleave', () => isSuggestionActive = false);
+                suggestionList.addEventListener('touchstart', () => isSuggestionActive = true, {passive: true});
+                suggestionList.addEventListener('touchend', () => setTimeout(() => isSuggestionActive = false, 500));
+
                 if (searchInput) {
                     searchInput.style.color = '#e6edf3';
                     searchInput.addEventListener('click', (e) => {
@@ -1410,14 +1428,21 @@ function openUserModal() {
                         delete searchInput.dataset.selectedId;
                         showSuggestions();
                     });
-                    searchInput.addEventListener('blur', () => { setTimeout(() => { suggestionList.style.display = 'none'; }, 250); });
+                    searchInput.addEventListener('blur', () => { 
+                        setTimeout(() => { 
+                            if (!isSuggestionActive) suggestionList.style.display = 'none'; 
+                        }, 250); 
+                    });
                 }
 
-                document.addEventListener('click', (e) => {
+                // [수정] 모바일 외부 터치 감지 추가
+                const outsideClickListener = (e) => {
                     if (suggestionList && suggestionList.style.display === 'block' && e.target !== searchInput && !suggestionList.contains(e.target)) {
                         suggestionList.style.display = 'none';
                     }
-                });
+                };
+                document.addEventListener('mousedown', outsideClickListener);
+                document.addEventListener('touchstart', outsideClickListener, {passive: true});
 
                 if (delBtn) {
                     // 이벤트 리스너 중복 추가 방지
