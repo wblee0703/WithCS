@@ -3562,8 +3562,14 @@ function setupTaskSearchModal() {
                     <button id="btn-close-task-search-modal" class="btn-close">✕</button>
                 </div>
                 <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
+                    <div class="form-row" style="margin-bottom: 0; flex-shrink: 0; flex-wrap: wrap;">
+                        <label class="form-label" style="width: auto; margin-bottom: 0;">기간</label>
+                        <input type="date" id="task-search-start-date" class="input-dark" style="flex: 1; min-width: 120px;">
+                        <span style="color: #e6edf3; align-self: center;">~</span>
+                        <input type="date" id="task-search-end-date" class="input-dark" style="flex: 1; min-width: 120px;">
+                    </div>
                     <div class="form-row" style="margin-bottom: 0; flex-shrink: 0;">
-                        <input type="text" id="task-search-worker-input" class="input-dark" placeholder="작업자 이름으로 검색..." style="flex: 1;">
+                        <input type="text" id="task-search-keyword-input" class="input-dark" placeholder="작업자, 장비, 내용 검색..." style="flex: 1;">
                         <button id="btn-do-task-search" class="btn-blue-sm" style="padding: 8px 15px;">검색</button>
                     </div>
                     <div id="task-search-results-container" class="data-table-wrapper" style="border: 1px solid var(--cal-border); border-radius: 4px; background: var(--cal-bg-dark);">
@@ -3581,32 +3587,52 @@ function setupTaskSearchModal() {
         document.getElementById('task-search-modal').style.display = 'none';
     };
     document.getElementById('btn-do-task-search').onclick = doTaskSearch;
-    document.getElementById('task-search-worker-input').onkeypress = (e) => {
-        if (e.key === 'Enter') doTaskSearch();
-    };
+    
+    const keywordInput = document.getElementById('task-search-keyword-input');
+    if (keywordInput) {
+        keywordInput.onkeypress = (e) => {
+            if (e.key === 'Enter') doTaskSearch();
+        };
+    }
+
+    const startDateInput = document.getElementById('task-search-start-date');
+    const endDateInput = document.getElementById('task-search-end-date');
+    if (startDateInput) startDateInput.addEventListener('change', doTaskSearch);
+    if (endDateInput) endDateInput.addEventListener('change', doTaskSearch);
 }
 
 function openTaskSearchModal() {
     const modal = document.getElementById('task-search-modal');
-    const searchInput = document.getElementById('task-search-worker-input');
+    const keywordInput = document.getElementById('task-search-keyword-input');
     const resultsList = document.getElementById('task-search-results-list');
+    const startDateInput = document.getElementById('task-search-start-date');
+    const endDateInput = document.getElementById('task-search-end-date');
     
     if (modal) {
         resultsList.innerHTML = '<li class="list-empty-msg">작업자 이름을 입력하고 검색하세요.</li>';
+        
+        // Set default date range (1st of current month to today)
+        const today = new Date();
+        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        startDateInput.value = firstDayOfMonth.toISOString().substring(0, 10);
+        endDateInput.value = today.toISOString().substring(0, 10);
+
         const userName = sessionStorage.getItem('userName') || sessionStorage.getItem('userId');
-        searchInput.value = userName || '';
+        keywordInput.value = userName || '';
         modal.style.display = 'flex';
         doTaskSearch(); // Open and search immediately
     }
 }
 
 function doTaskSearch() {
-    const searchInput = document.getElementById('task-search-worker-input');
-    const workerName = searchInput.value.trim().toLowerCase();
+    const keywordInput = document.getElementById('task-search-keyword-input');
+    const keyword = keywordInput.value.trim().toLowerCase();
     const resultsList = document.getElementById('task-search-results-list');
+    const startDate = document.getElementById('task-search-start-date').value;
+    const endDate = document.getElementById('task-search-end-date').value;
 
-    if (!workerName) {
-        resultsList.innerHTML = '<li class="list-empty-msg">작업자 이름을 입력해주세요.</li>';
+    if (!keyword && !startDate && !endDate) {
+        resultsList.innerHTML = '<li class="list-empty-msg">검색어를 입력하거나 기간을 선택하세요.</li>';
         return;
     }
 
@@ -3621,10 +3647,33 @@ function doTaskSearch() {
                     const data = JSON.parse(localStorage.getItem(key));
                     if (!data) return;
 
+                    // Helper to check if a date falls within the range
+                    const isDateInRange = (taskDate) => {
+                        if (!taskDate) return false;
+                        const taskDateObj = new Date(taskDate);
+                        taskDateObj.setHours(0, 0, 0, 0); // Normalize to start of day
+                        const start = startDate ? new Date(startDate) : null;
+                        const end = endDate ? new Date(endDate) : null;
+                        if (start) start.setHours(0, 0, 0, 0);
+                        if (end) end.setHours(0, 0, 0, 0);
+
+                        return (!start || taskDateObj >= start) && (!end || taskDateObj <= end);
+                    };
+
                     // 1. Completed tasks from logs
                     if (data.logs) {
                         data.logs.forEach(log => {
-                            if (log.worker && log.worker.toLowerCase().includes(workerName) && log.detailType !== '일정변경') {
+                            const logWorker = log.worker ? log.worker.toLowerCase() : '';
+                            const logContent = log.content ? log.content.toLowerCase() : '';
+                            const equipName = equip.split('::')[0].toLowerCase();
+
+                            const matchesKeyword = !keyword || (
+                                logWorker.includes(keyword) ||
+                                equipName.includes(keyword) ||
+                                logContent.includes(keyword)
+                            );
+                            
+                            if (log.detailType !== '일정변경' && matchesKeyword && isDateInRange(log.date)) {
                                 allTasks.push({ site, equip, item: log, isCompleted: true });
                             }
                         });
@@ -3633,7 +3682,18 @@ function doTaskSearch() {
                     // 2. Scheduled tasks from maint
                     if (data.maint) {
                         data.maint.forEach(item => {
-                            if (item.scheduledDate && item.worker && item.worker.toLowerCase().includes(workerName)) {
+                            const itemWorker = item.worker ? item.worker.toLowerCase() : '';
+                            const itemContent = item.content ? item.content.toLowerCase() : '';
+                            const equipName = equip.split('::')[0].toLowerCase();
+
+                            const matchesKeyword = !keyword || (
+                                itemWorker.includes(keyword) ||
+                                equipName.includes(keyword) ||
+                                itemContent.includes(keyword)
+                            );
+
+                            if (item.scheduledDate && matchesKeyword && isDateInRange(item.scheduledDate)) {
+                                // Check if this scheduled item has already been completed and logged
                                 const isDone = data.logs && data.logs.some(l => 
                                     l.date === item.scheduledDate && 
                                     l.content.includes(item.content) &&
@@ -3671,22 +3731,36 @@ function doTaskSearch() {
         const content = item.content || '내용 없음';
         const type = item.type || '정기';
         
+        // Format detailType
+        let displayDetailType = '';
+        if (item.detailType2) { // If detailType2 is explicitly present (mostly for logs)
+            displayDetailType = item.detailType2;
+        } else if (item.detailType) { // Otherwise, use detailType
+            displayDetailType = item.detailType;
+        } else if (item.type) { // Fallback to main type if no detail
+            displayDetailType = item.type;
+        }
+
+
         const typeClass = `type-${type}`;
-        const completedClass = isCompleted ? 'completed' : '';
+        const completedStatusText = isCompleted ? `<span style="color: var(--cal-green); font-weight: bold; margin-left: 5px;">완료</span>` : '';
 
         return `
             <li class="popup-event-item" 
                 onclick="openTaskFromSearch('${site}', '${equip}', ${item.id}, ${isCompleted})"
                 style="flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px; border-bottom: 1px solid var(--cal-border);">
                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <span class="item-text ${completedClass}" style="font-weight: bold; font-size: 14px;">
-                        <span class="popup-type-badge ${typeClass}">[${type}]</span>
-                        ${escapeHtml(site)} > ${escapeHtml(equipName)} ${escapeHtml(serialNo)}
-                    </span>
                     <span style="font-size: 12px; color: var(--cal-text-secondary);">${date}</span>
+                    ${completedStatusText}
                 </div>
-                <div style="font-size: 12px; color: #e6edf3; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(content)}">
-                    ${escapeHtml(content)}
+                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                    <span class="item-text" style="font-weight: bold; font-size: 14px;">
+                        <span class="popup-type-badge ${typeClass}">[${type}]</span>
+                        ${escapeHtml(equipName)} ${escapeHtml(serialNo)}
+                    </span>
+                </div>
+                <div style="font-size: 12px; color: #e6edf3; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(displayDetailType)} : ${escapeHtml(content)}">
+                    ${escapeHtml(displayDetailType)} : ${escapeHtml(content)}
                 </div>
             </li>
         `;
