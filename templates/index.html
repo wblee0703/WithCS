@@ -143,8 +143,10 @@
 
                 <!-- 오른쪽: 유지관리 현황 -->
                 <div class="dashboard-col" id="section-maint" style="display: none;">
-                    <button id="btn-mobile-register-task" class="btn-green-sm mobile-only-btn" style="width: 100%; margin-bottom: 15px; display: none;">
-                        <span class="icon-orange">➕</span> 작업 등록</button>
+                    <div class="mobile-only-btn-group">
+                        <button id="btn-mobile-search-task" class="btn-blue-sm">🔍 작업 검색</button>
+                        <button id="btn-mobile-register-task" class="btn-green-sm">➕ 작업 등록</button>
+                    </div>
                     <div class="maint-split-view">
                         <!-- 왼쪽: 차트 영역 -->
                         <div class="maint-left-charts">
@@ -445,7 +447,8 @@
             </div>
             <div class="form-row" style="margin-bottom: 15px;">
                 <label class="form-label" style="width: 50px;">공수</label>
-                <input type="number" id="schedule-md-input" class="input-dark" placeholder="공수(M/D)" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)" style="flex: 1;">
+                <input type="number" id="schedule-md-input" class="input-dark" placeholder="공수(M/D)" min="0"
+                    oninput="if(this.value < 0) this.value = Math.abs(this.value)" style="flex: 1;">
             </div>
             <div class="modal-btn-group">
                 <button class="btn-del" id="btn-delete-schedule">일정 삭제</button>
@@ -504,7 +507,8 @@
             </div>
             <div class="detail-row">
                 <label class="detail-label">공수</label>
-                <input type="number" id="detail-md" placeholder="공수(M/D)" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)">
+                <input type="number" id="detail-md" placeholder="공수(M/D)" min="0"
+                    oninput="if(this.value < 0) this.value = Math.abs(this.value)">
             </div>
             <div class="detail-row">
                 <label class="detail-label">점검 결과 / 메모</label>
@@ -525,13 +529,16 @@
     <div class="modal-window">
         <div class="modal-header">
             <h3>다음 작업 예정일 등록</h3>
-            <button class="btn-del-sm" onclick="document.getElementById('next-schedule-modal').style.display='none'; if(typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();">✕</button>
+            <button class="btn-del-sm"
+                onclick="document.getElementById('next-schedule-modal').style.display='none'; if(typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();">✕</button>
         </div>
         <div class="modal-body" style="display: flex; flex-direction: column; overflow: hidden; padding: 15px;">
-            <p style="color: #e6edf3; font-size: 13px; margin-bottom: 15px; text-align: center; word-break: keep-all; flex-shrink: 0;">
+            <p
+                style="color: #e6edf3; font-size: 13px; margin-bottom: 15px; text-align: center; word-break: keep-all; flex-shrink: 0;">
                 작업이 완료되었습니다.<br><span style="color:#58a6ff; font-weight:bold;">다음 작업 예정일</span>을 등록하시겠습니까?
             </p>
-            <div id="next-schedule-list-container" style="flex: 1; min-height: 50px; overflow-y: auto; padding-right: 5px;">
+            <div id="next-schedule-list-container"
+                style="flex: 1; min-height: 50px; overflow-y: auto; padding-right: 5px;">
                 <!-- JS 동적 렌더링 -->
             </div>
             <div class="modal-btn-group" style="margin-top: 15px; flex-shrink: 0;">
@@ -570,16 +577,19 @@
             <div class="form-row">
                 <label class="form-label">세부 구분</label>
                 <select id="register-detail-type-select" class="modal-select" disabled style="flex: 1;"></select>
-                <select id="register-detail-type2-select" class="modal-select" style="display: none; flex: 1; margin-left: 5px;"></select>
+                <select id="register-detail-type2-select" class="modal-select"
+                    style="display: none; flex: 1; margin-left: 5px;"></select>
             </div>
             <div class="form-row">
                 <label class="form-label">항목(내용)</label>
-                <div id="register-content-wrapper" class="log-select-wrapper" style="display: none; flex: 1; width: auto; margin-bottom: 0;">
+                <div id="register-content-wrapper" class="log-select-wrapper"
+                    style="display: none; flex: 1; width: auto; margin-bottom: 0;">
                     <div id="register-content-trigger" class="log-select-trigger">항목 선택</div>
                     <div id="register-content-dropdown" class="log-select-dropdown">
                         <div id="register-content-list" class="log-select-list"></div>
                         <div class="log-select-footer" style="padding:5px;">
-                            <button type="button" id="btn-register-content-add" class="btn-blue-sm" style="width: 100%;">추가</button>
+                            <button type="button" id="btn-register-content-add" class="btn-blue-sm"
+                                style="width: 100%;">추가</button>
                         </div>
                     </div>
                 </div>
@@ -597,7 +607,8 @@
             </div>
             <div class="form-row">
                 <label class="form-label">공수</label>
-                <input type="number" id="register-md" class="input-dark" placeholder="공수(M/D)" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)" style="flex:1;">
+                <input type="number" id="register-md" class="input-dark" placeholder="공수(M/D)" min="0"
+                    oninput="if(this.value < 0) this.value = Math.abs(this.value)" style="flex:1;">
             </div>
             <!-- 기존 js 에러 방지용 숨김 처리 -->
             <div id="register-item-list" style="display: none;"></div>
@@ -817,7 +828,16 @@
                 }
             });
         }
-
+        
+        // [추가] 모바일 작업 검색 버튼 이벤트
+        const btnMobileSearch = document.getElementById('btn-mobile-search-task');
+        if (btnMobileSearch) {
+            btnMobileSearch.addEventListener('click', () => {
+                if (typeof window.openTaskSearchModal === 'function') {
+                    window.openTaskSearchModal();
+                }
+            });
+        }
         // [요청] 모바일에서 캘린더 이벤트 드래그 비활성화
         // 화면 너비가 950px 이하일 때, .calendar-event-item에서 발생하는 dragstart 이벤트를 취소합니다.
         if (window.matchMedia("(max-width: 950px)").matches) {

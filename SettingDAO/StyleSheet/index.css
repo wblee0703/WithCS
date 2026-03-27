@@ -599,6 +599,11 @@ body {
     font-size: 12px;
 }
 
+/* [추가] 모바일 전용 버튼 그룹 */
+.mobile-only-btn-group {
+    display: none;
+}
+
 /* ==========================================================================
    10. 모달 및 폼 (Modals & Forms)
    ========================================================================== */
@@ -1034,9 +1039,15 @@ body {
         justify-content: center;
     }
 
-    /* [요청] 모바일 전용 버튼 표시 */
-    .mobile-only-btn {
-        display: block !important;
+    /* [추가] 모바일용 작업 검색/등록 버튼 그룹 */
+    .mobile-only-btn-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .mobile-only-btn-group button {
+        flex: 1;
     }
 
     .home-menu-container.compact .home-big-btn .icon {
