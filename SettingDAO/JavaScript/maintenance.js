@@ -3354,7 +3354,7 @@ function setMemoFieldsDisabled(disabled) {
         }
     }
 
-    const fields = ['memo-cost-type', 'memo-md', 'memo-issue-share'];// 'device-memo'는 항상 활성화
+    const fields = ['memo-cost-type', 'memo-issue-share'];// 'device-memo'는 항상 활성화, 'memo-md'는 제외
     fields.forEach(id => {
         const el = document.getElementById(id);
         if (el) {
@@ -3363,6 +3363,13 @@ function setMemoFieldsDisabled(disabled) {
             else el.classList.remove('input-disabled');
         }
     });
+    
+    // [추가] 공수(M/D) 필드는 사용자가 직접 수정할 수 없도록 항상 비활성화 유지
+    const mdInput = document.getElementById('memo-md');
+    if (mdInput) {
+        mdInput.disabled = true;
+        mdInput.classList.add('input-disabled');
+    }
     
     const workerTrigger = document.getElementById('memo-worker-trigger');
     if (workerTrigger) {
@@ -3688,7 +3695,8 @@ window.openAddWorkModal = function(logId, dateStr) {
             type: logItem.type,
             detailType: logItem.detailType,
             detailType2: logItem.detailType2,
-            content: '' // [수정] '항목 선택' 초기 상태로 나타나게 하려고 빈 값 전달
+                content: '', // [수정] '항목 선택' 초기 상태로 나타나게 하려고 빈 값 전달
+                worker: logItem.worker || '' // [추가] 부모 작업의 작업자를 기본으로 전달
         };
 
         window.isMobileRegisterFlow = true; // 등록 후 상세 팝업을 열도록 플래그 설정

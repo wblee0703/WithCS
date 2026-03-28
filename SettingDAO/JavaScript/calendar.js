@@ -2546,14 +2546,54 @@ function setupRegisterScheduleModal() {
         }
     }
 
-    // [추가] 작업자 선택 드롭다운 렌더링
+    // [추가] 작업자 선택 드롭다운 동적 생성 및 렌더링 (공수 입력칸 대체)
+    let mdHidden = document.getElementById('register-md');
+    let workerHidden = document.getElementById('register-worker-hidden');
+
+    if (mdHidden && !document.getElementById('register-worker-wrapper')) {
+        // 공수 라벨을 작업자로 변경
+        const mdLabel = mdHidden.previousElementSibling;
+        if (mdLabel && mdLabel.tagName === 'LABEL') {
+            mdLabel.textContent = '작업자';
+        }
+
+        if (!workerHidden) {
+            workerHidden = document.createElement('input');
+            workerHidden.type = 'hidden';
+            workerHidden.id = 'register-worker-hidden';
+            mdHidden.parentNode.insertBefore(workerHidden, mdHidden);
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.id = 'register-worker-wrapper';
+        wrapper.className = 'log-select-wrapper';
+        wrapper.style.flex = '1';
+        wrapper.style.minWidth = '100px';
+        wrapper.style.margin = '0';
+        
+        wrapper.innerHTML = `
+            <div id="register-worker-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 4px 8px; border-radius: 4px; min-height: 30px; display: flex; align-items: center;">작업자 선택</div>
+            <div id="register-worker-dropdown" class="log-select-dropdown">
+                <input type="text" id="register-worker-search" class="dropdown-search-input" placeholder="이름 검색...">
+                <div id="register-worker-list" class="log-select-list"></div>
+                <div class="log-select-footer">
+                    <button type="button" id="btn-register-worker-confirm" class="btn-blue-sm" style="width: 100%;">선택 완료</button>
+                </div>
+            </div>
+        `;
+        mdHidden.parentNode.insertBefore(wrapper, mdHidden);
+        mdHidden.type = 'hidden'; // 공수 입력칸 숨김 처리
+    }
+
     const workerTrigger = document.getElementById('register-worker-trigger');
     const workerDropdown = document.getElementById('register-worker-dropdown');
     const workerSearch = document.getElementById('register-worker-search');
     const workerList = document.getElementById('register-worker-list');
     const workerConfirmBtn = document.getElementById('btn-register-worker-confirm');
-    const workerHidden = document.getElementById('register-worker-hidden');
-    const mdHidden = document.getElementById('register-md');
+    
+    // 생성 후 변수 재할당
+    workerHidden = document.getElementById('register-worker-hidden');
+    mdHidden = document.getElementById('register-md');
 
     if (workerTrigger && workerDropdown) {
         workerTrigger.onclick = (e) => {
@@ -2579,9 +2619,8 @@ function setupRegisterScheduleModal() {
             currentSelected.forEach(selectedName => {
                 if (!displayedNames.has(selectedName)) {
                     const workerToAdd = allWorkers.find(w => w.name === selectedName);
-                    if (workerToAdd) {
-                        displayWorkers.unshift(workerToAdd); // 검색 결과에 없으면 맨 위에 추가
-                    }
+                        if (workerToAdd) displayWorkers.unshift(workerToAdd);
+                        else displayWorkers.unshift({name: selectedName, department: '', position: ''});
                 }
             });
 
@@ -2647,14 +2686,24 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
     if (workerHidden && workerTrigger) {
         // 로그인한 사용자 이름으로 초기 설정
         const userName = sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '';
-        if (userName && !presetData) {
+        
+        if (presetData && presetData.worker) {
+            // [추가] 추가작업 등록 등 presetData에 작업자가 있는 경우
+            workerHidden.value = presetData.worker;
+            workerTrigger.textContent = presetData.worker;
+            workerTrigger.title = presetData.worker;
+            workerTrigger.classList.add('has-value');
+            if (mdInput) mdInput.value = presetData.worker.split(',').filter(Boolean).length;
+        } else if (userName && !presetData) {
             workerHidden.value = userName;
             workerTrigger.textContent = userName;
+            workerTrigger.title = userName;
             workerTrigger.classList.add('has-value');
             if (mdInput) mdInput.value = 1;
         } else {
             workerHidden.value = '';
             workerTrigger.textContent = '작업자 선택';
+            workerTrigger.title = '';
             workerTrigger.classList.remove('has-value');
             if (mdInput) mdInput.value = '';
         }
