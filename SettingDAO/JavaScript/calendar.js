@@ -2545,13 +2545,25 @@ function setupRegisterScheduleModal() {
 
         const renderRegisterWorkers = async (searchTerm = '') => {
             const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
-            const currentSelected = workerHidden.value ? workerHidden.value.split(',').map(s => s.trim()) : [];
-            let displayWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            const currentSelected = workerHidden.value ? workerHidden.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+            const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            let displayWorkers = allWorkers;
             
             if (searchTerm) {
                 const kw = searchTerm.toLowerCase();
-                displayWorkers = displayWorkers.filter(w => w.name.toLowerCase().includes(kw) || w.department.toLowerCase().includes(kw) || w.position.toLowerCase().includes(kw));
+                displayWorkers = allWorkers.filter(w => w.name.toLowerCase().includes(kw) || w.department.toLowerCase().includes(kw) || w.position.toLowerCase().includes(kw));
             }
+
+            // [요청] 검색 시에도 기존 선택 항목이 사라지지 않도록 보정
+            const displayedNames = new Set(displayWorkers.map(w => w.name));
+            currentSelected.forEach(selectedName => {
+                if (!displayedNames.has(selectedName)) {
+                    const workerToAdd = allWorkers.find(w => w.name === selectedName);
+                    if (workerToAdd) {
+                        displayWorkers.unshift(workerToAdd); // 검색 결과에 없으면 맨 위에 추가
+                    }
+                }
+            });
 
             // 선택된 이름이 최상단으로 오도록 정렬
             displayWorkers.sort((a, b) => {
