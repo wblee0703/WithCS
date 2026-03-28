@@ -232,7 +232,8 @@ function setupLogEvents() {
         const renderWorkers = async (searchTerm = '') => {
             const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
             const currentSelected = workerInput.value ? workerInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-            let displayWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            let displayWorkers = [...allWorkers];
             
             if (searchTerm) {
                 const kw = searchTerm.toLowerCase();
@@ -242,6 +243,15 @@ function setupLogEvents() {
                     w.position.toLowerCase().includes(kw)
                 );
             }
+            
+            const displayedNames = new Set(displayWorkers.map(w => w.name));
+            currentSelected.forEach(selectedName => {
+                if (!displayedNames.has(selectedName)) {
+                    const workerToAdd = allWorkers.find(w => w.name === selectedName);
+                    if (workerToAdd) displayWorkers.unshift(workerToAdd);
+                    else displayWorkers.unshift({name: selectedName, department: '', position: ''});
+                }
+            });
             
             displayWorkers.sort((a, b) => {
                 const aSelected = currentSelected.includes(a.name);
@@ -581,8 +591,9 @@ function setupLogEvents() {
 
         const renderWorkers = async (searchTerm = '') => {
             const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
-            const currentSelected = hiddenInput.value ? hiddenInput.value.split(',').map(s => s.trim()) : [];
-            let displayWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            const currentSelected = hiddenInput.value ? hiddenInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+            const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            let displayWorkers = [...allWorkers];
             
             if (searchTerm) {
                 const kw = searchTerm.toLowerCase();
@@ -592,6 +603,15 @@ function setupLogEvents() {
                     w.position.toLowerCase().includes(kw)
                 );
             }
+
+            const displayedNames = new Set(displayWorkers.map(w => w.name));
+            currentSelected.forEach(selectedName => {
+                if (!displayedNames.has(selectedName)) {
+                    const workerToAdd = allWorkers.find(w => w.name === selectedName);
+                    if (workerToAdd) displayWorkers.unshift(workerToAdd);
+                    else displayWorkers.unshift({name: selectedName, department: '', position: ''});
+                }
+            });
             
             // [추가] 선택된 이름이 최상단으로 오도록 정렬
             displayWorkers.sort((a, b) => {
