@@ -1035,8 +1035,9 @@ function setupEventDetailModal() {
 
         const renderWorkers = async (searchTerm = '') => {
             const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
-            const currentSelected = workerInput.value ? workerInput.value.split(',').map(s => s.trim()) : [];
-            let displayWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            const currentSelected = workerInput.value ? workerInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+            const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            let displayWorkers = [...allWorkers];
             
             if (searchTerm) {
                 const kw = searchTerm.toLowerCase();
@@ -1046,6 +1047,15 @@ function setupEventDetailModal() {
                     w.position.toLowerCase().includes(kw)
                 );
             }
+            
+            const displayedNames = new Set(displayWorkers.map(w => w.name));
+            currentSelected.forEach(selectedName => {
+                if (!displayedNames.has(selectedName)) {
+                    const workerToAdd = allWorkers.find(w => w.name === selectedName);
+                    if (workerToAdd) displayWorkers.unshift(workerToAdd);
+                    else displayWorkers.unshift({name: selectedName, department: '', position: ''});
+                }
+            });
 
             // [추가] 선택된 이름이 최상단으로 오도록 정렬
             displayWorkers.sort((a, b) => {
@@ -1078,6 +1088,11 @@ function setupEventDetailModal() {
             if (selected.length > 0) trigger.textContent = selected.join(' ');
             else trigger.textContent = '작업자 선택';
             trigger.title = selected.join(', ');
+            
+            const mdInput = document.getElementById('detail-md');
+            if (mdInput) {
+                mdInput.value = selected.length.toString();
+            }
         };
 
         trigger.onclick = (e) => {
@@ -1097,6 +1112,11 @@ function setupEventDetailModal() {
             if (arr.length > 0) trigger.textContent = arr.join(' ');
             else trigger.textContent = '작업자 선택';
             trigger.title = arr.join(', ');
+            
+            const mdInput = document.getElementById('detail-md');
+            if (mdInput) {
+                mdInput.value = arr.length.toString();
+            }
         });
     }
 }
@@ -1266,7 +1286,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
                 if (itemWithMd) displayMd = itemWithMd.md;
             }
             mdInput.value = displayMd;
-            mdInput.disabled = false;
+            mdInput.disabled = true;
         }
 
         dateRow.style.display = 'block';
