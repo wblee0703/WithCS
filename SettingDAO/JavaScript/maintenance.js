@@ -183,15 +183,110 @@ function setupLogEvents() {
         }
     }
 
-    // [수정] log-worker를 log-md로 변경하고 속성 적용
-    if (workerInput && workerInput.id === 'log-worker') {
-        workerInput.id = 'log-md';
-        workerInput.placeholder = '공수(M/D)';
-        workerInput.type = 'number';
-        workerInput.min = '0';
-        workerInput.style.display = 'inline-block'; // 상단 폼에 다시 표시
-    } else if (workerInput && workerInput.id === 'log-md') {
+    // [수정] log-md를 log-worker로 변경하고 드롭다운 래퍼 적용 (공수 직접 입력 제거)
+    if (workerInput && workerInput.id === 'log-md') {
+        workerInput.id = 'log-worker';
+        workerInput.placeholder = '작업자 선택';
+        workerInput.type = 'text';
+        workerInput.removeAttribute('min');
+    } else if (workerInput && workerInput.id === 'log-worker') {
         workerInput.style.display = 'inline-block';
+    }
+
+    // 작업자 선택 드롭다운 생성
+    if (workerInput && !document.getElementById('log-worker-wrapper')) {
+        const workerContainer = document.createElement('div');
+        workerContainer.id = 'log-worker-wrapper';
+        workerContainer.className = 'log-select-wrapper';
+        workerContainer.style.flex = '0.8';
+        workerContainer.style.minWidth = '100px';
+        workerContainer.style.marginRight = '5px';
+        
+        workerContainer.innerHTML = `
+            <div id="log-worker-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; background: var(--cal-bg-dark);">작업자 선택</div>
+            <div id="log-worker-dropdown" class="log-select-dropdown">
+                <input type="text" id="log-worker-search" class="dropdown-search-input" placeholder="이름 검색...">
+                <div id="log-worker-list" class="log-select-list"></div>
+                <div class="log-select-footer">
+                    <button type="button" id="btn-log-worker-confirm" class="btn-blue-sm" style="width: 100%;">선택 완료</button>
+                </div>
+            </div>
+        `;
+        workerInput.parentNode.insertBefore(workerContainer, workerInput);
+        workerInput.type = 'hidden';
+
+        const trigger = document.getElementById('log-worker-trigger');
+        const dropdown = document.getElementById('log-worker-dropdown');
+        const searchInput = document.getElementById('log-worker-search');
+        const listContainer = document.getElementById('log-worker-list');
+        const confirmBtn = document.getElementById('btn-log-worker-confirm');
+
+        // 초기값 설정 (현재 사용자)
+        const currentUserName = sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '';
+        if (currentUserName) {
+            workerInput.value = currentUserName;
+            trigger.textContent = currentUserName;
+            trigger.title = currentUserName;
+        }
+
+        const renderWorkers = async (searchTerm = '') => {
+            const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
+            const currentSelected = workerInput.value ? workerInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+            let displayWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            
+            if (searchTerm) {
+                const kw = searchTerm.toLowerCase();
+                displayWorkers = displayWorkers.filter(w => 
+                    w.name.toLowerCase().includes(kw) || 
+                    w.department.toLowerCase().includes(kw) || 
+                    w.position.toLowerCase().includes(kw)
+                );
+            }
+            
+            displayWorkers.sort((a, b) => {
+                const aSelected = currentSelected.includes(a.name);
+                const bSelected = currentSelected.includes(b.name);
+                if (aSelected && !bSelected) return -1;
+                if (!aSelected && bSelected) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            listContainer.innerHTML = displayWorkers.map(w => {
+                const isSelected = currentSelected.includes(w.name);
+                const subInfo = (w.department || w.position) ? ` <span style="font-size:11px; color:#8b949e;">(${escapeHtml(w.department)} ${escapeHtml(w.position)})</span>` : '';
+                return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${subInfo}</span></div>`;
+            }).join('');
+            
+            if (displayWorkers.length === 0) listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
+            
+            listContainer.querySelectorAll('.log-select-item').forEach(item => {
+                item.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    item.classList.toggle('selected'); 
+                    updateWorkerSelection(); 
+                };
+            });
+        };
+
+        const updateWorkerSelection = () => {
+            const selected = Array.from(listContainer.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
+            workerInput.value = selected.join(', ');
+            if (selected.length > 0) trigger.textContent = selected.join(' ');
+            else trigger.textContent = '작업자 선택';
+            trigger.title = selected.join(', ');
+            trigger.classList.remove('error-border');
+        };
+
+        trigger.onclick = (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== dropdown) d.classList.remove('show'); });
+            dropdown.classList.toggle('show');
+            if (dropdown.classList.contains('show')) renderWorkers(searchInput.value.trim());
+        };
+
+        searchInput.onclick = (e) => e.stopPropagation();
+        searchInput.oninput = (e) => renderWorkers(e.target.value.trim());
+        confirmBtn.onclick = (e) => { e.stopPropagation(); dropdown.classList.remove('show'); };
     }
 
     const logAddBtn = document.getElementById('log-add-btn') || document.getElementById('log-reg-btn');
@@ -204,15 +299,6 @@ function setupLogEvents() {
 
     const logDateInput = document.getElementById('log-date');
     if (logDateInput) logDateInput.value = new Date().toISOString().substring(0, 10);
-
-    const logMdInput = document.getElementById('log-md');
-    if (logMdInput) {
-        logMdInput.onkeypress = (e) => { if (e.key === 'Enter') { e.preventDefault(); addLogItem(); } };
-        logMdInput.addEventListener('input', function() {
-            if (this.value < 0) this.value = Math.abs(this.value);
-        });
-        logMdInput.spellcheck = false;
-    }
 
     const logSearchInput = document.getElementById('log-search');
     if (logSearchInput) logSearchInput.addEventListener('keypress', (e) => {
@@ -1293,16 +1379,19 @@ function addLogItem(e) {
 
     // HTML 요소 안전하게 가져오기
     const dateInput = document.getElementById('log-date');
-    const mdInput = document.getElementById('log-md');
+    const workerInput = document.getElementById('log-worker');
 
-    if (!dateInput || !mdInput) return alert('입력창(ID: log-date 또는 log-md)을 찾을 수 없습니다.');
+    if (!dateInput || !workerInput) return alert('입력창(ID: log-date 또는 log-worker)을 찾을 수 없습니다.');
 
     const date = dateInput.value;
     const typeSelect = document.getElementById('log-type-select');
     const detailTypeSelect = document.getElementById('log-detail-type-select');
     const type = typeSelect ? typeSelect.value : '';
     const detailType = detailTypeSelect ? detailTypeSelect.value : '';
-    const md = mdInput.value.trim();
+    
+    // 작업자 수로 공수 자동 계산
+    const workerNames = workerInput.value.trim();
+    const md = workerNames ? workerNames.split(',').filter(Boolean).length.toString() : "0";
 
     // [추가] 비용처리 값 가져오기
     const costSelect = document.getElementById('log-cost-type');
@@ -1333,7 +1422,8 @@ function addLogItem(e) {
     const detailType2 = detailType2Select && detailType2Select.style.display !== 'none' ? detailType2Select.value : '';
 
     // [추가] 에러 테두리 초기화 및 유효성 검사
-    const elementsToCheck = [dateInput, typeSelect, detailTypeSelect, detailType2Select, costSelect, mdInput, contentInput, contentTrigger];
+    const workerTrigger = document.getElementById('log-worker-trigger');
+    const elementsToCheck = [dateInput, typeSelect, detailTypeSelect, detailType2Select, costSelect, workerInput, workerTrigger, contentInput, contentTrigger];
     elementsToCheck.forEach(el => {
         if (el) {
             el.classList.remove('error-border');
@@ -1351,7 +1441,11 @@ function addLogItem(e) {
     if (!detailType && detailTypeSelect && !detailTypeSelect.disabled) { detailTypeSelect.classList.add('error-border'); hasError = true; }
     if (type === '비정기' && !detailType2 && detailType2Select && !detailType2Select.disabled) { detailType2Select.classList.add('error-border'); hasError = true; }
     if (!costType) { if(costSelect) costSelect.classList.add('error-border'); hasError = true; }
-    if (!md && mdInput && mdInput.style.display !== 'none') { mdInput.classList.add('error-border'); hasError = true; }
+    if (!workerNames) {
+        if (workerTrigger) workerTrigger.classList.add('error-border');
+        else if (workerInput && workerInput.type !== 'hidden') workerInput.classList.add('error-border');
+        hasError = true;
+    }
     
     if (!content) {
         if (contentWrapper && contentWrapper.style.display !== 'none') {
@@ -1364,11 +1458,6 @@ function addLogItem(e) {
 
     if (hasError) {
         return alert('빨간색 테두리로 표시된 필수 항목을 모두 입력/선택해주세요.');
-    }
-
-    if (mdInput && mdInput.style.display !== 'none' && parseFloat(md) < 0) {
-        mdInput.classList.add('error-border');
-        return alert('공수(M/D)는 0 이상이어야 합니다.');
     }
 
     const key = `details_${currentPath.site}_${currentPath.equip}`;
@@ -1416,7 +1505,7 @@ function addLogItem(e) {
         addWork: addWork,
         costType: costType,
         md: md,
-        worker: sessionStorage.getItem('userId') || '', // 초기값, 상세에서 수정
+        worker: workerNames, // [수정] 작업자 세팅
         memo: "", // 상세 메모 초기값
         isIssueShared: false
     };
@@ -1500,7 +1589,15 @@ function addLogItem(e) {
     addSystemLog('ADD_LOG', currentPath.equip, `[${type} - ${finalDetailType}] ${content} (공수: ${md}, 날짜: ${date})`);
 
     // 입력창 초기화 및 리스트 갱신
-    if (mdInput && mdInput.style.display !== 'none') mdInput.value = '';
+    if (workerInput) {
+        const userName = sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '';
+        workerInput.value = userName;
+        const wTrigger = document.getElementById('log-worker-trigger');
+        if (wTrigger) {
+            wTrigger.textContent = userName || '작업자 선택';
+            wTrigger.title = userName;
+        }
+    }
     if (costSelect) costSelect.value = '';
     if (detailType2Select) detailType2Select.value = '';
     if (contentTrigger) contentTrigger.textContent = '항목 선택';

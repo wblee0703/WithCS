@@ -3674,15 +3674,15 @@ function setupTaskSearchModal() {
                     <button id="btn-close-task-search-modal" class="btn-del-sm">✕</button>
                 </div>
                 <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
-                    <div class="form-row" style="margin-bottom: 0; flex-shrink: 0; gap: 5px;">
-                        <label class="form-label" style="width: auto; margin-bottom: 0; flex-shrink: 0;">기간</label>
-                        <input type="date" id="task-search-start-date" class="input-dark" style="flex: 1; min-width: 110px;">
-                        <span style="color: #e6edf3; align-self: center;">~</span>
-                        <input type="date" id="task-search-end-date" class="input-dark" style="flex: 1; min-width: 110px;">
+                        <div class="form-row" style="display: flex; flex-direction: row; align-items: center; flex-wrap: nowrap; margin-bottom: 0; flex-shrink: 0; gap: 5px;">
+                            <label class="form-label" style="width: auto; margin-bottom: 0; flex-shrink: 0; white-space: nowrap;">기간</label>
+                            <input type="date" id="task-search-start-date" class="input-dark" style="flex: 1; min-width: 100px;">
+                            <span style="color: #e6edf3; flex-shrink: 0;">~</span>
+                            <input type="date" id="task-search-end-date" class="input-dark" style="flex: 1; min-width: 100px;">
                     </div>
-                    <div class="form-row" style="margin-bottom: 0; flex-shrink: 0;">
-                        <input type="text" id="task-search-keyword-input" class="input-dark" placeholder="작업자, 장비, 내용 검색..." style="flex: 1;">
-                        <button id="btn-do-task-search" class="btn-blue-sm" style="padding: 8px 15px;">검색</button>
+                        <div class="form-row" style="display: flex; flex-direction: row; align-items: center; flex-wrap: nowrap; margin-bottom: 0; flex-shrink: 0; gap: 5px;">
+                            <input type="text" id="task-search-keyword-input" class="input-dark" placeholder="작업자, 장비, 내용 검색..." style="flex: 1; min-width: 0;">
+                            <button id="btn-do-task-search" class="btn-blue-sm" style="padding: 8px 15px; flex-shrink: 0; white-space: nowrap;">검색</button>
                     </div>
                     <div id="task-search-results-container" class="data-table-wrapper" style="border: 1px solid var(--cal-border); border-radius: 4px; background: var(--cal-bg-dark);">
                         <ul id="task-search-results-list" style="list-style: none; padding: 0; margin: 0;">
@@ -3826,12 +3826,17 @@ function doTaskSearch() {
     const groupedTasks = {};
     allTasks.forEach(task => {
         const date = task.isCompleted ? task.item.date : task.item.scheduledDate;
-        const key = `${date}_${task.site}_${task.equip}`;
+        const type = task.item.type || '정기';
+        const detailType = task.item.detailType || '';
+        const detailType2 = task.item.detailType2 || '';
+        
+        const key = `${date}_${task.site}_${task.equip}_${type}_${detailType}_${detailType2}`;
         if (!groupedTasks[key]) {
             groupedTasks[key] = {
                 site: task.site,
                 equip: task.equip,
                 date: date,
+                type: type,
                 items: [],
                 isCompleted: true // Assume completed, set to false if any item is not
             };
@@ -3853,14 +3858,13 @@ function doTaskSearch() {
     }
 
     resultsList.innerHTML = displayTasks.map(group => {
-        const { site, equip, date, items, isCompleted } = group;
+        const { site, equip, date, type, items, isCompleted } = group;
         const parts = equip.split('::');
         const equipName = parts[0];
         const serialNo = parts.length > 1 ? `(${parts[1]})` : '';
 
         // Combine unique values
         const contents = [...new Set(items.map(item => item.content || '내용 없음'))];
-        const types = [...new Set(items.map(item => item.type || '정기'))];
         const detailTypes = [...new Set(items.map(item => {
             if (item.detailType2) return item.detailType2;
             if (item.detailType) return item.detailType;
@@ -3868,10 +3872,10 @@ function doTaskSearch() {
         }))];
 
         const displayContent = contents.join(', ');
-        const displayType = types.join(', ');
+        const displayType = type;
         const displayDetailType = detailTypes.join(' | ');
 
-        const typeClass = `type-${types[0]}`; // Use first type for badge color
+        const typeClass = `type-${type}`; // Use first type for badge color
         const completedStatusText = isCompleted ? `<span style="color: var(--cal-green); font-weight: bold; margin-left: 5px;">완료</span>` : '';
 
         // Use the ID of the first item in the group for the click action
