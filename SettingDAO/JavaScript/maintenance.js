@@ -1735,11 +1735,19 @@ function renderLogs() {
 
         const addWorkCell = tr.querySelector('.log-add-work');
         if (addWorkCell) {
-            addWorkCell.innerHTML = `
-                <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
-                    <button class="btn-blue-sm" style="padding: 2px 10px; font-size: 11px;" onclick="event.stopPropagation(); openAddWorkModal(${log.id}, '${escapeHtml(log.date)}')">추가</button>
-                </div>
-            `;
+            if (log.addWorkLogId) {
+                addWorkCell.innerHTML = `
+                    <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+                        <button class="btn-green-sm" style="padding: 2px 10px; font-size: 11px;" onclick="event.stopPropagation(); selectLog(${log.addWorkLogId})">이동</button>
+                    </div>
+                `;
+            } else {
+                addWorkCell.innerHTML = `
+                    <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+                        <button class="btn-blue-sm" style="padding: 2px 10px; font-size: 11px;" onclick="event.stopPropagation(); openAddWorkModal(${log.id}, '${escapeHtml(log.date)}');">추가</button>
+                    </div>
+                `;
+            }
         }
 
         tr.querySelector('.btn-edit-sm').onclick = (event) => {
@@ -3690,24 +3698,18 @@ window.openAddWorkModal = function(logId, dateStr) {
     }
 };
 
-// [추가] calendar.js에서 호출되어 원본 로그의 메모를 업데이트하는 함수
-window.updateLogAddWork = function(originalLogId, newWorkContent) {
-    const key = `details_${currentPath.site}_${currentPath.equip}`;
-    let data = JSON.parse(localStorage.getItem(key));
-    if (data && data.logs) {
-        const logItem = data.logs.find(l => l.id === originalLogId);
-        if (logItem) {
-            const currentMemo = logItem.memo || '';
-            const newMemoEntry = `\n\n--- 추가작업 ---\n${newWorkContent}`;
-            logItem.memo = currentMemo + newMemoEntry;
-            localStorage.setItem(key, JSON.stringify(data));
-            renderLogs(); // 로그 리스트를 다시 렌더링하여 업데이트된 메모 표시
-            if (typeof addSystemLog === 'function') {
-                addSystemLog('UPDATE_LOG_ADD_WORK', currentPath.equip, `로그 ID ${originalLogId}에 추가작업 내용 업데이트`);
-            }
+// [추가] 추가 작업 등록 완료 후 호출되는 함수
+window.handleExtraWorkAdded = function(newLogId) {
+    renderLogs();
+    setTimeout(() => {
+        selectLog(newLogId);
+        const row = document.getElementById(`log-row-${newLogId}`);
+        if (row) {
+            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-    }
+    }, 100);
 };
+
 window.closeFileEditModal = function () {
     document.getElementById('file-edit-modal').style.display = 'none';
     currentEditingFileId = null;

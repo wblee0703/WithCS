@@ -2914,12 +2914,56 @@ function confirmRegisterSchedule() {
 
     if (hasError) return alert('빨간색 테두리로 표시된 필수 항목을 모두 입력/선택해주세요.');
 
-    const key = `details_${site}_${equip}`;
-    let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
-    if (!data.maint) data.maint = [];
+    const finalDetailType = (type === '비정기' && detailType2) ? `${detailType} > ${detailType2}` : detailType;
+
+    // [수정] 추가 작업 등록일 경우, 점검 이력(log)으로 바로 등록
+    if (window.currentAddWorkLogId) {
+        const key = `details_${site}_${equip}`;
+        let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
+        if (!data.logs) data.logs = [];
+
+        const newLogId = Date.now();
+
+        const newLog = {
+            id: newLogId,
+            date: dateStr,
+            type: type,
+            detailType: finalDetailType,
+            content: content,
+            costType: costType,
+            md: md,
+            worker: worker,
+            memo: '',
+            isIssueShared: false,
+            originalLogId: window.currentAddWorkLogId
+        };
+        data.logs.push(newLog);
+
+        const originalLog = data.logs.find(l => l.id === window.currentAddWorkLogId);
+        if (originalLog) {
+            originalLog.addWorkLogId = newLogId;
+        }
+
+        localStorage.setItem(key, JSON.stringify(data));
+
+        if (typeof addSystemLog === 'function') {
+            addSystemLog('ADD_LOG_EXTRA', equip, `Added extra work for log ${window.currentAddWorkLogId}`);
+        }
+
+        document.getElementById('register-schedule-modal').style.display = 'none';
+
+        if (typeof window.handleExtraWorkAdded === 'function') {
+            window.handleExtraWorkAdded(newLogId);
+        }
+
+        window.currentAddWorkLogId = null;
+    } else {
+        // 기존 로직: 예정일(maint) 등록
+        const key = `details_${site}_${equip}`;
+        let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
+        if (!data.maint) data.maint = [];
 
     const itemsList = content.split(', ').map(s => s.trim()).filter(s => s);
-    const finalDetailType = (type === '비정기' && detailType2) ? `${detailType} > ${detailType2}` : detailType;
 
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
@@ -2982,15 +3026,9 @@ function confirmRegisterSchedule() {
     });
 
     localStorage.setItem(key, JSON.stringify(data));
-
-    if (typeof addSystemLog === 'function') {
-        addSystemLog('ADD_SCHEDULE', equip, `Date: ${dateStr}, Type: ${type}, Content: ${content}`);
-    }
-
-    // [추가] 장비 점검 이력에서 '추가작업' 버튼으로 호출된 경우 해당 로그에 내용 병합
-    if (window.currentAddWorkLogId && typeof window.updateLogAddWork === 'function') {
-        window.updateLogAddWork(window.currentAddWorkLogId, content);
-        window.currentAddWorkLogId = null;
+        if (typeof addSystemLog === 'function') {
+            addSystemLog('ADD_SCHEDULE', equip, `Date: ${dateStr}, Type: ${type}, Content: ${content}`);
+        }
     }
 
     alert('일정이 등록되었습니다.');
