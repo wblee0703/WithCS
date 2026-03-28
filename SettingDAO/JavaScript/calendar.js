@@ -2525,6 +2525,75 @@ function setupRegisterScheduleModal() {
             pa.onclick = (e) => { e.stopPropagation(); pd.classList.remove('show'); };
         }
     }
+
+    // [추가] 작업자 선택 드롭다운 렌더링
+    const workerTrigger = document.getElementById('register-worker-trigger');
+    const workerDropdown = document.getElementById('register-worker-dropdown');
+    const workerSearch = document.getElementById('register-worker-search');
+    const workerList = document.getElementById('register-worker-list');
+    const workerConfirmBtn = document.getElementById('btn-register-worker-confirm');
+    const workerHidden = document.getElementById('register-worker-hidden');
+    const mdHidden = document.getElementById('register-md');
+
+    if (workerTrigger && workerDropdown) {
+        workerTrigger.onclick = (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== workerDropdown) d.classList.remove('show'); });
+            workerDropdown.classList.toggle('show');
+            if (workerDropdown.classList.contains('show')) renderRegisterWorkers(workerSearch ? workerSearch.value.trim() : '');
+        };
+
+        const renderRegisterWorkers = async (searchTerm = '') => {
+            const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
+            const currentSelected = workerHidden.value ? workerHidden.value.split(',').map(s => s.trim()) : [];
+            let displayWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            
+            if (searchTerm) {
+                const kw = searchTerm.toLowerCase();
+                displayWorkers = displayWorkers.filter(w => w.name.toLowerCase().includes(kw) || w.department.toLowerCase().includes(kw) || w.position.toLowerCase().includes(kw));
+            }
+
+            // 선택된 이름이 최상단으로 오도록 정렬
+            displayWorkers.sort((a, b) => {
+                const aSelected = currentSelected.includes(a.name);
+                const bSelected = currentSelected.includes(b.name);
+                if (aSelected && !bSelected) return -1;
+                if (!aSelected && bSelected) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            workerList.innerHTML = displayWorkers.map(w => {
+                const isSelected = currentSelected.includes(w.name);
+                const subInfo = (w.department || w.position) ? ` <span style="font-size:11px; color:#8b949e;">(${escapeHtml(w.department)} ${escapeHtml(w.position)})</span>` : '';
+                return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${subInfo}</span></div>`;
+            }).join('');
+            if (displayWorkers.length === 0) workerList.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
+            
+            workerList.querySelectorAll('.log-select-item').forEach(item => {
+                item.onclick = (e) => { e.stopPropagation(); item.classList.toggle('selected'); updateRegisterWorkerSelection(); };
+            });
+        };
+
+        const updateRegisterWorkerSelection = () => {
+            const selected = Array.from(workerList.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
+            workerHidden.value = selected.join(', ');
+            if (selected.length > 0) workerTrigger.textContent = selected.join(' ');
+            else workerTrigger.textContent = '작업자 선택';
+            workerTrigger.title = selected.join(', ');
+            workerTrigger.classList.remove('error-border');
+            if (workerHidden.value) workerTrigger.classList.add('has-value');
+            else workerTrigger.classList.remove('has-value');
+
+            // [추가] 작업자 수에 맞춰 공수 자동 계산
+            if (mdHidden) mdHidden.value = selected.length;
+        };
+
+        if (workerSearch) {
+            workerSearch.onclick = (e) => e.stopPropagation();
+            workerSearch.oninput = (e) => renderRegisterWorkers(e.target.value.trim());
+        }
+        if (workerConfirmBtn) workerConfirmBtn.onclick = (e) => { e.stopPropagation(); workerDropdown.classList.remove('show'); };
+    }
 }
 
 function openRegisterScheduleModal(dateStr, presetData = null) {
@@ -2540,7 +2609,24 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
 
     const data = getDeviceDataMap();
     const mdInput = document.getElementById('register-md');
-    if (mdInput) mdInput.value = '';
+    const workerHidden = document.getElementById('register-worker-hidden');
+    const workerTrigger = document.getElementById('register-worker-trigger');
+
+    if (workerHidden && workerTrigger) {
+        // 로그인한 사용자 이름으로 초기 설정
+        const userName = sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '';
+        if (userName && !presetData) {
+            workerHidden.value = userName;
+            workerTrigger.textContent = userName;
+            workerTrigger.classList.add('has-value');
+            if (mdInput) mdInput.value = 1;
+        } else {
+            workerHidden.value = '';
+            workerTrigger.textContent = '작업자 선택';
+            workerTrigger.classList.remove('has-value');
+            if (mdInput) mdInput.value = '';
+        }
+    }
 
     siteSelect.innerHTML = '<option value="">사업장 선택</option>';
     Object.keys(data).forEach(site => {
@@ -2721,6 +2807,8 @@ function confirmRegisterSchedule() {
     const costType = costTypeSelect ? costTypeSelect.value : '';
     const mdInput = document.getElementById('register-md');
     const md = mdInput ? mdInput.value.trim() : '';
+    const workerHidden = document.getElementById('register-worker-hidden');
+    const worker = workerHidden ? workerHidden.value.trim() : '';
 
     let lastProcessedId = null; // [추가] 등록된 작업 ID 추적
 
@@ -2747,11 +2835,11 @@ function confirmRegisterSchedule() {
         hasError = true;
     }
     checkField('register-cost-type');
-    checkField('register-md');
-
-    if (md && parseFloat(md) < 0) {
-        alert('공수(M/D)는 0 이상이어야 합니다.');
-        return;
+    
+    if (!worker) {
+        const workerTrigger = document.getElementById('register-worker-trigger');
+        if (workerTrigger) workerTrigger.classList.add('error-border');
+        hasError = true;
     }
 
     let content = '';
@@ -2830,6 +2918,7 @@ function confirmRegisterSchedule() {
             existingItem.detailType = finalDetailType;
             if (costType) existingItem.costType = costType;
             existingItem.md = md;
+            existingItem.worker = worker; // [추가]
             if (itemCost) existingItem.itemCost = itemCost;
             if (idx === 0) lastProcessedId = existingItem.id;
 
@@ -2849,6 +2938,7 @@ function confirmRegisterSchedule() {
                 period: (type === '정기') ? period : null,
                 scheduledDate: dateStr,
                 costType: costType,
+                worker: worker, // [추가]
                 md: md,
                 itemCost: itemCost
             };

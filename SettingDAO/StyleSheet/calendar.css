@@ -827,4 +827,12 @@
         padding: 0 2px !important;
         margin-left: 5px !important;
     }
+     #task-search-modal .form-row {
+        flex-wrap: nowrap !important;
+    }
+    #task-search-start-date, #task-search-end-date {
+        min-width: 0 !important;
+        font-size: 11px !important;
+        padding: 4px 2px !important;
+    }
 }
