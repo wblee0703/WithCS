@@ -1735,7 +1735,17 @@ function renderLogs() {
 
         const addWorkCell = tr.querySelector('.log-add-work');
         if (addWorkCell) {
-            if (log.addWorkLogId) {
+            if (log.originalLogId) {
+                const originalLog = data.logs.find(l => l.id === log.originalLogId);
+                const originalDate = originalLog ? originalLog.date : '';
+                let formattedDate = '-';
+                if (originalDate) {
+                    const parts = originalDate.split('-');
+                    if (parts.length === 3) formattedDate = `${parts[0].slice(-2)}.${parts[1]}.${parts[2]}`;
+                    else formattedDate = originalDate;
+                }
+                addWorkCell.innerHTML = `<span style="font-size: 12px; color: #8b949e;" title="원본 작업일: ${escapeHtml(originalDate)}">${formattedDate}</span>`;
+            } else if (log.addWorkLogId) {
                 addWorkCell.innerHTML = `
                     <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
                         <button class="btn-green-sm" style="padding: 2px 10px; font-size: 11px;" onclick="event.stopPropagation(); selectLog(${log.addWorkLogId})">이동</button>
@@ -3695,12 +3705,14 @@ window.openAddWorkModal = function(logId, dateStr) {
             type: logItem.type,
             detailType: logItem.detailType,
             detailType2: logItem.detailType2,
-                content: '', // [수정] '항목 선택' 초기 상태로 나타나게 하려고 빈 값 전달
-                worker: logItem.worker || '' // [추가] 부모 작업의 작업자를 기본으로 전달
+            content: '', // [수정] '항목 선택' 초기 상태로 나타나게 하려고 빈 값 전달
+            worker: logItem.worker || '' // [추가] 부모 작업의 작업자를 기본으로 전달
         };
 
         window.isMobileRegisterFlow = true; // 등록 후 상세 팝업을 열도록 플래그 설정
-        openRegisterScheduleModal(dateStr, presetData);
+        
+        const todayStr = new Date().toISOString().substring(0, 10);
+        openRegisterScheduleModal(todayStr, presetData);
     } else {
         alert('작업 등록 팝업창을 열 수 없습니다. (팝업 스크립트 없음)');
     }
