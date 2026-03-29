@@ -2448,28 +2448,39 @@ function setupRegisterScheduleModal() {
 
             const wrapper = document.createElement('div');
             wrapper.id = 'register-equip-wrapper';
-            wrapper.className = 'autocomplete-wrapper';
+            wrapper.className = 'log-select-wrapper';
             wrapper.style.flex = '1';
             wrapper.style.margin = '0';
             wrapper.style.minWidth = '100px';
+ wrapper.innerHTML = `
+                <div id="register-equip-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; background: #0d1117; border: 1px solid #30363d; color: #8b949e; padding: 4px 8px; border-radius: 4px; min-height: 30px; display: flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: not-allowed; opacity: 0.5;">사업장을 먼저 선택해주세요</div>
+                <div id="register-equip-dropdown" class="log-select-dropdown">
+                    <input type="text" id="register-equip-search" class="dropdown-search-input" placeholder="장비 검색..." autocomplete="off">
+                    <ul id="register-equip-suggestions" class="log-select-list" style="list-style: none; padding: 0; margin: 0;"></ul>
+                </div>
+            `;
+            
+            equipSelect.parentNode.insertBefore(wrapper, equipSelect.nextSibling);
 
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.id = 'register-equip-input';
-            input.className = 'input-dark';
-            input.placeholder = '사업장을 먼저 선택해주세요';
-            input.style.width = '100%';
-            input.style.boxSizing = 'border-box';
-            input.autocomplete = 'off';
-            input.disabled = true;
+            const trigger = document.getElementById('register-equip-trigger');
+            const dropdown = document.getElementById('register-equip-dropdown');
+            const searchInput = document.getElementById('register-equip-search');
 
-            const ul = document.createElement('ul');
-            ul.id = 'register-equip-suggestions';
-            ul.className = 'suggestion-list';
-
-            wrapper.appendChild(input);
-            wrapper.appendChild(ul);
-
+            trigger.onclick = (e) => {
+                e.stopPropagation();
+                if (trigger.classList.contains('disabled')) return;
+                document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== dropdown) d.classList.remove('show'); });
+                dropdown.classList.toggle('show');
+                if (dropdown.classList.contains('show') && window.renderEquipSuggestions) {
+                    window.renderEquipSuggestions(searchInput.value.trim());
+                    searchInput.focus();
+                }
+            };
+            searchInput.onclick = (e) => e.stopPropagation();
+            searchInput.oninput = (e) => {
+                if (window.renderEquipSuggestions) window.renderEquipSuggestions(e.target.value.trim());
+            };
+            
             equipSelect.parentNode.insertBefore(wrapper, equipSelect.nextSibling);
         }
     }
@@ -2772,8 +2783,8 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
 
             if (hasOption) {
                 equipSelect.value = targetValue;
-                const equipInput = document.getElementById('register-equip-input');
-                if (equipInput) {
+                const equipTrigger = document.getElementById('register-equip-trigger');
+                if (equipTrigger) {
                     const parts = targetValue.split('::');
                     const name = parts[0] || '';
                     const serial = parts.length > 1 ? parts[1] : '';
@@ -2784,7 +2795,11 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
                     let displayValue = name;
                     if (serial) displayValue += ` (${serial})`;
                     if (custName) displayValue += ` [${custName}]`;
-                    equipInput.value = displayValue;
+                    
+                    equipTrigger.textContent = displayValue;
+                    equipTrigger.title = displayValue;
+                    equipTrigger.style.color = '#fff';
+                    equipTrigger.classList.add('has-value');
                 }
             }
         }
@@ -2895,20 +2910,36 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
 
 function updateRegisterEquipSelect(site) {
     const equipSelect = document.getElementById('register-equip-select');
-    const equipInput = document.getElementById('register-equip-input');
+    const equipTrigger = document.getElementById('register-equip-trigger');
     const equipSuggestionList = document.getElementById('register-equip-suggestions');
+ const equipSearch = document.getElementById('register-equip-search');
+    const equipDropdown = document.getElementById('register-equip-dropdown');
 
     equipSelect.innerHTML = '<option value="">장비 선택</option>';
 
-    if (equipInput) {
-        equipInput.value = '';
-        equipInput.disabled = !site;
-        equipInput.placeholder = site ? '장비 검색...' : '사업장을 먼저 선택해주세요';
+    if (equipTrigger) {
+        if (!site) {
+            equipTrigger.textContent = '사업장을 먼저 선택해주세요';
+            equipTrigger.title = '';
+            equipTrigger.classList.add('disabled');
+            equipTrigger.style.color = '#8b949e';
+            equipTrigger.style.cursor = 'not-allowed';
+            equipTrigger.style.opacity = '0.5';
+            if(equipSearch) equipSearch.value = '';
+        } else {
+            equipTrigger.textContent = '장비 선택';
+            equipTrigger.title = '';
+            equipTrigger.classList.remove('disabled');
+            equipTrigger.style.color = '#fff';
+            equipTrigger.style.cursor = 'pointer';
+            equipTrigger.style.opacity = '1';
+            if(equipSearch) equipSearch.value = '';
+        }
     }
 
     if (!site) {
         equipSelect.disabled = true;
-        if (equipSuggestionList) equipSuggestionList.style.display = 'none';
+         if (equipSuggestionList) equipSuggestionList.innerHTML = '';
         return;
     }
 
@@ -2925,8 +2956,8 @@ function updateRegisterEquipSelect(site) {
 
     equipSelect.disabled = false;
     
-    if (equipInput && equipSuggestionList) {
-        const renderSuggestions = (searchTerm = '') => {
+    if (equipSuggestionList) {
+        window.renderEquipSuggestions = (searchTerm = '') => {
             equipSuggestionList.innerHTML = '';
             const keywords = searchTerm.toLowerCase().split(/\s+/);
             
@@ -2956,16 +2987,12 @@ function updateRegisterEquipSelect(site) {
                     const li = document.createElement('li');
                     li.className = 'suggestion-item';
                     
-                    let displayHtml = `<div class="suggestion-item-content" style="flex-direction: column; align-items: flex-start; gap: 2px;">`;
-                    displayHtml += `<div><span style="font-weight: bold; color: #e6edf3;">${escapeHtml(name)}</span></div>`;
+                    let displayHtml = `<div class="suggestion-item-content" style="display: flex; flex-direction: row; align-items: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">`;
+                    displayHtml += `<span style="font-weight: bold; color: #e6edf3; margin-right: 5px;">${escapeHtml(name)}</span>`;
                     
-                    let subHtml = '';
-                    if (serial) subHtml += `<span style="color:#8b949e; font-size:11px;">(${escapeHtml(serial)})</span>`;
-                    if (custName) subHtml += `<span style="color:#58a6ff; font-size:11px; margin-left:5px;">[${escapeHtml(custName)}]</span>`;
+                    if (serial) displayHtml += `<span style="color:#8b949e; font-size:11px; margin-right: 5px;">(${escapeHtml(serial)})</span>`;
+                    if (custName) displayHtml += `<span style="color:#58a6ff; font-size:11px;">[${escapeHtml(custName)}]</span>`;
                     
-                    if (subHtml) {
-                        displayHtml += `<div>${subHtml}</div>`;
-                    }
                     displayHtml += `</div>`;
                     li.innerHTML = displayHtml;
 
@@ -2976,9 +3003,13 @@ function updateRegisterEquipSelect(site) {
                         let displayValue = name;
                         if (serial) displayValue += ` (${serial})`;
                         if (custName) displayValue += ` [${custName}]`;
-                        equipInput.value = displayValue;
+                        equipTrigger.textContent = displayValue;
+                        equipTrigger.title = displayValue;
+                        equipTrigger.classList.remove('error-border');
+                        equipTrigger.classList.add('has-value');
                         
                         equipSuggestionList.style.display = 'none';
+                        if (equipDropdown) equipDropdown.classList.remove('show');
                         if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
                         if (typeof window.updateRegisterInputStates === 'function') window.updateRegisterInputStates();
                     });
@@ -2986,21 +3017,9 @@ function updateRegisterEquipSelect(site) {
                 });
                 equipSuggestionList.style.display = 'block';
             } else {
-                equipSuggestionList.innerHTML = '<li class="suggestion-item list-empty-msg" style="justify-content: center;">검색 결과가 없습니다.</li>';
+                equipSuggestionList.innerHTML = '<li class="suggestion-item list-empty-msg" style="justify-content: center; text-align: center;">검색 결과가 없습니다.</li>';
                 equipSuggestionList.style.display = 'block';
             }
-        };
-
-        equipInput.onclick = (e) => { e.stopPropagation(); renderSuggestions(equipInput.value.trim()); };
-        equipInput.oninput = (e) => renderSuggestions(e.target.value.trim());
-        equipInput.onfocus = () => renderSuggestions(equipInput.value.trim());
-        equipInput.onblur = () => {
-            setTimeout(() => { equipSuggestionList.style.display = 'none'; }, 150);
-            setTimeout(() => {
-                if (equipInput.value && !equipSelect.value) {
-                    equipInput.value = '';
-                }
-            }, 200);
         };
     }
 
@@ -3029,10 +3048,10 @@ function confirmRegisterSchedule() {
     let hasError = false;
     const checkField = (id) => {
         const el = document.getElementById(id);
-        if (id === 'register-equip-select' && document.getElementById('register-equip-input')) {
-            const inputEl = document.getElementById('register-equip-input');
+        if (id === 'register-equip-select' && document.getElementById('register-equip-trigger')) {
+            const triggerEl = document.getElementById('register-equip-trigger');
             if (!el.value) {
-                inputEl.classList.add('error-border');
+                triggerEl.classList.add('error-border');
                 hasError = true;
             }
             return;
@@ -3929,7 +3948,7 @@ function setupTaskSearchModal() {
                             <input type="date" id="task-search-end-date" class="input-dark" style="flex: 1; min-width: 100px;">
                     </div>
                         <div class="form-row" style="display: flex; flex-direction: row; align-items: center; flex-wrap: nowrap; margin-bottom: 0; flex-shrink: 0; gap: 5px;">
-                            <input type="text" id="task-search-keyword-input" class="input-dark" placeholder="작업자, 장비, 내용 검색..." style="flex: 1; min-width: 0;">
+                            <input type="text" id="task-search-keyword-input" class="input-dark" placeholder="작업자, 장비(고객사 장비명), 내용 검색..." style="flex: 1; min-width: 0;">
                             <button id="btn-do-task-search" class="btn-blue-sm" style="padding: 8px 15px; flex-shrink: 0; white-space: nowrap;">검색</button>
                     </div>
                     <div id="task-search-results-container" class="data-table-wrapper" style="border: 1px solid var(--cal-border); border-radius: 4px; background: var(--cal-bg-dark);">
@@ -3969,7 +3988,7 @@ function openTaskSearchModal() {
     const endDateInput = document.getElementById('task-search-end-date');
 
     if (modal) {
-        resultsList.innerHTML = '<li class="list-empty-msg">작업자 이름을 입력하고 검색하세요.</li>';
+        resultsList.innerHTML = '<li class="list-empty-msg">검색어(작업자, 장비명 등)를 입력하고 검색하세요.</li>';
 
         // Set default date range (1st of current month to today)
         const today = new Date();
@@ -4031,7 +4050,8 @@ function doTaskSearch() {
                             const matchesKeyword = !keyword || (
                                 logWorker.includes(keyword) ||
                                 equipName.includes(keyword) ||
-                                logContent.includes(keyword)
+                                logContent.includes(keyword) ||
+                                custEquipName.toLowerCase().includes(keyword)
                             );
 
                             if (log.detailType !== '일정변경' && matchesKeyword && isDateInRange(log.date)) {
@@ -4050,7 +4070,8 @@ function doTaskSearch() {
                             const matchesKeyword = !keyword || (
                                 itemWorker.includes(keyword) ||
                                 equipName.includes(keyword) ||
-                                itemContent.includes(keyword)
+                                itemContent.includes(keyword) ||
+                                custEquipName.toLowerCase().includes(keyword)
                             );
 
                             if (item.scheduledDate && matchesKeyword && isDateInRange(item.scheduledDate)) {
@@ -4128,7 +4149,7 @@ function doTaskSearch() {
         const typeClass = `type-${type}`; // Use first type for badge color
         const completedStatusText = isCompleted ? `<span style="color: var(--cal-green); font-weight: bold; margin-left: 5px;">완료</span>` : '';
 
-        const custEquipNameHtml = custEquipName ? `<span style="color: #e6edf3; font-size: 12px; margin-left: 8px;">(${escapeHtml(custEquipName)})</span>` : '';
+        const custEquipNameHtml = custEquipName ? `<span style="color: #e6edf3; font-size: 12px; margin-left: 8px;">&lt;${escapeHtml(custEquipName)}&gt;</span>` : '';
 
         // Use the ID of the first item in the group for the click action
         const firstItemId = items[0].id;
