@@ -673,7 +673,11 @@ function renderEquipDetailList(data) {
 
                     if (selectedEquipFilter && name !== selectedEquipFilter) return;
 
-                    items.push({ site, equip, name, serial });
+                    const key = `details_${site}_${equip}`;
+                    const detailData = JSON.parse(localStorage.getItem(key)) || {};
+                    const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+
+                    items.push({ site, equip, name, serial, custEquipName });
                 });
             }
         });
@@ -690,11 +694,17 @@ function renderEquipDetailList(data) {
         if (selectedSerialFilter === item.equip) {
             li.classList.add('active');
         }
+        
+        let subInfo = '';
+        if (item.serial) subInfo += `[${escapeHtml(item.serial)}] `;
+        if (item.custEquipName) subInfo += `[${escapeHtml(item.custEquipName)}]`;
+        subInfo = subInfo.trim();
+
         li.innerHTML = `
             <span class="status-color equip-bar"></span>
             <span class="status-name no-margin-right">
                 ${escapeHtml(item.site)} > ${escapeHtml(item.name)} 
-                ${item.serial ? `<span class="equip-serial">${escapeHtml(item.serial)}</span>` : ''}
+                ${subInfo ? `<span class="equip-serial">${subInfo}</span>` : ''}
             </span>
         `;
         li.onclick = () => {
@@ -743,6 +753,8 @@ function renderUpcomingList(data) {
 
                     const key = `details_${site}_${equip}`;
                     const detailData = JSON.parse(localStorage.getItem(key));
+                    const custEquipName = (detailData && detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+
                     if (detailData && detailData.maint) {
                         detailData.maint.forEach(item => {
                             if (item.type === '정기') {
@@ -768,7 +780,8 @@ function renderUpcomingList(data) {
                                         diffDays: targetDiffDays,
                                         site: site,
                                         equip: equip,
-                                        item: item
+                                        item: item,
+                                        custEquipName: custEquipName
                                     });
                                 }
                             }
@@ -791,7 +804,7 @@ function renderUpcomingList(data) {
     const template = document.getElementById('upcoming-item-template');
 
     upcomingItems.forEach(obj => {
-        const { diffDays, site, equip, item } = obj;
+        const { diffDays, site, equip, item, custEquipName } = obj;
         const parts = equip.split('::');
         const name = parts[0];
         const serial = parts.length > 1 ? parts[1] : '';
@@ -820,8 +833,15 @@ function renderUpcomingList(data) {
             badgeClass = 'warning';
         }
 
+        let equipDisplayHtml = escapeHtml(name);
+        if (custEquipName) {
+            equipDisplayHtml += ` <span class="upcoming-info-sn">[${escapeHtml(custEquipName)}]</span>`;
+        } else if (serial) {
+            equipDisplayHtml += ` <span class="upcoming-info-sn">[${escapeHtml(serial)}]</span>`;
+        }
+
         const siteInfo = clone.querySelector('.upcoming-info-site');
-        siteInfo.innerHTML = `${escapeHtml(site)} > ${escapeHtml(name)} ${serial ? `<span class="upcoming-info-sn">(${escapeHtml(serial)})</span>` : ''}`;
+        siteInfo.innerHTML = `${escapeHtml(site)} > ${equipDisplayHtml}`;
 
         const contentText = escapeHtml(item.content);
 
@@ -1362,11 +1382,13 @@ window.populateEquipmentIssues = function () {
         dataMap[site].forEach(equipKey => {
             const key = `details_${site}_${equipKey}`;
             const details = JSON.parse(localStorage.getItem(key)) || {};
+            const custEquipName = (details.setup && details.setup.custEquipName) ? details.setup.custEquipName : '';
+
             if (details.logs) {
                 details.logs.forEach(log => {
                     // [수정] 이슈 공유 체크된 항목만 표시
                     if (log.isIssueShared === true) {
-                        issues.push({ site, equipKey, log });
+                        issues.push({ site, equipKey, log, custEquipName });
                     }
                 });
             }
@@ -1384,13 +1406,20 @@ window.populateEquipmentIssues = function () {
     }
 
     issues.forEach(issue => {
-        const { site, equipKey, log } = issue;
+        const { site, equipKey, log, custEquipName } = issue;
         const parts = equipKey.split('::');
         const rawModelName = parts[0];
         const serial = parts.length > 1 ? parts[1] : '';
 
         const matchedModel = equipmentModels.find(m => m.name === rawModelName);
         const modelName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawModelName;
+
+        let displayEquip = modelName;
+        if (custEquipName) {
+            displayEquip += ` [${custEquipName}]`;
+        } else if (serial) {
+            displayEquip += ` [${serial}]`;
+        }
 
         let detailStr = '';
         if (log.detailType2 && log.detailType2.includes('>')) {
@@ -1403,7 +1432,7 @@ window.populateEquipmentIssues = function () {
             detailStr = log.detailType ? log.detailType.trim() : '내용 없음';
         }
 
-        const line1Text = `${site} > ${modelName}${serial ? ` (${serial})` : ''}`;
+        const line1Text = `${site} > ${displayEquip}`;
         const dateStr = log.date || '';
 
         let displayContent = log.content || '';
@@ -1428,7 +1457,7 @@ window.populateEquipmentIssues = function () {
         `;
 
         li.onclick = () => {
-            if (confirm(`해당 장비의 점검 이력 상세 내용을 확인하시겠습니까?\n\n[${site}] ${modelName} ${serial ? '('+serial+')' : ''}\n이슈: ${detailStr}\n내용: ${log.content}`)) {
+            if (confirm(`해당 장비의 점검 이력 상세 내용을 확인하시겠습니까?\n\n[${site}] ${displayEquip}\n이슈: ${detailStr}\n내용: ${log.content}`)) {
                 let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equipKey)}&logId=${log.id}`;
                 window.location.href = targetUrl;
             }

@@ -726,7 +726,6 @@ function openCalendarPopup(dateStr, events) {
         searchBtn.className = 'btn-blue-sm';
         searchBtn.textContent = '작업 검색';
         searchBtn.style.marginRight = '10px';
-        searchBtn.style.padding = '8px 12px';
         searchBtn.style.textDecoration = 'none';
         searchBtn.onclick = (e) => {
             e.preventDefault();

@@ -387,6 +387,14 @@
 #btn-confirm-register-schedule { width: 100%; }
 #btn-apply-search-filter { width: 100px; }
 
+/* 캘린더 팝업: 작업 검색 및 등록 버튼 크기 확대 */
+#btn-task-search,
+#btn-open-register-modal {
+    padding: 10px 16px !important;
+    font-size: 14px !important;
+    font-weight: bold !important;
+}
+
 /* 상세 정보 모달 (Detail Modal) */
 .detail-row { margin-bottom: 15px; }
 .detail-row.large-margin { margin-bottom: 20px; }
