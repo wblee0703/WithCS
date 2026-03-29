@@ -727,6 +727,7 @@ function openCalendarPopup(dateStr, events) {
         searchBtn.textContent = '작업 검색';
         searchBtn.style.marginRight = '10px';
         searchBtn.style.padding = '8px 12px';
+        searchBtn.style.textDecoration = 'none';
         searchBtn.onclick = (e) => {
             e.preventDefault();
             openTaskSearchModal();
@@ -2793,8 +2794,11 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
                     const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
                     let displayValue = name;
-                    if (serial) displayValue += ` (${serial})`;
-                    if (custName) displayValue += ` [${custName}]`;
+                    if (custName) {
+                        displayValue = `${name}[${custName}]`;
+                    } else if (serial) {
+                        displayValue = `${name} [${serial}]`;
+                    }
                     
                     equipTrigger.textContent = displayValue;
                     equipTrigger.title = displayValue;
@@ -2988,7 +2992,7 @@ function updateRegisterEquipSelect(site) {
                     li.className = 'suggestion-item';
                     
                     let displayHtml = `<div class="suggestion-item-content" style="display: flex; flex-direction: row; align-items: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">`;
-                    displayHtml += `<span style="font-weight: bold; color: #e6edf3; margin-right: 5px;">${escapeHtml(name)}</span>`;
+                    displayHtml += `<span style="font-weight: bold; color: #e6edf3; font-size: 11px; margin-right: 5px;">${escapeHtml(name)}</span>`;
                     
                     if (serial) displayHtml += `<span style="color:#8b949e; font-size:11px; margin-right: 5px;">(${escapeHtml(serial)})</span>`;
                     if (custName) displayHtml += `<span style="color:#58a6ff; font-size:11px;">[${escapeHtml(custName)}]</span>`;
@@ -2998,11 +3002,14 @@ function updateRegisterEquipSelect(site) {
 
                     li.addEventListener('mousedown', (e) => {
                         e.preventDefault();
-                        equipSelect.value = equip; // 실제 select 동기화
-                        
+                        equipSelect.value = equip;
+
                         let displayValue = name;
-                        if (serial) displayValue += ` (${serial})`;
-                        if (custName) displayValue += ` [${custName}]`;
+                        if (custName) {
+                            displayValue = `${name}[${custName}]`;
+                        } else if (serial) {
+                            displayValue = `${name} [${serial}]`;
+                        }
                         equipTrigger.textContent = displayValue;
                         equipTrigger.title = displayValue;
                         equipTrigger.classList.remove('error-border');
