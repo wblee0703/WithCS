@@ -2191,6 +2191,7 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
 
         const dropdown = document.createElement('div');
         dropdown.className = 'log-select-dropdown';
+        dropdown.style.width = '200%';
 
         // [추가] 검색 입력창 생성
         const searchInput = document.createElement('input');

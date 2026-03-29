@@ -492,6 +492,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     box-sizing: border-box;
 }
 
+/* [요청] 항목 선택 및 작업자 제안 박스 2배 확장 (작업자는 우측 정렬로 좌측 확장) */
+#log-content-dropdown {
+    width: 200%;
+}
+#log-worker-dropdown,
+#memo-worker-dropdown {
+    width: 200%;
+    left: auto;
+    right: 0;
+}
+
 .log-select-dropdown.show {
     display: block;
 }
