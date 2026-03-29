@@ -20,7 +20,7 @@ if (typeof window.getHolidayName !== 'function') {
 // [추가] 작업자(사용자) 목록 조회 함수 폴백
 if (typeof window.fetchWorkerNames !== 'function') {
     window.workerNamesCache = [];
-    window.fetchWorkerNames = async function() {
+    window.fetchWorkerNames = async function () {
         if (window.workerNamesCache.length > 0) return window.workerNamesCache;
         try {
             const res = await fetch('/api/users/names');
@@ -64,7 +64,7 @@ if (typeof window.renderLogPartOptions !== 'function') {
         }
 
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-        
+
         let matchedItems = adminItems.filter(item => {
             if (!item.equip) return false;
             return item.equip.split(',').map(e => e.trim()).includes(equipName);
@@ -286,11 +286,11 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null, 
 
                     const now = new Date();
                     const modifyTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                    
+
                     const uDept = sessionStorage.getItem('userDepartment') || '';
                     const uPos = sessionStorage.getItem('userPosition') || '';
                     const uName = sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '';
-                    
+
                     const workerInfo = (uDept || uPos) ? `${uName} (${uDept} ${uPos})`.trim() : uName;
 
                     if (!data.logs) data.logs = [];
@@ -1013,7 +1013,7 @@ function setupEventDetailModal() {
         wrapper.className = 'log-select-wrapper';
         wrapper.style.width = '100%';
         wrapper.style.margin = '0';
-        
+
         wrapper.innerHTML = `
             <div id="detail-worker-trigger" class="log-select-trigger" style="width: 100%; padding: 8px; box-sizing: border-box; background: var(--cal-bg-dark);">작업자 선택</div>
             <div id="detail-worker-dropdown" class="log-select-dropdown">
@@ -1036,24 +1036,24 @@ function setupEventDetailModal() {
         const renderWorkers = async (searchTerm = '') => {
             const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
             const currentSelected = workerInput.value ? workerInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-            const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '' } : w);
             let displayWorkers = [...allWorkers];
-            
+
             if (searchTerm) {
                 const kw = searchTerm.toLowerCase();
-                displayWorkers = displayWorkers.filter(w => 
-                    w.name.toLowerCase().includes(kw) || 
-                    w.department.toLowerCase().includes(kw) || 
+                displayWorkers = displayWorkers.filter(w =>
+                    w.name.toLowerCase().includes(kw) ||
+                    w.department.toLowerCase().includes(kw) ||
                     w.position.toLowerCase().includes(kw)
                 );
             }
-            
+
             const displayedNames = new Set(displayWorkers.map(w => w.name));
             currentSelected.forEach(selectedName => {
                 if (!displayedNames.has(selectedName)) {
                     const workerToAdd = allWorkers.find(w => w.name === selectedName);
                     if (workerToAdd) displayWorkers.unshift(workerToAdd);
-                    else displayWorkers.unshift({name: selectedName, department: '', position: ''});
+                    else displayWorkers.unshift({ name: selectedName, department: '', position: '' });
                 }
             });
 
@@ -1088,7 +1088,7 @@ function setupEventDetailModal() {
             if (selected.length > 0) trigger.textContent = selected.join(' ');
             else trigger.textContent = '작업자 선택';
             trigger.title = selected.join(', ');
-            
+
             const mdInput = document.getElementById('detail-md');
             if (mdInput) {
                 mdInput.value = selected.length.toString();
@@ -1112,7 +1112,7 @@ function setupEventDetailModal() {
             if (arr.length > 0) trigger.textContent = arr.join(' ');
             else trigger.textContent = '작업자 선택';
             trigger.title = arr.join(', ');
-            
+
             const mdInput = document.getElementById('detail-md');
             if (mdInput) {
                 mdInput.value = arr.length.toString();
@@ -1497,7 +1497,7 @@ function toggleDetailContentEdit() {
             let registeredItems = [];
             let otherItems = [];
             const defaultSet = new Set(uniqueItems.map(i => i.code ? i.code : i.content));
-            
+
             let maintSet = new Set();
             if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
                 const maintKey = `details_${site}_${equip}`;
@@ -1619,7 +1619,7 @@ function toggleDetailContentEdit() {
                         if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
                             dropdown.classList.remove('show');
                         }
-                        
+
                         // [추가] 파트 연동 처리
                         const pWrapper = document.getElementById('detail-edit-part-wrapper');
                         if (pWrapper) {
@@ -1670,7 +1670,7 @@ function toggleDetailContentEdit() {
             };
 
             contentInput.parentNode.insertBefore(dropdownWrapper, contentInput.nextSibling);
-            
+
             // [추가] 파트 선택 래퍼 동적 추가 (수정 모드용)
             let pWrapper = document.getElementById('detail-edit-part-wrapper');
             if (!pWrapper) {
@@ -1701,7 +1701,7 @@ function toggleDetailContentEdit() {
             if (hasPartIssue && typeof window.renderLogPartOptions === 'function') {
                 window.renderLogPartOptions('detail-edit-part-wrapper', 'detail-edit-part-trigger', 'detail-edit-part-list', 'detail-edit-part-search', partContentStr);
             }
-            
+
         } else {
             contentInput.value = baseContent;
             contentDiv.style.display = 'none';
@@ -1728,7 +1728,7 @@ function toggleDetailContentEdit() {
         }
 
         const newContent = isDropdownMode ? dropdownValues.join(', ') : contentInput.value.trim();
-        
+
         let finalContent = newContent;
         const pWrapper = document.getElementById('detail-edit-part-wrapper');
         if (pWrapper && pWrapper.style.display !== 'none') {
@@ -1744,7 +1744,7 @@ function toggleDetailContentEdit() {
             }
             pWrapper.remove();
         } else if (pWrapper) pWrapper.remove();
-        
+
         if (!finalContent && !isDropdownMode) return alert('내용을 입력해주세요.');
         if (isDropdownMode && dropdownValues.length === 0) return alert('최소 1개 이상의 항목을 선택해주세요.');
 
@@ -2164,7 +2164,7 @@ function setupNextScheduleModal() {
                             const oldDate = item.scheduledDate;
                             item.scheduledDate = newDate;
                             if (newMd) item.md = newMd;
-                            
+
                             // 타입(정기/비정기) 변경 반영
                             if (newType && (!typeInput || !typeInput.disabled) && item.type !== newType) {
                                 item.type = newType;
@@ -2442,6 +2442,36 @@ function setupRegisterScheduleModal() {
         equipSelect.onchange = () => {
             if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
         };
+
+        if (!document.getElementById('register-equip-wrapper')) {
+            equipSelect.style.display = 'none';
+
+            const wrapper = document.createElement('div');
+            wrapper.id = 'register-equip-wrapper';
+            wrapper.className = 'autocomplete-wrapper';
+            wrapper.style.flex = '1';
+            wrapper.style.margin = '0';
+            wrapper.style.minWidth = '100px';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.id = 'register-equip-input';
+            input.className = 'input-dark';
+            input.placeholder = '사업장을 먼저 선택해주세요';
+            input.style.width = '100%';
+            input.style.boxSizing = 'border-box';
+            input.autocomplete = 'off';
+            input.disabled = true;
+
+            const ul = document.createElement('ul');
+            ul.id = 'register-equip-suggestions';
+            ul.className = 'suggestion-list';
+
+            wrapper.appendChild(input);
+            wrapper.appendChild(ul);
+
+            equipSelect.parentNode.insertBefore(wrapper, equipSelect.nextSibling);
+        }
     }
 
     if (typeSelect) {
@@ -2507,7 +2537,7 @@ function setupRegisterScheduleModal() {
 
     // [추가] 세부구분 2 입력창을 세부구분 1 우측으로 이동시키고 제목(Row) 숨김
     const detailType2Row = document.getElementById('register-detail-type2-row');
-    
+
     if (detailTypeSelect && detailType2Select && detailTypeSelect.parentNode !== detailType2Select.parentNode) {
         detailTypeSelect.parentNode.insertBefore(detailType2Select, detailTypeSelect.nextSibling);
         detailTypeSelect.style.flex = '1';
@@ -2570,7 +2600,7 @@ function setupRegisterScheduleModal() {
         wrapper.style.flex = '1';
         wrapper.style.minWidth = '100px';
         wrapper.style.margin = '0';
-        
+
         wrapper.innerHTML = `
             <div id="register-worker-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 4px 8px; border-radius: 4px; min-height: 30px; display: flex; align-items: center;">작업자 선택</div>
             <div id="register-worker-dropdown" class="log-select-dropdown">
@@ -2590,7 +2620,7 @@ function setupRegisterScheduleModal() {
     const workerSearch = document.getElementById('register-worker-search');
     const workerList = document.getElementById('register-worker-list');
     const workerConfirmBtn = document.getElementById('btn-register-worker-confirm');
-    
+
     // 생성 후 변수 재할당
     workerHidden = document.getElementById('register-worker-hidden');
     mdHidden = document.getElementById('register-md');
@@ -2606,9 +2636,9 @@ function setupRegisterScheduleModal() {
         const renderRegisterWorkers = async (searchTerm = '') => {
             const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
             const currentSelected = workerHidden.value ? workerHidden.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-            const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '' } : w);
             let displayWorkers = allWorkers;
-            
+
             if (searchTerm) {
                 const kw = searchTerm.toLowerCase();
                 displayWorkers = allWorkers.filter(w => w.name.toLowerCase().includes(kw) || w.department.toLowerCase().includes(kw) || w.position.toLowerCase().includes(kw));
@@ -2619,8 +2649,8 @@ function setupRegisterScheduleModal() {
             currentSelected.forEach(selectedName => {
                 if (!displayedNames.has(selectedName)) {
                     const workerToAdd = allWorkers.find(w => w.name === selectedName);
-                        if (workerToAdd) displayWorkers.unshift(workerToAdd);
-                        else displayWorkers.unshift({name: selectedName, department: '', position: ''});
+                    if (workerToAdd) displayWorkers.unshift(workerToAdd);
+                    else displayWorkers.unshift({ name: selectedName, department: '', position: '' });
                 }
             });
 
@@ -2639,7 +2669,7 @@ function setupRegisterScheduleModal() {
                 return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${subInfo}</span></div>`;
             }).join('');
             if (displayWorkers.length === 0) workerList.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
-            
+
             workerList.querySelectorAll('.log-select-item').forEach(item => {
                 item.onclick = (e) => { e.stopPropagation(); item.classList.toggle('selected'); updateRegisterWorkerSelection(); };
             });
@@ -2686,7 +2716,7 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
     if (workerHidden && workerTrigger) {
         // 로그인한 사용자 이름으로 초기 설정
         const userName = sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '';
-        
+
         if (presetData && presetData.worker) {
             // [추가] 추가작업 등록 등 presetData에 작업자가 있는 경우
             workerHidden.value = presetData.worker;
@@ -2742,6 +2772,20 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
 
             if (hasOption) {
                 equipSelect.value = targetValue;
+                const equipInput = document.getElementById('register-equip-input');
+                if (equipInput) {
+                    const parts = targetValue.split('::');
+                    const name = parts[0] || '';
+                    const serial = parts.length > 1 ? parts[1] : '';
+                    const key = `details_${currentSearchFilters.site}_${targetValue}`;
+                    const detailData = JSON.parse(localStorage.getItem(key)) || {};
+                    const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+
+                    let displayValue = name;
+                    if (serial) displayValue += ` (${serial})`;
+                    if (custName) displayValue += ` [${custName}]`;
+                    equipInput.value = displayValue;
+                }
             }
         }
     }
@@ -2814,7 +2858,7 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
                 const contentInput = document.getElementById('register-content-input');
                 const contentWrapper = document.getElementById('register-content-wrapper');
                 const contentTrigger = document.getElementById('register-content-trigger');
-                
+
                 if (contentWrapper && contentWrapper.style.display !== 'none') {
                     if (contentTrigger) {
                         if (presetData.content) {
@@ -2831,7 +2875,7 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
                 } else if (contentInput) {
                     contentInput.value = presetData.content || '';
                 }
-                
+
                 const partRow = document.getElementById('register-part-row');
                 if (partRow) {
                     partRow.style.display = 'none';
@@ -2851,11 +2895,20 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
 
 function updateRegisterEquipSelect(site) {
     const equipSelect = document.getElementById('register-equip-select');
+    const equipInput = document.getElementById('register-equip-input');
+    const equipSuggestionList = document.getElementById('register-equip-suggestions');
 
     equipSelect.innerHTML = '<option value="">장비 선택</option>';
 
+    if (equipInput) {
+        equipInput.value = '';
+        equipInput.disabled = !site;
+        equipInput.placeholder = site ? '장비 검색...' : '사업장을 먼저 선택해주세요';
+    }
+
     if (!site) {
         equipSelect.disabled = true;
+        if (equipSuggestionList) equipSuggestionList.style.display = 'none';
         return;
     }
 
@@ -2871,6 +2924,86 @@ function updateRegisterEquipSelect(site) {
     });
 
     equipSelect.disabled = false;
+    
+    if (equipInput && equipSuggestionList) {
+        const renderSuggestions = (searchTerm = '') => {
+            equipSuggestionList.innerHTML = '';
+            const keywords = searchTerm.toLowerCase().split(/\s+/);
+            
+            let matches = equips.filter(equip => {
+                const parts = equip.split('::');
+                const name = parts[0] || '';
+                const serial = parts.length > 1 ? parts[1] : '';
+                
+                const key = `details_${site}_${equip}`;
+                const detailData = JSON.parse(localStorage.getItem(key)) || {};
+                const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+
+                const text = `${name} ${serial} ${custName}`.toLowerCase();
+                return keywords.every(kw => text.includes(kw));
+            });
+
+            if (matches.length > 0) {
+                matches.forEach(equip => {
+                    const parts = equip.split('::');
+                    const name = parts[0] || '';
+                    const serial = parts.length > 1 ? parts[1] : '';
+                    
+                    const key = `details_${site}_${equip}`;
+                    const detailData = JSON.parse(localStorage.getItem(key)) || {};
+                    const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+
+                    const li = document.createElement('li');
+                    li.className = 'suggestion-item';
+                    
+                    let displayHtml = `<div class="suggestion-item-content" style="flex-direction: column; align-items: flex-start; gap: 2px;">`;
+                    displayHtml += `<div><span style="font-weight: bold; color: #e6edf3;">${escapeHtml(name)}</span></div>`;
+                    
+                    let subHtml = '';
+                    if (serial) subHtml += `<span style="color:#8b949e; font-size:11px;">(${escapeHtml(serial)})</span>`;
+                    if (custName) subHtml += `<span style="color:#58a6ff; font-size:11px; margin-left:5px;">[${escapeHtml(custName)}]</span>`;
+                    
+                    if (subHtml) {
+                        displayHtml += `<div>${subHtml}</div>`;
+                    }
+                    displayHtml += `</div>`;
+                    li.innerHTML = displayHtml;
+
+                    li.addEventListener('mousedown', (e) => {
+                        e.preventDefault();
+                        equipSelect.value = equip; // 실제 select 동기화
+                        
+                        let displayValue = name;
+                        if (serial) displayValue += ` (${serial})`;
+                        if (custName) displayValue += ` [${custName}]`;
+                        equipInput.value = displayValue;
+                        
+                        equipSuggestionList.style.display = 'none';
+                        if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
+                        if (typeof window.updateRegisterInputStates === 'function') window.updateRegisterInputStates();
+                    });
+                    equipSuggestionList.appendChild(li);
+                });
+                equipSuggestionList.style.display = 'block';
+            } else {
+                equipSuggestionList.innerHTML = '<li class="suggestion-item list-empty-msg" style="justify-content: center;">검색 결과가 없습니다.</li>';
+                equipSuggestionList.style.display = 'block';
+            }
+        };
+
+        equipInput.onclick = (e) => { e.stopPropagation(); renderSuggestions(equipInput.value.trim()); };
+        equipInput.oninput = (e) => renderSuggestions(e.target.value.trim());
+        equipInput.onfocus = () => renderSuggestions(equipInput.value.trim());
+        equipInput.onblur = () => {
+            setTimeout(() => { equipSuggestionList.style.display = 'none'; }, 150);
+            setTimeout(() => {
+                if (equipInput.value && !equipSelect.value) {
+                    equipInput.value = '';
+                }
+            }, 200);
+        };
+    }
+
     if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
 }
 
@@ -2896,6 +3029,14 @@ function confirmRegisterSchedule() {
     let hasError = false;
     const checkField = (id) => {
         const el = document.getElementById(id);
+        if (id === 'register-equip-select' && document.getElementById('register-equip-input')) {
+            const inputEl = document.getElementById('register-equip-input');
+            if (!el.value) {
+                inputEl.classList.add('error-border');
+                hasError = true;
+            }
+            return;
+        }
         if (el && !el.disabled && (!el.value || el.value.trim() === '')) {
             el.classList.add('error-border');
             hasError = true;
@@ -2916,7 +3057,7 @@ function confirmRegisterSchedule() {
         hasError = true;
     }
     checkField('register-cost-type');
-    
+
     if (!worker) {
         const workerTrigger = document.getElementById('register-worker-trigger');
         if (workerTrigger) workerTrigger.classList.add('error-border');
@@ -3012,69 +3153,69 @@ function confirmRegisterSchedule() {
         let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
         if (!data.maint) data.maint = [];
 
-    const itemsList = content.split(', ').map(s => s.trim()).filter(s => s);
+        const itemsList = content.split(', ').map(s => s.trim()).filter(s => s);
 
-    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+        const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
-    itemsList.forEach((itemText, idx) => {
-        let itemCost = '';
-        const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
-        if (costMatch) {
-            itemCost = costMatch[1];
-            itemText = costMatch[2];
-        }
+        itemsList.forEach((itemText, idx) => {
+            let itemCost = '';
+            const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
+            if (costMatch) {
+                itemCost = costMatch[1];
+                itemText = costMatch[2];
+            }
 
-        let code = '';
-        let fullContent = itemText;
-        let period = null;
+            let code = '';
+            let fullContent = itemText;
+            let period = null;
 
-        const match = adminItems.find(a => a.part === itemText || a.code === itemText);
-        if (match) {
-            code = match.code || '';
-            fullContent = match.part || itemText;
-            period = match.cycle || null;
-        }
+            const match = adminItems.find(a => a.part === itemText || a.code === itemText);
+            if (match) {
+                code = match.code || '';
+                fullContent = match.part || itemText;
+                period = match.cycle || null;
+            }
 
-        let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || (code && m.code === code) || m.content === itemText));
+            let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || (code && m.code === code) || m.content === itemText));
 
-        if (existingItem) {
-            const oldDate = existingItem.scheduledDate;
-            existingItem.scheduledDate = dateStr;
-            existingItem.detailType = finalDetailType;
-            if (costType) existingItem.costType = costType;
-            existingItem.md = md;
-            existingItem.worker = worker; // [추가]
-            if (itemCost) existingItem.itemCost = itemCost;
-            if (idx === 0) lastProcessedId = existingItem.id;
+            if (existingItem) {
+                const oldDate = existingItem.scheduledDate;
+                existingItem.scheduledDate = dateStr;
+                existingItem.detailType = finalDetailType;
+                if (costType) existingItem.costType = costType;
+                existingItem.md = md;
+                existingItem.worker = worker; // [추가]
+                if (itemCost) existingItem.itemCost = itemCost;
+                if (idx === 0) lastProcessedId = existingItem.id;
 
-            const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
-            const newMonth = dateStr.substring(0, 7);
-            if (oldMonth !== newMonth) {
+                const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
+                const newMonth = dateStr.substring(0, 7);
+                if (oldMonth !== newMonth) {
+                    if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
+                }
+            } else {
+                const newItem = {
+                    id: Date.now() + idx,
+                    type: type,
+                    detailType: finalDetailType,
+                    code: code,
+                    content: fullContent,
+                    date: "",
+                    period: (type === '정기') ? period : null,
+                    scheduledDate: dateStr,
+                    costType: costType,
+                    worker: worker, // [추가]
+                    md: md,
+                    itemCost: itemCost
+                };
+                if (idx === 0) lastProcessedId = newItem.id;
+                data.maint.push(newItem);
+
                 if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
             }
-        } else {
-            const newItem = {
-                id: Date.now() + idx,
-                type: type,
-                detailType: finalDetailType,
-                code: code,
-                content: fullContent,
-                date: "",
-                period: (type === '정기') ? period : null,
-                scheduledDate: dateStr,
-                costType: costType,
-                worker: worker, // [추가]
-                md: md,
-                itemCost: itemCost
-            };
-            if (idx === 0) lastProcessedId = newItem.id;
-            data.maint.push(newItem);
+        });
 
-            if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
-        }
-    });
-
-    localStorage.setItem(key, JSON.stringify(data));
+        localStorage.setItem(key, JSON.stringify(data));
         if (typeof addSystemLog === 'function') {
             addSystemLog('ADD_SCHEDULE', equip, `Date: ${dateStr}, Type: ${type}, Content: ${content}`);
         }
@@ -3482,7 +3623,7 @@ window.updateRegisterContentOptions = function () {
                     if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
                         if (dropdown) dropdown.classList.remove('show');
                     }
-                    
+
                     // [추가] 파트 연동 처리
                     const partRow = document.getElementById('register-part-row');
                     if (partRow) {
@@ -3806,7 +3947,7 @@ function setupTaskSearchModal() {
         document.getElementById('task-search-modal').style.display = 'none';
     };
     document.getElementById('btn-do-task-search').onclick = doTaskSearch;
-    
+
     const keywordInput = document.getElementById('task-search-keyword-input');
     if (keywordInput) {
         keywordInput.onkeypress = (e) => {
@@ -3826,10 +3967,10 @@ function openTaskSearchModal() {
     const resultsList = document.getElementById('task-search-results-list');
     const startDateInput = document.getElementById('task-search-start-date');
     const endDateInput = document.getElementById('task-search-end-date');
-    
+
     if (modal) {
         resultsList.innerHTML = '<li class="list-empty-msg">작업자 이름을 입력하고 검색하세요.</li>';
-        
+
         // Set default date range (1st of current month to today)
         const today = new Date();
         const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -3865,6 +4006,7 @@ function doTaskSearch() {
                 try {
                     const data = JSON.parse(localStorage.getItem(key));
                     if (!data) return;
+                    const custEquipName = (data.setup && data.setup.custEquipName) ? data.setup.custEquipName : '';
 
                     // Helper to check if a date falls within the range
                     const isDateInRange = (taskDate) => {
@@ -3891,9 +4033,9 @@ function doTaskSearch() {
                                 equipName.includes(keyword) ||
                                 logContent.includes(keyword)
                             );
-                            
+
                             if (log.detailType !== '일정변경' && matchesKeyword && isDateInRange(log.date)) {
-                                allTasks.push({ site, equip, item: log, isCompleted: true });
+                                allTasks.push({ site, equip, item: log, isCompleted: true, custEquipName: custEquipName });
                             }
                         });
                     }
@@ -3913,13 +4055,13 @@ function doTaskSearch() {
 
                             if (item.scheduledDate && matchesKeyword && isDateInRange(item.scheduledDate)) {
                                 // Check if this scheduled item has already been completed and logged
-                                const isDone = data.logs && data.logs.some(l => 
-                                    l.date === item.scheduledDate && 
+                                const isDone = data.logs && data.logs.some(l =>
+                                    l.date === item.scheduledDate &&
                                     l.content.includes(item.content) &&
                                     l.worker.includes(item.worker)
                                 );
                                 if (!isDone) {
-                                    allTasks.push({ site, equip, item: item, isCompleted: false });
+                                    allTasks.push({ site, equip, item: item, isCompleted: false, custEquipName: custEquipName });
                                 }
                             }
                         });
@@ -3936,7 +4078,7 @@ function doTaskSearch() {
         const type = task.item.type || '정기';
         const detailType = task.item.detailType || '';
         const detailType2 = task.item.detailType2 || '';
-        
+
         const key = `${date}_${task.site}_${task.equip}_${type}_${detailType}_${detailType2}`;
         if (!groupedTasks[key]) {
             groupedTasks[key] = {
@@ -3945,6 +4087,7 @@ function doTaskSearch() {
                 date: date,
                 type: type,
                 items: [],
+                custEquipName: task.custEquipName,
                 isCompleted: true // Assume completed, set to false if any item is not
             };
         }
@@ -3965,7 +4108,7 @@ function doTaskSearch() {
     }
 
     resultsList.innerHTML = displayTasks.map(group => {
-        const { site, equip, date, type, items, isCompleted } = group;
+        const { site, equip, date, type, items, isCompleted, custEquipName } = group;
         const parts = equip.split('::');
         const equipName = parts[0];
         const serialNo = parts.length > 1 ? `(${parts[1]})` : '';
@@ -3985,6 +4128,8 @@ function doTaskSearch() {
         const typeClass = `type-${type}`; // Use first type for badge color
         const completedStatusText = isCompleted ? `<span style="color: var(--cal-green); font-weight: bold; margin-left: 5px;">완료</span>` : '';
 
+        const custEquipNameHtml = custEquipName ? `<span style="color: #e6edf3; font-size: 12px; margin-left: 8px;">(${escapeHtml(custEquipName)})</span>` : '';
+
         // Use the ID of the first item in the group for the click action
         const firstItemId = items[0].id;
 
@@ -3993,7 +4138,10 @@ function doTaskSearch() {
                 onclick="openTaskFromSearch('${site}', '${equip}', ${firstItemId}, ${isCompleted})"
                 style="flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px; border-bottom: 1px solid var(--cal-border);">
                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <span style="font-size: 12px; color: var(--cal-text-secondary);">${date}</span>
+                    <div style="display: flex; align-items: center;">
+                        <span style="font-size: 12px; color: var(--cal-text-secondary);">${date}</span>
+                        ${custEquipNameHtml}
+                    </div>
                     ${completedStatusText}
                 </div>
                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
@@ -4013,7 +4161,7 @@ function doTaskSearch() {
 function openTaskFromSearch(site, equip, id, isCompleted) {
     const searchModal = document.getElementById('task-search-modal');
     if (searchModal) searchModal.style.display = 'none';
-    
+
     cameFromTaskSearch = true; // [추가] 플래그 설정
     openEventDetailModal(site, equip, id, isCompleted);
 }
