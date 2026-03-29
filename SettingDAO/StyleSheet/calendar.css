@@ -571,6 +571,17 @@
     box-sizing: border-box;
 }
 
+/* [요청] 항목 선택 및 작업자 제안 박스 2배 확장 (작업자는 우측 정렬로 좌측 확장) */
+#register-content-dropdown {
+    width: 200%;
+}
+#register-worker-dropdown,
+#detail-worker-dropdown {
+    width: 200%;
+    left: auto;
+    right: 0;
+}
+
 .log-select-dropdown.show { display: block; }
 
 .log-select-list { max-height: 200px; overflow-y: auto; padding: 5px; }
