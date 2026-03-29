@@ -2457,7 +2457,7 @@ function setupRegisterScheduleModal() {
                 <div id="register-equip-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; background: #0d1117; border: 1px solid #30363d; color: #8b949e; padding: 4px 8px; border-radius: 4px; min-height: 30px; display: flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: not-allowed; opacity: 0.5;">사업장을 먼저 선택해주세요</div>
                 <div id="register-equip-dropdown" class="log-select-dropdown">
                     <input type="text" id="register-equip-search" class="dropdown-search-input" placeholder="장비 검색..." autocomplete="off">
-                    <ul id="register-equip-suggestions" class="log-select-list" style="list-style: none; padding: 0; margin: 0;"></ul>
+                    <div id="register-equip-suggestions" class="log-select-list"></div>
                 </div>
             `;
             
@@ -2988,10 +2988,11 @@ function updateRegisterEquipSelect(site) {
                     const detailData = JSON.parse(localStorage.getItem(key)) || {};
                     const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
-                    const li = document.createElement('li');
-                    li.className = 'suggestion-item';
+                    const li = document.createElement('div');
+                    li.className = 'log-select-item';
+                    li.style.padding = '10px 8px';
                     
-                    let displayHtml = `<div class="suggestion-item-content" style="display: flex; flex-direction: row; align-items: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">`;
+                    let displayHtml = `<div style="display: flex; flex-direction: row; align-items: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">`;
                     displayHtml += `<span style="font-weight: bold; color: #e6edf3; font-size: 11px; margin-right: 5px;">${escapeHtml(name)}</span>`;
                     
                     if (serial) displayHtml += `<span style="color:#8b949e; font-size:11px; margin-right: 5px;">(${escapeHtml(serial)})</span>`;
@@ -3024,7 +3025,7 @@ function updateRegisterEquipSelect(site) {
                 });
                 equipSuggestionList.style.display = 'block';
             } else {
-                equipSuggestionList.innerHTML = '<li class="suggestion-item list-empty-msg" style="justify-content: center; text-align: center;">검색 결과가 없습니다.</li>';
+                equipSuggestionList.innerHTML = '<div class="log-select-empty-msg" style="padding: 10px;">검색 결과가 없습니다.</div>';
                 equipSuggestionList.style.display = 'block';
             }
         };
