@@ -1048,6 +1048,9 @@ body {
 
     .mobile-only-btn-group button {
         flex: 1;
+        padding: 12px 10px;
+        font-size: 15px;
+        font-weight: bold;
     }
 
     .home-menu-container.compact .home-big-btn .icon {
