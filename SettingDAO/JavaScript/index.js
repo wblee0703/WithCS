@@ -696,9 +696,11 @@ function renderEquipDetailList(data) {
         }
         
         let subInfo = '';
-        if (item.serial) subInfo += `[${escapeHtml(item.serial)}] `;
-        if (item.custEquipName) subInfo += `[${escapeHtml(item.custEquipName)}]`;
-        subInfo = subInfo.trim();
+        if (item.custEquipName) {
+            subInfo = `[${escapeHtml(item.custEquipName)}]`;
+        } else if (item.serial) {
+            subInfo = `[${escapeHtml(item.serial)}]`;
+        }
 
         li.innerHTML = `
             <span class="status-color equip-bar"></span>
