@@ -256,7 +256,7 @@ function getScheduleForCalendar() {
 /**
  * 일정 날짜 설정 (등록/수정/삭제)
  */
-function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null, providedReason = undefined) {
+function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null, worker = null, providedReason = undefined) {
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
 
@@ -322,6 +322,9 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null, 
                 item.scheduledDate = dateStr;
                 if (md !== null) {
                     item.md = md;
+                }
+                if (worker !== null) {
+                    item.worker = worker;
                 }
 
                 const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
@@ -826,7 +829,7 @@ function openCalendarPopup(dateStr, events) {
                         }
 
                         group.items.forEach(item => {
-                            setScheduleDate(item.site, item.equip, item.id, '', true, null, reason);
+                            setScheduleDate(item.site, item.equip, item.id, '', true, null, null, reason);
                         });
 
                         // UI 갱신 (배경 캘린더 및 대시보드)
@@ -891,10 +894,12 @@ function setupScheduleModal() {
                 const date = dateInput.value;
                 const mdInput = document.getElementById('schedule-md-input');
                 const md = mdInput ? mdInput.value.trim() : '';
+                const workerHidden = document.getElementById('schedule-worker-hidden');
+                const worker = workerHidden ? workerHidden.value.trim() : '';
                 if (!date) return alert('날짜를 선택해주세요.');
-                if (!md) return alert('공수(M/D)를 입력해주세요.');
+                if (!worker) return alert('작업자를 선택해주세요.');
                 if (parseFloat(md) < 0) return alert('공수는 0 이상이어야 합니다.');
-                const success = setScheduleDate(currentScheduleTarget.site, currentScheduleTarget.equip, currentScheduleTarget.id, date, false, md);
+                const success = setScheduleDate(currentScheduleTarget.site, currentScheduleTarget.equip, currentScheduleTarget.id, date, false, md, worker);
                 if (success === false) return; // 사용자가 사유 입력을 취소한 경우 중단
                 modal.style.display = 'none';
                 if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
@@ -935,7 +940,128 @@ function openScheduleModal(site, equip, id) {
 
     if (mdInput) {
         mdInput.value = item ? (item.md || '') : '';
+        mdInput.disabled = true; // [추가] 공수 입력창 비활성화
+        mdInput.classList.add('input-disabled');
     }
+
+    // [추가] 작업자 필드 동적 생성 및 검색/제안 박스 연동
+    let workerHidden = document.getElementById('schedule-worker-hidden');
+    if (!workerHidden) {
+        workerHidden = document.createElement('input');
+        workerHidden.type = 'hidden';
+        workerHidden.id = 'schedule-worker-hidden';
+        
+        const wrapper = document.createElement('div');
+        wrapper.id = 'schedule-worker-wrapper';
+        wrapper.className = 'log-select-wrapper';
+        wrapper.style.marginBottom = '15px';
+        wrapper.innerHTML = `
+            <label class="form-label" style="display:block; margin-bottom:5px; color:var(--cal-text-secondary); font-size:13px;">작업자</label>
+            <div id="schedule-worker-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; background: var(--cal-bg-dark);">작업자 선택</div>
+            <div id="schedule-worker-dropdown" class="log-select-dropdown">
+                <input type="text" id="schedule-worker-search" class="dropdown-search-input" placeholder="이름 검색...">
+                <div id="schedule-worker-list" class="log-select-list"></div>
+                <div class="log-select-footer">
+                    <button type="button" id="btn-schedule-worker-confirm" class="btn-blue-sm" style="width: 100%;">선택 완료</button>
+                </div>
+            </div>
+        `;
+        
+        const mdRow = mdInput ? (mdInput.closest('.form-row') || mdInput.closest('div')) : null;
+        if (mdRow && mdRow.parentNode) {
+            mdRow.parentNode.insertBefore(wrapper, mdRow);
+        } else {
+            modal.querySelector('.modal-body').insertBefore(wrapper, modal.querySelector('.modal-btn-group'));
+        }
+        wrapper.appendChild(workerHidden);
+    }
+    
+    const trigger = document.getElementById('schedule-worker-trigger');
+    const dropdown = document.getElementById('schedule-worker-dropdown');
+    const searchInput = document.getElementById('schedule-worker-search');
+    const listContainer = document.getElementById('schedule-worker-list');
+    const confirmBtn = document.getElementById('btn-schedule-worker-confirm');
+    
+    // 초기 데이터 바인딩
+    let initialWorker = item && item.worker ? item.worker : (sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '');
+    workerHidden.value = initialWorker;
+    if (initialWorker) {
+        trigger.textContent = initialWorker.split(',').join(' ');
+        trigger.title = initialWorker;
+        if (mdInput && !item) mdInput.value = initialWorker.split(',').filter(Boolean).length;
+    } else {
+        trigger.textContent = '작업자 선택';
+        trigger.title = '';
+        if (mdInput && !item) mdInput.value = '0';
+    }
+    
+    const renderWorkers = async (searchTerm = '') => {
+        const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
+        const currentSelected = workerHidden.value ? workerHidden.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+        const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+        let displayWorkers = [...allWorkers];
+        
+        if (searchTerm) {
+            const kw = searchTerm.toLowerCase();
+            displayWorkers = displayWorkers.filter(w => 
+                w.name.toLowerCase().includes(kw) || 
+                w.department.toLowerCase().includes(kw) || 
+                w.position.toLowerCase().includes(kw)
+            );
+        }
+        
+        const displayedNames = new Set(displayWorkers.map(w => w.name));
+        currentSelected.forEach(selectedName => {
+            if (!displayedNames.has(selectedName)) {
+                const workerToAdd = allWorkers.find(w => w.name === selectedName);
+                if (workerToAdd) displayWorkers.unshift(workerToAdd);
+                else displayWorkers.unshift({name: selectedName, department: '', position: ''});
+            }
+        });
+        
+        displayWorkers.sort((a, b) => {
+            const aSelected = currentSelected.includes(a.name);
+            const bSelected = currentSelected.includes(b.name);
+            if (aSelected && !bSelected) return -1;
+            if (!aSelected && bSelected) return 1;
+            return a.name.localeCompare(b.name);
+        });
+
+        listContainer.innerHTML = displayWorkers.map(w => {
+            const isSelected = currentSelected.includes(w.name);
+            const subInfo = (w.department || w.position) ? ` <span style="font-size:11px; color:#8b949e;">(${escapeHtml(w.department)} ${escapeHtml(w.position)})</span>` : '';
+            return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${subInfo}</span></div>`;
+        }).join('');
+        
+        if (displayWorkers.length === 0) listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
+        
+        listContainer.querySelectorAll('.log-select-item').forEach(liItem => {
+            liItem.onclick = (e) => { 
+                e.stopPropagation(); 
+                liItem.classList.toggle('selected'); 
+                
+                const selected = Array.from(listContainer.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
+                workerHidden.value = selected.join(', ');
+                if (selected.length > 0) trigger.textContent = selected.join(' ');
+                else trigger.textContent = '작업자 선택';
+                trigger.title = selected.join(', ');
+                
+                if (mdInput) mdInput.value = selected.length.toString();
+            };
+        });
+    };
+
+    // 이전 이벤트 핸들러 초기화 및 재할당
+    trigger.onclick = (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== dropdown) d.classList.remove('show'); });
+        dropdown.classList.toggle('show');
+        if (dropdown.classList.contains('show')) renderWorkers(searchInput.value.trim());
+    };
+
+    searchInput.onclick = (e) => e.stopPropagation();
+    searchInput.oninput = (e) => renderWorkers(e.target.value.trim());
+    confirmBtn.onclick = (e) => { e.stopPropagation(); dropdown.classList.remove('show'); };
 
     modal.style.display = 'flex';
 }
@@ -3836,7 +3962,7 @@ window.handleCalendarDrop = function (e, newDate) {
             }
 
             ids.forEach(id => {
-                setScheduleDate(site, equip, id, newDate, false, null, reason);
+                setScheduleDate(site, equip, id, newDate, false, null, null, reason);
             });
             renderCalendar();
             if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();

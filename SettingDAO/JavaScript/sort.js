@@ -865,6 +865,12 @@ function renderSortChart(results) {
     const allSites = new Set();
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
     
+    // [추가] 비정기 점검 항목 고정 리스트 (이 항목들만 차트에 표시)
+    const allowedIrregularItems = [
+        "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 / 용자 이상", 
+        "파트 이상 (교체)", "파트 이상 (수리)", "프로그램 이상", "단순조치", "기타"
+    ];
+
     results.forEach(row => {
         if (row.content) {
             const items = row.content.split(',').map(s => s.trim());
@@ -924,7 +930,8 @@ function renderSortChart(results) {
                 if (pureItem.includes(' - ')) {
                     pureItem = pureItem.split(' - ')[0].trim();
                 }
-                if (pureItem && row.site) {
+                // [수정] 지정된 10가지 비정기 항목만 필터링하여 차트에 집계
+                if (pureItem && row.site && allowedIrregularItems.includes(pureItem)) {
                     if (!irregularSiteCounts[pureItem]) irregularSiteCounts[pureItem] = {};
                     irregularSiteCounts[pureItem][row.site] = (irregularSiteCounts[pureItem][row.site] || 0) + 1;
                 }
@@ -995,8 +1002,21 @@ function renderSortChart(results) {
                 }
             });
 
+            // [수정] 수량/건수가 많은 항목부터 내림차순으로 정렬
+            const sortedCategories = Object.keys(dataObj).map(category => {
+                let currentTotal = 0;
+                allSitesArray.forEach(site => {
+                    if (localSelectedSite && localSelectedSite !== site) return;
+                    currentTotal += (dataObj[category][site] || 0);
+                });
+                return { category, total: currentTotal };
+            }).sort((a, b) => {
+                if (b.total !== a.total) return b.total - a.total; // 1차 정렬: 수량 많은 순
+                return a.category.localeCompare(b.category); // 2차 정렬: 수량이 같으면 가나다순
+            }).map(item => item.category);
+
             targetContainer.innerHTML = '';
-            Object.keys(dataObj).sort().forEach(category => {
+            sortedCategories.forEach(category => {
                 const groupDiv = document.createElement('div');
                 groupDiv.className = 'sort-bar-group type-group';
                 const trackDiv = document.createElement('div');
