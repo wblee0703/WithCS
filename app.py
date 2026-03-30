@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, has_request_context, send_from_directory
+from flask import Flask, render_template, request, jsonify, session, has_request_context, send_from_directory, redirect
 import json
 import os
 import sys
@@ -592,24 +592,27 @@ def home():
 @app.route('/setup.html')
 def setup():
     if 'user_id' not in session:
-        return render_template('index.html')
+        return redirect('/')
     return render_template('setup.html')
 
 @app.route('/maintenance.html')
 def maintenance():
     if 'user_id' not in session:
-        return render_template('index.html')
+        return redirect('/')
     return render_template('maintenance.html')
 
 @app.route('/admin.html')
 def admin():
     if 'user_id' not in session:
-        return render_template('index.html')
+        return redirect('/')
     if session.get('role') not in ['admin', 'superadmin']:
-        return render_template('index.html')
+        return redirect('/')
     return render_template('admin.html')
+
 @app.route('/sort')
 def sort():
+    if 'user_id' not in session:
+        return redirect('/')
     return render_template('sort.html')
 
 # [추가] SettingDAO 폴더 정적 파일 서빙

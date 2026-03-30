@@ -279,8 +279,8 @@ function setupSortFilters() {
     // 초기 커스텀 다중 선택 UI 동기화
     syncCustomMultiSelect('sort-site-select', '전체 사업장');
     syncCustomMultiSelect('sort-building-select', '전체 건물');
-    syncCustomMultiSelect('sort-model-select', '전체 모델');
     syncCustomMultiSelect('sort-equip-select', '전체 장비');
+    syncCustomMultiSelect('sort-model-select', '전체 모델');
     syncCustomMultiSelect('sort-type-select', '전체 구분');
     syncCustomMultiSelect('sort-detail-type-select', '전체 세부 구분');
     syncCustomMultiSelect('sort-detail-type2-select', '전체 세부 구분 2');
@@ -454,8 +454,11 @@ function updateSortEquipSelect(sites, buildings, models, data) {
     
             const custEquipName = setup.custEquipName || '';
             let displayText = displayName;
-            if (custEquipName) displayText += ` [${custEquipName}]`;
-            if (serialNo) displayText += ` (${serialNo})`;
+            if (custEquipName) {
+                displayText += ` [${custEquipName}]`;
+            } else if (serialNo) {
+                displayText += ` (${serialNo})`;
+            }
     
             const opt = document.createElement('option');
             opt.value = equip;

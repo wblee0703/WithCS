@@ -74,6 +74,14 @@ function saveAllToServer() {
             },
             body: JSON.stringify(allData)
         })
+            .then(res => {
+                if (res.status === 401) {
+                    alert('보안 세션이 만료되어 데이터 저장에 실패했습니다.\n다시 로그인해주세요.');
+                    sessionStorage.clear();
+                    window.location.href = '/';
+                }
+                return res;
+            })
             .catch(err => console.error('Server sync failed:', err));
     }, 2000); // 2초 지연 후 전송
 }
@@ -117,6 +125,12 @@ document.addEventListener('DOMContentLoaded', () => {
 function fetchServerData(callback) {
     fetch('/api/data')
         .then(response => {
+            if (response.status === 401) {
+                alert('보안 세션이 만료되었습니다. 다시 로그인해주세요.');
+                sessionStorage.clear();
+                window.location.href = '/';
+                throw new Error('Session expired');
+            }
             if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
         })

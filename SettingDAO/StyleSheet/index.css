@@ -599,9 +599,17 @@ body {
     font-size: 12px;
 }
 
-/* [추가] 모바일 전용 버튼 그룹 */
+/* [수정] 모바일 전용 버튼 그룹을 웹 브라우저(데스크톱)에서도 표시되도록 변경 */
 .mobile-only-btn-group {
-    display: none;
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+.mobile-only-btn-group button {
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: bold;
 }
 
 /* ==========================================================================
