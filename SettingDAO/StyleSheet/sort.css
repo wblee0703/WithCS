@@ -9,16 +9,26 @@
 }
 
 .dashboard-sidebar {
+    width: 300px; /* [추가] 너비 속성 누락으로 인한 레이아웃 깨짐 문제 해결 */
     display: flex;
     flex-direction: column;
     height: 100%;
+    gap: 15px; /* [추가] 일관된 UI를 위해 common.css 속성 반영 */
+    min-height: 0; /* [추가] 일관된 UI를 위해 common.css 속성 반영 */
+    flex-shrink: 0; /* [추가] 일관된 UI를 위해 common.css 속성 반영 */
 }
 
 .sidebar-group {
     flex: 1;
     overflow-y: auto;
-    overflow-x: hidden;
-    padding-right: 5px;
+    overflow-x: visible; /* 제안박스(드롭다운)가 스크롤 영역에 잘리지 않도록 가시성 확보 */
+    /* [수정] common.css의 스타일이 누락되어 발생하는 렌더링 문제 해결 */
+    background: #161b22;
+    border-radius: 8px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 }
 
 .dashboard-sidebar .form-group {
@@ -167,10 +177,10 @@
 .chart-legend-table {
     width: 120px;
     flex-shrink: 0;
-    padding: 0 10px;
-    margin-bottom: 48px; /* Y축과 하단 정렬 맞춤 */
+    padding: 0 10px 48px 10px; /* [수정] 하단 여백을 margin에서 padding으로 변경하여 스크롤 영역 확보 */
     overflow-y: auto;
     border-right: 1px solid #30363d;
+    box-sizing: border-box; /* [추가] 패딩이 높이에 포함되도록 설정 */
 }
 
 .legend-item {
@@ -212,7 +222,7 @@
 #section-sort .card-body {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
     padding: 0;
 }
 
@@ -240,4 +250,77 @@
     .sort-half-chart-wrapper {
         flex-direction: column !important;
     }
+}
+
+/* 제안박스(드롭다운) 여백 및 리스트 스타일 개선 */
+#section-sort .log-select-dropdown {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    z-index: 9999 !important; /* 제안박스가 다른 UI(막대그래프 등) 뒤에 깔리지 않도록 최상단 배치 */
+}
+
+#section-sort .log-select-list {
+    padding: 8px !important;
+}
+
+#section-sort .log-select-item {
+    padding: 8px 10px !important;
+    margin-bottom: 4px !important;
+    font-size: 13px !important;
+    cursor: pointer !important; /* 마우스 오버 시 클릭 가능 상태 명확히 표시 */
+    pointer-events: auto !important; /* 클릭 이벤트 강제 활성화 (부모) */
+}
+
+/* [추가] 제안박스 항목 클릭이 되지 않는 문제를 해결하기 위해 자식 요소까지 클릭 이벤트를 허용하도록 강제 */
+#section-sort .log-select-item * {
+    pointer-events: auto !important;
+}
+
+#section-sort .log-select-footer {
+    padding: 8px !important;
+    border-top: 1px solid #30363d;
+    background: #21262d;
+}
+
+/* [추가] 그래프 카드를 구분하기 위한 스타일 */
+.sort-half-chart {
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: #0d1117;
+}
+
+/* [추가] 전체 너비 그래프 카드 스타일 */
+.sort-full-chart {
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 15px;
+    background-color: #0d1117;
+}
+
+/* [추가] 모든 차트 컨테이너에 X축 선을 표시하기 위한 스타일 */
+#sort-chart-container,
+#sort-solution-chart-container,
+#sort-type-chart-container,
+#sort-detail-type-chart-container,
+#sort-detail-type2-chart-container,
+#sort-irregular-chart-container {
+    position: relative;
+}
+
+#sort-chart-container::after,
+#sort-solution-chart-container::after,
+#sort-type-chart-container::after,
+#sort-detail-type-chart-container::after,
+#sort-detail-type2-chart-container::after,
+#sort-irregular-chart-container::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 48px; /* Y축과 라벨 높이에 맞춰 X축 위치 조정 */
+    height: 1px;
+    background-color: #30363d; /* Y축과 동일한 색상 */
 }

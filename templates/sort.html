@@ -65,7 +65,15 @@
             </div>
             <div class="form-group mt-10">
                 <label class="form-label-custom">항목 / 내용 검색</label>
-                <input type="text" id="sort-keyword" class="input-dark full-width" placeholder="작업내용, 물품명, 작업자 입력..." autocomplete="off">
+                <div class="log-select-wrapper full-width" style="margin:0; position:relative;">
+                    <input type="text" id="sort-keyword" class="input-dark full-width" placeholder="검색어 입력 또는 클릭하여 선택..." autocomplete="off" style="cursor: text;">
+                    <div id="sort-keyword-dropdown" class="log-select-dropdown" style="width:100%; max-height:300px; display:none; position:absolute; top:100%; left:0; z-index:1000; background:#161b22; border:1px solid #30363d; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); margin-top:4px; box-sizing:border-box;">
+                        <div id="sort-keyword-list" class="log-select-list" style="max-height: 180px; overflow-y:auto; padding:8px;"></div>
+                        <div class="log-select-footer" style="padding: 5px;">
+                            <button type="button" id="btn-sort-keyword-confirm" class="btn-blue-sm" style="width: 100%;">선택 완료</button>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="form-group mt-10">
                 <label class="form-label-custom">물품 상세 구분 (분석부/샘플링부 등)</label>
@@ -101,14 +109,16 @@
             <div class="card-header">
                 <h3>교체 현황 통계</h3>
             </div>
-            <div class="card-body" style="padding: 15px 20px 10px 10px; overflow: hidden; display: flex; flex-direction: column;">
-                <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3; flex-shrink: 0;">파츠 교체 현황</div>
-                <div style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; margin-bottom: 20px; flex-shrink: 0;">
-                    <!-- Y축 영역 -->
-                    <div id="sort-part-legend" class="chart-legend-table"></div>
-                    <div id="sort-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
-                    <div id="sort-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
-                        <div class="list-empty-msg" style="width: 100%; text-align: center; margin-bottom: auto; margin-top: auto;">조건을 설정하고 검색해주세요.</div>
+            <div class="card-body" style="padding: 15px 20px 10px 10px; overflow: visible; display: flex; flex-direction: column;">
+                <div class="sort-full-chart" style="display: flex; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0;">
+                    <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3; flex-shrink: 0;">파츠 교체 현황</div>
+                    <div style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
+                        <!-- Y축 영역 -->
+                        <div id="sort-part-legend" class="chart-legend-table"></div>
+                        <div id="sort-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
+                        <div id="sort-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
+                            <div class="list-empty-msg" style="width: 100%; text-align: center; margin-bottom: auto; margin-top: auto;">조건을 설정하고 검색해주세요.</div>
+                        </div>
                     </div>
                 </div>
 
@@ -170,15 +180,17 @@
                     </div>
                 </div>
 
-                <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3; margin-top: 20px;">
-                    <span>비정기 점검 항목 현황</span>
-                </div>
-                <div style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; margin-bottom: 20px; flex-shrink: 0;">
-                    <!-- Y축 영역 -->
-                    <div id="sort-irregular-legend" class="chart-legend-table"></div>
-                    <div id="sort-irregular-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
-                    <div id="sort-irregular-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
-                        <div class="list-empty-msg" style="width: 100%; text-align: center; margin-bottom: auto; margin-top: auto;">조건을 설정하고 검색해주세요.</div>
+                <div class="sort-full-chart" style="display: flex; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px;">
+                    <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
+                        <span>비정기 점검 항목 현황</span>
+                    </div>
+                    <div style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
+                        <!-- Y축 영역 -->
+                        <div id="sort-irregular-legend" class="chart-legend-table"></div>
+                        <div id="sort-irregular-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
+                        <div id="sort-irregular-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
+                            <div class="list-empty-msg" style="width: 100%; text-align: center; margin-bottom: auto; margin-top: auto;">조건을 설정하고 검색해주세요.</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -188,9 +200,28 @@
                 <h3 style="font-size: 16px; color: #c9d1d9;">검색 결과 <span id="sort-result-count" class="count-badge">0</span></h3>
             </div>
             <div class="card-body" style="padding: 0;">
-                <ul id="sort-result-list" style="list-style: none; padding: 0; margin: 0; max-height: 500px; overflow-y: auto;">
-                    <li class="list-empty-msg" style="text-align: center; padding: 20px; color: #8b949e;">조건을 설정하고 검색해주세요.</li>
-                </ul>
+                <div class="data-table-wrapper" style="overflow-y: auto; max-height: 500px;">
+                    <table class="data-table" id="sort-result-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 90px;">날짜</th>
+                                <th style="width: 90px;">사업장</th>
+                                <th style="width: 100px;">모델명</th>
+                                <th style="width: 150px;">장비명</th>
+                                <th style="width: 80px;">구분</th>
+                                <th style="width: 180px;">세부구분</th>
+                                <th style="width: auto;">작업내용 (물품)</th>
+                                <th style="width: 80px;">비용처리</th>
+                                <th style="width: 200px;">작업자</th>
+                                <th style="width: 50px;">공수</th>
+                                <th style="width: 50px;">상태</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sort-result-tbody">
+                            <tr><td colspan="11" class="list-empty-msg" style="text-align: center; padding: 20px;">조건을 설정하고 검색해주세요.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </section>

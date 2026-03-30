@@ -494,11 +494,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* [요청] 항목 선택 및 작업자 제안 박스 2배 확장 (작업자는 우측 정렬로 좌측 확장) */
 #log-content-dropdown {
-    width: 200%;
+    width: 100%;
 }
 #log-worker-dropdown,
 #memo-worker-dropdown {
-    width: 200%;
+    width: 150%;
     left: auto;
     right: 0;
 }
@@ -1046,9 +1046,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     
     /* [요청] 모바일 항목 선택 제안박스 확장 및 비용처리 드롭다운 축소 */
     .log-select-dropdown {
-        width: 150% !important; /* 부모 입력창 너비에 정확히 맞춤 */
-        min-width: 150% !important;
-        max-width: none !important;
+        width: 150%; /* 부모 입력창 너비에 정확히 맞춤 */
+        min-width: 150%;
+        max-width: none;
     }
     .log-select-item {
         display: flex !important;
@@ -1176,6 +1176,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #log-list-wrapper .data-table td {
         font-size: 11px !important; /* 글자 크기 축소 */
         padding: 6px 4px !important; /* 여백 축소로 더 많은 내용 표시 */
+    }
+     /* [요청] 모바일 환경에서 제안 박스 너비 및 위치 조정 */
+    #log-content-dropdown {
+        width: 200%;
+    }
+    #log-worker-dropdown,
+    #memo-worker-dropdown {
+        width: 150%;
+        left: auto;
+        right: 0;
     }
 
     /* 모든 컬럼 표시 및 너비 재조정 */
