@@ -194,12 +194,54 @@ function initDateControls() {
 /* ==========================================================================
    [추가] 장비 통합 현황 섹션 (Equipment Integration Section)
    ========================================================================== */
+// [추가] 사업장 그룹 필터 전역 변수
+window.integEquipSiteGroupFilter = window.integEquipSiteGroupFilter || '전체';
+
 function renderIntegEquipStats(data) {
     const siteChartEl = document.getElementById('integ-equip-site-chart');
     const modelChartEl = document.getElementById('integ-equip-model-chart');
     const summaryEl = document.getElementById('integ-equip-summary');
     
     if (!siteChartEl || !modelChartEl) return;
+
+    // [추가] 필터 UI 동적 생성 (사업장별 장비현황 차트 위)
+    let filterContainer = document.getElementById('integ-equip-site-filter');
+    if (!filterContainer && siteChartEl.parentElement) {
+        filterContainer = document.createElement('div');
+        filterContainer.id = 'integ-equip-site-filter';
+        filterContainer.style.display = 'flex';
+        filterContainer.style.gap = '5px';
+        filterContainer.style.justifyContent = 'center';
+        filterContainer.style.marginBottom = '10px';
+        filterContainer.style.width = '100%';
+        filterContainer.style.flexWrap = 'wrap';
+        
+        siteChartEl.parentElement.insertBefore(filterContainer, siteChartEl);
+    }
+
+    if (filterContainer) {
+        const groups = ['전체', 'SKH 이천', 'SKH 청주', 'SEC 화성', '기타 사업장'];
+        filterContainer.innerHTML = '';
+        groups.forEach(g => {
+            const btn = document.createElement('button');
+            btn.className = `btn-filter ${window.integEquipSiteGroupFilter === g ? 'active' : ''}`;
+            btn.textContent = g === '기타 사업장' ? '기타' : g;
+            btn.onclick = () => {
+                window.integEquipSiteGroupFilter = g;
+                integEquipSelectedSite = null; // 필터 변경 시 개별 선택 해제
+                renderIntegEquipStats(data);
+            };
+            filterContainer.appendChild(btn);
+        });
+    }
+
+    const getSiteGroup = (siteName) => {
+        const upper = siteName.toUpperCase();
+        if (upper.includes('SKH 이천') || upper.includes('SKH이천')) return 'SKH 이천';
+        if (upper.includes('SKH 청주') || upper.includes('SKH청주')) return 'SKH 청주';
+        if (upper.includes('SEC 화성') || upper.includes('SEC화성')) return 'SEC 화성';
+        return '기타 사업장';
+    };
 
     const siteCounts = {};
     const modelCounts = {};
@@ -210,29 +252,34 @@ function renderIntegEquipStats(data) {
     // 데이터 집계
     Object.keys(data).forEach(site => {
         if (data[site] && data[site].length > 0) {
-            // 1. 사업장 별 장비 수
-            siteCounts[site] = data[site].length;
+            const group = getSiteGroup(site);
+            const isSiteVisible = (window.integEquipSiteGroupFilter === '전체' || window.integEquipSiteGroupFilter === group);
 
-            data[site].forEach(equip => {
-                totalEquipCount++;
-                const model = equip.split('::')[0]; // 장비명(모델) 추출
-                allModels.add(model);
-                
-                // 2. 모델 별 장비 수 (장비명 기준 집계) - [수정] 필터 적용
-                if (!integEquipSelectedSite || site === integEquipSelectedSite) {
-                    if (!modelCounts[model]) modelCounts[model] = { total: 0, setup: 0 };
-                    modelCounts[model].total++;
+            if (isSiteVisible) {
+                // 1. 사업장 별 장비 수
+                siteCounts[site] = data[site].length;
 
-                    const equipKey = `${site}::${equip}`;
-                    const detailData = setupData[equipKey];
-                    if (detailData && detailData.setupDetails) {
-                        const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
-                        if (completeItem && completeItem.startDate && !completeItem.completed) {
-                            modelCounts[model].setup++;
+                data[site].forEach(equip => {
+                    totalEquipCount++;
+                    const model = equip.split('::')[0]; // 장비명(모델) 추출
+                    allModels.add(model);
+                    
+                    // 2. 모델 별 장비 수 (장비명 기준 집계) - [수정] 필터 적용
+                    if (!integEquipSelectedSite || site === integEquipSelectedSite) {
+                        if (!modelCounts[model]) modelCounts[model] = { total: 0, setup: 0 };
+                        modelCounts[model].total++;
+
+                        const equipKey = `${site}::${equip}`;
+                        const detailData = setupData[equipKey];
+                        if (detailData && detailData.setupDetails) {
+                            const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
+                            if (completeItem && completeItem.startDate && !completeItem.completed) {
+                                modelCounts[model].setup++;
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
         }
     });
 
@@ -243,9 +290,9 @@ function renderIntegEquipStats(data) {
         summaryEl.textContent = `(사업장 : ${siteCount}, 장비 모델 : ${modelCount}, 장비수 : ${totalEquipCount})`;
     }
 
-    // 1. 사업장 별 장비 현황 (이름순 정렬)
+    // 1. 사업장 별 장비 현황 (장비 수 내림차순 정렬)
     const sortedSiteCounts = Object.entries(siteCounts)
-        .sort(([a,], [b,]) => a.localeCompare(b))
+        .sort(([, a], [, b]) => b - a)
         .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
 
     const siteGradients = {};
@@ -256,9 +303,9 @@ function renderIntegEquipStats(data) {
         renderIntegEquipStats(data);
     }, integEquipSelectedSite);
 
-    // 2. 모델 별 장비 현황 (이름순 정렬)
+    // 2. 모델 별 장비 현황 (장비 수 내림차순 정렬)
     const sortedModelCounts = Object.entries(modelCounts)
-        .sort(([a,], [b,]) => a.localeCompare(b))
+        .sort(([, a], [, b]) => b.total - a.total)
         .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
 
     const modelColors = [
@@ -678,7 +725,13 @@ function renderIntegMaintStats(mainData) {
     if (siteChartEl) {
         let totalSiteCount = 0;
         Object.values(siteCounts).forEach(count => totalSiteCount += count);
-        const orderedSiteCounts = { '전체': totalSiteCount, ...siteCounts };
+        
+        // 수량 기준 내림차순 정렬
+        const sortedSites = Object.entries(siteCounts)
+            .sort(([, a], [, b]) => b - a)
+            .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
+
+        const orderedSiteCounts = { '전체': totalSiteCount, ...sortedSites };
         const siteGradients = {};
         Object.keys(orderedSiteCounts).forEach(key => siteGradients[key] = window.getSiteGradient(key));
 

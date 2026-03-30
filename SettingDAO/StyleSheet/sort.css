@@ -95,6 +95,7 @@
     flex: 1; /* 남은 공간을 균등 분배하여 전체 너비 사용 */
     min-width: 60px;
     height: 100%;
+    position: relative; /* [추가] 라벨 대각선 배치를 위한 기준점 */
 }
 
 .sort-bar-group .bar-value {
@@ -127,20 +128,20 @@
 }
 
 .sort-bar-group .bar-label {
-    height: 35px;
-    margin-top: 8px;
     font-size: 11px;
-    color: #8b949e;
-    text-align: center;
-    width: 100%;
-    max-width: 100px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    word-break: break-all;
-    flex: none;
+    color: #e6edf3;
+    white-space: nowrap;
+    position: absolute;
+    top: calc(100% + 5px);
+    right: 50%;
+    transform: rotate(-45deg);
+    transform-origin: top right;
+    width: auto;
+    max-width: none;
+    height: auto;
+    margin-top: 0;
+    overflow: visible;
+    display: block;
 }
 
 .sort-bar-group.type-group .bar-track {
@@ -177,7 +178,7 @@
 .chart-legend-table {
     width: 120px;
     flex-shrink: 0;
-    padding: 0 10px 48px 10px; /* [수정] 하단 여백을 margin에서 padding으로 변경하여 스크롤 영역 확보 */
+    padding: 0 10px 100px 10px; /* [수정] 대각선 라벨 공간 30px 추가 확보 */
     overflow-y: auto;
     border-right: 1px solid #30363d;
     box-sizing: border-box; /* [추가] 패딩이 높이에 포함되도록 설정 */
@@ -249,6 +250,7 @@
     }
     .sort-half-chart-wrapper {
         flex-direction: column !important;
+        height: auto !important; /* [추가] 모바일 가로 배치 해제 시 높이 자동 조절 */
     }
 }
 
@@ -320,7 +322,31 @@
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 48px; /* Y축과 라벨 높이에 맞춰 X축 위치 조정 */
+    bottom: 100px !important; /* Y축과 라벨 높이에 맞춰 X축 위치 조정 */
     height: 1px;
     background-color: #30363d; /* Y축과 동일한 색상 */
+}
+
+/* [추가] 라벨 회전(대각선)으로 인한 하단 공간 확보 및 전체 차트 높이 보정 */
+#sort-y-axis,
+#sort-solution-y-axis,
+#sort-type-y-axis,
+#sort-detail-type-y-axis,
+#sort-detail-type2-y-axis,
+#sort-irregular-y-axis {
+    margin-bottom: 100px !important;
+}
+
+#sort-chart-container,
+#sort-solution-chart-container,
+#sort-type-chart-container,
+#sort-detail-type-chart-container,
+#sort-detail-type2-chart-container,
+#sort-irregular-chart-container {
+    padding-bottom: 100px !important;
+}
+
+.sort-half-chart-wrapper,
+.sort-full-chart > div:last-child {
+    height: 360px !important;
 }

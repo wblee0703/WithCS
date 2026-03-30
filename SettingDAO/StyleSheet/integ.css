@@ -63,9 +63,9 @@
     display: flex;
     align-items: flex-end;
     justify-content: space-around;
-    height: 250px;
+    height: 380px; /* 대각선 라벨 공간 50px 추가 확보 */
     width: 100%;
-    padding: 10px; /* Y축 제거로 패딩 통일 */
+    padding: 10px 10px 140px 10px; /* 라벨 표시를 위한 하단 패딩 50px 추가 증가 */
     position: relative;
     box-sizing: border-box;
 }
@@ -119,7 +119,7 @@
     position: absolute;
     left: 10px;
     top: 5px;
-    bottom: 35px; /* 라벨 높이만큼 하단 여백 */
+    bottom: 135px; /* 라벨 패딩 증가(+50px)에 맞춰 Y축 하단 여백 조정 */
     width: 30px;
     display: flex;
     flex-direction: column-reverse; /* 0이 아래로 오도록 */
@@ -237,14 +237,14 @@
 }
 
 .bar-chart-container .bar-label {
-    font-size: 14px;       /* [설정] 항목명 글씨 크기 */
+    font-size: 12px;       /* 라벨 글씨 축소 및 대각선 회전 처리 */
     color: #e6edf3;          /* [설정] 항목명 글씨 색상 */
-    margin-top: 6px;
-    text-align: center;
-    width: 120%;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
+    position: absolute;
+    top: calc(100% + 5px); /* 막대 하단 선 바로 아래 */
+    right: 50%; /* 막대 중앙 위치 */
+    transform: rotate(-45deg); /* -45도 대각선 회전 */
+    transform-origin: top right; /* 회전 중심을 우측 상단으로 설정 */
 }
 
 /* [추가] 셋업 진행 장비 목록 리스트 개별 설정 */
@@ -468,10 +468,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
 
     .bar-chart-container {
-        height: 200px;
+        height: 350px; /* 모바일 대각선 라벨 공간 50px 추가 확보 */
         overflow-x: auto; /* 가로 스크롤 허용 */
         justify-content: flex-start; /* 왼쪽 정렬 */
-        padding-bottom: 10px; /* 스크롤바 공간 확보 */
+        padding-bottom: 140px; /* 모바일 하단 라벨 공간 50px 추가 확보 */
     }
 
     .bar-group {
