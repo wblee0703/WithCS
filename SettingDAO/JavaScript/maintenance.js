@@ -1900,6 +1900,14 @@ function deleteLogItem(id) {
     const targetLog = data.logs.find(l => l.id === id);
     const deletedInfo = targetLog ? `${targetLog.date} ${targetLog.content}` : 'Unknown';
 
+    // [추가] 추가 작업으로 등록된 로그가 삭제될 경우, 원본 로그의 '이동' 버튼을 '추가' 버튼으로 되돌리기
+    if (targetLog && targetLog.originalLogId) {
+        const originalLog = data.logs.find(l => l.id === targetLog.originalLogId);
+        if (originalLog) {
+            delete originalLog.addWorkLogId;
+        }
+    }
+
     data.logs = data.logs.filter(l => l.id !== id);
     localStorage.setItem(key, JSON.stringify(data));
     addSystemLog('DELETE_LOG', currentPath.equip, `삭제: ${deletedInfo}`);

@@ -1173,8 +1173,9 @@ function setupEventDetailModal() {
         const confirmBtn = document.getElementById('btn-detail-worker-confirm');
 
         const renderWorkers = async (searchTerm = '') => {
-            // [수정] 현재 작업의 사업장(site)을 기준으로 작업자 목록을 가져옴
-            const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames(site) : [];
+            // [수정] 현재 작업의 사업장(currentDetailTarget.site)을 기준으로 작업자 목록을 가져옴
+            const currentSite = currentDetailTarget ? currentDetailTarget.site : null;
+            const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames(currentSite) : [];
             const currentSelected = workerInput.value ? workerInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
             const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '', site: '' } : w);
             let displayWorkers = [...allWorkers];
@@ -1611,7 +1612,7 @@ function toggleDetailContentEdit() {
 
             const dropdown = document.createElement('div');
             dropdown.className = 'log-select-dropdown';
-            dropdown.style.width = '200%';
+            dropdown.style.width = '100%';
 
             // [추가] 검색 입력창 생성
             const searchInput = document.createElement('input');
