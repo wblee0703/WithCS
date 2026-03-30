@@ -748,22 +748,36 @@ def update_user_info():
 @app.route('/api/users/names', methods=['GET'])
 @login_required
 def get_user_names():
+    target_site = request.args.get('site', None)
     excluded_ids = ['admin', 'user', os.environ.get('APP_ADMIN_ID', 'admin'), os.environ.get('APP_USER_ID', 'user')]
     users = User.query.filter(~User.id.in_(excluded_ids)).all()
     
-    workers = []
+    site_workers = []
+    other_workers = []
     seen = set()
+
     for u in users:
         name = u.name if u.name else u.id
         if name not in seen:
             seen.add(name)
-            workers.append({
+            worker_data = {
                 "name": name,
                 "department": u.department or "",
-                "position": u.position or ""
-            })
+                "position": u.position or "",
+                "site": u.site or ""
+            }
+            if target_site and u.site == target_site:
+                site_workers.append(worker_data)
+            else:
+                other_workers.append(worker_data)
+    
+    # 각 그룹을 이름순으로 정렬
+    site_workers.sort(key=lambda x: x["name"])
+    other_workers.sort(key=lambda x: x["name"])
+    
+    # 해당 사업장 작업자를 우선으로 하여 리스트 결합
+    workers = site_workers + other_workers
             
-    workers = sorted(workers, key=lambda x: x["name"])
     return jsonify({"status": "success", "workers": workers})
 
 @app.route('/api/session/extend', methods=['POST'])

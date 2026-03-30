@@ -20,15 +20,24 @@ if (typeof window.getHolidayName !== 'function') {
 // [추가] 작업자(사용자) 목록 조회 함수 폴백
 if (typeof window.fetchWorkerNames !== 'function') {
     window.workerNamesCache = [];
-    window.fetchWorkerNames = async function () {
-        if (window.workerNamesCache.length > 0) return window.workerNamesCache;
-        try {
-            const res = await fetch('/api/users/names');
+  window.fetchWorkerNames = async function (site = null) {
+        // 사이트 지정 없이 캐시가 있으면 캐시 반환
+        if (!site && window.workerNamesCache.length > 0) {
+            return window.workerNamesCache;
+        }
+      try {
+            // 사이트가 지정된 경우 쿼리 파라미터로 추가
+            const url = site ? `/api/users/names?site=${encodeURIComponent(site)}` : '/api/users/names';
+            const res = await fetch(url);
             if (res.ok) {
                 const data = await res.json();
                 if (data.status === 'success') {
-                    window.workerNamesCache = data.workers || data.names || [];
-                    return window.workerNamesCache;
+                    const workers = data.workers || data.names || [];
+                    // 사이트 지정이 없을 때만 전역 캐시 업데이트
+                    if (!site) {
+                        window.workerNamesCache = workers;
+                    }
+                    return workers;
                 }
             }
         } catch (e) { console.error("fetchWorkerNames Error:", e); }
@@ -996,9 +1005,10 @@ function openScheduleModal(site, equip, id) {
     }
     
     const renderWorkers = async (searchTerm = '') => {
-        const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
+        // [수정] 현재 작업의 사업장(site)을 기준으로 작업자 목록을 가져옴
+        const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames(site) : [];
         const currentSelected = workerHidden.value ? workerHidden.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-        const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+        const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: '', site: ''} : w);
         let displayWorkers = [...allWorkers];
         
         if (searchTerm) {
@@ -1029,8 +1039,11 @@ function openScheduleModal(site, equip, id) {
 
         listContainer.innerHTML = displayWorkers.map(w => {
             const isSelected = currentSelected.includes(w.name);
-            const subInfo = (w.department || w.position) ? ` <span style="font-size:11px; color:#8b949e;">(${escapeHtml(w.department)} ${escapeHtml(w.position)})</span>` : '';
-            return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${subInfo}</span></div>`;
+            // [수정] 작업자 이름 뒤에 소속/직급과 함께 사업장 정보 표시
+            let subInfo = '';
+            const siteInfo = w.site ? ` <span style="font-size:11px; color:#3fb950;">[${escapeHtml(w.site)}]</span>` : '';
+            const deptPosInfo = (w.department || w.position) ? ` <span style="font-size:11px; color:#8b949e;">(${escapeHtml(w.department)} ${escapeHtml(w.position)})</span>` : '';
+            return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${siteInfo}${deptPosInfo}</span></div>`;
         }).join('');
         
         if (displayWorkers.length === 0) listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
@@ -1160,9 +1173,10 @@ function setupEventDetailModal() {
         const confirmBtn = document.getElementById('btn-detail-worker-confirm');
 
         const renderWorkers = async (searchTerm = '') => {
-            const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
+            // [수정] 현재 작업의 사업장(site)을 기준으로 작업자 목록을 가져옴
+            const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames(site) : [];
             const currentSelected = workerInput.value ? workerInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-            const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '' } : w);
+            const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '', site: '' } : w);
             let displayWorkers = [...allWorkers];
 
             if (searchTerm) {
@@ -1194,8 +1208,11 @@ function setupEventDetailModal() {
 
             listContainer.innerHTML = displayWorkers.map(w => {
                 const isSelected = currentSelected.includes(w.name);
-                const subInfo = (w.department || w.position) ? ` <span style="font-size:11px; color:#8b949e;">(${escapeHtml(w.department)} ${escapeHtml(w.position)})</span>` : '';
-                return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${subInfo}</span></div>`;
+                // [수정] 작업자 이름 뒤에 소속/직급과 함께 사업장 정보 표시
+                let subInfo = '';
+                const siteInfo = w.site ? ` <span style="font-size:11px; color:#3fb950;">[${escapeHtml(w.site)}]</span>` : '';
+                const deptPosInfo = (w.department || w.position) ? ` <span style="font-size:11px; color:#8b949e;">(${escapeHtml(w.department)} ${escapeHtml(w.position)})</span>` : '';
+                return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${siteInfo}${deptPosInfo}</span></div>`;
             }).join('');
             if (displayWorkers.length === 0) listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
             listContainer.querySelectorAll('.log-select-item').forEach(item => {
@@ -2772,9 +2789,12 @@ function setupRegisterScheduleModal() {
         };
 
         const renderRegisterWorkers = async (searchTerm = '') => {
-            const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
+            // [수정] 선택된 사업장을 기준으로 작업자 목록을 가져옴
+            const siteSelect = document.getElementById('register-site-select');
+            const site = siteSelect ? siteSelect.value : null;
+            const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames(site) : [];
             const currentSelected = workerHidden.value ? workerHidden.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-            const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '' } : w);
+            const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '', site: '' } : w);
             let displayWorkers = allWorkers;
 
             if (searchTerm) {
@@ -2803,8 +2823,11 @@ function setupRegisterScheduleModal() {
 
             workerList.innerHTML = displayWorkers.map(w => {
                 const isSelected = currentSelected.includes(w.name);
-                const subInfo = (w.department || w.position) ? ` <span style="font-size:11px; color:#8b949e;">(${escapeHtml(w.department)} ${escapeHtml(w.position)})</span>` : '';
-                return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${subInfo}</span></div>`;
+                // [수정] 작업자 이름 뒤에 소속/직급과 함께 사업장 정보 표시
+                let subInfo = '';
+                const siteInfo = w.site ? ` <span style="font-size:11px; color:#3fb950;">[${escapeHtml(w.site)}]</span>` : '';
+                const deptPosInfo = (w.department || w.position) ? ` <span style="font-size:11px; color:#8b949e;">(${escapeHtml(w.department)} ${escapeHtml(w.position)})</span>` : '';
+                return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${siteInfo}${deptPosInfo}</span></div>`;
             }).join('');
             if (displayWorkers.length === 0) workerList.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
 
