@@ -1,0 +1,202 @@
+{% extends 'common.html' %}
+{% set active_page = 'sort' %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/sort.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="dashboard-wrapper" id="section-sort">
+    <!-- 좌측 필터 사이드바 -->
+    <aside class="dashboard-sidebar" style="width: 380px; display: flex; flex-direction: column;">
+        <div class="sidebar-group" style="flex: 1; overflow-y: auto; padding-right: 5px;">
+            <div class="sidebar-header-row">
+                <h3>데이터 정렬/검색 (SORT)</h3>
+            </div>
+            <div class="form-group mt-10">
+                <label class="form-label-custom">기간 설정</label>
+                <select id="sort-period-type" class="input-dark full-width" style="margin-bottom: 5px;">
+                    <option value="month">월간</option>
+                    <option value="year">연간</option>
+                    <option value="custom">직접 입력</option>
+                </select>
+                <input type="month" id="sort-month-input" class="input-dark full-width">
+                <select id="sort-year-input" class="input-dark full-width" style="display:none;"></select>
+                <div id="sort-custom-input" style="display: none; gap: 5px; align-items: center;">
+                    <input type="date" id="sort-start-date" class="input-dark flex-1">
+                    <span>~</span>
+                    <input type="date" id="sort-end-date" class="input-dark flex-1">
+                </div>
+            </div>
+            <div class="form-group mt-10">
+                <label class="form-label-custom">사업장</label>
+                <select id="sort-site-select" class="input-dark full-width"><option value="">전체 사업장</option></select>
+            </div>
+            <div class="form-group mt-10">
+                <label class="form-label-custom">건물명</label>
+                <select id="sort-building-select" class="input-dark full-width" disabled><option value="">전체 건물</option></select>
+            </div>
+            <div class="form-group mt-10">
+                <label class="form-label-custom">모델명</label>
+                <select id="sort-model-select" class="input-dark full-width"><option value="">전체 모델</option></select>
+            </div>
+            <div class="form-group mt-10">
+                <label class="form-label-custom">장비명</label>
+                <select id="sort-equip-select" class="input-dark full-width"><option value="">전체 장비</option></select>
+            </div>
+            <div class="form-group mt-10">
+                <label class="form-label-custom">작업 구분</label>
+                <select id="sort-type-select" class="input-dark full-width">
+                    <option value="">전체 구분</option>
+                    <option value="정기">정기 (PM)</option>
+                    <option value="비정기">비정기 (BM)</option>
+                    <option value="고객대응">고객대응</option>
+                    <option value="용액제조">용액제조</option>
+                    <option value="온라인점검">온라인점검</option>
+                </select>
+            </div>
+            <div class="form-group mt-10">
+                <label class="form-label-custom">세부 구분</label>
+                <select id="sort-detail-type-select" class="input-dark full-width" disabled><option value="">전체 세부 구분</option></select>
+            </div>
+            <div class="form-group mt-10" id="sort-detail-type2-group" style="display: none;">
+                <label class="form-label-custom">세부 구분 2</label>
+                <select id="sort-detail-type2-select" class="input-dark full-width"><option value="">전체 세부 구분 2</option></select>
+            </div>
+            <div class="form-group mt-10">
+                <label class="form-label-custom">항목 / 내용 검색</label>
+                <input type="text" id="sort-keyword" class="input-dark full-width" placeholder="작업내용, 물품명, 작업자 입력..." autocomplete="off">
+            </div>
+            <div class="form-group mt-10">
+                <label class="form-label-custom">물품 상세 구분 (분석부/샘플링부 등)</label>
+                <select id="sort-item-detail-type-select" class="input-dark full-width">
+                    <option value="">전체</option>
+                    <option value="샘플링부 교체">샘플링부 교체</option>
+                    <option value="분석부 교체">분석부 교체</option>
+                    <option value="용액">용액</option>
+                    <option value="가스">가스</option>
+                    <option value="기타">기타</option>
+                </select>
+            </div>
+            <div class="form-group mt-10">
+                <label class="form-label-custom">비용 처리</label>
+                <select id="sort-cost-type-select" class="input-dark full-width">
+                    <option value="">전체</option>
+                    <option value="유상">유상</option>
+                    <option value="무상(보증)">무상(보증)</option>
+                    <option value="무상(중고)">무상(중고)</option>
+                    <option value="기타">기타</option>
+                </select>
+            </div>
+            <button id="btn-sort-search" class="btn-blue full-width mt-10" style="padding: 10px; font-size: 14px;">검색 및 정렬</button>
+            <button id="btn-sort-export" class="btn-green full-width mt-10" style="display: none; padding: 10px; font-size: 14px;">CSV 다운로드</button>
+        </div>
+    </aside>
+
+    <div class="resizer" id="sidebar-resizer"></div>
+
+    <!-- 우측 차트 화면 -->
+    <section class="dashboard-main">
+        <div class="card" style="width: 100%; display: flex; flex-direction: column; margin-top: 15px;">
+            <div class="card-header">
+                <h3>교체 현황 통계</h3>
+            </div>
+            <div class="card-body" style="padding: 15px 20px 10px 10px; overflow: hidden; display: flex; flex-direction: column;">
+                <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3; flex-shrink: 0;">파츠 교체 현황</div>
+                <div style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; margin-bottom: 20px; flex-shrink: 0;">
+                    <!-- Y축 영역 -->
+                    <div id="sort-part-legend" class="chart-legend-table"></div>
+                    <div id="sort-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
+                    <div id="sort-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
+                        <div class="list-empty-msg" style="width: 100%; text-align: center; margin-bottom: auto; margin-top: auto;">조건을 설정하고 검색해주세요.</div>
+                    </div>
+                </div>
+
+                <div class="sort-half-chart-wrapper" style="display: flex; width: 100%; height: 300px; flex-shrink: 0; gap: 20px; min-height: 200px;">
+                    <!-- 용액 교체 현황 -->
+                    <div class="sort-half-chart" style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
+                        <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">용액 교체 현황</div>
+                        <div style="display: flex; flex-direction: row; flex: 1;">
+                            <div id="sort-solution-legend" class="chart-legend-table"></div>
+                            <div id="sort-solution-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
+                            <div id="sort-solution-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
+                                <div class="list-empty-msg" style="width: 100%; text-align: center; margin-bottom: auto; margin-top: auto;">조건을 설정하고 검색해주세요.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 점검구분별 작업현황 -->
+                    <div class="sort-half-chart" style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
+                        <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
+                            <span>점검구분별 작업현황</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; flex: 1;">
+                            <div id="sort-type-legend" class="chart-legend-table"></div>
+                            <div id="sort-type-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
+                            <div id="sort-type-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: space-around; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
+                                <div class="list-empty-msg" style="width: 100%; text-align: center; margin-bottom: auto; margin-top: auto;">조건을 설정하고 검색해주세요.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sort-half-chart-wrapper" style="display: flex; width: 100%; height: 300px; flex-shrink: 0; gap: 20px; min-height: 200px; margin-top: 20px;">
+                    <!-- 세부구분별 작업현황 -->
+                    <div class="sort-half-chart" style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
+                        <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
+                            <span>세부구분별 작업현황</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; flex: 1;">
+                            <div id="sort-detail-type-legend" class="chart-legend-table"></div>
+                            <div id="sort-detail-type-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
+                            <div id="sort-detail-type-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: space-around; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
+                                <div class="list-empty-msg" style="width: 100%; text-align: center; margin-bottom: auto; margin-top: auto;">조건을 설정하고 검색해주세요.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 세부구분 2별 작업현황 -->
+                    <div class="sort-half-chart" style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
+                        <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
+                            <span>세부구분 2별 작업현황</span>
+                        </div>
+                        <div style="display: flex; flex-direction: row; flex: 1;">
+                            <div id="sort-detail-type2-legend" class="chart-legend-table"></div>
+                            <div id="sort-detail-type2-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
+                            <div id="sort-detail-type2-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: space-around; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
+                                <div class="list-empty-msg" style="width: 100%; text-align: center; margin-bottom: auto; margin-top: auto;">조건을 설정하고 검색해주세요.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3; margin-top: 20px;">
+                    <span>비정기 점검 항목 현황</span>
+                </div>
+                <div style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; margin-bottom: 20px; flex-shrink: 0;">
+                    <!-- Y축 영역 -->
+                    <div id="sort-irregular-legend" class="chart-legend-table"></div>
+                    <div id="sort-irregular-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
+                    <div id="sort-irregular-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
+                        <div class="list-empty-msg" style="width: 100%; text-align: center; margin-bottom: auto; margin-top: auto;">조건을 설정하고 검색해주세요.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card" style="width: 100%; margin-bottom: 15px;">
+            <div class="card-header">
+                <h3 style="font-size: 16px; color: #c9d1d9;">검색 결과 <span id="sort-result-count" class="count-badge">0</span></h3>
+            </div>
+            <div class="card-body" style="padding: 0;">
+                <ul id="sort-result-list" style="list-style: none; padding: 0; margin: 0; max-height: 500px; overflow-y: auto;">
+                    <li class="list-empty-msg" style="text-align: center; padding: 20px; color: #8b949e;">조건을 설정하고 검색해주세요.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('SettingDAO', filename='JavaScript/sort.js') }}"></script>
+{% endblock %}

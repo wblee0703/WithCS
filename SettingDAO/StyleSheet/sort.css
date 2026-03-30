@@ -1,0 +1,243 @@
+/* ==========================================================================
+   SORT 전용 CSS 스타일
+   ========================================================================== */
+#section-sort {
+    display: flex;
+    flex-direction: row;
+    height: calc(100vh - 70px);
+    overflow: hidden;
+}
+
+.dashboard-sidebar {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.sidebar-group {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 5px;
+}
+
+.dashboard-sidebar .form-group {
+    margin-bottom: 15px;
+    width: 100%;
+}
+
+.dashboard-sidebar .form-label-custom {
+    display: block;
+    color: #8b949e;
+    font-size: 12px;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.dashboard-sidebar .input-dark {
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    padding: 8px;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.dashboard-sidebar .input-dark:focus {
+    border-color: #58a6ff;
+    outline: none;
+}
+
+.dashboard-sidebar .full-width {
+    width: 100%;
+}
+
+.dashboard-sidebar .flex-1 {
+    flex: 1;
+    min-width: 0;
+}
+
+.dashboard-sidebar .mt-10 {
+    margin-top: 10px;
+}
+
+/* 검색 결과 리스트 아이템 스타일 */
+.sort-result-item {
+    padding: 12px;
+    border: 1px solid #30363d;
+    background: #161b22;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.sort-result-item:hover {
+    background: #21262d;
+    border-color: #58a6ff;
+}
+
+/* 막대 그래프 컨테이너 및 바 스타일 */
+.sort-bar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1; /* 남은 공간을 균등 분배하여 전체 너비 사용 */
+    min-width: 60px;
+    height: 100%;
+}
+
+.sort-bar-group .bar-value {
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: #e6edf3;
+    font-weight: bold;
+    text-align: center;
+    flex: none;
+}
+
+.sort-bar-group .bar-track {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    width: 100%;
+    min-height: 0;
+}
+
+.sort-bar-group .bar {
+    width: 60%; /* 그룹 너비의 비율 사용 */
+    max-width: 50px; /* 너무 뚱뚱해지지 않게 제한 */
+    background-color: #30363d;
+    border-radius: 4px 4px 0 0;
+    transition: height 0.5s ease;
+    min-height: 1px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+}
+
+.sort-bar-group .bar-label {
+    height: 35px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: #8b949e;
+    text-align: center;
+    width: 100%;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    word-break: break-all;
+    flex: none;
+}
+
+.sort-bar-group.type-group .bar-track {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0;
+}
+
+.multi-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    flex: 1;
+    max-width: 30px;
+}
+
+.multi-bar-wrapper .bar {
+    width: 100% !important;
+    max-width: none !important;
+    border-radius: 2px 2px 0 0 !important;
+    border-left: 1px solid rgba(0,0,0,0.2);
+    border-right: 1px solid rgba(0,0,0,0.2);
+}
+
+.multi-bar-wrapper .bar-value {
+    font-size: 10px;
+    margin-bottom: 2px;
+}
+
+/* [추가] 범례 테이블 스타일 */
+.chart-legend-table {
+    width: 120px;
+    flex-shrink: 0;
+    padding: 0 10px;
+    margin-bottom: 48px; /* Y축과 하단 정렬 맞춤 */
+    overflow-y: auto;
+    border-right: 1px solid #30363d;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    color: #c9d1d9;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.legend-color-box {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+/* 우측 결과 화면 스크롤 보정 */
+#section-sort .dashboard-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow-y: auto;
+    padding: 0 15px 0 15px;
+    box-sizing: border-box;
+}
+
+#section-sort .card {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+#section-sort .card-body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 0;
+}
+
+/* 모바일 화면에서는 세로 배치 및 전체 스크롤 허용 */
+@media (max-width: 950px) {
+    #section-sort {
+        flex-direction: column;
+        height: auto;
+        overflow: visible;
+    }
+    .dashboard-sidebar {
+        width: 100% !important;
+        height: auto;
+    }
+    .sidebar-group {
+        overflow-y: visible;
+    }
+    #sidebar-resizer {
+        display: none;
+    }
+    #section-sort .dashboard-main {
+        height: auto;
+        overflow: visible;
+    }
+    .sort-half-chart-wrapper {
+        flex-direction: column !important;
+    }
+}

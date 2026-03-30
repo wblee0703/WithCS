@@ -608,6 +608,9 @@ def admin():
     if session.get('role') not in ['admin', 'superadmin']:
         return render_template('index.html')
     return render_template('admin.html')
+@app.route('/sort')
+def sort():
+    return render_template('sort.html')
 
 # [추가] SettingDAO 폴더 정적 파일 서빙
 @app.route('/SettingDAO/<path:filename>')
