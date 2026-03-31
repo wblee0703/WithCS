@@ -800,8 +800,8 @@ def add_user():
     
     if session.get('role') not in ['admin', 'superadmin']:
         return jsonify({"status": "fail", "message": "관리자 권한이 필요합니다."}), 403
-    if role == 'superadmin':
-        return jsonify({"status": "fail", "message": "최종 관리자 계정은 생성할 수 없습니다."}), 403
+    if role == 'superadmin' and session.get('role') != 'superadmin':
+        return jsonify({"status": "fail", "message": "최종 관리자 계정은 최종 관리자만 생성할 수 있습니다."}), 403
 
     if User.query.filter_by(id=new_id).first():
         return jsonify({"status": "fail", "message": "이미 존재하는 아이디입니다."}), 400
@@ -862,11 +862,11 @@ def get_deletable_users():
         return jsonify({"status": "fail", "message": "권한이 없습니다."}), 403
     
     if session.get('role') == 'superadmin':
-        users = User.query.filter(User.role != 'superadmin').all()
+        users = User.query.filter(User.role.in_(['admin', 'user'])).all()
     else:
         users = User.query.filter(~User.role.in_(['admin', 'superadmin'])).all()
         
-    user_list = [{"id": u.id, "name": u.name or '', "department": u.department or '', "position": u.position or ''} for u in users]
+    user_list = [{"id": u.id, "name": u.name or '', "department": u.department or '', "position": u.position or '', "role": u.role} for u in users]
     return jsonify({"status": "success", "users": user_list})
 
 # [추가] 관리자용 특정 사용자 삭제 API

@@ -52,7 +52,8 @@ body {
     left: 40px;
     height: 50px;
     width: auto;
-    cursor: pointer; /* [추가] 클릭 가능 표시 */
+    cursor: pointer;
+    /* [추가] 클릭 가능 표시 */
 }
 
 .nav-links {
@@ -515,7 +516,8 @@ body {
     background: #161b22;
     border: 1px solid #30363d;
     border-radius: 4px;
-    max-height: 155px; /* 약 5개 항목 높이 */
+    max-height: 155px;
+    /* 약 5개 항목 높이 */
     overflow-y: auto;
     z-index: 1000;
     display: none;
@@ -523,10 +525,13 @@ body {
     padding: 0;
     margin: 0 0 2px 0;
     box-sizing: border-box;
-    box-shadow: 0 -4px 12px rgba(0,0,0,0.5);
-    -webkit-overflow-scrolling: touch; /* [요청] 모바일 터치 스크롤 개선 */
-    overscroll-behavior: contain; /* [요청] 스크롤 체인 현상 방지 */
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.5);
+    -webkit-overflow-scrolling: touch;
+    /* [요청] 모바일 터치 스크롤 개선 */
+    overscroll-behavior: contain;
+    /* [요청] 스크롤 체인 현상 방지 */
 }
+
 .user-suggestion-item {
     padding: 8px 10px;
     cursor: pointer;
@@ -537,9 +542,11 @@ body {
     justify-content: space-between;
     align-items: center;
 }
+
 .user-suggestion-item:hover {
     background: #1f6feb;
 }
+
 .user-suggestion-item .user-id {
     color: #8b949e;
     font-size: 11px;
@@ -552,11 +559,13 @@ body {
     height: auto !important;
     min-height: 0 !important;
 }
+
 /* [추가] 계정 관리 모달 내부 내용(제안 박스 등)이 모달창 밖으로 튀어나올 수 있도록 오버플로우 허용 */
 #user-modal .modal-body,
 #add-user-modal .modal-body {
     overflow: visible !important;
 }
+
 /* ==========================================================================
    7. 버튼 (Buttons)
    ========================================================================== */
@@ -764,6 +773,15 @@ input:disabled {
     font-weight: bold;
 }
 
+.item-cost-select {
+    width: 45px;
+    font-size: 11px;
+    padding: 2px;
+    margin-left: 5px;
+    color: #fff;
+    color-scheme: dark;
+}
+
 @media (min-width: 1400px) {
     .dashboard-sidebar {
         width: 300px;
@@ -918,7 +936,8 @@ body.role-user .btn-list-setting {
     /* 2. 헤더 및 네비게이션 */
     .header {
         height: 60px;
-        justify-content: flex-end; /* [수정] 우측 정렬 (로고를 좌측으로 밀어냄) */
+        justify-content: flex-end;
+        /* [수정] 우측 정렬 (로고를 좌측으로 밀어냄) */
         align-items: center;
         padding: 0 15px;
         gap: 0;
@@ -929,34 +948,42 @@ body.role-user .btn-list-setting {
         height: 30px;
         left: auto;
         transform: none;
-        margin-right: auto; /* [추가] 로고를 가장 왼쪽으로 밈 */
-        order: 1; /* [추가] 첫 번째 순서 */
+        margin-right: auto;
+        /* [추가] 로고를 가장 왼쪽으로 밈 */
+        order: 1;
+        /* [추가] 첫 번째 순서 */
     }
 
     /* [추가] 모바일 현재 페이지 타이틀 스타일 */
     .mobile-page-title {
         display: block !important;
-        order: 2; /* [추가] 로고 다음, 햄버거 전 */
+        order: 2;
+        /* [추가] 로고 다음, 햄버거 전 */
         color: #e6edf3;
         font-size: 16px;
         font-weight: 800;
         font-family: 'Montserrat', 'Noto Sans KR', sans-serif;
-        margin-right: 10px; /* 타이머와의 간격 */
+        margin-right: 10px;
+        /* 타이머와의 간격 */
         letter-spacing: 1px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        flex-shrink: 1; /* 공간 부족 시 페이지 제목 너비 축소 */
+        flex-shrink: 1;
+        /* 공간 부족 시 페이지 제목 너비 축소 */
     }
 
     /* [추가] 모바일 타이머 헤더 배치 스타일 (줄바꿈 방지) */
     .mobile-header-timer {
-        display: none; /* 기본 숨김, JS에서 flex로 활성화 */
+        display: none;
+        /* 기본 숨김, JS에서 flex로 활성화 */
         order: 3;
-        margin-right: 15px; /* 햄버거 메뉴와의 간격 */
+        margin-right: 15px;
+        /* 햄버거 메뉴와의 간격 */
         white-space: nowrap;
         align-items: center;
-        flex-shrink: 0; /* 타이머와 버튼의 찌그러짐/줄바꿈 완벽 방지 */
+        flex-shrink: 0;
+        /* 타이머와 버튼의 찌그러짐/줄바꿈 완벽 방지 */
     }
 
     .header .container {
@@ -989,7 +1016,8 @@ body.role-user .btn-list-setting {
     /* 햄버거 메뉴 버튼 */
     .hamburger-menu {
         display: flex;
-        order: 4; /* [수정] 타이머 다음 가장 우측으로 배치 */
+        order: 4;
+        /* [수정] 타이머 다음 가장 우측으로 배치 */
         flex-direction: column;
         justify-content: space-around;
         width: 24px;
@@ -1003,6 +1031,7 @@ body.role-user .btn-list-setting {
         position: relative;
         /* [수정] z-index 적용을 위해 relative 설정 */
     }
+
     /* [요청] 모바일 헤더 햄버거 메뉴 바 색상 변경 (흰색) */
     .hamburger-menu .bar {
         width: 100%;
@@ -1145,15 +1174,28 @@ body.role-user .btn-list-setting {
         display: flex !important;
         flex-direction: column !important;
     }
+
     #user-modal .modal-body {
-        overflow-y: auto !important; /* [요청] 모바일에서 하단 내용(계정 삭제 등)이 잘리지 않도록 스크롤 복구 */
+        overflow-y: auto !important;
+        /* [요청] 모바일에서 하단 내용(계정 삭제 등)이 잘리지 않도록 스크롤 복구 */
         flex: 1 !important;
         padding: 15px !important;
     }
+
     #add-user-modal .modal-body {
-        overflow: visible !important; /* [추가] 계정 추가 모달은 제안박스 잘림 방지 우선 */
+        overflow: visible !important;
+        /* [추가] 계정 추가 모달은 제안박스 잘림 방지 우선 */
         flex: 1 !important;
         padding: 15px !important;
+    }
+
+    .item-cost-select {
+        width: 45px !important;
+        flex: 0 0 45px !important;
+        font-size: 10px !important;
+        padding: 0 2px !important;
+        margin-left: 5px !important;
+        color: #fff !important;
     }
 
     /* 5. 테이블 */
@@ -1178,6 +1220,7 @@ body.role-user .btn-list-setting {
     .data-management-section {
         display: none !important;
     }
+
     /* [요청] 모바일에서 데이터 관리 섹션 전체 숨김 */
     .sidebar-group.backup-section {
         display: none !important;
@@ -1188,6 +1231,7 @@ body.role-user .btn-list-setting {
     .sidebar-header-row h3 {
         font-size: 14px !important;
     }
+
     /* [요청] 모바일 계정 권한 선택창 너비 축소 및 가로 배치 유지 */
     #new-user-role,
     #edit-my-role,
@@ -1197,7 +1241,7 @@ body.role-user .btn-list-setting {
     }
 
     #new-user-site-wrapper,
-    #my-info-content > div {
+    #my-info-content>div {
         flex-direction: row !important;
         flex-wrap: nowrap !important;
     }

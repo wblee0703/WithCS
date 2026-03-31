@@ -415,34 +415,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     height: 30px;
 }
 
-/* [추가] 작업 등록 모달 폼 정렬 및 높이 통일 */
-#register-schedule-modal .form-row,
-#event-detail-modal .detail-row {
-    display: flex;
-    align-items: center !important;
-    gap: 10px;
-}
-
-#register-schedule-modal .form-row .log-select-wrapper,
-#event-detail-modal .detail-row .log-select-wrapper {
-    margin: 0 !important;
-}
-
-#register-schedule-modal .form-label {
-    margin-bottom: 0 !important;
-}
-
-#register-schedule-modal .input-dark,
-#register-schedule-modal .modal-select,
-#register-schedule-modal .log-select-trigger {
-    height: 30px !important;
-    min-height: 30px !important;
-    box-sizing: border-box !important;
-    padding: 4px 8px !important;
-    margin-top: 0 !important;
-    line-height: normal;
-}
-
 /* 커스텀 드롭다운 (로그 항목 선택) */
 .log-select-wrapper {
     position: relative;
@@ -1057,13 +1029,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .log-select-item span {
         flex: 1;
         min-width: 0; /* 항목명이 넘칠 경우 말줄임표 처리되도록 설정 */
-    }
-    .item-cost-select {
-        width: 60px !important; /* 비용처리 선택창 크기 축소 */
-        flex: 0 0 60px !important; /* 공간 축소 방지 */
-        font-size: 10px !important;
-        padding: 0px 2px !important;
-        margin-left: 5px !important;
     }
 
     /* [요청] 모바일에서 점검일 달력 아이콘 및 구분 선택 화살표 숨김 */

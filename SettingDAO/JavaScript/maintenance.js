@@ -25,16 +25,6 @@ if (typeof window.escapeHtml !== 'function') {
     };
 }
 
-// [추가] HTML 템플릿을 복제하는 헬퍼 함수
-function getTemplateContent(id) {
-    const template = document.getElementById(id);
-    if (template) {
-        return document.importNode(template.content, true);
-    }
-    console.error(`Template with id '${id}' not found.`);
-    return null;
-}
-
 let originalWorker = "";
 let originalIssueShared = false;
 let originalMd = "";
@@ -615,14 +605,14 @@ function setupLogEvents() {
                 const isSelected = currentSelected.includes(w.name);
                 const subInfoText = (w.department || w.position) ? `(${escapeHtml(w.department)} ${escapeHtml(w.position)})` : '';
 
-                const template = getTemplateContent('memo-worker-item-template');
+                const template = getTemplateContent('worker-list-item-template');
                 if (!template) return;
                 const div = template.querySelector('.log-select-item');
 
                 if (isSelected) div.classList.add('selected');
                 div.dataset.value = escapeHtml(w.name);
                 div.querySelector('.worker-name').textContent = escapeHtml(w.name);
-                div.querySelector('.worker-sub-info').textContent = subInfoText ? ` ${subInfoText}` : '';
+                div.querySelector('.worker-dept-pos').textContent = subInfoText ? ` ${subInfoText}` : '';
                 listContainer.appendChild(div);
             });
             if (displayWorkers.length === 0) listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
@@ -2286,7 +2276,7 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
                 if (detailType === 'PM 점검' || detailType === 'BM 점검' || type === '고객대응') {
                     return `<div class="log-select-item ${selClass}" data-value="${displayValue}">
                         <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayValue}</span>
-                        <select class="item-cost-select input-dark" style="width: 85px; font-size: 11px; padding: 2px; margin-left: 5px; color: #e6edf3; color-scheme: dark;" onclick="event.stopPropagation()">
+                        <select class="item-cost-select input-dark" onclick="event.stopPropagation()">
                             <option value="유상" ${itemCost === '유상' ? 'selected' : ''}>유상</option>
                             <option value="무상(보증)" ${itemCost === '무상(보증)' ? 'selected' : ''}>무상(보증)</option>
                             <option value="무상(중고)" ${itemCost === '무상(중고)' ? 'selected' : ''}>무상(중고)</option>
@@ -2746,7 +2736,7 @@ window.updateLogContentOptions = function () {
                         return `
                             <div class="log-select-item ${selClass}" data-value="${displayValue}">
                                 <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayValue}</span>
-                                <select class="item-cost-select input-dark" style="width: 85px; font-size: 11px; padding: 2px; margin-left: 5px; color: #e6edf3; color-scheme: dark;" onclick="event.stopPropagation()">
+                                <select class="item-cost-select input-dark" onclick="event.stopPropagation()">
                                     <option value="유상" ${itemCost === '유상' ? 'selected' : ''}>유상</option>
                                     <option value="무상(보증)" ${itemCost === '무상(보증)' ? 'selected' : ''}>무상(보증)</option>
                                     <option value="무상(중고)" ${itemCost === '무상(중고)' ? 'selected' : ''}>무상(중고)</option>

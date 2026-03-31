@@ -1,6 +1,14 @@
 /* ==========================================================================
    1. 전역 변수 및 데이터 관리 (Global State)
    ========================================================================== */
+// [추가] HTML 템플릿을 복제하는 헬퍼 함수
+function getTemplateContent(id) {
+    const template = document.getElementById(id);
+    if (template) return document.importNode(template.content, true);
+    console.error(`Template with id '${id}' not found.`);
+    return null;
+}
+
 let storageData = JSON.parse(localStorage.getItem('device_data')) || {};
 let currentPath = { site: '', equip: '' };
 let selectedLogId = null;
@@ -1212,6 +1220,23 @@ function openAddUserModal() {
     }
 
     if (modal) {
+        // [추가] 최종관리자는 '최종관리자' 계정을 생성할 수 있도록 옵션 동적 추가/제거
+        const roleSelect = modal.querySelector('#new-user-role');
+        if (roleSelect) {
+            const superadminOptionExists = Array.from(roleSelect.options).some(opt => opt.value === 'superadmin');
+
+            if (role === 'superadmin' && !superadminOptionExists) {
+                // 최종관리자 옵션 추가
+                const option = document.createElement('option');
+                option.value = 'superadmin';
+                option.textContent = '최종관리자';
+                roleSelect.appendChild(option);
+            } else if (role !== 'superadmin' && superadminOptionExists) {
+                // 최종관리자 옵션 제거
+                roleSelect.querySelector('option[value="superadmin"]').remove();
+            }
+        }
+
         // 혹시 모를 중복 팝업들은 강제 숨김 처리
         modals.forEach(m => { if (m !== modal) m.style.display = 'none'; });
         modal.style.display = 'flex';
@@ -1431,8 +1456,12 @@ function openUserModal() {
                         matches.forEach(u => {
                             const li = document.createElement('li');
                             li.className = 'user-suggestion-item';
+                            let roleDisplay = '';
+                            if (u.role === 'admin') {
+                                roleDisplay = ' <span style="color: #f85149; font-weight: bold;">[관리자]</span>';
+                            }
                             const namePart = u.name ? `${escapeHtml(u.name)} (${escapeHtml(u.department)} ${escapeHtml(u.position)})` : '이름 없음';
-                            li.innerHTML = `<span style="color: #e6edf3;">${namePart}</span><span class="user-id" style="color: #8b949e;">${escapeHtml(u.id)}</span>`;
+                            li.innerHTML = `<span style="color: #e6edf3;">${namePart}${roleDisplay}</span><span class="user-id" style="color: #8b949e;">${escapeHtml(u.id)}</span>`;
                             li.addEventListener('click', (e) => {
                                 searchInput.value = u.name ? `${u.name} (${u.department} ${u.position}) - ${u.id}` : u.id;
                                 searchInput.dataset.selectedId = u.id;

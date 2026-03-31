@@ -1261,20 +1261,6 @@ body {
         display: block;
         margin-top: 3px;
     }
-    /* [추가] 작업 검색 모달 모바일 최적화 */
-    #task-search-modal .modal-window {
-        width: 90% !important;
-        max-width: 500px !important;
-        height: 70vh !important;
-    }
-    #task-search-modal .form-row {
-        flex-wrap: nowrap !important;
-    }
-    #task-search-start-date, #task-search-end-date {
-        min-width: 0 !important;
-        font-size: 11px !important;
-        padding: 4px 2px !important;
-    }
 }
 
 /* [추가] 작업 검색 결과 리스트 스타일 */

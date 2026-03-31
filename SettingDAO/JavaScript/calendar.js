@@ -45,6 +45,37 @@ if (typeof window.fetchWorkerNames !== 'function') {
     };
 }
 
+// [추가] 작업자 리스트 렌더링을 템플릿 기반으로 처리하는 공통 헬퍼 함수
+function renderWorkerListItems(listContainer, displayWorkers, currentSelected, onClickCallback) {
+    listContainer.innerHTML = '';
+    if (displayWorkers.length === 0) {
+        listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
+        return;
+    }
+    displayWorkers.forEach(w => {
+        const isSelected = currentSelected.includes(w.name);
+        const tpl = getTemplateContent('worker-list-item-template');
+        if (tpl) {
+            const div = tpl.querySelector('.log-select-item');
+            if (isSelected) div.classList.add('selected');
+            div.dataset.value = w.name;
+            div.querySelector('.worker-name').textContent = w.name;
+            
+            if (w.site) div.querySelector('.worker-site').textContent = `[${w.site}]`;
+            if (w.department || w.position) div.querySelector('.worker-dept-pos').textContent = `(${w.department || ''} ${w.position || ''})`;
+            
+            div.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const trigger = div.closest('.log-select-wrapper')?.querySelector('.log-select-trigger');
+                if (trigger && trigger.classList.contains('disabled')) return;
+                div.classList.toggle('selected');
+                if (onClickCallback) onClickCallback();
+            });
+            listContainer.appendChild(div);
+        }
+    });
+}
+
 // [추가] 물품 선택 드롭다운 생성 및 렌더링 폴백 (maintenance.js 외부 동작 시 대비)
 if (typeof window.renderLogPartOptions !== 'function') {
     window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, presetValuesStr = '') {
@@ -135,19 +166,19 @@ if (typeof window.renderLogPartOptions !== 'function') {
                 const isSelected = currentSelections.hasOwnProperty(displayValue) || currentSelections.hasOwnProperty(item.part);
                 const itemCost = isSelected ? (currentSelections[displayValue] || currentSelections[item.part] || '유상') : '유상';
 
-                const div = document.createElement('div');
-                div.className = `log-select-item ${isSelected ? 'selected' : ''}`;
-                div.dataset.value = escapeHtml(displayValue);
-                div.innerHTML = `
-                    <span class="item-name" style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(displayValue)}</span>
-                    <select class="item-cost-select input-dark" style="width: 85px; font-size: 11px; padding: 2px; margin-left: 5px; color: #e6edf3; color-scheme: dark;" onclick="event.stopPropagation()">
-                        <option value="유상" ${itemCost === '유상' ? 'selected' : ''}>유상</option>
-                        <option value="무상(보증)" ${itemCost === '무상(보증)' ? 'selected' : ''}>무상(보증)</option>
-                        <option value="무상(중고)" ${itemCost === '무상(중고)' ? 'selected' : ''}>무상(중고)</option>
-                        <option value="기타" ${itemCost === '기타' ? 'selected' : ''}>기타</option>
-                    </select>
-                `;
-                list.appendChild(div);
+                const tpl = getTemplateContent('log-part-item-template');
+                if (tpl) {
+                    const div = tpl.querySelector('.log-select-item');
+                    if (isSelected) div.classList.add('selected');
+                    div.dataset.value = displayValue;
+                    div.querySelector('.item-name').textContent = displayValue;
+                    const costSelect = div.querySelector('.item-cost-select');
+                    if (costSelect) costSelect.value = itemCost;
+                    
+                    costSelect.addEventListener('change', (e) => { e.stopPropagation(); updateTriggerText(); });
+                    div.addEventListener('click', (e) => { e.stopPropagation(); div.classList.toggle('selected'); updateTriggerText(); });
+                    list.appendChild(div);
+                }
             });
 
             const updateTriggerText = () => {
@@ -770,102 +801,97 @@ function openCalendarPopup(dateStr, events) {
         });
 
         groupedList.forEach(group => {
-            const li = document.createElement('li');
-            li.className = 'popup-event-item';
+            const tpl = getTemplateContent('popup-event-item-template');
+            if (tpl) {
+                const li = tpl.querySelector('li');
+                
+                const textClass = (group.isCompleted || group.isChanged) ? 'completed' : '';
+                const parts = group.equip.split('::');
+                const equipName = parts[0];
+                const serialNo = parts.length > 1 ? parts[1] : '';
+                const displayEquip = serialNo ? `${equipName} (${serialNo})` : equipName;
 
-            const textClass = (group.isCompleted || group.isChanged) ? 'completed' : ''; // 변동 항목도 완료처럼 취소선 처리
-            const parts = group.equip.split('::');
-            const equipName = parts[0];
-            const serialNo = parts.length > 1 ? parts[1] : '';
-            const displayEquip = serialNo ? `${equipName} (${serialNo})` : equipName;
+                const itemTextSpan = li.querySelector('.popup-item-text');
+                if (textClass) itemTextSpan.classList.add(textClass);
+                
+                const typeBadge = li.querySelector('.popup-type-badge');
+                typeBadge.className = `popup-type-badge type-${group.type}`;
+                typeBadge.textContent = `[${group.type}]`;
+                
+                li.querySelector('.equip-info').textContent = `${group.site} > ${displayEquip}`;
 
-            const typeClass = `type-${group.type}`;
-            const typeBadge = `<span class="popup-type-badge ${typeClass}">[${group.type}]</span>`;
+                if (group.isCompleted) {
+                    const completedSpan = document.createElement('span');
+                    completedSpan.textContent = '<완료>';
+                    completedSpan.className = 'popup-completed-badge';
+                    li.appendChild(completedSpan);
+                } else if (group.isChanged) {
+                    const changedSpan = document.createElement('span');
+                    changedSpan.textContent = '<변동>';
+                    changedSpan.style.color = '#f0883e';
+                    changedSpan.style.marginLeft = 'auto';
+                    changedSpan.style.fontWeight = 'bold';
+                    changedSpan.style.fontSize = '12px';
+                    li.appendChild(changedSpan);
+                }
 
-            const wrapper = document.createElement('div');
-            wrapper.className = 'item-wrapper';
-            wrapper.innerHTML = `
-                <span class="item-text popup-item-text ${textClass}">${typeBadge} ${escapeHtml(group.site)} > ${escapeHtml(displayEquip)}</span>
-            `;
-            li.appendChild(wrapper);
+                if (!group.isCompleted && !group.isChanged) {
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'btn-calendar-del';
+                    delBtn.textContent = '✕';
+                    delBtn.title = '일정 삭제';
+                    delBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (confirm('이 작업 예정일을 삭제하시겠습니까?')) {
+                            let reason = undefined;
+                            const sampleItem = group.items[0];
+                            if (sampleItem && sampleItem.scheduledDate) {
+                                const [y, m] = sampleItem.scheduledDate.split('-').map(Number);
+                                const confs = JSON.parse(localStorage.getItem('calendar_confirmations')) || {};
+                                const yyyyMm = `${y}-${String(m).padStart(2, '0')}`;
+                                const monthConf = confs[yyyyMm];
+                                if (monthConf) {
+                                    const isGlobalConfirmed = monthConf.count !== undefined;
+                                    const isSiteConfirmed = monthConf[sampleItem.site] !== undefined || (monthConf.siteCounts && monthConf.siteCounts[sampleItem.site] !== undefined);
 
-            if (group.isCompleted) {
-                const completedSpan = document.createElement('span');
-                completedSpan.textContent = '<완료>';
-                completedSpan.className = 'popup-completed-badge';
-                li.appendChild(completedSpan);
-            } else if (group.isChanged) {
-                const changedSpan = document.createElement('span');
-                changedSpan.textContent = '<변동>';
-                changedSpan.style.color = '#f0883e'; // 주황색 강조
-                changedSpan.style.marginLeft = 'auto';
-                changedSpan.style.fontWeight = 'bold';
-                changedSpan.style.fontSize = '12px';
-                li.appendChild(changedSpan);
-            }
-
-            if (!group.isCompleted && !group.isChanged) {
-                const delBtn = document.createElement('button');
-                delBtn.className = 'btn-calendar-del';
-                delBtn.textContent = '✕';
-                delBtn.title = '일정 삭제';
-                delBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    if (confirm('이 작업 예정일을 삭제하시겠습니까?')) {
-                        let reason = undefined;
-                        const sampleItem = group.items[0];
-                        if (sampleItem && sampleItem.scheduledDate) {
-                            const [y, m] = sampleItem.scheduledDate.split('-').map(Number);
-                            const confs = JSON.parse(localStorage.getItem('calendar_confirmations')) || {};
-                            const yyyyMm = `${y}-${String(m).padStart(2, '0')}`;
-                            const monthConf = confs[yyyyMm];
-                            if (monthConf) {
-                                const isGlobalConfirmed = monthConf.count !== undefined;
-                                const isSiteConfirmed = monthConf[sampleItem.site] !== undefined || (monthConf.siteCounts && monthConf.siteCounts[sampleItem.site] !== undefined);
-
-                                if (isGlobalConfirmed || isSiteConfirmed) {
-                                    reason = prompt(`[${yyyyMm} 예정 확정됨]\n해당 월은 일정이 확정되었습니다.\n일정 삭제 사유를 입력해주세요:`);
-                                    if (reason === null) return;
+                                    if (isGlobalConfirmed || isSiteConfirmed) {
+                                        reason = prompt(`[${yyyyMm} 예정 확정됨]\n해당 월은 일정이 확정되었습니다.\n일정 삭제 사유를 입력해주세요:`);
+                                        if (reason === null) return;
+                                    }
                                 }
                             }
-                        }
 
-                        group.items.forEach(item => {
-                            setScheduleDate(item.site, item.equip, item.id, '', true, null, null, reason);
-                        });
-
-                        // UI 갱신 (배경 캘린더 및 대시보드)
-                        renderCalendar();
-                        if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
-
-                        // 팝업 닫지 않고 내용만 갱신
-                        const dateStr = document.getElementById('popup-date-title').textContent;
-                        const allEvents = getScheduleForCalendar();
-                        let dayEvents = allEvents[dateStr] || [];
-
-                        // 필터 재적용
-                        const searchInput = document.getElementById('calendar-search');
-                        const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
-                        if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
-                            dayEvents = dayEvents.filter(event => {
-                                const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)));
-                                const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
-                                const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
-                                return matchKeyword && matchSite && matchEquip;
+                            group.items.forEach(item => {
+                                setScheduleDate(item.site, item.equip, item.id, '', true, null, null, reason);
                             });
+
+                            renderCalendar();
+                            if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+
+                            const dateStr = document.getElementById('popup-date-title').textContent;
+                            const allEvents = getScheduleForCalendar();
+                            let dayEvents = allEvents[dateStr] || [];
+
+                            const searchInput = document.getElementById('calendar-search');
+                            const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+                            if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
+                                dayEvents = dayEvents.filter(event => {
+                                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)));
+                                    const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
+                                    const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
+                                    return matchKeyword && matchSite && matchEquip;
+                                });
+                            }
+                            openCalendarPopup(dateStr, dayEvents);
                         }
+                    };
+                    li.appendChild(delBtn);
+                }
 
-                        openCalendarPopup(dateStr, dayEvents);
-                    }
-                };
-                li.appendChild(delBtn);
+                li.onclick = () => openEventDetailModal(group.site, group.equip, group.items[0].id, group.isCompleted || group.isChanged);
+                list.appendChild(li);
             }
-
-            li.onclick = () => {
-                openEventDetailModal(group.site, group.equip, group.items[0].id, group.isCompleted || group.isChanged);
-            };
-            list.appendChild(li);
         });
     }
 
@@ -957,17 +983,11 @@ function openScheduleModal(site, equip, id) {
         wrapper.id = 'schedule-worker-wrapper';
         wrapper.className = 'log-select-wrapper';
         wrapper.style.marginBottom = '15px';
-        wrapper.innerHTML = `
-            <label class="form-label" style="display:block; margin-bottom:5px; color:var(--cal-text-secondary); font-size:13px;">작업자</label>
-            <div id="schedule-worker-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; background: var(--cal-bg-dark);">작업자 선택</div>
-            <div id="schedule-worker-dropdown" class="log-select-dropdown">
-                <input type="text" id="schedule-worker-search" class="dropdown-search-input" placeholder="이름 검색...">
-                <div id="schedule-worker-list" class="log-select-list"></div>
-                <div class="log-select-footer">
-                    <button type="button" id="btn-schedule-worker-confirm" class="btn-blue-sm" style="width: 100%;">선택 완료</button>
-                </div>
-            </div>
-        `;
+
+        const templateContent = getTemplateContent('schedule-worker-template');
+        if (templateContent) {
+            wrapper.appendChild(templateContent);
+        }
         
         const mdRow = mdInput ? (mdInput.closest('.form-row') || mdInput.closest('div')) : null;
         if (mdRow && mdRow.parentNode) {
@@ -1030,30 +1050,14 @@ function openScheduleModal(site, equip, id) {
             return a.name.localeCompare(b.name);
         });
 
-        listContainer.innerHTML = displayWorkers.map(w => {
-            const isSelected = currentSelected.includes(w.name);
-            // [수정] 작업자 이름 뒤에 소속/직급과 함께 사업장 정보 표시
-            let subInfo = '';
-            const siteInfo = w.site ? ` <span style="font-size:11px; color:#3fb950;">[${escapeHtml(w.site)}]</span>` : '';
-            const deptPosInfo = (w.department || w.position) ? ` <span style="font-size:11px; color:#8b949e;">(${escapeHtml(w.department)} ${escapeHtml(w.position)})</span>` : '';
-            return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${siteInfo}${deptPosInfo}</span></div>`;
-        }).join('');
-        
-        if (displayWorkers.length === 0) listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
-        
-        listContainer.querySelectorAll('.log-select-item').forEach(liItem => {
-            liItem.onclick = (e) => { 
-                e.stopPropagation(); 
-                liItem.classList.toggle('selected'); 
-                
-                const selected = Array.from(listContainer.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
-                workerHidden.value = selected.join(', ');
-                if (selected.length > 0) trigger.textContent = selected.join(' ');
-                else trigger.textContent = '작업자 선택';
-                trigger.title = selected.join(', ');
-                
-                if (mdInput) mdInput.value = selected.length.toString();
-            };
+        renderWorkerListItems(listContainer, displayWorkers, currentSelected, () => {
+            const selected = Array.from(listContainer.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
+            workerHidden.value = selected.join(', ');
+            if (selected.length > 0) trigger.textContent = selected.join(' ');
+            else trigger.textContent = '작업자 선택';
+            trigger.title = selected.join(', ');
+            
+            if (mdInput) mdInput.value = selected.length.toString();
         });
     };
 
@@ -1146,16 +1150,10 @@ function setupEventDetailModal() {
         wrapper.style.width = '100%';
         wrapper.style.margin = '0';
 
-        wrapper.innerHTML = `
-            <div id="detail-worker-trigger" class="log-select-trigger" style="width: 100%; padding: 8px; box-sizing: border-box; background: var(--cal-bg-dark);">작업자 선택</div>
-            <div id="detail-worker-dropdown" class="log-select-dropdown">
-                <input type="text" id="detail-worker-search" class="dropdown-search-input" placeholder="이름 검색...">
-                <div id="detail-worker-list" class="log-select-list"></div>
-                <div class="log-select-footer">
-                    <button type="button" id="btn-detail-worker-confirm" class="btn-blue-sm" style="width: 100%;">선택 완료</button>
-                </div>
-            </div>
-        `;
+        const templateContent = getTemplateContent('detail-worker-template');
+        if (templateContent) {
+            wrapper.appendChild(templateContent);
+        }
         workerInput.parentNode.insertBefore(wrapper, workerInput);
         workerInput.type = 'hidden';
 
@@ -1200,22 +1198,8 @@ function setupEventDetailModal() {
                 return a.name.localeCompare(b.name);
             });
 
-            listContainer.innerHTML = displayWorkers.map(w => {
-                const isSelected = currentSelected.includes(w.name);
-                // [수정] 작업자 이름 뒤에 소속/직급과 함께 사업장 정보 표시
-                let subInfo = '';
-                const siteInfo = w.site ? ` <span style="font-size:11px; color:#3fb950;">[${escapeHtml(w.site)}]</span>` : '';
-                const deptPosInfo = (w.department || w.position) ? ` <span style="font-size:11px; color:#8b949e;">(${escapeHtml(w.department)} ${escapeHtml(w.position)})</span>` : '';
-                return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${siteInfo}${deptPosInfo}</span></div>`;
-            }).join('');
-            if (displayWorkers.length === 0) listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
-            listContainer.querySelectorAll('.log-select-item').forEach(item => {
-                item.onclick = (e) => {
-                    e.stopPropagation();
-                    if (trigger.classList.contains('disabled')) return;
-                    item.classList.toggle('selected');
-                    updateWorkerSelection();
-                };
+        renderWorkerListItems(listContainer, displayWorkers, currentSelected, () => {
+            updateWorkerSelection();
             });
         };
 
@@ -1288,20 +1272,8 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
     // [수정] 같은 날짜, 같은 타입, 세부구분에 예정된 항목들을 모두 표시 (비용처리 포함)
     let displayContent = item.content || '';
-    if (!isCompleted) {
-        displayContent = item.code ? item.code : (item.content || '');
-        if (item.itemCost) displayContent = `[${item.itemCost}] ${displayContent}`;
-
-        if (item.scheduledDate) {
-            const sameDayItems = data.maint.filter(i => i.scheduledDate === item.scheduledDate && i.type === item.type && (i.detailType || '') === (item.detailType || ''));
-            if (sameDayItems.length > 0) {
-                const contentArr = sameDayItems.map(i => {
-                    const val = i.code ? i.code : i.content;
-                    return i.itemCost ? `[${i.itemCost}] ${val}` : val;
-                });
-                displayContent = [...new Set(contentArr)].join(', ');
-            }
-        }
+    if (!isCompleted && item.code) {
+        displayContent = item.code;
     }
 
     const contentEl = document.getElementById('detail-content');
@@ -1337,10 +1309,10 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         issueShareWrapper.style.marginTop = '10px';
         issueShareWrapper.style.display = 'flex';
         issueShareWrapper.style.alignItems = 'center';
-        issueShareWrapper.innerHTML = `
-            <input type="checkbox" id="detail-issue-share-checkbox" style="transform: scale(1.2); margin-right: 8px;">
-            <label for="detail-issue-share-checkbox" style="color: #e6edf3; font-size: 13px; cursor: pointer;">특이 이슈 공유 (홈 대시보드 노출)</label>
-        `;
+        const templateContent = getTemplateContent('detail-issue-share-template');
+        if (templateContent) {
+            issueShareWrapper.appendChild(templateContent);
+        }
         memoInput.parentNode.insertBefore(issueShareWrapper, memoInput.nextSibling);
     }
     const issueShareCb = document.getElementById('detail-issue-share-checkbox');
@@ -1411,8 +1383,8 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             });
             if (sortedLogs.length > 0) lastMemo = sortedLogs[0].memo || '';
         }
-        // [수정] 저장된 메모(취소된 내용)가 있으면 우선 사용, 없으면 이전 이력 메모 사용
-        memoInput.value = item.memo || lastMemo;
+        // [수정] 신규 작업 등록 시 이전 메모를 불러오지 않도록 수정
+        memoInput.value = item.memo || '';
         memoInput.disabled = false;
         if (mdInput) {
             let displayMd = item.md || '';
@@ -1590,8 +1562,16 @@ function toggleDetailContentEdit() {
             dropdownWrapper.id = dropdownWrapperId;
             dropdownWrapper.className = 'log-select-wrapper';
 
-            const trigger = document.createElement('div');
-            trigger.className = 'log-select-trigger';
+            const templateContent = getTemplateContent('edit-content-dropdown-template');
+            if (templateContent) {
+                dropdownWrapper.appendChild(templateContent);
+            }
+
+            const trigger = dropdownWrapper.querySelector('.log-select-trigger');
+            const dropdown = dropdownWrapper.querySelector('.log-select-dropdown');
+            const searchInput = dropdownWrapper.querySelector('.dropdown-search-input');
+            const list = dropdownWrapper.querySelector('.log-select-list');
+            const addBtn = dropdownWrapper.querySelector('.btn-blue-sm');
 
             const actualValues = Object.keys(selectedMap);
             let initialText = '항목 선택';
@@ -1602,22 +1582,6 @@ function toggleDetailContentEdit() {
             }
             trigger.innerText = initialText;
             trigger.title = currentValues.join('\n');
-
-            const dropdown = document.createElement('div');
-            dropdown.className = 'log-select-dropdown';
-            dropdown.style.width = '100%';
-
-            // [추가] 검색 입력창 생성
-            const searchInput = document.createElement('input');
-            searchInput.type = 'text';
-            searchInput.className = 'dropdown-search-input';
-            searchInput.placeholder = '텍스트로 항목 검색...';
-            searchInput.autocomplete = 'off';
-            searchInput.addEventListener('click', e => e.stopPropagation());
-            dropdown.appendChild(searchInput);
-
-            const list = document.createElement('div');
-            list.className = 'log-select-list';
 
             let poolItems = uniqueItems;
             if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
@@ -1684,26 +1648,60 @@ function toggleDetailContentEdit() {
                     });
                 }
 
-                list.innerHTML = displayItems.map(item => {
+                list.innerHTML = '';
+                displayItems.forEach(item => {
                     const val = item.code ? item.code : item.content;
                     const isSelected = currentSelections.hasOwnProperty(val) || currentSelections.hasOwnProperty(item.content);
-                    const selClass = isSelected ? 'selected' : '';
                     const itemCost = isSelected ? (currentSelections[val] || currentSelections[item.content] || '유상') : '유상';
 
-                    if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
-                        return `<div class="log-select-item ${selClass}" data-value="${val}">
-                                    <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${val}</span>
-                                    <select class="item-cost-select input-dark" style="width: 85px; font-size: 11px; padding: 2px; margin-left: 5px; color: #e6edf3; color-scheme: dark;" onclick="event.stopPropagation()">
-                                        <option value="유상" ${itemCost === '유상' ? 'selected' : ''}>유상</option>
-                                        <option value="무상(보증)" ${itemCost === '무상(보증)' ? 'selected' : ''}>무상(보증)</option>
-                                        <option value="무상(중고)" ${itemCost === '무상(중고)' ? 'selected' : ''}>무상(중고)</option>
-                                        <option value="기타" ${itemCost === '기타' ? 'selected' : ''}>기타</option>
-                                    </select>
-                                </div>`;
-                    } else {
-                        return `<div class="log-select-item ${selClass}" data-value="${val}"><span>${val}</span></div>`;
+                    const templateId = (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') 
+                        ? 'log-part-item-template' : 'detail-content-item-template';
+                    
+                    const tpl = getTemplateContent(templateId);
+                    if (tpl) {
+                        const div = tpl.querySelector('.log-select-item');
+                        if (isSelected) div.classList.add('selected');
+                        div.dataset.value = val;
+                        div.querySelector('.item-name').textContent = val;
+                        
+                        const cSel = div.querySelector('.item-cost-select');
+                        if (cSel) {
+                            cSel.value = itemCost;
+                            cSel.addEventListener('click', e => e.stopPropagation());
+                            cSel.addEventListener('change', (e) => {
+                                e.stopPropagation();
+                                if (div.classList.contains('selected')) updateTriggerText();
+                            });
+                        }
+                        
+                        div.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            if (type === '비정기' && detailType !== 'BM 점검') {
+                                list.querySelectorAll('.log-select-item.selected').forEach(el => {
+                                    if (el !== div) el.classList.remove('selected');
+                                });
+                            }
+                            div.classList.toggle('selected');
+                            updateTriggerText();
+                            if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
+                                dropdown.classList.remove('show');
+                            }
+
+                            // 파트 연동 처리
+                            const pWrapper = document.getElementById('detail-edit-part-wrapper');
+                            if (pWrapper) {
+                                const selectedItems = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
+                                const isPartIssueSelected = selectedItems.some(v => v.includes('파트 이상 (교체)') || v.includes('파트 이상 (수리)') || v.includes('용액 / 용자 이상'));
+                                pWrapper.style.display = isPartIssueSelected ? 'block' : 'none';
+                                if (isPartIssueSelected && typeof window.renderLogPartOptions === 'function') {
+                                    window.renderLogPartOptions('detail-edit-part-wrapper', 'detail-edit-part-trigger', 'detail-edit-part-list', 'detail-edit-part-search', '');
+                                }
+                            }
+                        });
+                        
+                        list.appendChild(div);
                     }
-                }).join('');
+                });
 
                 if (!showAll && !searchTerm && otherItems.length > 0) {
                     const moreBtn = document.createElement('button');
@@ -1736,40 +1734,6 @@ function toggleDetailContentEdit() {
                     trigger.title = values.join('\n');
                 };
 
-                list.querySelectorAll('.item-cost-select').forEach(cSel => {
-                    cSel.addEventListener('change', (e) => {
-                        e.stopPropagation();
-                        const parentDiv = cSel.closest('.log-select-item');
-                        if (parentDiv && parentDiv.classList.contains('selected')) updateTriggerText();
-                    });
-                });
-
-                list.querySelectorAll('.log-select-item').forEach(div => {
-                    div.onclick = (e) => {
-                        e.stopPropagation();
-                        if (type === '비정기' && detailType !== 'BM 점검') {
-                            list.querySelectorAll('.log-select-item.selected').forEach(el => {
-                                if (el !== div) el.classList.remove('selected');
-                            });
-                        }
-                        div.classList.toggle('selected');
-                        updateTriggerText();
-                        if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
-                            dropdown.classList.remove('show');
-                        }
-
-                        // [추가] 파트 연동 처리
-                        const pWrapper = document.getElementById('detail-edit-part-wrapper');
-                        if (pWrapper) {
-                            const selectedItems = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
-                            const isPartIssueSelected = selectedItems.some(val => val.includes('파트 이상 (교체)') || val.includes('파트 이상 (수리)') || val.includes('용액 / 용자 이상'));
-                            pWrapper.style.display = isPartIssueSelected ? 'block' : 'none';
-                            if (isPartIssueSelected && typeof window.renderLogPartOptions === 'function') {
-                                window.renderLogPartOptions('detail-edit-part-wrapper', 'detail-edit-part-trigger', 'detail-edit-part-list', 'detail-edit-part-search', '');
-                            }
-                        }
-                    };
-                });
             };
 
             searchInput.oninput = (e) => {
@@ -1778,26 +1742,15 @@ function toggleDetailContentEdit() {
 
             renderDropdownItems();
 
-            dropdown.appendChild(list);
+            dropdown.insertBefore(list, dropdown.querySelector('.log-select-footer'));
 
-            const footer = document.createElement('div');
-            footer.className = 'log-select-footer';
-            const addBtn = document.createElement('button');
-            addBtn.className = 'btn-blue-sm';
-            addBtn.style.width = '100%';
-            addBtn.textContent = '선택 완료';
             addBtn.onclick = (e) => {
                 e.stopPropagation();
                 dropdown.classList.remove('show');
             };
-            footer.appendChild(addBtn);
             if (type === '비정기' && detailType !== 'BM 점검') {
-                footer.style.display = 'none';
+                addBtn.parentElement.style.display = 'none';
             }
-            dropdown.appendChild(footer);
-
-            dropdownWrapper.appendChild(trigger);
-            dropdownWrapper.appendChild(dropdown);
 
             trigger.onclick = (e) => {
                 e.stopPropagation();
@@ -1817,14 +1770,10 @@ function toggleDetailContentEdit() {
                 pWrapper.id = 'detail-edit-part-wrapper';
                 pWrapper.style.width = '100%';
                 pWrapper.style.margin = '0';
-                pWrapper.innerHTML = `
-                    <div id="detail-edit-part-trigger" class="log-select-trigger" style="padding: 5px; min-height: 30px; box-sizing: border-box; background: #0d1117; border: 1px solid #30363d; color: #fff; border-radius: 4px;">물품 선택</div>
-                    <div id="detail-edit-part-dropdown" class="log-select-dropdown">
-                        <input type="text" id="detail-edit-part-search" class="dropdown-search-input" placeholder="물품 검색..." autocomplete="off">
-                        <div id="detail-edit-part-list" class="log-select-list"></div>
-                        <div class="log-select-footer" style="padding: 5px;"><button type="button" class="btn-blue-sm" style="width: 100%;" onclick="document.getElementById('detail-edit-part-dropdown').classList.remove('show')">선택 완료</button></div>
-                    </div>
-                `;
+                const templateContent = getTemplateContent('detail-edit-part-wrapper-template');
+                if (templateContent) {
+                    pWrapper.appendChild(templateContent);
+                }
                 contentInput.parentNode.insertBefore(pWrapper, dropdownWrapper.nextSibling);
                 const pTrigger = pWrapper.querySelector('#detail-edit-part-trigger');
                 const pDropdown = pWrapper.querySelector('#detail-edit-part-dropdown');
@@ -2200,43 +2149,31 @@ function completeScheduleWork() {
                         defaultNextDate = dateObj.toISOString().split('T')[0];
                     }
 
-                    const div = document.createElement('div');
-                    div.style.marginBottom = '10px';
-                    div.style.padding = '10px';
-                    div.style.backgroundColor = '#21262d';
-                    div.style.borderRadius = '4px';
-                    div.style.border = '1px solid #30363d';
-
                     const itemName = item.code ? item.code : item.content;
-
-                    // 기존 점검 이력이 있는 물품이거나 기존 정기 항목에 병합된 물품이면 타입 변경 불가
                     const originalItem = originalMaintMap.get(item.id);
                     const isExisting = mergedRegItemIds.has(item.id) || (originalItem && originalItem.date);
-
-                    const typeSelectHtml = `
-                        <select class="next-type-select" data-id="${item.id}" ${isExisting ? 'disabled' : ''} style="width: 75px;">
-                            <option value="정기" ${item.type === '정기' ? 'selected' : ''}>정기</option>
-                            <option value="비정기" ${item.type === '비정기' ? 'selected' : ''}>비정기</option>
-                        </select>
-                    `;
-
-                    div.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <div style="font-weight: bold; color: #58a6ff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; padding-right: 10px;">${escapeHtml(itemName)}</div>
-                            ${typeSelectHtml}
-                        </div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <div style="display: flex; align-items: center; flex: 1; min-width: 0;">
-                                <label class="form-label" style="width: 45px; margin-bottom: 0; flex-shrink: 0; text-align: left; font-size: 14px; color: #8b949e;">예정일</label>
-                                <input type="date" class="next-date-input" data-id="${item.id}" value="${defaultNextDate}" min="${completeDate}" style="flex: 1; min-width: 0;">
-                            </div>
-                            <div style="display: flex; align-items: center; flex: 0.6; min-width: 0;">
-                                <label class="form-label" style="width: 35px; margin-bottom: 0; flex-shrink: 0; text-align: left; font-size: 14px; color: #8b949e;">공수</label>
-                                <input type="number" class="next-md-input" data-id="${item.id}" value="${item.md || md}" placeholder="M/D" min="0" style="flex: 1; min-width: 0;">
-                            </div>
-                        </div>
-                    `;
-                    listContainer.appendChild(div);
+                    
+                    const tpl = getTemplateContent('next-schedule-item-template');
+                    if (tpl) {
+                        const div = tpl.firstElementChild;
+                        div.querySelector('.item-name').textContent = itemName;
+                        
+                        const typeSelect = div.querySelector('.next-type-select');
+                        typeSelect.dataset.id = item.id;
+                        typeSelect.value = item.type;
+                        if (isExisting) typeSelect.disabled = true;
+                        
+                        const dateInput = div.querySelector('.next-date-input');
+                        dateInput.dataset.id = item.id;
+                        dateInput.value = defaultNextDate;
+                        dateInput.min = completeDate;
+                        
+                        const mdInput = div.querySelector('.next-md-input');
+                        mdInput.dataset.id = item.id;
+                        mdInput.value = item.md || md;
+                        
+                        listContainer.appendChild(div);
+                    }
                 });
             }
             nextModal.style.display = 'flex';
@@ -2590,13 +2527,10 @@ function setupRegisterScheduleModal() {
             wrapper.style.flex = '1';
             wrapper.style.margin = '0';
             wrapper.style.minWidth = '100px';
- wrapper.innerHTML = `
-                <div id="register-equip-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; background: #0d1117; border: 1px solid #30363d; color: #8b949e; padding: 4px 8px; border-radius: 4px; min-height: 30px; display: flex; align-items: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: not-allowed; opacity: 0.5;">사업장을 먼저 선택해주세요</div>
-                <div id="register-equip-dropdown" class="log-select-dropdown">
-                    <input type="text" id="register-equip-search" class="dropdown-search-input" placeholder="장비 검색..." autocomplete="off">
-                    <div id="register-equip-suggestions" class="log-select-list"></div>
-                </div>
-            `;
+            const templateContent = getTemplateContent('register-equip-template');
+            if (templateContent) {
+                wrapper.appendChild(templateContent);
+            }
             
             equipSelect.parentNode.insertBefore(wrapper, equipSelect.nextSibling);
 
@@ -2705,17 +2639,10 @@ function setupRegisterScheduleModal() {
             partRow.id = 'register-part-row';
             partRow.className = 'form-row';
             partRow.style.display = 'none';
-            partRow.innerHTML = `
-                <label class="form-label"></label>
-                <div id="register-part-wrapper" class="log-select-wrapper" style="flex: 1; margin: 0; min-width: 0; width: 100%;">
-                    <div id="register-part-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 5px; border-radius: 4px; min-height: 30px;">물품 선택</div>
-                    <div id="register-part-dropdown" class="log-select-dropdown" style="width: 200%; left: auto; right: 0;">
-                        <input type="text" id="register-part-search" class="dropdown-search-input" placeholder="물품 검색..." autocomplete="off">
-                        <div id="register-part-list" class="log-select-list"></div>
-                        <div class="log-select-footer" style="padding: 5px;"><button type="button" id="btn-register-part-add" class="btn-blue-sm" style="width: 100%;">선택 완료</button></div>
-                    </div>
-                </div>
-            `;
+            const templateContent = getTemplateContent('register-part-row-template');
+            if (templateContent) {
+                partRow.appendChild(templateContent);
+            }
             formRow.parentNode.insertBefore(partRow, formRow.nextSibling);
             const pt = document.getElementById('register-part-trigger');
             const pd = document.getElementById('register-part-dropdown');
@@ -2750,16 +2677,10 @@ function setupRegisterScheduleModal() {
         wrapper.style.minWidth = '100px';
         wrapper.style.margin = '0';
 
-        wrapper.innerHTML = `
-            <div id="register-worker-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 4px 8px; border-radius: 4px; min-height: 30px; display: flex; align-items: center;">작업자 선택</div>
-            <div id="register-worker-dropdown" class="log-select-dropdown">
-                <input type="text" id="register-worker-search" class="dropdown-search-input" placeholder="이름 검색...">
-                <div id="register-worker-list" class="log-select-list"></div>
-                <div class="log-select-footer">
-                    <button type="button" id="btn-register-worker-confirm" class="btn-blue-sm" style="width: 100%;">선택 완료</button>
-                </div>
-            </div>
-        `;
+        const templateContent = getTemplateContent('register-worker-template');
+        if (templateContent) {
+            wrapper.appendChild(templateContent);
+        }
         mdHidden.parentNode.insertBefore(wrapper, mdHidden);
         mdHidden.type = 'hidden'; // 공수 입력칸 숨김 처리
     }
@@ -2812,21 +2733,18 @@ function setupRegisterScheduleModal() {
                 const bSelected = currentSelected.includes(b.name);
                 if (aSelected && !bSelected) return -1;
                 if (!aSelected && bSelected) return 1;
-                return a.name.localeCompare(b.name);
+
+                // [추가] 같은 사업장 작업자 우선 정렬
+                const aIsSameSite = a.site === site;
+                const bIsSameSite = b.site === site;
+                if (aIsSameSite && !bIsSameSite) return -1;
+                if (!aIsSameSite && bIsSameSite) return 1;
+
+                return a.name.localeCompare(b.name); // 이름순 정렬
             });
 
-            workerList.innerHTML = displayWorkers.map(w => {
-                const isSelected = currentSelected.includes(w.name);
-                // [수정] 작업자 이름 뒤에 소속/직급과 함께 사업장 정보 표시
-                let subInfo = '';
-                const siteInfo = w.site ? ` <span style="font-size:11px; color:#3fb950;">[${escapeHtml(w.site)}]</span>` : '';
-                const deptPosInfo = (w.department || w.position) ? ` <span style="font-size:11px; color:#8b949e;">(${escapeHtml(w.department)} ${escapeHtml(w.position)})</span>` : '';
-                return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${siteInfo}${deptPosInfo}</span></div>`;
-            }).join('');
-            if (displayWorkers.length === 0) workerList.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
-
-            workerList.querySelectorAll('.log-select-item').forEach(item => {
-                item.onclick = (e) => { e.stopPropagation(); item.classList.toggle('selected'); updateRegisterWorkerSelection(); };
+            renderWorkerListItems(workerList, displayWorkers, currentSelected, () => {
+                updateRegisterWorkerSelection();
             });
         };
 
@@ -3131,40 +3049,44 @@ function updateRegisterEquipSelect(site) {
                     const detailData = JSON.parse(localStorage.getItem(key)) || {};
                     const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
-                    const li = document.createElement('div');
-                    li.className = 'log-select-item';
-                    li.style.padding = '10px 8px';
-                    
-                    let displayHtml = `<div style="display: flex; flex-direction: row; align-items: center; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">`;
-                    displayHtml += `<span style="font-weight: bold; color: #e6edf3; font-size: 11px; margin-right: 5px;">${escapeHtml(name)}</span>`;
-                    
-                    if (serial) displayHtml += `<span style="color:#8b949e; font-size:11px; margin-right: 5px;">(${escapeHtml(serial)})</span>`;
-                    if (custName) displayHtml += `<span style="color:#58a6ff; font-size:11px;">[${escapeHtml(custName)}]</span>`;
-                    
-                    displayHtml += `</div>`;
-                    li.innerHTML = displayHtml;
-
-                    li.addEventListener('mousedown', (e) => {
-                        e.preventDefault();
-                        equipSelect.value = equip;
-
-                        let displayValue = name;
-                        if (custName) {
-                            displayValue = `${name}[${custName}]`;
-                        } else if (serial) {
-                            displayValue = `${name} [${serial}]`;
-                        }
-                        equipTrigger.textContent = displayValue;
-                        equipTrigger.title = displayValue;
-                        equipTrigger.classList.remove('error-border');
-                        equipTrigger.classList.add('has-value');
+                    const tpl = getTemplateContent('equip-suggestion-item-template');
+                    if (tpl) {
+                        const li = tpl.querySelector('.log-select-item');
+                        li.querySelector('.equip-name').textContent = name;
                         
-                        equipSuggestionList.style.display = 'none';
-                        if (equipDropdown) equipDropdown.classList.remove('show');
-                        if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
-                        if (typeof window.updateRegisterInputStates === 'function') window.updateRegisterInputStates();
-                    });
-                    equipSuggestionList.appendChild(li);
+                        if (serial) {
+                            const serialSpan = li.querySelector('.equip-serial');
+                            serialSpan.textContent = `(${serial})`;
+                            serialSpan.style.display = 'inline';
+                        }
+                        if (custName) {
+                            const custSpan = li.querySelector('.equip-cust');
+                            custSpan.textContent = `[${custName}]`;
+                            custSpan.style.display = 'inline';
+                        }
+                        
+                        li.addEventListener('mousedown', (e) => {
+                            e.preventDefault();
+                            equipSelect.value = equip;
+
+                            let displayValue = name;
+                            if (custName) {
+                                displayValue = `${name}[${custName}]`;
+                            } else if (serial) {
+                                displayValue = `${name} [${serial}]`;
+                            }
+                            equipTrigger.textContent = displayValue;
+                            equipTrigger.title = displayValue;
+                            equipTrigger.classList.remove('error-border');
+                            equipTrigger.classList.add('has-value');
+                            
+                            equipSuggestionList.style.display = 'none';
+                            if (equipDropdown) equipDropdown.classList.remove('show');
+                            if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
+                            if (typeof window.updateRegisterInputStates === 'function') window.updateRegisterInputStates();
+                        });
+                        equipSuggestionList.appendChild(li);
+                    }
                 });
                 equipSuggestionList.style.display = 'block';
             } else {
@@ -3734,26 +3656,63 @@ window.updateRegisterContentOptions = function () {
                 }
             });
 
-            list.innerHTML = displayItems.map(item => {
-                const val = item.code ? item.code : item.content;
-                const isSelected = currentSelections.hasOwnProperty(val);
-                const selClass = isSelected ? 'selected' : '';
-                const itemCost = isSelected ? currentSelections[val] : '유상';
+             list.innerHTML = '';
+                displayItems.forEach(item => {
+                    const val = item.code ? item.code : item.content;
+                    const isSelected = currentSelections.hasOwnProperty(val);
+                    const itemCost = isSelected ? currentSelections[val] : '유상';
 
-                if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
-                    return `<div class="log-select-item ${selClass}" data-value="${val}">
-                                <span style="flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${val}</span>
-                                <select class="item-cost-select input-dark has-value" style="width: 85px; font-size: 11px; padding: 2px; margin-left: 5px; color: #e6edf3; color-scheme: dark;" onclick="event.stopPropagation()">
-                                    <option value="유상" ${itemCost === '유상' ? 'selected' : ''}>유상</option>
-                                    <option value="무상(보증)" ${itemCost === '무상(보증)' ? 'selected' : ''}>무상(보증)</option>
-                                    <option value="무상(중고)" ${itemCost === '무상(중고)' ? 'selected' : ''}>무상(중고)</option>
-                                    <option value="기타" ${itemCost === '기타' ? 'selected' : ''}>기타</option>
-                                </select>
-                            </div>`;
-                } else {
-                    return `<div class="log-select-item ${selClass}" data-value="${val}"><span>${val}</span></div>`;
-                }
-            }).join('');
+                    const templateId = (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') 
+                        ? 'log-part-item-template' : 'detail-content-item-template';
+                    
+                    const tpl = getTemplateContent(templateId);
+                    if (tpl) {
+                        const div = tpl.querySelector('.log-select-item');
+                        if (isSelected) div.classList.add('selected');
+                        div.dataset.value = val;
+                        div.querySelector('.item-name').textContent = val;
+                        
+                        const cSel = div.querySelector('.item-cost-select');
+                        if (cSel) {
+                            cSel.value = itemCost;
+                            cSel.addEventListener('click', e => e.stopPropagation());
+                            cSel.addEventListener('change', (e) => {
+                                e.stopPropagation();
+                                if (div.classList.contains('selected')) updateTriggerText();
+                            });
+                        }
+                        
+                        div.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            trigger.classList.remove('error-border');
+
+                            if (type === '비정기' && detailType !== 'BM 점검') {
+                                list.querySelectorAll('.log-select-item.selected').forEach(el => {
+                                    if (el !== div) el.classList.remove('selected');
+                                });
+                            }
+                            div.classList.toggle('selected');
+                            updateTriggerText();
+
+                            if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
+                                if (dropdown) dropdown.classList.remove('show');
+                            }
+
+                            // 파트 연동 처리
+                            const partRow = document.getElementById('register-part-row');
+                            if (partRow) {
+                                const selectedItems = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
+                                const isPartIssue = selectedItems.some(v => v.includes('파트 이상 (교체)') || v.includes('파트 이상 (수리)') || v.includes('용액 / 용자 이상'));
+                                partRow.style.display = isPartIssue ? 'flex' : 'none';
+                                if (isPartIssue && typeof window.renderLogPartOptions === 'function') {
+                                    window.renderLogPartOptions('register-part-wrapper', 'register-part-trigger', 'register-part-list', 'register-part-search');
+                                }
+                            }
+                        });
+                        
+                        list.appendChild(div);
+                    }
+                });
 
             if (!showAll && !searchTerm && otherItems.length > 0) {
                 const moreBtn = document.createElement('button');
@@ -3769,43 +3728,6 @@ window.updateRegisterContentOptions = function () {
                 list.appendChild(moreBtn);
             }
 
-            list.querySelectorAll('.item-cost-select').forEach(cSel => {
-                cSel.addEventListener('change', (e) => {
-                    e.stopPropagation();
-                    const parentDiv = cSel.closest('.log-select-item');
-                    if (parentDiv && parentDiv.classList.contains('selected')) updateTriggerText();
-                });
-            });
-
-            list.querySelectorAll('.log-select-item').forEach(div => {
-                div.onclick = (e) => {
-                    e.stopPropagation();
-                    trigger.classList.remove('error-border');
-
-                    if (type === '비정기' && detailType !== 'BM 점검') {
-                        list.querySelectorAll('.log-select-item.selected').forEach(el => {
-                            if (el !== div) el.classList.remove('selected');
-                        });
-                    }
-                    div.classList.toggle('selected');
-                    updateTriggerText();
-
-                    if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
-                        if (dropdown) dropdown.classList.remove('show');
-                    }
-
-                    // [추가] 파트 연동 처리
-                    const partRow = document.getElementById('register-part-row');
-                    if (partRow) {
-                        const selectedItems = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
-                        const isPartIssue = selectedItems.some(v => v.includes('파트 이상 (교체)') || v.includes('파트 이상 (수리)') || v.includes('용액 / 용자 이상'));
-                        partRow.style.display = isPartIssue ? 'flex' : 'none';
-                        if (isPartIssue && typeof window.renderLogPartOptions === 'function') {
-                            window.renderLogPartOptions('register-part-wrapper', 'register-part-trigger', 'register-part-list', 'register-part-search');
-                        }
-                    }
-                };
-            });
         };
 
         if (searchInput) {
@@ -4084,34 +4006,10 @@ window.openRegisterScheduleModal = openRegisterScheduleModal;
 function setupTaskSearchModal() {
     if (document.getElementById('task-search-modal')) return;
 
-    const modalHtml = `
-        <div id="task-search-modal" class="modal-overlay" style="display: none; z-index: 10001;">
-            <div class="modal-window" style="width: 90%; max-width: 500px; height: 70vh;">
-                <div class="modal-header">
-                    <h3>작업 검색</h3>
-                    <button id="btn-close-task-search-modal" class="btn-del-sm">✕</button>
-                </div>
-                <div class="modal-body" style="display: flex; flex-direction: column; gap: 10px;">
-                        <div class="form-row" style="display: flex; flex-direction: row; align-items: center; flex-wrap: nowrap; margin-bottom: 0; flex-shrink: 0; gap: 5px;">
-                            <label class="form-label" style="width: auto; margin-bottom: 0; flex-shrink: 0; white-space: nowrap;">기간</label>
-                            <input type="date" id="task-search-start-date" class="input-dark" style="flex: 1; min-width: 100px;">
-                            <span style="color: #e6edf3; flex-shrink: 0;">~</span>
-                            <input type="date" id="task-search-end-date" class="input-dark" style="flex: 1; min-width: 100px;">
-                    </div>
-                        <div class="form-row" style="display: flex; flex-direction: row; align-items: center; flex-wrap: nowrap; margin-bottom: 0; flex-shrink: 0; gap: 5px;">
-                            <input type="text" id="task-search-keyword-input" class="input-dark" placeholder="작업자, 장비(고객사 장비명), 내용 검색..." style="flex: 1; min-width: 0;">
-                            <button id="btn-do-task-search" class="btn-blue-sm" style="padding: 8px 15px; flex-shrink: 0; white-space: nowrap;">검색</button>
-                    </div>
-                    <div id="task-search-results-container" class="data-table-wrapper" style="border: 1px solid var(--cal-border); border-radius: 4px; background: var(--cal-bg-dark);">
-                        <ul id="task-search-results-list" style="list-style: none; padding: 0; margin: 0;">
-                            <!-- Search results will be appended here -->
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const templateContent = getTemplateContent('task-search-modal-template');
+    if (templateContent) {
+        document.body.appendChild(templateContent);
+    }
 
     document.getElementById('btn-close-task-search-modal').onclick = () => {
         document.getElementById('task-search-modal').style.display = 'none';
@@ -4279,7 +4177,8 @@ function doTaskSearch() {
         return;
     }
 
-    resultsList.innerHTML = displayTasks.map(group => {
+    resultsList.innerHTML = '';
+    displayTasks.forEach(group => {
         const { site, equip, date, type, items, isCompleted, custEquipName } = group;
         const parts = equip.split('::');
         const equipName = parts[0];
@@ -4297,37 +4196,36 @@ function doTaskSearch() {
         const displayType = type;
         const displayDetailType = detailTypes.join(' | ');
 
-        const typeClass = `type-${type}`; // Use first type for badge color
-        const completedStatusText = isCompleted ? `<span style="color: var(--cal-green); font-weight: bold; margin-left: 5px;">완료</span>` : '';
-
-        const custEquipNameHtml = custEquipName ? `<span style="color: #e6edf3; font-size: 12px; margin-left: 8px;">&lt;${escapeHtml(custEquipName)}&gt;</span>` : '';
-
-        // Use the ID of the first item in the group for the click action
-        const firstItemId = items[0].id;
-
-        return `
-            <li class="popup-event-item" 
-                onclick="openTaskFromSearch('${site}', '${equip}', ${firstItemId}, ${isCompleted})"
-                style="flex-direction: column; align-items: flex-start; gap: 4px; padding: 10px; border-bottom: 1px solid var(--cal-border);">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <div style="display: flex; align-items: center;">
-                        <span style="font-size: 12px; color: var(--cal-text-secondary);">${date}</span>
-                        ${custEquipNameHtml}
-                    </div>
-                    ${completedStatusText}
-                </div>
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <span class="item-text" style="font-weight: bold; font-size: 14px;">
-                        <span class="popup-type-badge ${typeClass}">[${displayType}]</span>
-                        ${escapeHtml(equipName)} ${escapeHtml(serialNo)}
-                    </span>
-                </div>
-                <div style="font-size: 12px; color: #e6edf3; width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(displayDetailType)} : ${escapeHtml(displayContent)}">
-                    ${escapeHtml(displayDetailType)} : ${escapeHtml(displayContent)}
-                </div>
-            </li>
-        `;
-    }).join('');
+        const tpl = getTemplateContent('task-search-result-item-template');
+        if (tpl) {
+            const li = tpl.querySelector('li');
+            li.addEventListener('click', () => openTaskFromSearch(site, equip, items[0].id, isCompleted));
+            
+            li.querySelector('.task-date').textContent = date;
+            
+            if (custEquipName) {
+                const custSpan = li.querySelector('.cust-equip-name');
+                custSpan.textContent = `<${custEquipName}>`;
+                custSpan.style.display = 'inline';
+            }
+            
+            if (isCompleted) {
+                li.querySelector('.completed-status').style.display = 'inline';
+            }
+            
+            const typeBadge = li.querySelector('.popup-type-badge');
+            typeBadge.className = `popup-type-badge type-${type}`;
+            typeBadge.textContent = `[${displayType}]`;
+            
+            li.querySelector('.equip-name').textContent = `${equipName} ${serialNo}`;
+            
+            const detailsSpan = li.querySelector('.task-details');
+            detailsSpan.textContent = `${displayDetailType} : ${displayContent}`;
+            detailsSpan.title = `${displayDetailType} : ${displayContent}`;
+            
+            resultsList.appendChild(li);
+        }
+    });
 }
 
 function openTaskFromSearch(site, equip, id, isCompleted) {
