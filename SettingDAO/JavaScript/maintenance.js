@@ -533,18 +533,6 @@ function setupLogEvents() {
             dropdown.classList.toggle('show');
         };
 
-        // [수정] 모든 드롭다운에 대해 외부 클릭 시 닫기 처리
-        document.addEventListener('click', (e) => {
-            document.querySelectorAll('.log-select-dropdown.show').forEach(d => {
-                const wrapper = d.closest('.log-select-wrapper');
-                if (wrapper && !wrapper.contains(e.target)) {
-                    d.classList.remove('show');
-                }
-            });
-        });
-    }
-
-    if (addBtn && dropdown) {
         addBtn.onclick = (e) => {
             e.stopPropagation();
             dropdown.classList.remove('show');

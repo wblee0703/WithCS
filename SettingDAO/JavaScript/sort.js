@@ -244,6 +244,45 @@ function setupSortFilters() {
     const startDateInput = document.getElementById('sort-start-date');
     const endDateInput = document.getElementById('sort-end-date');
 
+    // [추가] 기간 설정 드롭다운과 입력창들을 한 줄(가로)에 배치하기 위한 DOM 조작
+    if (periodType && periodType.parentElement && !document.getElementById('sort-period-flex-wrapper')) {
+        const flexWrapper = document.createElement('div');
+        flexWrapper.id = 'sort-period-flex-wrapper';
+        flexWrapper.style.display = 'flex';
+        flexWrapper.style.flexWrap = 'wrap'; // [수정] 직접 입력 시 줄바꿈을 위해 추가
+        flexWrapper.style.gap = '5px';
+        flexWrapper.style.alignItems = 'center';
+        flexWrapper.style.width = '100%';
+        flexWrapper.style.marginBottom = '15px'; // 하단 여백 추가
+
+        periodType.parentElement.insertBefore(flexWrapper, periodType);
+        
+        periodType.classList.remove('full-width', 'mb-5');
+        periodType.style.flex = '0 0 auto';
+        periodType.style.width = 'auto';
+        periodType.style.margin = '0';
+        flexWrapper.appendChild(periodType);
+
+        if (monthInput) {
+            monthInput.style.flex = '1';
+            monthInput.style.minWidth = '0';
+            monthInput.classList.remove('mt-10');
+            flexWrapper.appendChild(monthInput);
+        }
+        if (yearInput) {
+            yearInput.style.flex = '1';
+            yearInput.style.minWidth = '0';
+            yearInput.classList.remove('mt-10');
+            flexWrapper.appendChild(yearInput);
+        }
+        if (customInput) {
+            customInput.style.flex = '1 1 100%'; // [수정] 아래 줄 전체 너비 차지
+            customInput.style.minWidth = '0';
+            customInput.classList.remove('mt-10');
+            flexWrapper.appendChild(customInput);
+        }
+    }
+
     const currentYear = new Date().getFullYear();
     if (yearInput) {
         for (let y = currentYear; y >= currentYear - 5; y--) {
@@ -266,9 +305,24 @@ function setupSortFilters() {
             if (yearInput) yearInput.style.display = 'none';
             if (customInput) customInput.style.display = 'none';
             
-            if (e.target.value === 'month') { if (monthInput) monthInput.style.display = 'block'; }
-            else if (e.target.value === 'year') { if (yearInput) yearInput.style.display = 'block'; }
-            else { if (customInput) customInput.style.display = 'flex'; }
+            if (e.target.value === 'month') { 
+                if (monthInput) monthInput.style.display = 'block'; 
+                periodType.style.flex = '0 0 auto';
+                periodType.style.width = 'auto';
+                periodType.style.marginBottom = '0';
+            }
+            else if (e.target.value === 'year') { 
+                if (yearInput) yearInput.style.display = 'block'; 
+                periodType.style.flex = '0 0 auto';
+                periodType.style.width = 'auto';
+                periodType.style.marginBottom = '0';
+            }
+            else { 
+                if (customInput) customInput.style.display = 'flex'; 
+                periodType.style.flex = '1 1 100%';
+                periodType.style.width = '100%';
+                periodType.style.marginBottom = '5px';
+            }
         });
     }
 
@@ -697,7 +751,8 @@ function performSortSearch() {
                         md: itemObj.md || '0',
                         costType: itemCostType,
                         itemDetailType: matchedItemDetailType,
-                        status: isLog ? '완료' : '예정'
+                        status: isLog ? '완료' : '예정',
+                        memo: itemObj.memo || ''
                     };
                 };
 
@@ -872,6 +927,9 @@ function renderSortChart(results) {
     ];
 
     results.forEach(row => {
+        // [수정] 통계 차트에는 작업이 '완료'된 내역만 포함하도록 필터링
+        if (row.status !== '완료') return;
+
         if (row.content) {
             const items = row.content.split(',').map(s => s.trim());
             items.forEach(item => {
@@ -1063,7 +1121,7 @@ function renderSortChart(results) {
 
 function exportSortResultsToCSV(results) {
     let csvContent = '\uFEFF'; 
-    csvContent += '날짜,상태,사업장,건물명,모델명,장비명(약어),Serial No,고객사 장비명,구분,세부구분,물품상세구분,작업내용,비용처리,작업자,공수\n';
+    csvContent += '날짜,상태,사업장,건물명,모델명,장비명(약어),Serial No,고객사 장비명,구분,세부구분,물품상세구분,작업내용,비용처리,작업자,공수,상세메모\n';
     
     results.forEach(row => {
         const cols = [
@@ -1081,7 +1139,8 @@ function exportSortResultsToCSV(results) {
             row.content,
             row.costType,
             row.worker,
-            row.md
+            row.md,
+            row.memo
         ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
         
         csvContent += cols + '\n';

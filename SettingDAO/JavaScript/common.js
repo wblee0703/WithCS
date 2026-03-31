@@ -8,7 +8,8 @@ let originalMemo = "";
 let originalSetupData = null;
 let currentLogFilter = 'all'; // [추가] 현재 로그 필터 상태
 let sessionTimer = null; // [추가] 세션 타이머
-let sessionTimeLeft = 1800; // [추가] 세션 유지 시간 (초) - 30분
+let sessionTimeLeft = 3600; // 60분 리셋 (3600초)
+let lastActivityTimestamp = Date.now(); // [추가] 마지막 사용자 활동 시간
 
 const setupInputIds = [
     'DeviceID-cust-equip-name', 'DeviceID-building', 'DeviceID-floor', 'DeviceID-detail-loc',
@@ -329,6 +330,11 @@ function initializeApp() {
     setupAuthEvents();
     setupMobileNav(); // [이동] 페이지 접근 제어 전에 실행하여 홈 화면에서도 메뉴 작동하도록 수정
     setupLogoEvent(); // [추가] 로고 클릭 시 홈 이동
+
+    // [추가] 사용자 활동 감지 이벤트 리스너 (세션 자동 연장용)
+    document.addEventListener('mousemove', recordUserActivity);
+    document.addEventListener('keypress', recordUserActivity);
+    document.addEventListener('click', recordUserActivity);
 
     // [개선] 데스크톱 네비게이션 링크 클릭 시, 이동 전 변경사항 확인
     const desktopNav = document.querySelector('.header .container .nav-links');
@@ -932,12 +938,24 @@ function restoreLastState() {
 // [추가] 세션 타이머 관련 함수
 function startSessionTimer() {
     stopSessionTimer(); // 기존 타이머 중지
-    sessionTimeLeft = 1800; // 30분 리셋 (1800초)
+    sessionTimeLeft = 3600; // 60분 리셋 (3600초)
+    lastActivityTimestamp = Date.now(); // [추가] 타이머 시작 시 활동 시간도 초기화
     updateTimerUI();
 
     sessionTimer = setInterval(() => {
         sessionTimeLeft--;
         updateTimerUI();
+
+        // [추가] 세션 만료 5분 전, 최근 5분 내 활동이 있었으면 자동 연장
+        if (sessionTimeLeft === 300) { // 5분 남았을 때
+            const now = Date.now();
+            // 최근 5분(300,000ms) 이내에 활동이 있었는지 확인
+            if (now - lastActivityTimestamp < 300000) {
+                window.extendSession();
+                // extendSession이 startSessionTimer를 다시 호출하므로,
+                // 이 인터벌은 자동으로 중지되고 새로 시작됩니다.
+            }
+        }
 
         if (sessionTimeLeft <= 0) {
             stopSessionTimer();
@@ -971,6 +989,10 @@ function updateTimerUI() {
         // 시간이 5분(300초) 이하로 남으면 빨간색으로 경고 표시
         el.style.color = sessionTimeLeft <= 300 ? '#f85149' : '';
     });
+}
+
+function recordUserActivity() {
+    lastActivityTimestamp = Date.now();
 }
 
 window.extendSession = function () {

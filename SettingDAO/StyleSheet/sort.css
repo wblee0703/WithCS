@@ -71,6 +71,20 @@
     margin-top: 10px;
 }
 
+/* [추가] 기간 설정 날짜 입력창 가로 배치 */
+#sort-period-inputs,
+#sort-custom-input {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+#sort-period-inputs .input-dark,
+#sort-custom-input .input-dark {
+    flex: 1;
+    min-width: 0; /* flex item이 줄어들 수 있도록 설정 */
+}
+
 /* 검색 결과 리스트 아이템 스타일 */
 .sort-result-item {
     padding: 12px;
@@ -349,4 +363,11 @@
 .sort-half-chart-wrapper,
 .sort-full-chart > div:last-child {
     height: 360px !important;
+}
+
+/* [추가] 달력 아이콘 회색 계열로 변경 */
+#section-sort .input-dark[type="date"]::-webkit-calendar-picker-indicator,
+#section-sort .input-dark[type="month"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    cursor: pointer;
 }

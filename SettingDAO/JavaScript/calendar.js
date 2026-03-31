@@ -185,13 +185,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTaskSearchModal(); // [추가]
     setupNextScheduleModal(); // [추가]
 
-    // 드롭다운 외부 클릭 시 닫기
-    document.addEventListener('click', (e) => {
-        const dropdowns = document.querySelectorAll('.log-select-dropdown.show');
-        dropdowns.forEach(d => {
-            if (!d.parentElement.contains(e.target)) d.classList.remove('show');
-        });
-    });
 });
 
 /* ==========================================================================
