@@ -475,6 +475,12 @@ body {
     width: 100%;
 }
 
+/* [추가] 폼 내 자동완성 래퍼가 flex 아이템으로 동작하도록 설정 */
+.form-row .autocomplete-wrapper {
+    flex: 1;
+    min-width: 0; /* Allow shrinking */
+}
+
 /* Modal Select */
 .modal-select {
     background: #0d1117;
@@ -726,6 +732,12 @@ input:disabled {
     align-items: center;
     margin-bottom: 15px;
     flex-wrap: wrap;
+}
+
+.form-col {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
 }
 
 .flex-grow {
