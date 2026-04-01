@@ -809,7 +809,19 @@ function openCalendarPopup(dateStr, events) {
                 const parts = group.equip.split('::');
                 const equipName = parts[0];
                 const serialNo = parts.length > 1 ? parts[1] : '';
-                const displayEquip = serialNo ? `${equipName} (${serialNo})` : equipName;
+                
+                const key = `details_${group.site}_${group.equip}`;
+                const detailData = JSON.parse(localStorage.getItem(key)) || {};
+                const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+                
+                let displayEquip = equipName;
+                if (serialNo && custName) {
+                    displayEquip += ` (${serialNo}) [${custName}]`;
+                } else if (custName) {
+                    displayEquip += ` [${custName}]`;
+                } else if (serialNo) {
+                    displayEquip += ` (${serialNo})`;
+                }
 
                 const itemTextSpan = li.querySelector('.popup-item-text');
                 if (textClass) itemTextSpan.classList.add(textClass);
@@ -4210,6 +4222,7 @@ function doTaskSearch() {
             }
             
             if (isCompleted) {
+                li.classList.add('completed');
                 li.querySelector('.completed-status').style.display = 'inline';
             }
             

@@ -368,7 +368,6 @@ function updateMaintenanceDashboard() {
 
     let totalEquip = 0;
     const siteStats = [];
-    const equipCounts = {};
 
     if (data) {
         Object.keys(data).forEach(site => {
@@ -377,56 +376,43 @@ function updateMaintenanceDashboard() {
             if (count > 0) {
                 siteStats.push({ name: site, count: count });
                 totalEquip += count;
-
-                // 장비별 집계
-                if (Array.isArray(list)) {
-                    list.forEach(item => {
-                        const name = item.split('::')[0];
-                        equipCounts[name] = (equipCounts[name] || 0) + 1;
-                    });
-                }
             }
         });
     }
 
-    let todayPmCount = 0;
-    let totalPmItems = 0;
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    // [정리] 장비 현황(차트) 데이터는 사업장 필터('selectedSiteFilter')를 적용하여 재계산
+    const equipCountsForChart = {};
+    let totalEquipForChart = 0;
 
-    // 상세 데이터 순회
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key.startsWith('details_')) {
-            const detailData = JSON.parse(localStorage.getItem(key));
-            if (detailData && detailData.maint) {
-                let hasUpcoming = false;
-                detailData.maint.forEach(item => {
-                     if (item.type === '정기') {
-                        totalPmItems++;
-                        if (item.date && item.period) {
-                            const [y, m, d] = item.date.split('-').map(Number);
-                            const targetDate = new Date(y, m - 1, d);
-                            targetDate.setDate(targetDate.getDate() + parseInt(item.period));
-
-                            // 오늘 날짜와 비교 (시간 제외)
-                            const targetTime = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate()).getTime();
-
-                            if (targetTime === today.getTime()) {
-                                todayPmCount++;
-                            }
-                        }
-                    }
+    if (selectedSiteFilter) {
+        // 특정 사업장 필터링
+        const list = data[selectedSiteFilter];
+        if (list && Array.isArray(list)) {
+            totalEquipForChart = list.length;
+            list.forEach(item => {
+                const name = item.split('::')[0];
+                equipCountsForChart[name] = (equipCountsForChart[name] || 0) + 1;
+            });
+        }
+    } else {
+        // 전체 보기 (필터 없음)
+        Object.keys(data).forEach(site => {
+            const list = data[site];
+            if (list && Array.isArray(list)) {
+                totalEquipForChart += list.length;
+                list.forEach(item => {
+                    const name = item.split('::')[0];
+                    equipCountsForChart[name] = (equipCountsForChart[name] || 0) + 1;
                 });
             }
-        }
+        });
     }
 
     // 도넛 차트 및 리스트 렌더링
-    const equipStats = Object.keys(equipCounts).map(key => ({ name: key, count: equipCounts[key] }));
+    const equipStats = Object.keys(equipCountsForChart).map(key => ({ name: key, count: equipCountsForChart[key] }));
 
     renderSiteStatus(siteStats, totalEquip, data);
-    renderEquipChart(equipStats, totalEquip, data);
+    renderEquipChart(equipStats, totalEquipForChart, data);
     renderEquipDetailList(data);
 
     // 점검 임박 리스트 업데이트
@@ -475,11 +461,8 @@ function renderSiteStatus(siteStats, totalEquip, allData) {
         selectedSerialFilter = null;
         currentSearchFilters = { site: '', equip: '' };
         saveMaintFilters(); // [추가] 상태 저장
+        updateMaintenanceDashboard();
         renderCalendar();
-        renderSiteStatus(siteStats, totalEquip, allData);
-        updateEquipChartBasedOnFilter(allData);
-        renderEquipDetailList(allData);
-        renderUpcomingList(allData); // 점검 임박 리스트 갱신
     };
     listEl.appendChild(allLi);
 
@@ -515,12 +498,7 @@ function renderSiteStatus(siteStats, totalEquip, allData) {
             selectedSerialFilter = null;
             currentSearchFilters.equip = '';
             saveMaintFilters(); // [추가] 상태 저장
-            // UI 갱신 (리스트 다시 그리기)
-            renderSiteStatus(siteStats, totalEquip, allData);
-            // 장비 차트 업데이트
-            updateEquipChartBasedOnFilter(allData);
-            renderEquipDetailList(allData);
-            renderUpcomingList(allData); // 점검 임박 리스트 갱신
+            updateMaintenanceDashboard();
             renderCalendar();
         };
         listEl.appendChild(li);
@@ -529,38 +507,6 @@ function renderSiteStatus(siteStats, totalEquip, allData) {
     // 차트 적용 (마지막 콤마 제거)
     chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
     if (centerText) centerText.innerHTML = `<div class="chart-center-label">Site</div><div class="chart-center-value">${siteStats.length}</div>`;
-}
-
-function updateEquipChartBasedOnFilter(data) {
-    const equipCounts = {};
-    let totalEquip = 0;
-
-    if (selectedSiteFilter) {
-        // 특정 사업장 필터링
-        const list = data[selectedSiteFilter];
-        if (list && Array.isArray(list)) {
-            totalEquip = list.length;
-            list.forEach(item => {
-                const name = item.split('::')[0];
-                equipCounts[name] = (equipCounts[name] || 0) + 1;
-            });
-        }
-    } else {
-        // 전체 보기 (필터 없음)
-        Object.keys(data).forEach(site => {
-            const list = data[site];
-            if (list && Array.isArray(list)) {
-                totalEquip += list.length;
-                list.forEach(item => {
-                    const name = item.split('::')[0];
-                    equipCounts[name] = (equipCounts[name] || 0) + 1;
-                });
-            }
-        });
-    }
-
-    const equipStats = Object.keys(equipCounts).map(key => ({ name: key, count: equipCounts[key] }));
-    renderEquipChart(equipStats, totalEquip, data);
 }
 
 function renderEquipChart(equipStats, totalEquip, allData) {
@@ -605,10 +551,8 @@ function renderEquipChart(equipStats, totalEquip, allData) {
             selectedSerialFilter = null;
             currentSearchFilters.equip = ''; // 사업장 필터는 유지하고 장비 필터만 초기화
             saveMaintFilters(); // [추가] 상태 저장
+            updateMaintenanceDashboard();
             renderCalendar();
-            renderEquipChart(equipStats, totalEquip, allData);
-            renderEquipDetailList(allData);
-            renderUpcomingList(allData);
         };
         listEl.appendChild(allLi);
     }
@@ -641,9 +585,7 @@ function renderEquipChart(equipStats, totalEquip, allData) {
                 }
                 selectedSerialFilter = null; // 장비 종류 변경 시 개별 장비 필터 초기화
                 saveMaintFilters(); // [추가] 상태 저장
-                renderEquipChart(equipStats, totalEquip, allData);
-                renderEquipDetailList(allData);
-                renderUpcomingList(allData);
+                updateMaintenanceDashboard();
                 renderCalendar();
             };
             listEl.appendChild(li);
@@ -661,6 +603,9 @@ function renderEquipDetailList(data) {
     listEl.innerHTML = '';
     let items = [];
 
+    // [추가] 장비 모델 약어 매핑을 위해 데이터 로드
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+
     if (data) {
         Object.keys(data).forEach(site => {
             if (selectedSiteFilter && site !== selectedSiteFilter) return;
@@ -677,7 +622,11 @@ function renderEquipDetailList(data) {
                     const detailData = JSON.parse(localStorage.getItem(key)) || {};
                     const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
-                    items.push({ site, equip, name, serial, custEquipName });
+                    // [추가] 모델 약어 찾기
+                    const modelObj = equipmentModels.find(m => m.name === name);
+                    const displayName = (modelObj && modelObj.abbr) ? modelObj.abbr : name;
+
+                    items.push({ site, equip, name: displayName, serial, custEquipName });
                 });
             }
         });
@@ -694,20 +643,25 @@ function renderEquipDetailList(data) {
         if (selectedSerialFilter === item.equip) {
             li.classList.add('active');
         }
-        
+
+        // [수정] 고객사 장비명과 시리얼 번호 모두 표시
         let subInfo = '';
-        if (item.custEquipName) {
+        if (item.serial && item.custEquipName) {
+            subInfo = `(${escapeHtml(item.serial)}) [${escapeHtml(item.custEquipName)}]`;
+        } else if (item.custEquipName) {
             subInfo = `[${escapeHtml(item.custEquipName)}]`;
         } else if (item.serial) {
-            subInfo = `[${escapeHtml(item.serial)}]`;
+            subInfo = `(${escapeHtml(item.serial)})`;
         }
 
+        const mainInfo = `${escapeHtml(item.site)} > ${escapeHtml(item.name)}`;
+        const fullTitle = `${mainInfo} ${subInfo}`.replace(/<[^>]*>?/gm, '').trim();
         li.innerHTML = `
             <span class="status-color equip-bar"></span>
-            <span class="status-name no-margin-right">
-                ${escapeHtml(item.site)} > ${escapeHtml(item.name)} 
-                ${subInfo ? `<span class="equip-serial">${subInfo}</span>` : ''}
-            </span>
+            <div style="flex: 1; display: flex; align-items: center; min-width: 0; gap: 5px;">
+                <span class="status-name" title="${fullTitle}" style="margin-right: 0;">${mainInfo}</span>
+                ${subInfo ? `<span class="equip-serial" style="color: #8b949e; font-weight: normal; flex-shrink: 0;">${subInfo}</span>` : ''}
+            </div>
         `;
         li.onclick = () => {
             if (selectedSerialFilter === item.equip) {
@@ -720,8 +674,7 @@ function renderEquipDetailList(data) {
                 currentSearchFilters.equip = item.equip;
             }
             saveMaintFilters(); // [추가] 상태 저장
-            renderEquipDetailList(data); // Highlight 갱신
-            renderUpcomingList(data); // 점검 임박 리스트 필터링
+            updateMaintenanceDashboard();
             renderCalendar();
         };
         listEl.appendChild(li);
@@ -835,15 +788,24 @@ function renderUpcomingList(data) {
             badgeClass = 'warning';
         }
 
-        let equipDisplayHtml = escapeHtml(name);
-        if (custEquipName) {
-            equipDisplayHtml += ` <span class="upcoming-info-sn">[${escapeHtml(custEquipName)}]</span>`;
+        const mainInfo = `${escapeHtml(site)} > ${escapeHtml(name)}`;
+        let subInfoHtml = '';
+        let subInfoText = '';
+        if (serial && custEquipName) {
+            subInfoText = `(${serial}) [${custEquipName}]`;
+            subInfoHtml = ` <span class="upcoming-info-sn" style="color: #8b949e; flex-shrink: 0;">(${escapeHtml(serial)}) [${escapeHtml(custEquipName)}]</span>`;
+        } else if (custEquipName) {
+            subInfoText = `[${custEquipName}]`;
+            subInfoHtml = ` <span class="upcoming-info-sn" style="color: #8b949e; flex-shrink: 0;">[${escapeHtml(custEquipName)}]</span>`;
         } else if (serial) {
-            equipDisplayHtml += ` <span class="upcoming-info-sn">[${escapeHtml(serial)}]</span>`;
+            subInfoText = `(${serial})`;
+            subInfoHtml = ` <span class="upcoming-info-sn" style="color: #8b949e; flex-shrink: 0;">(${escapeHtml(serial)})</span>`;
         }
 
+        const fullTitle = `${mainInfo} ${subInfoText}`.trim();
         const siteInfo = clone.querySelector('.upcoming-info-site');
-        siteInfo.innerHTML = `${escapeHtml(site)} > ${equipDisplayHtml}`;
+        siteInfo.style.cssText = 'display: flex; align-items: center; gap: 5px; min-width: 0;';
+        siteInfo.innerHTML = `<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(fullTitle)}">${mainInfo}</span>${subInfoHtml}`;
 
         const contentText = escapeHtml(item.content);
 
@@ -1139,6 +1101,9 @@ function renderSetupEquipDetailList(activeEquips) {
         const parts = item.equip.split('::');
         const name = parts[0];
         const serial = parts.length > 1 ? parts[1] : '';
+        const equipKey = `${item.site}_${item.equip}`;
+        const detailData = JSON.parse(localStorage.getItem(`details_${equipKey}`)) || {};
+        const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
         const li = document.createElement('li');
         li.className = 'status-list-item';
@@ -1148,12 +1113,23 @@ function renderSetupEquipDetailList(activeEquips) {
             li.classList.add('active');
         }
         
+        let subInfo = '';
+        if (serial && custEquipName) {
+            subInfo = `(${escapeHtml(serial)}) [${escapeHtml(custEquipName)}]`;
+        } else if (custEquipName) {
+            subInfo = `[${escapeHtml(custEquipName)}]`;
+        } else if (serial) {
+            subInfo = `(${escapeHtml(serial)})`;
+        }
+
+        const mainInfo = `${escapeHtml(item.site)} > ${escapeHtml(name)}`;
+        const fullTitle = `${mainInfo} ${subInfo}`.replace(/<[^>]*>?/gm, '').trim();
         li.innerHTML = `
             <span class="status-color equip-bar"></span>
-            <span class="status-name no-margin-right">
-                ${escapeHtml(item.site)} > ${escapeHtml(name)} 
-                ${serial ? `<span class="equip-serial">${escapeHtml(serial)}</span>` : ''}
-            </span>
+            <div style="flex: 1; display: flex; align-items: center; min-width: 0; gap: 5px;">
+                <span class="status-name" title="${fullTitle}" style="margin-right: 0;">${mainInfo}</span>
+                ${subInfo ? `<span class="equip-serial" style="flex-shrink: 0;">${subInfo}</span>` : ''}
+            </div>
         `;
         li.onclick = () => {
             // [수정] 이미 선택된 항목을 클릭하면 선택 해제(토글), 아니면 선택 적용
@@ -1238,6 +1214,9 @@ function renderSetupUpcomingList(activeEquips) {
     upcomingItems.forEach(item => {
         const parts = item.equip.split('::');
         const name = parts[0];
+        const serial = parts.length > 1 ? parts[1] : '';
+        const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.equip}`)) || {};
+        const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
         let badgeClass = 'safe';
         let dateText = item.task.startDate; // [수정] 날짜 표시
@@ -1255,7 +1234,16 @@ function renderSetupUpcomingList(activeEquips) {
             location.href = `setup.html?site=${encodeURIComponent(item.site)}&equip=${encodeURIComponent(item.equip)}`;
         };
 
-        clone.querySelector('.upcoming-info-site').textContent = `${item.site} > ${name}`; // textContent는 안전
+        let displayEquip = name;
+        if (serial && custEquipName) {
+            displayEquip += ` (${serial}) [${custEquipName}]`;
+        } else if (custEquipName) {
+            displayEquip += ` [${custEquipName}]`;
+        } else if (serial) {
+            displayEquip += ` (${serial})`;
+        }
+
+        clone.querySelector('.upcoming-info-site').textContent = `${item.site} > ${displayEquip}`; // textContent는 안전
         clone.querySelector('.upcoming-info-content').textContent = item.task.content;
 
         const badge = clone.querySelector('.d-day-badge');
@@ -1417,10 +1405,12 @@ window.populateEquipmentIssues = function () {
         const modelName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawModelName;
 
         let displayEquip = modelName;
-        if (custEquipName) {
+        if (serial && custEquipName) {
+            displayEquip += ` (${serial}) [${custEquipName}]`;
+        } else if (custEquipName) {
             displayEquip += ` [${custEquipName}]`;
         } else if (serial) {
-            displayEquip += ` [${serial}]`;
+            displayEquip += ` (${serial})`;
         }
 
         let detailStr = '';
@@ -1468,10 +1458,3 @@ window.populateEquipmentIssues = function () {
         issueList.appendChild(li);
     });
 };
-
-// [수정] common.js의 이벤트 리스너 대신, index.js에서 페이지를 렌더링한 직후에 호출하도록 설정
-window.addEventListener('DataLoaded', () => {
-    if (document.getElementById('home-welcome-container') && sessionStorage.getItem('isLoggedIn') === 'true') {
-        setTimeout(window.restructureHomeMaintenance, 100);
-    }
-});

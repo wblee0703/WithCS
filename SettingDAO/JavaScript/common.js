@@ -1883,12 +1883,21 @@ function renderEquips(siteName) {
                 displayEquipName = modelObj.abbr;
             }
 
-            const displaySubText = modelName ? `/ ${modelName}` : '';
+            // [수정] 고객사 장비명 및 시리얼 번호 모두 표시
+            let displaySubText = '';
+            if (modelName && custEquipName) {
+                displaySubText = `(${modelName}) [${custEquipName}]`;
+            } else if (custEquipName) {
+                displaySubText = `[${custEquipName}]`;
+            } else if (modelName) {
+                displaySubText = `(${modelName})`;
+            }
 
             const li = createListItem(name, displayEquipName, 'equip', (selectedEquip) => {
                 onEquipClick(siteName, selectedEquip);
             }, displaySubText);
 
+            // [수정] title 속성에도 전체 정보 추가
             li.dataset.custName = custEquipName;
             li.dataset.fullModelName = equipName; // 검색을 위해 원본 모델명 저장
             list.appendChild(li);
@@ -1920,9 +1929,9 @@ function createListItem(id, text, type, onSelect, subText = '') {
     });
 
     li.innerHTML = `
-        <div class="item-wrapper">
-            <span class="item-text" contenteditable="false">${escapeHtml(text)}</span>
-            ${subText ? `<span class="item-subtext">${escapeHtml(subText)}</span>` : ''}
+        <div class="item-wrapper" style="display: flex; align-items: center; flex-grow: 1; min-width: 0;">
+            <span class="item-text" contenteditable="false" title="${escapeHtml(text)} ${subText ? escapeHtml(subText) : ''}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(text)}</span>
+            ${subText ? `<span class="item-subtext" style="color: #8b949e; margin-left: 5px; flex-shrink: 0;">${escapeHtml(subText)}</span>` : ''}
         </div>
         <span class="icons">
             <span class="edit-btn">✏️</span>
@@ -2336,8 +2345,20 @@ function onEquipClick(site, equip) {
     const nameParts = equip.split('::');
     const displayEquipName = nameParts[0];
     const displaySerialNo = nameParts.length > 1 ? nameParts[1] : '';
+    
+    const key = `details_${site}_${equip}`;
+    const data = JSON.parse(localStorage.getItem(key)) || {};
+    const setup = data.setup || {};
+    const custName = setup.custEquipName ? setup.custEquipName : '';
 
-    const pathText = displaySerialNo ? `📍 ${site} > ${displayEquipName} > ${displaySerialNo}` : `📍 ${site} > ${displayEquipName}`;
+    let pathText = `📍 ${site} > ${displayEquipName}`;
+    if (displaySerialNo && custName) {
+        pathText += ` > ${displaySerialNo} [${custName}]`;
+    } else if (custName) {
+        pathText += ` > [${custName}]`;
+    } else if (displaySerialNo) {
+        pathText += ` > ${displaySerialNo}`;
+    }
     document.getElementById('current-path').textContent = pathText;
 
     // 장비 변경 시 선택된 로그 및 메모 초기화

@@ -630,21 +630,6 @@ body {
     margin-bottom: 10px;
 }
 
-/* [이동] modal-select 스타일은 common.css로 이동되었습니다. */
-.modal-btn-group {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-    gap: 10px;
-}
-
-.modal-btn-group-right {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 10px;
-    gap: 10px;
-}
-
 .modal-window.size-user {
     width: 500px;
     height: auto;
@@ -1263,12 +1248,6 @@ body {
     }
 }
 
-/* [추가] 작업 검색 결과 리스트 스타일 */
-#task-search-results-list .popup-event-item.completed .item-text {
-    text-decoration: line-through;
-    color: var(--cal-text-secondary);
-}
- 
 /* 일반 사용자(user) 로그인 시 글로벌 CSS(.role-user)에 의해 작업 상세 정보 팝업의 기능 버튼이 강제로 숨겨지는 현상 완벽 방지 */
 body.role-user #event-detail-modal button[style*="display: block"],
 body.role-user #event-detail-modal button[style*="display: inline-block"] {

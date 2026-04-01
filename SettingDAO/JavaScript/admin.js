@@ -1323,9 +1323,21 @@ function renderAdminEquipList() {
         const matchedModel = equipmentModels.find(m => m.name === name);
         const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
 
+        // [추가] 고객사 장비명 가져오기
+        const detailData = JSON.parse(localStorage.getItem(`details_${site}_${fullKey}`)) || {};
+        const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+
         const li = document.createElement('li');
         
-        let content = `<span>${displayName}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
+        // [수정] 고객사 장비명 또는 시리얼 표시
+        let subInfo = '';
+        if (custEquipName) {
+            subInfo = ` <span style="color:#58a6ff; font-size:12px;">[${escapeHtml(custEquipName)}]</span>`;
+        } else if (serial) {
+            subInfo = ` <span style="color:#8b949e; font-size:12px;">(${escapeHtml(serial)})</span>`;
+        }
+        
+        let content = `<span>${displayName}</span>${subInfo}`;
         if (!currentAdminEquipSite) {
             content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:#8b949e;">${site}</span><div>${content}</div></div>`;
         } else {

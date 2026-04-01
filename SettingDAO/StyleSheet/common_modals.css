@@ -76,7 +76,7 @@
 }
 
 /* --- 3. 작업 예정일 설정 모달 (Schedule Modal) --- */
-#schedule-worker-template .form-label {
+#schedule-worker-wrapper .form-label {
     display: block;
     margin-bottom: 5px;
     color: var(--cal-text-secondary);
@@ -110,15 +110,15 @@
     font-size: 13px;
     cursor: pointer;
 }
-#edit-content-dropdown-template .log-select-trigger {
+#detail-content-dropdown-wrapper .log-select-trigger {
     padding: 2px;
     min-height: auto;
     justify-content: center;
 }
-#edit-content-dropdown-template .log-select-dropdown {
+#detail-content-dropdown-wrapper .log-select-dropdown {
     width: 200%;
 }
-#edit-content-dropdown-template .btn-blue-sm {
+#detail-content-dropdown-wrapper .btn-blue-sm {
     width: 100%;
 }
 #detail-edit-part-trigger {
@@ -267,6 +267,12 @@
     padding: 0;
     margin: 0;
 }
+/* [추가] 작업 검색 결과 리스트 스타일 (중복 제거 및 통합) */
+#task-search-results-list li.completed .task-details {
+    text-decoration: line-through;
+    color: var(--cal-text-secondary);
+}
+
 
 /* --- 7. 공통 아이템 템플릿 (Common Item Templates) --- */
 .worker-site {
@@ -277,10 +283,10 @@
     font-size: 11px;
     color: #8b949e;
 }
-#equip-suggestion-item-template .log-select-item {
+#register-equip-suggestions .log-select-item {
     padding: 10px 8px;
 }
-#equip-suggestion-item-template > div {
+#register-equip-suggestions .log-select-item > div {
     display: flex;
     align-items: center;
     width: 100%;
@@ -311,19 +317,18 @@
     flex-shrink: 0;
     display: none;
 }
-#log-part-item-template .item-name,
-#detail-content-item-template .item-name {
+.log-select-item .item-name {
     flex: 1;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-#task-search-result-item-template {
+#task-search-results-list li {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
     padding: 10px;
     border-bottom: 1px solid var(--cal-border);
 }
-#task-search-result-item-template > div {
+#task-search-results-list li > div {
     display: flex;
     justify-content: space-between;
     width: 100%;
@@ -345,7 +350,7 @@
     margin-left: 5px;
     display: none;
 }
-#task-search-result-item-template .item-text {
+#task-search-results-list li .item-text {
     font-weight: bold;
     font-size: 14px;
 }
@@ -658,14 +663,15 @@
     font-family: monospace;
     line-height: 1.5;
 }
-#memo-worker-wrapper-template .memo-row-top { display: flex; align-items: center; }
-#memo-worker-wrapper-template .memo-row-top label { color: #8b949e; font-size: 13px; min-width: 50px; }
+.memo-worker-wrapper .memo-row-top { display: flex; align-items: center; }
+.memo-worker-wrapper .memo-row-top label { color: #8b949e; font-size: 13px; min-width: 50px; }
 #memo-cost-type { width: 80px; height: 30px; font-size: 13px; padding: 0 4px; margin-right: 15px; }
-#memo-worker-wrapper-template .memo-row-bottom { display: flex; align-items: center; }
-#memo-worker-wrapper-template .memo-row-bottom label { color: #8b949e; font-size: 13px; min-width: 50px; }
-#memo-worker-wrapper-template .memo-row-bottom label span { color: #f85149; }
+.memo-worker-wrapper .memo-row-bottom { display: flex; align-items: center; }
+.memo-worker-wrapper .memo-row-bottom label { color: #8b949e; font-size: 13px; min-width: 50px; }
+.memo-worker-wrapper .memo-row-bottom label span { color: #f85149; }
 #memo-md { width: 50px; height: 30px; font-size: 13px; padding: 0 8px; margin-right: 15px; }
 .memo-worker-select { margin: 0; flex: none; }
+
 #memo-worker-trigger {
     min-height: 30px;
     height: 30px;

@@ -473,6 +473,7 @@ body {
 .autocomplete-wrapper {
     position: relative;
     width: 100%;
+    display: flex;
 }
 
 /* [추가] 폼 내 자동완성 래퍼가 flex 아이템으로 동작하도록 설정 */
@@ -489,6 +490,11 @@ body {
     padding: 8px;
     border-radius: 4px;
     flex: 1;
+}
+
+/* [추가] 계정 추가 모달 권한 선택창 너비 고정 */
+#new-user-role {
+    flex: 0 0 150px;
 }
 
 /* Login Form inside Modal */
@@ -742,6 +748,20 @@ input:disabled {
 
 .flex-grow {
     flex: 2 !important;
+}
+
+.modal-btn-group {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    gap: 10px;
+}
+
+.modal-btn-group-right {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+    gap: 10px;
 }
 
 .form-row input {
