@@ -1886,9 +1886,9 @@ function renderEquips(siteName) {
             // [수정] 고객사 장비명이 우선 표시되며, 없을 경우 시리얼 번호 표시
             let displaySubText = '';
             if (custEquipName) {
-                displaySubText = `[${custEquipName}]`;
+                displaySubText = custEquipName;
             } else if (modelName) {
-                displaySubText = `[${modelName}]`;
+                displaySubText = modelName;
             }
 
             const li = createListItem(name, displayEquipName, 'equip', (selectedEquip) => {

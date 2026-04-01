@@ -827,7 +827,7 @@ input:disabled {
 /* 일반 사용자도 모든 입력/등록이 가능하도록 제한 해제. 단, 톱니바퀴(설정) 및 관리자 데이터 기능은 숨김 유지 */
 body.role-user #btn-import,
 body.role-user #btn-clear-logs,
-body.role-user .btn-list-setting {
+body.role-user .btn-list-setting:not(#btn-log-settings) {
     display: none !important;
 }
 

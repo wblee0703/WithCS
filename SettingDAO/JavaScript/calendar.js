@@ -20,12 +20,12 @@ if (typeof window.getHolidayName !== 'function') {
 // [추가] 작업자(사용자) 목록 조회 함수 폴백
 if (typeof window.fetchWorkerNames !== 'function') {
     window.workerNamesCache = [];
-  window.fetchWorkerNames = async function (site = null) {
+    window.fetchWorkerNames = async function (site = null) {
         // 사이트 지정 없이 캐시가 있으면 캐시 반환
         if (!site && window.workerNamesCache.length > 0) {
             return window.workerNamesCache;
         }
-      try {
+        try {
             // 사이트가 지정된 경우 쿼리 파라미터로 추가
             const url = site ? `/api/users/names?site=${encodeURIComponent(site)}` : '/api/users/names';
             const res = await fetch(url);
@@ -60,10 +60,10 @@ function renderWorkerListItems(listContainer, displayWorkers, currentSelected, o
             if (isSelected) div.classList.add('selected');
             div.dataset.value = w.name;
             div.querySelector('.worker-name').textContent = w.name;
-            
+
             if (w.site) div.querySelector('.worker-site').textContent = `[${w.site}]`;
             if (w.department || w.position) div.querySelector('.worker-dept-pos').textContent = `(${w.department || ''} ${w.position || ''})`;
-            
+
             div.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const trigger = div.closest('.log-select-wrapper')?.querySelector('.log-select-trigger');
@@ -174,7 +174,7 @@ if (typeof window.renderLogPartOptions !== 'function') {
                     div.querySelector('.item-name').textContent = displayValue;
                     const costSelect = div.querySelector('.item-cost-select');
                     if (costSelect) costSelect.value = itemCost;
-                    
+
                     costSelect.addEventListener('change', (e) => { e.stopPropagation(); updateTriggerText(); });
                     div.addEventListener('click', (e) => { e.stopPropagation(); div.classList.toggle('selected'); updateTriggerText(); });
                     list.appendChild(div);
@@ -514,7 +514,7 @@ function renderCalendar() {
             if (infoText) infoText += ` (검색: ${keyword})`;
             else infoText = `검색: "${keyword}"`;
         }
-        
+
         // [수정] 적용된 검색/필터가 없을 때 기본 검색 버튼 텍스트 표시
         if (!infoText) {
             infoText = '🔍 달력 상세 검색';
@@ -809,16 +809,16 @@ function openCalendarPopup(dateStr, events) {
             const tpl = getTemplateContent('popup-event-item-template');
             if (tpl) {
                 const li = tpl.querySelector('li');
-                
+
                 const textClass = (group.isCompleted || group.isChanged) ? 'completed' : '';
                 const parts = group.equip.split('::');
                 const equipName = parts[0];
                 const serialNo = parts.length > 1 ? parts[1] : '';
-                
+
                 const key = `details_${group.site}_${group.equip}`;
                 const detailData = JSON.parse(localStorage.getItem(key)) || {};
                 const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
-                
+
                 let subInfo = '';
                 if (custName) {
                     subInfo = ` <span class="equip-serial">[${escapeHtml(custName)}]</span>`;
@@ -828,11 +828,11 @@ function openCalendarPopup(dateStr, events) {
 
                 const itemTextSpan = li.querySelector('.popup-item-text');
                 if (textClass) itemTextSpan.classList.add(textClass);
-                
+
                 const typeBadge = li.querySelector('.popup-type-badge');
                 typeBadge.className = `popup-type-badge type-${group.type}`;
                 typeBadge.textContent = `[${group.type}]`;
-                
+
                 li.querySelector('.equip-info').innerHTML = `${escapeHtml(group.site)} > ${escapeHtml(equipName)}${subInfo}`;
 
                 if (group.isCompleted) {
@@ -993,7 +993,7 @@ function openScheduleModal(site, equip, id) {
         workerHidden = document.createElement('input');
         workerHidden.type = 'hidden';
         workerHidden.id = 'schedule-worker-hidden';
-        
+
         const wrapper = document.createElement('div');
         wrapper.id = 'schedule-worker-wrapper';
         wrapper.className = 'log-select-wrapper';
@@ -1003,7 +1003,7 @@ function openScheduleModal(site, equip, id) {
         if (templateContent) {
             wrapper.appendChild(templateContent);
         }
-        
+
         const mdRow = mdInput ? (mdInput.closest('.form-row') || mdInput.closest('div')) : null;
         if (mdRow && mdRow.parentNode) {
             mdRow.parentNode.insertBefore(wrapper, mdRow);
@@ -1012,13 +1012,13 @@ function openScheduleModal(site, equip, id) {
         }
         wrapper.appendChild(workerHidden);
     }
-    
+
     const trigger = document.getElementById('schedule-worker-trigger');
     const dropdown = document.getElementById('schedule-worker-dropdown');
     const searchInput = document.getElementById('schedule-worker-search');
     const listContainer = document.getElementById('schedule-worker-list');
     const confirmBtn = document.getElementById('btn-schedule-worker-confirm');
-    
+
     // 초기 데이터 바인딩
     let initialWorker = item && item.worker ? item.worker : (sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '');
     workerHidden.value = initialWorker;
@@ -1031,32 +1031,32 @@ function openScheduleModal(site, equip, id) {
         trigger.title = '';
         if (mdInput && !item) mdInput.value = '0';
     }
-    
+
     const renderWorkers = async (searchTerm = '') => {
         // [수정] 현재 작업의 사업장(site)을 기준으로 작업자 목록을 가져옴
         const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames(site) : [];
         const currentSelected = workerHidden.value ? workerHidden.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-        const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: '', site: ''} : w);
+        const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '', site: '' } : w);
         let displayWorkers = [...allWorkers];
-        
+
         if (searchTerm) {
             const kw = searchTerm.toLowerCase();
-            displayWorkers = displayWorkers.filter(w => 
-                w.name.toLowerCase().includes(kw) || 
-                w.department.toLowerCase().includes(kw) || 
+            displayWorkers = displayWorkers.filter(w =>
+                w.name.toLowerCase().includes(kw) ||
+                w.department.toLowerCase().includes(kw) ||
                 w.position.toLowerCase().includes(kw)
             );
         }
-        
+
         const displayedNames = new Set(displayWorkers.map(w => w.name));
         currentSelected.forEach(selectedName => {
             if (!displayedNames.has(selectedName)) {
                 const workerToAdd = allWorkers.find(w => w.name === selectedName);
                 if (workerToAdd) displayWorkers.unshift(workerToAdd);
-                else displayWorkers.unshift({name: selectedName, department: '', position: ''});
+                else displayWorkers.unshift({ name: selectedName, department: '', position: '' });
             }
         });
-        
+
         displayWorkers.sort((a, b) => {
             const aSelected = currentSelected.includes(a.name);
             const bSelected = currentSelected.includes(b.name);
@@ -1071,7 +1071,7 @@ function openScheduleModal(site, equip, id) {
             if (selected.length > 0) trigger.textContent = selected.join(' ');
             else trigger.textContent = '작업자 선택';
             trigger.title = selected.join(', ');
-            
+
             if (mdInput) mdInput.value = selected.length.toString();
         });
     };
@@ -1213,8 +1213,8 @@ function setupEventDetailModal() {
                 return a.name.localeCompare(b.name);
             });
 
-        renderWorkerListItems(listContainer, displayWorkers, currentSelected, () => {
-            updateWorkerSelection();
+            renderWorkerListItems(listContainer, displayWorkers, currentSelected, () => {
+                updateWorkerSelection();
             });
         };
 
@@ -1272,7 +1272,12 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
     const parts = equip.split('::');
     document.getElementById('detail-equip-info').textContent = `${site} > ${parts[0]}`;
-    document.getElementById('detail-serial-no').textContent = parts.length > 1 ? parts[1] : '-';
+    let serialText = parts.length > 1 ? parts[1] : '-';
+    const custName = (data.setup && data.setup.custEquipName) ? data.setup.custEquipName : '';
+    if (custName) {
+        serialText += ` [${custName}]`;
+    }
+    document.getElementById('detail-serial-no').textContent = serialText;
     document.getElementById('detail-type').textContent = item.type || '정기';
     let displayDetailType = item.detailType;
     if (!displayDetailType) {
@@ -1393,8 +1398,8 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             });
             if (sortedLogs.length > 0) lastMemo = sortedLogs[0].memo || '';
         }
-        // [수정] 신규 작업 등록 시 이전 메모를 불러오지 않도록 수정
-        memoInput.value = item.memo || '';
+        // [수정] 신규 작업 등록 시 이전 메모를 불러오도록 수정
+        memoInput.value = item.memo || lastMemo;
         memoInput.disabled = false;
         if (mdInput) {
             let displayMd = item.md || '';
@@ -1664,16 +1669,16 @@ function toggleDetailContentEdit() {
                     const isSelected = currentSelections.hasOwnProperty(val) || currentSelections.hasOwnProperty(item.content);
                     const itemCost = isSelected ? (currentSelections[val] || currentSelections[item.content] || '유상') : '유상';
 
-                    const templateId = (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') 
+                    const templateId = (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체')
                         ? 'log-part-item-template' : 'detail-content-item-template';
-                    
+
                     const tpl = getTemplateContent(templateId);
                     if (tpl) {
                         const div = tpl.querySelector('.log-select-item');
                         if (isSelected) div.classList.add('selected');
                         div.dataset.value = val;
                         div.querySelector('.item-name').textContent = val;
-                        
+
                         const cSel = div.querySelector('.item-cost-select');
                         if (cSel) {
                             cSel.value = itemCost;
@@ -1683,7 +1688,7 @@ function toggleDetailContentEdit() {
                                 if (div.classList.contains('selected')) updateTriggerText();
                             });
                         }
-                        
+
                         div.addEventListener('click', (e) => {
                             e.stopPropagation();
                             if (type === '비정기' && detailType !== 'BM 점검') {
@@ -1708,7 +1713,7 @@ function toggleDetailContentEdit() {
                                 }
                             }
                         });
-                        
+
                         list.appendChild(div);
                     }
                 });
@@ -2162,26 +2167,26 @@ function completeScheduleWork() {
                     const itemName = item.code ? item.code : item.content;
                     const originalItem = originalMaintMap.get(item.id);
                     const isExisting = mergedRegItemIds.has(item.id) || (originalItem && originalItem.date);
-                    
+
                     const tpl = getTemplateContent('next-schedule-item-template');
                     if (tpl) {
                         const div = tpl.firstElementChild;
                         div.querySelector('.item-name').textContent = itemName;
-                        
+
                         const typeSelect = div.querySelector('.next-type-select');
                         typeSelect.dataset.id = item.id;
                         typeSelect.value = item.type;
                         if (isExisting) typeSelect.disabled = true;
-                        
+
                         const dateInput = div.querySelector('.next-date-input');
                         dateInput.dataset.id = item.id;
                         dateInput.value = defaultNextDate;
                         dateInput.min = completeDate;
-                        
+
                         const mdInput = div.querySelector('.next-md-input');
                         mdInput.dataset.id = item.id;
                         mdInput.value = item.md || md;
-                        
+
                         listContainer.appendChild(div);
                     }
                 });
@@ -2541,7 +2546,7 @@ function setupRegisterScheduleModal() {
             if (templateContent) {
                 wrapper.appendChild(templateContent);
             }
-            
+
             equipSelect.parentNode.insertBefore(wrapper, equipSelect.nextSibling);
 
             const trigger = document.getElementById('register-equip-trigger');
@@ -2562,7 +2567,7 @@ function setupRegisterScheduleModal() {
             searchInput.oninput = (e) => {
                 if (window.renderEquipSuggestions) window.renderEquipSuggestions(e.target.value.trim());
             };
-            
+
             equipSelect.parentNode.insertBefore(wrapper, equipSelect.nextSibling);
         }
     }
@@ -2870,7 +2875,7 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
                     } else if (serial) {
                         displayValue = `${name} [${serial}]`;
                     }
-                    
+
                     equipTrigger.textContent = displayValue;
                     equipTrigger.title = displayValue;
                     equipTrigger.style.color = '#fff';
@@ -2987,7 +2992,7 @@ function updateRegisterEquipSelect(site) {
     const equipSelect = document.getElementById('register-equip-select');
     const equipTrigger = document.getElementById('register-equip-trigger');
     const equipSuggestionList = document.getElementById('register-equip-suggestions');
- const equipSearch = document.getElementById('register-equip-search');
+    const equipSearch = document.getElementById('register-equip-search');
     const equipDropdown = document.getElementById('register-equip-dropdown');
 
     equipSelect.innerHTML = '<option value="">장비 선택</option>';
@@ -3000,7 +3005,7 @@ function updateRegisterEquipSelect(site) {
             equipTrigger.style.color = '#8b949e';
             equipTrigger.style.cursor = 'not-allowed';
             equipTrigger.style.opacity = '0.5';
-            if(equipSearch) equipSearch.value = '';
+            if (equipSearch) equipSearch.value = '';
         } else {
             equipTrigger.textContent = '장비 선택';
             equipTrigger.title = '';
@@ -3008,13 +3013,13 @@ function updateRegisterEquipSelect(site) {
             equipTrigger.style.color = '#fff';
             equipTrigger.style.cursor = 'pointer';
             equipTrigger.style.opacity = '1';
-            if(equipSearch) equipSearch.value = '';
+            if (equipSearch) equipSearch.value = '';
         }
     }
 
     if (!site) {
         equipSelect.disabled = true;
-         if (equipSuggestionList) equipSuggestionList.innerHTML = '';
+        if (equipSuggestionList) equipSuggestionList.innerHTML = '';
         return;
     }
 
@@ -3030,17 +3035,17 @@ function updateRegisterEquipSelect(site) {
     });
 
     equipSelect.disabled = false;
-    
+
     if (equipSuggestionList) {
         window.renderEquipSuggestions = (searchTerm = '') => {
             equipSuggestionList.innerHTML = '';
             const keywords = searchTerm.toLowerCase().split(/\s+/);
-            
+
             let matches = equips.filter(equip => {
                 const parts = equip.split('::');
                 const name = parts[0] || '';
                 const serial = parts.length > 1 ? parts[1] : '';
-                
+
                 const key = `details_${site}_${equip}`;
                 const detailData = JSON.parse(localStorage.getItem(key)) || {};
                 const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
@@ -3054,7 +3059,7 @@ function updateRegisterEquipSelect(site) {
                     const parts = equip.split('::');
                     const name = parts[0] || '';
                     const serial = parts.length > 1 ? parts[1] : '';
-                    
+
                     const key = `details_${site}_${equip}`;
                     const detailData = JSON.parse(localStorage.getItem(key)) || {};
                     const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
@@ -3062,7 +3067,7 @@ function updateRegisterEquipSelect(site) {
                     const tpl = getTemplateContent('equip-suggestion-item-template');
                     if (tpl) {
                         const li = tpl.querySelector('.log-select-item');
-                        li.querySelector('.equip-name').textContent = name;                            
+                        li.querySelector('.equip-name').textContent = name;
                         if (custName) {
                             const custSpan = li.querySelector('.equip-cust');
                             custSpan.textContent = `[${custName}]`;
@@ -3072,7 +3077,7 @@ function updateRegisterEquipSelect(site) {
                             serialSpan.textContent = `(${serial})`;
                             serialSpan.style.display = 'inline';
                         }
-                        
+
                         li.addEventListener('mousedown', (e) => {
                             e.preventDefault();
                             equipSelect.value = equip;
@@ -3087,7 +3092,7 @@ function updateRegisterEquipSelect(site) {
                             equipTrigger.title = displayValue;
                             equipTrigger.classList.remove('error-border');
                             equipTrigger.classList.add('has-value');
-                            
+
                             equipSuggestionList.style.display = 'none';
                             if (equipDropdown) equipDropdown.classList.remove('show');
                             if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
@@ -3172,17 +3177,9 @@ function confirmRegisterSchedule() {
             const costSelect = el.querySelector('.item-cost-select');
             return costSelect ? `[${costSelect.value}] ${el.dataset.value}` : el.dataset.value;
         }).join(', ');
-        if (!content) {
-            const trigger = document.getElementById('register-content-trigger');
-            if (trigger) trigger.classList.add('error-border');
-            hasError = true;
-        }
     } else {
         const input = document.getElementById('register-content-input');
-        if (input && !input.disabled && !input.value.trim()) {
-            input.classList.add('error-border');
-            hasError = true;
-        } else if (input) {
+        if (input) {
             content = input.value.trim();
         }
     }
@@ -3253,7 +3250,7 @@ function confirmRegisterSchedule() {
         let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
         if (!data.maint) data.maint = [];
 
-        const itemsList = content.split(', ').map(s => s.trim()).filter(s => s);
+        const itemsList = content ? content.split(', ').map(s => s.trim()).filter(s => s) : ['내용 없음'];
 
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
@@ -3664,63 +3661,63 @@ window.updateRegisterContentOptions = function () {
                 }
             });
 
-             list.innerHTML = '';
-                displayItems.forEach(item => {
-                    const val = item.code ? item.code : item.content;
-                    const isSelected = currentSelections.hasOwnProperty(val);
-                    const itemCost = isSelected ? currentSelections[val] : '유상';
+            list.innerHTML = '';
+            displayItems.forEach(item => {
+                const val = item.code ? item.code : item.content;
+                const isSelected = currentSelections.hasOwnProperty(val);
+                const itemCost = isSelected ? currentSelections[val] : '유상';
 
-                    const templateId = (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') 
-                        ? 'log-part-item-template' : 'detail-content-item-template';
-                    
-                    const tpl = getTemplateContent(templateId);
-                    if (tpl) {
-                        const div = tpl.querySelector('.log-select-item');
-                        if (isSelected) div.classList.add('selected');
-                        div.dataset.value = val;
-                        div.querySelector('.item-name').textContent = val;
-                        
-                        const cSel = div.querySelector('.item-cost-select');
-                        if (cSel) {
-                            cSel.value = itemCost;
-                            cSel.addEventListener('click', e => e.stopPropagation());
-                            cSel.addEventListener('change', (e) => {
-                                e.stopPropagation();
-                                if (div.classList.contains('selected')) updateTriggerText();
+                const templateId = (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체')
+                    ? 'log-part-item-template' : 'detail-content-item-template';
+
+                const tpl = getTemplateContent(templateId);
+                if (tpl) {
+                    const div = tpl.querySelector('.log-select-item');
+                    if (isSelected) div.classList.add('selected');
+                    div.dataset.value = val;
+                    div.querySelector('.item-name').textContent = val;
+
+                    const cSel = div.querySelector('.item-cost-select');
+                    if (cSel) {
+                        cSel.value = itemCost;
+                        cSel.addEventListener('click', e => e.stopPropagation());
+                        cSel.addEventListener('change', (e) => {
+                            e.stopPropagation();
+                            if (div.classList.contains('selected')) updateTriggerText();
+                        });
+                    }
+
+                    div.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        trigger.classList.remove('error-border');
+
+                        if (type === '비정기' && detailType !== 'BM 점검') {
+                            list.querySelectorAll('.log-select-item.selected').forEach(el => {
+                                if (el !== div) el.classList.remove('selected');
                             });
                         }
-                        
-                        div.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            trigger.classList.remove('error-border');
+                        div.classList.toggle('selected');
+                        updateTriggerText();
 
-                            if (type === '비정기' && detailType !== 'BM 점검') {
-                                list.querySelectorAll('.log-select-item.selected').forEach(el => {
-                                    if (el !== div) el.classList.remove('selected');
-                                });
-                            }
-                            div.classList.toggle('selected');
-                            updateTriggerText();
+                        if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
+                            if (dropdown) dropdown.classList.remove('show');
+                        }
 
-                            if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
-                                if (dropdown) dropdown.classList.remove('show');
+                        // 파트 연동 처리
+                        const partRow = document.getElementById('register-part-row');
+                        if (partRow) {
+                            const selectedItems = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
+                            const isPartIssue = selectedItems.some(v => v.includes('파트 이상 (교체)') || v.includes('파트 이상 (수리)') || v.includes('용액 / 용자 이상'));
+                            partRow.style.display = isPartIssue ? 'flex' : 'none';
+                            if (isPartIssue && typeof window.renderLogPartOptions === 'function') {
+                                window.renderLogPartOptions('register-part-wrapper', 'register-part-trigger', 'register-part-list', 'register-part-search');
                             }
+                        }
+                    });
 
-                            // 파트 연동 처리
-                            const partRow = document.getElementById('register-part-row');
-                            if (partRow) {
-                                const selectedItems = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
-                                const isPartIssue = selectedItems.some(v => v.includes('파트 이상 (교체)') || v.includes('파트 이상 (수리)') || v.includes('용액 / 용자 이상'));
-                                partRow.style.display = isPartIssue ? 'flex' : 'none';
-                                if (isPartIssue && typeof window.renderLogPartOptions === 'function') {
-                                    window.renderLogPartOptions('register-part-wrapper', 'register-part-trigger', 'register-part-list', 'register-part-search');
-                                }
-                            }
-                        });
-                        
-                        list.appendChild(div);
-                    }
-                });
+                    list.appendChild(div);
+                }
+            });
 
             if (!showAll && !searchTerm && otherItems.length > 0) {
                 const moreBtn = document.createElement('button');
@@ -3788,12 +3785,17 @@ function setupSearchModal() {
     }
 
     if (resetBtn) {
+        resetBtn.textContent = '내 사업장 검색';
         resetBtn.onclick = () => {
-            if (siteSelect) siteSelect.value = '';
-            updateSearchEquipSelect('');
-            currentSearchFilters = { site: '', equip: '' };
+            const userSite = sessionStorage.getItem('userSite') || '';
+            if (siteSelect) siteSelect.value = userSite;
+            updateSearchEquipSelect(userSite);
+            if (equipSelect) equipSelect.value = '';
+            currentSearchFilters = { site: userSite, equip: '' };
+            modal.style.display = 'none';
             renderCalendar();
         };
+
     }
 
     if (applyBtn) {
@@ -4047,11 +4049,15 @@ function openTaskSearchModal() {
     if (modal) {
         resultsList.innerHTML = '<li class="list-empty-msg">검색어(작업자, 장비명 등)를 입력하고 검색하세요.</li>';
 
-        // Set default date range (1st of current month to today)
+        // Set default date range (today - 15 days to today + 15 days)
         const today = new Date();
-        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-        startDateInput.value = firstDayOfMonth.toISOString().substring(0, 10);
-        endDateInput.value = today.toISOString().substring(0, 10);
+        const pastDate = new Date(today);
+        pastDate.setDate(today.getDate() - 15);
+        const futureDate = new Date(today);
+        futureDate.setDate(today.getDate() + 15);
+
+        startDateInput.value = pastDate.toISOString().substring(0, 10);
+        endDateInput.value = futureDate.toISOString().substring(0, 10);
 
         const userName = sessionStorage.getItem('userName') || sessionStorage.getItem('userId');
         keywordInput.value = userName || '';
@@ -4208,24 +4214,24 @@ function doTaskSearch() {
         if (tpl) {
             const li = tpl.querySelector('li');
             li.addEventListener('click', () => openTaskFromSearch(site, equip, items[0].id, isCompleted));
-            
+
             li.querySelector('.task-date').textContent = date;
-            
+
             if (custEquipName) {
                 const custSpan = li.querySelector('.cust-equip-name');
                 custSpan.textContent = `<${custEquipName}>`;
                 custSpan.style.display = 'inline';
             }
-            
+
             if (isCompleted) {
                 li.classList.add('completed');
                 li.querySelector('.completed-status').style.display = 'inline';
             }
-            
+
             const typeBadge = li.querySelector('.popup-type-badge');
             typeBadge.className = `popup-type-badge type-${type}`;
             typeBadge.textContent = `[${displayType}]`;
-            
+
             let subInfo = '';
             if (custEquipName) {
                 subInfo = ` <span class="equip-serial">[${escapeHtml(custEquipName)}]</span>`;
@@ -4233,11 +4239,11 @@ function doTaskSearch() {
                 subInfo = ` <span class="equip-serial">${escapeHtml(serialNo)}</span>`;
             }
             li.querySelector('.equip-name').innerHTML = `${escapeHtml(site)} > ${escapeHtml(equipName)}${subInfo}`;
-            
+
             const detailsSpan = li.querySelector('.task-details');
             detailsSpan.textContent = `${displayDetailType} : ${displayContent}`;
             detailsSpan.title = `${displayDetailType} : ${displayContent}`;
-            
+
             resultsList.appendChild(li);
         }
     });
