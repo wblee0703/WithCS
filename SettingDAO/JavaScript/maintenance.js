@@ -2177,7 +2177,7 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
 
         const dropdown = document.createElement('div');
         dropdown.className = 'log-select-dropdown';
-        dropdown.style.width = '200%';
+        dropdown.style.width = '100%';
 
         // [추가] 검색 입력창 생성
         const searchInput = document.createElement('input');
@@ -3361,11 +3361,11 @@ function setMemoFieldsDisabled(disabled) {
         }
     });
     
-    // [추가] 공수(M/D) 필드는 사용자가 직접 수정할 수 없도록 항상 비활성화 유지
     const mdInput = document.getElementById('memo-md');
     if (mdInput) {
-        mdInput.disabled = true;
-        mdInput.classList.add('input-disabled');
+        mdInput.disabled = disabled;
+        if (disabled) mdInput.classList.add('input-disabled');
+        else mdInput.classList.remove('input-disabled');
     }
     
     const workerTrigger = document.getElementById('memo-worker-trigger');

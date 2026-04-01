@@ -818,13 +818,13 @@ function renderSortList(results) {
         tr.onmouseout = () => tr.style.backgroundColor = 'transparent';
         
         // [요청] 장비명 표시를 모델명(약어), 시리얼, 고객사장비명 순으로 3줄로 변경
-        let equipDisplayHtml = `<div>${escapeHtml(row.equipName)}</div>`;
-        if (row.serial) {
-            equipDisplayHtml += `<div style="font-size:11px; color:#8b949e;">(${escapeHtml(row.serial)})</div>`;
-        }
+        let subInfo = '';
         if (row.custName) {
-            equipDisplayHtml += `<div style="font-size:12px; color:#58a6ff;">[${escapeHtml(row.custName)}]</div>`;
+            subInfo = ` <span style="color:#3fb950; font-weight:bold;">[${escapeHtml(row.custName)}]</span>`;
+        } else if (row.serial) {
+            subInfo = ` <span style="color:#3fb950; font-weight:bold;">[${escapeHtml(row.serial)}]</span>`;
         }
+        let equipDisplayHtml = `<div>${escapeHtml(row.equipName)}${subInfo}</div>`;
         
         const badgeClass = row.type.replace(/\s/g, '');
         const statusColor = row.status === '완료' ? '#3fb950' : '#d29922';

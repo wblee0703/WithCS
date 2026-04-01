@@ -521,21 +521,18 @@ function renderIntegSetupList(list) {
         li.className = 'status-list-item';
         
         let subInfo = '';
-        if (serial && custEquipName) {
-            subInfo = `(${escapeHtml(serial)}) [${escapeHtml(custEquipName)}]`;
-        } else if (custEquipName) {
+        if (custEquipName) {
             subInfo = `[${escapeHtml(custEquipName)}]`;
         } else if (serial) {
-            subInfo = `(${escapeHtml(serial)})`;
+            subInfo = `[${escapeHtml(serial)}]`;
         }
 
         const mainInfo = `${escapeHtml(item.site)} > ${escapeHtml(name)}`;
         const fullTitle = `${mainInfo} ${subInfo}`.replace(/<[^>]*>?/gm, '').trim();
         li.innerHTML = `
             <span class="status-color equip-bar" style="background-color: ${progressColor};"></span>
-            <div style="flex: 1; display: flex; align-items: center; min-width: 0; gap: 5px;">
-                <span class="status-name integ-setup-detail-col-name" title="${fullTitle}" style="margin-right: 0;">${mainInfo}</span>
-                ${subInfo ? `<span class="equip-serial" style="flex-shrink: 0; color: #8b949e;">${subInfo}</span>` : ''}
+            <div style="flex: 1; display: flex; align-items: center; min-width: 0;">
+                <span class="status-name integ-setup-detail-col-name" title="${fullTitle}" style="margin-right: 0;">${mainInfo}${subInfo ? `<span class="equip-serial">${subInfo}</span>` : ''}</span>
             </div>
             <span class="status-count integ-setup-detail-col-progress">${item.progress}%</span>
         `;
@@ -579,21 +576,18 @@ function renderIntegCompletedList(list) {
         li.className = 'status-list-item';
         
         let subInfo = '';
-        if (serial && custEquipName) {
-            subInfo = `(${escapeHtml(serial)}) [${escapeHtml(custEquipName)}]`;
-        } else if (custEquipName) {
+        if (custEquipName) {
             subInfo = `[${escapeHtml(custEquipName)}]`;
         } else if (serial) {
-            subInfo = `(${escapeHtml(serial)})`;
+            subInfo = `[${escapeHtml(serial)}]`;
         }
 
         const mainInfo = `${escapeHtml(item.site)} > ${escapeHtml(name)}`;
         const fullTitle = `${mainInfo} ${subInfo}`.replace(/<[^>]*>?/gm, '').trim();
         li.innerHTML = `
             <span class="status-color equip-bar" style="background-color: #238636;"></span>
-            <div style="flex: 1; display: flex; align-items: center; min-width: 0; gap: 5px;">
-                <span class="status-name integ-setup-complete-col-name" title="${fullTitle}" style="margin-right: 0;">${mainInfo}</span>
-                ${subInfo ? `<span class="equip-serial" style="flex-shrink: 0; color: #8b949e;">${subInfo}</span>` : ''}
+            <div style="flex: 1; display: flex; align-items: center; min-width: 0;">
+                <span class="status-name integ-setup-complete-col-name" title="${fullTitle}" style="margin-right: 0;">${mainInfo}${subInfo ? `<span class="equip-serial">${subInfo}</span>` : ''}</span>
             </div>
             <span class="status-count integ-setup-complete-col-date">${item.date || ''}</span>
         `;

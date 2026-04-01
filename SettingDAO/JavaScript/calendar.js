@@ -514,6 +514,11 @@ function renderCalendar() {
             if (infoText) infoText += ` (검색: ${keyword})`;
             else infoText = `검색: "${keyword}"`;
         }
+        
+        // [수정] 적용된 검색/필터가 없을 때 기본 검색 버튼 텍스트 표시
+        if (!infoText) {
+            infoText = '🔍 달력 상세 검색';
+        }
         targetInfoEl.textContent = infoText;
     }
 
@@ -814,13 +819,11 @@ function openCalendarPopup(dateStr, events) {
                 const detailData = JSON.parse(localStorage.getItem(key)) || {};
                 const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
                 
-                let displayEquip = equipName;
-                if (serialNo && custName) {
-                    displayEquip += ` (${serialNo}) [${custName}]`;
-                } else if (custName) {
-                    displayEquip += ` [${custName}]`;
+                let subInfo = '';
+                if (custName) {
+                    subInfo = ` <span class="equip-serial">[${escapeHtml(custName)}]</span>`;
                 } else if (serialNo) {
-                    displayEquip += ` (${serialNo})`;
+                    subInfo = ` <span class="equip-serial">[${escapeHtml(serialNo)}]</span>`;
                 }
 
                 const itemTextSpan = li.querySelector('.popup-item-text');
@@ -830,7 +833,7 @@ function openCalendarPopup(dateStr, events) {
                 typeBadge.className = `popup-type-badge type-${group.type}`;
                 typeBadge.textContent = `[${group.type}]`;
                 
-                li.querySelector('.equip-info').textContent = `${group.site} > ${displayEquip}`;
+                li.querySelector('.equip-info').innerHTML = `${escapeHtml(group.site)} > ${escapeHtml(equipName)}${subInfo}`;
 
                 if (group.isCompleted) {
                     const completedSpan = document.createElement('span');
@@ -980,8 +983,8 @@ function openScheduleModal(site, equip, id) {
 
     if (mdInput) {
         mdInput.value = item ? (item.md || '') : '';
-        mdInput.disabled = true; // [추가] 공수 입력창 비활성화
-        mdInput.classList.add('input-disabled');
+        mdInput.disabled = false; // 공수 수동 입력 허용
+        mdInput.classList.remove('input-disabled');
     }
 
     // [추가] 작업자 필드 동적 생성 및 검색/제안 박스 연동
@@ -1245,11 +1248,6 @@ function setupEventDetailModal() {
             if (arr.length > 0) trigger.textContent = arr.join(' ');
             else trigger.textContent = '작업자 선택';
             trigger.title = arr.join(', ');
-
-            const mdInput = document.getElementById('detail-md');
-            if (mdInput) {
-                mdInput.value = arr.length.toString();
-            }
         });
     }
 }
@@ -1407,7 +1405,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
                 if (itemWithMd) displayMd = itemWithMd.md;
             }
             mdInput.value = displayMd;
-            mdInput.disabled = true;
+            mdInput.disabled = false;
         }
 
         dateRow.style.display = 'block';
@@ -3064,17 +3062,15 @@ function updateRegisterEquipSelect(site) {
                     const tpl = getTemplateContent('equip-suggestion-item-template');
                     if (tpl) {
                         const li = tpl.querySelector('.log-select-item');
-                        li.querySelector('.equip-name').textContent = name;
-                        
-                        if (serial) {
-                            const serialSpan = li.querySelector('.equip-serial');
-                            serialSpan.textContent = `(${serial})`;
-                            serialSpan.style.display = 'inline';
-                        }
+                        li.querySelector('.equip-name').textContent = name;                            
                         if (custName) {
                             const custSpan = li.querySelector('.equip-cust');
                             custSpan.textContent = `[${custName}]`;
                             custSpan.style.display = 'inline';
+                        } else if (serial) {
+                            const serialSpan = li.querySelector('.equip-serial');
+                            serialSpan.textContent = `(${serial})`;
+                            serialSpan.style.display = 'inline';
                         }
                         
                         li.addEventListener('mousedown', (e) => {
@@ -4194,7 +4190,7 @@ function doTaskSearch() {
         const { site, equip, date, type, items, isCompleted, custEquipName } = group;
         const parts = equip.split('::');
         const equipName = parts[0];
-        const serialNo = parts.length > 1 ? `(${parts[1]})` : '';
+        const serialNo = parts.length > 1 ? `[${parts[1]}]` : '';
 
         // Combine unique values
         const contents = [...new Set(items.map(item => item.content || '내용 없음'))];
@@ -4230,7 +4226,13 @@ function doTaskSearch() {
             typeBadge.className = `popup-type-badge type-${type}`;
             typeBadge.textContent = `[${displayType}]`;
             
-            li.querySelector('.equip-name').textContent = `${equipName} ${serialNo}`;
+            let subInfo = '';
+            if (custEquipName) {
+                subInfo = ` <span class="equip-serial">[${escapeHtml(custEquipName)}]</span>`;
+            } else if (serialNo) {
+                subInfo = ` <span class="equip-serial">${escapeHtml(serialNo)}</span>`;
+            }
+            li.querySelector('.equip-name').innerHTML = `${escapeHtml(site)} > ${escapeHtml(equipName)}${subInfo}`;
             
             const detailsSpan = li.querySelector('.task-details');
             detailsSpan.textContent = `${displayDetailType} : ${displayContent}`;

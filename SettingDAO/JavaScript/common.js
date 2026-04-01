@@ -1883,14 +1883,12 @@ function renderEquips(siteName) {
                 displayEquipName = modelObj.abbr;
             }
 
-            // [수정] 고객사 장비명 및 시리얼 번호 모두 표시
+            // [수정] 고객사 장비명이 우선 표시되며, 없을 경우 시리얼 번호 표시
             let displaySubText = '';
-            if (modelName && custEquipName) {
-                displaySubText = `(${modelName}) [${custEquipName}]`;
-            } else if (custEquipName) {
+            if (custEquipName) {
                 displaySubText = `[${custEquipName}]`;
             } else if (modelName) {
-                displaySubText = `(${modelName})`;
+                displaySubText = `[${modelName}]`;
             }
 
             const li = createListItem(name, displayEquipName, 'equip', (selectedEquip) => {
@@ -1930,8 +1928,7 @@ function createListItem(id, text, type, onSelect, subText = '') {
 
     li.innerHTML = `
         <div class="item-wrapper" style="display: flex; align-items: center; flex-grow: 1; min-width: 0;">
-            <span class="item-text" contenteditable="false" title="${escapeHtml(text)} ${subText ? escapeHtml(subText) : ''}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(text)}</span>
-            ${subText ? `<span class="item-subtext" style="color: #8b949e; margin-left: 5px; flex-shrink: 0;">${escapeHtml(subText)}</span>` : ''}
+            <span class="item-text" contenteditable="false" title="${escapeHtml(text)} ${subText ? escapeHtml(subText) : ''}" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(text)}${subText ? `<span class="item-subtext">${escapeHtml(subText)}</span>` : ''}</span>
         </div>
         <span class="icons">
             <span class="edit-btn">✏️</span>

@@ -4,21 +4,26 @@
 
 /* --- 1. 세션 타이머 (Session Timer) --- */
 .session-timer-container {
-    display: none; /* JS로 제어 */
+    display: none;
+    /* JS로 제어 */
     align-items: center;
 }
+
 .mobile-header-timer {
     margin-right: auto;
     padding-left: 10px;
 }
+
 .session-time-display {
     color: #e3b341;
     font-size: 14px;
 }
+
 .btn-extend-session {
     font-weight: bold;
     white-space: nowrap;
 }
+
 /* Mobile */
 #mobile-session-timer .btn-extend-session {
     padding: 2px 8px;
@@ -27,6 +32,7 @@
     border-radius: 4px;
     height: 24px;
 }
+
 /* Desktop */
 #desktop-session-timer .btn-extend-session {
     padding: 2px 6px;
@@ -40,17 +46,20 @@
 #my-info-wrapper {
     width: 100%;
 }
+
 #my-info-content {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
+
 #my-info-wrapper .form-row {
     display: flex;
     gap: 10px;
     width: 100%;
     height: 30px;
 }
+
 #my-info-wrapper .input-dark {
     flex: 1;
     min-width: 0;
@@ -59,6 +68,7 @@
     font-size: 13px;
     color: #e6edf3;
 }
+
 #my-info-wrapper button {
     width: auto;
     height: 100%;
@@ -69,6 +79,7 @@
     border-radius: 4px;
     box-sizing: border-box;
 }
+
 #my-info-wrapper #edit-my-role,
 #my-info-wrapper #edit-my-site {
     background: #0d1117;
@@ -82,11 +93,13 @@
     color: var(--cal-text-secondary);
     font-size: 13px;
 }
+
 #schedule-worker-trigger {
     width: 100%;
     box-sizing: border-box;
     background: var(--cal-bg-dark);
 }
+
 #schedule-worker-dropdown .btn-blue-sm {
     width: 100%;
 }
@@ -98,29 +111,36 @@
     box-sizing: border-box;
     background: var(--cal-bg-dark);
 }
+
 #detail-worker-dropdown .btn-blue-sm {
     width: 100%;
 }
+
 #detail-issue-share-checkbox {
     transform: scale(1.2);
     margin-right: 8px;
 }
-#detail-issue-share-checkbox + label {
+
+#detail-issue-share-checkbox+label {
     color: #e6edf3;
     font-size: 13px;
     cursor: pointer;
 }
+
 #detail-content-dropdown-wrapper .log-select-trigger {
     padding: 2px;
     min-height: auto;
     justify-content: center;
 }
+
 #detail-content-dropdown-wrapper .log-select-dropdown {
-    width: 200%;
+    width: 100%;
 }
+
 #detail-content-dropdown-wrapper .btn-blue-sm {
     width: 100%;
 }
+
 #detail-edit-part-trigger {
     width: 100%;
     box-sizing: border-box;
@@ -136,12 +156,15 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 #detail-edit-part-dropdown {
     width: 100%;
 }
+
 #detail-edit-part-dropdown .log-select-footer {
     padding: 5px;
 }
+
 #detail-edit-part-dropdown .btn-blue-sm {
     width: 100%;
 }
@@ -164,6 +187,7 @@
     cursor: not-allowed;
     opacity: 0.5;
 }
+
 /* [추가] 작업 등록 모달의 커스텀 드롭다운(내용, 작업자 등) 정렬 및 너비 통일 */
 #register-schedule-modal .log-select-wrapper {
     display: flex;
@@ -172,6 +196,7 @@
     min-width: 0;
     margin: 0 !important;
 }
+
 #register-part-trigger {
     width: 100%;
     box-sizing: border-box;
@@ -187,15 +212,19 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 #register-part-dropdown {
     width: 100%;
 }
+
 #register-part-dropdown .log-select-footer {
     padding: 5px;
 }
+
 #btn-register-part-add {
     width: 100%;
 }
+
 #register-worker-trigger {
     width: 100%;
     box-sizing: border-box;
@@ -208,6 +237,7 @@
     display: flex;
     align-items: center;
 }
+
 #register-worker-dropdown .btn-blue-sm {
     width: 100%;
 }
@@ -216,16 +246,19 @@
 #task-search-modal {
     z-index: 10001;
 }
+
 #task-search-modal .modal-window {
     width: 90%;
     max-width: 500px;
     height: 70vh;
 }
+
 #task-search-modal .modal-body {
     display: flex;
     flex-direction: column;
     gap: 10px;
 }
+
 #task-search-modal .form-row {
     display: flex;
     align-items: center;
@@ -234,42 +267,49 @@
     flex-shrink: 0;
     gap: 5px;
 }
+
 #task-search-modal .form-label {
     width: auto;
     margin-bottom: 0;
     flex-shrink: 0;
     white-space: nowrap;
 }
+
 #task-search-modal input[type="date"] {
     flex: 1;
     min-width: 100px;
 }
+
 #task-search-modal .form-row span {
     color: #e6edf3;
     flex-shrink: 0;
 }
+
 #task-search-keyword-input {
     flex: 1;
     min-width: 0;
 }
+
 #btn-do-task-search {
     padding: 8px 15px;
     flex-shrink: 0;
     white-space: nowrap;
 }
+
 #task-search-results-container {
     border: 1px solid var(--cal-border);
     border-radius: 4px;
     background: var(--cal-bg-dark);
 }
+
 #task-search-results-list {
     list-style: none;
     padding: 0;
     margin: 0;
 }
+
 /* [추가] 작업 검색 결과 리스트 스타일 (중복 제거 및 통합) */
 #task-search-results-list li.completed .task-details {
-    text-decoration: line-through;
     color: var(--cal-text-secondary);
 }
 
@@ -279,48 +319,58 @@
     font-size: 11px;
     color: #3fb950;
 }
+
 .worker-dept-pos {
     font-size: 11px;
     color: #8b949e;
 }
+
 #register-equip-suggestions .log-select-item {
     padding: 10px 8px;
 }
-#register-equip-suggestions .log-select-item > div {
+
+#register-equip-suggestions .log-select-item>div {
     display: flex;
     align-items: center;
     width: 100%;
     overflow: hidden;
 }
+
 .equip-name {
     font-weight: bold;
     color: #e6edf3;
-    font-size: 14px;
+    font-size: 13px;
     margin-right: 5px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     flex-shrink: 1;
 }
+
 .equip-serial {
-    color: #8b949e;
+    color: #3fb950; /* 녹색 */
+    font-weight: bold;
     font-size: 13px;
     margin-right: 5px;
     white-space: nowrap;
     flex-shrink: 0;
-    display: none;
 }
+
 .equip-cust {
-    color: #58a6ff;
+    color: #3fb950; /* 녹색 */
+    font-weight: bold;
     font-size: 13px;
     white-space: nowrap;
     flex-shrink: 0;
-    display: none;
 }
+
 .log-select-item .item-name {
     flex: 1;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
+
 #task-search-results-list li {
     flex-direction: column;
     align-items: flex-start;
@@ -328,32 +378,38 @@
     padding: 10px;
     border-bottom: 1px solid var(--cal-border);
 }
-#task-search-results-list li > div {
+
+#task-search-results-list li>div {
     display: flex;
     justify-content: space-between;
     width: 100%;
     align-items: center;
 }
+
 .task-date {
     font-size: 12px;
     color: var(--cal-text-secondary);
 }
+
 .cust-equip-name {
     color: #e6edf3;
     font-size: 12px;
     margin-left: 8px;
     display: none;
 }
+
 .completed-status {
     color: var(--cal-green);
     font-weight: bold;
     margin-left: 5px;
     display: none;
 }
+
 #task-search-results-list li .item-text {
     font-weight: bold;
     font-size: 14px;
 }
+
 .task-details {
     font-size: 12px;
     color: #e6edf3;
@@ -365,9 +421,17 @@
 
 /* --- 8. 페이지별 모달 (Page-specific Modals) --- */
 /* HOME / MAINTENANCE */
-#event-detail-modal { z-index: 9999; }
-#next-schedule-modal { z-index: 10000; }
-#register-schedule-modal { z-index: 9999; }
+#event-detail-modal {
+    z-index: 9999;
+}
+
+#next-schedule-modal {
+    z-index: 10000;
+}
+
+#register-schedule-modal {
+    z-index: 9999;
+}
 
 #next-schedule-modal .modal-window {
     width: 420px;
@@ -376,12 +440,14 @@
     display: flex;
     flex-direction: column;
 }
+
 #next-schedule-modal .modal-body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
     padding: 15px;
 }
+
 #next-schedule-modal p {
     color: #e6edf3;
     font-size: 13px;
@@ -390,20 +456,24 @@
     word-break: keep-all;
     flex-shrink: 0;
 }
+
 #next-schedule-modal p span {
     color: #58a6ff;
     font-weight: bold;
 }
+
 #next-schedule-list-container {
     flex: 1;
     min-height: 50px;
     overflow-y: auto;
     padding-right: 5px;
 }
+
 #next-schedule-modal .modal-btn-group {
     margin-top: 15px;
     flex-shrink: 0;
 }
+
 #register-schedule-modal .modal-window {
     width: 500px;
     height: 650px;
@@ -412,23 +482,28 @@
     min-width: 450px;
     min-height: 650px;
 }
+
 #register-schedule-modal .modal-body {
     overflow-y: auto;
     max-height: 70vh;
 }
+
 #register-schedule-modal .form-row {
     display: flex;
     align-items: center;
     gap: 10px;
 }
+
 #register-schedule-modal .form-label {
     width: 80px;
     margin-bottom: 0 !important;
 }
+
 #register-schedule-modal .input-dark,
 #register-schedule-modal .modal-select {
     flex: 1;
 }
+
 #register-schedule-modal .modal-select {
     background: #0d1117;
     color: #fff;
@@ -465,15 +540,26 @@
     background-color: var(--cal-bg-element) !important;
 }
 
-#register-detail-type2-row { display: none; }
-#register-detail-type2-select { display: none; margin-top: 0; }
-#register-content-input { display: none; }
+#register-detail-type2-row {
+    display: none;
+}
+
+#register-detail-type2-select {
+    display: none;
+    margin-top: 0;
+}
+
+#register-content-input {
+    display: none;
+}
+
 #register-content-wrapper {
     flex: 1;
     margin-right: 0;
     min-width: 0;
     width: 100%;
 }
+
 #register-content-trigger {
     width: 100%;
     box-sizing: border-box;
@@ -484,13 +570,18 @@
     border-radius: 4px;
     min-height: 30px;
 }
-#btn-register-content-add { width: 100%; }
+
+#btn-register-content-add {
+    width: 100%;
+}
+
 #register-worker-wrapper {
     flex: 1;
     margin-right: 0;
     min-width: 0;
     width: 100%;
 }
+
 #register-worker-trigger {
     width: 100%;
     box-sizing: border-box;
@@ -501,7 +592,10 @@
     border-radius: 4px;
     min-height: 30px;
 }
-#btn-register-worker-confirm { width: 100%; }
+
+#btn-register-worker-confirm {
+    width: 100%;
+}
 
 /* --- 9. 모바일 반응형 (Mobile Responsive) --- */
 @media (max-width: 950px) {
@@ -551,20 +645,30 @@
         flex-wrap: nowrap !important;
     }
 
-    #task-search-start-date, #task-search-end-date {
+    #task-search-start-date,
+    #task-search-end-date {
         min-width: 0 !important;
         font-size: 11px !important;
         padding: 4px 2px !important;
     }
+
+    /* [요청] 작업 상세 정보 모달의 드롭다운은 화면을 벗어나지 않게 100% 유지 */
+    #event-detail-modal .log-select-dropdown {
+        width: 100% !important;
+    }
 }
 
 /* SETUP */
-#setup-load-info-modal { z-index: 2000; }
+#setup-load-info-modal {
+    z-index: 2000;
+}
+
 #setup-load-list-modal .modal-window,
 #setup-load-info-modal .modal-window {
     width: 400px;
     height: auto;
 }
+
 #setup-load-list-modal .modal-select,
 #setup-load-info-modal .modal-select {
     flex: 1;
@@ -574,41 +678,104 @@
     padding: 5px;
     border-radius: 4px;
 }
+
 #setup-load-list-modal .warning-box,
 #setup-load-info-modal .info-box {
     margin-top: 20px;
     padding: 10px;
     border-radius: 4px;
 }
+
 #setup-load-list-modal .warning-box {
     background: rgba(248, 81, 73, 0.1);
     border: 1px solid rgba(248, 81, 73, 0.4);
 }
+
 #setup-load-info-modal .info-box {
     background: rgba(31, 111, 235, 0.1);
     border: 1px solid rgba(31, 111, 235, 0.4);
 }
-#setup-load-list-modal .info-text-gray { color: #ff7b72; }
-#setup-load-info-modal .info-text-gray { color: #58a6ff; }
-.info-text-gray { margin: 0; font-size: 12px; line-height: 1.4; }
 
-#setup-equip-modal .modal-window { width: 600px; height: auto; max-height: 90vh; }
-#setup-equip-modal .modal-header div { display: flex; align-items: center; }
-#setup-equip-modal .modal-header .btn-gray { padding: 2px 10px; font-size: 12px; margin-right: 5px; }
-#setup-modal-equipStatus { flex: 1; height: 30px; padding: 4px 8px; box-sizing: border-box; }
+#setup-load-list-modal .info-text-gray {
+    color: #ff7b72;
+}
+
+#setup-load-info-modal .info-text-gray {
+    color: #58a6ff;
+}
+
+.info-text-gray {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+#setup-equip-modal .modal-window {
+    width: 600px;
+    height: auto;
+    max-height: 90vh;
+}
+
+#setup-equip-modal .modal-header div {
+    display: flex;
+    align-items: center;
+}
+
+#setup-equip-modal .modal-header .btn-gray {
+    padding: 2px 10px;
+    font-size: 12px;
+    margin-right: 5px;
+}
+
+#setup-modal-equipStatus {
+    flex: 1;
+    height: 30px;
+    padding: 4px 8px;
+    box-sizing: border-box;
+}
+
 #setup-modal-deliveryDate,
 #setup-modal-warrantyStart,
-#setup-modal-warrantyPeriod { flex: 1; height: 30px; padding: 4px 8px; box-sizing: border-box; }
-#setup-modal-deliveryDate + label,
-#setup-modal-warrantyStart + label { width: 80px; text-align: center; padding-left: 5px; }
-#setup-equip-modal hr { border: 0; border-top: 1px solid #30363d; margin: 10px 0; }
-#setup-equip-modal h4 { color: #58a6ff; margin: 15px 0 5px; }
-#setup-equip-modal .flex-grow { flex-grow: 1; }
+#setup-modal-warrantyPeriod {
+    flex: 1;
+    height: 30px;
+    padding: 4px 8px;
+    box-sizing: border-box;
+}
+
+#setup-modal-deliveryDate+label,
+#setup-modal-warrantyStart+label {
+    width: 80px;
+    text-align: center;
+    padding-left: 5px;
+}
+
+#setup-equip-modal hr {
+    border: 0;
+    border-top: 1px solid #30363d;
+    margin: 10px 0;
+}
+
+#setup-equip-modal h4 {
+    color: #58a6ff;
+    margin: 15px 0 5px;
+}
+
+#setup-equip-modal .flex-grow {
+    flex-grow: 1;
+}
 
 /* MAINTENANCE */
-#maint-load-info-modal { z-index: 2000; }
+#maint-load-info-modal {
+    z-index: 2000;
+}
+
 #maint-load-list-modal .modal-window,
-#maint-load-info-modal .modal-window { width: 400px; height: auto; }
+#maint-load-info-modal .modal-window {
+    width: 400px;
+    height: auto;
+}
+
 #maint-load-list-modal .modal-select,
 #maint-load-info-modal .modal-select {
     flex: 1;
@@ -618,6 +785,7 @@
     padding: 5px;
     border-radius: 4px;
 }
+
 #maint-load-list-modal .warning-box {
     margin-top: 20px;
     padding: 10px;
@@ -625,6 +793,7 @@
     background: rgba(248, 81, 73, 0.1);
     border: 1px solid rgba(248, 81, 73, 0.4);
 }
+
 #maint-load-info-modal .info-box {
     margin-top: 20px;
     padding: 10px;
@@ -632,15 +801,52 @@
     background: rgba(31, 111, 235, 0.1);
     border: 1px solid rgba(31, 111, 235, 0.4);
 }
-#maint-load-list-modal .info-text-gray { color: #ff7b72; }
-#maint-load-info-modal .info-text-gray { color: #58a6ff; }
-#maint-equip-modal .modal-window { width: 600px; height: auto; max-height: 90vh; }
-#maint-equip-modal .modal-header div { display: flex; align-items: center; }
-#maint-equip-modal .modal-header .btn-gray { padding: 2px 10px; font-size: 12px; margin-right: 5px; }
-#maint-equip-modal hr { border: 0; border-top: 1px solid #30363d; margin: 10px 0; }
-#maint-equip-modal h4 { color: #58a6ff; margin: 15px 0 5px; }
-#maint-equip-modal .flex-grow { flex-grow: 1; }
-#special-note-modal .modal-window { width: 500px; height: 400px; }
+
+#maint-load-list-modal .info-text-gray {
+    color: #ff7b72;
+}
+
+#maint-load-info-modal .info-text-gray {
+    color: #58a6ff;
+}
+
+#maint-equip-modal .modal-window {
+    width: 600px;
+    height: auto;
+    max-height: 90vh;
+}
+
+#maint-equip-modal .modal-header div {
+    display: flex;
+    align-items: center;
+}
+
+#maint-equip-modal .modal-header .btn-gray {
+    padding: 2px 10px;
+    font-size: 12px;
+    margin-right: 5px;
+}
+
+#maint-equip-modal hr {
+    border: 0;
+    border-top: 1px solid #30363d;
+    margin: 10px 0;
+}
+
+#maint-equip-modal h4 {
+    color: #58a6ff;
+    margin: 15px 0 5px;
+}
+
+#maint-equip-modal .flex-grow {
+    flex-grow: 1;
+}
+
+#special-note-modal .modal-window {
+    width: 500px;
+    height: 400px;
+}
+
 #special-note-textarea {
     flex: 1;
     resize: none;
@@ -651,7 +857,12 @@
     padding: 10px;
     border-radius: 4px;
 }
-#file-edit-modal .modal-window { width: 800px; height: 600px; }
+
+#file-edit-modal .modal-window {
+    width: 800px;
+    height: 600px;
+}
+
 #file-edit-content {
     width: 100%;
     height: 100%;
@@ -663,14 +874,53 @@
     font-family: monospace;
     line-height: 1.5;
 }
-.memo-worker-wrapper .memo-row-top { display: flex; align-items: center; }
-.memo-worker-wrapper .memo-row-top label { color: #8b949e; font-size: 13px; min-width: 50px; }
-#memo-cost-type { width: 80px; height: 30px; font-size: 13px; padding: 0 4px; margin-right: 15px; }
-.memo-worker-wrapper .memo-row-bottom { display: flex; align-items: center; }
-.memo-worker-wrapper .memo-row-bottom label { color: #8b949e; font-size: 13px; min-width: 50px; }
-.memo-worker-wrapper .memo-row-bottom label span { color: #f85149; }
-#memo-md { width: 50px; height: 30px; font-size: 13px; padding: 0 8px; margin-right: 15px; }
-.memo-worker-select { margin: 0; flex: none; }
+
+.memo-worker-wrapper .memo-row-top {
+    display: flex;
+    align-items: center;
+}
+
+.memo-worker-wrapper .memo-row-top label {
+    color: #8b949e;
+    font-size: 13px;
+    min-width: 50px;
+}
+
+#memo-cost-type {
+    width: 80px;
+    height: 30px;
+    font-size: 13px;
+    padding: 0 4px;
+    margin-right: 15px;
+}
+
+.memo-worker-wrapper .memo-row-bottom {
+    display: flex;
+    align-items: center;
+}
+
+.memo-worker-wrapper .memo-row-bottom label {
+    color: #8b949e;
+    font-size: 13px;
+    min-width: 50px;
+}
+
+.memo-worker-wrapper .memo-row-bottom label span {
+    color: #f85149;
+}
+
+#memo-md {
+    width: 50px;
+    height: 30px;
+    font-size: 13px;
+    padding: 0 8px;
+    margin-right: 15px;
+}
+
+.memo-worker-select {
+    margin: 0;
+    flex: none;
+}
 
 #memo-worker-trigger {
     min-height: 30px;

@@ -428,7 +428,8 @@
 /* 모달 사이즈 */
 #schedule-modal .modal-window,
 #event-detail-modal .modal-window,
-#gantt-search-modal .modal-window {
+#gantt-search-modal .modal-window,
+#calendar-search-modal .modal-window {
     width: 400px;
     height: auto;
 }

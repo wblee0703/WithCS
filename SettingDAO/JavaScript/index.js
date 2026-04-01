@@ -1,7 +1,6 @@
 /* ==========================================================================
-   1. 초기화 및 전역 변수 (Initialization & Globals)
+   1. 전역 변수 및 공통 헬퍼 함수 (Globals & Helpers)
    ========================================================================== */
-let originalDetailMemo = "";
 let selectedSiteFilter = null;
 let selectedEquipFilter = null;
 let selectedSerialFilter = null;
@@ -9,11 +8,9 @@ let currentGanttFilters = { site: '', equip: '' };
 let setupDashboardFilter = { site: '', equip: '' };
 let isFirstLoad = true;
 
-// [추가] 사업장별 고유 색상 생성 함수 (이름 기반 해시)
-window.getSiteColor = function(siteName) {
+window.getSiteColor = function (siteName) {
     if (!siteName || siteName === '전체') return '#6e7681';
 
-    // [수정] 특정 사업장 고정 색상 지정
     const nameUpper = siteName.toUpperCase();
     if (nameUpper.includes('SKH')) return '#F37021'; // 주황색 (Orange)
     if (nameUpper.includes('SEC')) return '#034EA2'; // 파란색 (Blue)
@@ -22,7 +19,7 @@ window.getSiteColor = function(siteName) {
     if (nameUpper.includes('LG')) return '#6B6B6B'; // 회색 (Gray)
 
     const colors = [
-        '#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', 
+        '#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633',
         '#f0883e', '#3fb950', '#a371f7', '#9e6a03', '#1b7c83', '#6e40c9'
     ];
     let hash = 0;
@@ -32,8 +29,7 @@ window.getSiteColor = function(siteName) {
     return colors[Math.abs(hash) % colors.length];
 };
 
-// [추가] 사업장별 고유 그라데이션 생성 함수
-window.getSiteGradient = function(siteName) {
+window.getSiteGradient = function (siteName) {
     if (!siteName || siteName === '전체') return 'linear-gradient(to top, #6e7681, #8b949e)';
     const color = window.getSiteColor(siteName);
     const gradientMap = {
@@ -57,20 +53,53 @@ window.getSiteGradient = function(siteName) {
     return gradientMap[color] || 'linear-gradient(to top, #30363d, #57606a)';
 };
 
-document.addEventListener('DOMContentLoaded', () => {
-    // 초기화 함수 정의
-    const initDashboard = () => {
-        updateHomeDashboard();
-    };
+// [공통 헬퍼] 대시보드 데이터 로드
+function getDashboardData() {
+    let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
+    return (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
+}
 
-    // [수정] 이미 데이터가 로드되었는지 확인 후 실행
-    if (window.isDataLoaded) {
-        initDashboard();
-    } else {
-        window.addEventListener('DataLoaded', initDashboard);
+// [공통 헬퍼] 장비 표시 이름(시리얼, 고객사 장비명 포함) 포맷팅
+function formatEquipDisplayInfo(site, equipKey, equipmentModels = null) {
+    const parts = equipKey.split('::');
+    const name = parts[0];
+    const serial = parts.length > 1 ? parts[1] : '';
+
+    if (!equipmentModels) equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+    const matchedModel = equipmentModels.find(m => m.name === name);
+    const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+
+    const detailData = JSON.parse(localStorage.getItem(`details_${site}_${equipKey}`)) || {};
+    const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+
+    let subInfo = '';
+    if (custEquipName) {
+        subInfo = `[${escapeHtml(custEquipName)}]`;
+    } else if (serial) {
+        subInfo = `[${escapeHtml(serial)}]`;
     }
 
-    // [요청] Integrated 대시보드 리스트 클릭 시 이동 확인 팝업
+    const mainInfo = `${escapeHtml(site)} > ${escapeHtml(displayName)}`;
+    
+    return {
+        name: displayName,
+        serial: serial,
+        custEquipName: custEquipName,
+        subInfo: subInfo,
+        mainInfo: mainInfo,
+        fullTitle: `${mainInfo} ${subInfo}`.replace(/<[^>]*>?/gm, '').trim(),
+        displayEquip: subInfo ? `${displayName} ${subInfo}` : displayName
+    };
+}
+
+/* ==========================================================================
+   2. 초기화 및 이벤트 리스너 (Initialization)
+   ========================================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+    const initDashboard = () => updateHomeDashboard();
+    if (window.isDataLoaded) initDashboard();
+    else window.addEventListener('DataLoaded', initDashboard);
+
     const integLists = ['integ-setup-complete-list', 'integ-setup-detail-list'];
     integLists.forEach(id => {
         const list = document.getElementById(id);
@@ -91,37 +120,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ==========================================================================
-   2. 네비게이션 및 뷰 전환 (Navigation & View Switching)
+   3. 네비게이션 및 뷰 전환 (Navigation & View Switching)
    ========================================================================== */
-function goToSetupPage() {
-    let targetSite = setupDashboardFilter.site;
-    let targetEquipName = setupDashboardFilter.equip;
-    let targetSerial = '';
+// [공통 헬퍼] 필터 기반 페이지 이동 로직
+function navigateWithFilters(targetPage, savedPathKey, targetSite, targetEquipName, targetSerial) {
+    const data = getDashboardData();
+    let site = targetSite;
+    let serial = targetSerial;
+    let equipName = targetEquipName;
 
-    // [추가] 간트 차트 필터가 있으면 우선 적용
-    if (currentGanttFilters.site) {
-        targetSite = currentGanttFilters.site;
-    }
-    if (currentGanttFilters.equip) {
-        targetSerial = currentGanttFilters.equip;
-    }
-
-    let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
-    const data = typeof storageData !== 'undefined' && Object.keys(storageData).length > 0 ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
-
-    // 간트 차트 검색창 키워드 적용
-    const ganttSearchInput = document.getElementById('gantt-search');
-    const keyword = ganttSearchInput ? ganttSearchInput.value.trim().toLowerCase() : '';
+    const searchInputId = targetPage.includes('setup') ? 'gantt-search' : 'calendar-search';
+    const searchInput = document.getElementById(searchInputId);
+    const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
     if (keyword && !targetSerial) {
-        for (const site in data) {
-            if (targetSite && site !== targetSite) continue;
-            const equips = data[site];
+        for (const s in data) {
+            if (site && s !== site) continue;
+            const equips = data[s];
             if (equips) {
                 const found = equips.find(e => e.toLowerCase().includes(keyword));
                 if (found) {
-                    targetSite = site;
-                    targetSerial = found;
+                    site = s;
+                    serial = found;
                     break;
                 }
             }
@@ -129,104 +149,48 @@ function goToSetupPage() {
     }
 
     let fullEquipName = '';
-
-    if (targetSerial) {
-        fullEquipName = targetSerial;
-        if (!targetSite) {
-            for (const site in data) {
-                if (data[site] && data[site].includes(fullEquipName)) { targetSite = site; break; }
+    if (serial) {
+        fullEquipName = serial;
+        if (!site) {
+            for (const s in data) {
+                if (data[s] && data[s].includes(fullEquipName)) { site = s; break; }
             }
         }
-    } else if (targetSite && targetEquipName) {
-        if (data[targetSite]) {
-            const found = data[targetSite].find(e => e.split('::')[0] === targetEquipName);
+    } else if (site && equipName) {
+        if (data[site]) {
+            const found = data[site].find(e => e.split('::')[0] === equipName);
             if (found) fullEquipName = found;
         }
     }
 
-    if (targetSite && fullEquipName) {
-        location.href = `setup.html?site=${encodeURIComponent(targetSite)}&equip=${encodeURIComponent(fullEquipName)}`;
-    } else if (targetSite) {
-        location.href = `setup.html?site=${encodeURIComponent(targetSite)}`;
+    if (site && fullEquipName) {
+        location.href = `${targetPage}?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(fullEquipName)}`;
+    } else if (site) {
+        location.href = `${targetPage}?site=${encodeURIComponent(site)}`;
     } else {
         try {
-            const lastState = JSON.parse(sessionStorage.getItem('lastSetupPath'));
+            const lastState = JSON.parse(sessionStorage.getItem(savedPathKey));
             if (lastState && lastState.site && lastState.equip) {
-                location.href = `setup.html?site=${encodeURIComponent(lastState.site)}&equip=${encodeURIComponent(lastState.equip)}`;
+                location.href = `${targetPage}?site=${encodeURIComponent(lastState.site)}&equip=${encodeURIComponent(lastState.equip)}`;
                 return;
             }
         } catch (e) { }
-        location.href = 'setup.html';
+        location.href = targetPage;
     }
 }
 
+function goToSetupPage() {
+    let targetSite = setupDashboardFilter.site || currentGanttFilters.site;
+    let targetEquipName = setupDashboardFilter.equip;
+    let targetSerial = currentGanttFilters.equip;
+    navigateWithFilters('setup.html', 'lastSetupPath', targetSite, targetEquipName, targetSerial);
+}
+
 function goToMaintenancePage() {
-    // [수정] 운영 관리 대시보드 필터 확인 후 이동, 없으면 마지막 상태 복원
-    let targetSite = selectedSiteFilter;
+    let targetSite = currentSearchFilters.site || selectedSiteFilter;
     let targetEquipName = selectedEquipFilter;
-    let targetSerial = selectedSerialFilter;
-
-    // 1. 캘린더 상세 검색 필터(Select 박스) 적용
-    if (currentSearchFilters.site) {
-        targetSite = currentSearchFilters.site;
-    }
-    if (currentSearchFilters.equip) {
-        targetSerial = currentSearchFilters.equip;
-    }
-
-    let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
-    const data = typeof storageData !== 'undefined' && Object.keys(storageData).length > 0 ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
-
-    // 2. 캘린더 텍스트 검색창(Keyword) 적용
-    const calendarSearchInput = document.getElementById('calendar-search');
-    const keyword = calendarSearchInput ? calendarSearchInput.value.trim().toLowerCase() : '';
-
-    if (keyword && !targetSerial) {
-        for (const site in data) {
-            if (targetSite && site !== targetSite) continue;
-            const equips = data[site];
-            if (equips) {
-                const found = equips.find(e => e.toLowerCase().includes(keyword));
-                if (found) {
-                    targetSite = site;
-                    targetSerial = found;
-                    break;
-                }
-            }
-        }
-    }
-
-    let fullEquipName = '';
-
-    if (targetSerial) {
-        fullEquipName = targetSerial;
-        if (!targetSite) {
-            for (const site in data) {
-                if (data[site] && data[site].includes(fullEquipName)) { targetSite = site; break; }
-            }
-        }
-    } else if (targetSite && targetEquipName) {
-        if (data[targetSite]) {
-            const found = data[targetSite].find(e => e.split('::')[0] === targetEquipName);
-            if (found) fullEquipName = found;
-        }
-    }
-
-    if (targetSite && fullEquipName) {
-        location.href = `maintenance.html?site=${encodeURIComponent(targetSite)}&equip=${encodeURIComponent(fullEquipName)}`;
-    } else if (targetSite) {
-        // 장비가 특정되지 않았으나 사업장 필터가 있는 경우 사업장으로 이동
-        location.href = `maintenance.html?site=${encodeURIComponent(targetSite)}`;
-    } else {
-        try {
-            const lastState = JSON.parse(sessionStorage.getItem('lastMaintPath'));
-            if (lastState && lastState.site && lastState.equip) {
-                location.href = `maintenance.html?site=${encodeURIComponent(lastState.site)}&equip=${encodeURIComponent(lastState.equip)}`;
-                return;
-            }
-        } catch (e) { }
-        location.href = 'maintenance.html';
-    }
+    let targetSerial = currentSearchFilters.equip || selectedSerialFilter;
+    navigateWithFilters('maintenance.html', 'lastMaintPath', targetSite, targetEquipName, targetSerial);
 }
 
 function showHomeSection(type) {
@@ -235,7 +199,6 @@ function showHomeSection(type) {
     const maintSec = document.getElementById('section-maint');
     const integratedSec = document.getElementById('section-integrated');
 
-    // [Mobile] 이미 활성화된 섹션 버튼을 클릭했을 때 메뉴 확장/축소 토글
     let isAlreadyActive = false;
     if (type === 'setup' && document.querySelector('.btn-setup.active')) isAlreadyActive = true;
     if (type === 'maint' && document.querySelector('.btn-maint.active')) isAlreadyActive = true;
@@ -247,7 +210,6 @@ function showHomeSection(type) {
     }
     menuContainer.classList.remove('expanded'); // 다른 섹션 선택 시 메뉴 접기
 
-    // [추가] 버튼 활성화 상태 토글
     const btnSetup = document.querySelector('.btn-setup');
     const btnMaint = document.querySelector('.btn-maint');
     const btnIntegrated = document.querySelector('.btn-integrated');
@@ -257,8 +219,6 @@ function showHomeSection(type) {
 
     // 메뉴 컨테이너를 컴팩트 모드로 전환 (애니메이션 효과)
     menuContainer.classList.add('compact');
-
-    // [추가] 마지막 선택 상태 저장
     localStorage.setItem('lastHomeSection', type);
 
     if (type === 'setup') {
@@ -266,7 +226,7 @@ function showHomeSection(type) {
         setupSec.style.display = 'flex';
         maintSec.style.display = 'none';
         if (integratedSec) integratedSec.style.display = 'none';
-        renderGanttChart(); // Render Gantt when tab is shown
+        renderGanttChart();
     } else if (type === 'maint') {
         if (btnMaint) btnMaint.classList.add('active');
         setupSec.style.display = 'none';
@@ -278,37 +238,33 @@ function showHomeSection(type) {
         setupSec.style.display = 'none';
         maintSec.style.display = 'none';
         if (integratedSec) integratedSec.style.display = 'flex';
-        
-        // [추가] 통합 관리 대시보드 업데이트 호출
         if (typeof updateIntegratedDashboard === 'function') updateIntegratedDashboard();
     }
 }
 
 /* ==========================================================================
-   3. 대시보드 로직 (Dashboard Logic)
+   4. 대시보드 로직 (Dashboard Logic)
    ========================================================================== */
 function updateHomeDashboard() {
-    // [추가] 첫 로드 시 마지막 화면 상태 및 필터 복원
     if (isFirstLoad) {
         const lastSection = localStorage.getItem('lastHomeSection');
-        const userSite = sessionStorage.getItem('userSite'); // [추가] 계정 사업장 확인
+        const userSite = sessionStorage.getItem('userSite'); 
 
         try {
             const savedSetupFilter = JSON.parse(localStorage.getItem('setupDashboardFilter'));
             if (savedSetupFilter) {
                 setupDashboardFilter = savedSetupFilter;
             } else if (userSite) {
-                setupDashboardFilter = { site: userSite, equip: '' }; // [추가] 기본 필터
+                setupDashboardFilter = { site: userSite, equip: '' };
             }
 
             const savedGanttFilter = JSON.parse(localStorage.getItem('currentGanttFilters'));
             if (savedGanttFilter) {
                 currentGanttFilters = savedGanttFilter;
             } else if (userSite) {
-                currentGanttFilters = { site: userSite, equip: '' }; // [추가] 기본 필터
+                currentGanttFilters = { site: userSite, equip: '' };
             }
 
-            // [추가] 운영 관리 필터 복원
             const savedMaintFilter = JSON.parse(localStorage.getItem('maintDashboardFilter'));
             if (savedMaintFilter) {
                 selectedSiteFilter = savedMaintFilter.site;
@@ -330,7 +286,6 @@ function updateHomeDashboard() {
     updateMaintenanceDashboard();
     updateSetupDashboard();
 
-    // [추가] 간트뷰 또는 캘린더뷰 이동 버튼을 통해 접근 시 자동 스크롤
     const urlParams = new URLSearchParams(window.location.search);
     const scrollToTarget = urlParams.get('scrollTo');
     if (scrollToTarget) {
@@ -338,13 +293,11 @@ function updateHomeDashboard() {
             let targetEl = null;
             if (scrollToTarget === 'gantt') targetEl = document.getElementById('gantt-chart-area');
             else if (scrollToTarget === 'calendar') targetEl = document.querySelector('.calendar-container');
-            
+
             if (targetEl) targetEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            
-            // URL에서 파라미터 제거 (새로고침 시 방지)
             const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-            window.history.replaceState({path: newUrl}, '', newUrl);
-        }, 200); // UI 렌더링 후 약간의 대기 시간 적용
+            window.history.replaceState({ path: newUrl }, '', newUrl);
+        }, 200); 
     }
 }
 
@@ -359,12 +312,10 @@ function saveMaintFilters() {
 }
 
 /* ==========================================================================
-   3-1. 유지관리 대시보드 (Maintenance Dashboard)
+   5. 운영 관리 현황 대시보드 (Maintenance Dashboard)
    ========================================================================== */
 function updateMaintenanceDashboard() {
-    // 데이터 로드 (common.js의 storageData가 있다면 사용, 없으면 직접 로드)
-    let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
-    let data = typeof storageData !== 'undefined' && Object.keys(storageData).length > 0 ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
+    const data = getDashboardData();
 
     let totalEquip = 0;
     const siteStats = [];
@@ -380,12 +331,10 @@ function updateMaintenanceDashboard() {
         });
     }
 
-    // [정리] 장비 현황(차트) 데이터는 사업장 필터('selectedSiteFilter')를 적용하여 재계산
     const equipCountsForChart = {};
     let totalEquipForChart = 0;
 
     if (selectedSiteFilter) {
-        // 특정 사업장 필터링
         const list = data[selectedSiteFilter];
         if (list && Array.isArray(list)) {
             totalEquipForChart = list.length;
@@ -395,7 +344,6 @@ function updateMaintenanceDashboard() {
             });
         }
     } else {
-        // 전체 보기 (필터 없음)
         Object.keys(data).forEach(site => {
             const list = data[site];
             if (list && Array.isArray(list)) {
@@ -408,17 +356,13 @@ function updateMaintenanceDashboard() {
         });
     }
 
-    // 도넛 차트 및 리스트 렌더링
     const equipStats = Object.keys(equipCountsForChart).map(key => ({ name: key, count: equipCountsForChart[key] }));
 
     renderSiteStatus(siteStats, totalEquip, data);
     renderEquipChart(equipStats, totalEquipForChart, data);
     renderEquipDetailList(data);
-
-    // 점검 임박 리스트 업데이트
     renderUpcomingList(data);
 
-    // [추가] 렌더링 완료 후 UI 재배치 (에러 방지를 위해 딜레이 적용)
     setTimeout(window.restructureHomeMaintenance, 50);
 }
 
@@ -428,11 +372,10 @@ function renderSiteStatus(siteStats, totalEquip, allData) {
     const centerText = document.getElementById('site-chart-center');
 
     if (!chartEl || !listEl) return;
-
     listEl.innerHTML = '';
 
     if (totalEquip === 0) {
-        chartEl.style.background = ''; // CSS 기본값 사용
+        chartEl.style.background = ''; 
         if (centerText) centerText.innerHTML = `<div class="chart-center-label">Site</div><div class="chart-center-value">0</div>`;
         listEl.innerHTML = '<li class="list-empty-msg">데이터 없음</li>';
         return;
@@ -440,11 +383,8 @@ function renderSiteStatus(siteStats, totalEquip, allData) {
 
     let gradientStr = '';
     let currentDeg = 0;
-
-    // 장비 수 많은 순으로 정렬
     siteStats.sort((a, b) => b.count - a.count);
 
-    // 전체 항목 추가
     const allLi = document.createElement('li');
     allLi.className = 'status-list-item';
     if (selectedSiteFilter === null) {
@@ -457,10 +397,10 @@ function renderSiteStatus(siteStats, totalEquip, allData) {
     `;
     allLi.onclick = () => {
         selectedSiteFilter = null;
-        selectedEquipFilter = null; // 사이트 전체 선택 시 장비 필터도 초기화
+        selectedEquipFilter = null; 
         selectedSerialFilter = null;
         currentSearchFilters = { site: '', equip: '' };
-        saveMaintFilters(); // [추가] 상태 저장
+        saveMaintFilters(); 
         updateMaintenanceDashboard();
         renderCalendar();
     };
@@ -469,11 +409,9 @@ function renderSiteStatus(siteStats, totalEquip, allData) {
     siteStats.forEach((site, index) => {
         const color = window.getSiteColor(site.name);
         const deg = (site.count / totalEquip) * 360;
-
         gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
         currentDeg += deg;
 
-        // 리스트 아이템 생성
         const li = document.createElement('li');
         li.className = 'status-list-item';
         if (selectedSiteFilter === site.name) {
@@ -488,23 +426,22 @@ function renderSiteStatus(siteStats, totalEquip, allData) {
 
         li.onclick = () => {
             if (selectedSiteFilter === site.name) {
-                selectedSiteFilter = null; // 이미 선택된 경우 해제
+                selectedSiteFilter = null; 
                 currentSearchFilters.site = '';
             } else {
-                selectedSiteFilter = site.name; // 선택
+                selectedSiteFilter = site.name; 
                 currentSearchFilters.site = site.name;
             }
-            selectedEquipFilter = null; // 사이트 변경 시 장비 필터 초기화
+            selectedEquipFilter = null; 
             selectedSerialFilter = null;
             currentSearchFilters.equip = '';
-            saveMaintFilters(); // [추가] 상태 저장
+            saveMaintFilters(); 
             updateMaintenanceDashboard();
             renderCalendar();
         };
         listEl.appendChild(li);
     });
 
-    // 차트 적용 (마지막 콤마 제거)
     chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
     if (centerText) centerText.innerHTML = `<div class="chart-center-label">Site</div><div class="chart-center-value">${siteStats.length}</div>`;
 }
@@ -515,26 +452,20 @@ function renderEquipChart(equipStats, totalEquip, allData) {
     const centerText = document.getElementById('equip-chart-center');
 
     if (!chartEl) return;
-
     if (listEl) listEl.innerHTML = '';
 
     if (totalEquip === 0) {
-        chartEl.style.background = ''; // CSS 기본값 사용
+        chartEl.style.background = ''; 
         if (centerText) centerText.innerHTML = `<div class="chart-center-label">Equip</div><div class="chart-center-value">0</div>`;
         if (listEl) listEl.innerHTML = '<li class="list-empty-msg">데이터 없음</li>';
         return;
     }
 
-    // 색상 팔레트 (다른 톤 사용)
     const colors = ['#a371f7', '#f0883e', '#3fb950', '#da3633', '#8957e5', '#d29922', '#238636', '#1f6feb'];
-
     let gradientStr = '';
     let currentDeg = 0;
-
-    // 장비 수 많은 순으로 정렬
     equipStats.sort((a, b) => b.count - a.count);
 
-    // 전체 항목 추가
     if (listEl) {
         const allLi = document.createElement('li');
         allLi.className = 'status-list-item';
@@ -549,8 +480,8 @@ function renderEquipChart(equipStats, totalEquip, allData) {
         allLi.onclick = () => {
             selectedEquipFilter = null;
             selectedSerialFilter = null;
-            currentSearchFilters.equip = ''; // 사업장 필터는 유지하고 장비 필터만 초기화
-            saveMaintFilters(); // [추가] 상태 저장
+            currentSearchFilters.equip = ''; 
+            saveMaintFilters(); 
             updateMaintenanceDashboard();
             renderCalendar();
         };
@@ -583,8 +514,8 @@ function renderEquipChart(equipStats, totalEquip, allData) {
                     selectedEquipFilter = equip.name;
                     currentSearchFilters.equip = equip.name;
                 }
-                selectedSerialFilter = null; // 장비 종류 변경 시 개별 장비 필터 초기화
-                saveMaintFilters(); // [추가] 상태 저장
+                selectedSerialFilter = null; 
+                saveMaintFilters(); 
                 updateMaintenanceDashboard();
                 renderCalendar();
             };
@@ -599,34 +530,19 @@ function renderEquipChart(equipStats, totalEquip, allData) {
 function renderEquipDetailList(data) {
     const listEl = document.getElementById('equip-detail-list');
     if (!listEl) return;
-
     listEl.innerHTML = '';
-    let items = [];
 
-    // [추가] 장비 모델 약어 매핑을 위해 데이터 로드
+    let items = [];
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
     if (data) {
         Object.keys(data).forEach(site => {
             if (selectedSiteFilter && site !== selectedSiteFilter) return;
-
             if (data[site]) {
                 data[site].forEach(equip => {
-                    const parts = equip.split('::');
-                    const name = parts[0];
-                    const serial = parts.length > 1 ? parts[1] : '';
-
+                    const name = equip.split('::')[0];
                     if (selectedEquipFilter && name !== selectedEquipFilter) return;
-
-                    const key = `details_${site}_${equip}`;
-                    const detailData = JSON.parse(localStorage.getItem(key)) || {};
-                    const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
-
-                    // [추가] 모델 약어 찾기
-                    const modelObj = equipmentModels.find(m => m.name === name);
-                    const displayName = (modelObj && modelObj.abbr) ? modelObj.abbr : name;
-
-                    items.push({ site, equip, name: displayName, serial, custEquipName });
+                    items.push({ site, equip });
                 });
             }
         });
@@ -638,29 +554,17 @@ function renderEquipDetailList(data) {
     }
 
     items.forEach(item => {
+        const info = formatEquipDisplayInfo(item.site, item.equip, equipmentModels);
         const li = document.createElement('li');
         li.className = 'status-list-item';
         if (selectedSerialFilter === item.equip) {
             li.classList.add('active');
         }
 
-        // [수정] 고객사 장비명과 시리얼 번호 모두 표시
-        let subInfo = '';
-        if (item.serial && item.custEquipName) {
-            subInfo = `(${escapeHtml(item.serial)}) [${escapeHtml(item.custEquipName)}]`;
-        } else if (item.custEquipName) {
-            subInfo = `[${escapeHtml(item.custEquipName)}]`;
-        } else if (item.serial) {
-            subInfo = `(${escapeHtml(item.serial)})`;
-        }
-
-        const mainInfo = `${escapeHtml(item.site)} > ${escapeHtml(item.name)}`;
-        const fullTitle = `${mainInfo} ${subInfo}`.replace(/<[^>]*>?/gm, '').trim();
         li.innerHTML = `
             <span class="status-color equip-bar"></span>
-            <div style="flex: 1; display: flex; align-items: center; min-width: 0; gap: 5px;">
-                <span class="status-name" title="${fullTitle}" style="margin-right: 0;">${mainInfo}</span>
-                ${subInfo ? `<span class="equip-serial" style="color: #8b949e; font-weight: normal; flex-shrink: 0;">${subInfo}</span>` : ''}
+            <div style="flex: 1; display: flex; align-items: center; min-width: 0;">
+                <span class="status-name" title="${info.fullTitle}" style="margin-right: 0;">${info.mainInfo}${info.subInfo ? `<span class="equip-serial">${info.subInfo}</span>` : ''}</span>
             </div>
         `;
         li.onclick = () => {
@@ -673,7 +577,7 @@ function renderEquipDetailList(data) {
                 currentSearchFilters.site = item.site;
                 currentSearchFilters.equip = item.equip;
             }
-            saveMaintFilters(); // [추가] 상태 저장
+            saveMaintFilters(); 
             updateMaintenanceDashboard();
             renderCalendar();
         };
@@ -686,57 +590,48 @@ function renderUpcomingList(data) {
     const upcomingContainer = document.getElementById('dash-upcoming-container');
 
     if (!upcomingListEl || !upcomingContainer) return;
-
     upcomingListEl.innerHTML = '';
+
     const upcomingItems = [];
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
     if (data) {
         Object.keys(data).forEach(site => {
-            // 사이트 필터 적용
             if (selectedSiteFilter && site !== selectedSiteFilter) return;
 
             if (data[site]) {
                 data[site].forEach(equip => {
-                    // 장비 필터 적용
                     const equipName = equip.split('::')[0];
                     if (selectedEquipFilter && equipName !== selectedEquipFilter) return;
-
-                    // 시리얼(개별 장비) 필터 적용
                     if (selectedSerialFilter && equip !== selectedSerialFilter) return;
 
                     const key = `details_${site}_${equip}`;
                     const detailData = JSON.parse(localStorage.getItem(key));
-                    const custEquipName = (detailData && detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
                     if (detailData && detailData.maint) {
                         detailData.maint.forEach(item => {
                             if (item.type === '정기') {
                                 let targetDiffDays = null;
 
-                                // 1. 예정일(scheduledDate)이 있는 경우 (예정일 최우선)
                                 if (item.scheduledDate) {
                                     const [y, m, d] = item.scheduledDate.split('-').map(Number);
                                     const schedDate = new Date(y, m - 1, d);
                                     targetDiffDays = Math.round((schedDate - today) / (1000 * 60 * 60 * 24));
-                                } 
-                                // 2. 예정일이 없으면 기본 교체주기(시작일 + 주기) 적용
-                                else if (item.date && item.period) {
+                                } else if (item.date && item.period) {
                                     const [y, m, d] = item.date.split('-').map(Number);
                                     const cycleDate = new Date(y, m - 1, d);
                                     cycleDate.setDate(cycleDate.getDate() + parseInt(item.period));
                                     targetDiffDays = Math.round((cycleDate - today) / (1000 * 60 * 60 * 24));
                                 }
 
-                                // 30일 이내인 경우만 리스트에 표시
                                 if (targetDiffDays !== null && targetDiffDays <= 30) {
                                     upcomingItems.push({
                                         diffDays: targetDiffDays,
                                         site: site,
                                         equip: equip,
-                                        item: item,
-                                        custEquipName: custEquipName
+                                        item: item
                                     });
                                 }
                             }
@@ -747,11 +642,9 @@ function renderUpcomingList(data) {
         });
     }
 
-    // [수정] 정렬: 예정일 없는 항목 우선, 그 다음 남은 일수 오름차순
     upcomingItems.sort((a, b) => {
         const aHasDate = !!a.item.scheduledDate;
         const bHasDate = !!b.item.scheduledDate;
-        
         if (aHasDate !== bHasDate) return aHasDate ? 1 : -1;
         return a.diffDays - b.diffDays;
     });
@@ -759,58 +652,40 @@ function renderUpcomingList(data) {
     const template = document.getElementById('upcoming-item-template');
 
     upcomingItems.forEach(obj => {
-        const { diffDays, site, equip, item, custEquipName } = obj;
-        const parts = equip.split('::');
-        const name = parts[0];
-        const serial = parts.length > 1 ? parts[1] : '';
+        const info = formatEquipDisplayInfo(obj.site, obj.equip, equipmentModels);
 
         const clone = template.content.cloneNode(true);
         const div = clone.querySelector('.upcoming-item');
-        div.onclick = () => openScheduleModal(site, equip, item.id);
-        
-        if (item.scheduledDate) {
+        div.onclick = () => openScheduleModal(obj.site, obj.equip, obj.item.id);
+
+        if (obj.item.scheduledDate) {
             div.classList.add('scheduled-item');
-            div.title = `작업 예정일: ${item.scheduledDate}`;
+            div.title = `작업 예정일: ${obj.item.scheduledDate}`;
         } else {
             div.title = "클릭하여 작업 예정일 설정";
         }
 
-        // D-Day 뱃지 색상 및 텍스트
         let badgeClass = 'safe';
-        let dDayText = `D-${diffDays}`;
-        if (diffDays < 0) {
+        let dDayText = `D-${obj.diffDays}`;
+        if (obj.diffDays < 0) {
             badgeClass = 'danger';
-            dDayText = `+${Math.abs(diffDays)}`;
-        } else if (diffDays === 0) {
+            dDayText = `+${Math.abs(obj.diffDays)}`;
+        } else if (obj.diffDays === 0) {
             badgeClass = 'warning';
             dDayText = 'D-Day';
-        } else if (diffDays <= 3) {
+        } else if (obj.diffDays <= 3) {
             badgeClass = 'warning';
         }
 
-        const mainInfo = `${escapeHtml(site)} > ${escapeHtml(name)}`;
-        let subInfoHtml = '';
-        let subInfoText = '';
-        if (serial && custEquipName) {
-            subInfoText = `(${serial}) [${custEquipName}]`;
-            subInfoHtml = ` <span class="upcoming-info-sn" style="color: #8b949e; flex-shrink: 0;">(${escapeHtml(serial)}) [${escapeHtml(custEquipName)}]</span>`;
-        } else if (custEquipName) {
-            subInfoText = `[${custEquipName}]`;
-            subInfoHtml = ` <span class="upcoming-info-sn" style="color: #8b949e; flex-shrink: 0;">[${escapeHtml(custEquipName)}]</span>`;
-        } else if (serial) {
-            subInfoText = `(${serial})`;
-            subInfoHtml = ` <span class="upcoming-info-sn" style="color: #8b949e; flex-shrink: 0;">(${escapeHtml(serial)})</span>`;
-        }
+        const subInfoHtml = info.subInfo ? ` <span class="upcoming-info-sn">${info.subInfo}</span>` : '';
 
-        const fullTitle = `${mainInfo} ${subInfoText}`.trim();
         const siteInfo = clone.querySelector('.upcoming-info-site');
         siteInfo.style.cssText = 'display: flex; align-items: center; gap: 5px; min-width: 0;';
-        siteInfo.innerHTML = `<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(fullTitle)}">${mainInfo}</span>${subInfoHtml}`;
+        siteInfo.innerHTML = `<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${info.fullTitle}">${info.mainInfo}</span>${subInfoHtml}`;
 
-        const contentText = escapeHtml(item.content);
-
-        if (item.scheduledDate) {
-            clone.querySelector('.upcoming-info-content').innerHTML = `${contentText} <span class="scheduled-date-text">(예정: ${item.scheduledDate})</span>`;
+        const contentText = escapeHtml(obj.item.content);
+        if (obj.item.scheduledDate) {
+            clone.querySelector('.upcoming-info-content').innerHTML = `${contentText} <span class="scheduled-date-text">(예정: ${obj.item.scheduledDate})</span>`;
         } else {
             clone.querySelector('.upcoming-info-content').innerHTML = contentText;
         }
@@ -823,14 +698,13 @@ function renderUpcomingList(data) {
         if (btn) {
             btn.onclick = (e) => {
                 e.stopPropagation();
-                location.href = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
+                location.href = `maintenance.html?site=${encodeURIComponent(obj.site)}&equip=${encodeURIComponent(obj.equip)}`;
             };
         }
 
         upcomingListEl.appendChild(clone);
     });
 
-    // 항상 표시하되 내용이 없으면 메시지 출력
     upcomingContainer.style.display = 'flex';
     if (upcomingItems.length === 0) {
         upcomingListEl.innerHTML = '<div class="upcoming-empty-msg">예정된 점검이 없습니다.</div>';
@@ -838,17 +712,13 @@ function renderUpcomingList(data) {
 }
 
 /* ==========================================================================
-   3-2. 셋업 대시보드 (Setup Dashboard)
+   6. 셋업 현황 대시보드 (Setup Dashboard)
    ========================================================================== */
 function updateSetupDashboard() {
-    // [추가] 필터 상태 저장
     localStorage.setItem('setupDashboardFilter', JSON.stringify(setupDashboardFilter));
     localStorage.setItem('currentGanttFilters', JSON.stringify(currentGanttFilters));
 
-    let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
-    let data = typeof storageData !== 'undefined' && Object.keys(storageData).length > 0 ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
-
-    // 활성 셋업 장비 데이터 집계
+    const data = getDashboardData();
     let activeSetupEquips = [];
     let siteStats = {};
     let equipCounts = {};
@@ -859,20 +729,13 @@ function updateSetupDashboard() {
         if (data[site]) {
             data[site].forEach(equip => {
                 const detailData = setupData[`${site}::${equip}`];
-
-                // 셋업 데이터가 있고, 완료되지 않은 경우 (또는 셋업 중인 장비로 간주)
                 if (detailData && detailData.setupDetails && detailData.setupDetails.length > 0) {
-                    // "셋업 완료" 항목이 체크되어 있는지 확인
                     const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
                     const isCompleted = completeItem && completeItem.completed;
-
-                    // [추가] 셋업 일정(startDate)이 하나라도 입력된 장비만 필터링
                     const hasScheduledDate = detailData.setupDetails.some(d => d.startDate);
 
                     if (!isCompleted && hasScheduledDate) {
                         activeSetupEquips.push({ site, equip });
-
-                        // 통계 집계
                         siteStats[site] = (siteStats[site] || 0) + 1;
                         const equipName = equip.split('::')[0];
                         equipCounts[equipName] = (equipCounts[equipName] || 0) + 1;
@@ -914,15 +777,11 @@ function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
     let currentDeg = 0;
     siteStats.sort((a, b) => b.count - a.count);
 
-    // --- 막대그래프 렌더링 (상단 추가) ---
     if (barChartEl) {
         barChartEl.innerHTML = '';
-        // 전체 항목을 포함한 데이터 배열 생성 (전체가 제일 왼쪽)
-        // [수정] 막대그래프 이름순 정렬
         const sortedSiteStats = [...siteStats].sort((a, b) => a.name.localeCompare(b.name));
         const barData = [{ name: '전체', count: totalEquip }, ...sortedSiteStats];
 
-        // Y축 스케일 계산
         const maxVal = Math.max(...barData.map(d => d.count));
         let yAxisMax = 10;
         if (maxVal > 10) {
@@ -932,19 +791,14 @@ function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
         barData.forEach((item, index) => {
             const isTotal = item.name === '전체';
             const count = item.count;
-            const maxBarHeight = 140; // 컨테이너 높이(200px) 고려하여 조정
+            const maxBarHeight = 140; 
             const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
-
-            // 색상 결정 (전체는 회색, 나머지는 팔레트 순환)
             let bgStyle = window.getSiteGradient(item.name);
-
-            // 활성 상태 확인
             const isActive = (setupDashboardFilter.site === item.name) || (isTotal && !setupDashboardFilter.site);
             const activeClass = isActive ? 'active' : '';
 
             const barGroup = document.createElement('div');
             barGroup.className = 'bar-group';
-            // 선택되지 않은 항목 흐리게 처리
             if (setupDashboardFilter.site && !isActive) {
                 barGroup.classList.add('faded');
             }
@@ -967,14 +821,12 @@ function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
                 renderCalendar();
                 updateSetupDashboard();
             };
-            
+
             barGroup.style.cursor = 'pointer';
             barChartEl.appendChild(barGroup);
         });
     }
-    // ----------------------------------
 
-    // 전체
     const allLi = document.createElement('li');
     allLi.className = 'status-list-item';
     if (!setupDashboardFilter.site) allLi.classList.add('active');
@@ -982,7 +834,7 @@ function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
     allLi.onclick = () => {
         setupDashboardFilter.site = '';
         setupDashboardFilter.equip = '';
-        currentGanttFilters = { site: '', equip: '' }; // 간트 차트 숨김
+        currentGanttFilters = { site: '', equip: '' }; 
         currentSearchFilters = { site: '', equip: '' };
         renderCalendar();
         updateSetupDashboard();
@@ -1002,7 +854,7 @@ function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
         li.onclick = () => {
             setupDashboardFilter.site = (setupDashboardFilter.site === site.name) ? '' : site.name;
             setupDashboardFilter.equip = '';
-            currentGanttFilters = { site: '', equip: '' }; // 간트 차트 숨김
+            currentGanttFilters = { site: '', equip: '' }; 
             updateSetupDashboard();
         };
         listEl.appendChild(li);
@@ -1020,7 +872,6 @@ function renderSetupEquipChart(equipStats, totalEquip, activeEquips) {
     if (!chartEl || !listEl) return;
     listEl.innerHTML = '';
 
-    // 필터링된 데이터 기준 재집계
     let filteredEquips = activeEquips;
     if (setupDashboardFilter.site) {
         filteredEquips = activeEquips.filter(e => e.site === setupDashboardFilter.site);
@@ -1047,15 +898,14 @@ function renderSetupEquipChart(equipStats, totalEquip, activeEquips) {
     let currentDeg = 0;
     statsArr.sort((a, b) => b.count - a.count);
 
-    // 전체
     const allLi = document.createElement('li');
     allLi.className = 'status-list-item';
     if (!setupDashboardFilter.equip) allLi.classList.add('active');
     allLi.innerHTML = `<span class="status-color status-color-all"></span><span class="status-name">전체</span><span class="status-count">${filteredTotal}</span>`;
     allLi.onclick = () => {
         setupDashboardFilter.equip = '';
-        currentGanttFilters.equip = ''; // 간트 차트 숨김 (site 필터는 유지)
-        currentSearchFilters.equip = ''; // 사업장 필터는 유지하고 장비 필터만 초기화
+        currentGanttFilters.equip = ''; 
+        currentSearchFilters.equip = ''; 
         renderCalendar();
         updateSetupDashboard();
     };
@@ -1073,7 +923,7 @@ function renderSetupEquipChart(equipStats, totalEquip, activeEquips) {
         li.innerHTML = `<span class="status-color" style="background-color: ${color};"></span><span class="status-name">${escapeHtml(equip.name)}</span><span class="status-count">${equip.count}</span>`;
         li.onclick = () => {
             setupDashboardFilter.equip = (setupDashboardFilter.equip === equip.name) ? '' : equip.name;
-            currentGanttFilters = { site: '', equip: '' }; // 간트 차트 숨김
+            currentGanttFilters = { site: '', equip: '' }; 
             updateSetupDashboard();
         };
         listEl.appendChild(li);
@@ -1087,6 +937,7 @@ function renderSetupEquipDetailList(activeEquips) {
     const listEl = document.getElementById('setup-equip-detail-list');
     if (!listEl) return;
     listEl.innerHTML = '';
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
     let filtered = activeEquips;
     if (setupDashboardFilter.site) filtered = filtered.filter(e => e.site === setupDashboardFilter.site);
@@ -1098,49 +949,28 @@ function renderSetupEquipDetailList(activeEquips) {
     }
 
     filtered.forEach(item => {
-        const parts = item.equip.split('::');
-        const name = parts[0];
-        const serial = parts.length > 1 ? parts[1] : '';
-        const equipKey = `${item.site}_${item.equip}`;
-        const detailData = JSON.parse(localStorage.getItem(`details_${equipKey}`)) || {};
-        const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
-
+        const info = formatEquipDisplayInfo(item.site, item.equip, equipmentModels);
         const li = document.createElement('li');
         li.className = 'status-list-item';
-        
-        // [추가] 현재 간트 차트 필터(선택된 장비)와 일치하면 활성화(파란색) 스타일 적용
+
         if (currentGanttFilters.site === item.site && currentGanttFilters.equip === item.equip) {
             li.classList.add('active');
         }
-        
-        let subInfo = '';
-        if (serial && custEquipName) {
-            subInfo = `(${escapeHtml(serial)}) [${escapeHtml(custEquipName)}]`;
-        } else if (custEquipName) {
-            subInfo = `[${escapeHtml(custEquipName)}]`;
-        } else if (serial) {
-            subInfo = `(${escapeHtml(serial)})`;
-        }
 
-        const mainInfo = `${escapeHtml(item.site)} > ${escapeHtml(name)}`;
-        const fullTitle = `${mainInfo} ${subInfo}`.replace(/<[^>]*>?/gm, '').trim();
         li.innerHTML = `
             <span class="status-color equip-bar"></span>
-            <div style="flex: 1; display: flex; align-items: center; min-width: 0; gap: 5px;">
-                <span class="status-name" title="${fullTitle}" style="margin-right: 0;">${mainInfo}</span>
-                ${subInfo ? `<span class="equip-serial" style="flex-shrink: 0;">${subInfo}</span>` : ''}
+            <div style="flex: 1; display: flex; align-items: center; min-width: 0;">
+                <span class="status-name" title="${info.fullTitle}" style="margin-right: 0;">${info.mainInfo}${info.subInfo ? `<span class="equip-serial">${info.subInfo}</span>` : ''}</span>
             </div>
         `;
         li.onclick = () => {
-            // [수정] 이미 선택된 항목을 클릭하면 선택 해제(토글), 아니면 선택 적용
             if (currentGanttFilters.site === item.site && currentGanttFilters.equip === item.equip) {
                 currentGanttFilters.site = '';
                 currentGanttFilters.equip = '';
             } else {
                 currentGanttFilters.site = item.site;
                 currentGanttFilters.equip = item.equip;
-                
-                // [추가] 간트 차트 영역으로 부드럽게 화면 자동 스크롤
+
                 setTimeout(() => {
                     const ganttWrapper = document.getElementById('gantt-wrapper');
                     if (ganttWrapper) {
@@ -1163,11 +993,11 @@ function renderSetupUpcomingList(activeEquips) {
     let upcomingItems = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
 
     activeEquips.forEach(eq => {
-        // 필터 적용
         if (setupDashboardFilter.site && eq.site !== setupDashboardFilter.site) return;
         if (setupDashboardFilter.equip && eq.equip.split('::')[0] !== setupDashboardFilter.equip) return;
         if (currentGanttFilters.equip && eq.equip !== currentGanttFilters.equip) return;
@@ -1175,13 +1005,10 @@ function renderSetupUpcomingList(activeEquips) {
         const data = setupData[`${eq.site}::${eq.equip}`];
 
         if (data && data.setupDetails) {
-            // [수정] 체크 안 된 모든 작업 표시
             const uncheckedTasks = data.setupDetails.filter(t => !t.completed);
 
             uncheckedTasks.forEach(task => {
                 if (task.startDate) {
-
-                    // [수정] 간트 차트 필터가 적용되어 있다면 해당 장비만 표시
                     if (currentGanttFilters.site && currentGanttFilters.equip) {
                         if (eq.site !== currentGanttFilters.site || eq.equip !== currentGanttFilters.equip) return;
                     }
@@ -1212,14 +1039,10 @@ function renderSetupUpcomingList(activeEquips) {
     const template = document.getElementById('setup-upcoming-item-template');
 
     upcomingItems.forEach(item => {
-        const parts = item.equip.split('::');
-        const name = parts[0];
-        const serial = parts.length > 1 ? parts[1] : '';
-        const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.equip}`)) || {};
-        const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+        const info = formatEquipDisplayInfo(item.site, item.equip, equipmentModels);
 
         let badgeClass = 'safe';
-        let dateText = item.task.startDate; // [수정] 날짜 표시
+        let dateText = item.task.startDate; 
         if (item.diffDays < 0) {
             badgeClass = 'danger';
         } else if (item.diffDays === 0) {
@@ -1234,16 +1057,7 @@ function renderSetupUpcomingList(activeEquips) {
             location.href = `setup.html?site=${encodeURIComponent(item.site)}&equip=${encodeURIComponent(item.equip)}`;
         };
 
-        let displayEquip = name;
-        if (serial && custEquipName) {
-            displayEquip += ` (${serial}) [${custEquipName}]`;
-        } else if (custEquipName) {
-            displayEquip += ` [${custEquipName}]`;
-        } else if (serial) {
-            displayEquip += ` (${serial})`;
-        }
-
-        clone.querySelector('.upcoming-info-site').textContent = `${item.site} > ${displayEquip}`; // textContent는 안전
+        clone.querySelector('.upcoming-info-site').textContent = info.mainInfo; 
         clone.querySelector('.upcoming-info-content').textContent = item.task.content;
 
         const badge = clone.querySelector('.d-day-badge');
@@ -1253,8 +1067,11 @@ function renderSetupUpcomingList(activeEquips) {
         listEl.appendChild(clone);
     });
 }
-// index.js 하단에 추가할 내용
-window.restructureHomeMaintenance = function () {
+
+/* ==========================================================================
+   7. 장비 이슈 공유 (Equipment Issue Sharing)
+   ========================================================================== */
+function restructureHomeMaintenance() {
     const allLeftCharts = document.querySelectorAll('.maint-left-charts');
     let maintLeftCharts = null;
 
@@ -1282,7 +1099,7 @@ window.restructureHomeMaintenance = function () {
     if (!maintLeftCharts) return;
 
     if (maintLeftCharts.querySelector('#home-issue-card')) {
-        window.populateEquipmentIssues(); 
+        populateEquipmentIssues();
         return;
     }
 
@@ -1322,10 +1139,10 @@ window.restructureHomeMaintenance = function () {
             siteRow.style.flexDirection = 'row';
             siteRow.style.gap = '15px';
             siteRow.style.width = '100%';
-            
+
             const siteListFlex = siteRow.querySelector('.status-list-flex') || siteRow.querySelector('.status-list-container');
             const equipListFlex = equipRow.querySelector('.status-list-flex') || equipRow.querySelector('.status-list-container');
-            
+
             if (siteListFlex) {
                 siteListFlex.style.flex = '1';
                 siteListFlex.style.minWidth = '0';
@@ -1336,10 +1153,9 @@ window.restructureHomeMaintenance = function () {
                 siteRow.appendChild(equipListFlex);
             }
         }
-        
-        // 장비 현황 카드 자체를 화면에서 숨기되, DOM 트리에는 유지 (에러 방지)
-        equipCard.style.display = 'none'; 
-        equipCard.classList.remove('card-like'); 
+
+        equipCard.style.display = 'none';
+        equipCard.classList.remove('card-like');
     }
 
     const issueCard = document.createElement('div');
@@ -1351,20 +1167,20 @@ window.restructureHomeMaintenance = function () {
             <ul id="home-issue-list" class="upcoming-list" style="padding: 0 5px; margin: 0; list-style: none; flex: 1; min-height: 0; overflow-y: auto;"></ul>
         </div>
     `;
-    
-    maintLeftCharts.insertBefore(issueCard, maintLeftCharts.firstChild);
-    window.populateEquipmentIssues();
-};
 
-window.populateEquipmentIssues = function () {
+    maintLeftCharts.insertBefore(issueCard, maintLeftCharts.firstChild);
+    populateEquipmentIssues();
+}
+window.restructureHomeMaintenance = restructureHomeMaintenance; // UI 렌더링 후 호출용 유지
+
+function populateEquipmentIssues() {
     const issueList = document.getElementById('home-issue-list');
     if (!issueList) return;
 
     issueList.innerHTML = '';
     let issues = [];
 
-    const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
-    let dataMap = (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) ? storageData : (deviceData.equipments || deviceData);
+    const dataMap = getDashboardData();
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
     Object.keys(dataMap).forEach(site => {
@@ -1372,13 +1188,11 @@ window.populateEquipmentIssues = function () {
         dataMap[site].forEach(equipKey => {
             const key = `details_${site}_${equipKey}`;
             const details = JSON.parse(localStorage.getItem(key)) || {};
-            const custEquipName = (details.setup && details.setup.custEquipName) ? details.setup.custEquipName : '';
 
             if (details.logs) {
                 details.logs.forEach(log => {
-                    // [수정] 이슈 공유 체크된 항목만 표시
                     if (log.isIssueShared === true) {
-                        issues.push({ site, equipKey, log, custEquipName });
+                        issues.push({ site, equipKey, log });
                     }
                 });
             }
@@ -1396,22 +1210,8 @@ window.populateEquipmentIssues = function () {
     }
 
     issues.forEach(issue => {
-        const { site, equipKey, log, custEquipName } = issue;
-        const parts = equipKey.split('::');
-        const rawModelName = parts[0];
-        const serial = parts.length > 1 ? parts[1] : '';
-
-        const matchedModel = equipmentModels.find(m => m.name === rawModelName);
-        const modelName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawModelName;
-
-        let displayEquip = modelName;
-        if (serial && custEquipName) {
-            displayEquip += ` (${serial}) [${custEquipName}]`;
-        } else if (custEquipName) {
-            displayEquip += ` [${custEquipName}]`;
-        } else if (serial) {
-            displayEquip += ` (${serial})`;
-        }
+        const { site, equipKey, log } = issue;
+        const info = formatEquipDisplayInfo(site, equipKey, equipmentModels);
 
         let detailStr = '';
         if (log.detailType2 && log.detailType2.includes('>')) {
@@ -1424,7 +1224,6 @@ window.populateEquipmentIssues = function () {
             detailStr = log.detailType ? log.detailType.trim() : '내용 없음';
         }
 
-        const line1Text = `${site} > ${displayEquip}`;
         const dateStr = log.date || '';
 
         let displayContent = log.content || '';
@@ -1434,7 +1233,7 @@ window.populateEquipmentIssues = function () {
                 displayContent = `${items[0]} 외 ${items.length - 1}개`;
             }
         }
-        
+
         const line2Text = `${detailStr} : ${displayContent}`;
 
         const li = document.createElement('li');
@@ -1442,14 +1241,14 @@ window.populateEquipmentIssues = function () {
         li.style.borderLeft = '4px solid #eb371f';
         li.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden; flex: 1; padding-right: 10px;">
-                <span style="font-size: 13px; font-weight: bold; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(line1Text)}">${escapeHtml(line1Text)}</span>
+                <span style="font-size: 13px; font-weight: bold; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${info.fullTitle}">${info.mainInfo} <span class="equip-serial">${info.subInfo}</span></span>
                 <span style="font-size: 11px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(detailStr)} : ${escapeHtml(log.content)}">${escapeHtml(line2Text)}</span>
             </div>
             <div style="font-size: 11px; color: #8b949e; white-space: nowrap; flex-shrink: 0;">${dateStr}</div>
         `;
 
         li.onclick = () => {
-            if (confirm(`해당 장비의 점검 이력 상세 내용을 확인하시겠습니까?\n\n[${site}] ${displayEquip}\n이슈: ${detailStr}\n내용: ${log.content}`)) {
+            if (confirm(`해당 장비의 점검 이력 상세 내용을 확인하시겠습니까?\n\n[${site}] ${info.displayEquip}\n이슈: ${detailStr}\n내용: ${log.content}`)) {
                 let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equipKey)}&logId=${log.id}`;
                 window.location.href = targetUrl;
             }
@@ -1457,4 +1256,4 @@ window.populateEquipmentIssues = function () {
 
         issueList.appendChild(li);
     });
-};
+}

@@ -767,6 +767,7 @@ body {
     /* 녹색 */
     font-weight: bold;
     margin-left: 5px;
+    font-size: 15px;
 }
 
 .scheduled-item {
@@ -824,7 +825,8 @@ body {
 }
 
 .upcoming-info-sn {
-    color: #8b949e;
+    color: #3fb950; /* 녹색 */
+    font-weight: bold;
 }
 
 .d-day-badge {

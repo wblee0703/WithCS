@@ -1016,11 +1016,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         align-items: center !important; /* [추가] 텍스트 수직 중앙 정렬 */
     }
     
-    /* [요청] 모바일 항목 선택 제안박스 확장 및 비용처리 드롭다운 축소 */
+     /* [요청] 모바일에서 드롭다운 너비 확장 */
     .log-select-dropdown {
-        width: 150%; /* 부모 입력창 너비에 정확히 맞춤 */
-        min-width: 150%;
-        max-width: none;
+        width: 200% !important;
+        min-width: 100% !important;
+        max-width: none !important;
     }
     .log-select-item {
         display: flex !important;

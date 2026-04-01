@@ -285,8 +285,9 @@ body {
 }
 
 .item-subtext {
-    color: #8b949e;
-    font-size: 11px;
+    color: #3fb950; /* 녹색 */
+    font-weight: bold;
+    font-size: 13px;
     margin-left: 5px;
     white-space: nowrap;
     flex-shrink: 0;
@@ -806,7 +807,7 @@ input:disabled {
 }
 
 .item-cost-select {
-    width: 45px;
+    width: 80px;
     font-size: 11px;
     padding: 2px;
     margin-left: 5px;
@@ -1222,8 +1223,8 @@ body.role-user .btn-list-setting {
     }
 
     .item-cost-select {
-        width: 45px !important;
-        flex: 0 0 45px !important;
+        width: 80px !important;
+        flex: 0 0 80px !important;
         font-size: 10px !important;
         padding: 0 2px !important;
         margin-left: 5px !important;
