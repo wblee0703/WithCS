@@ -821,9 +821,9 @@ function openCalendarPopup(dateStr, events) {
 
                 let subInfo = '';
                 if (custName) {
-                    subInfo = ` <span class="equip-serial">[${escapeHtml(custName)}]</span>`;
+                    subInfo = ` <span style="color:#8b949e;">[${escapeHtml(custName)}]</span>`;
                 } else if (serialNo) {
-                    subInfo = ` <span class="equip-serial">[${escapeHtml(serialNo)}]</span>`;
+                    subInfo = ` <span style="color:#8b949e;">[${escapeHtml(serialNo)}]</span>`;
                 }
 
                 const itemTextSpan = li.querySelector('.popup-item-text');
@@ -2874,7 +2874,7 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
 
                     let displayValue = name;
                     if (custName) {
-                        displayValue = `${name}[${custName}]`;
+                        displayValue = `${name} [${custName}]`;
                     } else if (serial) {
                         displayValue = `${name} [${serial}]`;
                     }
@@ -3033,7 +3033,19 @@ function updateRegisterEquipSelect(site) {
         const option = document.createElement('option');
         option.value = equip;
         const parts = equip.split('::');
-        option.textContent = parts.length > 1 ? `${parts[0]} (${parts[1]})` : parts[0];
+        const name = parts[0] || '';
+        const serial = parts.length > 1 ? parts[1] : '';
+        const key = `details_${site}_${equip}`;
+        const detailData = JSON.parse(localStorage.getItem(key)) || {};
+        const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+        
+        let displayValue = name;
+        if (custName) {
+            displayValue = `${name} [${custName}]`;
+        } else if (serial) {
+            displayValue = `${name} [${serial}]`;
+        }
+        option.textContent = displayValue;
         equipSelect.appendChild(option);
     });
 
@@ -3070,16 +3082,17 @@ function updateRegisterEquipSelect(site) {
                     const tpl = getTemplateContent('equip-suggestion-item-template');
                     if (tpl) {
                         const li = tpl.querySelector('.log-select-item');
-                        li.querySelector('.equip-name').textContent = name;
+                        
+                        let displayValue = name;
                         if (custName) {
-                            const custSpan = li.querySelector('.equip-cust');
-                            custSpan.textContent = `[${custName}]`;
-                            custSpan.style.display = 'inline';
+                            displayValue = `${name} [${custName}]`;
                         } else if (serial) {
-                            const serialSpan = li.querySelector('.equip-serial');
-                            serialSpan.textContent = `(${serial})`;
-                            serialSpan.style.display = 'inline';
+                            displayValue = `${name} [${serial}]`;
                         }
+
+                        // 기존 템플릿의 분리된 구조를 무시하고 자연스럽게 한 줄에 표시
+                        const contentDiv = li.querySelector('.suggestion-item-content') || li;
+                        contentDiv.innerHTML = `<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(displayValue)}</span>`;
 
                         li.addEventListener('mousedown', (e) => {
                             e.preventDefault();
@@ -3087,7 +3100,7 @@ function updateRegisterEquipSelect(site) {
 
                             let displayValue = name;
                             if (custName) {
-                                displayValue = `${name}[${custName}]`;
+                                displayValue = `${name} [${custName}]`;
                             } else if (serial) {
                                 displayValue = `${name} [${serial}]`;
                             }
@@ -4237,9 +4250,9 @@ function doTaskSearch() {
 
             let subInfo = '';
             if (custEquipName) {
-                subInfo = ` <span class="equip-serial">[${escapeHtml(custEquipName)}]</span>`;
+                subInfo = ` <span style="color:#8b949e;">[${escapeHtml(custEquipName)}]</span>`;
             } else if (serialNo) {
-                subInfo = ` <span class="equip-serial">${escapeHtml(serialNo)}</span>`;
+                subInfo = ` <span style="color:#8b949e;">${escapeHtml(serialNo)}</span>`;
             }
             li.querySelector('.equip-name').innerHTML = `${escapeHtml(site)} > ${escapeHtml(equipName)}${subInfo}`;
 
