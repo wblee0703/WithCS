@@ -2170,7 +2170,10 @@ function completeScheduleWork() {
 
                     const tpl = getTemplateContent('next-schedule-item-template');
                     if (tpl) {
-                        const div = tpl.firstElementChild;
+                        // [수정] DocumentFragment에서 요소를 가져올 때 querySelector를 사용하도록 수정
+                        const div = tpl.querySelector('div');
+                        if (!div) return; // forEach 콜백 내부이므로 continue 대신 return 사용
+
                         div.querySelector('.item-name').textContent = itemName;
 
                         const typeSelect = div.querySelector('.next-type-select');
