@@ -1544,6 +1544,9 @@ function addLogItem(e) {
                 fullContent = match.part || itemText;
             }
 
+            // [수정] 시스템에 등록된 물품(항목)이 아니면 유지관리 리스트에 자동 생성하지 않음
+            if (!match) return;
+
             // 기존 유지관리 물품 리스트에 같은 항목이 있는지 확인 (풀네임 및 코드명 포함 매칭)
             let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || (code && m.code === code) || m.content === itemText));
 

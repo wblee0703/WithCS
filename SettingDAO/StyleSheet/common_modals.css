@@ -661,10 +661,16 @@
 /* --- 추가 작업 내역 모달 --- */
 #extra-work-history-modal .modal-window {
     width: 650px;
-    height: auto;
-    max-height: 80vh;
+    height: 600px;
+    max-height: 90vh;
     display: flex;
     flex-direction: column;
+}
+#extra-work-history-modal .data-table tbody tr.active-row {
+    background-color: rgba(56, 139, 253, 0.15) !important;
+}
+#extra-work-history-modal .data-table tbody tr:hover {
+    background-color: #21262d;
 }
 #extra-work-history-modal .data-table th,
 #extra-work-history-modal .data-table td {

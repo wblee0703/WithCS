@@ -2812,6 +2812,8 @@ function openNextScheduleModal(options) {
 window.openExtraWorkHistoryModal = function(site, equip, originalLogId) {
     const modal = document.getElementById('extra-work-history-modal');
     const tbody = document.getElementById('extra-work-history-body');
+    const pathEl = document.getElementById('extra-work-history-path');
+    const memoEl = document.getElementById('extra-work-history-memo');
     if (!modal || !tbody) return;
 
     const key = `details_${site}_${equip}`;
@@ -2823,27 +2825,53 @@ window.openExtraWorkHistoryModal = function(site, equip, originalLogId) {
 
     if (!parentLog) return alert('원본 작업을 찾을 수 없습니다.');
 
-    let html = '';
-    
-    // 부모 로그 렌더링
-    html += `<tr style="background-color: rgba(35, 134, 54, 0.1);">
-        <td><span class="badge" style="background:#238636;">원본 작업</span></td>
-        <td>${parentLog.date || '-'}</td>
-        <td style="text-align: left; padding-left: 10px;">${escapeHtml(parentLog.content || '-')}</td>
-        <td>${escapeHtml(parentLog.worker || '-')}</td>
-    </tr>`;
+    // 1. 점검 구분 경로 설정
+    let pathText = parentLog.type || '정기';
+    let detailStr = parentLog.detailType || '';
+    if (parentLog.detailType2 && !detailStr.includes(parentLog.detailType2)) {
+        detailStr += ` > ${parentLog.detailType2}`;
+    }
+    if (detailStr) {
+        pathText += ` > ${detailStr}`;
+    }
+    if (pathEl) pathEl.textContent = pathText;
 
-    // 자식 로그 렌더링
-    childLogs.forEach((log, idx) => {
-        html += `<tr>
-            <td><span class="badge" style="background:#1f6feb;">추가 작업 ${idx + 1}</span></td>
+    // 2. 메모 텍스트에어리어 초기화
+    if (memoEl) memoEl.value = parentLog.memo || '작성된 메모가 없습니다.';
+
+    tbody.innerHTML = '';
+
+    const createRow = (log, badgeText, badgeColor, isParent) => {
+        const tr = document.createElement('tr');
+        tr.style.cursor = 'pointer';
+        if (isParent) tr.style.backgroundColor = 'rgba(35, 134, 54, 0.1)';
+
+        tr.innerHTML = `
+            <td><span class="badge" style="background:${badgeColor};">${badgeText}</span></td>
             <td>${log.date || '-'}</td>
             <td style="text-align: left; padding-left: 10px;">${escapeHtml(log.content || '-')}</td>
             <td>${escapeHtml(log.worker || '-')}</td>
-        </tr>`;
+        `;
+
+        tr.onclick = () => {
+            if (memoEl) memoEl.value = log.memo || '작성된 메모가 없습니다.';
+            Array.from(tbody.children).forEach(child => child.classList.remove('active-row'));
+            tr.classList.add('active-row');
+        };
+
+        return tr;
+    };
+
+    // 부모 로그 렌더링
+    const parentRow = createRow(parentLog, '원본 작업', '#238636', true);
+    parentRow.classList.add('active-row');
+    tbody.appendChild(parentRow);
+
+    // 자식 로그 렌더링
+    childLogs.forEach((log, idx) => {
+        tbody.appendChild(createRow(log, `추가 작업 ${idx + 1}`, '#1f6feb', false));
     });
 
-    tbody.innerHTML = html;
     modal.style.display = 'flex';
 };
 

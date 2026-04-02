@@ -233,8 +233,11 @@
             <div class="modal-header">
                 <h3>추가 작업 내역</h3><button class="btn-del-sm" onclick="document.getElementById('extra-work-history-modal').style.display='none'">✕</button>
             </div>
-            <div class="modal-body" style="padding: 0;">
-                <div class="data-table-wrapper" style="margin: 0;">
+            <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                <div id="extra-work-history-path" style="font-size: 14px; font-weight: bold; color: #58a6ff;">
+                    <!-- 원본 작업 점검 구분 경로 -->
+                </div>
+                <div class="data-table-wrapper" style="margin: 0; flex: 1; border: 1px solid #30363d; border-radius: 4px;">
                     <table class="data-table" style="margin: 0; width: 100%;">
                         <thead>
                             <tr>
@@ -246,6 +249,10 @@
                         </thead>
                         <tbody id="extra-work-history-body"></tbody>
                     </table>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 5px; height: 150px;">
+                    <label style="color: #8b949e; font-size: 13px; font-weight: bold;">점검 결과 / 메모</label>
+                    <textarea id="extra-work-history-memo" class="input-dark" style="flex: 1; resize: none;" readonly></textarea>
                 </div>
             </div>
         </div>

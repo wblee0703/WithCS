@@ -2137,13 +2137,6 @@ function completeScheduleWork() {
     const remainingIds = data.maint.filter(i => sameDayItems.some(s => s.id === i.id) || mergedRegItemIds.has(i.id)).map(i => i.id);
     const remainingItems = data.maint.filter(i => remainingIds.includes(i.id));
 
-    // [추가] 다음 작업 예정일에는 시스템에 등록된 물품만 표시 (직접 입력한 텍스트나 내용 없음 제외)
-    const adminItemsList = JSON.parse(localStorage.getItem('admin_items')) || [];
-    const validRemainingItems = remainingItems.filter(item => {
-        if (!item.content || item.content === '내용 없음') return false;
-        return adminItemsList.some(ai => ai.part === item.content || ai.code === item.content || (item.code && ai.code === item.code));
-    });
-
     // [수정] 일회성 작업 및 PM/BM 점검이 아닌 항목(Alarm, 고객대응 등)은 완료 후 maint 배열에서 완전히 제거하여 유지관리 목록 누적 방지
     data.maint = data.maint.filter(i => {
         if (idsToRemove.has(i.id)) return false;
@@ -2166,12 +2159,12 @@ function completeScheduleWork() {
 
     // [추가] 완료 후 다음 예정일 등록 모달 띄우기
     // 비정기 물품 교체건과 병합된 정기 항목 포함
-    if (validRemainingItems.length > 0) {
+    if (remainingItems.length > 0) {
         // [수정] 공통 함수 호출로 변경
         openNextScheduleModal({
             site,
             equip,
-            items: validRemainingItems,
+            items: remainingItems,
             completeDate: completeDate,
             md: md,
             originalMaintMap: originalMaintMap,
