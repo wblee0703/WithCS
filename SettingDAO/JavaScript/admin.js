@@ -903,6 +903,8 @@ function setupEquipMgmt() {
                 btnCsvExport.style.color = '#e6edf3';
                 btnCsvExport.textContent = 'CSV 내보내기';
                 btnCsvExport.title = '등록된 전체 장비 데이터를 CSV 양식으로 내보냅니다.';
+                
+                const userRole = sessionStorage.getItem('userRole');
 
                 const btnCsvImport = document.createElement('button');
                 btnCsvImport.className = 'btn-settings';
@@ -922,12 +924,14 @@ function setupEquipMgmt() {
                 csvInput.style.display = 'none';
 
                 btnCsvExport.addEventListener('click', exportEquipCsv);
-                csvInput.addEventListener('change', handleEquipCsvImport);
-                btnCsvImport.addEventListener('click', () => csvInput.click());
-
                 controlsDiv.appendChild(btnCsvExport);
-                controlsDiv.appendChild(btnCsvImport);
-                controlsDiv.appendChild(csvInput);
+                
+                if (userRole === 'superadmin') {
+                    csvInput.addEventListener('change', handleEquipCsvImport);
+                    btnCsvImport.addEventListener('click', () => csvInput.click());
+                    controlsDiv.appendChild(btnCsvImport);
+                    controlsDiv.appendChild(csvInput);
+                }
             }
         }
     }

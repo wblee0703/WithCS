@@ -1827,6 +1827,11 @@ function toggleDetailContentEdit() {
             dropdownWrapper.remove();
         }
 
+        // [수정] 아무 항목도 선택하지 않은 경우 '내용 없음'으로 처리 (필수 선택 해제)
+        if (isDropdownMode && dropdownValues.length === 0) {
+            dropdownValues = ['내용 없음'];
+        }
+
         const newContent = isDropdownMode ? dropdownValues.join(', ') : contentInput.value.trim();
 
         let finalContent = newContent;
@@ -1840,13 +1845,21 @@ function toggleDetailContentEdit() {
                     return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
                 }).join(', ');
                 if (!partContent) return alert('교체/수리할 물품을 선택해주세요.');
-                finalContent = `${newContent} - ${partContent}`;
+                
+                // 내용이 없을 땐 선택한 부품명만 보여주도록 처리
+                if (finalContent === '내용 없음') {
+                    finalContent = partContent;
+                } else {
+                    finalContent = `${newContent} - ${partContent}`;
+                }
             }
             pWrapper.remove();
         } else if (pWrapper) pWrapper.remove();
 
-        if (!finalContent && !isDropdownMode) return alert('내용을 입력해주세요.');
-        if (isDropdownMode && dropdownValues.length === 0) return alert('최소 1개 이상의 항목을 선택해주세요.');
+        // [수정] 직접 입력 모드에서 완전히 비워뒀을 경우에도 저장 허용
+        if (!finalContent) {
+            finalContent = '내용 없음';
+        }
 
         if (currentDetailTarget) {
             const { site, equip, id, isCompleted } = currentDetailTarget;

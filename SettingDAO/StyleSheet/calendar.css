@@ -446,9 +446,13 @@
 /* 팝업 위에 뜨는 2차 팝업 모달 z-index 충돌 방지 */
 #schedule-modal,
 #event-detail-modal,
-#register-schedule-modal,
 #next-schedule-modal {
     z-index: 9999 !important;
+    pointer-events: auto !important;
+}
+
+#register-schedule-modal {
+    z-index: 10002 !important;
     pointer-events: auto !important;
 }
 
