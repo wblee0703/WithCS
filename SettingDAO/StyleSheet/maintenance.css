@@ -1121,13 +1121,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         padding: 0 !important;
         justify-content: center;
     }
-
-    /* [요청] 모바일 환경에서 유지관리 물품 제안박스 오른쪽 정렬 (화면 밖으로 나가는 현상 방지) */
+/* [수정] 모바일 환경에서 유지관리 물품 제안박스 입력창 너비에 완벽히 맞춤 */
     #maint-window .suggestion-list {
-        left: auto !important;
-        right: 0 !important;
+        left: 0 !important;
+        right: auto !important;
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: 100% !important;
     }
 
+    /* [추가] 모바일 유지관리 물품 추가 드롭다운에서 코드명만 나오도록 우측 물품명(.abbr) 숨김 */
+    #maint-content-suggestions .suggestion-item .abbr {
+        display: none !important;
+    }
     /* [요청] 모바일에서 장비 점검 이력 리스트 좌우 스크롤 및 전체 표시 */
     #log-list-wrapper {
         overflow-x: auto !important;
