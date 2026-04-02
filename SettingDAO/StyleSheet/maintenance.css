@@ -35,6 +35,7 @@
 #maint-window {
     flex: 1;
     min-height: 0;
+    overflow: visible; /* [수정] 제안 박스가 카드 밖으로 표시되도록 overflow 속성 변경 */
 }
 
 #log-window {
