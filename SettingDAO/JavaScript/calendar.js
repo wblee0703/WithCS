@@ -861,11 +861,17 @@ function openScheduleModal(site, equip, id) {
             }
         });
 
+        const userSite = sessionStorage.getItem('userSite') || '';
         displayWorkers.sort((a, b) => {
             const aSelected = currentSelected.includes(a.name);
             const bSelected = currentSelected.includes(b.name);
             if (aSelected && !bSelected) return -1;
             if (!aSelected && bSelected) return 1;
+
+            const aSameSite = a.site === userSite;
+            const bSameSite = b.site === userSite;
+            if (aSameSite && !bSameSite) return -1;
+            if (!aSameSite && bSameSite) return 1;
             return a.name.localeCompare(b.name);
         });
 
@@ -1009,11 +1015,17 @@ function setupEventDetailModal() {
             });
 
             // [추가] 선택된 이름이 최상단으로 오도록 정렬
+            const userSite = sessionStorage.getItem('userSite') || '';
             displayWorkers.sort((a, b) => {
                 const aSelected = currentSelected.includes(a.name);
                 const bSelected = currentSelected.includes(b.name);
                 if (aSelected && !bSelected) return -1;
                 if (!aSelected && bSelected) return 1;
+
+                const aSameSite = a.site === userSite;
+                const bSameSite = b.site === userSite;
+                if (aSameSite && !bSameSite) return -1;
+                if (!aSameSite && bSameSite) return 1;
                 return a.name.localeCompare(b.name);
             });
 
@@ -2465,15 +2477,16 @@ function setupRegisterScheduleModal() {
             });
 
             // 선택된 이름이 최상단으로 오도록 정렬
+            const userSite = sessionStorage.getItem('userSite') || '';
             displayWorkers.sort((a, b) => {
                 const aSelected = currentSelected.includes(a.name);
                 const bSelected = currentSelected.includes(b.name);
                 if (aSelected && !bSelected) return -1;
                 if (!aSelected && bSelected) return 1;
 
-                // [추가] 같은 사업장 작업자 우선 정렬
-                const aIsSameSite = a.site === site;
-                const bIsSameSite = b.site === site;
+                // [추가] 로그인한 계정과 같은 사업장 작업자 우선 정렬
+                const aIsSameSite = a.site === userSite;
+                const bIsSameSite = b.site === userSite;
                 if (aIsSameSite && !bIsSameSite) return -1;
                 if (!aIsSameSite && bIsSameSite) return 1;
 

@@ -2755,11 +2755,17 @@ function openNextScheduleModal(options) {
                 }
             });
             
+            const userSite = sessionStorage.getItem('userSite') || '';
             displayWorkers.sort((a, b) => {
                 const aSelected = currentSelected.includes(a.name);
                 const bSelected = currentSelected.includes(b.name);
                 if (aSelected && !bSelected) return -1;
                 if (!aSelected && bSelected) return 1;
+                
+                const aSameSite = a.site === userSite;
+                const bSameSite = b.site === userSite;
+                if (aSameSite && !bSameSite) return -1;
+                if (!aSameSite && bSameSite) return 1;
                 return a.name.localeCompare(b.name);
             });
 
