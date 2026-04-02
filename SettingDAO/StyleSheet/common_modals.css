@@ -642,11 +642,15 @@
     }
 
     #task-search-modal .form-row {
+        flex-direction: row !important;
+        align-items: center !important;
         flex-wrap: nowrap !important;
     }
 
     #task-search-start-date,
     #task-search-end-date {
+        width: auto !important;
+        flex: 1 !important;
         min-width: 0 !important;
         font-size: 11px !important;
         padding: 4px 2px !important;

@@ -2814,6 +2814,7 @@ window.openExtraWorkHistoryModal = function(site, equip, originalLogId) {
     const tbody = document.getElementById('extra-work-history-body');
     const pathEl = document.getElementById('extra-work-history-path');
     const memoEl = document.getElementById('extra-work-history-memo');
+    const moveBtn = document.getElementById('btn-move-to-extra-work-origin');
     if (!modal || !tbody) return;
 
     const key = `details_${site}_${equip}`;
@@ -2838,6 +2839,14 @@ window.openExtraWorkHistoryModal = function(site, equip, originalLogId) {
 
     // 2. 메모 텍스트에어리어 초기화
     if (memoEl) memoEl.value = parentLog.memo || '작성된 메모가 없습니다.';
+
+    // 3. 해당 장비 점검 이력으로 이동하는 버튼 이벤트
+    if (moveBtn) {
+        moveBtn.onclick = () => {
+            let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}&logId=${originalLogId}`;
+            location.href = targetUrl;
+        };
+    }
 
     tbody.innerHTML = '';
 

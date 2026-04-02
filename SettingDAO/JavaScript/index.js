@@ -1248,7 +1248,9 @@ function populateEquipmentIssues() {
         `;
 
         li.onclick = () => {
-            if (confirm(`해당 장비의 점검 이력 상세 내용을 확인하시겠습니까?\n\n[${site}] ${info.displayEquip}\n이슈: ${detailStr}\n내용: ${log.content}`)) {
+            if (typeof window.openExtraWorkHistoryModal === 'function') {
+                window.openExtraWorkHistoryModal(site, equipKey, log.id);
+            } else {
                 let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equipKey)}&logId=${log.id}`;
                 window.location.href = targetUrl;
             }
