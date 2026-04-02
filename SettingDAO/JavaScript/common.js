@@ -15,6 +15,7 @@ let selectedLogId = null;
 let originalMemo = "";
 let originalSetupData = null;
 let currentLogFilter = 'all'; // [추가] 현재 로그 필터 상태
+let currentNextScheduleTarget = null; // [추가] 다음 작업 예정일 타겟
 let sessionTimer = null; // [추가] 세션 타이머
 let sessionTimeLeft = 3600; // 60분 리셋 (3600초)
 let lastActivityTimestamp = Date.now(); // [추가] 마지막 사용자 활동 시간
@@ -569,11 +570,11 @@ function handlePageAccess() {
         if (isLoggedIn) {
             homeWelcomeContainer.style.display = 'flex';
             if (homeLoginContainer) homeLoginContainer.style.display = 'none';
-                if (typeof updateHomeDashboard === 'function') {
-                    updateHomeDashboard();
-                } else {
-                    try { updateHomeDashboard(); } catch(e){}
-                }
+            if (typeof updateHomeDashboard === 'function') {
+                updateHomeDashboard();
+            } else {
+                try { updateHomeDashboard(); } catch (e) { }
+            }
         } else {
             homeWelcomeContainer.style.display = 'none';
             if (homeLoginContainer) homeLoginContainer.style.display = 'flex';
@@ -1209,9 +1210,9 @@ function attemptLogin(id, pw, context) {
 function openAddUserModal() {
     const modals = document.querySelectorAll('#add-user-modal');
     if (modals.length === 0) return;
-    
+
     // [핵심] 여러 개의 중복 HTML 중 항상 사용자가 보고 있는 마지막(최신) 모달을 선택
-    const modal = modals[modals.length - 1]; 
+    const modal = modals[modals.length - 1];
     const role = sessionStorage.getItem('userRole');
 
     if (role !== 'admin' && role !== 'superadmin') {
@@ -1245,7 +1246,7 @@ function openAddUserModal() {
         // [추가] 모달 내 버튼 이벤트 확실하게 바인딩 (ID 중복으로 인한 버튼 먹통 방지)
         const btnAddUser = modal.querySelector('#btn-add-user');
         if (btnAddUser) btnAddUser.onclick = addNewUser;
-        
+
         const btnClose = modal.querySelector('#btn-close-add-user-modal');
         if (btnClose) btnClose.onclick = closeAddUserModal;
 
@@ -1347,7 +1348,7 @@ function openAddUserModal() {
             let isSuggestionActive = false;
             siteSuggestions.addEventListener('mouseenter', () => isSuggestionActive = true);
             siteSuggestions.addEventListener('mouseleave', () => isSuggestionActive = false);
-            siteSuggestions.addEventListener('touchstart', () => isSuggestionActive = true, {passive: true});
+            siteSuggestions.addEventListener('touchstart', () => isSuggestionActive = true, { passive: true });
             siteSuggestions.addEventListener('touchend', () => setTimeout(() => isSuggestionActive = false, 500));
 
             siteInput.addEventListener('blur', () => {
@@ -1393,7 +1394,7 @@ function openAddUserModal() {
             document.removeEventListener('touchstart', window._siteSuggestionOutsideClick);
             window._siteSuggestionOutsideClick = outsideClickListener;
             document.addEventListener('mousedown', outsideClickListener);
-            document.addEventListener('touchstart', outsideClickListener, {passive: true});
+            document.addEventListener('touchstart', outsideClickListener, { passive: true });
 
 
         }
@@ -1409,7 +1410,7 @@ function closeAddUserModal() {
         });
     });
     document.body.style.overflow = '';
-    
+
 }
 
 function openUserModal() {
@@ -1479,7 +1480,7 @@ function openUserModal() {
                 let isSuggestionActive = false;
                 suggestionList.addEventListener('mouseenter', () => isSuggestionActive = true);
                 suggestionList.addEventListener('mouseleave', () => isSuggestionActive = false);
-                suggestionList.addEventListener('touchstart', () => isSuggestionActive = true, {passive: true});
+                suggestionList.addEventListener('touchstart', () => isSuggestionActive = true, { passive: true });
                 suggestionList.addEventListener('touchend', () => setTimeout(() => isSuggestionActive = false, 500));
 
                 if (searchInput) {
@@ -1493,10 +1494,10 @@ function openUserModal() {
                         delete searchInput.dataset.selectedId;
                         showSuggestions();
                     });
-                    searchInput.addEventListener('blur', () => { 
-                        setTimeout(() => { 
-                            if (!isSuggestionActive) suggestionList.style.display = 'none'; 
-                        }, 250); 
+                    searchInput.addEventListener('blur', () => {
+                        setTimeout(() => {
+                            if (!isSuggestionActive) suggestionList.style.display = 'none';
+                        }, 250);
                     });
                 }
 
@@ -1507,7 +1508,7 @@ function openUserModal() {
                     }
                 };
                 document.addEventListener('mousedown', outsideClickListener);
-                document.addEventListener('touchstart', outsideClickListener, {passive: true});
+                document.addEventListener('touchstart', outsideClickListener, { passive: true });
 
                 if (delBtn) {
                     // 이벤트 리스너 중복 추가 방지
@@ -1605,7 +1606,7 @@ function addNewUser() {
             if (data.status === 'success') {
                 addSystemLog('ADD_USER', id, `Name: ${name}, Role: ${role}, Site: ${site || '전체'}`);
                 alert('계정이 추가되었습니다.');
-                
+
                 if (idInput) idInput.value = '';
                 if (pwInput) pwInput.value = '';
                 if (pwConfirmEl) pwConfirmEl.value = '';
@@ -2342,7 +2343,7 @@ function onEquipClick(site, equip) {
     const nameParts = equip.split('::');
     const displayEquipName = nameParts[0];
     const displaySerialNo = nameParts.length > 1 ? nameParts[1] : '';
-    
+
     const key = `details_${site}_${equip}`;
     const data = JSON.parse(localStorage.getItem(key)) || {};
     const setup = data.setup || {};
@@ -2427,7 +2428,7 @@ function onEquipClick(site, equip) {
                         data.logs.sort((a, b) => { if (b.date !== a.date) return b.date.localeCompare(a.date); return b.id - a.id; });
                         selectLog(data.logs[0].id, false);
                     }
-                    
+
                     // 새로고침 시 다시 선택되는 것을 방지하기 위해 URL에서 logId 파라미터 제거
                     const newUrl = new URL(window.location);
                     newUrl.searchParams.delete('logId');
@@ -2643,9 +2644,213 @@ async function clearSystemLogs() {
         }
     }
 }
+
+/* ==========================================================================
+   8. 다음 작업 예정일 등록 모달 (Next Schedule Modal)
+   ========================================================================== */
+
+/**
+ * [공통] 작업 완료 후 다음 예정일 등록 모달을 엽니다.
+ * @param {object} options - 모달 옵션
+ */
+function openNextScheduleModal(options) {
+    const { site, equip, items, completeDate, md, originalMaintMap, mergedRegItemIds, onClose, onDateChange } = options;
+
+    currentNextScheduleTarget = { site, equip, items, completeDate, onClose, onDateChange };
+
+    const modal = document.getElementById('next-schedule-modal');
+    if (!modal) {
+        alert('작업이 완료되었습니다.');
+        if (onClose) onClose();
+        return;
+    }
+
+    // [수정] 모달을 열 때마다 버튼 이벤트를 새로 바인딩하여 이벤트 유실을 완벽히 방지합니다.
+    const skipBtn = document.getElementById('btn-skip-next-schedule');
+    const saveBtn = document.getElementById('btn-save-next-schedule');
+
+    const closeModal = () => {
+        modal.style.display = 'none';
+        if (currentNextScheduleTarget && typeof currentNextScheduleTarget.onClose === 'function') {
+            currentNextScheduleTarget.onClose();
+        }
+        currentNextScheduleTarget = null; // Reset target
+    };
+
+    if (skipBtn) {
+        skipBtn.onclick = () => {
+            alert('작업이 완료되었습니다.');
+            closeModal();
+        };
+    }
+
+    if (saveBtn) {
+        saveBtn.onclick = () => {
+            if (!currentNextScheduleTarget) return;
+
+            const { site, equip } = currentNextScheduleTarget;
+            const key = `details_${site}_${equip}`;
+            let data = JSON.parse(localStorage.getItem(key)) || {};
+            let isUpdated = false;
+
+            if (data.maint) {
+                const listContainer = document.getElementById('next-schedule-list-container');
+                const dateInputs = listContainer.querySelectorAll('.next-date-input');
+                const mdInputs = listContainer.querySelectorAll('.next-md-input');
+                const typeInputs = listContainer.querySelectorAll('.next-type-select');
+
+                let hasError = false;
+
+                for (let i = 0; i < dateInputs.length; i++) {
+                    const dateInput = dateInputs[i];
+                    const mdInput = mdInputs[i];
+                    const typeInput = typeInputs[i];
+                    const id = parseInt(dateInput.dataset.id);
+                    const newDate = dateInput.value;
+                    const newMd = mdInput.value.trim();
+                    const newType = typeInput ? typeInput.value : null;
+
+                    if (newDate) {
+                        if (dateInput.min && newDate < dateInput.min) {
+                            alert('다음 예정일은 이전 작업일 이후 날짜로 선택해주세요.');
+                            hasError = true;
+                            break;
+                        }
+
+                        const item = data.maint.find(i => i.id === id);
+                        if (item) {
+                            const oldDate = item.scheduledDate;
+                            item.scheduledDate = newDate;
+                            if (newMd) item.md = newMd;
+
+                            if (newType && (!typeInput || !typeInput.disabled) && item.type !== newType) {
+                                item.type = newType;
+                                if (newType === '정기') {
+                                    item.detailType = 'PM 점검';
+                                } else {
+                                    item.detailType = 'BM 점검';
+                                    item.period = null;
+                                }
+                            }
+
+                            if (typeof currentNextScheduleTarget.onDateChange === 'function') {
+                                currentNextScheduleTarget.onDateChange(site, oldDate, newDate);
+                            }
+                            isUpdated = true;
+
+                            if (typeof addSystemLog === 'function') {
+                                addSystemLog('ADD_SCHEDULE', equip, `Date: ${newDate}, Content: ${item.content}, Next Schedule`);
+                            }
+                        }
+                    }
+                }
+
+                if (hasError) return;
+
+                if (isUpdated) {
+                    localStorage.setItem(key, JSON.stringify(data));
+                }
+            }
+
+            alert('작업 완료 및 다음 예정일 처리가 완료되었습니다.');
+            closeModal();
+        };
+    }
+
+    const listContainer = document.getElementById('next-schedule-list-container');
+    if (!listContainer) {
+        modal.style.display = 'flex';
+        return;
+    }
+
+    listContainer.innerHTML = '';
+    items.forEach(item => {
+        let defaultNextDate = '';
+        const period = parseInt(item.period) || 0;
+        if (period > 0) {
+            const dateObj = new Date(completeDate);
+            dateObj.setDate(dateObj.getDate() + period);
+            defaultNextDate = dateObj.toISOString().split('T')[0];
+        }
+
+        const itemName = item.code ? item.code : item.content;
+        const originalItem = originalMaintMap.get(item.id);
+        const isExisting = mergedRegItemIds.has(item.id) || (originalItem && originalItem.date);
+
+        const tpl = getTemplateContent('next-schedule-item-template');
+        if (tpl) {
+            const div = tpl.querySelector('div');
+            if (!div) return;
+
+            div.querySelector('.item-name').textContent = itemName;
+            div.querySelector('.item-name').title = itemName;
+
+            const typeSelect = div.querySelector('.next-type-select');
+            typeSelect.dataset.id = item.id;
+            typeSelect.value = item.type;
+            if (isExisting) typeSelect.disabled = true;
+
+            const dateInput = div.querySelector('.next-date-input');
+            dateInput.dataset.id = item.id;
+            dateInput.value = defaultNextDate;
+            dateInput.min = completeDate;
+
+            const mdInput = div.querySelector('.next-md-input');
+            mdInput.dataset.id = item.id;
+            mdInput.value = item.md || md;
+
+            listContainer.appendChild(div);
+        }
+    });
+
+    modal.style.display = 'flex';
+}
+
+/* ==========================================================================
+   9. 추가 작업 내역 확인 모달
+   ========================================================================== */
+window.openExtraWorkHistoryModal = function(site, equip, originalLogId) {
+    const modal = document.getElementById('extra-work-history-modal');
+    const tbody = document.getElementById('extra-work-history-body');
+    if (!modal || !tbody) return;
+
+    const key = `details_${site}_${equip}`;
+    const data = JSON.parse(localStorage.getItem(key)) || {};
+    const logs = data.logs || [];
+
+    const parentLog = logs.find(l => l.id == originalLogId);
+    const childLogs = logs.filter(l => l.originalLogId == originalLogId);
+
+    if (!parentLog) return alert('원본 작업을 찾을 수 없습니다.');
+
+    let html = '';
+    
+    // 부모 로그 렌더링
+    html += `<tr style="background-color: rgba(35, 134, 54, 0.1);">
+        <td><span class="badge" style="background:#238636;">원본 작업</span></td>
+        <td>${parentLog.date || '-'}</td>
+        <td style="text-align: left; padding-left: 10px;">${escapeHtml(parentLog.content || '-')}</td>
+        <td>${escapeHtml(parentLog.worker || '-')}</td>
+    </tr>`;
+
+    // 자식 로그 렌더링
+    childLogs.forEach((log, idx) => {
+        html += `<tr>
+            <td><span class="badge" style="background:#1f6feb;">추가 작업 ${idx + 1}</span></td>
+            <td>${log.date || '-'}</td>
+            <td style="text-align: left; padding-left: 10px;">${escapeHtml(log.content || '-')}</td>
+            <td>${escapeHtml(log.worker || '-')}</td>
+        </tr>`;
+    });
+
+    tbody.innerHTML = html;
+    modal.style.display = 'flex';
+};
+
 /* ==========================================================================
    유틸리티: 영업일 계산 (Business Days Calculation)
    ========================================================================== */
+
 window.getHolidayName = function (year, month, day) {
     const mm = String(month + 1).padStart(2, '0');
     const dd = String(day).padStart(2, '0');

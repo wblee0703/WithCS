@@ -9,7 +9,6 @@ var currentSearchFilters = { site: '', equip: '' };
 let currentScheduleTarget = null;
 let currentDetailTarget = null;
 let expandedViewId = null;
-let currentNextScheduleTarget = null; // [추가] 다음 작업 예정일 타겟
 let cameFromTaskSearch = false; // [추가] 작업 검색에서 상세 정보로 이동했는지 여부
 
 // [추가] 공통 함수 폴백 (common.js 누락 대비)
@@ -214,7 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupRegisterScheduleModal();
     setupSearchModal();
     setupTaskSearchModal(); // [추가]
-    setupNextScheduleModal(); // [추가]
 
 });
 
@@ -821,9 +819,9 @@ function openCalendarPopup(dateStr, events) {
 
                 let subInfo = '';
                 if (custName) {
-                    subInfo = ` <span style="color:#8b949e;">[${escapeHtml(custName)}]</span>`;
+                    subInfo = ` <span style="color:#3fb950;">[${escapeHtml(custName)}]</span>`;
                 } else if (serialNo) {
-                    subInfo = ` <span style="color:#8b949e;">[${escapeHtml(serialNo)}]</span>`;
+                    subInfo = ` <span style="color:#3fb950;">[${escapeHtml(serialNo)}]</span>`;
                 }
 
                 const itemTextSpan = li.querySelector('.popup-item-text');
@@ -2065,13 +2063,13 @@ function completeScheduleWork() {
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
 
+    // [추가] 원본 상태 복사 (기존 등록 물품 여부 확인용)
+    const originalMaintMap = new Map((data.maint || []).map(m => [m.id, { ...m }]));
+
     const maintItem = data.maint ? data.maint.find(i => i.id == id) : null;
     if (!maintItem) return;
 
     if (!data.logs) data.logs = [];
-
-    // [추가] 원본 상태 복사 (기존 등록 물품 여부 확인용)
-    const originalMaintMap = new Map((data.maint || []).map(m => [m.id, { ...m }]));
 
     // [수정] 같은 날짜, 같은 타입, 세부구분의 모든 항목 완료 처리 (비용처리 포함하여 로그에 기록)
     const sameDayItems = data.maint.filter(i => i.scheduledDate === maintItem.scheduledDate && i.type === maintItem.type && (i.detailType || '') === (maintItem.detailType || ''));
@@ -2122,6 +2120,17 @@ function completeScheduleWork() {
         }
     });
 
+    // [수정] 다음 예정일 등록 대상 항목을 data.maint 수정 전에 미리 결정
+    const remainingIds = data.maint.filter(i => sameDayItems.some(s => s.id === i.id) || mergedRegItemIds.has(i.id)).map(i => i.id);
+    const remainingItems = data.maint.filter(i => remainingIds.includes(i.id));
+
+    // [추가] 다음 작업 예정일에는 시스템에 등록된 물품만 표시 (직접 입력한 텍스트나 내용 없음 제외)
+    const adminItemsList = JSON.parse(localStorage.getItem('admin_items')) || [];
+    const validRemainingItems = remainingItems.filter(item => {
+        if (!item.content || item.content === '내용 없음') return false;
+        return adminItemsList.some(ai => ai.part === item.content || ai.code === item.content || (item.code && ai.code === item.code));
+    });
+
     // [수정] 일회성 작업 및 PM/BM 점검이 아닌 항목(Alarm, 고객대응 등)은 완료 후 maint 배열에서 완전히 제거하여 유지관리 목록 누적 방지
     data.maint = data.maint.filter(i => {
         if (idsToRemove.has(i.id)) return false;
@@ -2144,156 +2153,31 @@ function completeScheduleWork() {
 
     // [추가] 완료 후 다음 예정일 등록 모달 띄우기
     // 비정기 물품 교체건과 병합된 정기 항목 포함
-    const remainingIds = data.maint.filter(i => sameDayItems.some(s => s.id === i.id) || mergedRegItemIds.has(i.id)).map(i => i.id);
-
-    if (remainingIds.length > 0) {
-        const remainingItems = data.maint.filter(i => remainingIds.includes(i.id));
-        currentNextScheduleTarget = { site, equip, items: remainingItems, completeDate: completeDate };
-
-        const nextModal = document.getElementById('next-schedule-modal');
-        if (nextModal) {
-            const listContainer = document.getElementById('next-schedule-list-container');
-            if (listContainer) {
-                listContainer.innerHTML = '';
-                remainingItems.forEach(item => {
-                    let defaultNextDate = '';
-                    const period = parseInt(item.period) || 0;
-                    if (period > 0) {
-                        const dateObj = new Date(completeDate);
-                        dateObj.setDate(dateObj.getDate() + period);
-                        defaultNextDate = dateObj.toISOString().split('T')[0];
+    if (validRemainingItems.length > 0) {
+        // [수정] 공통 함수 호출로 변경
+        openNextScheduleModal({
+            site,
+            equip,
+            items: validRemainingItems,
+            completeDate: completeDate,
+            md: md,
+            originalMaintMap: originalMaintMap,
+            mergedRegItemIds: mergedRegItemIds,
+            onClose: window.refreshCalendarPopupAfterCompletion,
+            onDateChange: (site, oldDate, newDate) => {
+                const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
+                const newMonth = newDate.substring(0, 7);
+                if (oldMonth !== newMonth) {
+                    if (typeof window.incrementConfirmedCount === 'function') {
+                        window.incrementConfirmedCount(site, newDate, 1);
                     }
-
-                    const itemName = item.code ? item.code : item.content;
-                    const originalItem = originalMaintMap.get(item.id);
-                    const isExisting = mergedRegItemIds.has(item.id) || (originalItem && originalItem.date);
-
-                    const tpl = getTemplateContent('next-schedule-item-template');
-                    if (tpl) {
-                        // [수정] DocumentFragment에서 요소를 가져올 때 querySelector를 사용하도록 수정
-                        const div = tpl.querySelector('div');
-                        if (!div) return; // forEach 콜백 내부이므로 continue 대신 return 사용
-
-                        div.querySelector('.item-name').textContent = itemName;
-
-                        const typeSelect = div.querySelector('.next-type-select');
-                        typeSelect.dataset.id = item.id;
-                        typeSelect.value = item.type;
-                        if (isExisting) typeSelect.disabled = true;
-
-                        const dateInput = div.querySelector('.next-date-input');
-                        dateInput.dataset.id = item.id;
-                        dateInput.value = defaultNextDate;
-                        dateInput.min = completeDate;
-
-                        const mdInput = div.querySelector('.next-md-input');
-                        mdInput.dataset.id = item.id;
-                        mdInput.value = item.md || md;
-
-                        listContainer.appendChild(div);
-                    }
-                });
+                }
             }
-            nextModal.style.display = 'flex';
-        } else {
-            alert('작업이 완료되었습니다.');
-            window.refreshCalendarPopupAfterCompletion();
-        }
+        });
+
     } else {
         alert('작업이 완료되었습니다.');
         window.refreshCalendarPopupAfterCompletion();
-    }
-}
-
-function setupNextScheduleModal() {
-    const modal = document.getElementById('next-schedule-modal');
-    const skipBtn = document.getElementById('btn-skip-next-schedule');
-    const saveBtn = document.getElementById('btn-save-next-schedule');
-
-    if (!modal) return;
-
-    if (skipBtn) {
-        skipBtn.onclick = () => {
-            modal.style.display = 'none';
-            window.refreshCalendarPopupAfterCompletion();
-        };
-    }
-
-    if (saveBtn) {
-        saveBtn.onclick = () => {
-            if (!currentNextScheduleTarget) return;
-
-            const { site, equip, items, completeDate } = currentNextScheduleTarget;
-            const key = `details_${site}_${equip}`;
-            let data = JSON.parse(localStorage.getItem(key)) || {};
-            let isUpdated = false;
-
-            if (data.maint) {
-                const listContainer = document.getElementById('next-schedule-list-container');
-                const dateInputs = listContainer.querySelectorAll('.next-date-input');
-                const mdInputs = listContainer.querySelectorAll('.next-md-input');
-                const typeInputs = listContainer.querySelectorAll('.next-type-select');
-
-                let hasError = false;
-
-                for (let i = 0; i < dateInputs.length; i++) {
-                    const dateInput = dateInputs[i];
-                    const mdInput = mdInputs[i];
-                    const typeInput = typeInputs[i];
-                    const id = parseInt(dateInput.dataset.id);
-                    const newDate = dateInput.value;
-                    const newMd = mdInput.value.trim();
-                    const newType = typeInput ? typeInput.value : null;
-
-                    if (newDate) {
-                        if (dateInput.min && newDate < dateInput.min) {
-                            alert('다음 예정일은 이전 작업일 이후 날짜로 선택해주세요.');
-                            hasError = true;
-                            break;
-                        }
-
-                        const item = data.maint.find(i => i.id === id);
-                        if (item) {
-                            const oldDate = item.scheduledDate;
-                            item.scheduledDate = newDate;
-                            if (newMd) item.md = newMd;
-
-                            // 타입(정기/비정기) 변경 반영
-                            if (newType && (!typeInput || !typeInput.disabled) && item.type !== newType) {
-                                item.type = newType;
-                                if (newType === '정기') {
-                                    item.detailType = 'PM 점검';
-                                } else {
-                                    item.detailType = 'BM 점검';
-                                    item.period = null; // 비정기는 주기 없음
-                                }
-                            }
-
-                            const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
-                            const newMonth = newDate.substring(0, 7);
-                            if (oldMonth !== newMonth) {
-                                if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, newDate, 1);
-                            }
-                            isUpdated = true;
-
-                            if (typeof addSystemLog === 'function') {
-                                addSystemLog('ADD_SCHEDULE', equip, `Date: ${newDate}, Content: ${item.content}, Next Schedule`);
-                            }
-                        }
-                    }
-                }
-
-                if (hasError) return;
-
-                if (isUpdated) {
-                    localStorage.setItem(key, JSON.stringify(data));
-                }
-            }
-
-            modal.style.display = 'none';
-            alert('작업 완료 및 다음 예정일 처리가 완료되었습니다.');
-            window.refreshCalendarPopupAfterCompletion();
-        };
     }
 }
 
@@ -3083,16 +2967,16 @@ function updateRegisterEquipSelect(site) {
                     if (tpl) {
                         const li = tpl.querySelector('.log-select-item');
                         
-                        let displayValue = name;
+                        let displayValueHtml = escapeHtml(name);
                         if (custName) {
-                            displayValue = `${name} [${custName}]`;
+                            displayValueHtml += ` <span style="color:#3fb950;">[${escapeHtml(custName)}]</span>`;
                         } else if (serial) {
-                            displayValue = `${name} [${serial}]`;
+                            displayValueHtml += ` <span style="color:#3fb950;">[${escapeHtml(serial)}]</span>`;
                         }
 
                         // 기존 템플릿의 분리된 구조를 무시하고 자연스럽게 한 줄에 표시
                         const contentDiv = li.querySelector('.suggestion-item-content') || li;
-                        contentDiv.innerHTML = `<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(displayValue)}</span>`;
+                        contentDiv.innerHTML = `<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayValueHtml}</span>`;
 
                         li.addEventListener('mousedown', (e) => {
                             e.preventDefault();
@@ -4233,15 +4117,53 @@ function doTaskSearch() {
 
             li.querySelector('.task-date').textContent = date;
 
-            if (custEquipName) {
-                const custSpan = li.querySelector('.cust-equip-name');
-                custSpan.textContent = `<${custEquipName}>`;
-                custSpan.style.display = 'inline';
-            }
-
             if (isCompleted) {
                 li.classList.add('completed');
                 li.querySelector('.completed-status').style.display = 'inline';
+
+                const logItem = items[0];
+                const targetLogId = logItem.originalLogId || logItem.id; // 부모/자식 관계없이 원본 작업 ID 기준으로 처리
+                const key = `details_${site}_${equip}`;
+                const detailData = JSON.parse(localStorage.getItem(key)) || {};
+                const childLogs = (detailData.logs || []).filter(l => l.originalLogId === targetLogId);
+                const hasExtra = childLogs.length > 0;
+
+                const actionContainer = document.createElement('div');
+                actionContainer.style.display = 'flex';
+                actionContainer.style.gap = '5px';
+                actionContainer.style.marginLeft = 'auto'; // 우측 정렬
+
+                const addBtn = document.createElement('button');
+                addBtn.className = 'btn-blue-sm';
+                addBtn.textContent = '추가';
+                addBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const presetData = { type: logItem.type, detailType: logItem.detailType, detailType2: logItem.detailType2, content: '', worker: logItem.worker || '' };
+                    window.currentSearchFilters = { site: site, equip: equip };
+                    window.currentAddWorkLogId = targetLogId;
+                    const todayStr = new Date().toISOString().substring(0, 10);
+                    window.openRegisterScheduleModal(todayStr, presetData);
+                    
+                    window.handleExtraWorkAdded = function(newLogId) {
+                        alert('추가 작업이 등록되었습니다.');
+                        doTaskSearch();
+                    };
+                };
+                actionContainer.appendChild(addBtn);
+
+                if (hasExtra) {
+                    const viewBtn = document.createElement('button');
+                    viewBtn.className = 'btn-green-sm';
+                    viewBtn.textContent = '확인';
+                    viewBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (typeof window.openExtraWorkHistoryModal === 'function') window.openExtraWorkHistoryModal(site, equip, targetLogId);
+                    };
+                    actionContainer.appendChild(viewBtn);
+                }
+                
+                const topDiv = li.querySelector('div:first-child');
+                if (topDiv) topDiv.appendChild(actionContainer);
             }
 
             const typeBadge = li.querySelector('.popup-type-badge');
@@ -4250,9 +4172,9 @@ function doTaskSearch() {
 
             let subInfo = '';
             if (custEquipName) {
-                subInfo = ` <span style="color:#8b949e;">[${escapeHtml(custEquipName)}]</span>`;
+                subInfo = ` <span style="color:#3fb950;">[${escapeHtml(custEquipName)}]</span>`;
             } else if (serialNo) {
-                subInfo = ` <span style="color:#8b949e;">${escapeHtml(serialNo)}</span>`;
+                subInfo = ` <span style="color:#3fb950;">${escapeHtml(serialNo)}</span>`;
             }
             li.querySelector('.equip-name').innerHTML = `${escapeHtml(site)} > ${escapeHtml(equipName)}${subInfo}`;
 

@@ -1713,29 +1713,15 @@ function renderLogs() {
 
         const addWorkCell = tr.querySelector('.log-add-work');
         if (addWorkCell) {
-            if (log.originalLogId) {
-                const originalLog = data.logs.find(l => l.id === log.originalLogId);
-                const originalDate = originalLog ? originalLog.date : '';
-                let formattedDate = '-';
-                if (originalDate) {
-                    const parts = originalDate.split('-');
-                    if (parts.length === 3) formattedDate = `${parts[0].slice(-2)}.${parts[1]}.${parts[2]}`;
-                    else formattedDate = originalDate;
-                }
-                addWorkCell.innerHTML = `<span style="font-size: 12px; color: #8b949e;" title="원본 작업일: ${escapeHtml(originalDate)}">${formattedDate}</span>`;
-            } else if (log.addWorkLogId) {
-                addWorkCell.innerHTML = `
-                    <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
-                        <button class="btn-green-sm" style="padding: 2px 10px; font-size: 11px;" onclick="event.stopPropagation(); selectLog(${log.addWorkLogId})">이동</button>
-                    </div>
-                `;
-            } else {
-                addWorkCell.innerHTML = `
-                    <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
-                        <button class="btn-blue-sm" style="padding: 2px 10px; font-size: 11px;" onclick="event.stopPropagation(); openAddWorkModal(${log.id}, '${escapeHtml(log.date)}');">추가</button>
-                    </div>
-                `;
-            }
+            const targetLogId = log.originalLogId || log.id;
+            const childLogs = data.logs.filter(l => l.originalLogId === targetLogId);
+            const hasExtra = childLogs.length > 0;
+            addWorkCell.innerHTML = `
+                <div style="display: flex; justify-content: center; align-items: center; width: 100%; gap: 4px;">
+                    <button class="btn-blue-sm" style="padding: 2px 8px; font-size: 11px;" onclick="event.stopPropagation(); openAddWorkModal(${targetLogId}, '${escapeHtml(log.date)}');">추가</button>
+                    ${hasExtra ? `<button class="btn-green-sm" style="padding: 2px 8px; font-size: 11px;" onclick="event.stopPropagation(); window.openExtraWorkHistoryModal('${currentPath.site}', '${currentPath.equip}', ${targetLogId});">확인</button>` : ''}
+                </div>
+            `;
         }
 
         tr.querySelector('.btn-edit-sm').onclick = (event) => {
@@ -3707,14 +3693,8 @@ window.openAddWorkModal = function(logId, dateStr) {
 
 // [추가] 추가 작업 등록 완료 후 호출되는 함수
 window.handleExtraWorkAdded = function(newLogId) {
+    alert('추가 작업이 등록되었습니다.');
     renderLogs();
-    setTimeout(() => {
-        selectLog(newLogId);
-        const row = document.getElementById(`log-row-${newLogId}`);
-        if (row) {
-            row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-    }, 100);
 };
 
 window.closeFileEditModal = function () {

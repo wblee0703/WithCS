@@ -227,6 +227,30 @@
         </div>
     </div>
 
+    <!-- 추가 작업 내역 모달 -->
+    <div id="extra-work-history-modal" class="modal-overlay" style="display: none; z-index: 10005;">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h3>추가 작업 내역</h3><button class="btn-del-sm" onclick="document.getElementById('extra-work-history-modal').style.display='none'">✕</button>
+            </div>
+            <div class="modal-body" style="padding: 0;">
+                <div class="data-table-wrapper" style="margin: 0;">
+                    <table class="data-table" style="margin: 0; width: 100%;">
+                        <thead>
+                            <tr>
+                                <th style="width: 80px;">구분</th>
+                                <th style="width: 100px;">작업일</th>
+                                <th>내용</th>
+                                <th style="width: 100px;">작업자</th>
+                            </tr>
+                        </thead>
+                        <tbody id="extra-work-history-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 4. 스크립트 (Scripts) -->
     <!-- 계정 정보 조회 모드 템플릿 -->
     <template id="my-info-view-template"> 
@@ -1082,6 +1106,28 @@
                 autocomplete="off">
             <div class="log-select-list"></div>
             <div class="log-select-footer"><button type="button" class="btn-blue-sm" style="width: 100%;">선택 완료</button>
+            </div>
+        </div>
+    </template>
+
+    <template id="next-schedule-item-template">
+        <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; background: #21262d; border: 1px solid #30363d; border-radius: 6px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="item-name" style="flex: 1; color: #58a6ff; font-size: 13px; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></span>
+                <select class="next-type-select input-dark" style="width: 75px; height: 30px; box-sizing: border-box; padding: 4px; font-size: 12px;">
+                    <option value="정기">정기</option>
+                    <option value="비정기">비정기</option>
+                </select>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; justify-content: flex-end;">
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="color: #8b949e; font-size: 12px;">공수</span>
+                    <input type="number" class="next-md-input input-dark" style="width: 60px; height: 30px; box-sizing: border-box; padding: 4px; font-size: 12px; text-align: center;" placeholder="0" min="0" step="0.5">
+                </div>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span style="color: #8b949e; font-size: 12px;">예정일</span>
+                    <input type="date" class="next-date-input input-dark" style="width: 130px; height: 30px; box-sizing: border-box; padding: 4px; font-size: 12px; text-align: center;">
+                </div>
             </div>
         </div>
     </template>

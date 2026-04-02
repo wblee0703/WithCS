@@ -430,11 +430,11 @@
 }
 
 #register-schedule-modal {
-    z-index: 9999;
+    z-index: 10002;
 }
 
 #next-schedule-modal .modal-window {
-    width: 420px;
+    width: 500px;
     height: auto;
     max-height: 80vh;
     display: flex;
@@ -655,6 +655,24 @@
     /* [요청] 작업 상세 정보 모달의 드롭다운은 화면을 벗어나지 않게 100% 유지 */
     #event-detail-modal .log-select-dropdown {
         width: 100% !important;
+    }
+}
+
+/* --- 추가 작업 내역 모달 --- */
+#extra-work-history-modal .modal-window {
+    width: 650px;
+    height: auto;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+#extra-work-history-modal .data-table th,
+#extra-work-history-modal .data-table td {
+    font-size: 12px;
+}
+@media (max-width: 950px) {
+    #extra-work-history-modal .modal-window {
+        width: 95% !important;
     }
 }
 
