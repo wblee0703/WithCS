@@ -2654,9 +2654,9 @@ async function clearSystemLogs() {
  * @param {object} options - 모달 옵션
  */
 function openNextScheduleModal(options) {
-    const { site, equip, items, completeDate, md, originalMaintMap, mergedRegItemIds, onClose, onDateChange } = options;
+    const { site, equip, items, completeDate, md, mergedRegItemIds, onClose, onDateChange } = options;
 
-    currentNextScheduleTarget = { site, equip, items, completeDate, onClose, onDateChange };
+    currentNextScheduleTarget = { site, equip, items, completeDate, mergedRegItemIds, onClose, onDateChange };
 
     const modal = document.getElementById('next-schedule-modal');
     if (!modal) {
@@ -2665,7 +2665,6 @@ function openNextScheduleModal(options) {
         return;
     }
 
-    // [수정] 모달을 열 때마다 버튼 이벤트를 새로 바인딩하여 이벤트 유실을 완벽히 방지합니다.
     const skipBtn = document.getElementById('btn-skip-next-schedule');
     const saveBtn = document.getElementById('btn-save-next-schedule');
 
@@ -2674,7 +2673,7 @@ function openNextScheduleModal(options) {
         if (currentNextScheduleTarget && typeof currentNextScheduleTarget.onClose === 'function') {
             currentNextScheduleTarget.onClose();
         }
-        currentNextScheduleTarget = null; // Reset target
+        currentNextScheduleTarget = null;
     };
 
     if (skipBtn) {
@@ -2684,166 +2683,230 @@ function openNextScheduleModal(options) {
         };
     }
 
+    // 1. 예정일 계산 (선택된 항목 중 주기가 가장 큰 것 기준)
+    let defaultNextDate = '';
+    const firstValidItem = items.find(i => parseInt(i.period) > 0);
+    if (firstValidItem) {
+        const period = parseInt(firstValidItem.period);
+        const dateObj = new Date(completeDate);
+        dateObj.setDate(dateObj.getDate() + period);
+        defaultNextDate = dateObj.toISOString().split('T')[0];
+    }
+    
+    const dateInput = document.getElementById('next-schedule-date');
+    if (dateInput) {
+        dateInput.value = defaultNextDate;
+        dateInput.min = completeDate;
+    }
+
+    // 2. 공수 초기화
+    const mdInput = document.getElementById('next-schedule-md');
+    if (mdInput) mdInput.value = md || '';
+
+    // 3. 작업자 렌더링 및 드롭다운 설정
+    const workerHidden = document.getElementById('next-schedule-worker-hidden');
+    const workerTrigger = document.getElementById('next-schedule-worker-trigger');
+    let initialWorker = items.find(i => i.worker)?.worker || sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '';
+    
+    if (workerHidden) workerHidden.value = initialWorker;
+    if (workerTrigger) {
+        workerTrigger.textContent = initialWorker || '작업자 선택';
+        workerTrigger.title = initialWorker;
+    }
+    if (initialWorker && mdInput && mdInput.value === '') {
+        mdInput.value = initialWorker.split(',').filter(Boolean).length;
+    }
+
+    const wTrigger = document.getElementById('next-schedule-worker-trigger');
+    const wDropdown = document.getElementById('next-schedule-worker-dropdown');
+    const wSearch = document.getElementById('next-schedule-worker-search');
+    const wList = document.getElementById('next-schedule-worker-list');
+    const wConfirm = document.getElementById('btn-next-schedule-worker-confirm');
+
+    if (wTrigger && wDropdown) {
+        wTrigger.onclick = (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== wDropdown) d.classList.remove('show'); });
+            wDropdown.classList.toggle('show');
+            if (wDropdown.classList.contains('show')) renderNextWorkers(wSearch ? wSearch.value.trim() : '');
+        };
+
+        const renderNextWorkers = async (searchTerm = '') => {
+            const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames(site) : [];
+            const currentSelected = workerHidden.value ? workerHidden.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+            const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: '', site: ''} : w);
+            let displayWorkers = [...allWorkers];
+            
+            if (searchTerm) {
+                const kw = searchTerm.toLowerCase();
+                displayWorkers = displayWorkers.filter(w => 
+                    w.name.toLowerCase().includes(kw) || 
+                    w.department.toLowerCase().includes(kw) || 
+                    w.position.toLowerCase().includes(kw)
+                );
+            }
+            
+            const displayedNames = new Set(displayWorkers.map(w => w.name));
+            currentSelected.forEach(selectedName => {
+                if (!displayedNames.has(selectedName)) {
+                    const workerToAdd = allWorkers.find(w => w.name === selectedName);
+                    if (workerToAdd) displayWorkers.unshift(workerToAdd);
+                    else displayWorkers.unshift({name: selectedName, department: '', position: ''});
+                }
+            });
+            
+            displayWorkers.sort((a, b) => {
+                const aSelected = currentSelected.includes(a.name);
+                const bSelected = currentSelected.includes(b.name);
+                if (aSelected && !bSelected) return -1;
+                if (!aSelected && bSelected) return 1;
+                return a.name.localeCompare(b.name);
+            });
+
+            if (typeof window.renderWorkerListItems === 'function') {
+                window.renderWorkerListItems(wList, displayWorkers, currentSelected, () => {
+                    const selected = Array.from(wList.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
+                    workerHidden.value = selected.join(', ');
+                    if (selected.length > 0) wTrigger.textContent = selected.join(' ');
+                    else wTrigger.textContent = '작업자 선택';
+                    wTrigger.title = selected.join(', ');
+                    if(mdInput) mdInput.value = selected.length.toString();
+                });
+            }
+        };
+
+        if (wSearch) {
+            wSearch.onclick = (e) => e.stopPropagation();
+            wSearch.oninput = (e) => renderNextWorkers(e.target.value.trim());
+        }
+        if (wConfirm) wConfirm.onclick = (e) => { e.stopPropagation(); wDropdown.classList.remove('show'); };
+    }
+
+    // 4. 점검 항목 렌더링 및 드롭다운 설정 (기존에 완료된 항목을 프리셋으로 세팅)
+    const itemTrigger = document.getElementById('next-schedule-item-trigger');
+    const itemDropdown = document.getElementById('next-schedule-item-dropdown');
+    const itemConfirm = document.getElementById('btn-next-schedule-item-confirm');
+    
+    const presetItemsArr = items.filter(i => i.content !== '장비 점검').map(i => {
+        let name = i.code ? i.code : i.content;
+        return i.itemCost ? `[${i.itemCost}] ${name}` : name;
+    });
+    const presetItemsStr = presetItemsArr.join(', ');
+
+    if (itemTrigger && itemDropdown) {
+        itemTrigger.onclick = (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== itemDropdown) d.classList.remove('show'); });
+            itemDropdown.classList.toggle('show');
+        };
+        if (itemConfirm) itemConfirm.onclick = (e) => { e.stopPropagation(); itemDropdown.classList.remove('show'); };
+    }
+
+    window.currentDetailTarget = { equip: equip };
+    if (typeof window.renderLogPartOptions === 'function') {
+        window.renderLogPartOptions('next-schedule-item-wrapper', 'next-schedule-item-trigger', 'next-schedule-item-list', 'next-schedule-item-search', presetItemsStr);
+    }
+    window.currentDetailTarget = null;
+
+    // 5. 저장 버튼 로직
     if (saveBtn) {
         saveBtn.onclick = () => {
             if (!currentNextScheduleTarget) return;
 
-            const { site, equip } = currentNextScheduleTarget;
+            const newDate = dateInput ? dateInput.value : '';
+            const newMd = mdInput ? mdInput.value.trim() : '';
+            const newWorker = workerHidden ? workerHidden.value.trim() : '';
+
+            if (!newDate) return alert('예정일을 선택해주세요.');
+            if (dateInput && dateInput.min && newDate < dateInput.min) return alert('다음 예정일은 이전 작업일 이후 날짜로 선택해주세요.');
+            if (!newWorker) return alert('작업자를 선택해주세요.');
+
+            const selectedItems = [];
+            const itemList = document.getElementById('next-schedule-item-list');
+            if (itemList) {
+                itemList.querySelectorAll('.log-select-item.selected').forEach(el => {
+                    const cSel = el.querySelector('.item-cost-select');
+                    selectedItems.push({
+                        content: el.dataset.value,
+                        cost: cSel ? cSel.value : '유상'
+                    });
+                });
+            }
+
+            if (selectedItems.length === 0) return alert('최소 1개 이상의 점검 항목을 선택해주세요.');
+
             const key = `details_${site}_${equip}`;
             let data = JSON.parse(localStorage.getItem(key)) || {};
             let isUpdated = false;
 
-            if (data.maint) {
-                const listContainer = document.getElementById('next-schedule-list-container');
-                const itemDivs = listContainer.querySelectorAll('.next-schedule-item-row');
+            if (!data.maint) data.maint = [];
 
-                let hasError = false;
+            const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
-                itemDivs.forEach(div => {
-                    const dateInput = div.querySelector('.next-date-input');
-                    const mdInput = div.querySelector('.next-md-input');
-                    const typeInput = div.querySelector('.next-type-select');
-                    const workerInput = div.querySelector('.next-worker-input');
-                    
-                    const id = parseInt(dateInput.dataset.id);
-                    const newDate = dateInput.value;
-                    const newMd = mdInput.value.trim();
-                    const newType = typeInput ? typeInput.value : null;
-                    const newWorker = workerInput ? workerInput.value.trim() : null;
+            selectedItems.forEach((sItem, idx) => {
+                let code = '';
+                let fullContent = sItem.content;
+                let period = null;
 
-                    if (newDate) {
-                        if (dateInput.min && newDate < dateInput.min) {
-                            alert('다음 예정일은 이전 작업일 이후 날짜로 선택해주세요.');
-                            hasError = true;
-                            return;
-                        }
-
-                        let item = data.maint.find(i => i.id === id);
-                        if (item) {
-                            const oldDate = item.scheduledDate;
-                            item.scheduledDate = newDate;
-                            if (newMd) item.md = newMd;
-                            if (newWorker) item.worker = newWorker;
-
-                            if (newType && (!typeInput || !typeInput.disabled) && item.type !== newType) {
-                                item.type = newType;
-                                if (newType === '정기') {
-                                    item.detailType = 'PM 점검';
-                                } else {
-                                    item.detailType = 'BM 점검';
-                                    item.period = null;
-                                }
-                            }
-
-                            if (typeof currentNextScheduleTarget.onDateChange === 'function') {
-                                currentNextScheduleTarget.onDateChange(site, oldDate, newDate);
-                            }
-                            isUpdated = true;
-
-                            if (typeof addSystemLog === 'function') {
-                                addSystemLog('ADD_SCHEDULE', equip, `Date: ${newDate}, Content: ${item.content}, Next Schedule`);
-                            }
-                        } else if (dateInput.dataset.isNew === 'true') {
-                            // 항목이 없는 점검 완료 시 임시로 생성된 항목을 유지관리 리스트에 신규 등록
-                            const originalContent = div.dataset.content;
-                            const originalType = typeInput ? typeInput.value : '정기';
-                            const originalDetailType = originalType === '정기' ? 'PM 점검' : 'BM 점검';
-                            
-                            data.maint.push({
-                                id: id,
-                                type: originalType,
-                                detailType: originalDetailType,
-                                code: '',
-                                content: originalContent,
-                                date: '',
-                                period: null,
-                                scheduledDate: newDate,
-                                costType: '',
-                                worker: newWorker || '',
-                                md: newMd,
-                                itemCost: ''
-                            });
-                            
-                            if (typeof currentNextScheduleTarget.onDateChange === 'function') {
-                                currentNextScheduleTarget.onDateChange(site, null, newDate);
-                            }
-                            isUpdated = true;
-                        }
-                    }
-                });
-
-                if (hasError) return;
-
-                if (isUpdated) {
-                    localStorage.setItem(key, JSON.stringify(data));
+                const match = adminItems.find(a => a.part === sItem.content || a.code === sItem.content);
+                if (match) {
+                    code = match.code || '';
+                    fullContent = match.part || sItem.content;
+                    period = match.cycle || null;
                 }
+
+                let existingItem = data.maint.find(m => (m.content === fullContent || (code && m.code === code) || m.content === sItem.content) && mergedRegItemIds.has(m.id));
+                if (!existingItem) existingItem = data.maint.find(m => m.content === fullContent || (code && m.code === code) || m.content === sItem.content);
+
+                if (existingItem) {
+                    const oldDate = existingItem.scheduledDate;
+                    existingItem.scheduledDate = newDate;
+                    existingItem.md = newMd;
+                    existingItem.worker = newWorker;
+                    existingItem.itemCost = sItem.cost;
+
+                    if (existingItem.type !== '정기') {
+                        existingItem.type = '정기';
+                        existingItem.detailType = 'PM 점검';
+                    }
+
+                    if (typeof currentNextScheduleTarget.onDateChange === 'function') {
+                        currentNextScheduleTarget.onDateChange(site, oldDate, newDate);
+                    }
+                } else {
+                    data.maint.push({
+                        id: Date.now() + idx,
+                        type: '정기',
+                        detailType: 'PM 점검',
+                        code: code,
+                        content: fullContent,
+                        date: '',
+                        period: period,
+                        scheduledDate: newDate,
+                        costType: '',
+                        worker: newWorker,
+                        md: newMd,
+                        itemCost: sItem.cost
+                    });
+                    if (typeof currentNextScheduleTarget.onDateChange === 'function') {
+                        currentNextScheduleTarget.onDateChange(site, null, newDate);
+                    }
+                }
+                isUpdated = true;
+
+                if (typeof addSystemLog === 'function') {
+                    addSystemLog('ADD_SCHEDULE', equip, `Date: ${newDate}, Content: ${fullContent}, Next Schedule`);
+                }
+            });
+
+            if (isUpdated) {
+                localStorage.setItem(key, JSON.stringify(data));
             }
 
             alert('작업 완료 및 다음 예정일 처리가 완료되었습니다.');
             closeModal();
         };
     }
-
-    const listContainer = document.getElementById('next-schedule-list-container');
-    if (!listContainer) {
-        modal.style.display = 'flex';
-        return;
-    }
-
-    listContainer.innerHTML = '';
-    items.forEach(item => {
-        let defaultNextDate = '';
-        const period = parseInt(item.period) || 0;
-        if (period > 0) {
-            const dateObj = new Date(completeDate);
-            dateObj.setDate(dateObj.getDate() + period);
-            defaultNextDate = dateObj.toISOString().split('T')[0];
-        }
-
-        const itemName = item.code ? item.code : item.content;
-        const originalItem = originalMaintMap.get(item.id);
-        const isExisting = mergedRegItemIds.has(item.id) || (originalItem && originalItem.date);
-
-        const tpl = getTemplateContent('next-schedule-item-template');
-        if (tpl) {
-            const div = tpl.querySelector('div');
-            if (!div) return;
-            
-            div.classList.add('next-schedule-item-row');
-            div.dataset.content = item.content; // isNew일 때 백업용
-
-            const nameEl = div.querySelector('.item-name');
-            if (item.isNew && item.content === '장비 점검') {
-                nameEl.textContent = '기본 점검 (물품 항목 없음)';
-                nameEl.style.color = '#8b949e';
-            } else {
-                nameEl.textContent = itemName;
-                nameEl.title = itemName;
-            }
-
-            const typeSelect = div.querySelector('.next-type-select');
-            typeSelect.dataset.id = item.id;
-            typeSelect.value = item.type;
-            if (isExisting) typeSelect.disabled = true;
-
-            const dateInput = div.querySelector('.next-date-input');
-            dateInput.dataset.id = item.id;
-            dateInput.value = defaultNextDate;
-            dateInput.min = completeDate;
-            if (item.isNew) dateInput.dataset.isNew = 'true';
-
-            const mdInput = div.querySelector('.next-md-input');
-            mdInput.dataset.id = item.id;
-            mdInput.value = item.md || md;
-            
-            const workerInput = div.querySelector('.next-worker-input');
-            if (workerInput) {
-                workerInput.value = item.worker || '';
-            }
-
-            listContainer.appendChild(div);
-        }
-    });
 
     modal.style.display = 'flex';
 }
@@ -2902,8 +2965,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         if (isParent) tr.style.backgroundColor = 'rgba(35, 134, 54, 0.1)';
 
         tr.innerHTML = `
-            <td><span class="badge" style="background:${badgeColor}; padding: 4px 12px; border-radius: 4px; color: #fff; font-weight: bold;">${badgeText}</span></td>
-            <td>${log.date || '-'}</td>
+<td><span class="badge" style="background:${badgeColor}; display: inline-block; width: 45px; text-align: center; padding: 3px 0; font-size: 11px; border-radius: 4px; color: #fff; font-weight: bold;">${badgeText}</span></td>            <td>${log.date || '-'}</td>
             <td style="text-align: left; padding-left: 10px;">${escapeHtml(log.content || '-')}</td>
         `;
 
