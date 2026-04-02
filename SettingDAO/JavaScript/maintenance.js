@@ -359,155 +359,6 @@ function setupLogEvents() {
         }
     }
 
-    // 글로벌 파트 렌더 함수 (PM/BM 로직 응용)
-    window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, presetValuesStr = '') {
-        const list = document.getElementById(listId);
-        const trigger = document.getElementById(triggerId);
-        const searchInput = document.getElementById(searchId);
-        if (!list || !trigger) return;
-
-        const currentValues = presetValuesStr ? presetValuesStr.split(',').map(s => s.trim()).filter(s => s) : [];
-        const selectedMap = {};
-        currentValues.forEach(val => {
-            const match = val.match(/^\[(.*?)\] (.*)$/);
-            if (match) {
-                selectedMap[match[2]] = match[1];
-            } else {
-                selectedMap[val] = '유상';
-            }
-        });
-
-        const equipName = currentPath.equip ? currentPath.equip.split('::')[0] : '';
-        const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-        
-        let matchedItems = adminItems.filter(item => {
-            if (!item.equip) return false;
-            return item.equip.split(',').map(e => e.trim()).includes(equipName);
-        });
-
-        Object.keys(selectedMap).forEach(key => {
-            if (!matchedItems.some(i => i.part === key || i.code === key)) {
-                const globalMatch = adminItems.find(i => i.part === key || i.code === key);
-                if (globalMatch) matchedItems.unshift(globalMatch);
-                else matchedItems.unshift({ part: key, code: '' });
-            }
-        });
-
-        let otherItems = adminItems.filter(item => !matchedItems.some(mi => mi.part === item.part));
-        let showAll = matchedItems.length === 0;
-
-        const render = (searchTerm = '') => {
-            const currentSelections = { ...selectedMap };
-            list.querySelectorAll('.log-select-item.selected').forEach(el => {
-                const cSel = el.querySelector('.item-cost-select');
-                currentSelections[el.dataset.value] = cSel ? cSel.value : '유상';
-            });
-
-            let displayItems = showAll ? [...matchedItems, ...otherItems] : matchedItems;
-
-            if (searchTerm) {
-                const kws = searchTerm.toLowerCase().split(/\s+/);
-                displayItems = [...matchedItems, ...otherItems].filter(item => {
-                    const txt = `${item.part || ''} ${item.code || ''}`.toLowerCase();
-                    return kws.every(kw => txt.includes(kw));
-                });
-            }
-
-            // [요청] 검색 시에도 기존 선택 항목이 사라지지 않도록 보정
-            const displayItemValues = new Set(displayItems.map(i => i.code ? i.code : i.part));
-            Object.keys(currentSelections).forEach(selectedValue => {
-                if (!displayItemValues.has(selectedValue)) {
-                    const originalItem = [...matchedItems, ...otherItems].find(i => (i.code ? i.code : i.part) === selectedValue);
-                    if (originalItem) {
-                        displayItems.unshift(originalItem); // 검색 결과에 없으면 맨 위에 추가
-                    } else {
-                        displayItems.unshift({ part: selectedValue, code: '' }); // 원본 데이터를 못찾으면 플레이스홀더 추가
-                    }
-                }
-            });
-
-            const uniqueItems = [];
-            const seen = new Set();
-            displayItems.forEach(item => {
-                const val = item.code ? item.code : item.part;
-                if (!seen.has(val)) {
-                    seen.add(val);
-                    uniqueItems.push(item);
-                }
-            });
-
-            list.innerHTML = '';
-            uniqueItems.forEach(item => {
-                const displayValue = item.code ? item.code : item.part;
-                const isSelected = currentSelections.hasOwnProperty(displayValue) || currentSelections.hasOwnProperty(item.part);
-                const itemCost = isSelected ? (currentSelections[displayValue] || currentSelections[item.part] || '유상') : '유상';
-
-                const template = getTemplateContent('log-part-item-template');
-                if (!template) return;
-                const div = template.querySelector('.log-select-item');
-
-                if (isSelected) div.classList.add('selected');
-                div.dataset.value = escapeHtml(displayValue);
-                div.querySelector('.item-name').textContent = escapeHtml(displayValue);
-                div.querySelector('.item-cost-select').value = itemCost;
-
-                list.appendChild(div);
-            });
-
-            if (!showAll && !searchTerm && otherItems.length > 0) {
-                const moreBtn = document.createElement('button');
-                moreBtn.className = 'show-all-btn';
-                moreBtn.innerHTML = '⬇️ 더보기 (전체 물품)';
-                moreBtn.type = 'button';
-                moreBtn.onclick = (e) => {
-                    e.preventDefault(); e.stopPropagation();
-                    showAll = true;
-                    render(searchInput ? searchInput.value : '');
-                };
-                list.appendChild(moreBtn);
-            }
-
-            const updateTriggerText = () => {
-                const sels = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => {
-                    const cSel = el.querySelector('.item-cost-select');
-                    return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
-                });
-                if (sels.length > 1) {
-                    trigger.textContent = `${sels[0]} 외 ${sels.length - 1}개`;
-                } else if (sels.length === 1) {
-                    trigger.textContent = sels[0];
-                } else {
-                    trigger.textContent = '물품 선택';
-                }
-                trigger.title = sels.join('\n');
-                trigger.classList.remove('error-border');
-            };
-
-            list.querySelectorAll('.item-cost-select').forEach(cSel => {
-                cSel.addEventListener('change', (e) => {
-                    e.stopPropagation();
-                    const parentDiv = cSel.closest('.log-select-item');
-                    if (parentDiv && parentDiv.classList.contains('selected')) updateTriggerText();
-                });
-            });
-
-            list.querySelectorAll('.log-select-item').forEach(div => {
-                div.onclick = (e) => {
-                    e.stopPropagation();
-                    div.classList.toggle('selected');
-                    updateTriggerText();
-                };
-            });
-            
-            updateTriggerText();
-        };
-
-        if (searchInput) {
-            searchInput.oninput = (e) => render(e.target.value.trim());
-        }
-        render();
-    };
-
     // [추가] 커스텀 드롭다운 이벤트 핸들링
     const trigger = document.getElementById('log-content-trigger');
     const dropdown = document.getElementById('log-content-dropdown');
@@ -666,8 +517,18 @@ function setupLogEvents() {
         issueShareWrapper.style.display = 'flex';
         issueShareWrapper.style.alignItems = 'center';
         issueShareWrapper.style.marginRight = '15px';
+        
         const templateContent = getTemplateContent('memo-issue-share-wrapper-template');
-        if (templateContent) issueShareWrapper.appendChild(templateContent);
+        if (templateContent) {
+            issueShareWrapper.appendChild(templateContent);
+        } else {
+            issueShareWrapper.innerHTML = `
+                <label class="modal-checkbox-label" style="font-size: 13px; font-weight: bold; color: #f0883e; display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" id="memo-issue-share" class="modal-checkbox-input" style="margin-right: 5px; transform: scale(1.2);">
+                    이슈 공유
+                </label>
+            `;
+        }
         
         memoBtn.parentNode.insertBefore(rightContainer, memoBtn);
         rightContainer.appendChild(issueShareWrapper);
@@ -2127,6 +1988,7 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
     const currentValues = baseContent ? baseContent.split(',').map(s => s.trim()).filter(s => s) : [];
     const selectedMap = {}; // 비용 처리를 파싱하여 분리된 키 맵 생성
     currentValues.forEach(val => {
+        if (val === '내용 없음') return; // [추가] '내용 없음'은 리스트에 추가하지 않음
         const match = val.match(/^\[(.*?)\] (.*)$/);
         const actualVal = match ? match[2] : val;
         const costVal = match ? match[1] : '유상';
@@ -2777,7 +2639,9 @@ window.updateLogContentOptions = function () {
                 });
 
                 contentList.querySelectorAll('.log-select-item').forEach(div => {
-                    div.onclick = (e) => {
+                    div.addEventListener('mousedown', (e) => {
+                        if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
+                        e.preventDefault();
                         e.stopPropagation();
                         if (contentTrigger) contentTrigger.classList.remove('error-border');
 
@@ -2804,7 +2668,7 @@ window.updateLogContentOptions = function () {
                             const dropdownObj = document.getElementById('log-content-dropdown');
                             if (dropdownObj) dropdownObj.classList.remove('show');
                         }
-                    };
+                    });
                 });
             };
 

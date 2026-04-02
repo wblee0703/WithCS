@@ -11,200 +11,6 @@ let currentDetailTarget = null;
 let expandedViewId = null;
 let cameFromTaskSearch = false; // [추가] 작업 검색에서 상세 정보로 이동했는지 여부
 
-// [추가] 공통 함수 폴백 (common.js 누락 대비)
-if (typeof window.getHolidayName !== 'function') {
-    window.getHolidayName = function (year, month, day) { return null; };
-}
-
-// [추가] 작업자(사용자) 목록 조회 함수 폴백
-if (typeof window.fetchWorkerNames !== 'function') {
-    window.workerNamesCache = [];
-    window.fetchWorkerNames = async function (site = null) {
-        // 사이트 지정 없이 캐시가 있으면 캐시 반환
-        if (!site && window.workerNamesCache.length > 0) {
-            return window.workerNamesCache;
-        }
-        try {
-            // 사이트가 지정된 경우 쿼리 파라미터로 추가
-            const url = site ? `/api/users/names?site=${encodeURIComponent(site)}` : '/api/users/names';
-            const res = await fetch(url);
-            if (res.ok) {
-                const data = await res.json();
-                if (data.status === 'success') {
-                    const workers = data.workers || data.names || [];
-                    // 사이트 지정이 없을 때만 전역 캐시 업데이트
-                    if (!site) {
-                        window.workerNamesCache = workers;
-                    }
-                    return workers;
-                }
-            }
-        } catch (e) { console.error("fetchWorkerNames Error:", e); }
-        return [];
-    };
-}
-
-// [추가] 작업자 리스트 렌더링을 템플릿 기반으로 처리하는 공통 헬퍼 함수
-function renderWorkerListItems(listContainer, displayWorkers, currentSelected, onClickCallback) {
-    listContainer.innerHTML = '';
-    if (displayWorkers.length === 0) {
-        listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
-        return;
-    }
-    displayWorkers.forEach(w => {
-        const isSelected = currentSelected.includes(w.name);
-        const tpl = getTemplateContent('worker-list-item-template');
-        if (tpl) {
-            const div = tpl.querySelector('.log-select-item');
-            if (isSelected) div.classList.add('selected');
-            div.dataset.value = w.name;
-            div.querySelector('.worker-name').textContent = w.name;
-
-            if (w.site) div.querySelector('.worker-site').textContent = `[${w.site}]`;
-            if (w.department || w.position) div.querySelector('.worker-dept-pos').textContent = `(${w.department || ''} ${w.position || ''})`;
-
-            div.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const trigger = div.closest('.log-select-wrapper')?.querySelector('.log-select-trigger');
-                if (trigger && trigger.classList.contains('disabled')) return;
-                div.classList.toggle('selected');
-                if (onClickCallback) onClickCallback();
-            });
-            listContainer.appendChild(div);
-        }
-    });
-}
-
-// [추가] 물품 선택 드롭다운 생성 및 렌더링 폴백 (maintenance.js 외부 동작 시 대비)
-if (typeof window.renderLogPartOptions !== 'function') {
-    window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, presetValuesStr = '') {
-        const list = document.getElementById(listId);
-        const trigger = document.getElementById(triggerId);
-        const searchInput = document.getElementById(searchId);
-        if (!list || !trigger) return;
-
-        const currentValues = presetValuesStr ? presetValuesStr.split(',').map(s => s.trim()).filter(s => s) : [];
-        const selectedMap = {};
-        currentValues.forEach(val => {
-            const match = val.match(/^\[(.*?)\] (.*)$/);
-            if (match) {
-                selectedMap[match[2]] = match[1];
-            } else {
-                selectedMap[val] = '유상';
-            }
-        });
-
-        let equipName = '';
-        if (window.currentDetailTarget && window.currentDetailTarget.equip) {
-            equipName = window.currentDetailTarget.equip.split('::')[0];
-        } else if (document.getElementById('register-equip-select')) {
-            const equipVal = document.getElementById('register-equip-select').value;
-            if (equipVal) equipName = equipVal.split('::')[0];
-        }
-
-        const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-
-        let matchedItems = adminItems.filter(item => {
-            if (!item.equip) return false;
-            return item.equip.split(',').map(e => e.trim()).includes(equipName);
-        });
-
-        Object.keys(selectedMap).forEach(key => {
-            if (!matchedItems.some(i => i.part === key || i.code === key)) {
-                const globalMatch = adminItems.find(i => i.part === key || i.code === key);
-                if (globalMatch) matchedItems.unshift(globalMatch);
-                else matchedItems.unshift({ part: key, code: '' });
-            }
-        });
-
-        let otherItems = adminItems.filter(item => !matchedItems.some(mi => mi.part === item.part));
-        let showAll = matchedItems.length === 0;
-
-        const render = (searchTerm = '') => {
-            const currentSelections = { ...selectedMap };
-            list.querySelectorAll('.log-select-item.selected').forEach(el => {
-                const cSel = el.querySelector('.item-cost-select');
-                currentSelections[el.dataset.value] = cSel ? cSel.value : '유상';
-            });
-
-            let displayItems = showAll ? [...matchedItems, ...otherItems] : matchedItems;
-
-            if (searchTerm) {
-                const kws = searchTerm.toLowerCase().split(/\s+/);
-                displayItems = [...matchedItems, ...otherItems].filter(item => {
-                    const txt = `${item.part || ''} ${item.code || ''}`.toLowerCase();
-                    return kws.every(kw => txt.includes(kw));
-                });
-            }
-
-            // [요청] 검색 시에도 기존 선택 항목이 사라지지 않도록 보정
-            const displayItemValues = new Set(displayItems.map(i => i.code ? i.code : i.part));
-            Object.keys(currentSelections).forEach(selectedValue => {
-                if (!displayItemValues.has(selectedValue)) {
-                    const originalItem = [...matchedItems, ...otherItems].find(i => (i.code ? i.code : i.part) === selectedValue);
-                    if (originalItem) {
-                        displayItems.unshift(originalItem); // 검색 결과에 없으면 맨 위에 추가
-                    } else {
-                        displayItems.unshift({ part: selectedValue, code: '' }); // 원본 데이터를 못찾으면 플레이스홀더 추가
-                    }
-                }
-            });
-            const uniqueItems = [];
-            const seen = new Set();
-            displayItems.forEach(item => {
-                const val = item.code ? item.code : item.part;
-                if (!seen.has(val)) {
-                    seen.add(val);
-                    uniqueItems.push(item);
-                }
-            });
-
-            list.innerHTML = '';
-            uniqueItems.forEach(item => {
-                const displayValue = item.code ? item.code : item.part;
-                const isSelected = currentSelections.hasOwnProperty(displayValue) || currentSelections.hasOwnProperty(item.part);
-                const itemCost = isSelected ? (currentSelections[displayValue] || currentSelections[item.part] || '유상') : '유상';
-
-                const tpl = getTemplateContent('log-part-item-template');
-                if (tpl) {
-                    const div = tpl.querySelector('.log-select-item');
-                    if (isSelected) div.classList.add('selected');
-                    div.dataset.value = displayValue;
-                    div.querySelector('.item-name').textContent = displayValue;
-                    const costSelect = div.querySelector('.item-cost-select');
-                    if (costSelect) costSelect.value = itemCost;
-
-                    costSelect.addEventListener('change', (e) => { e.stopPropagation(); updateTriggerText(); });
-                    div.addEventListener('click', (e) => { e.stopPropagation(); div.classList.toggle('selected'); updateTriggerText(); });
-                    list.appendChild(div);
-                }
-            });
-
-            const updateTriggerText = () => {
-                const sels = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => {
-                    const cSel = el.querySelector('.item-cost-select');
-                    return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
-                });
-                if (sels.length > 1) {
-                    trigger.textContent = `${sels[0].split('] ')[1] || sels[0]} 외 ${sels.length - 1}개`;
-                } else if (sels.length === 1) {
-                    trigger.textContent = sels[0].split('] ')[1] || sels[0];
-                } else {
-                    trigger.textContent = '물품 선택';
-                }
-                trigger.title = sels.join('\\n');
-            };
-
-            list.querySelectorAll('.item-cost-select').forEach(cSel => cSel.addEventListener('change', (e) => { e.stopPropagation(); updateTriggerText(); }));
-            list.querySelectorAll('.log-select-item').forEach(div => div.onclick = (e) => { e.stopPropagation(); div.classList.toggle('selected'); updateTriggerText(); });
-            updateTriggerText();
-        };
-
-        if (searchInput) searchInput.oninput = (e) => render(e.target.value.trim());
-        render();
-    };
-}
-
 // [2] 초기화 (Initialization)
 document.addEventListener('DOMContentLoaded', () => {
     setupCalendar();
@@ -994,8 +800,8 @@ function openScheduleModal(site, equip, id) {
 
         const wrapper = document.createElement('div');
         wrapper.id = 'schedule-worker-wrapper';
-        wrapper.className = 'log-select-wrapper';
         wrapper.style.marginBottom = '15px';
+        wrapper.style.width = '100%';
 
         const templateContent = getTemplateContent('schedule-worker-template');
         if (templateContent) {
@@ -1484,6 +1290,7 @@ function toggleDetailContentEdit() {
         const currentValues = baseContent ? baseContent.split(',').map(s => s.trim()).filter(s => s) : [];
         const selectedMap = {};
         currentValues.forEach(val => {
+            if (val === '내용 없음') return; // [추가] '내용 없음'은 리스트에 추가하지 않음
             const match = val.match(/^\[(.*?)\] (.*)$/);
             if (match) {
                 selectedMap[match[2]] = match[1];
@@ -1687,7 +1494,9 @@ function toggleDetailContentEdit() {
                             });
                         }
 
-                        div.addEventListener('click', (e) => {
+                        div.addEventListener('mousedown', (e) => {
+                            if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
+                            e.preventDefault();
                             e.stopPropagation();
                             if (type === '비정기' && detailType !== 'BM 점검') {
                                 list.querySelectorAll('.log-select-item.selected').forEach(el => {
@@ -2136,6 +1945,26 @@ function completeScheduleWork() {
     // [수정] 다음 예정일 등록 대상 항목을 data.maint 수정 전에 미리 결정
     const remainingIds = data.maint.filter(i => sameDayItems.some(s => s.id === i.id) || mergedRegItemIds.has(i.id)).map(i => i.id);
     const remainingItems = data.maint.filter(i => remainingIds.includes(i.id));
+    
+    // [추가] Admin에 등록된 물품만 다음 예정일 등록 팝업에 표시하도록 필터링
+    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+    let nextScheduleItems = remainingItems.filter(item => {
+        return adminItems.some(a => a.part === item.content || a.code === item.content);
+    });
+
+    // 항목이 아예 없는 점검(내용 없음) 완료 시, 예정일 팝업에서 단일 폼(작업자/공수/예정일)만 표시되도록 생성
+    if (nextScheduleItems.length === 0) {
+        nextScheduleItems = [{
+            id: Date.now() + 9999, // 임시 고유 ID 부여
+            type: maintItem.type || '정기',
+            detailType: maintItem.detailType || 'PM 점검',
+            content: '장비 점검',
+            period: 0,
+            md: md,
+            worker: worker,
+            isNew: true // 새 항목 마커
+        }];
+    }
 
     // [수정] 일회성 작업 및 PM/BM 점검이 아닌 항목(Alarm, 고객대응 등)은 완료 후 maint 배열에서 완전히 제거하여 유지관리 목록 누적 방지
     data.maint = data.maint.filter(i => {
@@ -2159,12 +1988,12 @@ function completeScheduleWork() {
 
     // [추가] 완료 후 다음 예정일 등록 모달 띄우기
     // 비정기 물품 교체건과 병합된 정기 항목 포함
-    if (remainingItems.length > 0) {
+    if (nextScheduleItems.length > 0) {
         // [수정] 공통 함수 호출로 변경
         openNextScheduleModal({
             site,
             equip,
-            items: remainingItems,
+            items: nextScheduleItems,
             completeDate: completeDate,
             md: md,
             originalMaintMap: originalMaintMap,
@@ -2686,6 +2515,16 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
     const typeSelect = document.getElementById('register-type-select');
 
     if (!modal) return;
+
+    // [추가] 팝업 진입 경로에 따라 모달 타이틀 동적 변경
+    const modalTitle = modal.querySelector('.modal-header h3');
+    if (modalTitle) {
+        if (window.currentAddWorkLogId) {
+            modalTitle.textContent = '추가 작업 등록';
+        } else {
+            modalTitle.textContent = '작업 등록';
+        }
+    }
 
     if (dateDisplay) dateDisplay.value = dateStr;
 
