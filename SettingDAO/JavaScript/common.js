@@ -37,6 +37,51 @@ function escapeHtml(text) {
         .replace(/'/g, "&#039;");
 }
 
+/* ==========================================================================
+   2. DB 동기화 API 통신 (DB Sync APIs)
+   ========================================================================== */
+
+// [추가] 100% DB 전환을 위한 유지관리/이력 전용 트랜잭션 동기화 함수
+window.syncHistoryTransaction = async function (site, equip, payload) {
+    const equip_id = `${site}::${equip}`;
+    try {
+        const res = await fetch('/api/history/transaction', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+            body: JSON.stringify({ equip_id, ...payload })
+        });
+        const data = await res.json();
+        if (data.status !== 'success') console.error('DB Sync Error:', data.message);
+        return data.status === 'success';
+    } catch (e) {
+        console.error('DB Sync Failed:', e);
+        return false;
+    }
+};
+
+// [추가] 100% DB 전환을 위한 SETUP(셋업 상세내역/일지) 전용 동기화 함수
+window.syncSetupDataDB = async function (site, equip, details = null, logs = null) {
+    const equip_id = `${site}::${equip}`;
+    try {
+        const res = await fetch('/api/setup/sync_equip', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+            body: JSON.stringify({ equip_id, details, logs })
+        });
+        const data = await res.json();
+        return data.status === 'success';
+    } catch (e) {
+        console.error('Setup DB Sync Failed:', e);
+        return false;
+    }
+};
+
+// [보안] 비밀번호 복잡도 검증 함수 (영문, 숫자, 특수문자 포함 8자 이상)
+function isValidPassword(pw) {
+    const regex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+~\-={}\[\]:;"'<>,.?/|\\]).{8,}$/;
+    return regex.test(pw);
+}
+
 // [보안] 쿠키에서 CSRF 토큰 가져오기
 function getCookie(name) {
     let value = "; " + document.cookie;
@@ -44,78 +89,13 @@ function getCookie(name) {
     if (parts.length === 2) return parts.pop().split(";").shift();
 }
 
-// [서버 동기화 로직] localStorage 변경 시 서버로 자동 전송
-const originalSetItem = localStorage.setItem;
-const originalRemoveItem = localStorage.removeItem;
-let syncDebounceTimer = null;
-
-// [추가] 동기화 대상 키 목록 정의 (데이터 분리 구조 완벽 대응)
-const SYNC_KEYS = ['device_data', 'setup_data', 'equipment_models', 'admin_items', 'check_type_categories', 'check_type_items', 'calendar_confirmations'];
-
-function shouldSyncKey(key) {
-    return SYNC_KEYS.includes(key) || key.startsWith('details_') || key.startsWith('site_meta_');
-}
-
-function saveAllToServer() {
-    if (!window.isDataLoaded) return; // [핵심 방어] 서버 데이터 로드 전에는 기존 로컬 데이터가 서버를 덮어쓰는 것을 원천 차단!
-
-    // 연속된 호출 시 이전 타이머 취소 (과도한 요청 방지)
-    if (syncDebounceTimer) clearTimeout(syncDebounceTimer);
-
-    syncDebounceTimer = setTimeout(() => {
-        const allData = {};
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            // 동기화할 키 필터링
-            if (shouldSyncKey(key)) {
-                try {
-                    allData[key] = JSON.parse(localStorage.getItem(key));
-                } catch (e) {
-                    allData[key] = localStorage.getItem(key);
-                }
-            }
-        }
-
-        fetch('/api/data', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrf_token') // [보안] CSRF 토큰 추가
-            },
-            body: JSON.stringify(allData)
-        })
-            .then(res => {
-                if (res.status === 401) {
-                    alert('보안 세션이 만료되어 데이터 저장에 실패했습니다.\n다시 로그인해주세요.');
-                    sessionStorage.clear();
-                    window.location.href = '/';
-                }
-                return res;
-            })
-            .catch(err => console.error('Server sync failed:', err));
-    }, 2000); // 2초 지연 후 전송
-}
-
-localStorage.setItem = function (key, value) {
-    originalSetItem.call(this, key, value);
-    if (shouldSyncKey(key)) {
-        saveAllToServer();
-    }
-};
-
-localStorage.removeItem = function (key) {
-    originalRemoveItem.call(this, key);
-    if (shouldSyncKey(key)) {
-        saveAllToServer();
-    }
-};
-
 function saveData() {
+    // [Phase 3] 이제 서버 동기화는 각 기능별 전용 API가 수행하므로, 화면 빠른 전환을 위한 로컬 캐시 저장 용도로만 사용됩니다.
     localStorage.setItem('device_data', JSON.stringify(storageData));
 }
 
 /* ==========================================================================
-   2. 초기화 및 이벤트 리스너 (Initialization)
+   3. 초기화 및 네비게이션 (Initialization & Navigation)
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
     window.isDataLoaded = false; // 명시적 초기화
@@ -146,18 +126,11 @@ function fetchServerData(callback) {
         })
         .then(data => {
             // 기존 데이터 정리
-            const keysToRemove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (shouldSyncKey(key)) {
-                    keysToRemove.push(key);
-                }
-            }
-            keysToRemove.forEach(key => originalRemoveItem.call(localStorage, key));
+            localStorage.clear();
 
             // 서버 데이터를 localStorage에 반영
             Object.keys(data).forEach(key => {
-                originalSetItem.call(localStorage, key, JSON.stringify(data[key]));
+                localStorage.setItem(key, JSON.stringify(data[key]));
             });
             // [수정] 전역 변수 갱신 (초기 로드 시 데이터 누락 방지)
             storageData = JSON.parse(localStorage.getItem('device_data')) || {};
@@ -346,7 +319,7 @@ function updateWarrantyStatusAutomatically() {
 
         if (!catData2) catData2 = {};
         const deviceDataObj = JSON.parse(localStorage.getItem('device_data')) || {};
-        
+
         Object.keys(deviceDataObj).forEach(site => {
             if (Array.isArray(deviceDataObj[site])) {
                 deviceDataObj[site].forEach(equip => {
@@ -363,7 +336,7 @@ function updateWarrantyStatusAutomatically() {
             localStorage.setItem('check_type_categories2', JSON.stringify(catData2));
             isModified = true;
         }
-    } catch(e) { console.error('Category migration error', e); }
+    } catch (e) { console.error('Category migration error', e); }
 }
 
 function initializeApp() {
@@ -416,6 +389,7 @@ function initializeApp() {
     setupDataManagementEvents();
     setupResizers();
     setupCollapsibleCards(); // [추가] 소분류 카드 접기 기능 초기화
+    setupGlobalModalScrollLock(); // [추가] 모든 모달창 배경 스크롤 자동 제어 기능
     // 2-5. URL 파라미터 처리
     restoreLastState();
     // window.isDataLoaded 설정 및 이벤트 발생은 서버 동기화 완료 후로 이동됨
@@ -445,6 +419,29 @@ function refreshAppViews() {
             restoreLastState();
         }
     }
+}
+
+// [추가] 전역 모달 오버레이 스크롤 락 (MutationObserver를 활용하여 모든 js 파일의 모달에 100% 자동 적용됨)
+function setupGlobalModalScrollLock() {
+    const observer = new MutationObserver(() => {
+        let isAnyModalOpen = false;
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            if (window.getComputedStyle(modal).display !== 'none') {
+                isAnyModalOpen = true;
+            }
+        });
+
+        // 화면상에 떠있는 모달이 단 하나라도 있다면 뒷 배경 스크롤을 막고, 모두 닫히면 풀어줍니다.
+        if (isAnyModalOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+    });
+
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+        observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
+    });
 }
 
 function setupAuthEvents() {
@@ -837,33 +834,15 @@ function setupDataManagementEvents() {
     const btnExport = document.getElementById('btn-export');
     const btnImport = document.getElementById('btn-import');
     const fileImport = document.getElementById('file-import');
-    if (btnExport) btnExport.addEventListener('click', exportData);
-    
-    // [추가] 100% DB 전환을 위한 마이그레이션 테스트 버튼 동적 추가
-    if (btnExport && sessionStorage.getItem('userRole') === 'superadmin') {
-        const btnMigrate = document.createElement('button');
-        btnMigrate.className = 'btn-orange';
-        btnMigrate.textContent = 'DB로 데이터 안전 복사 (마이그레이션)';
-        btnMigrate.title = '기존 JSON 데이터를 읽어 DB 테이블에 채워넣습니다. 기존 파일은 절대 지워지지 않습니다.';
-        btnMigrate.onclick = () => {
-            if (!confirm("현재 구성된 모든 장비 및 점검 이력을 SQLite DB 테이블로 복사합니다.\n(기존 시스템에는 아무런 영향을 주지 않는 안전한 작업입니다)\n\n진행하시겠습니까?")) return;
-            fetch('/api/admin/migrate_json_to_db', {
-                method: 'POST',
-                headers: { 'X-CSRFToken': getCookie('csrf_token') }
-            }).then(res => res.json()).then(data => alert(data.message));
-        };
-        btnExport.parentNode.appendChild(btnMigrate);
-    }
-    
+    // [Phase 3] 100% DB 전환으로 인해 JSON 파일 기반의 내보내기/불러오기 기능은 완전히 제거되었습니다.
+
     // [추가] 모바일에서 데이터 관리 숨기기 식별을 위한 클래스 추가
     if (btnExport && btnExport.parentElement) {
         btnExport.parentElement.classList.add('data-management-section');
     }
 
-    if (btnImport) btnImport.addEventListener('click', () => fileImport.click());
-    if (fileImport) fileImport.addEventListener('change', importData);
-
     const btnViewLogs = document.getElementById('btn-view-logs');
+
     const btnCloseModal = document.getElementById('btn-close-modal');
     const btnClearLogs = document.getElementById('btn-clear-logs');
     const logModal = document.getElementById('log-modal');
@@ -1079,7 +1058,7 @@ window.extendSession = function () {
 }
 
 /* ==========================================================================
-   3. 인증 및 사용자 관리 (Authentication)
+   4. 인증 및 사용자 관리 (Authentication & Session)
    ========================================================================== */
 function checkLoginStatus() {
     const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
@@ -1224,6 +1203,45 @@ function handleLoginLogoutClick() {
     }
 }
 
+// [추가] 1개월 만료 시 강제 변경 모달 출력 함수
+function showForcePwChangeModal() {
+    const modal = document.getElementById('force-pw-change-modal');
+    if (!modal) return;
+    modal.style.display = 'flex';
+
+    const btnChange = document.getElementById('btn-force-pw-change');
+    const btnCancel = document.getElementById('btn-force-pw-cancel');
+
+    btnChange.onclick = () => {
+        const currentPw = document.getElementById('force-pw-current').value;
+        const newPw = document.getElementById('force-pw-new').value;
+        const confirmPw = document.getElementById('force-pw-confirm').value;
+
+        if (!currentPw || !newPw) return alert('현재 비밀번호와 새 비밀번호를 입력해주세요.');
+        if (newPw !== confirmPw) return alert('새 비밀번호가 일치하지 않습니다.');
+        if (!isValidPassword(newPw)) return alert('비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다.');
+
+        fetch('/api/user/password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+            body: JSON.stringify({ id: sessionStorage.getItem('userId'), current_pw: currentPw, new_pw: newPw })
+        }).then(res => res.json()).then(resData => {
+            if (resData.status === 'success') {
+                alert('비밀번호가 성공적으로 변경되었습니다.\n새로운 비밀번호로 다시 로그인해주세요.');
+                modal.style.display = 'none';
+                fetch('/api/logout', { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrf_token') } }).then(() => { sessionStorage.clear(); location.reload(); });
+            } else {
+                alert(resData.message || '비밀번호 변경 실패');
+            }
+        });
+    };
+
+    btnCancel.onclick = () => {
+        modal.style.display = 'none';
+        fetch('/api/logout', { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrf_token') } }).then(() => { sessionStorage.clear(); location.reload(); });
+    };
+}
+
 function attemptLogin(id, pw, context) {
     // [수정] 서버 API를 통한 로그인 검증
     fetch('/api/login', {
@@ -1246,16 +1264,19 @@ function attemptLogin(id, pw, context) {
                 sessionStorage.setItem('userName', data.name || '');
                 addSystemLog('LOGIN', id, `로그인 성공 (${context})`);
 
-                const homeLoginContainer = document.getElementById('home-login-container');
-                if (homeLoginContainer) {
-                    document.getElementById('home-login-container').style.display = 'none';
-                    document.getElementById('home-welcome-container').style.display = 'flex';
-                    // [수정] 로그인 완료 후 서버에서 최신 데이터를 가져온 뒤 대시보드를 렌더링
-                    fetchServerData(() => {
-                        checkLoginStatus();
-                    });
+                if (data.require_pw_change) {
+                    showForcePwChangeModal();
                 } else {
-                    location.reload();
+                    const homeLoginContainer = document.getElementById('home-login-container');
+                    if (homeLoginContainer) {
+                        document.getElementById('home-login-container').style.display = 'none';
+                        document.getElementById('home-welcome-container').style.display = 'flex';
+                        fetchServerData(() => {
+                            checkLoginStatus();
+                        });
+                    } else {
+                        location.reload();
+                    }
                 }
             } else {
                 alert(data.message || '로그인 실패');
@@ -1468,9 +1489,10 @@ function closeAddUserModal() {
             const el = m.querySelector('#' + id);
             if (el) el.value = '';
         });
+        // [추가] 계정 권한(Role) 선택값도 기본값으로 초기화
+        const roleEl = m.querySelector('#new-user-role');
+        if (roleEl) roleEl.value = 'user';
     });
-    document.body.style.overflow = '';
-
 }
 
 function openUserModal() {
@@ -1648,6 +1670,7 @@ function addNewUser() {
 
     if (!id || !pw) return alert('아이디와 비밀번호를 입력해주세요.');
     if (pw !== pwConfirm) return alert('비밀번호가 일치하지 않습니다.');
+    if (!isValidPassword(pw)) return alert('비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다.');
     if (!department) return alert('소속을 입력해주세요.');
     if (!position) return alert('직급을 입력해주세요.');
     if (!name) return alert('이름을 입력해주세요.');
@@ -1690,6 +1713,7 @@ function changePassword() {
 
     if (!currentPw || !newPw) return alert('현재 비밀번호와 새 비밀번호를 입력해주세요.');
     if (newPw !== confirmPw) return alert('새 비밀번호가 일치하지 않습니다.');
+    if (!isValidPassword(newPw)) return alert('비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다.');
 
     // [수정] 서버 API 호출
     fetch('/api/user/password', {
@@ -1771,22 +1795,36 @@ window.renderMyInfo = function () {
                 const btnEdit = clone.getElementById('btn-edit-my-info');
                 if (btnEdit) {
                     btnEdit.onclick = () => {
-                        const pw = prompt('정보를 수정하려면 현재 비밀번호를 입력하세요.');
-                        if (!pw) return;
+                        const verifyModal = document.getElementById('verify-pw-modal');
+                        const verifyInput = document.getElementById('verify-pw-input');
+                        const verifyBtn = document.getElementById('btn-verify-pw-confirm');
 
-                        fetch('/api/user/verify', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
-                            body: JSON.stringify({ pw: pw })
-                        })
-                            .then(res => res.json())
-                            .then(vData => {
-                                if (vData.status === 'success') {
-                                    window.renderMyInfoEdit(user);
-                                } else {
-                                    alert(vData.message || '비밀번호가 일치하지 않습니다.');
-                                }
-                            });
+                        if (verifyModal && verifyInput && verifyBtn) {
+                            verifyInput.value = '';
+                            verifyModal.style.display = 'flex';
+                            verifyInput.focus();
+
+                            verifyBtn.onclick = () => {
+                                const pw = verifyInput.value;
+                                if (!pw) return alert('현재 비밀번호를 입력해주세요.');
+
+                                fetch('/api/user/verify', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+                                    body: JSON.stringify({ pw: pw })
+                                }).then(res => res.json()).then(vData => {
+                                    if (vData.status === 'success') {
+                                        verifyModal.style.display = 'none';
+                                        window.renderMyInfoEdit(user);
+                                    } else {
+                                        alert(vData.message || '비밀번호가 일치하지 않습니다.');
+                                        verifyInput.value = '';
+                                        verifyInput.focus();
+                                    }
+                                });
+                            };
+                            verifyInput.onkeypress = (e) => { if (e.key === 'Enter') verifyBtn.click(); };
+                        }
                     };
                 }
                 content.appendChild(clone);
@@ -1882,7 +1920,7 @@ window.renderMyInfoEdit = function (user) {
 };
 
 /* ==========================================================================
-   4. 사이드바 및 리스트 관리 (Sidebar & List)
+   5. 사이드바 및 리스트 관리 (Sidebar & List Management)
    ========================================================================== */
 function renderSites() {
     const list = document.getElementById('site-list');
@@ -2383,7 +2421,7 @@ function handleReorder(type) {
 }
 
 /* ==========================================================================
-   4. 상세 화면 오케스트레이션 (Detail View)
+   6. 상세 화면 오케스트레이션 (Detail View Orchestration)
    ========================================================================== */
 function onEquipClick(site, equip) {
     currentPath = { site, equip };
@@ -2528,86 +2566,8 @@ function checkUnsavedChanges() {
 }
 
 /* ==========================================================================
-   7. 데이터 관리 및 시스템 로그 (Data & Logs)
+   7. 시스템 로그 관리 (System Logs)
    ========================================================================== */
-function exportData() {
-    const allData = {};
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (shouldSyncKey(key)) allData[key] = JSON.parse(localStorage.getItem(key));
-    }
-    const blob = new Blob([JSON.stringify(allData, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `withtech_backup_${new Date().toISOString().slice(0, 10).replace(/-/g, "")}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    addSystemLog('BACKUP_EXPORT', 'System', '데이터 백업 저장');
-}
-
-function importData(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function (e) {
-        try {
-            const importedData = JSON.parse(e.target.result);
-            if (!confirm('현재 데이터를 모두 덮어쓰고 백업 파일로 복원하시겠습니까?\n(주의: 복원 후 기존 데이터는 사라집니다.)')) {
-                event.target.value = ''; return;
-            }
-
-            // [추가] 0. 기존 데이터 삭제 (Clean Import: 기존 쿠키 데이터와 섞이지 않도록 초기화)
-            const keysToRemove = [];
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (shouldSyncKey(key)) {
-                    keysToRemove.push(key);
-                }
-            }
-            keysToRemove.forEach(key => originalRemoveItem.call(localStorage, key));
-
-            // 1. LocalStorage 업데이트 (불러온 데이터로 채움)
-            Object.keys(importedData).forEach(key => {
-                if (shouldSyncKey(key)) {
-                    originalSetItem.call(localStorage, key, JSON.stringify(importedData[key]));
-                }
-            });
-
-            // 2. 시스템 로그 추가
-            addSystemLog('BACKUP_IMPORT', 'System', '데이터 복원 완료');
-
-            // 3. 서버로 데이터 즉시 전송 (페이지 리로드 전 저장 보장)
-            const allData = {};
-            for (let i = 0; i < localStorage.length; i++) {
-                const key = localStorage.key(i);
-                if (shouldSyncKey(key)) {
-                    try { allData[key] = JSON.parse(localStorage.getItem(key)); }
-                    catch (e) { allData[key] = localStorage.getItem(key); }
-                }
-            }
-
-            fetch('/api/data', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
-                body: JSON.stringify(allData)
-            })
-                .then(() => {
-                    alert('데이터 복원 및 서버 저장이 완료되었습니다.');
-                    location.reload();
-                })
-                .catch(err => {
-                    console.error('Import sync failed:', err);
-                    alert('서버 저장에 실패했습니다. 로컬 데이터만 갱신됩니다.');
-                    location.reload();
-                });
-        } catch (err) { alert('올바르지 않은 백업 파일입니다.'); console.error(err); }
-    };
-    reader.readAsText(file);
-}
-
 function addSystemLog(action, target, details = "") {
     fetch('/api/log/add', {
         method: 'POST',
@@ -2752,7 +2712,7 @@ function openNextScheduleModal(options) {
         dateObj.setDate(dateObj.getDate() + period);
         defaultNextDate = dateObj.toISOString().split('T')[0];
     }
-    
+
     const dateInput = document.getElementById('next-schedule-date');
     if (dateInput) {
         dateInput.value = defaultNextDate;
@@ -2767,7 +2727,7 @@ function openNextScheduleModal(options) {
     const workerHidden = document.getElementById('next-schedule-worker-hidden');
     const workerTrigger = document.getElementById('next-schedule-worker-trigger');
     let initialWorker = items.find(i => i.worker)?.worker || sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '';
-    
+
     if (workerHidden) workerHidden.value = initialWorker;
     if (workerTrigger) {
         workerTrigger.textContent = initialWorker || '작업자 선택';
@@ -2794,34 +2754,34 @@ function openNextScheduleModal(options) {
         const renderNextWorkers = async (searchTerm = '') => {
             const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames(site) : [];
             const currentSelected = workerHidden.value ? workerHidden.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-            const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: '', site: ''} : w);
+            const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '', site: '' } : w);
             let displayWorkers = [...allWorkers];
-            
+
             if (searchTerm) {
                 const kw = searchTerm.toLowerCase();
-                displayWorkers = displayWorkers.filter(w => 
-                    w.name.toLowerCase().includes(kw) || 
-                    w.department.toLowerCase().includes(kw) || 
+                displayWorkers = displayWorkers.filter(w =>
+                    w.name.toLowerCase().includes(kw) ||
+                    w.department.toLowerCase().includes(kw) ||
                     w.position.toLowerCase().includes(kw)
                 );
             }
-            
+
             const displayedNames = new Set(displayWorkers.map(w => w.name));
             currentSelected.forEach(selectedName => {
                 if (!displayedNames.has(selectedName)) {
                     const workerToAdd = allWorkers.find(w => w.name === selectedName);
                     if (workerToAdd) displayWorkers.unshift(workerToAdd);
-                    else displayWorkers.unshift({name: selectedName, department: '', position: ''});
+                    else displayWorkers.unshift({ name: selectedName, department: '', position: '' });
                 }
             });
-            
+
             const userSite = sessionStorage.getItem('userSite') || '';
             displayWorkers.sort((a, b) => {
                 const aSelected = currentSelected.includes(a.name);
                 const bSelected = currentSelected.includes(b.name);
                 if (aSelected && !bSelected) return -1;
                 if (!aSelected && bSelected) return 1;
-                
+
                 const aSameSite = a.site === userSite;
                 const bSameSite = b.site === userSite;
                 if (aSameSite && !bSameSite) return -1;
@@ -2836,7 +2796,7 @@ function openNextScheduleModal(options) {
                     if (selected.length > 0) wTrigger.textContent = selected.join(' ');
                     else wTrigger.textContent = '작업자 선택';
                     wTrigger.title = selected.join(', ');
-                    if(mdInput) mdInput.value = selected.length.toString();
+                    if (mdInput) mdInput.value = selected.length.toString();
                 });
             }
         };
@@ -2852,7 +2812,7 @@ function openNextScheduleModal(options) {
     const itemTrigger = document.getElementById('next-schedule-item-trigger');
     const itemDropdown = document.getElementById('next-schedule-item-dropdown');
     const itemConfirm = document.getElementById('btn-next-schedule-item-confirm');
-    
+
     const presetItemsArr = items.filter(i => i.content !== '장비 점검').map(i => {
         let name = i.code ? i.code : i.content;
         return i.itemCost ? `[${i.itemCost}] ${name}` : name;
@@ -2905,6 +2865,8 @@ function openNextScheduleModal(options) {
             let data = JSON.parse(localStorage.getItem(key)) || {};
             let isUpdated = false;
 
+            let payload = { maint_upserts: [] };
+
             if (!data.maint) data.maint = [];
 
             const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
@@ -2939,8 +2901,9 @@ function openNextScheduleModal(options) {
                     if (typeof currentNextScheduleTarget.onDateChange === 'function') {
                         currentNextScheduleTarget.onDateChange(site, oldDate, newDate);
                     }
+                    payload.maint_upserts.push(existingItem);
                 } else {
-                    data.maint.push({
+                    const newItem = {
                         id: Date.now() + idx,
                         type: '정기',
                         detailType: 'PM 점검',
@@ -2953,7 +2916,10 @@ function openNextScheduleModal(options) {
                         worker: newWorker,
                         md: newMd,
                         itemCost: sItem.cost
-                    });
+                    };
+                    data.maint.push(newItem);
+                    payload.maint_upserts.push(newItem);
+
                     if (typeof currentNextScheduleTarget.onDateChange === 'function') {
                         currentNextScheduleTarget.onDateChange(site, null, newDate);
                     }
@@ -2967,6 +2933,7 @@ function openNextScheduleModal(options) {
 
             if (isUpdated) {
                 localStorage.setItem(key, JSON.stringify(data));
+                window.syncHistoryTransaction(site, equip, payload);
             }
 
             alert('작업 완료 및 다음 예정일 처리가 완료되었습니다.');
@@ -2978,7 +2945,7 @@ function openNextScheduleModal(options) {
 }
 
 /* ==========================================================================
-   9. 추가 작업 내역 확인 모달
+   9. 추가 작업 내역 확인 모달 (Extra Work History Modal)
    ========================================================================== */
 window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     const modal = document.getElementById('extra-work-history-modal');
@@ -3060,7 +3027,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
 };
 
 /* ==========================================================================
-   유틸리티: 영업일 계산 (Business Days Calculation)
+   10. 날짜/휴일 및 공통 헬퍼 (Date & Common Helpers)
    ========================================================================== */
 
 window.getHolidayName = function (year, month, day) {
@@ -3140,7 +3107,7 @@ window.isHoliday = isHoliday;
 window.addBusinessDays = addBusinessDays;
 
 /* ==========================================================================
-   [추가] 통합 공통 유틸리티 (calendar.js, maintenance.js 중복 폴백 통합)
+   10-1. 통합 공통 유틸리티 (Shared Components)
    ========================================================================== */
 window.workerNamesCache = [];
 window.fetchWorkerNames = async function (site = null) {

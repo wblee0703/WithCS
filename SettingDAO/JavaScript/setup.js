@@ -394,6 +394,7 @@ function renderSetupDetailList() {
         ];
         setupData[equipKey] = data;
         localStorage.setItem('setup_data', JSON.stringify(setupData));
+        window.syncSetupDataDB(currentPath.site, currentPath.equip, data.setupDetails, null); // [DB 동기화]
     }
 
     // [요청] '셋업 완료' 항목이 없는 경우, 강제로 추가하여 복구
@@ -408,6 +409,7 @@ function renderSetupDetailList() {
             });
             setupData[equipKey] = data;
             localStorage.setItem('setup_data', JSON.stringify(setupData));
+            window.syncSetupDataDB(currentPath.site, currentPath.equip, data.setupDetails, null); // [DB 동기화]
         }
     }
 
@@ -825,6 +827,7 @@ function saveSetupDetails(logAction = 'UPDATE_SETUP_DETAILS', logDetails = '셋�
     data.setupDetails = newDetails;
     setupData[equipKey] = data;
     localStorage.setItem('setup_data', JSON.stringify(setupData));
+    window.syncSetupDataDB(currentPath.site, currentPath.equip, newDetails, null); // [DB 동기화]
 
     // 세부사항이 변경되었으므로 일지 입력창의 옵션도 갱신
     updateSetupLogSelectOptions();
@@ -1221,6 +1224,7 @@ function addSetupLogItem() {
     data.setupLogs.push({ id: Date.now(), date: date, worker: worker, content: content, company: company, memo: "" });
     setupData[equipKey] = data;
     localStorage.setItem('setup_data', JSON.stringify(setupData));
+    window.syncSetupDataDB(currentPath.site, currentPath.equip, null, data.setupLogs); // [DB 동기화]
     
     workerInput.value = ''; // 작업자 입력창 초기화
     select.value = ''; // 선택창 초기화
@@ -1287,6 +1291,7 @@ function saveSetupLogMemo() {
         data.setupLogs[logIndex].memo = memoContent;
         setupData[equipKey] = data;
         localStorage.setItem('setup_data', JSON.stringify(setupData));
+        window.syncSetupDataDB(currentPath.site, currentPath.equip, null, data.setupLogs); // [DB 동기화]
         
         originalSetupLogMemo = memoContent; // 원본 상태 업데이트
         const saveBtn = document.getElementById('btn-save-setup-log-memo');
@@ -1309,6 +1314,7 @@ function deleteSetupLogItem(id) {
         data.setupLogs = data.setupLogs.filter(l => l.id !== id);
         setupData[equipKey] = data;
         localStorage.setItem('setup_data', JSON.stringify(setupData));
+        window.syncSetupDataDB(currentPath.site, currentPath.equip, null, data.setupLogs); // [DB 동기화]
         
         if (selectedSetupLogId === id) {
             selectedSetupLogId = null;
@@ -1408,6 +1414,7 @@ function updateSetupLogItem(id, newData) {
         data.setupLogs[logIndex] = { ...data.setupLogs[logIndex], ...newData };
         setupData[equipKey] = data;
         localStorage.setItem('setup_data', JSON.stringify(setupData));
+        window.syncSetupDataDB(currentPath.site, currentPath.equip, null, data.setupLogs); // [DB 동기화]
         if (typeof addSystemLog === 'function') {
             addSystemLog('UPDATE_SETUP_LOG', currentPath.equip, `LogID: ${id}`);
         }
@@ -1786,6 +1793,7 @@ function saveSetupCompletion() {
         
         setupData[equipKey] = data;
         localStorage.setItem('setup_data', JSON.stringify(setupData));
+        window.syncSetupDataDB(currentPath.site, currentPath.equip, null, data.setupLogs); // [DB 동기화]
         
         // 일지 리스트 갱신
         renderSetupLogList();
@@ -1876,6 +1884,7 @@ function saveSetupExecStart() {
             task.execStartDate = execDate;
             setupData[equipKey] = data;
             localStorage.setItem('setup_data', JSON.stringify(setupData));
+            window.syncSetupDataDB(currentPath.site, currentPath.equip, data.setupDetails, null); // [DB 동기화]
             
             if (typeof addSystemLog === 'function') {
                 addSystemLog('START_SETUP_EXEC', currentPath.equip, `실행 시작일 설정: ${execDate}`);
@@ -1986,6 +1995,7 @@ function loadSetupListFromTarget() {
     setupData[targetKey] = targetData;
     
     localStorage.setItem('setup_data', JSON.stringify(setupData));
+    window.syncSetupDataDB(currentPath.site, currentPath.equip, newDetails, null); // [DB 동기화]
     
     // UI 갱신
     renderSetupDetailList();
@@ -2131,6 +2141,7 @@ function resetSetupDates() {
         
         setupData[equipKey] = data;
         localStorage.setItem('setup_data', JSON.stringify(setupData));
+        window.syncSetupDataDB(currentPath.site, currentPath.equip, data.setupDetails, null); // [DB 동기화]
         
         // UI 갱신
         renderSetupDetailList();

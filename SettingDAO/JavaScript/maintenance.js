@@ -809,6 +809,8 @@ function addDetailItem() {
     localStorage.setItem(key, JSON.stringify(data));
     // [수정] 상세 로그 기록
     addSystemLog('ADD_MAINTENANCE', currentPath.equip, `[${maintType}] ${content} (주기: ${period || '-'}일, 시작일: ${date})`);
+    
+    window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_upserts: [newItem] });
 
     // 입력창 초기화
     document.getElementById('maint-content').value = '';
@@ -1104,6 +1106,8 @@ function deleteDetailItem(id) {
         // 4. 변경된 데이터 저장
         localStorage.setItem(key, JSON.stringify(data));
         addSystemLog('DELETE_MAINTENANCE', currentPath.equip, `삭제: ${deletedContent} (ID: ${id})`);
+        
+        window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_deletes: [id.toString()] });
 
         // 5. 화면 즉시 갱신
         renderDetails();
@@ -1176,6 +1180,8 @@ function updateRowData(id, code, content, date, period) {
         data.maint[idx].period = (data.maint[idx].type === '정기') ? (parseInt(period) || 0) : null;
         localStorage.setItem(key, JSON.stringify(data));
         addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `수정: [${code || '-'}] ${content} (날짜: ${date}, 주기: ${period || '-'})`);
+        
+        window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_upserts: [data.maint[idx]] });
     }
 }
 
@@ -1382,6 +1388,8 @@ function addLogItem(e) {
     };
 
     data.logs.push(newLog);
+    
+    let payload = { log_upserts: [newLog], maint_upserts: [] };
 
     // [추가] PM/BM 점검 등록 시 유지관리 물품에 자동 추가 및 갱신 로직
     let isMaintUpdated = false;
@@ -1428,6 +1436,7 @@ function addLogItem(e) {
                 existingItem.date = date;
                 if (itemCost) existingItem.itemCost = itemCost;
                 isMaintUpdated = true;
+                payload.maint_upserts.push(existingItem);
             } else {
                 let isAdded = false;
                 // [추가] 비정기 작업 시 기존 '정기' 항목이 있으면 날짜만 갱신하고 구분을 유지
@@ -1438,11 +1447,12 @@ function addLogItem(e) {
                         if (itemCost) regItem.itemCost = itemCost;
                         isMaintUpdated = true;
                         isAdded = true;
+                        payload.maint_upserts.push(regItem);
                     }
                 }
 
                 if (!isAdded) {
-                    data.maint.push({
+                    const newMaintItem = {
                         id: Date.now() + 1000 + idx, // ID 충돌 방지
                         type: type,
                         detailType: detailType,
@@ -1451,7 +1461,9 @@ function addLogItem(e) {
                         date: date,
                         period: null,
                         itemCost: itemCost
-                    });
+                    };
+                    data.maint.push(newMaintItem);
+                    payload.maint_upserts.push(newMaintItem);
                     isMaintUpdated = true;
                     addSystemLog('ADD_MAINTENANCE', currentPath.equip, `[${type}] ${fullContent} (자동 등록, 시작일: ${date})`);
                 }
@@ -1461,6 +1473,8 @@ function addLogItem(e) {
 
     localStorage.setItem(key, JSON.stringify(data));
     addSystemLog('ADD_LOG', currentPath.equip, `[${type} - ${finalDetailType}] ${content} (공수: ${md}, 날짜: ${date})`);
+    
+    window.syncHistoryTransaction(currentPath.site, currentPath.equip, payload);
 
     // 입력창 초기화 및 리스트 갱신
     if (workerInput) {
@@ -1714,6 +1728,8 @@ function saveMemo() {
         originalIssueShared = isIssueShared;
         originalMd = mdContent;
         originalCostType = costTypeContent;
+        
+        window.syncHistoryTransaction(currentPath.site, currentPath.equip, { log_upserts: [data.logs[logIdx]] });
 
         // [수정] 저장 후 '수정' 모드로 전환
         const memoBtn = document.getElementById('memo-save-btn');
@@ -1741,16 +1757,20 @@ function deleteLogItem(id) {
     const deletedInfo = targetLog ? `${targetLog.date} ${targetLog.content}` : 'Unknown';
 
     // [추가] 추가 작업으로 등록된 로그가 삭제될 경우, 원본 로그의 '이동' 버튼을 '추가' 버튼으로 되돌리기
+    let payload = { log_deletes: [id.toString()], log_upserts: [] };
     if (targetLog && targetLog.originalLogId) {
         const originalLog = data.logs.find(l => l.id === targetLog.originalLogId);
         if (originalLog) {
             delete originalLog.addWorkLogId;
+            payload.log_upserts.push(originalLog);
         }
     }
 
     data.logs = data.logs.filter(l => l.id !== id);
     localStorage.setItem(key, JSON.stringify(data));
     addSystemLog('DELETE_LOG', currentPath.equip, `삭제: ${deletedInfo}`);
+    
+    window.syncHistoryTransaction(currentPath.site, currentPath.equip, payload);
 
     if (selectedLogId === id) {
         selectedLogId = null;
@@ -1953,6 +1973,8 @@ function updateLogItem(id, date, type, detailType, content, addWork, costType, m
 
             localStorage.setItem(key, JSON.stringify(data));
             if (typeof addSystemLog === 'function') addSystemLog('UPDATE_LOG', currentPath.equip, `점검 이력 수정 (LogID: ${id})`);
+            
+            window.syncHistoryTransaction(currentPath.site, currentPath.equip, { log_upserts: [data.logs[idx]] });
 
             renderLogs();
         }
@@ -2964,7 +2986,7 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
 }
 
 /* ==========================================================================
-   4. 모달 및 팝업 (Modals & Popups)
+   5. 모달 및 팝업 관리 (Modals & Popups)
    ========================================================================== */
 
 // 4.1 마스터 정보 관리 (Master Info)
@@ -3025,6 +3047,13 @@ function saveMaintEquipModal() {
 
     localStorage.setItem(key, JSON.stringify(data));
     addSystemLog('UPDATE_SETUP', equip, '장비 정보 수정 (Maintenance Page)');
+    
+    // [추가] 장비 셋업 정보 Admin 연계 DB 업데이트
+    fetch('/api/admin/crud', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+        body: JSON.stringify({ domain: 'equip', action: 'UPDATE', payload: { old_id: equip, new_id: equip, site: site, setup: newSetup, special_note: data.specialNote || '' } })
+    });
 
     alert('저장되었습니다.');
     document.getElementById('maint-equip-modal').style.display = 'none';
@@ -3533,48 +3562,6 @@ window.saveFileContent = function () {
             }
         }
     }
-};
-
-// [추가] 추가작업 팝업 호출 및 콜백 처리
-window.openAddWorkModal = function(logId, dateStr) {
-    if (typeof openRegisterScheduleModal === 'function') {
-        window.currentAddWorkLogId = logId; // 현재 작업 중인 로그 ID 임시 저장
-        
-        // currentSearchFilters는 calendar.js에서 사용되므로, 현재 장비 정보로 업데이트
-        if (typeof currentSearchFilters === 'undefined') {
-            window.currentSearchFilters = { site: currentPath.site, equip: currentPath.equip };
-        } else {
-            currentSearchFilters.site = currentPath.site;
-            currentSearchFilters.equip = currentPath.equip;
-        }
-
-        // [추가] 추가 작업을 위해 원본 로그 데이터 가져오기
-        const key = `details_${currentPath.site}_${currentPath.equip}`;
-        const data = JSON.parse(localStorage.getItem(key));
-        const logItem = data.logs.find(l => l.id === logId);
-        
-        // [수정] 원본 로그 데이터를 presetData로 전달
-        const presetData = {
-            type: logItem.type,
-            detailType: logItem.detailType,
-            detailType2: logItem.detailType2,
-            content: '', // [수정] '항목 선택' 초기 상태로 나타나게 하려고 빈 값 전달
-            worker: logItem.worker || '' // [추가] 부모 작업의 작업자를 기본으로 전달
-        };
-
-        window.isMobileRegisterFlow = true; // 등록 후 상세 팝업을 열도록 플래그 설정
-        
-        const todayStr = new Date().toISOString().substring(0, 10);
-        openRegisterScheduleModal(todayStr, presetData);
-    } else {
-        alert('작업 등록 팝업창을 열 수 없습니다. (팝업 스크립트 없음)');
-    }
-};
-
-// [추가] 추가 작업 등록 완료 후 호출되는 함수
-window.handleExtraWorkAdded = function(newLogId) {
-    alert('추가 작업이 등록되었습니다.');
-    renderLogs();
 };
 
 window.closeFileEditModal = function () {

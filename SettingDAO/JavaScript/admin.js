@@ -1,3 +1,6 @@
+/* ==========================================================================
+   1. 전역 변수 및 유틸리티 (Globals & Utilities)
+   ========================================================================== */
 let currentAdminSite = null; // 현재 선택된 사업장
 let currentBuildingList = []; // 현재 편집 중인 건물 목록
 let currentAdminEquipKey = null; // 장비 관리에서 선택된 장비 키 (Name::Serial)
@@ -22,6 +25,23 @@ let checkTypeCategories2Data = {}; // [추가] 세부구분 2 저장소
 let adminFormDirty = false;
 let currentDirtyContext = null;
 let initialAdminFormData = { site: null, equip: null, item: null };
+
+// [추가] 만능 DB 동기화 비동기 헬퍼 함수
+async function syncAdminDB(domain, action, payload) {
+    try {
+        const res = await fetch('/api/admin/crud', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+            body: JSON.stringify({ domain, action, payload })
+        });
+        const data = await res.json();
+        if (data.status !== 'success') console.error('DB Sync Error:', data.message);
+        return data.status === 'success';
+    } catch (e) {
+        console.error('DB Sync Failed:', e);
+        return false;
+    }
+}
 
 function getSiteFormState() {
     return JSON.stringify({
@@ -113,6 +133,9 @@ if (typeof window.getDragAfterElement !== 'function') {
     };
 }
 
+/* ==========================================================================
+   2. 초기화 및 메뉴 관리 (Initialization & Menu)
+   ========================================================================== */
 // [추가] 모바일 환경에서 상세 폼으로 부드럽게 스크롤 이동하는 함수
 function scrollToAdminDetail(targetId) {
     if (window.innerWidth <= 950) {
@@ -225,7 +248,7 @@ function restoreLastAdminSection() {
 }
 
 /* ==========================================================================
-   사업장 관리 (Site Management)
+   3. 사업장 관리 (Site Management)
    ========================================================================== */
 function setupSiteMgmt() {
     // 초기 리스트 렌더링
@@ -242,10 +265,13 @@ function setupSiteMgmt() {
     const inputAdd = document.getElementById('admin-site-add-input');
     
     if (btnAdd && inputAdd) {
-        btnAdd.addEventListener('click', () => {
+        btnAdd.addEventListener('click', async () => {
             const newName = inputAdd.value.trim();
             if (!newName) return alert('사업장 이름을 입력해주세요.');
             if (storageData[newName]) return alert('이미 존재하는 사업장입니다.');
+
+            const success = await syncAdminDB('site', 'CREATE', { name: newName });
+            if (!success) return alert('DB 통신 중 오류가 발생했습니다.');
 
             // 데이터 생성
             storageData[newName] = []; // 장비 리스트 초기화
@@ -481,7 +507,7 @@ function renderBuildingList() {
     });
 }
 
-function handleSiteSave() {
+async function handleSiteSave() {
     if (!currentAdminSite) return false;
     
     const newName = document.getElementById('site-info-name').value.trim();
@@ -491,6 +517,9 @@ function handleSiteSave() {
     if (newName !== currentAdminSite) {
         if (storageData[newName]) { alert('이미 존재하는 사업장 이름입니다.'); return false; }
         if (!confirm(`사업장 이름을 '${currentAdminSite}'에서 '${newName}'(으)로 변경하시겠습니까?\n관련된 모든 장비 및 데이터가 이동됩니다.`)) return false;
+
+        const success = await syncAdminDB('site', 'UPDATE', { old_name: currentAdminSite, new_name: newName, buildings: currentBuildingList });
+        if (!success) return alert('DB 수정 중 오류가 발생했습니다.');
 
         // 데이터 마이그레이션 (handleRename 로직 응용)
         storageData[newName] = storageData[currentAdminSite];
@@ -512,6 +541,9 @@ function handleSiteSave() {
         
         addSystemLog('RENAME_SITE', currentAdminSite, `To: ${newName}`);
         currentAdminSite = newName; // 현재 선택값 갱신
+    } else {
+        const success = await syncAdminDB('site', 'UPDATE', { old_name: currentAdminSite, new_name: currentAdminSite, buildings: currentBuildingList });
+        if (!success) return alert('DB 수정 중 오류가 발생했습니다.');
     }
 
     // 2. 메타데이터 저장 (localStorage에 별도 저장)
@@ -529,11 +561,14 @@ function handleSiteSave() {
     return true;
 }
 
-function handleSiteDelete() {
+async function handleSiteDelete() {
     if (!currentAdminSite) return false;
     
     // common.js 의 로직은 사이드바 UI에 의존하므로, 여기서는 데이터 처리만 수행 후 UI 갱신
     if (!confirm(`'${currentAdminSite}' 사업장을 삭제하시겠습니까?\n포함된 장비와 모든 데이터가 영구 삭제됩니다.`)) return false;
+
+    const success = await syncAdminDB('site', 'DELETE', { name: currentAdminSite });
+    if (!success) return alert('DB 삭제 중 오류가 발생했습니다.');
 
     // 1. details_ 데이터 삭제
     const prefix = `details_${currentAdminSite}_`;
@@ -568,7 +603,7 @@ function handleSiteDelete() {
 }
 
 /* ==========================================================================
-   장비 모델 관리 (Equipment Model Management)
+   4. 장비 모델 관리 (Equipment Model Management)
    ========================================================================== */
 function setupEquipModelMgmt() {
     loadEquipmentModels();
@@ -665,6 +700,7 @@ function loadEquipmentModels() {
 
 function saveEquipmentModels() {
     localStorage.setItem('equipment_models', JSON.stringify(equipmentModels));
+    syncAdminDB('setting', 'UPDATE', { key: 'equipment_models', value: equipmentModels });
     if (typeof saveData === 'function') saveData();
 }
 
@@ -811,7 +847,7 @@ function renderEquipModelList() {
 }
 
 /* ==========================================================================
-   장비 관리 (Equipment Management)
+   5. 장비 관리 (Equipment Management)
    ========================================================================== */
 function setupEquipMgmt() {
     // 사업장 선택 필터
@@ -1434,7 +1470,7 @@ function resetEquipForm() {
     if(list) list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
 }
 
-function handleEquipSave() {
+async function handleEquipSave() {
     // [수정] 현재 필터값이 없어도(전체보기) 폼에 입력된 사업장 기준으로 저장 수행
     const targetSite = document.getElementById('equip-info-site').value.trim();
     if (!targetSite) { alert('사업장을 선택하거나 목록에서 장비를 선택해주세요.'); return false; }
@@ -1487,6 +1523,21 @@ function handleEquipSave() {
     // 중복 체크 (수정이면 자기 자신 제외)
     if (currentAdminEquipKey !== newKey && storageData[targetSite].includes(newKey)) {
         alert('해당 사업장에 이미 동일한 장비가 존재합니다.'); return false;
+    }
+
+    const setupPayload = {
+        custEquipName: custEquipName, equipStatus: equipStatus, deliveryDate: deliveryDate,
+        warrantyStart: warrantyStart, warrantyPeriod: warrantyPeriod, building: building,
+        floor: floor, detailLoc: location, manager: manager, contact: contact, email: email,
+        custManager: custManager, custContact: custContact, custEmail: custEmail, model: serial
+    };
+
+    if (currentAdminEquipKey) {
+        const success = await syncAdminDB('equip', 'UPDATE', { old_id: currentAdminEquipKey, new_id: newKey, site: targetSite, special_note: specialNote, setup: setupPayload });
+        if (!success) return false;
+    } else {
+        const success = await syncAdminDB('equip', 'CREATE', { new_id: newKey, site: targetSite, special_note: specialNote, setup: setupPayload });
+        if (!success) return false;
     }
 
     // 수정 (Rename) 처리
@@ -1605,11 +1656,14 @@ function handleEquipSave() {
     return true;
 }
 
-function handleEquipDelete() {
+async function handleEquipDelete() {
     const targetSite = document.getElementById('equip-info-site').value;
     if (!targetSite || !currentAdminEquipKey) return false;
     
     if (!confirm(`'${currentAdminEquipKey}' 장비를 삭제하시겠습니까?\n모든 점검 이력과 데이터가 삭제됩니다.`)) return false;
+
+    const success = await syncAdminDB('equip', 'DELETE', { id: currentAdminEquipKey });
+    if (!success) return false;
 
     // 리스트에서 제거
     storageData[targetSite] = storageData[targetSite].filter(k => k !== currentAdminEquipKey);
@@ -1632,7 +1686,7 @@ function handleEquipDelete() {
 }
 
 /* ==========================================================================
-   물품 관리 (Item Management)
+   6. 물품 관리 (Item Management)
    ========================================================================== */
 function setupItemMgmt() {
     loadAdminItems();
@@ -1667,7 +1721,7 @@ function setupItemMgmt() {
     }
 
     if (btnAdd) {
-        btnAdd.addEventListener('click', () => {
+        btnAdd.addEventListener('click', async () => {
             const code = codeInput ? codeInput.value.trim() : "";
             const part = partInput.value.trim();
             const spec = specInput.value.trim();
@@ -1675,8 +1729,12 @@ function setupItemMgmt() {
             if (code.includes(',')) return alert('코드명에는 쉼표(,)를 입력할 수 없습니다.');
             if (!part) return alert('물품명을 입력해주세요.');
 
+            const newItemId = Date.now();
+            const success = await syncAdminDB('item', 'CREATE', { id: newItemId, detailType: '', additional: '', partno: '', code: code, part: part, spec: spec, equip: '' });
+            if (!success) return alert('DB 등록 중 오류가 발생했습니다.');
+
             adminItems.push({
-                id: Date.now(),
+                id: newItemId,
                 type: "",
                 detailType: '',
                 additional: '',
@@ -1832,6 +1890,7 @@ function loadAdminItems() {
 
 function saveAdminItems() {
     localStorage.setItem('admin_items', JSON.stringify(adminItems));
+    syncAdminDB('setting', 'UPDATE', { key: 'admin_items', value: adminItems });
     if (typeof saveData === 'function') saveData();
 }
 
@@ -1934,7 +1993,7 @@ function loadItemDetail(item) {
     initialAdminFormData.item = getItemFormState(); // [추가] 스냅샷 저장
 }
 
-function handleItemDetailSave() {
+async function handleItemDetailSave() {
     if (!currentAdminItemId) return false;
     
     const detailType = document.getElementById('item-info-detail-type').value.trim();
@@ -1959,6 +2018,10 @@ function handleItemDetailSave() {
         const newPart = part;
         const newCode = code;
         const newDisplayValue = newCode ? newCode : newPart;
+
+        const payload = { id: currentAdminItemId, detailType, additional, partno, code, part, spec, equip };
+        const success = await syncAdminDB('item', 'UPDATE', payload);
+        if (!success) return false;
 
         adminItems[idx] = {
             id: adminItems[idx].id,
@@ -2069,13 +2132,16 @@ function handleItemDetailSave() {
     return false;
 }
 
-function handleItemDetailDelete() {
+async function handleItemDetailDelete() {
     if (!currentAdminItemId) return false;
     
     const item = adminItems.find(i => i.id === currentAdminItemId);
     if (!item) return false;
 
     if (!confirm(`'${item.part}' 물품을 삭제하시겠습니까?`)) return false;
+
+    const success = await syncAdminDB('item', 'DELETE', { id: currentAdminItemId });
+    if (!success) return false;
 
     adminItems = adminItems.filter(i => i.id !== currentAdminItemId);
     saveAdminItems();
@@ -2090,7 +2156,7 @@ function handleItemDetailDelete() {
 }
 
 /* ==========================================================================
-   점검 구분 관리 (Check Type Management)
+   7. 점검 구분 관리 (Check Type Management)
    ========================================================================== */
 function setupCheckTypeMgmt() {
     loadCheckTypeCategories();
@@ -2482,11 +2548,13 @@ function loadCheckTypeCategories2() {
 
 function saveCheckTypeCategories2() {
     localStorage.setItem('check_type_categories2', JSON.stringify(checkTypeCategories2Data));
+    syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories2', value: checkTypeCategories2Data });
     if (typeof saveData === 'function') saveData();
 }
 
 function saveCheckTypeCategories() {
     localStorage.setItem('check_type_categories', JSON.stringify(checkTypeCategoriesData));
+    syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories', value: checkTypeCategoriesData });
     if (typeof saveData === 'function') saveData();
 }
 
@@ -2501,6 +2569,7 @@ function loadCheckTypeItems() {
 
 function saveCheckTypeItems() {
     localStorage.setItem('check_type_items', JSON.stringify(checkTypeItemsData));
+    syncAdminDB('setting', 'UPDATE', { key: 'check_type_items', value: checkTypeItemsData });
     if (typeof saveData === 'function') saveData();
 }
 

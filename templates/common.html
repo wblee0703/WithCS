@@ -160,7 +160,7 @@
                         <input type="password" id="change-pw-current" class="input-dark" placeholder="현재 비밀번호">
                     </div>
                     <div id="change-pw-new-wrapper" class="form-row">
-                        <input type="password" id="change-pw-new" class="input-dark" placeholder="새 비밀번호">
+                        <input type="password" id="change-pw-new" class="input-dark" placeholder="새 비밀번호 (영문,숫자,특수기호 포함 8자 이상)">
                         <input type="password" id="change-pw-confirm" class="input-dark" placeholder="새 비밀번호 확인">
                         <button class="btn-blue" id="btn-change-pw">변경</button>
                     </div>
@@ -201,7 +201,7 @@
                         <input type="text" id="new-user-id" class="input-dark" placeholder="아이디">
                     </div>
                     <div id="new-user-pw-wrapper" class="form-row">
-                        <input type="password" id="new-user-pw" class="input-dark" placeholder="비밀번호">
+                        <input type="password" id="new-user-pw" class="input-dark" placeholder="비밀번호 (영문,숫자,특수기호 포함 8자 이상)">
                         <input type="password" id="new-user-pw-confirm" class="input-dark" placeholder="비밀번호 확인">
                     </div>
                     <div id="new-user-extra-wrapper" class="form-row">
@@ -263,6 +263,44 @@
                     </div>
                     <textarea id="extra-work-history-memo" class="input-dark" style="flex: 1; resize: none;" readonly></textarea>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- [추가] 본인 확인 비밀번호 모달 (내 정보 수정용) -->
+    <div id="verify-pw-modal" class="modal-overlay" style="display: none; z-index: 11000;">
+        <div class="modal-window size-date-edit">
+            <div class="modal-header">
+                <h3>본인 확인</h3><button class="btn-del-sm" onclick="document.getElementById('verify-pw-modal').style.display='none'">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-row">
+                    <input type="password" id="verify-pw-input" class="input-dark" style="width: 100%; text-align: center;" placeholder="현재 비밀번호를 입력하세요">
+                </div>
+            </div>
+            <div class="modal-footer"><button class="btn-blue" id="btn-verify-pw-confirm">확인</button></div>
+        </div>
+    </div>
+
+    <!-- [추가] 정기 비밀번호 변경 강제 모달 -->
+    <div id="force-pw-change-modal" class="modal-overlay" style="display: none; z-index: 12000;">
+        <div class="modal-window size-user">
+            <div class="modal-header">
+                <h3>비밀번호 정기 변경 안내</h3>
+            </div>
+            <div class="modal-body">
+                <p style="color: #f85149; font-size: 13px; margin-bottom: 15px; text-align: center; font-weight: bold;">마지막으로 비밀번호를 변경한 지 1개월이 지났습니다.<br>안전한 시스템 사용을 위해 새로운 비밀번호로 변경해주세요.</p>
+                <div class="form-row form-col">
+                    <div class="form-row"><input type="password" id="force-pw-current" class="input-dark" placeholder="현재 비밀번호"></div>
+                    <div class="form-row">
+                        <input type="password" id="force-pw-new" class="input-dark" placeholder="새 비밀번호 (영문,숫자,특수기호 포함 8자 이상)">
+                        <input type="password" id="force-pw-confirm" class="input-dark" placeholder="새 비밀번호 확인">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-blue" id="btn-force-pw-change">비밀번호 변경</button>
+                <button class="btn-gray" id="btn-force-pw-cancel">로그아웃</button>
             </div>
         </div>
     </div>

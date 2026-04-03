@@ -56,7 +56,7 @@ window.getSiteGradient = function (siteName) {
 // [공통 헬퍼] 대시보드 데이터 로드
 function getDashboardData() {
     let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
-    return (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) ? storageData : (deviceData.equipments || deviceData || JSON.parse(localStorage.getItem('withtech_data')) || {});
+    return (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) ? storageData : (deviceData.equipments || deviceData || {});
 }
 
 // [공통 헬퍼] 장비 표시 이름(시리얼, 고객사 장비명 포함) 포맷팅

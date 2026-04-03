@@ -1,37 +1,30 @@
 from flask import Flask, render_template, request, jsonify, session, has_request_context, send_from_directory, redirect
 import json
 import os
-import sys
-import webbrowser
-from threading import Timer, Lock, Thread
-import glob
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.engine import Engine
+from sqlalchemy import event
 from sqlalchemy import text
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from werkzeug.middleware.proxy_fix import ProxyFix
 import logging
 from logging.handlers import TimedRotatingFileHandler
-import shutil
-import subprocess
 import secrets
 import uuid
 
 app = Flask(__name__)
 
 # ------------------------------------------------------------------------------
-# 1. App Configuration & Security
+# 1. 앱 설정 및 보안 (App Configuration & Security)
 # ------------------------------------------------------------------------------
 # 프록시 서버(Nginx 등) 뒤에서 실제 IP 처리를 위한 설정
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1)
-
-# 스레드 락 (파일 동시 접근 방지)
-data_lock = Lock()
 
 # 경로 설정
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -45,6 +38,9 @@ if not os.path.exists(env_path):
             init_admin_pw = secrets.token_urlsafe(8)
             init_user_pw = secrets.token_urlsafe(8)
             f.write(f"APP_ADMIN_ID=admin\nAPP_ADMIN_PW={init_admin_pw}\nAPP_USER_ID=user\nAPP_USER_PW={init_user_pw}\nAPP_PORT=5500\n")
+            f.write("\n# Database Settings (sqlite or mysql)\n")
+            f.write("DB_TYPE=sqlite\n")
+            f.write("MYSQL_USER=your_gabia_id\nMYSQL_PASSWORD=your_gabia_pw\nMYSQL_HOST=your_gabia_ip\nMYSQL_DB=your_gabia_db_name\n")
     except: pass
 load_dotenv(env_path)
 
@@ -62,17 +58,37 @@ if hasattr(app, 'json'): app.json.sort_keys = False
 if os.environ.get('APP_ENV') == 'production':
     app.config['SESSION_COOKIE_SECURE'] = True
 
+# [호환성] Python 3.12 이상에서 datetime.utcnow()가 deprecated 됨에 따라 최신 표준 함수 적용
+def get_utc_now():
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
 # Security Extensions
 csrf = CSRFProtect(app)
 # [수정] 메모리 저장소 명시적 설정
 # 잦은 자동 저장 및 API 호출 시 429 에러(Too Many Requests)가 발생하는 것을 막기 위해 전역 제한 해제(, default_limits=["200 per day", "50 per hour"]추가하면 보안 강화됨)
 limiter = Limiter(get_remote_address, app=app, storage_uri="memory://")
 
-# [추가] DB 설정 (SQLite)
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'data', 'withtech.db')}"
+# [변경] DB 설정 (환경변수에 따라 MySQL 또는 SQLite 사용)
+db_type = os.environ.get('DB_TYPE', 'sqlite').lower()
+if db_type == 'mysql':
+    mysql_user = os.environ.get('MYSQL_USER', 'root')
+    mysql_pw = os.environ.get('MYSQL_PASSWORD', '')
+    mysql_host = os.environ.get('MYSQL_HOST', 'localhost')
+    mysql_db = os.environ.get('MYSQL_DB', 'withtech')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{mysql_user}:{mysql_pw}@{mysql_host}/{mysql_db}?charset=utf8mb4"
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'data', 'withtech.db')}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+
+# [추가] SQLite 외래키(Foreign Key) 및 Cascade(연쇄 삭제/수정) 기능 강제 활성화
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    if type(dbapi_connection).__module__ == "sqlite3":
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 class User(db.Model):
     id = db.Column(db.String(50), primary_key=True)
@@ -82,12 +98,13 @@ class User(db.Model):
     department = db.Column(db.String(100), nullable=True) # [추가] 소속
     position = db.Column(db.String(100), nullable=True) # [추가] 직급
     name = db.Column(db.String(100), nullable=True) # [추가] 이름
+    pw_changed_at = db.Column(db.DateTime, default=get_utc_now) # [추가] 비밀번호 변경일 (1개월 만료용)
     failed_attempts = db.Column(db.Integer, default=0)
     lockout_until = db.Column(db.DateTime, nullable=True)
 
 class SystemLog(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, default=get_utc_now)
     action = db.Column(db.String(50))
     target = db.Column(db.String(100))
     details = db.Column(db.Text)
@@ -101,13 +118,13 @@ class Site(db.Model):
 
 class Equipment(db.Model):
     id = db.Column(db.String(200), primary_key=True) # Site::Name::Serial
-    site_name = db.Column(db.String(100), db.ForeignKey('site.name', ondelete='CASCADE'))
+    site_name = db.Column(db.String(100), db.ForeignKey('site.name', ondelete='CASCADE', onupdate='CASCADE'))
     name = db.Column(db.String(100))
     serial = db.Column(db.String(100))
     special_note = db.Column(db.Text, default='')
 
 class SetupInfo(db.Model):
-    equip_id = db.Column(db.String(200), db.ForeignKey('equipment.id', ondelete='CASCADE'), primary_key=True)
+    equip_id = db.Column(db.String(200), db.ForeignKey('equipment.id', ondelete='CASCADE', onupdate='CASCADE'), primary_key=True)
     cust_equip_name = db.Column(db.String(100), default='')
     equip_status = db.Column(db.String(50), default='')
     delivery_date = db.Column(db.String(50), default='')
@@ -124,10 +141,35 @@ class SetupInfo(db.Model):
     cust_email = db.Column(db.String(100), default='')
     model = db.Column(db.String(100), default='')
 
+# [추가] 셋업(SETUP) 진행 세부사항(체크리스트) 모델
+class SetupDetail(db.Model):
+    _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.String(50))
+    equip_id = db.Column(db.String(200), db.ForeignKey('equipment.id', ondelete='CASCADE', onupdate='CASCADE'))
+    category = db.Column(db.String(100), default='')
+    content = db.Column(db.String(255), default='')
+    start_date = db.Column(db.String(50), default='')
+    date = db.Column(db.String(50), default='')
+    est_days = db.Column(db.String(50), default='1')
+    completed = db.Column(db.Boolean, default=False)
+    exec_start_date = db.Column(db.String(50), default='')
+    delay_reason = db.Column(db.Text, default='')
+
+# [추가] 셋업(SETUP) 이력/일지 모델
+class SetupLog(db.Model):
+    _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.String(50))
+    equip_id = db.Column(db.String(200), db.ForeignKey('equipment.id', ondelete='CASCADE', onupdate='CASCADE'))
+    date = db.Column(db.String(50), default='')
+    worker = db.Column(db.String(100), default='')
+    content = db.Column(db.String(255), default='')
+    company = db.Column(db.String(100), default='위드텍')
+    memo = db.Column(db.Text, default='')
+
 class MaintItem(db.Model):
     _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     id = db.Column(db.String(50)) 
-    equip_id = db.Column(db.String(200), db.ForeignKey('equipment.id', ondelete='CASCADE'))
+    equip_id = db.Column(db.String(200), db.ForeignKey('equipment.id', ondelete='CASCADE', onupdate='CASCADE'))
     type = db.Column(db.String(50), default='')
     detail_type = db.Column(db.String(100), default='')
     code = db.Column(db.String(100), default='')
@@ -144,7 +186,7 @@ class MaintItem(db.Model):
 class LogItem(db.Model):
     _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     id = db.Column(db.String(50))
-    equip_id = db.Column(db.String(200), db.ForeignKey('equipment.id', ondelete='CASCADE'))
+    equip_id = db.Column(db.String(200), db.ForeignKey('equipment.id', ondelete='CASCADE', onupdate='CASCADE'))
     date = db.Column(db.String(50), default='')
     type = db.Column(db.String(50), default='')
     detail_type = db.Column(db.String(100), default='')
@@ -159,33 +201,29 @@ class LogItem(db.Model):
     original_log_id = db.Column(db.String(50), nullable=True)
     add_work_log_id = db.Column(db.String(50), nullable=True)
 
+# [추가] 관리자 물품 관리 테이블 (AdminItem)
+class AdminItem(db.Model):
+    id = db.Column(db.String(50), primary_key=True)
+    detail_type = db.Column(db.String(100), default='')
+    additional = db.Column(db.String(100), default='')
+    partno = db.Column(db.String(100), default='')
+    code = db.Column(db.String(100), default='')
+    part = db.Column(db.String(100), default='')
+    spec = db.Column(db.String(255), default='')
+    equip = db.Column(db.Text, default='')
+
+# [추가] 점검 구분 등 동적 설정 데이터 테이블 (SystemSetting)
+class SystemSetting(db.Model):
+    key = db.Column(db.String(100), primary_key=True)
+    value = db.Column(db.Text)
+
 # ------------------------------------------------------------------------------
-# 2. File Paths & Logging Setup
+# 2. 경로 및 로깅 설정 (Paths & Logging Setup)
 # ------------------------------------------------------------------------------
 DATA_DIR = os.path.join(BASE_DIR, 'data')
 LOG_DIR = os.path.join(BASE_DIR, 'logs')
 DATA_LOG_DIR = os.path.join(DATA_DIR, 'log') # [추가] 데이터 로그 폴더
 BACKUP_DIR = os.path.join(BASE_DIR, 'backups')
-
-# 디렉토리 생성
-for d in [DATA_DIR, LOG_DIR, BACKUP_DIR, DATA_LOG_DIR]:
-    if not os.path.exists(d):
-        os.makedirs(d)
-
-# JSON 파일 경로 정의
-FILE_SETUP = os.path.join(DATA_DIR, 'setup_data.json')
-FILE_MAINTENANCE = os.path.join(DATA_DIR, 'maintenance_data.json')
-FILE_HOME = os.path.join(DATA_DIR, 'home_data.json')
-FILE_WITHTECH = os.path.join(DATA_DIR, 'client_data.json')
-FILE_DEVICE = os.path.join(DATA_DIR, 'device_data.json')
-FILE_ITEM = os.path.join(DATA_DIR, 'item_data.json')
-FILE_MANAGEMENT = os.path.join(DATA_DIR, 'management_data.json')
-
-# [변경] 로그 파일 경로 (data/log 폴더로 이동)
-FILE_COMMON_LOG = os.path.join(DATA_LOG_DIR, 'common_log.json')
-FILE_SETUP_LOG = os.path.join(DATA_LOG_DIR, 'setup_log.json')
-FILE_MAINTENANCE_LOG = os.path.join(DATA_LOG_DIR, 'maintenance_log.json')
-FILE_ADMIN_LOG = os.path.join(DATA_LOG_DIR, 'admin_log.json')
 
 # 로깅 필터 설정
 class RequestInfoFilter(logging.Filter):
@@ -211,142 +249,7 @@ app.logger.setLevel(logging.INFO) # [수정] INFO 레벨 로그도 기록하도�
 app.logger.warning('Server startup')
 
 # ------------------------------------------------------------------------------
-# 3. Utility Functions (File I/O, Backup, Git)
-# ------------------------------------------------------------------------------
-# [이동] load_json_file에서 사용하기 위해 위로 이동
-def restore_from_backup(target_filepath):
-    """파일이 없을 경우 백업 폴더에서 최신 백업을 찾아 복원합니다."""
-    filename = os.path.basename(target_filepath)
-    # 백업 파일 패턴: filename.YYYY-MM-DD.bak
-    search_pattern = os.path.join(BACKUP_DIR, f"{filename}.*.bak")
-    backups = glob.glob(search_pattern)
-    
-    if not backups:
-        return False
-        
-    # 최신순 정렬 (파일명에 날짜가 포함되어 있으므로 역순 정렬 시 최신 날짜가 먼저 옴)
-    backups.sort(reverse=True) 
-    latest_backup = backups[0]
-    
-    try:
-        shutil.copy2(latest_backup, target_filepath)
-        app.logger.warning(f"Restored {filename} from backup: {os.path.basename(latest_backup)}")
-        return True
-    except Exception as e:
-        app.logger.error(f"Failed to restore backup for {filename}: {e}")
-        return False
-
-def load_json_file(filepath):
-    if os.path.exists(filepath):
-        try:
-            with open(filepath, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except json.JSONDecodeError as e:
-            app.logger.error(f"JSON Decode Error in {filepath}: {e}. Attempting to restore from backup.")
-            # 파일이 깨졌으므로 백업에서 복구 시도
-            if restore_from_backup(filepath):
-                try:
-                    with open(filepath, 'r', encoding='utf-8') as f:
-                        return json.load(f)
-                except Exception as retry_e:
-                    app.logger.error(f"Failed to load restored file {filepath}: {retry_e}")
-            return {}
-        except Exception as e:
-            app.logger.error(f"Error loading {filepath}: {e}")
-            return {}
-    return {}
-
-# Atomic Write: 저장 중 오류 발생 시 데이터 깨짐 방지
-def save_json_file(filepath, data):
-    # [수정] 다중 프로세스(PythonAnywhere 워커) 환경에서 임시 파일 충돌로 인한 JSON 데이터 깨짐 방지
-    tmp_path = f"{filepath}.{uuid.uuid4().hex}.tmp"
-    try:
-        with open(tmp_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
-            f.flush()
-            os.fsync(f.fileno()) # 디스크 기록 강제
-        os.replace(tmp_path, filepath) # 원자적 교체
-    except Exception as e:
-        if os.path.exists(tmp_path):
-            try: os.remove(tmp_path)
-            except: pass
-        app.logger.error(f"Failed to save file {filepath}: {e}")
-        raise e
-
-# 일일 백업 생성 (최근 30일 보관)
-def create_daily_backup(filepath):
-    if not os.path.exists(filepath):
-        return
-
-    try:
-        filename = os.path.basename(filepath)
-        today = datetime.now().strftime('%Y-%m-%d')
-        backup_filename = f"{filename}.{today}.bak"
-        backup_path = os.path.join(BACKUP_DIR, backup_filename)
-
-        # 오늘자 백업이 없으면 생성
-        if not os.path.exists(backup_path):
-            # [수정] 백업 파일 생성 시에도 임시 파일을 사용하여 충돌 방지
-            tmp_backup = f"{backup_path}.{uuid.uuid4().hex}.tmp"
-            shutil.copy2(filepath, tmp_backup)
-            os.replace(tmp_backup, backup_path)
-            
-            # 30일 지난 백업 삭제
-            cutoff_date = datetime.now() - timedelta(days=30)
-            for f in os.listdir(BACKUP_DIR):
-                if f.startswith(filename) and f.endswith('.bak'):
-                    try:
-                        date_part = f.split('.')[-2]
-                        file_date = datetime.strptime(date_part, '%Y-%m-%d')
-                        if file_date < cutoff_date:
-                            os.remove(os.path.join(BACKUP_DIR, f))
-                    except: pass
-    except Exception as e:
-        app.logger.error(f"Backup failed: {e}")
-
-# GitHub 자동 동기화
-def git_push_data():
-    # [비활성화] 데이터는 PythonAnywhere 서버에만 저장하고 GitHub에는 올리지 않음
-    return
-    try:
-        if not os.path.exists(os.path.join(BASE_DIR, '.git')):
-            return
-
-        # [수정] 특정 폴더(data/)가 아닌 전체 변경 사항 감지
-        status = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
-        if not status.stdout.strip():
-            return
-
-        # [개선] Push 전 충돌 방지를 위해 Pull(rebase)을 먼저 수행하고, 실패 시 상세 로그(stderr) 캡처
-        subprocess.run(["git", "pull", "--rebase"], capture_output=True, text=True)
-        
-        subprocess.run(["git", "add", "."], check=True, capture_output=True)
-        subprocess.run(["git", "commit", "-m", f"Auto-save: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"], check=True, capture_output=True)
-        
-        push_res = subprocess.run(["git", "push"], capture_output=True, text=True)
-        if push_res.returncode != 0:
-            # [수정] 원격 저장소 동시 접근(Lock/Rejected) 오류는 시스템 장애가 아니므로 WARNING으로 변경
-            app.logger.warning(f"GitHub push collision (ignored): {push_res.stderr.strip()}")
-        else:
-            app.logger.info("GitHub sync successful")
-    except Exception as e:
-        app.logger.error(f"GitHub sync failed: {e}")
-
-# [추가] GitHub 데이터 가져오기 (Pull)
-def git_pull_data():
-    # [비활성화] 데이터는 PythonAnywhere 서버에만 저장하고 GitHub에는 올리지 않음
-    return
-    try:
-        if not os.path.exists(os.path.join(BASE_DIR, '.git')):
-            return
-
-        subprocess.run(["git", "pull"], check=True)
-        app.logger.info("GitHub pull successful")
-    except Exception as e:
-        app.logger.error(f"GitHub pull failed: {e}")
-
-# ------------------------------------------------------------------------------
-# 4. Core Logic (Data Management)
+# 3. 유틸리티 함수 (Utility Functions)
 # ------------------------------------------------------------------------------
 # [추가] 로그 카테고리 분류 로직 (Backend)
 COMMON_ACTIONS = {'LOGIN', 'LOGOUT', 'ADD_USER', 'CHANGE_PW', 'BACKUP_EXPORT', 'BACKUP_IMPORT'}
@@ -370,229 +273,122 @@ def get_log_category(action):
     if action in SETUP_ACTIONS: return 'setup'
     return 'maintenance'
 
-def init_data_files():
-    """데이터 파일이 없으면 초기화하고 기본 계정을 생성합니다."""
-
-    # [추가] 중요 파일이 없으면 백업에서 복원 시도
-    for filepath in [FILE_HOME, FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH, FILE_DEVICE, FILE_ITEM, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG, FILE_ADMIN_LOG]:
-        if not os.path.exists(filepath):
-            restore_from_backup(filepath)
-
-    # [추가] logs/ 폴더의 json 로그 파일을 data/log/로 이동 (경로 변경 마이그레이션)
-    old_log_dir = os.path.join(BASE_DIR, 'logs')
-    for log_file in ['common_log.json', 'setup_log.json', 'maintenance_log.json', 'admin_log.json']:
-        old_path = os.path.join(old_log_dir, log_file)
-        new_path = os.path.join(DATA_LOG_DIR, log_file)
-        if os.path.exists(old_path) and not os.path.exists(new_path):
-            try:
-                shutil.move(old_path, new_path)
-                app.logger.info(f"Moved {log_file} from logs/ to data/log/")
-            except Exception as e:
-                app.logger.error(f"Failed to move {log_file}: {e}")
-
-    # [추가] 기존 system_log.json 마이그레이션 (분할 저장)
-    old_log_path = os.path.join(DATA_DIR, 'system_log.json')
-    if os.path.exists(old_log_path):
-        if not os.path.exists(FILE_COMMON_LOG) and not os.path.exists(FILE_SETUP_LOG) and not os.path.exists(FILE_MAINTENANCE_LOG) and not os.path.exists(FILE_ADMIN_LOG):
-            app.logger.warning("Migrating system_log.json to split log files...")
-            old_logs = load_json_file(old_log_path)
-            if isinstance(old_logs, list):
-                common, admin, setup, maint = [], [], [], []
-                for log in old_logs:
-                    cat = get_log_category(log.get('action', ''))
-                    if cat == 'common': common.append(log)
-                    elif cat == 'admin': admin.append(log)
-                    elif cat == 'setup': setup.append(log)
-                    else: maint.append(log)
-                save_json_file(FILE_COMMON_LOG, common)
-                save_json_file(FILE_ADMIN_LOG, admin)
-                save_json_file(FILE_SETUP_LOG, setup)
-                save_json_file(FILE_MAINTENANCE_LOG, maint)
-            try:
-                os.rename(old_log_path, old_log_path + '.migrated')
-            except: pass
-
-    for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_WITHTECH, FILE_DEVICE, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG, FILE_ADMIN_LOG]:
-        if not os.path.exists(filepath):
-            save_json_file(filepath, {} if 'log.json' not in filepath else [])
-            
-    if not os.path.exists(FILE_ITEM):
-        save_json_file(FILE_ITEM, [])
-
+# ------------------------------------------------------------------------------
+# 4. 핵심 로직: 데이터 로딩 (Core Logic: Data Loading)
+# ------------------------------------------------------------------------------
 def load_data():
-    """모든 데이터 파일을 읽어 하나의 딕셔너리로 병합합니다."""
-    with data_lock:
-        data = {}
-        
-        # 1. 병합 파일 먼저 로드 (Maintenance, Home) - 기본 베이스
-        if os.path.exists(FILE_MAINTENANCE):
-            maint_data = load_json_file(FILE_MAINTENANCE)
-            if isinstance(maint_data, dict):
-                data.update(maint_data)
-                
-        if os.path.exists(FILE_HOME):
-            home_data = load_json_file(FILE_HOME)
-            if isinstance(home_data, dict):
-                data.update(home_data)
-
-        # 2. 단일 키 파일 로드 (개별 파일이 우선순위를 가짐)
-        if os.path.exists(FILE_SETUP):
-            setup_content = load_json_file(FILE_SETUP)
-            # [수정] 중첩된 setup_data 키가 있다면 평탄화 (구조 보정)
-            if isinstance(setup_content, dict) and 'setup_data' in setup_content and len(setup_content) == 1:
-                setup_content = setup_content['setup_data']
-            data['setup_data'] = setup_content
+    """
+    [Phase 3: DB 100% 전환 완료]
+    더 이상 JSON 파일을 읽지 않고, 오직 DB(SQLite/MySQL)에서 전체 데이터를 조회하여 
+    프론트엔드가 요구하는 JSON 구조로 즉석에서 조립해 반환합니다.
+    """
+    data = {}
+    
+    # 1. 시스템 설정 (점검 구분, 장비 모델 등)
+    settings = SystemSetting.query.all()
+    for s in settings:
+        try:
+            data[s.key] = json.loads(s.value)
+        except:
+            data[s.key] = [] if s.key == 'equipment_models' else {}
             
-        # 3. 데이터 구조 재설계 파일들 (Adapter Pattern)
-        # 3.1 client_data.json (사업장 관리)
-        withtech_file = load_json_file(FILE_WITHTECH)
-        if isinstance(withtech_file, dict):
-            for site, info in withtech_file.items():
-                if isinstance(info, dict) and 'buildings' in info:
-                    data[f'site_meta_{site}'] = {'buildings': info['buildings']}
+    if 'equipment_models' not in data: data['equipment_models'] = []
+    if 'check_type_categories' not in data: data['check_type_categories'] = {}
+    if 'check_type_categories2' not in data: data['check_type_categories2'] = {}
+    if 'check_type_items' not in data: data['check_type_items'] = {}
 
-        # 3.2 device_data.json (장비 관리)
-        device_file = load_json_file(FILE_DEVICE)
-        if isinstance(device_file, dict):
-            data['equipment_models'] = device_file.get('models', [])
-            data['device_data'] = device_file.get('equipments', {})
-            # device_data.json 내의 상세 정보(setup, specialNote)를 details_ 객체에 병합
-            details_obj = device_file.get('details', {})
-            for site_equip, info in details_obj.items():
-                k = f'details_{site_equip}'
-                if k not in data:
-                    data[k] = {}
-                data[k]['setup'] = info.get('setup', {})
-                data[k]['specialNote'] = info.get('specialNote', '')
-                
-        # 3.3 Item.json (물품 관리)
-        item_file = load_json_file(FILE_ITEM)
-        data['admin_items'] = item_file if isinstance(item_file, list) else []
+    # 2. 물품 관리 마스터 데이터
+    admin_items = AdminItem.query.all()
+    data['admin_items'] = [{
+        'id': int(i.id) if str(i.id).isdigit() else i.id,
+        'detailType': i.detail_type, 'additional': i.additional, 'partno': i.partno,
+        'code': i.code, 'part': i.part, 'spec': i.spec, 'equip': i.equip
+    } for i in admin_items]
+
+    # 3. 사업장(Site) 및 장비 트리(device_data) 구성
+    device_data = {}
+    sites = Site.query.all()
+    for site in sites:
+        device_data[site.name] = []
+        try: buildings = json.loads(site.buildings)
+        except: buildings = []
+        data[f"site_meta_{site.name}"] = {"buildings": buildings}
+
+    data['device_data'] = device_data
+    data['setup_data'] = {}
+
+    # N+1 쿼리 성능 저하 방지를 위한 전체 데이터 사전 로드 (Dictionary 매핑)
+    setup_infos = { s.equip_id: s for s in SetupInfo.query.all() }
+    maint_items = {}; log_items = {}; setup_details = {}; setup_logs = {}
+    
+    for m in MaintItem.query.all(): maint_items.setdefault(m.equip_id, []).append(m)
+    for l in LogItem.query.all(): log_items.setdefault(l.equip_id, []).append(l)
+    for sd in SetupDetail.query.all(): setup_details.setdefault(sd.equip_id, []).append(sd)
+    for sl in SetupLog.query.all(): setup_logs.setdefault(sl.equip_id, []).append(sl)
+
+    # 4. 장비 상세 데이터 (details_ 및 setup_data) 매핑
+    equips = Equipment.query.all()
+    for eq in equips:
+        site_prefix = f"{eq.site_name}::"
+        eq_name_serial = eq.id[len(site_prefix):] if str(eq.id).startswith(site_prefix) else eq.id
         
-        # 3.4 management_data.json (점검 구분 관리)
-        mgmt_file = load_json_file(FILE_MANAGEMENT)
-        if isinstance(mgmt_file, dict):
-            data['check_type_categories'] = mgmt_file.get('categories', {})
-            data['check_type_items'] = mgmt_file.get('items', {})
+        if eq.site_name not in device_data: device_data[eq.site_name] = []
+        device_data[eq.site_name].append(eq_name_serial)
+
+        detail_key = f"details_{eq.site_name}_{eq_name_serial}"
+        data[detail_key] = { "specialNote": eq.special_note, "maint": [], "logs": [], "setup": {} }
+        
+        # 장비 셋업(마스터) 정보
+        si = setup_infos.get(eq.id)
+        if si:
+            data[detail_key]["setup"] = {
+                "custEquipName": si.cust_equip_name, "equipStatus": si.equip_status, "deliveryDate": si.delivery_date,
+                "warrantyStart": si.warranty_start, "warrantyPeriod": si.warranty_period, "building": si.building,
+                "floor": si.floor, "detailLoc": si.detail_loc, "manager": si.manager, "contact": si.contact,
+                "email": si.email, "custManager": si.cust_manager, "custContact": si.cust_contact,
+                "custEmail": si.cust_email, "model": si.model
+            }
+
+        # 유지관리(maint) 예정 목록
+        for m in maint_items.get(eq.id, []):
+            data[detail_key]["maint"].append({
+                "id": int(m.id) if str(m.id).isdigit() else m.id, "type": m.type, "detailType": m.detail_type,
+                "code": m.code, "content": m.content, "date": m.date, "scheduledDate": m.scheduled_date,
+                "period": int(m.period) if m.period and str(m.period).isdigit() else m.period,
+                "costType": m.cost_type, "worker": m.worker, "md": m.md, "itemCost": m.item_cost, "memo": m.memo
+            })
             
-        # [마이그레이션 호환성] 기존 withtech_data.json 이 남아있다면 병합 (초기 1회용)
-        old_withtech_path = os.path.join(DATA_DIR, 'withtech_data.json')
-        if os.path.exists(old_withtech_path) and not data.get('device_data'):
-            old_data = load_json_file(old_withtech_path)
-            if isinstance(old_data, dict) and 'withtech_data' in old_data:
-                data['device_data'] = old_data['withtech_data']
-            else:
-                data['device_data'] = old_data
+        # 점검 이력(logs) 목록
+        for l in log_items.get(eq.id, []):
+            data[detail_key]["logs"].append({
+                "id": int(l.id) if str(l.id).isdigit() else l.id, "date": l.date, "type": l.type,
+                "detailType": l.detail_type, "detailType2": l.detail_type2, "content": l.content,
+                "addWork": l.add_work, "costType": l.cost_type, "md": l.md, "worker": l.worker, "memo": l.memo,
+                "isIssueShared": l.is_issue_shared,
+                "originalLogId": int(l.original_log_id) if l.original_log_id and str(l.original_log_id).isdigit() else l.original_log_id,
+                "addWorkLogId": int(l.add_work_log_id) if l.add_work_log_id and str(l.add_work_log_id).isdigit() else l.add_work_log_id
+            })
 
-        return data
+        # 셋업 화면 상세/일지 (setup_data)
+        sd_list = setup_details.get(eq.id, [])
+        sl_list = setup_logs.get(eq.id, [])
+        if sd_list or sl_list:
+            data['setup_data'][eq.id] = {
+                "setupDetails": [{
+                    "id": int(sd.id) if str(sd.id).isdigit() else sd.id, "category": sd.category, "content": sd.content,
+                    "startDate": sd.start_date, "date": sd.date, "estDays": sd.est_days, "completed": sd.completed,
+                    "execStartDate": sd.exec_start_date, "delayReason": sd.delay_reason
+                } for sd in sd_list],
+                "setupLogs": [{
+                    "id": int(sl.id) if str(sl.id).isdigit() else sl.id, "date": sl.date, "worker": sl.worker,
+                    "content": sl.content, "company": sl.company, "memo": sl.memo
+                } for sl in sl_list]
+            }
 
-def save_data(full_data):
-    """데이터를 분류하여 각 파일에 저장합니다. (클라이언트 상태 우선 신뢰)"""
-    with data_lock:
-        # 1. 백업 수행
-        for filepath in [FILE_SETUP, FILE_MAINTENANCE, FILE_HOME, FILE_WITHTECH, FILE_DEVICE, FILE_ITEM, FILE_MANAGEMENT, FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG, FILE_ADMIN_LOG]:
-            create_daily_backup(filepath)
-
-        # 2. 기존 데이터 로드
-        home_data = load_json_file(FILE_HOME)
-        home_data.clear()
-        
-        if not full_data:
-            return
-
-        # 각 저장소 컨테이너 초기화
-        setup_data = {}
-        maintenance_data = {}
-        withtech_data = {}
-        # [수정] 클라이언트 상태를 신뢰하여 즉각 삭제 반영 (기존 서버 데이터 부활 로직 제거)
-        device_json_data = {
-            "models": full_data.get('equipment_models', []),
-            "equipments": full_data.get('device_data', {}),
-            "details": {}
-        }
-        item_data = full_data.get('admin_items', [])
-        management_data = {
-            "categories": full_data.get('check_type_categories', {}),
-            "items": full_data.get('check_type_items', {})
-        }
-
-        # [추가] 유효한 사업장 및 장비 목록 추출 (가비지/고아 데이터 필터링 방어막)
-        valid_sites = set(device_json_data['equipments'].keys())
-        valid_site_equips = {f"{site}_{equip}" for site, equips in device_json_data['equipments'].items() for equip in equips}
-
-        # 3. 데이터 분류 및 병합
-        for key, value in full_data.items():
-            if key == 'setup_data':
-                setup_data = value
-            elif key.startswith('site_meta_'):
-                site = key.replace('site_meta_', '')
-                # [핵심] 실제 목록에 없는 사업장 메타데이터 무시
-                if site not in valid_sites:
-                    continue
-                if site not in withtech_data:
-                    withtech_data[site] = {}
-                withtech_data[site]['buildings'] = value.get('buildings', [])
-            elif key.startswith('details_'):
-                site_equip = key.replace('details_', '', 1)
-                if not isinstance(value, dict):
-                    continue
-                
-                # [핵심] 장비 트리 목록에 존재하지 않는 외계어/찌꺼기 상세 데이터는 즉시 버림
-                if site_equip not in valid_site_equips:
-                    continue
-
-                # maintenance_data.json 에는 운영 정보만 저장
-                if key not in maintenance_data:
-                    maintenance_data[key] = {}
-                maintenance_data[key]['maint'] = value.get('maint', [])
-                maintenance_data[key]['logs'] = value.get('logs', [])
-                maintenance_data[key]['memo'] = value.get('memo', '')
-                maintenance_data[key]['files'] = value.get('files', [])
-                
-                # device_data.json 에는 장비 설정 및 특이사항 정보 저장
-                if site_equip not in device_json_data['details']:
-                    device_json_data['details'][site_equip] = {}
-                device_json_data['details'][site_equip]['setup'] = value.get('setup', {})
-                device_json_data['details'][site_equip]['specialNote'] = value.get('specialNote', '')
-            elif key in ['equipment_models', 'device_data', 'admin_items', 'check_type_categories', 'check_type_items']:
-                # 이미 각 구조체로 매핑했으므로 무시
-                pass
-            else:
-                # 위 분류에 속하지 않는 나머지 (예: 대시보드 기타 설정 등)는 home_data에 저장
-                home_data[key] = value
-
-        # [수정] 클라이언트에서 완전히 삭제된 데이터는 서버 JSON에서도 소멸되도록 처리
-        # 장비 트리에 등록되어 있으나 상세 데이터가 누락된 경우에만 빈 껍데기로 초기화 (찌꺼기 방지)
-        for site, equips in device_json_data['equipments'].items():
-            for equip in equips:
-                site_equip = f"{site}_{equip}"
-                detail_key = f"details_{site_equip}"
-                
-                if site_equip not in device_json_data['details']:
-                    device_json_data['details'][site_equip] = {"setup": {}, "specialNote": ""}
-                        
-                if detail_key not in maintenance_data:
-                    maintenance_data[detail_key] = {"maint": [], "logs": [], "memo": "", "files": []}
-
-        # [보완] 사업장 기본 골격 생성 및 기존 건물명 데이터 보호 (방어 로직)
-        for site in device_json_data['equipments'].keys():
-            if site not in withtech_data:
-                withtech_data[site] = {"buildings": []}
-
-        # 4. 파일 저장
-        save_json_file(FILE_SETUP, setup_data)
-        save_json_file(FILE_MAINTENANCE, maintenance_data)
-        save_json_file(FILE_HOME, home_data)
-        save_json_file(FILE_WITHTECH, withtech_data)
-        save_json_file(FILE_DEVICE, device_json_data)
-        save_json_file(FILE_ITEM, item_data)
-        save_json_file(FILE_MANAGEMENT, management_data)
-        
-        # 5. Git 동기화 (비동기) - 비활성화됨
-        # Thread(target=git_push_data).start()
+    return data
 
 # ------------------------------------------------------------------------------
-# 5. Decorators & Middlewares
+# 5. 데코레이터 및 미들웨어 (Decorators & Middlewares)
 # ------------------------------------------------------------------------------
 # [추가] 템플릿 전역에서 모바일 접속 여부(is_mobile)를 사용할 수 있도록 설정
 @app.context_processor
@@ -649,7 +445,7 @@ def set_security_headers(response):
     return response
 
 # ------------------------------------------------------------------------------
-# 6. Routes: Views (HTML)
+# 6. 라우트: 화면 (Routes: Views)
 # ------------------------------------------------------------------------------
 @app.route('/') 
 @app.route('/index.html')
@@ -688,18 +484,24 @@ def sort():
 def SettingDAO(filename):
     return send_from_directory(os.path.join(app.root_path, 'SettingDAO'), filename)
 
+# [추가] 보안: 데이터베이스(.db), 로그, 환경변수 등 민감한 폴더에 대한 웹 브라우저 직접 경로 접근(다운로드) 원천 차단
+@app.route('/data/<path:filename>')
+@app.route('/logs/<path:filename>')
+@app.route('/backups/<path:filename>')
+def block_sensitive_data(filename):
+    app.logger.warning(f"Unauthorized direct file access blocked: {request.path}")
+    return jsonify({"status": "fail", "message": "비정상적인 접근이 감지되어 시스템에 의해 차단되었습니다."}), 403
+
 # ------------------------------------------------------------------------------
-# 7. Routes: API
+# 7. 라우트: API (Routes: API)
 # ------------------------------------------------------------------------------
 @app.route('/api/data', methods=['GET', 'POST'])
 @login_required
 def handle_data():
-    if request.method == 'POST':
-        data = request.json
-        save_data(data)
-        return jsonify({"status": "success", "message": "저장되었습니다."})
-    else:
+    # [Phase 3] POST 요청은 더 이상 사용하지 않음 (개별 API로 대체)
+    if request.method == 'GET':
         return jsonify(load_data())
+    return jsonify({"status": "fail", "message": "지원하지 않는 요청입니다."}), 405
 
 @app.route('/api/login', methods=['POST'])
 @limiter.limit("5 per minute")
@@ -733,6 +535,11 @@ def login():
             user.lockout_until = None
             db.session.commit()
 
+        # [추가] 비밀번호 만료 체크 (30일)
+        require_pw_change = False
+        if not user.pw_changed_at or user.pw_changed_at < get_utc_now() - timedelta(days=30):
+            require_pw_change = True
+
         session['user_id'] = user.id
         session['role'] = user.role
         session['site'] = user.site # [추가]
@@ -742,7 +549,8 @@ def login():
             "site": user.site,
             "department": user.department or "",
             "position": user.position or "",
-            "name": user.name or ""
+            "name": user.name or "",
+            "require_pw_change": require_pw_change
         })
 
     # 3. 실패 처리
@@ -873,7 +681,7 @@ def add_user():
     if User.query.filter_by(id=new_id).first():
         return jsonify({"status": "fail", "message": "이미 존재하는 아이디입니다."}), 400
 
-    new_user = User(id=new_id, pw=generate_password_hash(new_pw), role=role, site=site, department=department, position=position, name=name)
+    new_user = User(id=new_id, pw=generate_password_hash(new_pw), role=role, site=site, department=department, position=position, name=name, pw_changed_at=get_utc_now())
     db.session.add(new_user)
     db.session.commit()
 
@@ -895,6 +703,7 @@ def change_password():
         return jsonify({"status": "fail", "message": "현재 비밀번호가 일치하지 않습니다."}), 401
 
     user.pw = generate_password_hash(new_pw)
+    user.pw_changed_at = get_utc_now() # [추가] 비밀번호 변경일 갱신
     db.session.commit()
 
     return jsonify({"status": "success"})
@@ -997,95 +806,198 @@ def clear_logs():
         db.session.rollback()
         return jsonify({"status": "fail", "message": str(e)}), 500
 
-# [추가] 안전한 데이터 마이그레이션 API (JSON -> DB 복사 전용)
-@app.route('/api/admin/migrate_json_to_db', methods=['POST'])
+# [추가] 통합 Admin 설정 관리를 위한 만능 DB CRUD API
+@app.route('/api/admin/crud', methods=['POST'])
 @login_required
-def migrate_json_to_db():
-    if session.get('role') != 'superadmin':
-        return jsonify({"status": "fail", "message": "최종 관리자 권한이 필요합니다."}), 403
-        
+def admin_crud():
+    if session.get('role') not in ['admin', 'superadmin']:
+        return jsonify({"status": "fail", "message": "권한이 없습니다."}), 403
+    data = request.json
+    domain = data.get('domain')
+    action = data.get('action')
+    payload = data.get('payload')
+    
     try:
-        data = load_data() # 메모리에 머지된 전체 JSON 데이터 로드
-        
-        # 테스트 반복을 위해 기존 복사된 테이블 데이터만 초기화 (유저/시스템로그 제외)
-        db.session.query(LogItem).delete()
-        db.session.query(MaintItem).delete()
-        db.session.query(SetupInfo).delete()
-        db.session.query(Equipment).delete()
-        db.session.query(Site).delete()
-        
-        # 1. 사업장 (Site) 마이그레이션
-        withtech = data.get('withtech_data', {})
-        equipments = data.get('device_data', {})
-        all_sites = set(list(withtech.keys()) + list(equipments.keys()))
-        
-        for s_name in all_sites:
-            bldgs = []
-            meta_key = f"site_meta_{s_name}"
-            if meta_key in data:
-                bldgs = data[meta_key].get('buildings', [])
-            db.session.add(Site(name=s_name, buildings=json.dumps(bldgs, ensure_ascii=False)))
-            
-        # 2. 장비(Equipment) 및 하위 데이터 마이그레이션
-        for site_name, equips in equipments.items():
-            for equip_name_serial in equips:
-                equip_id = f"{site_name}::{equip_name_serial}"
-                parts = equip_name_serial.split('::')
-                e_name = parts[0]
-                e_serial = parts[1] if len(parts) > 1 else ''
+        if domain == 'site':
+            if action == 'CREATE':
+                db.session.add(Site(name=payload['name'], buildings='[]'))
+            elif action == 'UPDATE':
+                old_name = payload['old_name']
+                new_name = payload['new_name']
+                if old_name != new_name:
+                    # DB 차원 이름 변경 (연쇄 업데이트 작동)
+                    db.session.execute(text("UPDATE site SET name=:n WHERE name=:o"), {'n':new_name, 'o':old_name})
+                    # 하위 장비 ID 강제 병합 업데이트
+                    equips = Equipment.query.filter_by(site_name=new_name).all()
+                    for eq in equips:
+                        parts = eq.id.split('::')
+                        new_eq_id = f"{new_name}::{parts[1] if len(parts)>1 else ''}"
+                        db.session.execute(text("UPDATE equipment SET id=:n WHERE id=:o"), {'n':new_eq_id, 'o':eq.id})
+                site = Site.query.filter_by(name=new_name).first()
+                if site: site.buildings = json.dumps(payload.get('buildings', []), ensure_ascii=False)
+            elif action == 'DELETE':
+                db.session.execute(text("DELETE FROM site WHERE name=:n"), {'n':payload['name']})
                 
-                detail_key = f"details_{site_name}_{equip_name_serial}"
-                detail = data.get(detail_key, {})
-                
-                # 장비 기본 정보
-                db.session.add(Equipment(
-                    id=equip_id, site_name=site_name, name=e_name, 
-                    serial=e_serial, special_note=detail.get('specialNote', '')
-                ))
-                
-                # 셋업(마스터) 정보
-                setup = detail.get('setup', {})
+        elif domain == 'equip':
+            new_id = payload.get('new_id')
+            if action == 'CREATE':
+                e_name = new_id.split('::')[0]
+                e_serial = new_id.split('::')[1] if '::' in new_id else ''
+                db.session.add(Equipment(id=new_id, site_name=payload['site'], name=e_name, serial=e_serial, special_note=payload.get('special_note', '')))
                 db.session.add(SetupInfo(
-                    equip_id=equip_id, cust_equip_name=setup.get('custEquipName', ''),
-                    equip_status=setup.get('equipStatus', ''), delivery_date=setup.get('deliveryDate', ''),
-                    warranty_start=setup.get('warrantyStart', ''), warranty_period=str(setup.get('warrantyPeriod', '')),
-                    building=setup.get('building', ''), floor=setup.get('floor', ''), detail_loc=setup.get('detailLoc', ''),
-                    manager=setup.get('manager', ''), contact=setup.get('contact', ''), email=setup.get('email', ''),
-                    cust_manager=setup.get('custManager', ''), cust_contact=setup.get('custContact', ''),
-                    cust_email=setup.get('custEmail', ''), model=setup.get('model', '')
+                    equip_id=new_id, cust_equip_name=payload['setup'].get('custEquipName', ''), equip_status=payload['setup'].get('equipStatus', ''),
+                    delivery_date=payload['setup'].get('deliveryDate', ''), warranty_start=payload['setup'].get('warrantyStart', ''), warranty_period=str(payload['setup'].get('warrantyPeriod', '')),
+                    building=payload['setup'].get('building', ''), floor=payload['setup'].get('floor', ''), detail_loc=payload['setup'].get('detailLoc', ''),
+                    manager=payload['setup'].get('manager', ''), contact=payload['setup'].get('contact', ''), email=payload['setup'].get('email', ''),
+                    cust_manager=payload['setup'].get('custManager', ''), cust_contact=payload['setup'].get('custContact', ''), cust_email=payload['setup'].get('custEmail', ''), model=payload['setup'].get('model', '')
                 ))
+            elif action == 'UPDATE':
+                old_id = payload['old_id']
+                if old_id != new_id:
+                    db.session.execute(text("UPDATE equipment SET id=:n WHERE id=:o"), {'n':new_id, 'o':old_id})
+                equip = Equipment.query.filter_by(id=new_id).first()
+                if equip:
+                    equip.special_note = payload.get('special_note', '')
+                    setup = SetupInfo.query.filter_by(equip_id=new_id).first()
+                    if not setup:
+                        setup = SetupInfo(equip_id=new_id)
+                        db.session.add(setup)
+                    # 매핑
+                    s_data = payload.get('setup', {})
+                    setup.cust_equip_name = s_data.get('custEquipName', '')
+                    setup.equip_status = s_data.get('equipStatus', '')
+                    setup.delivery_date = s_data.get('deliveryDate', '')
+                    setup.warranty_start = s_data.get('warrantyStart', '')
+                    setup.warranty_period = str(s_data.get('warrantyPeriod', ''))
+                    setup.building = s_data.get('building', '')
+                    setup.floor = s_data.get('floor', '')
+                    setup.detail_loc = s_data.get('detailLoc', '')
+                    setup.manager = s_data.get('manager', '')
+                    setup.contact = s_data.get('contact', '')
+                    setup.email = s_data.get('email', '')
+                    setup.cust_manager = s_data.get('custManager', '')
+                    setup.cust_contact = s_data.get('custContact', '')
+                    setup.cust_email = s_data.get('custEmail', '')
+                    setup.model = s_data.get('model', '')
+            elif action == 'DELETE':
+                db.session.execute(text("DELETE FROM equipment WHERE id=:n"), {'n':payload['id']})
+
+        elif domain == 'item':
+            if action == 'CREATE' or action == 'UPDATE':
+                item = AdminItem.query.filter_by(id=str(payload['id'])).first()
+                if not item: db.session.add(AdminItem(id=str(payload['id'])))
+                db.session.execute(text("UPDATE admin_item SET detail_type=:dt, additional=:add, partno=:pn, code=:cd, part=:pt, spec=:sp, equip=:eq WHERE id=:i"), {'dt':payload.get('detailType',''), 'add':payload.get('additional',''), 'pn':payload.get('partno',''), 'cd':payload.get('code',''), 'pt':payload.get('part',''), 'sp':payload.get('spec',''), 'eq':payload.get('equip',''), 'i':str(payload['id'])})
+            elif action == 'DELETE':
+                db.session.execute(text("DELETE FROM admin_item WHERE id=:i"), {'i': str(payload['id'])})
                 
-                # 유지관리 예정 정보
-                for m in detail.get('maint', []):
-                    db.session.add(MaintItem(
-                        id=str(m.get('id', '')), equip_id=equip_id, type=m.get('type', ''),
-                        detail_type=m.get('detailType', ''), code=m.get('code', ''), content=m.get('content', ''),
-                        date=m.get('date', ''), period=str(m.get('period', '')), scheduled_date=m.get('scheduledDate', ''),
-                        cost_type=m.get('costType', ''), worker=m.get('worker', ''), md=str(m.get('md', '')),
-                        item_cost=m.get('itemCost', ''), memo=m.get('memo', '')
-                    ))
-                    
-                # 점검 이력
-                for l in detail.get('logs', []):
-                    db.session.add(LogItem(
-                        id=str(l.get('id', '')), equip_id=equip_id, date=l.get('date', ''),
-                        type=l.get('type', ''), detail_type=l.get('detailType', ''), detail_type2=l.get('detailType2', ''),
-                        content=l.get('content', ''), add_work=l.get('addWork', ''), cost_type=l.get('costType', ''),
-                        md=str(l.get('md', '')), worker=l.get('worker', ''), memo=l.get('memo', ''),
-                        is_issue_shared=bool(l.get('isIssueShared', False)),
-                        original_log_id=str(l.get('originalLogId', '')), add_work_log_id=str(l.get('addWorkLogId', ''))
-                    ))
-                    
+        elif domain == 'setting':
+            setting = SystemSetting.query.filter_by(key=payload['key']).first()
+            val_json = json.dumps(payload['value'], ensure_ascii=False)
+            if setting: setting.value = val_json
+            else: db.session.add(SystemSetting(key=payload['key'], value=val_json))
+                
         db.session.commit()
-        app.logger.info("Data successfully cloned from JSON to SQLite DB.")
-        return jsonify({"status": "success", "message": "현재 운영 중인 JSON 데이터가 SQLite DB로 완벽하게 안전 복사(마이그레이션) 되었습니다.\n\n(기존 JSON 데이터는 삭제되지 않았으며, 시스템은 계속 정상 작동합니다.)"})
-        
+        return jsonify({"status": "success"})
     except Exception as e:
         db.session.rollback()
-        return jsonify({"status": "fail", "message": f"마이그레이션 실패: {str(e)}"}), 500
+        return jsonify({"status": "fail", "message": str(e)}), 500
+
+# [추가] 유지관리 및 캘린더 장비 이력 100% DB 동기화 전용 트랜잭션 API
+@app.route('/api/history/transaction', methods=['POST'])
+@login_required
+def history_transaction():
+    data = request.json
+    equip_id = data.get('equip_id')
+    maint_upserts = data.get('maint_upserts', [])
+    maint_deletes = data.get('maint_deletes', [])
+    log_upserts = data.get('log_upserts', [])
+    log_deletes = data.get('log_deletes', [])
+
+    try:
+        if maint_deletes:
+            MaintItem.query.filter(MaintItem.id.in_(maint_deletes)).delete(synchronize_session=False)
+        
+        for m in maint_upserts:
+            m_id = str(m['id'])
+            item = MaintItem.query.filter_by(id=m_id).first()
+            if not item:
+                item = MaintItem(id=m_id, equip_id=equip_id)
+                db.session.add(item)
+            item.type = m.get('type', item.type)
+            item.detail_type = m.get('detailType', item.detail_type)
+            item.code = m.get('code', item.code)
+            item.content = m.get('content', item.content)
+            item.date = m.get('date', item.date)
+            item.period = str(m.get('period')) if m.get('period') is not None else item.period
+            item.scheduled_date = m.get('scheduledDate', item.scheduled_date)
+            item.cost_type = m.get('costType', item.cost_type)
+            item.worker = m.get('worker', item.worker)
+            item.md = str(m.get('md', item.md))
+            item.item_cost = m.get('itemCost', item.item_cost)
+            item.memo = m.get('memo', item.memo)
+
+        if log_deletes:
+            LogItem.query.filter(LogItem.id.in_(log_deletes)).delete(synchronize_session=False)
+
+        for l in log_upserts:
+            l_id = str(l['id'])
+            item = LogItem.query.filter_by(id=l_id).first()
+            if not item:
+                item = LogItem(id=l_id, equip_id=equip_id)
+                db.session.add(item)
+            item.date = l.get('date', item.date)
+            item.type = l.get('type', item.type)
+            item.detail_type = l.get('detailType', item.detail_type)
+            item.detail_type2 = l.get('detailType2', item.detail_type2)
+            item.content = l.get('content', item.content)
+            item.add_work = l.get('addWork', item.add_work)
+            item.cost_type = l.get('costType', item.cost_type)
+            item.md = str(l.get('md', item.md))
+            item.worker = l.get('worker', item.worker)
+            item.memo = l.get('memo', item.memo)
+            item.is_issue_shared = bool(l.get('isIssueShared', item.is_issue_shared))
+            item.original_log_id = str(l.get('originalLogId')) if l.get('originalLogId') else item.original_log_id
+            item.add_work_log_id = str(l.get('addWorkLogId')) if l.get('addWorkLogId') else item.add_work_log_id
+
+        db.session.commit()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "fail", "message": str(e)}), 500
+
+# [추가] 셋업 화면 데이터 전용 100% DB 동기화 API
+@app.route('/api/setup/sync_equip', methods=['POST'])
+@login_required
+def sync_setup_equip():
+    data = request.json
+    equip_id = data.get('equip_id')
+    details = data.get('details') # 리스트 형태 (없으면 None)
+    logs = data.get('logs') # 리스트 형태 (없으면 None)
+
+    try:
+        if details is not None:
+            db.session.query(SetupDetail).filter_by(equip_id=equip_id).delete(synchronize_session=False)
+            for sd in details:
+                db.session.add(SetupDetail(
+                    id=str(sd.get('id', '')), equip_id=equip_id, category=sd.get('category', ''), content=sd.get('content', ''),
+                    start_date=sd.get('startDate', ''), date=sd.get('date', ''), est_days=str(sd.get('estDays', '1')),
+                    completed=bool(sd.get('completed', False)), exec_start_date=sd.get('execStartDate', ''), delay_reason=sd.get('delayReason', '')
+                ))
+        if logs is not None:
+            db.session.query(SetupLog).filter_by(equip_id=equip_id).delete(synchronize_session=False)
+            for sl in logs:
+                db.session.add(SetupLog(
+                    id=str(sl.get('id', '')), equip_id=equip_id, date=sl.get('date', ''), worker=sl.get('worker', ''),
+                    content=sl.get('content', ''), company=sl.get('company', ''), memo=sl.get('memo', '')
+                ))
+        db.session.commit()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "fail", "message": str(e)}), 500
 
 # ------------------------------------------------------------------------------
-# 8. Main Execution
+# 8. 앱 초기화 및 실행 (Initialization & Main Execution)
 # ------------------------------------------------------------------------------
 def init_db():
     with app.app_context():
@@ -1108,30 +1020,22 @@ def init_db():
         except:
             db.session.rollback()
         
-        # [DB 마이그레이션] 사용자 데이터
-        home_data = load_json_file(FILE_HOME)
-        accounts = home_data.get('user_accounts', [])
-        if accounts:
-            for acc in accounts:
-                if not User.query.filter_by(id=acc['id']).first():
-                    pw_val = acc['pw']
-                    # 기존 JSON에 저장된 비밀번호가 평문인 경우 해시로 변환하여 삽입
-                    if not (pw_val.startswith('scrypt:') or pw_val.startswith('pbkdf2:')):
-                        pw_val = generate_password_hash(pw_val)
-                        
-                    new_user = User(id=acc['id'], pw=pw_val, role=acc.get('role', 'user'))
-                    db.session.add(new_user)
+        # [마이그레이션] 비밀번호 변경일(보안) 컬럼 추가
+        try:
+            db.session.execute(text('ALTER TABLE "user" ADD COLUMN pw_changed_at DATETIME'))
             db.session.commit()
-            del home_data['user_accounts']
-            save_json_file(FILE_HOME, home_data)
-            app.logger.warning("Migrated user accounts from JSON to SQLite DB.")
-            
+            db.session.execute(text('UPDATE "user" SET pw_changed_at = CURRENT_TIMESTAMP WHERE pw_changed_at IS NULL'))
+            db.session.commit()
+        except:
+            db.session.rollback()
+        
+        # [DB 마이그레이션] 사용자 데이터
         # Admin 초기 계정 생성
         admin_id = os.environ.get('APP_ADMIN_ID', 'admin')
         admin_user = User.query.filter_by(id=admin_id).first()
         if not admin_user:
             admin_pw = os.environ.get('APP_ADMIN_PW', secrets.token_urlsafe(8))
-            admin_user = User(id=admin_id, pw=generate_password_hash(admin_pw), role='superadmin')
+            admin_user = User(id=admin_id, pw=generate_password_hash(admin_pw), role='superadmin', pw_changed_at=get_utc_now())
             db.session.add(admin_user)
             db.session.commit()
             app.logger.warning(f"Initial Admin PW generated in DB: {admin_pw}")
@@ -1145,7 +1049,7 @@ def init_db():
         user_id = os.environ.get('APP_USER_ID', 'user')
         if not User.query.filter_by(id=user_id).first():
             user_pw = os.environ.get('APP_USER_PW', secrets.token_urlsafe(8))
-            normal_user = User(id=user_id, pw=generate_password_hash(user_pw), role='user')
+            normal_user = User(id=user_id, pw=generate_password_hash(user_pw), role='user', pw_changed_at=get_utc_now())
             db.session.add(normal_user)
             db.session.commit()
             app.logger.warning(f"Initial User PW generated in DB: {user_pw}")
@@ -1159,41 +1063,16 @@ def init_db():
                 u.pw = generate_password_hash(u.pw)
         db.session.commit()
 
-        # [DB 마이그레이션] 시스템 로그 데이터
-        if not SystemLog.query.first():
-            all_logs = []
-            for filepath in [FILE_COMMON_LOG, FILE_SETUP_LOG, FILE_MAINTENANCE_LOG, FILE_ADMIN_LOG]:
-                logs = load_json_file(filepath)
-                if isinstance(logs, list):
-                    all_logs.extend(logs)
-            if all_logs:
-                for log in all_logs:
-                    try:
-                        ts_str = log.get('timestamp', '')
-                        if ts_str.endswith('Z'): ts_str = ts_str[:-1]
-                        ts = datetime.fromisoformat(ts_str) if ts_str else datetime.utcnow()
-                    except:
-                        ts = datetime.utcnow()
-                        
-                    db.session.add(SystemLog(timestamp=ts, action=log.get('action'), target=log.get('target'), details=log.get('details', '')))
-                db.session.commit()
-                app.logger.warning("Migrated system logs from JSON to SQLite DB.")
-            else:
-                db.session.add(SystemLog(action='SYSTEM_INIT', target='Database', details='Database initialized.'))
-                db.session.commit()
-
 # WSGI 서버(PythonAnywhere 등) 환경에서도 앱 구동 시 초기화가 실행되도록 __main__ 블록 밖으로 이동
-init_data_files()
+# [Phase 3] JSON 파일 관련 로직이 제거되었으므로, 폴더 생성만 수행
+for d in [DATA_DIR, LOG_DIR, BACKUP_DIR, DATA_LOG_DIR]:
+    if not os.path.exists(d):
+        os.makedirs(d, mode=0o700)
+
 init_db()
 
 if __name__ == '__main__':
-    
-    # [추가] 서버 시작 시 GitHub에서 최신 데이터 동기화 - 비활성화됨
-    # git_pull_data()
-    
     port = int(os.environ.get("APP_PORT", 5500))
-    if not os.environ.get("WERKZEUG_RUN_MAIN"):
-        Timer(1, lambda: webbrowser.open(f'http://127.0.0.1:{port}/')).start()
 
     # [수정] Waitress 서버 적용 (개발 서버 경고 제거 및 안정성 향상)
     try:
@@ -1203,5 +1082,6 @@ if __name__ == '__main__':
     except ImportError:
         # Waitress가 설치되지 않은 경우 기존 Flask 개발 서버 사용
         print(" * Waitress not found. Running with basic Flask server.")
-        print(f" * To fix the warning, run: & \"{sys.executable}\" -m pip install waitress")
+        import sys
+        print(f" * To fix the warning, run: pip install waitress")
         app.run(debug=False, port=port, host='0.0.0.0')

@@ -1,8 +1,7 @@
 /* ==========================================================================
-   캘린더 시스템 (Calendar System)
+   1. 전역 변수 및 초기화 (Globals & Initialization)
    ========================================================================== */
 
-// [1] 전역 변수 (Global Variables)
 const nowInit = new Date();
 let calendarDate = new Date(nowInit.getFullYear(), nowInit.getMonth(), 1); // [수정] 1일로 초기화하여 월 계산 오류 방지
 var currentSearchFilters = { site: '', equip: '' };
@@ -11,7 +10,6 @@ let currentDetailTarget = null;
 let expandedViewId = null;
 let cameFromTaskSearch = false; // [추가] 작업 검색에서 상세 정보로 이동했는지 여부
 
-// [2] 초기화 (Initialization)
 document.addEventListener('DOMContentLoaded', () => {
     setupCalendar();
     setupScheduleModal();
@@ -34,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /* ==========================================================================
-   [3] 핵심 로직 & 데이터 처리 (Core Logic & Data)
+   2. 핵심 로직 & 데이터 처리 (Core Logic & Data)
    ========================================================================== */
 
 /**
@@ -45,7 +43,7 @@ function getDeviceDataMap() {
         if (storageData.device_data) return storageData.device_data;
         return storageData;
     }
-    return JSON.parse(localStorage.getItem('device_data')) || JSON.parse(localStorage.getItem('withtech_data')) || {};
+    return JSON.parse(localStorage.getItem('device_data')) || {};
 }
 
 /**
@@ -107,6 +105,8 @@ function getScheduleForCalendar() {
 function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null, worker = null, providedReason = undefined) {
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
+    
+    let payload = { maint_upserts: [], maint_deletes: [], log_upserts: [] };
 
     if (data.maint) {
         const index = data.maint.findIndex(i => i.id === id);
@@ -142,7 +142,7 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null, 
                     const workerInfo = (uDept || uPos) ? `${uName} (${uDept} ${uPos})`.trim() : uName;
 
                     if (!data.logs) data.logs = [];
-                    data.logs.push({
+                    const newLog = {
                         id: Date.now() + Math.floor(Math.random() * 10000), // 중복 방지
                         date: item.scheduledDate, // 기존 날짜에 변경 이력 남김
                         type: item.type || '정기',
@@ -153,7 +153,9 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null, 
                         md: '0',
                         worker: workerInfo,
                         memo: `[일정 ${isDelete ? '삭제' : '변경'} 사유]\n${actualReason}\n\n[변경 내역]\n기존: ${item.scheduledDate}\n변경: ${isDelete ? '삭제됨' : dateStr}\n\n[수정 일시 및 작업자]\n${modifyTime} / ${workerInfo}`
-                    });
+                    };
+                    data.logs.push(newLog);
+                    payload.log_upserts.push(newLog);
                 }
             }
 
@@ -165,6 +167,9 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null, 
                 delete item.memo;
                 if (!item.period) {
                     data.maint.splice(index, 1);
+                    payload.maint_deletes.push(id.toString());
+                } else {
+                    payload.maint_upserts.push(item);
                 }
             } else {
                 item.scheduledDate = dateStr;
@@ -180,8 +185,10 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null, 
                 if (oldMonth !== newMonth) {
                     if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
                 }
+                payload.maint_upserts.push(item);
             }
             localStorage.setItem(key, JSON.stringify(data));
+            window.syncHistoryTransaction(site, equip, payload);
 
             if (typeof addSystemLog === 'function') {
                 const action = isDelete ? 'DELETE_SCHEDULE' : 'ADD_SCHEDULE';
@@ -194,7 +201,7 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null, 
 }
 
 /* ==========================================================================
-   [4] 캘린더 UI 렌더링 (Calendar UI Rendering)
+   3. 캘린더 UI 렌더링 (Calendar UI Rendering)
    ========================================================================== */
 
 function setupCalendar() {
@@ -732,7 +739,7 @@ function openCalendarPopup(dateStr, events) {
 }
 
 /* ==========================================================================
-   [5] 모달: 작업 예정일 설정 (Schedule Date Modal)
+   4. 모달: 작업 예정일 설정 (Schedule Date Modal)
    ========================================================================== */
 
 function setupScheduleModal() {
@@ -913,7 +920,7 @@ function openScheduleModal(site, equip, id) {
 }
 
 /* ==========================================================================
-   [6] 모달: 일정 상세 정보 (Event Detail Modal)
+   5. 모달: 일정 상세 정보 (Event Detail Modal)
    ========================================================================== */
 
 function setupEventDetailModal() {
@@ -1924,8 +1931,10 @@ function completeScheduleWork() {
     });
     const combinedContent = [...new Set(contentArr)].join(', ');
     const completeDate = maintItem.scheduledDate || new Date().toISOString().split('T')[0];
+    
+    let payload = { log_upserts: [], maint_upserts: [], maint_deletes: [] };
 
-    data.logs.push({
+    const newLog = {
         id: Date.now(),
         date: completeDate,
         type: maintItem.type || '정기',
@@ -1937,7 +1946,9 @@ function completeScheduleWork() {
         worker: worker,
         memo: memo,
         isIssueShared: isIssueShared
-    });
+    };
+    data.logs.push(newLog);
+    payload.log_upserts.push(newLog);
 
     sameDayItems.forEach(i => {
         delete i.scheduledDate;
@@ -1948,6 +1959,7 @@ function completeScheduleWork() {
         if (i.type === '정기' || i.type === '비정기') {
             i.date = completeDate;
         }
+        payload.maint_upserts.push(i);
     });
 
     // [추가] 비정기 작업으로 완료 시 기존 '정기' 항목과 동기화 및 중복 방지
@@ -1989,6 +2001,7 @@ function completeScheduleWork() {
         }];
     }
 
+    const preFilterIds = new Set(data.maint.map(i => i.id));
     // [수정] 일회성 작업 및 PM/BM 점검이 아닌 항목(Alarm, 고객대응 등)은 완료 후 maint 배열에서 완전히 제거하여 유지관리 목록 누적 방지
     data.maint = data.maint.filter(i => {
         if (idsToRemove.has(i.id)) return false;
@@ -2000,8 +2013,15 @@ function completeScheduleWork() {
         }
         return true;
     });
+    const postFilterIds = new Set(data.maint.map(i => i.id));
+    
+    preFilterIds.forEach(id => {
+        if (!postFilterIds.has(id)) payload.maint_deletes.push(id.toString());
+    });
+    payload.maint_upserts = payload.maint_upserts.filter(i => postFilterIds.has(i.id));
 
     localStorage.setItem(key, JSON.stringify(data));
+    window.syncHistoryTransaction(site, equip, payload);
 
     if (typeof addSystemLog === 'function') {
         addSystemLog('COMPLETE_SCHEDULE', equip, `Content: ${combinedContent}`);
@@ -2101,6 +2121,8 @@ function cancelScheduleCompletion() {
     const contents = logContent.split(',').map(s => s.trim());
 
     if (!data.maint) data.maint = [];
+    
+    let payload = { log_deletes: [id.toString()], maint_upserts: [] };
 
     let recoveredMaintId = null; // 복구된 메인 ID 추적
 
@@ -2135,10 +2157,10 @@ function cancelScheduleCompletion() {
             existingItem.costType = logItem.costType || '';
             if (itemCost) existingItem.itemCost = itemCost;
             if (idx === 0) recoveredMaintId = existingItem.id;
+            payload.maint_upserts.push(existingItem);
         } else {
             // 일회성 항목 등으로 인해 maint에서 삭제된 경우 재생성
-            const newId = Date.now() + idx;
-            data.maint.push({
+            const newItem = {
                 id: newId,
                 type: logType,
                 detailType: logItem.detailType || '',
@@ -2152,12 +2174,15 @@ function cancelScheduleCompletion() {
                 md: recoveredMd,         // [추가]
                 memo: recoveredMemo,     // [추가]
                 itemCost: itemCost
-            });
+            };
+            data.maint.push(newItem);
+            payload.maint_upserts.push(newItem);
             if (idx === 0) recoveredMaintId = newId;
         }
     });
 
     localStorage.setItem(key, JSON.stringify(data));
+    window.syncHistoryTransaction(site, equip, payload);
 
     if (typeof addSystemLog === 'function') {
         addSystemLog('CANCEL_COMPLETION', equip, `Reverted: ${logContent}`);
@@ -2248,7 +2273,7 @@ function cancelScheduleCompletion() {
 }
 
 /* ==========================================================================
-   [7] 모달: 작업 예정일 등록 (Register Schedule Modal)
+   6. 모달: 작업 예정일 등록 (Register Schedule Modal)
    ========================================================================== */
 
 function setupRegisterScheduleModal() {
@@ -3001,6 +3026,7 @@ function confirmRegisterSchedule() {
         }
 
         localStorage.setItem(key, JSON.stringify(data));
+        window.syncHistoryTransaction(site, equip, { log_upserts: [newLog, originalLog].filter(Boolean) });
 
         if (typeof addSystemLog === 'function') {
             addSystemLog('ADD_LOG_EXTRA', equip, `Added extra work for log ${window.currentAddWorkLogId}`);
@@ -3018,6 +3044,7 @@ function confirmRegisterSchedule() {
         const key = `details_${site}_${equip}`;
         let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
         if (!data.maint) data.maint = [];
+        let payload = { maint_upserts: [] };
 
         const itemsList = content ? content.split(', ').map(s => s.trim()).filter(s => s) : ['내용 없음'];
 
@@ -3059,6 +3086,7 @@ function confirmRegisterSchedule() {
                 if (oldMonth !== newMonth) {
                     if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
                 }
+                payload.maint_upserts.push(existingItem);
             } else {
                 const newItem = {
                     id: Date.now() + idx,
@@ -3076,12 +3104,14 @@ function confirmRegisterSchedule() {
                 };
                 if (idx === 0) lastProcessedId = newItem.id;
                 data.maint.push(newItem);
+                payload.maint_upserts.push(newItem);
 
                 if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
             }
         });
 
         localStorage.setItem(key, JSON.stringify(data));
+        window.syncHistoryTransaction(site, equip, payload);
         if (typeof addSystemLog === 'function') {
             addSystemLog('ADD_SCHEDULE', equip, `Date: ${dateStr}, Type: ${type}, Content: ${content}`);
         }
@@ -3533,7 +3563,7 @@ window.updateRegisterContentOptions = function () {
 };
 
 /* ==========================================================================
-   [8] 모달: 검색 필터 (Search Filter Modal)
+   7. 모달: 검색 필터 (Search Filter Modal)
    ========================================================================== */
 
 function setupSearchModal() {
@@ -3771,7 +3801,7 @@ function updateSearchEquipSelect(site) {
 }
 
 /* ==========================================================================
-   [9] 드래그 앤 드롭 (Drag & Drop)
+   8. 드래그 앤 드롭 (Drag & Drop)
    ========================================================================== */
 window.handleCalendarDragStartFromData = function (e) {
     e.stopPropagation();
@@ -3926,7 +3956,7 @@ window.openScheduleModal = openScheduleModal;
 window.openRegisterScheduleModal = openRegisterScheduleModal;
 
 /* ==========================================================================
-   [10] 모달: 작업 검색 (Task Search Modal)
+   9. 모달: 작업 검색 (Task Search Modal)
    ========================================================================== */
 function setupTaskSearchModal() {
     if (document.getElementById('task-search-modal')) return;

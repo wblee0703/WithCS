@@ -50,7 +50,7 @@ function setupSortResizer() {
 }
 
 /* ==========================================================================
-   다중 선택(Multi-select) 커스텀 UI 유틸리티
+   2. 커스텀 UI 유틸리티 (Custom UI Utilities)
    ========================================================================== */
 function getMultiValues(selectId) {
     const wrapper = document.getElementById(`${selectId}-wrapper`);
@@ -179,7 +179,7 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
 }
 
 /* ==========================================================================
-   2. 필터 설정 (Filters Setup)
+   3. 필터 설정 및 업데이트 (Filter Setup & Updates)
    ========================================================================== */
 function setupSortFilters() {
     const siteSelect = document.getElementById('sort-site-select');
@@ -409,6 +409,14 @@ function updateKeywordSuggestions() {
         "파트 이상 (교체)", "파트 이상 (수리)", "프로그램 이상", "단순조치", "기타" 
     ];
     
+    // [추가] 관리자가 등록한 전체 물품 DB(admin_items)를 제안 박스에 병합하여 검색 편의성 강화
+    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+    adminItems.forEach(item => {
+        if (item.part && !suggestionItems.includes(item.part)) {
+            suggestionItems.push(item.part);
+        }
+    });
+    
     const currentSelected = Array.from(keywordList.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
     keywordList.innerHTML = '';
     
@@ -592,7 +600,7 @@ function updateSortDetailType2Select() {
 }
 
 /* ==========================================================================
-   3. 이벤트 및 검색 로직 (Events & Search)
+   4. 이벤트 및 검색 로직 (Events & Search Logic)
    ========================================================================== */
 function setupSortEvents() {
     const searchBtn = document.getElementById('btn-sort-search');
@@ -736,6 +744,7 @@ function performSortSearch() {
                     }
                     
                     return {
+                        id: itemObj.id, // [추가] 팝업 연동을 위한 원본 ID 포함
                         date: itemDate,
                         site: site,
                         building: equipBuilding,
@@ -792,6 +801,9 @@ function performSortSearch() {
     if (exportBtn) exportBtn.onclick = () => exportSortResultsToCSV(results);
 }
 
+/* ==========================================================================
+   5. UI 렌더링 (UI Rendering)
+   ========================================================================== */
 function renderSortList(results) {
     const tbody = document.getElementById('sort-result-tbody');
     const countBadge = document.getElementById('sort-result-count');
@@ -844,7 +856,10 @@ function renderSortList(results) {
         `;
         
         tr.onclick = () => {
-            window.location.href = `maintenance.html?site=${encodeURIComponent(row.site)}&equip=${encodeURIComponent(row.equipRaw)}`;
+            // [수정] 작업이 완료된 로그일 경우 해당 로그 ID를 파라미터로 넘겨 상세 팝업이 바로 뜨도록 연동
+            let url = `maintenance.html?site=${encodeURIComponent(row.site)}&equip=${encodeURIComponent(row.equipRaw)}`;
+            if (row.status === '완료' && row.id) url += `&logId=${row.id}`;
+            window.location.href = url;
         };
         
         tbody.appendChild(tr);
@@ -1119,6 +1134,9 @@ function renderSortChart(results) {
     drawGroupedChart(irregularSiteCounts, irregularContainer, irregularYAxis, irregularLegend, sitesArray);
 }
 
+/* ==========================================================================
+   6. 데이터 내보내기 및 헬퍼 (Export & Helpers)
+   ========================================================================== */
 function exportSortResultsToCSV(results) {
     let csvContent = '\uFEFF'; 
     csvContent += '날짜,상태,사업장,건물명,모델명,장비명(약어),Serial No,고객사 장비명,구분,세부구분,물품상세구분,작업내용,비용처리,작업자,공수,상세메모\n';

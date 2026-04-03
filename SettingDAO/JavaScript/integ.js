@@ -192,7 +192,7 @@ function initDateControls() {
 }
 
 /* ==========================================================================
-   [추가] 장비 통합 현황 섹션 (Equipment Integration Section)
+   3. 장비 통합 현황 섹션 (Equipment Integration Section)
    ========================================================================== */
 // [추가] 사업장 그룹 필터 전역 변수
 window.integEquipSiteGroupFilter = window.integEquipSiteGroupFilter || '전체';
@@ -220,7 +220,10 @@ function renderIntegEquipStats(data) {
     }
 
     if (filterContainer) {
-        const groups = ['전체', 'SKH 이천', 'SKH 청주', 'SEC 화성', '기타 사업장'];
+        // [수정] 하드코딩된 필터 탭 제거, DB에 등록된 실제 사업장 목록 기반으로 동적 탭 자동 생성
+        const allSites = Object.keys(data).sort();
+        const groups = ['전체', ...allSites];
+        
         filterContainer.innerHTML = '';
         groups.forEach(g => {
             const btn = document.createElement('button');
@@ -235,14 +238,6 @@ function renderIntegEquipStats(data) {
         });
     }
 
-    const getSiteGroup = (siteName) => {
-        const upper = siteName.toUpperCase();
-        if (upper.includes('SKH 이천') || upper.includes('SKH이천')) return 'SKH 이천';
-        if (upper.includes('SKH 청주') || upper.includes('SKH청주')) return 'SKH 청주';
-        if (upper.includes('SEC 화성') || upper.includes('SEC화성')) return 'SEC 화성';
-        return '기타 사업장';
-    };
-
     const siteCounts = {};
     const modelCounts = {};
     const allModels = new Set();
@@ -252,8 +247,8 @@ function renderIntegEquipStats(data) {
     // 데이터 집계
     Object.keys(data).forEach(site => {
         if (data[site] && data[site].length > 0) {
-            const group = getSiteGroup(site);
-            const isSiteVisible = (window.integEquipSiteGroupFilter === '전체' || window.integEquipSiteGroupFilter === group);
+            // [수정] 선택된 탭과 완벽히 매칭되도록 변경하여 확장성 보장
+            const isSiteVisible = (window.integEquipSiteGroupFilter === '전체' || window.integEquipSiteGroupFilter === site);
 
             if (isSiteVisible) {
                 // 1. 사업장 별 장비 수
@@ -322,7 +317,7 @@ function renderIntegEquipStats(data) {
 }
 
 /* ==========================================================================
-   3. 셋업 현황 섹션 (Setup Dashboard Section)
+   4. 셋업 현황 섹션 (Setup Dashboard Section)
    ========================================================================== */
 function renderIntegSetupBarChart(siteCounts, totalCount) {
     const chartEl = document.getElementById('integ-setup-site-bar-chart');
@@ -637,7 +632,7 @@ function toggleIntegSetupPeriodMode() {
 }
 
 /* ==========================================================================
-   4. 운영 관리 현황 섹션 (Maintenance Dashboard Section)
+   5. 운영 관리 현황 섹션 (Maintenance Dashboard Section)
    ========================================================================== */
 function renderIntegMaintStats(mainData) {
     if (!mainData) {
@@ -824,7 +819,7 @@ function toggleIntegPeriodMode() {
 }
 
 /* ==========================================================================
-   5. 헬퍼 함수 (Helpers)
+   6. 헬퍼 함수 (Helpers)
    ========================================================================== */
 function togglePeriodMode(typeId, monthId, yearId, titleId) {
     const type = document.getElementById(typeId).value;
