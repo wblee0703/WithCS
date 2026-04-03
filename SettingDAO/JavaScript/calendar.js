@@ -672,13 +672,42 @@ function openCalendarPopup(dateStr, events) {
                     li.appendChild(changedSpan);
                 }
 
-                if (!group.isCompleted && !group.isChanged) {
+            const userRole = sessionStorage.getItem('userRole');
+            const canDelete = (!group.isCompleted && !group.isChanged) || (group.isChanged && userRole === 'superadmin');
+
+            if (canDelete) {
                     const delBtn = document.createElement('button');
                     delBtn.className = 'btn-calendar-del';
                     delBtn.textContent = '✕';
-                    delBtn.title = '일정 삭제';
+                delBtn.title = group.isChanged ? '변동 이력 삭제' : '일정 삭제';
                     delBtn.onclick = (e) => {
                         e.stopPropagation();
+                    if (group.isChanged) {
+                        if (confirm('이 변동 이력을 삭제하시겠습니까? (삭제 후 복구할 수 없습니다)')) {
+                            const sampleItem = group.items[0];
+                            const key = `details_${sampleItem.site}_${sampleItem.equip}`;
+                            let data = JSON.parse(localStorage.getItem(key)) || {};
+                            let payload = { log_deletes: [] };
+
+                            group.items.forEach(item => {
+                                if (data.logs) {
+                                    data.logs = data.logs.filter(l => l.id !== item.id);
+                                }
+                                payload.log_deletes.push(item.id.toString());
+                            });
+
+                            localStorage.setItem(key, JSON.stringify(data));
+                            if (typeof window.syncHistoryTransaction === 'function') {
+                                window.syncHistoryTransaction(sampleItem.site, sampleItem.equip, payload);
+                            }
+
+                            if (typeof addSystemLog === 'function') {
+                                addSystemLog('DELETE_LOG', sampleItem.equip, '일정 변경 이력 삭제');
+                            }
+                        } else {
+                            return;
+                        }
+                    } else {
                         if (confirm('이 작업 예정일을 삭제하시겠습니까?')) {
                             let reason = undefined;
                             const sampleItem = group.items[0];
@@ -701,6 +730,10 @@ function openCalendarPopup(dateStr, events) {
                             group.items.forEach(item => {
                                 setScheduleDate(item.site, item.equip, item.id, '', true, null, null, reason);
                             });
+                        } else {
+                            return;
+                        }
+                    }
 
                             renderCalendar();
                             if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();

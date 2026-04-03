@@ -277,8 +277,11 @@ function updateHomeDashboard() {
             }
         } catch (e) { console.error("Failed to restore filters", e); }
 
-        if (lastSection) {
+        // [수정] 마지막으로 본 섹션이 유효하면 해당 섹션을, 없으면 '통합 현황'을 기본으로 표시
+        if (lastSection && document.querySelector(`.btn-${lastSection}`)) {
             showHomeSection(lastSection);
+        } else {
+            showHomeSection('integrated');
         }
         isFirstLoad = false;
     }
