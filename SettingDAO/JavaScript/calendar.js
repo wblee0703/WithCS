@@ -754,7 +754,6 @@ function openCalendarPopup(dateStr, events) {
                                 });
                             }
                             openCalendarPopup(dateStr, dayEvents);
-                        }
                     };
                     li.appendChild(delBtn);
                 }
@@ -2193,6 +2192,7 @@ function cancelScheduleCompletion() {
             payload.maint_upserts.push(existingItem);
         } else {
             // 일회성 항목 등으로 인해 maint에서 삭제된 경우 재생성
+                const newId = Date.now() + idx; // [수정] 변수 선언 누락 오류 해결
             const newItem = {
                 id: newId,
                 type: logType,
@@ -4119,8 +4119,8 @@ function doTaskSearch() {
                                 // Check if this scheduled item has already been completed and logged
                                 const isDone = data.logs && data.logs.some(l =>
                                     l.date === item.scheduledDate &&
-                                    l.content.includes(item.content) &&
-                                    l.worker.includes(item.worker)
+                                (l.content || '').includes(item.content || '') &&
+                                (l.worker || '').includes(item.worker || '')
                                 );
                                 if (!isDone) {
                                     allTasks.push({ site, equip, item: item, isCompleted: false, custEquipName: custEquipName });

@@ -136,10 +136,6 @@ body {
     min-height: 0;
 }
 
-.sidebar-group.backup-section {
-    flex: 0 0 auto;
-}
-
 .group-header h3 {
     font-size: 11px;
     letter-spacing: 2px;
@@ -402,15 +398,6 @@ body {
 .sidebar-input-group input {
     flex: 1;
     min-width: 0;
-}
-
-.backup-controls {
-    display: flex;
-    gap: 10px;
-}
-
-.backup-controls button {
-    flex: 1;
 }
 
 /* ==========================================================================
@@ -1249,15 +1236,6 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
         white-space: nowrap;
     }
 
-    /* [요청] 중분류 아래 데이터 관리 숨김 */
-    .data-management-section {
-        display: none !important;
-    }
-
-    /* [요청] 모바일에서 데이터 관리 섹션 전체 숨김 */
-    .sidebar-group.backup-section {
-        display: none !important;
-    }
 
     /* [요청] 모바일 사이드바 대분류/중분류 제목 글자 크기 14px로 변경 */
     .group-header h3,

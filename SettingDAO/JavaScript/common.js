@@ -398,7 +398,7 @@ function initializeApp() {
     checkLoginStatus();
     renderSites();
     setupSidebarEvents();
-    setupDataManagementEvents();
+    setupSystemLogEvents();
     setupResizers();
     setupCollapsibleCards(); // [추가] 소분류 카드 접기 기능 초기화
     setupGlobalModalScrollLock(); // [추가] 모든 모달창 배경 스크롤 자동 제어 기능
@@ -532,6 +532,14 @@ function setupMobileNav() {
         btnAddUserMobile.addEventListener('click', () => {
             toggleNav();
             openAddUserModal();
+        });
+    }
+
+    const btnViewLogsMobile = document.getElementById('mobile-btn-view-logs');
+    if (btnViewLogsMobile) {
+        btnViewLogsMobile.addEventListener('click', () => {
+            toggleNav();
+            openLogModal();
         });
     }
 
@@ -842,29 +850,18 @@ function setupSidebarEvents() {
     });
 }
 
-function setupDataManagementEvents() {
-    const btnExport = document.getElementById('btn-export');
-    const btnImport = document.getElementById('btn-import');
-    const fileImport = document.getElementById('file-import');
-    if (btnExport) btnExport.addEventListener('click', exportData);
-    
-   
-    // [추가] 모바일에서 데이터 관리 숨기기 식별을 위한 클래스 추가
-    if (btnExport && btnExport.parentElement) {
-        btnExport.parentElement.classList.add('data-management-section');
-    }
-
     if (btnImport) btnImport.addEventListener('click', () => fileImport.click());
     if (fileImport) fileImport.addEventListener('change', importData);
 
-    const btnViewLogs = document.getElementById('btn-view-logs');
+function setupSystemLogEvents() {
     const btnCloseModal = document.getElementById('btn-close-modal');
     const btnClearLogs = document.getElementById('btn-clear-logs');
     const logModal = document.getElementById('log-modal');
-
-    if (btnViewLogs) {
-        btnViewLogs.addEventListener('click', (e) => { e.preventDefault(); openLogModal(); });
+    const btnHeaderViewLogs = document.getElementById('btn-header-view-logs');
+    if (btnHeaderViewLogs) {
+        btnHeaderViewLogs.addEventListener('click', (e) => { e.preventDefault(); openLogModal(); });
     }
+
     if (btnCloseModal) {
         btnCloseModal.addEventListener('click', (e) => { e.preventDefault(); closeLogModal(); });
     }
@@ -1110,6 +1107,9 @@ function checkLoginStatus() {
         const btnHeaderAddUser = document.getElementById('btn-header-add-user');
         if (btnHeaderAddUser) btnHeaderAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
 
+        const btnHeaderViewLogs = document.getElementById('btn-header-view-logs');
+        if (btnHeaderViewLogs) btnHeaderViewLogs.style.display = (role === 'superadmin') ? 'inline-block' : 'none';
+
         const adminItems = document.querySelectorAll('.nav-admin-item');
         adminItems.forEach(el => el.style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none');
 
@@ -1136,6 +1136,9 @@ function checkLoginStatus() {
         const mobileBtnAddUser = document.getElementById('mobile-btn-add-user');
         if (mobileBtnAddUser) mobileBtnAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none';
 
+        const mobileBtnViewLogs = document.getElementById('mobile-btn-view-logs');
+        if (mobileBtnViewLogs) mobileBtnViewLogs.style.display = (role === 'superadmin') ? 'block' : 'none';
+
         // [추가] 모바일 타이머 UI 표시 (common.html 템플릿 사용)
         let mobileTimerContainer = document.getElementById('mobile-session-timer');
         if (mobileTimerContainer) {
@@ -1159,6 +1162,9 @@ function checkLoginStatus() {
         const btnHeaderAddUser = document.getElementById('btn-header-add-user');
         if (btnHeaderAddUser) btnHeaderAddUser.style.display = 'none';
 
+        const btnHeaderViewLogs = document.getElementById('btn-header-view-logs');
+        if (btnHeaderViewLogs) btnHeaderViewLogs.style.display = 'none';
+
         const adminItems = document.querySelectorAll('.nav-admin-item');
         adminItems.forEach(el => el.style.display = 'none');
 
@@ -1172,6 +1178,9 @@ function checkLoginStatus() {
 
         const mobileBtnAddUser = document.getElementById('mobile-btn-add-user');
         if (mobileBtnAddUser) mobileBtnAddUser.style.display = 'none';
+
+        const mobileBtnViewLogs = document.getElementById('mobile-btn-view-logs');
+        if (mobileBtnViewLogs) mobileBtnViewLogs.style.display = 'none';
 
         document.body.classList.remove('role-superadmin', 'role-admin', 'role-user');
 
