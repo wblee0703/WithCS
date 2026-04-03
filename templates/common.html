@@ -63,7 +63,6 @@
             </ul>
             <div class="mobile-user-controls">
                 <span class="user-info" id="mobile-user-info" style="display: none;"></span>
-                <button id="mobile-btn-add-user" class="btn-green" style="display: none;">➕ 계정 추가</button>
                 <button id="mobile-btn-view-logs" class="btn-gray" style="display: none;">📜 시스템 로그</button>
                 <button id="mobile-btn-user-settings" class="btn-gray" style="display: none;">⚙️ 설정</button>
                 <button id="mobile-btn-login-logout" class="btn-blue">로그인</button>
@@ -78,7 +77,6 @@
             </div>
             <span id="user-info" class="user-info" style="display: none;"></span>
             <button id="btn-header-view-logs" class="btn-gray" style="display: none;">📜 시스템 로그</button>
-            <button id="btn-header-add-user" class="btn-green" style="display: none;">➕ 계정 추가</button>
             <button id="btn-login-logout" class="btn-gray">로그인</button>
             <button id="btn-user-settings" class="btn-gray" style="display: none;">⚙️ 설정</button>
         </div>
@@ -144,7 +142,10 @@
         <div class="modal-window size-user">
             <div class="modal-header">
                 <h3>계정 관리</h3>
-                <button class="btn-del-sm" id="btn-close-user-modal">✕</button>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button id="btn-modal-add-user" class="btn-green" style="display: none; padding: 4px 10px; font-size: 12px;">➕ 계정 추가</button>
+                    <button class="btn-del-sm" id="btn-close-user-modal">✕</button>
+                </div>
             </div>
             <div class="modal-body">
                 <h4 class="modal-section-title-blue" style="font-size: 14px; margin: 0 0 12px 0;">계정 정보</h4>

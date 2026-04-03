@@ -468,6 +468,10 @@ function setupAuthEvents() {
     const btnChangePw = document.getElementById('btn-change-pw');
     const userInfo = document.getElementById('user-info');
 
+    // [추가] 모달 내부로 이동된 계정 추가 버튼 이벤트 연결
+    const btnModalAddUser = document.getElementById('btn-modal-add-user');
+    if (btnModalAddUser) btnModalAddUser.addEventListener('click', openAddUserModal);
+
     // [추가] 홈 화면 로그인 요소 이벤트 연결
     const homeLoginBtn = document.getElementById('home-login-btn');
     const homeLoginId = document.getElementById('home-login-id');
@@ -527,14 +531,6 @@ function setupMobileNav() {
         }
     }
 
-    const btnAddUserMobile = document.getElementById('mobile-btn-add-user');
-    if (btnAddUserMobile) {
-        btnAddUserMobile.addEventListener('click', () => {
-            toggleNav();
-            openAddUserModal();
-        });
-    }
-
     const btnViewLogsMobile = document.getElementById('mobile-btn-view-logs');
     if (btnViewLogsMobile) {
         btnViewLogsMobile.addEventListener('click', () => {
@@ -558,9 +554,6 @@ function setupMobileNav() {
             openUserModal();
         });
     }
-
-    const btnHeaderAddUser = document.getElementById('btn-header-add-user');
-    if (btnHeaderAddUser) btnHeaderAddUser.addEventListener('click', openAddUserModal);
 
     const btnCloseAddUserModal = document.getElementById('btn-close-add-user-modal');
     if (btnCloseAddUserModal) btnCloseAddUserModal.addEventListener('click', closeAddUserModal);
@@ -850,13 +843,11 @@ function setupSidebarEvents() {
     });
 }
 
-    if (btnImport) btnImport.addEventListener('click', () => fileImport.click());
-    if (fileImport) fileImport.addEventListener('change', importData);
-
 function setupSystemLogEvents() {
     const btnCloseModal = document.getElementById('btn-close-modal');
     const btnClearLogs = document.getElementById('btn-clear-logs');
     const logModal = document.getElementById('log-modal');
+
     const btnHeaderViewLogs = document.getElementById('btn-header-view-logs');
     if (btnHeaderViewLogs) {
         btnHeaderViewLogs.addEventListener('click', (e) => { e.preventDefault(); openLogModal(); });
@@ -1104,8 +1095,8 @@ function checkLoginStatus() {
         }
         if (btnUserSettings) btnUserSettings.style.display = 'inline-block';
 
-        const btnHeaderAddUser = document.getElementById('btn-header-add-user');
-        if (btnHeaderAddUser) btnHeaderAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
+        const btnModalAddUser = document.getElementById('btn-modal-add-user');
+        if (btnModalAddUser) btnModalAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
 
         const btnHeaderViewLogs = document.getElementById('btn-header-view-logs');
         if (btnHeaderViewLogs) btnHeaderViewLogs.style.display = (role === 'superadmin') ? 'inline-block' : 'none';
@@ -1133,9 +1124,6 @@ function checkLoginStatus() {
         }
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'block';
 
-        const mobileBtnAddUser = document.getElementById('mobile-btn-add-user');
-        if (mobileBtnAddUser) mobileBtnAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none';
-
         const mobileBtnViewLogs = document.getElementById('mobile-btn-view-logs');
         if (mobileBtnViewLogs) mobileBtnViewLogs.style.display = (role === 'superadmin') ? 'block' : 'none';
 
@@ -1159,8 +1147,8 @@ function checkLoginStatus() {
         }
         if (btnUserSettings) btnUserSettings.style.display = 'none';
 
-        const btnHeaderAddUser = document.getElementById('btn-header-add-user');
-        if (btnHeaderAddUser) btnHeaderAddUser.style.display = 'none';
+        const btnModalAddUser = document.getElementById('btn-modal-add-user');
+        if (btnModalAddUser) btnModalAddUser.style.display = 'none';
 
         const btnHeaderViewLogs = document.getElementById('btn-header-view-logs');
         if (btnHeaderViewLogs) btnHeaderViewLogs.style.display = 'none';
@@ -1175,9 +1163,6 @@ function checkLoginStatus() {
             mobileBtnLogin.classList.replace('btn-gray', 'btn-blue');
         }
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'none';
-
-        const mobileBtnAddUser = document.getElementById('mobile-btn-add-user');
-        if (mobileBtnAddUser) mobileBtnAddUser.style.display = 'none';
 
         const mobileBtnViewLogs = document.getElementById('mobile-btn-view-logs');
         if (mobileBtnViewLogs) mobileBtnViewLogs.style.display = 'none';

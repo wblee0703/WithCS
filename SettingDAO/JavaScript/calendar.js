@@ -4117,15 +4117,11 @@ function doTaskSearch() {
 
                             if (item.scheduledDate && matchesKeyword && isDateInRange(item.scheduledDate)) {
                                 // Check if this scheduled item has already been completed and logged
-                                const isDone = data.logs && data.logs.some(l => {
-                                    if (l.date !== item.scheduledDate) return false;
-                                    const logContent = String(l.content || '');
-                                    const itemContent = String(item.content || '');
-                                    const logWorker = String(l.worker || '');
-                                    const itemWorker = String(item.worker || '');
-                                    
-                                    return itemContent && logContent.includes(itemContent) && (!itemWorker || logWorker.includes(itemWorker));
-                                });
+                                const isDone = data.logs && data.logs.some(l =>
+                                    l.date === item.scheduledDate &&
+                                (l.content || '').includes(item.content || '') &&
+                                (l.worker || '').includes(item.worker || '')
+                                );
                                 if (!isDone) {
                                     allTasks.push({ site, equip, item: item, isCompleted: false, custEquipName: custEquipName });
                                 }
