@@ -69,7 +69,8 @@ csrf = CSRFProtect(app)
 limiter = Limiter(get_remote_address, app=app, storage_uri="memory://")
 
 # [변경] DB 설정 (환경변수에 따라 MySQL 또는 SQLite 사용)
-db_type = os.environ.get('DB_TYPE', 'sqlite').lower()
+ # [임시] 가비아 호스팅 전 로컬 환경을 위해 강제로 SQLite(로컬 파일 DB)를 사용하도록 고정합니다.
+db_type = 'sqlite' # 나중에 가비아에 올릴 때 os.environ.get('DB_TYPE', 'sqlite').lower() 로 복구
 if db_type == 'mysql':
     mysql_user = os.environ.get('MYSQL_USER', 'root')
     mysql_pw = os.environ.get('MYSQL_PASSWORD', '')
