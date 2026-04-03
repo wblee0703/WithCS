@@ -452,7 +452,6 @@ function setupAuthEvents() {
     const btnUserSettings = document.getElementById('btn-user-settings');
     const btnCloseUserModal = document.getElementById('btn-close-user-modal');
     const userModal = document.getElementById('user-modal');
-    const btnAddUser = document.getElementById('btn-add-user');
     const btnChangePw = document.getElementById('btn-change-pw');
     const userInfo = document.getElementById('user-info');
 
@@ -475,7 +474,6 @@ function setupAuthEvents() {
     if (btnCloseUserModal) btnCloseUserModal.addEventListener('click', closeUserModal);
     // [수정] 모달 바깥쪽(배경) 클릭 시 닫히는 기능 제거 (오직 X 버튼으로만 닫힘)
     // if (userModal) userModal.addEventListener('click', (e) => { if (e.target === userModal) closeUserModal(); });
-    if (btnAddUser) btnAddUser.addEventListener('click', addNewUser);
     if (btnChangePw) btnChangePw.addEventListener('click', changePassword);
 
     const btnDeleteAccount = document.getElementById('btn-delete-account');
@@ -1657,6 +1655,7 @@ function addNewUser() {
     const deptInput = modal.querySelector('#new-user-department');
     const posInput = modal.querySelector('#new-user-position');
     const nameInput = modal.querySelector('#new-user-name');
+    const btnSubmit = modal.querySelector('#btn-add-user');
 
     const id = idInput ? idInput.value.trim() : '';
     const pw = pwInput ? pwInput.value.trim() : '';
@@ -1674,6 +1673,9 @@ function addNewUser() {
     if (!department) return alert('소속을 입력해주세요.');
     if (!position) return alert('직급을 입력해주세요.');
     if (!name) return alert('이름을 입력해주세요.');
+
+    // [추가] 사용자의 연속 클릭(따닥)으로 인한 중복 생성 방지
+    if (btnSubmit) btnSubmit.disabled = true;
 
     // [수정] 서버 API 호출
     fetch('/api/user/add', {
@@ -1701,6 +1703,13 @@ function addNewUser() {
             } else {
                 alert(data.message || '계정 추가 실패');
             }
+        })
+        .catch(err => {
+            console.error('Add User Error:', err);
+            alert('요청 처리 중 오류가 발생했습니다.');
+        })
+        .finally(() => {
+            if (btnSubmit) btnSubmit.disabled = false; // 버튼 상태 복구
         });
 }
 
