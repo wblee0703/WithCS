@@ -242,6 +242,14 @@
     width: 100%;
 }
 
+/* [추가] 작업 등록 모달의 작업자 드롭다운을 위쪽으로 열리게 수정 */
+#register-worker-dropdown {
+    top: auto;
+    bottom: 100%;
+    margin-top: 0;
+    margin-bottom: 2px;
+}
+
 /* --- 6. 작업 검색 모달 (Task Search Modal) --- */
 #task-search-modal {
     z-index: 10001;

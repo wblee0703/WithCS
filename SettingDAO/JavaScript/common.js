@@ -838,6 +838,23 @@ function setupDataManagementEvents() {
     const btnImport = document.getElementById('btn-import');
     const fileImport = document.getElementById('file-import');
     if (btnExport) btnExport.addEventListener('click', exportData);
+    
+    // [추가] 100% DB 전환을 위한 마이그레이션 테스트 버튼 동적 추가
+    if (btnExport && sessionStorage.getItem('userRole') === 'superadmin') {
+        const btnMigrate = document.createElement('button');
+        btnMigrate.className = 'btn-orange';
+        btnMigrate.textContent = 'DB로 데이터 안전 복사 (마이그레이션)';
+        btnMigrate.title = '기존 JSON 데이터를 읽어 DB 테이블에 채워넣습니다. 기존 파일은 절대 지워지지 않습니다.';
+        btnMigrate.onclick = () => {
+            if (!confirm("현재 구성된 모든 장비 및 점검 이력을 SQLite DB 테이블로 복사합니다.\n(기존 시스템에는 아무런 영향을 주지 않는 안전한 작업입니다)\n\n진행하시겠습니까?")) return;
+            fetch('/api/admin/migrate_json_to_db', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': getCookie('csrf_token') }
+            }).then(res => res.json()).then(data => alert(data.message));
+        };
+        btnExport.parentNode.appendChild(btnMigrate);
+    }
+    
     // [추가] 모바일에서 데이터 관리 숨기기 식별을 위한 클래스 추가
     if (btnExport && btnExport.parentElement) {
         btnExport.parentElement.classList.add('data-management-section');

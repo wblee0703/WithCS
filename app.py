@@ -93,6 +93,73 @@ class SystemLog(db.Model):
     details = db.Column(db.Text)
 
 # ------------------------------------------------------------------------------
+# [추가] 100% DB 전환을 위한 Core Business Models (스키마)
+# ------------------------------------------------------------------------------
+class Site(db.Model):
+    name = db.Column(db.String(100), primary_key=True)
+    buildings = db.Column(db.Text, default='[]') # JSON string
+
+class Equipment(db.Model):
+    id = db.Column(db.String(200), primary_key=True) # Site::Name::Serial
+    site_name = db.Column(db.String(100), db.ForeignKey('site.name', ondelete='CASCADE'))
+    name = db.Column(db.String(100))
+    serial = db.Column(db.String(100))
+    special_note = db.Column(db.Text, default='')
+
+class SetupInfo(db.Model):
+    equip_id = db.Column(db.String(200), db.ForeignKey('equipment.id', ondelete='CASCADE'), primary_key=True)
+    cust_equip_name = db.Column(db.String(100), default='')
+    equip_status = db.Column(db.String(50), default='')
+    delivery_date = db.Column(db.String(50), default='')
+    warranty_start = db.Column(db.String(50), default='')
+    warranty_period = db.Column(db.String(50), default='')
+    building = db.Column(db.String(100), default='')
+    floor = db.Column(db.String(50), default='')
+    detail_loc = db.Column(db.String(200), default='')
+    manager = db.Column(db.String(100), default='')
+    contact = db.Column(db.String(100), default='')
+    email = db.Column(db.String(100), default='')
+    cust_manager = db.Column(db.String(100), default='')
+    cust_contact = db.Column(db.String(100), default='')
+    cust_email = db.Column(db.String(100), default='')
+    model = db.Column(db.String(100), default='')
+
+class MaintItem(db.Model):
+    _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.String(50)) 
+    equip_id = db.Column(db.String(200), db.ForeignKey('equipment.id', ondelete='CASCADE'))
+    type = db.Column(db.String(50), default='')
+    detail_type = db.Column(db.String(100), default='')
+    code = db.Column(db.String(100), default='')
+    content = db.Column(db.String(255), default='')
+    date = db.Column(db.String(50), default='')
+    period = db.Column(db.String(50), nullable=True)
+    scheduled_date = db.Column(db.String(50), default='')
+    cost_type = db.Column(db.String(50), default='')
+    worker = db.Column(db.String(100), default='')
+    md = db.Column(db.String(50), default='')
+    item_cost = db.Column(db.String(50), default='')
+    memo = db.Column(db.Text, default='')
+
+class LogItem(db.Model):
+    _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.String(50))
+    equip_id = db.Column(db.String(200), db.ForeignKey('equipment.id', ondelete='CASCADE'))
+    date = db.Column(db.String(50), default='')
+    type = db.Column(db.String(50), default='')
+    detail_type = db.Column(db.String(100), default='')
+    detail_type2 = db.Column(db.String(100), default='')
+    content = db.Column(db.String(255), default='')
+    add_work = db.Column(db.String(255), default='')
+    cost_type = db.Column(db.String(50), default='')
+    md = db.Column(db.String(50), default='')
+    worker = db.Column(db.String(100), default='')
+    memo = db.Column(db.Text, default='')
+    is_issue_shared = db.Column(db.Boolean, default=False)
+    original_log_id = db.Column(db.String(50), nullable=True)
+    add_work_log_id = db.Column(db.String(50), nullable=True)
+
+# ------------------------------------------------------------------------------
 # 2. File Paths & Logging Setup
 # ------------------------------------------------------------------------------
 DATA_DIR = os.path.join(BASE_DIR, 'data')
@@ -929,6 +996,93 @@ def clear_logs():
     except Exception as e:
         db.session.rollback()
         return jsonify({"status": "fail", "message": str(e)}), 500
+
+# [추가] 안전한 데이터 마이그레이션 API (JSON -> DB 복사 전용)
+@app.route('/api/admin/migrate_json_to_db', methods=['POST'])
+@login_required
+def migrate_json_to_db():
+    if session.get('role') != 'superadmin':
+        return jsonify({"status": "fail", "message": "최종 관리자 권한이 필요합니다."}), 403
+        
+    try:
+        data = load_data() # 메모리에 머지된 전체 JSON 데이터 로드
+        
+        # 테스트 반복을 위해 기존 복사된 테이블 데이터만 초기화 (유저/시스템로그 제외)
+        db.session.query(LogItem).delete()
+        db.session.query(MaintItem).delete()
+        db.session.query(SetupInfo).delete()
+        db.session.query(Equipment).delete()
+        db.session.query(Site).delete()
+        
+        # 1. 사업장 (Site) 마이그레이션
+        withtech = data.get('withtech_data', {})
+        equipments = data.get('device_data', {})
+        all_sites = set(list(withtech.keys()) + list(equipments.keys()))
+        
+        for s_name in all_sites:
+            bldgs = []
+            meta_key = f"site_meta_{s_name}"
+            if meta_key in data:
+                bldgs = data[meta_key].get('buildings', [])
+            db.session.add(Site(name=s_name, buildings=json.dumps(bldgs, ensure_ascii=False)))
+            
+        # 2. 장비(Equipment) 및 하위 데이터 마이그레이션
+        for site_name, equips in equipments.items():
+            for equip_name_serial in equips:
+                equip_id = f"{site_name}::{equip_name_serial}"
+                parts = equip_name_serial.split('::')
+                e_name = parts[0]
+                e_serial = parts[1] if len(parts) > 1 else ''
+                
+                detail_key = f"details_{site_name}_{equip_name_serial}"
+                detail = data.get(detail_key, {})
+                
+                # 장비 기본 정보
+                db.session.add(Equipment(
+                    id=equip_id, site_name=site_name, name=e_name, 
+                    serial=e_serial, special_note=detail.get('specialNote', '')
+                ))
+                
+                # 셋업(마스터) 정보
+                setup = detail.get('setup', {})
+                db.session.add(SetupInfo(
+                    equip_id=equip_id, cust_equip_name=setup.get('custEquipName', ''),
+                    equip_status=setup.get('equipStatus', ''), delivery_date=setup.get('deliveryDate', ''),
+                    warranty_start=setup.get('warrantyStart', ''), warranty_period=str(setup.get('warrantyPeriod', '')),
+                    building=setup.get('building', ''), floor=setup.get('floor', ''), detail_loc=setup.get('detailLoc', ''),
+                    manager=setup.get('manager', ''), contact=setup.get('contact', ''), email=setup.get('email', ''),
+                    cust_manager=setup.get('custManager', ''), cust_contact=setup.get('custContact', ''),
+                    cust_email=setup.get('custEmail', ''), model=setup.get('model', '')
+                ))
+                
+                # 유지관리 예정 정보
+                for m in detail.get('maint', []):
+                    db.session.add(MaintItem(
+                        id=str(m.get('id', '')), equip_id=equip_id, type=m.get('type', ''),
+                        detail_type=m.get('detailType', ''), code=m.get('code', ''), content=m.get('content', ''),
+                        date=m.get('date', ''), period=str(m.get('period', '')), scheduled_date=m.get('scheduledDate', ''),
+                        cost_type=m.get('costType', ''), worker=m.get('worker', ''), md=str(m.get('md', '')),
+                        item_cost=m.get('itemCost', ''), memo=m.get('memo', '')
+                    ))
+                    
+                # 점검 이력
+                for l in detail.get('logs', []):
+                    db.session.add(LogItem(
+                        id=str(l.get('id', '')), equip_id=equip_id, date=l.get('date', ''),
+                        type=l.get('type', ''), detail_type=l.get('detailType', ''), detail_type2=l.get('detailType2', ''),
+                        content=l.get('content', ''), add_work=l.get('addWork', ''), cost_type=l.get('costType', ''),
+                        md=str(l.get('md', '')), worker=l.get('worker', ''), memo=l.get('memo', ''),
+                        is_issue_shared=bool(l.get('isIssueShared', False)),
+                        original_log_id=str(l.get('originalLogId', '')), add_work_log_id=str(l.get('addWorkLogId', ''))
+                    ))
+                    
+        db.session.commit()
+        app.logger.info("Data successfully cloned from JSON to SQLite DB.")
+        return jsonify({"status": "success", "message": "현재 운영 중인 JSON 데이터가 SQLite DB로 완벽하게 안전 복사(마이그레이션) 되었습니다.\n\n(기존 JSON 데이터는 삭제되지 않았으며, 시스템은 계속 정상 작동합니다.)"})
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "fail", "message": f"마이그레이션 실패: {str(e)}"}), 500
 
 # ------------------------------------------------------------------------------
 # 8. Main Execution
