@@ -20,6 +20,17 @@ document.addEventListener('DOMContentLoaded', () => {
     setupSearchModal();
     setupTaskSearchModal(); // [추가]
 
+    // [추가] 달력 상세 검색 제안박스 외부 클릭 시 닫기
+    document.addEventListener('click', (e) => {
+        const searchDropdown = document.getElementById('search-equip-dropdown');
+        const searchTrigger = document.getElementById('search-equip-trigger');
+        if (searchDropdown && searchDropdown.classList.contains('show')) {
+            if (e.target !== searchTrigger && !searchTrigger.contains(e.target) && !searchDropdown.contains(e.target)) {
+                searchDropdown.classList.remove('show');
+            }
+        }
+    });
+
 });
 
 /* ==========================================================================
@@ -3154,7 +3165,7 @@ window.updateRegisterDetailTypeOptions = function () {
     const key = `${equipKey}::${type}`;
     const defaultSubCategories = {
         '정기': ['PM 점검'],
-        '비정기': ['BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상'],
+        '비정기': ['BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상', '기타'],
         '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
         '용액제조': ['용액제조'],
         '온라인점검': ['온라인점검']
@@ -3202,7 +3213,8 @@ window.updateRegisterDetailType2Options = function () {
         'BM 점검': ['BM 물품 교체'],
         'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
         'Hunting': ['Air Peak_헌팅', 'HPLC_헌팅', 'Flow_헌팅', 'WD_헌팅', 'BASE_헌팅', 'ETC_헌팅'],
-        'Data / Para 이상': ['REF_PORT', 'RT_흔들림', 'HPLC 압력변동', '에어 유량 변동', '미지피크_발생', '콤플렉스_피크', '프로그램_오류', '베이스 값 이상', 'Data 변동', 'Data 전송 이슈', '딜리버리펌프_이슈', '클리닝펌프_이슈', '용액 이슈']
+        'Data / Para 이상': ['REF_PORT', 'RT_흔들림', 'HPLC 압력변동', '에어 유량 변동', '미지피크_발생', '콤플렉스_피크', '프로그램_오류', '베이스 값 이상', 'Data 변동', 'Data 전송 이슈', '딜리버리펌프_이슈', '클리닝펌프_이슈', '용액 이슈'],
+        '기타': ['배수 펌프 이슈', '구동 이상']
     };
 
     let subCategories2 = catData[key] || [];
@@ -3565,6 +3577,31 @@ function setupSearchModal() {
             renderCalendar();
         };
     }
+
+        // [추가] 장비 검색 제안 박스 이벤트 연동
+        const searchTrigger = document.getElementById('search-equip-trigger');
+        const searchDropdown = document.getElementById('search-equip-dropdown');
+        const searchInput = document.getElementById('search-equip-search');
+        
+        if (searchTrigger && searchDropdown) {
+            searchTrigger.onclick = (e) => {
+                e.stopPropagation();
+                if (searchTrigger.classList.contains('disabled')) return;
+                document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== searchDropdown) d.classList.remove('show'); });
+                searchDropdown.classList.toggle('show');
+                if (searchDropdown.classList.contains('show') && window.renderSearchEquipSuggestions) {
+                    window.renderSearchEquipSuggestions(searchInput ? searchInput.value.trim() : '');
+                    if (searchInput) searchInput.focus();
+                }
+            };
+        }
+        
+        if (searchInput) {
+            searchInput.onclick = (e) => e.stopPropagation();
+            searchInput.oninput = (e) => {
+                if (window.renderSearchEquipSuggestions) window.renderSearchEquipSuggestions(e.target.value.trim());
+            };
+        }
 }
 
 function openSearchModal() {
@@ -3585,32 +3622,152 @@ function openSearchModal() {
     });
 
     updateSearchEquipSelect(currentSearchFilters.site);
-    if (currentSearchFilters.equip) equipSelect.value = currentSearchFilters.equip;
+        
+        // [추가] 팝업을 열었을 때 기존에 선택된 장비 정보 복원
+        if (currentSearchFilters.equip) {
+            if (equipSelect) equipSelect.value = currentSearchFilters.equip;
+            const trigger = document.getElementById('search-equip-trigger');
+            if (trigger) {
+                const parts = currentSearchFilters.equip.split('::');
+                const name = parts[0] || '';
+                const serial = parts.length > 1 ? parts[1] : '';
+                const key = `details_${currentSearchFilters.site}_${currentSearchFilters.equip}`;
+                const detailData = JSON.parse(localStorage.getItem(key)) || {};
+                const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+
+                let displayValueHtml = escapeHtml(name);
+                let subInfoHtml = '';
+                if (custName) {
+                    subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(custName)}]</span>`;
+                } else if (serial) {
+                    subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(serial)}]</span>`;
+                }
+                trigger.innerHTML = `${displayValueHtml}${subInfoHtml}`;
+            }
+        }
 
     modal.style.display = 'flex';
 }
 
 function updateSearchEquipSelect(site) {
     const equipSelect = document.getElementById('search-equip-select');
-    equipSelect.innerHTML = '<option value="">전체 장비</option>';
+    const trigger = document.getElementById('search-equip-trigger');
+    const list = document.getElementById('search-equip-list');
+    const searchInput = document.getElementById('search-equip-search');
+    const dropdown = document.getElementById('search-equip-dropdown');
 
-    if (!site) {
-        equipSelect.disabled = true;
-        return;
+    if (equipSelect) {
+        equipSelect.innerHTML = '<option value="">전체 장비</option>';
+        equipSelect.value = '';
     }
+
+    if (trigger) {
+        if (!site) {
+            trigger.textContent = '사업장을 먼저 선택해주세요';
+            trigger.classList.add('disabled');
+            trigger.style.color = '#8b949e';
+            trigger.style.cursor = 'not-allowed';
+            trigger.style.opacity = '0.5';
+            if (searchInput) searchInput.value = '';
+            if (list) list.innerHTML = '';
+            return;
+        } else {
+            trigger.textContent = '전체 장비';
+            trigger.classList.remove('disabled');
+            trigger.style.color = '#fff';
+            trigger.style.cursor = 'pointer';
+            trigger.style.opacity = '1';
+            if (searchInput) searchInput.value = '';
+        }
+    }
+
+    if (!site) return;
 
     const data = getDeviceDataMap();
     const equips = data[site] || [];
 
-    equips.forEach(equip => {
-        const option = document.createElement('option');
-        option.value = equip;
-        const parts = equip.split('::');
-        option.textContent = parts.length > 1 ? `${parts[0]} (${parts[1]})` : parts[0];
-        equipSelect.appendChild(option);
-    });
+    if (equipSelect) {
+        equips.forEach(equip => {
+            const option = document.createElement('option');
+            option.value = equip;
+            equipSelect.appendChild(option);
+        });
+    }
 
-    equipSelect.disabled = false;
+    // 제안 박스 렌더링 로직
+    window.renderSearchEquipSuggestions = (searchTerm = '') => {
+        if (!list) return;
+        list.innerHTML = '';
+        const keywords = searchTerm.toLowerCase().split(/\s+/);
+
+        let matches = equips.filter(equip => {
+            const parts = equip.split('::');
+            const name = parts[0] || '';
+            const serial = parts.length > 1 ? parts[1] : '';
+            const key = `details_${site}_${equip}`;
+            const detailData = JSON.parse(localStorage.getItem(key)) || {};
+            const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+
+            const text = `${name} ${serial} ${custName}`.toLowerCase();
+            return keywords.every(kw => text.includes(kw));
+        });
+
+        if (searchTerm === '') {
+            const allLi = document.createElement('div');
+            allLi.className = 'log-select-item';
+            allLi.style.padding = '10px 8px';
+            allLi.innerHTML = `<span>전체 장비</span>`;
+            allLi.addEventListener('mousedown', (ev) => {
+                ev.preventDefault();
+                if (equipSelect) equipSelect.value = '';
+                trigger.textContent = '전체 장비';
+                trigger.title = '전체 장비';
+                trigger.style.color = '#fff';
+                if (dropdown) dropdown.classList.remove('show');
+            });
+            list.appendChild(allLi);
+        }
+
+        if (matches.length > 0) {
+            matches.forEach(equip => {
+                const parts = equip.split('::');
+                const name = parts[0] || '';
+                const serial = parts.length > 1 ? parts[1] : '';
+
+                const key = `details_${site}_${equip}`;
+                const detailData = JSON.parse(localStorage.getItem(key)) || {};
+                const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+
+                let displayValueHtml = escapeHtml(name);
+                let subInfoHtml = '';
+                if (custName) {
+                    subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(custName)}]</span>`;
+                } else if (serial) {
+                    subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(serial)}]</span>`;
+                }
+
+                let plainDisplayValue = name;
+                if (custName) plainDisplayValue += ` [${custName}]`;
+                else if (serial) plainDisplayValue += ` [${serial}]`;
+
+                const li = document.createElement('div');
+                li.className = 'log-select-item';
+                li.style.padding = '10px 8px';
+                li.innerHTML = `<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayValueHtml}${subInfoHtml}</span>`;
+
+                li.addEventListener('mousedown', (ev) => {
+                    ev.preventDefault();
+                    if (equipSelect) equipSelect.value = equip;
+                    trigger.innerHTML = `${escapeHtml(name)}${subInfoHtml}`;
+                    trigger.title = plainDisplayValue;
+                    if (dropdown) dropdown.classList.remove('show');
+                });
+                list.appendChild(li);
+            });
+        } else {
+            list.innerHTML = '<div class="log-select-empty-msg" style="padding: 10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>';
+        }
+    };
 }
 
 /* ==========================================================================

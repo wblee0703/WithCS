@@ -321,6 +321,49 @@ function updateWarrantyStatusAutomatically() {
             } catch (e) { }
         }
     }
+
+    // 3. 점검 구분 관리 기본값 마이그레이션 (비정기 > 기타 및 세부구분 2 추가)
+    try {
+        let catData = JSON.parse(localStorage.getItem('check_type_categories'));
+        let catData2 = JSON.parse(localStorage.getItem('check_type_categories2'));
+        let catModified = false;
+        let cat2Modified = false;
+
+        if (catData) {
+            Object.keys(catData).forEach(key => {
+                if (key.endsWith('::비정기')) {
+                    if (!catData[key].includes('기타')) {
+                        catData[key].push('기타');
+                        catModified = true;
+                    }
+                }
+            });
+            if (catModified) {
+                localStorage.setItem('check_type_categories', JSON.stringify(catData));
+                isModified = true;
+            }
+        }
+
+        if (!catData2) catData2 = {};
+        const deviceDataObj = JSON.parse(localStorage.getItem('device_data')) || {};
+        
+        Object.keys(deviceDataObj).forEach(site => {
+            if (Array.isArray(deviceDataObj[site])) {
+                deviceDataObj[site].forEach(equip => {
+                    const key2 = `${equip}::비정기::기타`;
+                    if (!catData2[key2] || catData2[key2].length === 0) {
+                        catData2[key2] = ['배수 펌프 이슈', '구동 이상'];
+                        cat2Modified = true;
+                    }
+                });
+            }
+        });
+
+        if (cat2Modified) {
+            localStorage.setItem('check_type_categories2', JSON.stringify(catData2));
+            isModified = true;
+        }
+    } catch(e) { console.error('Category migration error', e); }
 }
 
 function initializeApp() {

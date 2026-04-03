@@ -703,8 +703,16 @@
             <div class="modal-body">
                 <div class="form-row"><label class="form-label">사업장</label><select id="search-site-select"
                         class="modal-select"></select></div>
-                <div class="form-row"><label class="form-label">장비</label><select id="search-equip-select"
-                        class="modal-select" disabled></select></div>
+                <div class="form-row"><label class="form-label">장비</label>
+                    <div id="search-equip-wrapper" class="log-select-wrapper" style="flex: 1; margin: 0; min-width: 0;">
+                        <div id="search-equip-trigger" class="log-select-trigger disabled" style="color: #8b949e; cursor: not-allowed; opacity: 0.5;">사업장을 먼저 선택해주세요</div>
+                        <div id="search-equip-dropdown" class="log-select-dropdown">
+                            <input type="text" id="search-equip-search" class="dropdown-search-input" placeholder="장비 검색..." autocomplete="off">
+                            <div id="search-equip-list" class="log-select-list"></div>
+                        </div>
+                    </div>
+                    <select id="search-equip-select" style="display: none;"></select>
+                </div>
                 <div class="modal-btn-group-right"><button class="btn-gray"
                         id="btn-reset-search-filter">초기화</button><button class="btn-blue"
                         id="btn-apply-search-filter">적용</button></div>

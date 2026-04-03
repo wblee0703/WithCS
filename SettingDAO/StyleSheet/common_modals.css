@@ -433,18 +433,26 @@
     z-index: 10002;
 }
 
+/* [요청] 드롭다운 메뉴가 모달 밖으로 나갈 수 있도록 overflow 속성 해제 */
+#calendar-search-modal .modal-window,
+#calendar-search-modal .modal-body,
+#schedule-modal .modal-window,
+#schedule-modal .modal-body {
+    overflow: visible !important;
+}
+
 #next-schedule-modal .modal-window {
     width: 500px;
     height: auto;
-    max-height: 80vh;
     display: flex;
     flex-direction: column;
+    overflow: visible !important;
 }
 
 #next-schedule-modal .modal-body {
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible !important;
     padding: 15px;
 }
 
@@ -476,16 +484,15 @@
 
 #register-schedule-modal .modal-window {
     width: 500px;
-    height: 650px;
-    resize: both;
-    overflow: auto;
+    height: auto;
+    resize: none;
     min-width: 450px;
-    min-height: 650px;
+    overflow: visible !important;
 }
 
 #register-schedule-modal .modal-body {
-    overflow-y: auto;
-    max-height: 70vh;
+    overflow: visible !important;
+    max-height: none;
 }
 
 #register-schedule-modal .form-row {
@@ -601,15 +608,16 @@
 @media (max-width: 950px) {
     #register-schedule-modal .modal-window {
         width: 90% !important;
-        height: 85vh !important;
-        max-height: 85vh !important;
+        height: auto !important;
+        max-height: none !important;
         min-width: 0 !important;
         min-height: 0 !important;
         resize: none;
+        overflow: visible !important;
     }
 
     #register-schedule-modal .modal-body {
-        overflow-y: auto;
+        overflow: visible !important;
     }
 
     #register-schedule-modal .form-row {
