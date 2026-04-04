@@ -1012,22 +1012,6 @@ function setupEventDetailModal() {
         };
     }
 
-    // 4. [추가] 이슈 공유 체크박스 연동
-    const issueShareCb = document.getElementById('extra-work-issue-share');
-    if (issueShareCb) {
-        issueShareCb.checked = !!parentLog.isIssueShared;
-        issueShareCb.onchange = (e) => {
-            const isShared = e.target.checked;
-            parentLog.isIssueShared = isShared;
-            localStorage.setItem(key, JSON.stringify(data));
-            if (typeof window.syncHistoryTransaction === 'function') {
-                window.syncHistoryTransaction(site, equip, { log_upserts: [parentLog] });
-            }
-            if (typeof addSystemLog === 'function') addSystemLog('UPDATE_MEMO', equip, `이슈 공유 상태 변경: ${isShared}`);
-            if (typeof populateEquipmentIssues === 'function') populateEquipmentIssues();
-        };
-    }
-
     if (editContentBtn) {
         editContentBtn.onclick = toggleDetailContentEdit;
     }
