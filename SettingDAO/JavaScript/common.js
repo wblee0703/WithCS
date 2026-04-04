@@ -42,7 +42,7 @@ function escapeHtml(text) {
    ========================================================================== */
 
 // [추가] 100% DB 전환을 위한 유지관리/이력 전용 트랜잭션 동기화 함수
-window.syncHistoryTransaction = async function(site, equip, payload) {
+window.syncHistoryTransaction = async function (site, equip, payload) {
     const equip_id = `${site}::${equip}`;
     try {
         const res = await fetch('/api/history/transaction', {
@@ -60,7 +60,7 @@ window.syncHistoryTransaction = async function(site, equip, payload) {
 };
 
 // [추가] 100% DB 전환을 위한 SETUP(셋업 상세내역/일지) 전용 동기화 함수
-window.syncSetupDataDB = async function(site, equip, details = null, logs = null) {
+window.syncSetupDataDB = async function (site, equip, details = null, logs = null) {
     const equip_id = `${site}::${equip}`;
     try {
         const res = await fetch('/api/setup/sync_equip', {
@@ -125,20 +125,8 @@ function fetchServerData(callback) {
             return response.json();
         })
         .then(data => {
-            // [수정] UI 상태 유지를 위해 새로고침 시에도 유지되어야 할 값들을 백업
-            const uiStates = {
-                lastHomeSection: localStorage.getItem('lastHomeSection'),
-                lastAdminSection: localStorage.getItem('lastAdminSection'),
-                setupDashboardFilter: localStorage.getItem('setupDashboardFilter'),
-                currentGanttFilters: localStorage.getItem('currentGanttFilters'),
-                maintDashboardFilter: localStorage.getItem('maintDashboardFilter')
-            };
-
             // 기존 데이터 정리
             localStorage.clear();
-            
-            // [수정] 백업한 UI 상태 복원
-            Object.keys(uiStates).forEach(key => { if (uiStates[key]) localStorage.setItem(key, uiStates[key]); });
 
             // 서버 데이터를 localStorage에 반영
             Object.keys(data).forEach(key => {
@@ -331,7 +319,7 @@ function updateWarrantyStatusAutomatically() {
 
         if (!catData2) catData2 = {};
         const deviceDataObj = JSON.parse(localStorage.getItem('device_data')) || {};
-        
+
         Object.keys(deviceDataObj).forEach(site => {
             if (Array.isArray(deviceDataObj[site])) {
                 deviceDataObj[site].forEach(equip => {
@@ -348,7 +336,7 @@ function updateWarrantyStatusAutomatically() {
             localStorage.setItem('check_type_categories2', JSON.stringify(catData2));
             isModified = true;
         }
-    } catch(e) { console.error('Category migration error', e); }
+    } catch (e) { console.error('Category migration error', e); }
 }
 
 function initializeApp() {
@@ -398,7 +386,7 @@ function initializeApp() {
     checkLoginStatus();
     renderSites();
     setupSidebarEvents();
-    setupSystemLogEvents();
+    setupDataManagementEvents();
     setupResizers();
     setupCollapsibleCards(); // [추가] 소분류 카드 접기 기능 초기화
     setupGlobalModalScrollLock(); // [추가] 모든 모달창 배경 스크롤 자동 제어 기능
@@ -442,7 +430,7 @@ function setupGlobalModalScrollLock() {
                 isAnyModalOpen = true;
             }
         });
-        
+
         // 화면상에 떠있는 모달이 단 하나라도 있다면 뒷 배경 스크롤을 막고, 모두 닫히면 풀어줍니다.
         if (isAnyModalOpen) {
             document.body.style.overflow = 'hidden';
@@ -464,13 +452,8 @@ function setupAuthEvents() {
     const btnUserSettings = document.getElementById('btn-user-settings');
     const btnCloseUserModal = document.getElementById('btn-close-user-modal');
     const userModal = document.getElementById('user-modal');
-    const btnAddUser = document.getElementById('btn-add-user');
     const btnChangePw = document.getElementById('btn-change-pw');
     const userInfo = document.getElementById('user-info');
-
-    // [추가] 모달 내부로 이동된 계정 추가 버튼 이벤트 연결
-    const btnModalAddUser = document.getElementById('btn-modal-add-user');
-    if (btnModalAddUser) btnModalAddUser.addEventListener('click', openAddUserModal);
 
     // [추가] 홈 화면 로그인 요소 이벤트 연결
     const homeLoginBtn = document.getElementById('home-login-btn');
@@ -491,7 +474,6 @@ function setupAuthEvents() {
     if (btnCloseUserModal) btnCloseUserModal.addEventListener('click', closeUserModal);
     // [수정] 모달 바깥쪽(배경) 클릭 시 닫히는 기능 제거 (오직 X 버튼으로만 닫힘)
     // if (userModal) userModal.addEventListener('click', (e) => { if (e.target === userModal) closeUserModal(); });
-    if (btnAddUser) btnAddUser.addEventListener('click', addNewUser);
     if (btnChangePw) btnChangePw.addEventListener('click', changePassword);
 
     const btnDeleteAccount = document.getElementById('btn-delete-account');
@@ -531,11 +513,11 @@ function setupMobileNav() {
         }
     }
 
-    const btnViewLogsMobile = document.getElementById('mobile-btn-view-logs');
-    if (btnViewLogsMobile) {
-        btnViewLogsMobile.addEventListener('click', () => {
+    const btnAddUserMobile = document.getElementById('mobile-btn-add-user');
+    if (btnAddUserMobile) {
+        btnAddUserMobile.addEventListener('click', () => {
             toggleNav();
-            openLogModal();
+            openAddUserModal();
         });
     }
 
@@ -554,6 +536,9 @@ function setupMobileNav() {
             openUserModal();
         });
     }
+
+    const btnHeaderAddUser = document.getElementById('btn-header-add-user');
+    if (btnHeaderAddUser) btnHeaderAddUser.addEventListener('click', openAddUserModal);
 
     const btnCloseAddUserModal = document.getElementById('btn-close-add-user-modal');
     if (btnCloseAddUserModal) btnCloseAddUserModal.addEventListener('click', closeAddUserModal);
@@ -843,16 +828,26 @@ function setupSidebarEvents() {
     });
 }
 
-function setupSystemLogEvents() {
+function setupDataManagementEvents() {
+    const btnExport = document.getElementById('btn-export');
+    const btnImport = document.getElementById('btn-import');
+    const fileImport = document.getElementById('file-import');
+    // [Phase 3] 100% DB 전환으로 인해 JSON 파일 기반의 내보내기/불러오기 기능은 완전히 제거되었습니다.
+
+    // [추가] 모바일에서 데이터 관리 숨기기 식별을 위한 클래스 추가
+    if (btnExport && btnExport.parentElement) {
+        btnExport.parentElement.classList.add('data-management-section');
+    }
+
+    const btnViewLogs = document.getElementById('btn-view-logs');
+
     const btnCloseModal = document.getElementById('btn-close-modal');
     const btnClearLogs = document.getElementById('btn-clear-logs');
     const logModal = document.getElementById('log-modal');
 
-    const btnHeaderViewLogs = document.getElementById('btn-header-view-logs');
-    if (btnHeaderViewLogs) {
-        btnHeaderViewLogs.addEventListener('click', (e) => { e.preventDefault(); openLogModal(); });
+    if (btnViewLogs) {
+        btnViewLogs.addEventListener('click', (e) => { e.preventDefault(); openLogModal(); });
     }
-
     if (btnCloseModal) {
         btnCloseModal.addEventListener('click', (e) => { e.preventDefault(); closeLogModal(); });
     }
@@ -1095,11 +1090,8 @@ function checkLoginStatus() {
         }
         if (btnUserSettings) btnUserSettings.style.display = 'inline-block';
 
-        const btnModalAddUser = document.getElementById('btn-modal-add-user');
-        if (btnModalAddUser) btnModalAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
-
-        const btnHeaderViewLogs = document.getElementById('btn-header-view-logs');
-        if (btnHeaderViewLogs) btnHeaderViewLogs.style.display = (role === 'superadmin') ? 'inline-block' : 'none';
+        const btnHeaderAddUser = document.getElementById('btn-header-add-user');
+        if (btnHeaderAddUser) btnHeaderAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
 
         const adminItems = document.querySelectorAll('.nav-admin-item');
         adminItems.forEach(el => el.style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none');
@@ -1124,8 +1116,8 @@ function checkLoginStatus() {
         }
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'block';
 
-        const mobileBtnViewLogs = document.getElementById('mobile-btn-view-logs');
-        if (mobileBtnViewLogs) mobileBtnViewLogs.style.display = (role === 'superadmin') ? 'block' : 'none';
+        const mobileBtnAddUser = document.getElementById('mobile-btn-add-user');
+        if (mobileBtnAddUser) mobileBtnAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none';
 
         // [추가] 모바일 타이머 UI 표시 (common.html 템플릿 사용)
         let mobileTimerContainer = document.getElementById('mobile-session-timer');
@@ -1147,11 +1139,8 @@ function checkLoginStatus() {
         }
         if (btnUserSettings) btnUserSettings.style.display = 'none';
 
-        const btnModalAddUser = document.getElementById('btn-modal-add-user');
-        if (btnModalAddUser) btnModalAddUser.style.display = 'none';
-
-        const btnHeaderViewLogs = document.getElementById('btn-header-view-logs');
-        if (btnHeaderViewLogs) btnHeaderViewLogs.style.display = 'none';
+        const btnHeaderAddUser = document.getElementById('btn-header-add-user');
+        if (btnHeaderAddUser) btnHeaderAddUser.style.display = 'none';
 
         const adminItems = document.querySelectorAll('.nav-admin-item');
         adminItems.forEach(el => el.style.display = 'none');
@@ -1164,8 +1153,8 @@ function checkLoginStatus() {
         }
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'none';
 
-        const mobileBtnViewLogs = document.getElementById('mobile-btn-view-logs');
-        if (mobileBtnViewLogs) mobileBtnViewLogs.style.display = 'none';
+        const mobileBtnAddUser = document.getElementById('mobile-btn-add-user');
+        if (mobileBtnAddUser) mobileBtnAddUser.style.display = 'none';
 
         document.body.classList.remove('role-superadmin', 'role-admin', 'role-user');
 
@@ -1217,19 +1206,19 @@ function showForcePwChangeModal() {
     const modal = document.getElementById('force-pw-change-modal');
     if (!modal) return;
     modal.style.display = 'flex';
-    
+
     const btnChange = document.getElementById('btn-force-pw-change');
     const btnCancel = document.getElementById('btn-force-pw-cancel');
-    
+
     btnChange.onclick = () => {
         const currentPw = document.getElementById('force-pw-current').value;
         const newPw = document.getElementById('force-pw-new').value;
         const confirmPw = document.getElementById('force-pw-confirm').value;
-        
+
         if (!currentPw || !newPw) return alert('현재 비밀번호와 새 비밀번호를 입력해주세요.');
         if (newPw !== confirmPw) return alert('새 비밀번호가 일치하지 않습니다.');
         if (!isValidPassword(newPw)) return alert('비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다.');
-        
+
         fetch('/api/user/password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
@@ -1244,7 +1233,7 @@ function showForcePwChangeModal() {
             }
         });
     };
-    
+
     btnCancel.onclick = () => {
         modal.style.display = 'none';
         fetch('/api/logout', { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrf_token') } }).then(() => { sessionStorage.clear(); location.reload(); });
@@ -1666,6 +1655,7 @@ function addNewUser() {
     const deptInput = modal.querySelector('#new-user-department');
     const posInput = modal.querySelector('#new-user-position');
     const nameInput = modal.querySelector('#new-user-name');
+    const btnSubmit = modal.querySelector('#btn-add-user');
 
     const id = idInput ? idInput.value.trim() : '';
     const pw = pwInput ? pwInput.value.trim() : '';
@@ -1683,6 +1673,9 @@ function addNewUser() {
     if (!department) return alert('소속을 입력해주세요.');
     if (!position) return alert('직급을 입력해주세요.');
     if (!name) return alert('이름을 입력해주세요.');
+
+    // [추가] 사용자의 연속 클릭(따닥)으로 인한 중복 생성 방지
+    if (btnSubmit) btnSubmit.disabled = true;
 
     // [수정] 서버 API 호출
     fetch('/api/user/add', {
@@ -1710,6 +1703,13 @@ function addNewUser() {
             } else {
                 alert(data.message || '계정 추가 실패');
             }
+        })
+        .catch(err => {
+            console.error('Add User Error:', err);
+            alert('요청 처리 중 오류가 발생했습니다.');
+        })
+        .finally(() => {
+            if (btnSubmit) btnSubmit.disabled = false; // 버튼 상태 복구
         });
 }
 
@@ -1807,16 +1807,16 @@ window.renderMyInfo = function () {
                         const verifyModal = document.getElementById('verify-pw-modal');
                         const verifyInput = document.getElementById('verify-pw-input');
                         const verifyBtn = document.getElementById('btn-verify-pw-confirm');
-                        
+
                         if (verifyModal && verifyInput && verifyBtn) {
                             verifyInput.value = '';
                             verifyModal.style.display = 'flex';
                             verifyInput.focus();
-                            
+
                             verifyBtn.onclick = () => {
                                 const pw = verifyInput.value;
                                 if (!pw) return alert('현재 비밀번호를 입력해주세요.');
-                                
+
                                 fetch('/api/user/verify', {
                                     method: 'POST',
                                     headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
@@ -2720,8 +2720,16 @@ function openNextScheduleModal(options) {
         const dateObj = new Date(completeDate);
         dateObj.setDate(dateObj.getDate() + period);
         defaultNextDate = dateObj.toISOString().split('T')[0];
+    } else {
+        // [추가] 주기가 없고 정기 작업인 경우 1달 후로 설정
+        const isRegular = items.some(i => i.type === '정기' || i.detailType === 'PM 점검');
+        if (isRegular) {
+            const dateObj = new Date(completeDate);
+            dateObj.setMonth(dateObj.getMonth() + 1);
+            defaultNextDate = dateObj.toISOString().split('T')[0];
+        }
     }
-    
+
     const dateInput = document.getElementById('next-schedule-date');
     if (dateInput) {
         dateInput.value = defaultNextDate;
@@ -2736,7 +2744,7 @@ function openNextScheduleModal(options) {
     const workerHidden = document.getElementById('next-schedule-worker-hidden');
     const workerTrigger = document.getElementById('next-schedule-worker-trigger');
     let initialWorker = items.find(i => i.worker)?.worker || sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '';
-    
+
     if (workerHidden) workerHidden.value = initialWorker;
     if (workerTrigger) {
         workerTrigger.textContent = initialWorker || '작업자 선택';
@@ -2763,34 +2771,34 @@ function openNextScheduleModal(options) {
         const renderNextWorkers = async (searchTerm = '') => {
             const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames(site) : [];
             const currentSelected = workerHidden.value ? workerHidden.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-            const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: '', site: ''} : w);
+            const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '', site: '' } : w);
             let displayWorkers = [...allWorkers];
-            
+
             if (searchTerm) {
                 const kw = searchTerm.toLowerCase();
-                displayWorkers = displayWorkers.filter(w => 
-                    w.name.toLowerCase().includes(kw) || 
-                    w.department.toLowerCase().includes(kw) || 
+                displayWorkers = displayWorkers.filter(w =>
+                    w.name.toLowerCase().includes(kw) ||
+                    w.department.toLowerCase().includes(kw) ||
                     w.position.toLowerCase().includes(kw)
                 );
             }
-            
+
             const displayedNames = new Set(displayWorkers.map(w => w.name));
             currentSelected.forEach(selectedName => {
                 if (!displayedNames.has(selectedName)) {
                     const workerToAdd = allWorkers.find(w => w.name === selectedName);
                     if (workerToAdd) displayWorkers.unshift(workerToAdd);
-                    else displayWorkers.unshift({name: selectedName, department: '', position: ''});
+                    else displayWorkers.unshift({ name: selectedName, department: '', position: '' });
                 }
             });
-            
+
             const userSite = sessionStorage.getItem('userSite') || '';
             displayWorkers.sort((a, b) => {
                 const aSelected = currentSelected.includes(a.name);
                 const bSelected = currentSelected.includes(b.name);
                 if (aSelected && !bSelected) return -1;
                 if (!aSelected && bSelected) return 1;
-                
+
                 const aSameSite = a.site === userSite;
                 const bSameSite = b.site === userSite;
                 if (aSameSite && !bSameSite) return -1;
@@ -2805,7 +2813,7 @@ function openNextScheduleModal(options) {
                     if (selected.length > 0) wTrigger.textContent = selected.join(' ');
                     else wTrigger.textContent = '작업자 선택';
                     wTrigger.title = selected.join(', ');
-                    if(mdInput) mdInput.value = selected.length.toString();
+                    if (mdInput) mdInput.value = selected.length.toString();
                 });
             }
         };
@@ -2821,7 +2829,7 @@ function openNextScheduleModal(options) {
     const itemTrigger = document.getElementById('next-schedule-item-trigger');
     const itemDropdown = document.getElementById('next-schedule-item-dropdown');
     const itemConfirm = document.getElementById('btn-next-schedule-item-confirm');
-    
+
     const presetItemsArr = items.filter(i => i.content !== '장비 점검').map(i => {
         let name = i.code ? i.code : i.content;
         return i.itemCost ? `[${i.itemCost}] ${name}` : name;
@@ -2868,12 +2876,15 @@ function openNextScheduleModal(options) {
                 });
             }
 
-            if (selectedItems.length === 0) return alert('최소 1개 이상의 점검 항목을 선택해주세요.');
+            // [수정] 항목을 명시적으로 선택하지 않아도 기본값('장비 점검')으로 다음 예정일이 무사히 등록되도록 변경
+            if (selectedItems.length === 0) {
+                selectedItems.push({ content: '장비 점검', cost: '유상' });
+            }
 
             const key = `details_${site}_${equip}`;
             let data = JSON.parse(localStorage.getItem(key)) || {};
             let isUpdated = false;
-            
+
             let payload = { maint_upserts: [] };
 
             if (!data.maint) data.maint = [];
@@ -2928,7 +2939,7 @@ function openNextScheduleModal(options) {
                     };
                     data.maint.push(newItem);
                     payload.maint_upserts.push(newItem);
-                    
+
                     if (typeof currentNextScheduleTarget.onDateChange === 'function') {
                         currentNextScheduleTarget.onDateChange(site, null, newDate);
                     }

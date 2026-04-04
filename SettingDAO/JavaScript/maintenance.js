@@ -2330,8 +2330,9 @@ window.openAddWorkModal = function(logId, dateStr) {
         const data = JSON.parse(localStorage.getItem(key));
         const logItem = data.logs.find(l => l.id === logId);
         
-        // [수정] 원본 로그 데이터를 presetData로 전달
-        openRegisterScheduleModal(dateStr, logItem);
+        // [수정] 추가 작업 등록 시 기본 날짜를 오늘로 설정하고, 원본 데이터를 presetData로 전달
+        const todayStr = new Date().toISOString().substring(0, 10);
+        openRegisterScheduleModal(todayStr, logItem);
     } else {
         alert('작업 등록 팝업창을 열 수 없습니다. (팝업 스크립트 없음)');
     }

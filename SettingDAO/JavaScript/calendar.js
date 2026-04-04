@@ -1012,6 +1012,22 @@ function setupEventDetailModal() {
         };
     }
 
+    // 4. [추가] 이슈 공유 체크박스 연동
+    const issueShareCb = document.getElementById('extra-work-issue-share');
+    if (issueShareCb) {
+        issueShareCb.checked = !!parentLog.isIssueShared;
+        issueShareCb.onchange = (e) => {
+            const isShared = e.target.checked;
+            parentLog.isIssueShared = isShared;
+            localStorage.setItem(key, JSON.stringify(data));
+            if (typeof window.syncHistoryTransaction === 'function') {
+                window.syncHistoryTransaction(site, equip, { log_upserts: [parentLog] });
+            }
+            if (typeof addSystemLog === 'function') addSystemLog('UPDATE_MEMO', equip, `이슈 공유 상태 변경: ${isShared}`);
+            if (typeof populateEquipmentIssues === 'function') populateEquipmentIssues();
+        };
+    }
+
     if (editContentBtn) {
         editContentBtn.onclick = toggleDetailContentEdit;
     }
@@ -1979,6 +1995,17 @@ function completeScheduleWork() {
         memo: memo,
         isIssueShared: isIssueShared
     };
+
+    // [추가] 추가 작업(Extra Work)인 경우 원본 로그 정보 상속 및 연결
+    if (maintItem.originalLogId) {
+        newLog.originalLogId = maintItem.originalLogId;
+        const originalLog = data.logs.find(l => l.id == maintItem.originalLogId);
+        if (originalLog) {
+            originalLog.addWorkLogId = newLog.id;
+            payload.log_upserts.push(originalLog);
+        }
+    }
+
     data.logs.push(newLog);
     payload.log_upserts.push(newLog);
 
@@ -3036,40 +3063,44 @@ function confirmRegisterSchedule() {
         let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
         if (!data.logs) data.logs = [];
 
-        const newLogId = Date.now();
-
-        const newLog = {
-            id: newLogId,
-            date: dateStr,
+        // [수정] 추가 작업을 완료된 로그(logs)가 아닌, 예정 작업(maint)으로 먼저 등록 후 팝업 호출
+        const newId = Date.now();
+        
+        if (!data.maint) data.maint = [];
+        
+        const newMaintItem = {
+            id: newId,
             type: type,
             detailType: finalDetailType,
+            code: '',
             content: content,
+            date: "",
+            period: null,
+            scheduledDate: dateStr,
             costType: costType,
-            md: md,
             worker: worker,
-            memo: '',
-            isIssueShared: false,
-            originalLogId: window.currentAddWorkLogId
+            md: md,
+            itemCost: '',
+            originalLogId: window.currentAddWorkLogId // 원본 로그 ID 연결
         };
-        data.logs.push(newLog);
-
-        const originalLog = data.logs.find(l => l.id === window.currentAddWorkLogId);
-        if (originalLog) {
-            originalLog.addWorkLogId = newLogId;
-        }
+        data.maint.push(newMaintItem);
 
         localStorage.setItem(key, JSON.stringify(data));
-        window.syncHistoryTransaction(site, equip, { log_upserts: [newLog, originalLog].filter(Boolean) });
+        window.syncHistoryTransaction(site, equip, { maint_upserts: [newMaintItem] });
 
         if (typeof addSystemLog === 'function') {
-            addSystemLog('ADD_LOG_EXTRA', equip, `Added extra work for log ${window.currentAddWorkLogId}`);
+            addSystemLog('ADD_SCHEDULE_EXTRA', equip, `추가 작업 예정 등록 (LogID: ${window.currentAddWorkLogId})`);
         }
 
         document.getElementById('register-schedule-modal').style.display = 'none';
 
-        if (typeof window.handleExtraWorkAdded === 'function') {
-            window.handleExtraWorkAdded(newLogId);
-        }
+        // [수정] 등록 직후 바로 내용을 입력하고 완료 처리할 수 있도록 상세 팝업 오픈
+        setTimeout(() => {
+            if (typeof openEventDetailModal === 'function') {
+                window.currentDetailTarget = { site: site, equip: equip }; // 컨텍스트 임시 복구
+                openEventDetailModal(site, equip, newId, false);
+            }
+        }, 100);
 
         window.currentAddWorkLogId = null;
     } else {
