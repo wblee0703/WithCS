@@ -831,8 +831,12 @@ def admin_crud():
                     # 하위 장비 ID 강제 병합 업데이트
                     equips = Equipment.query.filter_by(site_name=new_name).all()
                     for eq in equips:
-                        parts = eq.id.split('::')
-                        new_eq_id = f"{new_name}::{parts[1] if len(parts)>1 else ''}"
+                        frontend_id = eq.id
+                        if frontend_id.startswith(f"{old_name}::"):
+                            frontend_id = frontend_id[len(f"{old_name}::"):]
+                        elif frontend_id.startswith(f"{new_name}::"):
+                            frontend_id = frontend_id[len(f"{new_name}::"):]
+                        new_eq_id = f"{new_name}::{frontend_id}"
                         db.session.execute(text("UPDATE equipment SET id=:n WHERE id=:o"), {'n':new_eq_id, 'o':eq.id})
                 site = Site.query.filter_by(name=new_name).first()
                 if site: site.buildings = json.dumps(payload.get('buildings', []), ensure_ascii=False)
@@ -841,12 +845,15 @@ def admin_crud():
                 
         elif domain == 'equip':
             new_id = payload.get('new_id')
+            site_name = payload.get('site')
+            
             if action == 'CREATE':
+                db_id = f"{site_name}::{new_id}"
                 e_name = new_id.split('::')[0]
                 e_serial = new_id.split('::')[1] if '::' in new_id else ''
-                db.session.add(Equipment(id=new_id, site_name=payload['site'], name=e_name, serial=e_serial, special_note=payload.get('special_note', '')))
+                db.session.add(Equipment(id=db_id, site_name=site_name, name=e_name, serial=e_serial, special_note=payload.get('special_note', '')))
                 db.session.add(SetupInfo(
-                    equip_id=new_id, cust_equip_name=payload['setup'].get('custEquipName', ''), equip_status=payload['setup'].get('equipStatus', ''),
+                    equip_id=db_id, cust_equip_name=payload['setup'].get('custEquipName', ''), equip_status=payload['setup'].get('equipStatus', ''),
                     delivery_date=payload['setup'].get('deliveryDate', ''), warranty_start=payload['setup'].get('warrantyStart', ''), warranty_period=str(payload['setup'].get('warrantyPeriod', '')),
                     building=payload['setup'].get('building', ''), floor=payload['setup'].get('floor', ''), detail_loc=payload['setup'].get('detailLoc', ''),
                     manager=payload['setup'].get('manager', ''), contact=payload['setup'].get('contact', ''), email=payload['setup'].get('email', ''),
@@ -854,14 +861,20 @@ def admin_crud():
                 ))
             elif action == 'UPDATE':
                 old_id = payload['old_id']
+                db_old_id = f"{site_name}::{old_id}"
+                db_new_id = f"{site_name}::{new_id}"
+                
                 if old_id != new_id:
-                    db.session.execute(text("UPDATE equipment SET id=:n WHERE id=:o"), {'n':new_id, 'o':old_id})
-                equip = Equipment.query.filter_by(id=new_id).first()
+                    db.session.execute(text("UPDATE equipment SET id=:n WHERE id=:o1 OR id=:o2"), {'n':db_new_id, 'o1':db_old_id, 'o2':old_id})
+                else:
+                    db.session.execute(text("UPDATE equipment SET id=:n WHERE id=:o"), {'n':db_new_id, 'o':old_id})
+                    
+                equip = Equipment.query.filter_by(id=db_new_id).first()
                 if equip:
                     equip.special_note = payload.get('special_note', '')
-                    setup = SetupInfo.query.filter_by(equip_id=new_id).first()
+                    setup = SetupInfo.query.filter_by(equip_id=db_new_id).first()
                     if not setup:
-                        setup = SetupInfo(equip_id=new_id)
+                        setup = SetupInfo(equip_id=db_new_id)
                         db.session.add(setup)
                     # 매핑
                     s_data = payload.get('setup', {})
@@ -881,7 +894,10 @@ def admin_crud():
                     setup.cust_email = s_data.get('custEmail', '')
                     setup.model = s_data.get('model', '')
             elif action == 'DELETE':
-                db.session.execute(text("DELETE FROM equipment WHERE id=:n"), {'n':payload['id']})
+                del_id = payload['id']
+                del_site = payload.get('site', '')
+                db_del_id = f"{del_site}::{del_id}"
+                db.session.execute(text("DELETE FROM equipment WHERE id=:n1 OR id=:n2"), {'n1':db_del_id, 'n2':del_id})
 
         elif domain == 'item':
             if action == 'CREATE' or action == 'UPDATE':

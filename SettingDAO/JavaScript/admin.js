@@ -1645,7 +1645,7 @@ async function handleEquipDelete() {
     
     if (!confirm(`'${currentAdminEquipKey}' 장비를 삭제하시겠습니까?\n모든 점검 이력과 데이터가 삭제됩니다.`)) return false;
 
-    const success = await syncAdminDB('equip', 'DELETE', { id: currentAdminEquipKey });
+    const success = await syncAdminDB('equip', 'DELETE', { id: currentAdminEquipKey, site: targetSite });
     if (!success) return false;
 
     // 리스트에서 제거

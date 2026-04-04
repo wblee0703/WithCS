@@ -2277,7 +2277,7 @@ function createListItem(id, text, type, onSelect, subText = '') {
                 const activeSiteLi = document.querySelector('#site-list li.active');
                 const siteName = activeSiteLi.querySelector('.item-text').textContent.trim();
 
-                const success = await window.syncAdminDB('equip', 'DELETE', { id: id });
+                const success = await window.syncAdminDB('equip', 'DELETE', { id: id, site: siteName });
                 if (!success) return alert('서버 삭제에 실패했습니다.');
                 
                 storageData[siteName] = storageData[siteName].filter(i => i !== id);
