@@ -76,6 +76,23 @@ window.syncSetupDataDB = async function (site, equip, details = null, logs = nul
     }
 };
 
+// [추가] 100% DB 전환을 위한 만능 DB 동기화 비동기 헬퍼 함수 (전역 사용)
+window.syncAdminDB = async function (domain, action, payload) {
+    try {
+        const res = await fetch('/api/admin/crud', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+            body: JSON.stringify({ domain, action, payload })
+        });
+        const data = await res.json();
+        if (data.status !== 'success') console.error('DB Sync Error:', data.message);
+        return data.status === 'success';
+    } catch (e) {
+        console.error('DB Sync Failed:', e);
+        return false;
+    }
+};
+
 // [보안] 비밀번호 복잡도 검증 함수 (영문, 숫자, 특수문자 포함 8자 이상)
 function isValidPassword(pw) {
     const regex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#$%^&*()_+~\-={}\[\]:;"'<>,.?/|\\]).{8,}$/;
@@ -655,9 +672,12 @@ function setupSidebarEvents() {
     const siteInput = document.getElementById('site-input');
     const siteAddBtn = document.getElementById('site-add-btn');
     if (siteAddBtn) {
-        siteAddBtn.onclick = () => {
+        siteAddBtn.onclick = async () => {
             const val = siteInput.value.trim();
             if (val && !storageData[val]) {
+                const success = await window.syncAdminDB('site', 'CREATE', { name: val });
+                if (!success) return alert('서버 등록에 실패했습니다.');
+
                 storageData[val] = [];
                 saveData();
                 addSystemLog('ADD_SITE', val);
@@ -710,7 +730,7 @@ function setupSidebarEvents() {
     const equipAddBtn = document.getElementById('equip-add-btn');
 
     if (equipAddBtn) {
-        equipAddBtn.onclick = () => {
+        equipAddBtn.onclick = async () => {
             const activeSiteLi = document.querySelector('#site-list li.active');
             if (!activeSiteLi) return alert('사업장을 먼저 선택해주세요.');
 
@@ -732,6 +752,10 @@ function setupSidebarEvents() {
                 const fullEquipName = equipModelVal ? `${equipVal}::${equipModelVal}` : equipVal;
                 if (!storageData[siteName]) storageData[siteName] = [];
                 if (storageData[siteName].includes(fullEquipName)) return alert('이미 존재하는 장비(Serial No.)입니다.');
+
+                const setupPayload = { model: equipModelVal };
+                const success = await window.syncAdminDB('equip', 'CREATE', { new_id: fullEquipName, site: siteName, setup: setupPayload });
+                if (!success) return alert('서버 등록에 실패했습니다.');
 
                 storageData[siteName].push(fullEquipName);
                 saveData();
@@ -2225,10 +2249,13 @@ function createListItem(id, text, type, onSelect, subText = '') {
     textSpan.onkeypress = (e) => { if (e.key === 'Enter') { e.preventDefault(); finalizeEdit(); } };
     textSpan.onblur = () => { if (textSpan.contentEditable === 'true') finalizeEdit(); };
 
-    li.querySelector('.del-btn').onclick = (e) => {
+    li.querySelector('.del-btn').onclick = async (e) => {
         e.stopPropagation();
         if (confirm(`'${text}' 항목을 삭제하시겠습니까?`)) {
             if (type === 'site') {
+                const success = await window.syncAdminDB('site', 'DELETE', { name: id });
+                if (!success) return alert('서버 삭제에 실패했습니다.');
+
                 // [추가] 사이트 삭제 시 관련 장비 데이터(details_) 일괄 삭제
                 const prefix = `details_${id}_`;
                 Object.keys(localStorage).forEach(k => {
@@ -2249,6 +2276,10 @@ function createListItem(id, text, type, onSelect, subText = '') {
             } else {
                 const activeSiteLi = document.querySelector('#site-list li.active');
                 const siteName = activeSiteLi.querySelector('.item-text').textContent.trim();
+
+                const success = await window.syncAdminDB('equip', 'DELETE', { id: id });
+                if (!success) return alert('서버 삭제에 실패했습니다.');
+                
                 storageData[siteName] = storageData[siteName].filter(i => i !== id);
 
                 // [추가] 장비 삭제 시 관련 데이터(details_) 삭제
@@ -2321,13 +2352,17 @@ function filterList(listId, keyword) {
     });
 }
 
-function handleRename(oldName, newName, type) {
+async function handleRename(oldName, newName, type) {
     if (type === 'site') {
         if (storageData[newName]) {
             alert('이미 존재하는 이름입니다.');
             renderSites();
             return;
         }
+
+        const success = await window.syncAdminDB('site', 'UPDATE', { old_name: oldName, new_name: newName });
+        if (!success) { renderSites(); return alert('서버 수정에 실패했습니다.'); }
+
         storageData[newName] = storageData[oldName];
         delete storageData[oldName];
 
@@ -2355,6 +2390,12 @@ function handleRename(oldName, newName, type) {
             renderEquips(siteName);
             return;
         }
+
+        const parts = newName.split('::');
+        const newModel = parts.length > 1 ? parts[1] : '';
+        
+        const success = await window.syncAdminDB('equip', 'UPDATE', { old_id: oldName, new_id: newName, site: siteName, setup: {model: newModel} });
+        if (!success) { renderEquips(siteName); return alert('서버 수정에 실패했습니다.'); }
 
         const idx = storageData[siteName].indexOf(oldName);
         if (idx !== -1) storageData[siteName][idx] = newName;

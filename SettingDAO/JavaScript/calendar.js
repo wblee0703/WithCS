@@ -3933,6 +3933,9 @@ window.confirmMonthSchedule = function (site, year, month, count) {
 
     confs[yyyyMm][site] = { count: count, confirmedAt: new Date().toISOString() };
     localStorage.setItem('calendar_confirmations', JSON.stringify(confs));
+    if (typeof window.syncAdminDB === 'function') {
+        window.syncAdminDB('setting', 'UPDATE', { key: 'calendar_confirmations', value: confs });
+    }
 
     if (typeof addSystemLog === 'function') {
         addSystemLog('CONFIRM_SCHEDULE', yyyyMm, `[${site}] 작업수 ${count}건 확정`);
@@ -3962,6 +3965,9 @@ window.cancelMonthScheduleConfirm = function (site, year, month) {
         }
 
         localStorage.setItem('calendar_confirmations', JSON.stringify(confs));
+        if (typeof window.syncAdminDB === 'function') {
+            window.syncAdminDB('setting', 'UPDATE', { key: 'calendar_confirmations', value: confs });
+        }
 
         if (typeof addSystemLog === 'function') {
             addSystemLog('CANCEL_CONFIRM_SCHEDULE', yyyyMm, `[${site}] 작업 확정 취소`);
@@ -3993,6 +3999,9 @@ window.incrementConfirmedCount = function (site, dateStr, delta) {
         }
         if (updated) {
             localStorage.setItem('calendar_confirmations', JSON.stringify(confs));
+            if (typeof window.syncAdminDB === 'function') {
+                window.syncAdminDB('setting', 'UPDATE', { key: 'calendar_confirmations', value: confs });
+            }
         }
     }
 };

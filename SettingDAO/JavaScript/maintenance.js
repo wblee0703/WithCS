@@ -3047,14 +3047,14 @@ function saveMaintEquipModal() {
     data.setup = newSetup;
 
     localStorage.setItem(key, JSON.stringify(data));
-    addSystemLog('UPDATE_SETUP', equip, '장비 정보 수정 (Maintenance Page)');
+
+    if (typeof addSystemLog === 'function') {
+        addSystemLog('UPDATE_SETUP', equip, '장비 정보 수정 (Maintenance Page)');
+    }
     
-    // [추가] 장비 셋업 정보 Admin 연계 DB 업데이트
-    fetch('/api/admin/crud', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
-        body: JSON.stringify({ domain: 'equip', action: 'UPDATE', payload: { old_id: equip, new_id: equip, site: site, setup: newSetup, special_note: data.specialNote || '' } })
-    });
+    if (typeof window.syncAdminDB === 'function') {
+        window.syncAdminDB('equip', 'UPDATE', { old_id: equip, new_id: equip, site: site, setup: newSetup, special_note: data.specialNote || '' });
+    }
 
     alert('저장되었습니다.');
     document.getElementById('maint-equip-modal').style.display = 'none';
@@ -3152,9 +3152,17 @@ function loadMaintListFromTarget() {
 
     const targetKey = `details_${currentPath.site}_${currentPath.equip}`;
     let targetData = JSON.parse(localStorage.getItem(targetKey)) || {};
+    
+    // [추가] 100% DB 동기화를 위해 기존 항목 ID 추출
+    const oldMaintIds = targetData.maint ? targetData.maint.map(m => m.id.toString()) : [];
+    
     targetData.maint = newMaint;
 
     localStorage.setItem(targetKey, JSON.stringify(targetData));
+    
+    if (typeof window.syncHistoryTransaction === 'function') {
+        window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_deletes: oldMaintIds, maint_upserts: newMaint });
+    }
 
     // UI 갱신
     renderDetails();
@@ -3209,6 +3217,11 @@ function saveSpecialNote() {
     let data = JSON.parse(localStorage.getItem(key)) || {};
     data.specialNote = textarea.value;
     localStorage.setItem(key, JSON.stringify(data));
+
+    if (typeof window.syncAdminDB === 'function') {
+        window.syncAdminDB('equip', 'UPDATE', { old_id: currentPath.equip, new_id: currentPath.equip, site: currentPath.site, setup: data.setup || {}, special_note: data.specialNote });
+    }
+
     addSystemLog('UPDATE_SPECIAL_NOTE', currentPath.equip, '특이사항 수정');
     alert('특이사항이 저장되었습니다.');
     closeSpecialNoteModal();

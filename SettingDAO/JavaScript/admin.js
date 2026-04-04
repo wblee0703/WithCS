@@ -26,23 +26,6 @@ let adminFormDirty = false;
 let currentDirtyContext = null;
 let initialAdminFormData = { site: null, equip: null, item: null };
 
-// [추가] 만능 DB 동기화 비동기 헬퍼 함수
-async function syncAdminDB(domain, action, payload) {
-    try {
-        const res = await fetch('/api/admin/crud', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
-            body: JSON.stringify({ domain, action, payload })
-        });
-        const data = await res.json();
-        if (data.status !== 'success') console.error('DB Sync Error:', data.message);
-        return data.status === 'success';
-    } catch (e) {
-        console.error('DB Sync Failed:', e);
-        return false;
-    }
-}
-
 function getSiteFormState() {
     return JSON.stringify({
         name: document.getElementById('site-info-name') ? document.getElementById('site-info-name').value : '',
