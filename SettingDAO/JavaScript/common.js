@@ -189,6 +189,24 @@ function fetchServerData(callback) {
         });
 }
 
+// [추가] 데이터 갱신 후 화면 리프레시 시 팝업 지연 호출 체크
+function checkPendingModals() {
+    const openAddWork = sessionStorage.getItem('openAddWorkForLog');
+    if (openAddWork && window.location.pathname.indexOf('maintenance') !== -1) {
+        const data = JSON.parse(openAddWork);
+        sessionStorage.removeItem('openAddWorkForLog');
+        setTimeout(() => {
+            if (typeof window.openRegisterScheduleModal === 'function') {
+                const presetData = { type: '정기', detailType: '', detailType2: '', content: '', worker: '' };
+                window.currentSearchFilters = { site: data.site, equip: data.equip };
+                window.currentAddWorkLogId = data.logId;
+                const todayStr = new Date().toISOString().substring(0, 10);
+                window.openRegisterScheduleModal(todayStr, presetData);
+            }
+        }, 500);
+    }
+}
+
 // [수정] 기존 PM 데이터 변환 및 JSON 저장 시 원하는 키 순서로 자동 재정렬하는 함수
 function migrateDataFormat() {
     let isModified = false;
@@ -436,6 +454,9 @@ function refreshAppViews() {
             restoreLastState();
         }
     }
+
+    // 대기 중인 팝업 모달이 있는지 확인
+    checkPendingModals();
 }
 
 // [추가] 전역 모달 오버레이 스크롤 락 (MutationObserver를 활용하여 모든 js 파일의 모달에 100% 자동 적용됨)
@@ -970,7 +991,7 @@ function restoreLastState() {
             if (window.location.pathname.indexOf('setup') !== -1) lastStateKey = 'lastSetupPath';
             else if (window.location.pathname.indexOf('maintenance') !== -1) lastStateKey = 'lastMaintPath';
 
-            const lastState = sessionStorage.getItem(lastStateKey);
+            const lastState = localStorage.getItem(lastStateKey) || sessionStorage.getItem(lastStateKey);
             if (lastState) {
                 const parsed = JSON.parse(lastState);
                 siteToSelect = parsed.site;
@@ -2478,9 +2499,9 @@ function onEquipClick(site, equip) {
 
     // [수정] 페이지별로 마지막 선택 상태 분리 저장
     if (window.location.pathname.indexOf('setup') !== -1) {
-        sessionStorage.setItem('lastSetupPath', JSON.stringify(currentPath));
+        localStorage.setItem('lastSetupPath', JSON.stringify(currentPath));
     } else if (window.location.pathname.indexOf('maintenance') !== -1) {
-        sessionStorage.setItem('lastMaintPath', JSON.stringify(currentPath));
+        localStorage.setItem('lastMaintPath', JSON.stringify(currentPath));
     }
 
     const detailWindow = document.getElementById('detail-window');
@@ -2919,7 +2940,8 @@ function openNextScheduleModal(options) {
 
             // [수정] 항목을 명시적으로 선택하지 않아도 기본값('장비 점검')으로 다음 예정일이 무사히 등록되도록 변경
             if (selectedItems.length === 0) {
-                selectedItems.push({ content: '장비 점검', cost: '유상' });
+                alert('다음 예정일로 등록할 점검 항목을 1개 이상 선택해주세요.');
+                return;
             }
 
             const key = `details_${site}_${equip}`;
@@ -3051,6 +3073,51 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         };
     }
 
+    // [추가] 추가 버튼 생성 및 연결
+    let addBtn = document.getElementById('btn-add-extra-work-from-history');
+    if (moveBtn && !addBtn) {
+        addBtn = document.createElement('button');
+        addBtn.id = 'btn-add-extra-work-from-history';
+        addBtn.className = 'btn-blue-sm';
+        addBtn.style.marginLeft = '10px';
+        addBtn.textContent = '추가';
+        moveBtn.parentNode.insertBefore(addBtn, moveBtn.nextSibling);
+    }
+
+    if (addBtn) {
+        addBtn.onclick = () => {
+            modal.style.display = 'none';
+            if (typeof window.openRegisterScheduleModal === 'function') {
+                const presetData = { type: parentLog.type, detailType: parentLog.detailType, detailType2: parentLog.detailType2, content: '', worker: parentLog.worker || '' };
+                window.currentSearchFilters = { site: site, equip: equip };
+                window.currentAddWorkLogId = originalLogId;
+                const todayStr = new Date().toISOString().substring(0, 10);
+                window.openRegisterScheduleModal(todayStr, presetData);
+            } else {
+                sessionStorage.setItem('openAddWorkForLog', JSON.stringify({ site, equip, logId: originalLogId }));
+                location.href = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
+            }
+        };
+    }
+
+    // [추가] 이슈 공유 체크박스 래퍼
+    let issueShareCb = document.getElementById('extra-work-history-issue-share');
+    if (!issueShareCb && memoEl) {
+        const cbWrapper = document.createElement('div');
+        cbWrapper.style.display = 'flex';
+        cbWrapper.style.alignItems = 'center';
+        cbWrapper.style.marginBottom = '10px';
+        cbWrapper.style.justifyContent = 'flex-end';
+        cbWrapper.innerHTML = `
+            <label style="font-size: 13px; font-weight: bold; color: #f0883e; display: flex; align-items: center; cursor: pointer;">
+                <input type="checkbox" id="extra-work-history-issue-share" style="transform: scale(1.2); margin-right: 5px;">
+                이슈 공유
+            </label>
+        `;
+        memoEl.parentNode.insertBefore(cbWrapper, memoEl);
+        issueShareCb = document.getElementById('extra-work-history-issue-share');
+    }
+
     tbody.innerHTML = '';
 
     const createRow = (log, badgeText, badgeColor, isParent) => {
@@ -3063,10 +3130,12 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
             <td style="text-align: left; padding-left: 10px;">${escapeHtml(log.content || '-')}</td>
         `;
 
+        tr.dataset.logId = log.id;
         tr.onclick = () => {
             if (memoEl) memoEl.value = log.memo || '작성된 메모가 없습니다.';
             if (workerEl) workerEl.textContent = log.worker || '-';
             if (mdEl) mdEl.textContent = log.md || '0';
+            if (issueShareCb) issueShareCb.checked = !!log.isIssueShared;
             Array.from(tbody.children).forEach(child => child.classList.remove('active-row'));
             tr.classList.add('active-row');
         };
@@ -3078,11 +3147,40 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     const parentRow = createRow(parentLog, '최초', '#238636', true);
     parentRow.classList.add('active-row');
     tbody.appendChild(parentRow);
+    
+    // 팝업 열릴 때 부모의 상태를 우선 표시
+    if (issueShareCb) issueShareCb.checked = !!parentLog.isIssueShared;
 
     // 자식 로그 렌더링
     childLogs.forEach((log, idx) => {
         tbody.appendChild(createRow(log, `추가 ${idx + 1}`, '#1f6feb', false));
     });
+    
+    // 체크박스 클릭(변경) 이벤트 바인딩
+    if (issueShareCb) {
+        const newCb = issueShareCb.cloneNode(true);
+        issueShareCb.parentNode.replaceChild(newCb, issueShareCb);
+        issueShareCb = document.getElementById('extra-work-history-issue-share');
+        
+        issueShareCb.addEventListener('change', (e) => {
+            const isChecked = e.target.checked;
+            const activeRow = tbody.querySelector('tr.active-row');
+            if (activeRow) {
+                const logId = activeRow.dataset.logId;
+                const data = JSON.parse(localStorage.getItem(key)) || {};
+                if (data.logs) {
+                    const logItem = data.logs.find(l => l.id == logId);
+                    if (logItem) {
+                        logItem.isIssueShared = isChecked;
+                        localStorage.setItem(key, JSON.stringify(data));
+                        window.syncHistoryTransaction(site, equip, { log_upserts: [logItem] });
+                        if (typeof addSystemLog === 'function') addSystemLog('UPDATE_MEMO', equip, `이슈 공유 상태 변경 (LogID: ${logId})`);
+                        if (typeof populateEquipmentIssues === 'function') populateEquipmentIssues();
+                    }
+                }
+            }
+        });
+    }
 
     modal.style.display = 'flex';
 };

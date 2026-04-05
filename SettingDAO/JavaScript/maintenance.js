@@ -32,7 +32,7 @@ let originalCostType = "";
 
 // [추가] 에러 테두리 제거 헬퍼 함수
 if (typeof window.removeErrorBorder !== 'function') {
-    window.removeErrorBorder = function(e) {
+    window.removeErrorBorder = function (e) {
         if (e.target) e.target.classList.remove('error-border');
     };
 }
@@ -40,7 +40,7 @@ if (typeof window.removeErrorBorder !== 'function') {
 // [추가] 작업자(사용자) 목록 조회 함수 폴백
 if (typeof window.fetchWorkerNames !== 'function') {
     window.workerNamesCache = [];
-    window.fetchWorkerNames = async function() {
+    window.fetchWorkerNames = async function () {
         if (window.workerNamesCache.length > 0) return window.workerNamesCache;
         try {
             const res = await fetch('/api/users/names');
@@ -83,7 +83,7 @@ function setupMaintenanceEvents() {
     if (maintPeriodInput) {
         maintPeriodInput.type = 'number';
         maintPeriodInput.min = '0';
-        maintPeriodInput.addEventListener('input', function() {
+        maintPeriodInput.addEventListener('input', function () {
             if (this.value < 0) this.value = Math.abs(this.value);
         });
     }
@@ -191,7 +191,7 @@ function setupLogEvents() {
         workerContainer.style.flex = '0.8';
         workerContainer.style.minWidth = '100px';
         workerContainer.style.marginRight = '5px';
-        
+
         workerContainer.innerHTML = `
             <div id="log-worker-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; background: var(--cal-bg-dark);">작업자 선택</div>
             <div id="log-worker-dropdown" class="log-select-dropdown">
@@ -222,27 +222,27 @@ function setupLogEvents() {
         const renderWorkers = async (searchTerm = '') => {
             const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
             const currentSelected = workerInput.value ? workerInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-            const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '' } : w);
             let displayWorkers = [...allWorkers];
-            
+
             if (searchTerm) {
                 const kw = searchTerm.toLowerCase();
-                displayWorkers = displayWorkers.filter(w => 
-                    w.name.toLowerCase().includes(kw) || 
-                    w.department.toLowerCase().includes(kw) || 
+                displayWorkers = displayWorkers.filter(w =>
+                    w.name.toLowerCase().includes(kw) ||
+                    w.department.toLowerCase().includes(kw) ||
                     w.position.toLowerCase().includes(kw)
                 );
             }
-            
+
             const displayedNames = new Set(displayWorkers.map(w => w.name));
             currentSelected.forEach(selectedName => {
                 if (!displayedNames.has(selectedName)) {
                     const workerToAdd = allWorkers.find(w => w.name === selectedName);
                     if (workerToAdd) displayWorkers.unshift(workerToAdd);
-                    else displayWorkers.unshift({name: selectedName, department: '', position: ''});
+                    else displayWorkers.unshift({ name: selectedName, department: '', position: '' });
                 }
             });
-            
+
             const userSite = sessionStorage.getItem('userSite') || '';
             displayWorkers.sort((a, b) => {
                 const aSelected = currentSelected.includes(a.name);
@@ -262,14 +262,14 @@ function setupLogEvents() {
                 const subInfo = (w.department || w.position) ? ` <span style="font-size:11px; color:#8b949e;">(${escapeHtml(w.department)} ${escapeHtml(w.position)})</span>` : '';
                 return `<div class="log-select-item ${isSelected ? 'selected' : ''}" data-value="${escapeHtml(w.name)}"><span>${escapeHtml(w.name)}${subInfo}</span></div>`;
             }).join('');
-            
+
             if (displayWorkers.length === 0) listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
-            
+
             listContainer.querySelectorAll('.log-select-item').forEach(item => {
-                item.onclick = (e) => { 
-                    e.stopPropagation(); 
-                    item.classList.toggle('selected'); 
-                    updateWorkerSelection(); 
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    item.classList.toggle('selected');
+                    updateWorkerSelection();
                 };
             });
         };
@@ -427,14 +427,14 @@ function setupLogEvents() {
         const renderWorkers = async (searchTerm = '') => {
             const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
             const currentSelected = hiddenInput.value ? hiddenInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-            const allWorkers = workers.map(w => typeof w === 'string' ? {name: w, department: '', position: ''} : w);
+            const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '' } : w);
             let displayWorkers = [...allWorkers];
-            
+
             if (searchTerm) {
                 const kw = searchTerm.toLowerCase();
-                displayWorkers = displayWorkers.filter(w => 
-                    w.name.toLowerCase().includes(kw) || 
-                    w.department.toLowerCase().includes(kw) || 
+                displayWorkers = displayWorkers.filter(w =>
+                    w.name.toLowerCase().includes(kw) ||
+                    w.department.toLowerCase().includes(kw) ||
                     w.position.toLowerCase().includes(kw)
                 );
             }
@@ -444,10 +444,10 @@ function setupLogEvents() {
                 if (!displayedNames.has(selectedName)) {
                     const workerToAdd = allWorkers.find(w => w.name === selectedName);
                     if (workerToAdd) displayWorkers.unshift(workerToAdd);
-                    else displayWorkers.unshift({name: selectedName, department: '', position: ''});
+                    else displayWorkers.unshift({ name: selectedName, department: '', position: '' });
                 }
             });
-            
+
             // [추가] 선택된 이름이 최상단으로 오도록 정렬
             const userSite = sessionStorage.getItem('userSite') || '';
             displayWorkers.sort((a, b) => {
@@ -491,7 +491,7 @@ function setupLogEvents() {
             else trigger.textContent = '작업자 선택';
             trigger.title = selected.join(', ');
             hiddenInput.dispatchEvent(new Event('input'));
-            
+
             // [추가] 작업자 수에 맞춰 공수 자동 계산
             const mdInput = document.getElementById('memo-md');
             if (mdInput) {
@@ -529,7 +529,7 @@ function setupLogEvents() {
         issueShareWrapper.style.display = 'flex';
         issueShareWrapper.style.alignItems = 'center';
         issueShareWrapper.style.marginRight = '15px';
-        
+
         const templateContent = getTemplateContent('memo-issue-share-wrapper-template');
         if (templateContent) {
             issueShareWrapper.appendChild(templateContent);
@@ -541,7 +541,7 @@ function setupLogEvents() {
                 </label>
             `;
         }
-        
+
         memoBtn.parentNode.insertBefore(rightContainer, memoBtn);
         rightContainer.appendChild(issueShareWrapper);
         rightContainer.appendChild(memoBtn);
@@ -627,8 +627,8 @@ function setupLogEvents() {
         if (rowContainer && !rowContainer.querySelector('.flex-break')) {
             const breakDiv = document.createElement('div');
             breakDiv.className = 'flex-break';
-                const targetNode = document.getElementById('log-detail-type2-select') || logDetailTypeNode;
-                rowContainer.insertBefore(breakDiv, targetNode.nextSibling);
+            const targetNode = document.getElementById('log-detail-type2-select') || logDetailTypeNode;
+            rowContainer.insertBefore(breakDiv, targetNode.nextSibling);
         }
     }
 }
@@ -781,8 +781,8 @@ function addDetailItem() {
 
     let hasError = false;
     if (!content) { contentEl.classList.add('error-border'); hasError = true; }
-    if (!date) { if(dateEl) dateEl.classList.add('error-border'); hasError = true; }
-    if (maintType === '정기' && !period) { if(periodEl) periodEl.classList.add('error-border'); hasError = true; }
+    if (!date) { if (dateEl) dateEl.classList.add('error-border'); hasError = true; }
+    if (maintType === '정기' && !period) { if (periodEl) periodEl.classList.add('error-border'); hasError = true; }
     if (hasError) {
         return alert(maintType === '정기' ? '정기는 내용, 날짜, 교체 주기를 모두 입력해야 합니다.\n빨간색 테두리로 표시된 항목을 확인해주세요.' : '비정기는 내용과 날짜를 입력해야 합니다.\n빨간색 테두리로 표시된 항목을 확인해주세요.');
     }
@@ -809,7 +809,7 @@ function addDetailItem() {
     localStorage.setItem(key, JSON.stringify(data));
     // [수정] 상세 로그 기록
     addSystemLog('ADD_MAINTENANCE', currentPath.equip, `[${maintType}] ${content} (주기: ${period || '-'}일, 시작일: ${date})`);
-    
+
     window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_upserts: [newItem] });
 
     // 입력창 초기화
@@ -836,7 +836,7 @@ function renderDetails() {
         if (item.type === '비정기' && !item.date) return;
 
         const status = calculateStatus(item.type, item.date, item.period);
-        
+
         const template = getTemplateContent('maint-table-row-template');
         if (!template) return;
         const tr = template.querySelector('tr');
@@ -860,7 +860,7 @@ function renderDetails() {
         tr.querySelector('.edit-content').textContent = escapeHtml(item.content);
         tr.querySelector('.edit-date').textContent = item.date;
         tr.querySelector('.edit-period').textContent = item.period ? item.period + '일' : '-';
-        
+
         const statusCell = tr.querySelector('.status-cell');
         statusCell.className = `status-cell ${status.class}`;
         statusCell.textContent = status.text;
@@ -922,10 +922,10 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
         ul.id = 'maint-content-suggestions';
         ul.className = 'suggestion-list';
         // [수정] 7개 항목 높이 제한 (약 230px)
-        ul.style.maxHeight = '230px'; 
+        ul.style.maxHeight = '230px';
         ul.style.overflowY = 'auto'; // 스크롤 활성화
         wrapper.appendChild(ul);
-        
+
         // 이벤트 리스너 등록
         contentElement.addEventListener('click', () => window.renderMaintSuggestions());
         contentElement.addEventListener('input', () => {
@@ -940,7 +940,7 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
             }
             window.renderMaintSuggestions();
         });
-        
+
         // 포커스를 잃을 때 목록에 없는 임의의 텍스트가 입력되어 있다면 이전 유효값으로 롤백
         contentElement.addEventListener('blur', () => {
             setTimeout(() => {
@@ -970,10 +970,10 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
     contentElement.placeholder = (maintType === '정기' || maintType === '비정기') ? '검색 후 선택 (직접 입력 불가)' : '항목 내용 입력';
 
     // 렌더링 함수 전역 연결
-    window.renderMaintSuggestions = function(showAll = forceShowAll, isInput = false) {
+    window.renderMaintSuggestions = function (showAll = forceShowAll, isInput = false) {
         const ul = document.getElementById('maint-content-suggestions');
         if (!ul || contentElement.disabled) return;
-        
+
         const data = JSON.parse(localStorage.getItem('admin_items')) || [];
         const equipModel = currentPath.equip ? currentPath.equip.split('::')[0] : '';
         const currentType = document.querySelector('#maint-type-toggle .active').dataset.type;
@@ -987,9 +987,9 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
         const keywords = query ? query.split(/\s+/) : [];
 
         if (currentType === '정기' || currentType === '비정기') {
-            
+
             let filteredItems = data.filter(item => {
-                if (addedParts.includes(item.part)) return false; 
+                if (addedParts.includes(item.part)) return false;
                 return true;
             });
 
@@ -1106,7 +1106,7 @@ function deleteDetailItem(id) {
         // 4. 변경된 데이터 저장
         localStorage.setItem(key, JSON.stringify(data));
         addSystemLog('DELETE_MAINTENANCE', currentPath.equip, `삭제: ${deletedContent} (ID: ${id})`);
-        
+
         window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_deletes: [id.toString()] });
 
         // 5. 화면 즉시 갱신
@@ -1180,7 +1180,7 @@ function updateRowData(id, code, content, date, period) {
         data.maint[idx].period = (data.maint[idx].type === '정기') ? (parseInt(period) || 0) : null;
         localStorage.setItem(key, JSON.stringify(data));
         addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `수정: [${code || '-'}] ${content} (날짜: ${date}, 주기: ${period || '-'})`);
-        
+
         window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_upserts: [data.maint[idx]] });
     }
 }
@@ -1265,7 +1265,7 @@ function addLogItem(e) {
     const detailTypeSelect = document.getElementById('log-detail-type-select');
     const type = typeSelect ? typeSelect.value : '';
     const detailType = detailTypeSelect ? detailTypeSelect.value : '';
-    
+
     // 작업자 수로 공수 자동 계산
     const workerNames = workerInput.value.trim();
     const md = workerNames ? workerNames.split(',').filter(Boolean).length.toString() : "0";
@@ -1314,16 +1314,16 @@ function addLogItem(e) {
     let hasError = false;
 
     if (!date) { dateInput.classList.add('error-border'); hasError = true; }
-    if (!type) { if(typeSelect) typeSelect.classList.add('error-border'); hasError = true; }
+    if (!type) { if (typeSelect) typeSelect.classList.add('error-border'); hasError = true; }
     if (!detailType && detailTypeSelect && !detailTypeSelect.disabled) { detailTypeSelect.classList.add('error-border'); hasError = true; }
     if (type === '비정기' && !detailType2 && detailType2Select && !detailType2Select.disabled) { detailType2Select.classList.add('error-border'); hasError = true; }
-    if (!costType) { if(costSelect) costSelect.classList.add('error-border'); hasError = true; }
+    if (!costType) { if (costSelect) costSelect.classList.add('error-border'); hasError = true; }
     if (!workerNames) {
         if (workerTrigger) workerTrigger.classList.add('error-border');
         else if (workerInput && workerInput.type !== 'hidden') workerInput.classList.add('error-border');
         hasError = true;
     }
-    
+
     if (!content) {
         if (contentWrapper && contentWrapper.style.display !== 'none') {
             if (contentTrigger) contentTrigger.classList.add('error-border');
@@ -1337,14 +1337,28 @@ function addLogItem(e) {
         return alert('빨간색 테두리로 표시된 필수 항목을 모두 입력/선택해주세요.');
     }
 
+    // 테이블과 데이터에 깔끔하게 표시하기 위해 세부구분 2를 병합
+    const finalDetailType = (type === '비정기' && detailType2) ? `${detailType} > ${detailType2}` : detailType;
+
+    // [추가] 같은 장비, 같은 날짜에 정기 PM 중복 등록 방지
+    if (type === '정기' && finalDetailType.includes('PM 점검')) {
+        const key = `details_${currentPath.site}_${currentPath.equip}`;
+        let checkData = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [], memo: "" };
+        const completedLog = (checkData.logs || []).find(l => l.date === date && l.type === '정기' && (l.detailType || '').includes('PM 점검') && l.detailType !== '일정변경');
+        if (completedLog) {
+            alert('이미 등록된 작업입니다.');
+            selectLog(completedLog.id);
+            const row = document.getElementById(`log-row-${completedLog.id}`);
+            if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+    }
+
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [], memo: "" };
     if (!data.logs) data.logs = []; // 기존 데이터 호환성 처리
 
     // [수정] 중복 검사 제거 (같은 날짜에 여러 항목 기록 허용)
-
-    // 테이블과 데이터에 깔끔하게 표시하기 위해 세부구분 2를 병합
-    const finalDetailType = (type === '비정기' && detailType2) ? `${detailType} > ${detailType2}` : detailType;
 
     // [추가] 파트 이상(교체/수리) 선택 시 파트 데이터 병합
     let isPartIssue = content.includes('파트 이상 (교체)') || content.includes('파트 이상 (수리)') || content.includes('용액 / 용자 이상');
@@ -1388,7 +1402,7 @@ function addLogItem(e) {
     };
 
     data.logs.push(newLog);
-    
+
     let payload = { log_upserts: [newLog], maint_upserts: [] };
 
     // [추가] PM/BM 점검 등록 시 유지관리 물품에 자동 추가 및 갱신 로직
@@ -1401,7 +1415,7 @@ function addLogItem(e) {
         } else {
             itemsList = content.split(', ').map(s => s.trim()).filter(s => s);
         }
-        
+
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
         itemsList.forEach((itemText, idx) => {
@@ -1473,7 +1487,7 @@ function addLogItem(e) {
 
     localStorage.setItem(key, JSON.stringify(data));
     addSystemLog('ADD_LOG', currentPath.equip, `[${type} - ${finalDetailType}] ${content} (공수: ${md}, 날짜: ${date})`);
-    
+
     window.syncHistoryTransaction(currentPath.site, currentPath.equip, payload);
 
     // 입력창 초기화 및 리스트 갱신
@@ -1653,7 +1667,7 @@ function selectLog(id, focus = true) {
         const worker = logItem.worker || "";
         const md = logItem.md || "";
         const costType = logItem.costType || "유상";
-        
+
         document.getElementById('device-memo').value = memo;
         const workerInput = document.getElementById('memo-worker');
         if (workerInput) {
@@ -1728,7 +1742,7 @@ function saveMemo() {
         originalIssueShared = isIssueShared;
         originalMd = mdContent;
         originalCostType = costTypeContent;
-        
+
         window.syncHistoryTransaction(currentPath.site, currentPath.equip, { log_upserts: [data.logs[logIdx]] });
 
         // [수정] 저장 후 '수정' 모드로 전환
@@ -1769,7 +1783,7 @@ function deleteLogItem(id) {
     data.logs = data.logs.filter(l => l.id !== id);
     localStorage.setItem(key, JSON.stringify(data));
     addSystemLog('DELETE_LOG', currentPath.equip, `삭제: ${deletedInfo}`);
-    
+
     window.syncHistoryTransaction(currentPath.site, currentPath.equip, payload);
 
     if (selectedLogId === id) {
@@ -1780,12 +1794,12 @@ function deleteLogItem(id) {
         if (document.getElementById('memo-cost-type')) {
             document.getElementById('memo-cost-type').value = '유상';
         }
-        if(document.getElementById('memo-worker')) {
+        if (document.getElementById('memo-worker')) {
             document.getElementById('memo-worker').value = '';
             const trigger = document.getElementById('memo-worker-trigger');
             if (trigger) { trigger.textContent = '작업자 선택'; trigger.title = ''; }
         }
-        if(document.getElementById('memo-issue-share')) {
+        if (document.getElementById('memo-issue-share')) {
             document.getElementById('memo-issue-share').checked = false;
         }
         originalMemo = "";
@@ -1948,9 +1962,9 @@ function toggleLogEdit(id, btn) {
         if (!newDate || !newType || (!newDetailType && detailTypeInput && !detailTypeInput.disabled)) {
             return alert('필수 항목(날짜, 구분, 세부구분)을 모두 입력해주세요.');
         }
-        
+
         const currentAddWork = logItem ? (logItem.addWork || '') : '';
-        
+
         const newDetailTypeFull = (newType === '비정기' && newDetailType2) ? `${newDetailType} > ${newDetailType2}` : newDetailType;
         updateLogItem(id, newDate, newType, newDetailTypeFull, newContent, currentAddWork, currentCost, currentMd);
     }
@@ -1973,7 +1987,7 @@ function updateLogItem(id, date, type, detailType, content, addWork, costType, m
 
             localStorage.setItem(key, JSON.stringify(data));
             if (typeof addSystemLog === 'function') addSystemLog('UPDATE_LOG', currentPath.equip, `점검 이력 수정 (LogID: ${id})`);
-            
+
             window.syncHistoryTransaction(currentPath.site, currentPath.equip, { log_upserts: [data.logs[idx]] });
 
             renderLogs();
@@ -2092,7 +2106,7 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
         let registeredItems = [];
         let otherItems = [];
         const defaultSet = new Set(items.map(i => i.code ? i.code : i.content));
-        
+
         let maintSet = new Set();
         if (detailType === 'PM 점검' || detailType === 'BM 점검' || type === '고객대응') {
             const maintKey = `details_${currentPath.site}_${currentPath.equip}`;
@@ -2315,7 +2329,7 @@ window.renderEditLogContentField = function (id, type, detailType, detailType2, 
 }
 
 // [추가] 추가작업 팝업 호출 및 콜백 처리
-window.openAddWorkModal = function(logId, dateStr) {
+window.openAddWorkModal = function (logId, dateStr) {
     if (typeof openRegisterScheduleModal === 'function') {
         window.currentAddWorkLogId = logId; // 현재 작업 중인 로그 ID 임시 저장
         if (typeof currentSearchFilters === 'undefined') {
@@ -2329,7 +2343,7 @@ window.openAddWorkModal = function(logId, dateStr) {
         const key = `details_${currentPath.site}_${currentPath.equip}`;
         const data = JSON.parse(localStorage.getItem(key));
         const logItem = data.logs.find(l => l.id === logId);
-        
+
         // [수정] 추가 작업 등록 시 기본 날짜를 오늘로 설정하고, 원본 데이터를 presetData로 전달
         const todayStr = new Date().toISOString().substring(0, 10);
         openRegisterScheduleModal(todayStr, logItem);
@@ -2338,7 +2352,7 @@ window.openAddWorkModal = function(logId, dateStr) {
     }
 };
 
-window.updateLogAddWork = function(logId, newWorkContent) {
+window.updateLogAddWork = function (logId, newWorkContent) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
     if (data && data.logs) {
@@ -2463,7 +2477,7 @@ window.updateLogContentOptions = function () {
     const contentList = document.getElementById('log-content-list');
     const contentTrigger = document.getElementById('log-content-trigger');
     const contentInput = document.getElementById('log-content-input');
-    
+
     // 갱신 시 파트 래퍼 초기화
     const partWrapper = document.getElementById('log-part-wrapper');
     if (partWrapper) {
@@ -2552,7 +2566,7 @@ window.updateLogContentOptions = function () {
             let registeredItems = [];
             let otherItems = [];
             const defaultSet = new Set(items.map(i => i.code ? i.code : i.content));
-            
+
             let maintSet = new Set();
             if (detailType === 'PM 점검' || detailType === 'BM 점검' || type === '고객대응') {
                 const maintKey = `details_${currentPath.site}_${currentPath.equip}`;
@@ -2687,7 +2701,7 @@ window.updateLogContentOptions = function () {
                         }
                         div.classList.toggle('selected');
                         updateTriggerText();
-                         
+
                         // [추가] 파트 이상(교체/수리) 선택 시 물품 드롭다운 표시 연동
                         if (partWrapper) {
                             const isPartIssue = div.dataset.value.includes('파트 이상 (교체)') || div.dataset.value.includes('파트 이상 (수리)') || div.dataset.value.includes('용액 / 용자 이상');
@@ -2698,7 +2712,7 @@ window.updateLogContentOptions = function () {
                                 partWrapper.style.display = 'none';
                             }
                         }
-                        
+
                         if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
                             const dropdownObj = document.getElementById('log-content-dropdown');
                             if (dropdownObj) dropdownObj.classList.remove('show');
@@ -2823,7 +2837,7 @@ window.updateEditLogContentField = function (id) {
     renderEditLogContentField(id, type, detailType, detailType2, '');
 };
 
-window.updateEditDetailType2Options = function(id, presetVal = '') {
+window.updateEditDetailType2Options = function (id, presetVal = '') {
     const typeSelect = document.getElementById(`edit-log-type-${id}`);
     const detailTypeSelect = document.getElementById(`edit-log-detail-type-${id}`);
     const detail2Select = document.getElementById(`edit-log-detail-type2-${id}`);
@@ -3051,7 +3065,7 @@ function saveMaintEquipModal() {
     if (typeof addSystemLog === 'function') {
         addSystemLog('UPDATE_SETUP', equip, '장비 정보 수정 (Maintenance Page)');
     }
-    
+
     if (typeof window.syncAdminDB === 'function') {
         window.syncAdminDB('equip', 'UPDATE', { old_id: equip, new_id: equip, site: site, setup: newSetup, special_note: data.specialNote || '' });
     }
@@ -3152,14 +3166,14 @@ function loadMaintListFromTarget() {
 
     const targetKey = `details_${currentPath.site}_${currentPath.equip}`;
     let targetData = JSON.parse(localStorage.getItem(targetKey)) || {};
-    
+
     // [추가] 100% DB 동기화를 위해 기존 항목 ID 추출
     const oldMaintIds = targetData.maint ? targetData.maint.map(m => m.id.toString()) : [];
-    
+
     targetData.maint = newMaint;
 
     localStorage.setItem(targetKey, JSON.stringify(targetData));
-    
+
     if (typeof window.syncHistoryTransaction === 'function') {
         window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_deletes: oldMaintIds, maint_upserts: newMaint });
     }
@@ -3247,7 +3261,7 @@ window.renderSpecialNote = function () {
    [추가] 메모/작업내용 필드 비활성화 제어 (Memo Fields State Control)
    ========================================================================== */
 function setMemoFieldsDisabled(disabled) {
-       // [수정] device-memo는 readonly로 제어하여 스크롤 가능하도록 함
+    // [수정] device-memo는 readonly로 제어하여 스크롤 가능하도록 함
     const memoInput = document.getElementById('device-memo');
     if (memoInput) {
         memoInput.readOnly = disabled;
@@ -3269,14 +3283,14 @@ function setMemoFieldsDisabled(disabled) {
             else el.classList.remove('input-disabled');
         }
     });
-    
+
     const mdInput = document.getElementById('memo-md');
     if (mdInput) {
         mdInput.disabled = disabled;
         if (disabled) mdInput.classList.add('input-disabled');
         else mdInput.classList.remove('input-disabled');
     }
-    
+
     const workerTrigger = document.getElementById('memo-worker-trigger');
     if (workerTrigger) {
         if (disabled) {
@@ -3584,7 +3598,7 @@ window.closeFileEditModal = function () {
 };
 
 // [추가] 캘린더뷰 이동 로직
-window.moveToCalendarView = function() {
+window.moveToCalendarView = function () {
     if (!currentPath.site || !currentPath.equip) {
         alert('장비를 선택해주세요.');
         return;
@@ -3600,12 +3614,12 @@ window.moveToCalendarView = function() {
     }
 
     const equipName = currentPath.equip.split('::')[0];
-    
+
     // 운영 관리 대시보드 및 캘린더 필터 설정
     const maintFilter = { site: currentPath.site, equip: equipName, serial: currentPath.equip, search: { site: currentPath.site, equip: currentPath.equip } };
     localStorage.setItem('maintDashboardFilter', JSON.stringify(maintFilter));
     localStorage.setItem('lastHomeSection', 'maint');
-    
+
     // 홈 화면으로 이동
     window.location.href = 'index.html?scrollTo=calendar';
 };

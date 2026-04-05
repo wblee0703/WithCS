@@ -25,11 +25,47 @@ function initSortPage() {
     setupSortEvents();
     setupSortResizer();
 
-    // 초기 로드 시 '연간' 기준으로 전체 데이터 자동 검색 실행
-    const periodType = document.getElementById('sort-period-type');
-    if (periodType) {
-        periodType.value = 'year';
-        periodType.dispatchEvent(new Event('change'));
+    // 마지막 검색 필터 복원
+    try {
+        const lastSortFilters = JSON.parse(localStorage.getItem('lastSortFilters'));
+        if (lastSortFilters) {
+            const periodType = document.getElementById('sort-period-type');
+            if (periodType && lastSortFilters.periodType) {
+                periodType.value = lastSortFilters.periodType;
+                periodType.dispatchEvent(new Event('change'));
+            }
+            
+            if (lastSortFilters.monthInput) {
+                const mi = document.getElementById('sort-month-input');
+                if (mi) mi.value = lastSortFilters.monthInput;
+            }
+            if (lastSortFilters.yearInput) {
+                const yi = document.getElementById('sort-year-input');
+                if (yi) yi.value = lastSortFilters.yearInput;
+            }
+            if (lastSortFilters.startDate) {
+                const si = document.getElementById('sort-start-date');
+                if (si) si.value = lastSortFilters.startDate;
+            }
+            if (lastSortFilters.endDate) {
+                const ei = document.getElementById('sort-end-date');
+                if (ei) ei.value = lastSortFilters.endDate;
+            }
+            
+            if (lastSortFilters.keywordInputVal) {
+                const ki = document.getElementById('sort-keyword');
+                if (ki) ki.value = lastSortFilters.keywordInputVal;
+            }
+            setTimeout(performSortSearch, 50);
+            return;
+        }
+    } catch(e) {}
+
+    // 초기 로드 시 '연간' 기준으로 전체 데이터 자동 검색 실행 (저장된 필터가 없을 때)
+    const pType = document.getElementById('sort-period-type');
+    if (pType) {
+        pType.value = 'year';
+        pType.dispatchEvent(new Event('change'));
     }
     setTimeout(performSortSearch, 50);
 }
@@ -650,6 +686,17 @@ function performSortSearch() {
         startDate = document.getElementById('sort-start-date') ? document.getElementById('sort-start-date').value : '';
         endDate = document.getElementById('sort-end-date') ? document.getElementById('sort-end-date').value : '';
     }
+
+    // [추가] 마지막 검색 필터 저장
+    const currentSortFilters = {
+        periodType: periodType,
+        monthInput: monthInput ? monthInput.value : '',
+        yearInput: yearInput ? yearInput.value : '',
+        startDate: startDate,
+        endDate: endDate,
+        keywordInputVal: keywordInputVal
+    };
+    localStorage.setItem('lastSortFilters', JSON.stringify(currentSortFilters));
 
     let results = [];
     
