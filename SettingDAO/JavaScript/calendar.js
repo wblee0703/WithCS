@@ -161,11 +161,12 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null, 
             }
 
             if (isDelete) {
-                delete item.scheduledDate;
-                delete item.md;
-                delete item.costType;
-                delete item.worker;
-                delete item.memo;
+                // [수정] delete 대신 빈 문자열 명시적 할당으로 DB 동기화 시 누락되어 부활하는 현상 방지
+                item.scheduledDate = "";
+                item.md = "";
+                item.costType = "";
+                item.worker = "";
+                item.memo = "";
                 if (!item.period) {
                     data.maint.splice(index, 1);
                     payload.maint_deletes.push(id.toString());
@@ -1888,7 +1889,7 @@ function saveDetailChanges() {
 
         sameDayItems.forEach(m => {
             if (!remainingIds.includes(m.id)) {
-                delete m.scheduledDate;
+                m.scheduledDate = ""; // [수정] DB 삭제 누락 방지
                 payload.maint_upserts.push(m);
             }
         });
@@ -2039,11 +2040,12 @@ function completeScheduleWork() {
     payload.log_upserts.push(newLog);
 
     sameDayItems.forEach(i => {
-        delete i.scheduledDate;
-        delete i.worker;
-        delete i.memo;
-        delete i.costType;
-        delete i.md;
+        // [수정] DB에서 값이 지워지도록 명시적 빈 문자열 할당
+        i.scheduledDate = "";
+        i.worker = "";
+        i.memo = "";
+        i.costType = "";
+        i.md = "";
         if (i.type === '정기' || i.type === '비정기') {
             i.date = completeDate;
         }

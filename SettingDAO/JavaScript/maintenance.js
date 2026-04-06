@@ -1804,7 +1804,7 @@ function deleteLogItem(id) {
     if (targetLog && targetLog.originalLogId) {
         const originalLog = data.logs.find(l => l.id === targetLog.originalLogId);
         if (originalLog) {
-            delete originalLog.addWorkLogId;
+            originalLog.addWorkLogId = ""; // [수정] 추가 작업 삭제 시 원본 로그에서 연동 상태 DB 삭제 누락 방지
             payload.log_upserts.push(originalLog);
         }
     }
