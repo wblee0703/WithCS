@@ -70,6 +70,7 @@ function getScheduleForCalendar() {
                             if (targetDateStr) {
                                 if (!events[targetDateStr]) events[targetDateStr] = [];
                                 events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.code ? item.code : item.content, id: item.id, md: item.md || 0 });
+                                events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.code ? item.code : item.content, id: item.id, md: item.md || 0, originalLogId: item.originalLogId });
                             }
                         });
                     }
@@ -88,6 +89,8 @@ function getScheduleForCalendar() {
                                     isCompleted: !isChanged,
                                     isChanged: isChanged,
                                     md: log.md || 0
+                                    md: log.md || 0,
+                                    originalLogId: log.originalLogId
                                 });
                             }
                         });
@@ -657,11 +660,20 @@ function openCalendarPopup(dateStr, events) {
 
                 li.querySelector('.equip-info').innerHTML = `${escapeHtml(group.site)} > ${escapeHtml(equipName)}${subInfo}`;
 
+                const rightContainer = document.createElement('div');
+                rightContainer.style.display = 'flex';
+                rightContainer.style.alignItems = 'center';
+                rightContainer.style.gap = '8px';
+                rightContainer.style.marginLeft = 'auto';
+                li.appendChild(rightContainer);
+
                 if (group.isCompleted) {
                     const completedSpan = document.createElement('span');
                     completedSpan.textContent = '<완료>';
                     completedSpan.className = 'popup-completed-badge';
                     li.appendChild(completedSpan);
+                    completedSpan.style.marginLeft = '0';
+                    rightContainer.appendChild(completedSpan);
                 } else if (group.isChanged) {
                     const changedSpan = document.createElement('span');
                     changedSpan.textContent = '<변동>';
@@ -670,6 +682,17 @@ function openCalendarPopup(dateStr, events) {
                     changedSpan.style.fontWeight = 'bold';
                     changedSpan.style.fontSize = '12px';
                     li.appendChild(changedSpan);
+                    rightContainer.appendChild(changedSpan);
+                }
+
+                const isExtraWork = group.items.some(i => i.originalLogId);
+                if (isExtraWork) {
+                    const extraSpan = document.createElement('span');
+                    extraSpan.textContent = '<추가>';
+                    extraSpan.style.color = '#1f6feb';
+                    extraSpan.style.fontWeight = 'bold';
+                    extraSpan.style.fontSize = '12px';
+                    rightContainer.appendChild(extraSpan);
                 }
 
             const userRole = sessionStorage.getItem('userRole');
@@ -1927,6 +1950,12 @@ function updateScheduleDateFromDetail() {
 function completeScheduleWork() {
     if (!currentDetailTarget || currentDetailTarget.isCompleted) return;
 
+    // [추가] 수정사항이 저장되지 않은 경우 완료 진행을 차단하고 팝업 알림
+    if (hasDetailUnsavedChanges()) {
+        alert('수정된 내용이 저장되지 않았습니다. 먼저 [저장] 버튼을 눌러 변경사항을 저장해주세요.');
+        return;
+    }
+
     const worker = document.getElementById('detail-worker').value.trim();
     const mdInput = document.getElementById('detail-md');
     const md = mdInput ? mdInput.value.trim() : '';
@@ -1940,10 +1969,6 @@ function completeScheduleWork() {
 
     // [추가] 작업 완료 전 확인 팝업
     if (!confirm('해당 작업을 완료 처리하시겠습니까?')) return;
-
-    if (hasDetailUnsavedChanges()) {
-        if (!saveDetailChanges()) return;
-    }
 
     localStorage.setItem('lastWorkerName', worker);
 
