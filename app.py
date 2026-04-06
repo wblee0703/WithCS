@@ -435,7 +435,7 @@ def set_security_headers(response):
         # [수정] 401 Unauthorized는 정상적인 인증 루틴일 수 있으므로 경고 로그에서 제외 (로그인 실패 등)
         # [개선] 400 에러는 위의 에러 핸들러와 일반 비즈니스 로직(중복 아이디 등)에서 처리/기록하므로 포괄 로그에서 제외 (중복 방지)
         if response.status_code > 400 and response.status_code != 401:
-            app.logger.warning(f"Response Status: {response.status}")
+            app.logger.warning(f"Response Status: {response.status} (Path: {request.path})")
     
     # 보안 헤더
     response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -453,18 +453,21 @@ def set_security_headers(response):
 def home():
     return render_template('index.html')
 
+@app.route('/setup')
 @app.route('/setup.html')
 def setup():
     if 'user_id' not in session:
         return redirect('/')
     return render_template('setup.html')
 
+@app.route('/maintenance')
 @app.route('/maintenance.html')
 def maintenance():
     if 'user_id' not in session:
         return redirect('/')
     return render_template('maintenance.html')
 
+@app.route('/admin')
 @app.route('/admin.html')
 def admin():
     if 'user_id' not in session:
@@ -473,6 +476,7 @@ def admin():
         return redirect('/')
     return render_template('admin.html')
 
+@app.route('/sort')
 @app.route('/sort.html')
 def sort():
     if 'user_id' not in session:

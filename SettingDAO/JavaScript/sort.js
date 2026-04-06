@@ -22,29 +22,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // [추가] 모든 형태의 로컬 데이터를 안전하게 병합하여 가져오는 헬퍼 함수
 function getSortDeviceData() {
-    let data = {};
-    if (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) {
-        data = storageData;
-    } else {
-        data = JSON.parse(localStorage.getItem('device_data')) || {};
-        if (Object.keys(data).length === 0) {
-            data = JSON.parse(localStorage.getItem('withtech_data')) || {};
-        }
-    }
-    if (data.equipments) return data.equipments;
-    return data;
+    // 100% DB 동기화 방식에 맞춰 localStorage의 순수 device_data 맵핑 객체만 사용
+    return JSON.parse(localStorage.getItem('device_data')) || {};
 }
 
 function initSortPage() {
     let data = getSortDeviceData();
     if (!data || Object.keys(data).length === 0) {
         if (!window.sortInitRetries) window.sortInitRetries = 0;
-        if (window.sortInitRetries < 30) { // 최대 3초 대기
+        if (window.sortInitRetries < 50) { // 최대 5초 대기
             window.sortInitRetries++;
             setTimeout(initSortPage, 100);
             return;
         }
     }
+    
+    // [추가] 중복 이벤트 실행 방지 (필터 꼬임 원천 차단)
+    if (window.isSortPageInitialized) return;
+    window.isSortPageInitialized = true;
 
     setupSortFilters();
     setupSortEvents();
@@ -115,39 +110,44 @@ function initSortPage() {
             };
             
             setTimeout(() => {
-                let data = getSortDeviceData();
-                
-                applyCustomMultiSelect('sort-site-select', lastSortFilters.siteFilters);
-                updateSortBuildingSelect(getMultiValues('sort-site-select'));
-                applyCustomMultiSelect('sort-building-select', lastSortFilters.buildingFilters);
-                
-                applyCustomMultiSelect('sort-model-select', lastSortFilters.modelFilters);
-                updateSortEquipSelect(getMultiValues('sort-site-select'), getMultiValues('sort-building-select'), getMultiValues('sort-model-select'), data);
-                applyCustomMultiSelect('sort-equip-select', lastSortFilters.equipFilters);
-                
-                applyCustomMultiSelect('sort-type-select', lastSortFilters.typeFilters);
-                updateSortDetailTypeSelect();
-                applyCustomMultiSelect('sort-detail-type-select', lastSortFilters.detailTypeFilters);
-                updateSortDetailType2Select();
-                applyCustomMultiSelect('sort-detail-type2-select', lastSortFilters.detailType2Filters);
-                
-                applyCustomMultiSelect('sort-cost-type-select', lastSortFilters.costTypeFilters);
-                applyCustomMultiSelect('sort-item-detail-type-select', lastSortFilters.itemDetailTypeFilters);
-                
-                if (lastSortFilters.keywordSelected && lastSortFilters.keywordSelected.length > 0) {
-                    const kwList = document.getElementById('sort-keyword-list');
-                    if (kwList) {
-                        kwList.querySelectorAll('.log-select-item').forEach(el => {
-                            if (lastSortFilters.keywordSelected.includes(el.dataset.value)) {
-                                el.classList.add('selected');
-                                const icon = el.querySelector('.check-icon');
-                                if (icon) icon.style.opacity = '1';
-                            }
-                        });
-                        updateKeywordTrigger();
+                try {
+                    let data = getSortDeviceData();
+                    
+                    applyCustomMultiSelect('sort-site-select', lastSortFilters.siteFilters);
+                    updateSortBuildingSelect(getMultiValues('sort-site-select'));
+                    applyCustomMultiSelect('sort-building-select', lastSortFilters.buildingFilters);
+                    
+                    applyCustomMultiSelect('sort-model-select', lastSortFilters.modelFilters);
+                    updateSortEquipSelect(getMultiValues('sort-site-select'), getMultiValues('sort-building-select'), getMultiValues('sort-model-select'), data);
+                    applyCustomMultiSelect('sort-equip-select', lastSortFilters.equipFilters);
+                    
+                    applyCustomMultiSelect('sort-type-select', lastSortFilters.typeFilters);
+                    updateSortDetailTypeSelect();
+                    applyCustomMultiSelect('sort-detail-type-select', lastSortFilters.detailTypeFilters);
+                    updateSortDetailType2Select();
+                    applyCustomMultiSelect('sort-detail-type2-select', lastSortFilters.detailType2Filters);
+                    
+                    applyCustomMultiSelect('sort-cost-type-select', lastSortFilters.costTypeFilters);
+                    applyCustomMultiSelect('sort-item-detail-type-select', lastSortFilters.itemDetailTypeFilters);
+                    
+                    if (lastSortFilters.keywordSelected && lastSortFilters.keywordSelected.length > 0) {
+                        const kwList = document.getElementById('sort-keyword-list');
+                        if (kwList) {
+                            kwList.querySelectorAll('.log-select-item').forEach(el => {
+                                if (lastSortFilters.keywordSelected.includes(el.dataset.value)) {
+                                    el.classList.add('selected');
+                                    const icon = el.querySelector('.check-icon');
+                                    if (icon) icon.style.opacity = '1';
+                                }
+                            });
+                            updateKeywordTrigger();
+                        }
                     }
+                } catch (e) {
+                    console.error('Filter restore error:', e);
+                } finally {
+                    performSortSearch();
                 }
-                performSortSearch();
             }, 100);
             return;
         }
@@ -159,7 +159,7 @@ function initSortPage() {
         pType.value = 'year';
         pType.dispatchEvent(new Event('change'));
     }
-    setTimeout(performSortSearch, 50);
+    setTimeout(performSortSearch, 150); // 드롭다운(연도 등) UI 렌더링을 기다리기 위해 대기 시간 증가
 }
 
 function setupSortResizer() {
@@ -323,7 +323,7 @@ function setupSortFilters() {
 
     siteSelect.innerHTML = '<option value="">전체 사업장</option>';
     Object.keys(data).sort().forEach(site => {
-        if (site === 'models' || site === 'details' || !Array.isArray(data[site])) return;
+        if (!Array.isArray(data[site])) return;
         const opt = document.createElement('option');
         opt.value = site;
         opt.textContent = site;
@@ -596,7 +596,6 @@ function updateSortBuildingSelect(sites) {
     }
     let allBuildings = new Set();
     sites.forEach(site => {
-        if (site === 'models' || site === 'details') return;
         const metaData = JSON.parse(localStorage.getItem(`site_meta_${site}`)) || {};
         const buildings = metaData.buildings || [];
         buildings.forEach(b => allBuildings.add(b));
@@ -671,6 +670,15 @@ function updateSortDetailTypeSelect() {
     
     const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
     let subCategories = new Set();
+
+    // [추가] 기본 점검 구분 설정 (관리자 페이지 미저장 시 필터가 비어있는 현상 방지)
+    const defaultSubCategories = [
+        'PM 점검', 'BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상', '기타',
+        '순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정',
+        '용액제조', '온라인점검'
+    ];
+    defaultSubCategories.forEach(cat => subCategories.add(cat));
+
  // 모든 세부 구분 항목을 가져옴
     Object.keys(catData).forEach(key => {
         catData[key].forEach(cat => subCategories.add(cat));
@@ -696,28 +704,47 @@ function updateSortDetailType2Select() {
     if (!detailType2Select) return;
     detailType2Select.innerHTML = '<option value="">전체 세부 구분 2</option>';
     
-    if (!types.includes('비정기')) {
+    // [수정] 아무것도 선택되지 않은 '전체' 상태일 때는 '비정기'도 포함이므로 숨기지 않음
+    if (types.length > 0 && !types.includes('비정기')) {
         if (detailType2Group) detailType2Group.style.display = 'none';
         return;
     }
     if (detailType2Group) detailType2Group.style.display = 'block';
     
-    if (!detailTypes || detailTypes.length === 0) {
-        detailType2Select.disabled = true;
-        syncCustomMultiSelect('sort-detail-type2-select', '전체 세부 구분 2');
-        return;
-    }
     detailType2Select.disabled = false;
     
     const catData2 = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
     let subCategories2 = new Set();
-    detailTypes.forEach(dt => {
-        Object.keys(catData2).forEach(key => {
-            if (key.includes(`::비정기::${dt}`)) {
-                catData2[key].forEach(cat => subCategories2.add(cat));
-            }
+
+    // [추가] 세부구분2 기본값 (사용자 정의 데이터가 없을 경우를 대비)
+    const defaultSubCategories2 = {
+        'BM 점검': ['BM 물품 교체'],
+        'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
+        'Hunting': ['Air Peak_헌팅', 'HPLC_헌팅', 'Flow_헌팅', 'WD_헌팅', 'BASE_헌팅', 'ETC_헌팅'],
+        'Data / Para 이상': ['REF_PORT', 'RT_흔들림', 'HPLC 압력변동', '에어 유량 변동', '미지피크_발생', '콤플렉스_피크', '프로그램_오류', '베이스 값 이상', 'Data 변동', 'Data 전송 이슈', '딜리버리펌프_이슈', '클리닝펌프_이슈', '용액 이슈'],
+        '기타': ['배수 펌프 이슈', '구동 이상']
+    };
+
+    if (!detailTypes || detailTypes.length === 0) {
+        // 세부 구분 1이 선택되지 않았으면 전체 세부구분 2를 로드
+        Object.keys(defaultSubCategories2).forEach(k => {
+            defaultSubCategories2[k].forEach(cat => subCategories2.add(cat));
         });
-    });
+        Object.keys(catData2).forEach(key => {
+            if (key.includes('::비정기::')) catData2[key].forEach(cat => subCategories2.add(cat));
+        });
+    } else {
+        detailTypes.forEach(dt => {
+            if (defaultSubCategories2[dt]) {
+                defaultSubCategories2[dt].forEach(cat => subCategories2.add(cat));
+            }
+            Object.keys(catData2).forEach(key => {
+                if (key.includes(`::비정기::${dt}`)) {
+                    catData2[key].forEach(cat => subCategories2.add(cat));
+                }
+            });
+        });
+    }
 
     Array.from(subCategories2).forEach(sub => {
         const opt = document.createElement('option');
@@ -760,8 +787,10 @@ function performSortSearch() {
     let startDate = '';
     let endDate = '';
 
+    const monthInput = document.getElementById('sort-month-input');
+    const yearInput = document.getElementById('sort-year-input');
+
     if (periodType === 'month') {
-        const monthInput = document.getElementById('sort-month-input');
         const monthVal = (monthInput && monthInput.value) ? monthInput.value : `${currentYear}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
         if (monthVal) {
             const [y, m] = monthVal.split('-').map(Number);
@@ -770,7 +799,6 @@ function performSortSearch() {
             endDate = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
         }
     } else if (periodType === 'year') {
-        const yearInput = document.getElementById('sort-year-input');
         const yearVal = (yearInput && yearInput.value) ? yearInput.value : currentYear.toString();
         if (yearVal) {
             startDate = `${yearVal}-01-01`;
@@ -807,9 +835,15 @@ function performSortSearch() {
     let data = getSortDeviceData();
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+    
+    if (!data || Object.keys(data).length === 0) {
+        renderSortList([]);
+        renderSortChart([]);
+        return;
+    }
 
     Object.keys(data).forEach(site => {
-        if (site === 'models' || site === 'details' || !Array.isArray(data[site])) return;
+        if (!Array.isArray(data[site])) return;
         if (siteFilters.length > 0 && !siteFilters.includes(site)) return;
         
         if (data[site]) {
@@ -1016,7 +1050,7 @@ function renderSortList(results) {
         }
         let equipDisplayHtml = `<div>${escapeHtml(row.equipName)}${subInfo}</div>`;
         
-        const badgeClass = row.type.replace(/\s/g, '');
+        const badgeClass = row.type ? row.type.replace(/\s/g, '') : 'default';
         const statusColor = row.status === '완료' ? '#3fb950' : '#d29922';
 
         tr.innerHTML = `
@@ -1264,7 +1298,7 @@ function renderSortChart(results) {
                 return { category, total: currentTotal };
             }).sort((a, b) => {
                 if (b.total !== a.total) return b.total - a.total; // 1차 정렬: 수량 많은 순
-                return a.category.localeCompare(b.category); // 2차 정렬: 수량이 같으면 가나다순
+                return (a.category || '').localeCompare(b.category || ''); // 2차 정렬: 수량이 같으면 가나다순 (Null 에러 방어)
             }).map(item => item.category);
 
             targetContainer.innerHTML = '';

@@ -69,7 +69,6 @@ function getScheduleForCalendar() {
                             }
                             if (targetDateStr) {
                                 if (!events[targetDateStr]) events[targetDateStr] = [];
-                                events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.code ? item.code : item.content, id: item.id, md: item.md || 0 });
                                 events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.code ? item.code : item.content, id: item.id, md: item.md || 0, originalLogId: item.originalLogId });
                             }
                         });
@@ -88,7 +87,6 @@ function getScheduleForCalendar() {
                                     id: log.id,
                                     isCompleted: !isChanged,
                                     isChanged: isChanged,
-                                    md: log.md || 0
                                     md: log.md || 0,
                                     originalLogId: log.originalLogId
                                 });
@@ -671,17 +669,14 @@ function openCalendarPopup(dateStr, events) {
                     const completedSpan = document.createElement('span');
                     completedSpan.textContent = '<완료>';
                     completedSpan.className = 'popup-completed-badge';
-                    li.appendChild(completedSpan);
                     completedSpan.style.marginLeft = '0';
                     rightContainer.appendChild(completedSpan);
                 } else if (group.isChanged) {
                     const changedSpan = document.createElement('span');
                     changedSpan.textContent = '<변동>';
                     changedSpan.style.color = '#f0883e';
-                    changedSpan.style.marginLeft = 'auto';
                     changedSpan.style.fontWeight = 'bold';
                     changedSpan.style.fontSize = '12px';
-                    li.appendChild(changedSpan);
                     rightContainer.appendChild(changedSpan);
                 }
 
@@ -778,7 +773,7 @@ function openCalendarPopup(dateStr, events) {
                             }
                             openCalendarPopup(dateStr, dayEvents);
                     };
-                    li.appendChild(delBtn);
+                    rightContainer.appendChild(delBtn);
                 }
 
                 li.onclick = () => openEventDetailModal(group.site, group.equip, group.items[0].id, group.isCompleted || group.isChanged);
