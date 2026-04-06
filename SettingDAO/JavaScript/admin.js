@@ -1178,7 +1178,7 @@ function handleEquipCsvImport(event) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function(e) {
+    reader.onload = async function(e) {
         try {
             const buffer = e.target.result;
             let text = new TextDecoder('utf-8').decode(buffer);
@@ -1293,6 +1293,16 @@ function handleEquipCsvImport(event) {
                         } 
                     }; 
                     localStorage.setItem(`details_${site}_${newKey}`, JSON.stringify(initData));
+                    
+                    // [추가] 셋업(SETUP) 데이터용 기본 껍데기 함께 생성
+                    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+                    setupData[`${site}::${newKey}`] = { setupDetails: [], setupLogs: [] };
+                    localStorage.setItem('setup_data', JSON.stringify(setupData));
+                    
+                    // [추가] CSV로 추가된 장비를 서버 DB에 동기화 전송
+                    const setupPayload = initData.setup;
+                    await window.syncAdminDB('equip', 'CREATE', { new_id: newKey, site: site, special_note: "", setup: setupPayload });
+                    
                     importedCount++;
                 } else {
                     skippedCount++;
@@ -1585,10 +1595,10 @@ async function handleEquipSave() {
 
     if (currentAdminEquipKey) {
         const success = await syncAdminDB('equip', 'UPDATE', { old_id: currentAdminEquipKey, new_id: newKey, site: targetSite, special_note: specialNote, setup: setupPayload });
-        if (!success) return false;
+        if (!success) { alert('서버 장비 정보 수정에 실패했습니다.'); return false; }
     } else {
         const success = await syncAdminDB('equip', 'CREATE', { new_id: newKey, site: targetSite, special_note: specialNote, setup: setupPayload });
-        if (!success) return false;
+        if (!success) { alert('서버 장비 신규 등록에 실패했습니다.'); return false; }
     }
 
     // 수정 (Rename) 처리
@@ -1684,6 +1694,12 @@ async function handleEquipSave() {
             model: serial
         } }; 
         localStorage.setItem(`details_${targetSite}_${newKey}`, JSON.stringify(initData));
+        
+        // [추가] 셋업(SETUP) 데이터용 기본 껍데기도 함께 생성하여 타 탭 이동 시 데이터 유실 방지
+        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+        setupData[`${targetSite}::${newKey}`] = { setupDetails: [], setupLogs: [] };
+        localStorage.setItem('setup_data', JSON.stringify(setupData));
+        
         addSystemLog('ADD_EQUIP', newKey, `Site: ${targetSite}`);
     }
 
