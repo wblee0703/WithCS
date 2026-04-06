@@ -1252,7 +1252,8 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
     }
 
     #new-user-site-wrapper,
-    #my-info-content>div {
+    #my-info-content>div,
+    #delete-account-wrapper {
         flex-direction: row !important;
         flex-wrap: nowrap !important;
     }

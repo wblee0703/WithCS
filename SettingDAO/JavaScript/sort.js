@@ -1009,31 +1009,94 @@ function performSortSearch() {
     renderSortList(results);
     renderSortChart(results);
     
-    const exportBtn = document.getElementById('btn-sort-export');
-    if (exportBtn) exportBtn.onclick = () => exportSortResultsToCSV(results);
+    // CSV 내보내기 버튼 이벤트는 renderSortListTableOnly에서 필터링된 배열로 다시 연결됩니다.
 }
 
 /* ==========================================================================
    5. UI 렌더링 (UI Rendering)
    ========================================================================== */
 function renderSortList(results) {
-    const tbody = document.getElementById('sort-result-tbody');
+    window.currentSortResults = results;
+
     const countBadge = document.getElementById('sort-result-count');
     
-    if (countBadge) countBadge.textContent = results.length;
-    if (!tbody) return;
-    
-    tbody.innerHTML = '';
+    // [추가] 결과 내 검색창 동적 생성
+    if (countBadge) {
+        let headerContainer = countBadge.parentElement;
+        if (headerContainer && !document.getElementById('sort-inner-search-container')) {
+            let searchContainer = document.createElement('div');
+            searchContainer.id = 'sort-inner-search-container';
+            searchContainer.style.display = 'inline-flex';
+            searchContainer.style.marginLeft = '15px';
+            searchContainer.style.alignItems = 'center';
+            
+            let input = document.createElement('input');
+            input.type = 'text';
+            input.id = 'sort-inner-search';
+            input.className = 'input-dark';
+            input.placeholder = '결과 내 텍스트 검색...';
+            input.style.padding = '4px 8px';
+            input.style.fontSize = '12px';
+            input.style.height = '26px';
+            input.style.width = '200px';
 
-    if (results.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" class="list-empty-msg" style="text-align:center; padding: 20px; color:#8b949e;">검색된 결과가 없습니다.</td></tr>';
-        const exportBtn = document.getElementById('btn-sort-export');
-        if (exportBtn) exportBtn.style.display = 'none';
-        return;
+            input.addEventListener('input', () => {
+                renderSortListTableOnly();
+            });
+
+            searchContainer.appendChild(input);
+            headerContainer.appendChild(searchContainer);
+        }
     }
 
+    // [수정] 권한에 따른 CSV 내보내기 버튼 제어 (관리자 이상만)
     const exportBtn = document.getElementById('btn-sort-export');
-    if (exportBtn) exportBtn.style.display = 'block';
+    if (exportBtn) {
+        const userRole = sessionStorage.getItem('userRole');
+        if (results.length > 0 && (userRole === 'admin' || userRole === 'superadmin')) {
+            exportBtn.style.display = 'block';
+        } else {
+            exportBtn.style.display = 'none';
+        }
+    }
+    
+    // [추가] 메인 검색(Search) 시 내부 검색창 초기화
+    const innerSearch = document.getElementById('sort-inner-search');
+    if (innerSearch) innerSearch.value = '';
+
+    renderSortListTableOnly();
+}
+
+// [추가] 결과 내 검색 필터링이 적용된 테이블 렌더링 전용 함수
+function renderSortListTableOnly() {
+    const tbody = document.getElementById('sort-result-tbody');
+    const countBadge = document.getElementById('sort-result-count');
+    const innerSearch = document.getElementById('sort-inner-search');
+    const keyword = innerSearch ? innerSearch.value.trim().toLowerCase() : '';
+
+    let results = window.currentSortResults || [];
+    
+    if (keyword) {
+        const keywords = keyword.split(/\s+/);
+        results = results.filter(row => {
+            const text = `${row.date} ${row.site} ${row.modelName} ${row.equipName} ${row.serial} ${row.custName} ${row.type} ${row.detailType} ${row.content} ${row.costType} ${row.worker} ${row.md} ${row.status} ${row.memo}`.toLowerCase();
+            return keywords.every(kw => text.includes(kw));
+        });
+    }
+
+    if (countBadge) countBadge.textContent = results.length;
+    
+    // CSV 내보내기 대상 업데이트
+    const exportBtn = document.getElementById('btn-sort-export');
+    if (exportBtn) exportBtn.onclick = () => exportSortResultsToCSV(results);
+
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    if (results.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" class="list-empty-msg" style="text-align:center; padding: 20px; color:#8b949e;">검색된 결과가 없습니다.</td></tr>';
+        return;
+    }
 
     results.forEach(row => {
         const tr = document.createElement('tr');
