@@ -2603,8 +2603,18 @@ function onEquipClick(site, equip) {
                     newUrl.searchParams.delete('logId');
                     window.history.replaceState({}, '', newUrl);
                 } else {
-                    data.logs.sort((a, b) => { if (b.date !== a.date) return b.date.localeCompare(a.date); return b.id - a.id; });
-                    selectLog(data.logs[0].id, false); // 포커스 없이 선택
+                        const lastLogId = localStorage.getItem(`lastLog_${site}_${equip}`);
+                        const matchedLog = lastLogId ? data.logs.find(l => l.id == lastLogId) : null;
+                        if (matchedLog) {
+                            setTimeout(() => {
+                                selectLog(matchedLog.id, false);
+                                const row = document.getElementById(`log-row-${matchedLog.id}`);
+                                if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            }, 50);
+                        } else {
+                            data.logs.sort((a, b) => { if (b.date !== a.date) return b.date.localeCompare(a.date); return b.id - a.id; });
+                            selectLog(data.logs[0].id, false);
+                        }
                 }
             }
         }
@@ -3100,23 +3110,8 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         };
     }
 
-    // [추가] 이슈 공유 체크박스 래퍼
-    let issueShareCb = document.getElementById('extra-work-history-issue-share');
-    if (!issueShareCb && memoEl) {
-        const cbWrapper = document.createElement('div');
-        cbWrapper.style.display = 'flex';
-        cbWrapper.style.alignItems = 'center';
-        cbWrapper.style.marginBottom = '10px';
-        cbWrapper.style.justifyContent = 'flex-end';
-        cbWrapper.innerHTML = `
-            <label style="font-size: 13px; font-weight: bold; color: #f0883e; display: flex; align-items: center; cursor: pointer;">
-                <input type="checkbox" id="extra-work-history-issue-share" style="transform: scale(1.2); margin-right: 5px;">
-                이슈 공유
-            </label>
-        `;
-        memoEl.parentNode.insertBefore(cbWrapper, memoEl);
-        issueShareCb = document.getElementById('extra-work-history-issue-share');
-    }
+    // [수정] 헤더에 있는 통합 이슈 공유 체크박스 사용
+    let issueShareCb = document.getElementById('extra-work-issue-share');
 
     tbody.innerHTML = '';
 
@@ -3135,7 +3130,6 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
             if (memoEl) memoEl.value = log.memo || '작성된 메모가 없습니다.';
             if (workerEl) workerEl.textContent = log.worker || '-';
             if (mdEl) mdEl.textContent = log.md || '0';
-            if (issueShareCb) issueShareCb.checked = !!log.isIssueShared;
             Array.from(tbody.children).forEach(child => child.classList.remove('active-row'));
             tr.classList.add('active-row');
         };
@@ -3160,24 +3154,27 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     if (issueShareCb) {
         const newCb = issueShareCb.cloneNode(true);
         issueShareCb.parentNode.replaceChild(newCb, issueShareCb);
-        issueShareCb = document.getElementById('extra-work-history-issue-share');
+        issueShareCb = document.getElementById('extra-work-issue-share');
         
         issueShareCb.addEventListener('change', (e) => {
             const isChecked = e.target.checked;
-            const activeRow = tbody.querySelector('tr.active-row');
-            if (activeRow) {
-                const logId = activeRow.dataset.logId;
-                const data = JSON.parse(localStorage.getItem(key)) || {};
-                if (data.logs) {
-                    const logItem = data.logs.find(l => l.id == logId);
-                    if (logItem) {
-                        logItem.isIssueShared = isChecked;
-                        localStorage.setItem(key, JSON.stringify(data));
-                        window.syncHistoryTransaction(site, equip, { log_upserts: [logItem] });
-                        if (typeof addSystemLog === 'function') addSystemLog('UPDATE_MEMO', equip, `이슈 공유 상태 변경 (LogID: ${logId})`);
-                        if (typeof populateEquipmentIssues === 'function') populateEquipmentIssues();
-                    }
+            const data = JSON.parse(localStorage.getItem(key)) || {};
+            if (data.logs) {
+                let logUpserts = [];
+                const pLog = data.logs.find(l => l.id == originalLogId);
+                if (pLog) {
+                    pLog.isIssueShared = isChecked;
+                    logUpserts.push(pLog);
                 }
+                const cLogs = data.logs.filter(l => l.originalLogId == originalLogId);
+                cLogs.forEach(cLog => {
+                    cLog.isIssueShared = isChecked;
+                    logUpserts.push(cLog);
+                });
+                localStorage.setItem(key, JSON.stringify(data));
+                window.syncHistoryTransaction(site, equip, { log_upserts: logUpserts });
+                if (typeof addSystemLog === 'function') addSystemLog('UPDATE_MEMO', equip, `이슈 공유 상태 세트 변경 (LogID: ${originalLogId})`);
+                if (typeof populateEquipmentIssues === 'function') populateEquipmentIssues();
             }
         });
     }

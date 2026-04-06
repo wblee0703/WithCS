@@ -963,11 +963,12 @@ function setupEventDetailModal() {
     const cancelBtn = document.getElementById('btn-cancel-completion');
     const dateInput = document.getElementById('detail-scheduled-date');
     const moveToEquipBtn = document.getElementById('btn-move-to-equip');
+    const saveBtn = document.getElementById('btn-save-detail-memo');
 
     if (!modal) return;
 
     const closeModal = () => {
-        if (currentDetailTarget && !currentDetailTarget.isCompleted) {
+        if (currentDetailTarget) {
             if (hasDetailUnsavedChanges()) {
                 if (confirm('수정사항이 있습니다. 저장하고 닫으시겠습니까?')) {
                     if (!saveDetailChanges()) return; // 검증 실패 시 닫기 중단
@@ -990,6 +991,14 @@ function setupEventDetailModal() {
 
     if (closeBtn) closeBtn.onclick = closeModal;
     if (closeFooterBtn) closeFooterBtn.onclick = closeModal;
+
+    if (saveBtn) {
+        saveBtn.onclick = () => {
+            if (saveDetailChanges()) {
+                alert('저장되었습니다.');
+            }
+        };
+    }
 
     if (completeBtn) {
         completeBtn.onclick = completeScheduleWork;
@@ -1178,6 +1187,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     const contentDiv = document.getElementById('detail-content');
     const contentInput = document.getElementById('detail-content-input');
     const cancelBtn = document.getElementById('btn-cancel-completion');
+    const saveBtn = document.getElementById('btn-save-detail-memo');
 
     // [추가] 특이 이슈 공유 체크박스 래퍼 동적 생성
     let issueShareWrapper = document.getElementById('detail-issue-share-wrapper');
@@ -1203,48 +1213,18 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     const dropdownWrapper = document.getElementById('detail-content-dropdown-wrapper');
     if (dropdownWrapper) dropdownWrapper.remove();
 
-    if (isCompleted) {
-        workerInput.value = item.worker || '';
-        workerInput.disabled = true;
-        const trigger = document.getElementById('detail-worker-trigger');
-        if (trigger) {
-            trigger.classList.add('disabled');
-            trigger.style.opacity = '0.5';
-            trigger.style.cursor = 'not-allowed';
-        }
-        memoInput.value = item.memo || '';
-        memoInput.disabled = true;
-        if (mdInput) {
-            mdInput.value = item.md || '';
-            mdInput.disabled = true;
-        }
-        dateRow.style.display = 'block';
-        document.getElementById('detail-scheduled-date').value = item.date || '';
-        document.getElementById('detail-scheduled-date').disabled = true;
-        completeBtn.style.display = 'none';
-        if (cancelBtn) {
-            if (item.detailType === '일정변경') {
-                cancelBtn.style.display = 'none'; // 일정 변경 이력은 완료 취소 불가
-            } else {
-                cancelBtn.style.display = 'block'; // 일반 완료 상태면 취소 버튼 표시
-            }
-        }
-        if (issueShareCb) {
-            issueShareCb.checked = !!item.isIssueShared;
-            issueShareCb.disabled = true;
-        }
-    } else {
-        // [수정] 저장된 작업자(취소된 내용)가 있으면 우선 사용
-        workerInput.value = item.worker || localStorage.getItem('lastWorkerName') || sessionStorage.getItem('userId') || '';
-        workerInput.disabled = false;
-        const trigger = document.getElementById('detail-worker-trigger');
-        if (trigger) {
-            trigger.classList.remove('disabled');
-            trigger.style.opacity = '1';
-            trigger.style.cursor = 'pointer';
-        }
+    // 완료, 미완료 관계없이 폼 필드 활성화
+    workerInput.value = item.worker || (!isCompleted ? (localStorage.getItem('lastWorkerName') || sessionStorage.getItem('userId') || '') : '');
+    workerInput.disabled = false;
+    const trigger = document.getElementById('detail-worker-trigger');
+    if (trigger) {
+        trigger.classList.remove('disabled');
+        trigger.style.opacity = '1';
+        trigger.style.cursor = 'pointer';
+    }
 
-        // [추가] 이전 점검 결과(메모) 불러오기
+    memoInput.value = item.memo || '';
+    if (!isCompleted && !item.memo) {
         let lastMemo = '';
         if (data.logs && data.logs.length > 0) {
             const validLogs = data.logs.filter(l => l.detailType !== '일정변경');
@@ -1254,48 +1234,89 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             });
             if (sortedLogs.length > 0) lastMemo = sortedLogs[0].memo || '';
         }
-        // [수정] 신규 작업 등록 시 이전 메모를 불러오도록 수정
-        memoInput.value = item.memo || lastMemo;
-        memoInput.disabled = false;
-        if (mdInput) {
-            let displayMd = item.md || '';
-            // [추가] 같은 날짜에 묶인 항목 중 공수 데이터가 있는지 우선 검색 (그룹화 시 데이터 유실 방지)
-            if (!displayMd && item.scheduledDate) {
-                const sameDayItems = data.maint.filter(i => i.scheduledDate === item.scheduledDate && i.type === item.type && (i.detailType || '') === (item.detailType || ''));
-                const itemWithMd = sameDayItems.find(i => i.md);
-                if (itemWithMd) displayMd = itemWithMd.md;
-            }
-            mdInput.value = displayMd;
-            mdInput.disabled = false;
+        memoInput.value = lastMemo;
+    }
+    memoInput.disabled = false;
+
+    if (mdInput) {
+        let displayMd = item.md || '';
+        if (!isCompleted && !displayMd && item.scheduledDate) {
+            const sameDayItems = data.maint.filter(i => i.scheduledDate === item.scheduledDate && i.type === item.type && (i.detailType || '') === (item.detailType || ''));
+            const itemWithMd = sameDayItems.find(i => i.md);
+            if (itemWithMd) displayMd = itemWithMd.md;
         }
+        mdInput.value = displayMd;
+        mdInput.disabled = false;
+    }
 
-        dateRow.style.display = 'block';
-        document.getElementById('detail-scheduled-date').value = item.scheduledDate || '';
-        document.getElementById('detail-scheduled-date').disabled = false;
+    dateRow.style.display = 'block';
+    const dateField = document.getElementById('detail-scheduled-date');
+    dateField.value = isCompleted ? (item.date || '') : (item.scheduledDate || '');
+    dateField.disabled = false;
 
+    if (saveBtn) saveBtn.style.display = 'block';
+
+    if (isCompleted) {
+        completeBtn.style.display = 'none';
+        if (cancelBtn) {
+            if (item.detailType === '일정변경') cancelBtn.style.display = 'none';
+            else cancelBtn.style.display = 'block';
+        }
+    } else {
         completeBtn.style.display = 'block';
         completeBtn.textContent = '작업 완료';
-        if (cancelBtn) cancelBtn.style.display = 'none'; // 미완료 상태면 취소 버튼 숨김
-        if (issueShareCb) {
-            issueShareCb.checked = false;
+        if (cancelBtn) cancelBtn.style.display = 'none';
+    }
+
+    if (issueShareCb) {
+        if (item.originalLogId) {
+            const parentLog = data.logs ? data.logs.find(l => l.id == item.originalLogId) : null;
+            issueShareCb.checked = parentLog ? !!parentLog.isIssueShared : false;
+            issueShareCb.disabled = true;
+        } else {
+            issueShareCb.checked = !!item.isIssueShared;
             issueShareCb.disabled = false;
         }
     }
+
     if (workerInput) workerInput.dispatchEvent(new Event('updateTrigger'));
 
-    // [추가] 완료 상태가 아니면 즉시 항목을 드롭다운 수정 형태로 렌더링
-    if (!isCompleted) {
-        buildDetailDropdown(item, site, equip);
-        
-        window.initialEventDetail = {
-            worker: workerInput ? workerInput.value.trim() : '',
-            md: mdInput ? mdInput.value.trim() : '',
-            memo: memoInput ? memoInput.value.trim() : '',
-            date: document.getElementById('detail-scheduled-date').value,
-            issueShared: issueShareCb ? issueShareCb.checked : false,
-            content: item.content || '내용 없음'
-        };
+    // 항시 수정 렌더링 (모든 상태)
+    buildDetailDropdown(item, site, equip);
+    
+    let currentContentStr = '';
+    const dWrapper = document.getElementById('detail-content-dropdown-wrapper');
+    if (dWrapper) {
+        const selected = dWrapper.querySelectorAll('.log-select-item.selected');
+        currentContentStr = Array.from(selected).map(el => {
+            const cSel = el.querySelector('.item-cost-select');
+            return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+        }).join(', ');
+        const pWrapper = document.getElementById('detail-edit-part-wrapper');
+        if (pWrapper && pWrapper.style.display !== 'none') {
+            const pList = document.getElementById('detail-edit-part-list');
+            if (pList) {
+                const selectedParts = pList.querySelectorAll('.log-select-item.selected');
+                const partContent = Array.from(selectedParts).map(el => {
+                    const cSel = el.querySelector('.item-cost-select');
+                    return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+                }).join(', ');
+                if (partContent) currentContentStr = currentContentStr ? `${currentContentStr} - ${partContent}` : partContent;
+            }
+        }
+    } else {
+        currentContentStr = document.getElementById('detail-content-input').value.trim();
     }
+    if (!currentContentStr) currentContentStr = '내용 없음';
+
+    window.initialEventDetail = {
+        worker: workerInput ? workerInput.value.trim() : '',
+        md: mdInput ? mdInput.value.trim() : '',
+        memo: memoInput ? memoInput.value.trim() : '',
+        date: dateField.value,
+        issueShared: issueShareCb ? issueShareCb.checked : false,
+        content: currentContentStr
+    };
 
     modal.style.display = 'flex';
 }
@@ -1661,10 +1682,16 @@ function hasDetailUnsavedChanges() {
 }
 
 function saveDetailChanges() {
-    const { site, equip, id } = currentDetailTarget;
+    const { site, equip, id, isCompleted } = currentDetailTarget;
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
-    const item = data.maint ? data.maint.find(i => i.id == id) : null;
+    
+    let item = null;
+    if (isCompleted) {
+        item = data.logs ? data.logs.find(i => i.id == id) : null;
+    } else {
+        item = data.maint ? data.maint.find(i => i.id == id) : null;
+    }
     if (!item) return true;
 
     const newWorker = document.getElementById('detail-worker').value.trim();
@@ -1706,71 +1733,121 @@ function saveDetailChanges() {
     const itemType = item.type;
     const itemDetailType = item.detailType || '';
     let remainingIds = [];
-    const sameDayItems = data.maint.filter(m => m.scheduledDate === item.scheduledDate && m.type === itemType && (m.detailType || '') === itemDetailType);
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
     
-    let payload = { maint_upserts: [] };
+    let payload = { maint_upserts: [], log_upserts: [] };
+    let finalContentStr = '';
 
-    if (dropdownValues.length > 0) {
-        dropdownValues.forEach((val, idx) => {
-            let itemCost = '';
-            const costMatch = val.match(/^\[(.*?)\] (.*)$/);
-            if (costMatch) { itemCost = costMatch[1]; val = costMatch[2]; }
-            let code = ''; let fullContent = val;
-            const match = adminItems.find(a => a.part === val || a.code === val);
-            if (match) { code = match.code || ''; fullContent = match.part || val; }
-            if (partContent && idx === 0) fullContent = `${fullContent} - ${partContent}`;
+    if (isCompleted) {
+        if (dropdownValues.length > 0) {
+            finalContentStr = dropdownValues.join(', ');
+            if (partContent) finalContentStr = `${finalContentStr} - ${partContent}`;
+        } else {
+            finalContentStr = document.getElementById('detail-content-input').value.trim();
+            if (partContent) finalContentStr = `${finalContentStr} - ${partContent}`;
+            if (!finalContentStr) finalContentStr = '내용 없음';
+        }
 
-            let existing = data.maint.find(m => m.type === itemType && (m.content === fullContent || (code && m.code === code) || m.content === val));
+        item.date = targetDate;
+        item.worker = newWorker;
+        item.memo = newMemo;
+        item.md = newMd;
+        item.content = finalContentStr;
+        
+        const targetParentId = item.originalLogId || item.id;
+        const issueShareCb = document.getElementById('detail-issue-share-checkbox');
+        const newIssueShared = issueShareCb ? issueShareCb.checked : false;
+        
+        data.logs.forEach(l => {
+            let isModified = false;
+            if (l.id === item.id) isModified = true;
+            if (l.id == targetParentId || l.originalLogId == targetParentId) {
+                if (!!l.isIssueShared !== newIssueShared) {
+                    l.isIssueShared = newIssueShared;
+                    isModified = true;
+                }
+            }
+            if (isModified && !payload.log_upserts.includes(l)) {
+                payload.log_upserts.push(l);
+            }
+        });
+        
+    } else {
+        const sameDayItems = data.maint.filter(m => m.scheduledDate === item.scheduledDate && m.type === itemType && (m.detailType || '') === itemDetailType);
+        
+        if (dropdownValues.length > 0) {
+            dropdownValues.forEach((val, idx) => {
+                let itemCost = '';
+                const costMatch = val.match(/^\[(.*?)\] (.*)$/);
+                if (costMatch) { itemCost = costMatch[1]; val = costMatch[2]; }
+                let code = ''; let fullContent = val;
+                const match = adminItems.find(a => a.part === val || a.code === val);
+                if (match) { code = match.code || ''; fullContent = match.part || val; }
+                if (partContent && idx === 0) fullContent = `${fullContent} - ${partContent}`;
+
+                let existing = data.maint.find(m => m.type === itemType && (m.content === fullContent || (code && m.code === code) || m.content === val));
+                if (existing) {
+                    existing.scheduledDate = targetDate;
+                    existing.detailType = itemDetailType;
+                    existing.worker = newWorker;
+                    existing.memo = newMemo;
+                    existing.md = newMd;
+                    if (itemCost) existing.itemCost = itemCost;
+                    remainingIds.push(existing.id);
+                    payload.maint_upserts.push(existing);
+                } else {
+                    const newId = Date.now() + idx;
+                    const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: code, content: fullContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: itemCost };
+                    data.maint.push(newItem);
+                    remainingIds.push(newId);
+                    payload.maint_upserts.push(newItem);
+                }
+                if (idx === 0) finalContentStr = fullContent;
+            });
+        } else {
+            let finalContent = document.getElementById('detail-content-input').value.trim();
+            if (partContent) finalContent = `${finalContent} - ${partContent}`;
+            if (!finalContent) finalContent = '내용 없음';
+            finalContentStr = finalContent;
+            
+            let existing = data.maint.find(m => m.type === itemType && m.content === finalContent);
             if (existing) {
                 existing.scheduledDate = targetDate;
-                existing.detailType = itemDetailType;
                 existing.worker = newWorker;
                 existing.memo = newMemo;
                 existing.md = newMd;
-                if (itemCost) existing.itemCost = itemCost;
                 remainingIds.push(existing.id);
                 payload.maint_upserts.push(existing);
             } else {
-                const newId = Date.now() + idx;
-                const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: code, content: fullContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: itemCost };
+                const newId = Date.now();
+                const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd };
                 data.maint.push(newItem);
                 remainingIds.push(newId);
                 payload.maint_upserts.push(newItem);
             }
-        });
-    } else {
-        let finalContent = document.getElementById('detail-content-input').value.trim();
-        if (partContent) finalContent = `${finalContent} - ${partContent}`;
-        if (!finalContent) finalContent = '내용 없음';
-        
-        let existing = data.maint.find(m => m.type === itemType && m.content === finalContent);
-        if (existing) {
-            existing.scheduledDate = targetDate;
-            existing.worker = newWorker;
-            existing.memo = newMemo;
-            existing.md = newMd;
-            remainingIds.push(existing.id);
-            payload.maint_upserts.push(existing);
-        } else {
-            const newId = Date.now();
-            const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd };
-            data.maint.push(newItem);
-            remainingIds.push(newId);
-            payload.maint_upserts.push(newItem);
         }
-    }
 
-    sameDayItems.forEach(m => {
-        if (!remainingIds.includes(m.id)) {
-            delete m.scheduledDate;
-            payload.maint_upserts.push(m);
-        }
-    });
+        sameDayItems.forEach(m => {
+            if (!remainingIds.includes(m.id)) {
+                delete m.scheduledDate;
+                payload.maint_upserts.push(m);
+            }
+        });
+    }
 
     localStorage.setItem(key, JSON.stringify(data));
     window.syncHistoryTransaction(site, equip, payload);
     
+    const issueShareCb = document.getElementById('detail-issue-share-checkbox');
+    window.initialEventDetail = {
+        worker: newWorker,
+        md: newMd,
+        memo: newMemo,
+        date: targetDate,
+        issueShared: issueShareCb ? issueShareCb.checked : false,
+        content: finalContentStr || document.getElementById('detail-content-input').value.trim()
+    };
+
     renderCalendar();
     if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
     return true;
@@ -1905,6 +1982,7 @@ function completeScheduleWork() {
         newLog.originalLogId = maintItem.originalLogId;
         const originalLog = data.logs.find(l => l.id == maintItem.originalLogId);
         if (originalLog) {
+            newLog.isIssueShared = !!originalLog.isIssueShared; // 부모 상태 강제 상속
             originalLog.addWorkLogId = newLog.id;
             payload.log_upserts.push(originalLog);
         }

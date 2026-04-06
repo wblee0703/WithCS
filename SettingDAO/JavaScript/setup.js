@@ -360,6 +360,11 @@ function renderDetails() {
     const logDateInput = document.getElementById('setup-log-date');
     if (logDateInput) logDateInput.value = new Date().toISOString().split('T')[0];
 
+    const lastSetupLog = localStorage.getItem(`lastSetupLog_${currentPath.site}_${currentPath.equip}`);
+    if (lastSetupLog) {
+        setTimeout(() => selectSetupLog(Number(lastSetupLog)), 50);
+    }
+
     // 업체 입력창 초기값 '위드텍' 설정
     const logCompanyInput = document.getElementById('setup-log-company');
     if (logCompanyInput) logCompanyInput.value = '위드텍';
@@ -1246,6 +1251,7 @@ function selectSetupLog(id) {
     }
 
     selectedSetupLogId = id;
+    localStorage.setItem(`lastSetupLog_${currentPath.site}_${currentPath.equip}`, id);
     
     // UI 업데이트 (행 강조)
     const rows = document.querySelectorAll('#setup-log-body tr');

@@ -80,6 +80,8 @@ function setupMaintenanceEvents() {
     const maintTypeButtons = document.querySelectorAll('#maint-type-toggle button');
     const maintPeriodInput = document.getElementById('maint-period');
 
+    const lastMaintType = localStorage.getItem('lastMaintType');
+
     if (maintPeriodInput) {
         maintPeriodInput.type = 'number';
         maintPeriodInput.min = '0';
@@ -93,6 +95,7 @@ function setupMaintenanceEvents() {
             btn.onclick = () => {
                 maintTypeButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+                localStorage.setItem('lastMaintType', btn.dataset.type);
 
                 // 비정기일 때 입력창 비활성화
                 if (btn.dataset.type === '비정기') {
@@ -109,6 +112,9 @@ function setupMaintenanceEvents() {
                 // [추가] 유지관리 물품 항목 옵션 갱신
                 if (typeof updateMaintContentOptions === 'function') updateMaintContentOptions();
             };
+            if (lastMaintType && btn.dataset.type === lastMaintType) {
+                setTimeout(() => btn.click(), 10);
+            }
         });
     }
 
@@ -1651,6 +1657,7 @@ function selectLog(id, focus = true) {
     if (selectedLogId === id) return;
 
     selectedLogId = id; // 전역 변수에 현재 선택된 ID 저장
+    localStorage.setItem(`lastLog_${currentPath.site}_${currentPath.equip}`, id);
 
     // UI: 선택된 행 강조 스타일 적용
     document.querySelectorAll('#log-table-body tr').forEach(tr => tr.classList.remove('active-log'));
@@ -1733,7 +1740,26 @@ function saveMemo() {
         data.logs[logIdx].worker = workerContent; // 작업자 업데이트
         data.logs[logIdx].md = mdContent; // 공수 업데이트
         data.logs[logIdx].costType = costTypeContent; // 비용처리 업데이트
-        data.logs[logIdx].isIssueShared = isIssueShared; // 공유 상태 업데이트
+        
+        const targetParentId = data.logs[logIdx].originalLogId || data.logs[logIdx].id;
+        let logUpserts = [];
+        
+        data.logs.forEach(l => {
+            let isModified = false;
+            if (l.id === selectedLogId) {
+                isModified = true;
+            }
+            if (l.id == targetParentId || l.originalLogId == targetParentId) {
+                if (!!l.isIssueShared !== isIssueShared) {
+                    l.isIssueShared = isIssueShared;
+                    isModified = true;
+                }
+            }
+            if (isModified) {
+                logUpserts.push(l);
+            }
+        });
+        
         localStorage.setItem(key, JSON.stringify(data));
         addSystemLog('UPDATE_MEMO', currentPath.equip, `작업 내용 및 작업자 수정 (LogID: ${selectedLogId})`);
 
@@ -1743,7 +1769,7 @@ function saveMemo() {
         originalMd = mdContent;
         originalCostType = costTypeContent;
 
-        window.syncHistoryTransaction(currentPath.site, currentPath.equip, { log_upserts: [data.logs[logIdx]] });
+        window.syncHistoryTransaction(currentPath.site, currentPath.equip, { log_upserts: logUpserts });
 
         // [수정] 저장 후 '수정' 모드로 전환
         const memoBtn = document.getElementById('memo-save-btn');

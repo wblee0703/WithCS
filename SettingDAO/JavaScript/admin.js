@@ -377,6 +377,7 @@ function renderAdminSiteList() {
             setAdminFormDirty(false, 'site');
             
             currentAdminSite = site;
+            localStorage.setItem('lastAdminSite', site);
             // 활성화 스타일 갱신
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
@@ -387,6 +388,14 @@ function renderAdminSiteList() {
 
         list.appendChild(li);
     });
+
+    if (!currentAdminSite) {
+        const savedSite = localStorage.getItem('lastAdminSite');
+        if (savedSite) {
+            const targetLi = Array.from(list.children).find(li => li.dataset.site === savedSite);
+            if (targetLi) setTimeout(() => targetLi.click(), 10);
+        }
+    }
 }
 
 function loadSiteDetail(siteName) {
@@ -710,6 +719,7 @@ function renderEquipModelList() {
 
     filteredModels.forEach(model => {
         const li = document.createElement('li');
+        li.dataset.modelName = model.name;
         if (currentAdminModel && currentAdminModel.name === model.name) {
             li.classList.add('active');
         }
@@ -730,6 +740,9 @@ function renderEquipModelList() {
             currentAdminModel = (currentAdminModel && currentAdminModel.name === model.name) ? null : model;
             renderEquipModelList();
             
+            if (currentAdminModel) localStorage.setItem('lastAdminModel', currentAdminModel.name);
+            else localStorage.removeItem('lastAdminModel');
+
             // [수정] 장비 모델 리스트 클릭 시 기존 선택된 장비 정보 폼이 초기화되는 현상 방지
             if (!currentAdminEquipKey && document.getElementById('admin-equip-form').style.display === 'block') {
                 // 신규 등록 모드(장비 미선택)일 때만 모델명 자동 입력 및 읽기 전용 처리
@@ -827,6 +840,14 @@ function renderEquipModelList() {
         });
         list.appendChild(li);
     });
+
+    if (!currentAdminModel) {
+        const savedModel = localStorage.getItem('lastAdminModel');
+        if (savedModel) {
+            const targetLi = Array.from(list.children).find(li => li.dataset.modelName === savedModel);
+            if (targetLi) setTimeout(() => targetLi.click(), 10);
+        }
+    }
 }
 
 /* ==========================================================================
@@ -1351,6 +1372,7 @@ function renderAdminEquipList() {
         const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
         const li = document.createElement('li');
+        li.dataset.equipKey = fullKey;
         
         // [수정] 고객사 장비명 또는 시리얼 표시
         let subInfo = '';
@@ -1378,6 +1400,7 @@ function renderAdminEquipList() {
             
             currentAdminEquipKey = fullKey;
             currentAdminEquipSiteContext = site; // 컨텍스트 저장
+            localStorage.setItem('lastAdminEquipKey', fullKey);
             // UI 업데이트
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
@@ -1420,6 +1443,14 @@ function renderAdminEquipList() {
 
         list.appendChild(li);
     });
+
+    if (!currentAdminEquipKey) {
+        const savedEquip = localStorage.getItem('lastAdminEquipKey');
+        if (savedEquip) {
+            const targetLi = Array.from(list.children).find(li => li.dataset.equipKey === savedEquip);
+            if (targetLi) setTimeout(() => targetLi.click(), 10);
+        }
+    }
 }
 
 function resetEquipForm() {
@@ -1899,6 +1930,7 @@ function renderAdminItemList() {
 
     filteredItems.forEach(item => {
         const li = document.createElement('li');
+        li.dataset.itemId = item.id;
         if (currentAdminItemId === item.id) {
             li.classList.add('active');
         }
@@ -1921,6 +1953,7 @@ function renderAdminItemList() {
             setAdminFormDirty(false, 'item');
             
             currentAdminItemId = item.id;
+            localStorage.setItem('lastAdminItemId', item.id);
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
             
@@ -1930,6 +1963,14 @@ function renderAdminItemList() {
 
         list.appendChild(li);
     });
+
+    if (!currentAdminItemId) {
+        const savedItemId = localStorage.getItem('lastAdminItemId');
+        if (savedItemId) {
+            const targetLi = Array.from(list.children).find(li => li.dataset.itemId == savedItemId);
+            if (targetLi) setTimeout(() => targetLi.click(), 10);
+        }
+    }
 }
 
 // [추가] 장비 태그 렌더링 함수
@@ -2618,6 +2659,7 @@ function renderCheckTypeEquipList() {
         const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
 
         const li = document.createElement('li');
+        li.dataset.equipKey = fullKey;
         
         let content = `<span>${displayName}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
         if (!currentCheckTypeSiteContext) {
@@ -2631,6 +2673,7 @@ function renderCheckTypeEquipList() {
 
         li.addEventListener('click', () => {
             currentCheckTypeEquipKey = fullKey;
+            localStorage.setItem('lastCheckTypeEquipKey', fullKey);
             
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
@@ -2669,6 +2712,14 @@ function renderCheckTypeEquipList() {
 
         list.appendChild(li);
     });
+
+    if (!currentCheckTypeEquipKey) {
+        const savedEquip = localStorage.getItem('lastCheckTypeEquipKey');
+        if (savedEquip) {
+            const targetLi = Array.from(list.children).find(li => li.dataset.equipKey === savedEquip);
+            if (targetLi) setTimeout(() => targetLi.click(), 10);
+        }
+    }
 }
 
 function renderCheckTypeSubCategoryList() {

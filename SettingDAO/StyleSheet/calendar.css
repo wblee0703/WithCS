@@ -530,14 +530,24 @@
     font-size: 14px;
 }
 
+#detail-scheduled-date,
+#detail-content-input,
 #detail-worker,
-#detail-md {
+#detail-md,
+#next-schedule-date,
+#next-schedule-md,
+#register-date-display,
+#register-content-input {
     width: 100%;
     background: var(--cal-bg-dark);
     border: 1px solid var(--cal-border);
     color: var(--cal-text-white);
-    padding: 8px;
+    padding: 8px 10px;
     border-radius: 4px;
+    height: 36px;
+    box-sizing: border-box;
+    font-size: 13px;
+    text-align: left;
 }
 
 #detail-work-memo {
@@ -691,7 +701,7 @@
     background: var(--cal-bg-dark);
     border: 1px solid var(--cal-border);
     color: var(--cal-text-white);
-    padding: 8px;
+    padding: 8px 10px;
     border-radius: 4px;
     cursor: pointer;
     white-space: normal;
@@ -701,6 +711,10 @@
     line-height: 1.4;
     font-size: 13px;
     text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    box-sizing: border-box;
 }
 
 .log-select-dropdown {

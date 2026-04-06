@@ -169,7 +169,7 @@ function navigateWithFilters(targetPage, savedPathKey, targetSite, targetEquipNa
         location.href = `${targetPage}?site=${encodeURIComponent(site)}`;
     } else {
         try {
-            const lastState = JSON.parse(sessionStorage.getItem(savedPathKey));
+                const lastState = JSON.parse(localStorage.getItem(savedPathKey) || sessionStorage.getItem(savedPathKey));
             if (lastState && lastState.site && lastState.equip) {
                 location.href = `${targetPage}?site=${encodeURIComponent(lastState.site)}&equip=${encodeURIComponent(lastState.equip)}`;
                 return;
