@@ -407,9 +407,18 @@
     margin: 0;
 }
 
-#btn-move-to-equip {
-    padding: 2px 8px;
+#btn-move-to-equip,
+#btn-move-to-extra-work-origin {
+    padding: 3px 10px;
     font-size: 11px;
+    background-color: #1f6feb !important;
+    color: #fff !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 4px;
+}
+#btn-move-to-equip:hover,
+#btn-move-to-extra-work-origin:hover {
+    background-color: #388bfd !important;
 }
 
 #detail-equip-info,
