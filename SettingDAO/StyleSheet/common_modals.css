@@ -105,11 +105,10 @@
 }
 
 /* --- 4. 일정 상세 정보 모달 (Event Detail Modal) --- */
-#detail-worker-trigger {
-    width: 100%;
-    padding: 8px;
-    box-sizing: border-box;
-    background: var(--cal-bg-dark);
+/* [추가] 모달 내 드롭다운 래퍼가 텍스트 크기로 줄어들지 않고 전체 너비를 사용하도록 강제 설정 */
+#event-detail-modal .log-select-wrapper {
+    width: 100% !important;
+    display: block !important;
 }
 
 #detail-worker-dropdown .btn-blue-sm {
@@ -127,34 +126,12 @@
     cursor: pointer;
 }
 
-#detail-content-dropdown-wrapper .log-select-trigger {
-    padding: 2px;
-    min-height: auto;
-    justify-content: center;
-}
-
 #detail-content-dropdown-wrapper .log-select-dropdown {
     width: 100%;
 }
 
 #detail-content-dropdown-wrapper .btn-blue-sm {
     width: 100%;
-}
-
-#detail-edit-part-trigger {
-    width: 100%;
-    box-sizing: border-box;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 4px;
-    min-height: 30px;
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 #detail-edit-part-dropdown {
@@ -170,47 +147,15 @@
 }
 
 /* --- 5. 작업 등록 모달 (Register Schedule Modal) --- */
-#register-equip-trigger {
-    width: 100%;
-    box-sizing: border-box;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #8b949e;
-    padding: 4px 8px;
-    border-radius: 4px;
-    min-height: 30px;
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    cursor: not-allowed;
-    opacity: 0.5;
-}
-
 /* [추가] 작업 등록 모달의 커스텀 드롭다운(내용, 작업자 등) 정렬 및 너비 통일 */
-#register-schedule-modal .log-select-wrapper {
+#register-schedule-modal .log-select-wrapper,
+#next-schedule-modal .log-select-wrapper {
     display: flex;
     align-items: center;
-    flex: 1;
+    flex: 1 !important;
+    width: 100% !important;
     min-width: 0;
     margin: 0 !important;
-}
-
-#register-part-trigger {
-    width: 100%;
-    box-sizing: border-box;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 4px;
-    min-height: 30px;
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
 }
 
 #register-part-dropdown {
@@ -223,19 +168,6 @@
 
 #btn-register-part-add {
     width: 100%;
-}
-
-#register-worker-trigger {
-    width: 100%;
-    box-sizing: border-box;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 4px;
-    min-height: 30px;
-    display: flex;
-    align-items: center;
 }
 
 #register-worker-dropdown .btn-blue-sm {
@@ -385,6 +317,173 @@
     gap: 4px;
     padding: 10px;
     border-bottom: 1px solid var(--cal-border);
+}
+
+/* ==========================================================================
+   캘린더/작업 상세 공통 모달 스타일 (Moved from calendar.css)
+   ========================================================================== */
+
+/* 모달 사이즈 */
+#schedule-modal .modal-window,
+#event-detail-modal .modal-window,
+#gantt-search-modal .modal-window,
+#calendar-search-modal .modal-window {
+    width: 400px;
+    height: auto;
+}
+
+#next-schedule-modal .modal-window {
+    width: 420px;
+    height: auto;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#schedule-modal,
+#event-detail-modal,
+#next-schedule-modal {
+    z-index: 9999 !important;
+    pointer-events: auto !important;
+}
+
+#register-schedule-modal {
+    z-index: 10002 !important;
+    pointer-events: auto !important;
+}
+
+/* 모달 내부 버튼 */
+#btn-schedule-calendar { padding: 8px 12px; }
+#btn-confirm-register-schedule { width: 100%; }
+#btn-apply-search-filter { width: 100px; }
+
+/* 상세 정보 모달 (Detail Modal) */
+.detail-row { margin-bottom: 15px; }
+.detail-row.large-margin { margin-bottom: 20px; }
+.detail-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.detail-label { color: #8b949e; font-size: 12px; display: block; margin-bottom: 5px; }
+.detail-label-row .detail-label { margin: 0; }
+#btn-move-to-equip { padding: 2px 8px; font-size: 11px; }
+#detail-equip-info, #detail-serial-no, #detail-content { color: #e6edf3; font-weight: bold; font-size: 14px; }
+#detail-type { font-weight: bold; font-size: 14px; }
+
+#detail-work-memo {
+    width: 100%;
+    height: 200px;
+    resize: none;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+#btn-save-detail-memo, #btn-close-detail-footer, #btn-complete-work { flex: 1; }
+
+/* 체크박스 리스트 (Register Modal) */
+.checkbox-list-container { flex: 1; background: #0d1117; border: 1px solid #30363d; border-radius: 4px; padding: 8px; height: 150px; overflow-y: auto; resize: vertical; }
+.checkbox-item { display: flex; align-items: center; padding: 4px 0; }
+.checkbox-item:hover { background-color: rgba(255, 255, 255, 0.05); }
+.checkbox-col-left { flex: 0 0 20px; min-width: 50px; overflow: hidden; padding-right: 0px; display: flex; justify-content: center; align-items: center; }
+.checkbox-col-right { flex: 1; min-width: 0; overflow: hidden; padding-left: 8px; }
+.register-item-checkbox { margin: 0; cursor: pointer; }
+.checkbox-item label { color: #e6edf3; font-size: 13px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%; }
+
+.btn-full-width { width: 100%; }
+.btn-save-state { background-color: #d29922 !important; border-color: #d29922 !important; }
+.register-item-container { flex: 1; position: relative; }
+.manual-input { width: 100%; padding: 8px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; }
+.scheduled-date-text { color: #e3b341; font-size: 0.85em; }
+.log-select-search-container { padding: 5px; border-bottom: 1px solid #30363d; }
+.log-select-search-input { width: 100%; padding: 5px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 3px; font-size: 12px; }
+.log-select-trigger.multi-line { height: auto; white-space: pre-wrap; text-align: left; }
+#detail-content { white-space: pre-wrap; }
+
+/* 다음 예정일 등록 드롭다운 및 입력창 */
+.next-type-select { background-color: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; padding: 4px 6px; font-size: 12px; cursor: pointer; outline: none; }
+.next-type-select:disabled { background-color: #21262d; color: #8b949e; cursor: not-allowed; }
+.next-date-input, .next-md-input { background-color: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; padding: 4px 8px; font-size: 13px; outline: none; }
+.next-type-select:focus, .next-date-input:focus, .next-md-input:focus { border-color: #58a6ff; }
+
+.error-border { border: 1px solid #f85149 !important; }
+.dropdown-search-input { width: calc(100% - 12px) !important; max-width: calc(100% - 12px) !important; margin: 5px 6px !important; display: block !important; padding: 6px 10px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; box-sizing: border-box; }
+.show-all-btn { width: 100%; padding: 10px; background: #21262d; color: #58a6ff; border: none; border-top: 1px solid #30363d; cursor: pointer; font-weight: bold; position: sticky; bottom: 0; z-index: 10; }
+
+/* ==========================================================================
+   통합 모달 입력 필드 및 드롭다운 트리거 스타일 (Event Detail, Register, Next Schedule)
+   ========================================================================== */
+#detail-scheduled-date,
+#detail-content-input,
+#detail-worker,
+#detail-md,
+#next-schedule-date,
+#next-schedule-md,
+#register-date-display,
+#register-content-input,
+#event-detail-modal .log-select-trigger,
+#register-schedule-modal .log-select-trigger,
+#next-schedule-modal .log-select-trigger {
+    width: 100%;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 8px 10px;
+    border-radius: 4px;
+    height: 36px;
+    box-sizing: border-box;
+    font-size: 13px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+#register-equip-trigger.disabled {
+    color: #8b949e !important;
+    cursor: not-allowed !important;
+    opacity: 0.5 !important;
+}
+
+/* 모달 모바일 반응형 스타일 */
+@media (max-width: 950px) {
+    #event-detail-modal .modal-window,
+    #next-schedule-modal .modal-window {
+        width: 90% !important;
+        max-height: 80vh !important;
+        display: flex;
+        flex-direction: column;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        resize: none;
+    }
+
+    #event-detail-modal .modal-body,
+    #next-schedule-modal .modal-body {
+        overflow-y: auto;
+    }
+
+    @media (orientation: landscape) {
+        #event-detail-modal .modal-window {
+            height: 90vh !important;
+            max-height: 90vh !important;
+        }
+    }
+    
+    .log-select-dropdown {
+        width: 100% !important;
+        min-width: 100% !important;
+        max-width: none !important;
+    }
+
+    .log-select-item {
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .log-select-item span {
+        flex: 1;
+        min-width: 0;
+    }
 }
 
 #task-search-results-list li>div {

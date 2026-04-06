@@ -1725,10 +1725,6 @@ function saveDetailChanges() {
         }
     }
 
-    if (dropdownWrapper && dropdownValues.length === 0) {
-        alert('점검 항목을 1개 이상 선택해주세요.'); return false;
-    }
-
     const targetDate = newDate;
     const itemType = item.type;
     const itemDetailType = item.detailType || '';
@@ -1743,8 +1739,12 @@ function saveDetailChanges() {
             finalContentStr = dropdownValues.join(', ');
             if (partContent) finalContentStr = `${finalContentStr} - ${partContent}`;
         } else {
+            finalContentStr = partContent ? partContent : '내용 없음';
+        }
+        
+        if (!dropdownWrapper) {
             finalContentStr = document.getElementById('detail-content-input').value.trim();
-            if (partContent) finalContentStr = `${finalContentStr} - ${partContent}`;
+            if (partContent) finalContentStr = finalContentStr ? `${finalContentStr} - ${partContent}` : partContent;
             if (!finalContentStr) finalContentStr = '내용 없음';
         }
 
@@ -1805,6 +1805,26 @@ function saveDetailChanges() {
                 if (idx === 0) finalContentStr = fullContent;
             });
         } else {
+            if (dropdownWrapper) {
+                let finalContent = partContent ? partContent : '내용 없음';
+                finalContentStr = finalContent;
+                let existing = data.maint.find(m => m.type === itemType && m.content === finalContent);
+                if (existing) {
+                    existing.scheduledDate = targetDate;
+                    existing.detailType = itemDetailType;
+                    existing.worker = newWorker;
+                    existing.memo = newMemo;
+                    existing.md = newMd;
+                    remainingIds.push(existing.id);
+                    payload.maint_upserts.push(existing);
+                } else {
+                    const newId = Date.now();
+                    const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: '' };
+                    data.maint.push(newItem);
+                    remainingIds.push(newId);
+                    payload.maint_upserts.push(newItem);
+                }
+            } else {
             let finalContent = document.getElementById('detail-content-input').value.trim();
             if (partContent) finalContent = `${finalContent} - ${partContent}`;
             if (!finalContent) finalContent = '내용 없음';
@@ -1825,6 +1845,7 @@ function saveDetailChanges() {
                 remainingIds.push(newId);
                 payload.maint_upserts.push(newItem);
             }
+            }
         }
 
         sameDayItems.forEach(m => {
@@ -1838,6 +1859,10 @@ function saveDetailChanges() {
     localStorage.setItem(key, JSON.stringify(data));
     window.syncHistoryTransaction(site, equip, payload);
     
+    if (!isCompleted && remainingIds.length > 0) {
+        currentDetailTarget.id = remainingIds[0];
+    }
+
     const issueShareCb = document.getElementById('detail-issue-share-checkbox');
     window.initialEventDetail = {
         worker: newWorker,
@@ -1902,28 +1927,6 @@ function updateScheduleDateFromDetail() {
 function completeScheduleWork() {
     if (!currentDetailTarget || currentDetailTarget.isCompleted) return;
 
-    // [추가] 항목 선택 없이 완료 시 내용 없음을 생성하지 않고 강제 중단
-    let dropdownValues = [];
-    const dropdownWrapper = document.getElementById('detail-content-dropdown-wrapper');
-    if (dropdownWrapper) {
-        const list = dropdownWrapper.querySelector('.log-select-list');
-        const selected = list.querySelectorAll('.log-select-item.selected');
-        dropdownValues = Array.from(selected).map(el => {
-            const cSel = el.querySelector('.item-cost-select');
-            return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
-        });
-        if (dropdownValues.length === 0) {
-            alert('점검 항목을 1개 이상 선택해주세요.');
-            return;
-        }
-    } else {
-        const inputVal = document.getElementById('detail-content-input').value.trim();
-        if (!inputVal) {
-            alert('점검 항목을 입력해주세요.');
-            return;
-        }
-    }
-
     const worker = document.getElementById('detail-worker').value.trim();
     const mdInput = document.getElementById('detail-md');
     const md = mdInput ? mdInput.value.trim() : '';
@@ -1937,6 +1940,10 @@ function completeScheduleWork() {
 
     // [추가] 작업 완료 전 확인 팝업
     if (!confirm('해당 작업을 완료 처리하시겠습니까?')) return;
+
+    if (hasDetailUnsavedChanges()) {
+        if (!saveDetailChanges()) return;
+    }
 
     localStorage.setItem('lastWorkerName', worker);
 

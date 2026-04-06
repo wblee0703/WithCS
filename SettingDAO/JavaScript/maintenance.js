@@ -841,6 +841,9 @@ function renderDetails() {
         // [추가] 비정기 예정 항목(완료일이 없는 상태)은 유지관리 리스트에서 숨김 처리
         if (item.type === '비정기' && !item.date) return;
 
+        // [추가] "내용 없음" 또는 "장비 점검" 더미 항목은 리스트에 표시하지 않음
+        if (item.content === '내용 없음' || item.content === '장비 점검') return;
+
         const status = calculateStatus(item.type, item.date, item.period);
 
         const template = getTemplateContent('maint-table-row-template');

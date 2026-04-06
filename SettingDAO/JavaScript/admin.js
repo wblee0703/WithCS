@@ -1237,9 +1237,40 @@ function handleEquipCsvImport(event) {
                     }
                 }
 
-                const newKey = serial ? `${name}::${serial}` : name;
+                let newKey = serial ? `${name}::${serial}` : name;
+                let isDuplicate = false;
                 
-                if (!storageData[site].includes(newKey)) {
+                if (storageData[site].includes(newKey)) {
+                    const detailData = JSON.parse(localStorage.getItem(`details_${site}_${newKey}`)) || {};
+                    const existingCustName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+                    
+                    if (existingCustName === custEquipName) {
+                        isDuplicate = true;
+                    } else {
+                        let suffix = 1;
+                        let altKey = serial ? `${name}::${serial}(${suffix})` : `${name}::(${suffix})`;
+                        let altIsDuplicate = false;
+                        
+                        while (storageData[site].includes(altKey)) {
+                            const altDetail = JSON.parse(localStorage.getItem(`details_${site}_${altKey}`)) || {};
+                            const altCustName = (altDetail.setup && altDetail.setup.custEquipName) ? altDetail.setup.custEquipName : '';
+                            if (altCustName === custEquipName) {
+                                altIsDuplicate = true;
+                                break;
+                            }
+                            suffix++;
+                            altKey = serial ? `${name}::${serial}(${suffix})` : `${name}::(${suffix})`;
+                        }
+                        
+                        if (altIsDuplicate) {
+                            isDuplicate = true;
+                        } else {
+                            newKey = altKey;
+                        }
+                    }
+                }
+
+                if (!isDuplicate) {
                     storageData[site].push(newKey);
                     const initData = { 
                         maint: [], logs: [], memo: "", specialNote: "", 

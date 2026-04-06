@@ -2953,8 +2953,7 @@ function openNextScheduleModal(options) {
 
             // [수정] 항목을 명시적으로 선택하지 않아도 기본값('장비 점검')으로 다음 예정일이 무사히 등록되도록 변경
             if (selectedItems.length === 0) {
-                alert('다음 예정일로 등록할 점검 항목을 1개 이상 선택해주세요.');
-                return;
+               selectedItems.push({ content: '내용 없음', cost: '유상' });
             }
 
             const key = `details_${site}_${equip}`;
