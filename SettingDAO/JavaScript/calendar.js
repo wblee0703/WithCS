@@ -1511,11 +1511,18 @@ function buildDetailDropdown(item, site, equip) {
 
         let showAll = registeredItems.length === 0;
 
+        // [수정] 렌더링 전 기존 선택 상태 및 비용 처리 값 백업을 함수 외부 스코프에서 관리
+        const currentSelections = { ...selectedMap };
+
         const renderDropdownItems = (searchTerm = '') => {
-            const currentSelections = { ...selectedMap };
-            list.querySelectorAll('.log-select-item.selected').forEach(el => {
-                const cSel = el.querySelector('.item-cost-select');
-                currentSelections[el.dataset.value] = cSel ? cSel.value : '유상';
+            list.querySelectorAll('.log-select-item').forEach(el => {
+                const val = el.dataset.value;
+                if (el.classList.contains('selected')) {
+                    const cSel = el.querySelector('.item-cost-select');
+                    currentSelections[val] = cSel ? cSel.value : '유상';
+                } else {
+                    delete currentSelections[val];
+                }
             });
 
             let displayItems = showAll ? [...registeredItems, ...otherItems] : registeredItems;
@@ -1527,6 +1534,19 @@ function buildDetailDropdown(item, site, equip) {
                     return kws.every(kw => txt.includes(kw));
                 });
             }
+
+            // [추가] 검색 시에도 기존 선택 항목(물품 미등록 항목 포함)이 사라지지 않도록 보정
+            const displayItemValues = new Set(displayItems.map(i => i.code ? i.code : i.content));
+            Object.keys(currentSelections).forEach(selectedValue => {
+                if (!displayItemValues.has(selectedValue)) {
+                    const originalItem = [...registeredItems, ...otherItems].find(i => (i.code ? i.code : i.content) === selectedValue);
+                    if (originalItem) {
+                        displayItems.unshift(originalItem); // 검색 결과에 없으면 맨 위에 추가
+                    } else {
+                        displayItems.unshift({ content: selectedValue, code: '' }); // 시스템 미등록 항목 보존
+                    }
+                }
+            });
 
             list.innerHTML = '';
             displayItems.forEach(item => {
@@ -3530,12 +3550,18 @@ window.updateRegisterContentOptions = function () {
 
         let showAll = registeredItems.length === 0;
 
+        // [수정] 렌더링 전 기존 선택 상태 및 비용 처리 값 백업을 함수 외부 스코프에서 관리
+        const currentSelections = {};
+
         const renderDropdownItems = (searchTerm = '') => {
-            // [추가] 렌더링 전 기존 선택 상태 및 비용 처리 값 백업 (선택 초기화 방지)
-            const currentSelections = {};
-            list.querySelectorAll('.log-select-item.selected').forEach(el => {
-                const cSel = el.querySelector('.item-cost-select');
-                currentSelections[el.dataset.value] = cSel ? cSel.value : '유상';
+            list.querySelectorAll('.log-select-item').forEach(el => {
+                const val = el.dataset.value;
+                if (el.classList.contains('selected')) {
+                    const cSel = el.querySelector('.item-cost-select');
+                    currentSelections[val] = cSel ? cSel.value : '유상';
+                } else {
+                    delete currentSelections[val];
+                }
             });
 
             let displayItems = showAll ? [...registeredItems, ...otherItems] : registeredItems;
@@ -3555,6 +3581,8 @@ window.updateRegisterContentOptions = function () {
                     const originalItem = [...registeredItems, ...otherItems].find(i => (i.code ? i.code : i.content) === selectedValue);
                     if (originalItem) {
                         displayItems.unshift(originalItem); // 검색 결과에 없으면 맨 위에 추가
+                    } else {
+                        displayItems.unshift({ content: selectedValue, code: '' }); // 시스템 미등록 항목 보존
                     }
                 }
             });

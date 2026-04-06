@@ -3349,11 +3349,18 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
     let otherItems = adminItems.filter(item => !matchedItems.some(mi => mi.part === item.part));
     let showAll = matchedItems.length === 0;
 
+    // [수정] 렌더링 전 기존 선택 상태 및 비용 처리 값 백업을 함수 외부 스코프에서 관리
+    const currentSelections = { ...selectedMap };
+
     const render = (searchTerm = '') => {
-        const currentSelections = { ...selectedMap };
-        list.querySelectorAll('.log-select-item.selected').forEach(el => {
-            const cSel = el.querySelector('.item-cost-select');
-            currentSelections[el.dataset.value] = cSel ? cSel.value : '유상';
+        list.querySelectorAll('.log-select-item').forEach(el => {
+            const val = el.dataset.value;
+            if (el.classList.contains('selected')) {
+                const cSel = el.querySelector('.item-cost-select');
+                currentSelections[val] = cSel ? cSel.value : '유상';
+            } else {
+                delete currentSelections[val];
+            }
         });
         let displayItems = showAll ? [...matchedItems, ...otherItems] : matchedItems;
         if (searchTerm) {
