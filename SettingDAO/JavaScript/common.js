@@ -5,7 +5,7 @@
 function getTemplateContent(id) {
     const template = document.getElementById(id);
     if (template) return document.importNode(template.content, true);
-    console.error(`Template with id '${id}' not found.`);
+    // console.warn(`Template with id '${id}' not found. Using fallback if available.`);
     return null;
 }
 
@@ -142,8 +142,19 @@ function fetchServerData(callback) {
             return response.json();
         })
         .then(data => {
-            // 기존 데이터 정리
+            // [핵심 수정] 기존 데이터 전체를 무조건 날리지 않고(localStorage.clear), 
+            // 사용자가 선택했던 마지막 UI 상태(last... 등) 관련 키들은 안전하게 백업 후 복원합니다.
+            const keysToKeep = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                // 시스템(DB) 동기화 키가 아닌, 프론트엔드 UI 상태를 나타내는 키만 백업
+                if (!key.startsWith('details_') && !key.startsWith('site_meta_') && 
+                    !['device_data', 'setup_data', 'admin_items', 'equipment_models', 'check_type_categories', 'check_type_categories2', 'check_type_items'].includes(key)) {
+                    keysToKeep.push({ key: key, value: localStorage.getItem(key) });
+                }
+            }
             localStorage.clear();
+            keysToKeep.forEach(item => localStorage.setItem(item.key, item.value));
 
             // 서버 데이터를 localStorage에 반영
             Object.keys(data).forEach(key => {
@@ -979,8 +990,8 @@ function restoreLastState() {
     let siteToSelect = urlParams.get('site');
     let equipToSelect = urlParams.get('equip');
 
-    // URL 파라미터가 없으면 마지막 저장된 상태 확인
-    if (!siteToSelect || !equipToSelect) {
+    // [수정] URL 파라미터가 둘 다 없을 때만 로컬 스토리지 마지막 상태를 복원하도록 변경 (URL 강제 이동 꼬임 방지)
+    if (!siteToSelect && !equipToSelect) {
         try {
             let lastStateKey = 'lastSelectedPath'; // 기본값
             if (window.location.pathname.indexOf('setup') !== -1) lastStateKey = 'lastSetupPath';
@@ -998,20 +1009,22 @@ function restoreLastState() {
     // [개선] DOM 렌더링 대기 후 안전하게 복원 (Interval 사용)
     if (siteToSelect) {
         let retries = 0;
-        const interval = setInterval(() => {
+        if (window.restoreSiteInterval) clearInterval(window.restoreSiteInterval); // [개선] 중복 복원 방지
+        window.restoreSiteInterval = setInterval(() => {
             const siteItems = document.querySelectorAll('#site-list .item-text');
             if (siteItems.length > 0 || retries > 20) {
-                clearInterval(interval);
+                clearInterval(window.restoreSiteInterval);
                 const targetSiteLi = Array.from(siteItems).find(span => span.textContent.trim() === siteToSelect)?.parentElement;
                 if (targetSiteLi) {
                     targetSiteLi.click();
                     if (equipToSelect) {
                         let equipRetries = 0;
-                        const equipInterval = setInterval(() => {
+                        if (window.restoreEquipInterval) clearInterval(window.restoreEquipInterval);
+                        window.restoreEquipInterval = setInterval(() => {
                             const safeId = equipToSelect.replace(/"/g, '\\"');
                             const targetEquipLi = document.querySelector(`#equip-list li[data-id="${safeId}"]`);
                             if (targetEquipLi || equipRetries > 20) {
-                                clearInterval(equipInterval);
+                                clearInterval(window.restoreEquipInterval);
                                 if (targetEquipLi) targetEquipLi.click();
                             }
                             equipRetries++;
@@ -1987,6 +2000,12 @@ function renderSites() {
 
     Object.keys(storageData).forEach(name => {
         const li = createListItem(name, name, 'site', (selectedSite) => {
+            // [추가] 장비를 선택하지 않고 사업장만 클릭했을 때도 마지막 경로로 저장되도록 로직 추가
+            let lastStateKey = 'lastSelectedPath';
+            if (window.location.pathname.indexOf('setup') !== -1) lastStateKey = 'lastSetupPath';
+            else if (window.location.pathname.indexOf('maintenance') !== -1) lastStateKey = 'lastMaintPath';
+            localStorage.setItem(lastStateKey, JSON.stringify({ site: selectedSite, equip: '' }));
+
             const equipSection = document.getElementById('equip-section');
             const eInput = document.getElementById('equip-input');
             const eModelInput = document.getElementById('equip-model-input');

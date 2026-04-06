@@ -2244,6 +2244,7 @@ function setupCheckTypeMgmt() {
     if (siteSelect) {
         siteSelect.addEventListener('change', (e) => {
             currentCheckTypeSiteContext = e.target.value;
+            localStorage.setItem('lastCheckTypeSiteContext', currentCheckTypeSiteContext); // [추가] 필터 상태 저장
             renderCheckTypeEquipList();
         });
     }
@@ -2683,7 +2684,13 @@ function updateCheckTypeSiteSelect() {
         select.appendChild(opt);
     });
     
-    if (storageData[currentVal]) select.value = currentVal;
+    // [추가] 마지막으로 선택했던 점검 구분 사업장 필터 복원
+    const savedSite = localStorage.getItem('lastCheckTypeSiteContext');
+    if (currentVal && storageData[currentVal]) select.value = currentVal;
+    else if (savedSite && storageData[savedSite]) {
+        select.value = savedSite;
+        currentCheckTypeSiteContext = savedSite;
+    }
 }
 
 function renderCheckTypeEquipList() {

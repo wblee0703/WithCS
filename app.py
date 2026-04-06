@@ -431,7 +431,7 @@ def set_security_headers(response):
     response.set_cookie('csrf_token', generate_csrf())
     
     # 에러 로그 기록 (정적 파일 경로 제외)
-    if not request.path.startswith(('/static', '/SettingDAO', '/favicon.ico')):
+    if not request.path.startswith(('/static', '/SettingDAO', '/favicon.ico', '/.well-known')):
         # [수정] 401 Unauthorized는 정상적인 인증 루틴일 수 있으므로 경고 로그에서 제외 (로그인 실패 등)
         # [개선] 400 에러는 위의 에러 핸들러와 일반 비즈니스 로직(중복 아이디 등)에서 처리/기록하므로 포괄 로그에서 제외 (중복 방지)
         if response.status_code > 400 and response.status_code != 401:
