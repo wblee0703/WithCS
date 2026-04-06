@@ -485,6 +485,7 @@ function setupAuthEvents() {
     const userModal = document.getElementById('user-modal');
     const btnChangePw = document.getElementById('btn-change-pw');
     const userInfo = document.getElementById('user-info');
+    const btnModalAddUser = document.getElementById('btn-modal-add-user');
 
     // [추가] 홈 화면 로그인 요소 이벤트 연결
     const homeLoginBtn = document.getElementById('home-login-btn');
@@ -505,6 +506,7 @@ function setupAuthEvents() {
     if (btnCloseUserModal) btnCloseUserModal.addEventListener('click', closeUserModal);
     // [수정] 모달 바깥쪽(배경) 클릭 시 닫히는 기능 제거 (오직 X 버튼으로만 닫힘)
     // if (userModal) userModal.addEventListener('click', (e) => { if (e.target === userModal) closeUserModal(); });
+    if (btnModalAddUser) btnModalAddUser.addEventListener('click', openAddUserModal);
     if (btnChangePw) btnChangePw.addEventListener('click', changePassword);
 
     const btnDeleteAccount = document.getElementById('btn-delete-account');
@@ -1134,6 +1136,9 @@ function checkLoginStatus() {
         const btnHeaderAddUser = document.getElementById('btn-header-add-user');
         if (btnHeaderAddUser) btnHeaderAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
 
+        const btnModalAddUser = document.getElementById('btn-modal-add-user');
+        if (btnModalAddUser) btnModalAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
+
         const adminItems = document.querySelectorAll('.nav-admin-item');
         adminItems.forEach(el => el.style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none');
 
@@ -1182,6 +1187,9 @@ function checkLoginStatus() {
 
         const btnHeaderAddUser = document.getElementById('btn-header-add-user');
         if (btnHeaderAddUser) btnHeaderAddUser.style.display = 'none';
+        
+        const btnModalAddUser = document.getElementById('btn-modal-add-user');
+        if (btnModalAddUser) btnModalAddUser.style.display = 'none';
 
         const adminItems = document.querySelectorAll('.nav-admin-item');
         adminItems.forEach(el => el.style.display = 'none');

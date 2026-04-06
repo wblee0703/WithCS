@@ -20,7 +20,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// [추가] 모든 형태의 로컬 데이터를 안전하게 병합하여 가져오는 헬퍼 함수
+function getSortDeviceData() {
+    let data = {};
+    if (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) {
+        data = storageData;
+    } else {
+        data = JSON.parse(localStorage.getItem('device_data')) || {};
+        if (Object.keys(data).length === 0) {
+            data = JSON.parse(localStorage.getItem('withtech_data')) || {};
+        }
+    }
+    if (data.equipments) return data.equipments;
+    return data;
+}
+
 function initSortPage() {
+    let data = getSortDeviceData();
+    if (!data || Object.keys(data).length === 0) {
+        if (!window.sortInitRetries) window.sortInitRetries = 0;
+        if (window.sortInitRetries < 30) { // 최대 3초 대기
+            window.sortInitRetries++;
+            setTimeout(initSortPage, 100);
+            return;
+        }
+    }
+
     setupSortFilters();
     setupSortEvents();
     setupSortResizer();
@@ -41,7 +66,11 @@ function initSortPage() {
             }
             if (lastSortFilters.yearInput) {
                 const yi = document.getElementById('sort-year-input');
-                if (yi) yi.value = lastSortFilters.yearInput;
+                if (yi) {
+                    const exists = Array.from(yi.options).some(o => o.value == lastSortFilters.yearInput);
+                    if (!exists) yi.insertAdjacentHTML('beforeend', `<option value="${lastSortFilters.yearInput}">${lastSortFilters.yearInput}년</option>`);
+                    yi.value = lastSortFilters.yearInput;
+                }
             }
             if (lastSortFilters.startDate) {
                 const si = document.getElementById('sort-start-date');
@@ -86,9 +115,7 @@ function initSortPage() {
             };
             
             setTimeout(() => {
-                let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
-                let data = (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) ? storageData : deviceData;
-                if (data.equipments) data = data.equipments;
+                let data = getSortDeviceData();
                 
                 applyCustomMultiSelect('sort-site-select', lastSortFilters.siteFilters);
                 updateSortBuildingSelect(getMultiValues('sort-site-select'));
@@ -292,12 +319,11 @@ function setupSortFilters() {
     
     if (!siteSelect) return;
 
-    let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
-    let data = (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) ? storageData : deviceData;
-    if (data.equipments) data = data.equipments;
+    let data = getSortDeviceData();
 
     siteSelect.innerHTML = '<option value="">전체 사업장</option>';
     Object.keys(data).sort().forEach(site => {
+        if (site === 'models' || site === 'details' || !Array.isArray(data[site])) return;
         const opt = document.createElement('option');
         opt.value = site;
         opt.textContent = site;
@@ -570,6 +596,7 @@ function updateSortBuildingSelect(sites) {
     }
     let allBuildings = new Set();
     sites.forEach(site => {
+        if (site === 'models' || site === 'details') return;
         const metaData = JSON.parse(localStorage.getItem(`site_meta_${site}`)) || {};
         const buildings = metaData.buildings || [];
         buildings.forEach(b => allBuildings.add(b));
@@ -600,8 +627,9 @@ function updateSortEquipSelect(sites, buildings, models, data) {
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
     sites.forEach(site => {
-        if (!data[site]) return;
+        if (!data[site] || !Array.isArray(data[site])) return;
         data[site].forEach(equip => {
+            if (typeof equip !== 'string') return;
             const detailData = JSON.parse(localStorage.getItem(`details_${site}_${equip}`)) || {};
             const setup = detailData.setup || {};
             
@@ -725,15 +753,16 @@ function performSortSearch() {
     const costTypeFilters = getMultiValues('sort-cost-type-select');
     const keywordInputVal = document.getElementById('sort-keyword') ? document.getElementById('sort-keyword').value.trim().toLowerCase() : '';
     const keywordList = document.getElementById('sort-keyword-list');
-    const keywordSelected = keywordList ? Array.from(keywordList.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value.toLowerCase()) : [];
+    const keywordSelected = keywordList ? Array.from(keywordList.querySelectorAll('.log-select-item.selected')).map(el => (el.dataset.value || '').toLowerCase()) : [];
     
+    const currentYear = new Date().getFullYear();
     const periodType = document.getElementById('sort-period-type') ? document.getElementById('sort-period-type').value : 'custom';
     let startDate = '';
     let endDate = '';
 
     if (periodType === 'month') {
         const monthInput = document.getElementById('sort-month-input');
-        const monthVal = monthInput ? monthInput.value : '';
+        const monthVal = (monthInput && monthInput.value) ? monthInput.value : `${currentYear}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
         if (monthVal) {
             const [y, m] = monthVal.split('-').map(Number);
             startDate = `${y}-${String(m).padStart(2, '0')}-01`;
@@ -742,7 +771,7 @@ function performSortSearch() {
         }
     } else if (periodType === 'year') {
         const yearInput = document.getElementById('sort-year-input');
-        const yearVal = yearInput ? yearInput.value : '';
+        const yearVal = (yearInput && yearInput.value) ? yearInput.value : currentYear.toString();
         if (yearVal) {
             startDate = `${yearVal}-01-01`;
             endDate = `${yearVal}-12-31`;
@@ -775,17 +804,17 @@ function performSortSearch() {
 
     let results = [];
     
-    let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
-    let data = (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) ? storageData : deviceData;
-    if (data.equipments) data = data.equipments;
+    let data = getSortDeviceData();
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
     Object.keys(data).forEach(site => {
+        if (site === 'models' || site === 'details' || !Array.isArray(data[site])) return;
         if (siteFilters.length > 0 && !siteFilters.includes(site)) return;
         
         if (data[site]) {
             data[site].forEach(equip => {
+                if (typeof equip !== 'string') return;
                 if (equipFilters.length > 0 && !equipFilters.includes(equip)) return;
                 
                 const parts = equip.split('::');
@@ -804,93 +833,110 @@ function performSortSearch() {
                 if (buildingFilters.length > 0 && !buildingFilters.includes(equipBuilding)) return;
 
                 const checkItemMatch = (itemObj, isLog) => {
-                    const itemDate = isLog ? itemObj.date : itemObj.scheduledDate;
-                    if (!itemDate) return false;
-                    if (isLog && itemObj.detailType === '일정변경') return false;
-                    
-                    const itemType = itemObj.type || '정기'; // 구버전 데이터 누락 대응
-                    if (typeFilters.length > 0 && !typeFilters.includes(itemType)) return false;
-                    if (startDate && itemDate < startDate) return false;
-                    if (endDate && itemDate > endDate) return false;
-                    
-                    let dt1 = itemObj.detailType || (itemType === '정기' ? 'PM 점검' : 'BM 점검');
-                    let dt2 = itemObj.detailType2 || '';
-                    
-                    if (dt1.includes(' > ')) {
-                        const ps = dt1.split(' > '); dt1 = ps[0].trim(); dt2 = ps[1].trim();
-                    } else if (dt2.includes(' > ')) {
-                        const ps = dt2.split(' > '); dt1 = ps[0].trim(); dt2 = ps[1].trim();
-                    }
-                    
-                    if (detailTypeFilters.length > 0 && !detailTypeFilters.includes(dt1)) return false;
-                    if (itemType === '비정기' && detailType2Filters.length > 0 && !detailType2Filters.includes(dt2)) return false;
-
-                    const pureContent = itemObj.content || itemObj.code || '';
-                    
-                    let parsedCostType = '';
-                    const costMatch = pureContent.match(/\[(.*?)\]/);
-                    if (costMatch) parsedCostType = costMatch[1];
-                    const itemCostType = itemObj.costType || itemObj.itemCost || parsedCostType || '유상';
-                    
-                    if (costTypeFilters.length > 0 && !costTypeFilters.includes(itemCostType)) return false;
-
-                    let matchedItemDetailType = '';
-                    const contentsList = pureContent.split(',').map(s => s.replace(/\[.*?\]\s*/g, '').trim());
-                    
-                    for (const c of contentsList) {
-                        let cleanContent = c.replace(/\[지연\]/g, '').trim();
+                    try {
+                        const itemDate = isLog ? itemObj.date : itemObj.scheduledDate;
+                        if (!itemDate) return false;
+                        if (isLog && itemObj.detailType === '일정변경') return false;
                         
-                        // '파트 이상 (교체) - 부품명' 같은 형식이면 뒷부분 부품명만 추출하여 정확도 향상
-                        if (cleanContent.includes(' - ')) {
-                            cleanContent = cleanContent.split(' - ')[1].trim();
+                        const itemType = itemObj.type || '정기'; // 구버전 데이터 누락 대응
+                        if (typeFilters.length > 0 && !typeFilters.includes(itemType)) return false;
+                        if (startDate && itemDate < startDate) return false;
+                        if (endDate && itemDate > endDate) return false;
+                        
+                        let dt1 = itemObj.detailType || (itemType === '정기' ? 'PM 점검' : 'BM 점검');
+                        let dt2 = itemObj.detailType2 || '';
+                        
+                        if (dt1.includes(' > ')) {
+                            const ps = dt1.split(' > '); dt1 = ps[0].trim(); dt2 = ps[1].trim();
+                        } else if (dt2.includes(' > ')) {
+                            const ps = dt2.split(' > '); dt1 = ps[0].trim(); dt2 = ps[1].trim();
                         }
                         
-                        const matchItem = adminItems.find(ai => ai.part === cleanContent || ai.code === cleanContent);
-                        if (matchItem && matchItem.detailType) {
-                            matchedItemDetailType = matchItem.detailType;
-                            if (itemDetailTypeFilters.length > 0 && itemDetailTypeFilters.includes(matchedItemDetailType)) break;
-                        }
-                    }
-                    
-                    if (itemDetailTypeFilters.length > 0 && !itemDetailTypeFilters.includes(matchedItemDetailType)) return false;
-                    
-                    const workerText = itemObj.worker || '';
-                    if (keywordInputVal || keywordSelected.length > 0) {
-                        const searchTarget = `${pureContent} ${workerText} ${displayEquipName} ${custEquipName}`.toLowerCase();
-                        let isMatch = false;
+                        if (detailTypeFilters.length > 0 && !detailTypeFilters.includes(dt1)) return false;
+                        if (itemType === '비정기' && detailType2Filters.length > 0 && !detailType2Filters.includes(dt2)) return false;
 
-                        if (keywordSelected.length > 0) {
-                            // 제안 박스에서 선택한 드롭다운 항목이 있다면 (OR 조건)
-                            isMatch = keywordSelected.some(kw => searchTarget.includes(kw));
-                        } else if (keywordInputVal) {
-                            // 직접 텍스트를 입력했다면 띄어쓰기 복합 검색 (AND 조건)
-                            const kws = keywordInputVal.split(/\s+/);
-                            isMatch = kws.every(kw => searchTarget.includes(kw));
+                        const pureContent = itemObj.content || itemObj.code || '';
+                        
+                        let parsedCostType = '';
+                        const costMatch = pureContent.match(/\[(.*?)\]/);
+                        if (costMatch) parsedCostType = costMatch[1];
+                        const itemCostType = itemObj.costType || itemObj.itemCost || parsedCostType || '유상';
+                        
+                        if (costTypeFilters.length > 0 && !costTypeFilters.includes(itemCostType)) return false;
+
+                        let matchedItemDetailType = '';
+                        const contentsList = pureContent.split(',').map(s => s.replace(/\[.*?\]\s*/g, '').trim());
+                        
+                        if (itemDetailTypeFilters.length > 0) {
+                            let matchFound = false;
+                            for (const c of contentsList) {
+                                let cleanContent = c.replace(/\[지연\]/g, '').trim();
+                                
+                                if (cleanContent.includes(' - ')) {
+                                    const parts = cleanContent.split(' - ');
+                                    cleanContent = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                                }
+                                
+                                const matchItem = adminItems.find(ai => ai.part === cleanContent || ai.code === cleanContent);
+                                if (matchItem && matchItem.detailType) {
+                                    matchedItemDetailType = matchItem.detailType;
+                                    if (itemDetailTypeFilters.includes(matchedItemDetailType)) {
+                                        matchFound = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!matchFound) return false;
+                        } else {
+                            let cleanContent = contentsList[0] || '';
+                            cleanContent = cleanContent.replace(/\[지연\]/g, '').trim();
+                            if (cleanContent.includes(' - ')) {
+                                const parts = cleanContent.split(' - ');
+                                cleanContent = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                            }
+                            const matchItem = adminItems.find(ai => ai.part === cleanContent || ai.code === cleanContent);
+                            if (matchItem) matchedItemDetailType = matchItem.detailType;
                         }
                         
-                        if (!isMatch) return false;
+                        const workerText = itemObj.worker || '';
+                        if (keywordInputVal || keywordSelected.length > 0) {
+                            const searchTarget = `${pureContent} ${workerText} ${displayEquipName} ${custEquipName}`.toLowerCase();
+                            let isMatch = false;
+
+                            if (keywordSelected.length > 0) {
+                                isMatch = keywordSelected.some(kw => searchTarget.includes(kw));
+                            } else if (keywordInputVal) {
+                                const kws = keywordInputVal.split(/\s+/);
+                                isMatch = kws.every(kw => searchTarget.includes(kw));
+                            }
+                            
+                            if (!isMatch) return false;
+                        }
+                        
+                        return {
+                            id: itemObj.id,
+                            date: itemDate,
+                            site: site,
+                            building: equipBuilding,
+                            equipRaw: equip,
+                            equipName: displayEquipName,
+                            modelName: equipName,
+                            serial: serialNo,
+                            custName: custEquipName,
+                            type: itemType,
+                            detailType: dt2 ? `${dt1} > ${dt2}` : dt1,
+                            content: pureContent,
+                            worker: workerText,
+                            md: itemObj.md || '0',
+                            costType: itemCostType,
+                            itemDetailType: matchedItemDetailType,
+                            status: isLog ? '완료' : '예정',
+                            memo: itemObj.memo || ''
+                        };
+                    } catch(e) {
+                        console.error('checkItemMatch Error:', e);
+                        return false;
                     }
-                    
-                    return {
-                        id: itemObj.id, // [추가] 팝업 연동을 위한 원본 ID 포함
-                        date: itemDate,
-                        site: site,
-                        building: equipBuilding,
-                        equipRaw: equip,
-                        equipName: displayEquipName,
-                        modelName: equipName,
-                        serial: serialNo,
-                        custName: custEquipName,
-                        type: itemType,
-                        detailType: dt2 ? `${dt1} > ${dt2}` : dt1,
-                        content: pureContent,
-                        worker: workerText,
-                        md: itemObj.md || '0',
-                        costType: itemCostType,
-                        itemDetailType: matchedItemDetailType,
-                        status: isLog ? '완료' : '예정',
-                        memo: itemObj.memo || ''
-                    };
                 };
 
                 // 1. Logs (완료된 유지관리 이력 추출)
@@ -918,8 +964,12 @@ function performSortSearch() {
 
     // 날짜 내림차순 정렬, 동일 날짜일 경우 예정(미완료) 먼저 
     results.sort((a, b) => {
-        if (b.date !== a.date) return b.date.localeCompare(a.date);
-        return a.status.localeCompare(b.status);
+        const dateA = a.date || '';
+        const dateB = b.date || '';
+        if (dateB !== dateA) return dateB.localeCompare(dateA);
+        const statusA = a.status || '';
+        const statusB = b.status || '';
+        return statusA.localeCompare(statusB);
     });
 
     renderSortList(results);
@@ -1078,7 +1128,8 @@ function renderSortChart(results) {
             items.forEach(item => {
                 let pureItem = item.replace(/\[.*?\]\s*/g, '').trim();
                 if (pureItem.includes(' - ')) {
-                    pureItem = pureItem.split(' - ')[1].trim();
+                    const parts = pureItem.split(' - ');
+                    pureItem = parts.length > 1 ? parts[1].trim() : parts[0].trim();
                 }
                 if (pureItem) {
                     const cleanContent = pureItem.replace(/\[지연\]/g, '').trim();
