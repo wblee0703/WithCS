@@ -626,7 +626,7 @@ function setupLogoEvent() {
     if (logo) {
         logo.addEventListener('click', () => {
             if (!checkUnsavedChanges()) return;
-            window.location.href = 'index.html';
+            window.location.href = '/';
         });
     }
 }
@@ -677,7 +677,7 @@ function handlePageAccess() {
     // [그 외 페이지]
     if (!isLoggedIn) {
         alert('로그인이 필요한 서비스입니다.');
-        window.location.href = 'index.html';
+        window.location.href = '/';
         return false;
     }
     return true;

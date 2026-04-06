@@ -473,7 +473,7 @@ def admin():
         return redirect('/')
     return render_template('admin.html')
 
-@app.route('/sort')
+@app.route('/sort.html')
 def sort():
     if 'user_id' not in session:
         return redirect('/')
