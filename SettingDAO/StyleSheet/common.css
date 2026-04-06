@@ -413,7 +413,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 1050; /* [수정] 모바일 햄버거 메뉴(1020)보다 위로 표시되도록 1000 -> 1050 */
 }
 
 .modal-window {
@@ -1046,7 +1046,7 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
         border: none;
         cursor: pointer;
         padding: 0;
-        z-index: 9999;
+        z-index: 1020; /* [수정] 모달창(1050)보다 아래에 위치하도록 9999 -> 1020 */
         /* [수정] 다른 요소보다 위에 오도록 최상위 설정 */
         position: relative;
         /* [수정] z-index 적용을 위해 relative 설정 */

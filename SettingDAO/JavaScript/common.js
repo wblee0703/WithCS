@@ -1231,8 +1231,10 @@ function checkLoginStatus() {
     if (mobileNav) {
         const setupLink = mobileNav.querySelector('a[href*="setup"]');
         const maintLink = mobileNav.querySelector('a[href*="maintenance"]');
+        const sortLink = mobileNav.querySelector('a[href*="sort"]');
         if (setupLink) setupLink.style.display = isLoggedIn ? 'block' : 'none';
         if (maintLink) maintLink.style.display = isLoggedIn ? 'block' : 'none';
+        if (sortLink) sortLink.style.display = isLoggedIn ? 'block' : 'none';
     }
 }
 

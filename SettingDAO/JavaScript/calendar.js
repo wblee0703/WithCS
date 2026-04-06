@@ -69,7 +69,7 @@ function getScheduleForCalendar() {
                             }
                             if (targetDateStr) {
                                 if (!events[targetDateStr]) events[targetDateStr] = [];
-                                events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.code ? item.code : item.content, id: item.id, md: item.md || 0, originalLogId: item.originalLogId });
+                                events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.code ? item.code : item.content, id: item.id, md: item.md || 0, originalLogId: item.originalLogId, worker: item.worker });
                             }
                         });
                     }
@@ -88,7 +88,8 @@ function getScheduleForCalendar() {
                                     isCompleted: !isChanged,
                                     isChanged: isChanged,
                                     md: log.md || 0,
-                                    originalLogId: log.originalLogId
+                                    originalLogId: log.originalLogId,
+                                    worker: log.worker
                                 });
                             }
                         });
@@ -403,7 +404,8 @@ function renderMonthGrid(year, month, titleId, gridId) {
                     const matchKeyword = !keyword || (
                         (event.site && event.site.toLowerCase().includes(keyword)) ||
                         (event.equip && event.equip.toLowerCase().includes(keyword)) ||
-                        (event.content && event.content.toLowerCase().includes(keyword))
+                        (event.content && event.content.toLowerCase().includes(keyword)) ||
+                        (event.worker && event.worker.toLowerCase().includes(keyword))
                     );
 
                     const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
@@ -766,7 +768,7 @@ function openCalendarPopup(dateStr, events) {
 
                             if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
                                 dayEvents = dayEvents.filter(event => {
-                                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)));
+                                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
                                     const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
                                     const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
                                     return matchKeyword && matchSite && matchEquip;
@@ -1958,7 +1960,7 @@ function updateScheduleDateFromDetail() {
 
             if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
                 dayEvents = dayEvents.filter(event => {
-                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)));
+                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
                     const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
                     const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
                     return matchKeyword && matchSite && matchEquip;
@@ -2178,7 +2180,7 @@ window.refreshCalendarPopupAfterCompletion = function () {
 
             if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
                 dayEvents = dayEvents.filter(event => {
-                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)));
+                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
                     const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
                     const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
                     return matchKeyword && matchSite && matchEquip;
@@ -2313,7 +2315,7 @@ function cancelScheduleCompletion() {
 
             if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
                 dayEvents = dayEvents.filter(event => {
-                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)));
+                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
                     const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
                     const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
                     return matchKeyword && matchSite && matchEquip;
