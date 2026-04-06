@@ -443,17 +443,10 @@ function refreshAppViews() {
         }
     }
 
-    // Setup/Maintenance 화면인 경우: 선택 상태 복원 및 상세 내용 갱신
-    if (currentPath.site) {
-        const activeSiteLi = Array.from(document.querySelectorAll('#site-list li .item-text'))
-            .find(el => el.textContent.trim() === currentPath.site)?.parentElement;
-        if (activeSiteLi) {
-            // 사이트가 존재하면 장비 목록 재렌더링
-            renderEquips(currentPath.site);
-            // 부드러운 UX를 위해 마지막 선택 상태 강제 복원 (상세 내용 갱신 포함)
+     // [개선] 항상 마지막 상태 복원 시도 (Setup, Maint 페이지)
+        if (window.location.pathname.indexOf('setup') !== -1 || window.location.pathname.indexOf('maintenance') !== -1) {
             restoreLastState();
         }
-    }
 
     // 대기 중인 팝업 모달이 있는지 확인
     checkPendingModals();
@@ -1000,29 +993,32 @@ function restoreLastState() {
         } catch (e) { console.error(e); }
     }
 
-    // [추가] 특정 장비가 선택되지 않았더라도 사업장이 있다면 해당 사업장 폴더를 엽니다.
-    if (siteToSelect && !equipToSelect) {
-        setTimeout(() => {
+    // [개선] DOM 렌더링 대기 후 안전하게 복원 (Interval 사용)
+    if (siteToSelect) {
+        let retries = 0;
+        const interval = setInterval(() => {
             const siteItems = document.querySelectorAll('#site-list .item-text');
-            const targetSiteLi = Array.from(siteItems).find(span => span.textContent.trim() === siteToSelect)?.parentElement;
-            if (targetSiteLi) targetSiteLi.click();
-        }, 100);
-    }
-
-    if (siteToSelect && equipToSelect) {
-        setTimeout(() => {
-            const siteItems = document.querySelectorAll('#site-list .item-text');
-            const targetSiteLi = Array.from(siteItems).find(span => span.textContent.trim() === siteToSelect)?.parentElement;
-            if (targetSiteLi) {
-                targetSiteLi.click();
-                setTimeout(() => {
-                    // ID에 특수문자가 있을 수 있으므로 이스케이프 처리
-                    const safeId = equipToSelect.replace(/"/g, '\\"');
-                    const targetEquipLi = document.querySelector(`#equip-list li[data-id="${safeId}"]`);
-                    if (targetEquipLi) targetEquipLi.click();
-                }, 100);
+            if (siteItems.length > 0 || retries > 20) {
+                clearInterval(interval);
+                const targetSiteLi = Array.from(siteItems).find(span => span.textContent.trim() === siteToSelect)?.parentElement;
+                if (targetSiteLi) {
+                    targetSiteLi.click();
+                    if (equipToSelect) {
+                        let equipRetries = 0;
+                        const equipInterval = setInterval(() => {
+                            const safeId = equipToSelect.replace(/"/g, '\\"');
+                            const targetEquipLi = document.querySelector(`#equip-list li[data-id="${safeId}"]`);
+                            if (targetEquipLi || equipRetries > 20) {
+                                clearInterval(equipInterval);
+                                if (targetEquipLi) targetEquipLi.click();
+                            }
+                            equipRetries++;
+                        }, 50);
+                    }
+                }
             }
-        }, 100);
+            retries++;
+        }, 50);
     }
 }
 
@@ -2606,10 +2602,17 @@ function onEquipClick(site, equip) {
                         const lastLogId = localStorage.getItem(`lastLog_${site}_${equip}`);
                         const matchedLog = lastLogId ? data.logs.find(l => l.id == lastLogId) : null;
                         if (matchedLog) {
-                            setTimeout(() => {
-                                selectLog(matchedLog.id, false);
+                            let retries = 0;
+                            const scrollInterval = setInterval(() => {
                                 const row = document.getElementById(`log-row-${matchedLog.id}`);
-                                if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                if (row || retries > 20) {
+                                    clearInterval(scrollInterval);
+                                    selectLog(matchedLog.id, false);
+                                    if (row) {
+                                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                    }
+                                }
+                                retries++;
                             }, 50);
                         } else {
                             data.logs.sort((a, b) => { if (b.date !== a.date) return b.date.localeCompare(a.date); return b.id - a.id; });
@@ -3083,16 +3086,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         };
     }
 
-    // [추가] 추가 버튼 생성 및 연결
     let addBtn = document.getElementById('btn-add-extra-work-from-history');
-    if (moveBtn && !addBtn) {
-        addBtn = document.createElement('button');
-        addBtn.id = 'btn-add-extra-work-from-history';
-        addBtn.className = 'btn-blue-sm';
-        addBtn.style.marginLeft = '10px';
-        addBtn.textContent = '추가';
-        moveBtn.parentNode.insertBefore(addBtn, moveBtn.nextSibling);
-    }
 
     if (addBtn) {
         addBtn.onclick = () => {

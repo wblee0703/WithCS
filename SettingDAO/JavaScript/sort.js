@@ -56,7 +56,72 @@ function initSortPage() {
                 const ki = document.getElementById('sort-keyword');
                 if (ki) ki.value = lastSortFilters.keywordInputVal;
             }
-            setTimeout(performSortSearch, 50);
+            
+            // [개선] 다중 선택 드롭다운 상태 완벽 복원
+            const applyCustomMultiSelect = (selectId, values) => {
+                if (!values || values.length === 0) return;
+                const list = document.getElementById(`${selectId}-list`);
+                const selectEl = document.getElementById(selectId);
+                if (selectEl) {
+                    Array.from(selectEl.options).forEach(opt => {
+                        if (values.includes(opt.value)) opt.selected = true;
+                    });
+                }
+                if (list) {
+                    list.querySelectorAll('.log-select-item').forEach(el => {
+                        if (values.includes(el.dataset.value)) {
+                            el.classList.add('selected');
+                            const icon = el.querySelector('.check-icon');
+                            if (icon) icon.style.opacity = '1';
+                        }
+                    });
+                    const trigger = document.getElementById(`${selectId}-trigger`);
+                    const selected = Array.from(list.querySelectorAll('.log-select-item.selected'));
+                    if (trigger && selected.length > 0) {
+                        if (selected.length === 1) trigger.textContent = selected[0].querySelector('.item-text').textContent;
+                        else trigger.textContent = `${selected[0].querySelector('.item-text').textContent} 외 ${selected.length - 1}개`;
+                        trigger.style.color = '#e6edf3';
+                    }
+                }
+            };
+            
+            setTimeout(() => {
+                let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
+                let data = (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) ? storageData : deviceData;
+                if (data.equipments) data = data.equipments;
+                
+                applyCustomMultiSelect('sort-site-select', lastSortFilters.siteFilters);
+                updateSortBuildingSelect(getMultiValues('sort-site-select'));
+                applyCustomMultiSelect('sort-building-select', lastSortFilters.buildingFilters);
+                
+                applyCustomMultiSelect('sort-model-select', lastSortFilters.modelFilters);
+                updateSortEquipSelect(getMultiValues('sort-site-select'), getMultiValues('sort-building-select'), getMultiValues('sort-model-select'), data);
+                applyCustomMultiSelect('sort-equip-select', lastSortFilters.equipFilters);
+                
+                applyCustomMultiSelect('sort-type-select', lastSortFilters.typeFilters);
+                updateSortDetailTypeSelect();
+                applyCustomMultiSelect('sort-detail-type-select', lastSortFilters.detailTypeFilters);
+                updateSortDetailType2Select();
+                applyCustomMultiSelect('sort-detail-type2-select', lastSortFilters.detailType2Filters);
+                
+                applyCustomMultiSelect('sort-cost-type-select', lastSortFilters.costTypeFilters);
+                applyCustomMultiSelect('sort-item-detail-type-select', lastSortFilters.itemDetailTypeFilters);
+                
+                if (lastSortFilters.keywordSelected && lastSortFilters.keywordSelected.length > 0) {
+                    const kwList = document.getElementById('sort-keyword-list');
+                    if (kwList) {
+                        kwList.querySelectorAll('.log-select-item').forEach(el => {
+                            if (lastSortFilters.keywordSelected.includes(el.dataset.value)) {
+                                el.classList.add('selected');
+                                const icon = el.querySelector('.check-icon');
+                                if (icon) icon.style.opacity = '1';
+                            }
+                        });
+                        updateKeywordTrigger();
+                    }
+                }
+                performSortSearch();
+            }, 100);
             return;
         }
     } catch(e) {}
@@ -694,7 +759,17 @@ function performSortSearch() {
         yearInput: yearInput ? yearInput.value : '',
         startDate: startDate,
         endDate: endDate,
-        keywordInputVal: keywordInputVal
+        keywordInputVal: keywordInputVal,
+        siteFilters: siteFilters,
+        buildingFilters: buildingFilters,
+        modelFilters: modelFilters,
+        equipFilters: equipFilters,
+        typeFilters: typeFilters,
+        detailTypeFilters: detailTypeFilters,
+        detailType2Filters: detailType2Filters,
+        itemDetailTypeFilters: itemDetailTypeFilters,
+        costTypeFilters: costTypeFilters,
+        keywordSelected: keywordSelected
     };
     localStorage.setItem('lastSortFilters', JSON.stringify(currentSortFilters));
 
@@ -733,11 +808,12 @@ function performSortSearch() {
                     if (!itemDate) return false;
                     if (isLog && itemObj.detailType === '일정변경') return false;
                     
-                    if (typeFilters.length > 0 && !typeFilters.includes(itemObj.type)) return false;
+                    const itemType = itemObj.type || '정기'; // 구버전 데이터 누락 대응
+                    if (typeFilters.length > 0 && !typeFilters.includes(itemType)) return false;
                     if (startDate && itemDate < startDate) return false;
                     if (endDate && itemDate > endDate) return false;
                     
-                    let dt1 = itemObj.detailType || '';
+                    let dt1 = itemObj.detailType || (itemType === '정기' ? 'PM 점검' : 'BM 점검');
                     let dt2 = itemObj.detailType2 || '';
                     
                     if (dt1.includes(' > ')) {
@@ -747,7 +823,7 @@ function performSortSearch() {
                     }
                     
                     if (detailTypeFilters.length > 0 && !detailTypeFilters.includes(dt1)) return false;
-                    if (typeFilters.includes('비정기') && detailType2Filters.length > 0 && dt2 && !detailType2Filters.includes(dt2)) return false;
+                    if (itemType === '비정기' && detailType2Filters.length > 0 && !detailType2Filters.includes(dt2)) return false;
 
                     const pureContent = itemObj.content || itemObj.code || '';
                     
@@ -762,7 +838,13 @@ function performSortSearch() {
                     const contentsList = pureContent.split(',').map(s => s.replace(/\[.*?\]\s*/g, '').trim());
                     
                     for (const c of contentsList) {
-                        const cleanContent = c.replace(/\[지연\]/g, '').trim();
+                        let cleanContent = c.replace(/\[지연\]/g, '').trim();
+                        
+                        // '파트 이상 (교체) - 부품명' 같은 형식이면 뒷부분 부품명만 추출하여 정확도 향상
+                        if (cleanContent.includes(' - ')) {
+                            cleanContent = cleanContent.split(' - ')[1].trim();
+                        }
+                        
                         const matchItem = adminItems.find(ai => ai.part === cleanContent || ai.code === cleanContent);
                         if (matchItem && matchItem.detailType) {
                             matchedItemDetailType = matchItem.detailType;
@@ -775,19 +857,18 @@ function performSortSearch() {
                     const workerText = itemObj.worker || '';
                     if (keywordInputVal || keywordSelected.length > 0) {
                         const searchTarget = `${pureContent} ${workerText} ${displayEquipName} ${custEquipName}`.toLowerCase();
-                        
-                        let textMatch = true;
-                        if (keywordInputVal && keywordSelected.length === 0) {
-                            const kws = keywordInputVal.split(/\s+/);
-                            textMatch = kws.every(kw => searchTarget.includes(kw));
-                        }
-                        
-                        let selMatch = true;
+                        let isMatch = false;
+
                         if (keywordSelected.length > 0) {
-                            selMatch = keywordSelected.some(kw => searchTarget.includes(kw));
+                            // 제안 박스에서 선택한 드롭다운 항목이 있다면 (OR 조건)
+                            isMatch = keywordSelected.some(kw => searchTarget.includes(kw));
+                        } else if (keywordInputVal) {
+                            // 직접 텍스트를 입력했다면 띄어쓰기 복합 검색 (AND 조건)
+                            const kws = keywordInputVal.split(/\s+/);
+                            isMatch = kws.every(kw => searchTarget.includes(kw));
                         }
                         
-                        if (!textMatch || !selMatch) return false;
+                        if (!isMatch) return false;
                     }
                     
                     return {
@@ -800,7 +881,7 @@ function performSortSearch() {
                         modelName: equipName,
                         serial: serialNo,
                         custName: custEquipName,
-                        type: itemObj.type || '정기',
+                        type: itemType,
                         detailType: dt2 ? `${dt1} > ${dt2}` : dt1,
                         content: pureContent,
                         worker: workerText,

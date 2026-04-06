@@ -859,6 +859,7 @@ function setupEquipMgmt() {
     if (siteSelect) {
         siteSelect.addEventListener('change', (e) => {
             currentAdminEquipSite = e.target.value;
+            localStorage.setItem('lastAdminEquipSite', currentAdminEquipSite);
             renderAdminEquipList();
         });
     }
@@ -1318,7 +1319,12 @@ function updateEquipSiteSelect() {
         select.appendChild(opt);
     });
     
-    if (storageData[currentVal]) select.value = currentVal;
+    const savedSite = localStorage.getItem('lastAdminEquipSite');
+    if (currentVal && storageData[currentVal]) select.value = currentVal;
+    else if (savedSite && storageData[savedSite]) {
+        select.value = savedSite;
+        currentAdminEquipSite = savedSite;
+    }
 }
 
 function renderAdminEquipList() {
@@ -2237,6 +2243,7 @@ function setupCheckTypeMgmt() {
             categoryItems.forEach(item => item.classList.remove('active'));
             li.classList.add('active');
             currentCheckTypeCategory = li.dataset.type;
+            localStorage.setItem('lastCheckTypeCategory', currentCheckTypeCategory);
             
             // [변경] 분류 패널 활성화
             const subList = document.getElementById('check-type-subcategory-list');
@@ -2267,6 +2274,15 @@ function setupCheckTypeMgmt() {
                 document.getElementById('check-type-detail-container').style.display = 'none';
                 document.getElementById('check-type-detail-desc').textContent = '세부구분 2를 선택해주세요.';
                 scrollToAdminDetail('check-type-subcategory-list');
+                
+                // [개선] 세부구분 상태 자동 복원
+                if (!currentCheckTypeSubCategory) {
+                    const savedSub = localStorage.getItem('lastCheckTypeSubCategory');
+                    if (savedSub) {
+                        const targetSub = Array.from(document.querySelectorAll('#check-type-subcategory-list li')).find(el => el.dataset.sub === savedSub);
+                        if (targetSub) setTimeout(() => targetSub.click(), 50);
+                    }
+                }
             } else {
                 const p2 = document.getElementById('check-type-subcategory2-container');
                 if (p2) p2.style.display = 'none';
@@ -2275,6 +2291,15 @@ function setupCheckTypeMgmt() {
                 document.getElementById('check-type-detail-container').style.display = 'none';
                 document.getElementById('check-type-detail-desc').textContent = '장비, 점검 구분, 분류를 순서대로 선택해주세요.';
                 scrollToAdminDetail('check-type-subcategory-list'); // [추가] 모바일 스크롤 이동
+                
+                // [개선] 세부구분 상태 자동 복원
+                if (!currentCheckTypeSubCategory) {
+                    const savedSub = localStorage.getItem('lastCheckTypeSubCategory');
+                    if (savedSub) {
+                        const targetSub = Array.from(document.querySelectorAll('#check-type-subcategory-list li')).find(el => el.dataset.sub === savedSub);
+                        if (targetSub) setTimeout(() => targetSub.click(), 50);
+                    }
+                }
             }
         });
     });
@@ -2708,6 +2733,15 @@ function renderCheckTypeEquipList() {
             document.getElementById('check-type-detail-container').style.display = 'none';
             document.getElementById('check-type-detail-desc').textContent = '장비, 점검 구분, 분류를 순서대로 선택해주세요.';
             scrollToAdminDetail('check-type-category-list'); // [추가] 모바일 스크롤 이동
+                
+                // [개선] 분류 상태 자동 복원
+                if (!currentCheckTypeCategory) {
+                    const savedCat = localStorage.getItem('lastCheckTypeCategory');
+                    if (savedCat) {
+                        const targetCat = Array.from(categoryList.children).find(li => li.dataset.type === savedCat);
+                        if (targetCat) setTimeout(() => targetCat.click(), 50);
+                    }
+                }
         });
 
         list.appendChild(li);
@@ -2772,6 +2806,7 @@ function renderCheckTypeSubCategoryList() {
         li.addEventListener('click', () => {
             if (li.classList.contains('editing')) return; // 수정 중일 때 클릭(선택) 방지
             currentCheckTypeSubCategory = cat;
+            localStorage.setItem('lastCheckTypeSubCategory', cat);
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
             
@@ -2794,6 +2829,15 @@ function renderCheckTypeSubCategoryList() {
                 document.getElementById('check-type-detail-container').style.display = 'none';
                 document.getElementById('check-type-detail-desc').textContent = '세부구분 2를 선택해주세요.';
                 scrollToAdminDetail('check-type-subcategory2-list');
+                
+                // [개선] 세부구분2 상태 자동 복원
+                if (!currentCheckTypeSubCategory2) {
+                    const savedSub2 = localStorage.getItem('lastCheckTypeSubCategory2');
+                    if (savedSub2) {
+                        const targetSub2 = Array.from(document.querySelectorAll('#check-type-subcategory2-list li')).find(el => el.dataset.sub2 === savedSub2);
+                        if (targetSub2) setTimeout(() => targetSub2.click(), 50);
+                    }
+                }
             } else {
                 document.getElementById('check-type-detail-placeholder').style.display = 'none';
                 document.getElementById('check-type-detail-container').style.display = 'block';
@@ -2958,6 +3002,7 @@ function renderCheckTypeSubCategory2List() {
         li.addEventListener('click', () => {
             if (li.classList.contains('editing')) return;
             currentCheckTypeSubCategory2 = cat;
+            localStorage.setItem('lastCheckTypeSubCategory2', cat);
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
             
