@@ -108,34 +108,15 @@
                     </section>
                 </div>
                 <section class="card" id="log-window">
-                    <div class="card-header">
-                        <h3>장비 점검 이력
-                            <button id="btn-log-settings" class="btn-list-setting" title="관리 모드 (삭제)"
-                                style="font-size: 14px;">⚙️</button>
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3 style="margin: 0; display: flex; align-items: center;">장비 점검 이력
+                            <button id="btn-log-settings" class="btn-list-setting" title="관리 모드 (삭제)" style="font-size: 14px; margin-left: 8px;">⚙️</button>
                         </h3>
-                        <input type="text" id="log-search" placeholder="검색 (작업자, 날짜, 메모 내용)">
+                        <div id="log-search-container" style="display: flex; gap: 5px; align-items: center;">
+                            <input type="text" id="log-search" placeholder="검색 (작업자, 날짜, 메모 내용)" class="input-dark" style="height: 30px; font-size: 12px; padding: 4px 8px; width: 200px;">
+                        </div>
                     </div>
                     <div class="card-body">
-                        <div class="form-row">
-                            <input type="date" id="log-date">
-                            <select id="log-type-select" class="log-select">
-                            </select>
-                            <select id="log-detail-type-select" class="log-select" disabled>
-                            </select>
-                            <div id="log-content-wrapper" class="log-select-wrapper" style="display: none;">
-                                <div id="log-content-trigger" class="log-select-trigger">항목 선택</div>
-                                <div id="log-content-dropdown" class="log-select-dropdown">
-                                    <div id="log-content-list" class="log-select-list"></div>
-                                    <div class="log-select-footer">
-                                        <button id="btn-log-content-add" class="btn-blue-sm"
-                                            style="width: 100%;">추가</button>
-                                    </div>
-                                </div>
-                            </div>
-                            <input type="text" id="log-content-input" class="log-content-input" placeholder="내용">
-                            <input type="text" id="log-worker" placeholder="작업자">
-                            <button class="btn-blue" id="log-reg-btn">기록</button>
-                        </div>
                         <div class="data-table-wrapper log-list-container" id="log-list-wrapper">
                             <table class="data-table">
                                 <thead>

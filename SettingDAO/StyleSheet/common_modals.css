@@ -268,6 +268,12 @@
     padding: 10px 8px;
 }
 
+.log-select-item {
+    display: flex;
+    align-items: center !important;
+    /* 자식 요소들을 완벽한 수직 중앙으로 정렬 */
+}
+
 #register-equip-suggestions .log-select-item>div {
     display: flex;
     align-items: center;
@@ -287,7 +293,8 @@
 }
 
 .equip-serial {
-    color: #3fb950; /* 녹색 */
+    color: #3fb950;
+    /* 녹색 */
     font-weight: bold;
     font-size: 13px;
     margin-right: 5px;
@@ -296,7 +303,8 @@
 }
 
 .equip-cust {
-    color: #3fb950; /* 녹색 */
+    color: #3fb950;
+    /* 녹색 */
     font-weight: bold;
     font-size: 13px;
     white-space: nowrap;
@@ -360,19 +368,62 @@
 }
 
 /* 모달 내부 버튼 */
-#btn-schedule-calendar { padding: 8px 12px; }
-#btn-confirm-register-schedule { width: 100%; }
-#btn-apply-search-filter { width: 100px; }
+#btn-schedule-calendar {
+    padding: 8px 12px;
+}
+
+#btn-confirm-register-schedule {
+    width: 100%;
+}
+
+#btn-apply-search-filter {
+    width: 100px;
+}
 
 /* 상세 정보 모달 (Detail Modal) */
-.detail-row { margin-bottom: 15px; }
-.detail-row.large-margin { margin-bottom: 20px; }
-.detail-label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-.detail-label { color: #8b949e; font-size: 12px; display: block; margin-bottom: 5px; }
-.detail-label-row .detail-label { margin: 0; }
-#btn-move-to-equip { padding: 2px 8px; font-size: 11px; }
-#detail-equip-info, #detail-serial-no, #detail-content { color: #e6edf3; font-weight: bold; font-size: 14px; }
-#detail-type { font-weight: bold; font-size: 14px; }
+.detail-row {
+    margin-bottom: 15px;
+}
+
+.detail-row.large-margin {
+    margin-bottom: 20px;
+}
+
+.detail-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.detail-label {
+    color: #8b949e;
+    font-size: 12px;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.detail-label-row .detail-label {
+    margin: 0;
+}
+
+#btn-move-to-equip {
+    padding: 2px 8px;
+    font-size: 11px;
+}
+
+#detail-equip-info,
+#detail-serial-no,
+#detail-content {
+    color: #e6edf3;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+#detail-type {
+    font-weight: bold;
+    font-size: 14px;
+}
 
 #detail-work-memo {
     width: 100%;
@@ -385,36 +436,185 @@
     border-radius: 4px;
 }
 
-#btn-save-detail-memo, #btn-close-detail-footer, #btn-complete-work { flex: 1; }
+#btn-save-detail-memo,
+#btn-close-detail-footer,
+#btn-complete-work {
+    flex: 1;
+}
 
 /* 체크박스 리스트 (Register Modal) */
-.checkbox-list-container { flex: 1; background: #0d1117; border: 1px solid #30363d; border-radius: 4px; padding: 8px; height: 150px; overflow-y: auto; resize: vertical; }
-.checkbox-item { display: flex; align-items: center; padding: 4px 0; }
-.checkbox-item:hover { background-color: rgba(255, 255, 255, 0.05); }
-.checkbox-col-left { flex: 0 0 20px; min-width: 50px; overflow: hidden; padding-right: 0px; display: flex; justify-content: center; align-items: center; }
-.checkbox-col-right { flex: 1; min-width: 0; overflow: hidden; padding-left: 8px; }
-.register-item-checkbox { margin: 0; cursor: pointer; }
-.checkbox-item label { color: #e6edf3; font-size: 13px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; width: 100%; }
+.checkbox-list-container {
+    flex: 1;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 8px;
+    height: 150px;
+    overflow-y: auto;
+    resize: vertical;
+}
 
-.btn-full-width { width: 100%; }
-.btn-save-state { background-color: #d29922 !important; border-color: #d29922 !important; }
-.register-item-container { flex: 1; position: relative; }
-.manual-input { width: 100%; padding: 8px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; }
-.scheduled-date-text { color: #e3b341; font-size: 0.85em; }
-.log-select-search-container { padding: 5px; border-bottom: 1px solid #30363d; }
-.log-select-search-input { width: 100%; padding: 5px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 3px; font-size: 12px; }
-.log-select-trigger.multi-line { height: auto; white-space: pre-wrap; text-align: left; }
-#detail-content { white-space: pre-wrap; }
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    padding: 4px 0;
+}
+
+.checkbox-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.checkbox-col-left {
+    flex: 0 0 20px;
+    min-width: 50px;
+    overflow: hidden;
+    padding-right: 0px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.checkbox-col-right {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    padding-left: 8px;
+}
+
+.register-item-checkbox {
+    margin: 0;
+    cursor: pointer;
+}
+
+.checkbox-item label {
+    color: #e6edf3;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    width: 100%;
+}
+
+.btn-full-width {
+    width: 100%;
+}
+
+.btn-save-state {
+    background-color: #d29922 !important;
+    border-color: #d29922 !important;
+}
+
+.register-item-container {
+    flex: 1;
+    position: relative;
+}
+
+.manual-input {
+    width: 100%;
+    padding: 8px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    border-radius: 4px;
+}
+
+.scheduled-date-text {
+    color: #e3b341;
+    font-size: 0.85em;
+}
+
+.log-select-search-container {
+    padding: 5px;
+    border-bottom: 1px solid #30363d;
+}
+
+.log-select-search-input {
+    width: 100%;
+    padding: 5px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.log-select-trigger.multi-line {
+    height: auto;
+    white-space: pre-wrap;
+    text-align: left;
+}
+
+#detail-content {
+    white-space: pre-wrap;
+}
 
 /* 다음 예정일 등록 드롭다운 및 입력창 */
-.next-type-select { background-color: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; padding: 4px 6px; font-size: 12px; cursor: pointer; outline: none; }
-.next-type-select:disabled { background-color: #21262d; color: #8b949e; cursor: not-allowed; }
-.next-date-input, .next-md-input { background-color: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; padding: 4px 8px; font-size: 13px; outline: none; }
-.next-type-select:focus, .next-date-input:focus, .next-md-input:focus { border-color: #58a6ff; }
+.next-type-select {
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-size: 12px;
+    cursor: pointer;
+    outline: none;
+}
 
-.error-border { border: 1px solid #f85149 !important; }
-.dropdown-search-input { width: calc(100% - 12px) !important; max-width: calc(100% - 12px) !important; margin: 5px 6px !important; display: block !important; padding: 6px 10px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; box-sizing: border-box; }
-.show-all-btn { width: 100%; padding: 10px; background: #21262d; color: #58a6ff; border: none; border-top: 1px solid #30363d; cursor: pointer; font-weight: bold; position: sticky; bottom: 0; z-index: 10; }
+.next-type-select:disabled {
+    background-color: #21262d;
+    color: #8b949e;
+    cursor: not-allowed;
+}
+
+.next-date-input,
+.next-md-input {
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 13px;
+    outline: none;
+}
+
+.next-type-select:focus,
+.next-date-input:focus,
+.next-md-input:focus {
+    border-color: #58a6ff;
+}
+
+.error-border {
+    border: 1px solid #f85149 !important;
+}
+
+.dropdown-search-input {
+    width: calc(100% - 12px) !important;
+    max-width: calc(100% - 12px) !important;
+    margin: 5px 6px !important;
+    display: block !important;
+    padding: 6px 10px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.show-all-btn {
+    width: 100%;
+    padding: 10px;
+    background: #21262d;
+    color: #58a6ff;
+    border: none;
+    border-top: 1px solid #30363d;
+    cursor: pointer;
+    font-weight: bold;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+}
 
 /* ==========================================================================
    통합 모달 입력 필드 및 드롭다운 트리거 스타일 (Event Detail, Register, Next Schedule)
@@ -453,6 +653,7 @@
 
 /* 모달 모바일 반응형 스타일 */
 @media (max-width: 950px) {
+
     #event-detail-modal .modal-window,
     #next-schedule-modal .modal-window {
         width: 90% !important;
@@ -475,7 +676,7 @@
             max-height: 90vh !important;
         }
     }
-    
+
     .log-select-dropdown {
         width: 100% !important;
         min-width: 100% !important;
@@ -792,16 +993,20 @@
     display: flex;
     flex-direction: column;
 }
+
 #extra-work-history-modal .data-table tbody tr.active-row {
     background-color: rgba(56, 139, 253, 0.15) !important;
 }
+
 #extra-work-history-modal .data-table tbody tr:hover {
     background-color: #21262d;
 }
+
 #extra-work-history-modal .data-table th,
 #extra-work-history-modal .data-table td {
     font-size: 12px;
 }
+
 @media (max-width: 950px) {
     #extra-work-history-modal .modal-window {
         width: 95% !important;

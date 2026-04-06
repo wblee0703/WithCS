@@ -2391,6 +2391,7 @@ function setupRegisterScheduleModal() {
     if (closeBtn) closeBtn.onclick = () => {
         modal.style.display = 'none';
         window.currentAddWorkLogId = null; // 팝업 닫을 시 상태 초기화
+        window.openDetailAfterRegister = false; // [추가] 팝업 닫을 시 상세 팝업 오픈 플래그 초기화
     };
 
     if (siteSelect) {
@@ -3256,9 +3257,10 @@ function confirmRegisterSchedule() {
     const popup = document.getElementById('calendar-popup');
     if (popup) popup.style.display = 'none';
 
-    // [추가] 모바일 작업 등록 플로우: 등록 후 바로 상세 팝업 오픈
-    if (window.isMobileRegisterFlow && lastProcessedId) {
+    // [수정] 모바일 플로우 또는 장비 점검 이력에서 등록 시: 등록 후 바로 상세 팝업 오픈
+    if ((window.isMobileRegisterFlow || window.openDetailAfterRegister) && lastProcessedId) {
         window.isMobileRegisterFlow = false;
+        window.openDetailAfterRegister = false; // 플래그 초기화
         setTimeout(() => {
             openEventDetailModal(site, equip, lastProcessedId, false);
         }, 100);

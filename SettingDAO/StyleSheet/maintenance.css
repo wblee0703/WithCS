@@ -282,10 +282,6 @@ tr.dragging {
 
 /* 드롭다운(select) 공통 다크 테마 디자인 적용 */
 select.input-dark,
-select#log-type-select,
-select#log-cost-type,
-select#log-detail-type-select,
-select#log-detail-type2-select,
 select#maint-content {
     background-color: #0d1117;
     border: 1px solid #30363d;
@@ -296,19 +292,11 @@ select#maint-content {
 }
 
 select.input-dark:focus,
-select#log-type-select:focus,
-select#log-cost-type:focus,
-select#log-detail-type-select:focus,
-select#log-detail-type2-select:focus,
 select#maint-content:focus {
     border-color: #58a6ff;
 }
 
 select.input-dark option,
-select#log-type-select option,
-select#log-cost-type option,
-select#log-detail-type-select option,
-select#log-detail-type2-select option,
 select#maint-content option {
     background-color: #161b22;
     color: #e6edf3;
@@ -368,53 +356,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* 로그 입력 */
-#log-date {
-    width: 140px;
-    height: 30px;
-    flex: 1;
-    min-width: 120px;
-}
-
-#log-type-select,
-#log-detail-type-select,
-#log-cost-type {
-    width: 110px;
-    height: 30px;
-    flex: 1;
-    min-width: 100px;
-}
-
-#log-detail-type2-select {
-    width: 130px;
-    height: 30px;
-    flex: 1.2;
-    min-width: 120px;
-}
-
-#log-worker,
-#log-md {
-    width: 100px;
-    height: 30px;
-    flex: 0.8;
-    min-width: 80px;
-}
-
-.log-select {
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
-    padding: 5px;
-    border-radius: 4px;
-    margin-right: 5px;
-}
-
-.log-content-input {
-    display: none;
-    margin-right: 5px;
-    flex: 2;
-    min-width: 150px;
-    height: 30px;
-}
 
 /* 커스텀 드롭다운 (로그 항목 선택) */
 .log-select-wrapper {
@@ -850,87 +791,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         padding: 0 4px !important;
     }
 
-    /* [추가] 텍스트 입력창(프로그램변경 등) 너비 및 높이 맞춤 */
-    .log-content-input {
-        width: auto !important;
-        flex: 1.1 !important;
-        min-width: 0 !important;
-        margin-right: 0 !important;
-    }
-
-    /* [요청] 장비 점검 이력 입력창 2줄 배치 (웹과 동일) */
-    #log-window .form-row {
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        gap: 5px !important;
-        align-items: center !important;
-    }
-
-    #log-date {
-        width: auto !important;
-        flex: 1.2 !important;
-        /* [수정] 날짜 입력창 너비 비율 할당 */
-        min-width: 0 !important;
-    }
-
-    #log-type-select {
-        width: auto !important;
-        flex: 1 !important;
-        /* [수정] 구분 선택창 너비 비율 할당 */
-        min-width: 0 !important;
-        padding: 0 !important;
-    }
-
-    #log-detail-type-select {
-        width: auto !important;
-        flex: 1 !important;
-        min-width: 0 !important;
-        padding: 0 !important;
-        appearance: none;
-        -webkit-appearance: none;
-    }
-
-    #log-detail-type2-select {
-        width: auto !important;
-        flex: 1.2 !important;
-        min-width: 0 !important;
-        padding: 0 !important;
-        appearance: none;
-        -webkit-appearance: none;
-    }
-
-    #log-cost-type {
-        width: auto !important;
-        flex: 1 !important;
-        min-width: 0 !important;
-        padding: 0 !important;
-        appearance: none;
-        -webkit-appearance: none;
-    }
-
-    #log-worker,
-    #log-md {
-        width: auto !important;
-        flex: 0.7 !important;
-        /* [수정] 공수 입력창 너비 비율 할당 */
-        min-width: 0 !important;
-    }
-
-    /* 입력 폰트 크기 축소 */
-    #log-date,
-    #log-type-select,
-    #log-detail-type-select,
-    #log-detail-type2-select,
-    #log-cost-type,
-    #log-worker,
-    #log-md,
-    .log-content-input {
-        font-size: 12px !important;
-        padding-left: 2px !important;
-        padding-right: 2px !important;
-        height: 30px !important;
-    }
-
     /* 모바일에서 항목 선택창 높이 유동적으로 변경 */
     #log-window .log-select-trigger {
         font-size: 12px !important;
@@ -958,18 +818,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .log-select-item span {
         flex: 1;
         min-width: 0; /* 항목명이 넘칠 경우 말줄임표 처리되도록 설정 */
-    }
-
-    /* [요청] 모바일에서 점검일 달력 아이콘 및 구분 선택 화살표 숨김 */
-    #log-date::-webkit-calendar-picker-indicator {
-        display: none !important;
-        -webkit-appearance: none;
-    }
-
-    #log-type-select {
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        appearance: none;
     }
 
     #log-add-btn,
