@@ -37,7 +37,7 @@ if not os.path.exists(env_path):
             # [보안] 초기 비밀번호 랜덤 생성 (소스코드 내 하드코딩 제거)
             init_admin_pw = secrets.token_urlsafe(8)
             init_user_pw = secrets.token_urlsafe(8)
-            f.write(f"APP_ADMIN_ID=admin\nAPP_ADMIN_PW={init_admin_pw}\nAPP_USER_ID=user\nAPP_USER_PW={init_user_pw}\nAPP_PORT=5500\n")
+            f.write(f"APP_ADMIN_ID=admin\nAPP_ADMIN_PW={init_admin_pw}\nAPP_USER_ID=user\nAPP_USER_PW={init_user_pw}\nAPP_PORT=8080\n")
             f.write("\n# Database Settings (sqlite or mysql)\n")
             f.write("DB_TYPE=sqlite\n")
             f.write("MYSQL_USER=your_gabia_id\nMYSQL_PASSWORD=your_gabia_pw\nMYSQL_HOST=your_gabia_ip\nMYSQL_DB=your_gabia_db_name\n")
