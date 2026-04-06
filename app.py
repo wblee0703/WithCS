@@ -1093,7 +1093,7 @@ for d in [DATA_DIR, LOG_DIR, BACKUP_DIR, DATA_LOG_DIR]:
 init_db()
 
 if __name__ == '__main__':
-    port = int(os.environ.get("APP_PORT", 5500))
+    port = int(os.environ.get("APP_PORT", 8080))
 
     # [수정] Waitress 서버 적용 (개발 서버 경고 제거 및 안정성 향상)
     try:

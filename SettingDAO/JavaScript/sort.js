@@ -83,12 +83,12 @@ function initSortPage() {
             
             // [개선] 다중 선택 드롭다운 상태 완벽 복원
             const applyCustomMultiSelect = (selectId, values) => {
-                if (!values || values.length === 0) return;
+                if (!values) return;
                 const list = document.getElementById(`${selectId}-list`);
                 const selectEl = document.getElementById(selectId);
                 if (selectEl) {
                     Array.from(selectEl.options).forEach(opt => {
-                        if (values.includes(opt.value)) opt.selected = true;
+                        opt.selected = values.includes(opt.value);
                     });
                 }
                 if (list) {
@@ -97,14 +97,31 @@ function initSortPage() {
                             el.classList.add('selected');
                             const icon = el.querySelector('.check-icon');
                             if (icon) icon.style.opacity = '1';
+                        } else {
+                            el.classList.remove('selected');
+                            const icon = el.querySelector('.check-icon');
+                            if (icon) icon.style.opacity = '0';
                         }
                     });
                     const trigger = document.getElementById(`${selectId}-trigger`);
                     const selected = Array.from(list.querySelectorAll('.log-select-item.selected'));
-                    if (trigger && selected.length > 0) {
-                        if (selected.length === 1) trigger.textContent = selected[0].querySelector('.item-text').textContent;
-                        else trigger.textContent = `${selected[0].querySelector('.item-text').textContent} 외 ${selected.length - 1}개`;
-                        trigger.style.color = '#e6edf3';
+                    const totalItems = list.querySelectorAll('.log-select-item').length;
+
+                    if (trigger) {
+                        const placeholder = trigger.dataset.placeholder || '전체';
+                        if (totalItems > 0 && selected.length === totalItems) {
+                            trigger.textContent = placeholder;
+                            trigger.style.color = '#e6edf3';
+                        } else if (selected.length === 0) {
+                            trigger.textContent = '선택 없음';
+                            trigger.style.color = '#8b949e';
+                        } else if (selected.length === 1) {
+                            trigger.textContent = selected[0].querySelector('.item-text').textContent;
+                            trigger.style.color = '#e6edf3';
+                        } else {
+                            trigger.textContent = `${selected[0].querySelector('.item-text').textContent} 외 ${selected.length - 1}개`;
+                            trigger.style.color = '#e6edf3';
+                        }
                     }
                 }
             };
@@ -159,6 +176,13 @@ function initSortPage() {
         pType.value = 'year';
         pType.dispatchEvent(new Event('change'));
     }
+     
+    // [추가] 초기 진입 시 연쇄 업데이트를 통한 하위 필터(건물, 장비 등) 생성 및 전부 선택 활성화 유도
+    const siteSelect = document.getElementById('sort-site-select');
+    if (siteSelect) {
+        siteSelect.dispatchEvent(new Event('change'));
+    }
+    
     setTimeout(performSortSearch, 150); // 드롭다운(연도 등) UI 렌더링을 기다리기 위해 대기 시간 증가
 }
 
@@ -205,7 +229,7 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
         wrapper.style.position = 'relative'; // 부모 영역 기준점 설정
         
         wrapper.innerHTML = `
-            <div id="${selectId}-trigger" class="log-select-trigger" style="min-height:30px; display:flex; align-items:center; background:#0d1117; color:#8b949e; border:1px solid #30363d; border-radius:4px; padding:6px 10px; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${placeholder}</div>
+            <div id="${selectId}-trigger" data-placeholder="${placeholder}" class="log-select-trigger" style="min-height:30px; display:flex; align-items:center; background:#0d1117; color:#8b949e; border:1px solid #30363d; border-radius:4px; padding:6px 10px; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${placeholder}</div>
             <div id="${selectId}-dropdown" class="log-select-dropdown" style="width:100%; display:none; position:absolute; top:100%; left:0; z-index:1000; margin-top:4px; background:#161b22; border:1px solid #30363d; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); box-sizing:border-box;">
                 <div id="${selectId}-list" class="log-select-list" style="max-height: 200px; overflow-y: auto; padding: 8px;"></div>
                 <div class="log-select-footer" style="padding: 8px; border-top: 1px solid #30363d; background: #21262d;">
@@ -245,12 +269,17 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
     const list = wrapper.querySelector(`#${selectId}-list`);
     const trigger = wrapper.querySelector(`#${selectId}-trigger`);
     
+    const isInitialized = wrapper.dataset.initialized === 'true';
+    wrapper.dataset.initialized = 'true';
+    const previousKnownValues = JSON.parse(wrapper.dataset.knownValues || '[]');
+
     if (selectEl.disabled) {
         trigger.classList.add('disabled');
         trigger.style.opacity = '0.5';
         trigger.style.cursor = 'not-allowed';
         trigger.textContent = placeholder;
         list.innerHTML = '';
+        wrapper.dataset.knownValues = '[]';
         return;
     } else {
         trigger.classList.remove('disabled');
@@ -264,14 +293,29 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
     const options = Array.from(selectEl.options).filter(opt => opt.value);
     if (options.length === 0) {
         list.innerHTML = '<div style="padding:10px; color:#8b949e; text-align:center; font-size:12px;">항목이 없습니다.</div>';
+        wrapper.dataset.knownValues = '[]';
     } else {
+        const currentValues = [];
         options.forEach(opt => {
             const val = opt.value;
             const text = opt.textContent;
+            currentValues.push(val);
             const div = document.createElement('div');
             div.className = 'log-select-item';
             div.dataset.value = val;
-            const isSelected = currentSelected.includes(val);
+            
+            let isSelected = false;
+            if (!isInitialized) {
+                isSelected = true; // [수정] 초기 상태에는 모든 항목이 체크되도록 변경
+            } else {
+                // 이전에 없던 새 항목이 렌더링될 경우 기본적으로 체크되도록 처리
+                if (!previousKnownValues.includes(val)) {
+                    isSelected = true;
+                } else {
+                    isSelected = currentSelected.includes(val);
+                }
+            }
+
             if (isSelected) div.classList.add('selected');
             
             div.innerHTML = `<span class="check-icon" style="margin-right:8px; opacity:${isSelected ? '1' : '0'}; font-weight:bold; color:#58a6ff; flex-shrink:0;">✓</span><span class="item-text" style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(text)}</span>`;
@@ -286,12 +330,18 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
             });
             list.appendChild(div);
         });
+        wrapper.dataset.knownValues = JSON.stringify(currentValues);
     }
     
     const updateTriggerText = () => {
         const selected = Array.from(list.querySelectorAll('.log-select-item.selected'));
-        if (selected.length === 0) {
+        const totalItems = list.querySelectorAll('.log-select-item').length;
+
+        if (totalItems > 0 && selected.length === totalItems) {
             trigger.textContent = placeholder;
+            trigger.style.color = '#e6edf3';
+        } else if (selected.length === 0) {
+            trigger.textContent = '선택 없음'; // [수정] 0개 선택 시 명확한 텍스트로 변경
             trigger.style.color = '#8b949e';
         } else if (selected.length === 1) {
             trigger.textContent = selected[0].querySelector('.item-text').textContent;
@@ -1107,11 +1157,17 @@ function renderSortListTableOnly() {
         // [요청] 장비명 표시를 모델명(약어), 시리얼, 고객사장비명 순으로 3줄로 변경
         let subInfo = '';
         if (row.custName) {
-            subInfo = ` <span style="color:#3fb950; font-weight:bold;">[${escapeHtml(row.custName)}]</span>`;
+            subInfo = `<div style="color:#3fb950; font-weight:bold; font-size: 12px; margin-top: 2px;">[${escapeHtml(row.custName)}]</div>`;
         } else if (row.serial) {
-            subInfo = ` <span style="color:#3fb950; font-weight:bold;">[${escapeHtml(row.serial)}]</span>`;
+            subInfo = `<div style="color:#3fb950; font-weight:bold; font-size: 12px; margin-top: 2px;">[${escapeHtml(row.serial)}]</div>`;
         }
-        let equipDisplayHtml = `<div>${escapeHtml(row.equipName)}${subInfo}</div>`;
+        let equipDisplayHtml = `<div>${escapeHtml(row.equipName)}</div>${subInfo}`;
+        
+        let detailHtml = escapeHtml(row.detailType);
+        if (row.detailType && row.detailType.includes(' > ')) {
+            const parts = row.detailType.split(' > ');
+            detailHtml = `<div>${escapeHtml(parts[0])}</div><div style="color:#8b949e; font-size: 12px; margin-top: 2px;">${escapeHtml(parts[1])}</div>`;
+        }
         
         const badgeClass = row.type ? row.type.replace(/\s/g, '') : 'default';
         const statusColor = row.status === '완료' ? '#3fb950' : '#d29922';
@@ -1122,7 +1178,7 @@ function renderSortListTableOnly() {
             <td>${escapeHtml(row.modelName)}</td>
             <td style="text-align: left; padding-left: 10px;">${equipDisplayHtml}</td>
             <td><span class="badge ${badgeClass}" style="padding: 2px 6px; font-size: 11px;">${escapeHtml(row.type)}</span></td>
-            <td style="text-align: left; padding-left: 10px;">${escapeHtml(row.detailType)}</td>
+            <td style="text-align: left; padding-left: 10px;">${detailHtml}</td>
             <td style="text-align: left; padding-left: 10px;">${escapeHtml(row.content)}</td>
             <td>${escapeHtml(row.costType)}</td>
             <td title="${escapeHtml(row.worker)}">${escapeHtml(row.worker) || '-'}</td>
