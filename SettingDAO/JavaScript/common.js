@@ -397,6 +397,9 @@ function initializeApp() {
         if (btn.textContent.trim() === 'PM') btn.textContent = '정기';
     });
 
+    // [추가] 웹 브라우저 전역 자동완성(Autofill) 팝업 강제 원천 차단
+    disableAutocompleteGlobal();
+
     // 2-2. 로그인 및 사용자 관리 이벤트
     setupAuthEvents();
     setupMobileNav(); // [이동] 페이지 접근 제어 전에 실행하여 홈 화면에서도 메뉴 작동하도록 수정
@@ -484,6 +487,33 @@ function setupGlobalModalScrollLock() {
     document.querySelectorAll('.modal-overlay').forEach(modal => {
         observer.observe(modal, { attributes: true, attributeFilter: ['style'] });
     });
+}
+
+// [추가] 브라우저 자동완성을 무력화하는 전역 헬퍼 함수
+function disableAutocompleteGlobal() {
+    const disableAutocomplete = (node) => {
+        if (node.tagName === 'INPUT') {
+            node.setAttribute('autocomplete', 'new-password');
+        }
+        if (node.querySelectorAll) {
+            node.querySelectorAll('input').forEach(el => {
+                el.setAttribute('autocomplete', 'new-password');
+            });
+        }
+    };
+
+    // 현재 화면에 있는 모든 input 처리
+    disableAutocomplete(document.body);
+
+    // 팝업 창 등 동적으로 생성되는 모든 input 실시간 감지 및 처리
+    const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === 1) disableAutocomplete(node);
+            });
+        });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
 }
 
 function setupAuthEvents() {

@@ -1833,7 +1833,7 @@ function saveDetailChanges() {
                 if (match) { code = match.code || ''; fullContent = match.part || val; }
                 if (partContent && idx === 0) fullContent = `${fullContent} - ${partContent}`;
 
-                let existing = data.maint.find(m => m.type === itemType && (m.content === fullContent || (code && m.code === code) || m.content === val));
+                let existing = sameDayItems.find(m => (m.content === fullContent || (code && m.code === code) || m.content === val));
                 if (existing) {
                     existing.scheduledDate = targetDate;
                     existing.detailType = itemDetailType;
@@ -1856,7 +1856,7 @@ function saveDetailChanges() {
             if (dropdownWrapper) {
                 let finalContent = partContent ? partContent : '내용 없음';
                 finalContentStr = finalContent;
-                let existing = data.maint.find(m => m.type === itemType && m.content === finalContent);
+                let existing = sameDayItems.find(m => m.content === finalContent);
                 if (existing) {
                     existing.scheduledDate = targetDate;
                     existing.detailType = itemDetailType;
@@ -1878,7 +1878,7 @@ function saveDetailChanges() {
             if (!finalContent) finalContent = '내용 없음';
             finalContentStr = finalContent;
             
-            let existing = data.maint.find(m => m.type === itemType && m.content === finalContent);
+            let existing = sameDayItems.find(m => m.content === finalContent);
             if (existing) {
                 existing.scheduledDate = targetDate;
                 existing.worker = newWorker;
