@@ -720,10 +720,15 @@ def change_password():
 
     if not user:
         return jsonify({"status": "fail", "message": "계정을 찾을 수 없습니다."}), 404
-    if not check_password_hash(user.pw, current_pw):
+    try:
+        is_valid = check_password_hash(user.pw, current_pw)
+    except AttributeError:
+        is_valid = False
+        
+    if not is_valid:
         return jsonify({"status": "fail", "message": "현재 비밀번호가 일치하지 않습니다."}), 401
 
-    user.pw = generate_password_hash(admin_pw, method='pbkdf2:sha256')
+    user.pw = generate_password_hash(new_pw, method='pbkdf2:sha256')
     user.pw_changed_at = get_utc_now() # [추가] 비밀번호 변경일 갱신
     db.session.commit()
 
@@ -744,7 +749,12 @@ def delete_account():
         return jsonify({"status": "fail", "message": "시스템 보호를 위해 최고 관리자 계정은 삭제할 수 없습니다."}), 403
 
     user = User.query.filter_by(id=user_id).first()
-    if not user or not check_password_hash(user.pw, pw):
+    try:
+        is_valid = check_password_hash(user.pw, pw) if user else False
+    except AttributeError:
+        is_valid = False
+        
+    if not user or not is_valid:
         return jsonify({"status": "fail", "message": "비밀번호가 일치하지 않습니다."}), 401
 
     db.session.delete(user)
