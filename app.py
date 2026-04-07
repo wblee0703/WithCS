@@ -62,6 +62,9 @@ if hasattr(app, 'json'): app.json.sort_keys = False
 # 나중에 가비아에 도메인과 HTTPS를 적용하시면 .env에 USE_HTTPS=true 를 추가하세요.
 if os.environ.get('USE_HTTPS') == 'true':
     app.config['SESSION_COOKIE_SECURE'] = True
+else:
+    app.config['SESSION_COOKIE_SECURE'] = False
+    app.config['WTF_CSRF_SSL_STRICT'] = False
 
 # [호환성] Python 3.12 이상에서 datetime.utcnow()가 deprecated 됨에 따라 최신 표준 함수 적용
 def get_utc_now():
@@ -433,7 +436,8 @@ def login_required(f):
 @app.after_request
 def set_security_headers(response):
     """모든 응답에 보안 헤더 및 CSRF 토큰 설정"""
-    response.set_cookie('csrf_token', generate_csrf())
+    is_secure = os.environ.get('USE_HTTPS') == 'true'
+    response.set_cookie('csrf_token', generate_csrf(), secure=is_secure, httponly=False, samesite='Lax')
     
     # 에러 로그 기록 (정적 파일 경로 제외)
     if not request.path.startswith(('/static', '/SettingDAO', '/favicon.ico', '/.well-known')):
