@@ -17,6 +17,7 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import secrets
 import uuid
+import urllib.parse
 
 app = Flask(__name__)
 
@@ -37,6 +38,8 @@ if not os.path.exists(env_path):
             # [보안] 초기 비밀번호 랜덤 생성 (소스코드 내 하드코딩 제거)
             init_admin_pw = secrets.token_urlsafe(8)
             init_user_pw = secrets.token_urlsafe(8)
+            app_secret = secrets.token_hex(24)
+            f.write(f"APP_ENV=production\nSECRET_KEY={app_secret}\n")
             f.write(f"APP_ADMIN_ID=admin\nAPP_ADMIN_PW={init_admin_pw}\nAPP_USER_ID=user\nAPP_USER_PW={init_user_pw}\nAPP_PORT=8080\n")
             f.write("\n# Database Settings (sqlite or mysql)\n")
             f.write("DB_TYPE=sqlite\n")
@@ -55,7 +58,9 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['JSON_SORT_KEYS'] = False
 if hasattr(app, 'json'): app.json.sort_keys = False
 
-if os.environ.get('APP_ENV') == 'production':
+# HTTPS(SSL) 인증서가 없는 HTTP(IP 주소) 접속 시 로그인이 풀리는(CSRF) 에러 방지
+# 나중에 가비아에 도메인과 HTTPS를 적용하시면 .env에 USE_HTTPS=true 를 추가하세요.
+if os.environ.get('USE_HTTPS') == 'true':
     app.config['SESSION_COOKIE_SECURE'] = True
 
 # [호환성] Python 3.12 이상에서 datetime.utcnow()가 deprecated 됨에 따라 최신 표준 함수 적용
@@ -65,15 +70,15 @@ def get_utc_now():
 # Security Extensions
 csrf = CSRFProtect(app)
 # [수정] 메모리 저장소 명시적 설정
-# 잦은 자동 저장 및 API 호출 시 429 에러(Too Many Requests)가 발생하는 것을 막기 위해 전역 제한 해제(, default_limits=["200 per day", "50 per hour"]추가하면 보안 강화됨)
-limiter = Limiter(get_remote_address, app=app, storage_uri="memory://")
+# 잦은 API 호출로 인한 429 에러를 방지하면서도 기본적인 무차별 대입 공격을 막기 위해 넉넉한 기본 제한(Rate Limit) 설정 적용
+limiter = Limiter(get_remote_address, app=app, storage_uri="memory://", default_limits=["3000 per day", "500 per hour"])
 
 # [변경] DB 설정 (환경변수에 따라 MySQL 또는 SQLite 사용)
  # [임시] 가비아 호스팅 전 로컬 환경을 위해 강제로 SQLite(로컬 파일 DB)를 사용하도록 고정합니다.
-db_type = 'sqlite' # 나중에 가비아에 올릴 때 os.environ.get('DB_TYPE', 'sqlite').lower() 로 복구
+db_type = os.environ.get('DB_TYPE', 'sqlite').lower()
 if db_type == 'mysql':
-    mysql_user = os.environ.get('MYSQL_USER', 'root')
-    mysql_pw = os.environ.get('MYSQL_PASSWORD', '')
+    mysql_user = urllib.parse.quote_plus(os.environ.get('MYSQL_USER', 'root'))
+    mysql_pw = urllib.parse.quote_plus(os.environ.get('MYSQL_PASSWORD', ''))
     mysql_host = os.environ.get('MYSQL_HOST', 'localhost')
     mysql_db = os.environ.get('MYSQL_DB', 'withtech')
     app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{mysql_user}:{mysql_pw}@{mysql_host}/{mysql_db}?charset=utf8mb4"
@@ -440,6 +445,7 @@ def set_security_headers(response):
     # 보안 헤더
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
     if os.environ.get('APP_ENV') == 'production':
         response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
         
@@ -686,7 +692,7 @@ def add_user():
     if User.query.filter_by(id=new_id).first():
         return jsonify({"status": "fail", "message": "이미 존재하는 아이디입니다."}), 400
 
-    new_user = User(id=new_id, pw=generate_password_hash(new_pw), role=role, site=site, department=department, position=position, name=name, pw_changed_at=get_utc_now())
+    new_user = User(id=new_id, pw=generate_password_hash(admin_pw, method='pbkdf2:sha256'), role=role, site=site, department=department, position=position, name=name, pw_changed_at=get_utc_now())
     db.session.add(new_user)
     db.session.commit()
 
@@ -707,7 +713,7 @@ def change_password():
     if not check_password_hash(user.pw, current_pw):
         return jsonify({"status": "fail", "message": "현재 비밀번호가 일치하지 않습니다."}), 401
 
-    user.pw = generate_password_hash(new_pw)
+    user.pw = generate_password_hash(admin_pw, method='pbkdf2:sha256')
     user.pw_changed_at = get_utc_now() # [추가] 비밀번호 변경일 갱신
     db.session.commit()
 
@@ -1056,7 +1062,7 @@ def init_db():
         admin_user = User.query.filter_by(id=admin_id).first()
         if not admin_user:
             admin_pw = os.environ.get('APP_ADMIN_PW', secrets.token_urlsafe(8))
-            admin_user = User(id=admin_id, pw=generate_password_hash(admin_pw), role='superadmin', pw_changed_at=get_utc_now())
+            admin_user = User(id=admin_id, pw=generate_password_hash(admin_pw, method='pbkdf2:sha256'), role='superadmin', pw_changed_at=get_utc_now())
             db.session.add(admin_user)
             db.session.commit()
             app.logger.warning(f"Initial Admin PW generated in DB: {admin_pw}")
@@ -1070,7 +1076,7 @@ def init_db():
         user_id = os.environ.get('APP_USER_ID', 'user')
         if not User.query.filter_by(id=user_id).first():
             user_pw = os.environ.get('APP_USER_PW', secrets.token_urlsafe(8))
-            normal_user = User(id=user_id, pw=generate_password_hash(user_pw), role='user', pw_changed_at=get_utc_now())
+            normal_user = User(id=user_id, pw=generate_password_hash(user_pw, method='pbkdf2:sha256'), role='user', pw_changed_at=get_utc_now())
             db.session.add(normal_user)
             db.session.commit()
             app.logger.warning(f"Initial User PW generated in DB: {user_pw}")
@@ -1081,7 +1087,7 @@ def init_db():
         all_users = User.query.all()
         for u in all_users:
             if u.pw and '$' not in u.pw:
-                u.pw = generate_password_hash(u.pw)
+                u.pw = generate_password_hash(admin_pw, method='pbkdf2:sha256')
         db.session.commit()
 
 # WSGI 서버(PythonAnywhere 등) 환경에서도 앱 구동 시 초기화가 실행되도록 __main__ 블록 밖으로 이동
@@ -1093,16 +1099,15 @@ for d in [DATA_DIR, LOG_DIR, BACKUP_DIR, DATA_LOG_DIR]:
 init_db()
 
 if __name__ == '__main__':
-    port = int(os.environ.get("APP_PORT", 8080))
 
     # [수정] Waitress 서버 적용 (개발 서버 경고 제거 및 안정성 향상)
     try:
         from waitress import serve
-        print(f" * Serving with Waitress on http://0.0.0.0:{port}")
-        serve(app, host='0.0.0.0', port=port, threads=6)
+        print(" * Serving with Waitress on http://0.0.0.0:8080")
+        serve(app, host='0.0.0.0', port=8080, threads=6)
     except ImportError:
         # Waitress가 설치되지 않은 경우 기존 Flask 개발 서버 사용
         print(" * Waitress not found. Running with basic Flask server.")
         import sys
         print(f" * To fix the warning, run: pip install waitress")
-        app.run(debug=False, port=port, host='0.0.0.0')
+        app.run(debug=False, port=8080, host='0.0.0.0')
