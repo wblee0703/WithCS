@@ -710,6 +710,8 @@ def add_user():
         return jsonify({"status": "fail", "message": "관리자 권한이 필요합니다."}), 403
     if role == 'superadmin' and session.get('role') != 'superadmin':
         return jsonify({"status": "fail", "message": "최종 관리자 계정은 최종 관리자만 생성할 수 있습니다."}), 403
+    if role == 'admin' and session.get('role') != 'superadmin':
+        return jsonify({"status": "fail", "message": "일반 관리자는 일반 계정만 생성할 수 있습니다."}), 403
 
     if User.query.filter_by(id=new_id).first():
         return jsonify({"status": "fail", "message": "이미 존재하는 아이디입니다."}), 400

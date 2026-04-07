@@ -1176,6 +1176,9 @@ function checkLoginStatus() {
         }
         if (btnUserSettings) btnUserSettings.style.display = 'inline-block';
 
+        const btnHeaderViewLogs = document.getElementById('btn-header-view-logs');
+        if (btnHeaderViewLogs) btnHeaderViewLogs.style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
+
         const btnHeaderAddUser = document.getElementById('btn-header-add-user');
         if (btnHeaderAddUser) btnHeaderAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
 
@@ -1205,6 +1208,9 @@ function checkLoginStatus() {
         }
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'block';
 
+        const mobileBtnViewLogs = document.getElementById('mobile-btn-view-logs');
+        if (mobileBtnViewLogs) mobileBtnViewLogs.style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none';
+
         const mobileBtnAddUser = document.getElementById('mobile-btn-add-user');
         if (mobileBtnAddUser) mobileBtnAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none';
 
@@ -1228,6 +1234,9 @@ function checkLoginStatus() {
         }
         if (btnUserSettings) btnUserSettings.style.display = 'none';
 
+        const btnHeaderViewLogs = document.getElementById('btn-header-view-logs');
+        if (btnHeaderViewLogs) btnHeaderViewLogs.style.display = 'none';
+
         const btnHeaderAddUser = document.getElementById('btn-header-add-user');
         if (btnHeaderAddUser) btnHeaderAddUser.style.display = 'none';
         
@@ -1244,6 +1253,9 @@ function checkLoginStatus() {
             mobileBtnLogin.classList.replace('btn-gray', 'btn-blue');
         }
         if (mobileBtnSettings) mobileBtnSettings.style.display = 'none';
+
+        const mobileBtnViewLogs = document.getElementById('mobile-btn-view-logs');
+        if (mobileBtnViewLogs) mobileBtnViewLogs.style.display = 'none';
 
         const mobileBtnAddUser = document.getElementById('mobile-btn-add-user');
         if (mobileBtnAddUser) mobileBtnAddUser.style.display = 'none';
@@ -1394,20 +1406,13 @@ function openAddUserModal() {
     }
 
     if (modal) {
-        // [추가] 최종관리자는 '최종관리자' 계정을 생성할 수 있도록 옵션 동적 추가/제거
+        // [수정] 일반 관리자는 '일반' 계정만, 최종관리자는 '모든' 계정을 생성할 수 있도록 옵션 제어
         const roleSelect = modal.querySelector('#new-user-role');
         if (roleSelect) {
-            const superadminOptionExists = Array.from(roleSelect.options).some(opt => opt.value === 'superadmin');
-
-            if (role === 'superadmin' && !superadminOptionExists) {
-                // 최종관리자 옵션 추가
-                const option = document.createElement('option');
-                option.value = 'superadmin';
-                option.textContent = '최종관리자';
-                roleSelect.appendChild(option);
-            } else if (role !== 'superadmin' && superadminOptionExists) {
-                // 최종관리자 옵션 제거
-                roleSelect.querySelector('option[value="superadmin"]').remove();
+            roleSelect.innerHTML = '<option value="user">일반</option>'; // 기본값 초기화
+            if (role === 'superadmin') {
+                roleSelect.insertAdjacentHTML('beforeend', '<option value="admin">관리자</option>');
+                roleSelect.insertAdjacentHTML('beforeend', '<option value="superadmin">최종관리자</option>');
             }
         }
 

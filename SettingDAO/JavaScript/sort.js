@@ -232,8 +232,9 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
             <div id="${selectId}-trigger" data-placeholder="${placeholder}" class="log-select-trigger" style="min-height:30px; display:flex; align-items:center; background:#0d1117; color:#8b949e; border:1px solid #30363d; border-radius:4px; padding:6px 10px; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${placeholder}</div>
             <div id="${selectId}-dropdown" class="log-select-dropdown" style="width:100%; display:none; position:absolute; top:100%; left:0; z-index:1000; margin-top:4px; background:#161b22; border:1px solid #30363d; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); box-sizing:border-box;">
                 <div id="${selectId}-list" class="log-select-list" style="max-height: 200px; overflow-y: auto; padding: 8px;"></div>
-                <div class="log-select-footer" style="padding: 8px; border-top: 1px solid #30363d; background: #21262d;">
-                    <button type="button" class="btn-blue-sm btn-confirm" style="width: 100%;">선택 완료</button>
+                <div class="log-select-footer" style="padding: 8px; border-top: 1px solid #30363d; background: #21262d; display: flex; gap: 5px;">
+                    <button type="button" class="btn-gray btn-deselect-all" style="flex: 1; padding: 4px 0; font-size: 12px;">전체 해제</button>
+                    <button type="button" class="btn-blue-sm btn-confirm" style="flex: 1;">선택 완료</button>
                 </div>
             </div>
         `;
@@ -242,6 +243,7 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
         const trigger = wrapper.querySelector(`#${selectId}-trigger`);
         const dropdown = wrapper.querySelector(`#${selectId}-dropdown`);
         const confirmBtn = wrapper.querySelector('.btn-confirm');
+        const deselectAllBtn = wrapper.querySelector('.btn-deselect-all');
         
         trigger.onclick = (e) => {
             e.stopPropagation();
@@ -258,6 +260,20 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
             }
         };
         
+        if (deselectAllBtn) {
+            deselectAllBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault(); // 포커스 아웃 방지
+                e.stopPropagation();
+                list.querySelectorAll('.log-select-item').forEach(el => {
+                    el.classList.remove('selected');
+                    const checkIcon = el.querySelector('.check-icon');
+                    if (checkIcon) checkIcon.style.opacity = '0';
+                });
+                updateTriggerText();
+                selectEl.dispatchEvent(new Event('change'));
+            });
+        }
+
         confirmBtn.addEventListener('mousedown', (e) => {
             e.preventDefault(); // 포커스 아웃 방지
             e.stopPropagation();
@@ -524,6 +540,7 @@ function setupSortFilters() {
 function setupSortKeyword() {
     const dropdown = document.getElementById('sort-keyword-dropdown');
     const confirmBtn = document.getElementById('btn-sort-keyword-confirm');
+    const deselectBtn = document.getElementById('btn-sort-keyword-deselect');
     const input = document.getElementById('sort-keyword');
     
     if (input && dropdown) {
@@ -539,6 +556,23 @@ function setupSortKeyword() {
 
         input.onclick = showDropdown;
         input.onfocus = showDropdown;
+
+        if (deselectBtn) {
+            deselectBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const list = document.getElementById('sort-keyword-list');
+                if (list) {
+                    list.querySelectorAll('.log-select-item').forEach(el => {
+                        el.classList.remove('selected');
+                        const icon = el.querySelector('.check-icon');
+                        if (icon) icon.style.opacity = '0';
+                    });
+                    updateKeywordTrigger();
+                    performSortSearch();
+                }
+            });
+        }
 
         if (confirmBtn) {
             confirmBtn.addEventListener('mousedown', (e) => {
