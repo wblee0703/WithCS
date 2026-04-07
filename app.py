@@ -1136,15 +1136,17 @@ for d in [DATA_DIR, LOG_DIR, BACKUP_DIR, DATA_LOG_DIR]:
 init_db()
 
 if __name__ == '__main__':
+    # 로컬과 서버 환경을 분리하기 위해 .env 파일에서 APP_PORT 값을 읽어옵니다. (기본값: 8080)
+    port = int(os.environ.get('APP_PORT', 8080))
 
     # [수정] Waitress 서버 적용 (개발 서버 경고 제거 및 안정성 향상)
     try:
         from waitress import serve
-        print(" * Serving with Waitress on http://0.0.0.0:8080")
-        serve(app, host='0.0.0.0', port=8080, threads=6)
+        print(f" * Serving with Waitress on http://0.0.0.0:{port}")
+        serve(app, host='0.0.0.0', port=port, threads=6)
     except ImportError:
         # Waitress가 설치되지 않은 경우 기존 Flask 개발 서버 사용
         print(" * Waitress not found. Running with basic Flask server.")
         import sys
-        print(f" * To fix the warning, run: pip install waitress")
-        app.run(debug=False, port=8080, host='0.0.0.0')
+        print(" * To fix the warning, run: pip install waitress")
+        app.run(debug=False, port=port, host='0.0.0.0')
