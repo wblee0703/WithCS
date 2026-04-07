@@ -1113,7 +1113,7 @@ def init_db():
                 else:
                     fallback_pw = 'withtech123!'
                 u.pw = generate_password_hash(fallback_pw, method='pbkdf2:sha256')
-        db.session.commit()
+                db.session.commit() # [수정] 긴 암호화 계산 시간으로 인한 DB 연결 끊김(Timeout) 방지를 위해 한 명씩 개별 저장
 
 # WSGI 서버(PythonAnywhere 등) 환경에서도 앱 구동 시 초기화가 실행되도록 __main__ 블록 밖으로 이동
 # [Phase 3] JSON 파일 관련 로직이 제거되었으므로, 폴더 생성만 수행
