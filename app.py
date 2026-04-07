@@ -549,7 +549,15 @@ def login():
             db.session.commit()
 
     # 2. 비밀번호 검증
-    if check_password_hash(user.pw, user_pw):
+    try:
+        is_valid = check_password_hash(user.pw, user_pw)
+    except AttributeError:
+        fallback_pw = os.environ.get('APP_ADMIN_PW', 'admin') if user.id in ['admin', os.environ.get('APP_ADMIN_ID', 'admin')] else (os.environ.get('APP_USER_PW', 'user') if user.id in ['user', os.environ.get('APP_USER_ID', 'user')] else 'withtech123!')
+        user.pw = generate_password_hash(fallback_pw, method='pbkdf2:sha256:50000')
+        db.session.commit()
+        return jsonify({"status": "fail", "message": "보안 시스템 업데이트로 비밀번호가 안전하게 초기화되었습니다.\n최초 발급받은 초기 비밀번호로 다시 로그인해주세요."}), 401
+
+    if is_valid:
         # 성공: 실패 횟수 초기화 및 세션 설정
         if user.failed_attempts > 0 or user.lockout_until:
             user.failed_attempts = 0
@@ -617,7 +625,11 @@ def verify_user_pw():
     data = request.json
     pw = data.get('pw')
     user = User.query.filter_by(id=session.get('user_id')).first()
-    if not user or not check_password_hash(user.pw, pw):
+    try:
+        is_valid = check_password_hash(user.pw, pw) if user else False
+    except AttributeError:
+        is_valid = False
+    if not user or not is_valid:
         return jsonify({"status": "fail", "message": "비밀번호가 일치하지 않습니다."}), 401
     return jsonify({"status": "success"})
 
@@ -702,7 +714,7 @@ def add_user():
     if User.query.filter_by(id=new_id).first():
         return jsonify({"status": "fail", "message": "이미 존재하는 아이디입니다."}), 400
 
-    new_user = User(id=new_id, pw=generate_password_hash(admin_pw, method='pbkdf2:sha256'), role=role, site=site, department=department, position=position, name=name, pw_changed_at=get_utc_now())
+    new_user = User(id=new_id, pw=generate_password_hash(new_pw, method='pbkdf2:sha256:50000'), role=role, site=site, department=department, position=position, name=name, pw_changed_at=get_utc_now())
     db.session.add(new_user)
     db.session.commit()
 
@@ -728,7 +740,7 @@ def change_password():
     if not is_valid:
         return jsonify({"status": "fail", "message": "현재 비밀번호가 일치하지 않습니다."}), 401
 
-    user.pw = generate_password_hash(new_pw, method='pbkdf2:sha256')
+    user.pw = generate_password_hash(new_pw, method='pbkdf2:sha256:50000')
     user.pw_changed_at = get_utc_now() # [추가] 비밀번호 변경일 갱신
     db.session.commit()
 
@@ -1082,7 +1094,7 @@ def init_db():
         admin_user = User.query.filter_by(id=admin_id).first()
         if not admin_user:
             admin_pw = os.environ.get('APP_ADMIN_PW', secrets.token_urlsafe(8))
-            admin_user = User(id=admin_id, pw=generate_password_hash(admin_pw, method='pbkdf2:sha256'), role='superadmin', pw_changed_at=get_utc_now())
+            admin_user = User(id=admin_id, pw=generate_password_hash(admin_pw, method='pbkdf2:sha256:50000'), role='superadmin', pw_changed_at=get_utc_now())
             db.session.add(admin_user)
             db.session.commit()
             app.logger.warning(f"Initial Admin PW generated in DB: {admin_pw}")
@@ -1096,7 +1108,7 @@ def init_db():
         user_id = os.environ.get('APP_USER_ID', 'user')
         if not User.query.filter_by(id=user_id).first():
             user_pw = os.environ.get('APP_USER_PW', secrets.token_urlsafe(8))
-            normal_user = User(id=user_id, pw=generate_password_hash(user_pw, method='pbkdf2:sha256'), role='user', pw_changed_at=get_utc_now())
+            normal_user = User(id=user_id, pw=generate_password_hash(user_pw, method='pbkdf2:sha256:50000'), role='user', pw_changed_at=get_utc_now())
             db.session.add(normal_user)
             db.session.commit()
             app.logger.warning(f"Initial User PW generated in DB: {user_pw}")
@@ -1112,8 +1124,9 @@ def init_db():
                     fallback_pw = os.environ.get('APP_USER_PW', 'user')
                 else:
                     fallback_pw = 'withtech123!'
-                u.pw = generate_password_hash(fallback_pw, method='pbkdf2:sha256')
-                db.session.commit() # [수정] 긴 암호화 계산 시간으로 인한 DB 연결 끊김(Timeout) 방지를 위해 한 명씩 개별 저장
+                u.pw = generate_password_hash(fallback_pw, method='pbkdf2:sha256:50000')
+        
+        db.session.commit() # 연산 속도가 대폭 개선되었으므로 안전하게 한 번에 저장합니다.
 
 # WSGI 서버(PythonAnywhere 등) 환경에서도 앱 구동 시 초기화가 실행되도록 __main__ 블록 밖으로 이동
 # [Phase 3] JSON 파일 관련 로직이 제거되었으므로, 폴더 생성만 수행
