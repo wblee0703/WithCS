@@ -85,6 +85,12 @@ if db_type == 'mysql':
     mysql_host = os.environ.get('MYSQL_HOST', 'localhost')
     mysql_db = os.environ.get('MYSQL_DB', 'withtech')
     app.config['SQLALCHEMY_DATABASE_URI'] = f"mysql+pymysql://{mysql_user}:{mysql_pw}@{mysql_host}/{mysql_db}?charset=utf8mb4"
+    
+    # [추가] MySQL Connection Timeout(2013, 2006 에러) 방지 설정
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_recycle': 280,   # 280초마다 연결을 새로 고침 (가비아의 타이트한 설정 방어)
+        'pool_pre_ping': True  # 쿼리 실행 전 연결이 살아있는지 확인 후, 죽었으면 재연결
+    }
 else:
     app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'data', 'withtech.db')}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
