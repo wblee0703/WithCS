@@ -1117,7 +1117,7 @@ def init_db():
         # [수정] 가비아 서버(Python 3.9)에서 지원하지 않는 scrypt 해시를 pbkdf2로 강제 변환 및 평문 비밀번호 해싱
         all_users = User.query.all()
         for u in all_users:
-            if u.pw and ('$' not in u.pw or u.pw.startswith('scrypt:')):
+            if u.pw and ('$' not in u.pw or u.pw.startswith('scrypt:') or '1000000' in u.pw):
                 if u.id == os.environ.get('APP_ADMIN_ID', 'admin') or u.id == 'admin':
                     fallback_pw = os.environ.get('APP_ADMIN_PW', 'admin')
                 elif u.id == os.environ.get('APP_USER_ID', 'user') or u.id == 'user':
@@ -1125,8 +1125,7 @@ def init_db():
                 else:
                     fallback_pw = 'withtech123!'
                 u.pw = generate_password_hash(fallback_pw, method='pbkdf2:sha256:50000')
-        
-        db.session.commit() # 연산 속도가 대폭 개선되었으므로 안전하게 한 번에 저장합니다.
+                db.session.commit() # [수정] DB 연결 끊김 방지를 위해 1명 변환될 때마다 즉시 저장
 
 # WSGI 서버(PythonAnywhere 등) 환경에서도 앱 구동 시 초기화가 실행되도록 __main__ 블록 밖으로 이동
 # [Phase 3] JSON 파일 관련 로직이 제거되었으므로, 폴더 생성만 수행
