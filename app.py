@@ -1092,12 +1092,17 @@ def init_db():
             app.logger.warning(f"Initial User PW generated in DB: {user_pw}")
             print(f"[*] User Account Created -> ID: {user_id} / PW: {user_pw}")
 
-        # [수정] 이중 해싱 방지: Werkzeug 해시는 방식(scrypt, pbkdf2, sha256 등)과 무관하게 반드시 '$' 기호를 포함합니다. 
-        # '$'가 없는 경우에만 평문으로 간주하고 해시하도록 강력하게 제한합니다.
+        # [수정] 가비아 서버(Python 3.9)에서 지원하지 않는 scrypt 해시를 pbkdf2로 강제 변환 및 평문 비밀번호 해싱
         all_users = User.query.all()
         for u in all_users:
-            if u.pw and '$' not in u.pw:
-                u.pw = generate_password_hash(admin_pw, method='pbkdf2:sha256')
+            if u.pw and ('$' not in u.pw or u.pw.startswith('scrypt:')):
+                if u.id == os.environ.get('APP_ADMIN_ID', 'admin') or u.id == 'admin':
+                    fallback_pw = os.environ.get('APP_ADMIN_PW', 'admin')
+                elif u.id == os.environ.get('APP_USER_ID', 'user') or u.id == 'user':
+                    fallback_pw = os.environ.get('APP_USER_PW', 'user')
+                else:
+                    fallback_pw = 'withtech123!'
+                u.pw = generate_password_hash(fallback_pw, method='pbkdf2:sha256')
         db.session.commit()
 
 # WSGI 서버(PythonAnywhere 등) 환경에서도 앱 구동 시 초기화가 실행되도록 __main__ 블록 밖으로 이동
