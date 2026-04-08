@@ -52,7 +52,12 @@ app.secret_key = os.environ.get('SECRET_KEY', 'CHANGE_THIS_TO_A_COMPLEX_RANDOM_K
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
-app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['WTF_CSRF_TIME_LIMIT'] = None  # [추가] CSRF 토큰의 독자적인 타임아웃(기본 3600초)을 해제하여 세션 수명과 100% 동기화
+
+if os.environ.get('APP_ENV') == 'production':
+    app.config['TEMPLATES_AUTO_RELOAD'] = False  # [수정] 운영 환경에서는 파일 감지로 인한 불필요한 서버 재시작 방지
+else:
+    app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # [추가] JSON 데이터 저장 및 응답 시 키(Key)가 알파벳순으로 자동 정렬되는 것을 방지
 app.config['JSON_SORT_KEYS'] = False
@@ -570,6 +575,7 @@ def login():
         if not user.pw_changed_at or user.pw_changed_at < get_utc_now() - timedelta(days=30):
             require_pw_change = True
 
+        session.permanent = True  # [추가] 브라우저에 PERMANENT_SESSION_LIFETIME(60분)을 명시적으로 적용
         session['user_id'] = user.id
         session['role'] = user.role
         session['site'] = user.site # [추가]
