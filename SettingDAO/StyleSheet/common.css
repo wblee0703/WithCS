@@ -744,7 +744,11 @@ button {
 
 /* User Roles */
 body.role-user #btn-import,
-body.role-user .btn-list-setting:not(#btn-log-settings) {
+body.role-user #btn-export,
+body.role-user .btn-list-setting:not(#btn-log-settings),
+body.role-admin #btn-import,
+body.role-admin #btn-export,
+body.role-admin .btn-list-setting:not(#btn-log-settings) {
     display: none !important;
 }
 

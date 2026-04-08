@@ -855,10 +855,19 @@ def get_logs():
 @app.route('/api/admin/crud', methods=['POST'])
 @login_required
 def admin_crud():
-    if session.get('role') not in ['admin', 'superadmin']:
+    role = session.get('role')
+    if role not in ['admin', 'superadmin']:
         return jsonify({"status": "fail", "message": "권한이 없습니다."}), 403
     data = request.json
     domain = data.get('domain')
+    
+    # [추가] 일반 관리자(admin)는 마스터 데이터 수정 불가 (달력 확정 기능만 예외 허용)
+    if role == 'admin':
+        if domain in ['site', 'equip', 'item']:
+            return jsonify({"status": "fail", "message": "해당 데이터의 추가/수정/삭제는 최종 관리자(superadmin)만 가능합니다."}), 403
+        if domain == 'setting' and data.get('payload', {}).get('key') != 'calendar_confirmations':
+            return jsonify({"status": "fail", "message": "해당 설정의 변경은 최종 관리자(superadmin)만 가능합니다."}), 403
+            
     action = data.get('action')
     payload = data.get('payload')
     
