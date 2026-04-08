@@ -123,6 +123,7 @@ class SystemLog(db.Model):
     action = db.Column(db.String(50))
     target = db.Column(db.String(100))
     details = db.Column(db.Text)
+    worker = db.Column(db.String(100), nullable=True) # [추가] 작업자 컬럼
 
 # ------------------------------------------------------------------------------
 # [추가] 100% DB 전환을 위한 Core Business Models (스키마)
@@ -816,10 +817,15 @@ def admin_delete_target_user():
 @login_required
 def add_log():
     data = request.json
+    user_id = session.get('user_id')
+    user = User.query.filter_by(id=user_id).first()
+    worker_name = user.name if user and user.name else user_id
+    
     new_log = SystemLog(
         action=data.get('action'),
         target=data.get('target'),
-        details=data.get('details', '')
+        details=data.get('details', ''),
+        worker=worker_name
     )
     db.session.add(new_log)
     db.session.commit()
@@ -834,22 +840,10 @@ def get_logs():
         "timestamp": log.timestamp.isoformat() + "Z",
         "action": log.action,
         "target": log.target,
-        "details": log.details
+        "details": log.details,
+        "worker": log.worker or "-" # [추가] 작업자 반환 (없으면 하이픈)
     } for log in logs]
     return jsonify(result)
-
-@app.route('/api/logs/clear', methods=['POST'])
-@login_required
-def clear_logs():
-    if session.get('role') not in ['admin', 'superadmin']:
-         return jsonify({"status": "fail", "message": "관리자 권한이 필요합니다."}), 403
-    try:
-        db.session.query(SystemLog).delete()
-        db.session.commit()
-        return jsonify({"status": "success"})
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({"status": "fail", "message": str(e)}), 500
 
 # [추가] 통합 Admin 설정 관리를 위한 만능 DB CRUD API
 @app.route('/api/admin/crud', methods=['POST'])
@@ -1086,6 +1080,13 @@ def init_db():
             db.session.execute(text('ALTER TABLE "user" ADD COLUMN pw_changed_at DATETIME'))
             db.session.commit()
             db.session.execute(text('UPDATE "user" SET pw_changed_at = CURRENT_TIMESTAMP WHERE pw_changed_at IS NULL'))
+            db.session.commit()
+        except:
+            db.session.rollback()
+        
+        # [마이그레이션] 시스템 로그 테이블에 작업자(worker) 컬럼 추가
+        try:
+            db.session.execute(text('ALTER TABLE system_log ADD COLUMN worker VARCHAR(100)'))
             db.session.commit()
         except:
             db.session.rollback()

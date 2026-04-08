@@ -14,7 +14,7 @@ let currentPath = { site: '', equip: '' };
 let selectedLogId = null;
 let originalMemo = "";
 let originalSetupData = null;
-let currentLogFilter = 'all'; // [추가] 현재 로그 필터 상태
+let currentLogFilters = ['common', 'setup', 'maint', 'admin']; // [수정] 현재 로그 필터 상태 (복수 선택 지원)
 let currentNextScheduleTarget = null; // [추가] 다음 작업 예정일 타겟
 let sessionTimer = null; // [추가] 세션 타이머
 let sessionTimeLeft = 3600; // 60분 리셋 (3600초)
@@ -148,7 +148,7 @@ function fetchServerData(callback) {
             for (let i = 0; i < localStorage.length; i++) {
                 const key = localStorage.key(i);
                 // 시스템(DB) 동기화 키가 아닌, 프론트엔드 UI 상태를 나타내는 키만 백업
-                if (!key.startsWith('details_') && !key.startsWith('site_meta_') && 
+                if (!key.startsWith('details_') && !key.startsWith('site_meta_') &&
                     !['device_data', 'setup_data', 'admin_items', 'equipment_models', 'check_type_categories', 'check_type_categories2', 'check_type_items'].includes(key)) {
                     keysToKeep.push({ key: key, value: localStorage.getItem(key) });
                 }
@@ -429,16 +429,18 @@ function initializeApp() {
         });
     }
 
+    // [이동] HOME 화면에서도 시스템 로그 팝업 이벤트(필터, 닫기)가 동작하도록 페이지 접근 제어 이전에 먼저 실행합니다.
+    setupDataManagementEvents();
+    setupGlobalModalScrollLock();
+
     // 2-3. 페이지별 접근 제어
     if (!handlePageAccess()) return;
     // 2-4. UI 초기화
     checkLoginStatus();
     renderSites();
     setupSidebarEvents();
-    setupDataManagementEvents();
     setupResizers();
     setupCollapsibleCards(); // [추가] 소분류 카드 접기 기능 초기화
-    setupGlobalModalScrollLock(); // [추가] 모든 모달창 배경 스크롤 자동 제어 기능
     // 2-5. URL 파라미터 처리
     restoreLastState();
     // window.isDataLoaded 설정 및 이벤트 발생은 서버 동기화 완료 후로 이동됨
@@ -457,10 +459,10 @@ function refreshAppViews() {
         }
     }
 
-     // [개선] 항상 마지막 상태 복원 시도 (Setup, Maint 페이지)
-        if (window.location.pathname.indexOf('setup') !== -1 || window.location.pathname.indexOf('maintenance') !== -1) {
-            restoreLastState();
-        }
+    // [개선] 항상 마지막 상태 복원 시도 (Setup, Maint 페이지)
+    if (window.location.pathname.indexOf('setup') !== -1 || window.location.pathname.indexOf('maintenance') !== -1) {
+        restoreLastState();
+    }
 
     // 대기 중인 팝업 모달이 있는지 확인
     checkPendingModals();
@@ -923,7 +925,6 @@ function setupDataManagementEvents() {
     const btnViewLogs = document.getElementById('btn-view-logs');
 
     const btnCloseModal = document.getElementById('btn-close-modal');
-    const btnClearLogs = document.getElementById('btn-clear-logs');
     const logModal = document.getElementById('log-modal');
 
     if (btnViewLogs) {
@@ -931,9 +932,6 @@ function setupDataManagementEvents() {
     }
     if (btnCloseModal) {
         btnCloseModal.addEventListener('click', (e) => { e.preventDefault(); closeLogModal(); });
-    }
-    if (btnClearLogs) {
-        btnClearLogs.addEventListener('click', (e) => { e.preventDefault(); clearSystemLogs(); });
     }
     if (logModal) {
         logModal.addEventListener('click', (e) => { if (e.target === logModal) closeLogModal(); });
@@ -944,13 +942,25 @@ function setupDataManagementEvents() {
     if (filterBtns.length > 0) {
         filterBtns.forEach(btn => {
             btn.onclick = () => {
-                filterBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentLogFilter = btn.dataset.filter;
+                btn.classList.toggle('active');
+                const filterVal = btn.dataset.filter;
+                if (btn.classList.contains('active')) {
+                    if (!currentLogFilters.includes(filterVal)) currentLogFilters.push(filterVal);
+                } else {
+                    currentLogFilters = currentLogFilters.filter(f => f !== filterVal);
+                }
                 renderSystemLogs();
             };
         });
     }
+
+    // [추가] 날짜 및 검색창 입력 시 로그 필터링
+    const sysLogStart = document.getElementById('syslog-filter-start');
+    const sysLogEnd = document.getElementById('syslog-filter-end');
+    const sysLogSearch = document.getElementById('syslog-filter-search');
+    if(sysLogStart) sysLogStart.addEventListener('change', renderSystemLogs);
+    if(sysLogEnd) sysLogEnd.addEventListener('change', renderSystemLogs);
+    if(sysLogSearch) sysLogSearch.addEventListener('input', renderSystemLogs);
 }
 
 function setupResizers() {
@@ -1239,7 +1249,7 @@ function checkLoginStatus() {
 
         const btnHeaderAddUser = document.getElementById('btn-header-add-user');
         if (btnHeaderAddUser) btnHeaderAddUser.style.display = 'none';
-        
+
         const btnModalAddUser = document.getElementById('btn-modal-add-user');
         if (btnModalAddUser) btnModalAddUser.style.display = 'none';
 
@@ -2360,7 +2370,7 @@ function createListItem(id, text, type, onSelect, subText = '') {
 
                 const success = await window.syncAdminDB('equip', 'DELETE', { id: id, site: siteName });
                 if (!success) return alert('서버 삭제에 실패했습니다.');
-                
+
                 storageData[siteName] = storageData[siteName].filter(i => i !== id);
 
                 // [추가] 장비 삭제 시 관련 데이터(details_) 삭제
@@ -2474,8 +2484,8 @@ async function handleRename(oldName, newName, type) {
 
         const parts = newName.split('::');
         const newModel = parts.length > 1 ? parts[1] : '';
-        
-        const success = await window.syncAdminDB('equip', 'UPDATE', { old_id: oldName, new_id: newName, site: siteName, setup: {model: newModel} });
+
+        const success = await window.syncAdminDB('equip', 'UPDATE', { old_id: oldName, new_id: newName, site: siteName, setup: { model: newModel } });
         if (!success) { renderEquips(siteName); return alert('서버 수정에 실패했습니다.'); }
 
         const idx = storageData[siteName].indexOf(oldName);
@@ -2663,25 +2673,25 @@ function onEquipClick(site, equip) {
                     newUrl.searchParams.delete('logId');
                     window.history.replaceState({}, '', newUrl);
                 } else {
-                        const lastLogId = localStorage.getItem(`lastLog_${site}_${equip}`);
-                        const matchedLog = lastLogId ? data.logs.find(l => l.id == lastLogId) : null;
-                        if (matchedLog) {
-                            let retries = 0;
-                            const scrollInterval = setInterval(() => {
-                                const row = document.getElementById(`log-row-${matchedLog.id}`);
-                                if (row || retries > 20) {
-                                    clearInterval(scrollInterval);
-                                    selectLog(matchedLog.id, false);
-                                    if (row) {
-                                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                    }
+                    const lastLogId = localStorage.getItem(`lastLog_${site}_${equip}`);
+                    const matchedLog = lastLogId ? data.logs.find(l => l.id == lastLogId) : null;
+                    if (matchedLog) {
+                        let retries = 0;
+                        const scrollInterval = setInterval(() => {
+                            const row = document.getElementById(`log-row-${matchedLog.id}`);
+                            if (row || retries > 20) {
+                                clearInterval(scrollInterval);
+                                selectLog(matchedLog.id, false);
+                                if (row) {
+                                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                 }
-                                retries++;
-                            }, 50);
-                        } else {
-                            data.logs.sort((a, b) => { if (b.date !== a.date) return b.date.localeCompare(a.date); return b.id - a.id; });
-                            selectLog(data.logs[0].id, false);
-                        }
+                            }
+                            retries++;
+                        }, 50);
+                    } else {
+                        data.logs.sort((a, b) => { if (b.date !== a.date) return b.date.localeCompare(a.date); return b.id - a.id; });
+                        selectLog(data.logs[0].id, false);
+                    }
                 }
             }
         }
@@ -2749,22 +2759,40 @@ async function renderSystemLogs() {
 
         const logs = await response.json();
 
-        // [추가] 필터링 로직
+        // [수정] 필터 입력값 가져오기
+        const startDate = document.getElementById('syslog-filter-start') ? document.getElementById('syslog-filter-start').value : '';
+        const endDate = document.getElementById('syslog-filter-end') ? document.getElementById('syslog-filter-end').value : '';
+        const keyword = document.getElementById('syslog-filter-search') ? document.getElementById('syslog-filter-search').value.toLowerCase().trim() : '';
+
+        // [수정] 복합 다중 필터링 로직 (분류 + 날짜 + 텍스트)
         const filteredLogs = logs.filter(log => {
-            if (currentLogFilter === 'all') return true;
             const category = getLogCategory(log.action);
-            return category === currentLogFilter;
+            
+            if (!currentLogFilters.includes(category)) return false;
+            
+            if (startDate || endDate) {
+                const logDate = log.timestamp.split('T')[0];
+                if (startDate && logDate < startDate) return false;
+                if (endDate && logDate > endDate) return false;
+            }
+            
+            if (keyword) {
+                const searchStr = `${log.action} ${log.target} ${log.worker || ''} ${log.details}`.toLowerCase();
+                if (!searchStr.includes(keyword)) return false;
+            }
+            
+            return true;
         });
 
         if (filteredLogs.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: #8b949e;">로그 내역이 없습니다.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #8b949e;">로그 내역이 없습니다.</td></tr>';
             return;
         }
 
-        tbody.innerHTML = filteredLogs.map(log => `<tr><td>${new Date(log.timestamp).toLocaleString()}</td><td><span class="badge pm" style="background: #30363d;">${log.action}</span></td><td>${log.target}</td><td>${log.details}</td></tr>`).join('');
+        tbody.innerHTML = filteredLogs.map(log => `<tr><td>${new Date(log.timestamp).toLocaleString()}</td><td><span class="badge pm" style="background: #30363d;">${log.action}</span></td><td>${log.target}</td><td style="text-align: center;">${escapeHtml(log.worker)}</td><td style="text-align: left;">${log.details}</td></tr>`).join('');
     } catch (err) {
         console.error(err);
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 20px; color: #f85149;">로그를 불러오는데 실패했습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #f85149;">로그를 불러오는데 실패했습니다.</td></tr>';
     }
 }
 
@@ -2791,26 +2819,6 @@ function getLogCategory(action) {
 
     // 나머지는 운영관리(maint)로 간주 (ADD_MAINTENANCE, ADD_LOG 등)
     return 'maint';
-}
-
-async function clearSystemLogs() {
-    if (confirm('모든 시스템 로그를 삭제하시겠습니까?')) {
-        try {
-            const response = await fetch('/api/logs/clear', {
-                method: 'POST',
-                headers: { 'X-CSRFToken': getCookie('csrf_token') }
-            });
-            const data = await response.json();
-            if (data.status === 'success') {
-                renderSystemLogs();
-            } else {
-                alert(data.message || '로그 삭제 실패');
-            }
-        } catch (err) {
-            console.error(err);
-            alert('로그 삭제 중 오류가 발생했습니다.');
-        }
-    }
 }
 
 /* ==========================================================================
@@ -3017,7 +3025,7 @@ function openNextScheduleModal(options) {
 
             // [수정] 항목을 명시적으로 선택하지 않아도 기본값('장비 점검')으로 다음 예정일이 무사히 등록되도록 변경
             if (selectedItems.length === 0) {
-               selectedItems.push({ content: '내용 없음', cost: '유상' });
+                selectedItems.push({ content: '내용 없음', cost: '유상' });
             }
 
             const key = `details_${site}_${equip}`;
@@ -3198,7 +3206,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     const parentRow = createRow(parentLog, '최초', '#238636', true);
     parentRow.classList.add('active-row');
     tbody.appendChild(parentRow);
-    
+
     // 팝업 열릴 때 부모의 상태를 우선 표시
     if (issueShareCb) issueShareCb.checked = !!parentLog.isIssueShared;
 
@@ -3206,13 +3214,13 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     childLogs.forEach((log, idx) => {
         tbody.appendChild(createRow(log, `추가 ${idx + 1}`, '#1f6feb', false));
     });
-    
+
     // 체크박스 클릭(변경) 이벤트 바인딩
     if (issueShareCb) {
         const newCb = issueShareCb.cloneNode(true);
         issueShareCb.parentNode.replaceChild(newCb, issueShareCb);
         issueShareCb = document.getElementById('extra-work-issue-share');
-        
+
         issueShareCb.addEventListener('change', (e) => {
             const isChecked = e.target.checked;
             const data = JSON.parse(localStorage.getItem(key)) || {};

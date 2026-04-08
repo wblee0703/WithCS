@@ -89,16 +89,25 @@
 
     <!-- 시스템 로그 모달 -->
     <div id="log-modal" class="modal-overlay" style="display: none;">
-        <div class="modal-window">
+        <div class="modal-window" style="width: 1050px;">
             <div class="modal-header">
                 <h3>시스템 로그</h3>
                 <button class="btn-del-sm" id="btn-close-modal">✕</button>
             </div>
-            <div class="log-filter-bar">
-                <button class="btn-filter active" data-filter="all">전체</button>
-                <button class="btn-filter" data-filter="common">공통</button>
-                <button class="btn-filter" data-filter="setup">장비셋업</button>
-                <button class="btn-filter" data-filter="maint">운영관리</button>
+            <div class="log-filter-bar" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;">
+                <div style="display: flex; gap: 5px;">
+                    <!-- [수정] 전체 버튼 제거, 복수 선택을 위해 모두 활성화된 상태로 시작, Admin 추가 -->
+                    <button class="btn-filter active" data-filter="common">공통</button>
+                    <button class="btn-filter active" data-filter="setup">장비셋업</button>
+                    <button class="btn-filter active" data-filter="maint">운영관리</button>
+                    <button class="btn-filter active" data-filter="admin">Admin</button>
+                </div>
+                <div style="display: flex; gap: 5px; align-items: center;">
+                    <input type="date" id="syslog-filter-start" class="input-dark" style="padding: 4px 6px; font-size: 12px; height: 26px;">
+                    <span style="color: #8b949e; font-size: 12px;">~</span>
+                    <input type="date" id="syslog-filter-end" class="input-dark" style="padding: 4px 6px; font-size: 12px; height: 26px;">
+                    <input type="text" id="syslog-filter-search" class="input-dark" placeholder="행동, 대상, 상세 내용 검색" autocomplete="off" style="padding: 4px 8px; font-size: 12px; width: 220px; height: 26px; margin-left: 5px;">
+                </div>
             </div>
             <div class="modal-body">
                 <div class="data-table-wrapper">
@@ -108,15 +117,13 @@
                                 <th style="width: 180px;">시간</th>
                                 <th style="width: 150px;">행동</th>
                                 <th style="width: 150px;">대상</th>
+                                <th style="width: 120px;">작업자</th>
                                 <th>상세</th>
                             </tr>
                         </thead>
                         <tbody id="system-log-body"></tbody>
                     </table>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-gray" id="btn-clear-logs">로그 비우기</button>
             </div>
         </div>
     </div>
