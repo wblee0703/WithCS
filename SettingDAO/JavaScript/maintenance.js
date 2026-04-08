@@ -955,6 +955,8 @@ function renderLogs() {
             const cb = issueShareCell.querySelector('.issue-share-checkbox');
             if (cb) {
                 cb.checked = isShared;
+                const userRole = sessionStorage.getItem('userRole');
+                cb.disabled = (userRole !== 'admin' && userRole !== 'superadmin');
                 cb.onclick = (e) => {
                     e.stopPropagation();
                     window.toggleIssueShare(log.id, e.target.checked);

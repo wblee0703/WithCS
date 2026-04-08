@@ -1317,7 +1317,10 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         memoInput.disabled = false;
         if (mdInput) mdInput.disabled = false;
         dateField.disabled = false;
-        if (issueShareCb && !item.originalLogId) issueShareCb.disabled = false;
+        if (issueShareCb && !item.originalLogId) {
+            const userRole = sessionStorage.getItem('userRole');
+            issueShareCb.disabled = (userRole !== 'admin' && userRole !== 'superadmin');
+        }
     }
 
     if (issueShareCb) {
@@ -1327,7 +1330,8 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             issueShareCb.disabled = true;
         } else {
             issueShareCb.checked = !!item.isIssueShared;
-            issueShareCb.disabled = false;
+            const userRole = sessionStorage.getItem('userRole');
+            issueShareCb.disabled = isCompleted || (userRole !== 'admin' && userRole !== 'superadmin');
         }
     }
 
@@ -2398,7 +2402,8 @@ function cancelScheduleCompletion() {
         dateInput.value = logDate; // 완료일 -> 예정일로 설정
     }
     if (issueShareCb) {
-        issueShareCb.disabled = false;
+        const userRole = sessionStorage.getItem('userRole');
+        issueShareCb.disabled = (userRole !== 'admin' && userRole !== 'superadmin');
         issueShareCb.checked = false;
     }
 

@@ -3278,6 +3278,9 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         issueShareCb.parentNode.replaceChild(newCb, issueShareCb);
         issueShareCb = document.getElementById('extra-work-issue-share');
 
+        const userRole = sessionStorage.getItem('userRole');
+        issueShareCb.disabled = (userRole !== 'admin' && userRole !== 'superadmin');
+
         issueShareCb.addEventListener('change', (e) => {
             const isChecked = e.target.checked;
             const data = JSON.parse(localStorage.getItem(key)) || {};
