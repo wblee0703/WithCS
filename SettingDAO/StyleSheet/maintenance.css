@@ -180,7 +180,7 @@ tr.dragging {
 
 /* 로그 테이블 설정 */
 #log-list-wrapper .data-table {
-    table-layout: fixed;
+    flex: 1;
 }
 
 /* 점검일 */
@@ -200,7 +200,7 @@ tr.dragging {
 
 /* 내용 */
 #log-list-wrapper .data-table th:nth-child(4) {
-    width: 200px;
+    width: auto;
 }
 
 /* [요청] 점검 이력의 '내용' 컬럼을 좌측 정렬하여 가독성 향상 */
@@ -212,7 +212,13 @@ tr.dragging {
 
 /* 추가작업 (신규) */
 #log-list-wrapper .data-table th:nth-child(5) {
-    width: 80px;
+    width: 90px;
+}
+
+/* 이슈 공유 (신규) */
+#log-list-wrapper .data-table th.th-issue-share,
+#log-list-wrapper .data-table th:nth-child(6) {
+    width: 70px;
 }
 
 /* [요청] 추가작업 버튼 표시를 위해 5번째 컬럼 스타일 조정 */
@@ -222,18 +228,10 @@ tr.dragging {
     text-overflow: clip; /* 말줄임표 제거 */
 }
 
-/* 관리 */
-
-/* 로그 테이블 관리 모드 (삭제 컬럼 제어) */
-#log-list-wrapper .data-table th:nth-child(6),
-#log-list-wrapper .data-table td:nth-child(6) {
-    display: none;
-    width: 70px;
-}
-
-#log-list-wrapper .data-table.management-active th:nth-child(6),
-#log-list-wrapper .data-table.management-active td:nth-child(6) {
-    display: table-cell;
+/* [요청] 장비 점검 이력 톱니바퀴 및 관리 기능 컬럼 숨김 처리 */
+#btn-log-settings,
+#log-list-wrapper .manage-col {
+    display: none !important;
 }
 
 .log-list-container {
@@ -982,7 +980,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #log-list-wrapper .data-table th:nth-child(2) { width: 60px !important; } /* 구분 */
     #log-list-wrapper .data-table th:nth-child(3) { width: 120px !important; } /* 세부구분 */
     #log-list-wrapper .data-table th:nth-child(4) { width: 160px !important; } /* 내용 */
-    #log-list-wrapper .data-table th:nth-child(5) { width: 80px !important; } /* 추가작업 */
+    #log-list-wrapper .data-table th:nth-child(5) { width: 90px !important; } /* 추가작업 */
+    #log-list-wrapper .data-table th:nth-child(6) { width: 60px !important; } /* 이슈공유 */
 
     /* [요청] 모바일에서 '내용' 컬럼 좌측 정렬 및 여백 조정 */
     #log-list-wrapper .data-table td:nth-child(4) {

@@ -1290,10 +1290,34 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             if (item.detailType === '일정변경') cancelBtn.style.display = 'none';
             else cancelBtn.style.display = 'block';
         }
+        // [추가] 완료된 작업은 모든 필드 수정 불가 (Read-only)
+        workerInput.disabled = true;
+        if (trigger) {
+            trigger.classList.add('disabled');
+            trigger.style.opacity = '0.6';
+            trigger.style.pointerEvents = 'none';
+        }
+        memoInput.disabled = true;
+        if (mdInput) mdInput.disabled = true;
+        dateField.disabled = true;
+        if (issueShareCb && !item.originalLogId) issueShareCb.disabled = true; // 부모가 강제하는 경우가 아니면 잠금
+        if (saveBtn) saveBtn.style.display = 'none';
     } else {
         completeBtn.style.display = 'block';
         completeBtn.textContent = '작업 완료';
         if (cancelBtn) cancelBtn.style.display = 'none';
+        
+        // [추가] 취소 후 돌아왔을 때 필드 다시 활성화
+        workerInput.disabled = false;
+        if (trigger) {
+            trigger.classList.remove('disabled');
+            trigger.style.opacity = '1';
+            trigger.style.pointerEvents = 'auto';
+        }
+        memoInput.disabled = false;
+        if (mdInput) mdInput.disabled = false;
+        dateField.disabled = false;
+        if (issueShareCb && !item.originalLogId) issueShareCb.disabled = false;
     }
 
     if (issueShareCb) {
@@ -1311,6 +1335,16 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
     // 항시 수정 렌더링 (모든 상태)
     buildDetailDropdown(item, site, equip);
+    
+    // [추가] 항목 드롭다운 트리거 비활성화 (완료된 작업)
+    if (isCompleted) {
+        const contentTrigger = document.getElementById('detail-content-dropdown-wrapper')?.querySelector('.log-select-trigger');
+        if (contentTrigger) {
+            contentTrigger.classList.add('disabled');
+            contentTrigger.style.pointerEvents = 'none';
+        }
+        if (contentInput) contentInput.disabled = true;
+    }
     
     let currentContentStr = '';
     const dWrapper = document.getElementById('detail-content-dropdown-wrapper');

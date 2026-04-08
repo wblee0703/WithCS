@@ -2759,6 +2759,26 @@ async function renderSystemLogs() {
 
         const logs = await response.json();
 
+        // [추가] 장비 맵 생성 (대상 정보 포맷팅 및 검색 용도)
+        const dataMap = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('device_data')) || {};
+        const equipInfoMap = {};
+        const equipKeys = new Set();
+        const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+        
+        Object.keys(dataMap).forEach(site => {
+            if (dataMap[site]) {
+                dataMap[site].forEach(equip => {
+                    equipKeys.add(equip);
+                    const key = `details_${site}_${equip}`;
+                    const detailData = JSON.parse(localStorage.getItem(key)) || {};
+                    const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+                    if (custName) {
+                        equipInfoMap[equip] = custName;
+                    }
+                });
+            }
+        });
+
         // [수정] 필터 입력값 가져오기
         const startDate = document.getElementById('syslog-filter-start') ? document.getElementById('syslog-filter-start').value : '';
         const endDate = document.getElementById('syslog-filter-end') ? document.getElementById('syslog-filter-end').value : '';
@@ -2777,7 +2797,8 @@ async function renderSystemLogs() {
             }
             
             if (keyword) {
-                const searchStr = `${log.action} ${log.target} ${log.worker || ''} ${log.details}`.toLowerCase();
+                const custName = equipInfoMap[log.target] || '';
+                const searchStr = `${log.action} ${log.target} ${custName} ${log.worker || ''} ${log.details}`.toLowerCase();
                 if (!searchStr.includes(keyword)) return false;
             }
             
@@ -2789,7 +2810,43 @@ async function renderSystemLogs() {
             return;
         }
 
-        tbody.innerHTML = filteredLogs.map(log => `<tr><td>${new Date(log.timestamp).toLocaleString()}</td><td><span class="badge pm" style="background: #30363d;">${log.action}</span></td><td>${log.target}</td><td style="text-align: center;">${escapeHtml(log.worker)}</td><td style="text-align: left;">${log.details}</td></tr>`).join('');
+        tbody.innerHTML = filteredLogs.map(log => {
+            let displayTarget = escapeHtml(log.target);
+            
+            let isEquip = equipKeys.has(log.target);
+            if (!isEquip && log.target) {
+                const modelPart = log.target.split('::')[0];
+                if (equipmentModels.some(m => m.name === modelPart)) {
+                    isEquip = true;
+                }
+            }
+            
+            if (isEquip) {
+                const parts = log.target.split('::');
+                const model = parts[0];
+                const serial = parts.length > 1 ? parts[1] : '';
+                
+                const matchedModel = equipmentModels.find(m => m.name === model);
+                const displayModel = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : model;
+                
+                const custName = equipInfoMap[log.target] || '';
+                
+                let subInfo = '';
+                if (custName) subInfo = `[${escapeHtml(custName)}]`;
+                else if (serial) subInfo = `[${escapeHtml(serial)}]`;
+                
+                if (subInfo) displayTarget = `<div>${escapeHtml(displayModel)}</div><div style="font-size: 11px; color: #3fb950; margin-top: 2px; font-weight: bold;">${subInfo}</div>`;
+                else displayTarget = escapeHtml(displayModel);
+            }
+            
+            return `<tr>
+                <td>${new Date(log.timestamp).toLocaleString()}</td>
+                <td style="text-align: center;">${escapeHtml(log.worker)}</td>
+                <td><span class="badge pm" style="background: #30363d;">${log.action}</span></td>
+                <td>${displayTarget}</td>
+                <td style="text-align: left;">${log.details}</td>
+            </tr>`;
+        }).join('');
     } catch (err) {
         console.error(err);
         tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color: #f85149;">로그를 불러오는데 실패했습니다.</td></tr>';
