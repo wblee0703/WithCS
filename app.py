@@ -265,6 +265,9 @@ file_handler.addFilter(RequestInfoFilter())
 file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s [%(ip)s] %(method)s %(url)s: %(message)s [in %(pathname)s:%(lineno)d]'))
 file_handler.setLevel(logging.INFO) # [수정] INFO 레벨 로그도 기록하도록 변경
 
+# [추가] Flask-WTF 모듈 자체에서 뱉어내는 불필요한 CSRF INFO 로그 숨김 (로그 도배 방지)
+logging.getLogger('flask_wtf.csrf').setLevel(logging.WARNING)
+
 app.logger.addHandler(file_handler)
 app.logger.setLevel(logging.INFO) # [수정] INFO 레벨 로그도 기록하도록 변경
 # app.logger.warning('Server startup') # 불필요한 시작 로그 제거
@@ -970,6 +973,8 @@ def admin_crud():
         return jsonify({"status": "success"})
     except Exception as e:
         db.session.rollback()
+        # [추가] 500 에러 발생 시 정확한 원인 파악을 위해 상세 에러 로그 기록
+        app.logger.error(f"Admin CRUD Error ({domain} - {action}): {str(e)}", exc_info=True)
         return jsonify({"status": "fail", "message": str(e)}), 500
 
 # [추가] 유지관리 및 캘린더 장비 이력 100% DB 동기화 전용 트랜잭션 API
@@ -1033,6 +1038,7 @@ def history_transaction():
         return jsonify({"status": "success"})
     except Exception as e:
         db.session.rollback()
+        app.logger.error(f"History Transaction Error: {str(e)}", exc_info=True)
         return jsonify({"status": "fail", "message": str(e)}), 500
 
 # [추가] 셋업 화면 데이터 전용 100% DB 동기화 API
@@ -1064,6 +1070,7 @@ def sync_setup_equip():
         return jsonify({"status": "success"})
     except Exception as e:
         db.session.rollback()
+        app.logger.error(f"Setup DB Sync Error: {str(e)}", exc_info=True)
         return jsonify({"status": "fail", "message": str(e)}), 500
 
 # ------------------------------------------------------------------------------
@@ -1161,7 +1168,7 @@ if __name__ == '__main__':
     try:
         from waitress import serve
         print(f" * Serving with Waitress on http://0.0.0.0:{port}")
-        serve(app, host='0.0.0.0', port=port, threads=6)
+        serve(app, host='0.0.0.0', port=port, threads=12) # [수정] 동시 처리 스레드 수 증가 (Queue depth 경고 방지)
     except ImportError:
         # Waitress가 설치되지 않은 경우 기존 Flask 개발 서버 사용
         print(" * Waitress not found. Running with basic Flask server.")
