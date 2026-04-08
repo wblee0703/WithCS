@@ -961,6 +961,20 @@ function setupDataManagementEvents() {
     if(sysLogStart) sysLogStart.addEventListener('change', renderSystemLogs);
     if(sysLogEnd) sysLogEnd.addEventListener('change', renderSystemLogs);
     if(sysLogSearch) sysLogSearch.addEventListener('input', renderSystemLogs);
+
+    // [추가] 시스템 로그 검색 필터 초기화 버튼
+    const btnSysLogReset = document.getElementById('btn-syslog-reset');
+    if (btnSysLogReset) {
+        btnSysLogReset.addEventListener('click', () => {
+            if (sysLogStart) sysLogStart.value = '';
+            if (sysLogEnd) sysLogEnd.value = '';
+            if (sysLogSearch) sysLogSearch.value = '';
+            currentLogFilters = ['common', 'setup', 'maint', 'admin'];
+            const filters = document.querySelectorAll('#log-modal .btn-filter');
+            filters.forEach(btn => btn.classList.add('active'));
+            renderSystemLogs();
+        });
+    }
 }
 
 function setupResizers() {

@@ -687,6 +687,18 @@ button {
     border-color: #1f6feb;
 }
 
+/* [추가] 시스템 로그 모달 디자인 통일 */
+#log-modal .data-table {
+    min-width: 100%; /* 다른 페이지의 min-width 오버라이드 */
+}
+
+#log-modal .data-table td {
+    padding: 8px 10px; /* 공통 패딩 강제 */
+    white-space: normal; /* 텍스트 줄바꿈 허용 */
+    overflow: visible;   /* 내용 잘림 방지 */
+    text-overflow: clip; /* 말줄임표 제거 */
+}
+
 /* ==========================================================================
    11. 유틸리티 및 권한 (Utilities & User Roles)
    ========================================================================== */

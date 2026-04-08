@@ -195,7 +195,7 @@ function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null, 
 
             if (typeof addSystemLog === 'function') {
                 const action = isDelete ? 'DELETE_SCHEDULE' : 'ADD_SCHEDULE';
-                addSystemLog(action, equip, `Date: ${dateStr}, Content: ${item.content}`);
+                addSystemLog(action, equip, `예정일: ${dateStr}, 내용: ${item.content}`);
             }
             return true;
         }
@@ -758,6 +758,8 @@ function openCalendarPopup(dateStr, events) {
 
                             renderCalendar();
                             if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+                            if (typeof renderDetails === 'function') renderDetails();
+                            if (typeof renderLogs === 'function') renderLogs();
 
                             const dateStr = document.getElementById('popup-date-title').textContent;
                             const allEvents = getScheduleForCalendar();
@@ -822,6 +824,8 @@ function setupScheduleModal() {
                 modal.style.display = 'none';
                 if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
                 renderCalendar();
+                if (typeof renderDetails === 'function') renderDetails();
+                if (typeof renderLogs === 'function') renderLogs();
             }
         };
     }
@@ -834,6 +838,8 @@ function setupScheduleModal() {
                 modal.style.display = 'none';
                 if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
                 renderCalendar();
+                if (typeof renderDetails === 'function') renderDetails();
+                if (typeof renderLogs === 'function') renderLogs();
             }
         };
     }
@@ -1961,6 +1967,8 @@ function saveDetailChanges() {
 
     renderCalendar();
     if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+    if (typeof renderDetails === 'function') renderDetails();
+    if (typeof renderLogs === 'function') renderLogs();
     return true;
 }
 
@@ -1982,6 +1990,8 @@ function updateScheduleDateFromDetail() {
     }
     renderCalendar();
     if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+    if (typeof renderDetails === 'function') renderDetails();
+    if (typeof renderLogs === 'function') renderLogs();
 
     // [추가] 캘린더 팝업이 열려있다면 내용 갱신 (변경된 항목 제거)
     const popup = document.getElementById('calendar-popup');
@@ -2168,7 +2178,7 @@ function completeScheduleWork() {
     window.syncHistoryTransaction(site, equip, payload);
 
     if (typeof addSystemLog === 'function') {
-        addSystemLog('COMPLETE_SCHEDULE', equip, `Content: ${combinedContent}`);
+        addSystemLog('COMPLETE_SCHEDULE', equip, `작업일: ${completeDate}, 내용: ${combinedContent}`);
     }
 
     document.getElementById('event-detail-modal').style.display = 'none';
@@ -2206,6 +2216,8 @@ function completeScheduleWork() {
 window.refreshCalendarPopupAfterCompletion = function () {
     renderCalendar();
     if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+    if (typeof renderDetails === 'function') renderDetails();
+    if (typeof renderLogs === 'function') renderLogs();
 
     const popup = document.getElementById('calendar-popup');
     if (popup && popup.style.display !== 'none') {
@@ -2330,7 +2342,7 @@ function cancelScheduleCompletion() {
     window.syncHistoryTransaction(site, equip, payload);
 
     if (typeof addSystemLog === 'function') {
-        addSystemLog('CANCEL_COMPLETION', equip, `Reverted: ${logContent}`);
+        addSystemLog('CANCEL_COMPLETION', equip, `예정일: ${logDate}, 내용: ${logContent}`);
     }
 
     alert('작업 완료가 취소되었습니다.');
@@ -2339,6 +2351,8 @@ function cancelScheduleCompletion() {
     // 배경 데이터 및 캘린더 갱신
     renderCalendar();
     if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+    if (typeof renderDetails === 'function') renderDetails();
+    if (typeof renderLogs === 'function') renderLogs();
 
     // [추가] 캘린더 팝업(예정 목록)이 열려있다면 내용 갱신
     const popup = document.getElementById('calendar-popup');
@@ -3196,7 +3210,7 @@ function confirmRegisterSchedule() {
         window.syncHistoryTransaction(site, equip, { maint_upserts: [newMaintItem] });
 
         if (typeof addSystemLog === 'function') {
-            addSystemLog('ADD_SCHEDULE_EXTRA', equip, `추가 작업 예정 등록 (LogID: ${window.currentAddWorkLogId})`);
+            addSystemLog('ADD_SCHEDULE_EXTRA', equip, `예정일: ${dateStr}, 내용: ${content} (추가 작업 등록)`);
         }
 
         document.getElementById('register-schedule-modal').style.display = 'none';
@@ -3284,7 +3298,7 @@ function confirmRegisterSchedule() {
         localStorage.setItem(key, JSON.stringify(data));
         window.syncHistoryTransaction(site, equip, payload);
         if (typeof addSystemLog === 'function') {
-            addSystemLog('ADD_SCHEDULE', equip, `Date: ${dateStr}, Type: ${type}, Content: ${content}`);
+            addSystemLog('ADD_SCHEDULE', equip, `예정일: ${dateStr}, 구분: ${type}, 내용: ${content}`);
         }
     }
 
@@ -3295,6 +3309,8 @@ function confirmRegisterSchedule() {
 
     renderCalendar();
     if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+    if (typeof renderDetails === 'function') renderDetails();
+    if (typeof renderLogs === 'function') renderLogs();
     const popup = document.getElementById('calendar-popup');
     if (popup) popup.style.display = 'none';
 
@@ -4040,6 +4056,8 @@ window.handleCalendarDrop = function (e, newDate) {
             });
             renderCalendar();
             if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+            if (typeof renderDetails === 'function') renderDetails();
+            if (typeof renderLogs === 'function') renderLogs();
         }
     } catch (err) {
         console.error('Drop error:', err);
@@ -4070,7 +4088,7 @@ window.confirmMonthSchedule = function (site, year, month, count) {
     }
 
     if (typeof addSystemLog === 'function') {
-        addSystemLog('CONFIRM_SCHEDULE', yyyyMm, `[${site}] 작업수 ${count}건 확정`);
+        addSystemLog('CONFIRM_SCHEDULE', site, `${year}년 ${month + 1}월 작업 확정 (작업수: ${count}건)`);
     }
     renderCalendar();
 };
@@ -4102,7 +4120,7 @@ window.cancelMonthScheduleConfirm = function (site, year, month) {
         }
 
         if (typeof addSystemLog === 'function') {
-            addSystemLog('CANCEL_CONFIRM_SCHEDULE', yyyyMm, `[${site}] 작업 확정 취소`);
+            addSystemLog('CANCEL_CONFIRM_SCHEDULE', site, `${year}년 ${month + 1}월 작업 확정 취소`);
         }
         renderCalendar();
     }
