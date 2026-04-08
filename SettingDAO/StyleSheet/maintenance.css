@@ -705,6 +705,46 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     /* [요청] 모바일 소분류 제목 글자 크기 축소 */
     .card-header h3 {
         font-size: 12px;
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        white-space: nowrap;
+    }
+
+    /* [요청] 카드 헤더 요소들(검색창, 작업등록, 접기버튼, 항목건수 등) 나란히 배치되도록 최적화 */
+    .card-header {
+        flex-wrap: nowrap !important;
+        padding: 0 8px !important;
+        gap: 4px !important;
+    }
+    
+    #maint-count {
+        margin-left: auto !important; /* 항목 건수를 우측 버튼들과 나란히 붙도록 밀어냄 */
+        margin-right: 4px;
+        flex-shrink: 0;
+    }
+
+    #log-window .card-header > div,
+    #maint-window .card-header > div {
+        flex: 0 0 auto;
+        display: flex !important;
+        align-items: center;
+        gap: 4px !important;
+    }
+
+    /* 장비 점검 이력 검색창 크기 절반 수준으로 축소 */
+    #log-search {
+        width: 100px !important;
+        height: 26px !important;
+        font-size: 11px !important;
+        padding: 2px 6px !important;
+    }
+
+    #btn-open-register-task {
+        height: 26px !important;
+        padding: 0 8px !important;
+        font-size: 11px !important;
     }
 
     .breadcrumb {
@@ -848,6 +888,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     /* [요청] 모바일에서 카드 접기 버튼 표시 */
     .btn-collapse {
         display: block !important;
+        flex-shrink: 0; /* 텍스트 공간이 부족해도 아이콘은 찌그러지지 않도록 보호 */
     }
 
     /* [요청] 모바일에서 장비 점검 이력(#log-window)을 최상단으로 배치 */

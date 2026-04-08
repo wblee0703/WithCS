@@ -569,6 +569,7 @@ function renderEquipDetailList(data) {
             <div style="flex: 1; display: flex; align-items: center; min-width: 0;">
                 <span class="status-name" title="${info.fullTitle}" style="margin-right: 0;">${info.mainInfo}${info.subInfo ? `<span class="equip-serial">${info.subInfo}</span>` : ''}</span>
             </div>
+            <button class="btn-shortcut" style="margin-left: 10px;">이동</button>
         `;
         li.onclick = () => {
             if (selectedSerialFilter === item.equip) {
@@ -584,6 +585,14 @@ function renderEquipDetailList(data) {
             updateMaintenanceDashboard();
             renderCalendar();
         };
+        
+        const btn = li.querySelector('.btn-shortcut');
+        if (btn) {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                location.href = `maintenance.html?site=${encodeURIComponent(item.site)}&equip=${encodeURIComponent(item.equip)}`;
+            };
+        }
         listEl.appendChild(li);
     });
 }
@@ -1193,9 +1202,15 @@ function populateEquipmentIssues() {
             const details = JSON.parse(localStorage.getItem(key)) || {};
 
             if (details.logs) {
+                const addedIssueIds = new Set(); // 중복 방지용 Set
                 details.logs.forEach(log => {
                     if (log.isIssueShared === true) {
-                        issues.push({ site, equipKey, log });
+                        const familyId = log.originalLogId || log.id;
+                        if (!addedIssueIds.has(familyId)) {
+                            const parentLog = details.logs.find(l => l.id == familyId) || log;
+                            issues.push({ site, equipKey, log: parentLog });
+                            addedIssueIds.add(familyId);
+                        }
                     }
                 });
             }

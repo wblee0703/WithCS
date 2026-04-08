@@ -1975,12 +1975,6 @@ function updateScheduleDateFromDetail() {
 function completeScheduleWork() {
     if (!currentDetailTarget || currentDetailTarget.isCompleted) return;
 
-    // [추가] 수정사항이 저장되지 않은 경우 완료 진행을 차단하고 팝업 알림
-    if (hasDetailUnsavedChanges()) {
-        alert('수정된 내용이 저장되지 않았습니다. 먼저 [저장] 버튼을 눌러 변경사항을 저장해주세요.');
-        return;
-    }
-
     const worker = document.getElementById('detail-worker').value.trim();
     const mdInput = document.getElementById('detail-md');
     const md = mdInput ? mdInput.value.trim() : '';
@@ -1992,8 +1986,16 @@ function completeScheduleWork() {
     if (!md) return alert('공수(M/D)를 입력해주세요.');
     if (!memo) return alert('점검 결과 / 메모를 입력해주세요.');
 
-    // [추가] 작업 완료 전 확인 팝업
-    if (!confirm('해당 작업을 완료 처리하시겠습니까?')) return;
+    // [수정] 저장되지 않은 변경사항 확인 및 자동 저장 후 완료 처리
+    if (hasDetailUnsavedChanges()) {
+        if (confirm('수정된 내용이 저장되지 않았습니다. 변경사항을 저장 후 완료 처리하시겠습니까?')) {
+            if (!saveDetailChanges()) return;
+        } else {
+            return;
+        }
+    } else {
+        if (!confirm('해당 작업을 완료 처리하시겠습니까?')) return;
+    }
 
     localStorage.setItem('lastWorkerName', worker);
 
@@ -4329,6 +4331,9 @@ function doTaskSearch() {
                 const addBtn = document.createElement('button');
                 addBtn.className = 'btn-blue-sm';
                 addBtn.textContent = '추가';
+                addBtn.style.width = '50px';
+                addBtn.style.padding = '4px 0';
+                addBtn.style.textAlign = 'center';
                 addBtn.onclick = (e) => {
                     e.stopPropagation();
                     const presetData = { type: logItem.type, detailType: logItem.detailType, detailType2: logItem.detailType2, content: '', worker: logItem.worker || '' };
@@ -4348,6 +4353,9 @@ function doTaskSearch() {
                     const viewBtn = document.createElement('button');
                     viewBtn.className = 'btn-green-sm';
                     viewBtn.textContent = '확인';
+                viewBtn.style.width = '50px';
+                viewBtn.style.padding = '4px 0';
+                viewBtn.style.textAlign = 'center';
                     viewBtn.onclick = (e) => {
                         e.stopPropagation();
                         if (typeof window.openExtraWorkHistoryModal === 'function') window.openExtraWorkHistoryModal(site, equip, targetLogId);
