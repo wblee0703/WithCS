@@ -35,7 +35,7 @@ body {
 }
 
 /* ==========================================================================
-   2. 헤더 및 네비게이션 (Header)
+   2. 헤더 및 네비게이션 (Header & Navigation)
    ========================================================================== */
 .header {
     height: 100px;
@@ -53,7 +53,6 @@ body {
     height: 50px;
     width: auto;
     cursor: pointer;
-    /* [추가] 클릭 가능 표시 */
 }
 
 .nav-links {
@@ -90,7 +89,6 @@ body {
     cursor: pointer;
 }
 
-/* [추가] 세션 타이머 컨테이너 */
 .session-timer-container {
     display: flex;
     align-items: center;
@@ -99,7 +97,6 @@ body {
     font-weight: bold;
 }
 
-/* [추가] 데스크톱 화면(951px 이상)에서는 햄버거 메뉴 옆의 모바일용 타이머를 강제로 숨김 */
 @media (min-width: 951px) {
     .mobile-header-timer {
         display: none !important;
@@ -107,16 +104,36 @@ body {
 }
 
 /* ==========================================================================
-   3. 레이아웃 (Layout - Shared with Maintenance)
+   3. 전체 레이아웃 (Layout)
    ========================================================================== */
 .dashboard-wrapper {
     display: flex;
     height: calc(100vh - 100px);
-    /* 헤더 제외 전체 높이 */
     padding: 15px;
     gap: 15px;
 }
 
+.dashboard-main {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.detail-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   4. 사이드바 및 리스트 (Sidebar & List)
+   ========================================================================== */
 .dashboard-sidebar {
     width: 300px;
     display: flex;
@@ -124,6 +141,12 @@ body {
     gap: 15px;
     min-height: 0;
     flex-shrink: 0;
+}
+
+@media (min-width: 1400px) {
+    .dashboard-sidebar {
+        width: 300px;
+    }
 }
 
 .sidebar-group {
@@ -161,7 +184,6 @@ body {
     flex: 1;
 }
 
-/* 브레드크럼 (경로 표시) */
 .breadcrumb {
     color: #58a6ff;
     font-weight: bold;
@@ -169,65 +191,6 @@ body {
     margin-bottom: 8px;
 }
 
-/* Resizers */
-.resizer {
-    width: 5px;
-    cursor: col-resize;
-    background-color: transparent;
-    transition: background-color 0.2s;
-    flex-shrink: 0;
-    margin: 0 -2px;
-    z-index: 10;
-}
-
-.hamburger-menu,
-.mobile-nav,
-.mobile-page-title,
-.nav-overlay {
-    display: none;
-    /* 데스크탑에서는 숨김 */
-}
-
-.resizer:hover,
-.resizer.resizing {
-    background-color: #58a6ff;
-}
-
-.resizer-vertical {
-    height: 5px;
-    cursor: row-resize;
-    background-color: transparent;
-    transition: background-color 0.2s;
-    flex-shrink: 0;
-    z-index: 10;
-}
-
-.resizer-vertical:hover,
-.resizer-vertical.resizing {
-    background-color: #58a6ff;
-}
-
-.dashboard-main {
-    flex: 1;
-    display: flex;
-    flex-direction: row;
-    gap: 15px;
-    min-width: 0;
-    min-height: 0;
-    overflow: hidden;
-}
-
-.detail-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-}
-
-/* ==========================================================================
-   4. 사이드바 컴포넌트 (Sidebar Components)
-   ========================================================================== */
 .list-data {
     list-style: none;
     overflow-y: auto;
@@ -281,7 +244,7 @@ body {
 }
 
 .item-subtext {
-    color: #3fb950; /* 녹색 */
+    color: #3fb950;
     font-weight: bold;
     font-size: 13px;
     margin-left: 5px;
@@ -296,7 +259,6 @@ body {
     padding: 2px 5px;
 }
 
-/* Icons & Buttons in List */
 .icons {
     display: flex;
     align-items: center;
@@ -310,21 +272,6 @@ body {
 
 .list-data.edit-active .icons {
     display: flex;
-}
-
-.btn-list-setting {
-    background: none;
-    border: none;
-    color: #8b949e;
-    cursor: pointer;
-    font-size: 12px;
-    margin-left: 5px;
-    padding: 0;
-}
-
-.btn-list-setting:hover,
-.btn-list-setting.active {
-    color: #e6edf3;
 }
 
 .icons span {
@@ -348,7 +295,85 @@ body {
     background: #30363d;
 }
 
-/* Inputs */
+/* ==========================================================================
+   5. 공통 데이터 테이블 (Data Table)
+   ========================================================================== */
+.data-table-wrapper {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    color: #8b949e;
+    font-size: 12px;
+    text-align: center;
+    padding: 10px;
+    border-bottom: 1px solid #30363d;
+    position: sticky;
+    top: 0;
+    background: #161b22;
+    z-index: 1;
+}
+
+.data-table td {
+    padding: 8px 10px;
+    font-size: 13px;
+    border-bottom: 1px solid #21262d;
+    text-align: center;
+}
+
+/* ==========================================================================
+   6. 폼 및 입력 요소 (Forms & Inputs)
+   ========================================================================== */
+input,
+textarea {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+textarea {
+    width: 100%;
+    flex: 1;
+    resize: none;
+    padding: 15px;
+    line-height: 1.3;
+}
+
+input:disabled {
+    opacity: 0.5;
+    filter: grayscale(1);
+    pointer-events: none;
+    border: 1px solid #21262d;
+}
+
+.form-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.form-col {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+}
+
+.form-row input {
+    flex: 1;
+    min-width: 120px;
+}
+
 .search-input {
     width: 100%;
     margin-top: 10px;
@@ -400,8 +425,28 @@ body {
     min-width: 0;
 }
 
+.autocomplete-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+}
+
+.form-row .autocomplete-wrapper {
+    flex: 1;
+    min-width: 0;
+}
+
+.item-cost-select {
+    width: 80px;
+    font-size: 11px;
+    padding: 2px;
+    margin-left: 5px;
+    color: #fff;
+    color-scheme: dark;
+}
+
 /* ==========================================================================
-   6. 모달 스타일 (Modal)
+   7. 모달 스타일 (Modals)
    ========================================================================== */
 .modal-overlay {
     position: fixed;
@@ -413,7 +458,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 1050; /* [수정] 모바일 햄버거 메뉴(1020)보다 위로 표시되도록 1000 -> 1050 */
+    z-index: 1050;
 }
 
 .modal-window {
@@ -457,20 +502,6 @@ body {
     background: #161b22;
 }
 
-/* [추가] 공통 자동완성 래퍼 (HOME 화면 제안박스 표시 오류 해결) */
-.autocomplete-wrapper {
-    position: relative;
-    width: 100%;
-    display: flex;
-}
-
-/* [추가] 폼 내 자동완성 래퍼가 flex 아이템으로 동작하도록 설정 */
-.form-row .autocomplete-wrapper {
-    flex: 1;
-    min-width: 0; /* Allow shrinking */
-}
-
-/* Modal Select */
 .modal-select {
     background: #0d1117;
     color: #fff;
@@ -480,12 +511,10 @@ body {
     flex: 1;
 }
 
-/* [추가] 계정 추가 모달 권한 선택창 너비 고정 */
 #new-user-role {
     flex: 0 0 150px;
 }
 
-/* Login Form inside Modal */
 .login-form {
     display: flex;
     flex-direction: column;
@@ -507,7 +536,6 @@ body {
     font-weight: bold;
 }
 
-/* [추가] 관리자 계정 삭제용 제안 박스 스타일 */
 .user-suggestion-list {
     position: absolute;
     bottom: 100%;
@@ -517,7 +545,6 @@ body {
     border: 1px solid #30363d;
     border-radius: 4px;
     max-height: 155px;
-    /* 약 5개 항목 높이 */
     overflow-y: auto;
     z-index: 1000;
     display: none;
@@ -527,9 +554,7 @@ body {
     box-sizing: border-box;
     box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.5);
     -webkit-overflow-scrolling: touch;
-    /* [요청] 모바일 터치 스크롤 개선 */
     overscroll-behavior: contain;
-    /* [요청] 스크롤 체인 현상 방지 */
 }
 
 .user-suggestion-item {
@@ -552,7 +577,6 @@ body {
     font-size: 11px;
 }
 
-/* [요청] 계정 관리 팝업창 크기 자동 조절 (여백 축소) */
 #user-modal .modal-window,
 #add-user-modal .modal-window {
     width: 500px !important;
@@ -560,14 +584,13 @@ body {
     min-height: 0 !important;
 }
 
-/* [추가] 계정 관리 모달 내부 내용(제안 박스 등)이 모달창 밖으로 튀어나올 수 있도록 오버플로우 허용 */
 #user-modal .modal-body,
 #add-user-modal .modal-body {
     overflow: visible !important;
 }
 
 /* ==========================================================================
-   7. 버튼 (Buttons)
+   8. 버튼 (Buttons)
    ========================================================================== */
 button {
     cursor: pointer;
@@ -578,165 +601,96 @@ button {
     flex-shrink: 0;
 }
 
-/* 색상별 버튼 스타일 */
-.btn-blue {
-    background: #1f6feb;
-    color: #fff;
-    padding: 6px 20px;
+.btn-blue { background: #1f6feb; color: #fff; padding: 6px 20px; }
+.btn-green { background: #238636; color: #fff; padding: 6px 20px; }
+.btn-orange { background: #d29922; color: #fff; padding: 6px 20px; }
+.btn-gray { background: #21262d; border: 1px solid #30363d; color: #fff; padding: 5px 15px; font-size: 12px; }
+
+.btn-blue-sm { background: #1f6feb; color: #fff; padding: 5px 15px; font-size: 12px; }
+.btn-green-sm { background: #238636; color: #fff; padding: 5px 15px; font-size: 12px; }
+.btn-orange-sm { background: #d29922; color: #fff; padding: 5px 15px; font-size: 12px; }
+.btn-header-setting { margin-left: 20px; padding: 2px 8px; font-size: 11px; }
+
+.btn-edit-sm { background: none; border: none; color: #8b949e; font-size: 14px; padding: 0 5px; cursor: pointer; }
+.btn-edit-sm:hover { color: #58a6ff; }
+.btn-del-sm { background: none; color: #f85149; font-size: 14px; padding: 0; display: inline-flex; align-items: center; }
+
+.btn-list-setting { background: none; border: none; color: #8b949e; cursor: pointer; font-size: 12px; margin-left: 5px; padding: 0; }
+.btn-list-setting:hover, .btn-list-setting.active { color: #e6edf3; }
+
+.btn-add { background: none; color: #3fb950; font-size: 24px; width: auto; padding: 0 8px; line-height: 1; }
+.btn-add:hover { color: #2ea043; }
+.btn-edit { background-color: #30363d; color: #c9d1d9; border: 1px solid #f0f6fc1a; padding: 4px 0; font-size: 12px; width: 50px; text-align: center; }
+.btn-del { background-color: #da3633; color: white; padding: 4px 8px; margin-left: 5px; font-size: 12px; }
+
+#btn-github-sync { display: none !important; }
+
+/* ==========================================================================
+   9. 리사이저 (Resizers)
+   ========================================================================== */
+.resizer {
+    width: 5px;
+    cursor: col-resize;
+    background-color: transparent;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+    margin: 0 -2px;
+    z-index: 10;
 }
 
-.btn-green {
-    background: #238636;
-    color: #fff;
-    padding: 6px 20px;
+.resizer:hover,
+.resizer.resizing {
+    background-color: #58a6ff;
 }
 
-.btn-orange {
-    background: #d29922;
-    color: #fff;
-    padding: 6px 20px;
+.resizer-vertical {
+    height: 5px;
+    cursor: row-resize;
+    background-color: transparent;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+    z-index: 10;
 }
 
-.btn-gray {
-    background: #21262d;
-    border: 1px solid #30363d;
-    color: #fff;
-    padding: 5px 15px;
-    font-size: 12px;
-}
-
-/* 소형 버튼 */
-.btn-blue-sm {
-    background: #1f6feb;
-    color: #fff;
-    padding: 5px 15px;
-    font-size: 12px;
-}
-
-.btn-green-sm {
-    background: #238636;
-    color: #fff;
-    padding: 5px 15px;
-    font-size: 12px;
-}
-
-.btn-orange-sm {
-    background: #d29922;
-    color: #fff;
-    padding: 5px 15px;
-    font-size: 12px;
-}
-
-.btn-header-setting {
-    margin-left: 20px;
-    padding: 2px 8px;
-    font-size: 11px;
-}
-
-.btn-edit-sm {
-    background: none;
-    border: none;
-    color: #8b949e;
-    font-size: 14px;
-    padding: 0 5px;
-    cursor: pointer;
-}
-
-.btn-edit-sm:hover {
-    color: #58a6ff;
-}
-
-/* 특수 버튼 (추가, 수정, 삭제) */
-.btn-add {
-    background: none;
-    color: #3fb950;
-    font-size: 24px;
-    width: auto;
-    padding: 0 8px;
-    line-height: 1;
-}
-
-.btn-add:hover {
-    color: #2ea043;
-}
-
-.btn-edit {
-    background-color: #30363d;
-    color: #c9d1d9;
-    border: 1px solid #f0f6fc1a;
-    padding: 4px 0;
-    font-size: 12px;
-    width: 50px;
-    text-align: center;
-}
-
-.btn-del {
-    background-color: #da3633;
-    color: white;
-    padding: 4px 8px;
-    margin-left: 5px;
-    font-size: 12px;
-}
-
-.btn-del-sm {
-    background: none;
-    color: #f85149;
-    font-size: 14px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-}
-
-/* [요청] GitHub 수동 동기화 버튼 숨김 (자동 동기화 권장) */
-#btn-github-sync {
-    display: none !important;
+.resizer-vertical:hover,
+.resizer-vertical.resizing {
+    background-color: #58a6ff;
 }
 
 /* ==========================================================================
-   8. 유틸리티 및 기타 (Utilities)
+   10. 시스템 로그 필터 (System Log Filter)
    ========================================================================== */
-/* 기본 입력창 스타일 */
-input,
-textarea {
-    background: #0d1117;
+.log-filter-bar {
+    padding: 10px 15px;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    gap: 5px;
+    background: #161b22;
+}
+
+.btn-filter {
+    background: #21262d;
     border: 1px solid #30363d;
-    color: #fff;
-    padding: 8px;
+    color: #8b949e;
+    padding: 4px 12px;
+    font-size: 12px;
     border-radius: 4px;
 }
 
-textarea {
-    width: 100%;
-    flex: 1;
-    resize: none;
-    padding: 15px;
-    line-height: 1.3;
+.btn-filter:hover {
+    color: #e6edf3;
 }
 
-input:disabled {
-    opacity: 0.5;
-    filter: grayscale(1);
-    pointer-events: none;
-    border: 1px solid #21262d;
+.btn-filter.active {
+    background: #1f6feb;
+    color: #fff;
+    border-color: #1f6feb;
 }
 
-.form-row {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-}
-
-.form-col {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-}
-
-.flex-grow {
-    flex: 2 !important;
-}
+/* ==========================================================================
+   11. 유틸리티 및 권한 (Utilities & User Roles)
+   ========================================================================== */
+.flex-grow { flex: 2 !important; }
 
 .modal-btn-group {
     display: flex;
@@ -750,11 +704,6 @@ input:disabled {
     justify-content: flex-end;
     margin-top: 10px;
     gap: 10px;
-}
-
-.form-row input {
-    flex: 1;
-    min-width: 120px;
 }
 
 .placeholder-view {
@@ -793,135 +742,48 @@ input:disabled {
     font-weight: bold;
 }
 
-.item-cost-select {
-    width: 80px;
-    font-size: 11px;
-    padding: 2px;
-    margin-left: 5px;
-    color: #fff;
-    color-scheme: dark;
-}
-
-@media (min-width: 1400px) {
-    .dashboard-sidebar {
-        width: 300px;
-    }
-}
-
-/* ==========================================================================
-   9. 사용자 권한 스타일 (User Roles)
-   ========================================================================== */
-/* 일반 사용자도 모든 입력/등록이 가능하도록 제한 해제. 단, 톱니바퀴(설정) 및 관리자 데이터 기능은 숨김 유지 */
+/* User Roles */
 body.role-user #btn-import,
 body.role-user .btn-list-setting:not(#btn-log-settings) {
     display: none !important;
 }
 
 /* ==========================================================================
-   10. 시스템 로그 필터 (System Log Filter)
+   12. 모바일 전용 기본 숨김 처리 (Mobile Hidden by Default)
    ========================================================================== */
-.log-filter-bar {
-    padding: 10px 15px;
-    border-bottom: 1px solid #30363d;
-    display: flex;
-    gap: 5px;
-    background: #161b22;
-}
-
-.btn-filter {
-    background: #21262d;
-    border: 1px solid #30363d;
-    color: #8b949e;
-    padding: 4px 12px;
-    font-size: 12px;
-    border-radius: 4px;
-}
-
-.btn-filter:hover {
-    color: #e6edf3;
-}
-
-.btn-filter.active {
-    background: #1f6feb;
-    color: #fff;
-    border-color: #1f6feb;
+.hamburger-menu,
+.mobile-nav,
+.mobile-page-title,
+.nav-overlay {
+    display: none;
 }
 
 /* ==========================================================================
-   11. 공통 데이터 테이블 (Data Table)
+   13. 모바일 반응형 (Mobile Responsive)
    ========================================================================== */
-.data-table-wrapper {
-    flex: 1;
-    overflow-y: auto;
-    min-height: 0;
-}
-
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.data-table th {
-    color: #8b949e;
-    font-size: 12px;
-    text-align: center;
-    padding: 10px;
-    border-bottom: 1px solid #30363d;
-    position: sticky;
-    top: 0;
-    background: #161b22;
-    z-index: 1;
-}
-
-.data-table td {
-    padding: 8px 10px;
-    font-size: 13px;
-    border-bottom: 1px solid #21262d;
-    text-align: center;
-}
-
-/* ==========================================================
-   모바일 반응형 스타일 (Mobile Responsive Styles)
-   ========================================================== */
-
 /* 화면 너비가 768px 이하일 때 적용됩니다. */
 @media (max-width: 950px) {
 
     /* 1. 기본 및 레이아웃 조정 */
     body {
         overflow-y: auto;
-        /* 모바일에서는 페이지 스크롤 허용 */
         -webkit-text-size-adjust: 100%;
-        /* iOS 폰트 크기 자동 조정 방지 */
     }
 
     .dashboard-wrapper,
     .dashboard-main,
     .content-body,
-    /* maintenance.css */
     .left-panel,
-    /* maintenance.css */
     .setup-workspace,
-    /* setup.css */
     .maint-split-view,
-    /* index.css */
     .maint-left-charts,
-    /* index.css */
     .dashboard-split,
-    /* index.css */
     .integ-row,
-    /* integ.css */
     .calendars-wrapper,
-    /* calendar.css */
-    .gantt__wrapper
-
-    /* gantt.css */
-        {
+    .gantt__wrapper {
         flex-direction: column;
         height: auto;
-        /* 높이 자동 조정 */
         gap: 10px;
-        /* 간격 줄이기 */
     }
 
     .dashboard-sidebar,
@@ -932,7 +794,6 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
     .calendar-view {
         width: 100%;
         flex: none;
-        /* flex 비율 무시 */
         height: auto;
     }
 
@@ -956,10 +817,9 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
     .header {
         height: 60px;
         justify-content: flex-end;
-        /* [수정] 우측 정렬 (로고를 좌측으로 밀어냄) */
         align-items: center;
         padding: 0 15px;
-        gap: 0;
+        gap: 8px;
     }
 
     .header-logo {
@@ -968,41 +828,31 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
         left: auto;
         transform: none;
         margin-right: auto;
-        /* [추가] 로고를 가장 왼쪽으로 밈 */
         order: 1;
-        /* [추가] 첫 번째 순서 */
     }
 
-    /* [추가] 모바일 현재 페이지 타이틀 스타일 */
     .mobile-page-title {
         display: block !important;
         order: 2;
-        /* [추가] 로고 다음, 햄버거 전 */
         color: #e6edf3;
         font-size: 16px;
         font-weight: 800;
         font-family: 'Montserrat', 'Noto Sans KR', sans-serif;
-        margin-right: 10px;
-        /* 타이머와의 간격 */
+        margin-right: 0;
         letter-spacing: 1px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         flex-shrink: 1;
-        /* 공간 부족 시 페이지 제목 너비 축소 */
     }
 
-    /* [추가] 모바일 타이머 헤더 배치 스타일 (줄바꿈 방지) */
     .mobile-header-timer {
         display: none;
-        /* 기본 숨김, JS에서 flex로 활성화 */
         order: 3;
-        margin-right: 15px;
-        /* 햄버거 메뉴와의 간격 */
+        margin-right: 0;
         white-space: nowrap;
         align-items: center;
         flex-shrink: 0;
-        /* 타이머와 버튼의 찌그러짐/줄바꿈 완벽 방지 */
     }
 
     .header .container {
@@ -1010,7 +860,6 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
         order: 0;
     }
 
-    /* [추가] 모바일용 네비게이션 링크 스타일 */
     .nav-links {
         gap: 20px;
     }
@@ -1027,16 +876,13 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
         display: none;
     }
 
-    /* [요청] 모바일 헤더에서 로그인/설정 버튼 숨기기 */
     .header .user-controls>button {
         display: inline-block;
     }
 
-    /* 햄버거 메뉴 버튼 */
     .hamburger-menu {
         display: flex;
         order: 4;
-        /* [수정] 타이머 다음 가장 우측으로 배치 */
         flex-direction: column;
         justify-content: space-around;
         width: 24px;
@@ -1045,13 +891,10 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
         border: none;
         cursor: pointer;
         padding: 0;
-        z-index: 1020; /* [수정] 모달창(1050)보다 아래에 위치하도록 9999 -> 1020 */
-        /* [수정] 다른 요소보다 위에 오도록 최상위 설정 */
+        z-index: 1020;
         position: relative;
-        /* [수정] z-index 적용을 위해 relative 설정 */
     }
 
-    /* [요청] 모바일 헤더 햄버거 메뉴 바 색상 변경 (흰색) */
     .hamburger-menu .bar {
         width: 100%;
         height: 3px;
@@ -1072,13 +915,11 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
         transform: rotate(-45deg) translate(6px, -6px);
     }
 
-    /* 모바일 네비게이션 패널 */
     .mobile-nav {
         display: flex;
         position: fixed;
         top: 0;
         left: -100%;
-        /* 초기에는 화면 밖 */
         width: 80%;
         max-width: 300px;
         height: 100%;
@@ -1112,7 +953,6 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
         font-weight: bold;
     }
 
-    /* 모바일 네비게이션 활성화 시 배경 오버레이 */
     .nav-overlay {
         display: none;
         position: fixed;
@@ -1128,10 +968,8 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
         display: block;
     }
 
-    /* [추가] 모바일 유저 컨트롤 스타일 */
     .mobile-user-controls {
         margin-top: auto;
-        /* 하단 고정 */
         padding: 20px;
         border-top: 1px solid #30363d;
         display: flex;
@@ -1154,7 +992,6 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
         margin-bottom: 5px;
         font-weight: bold;
         cursor: pointer;
-        /* [요청] 클릭 가능하도록 커서 변경 */
     }
 
     /* 3. 폼 및 버튼 */
@@ -1185,7 +1022,6 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
         overflow-y: auto;
     }
 
-    /* [요청] 모바일에서 계정 관리 모달 스크롤 허용 및 최대 크기 제한 */
     #user-modal .modal-window,
     #add-user-modal .modal-window {
         width: 95vw !important;
@@ -1196,14 +1032,12 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
 
     #user-modal .modal-body {
         overflow-y: auto !important;
-        /* [요청] 모바일에서 하단 내용(계정 삭제 등)이 잘리지 않도록 스크롤 복구 */
         flex: 1 !important;
         padding: 15px !important;
     }
 
     #add-user-modal .modal-body {
         overflow: visible !important;
-        /* [추가] 계정 추가 모달은 제안박스 잘림 방지 우선 */
         flex: 1 !important;
         padding: 15px !important;
     }
@@ -1235,14 +1069,11 @@ body.role-user .btn-list-setting:not(#btn-log-settings) {
         white-space: nowrap;
     }
 
-
-    /* [요청] 모바일 사이드바 대분류/중분류 제목 글자 크기 14px로 변경 */
     .group-header h3,
     .sidebar-header-row h3 {
         font-size: 14px !important;
     }
 
-    /* [요청] 모바일 계정 권한 선택창 너비 축소 및 가로 배치 유지 */
     #new-user-role,
     #edit-my-role,
     #view-my-role {

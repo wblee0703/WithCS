@@ -735,7 +735,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     /* 장비 점검 이력 검색창 크기 절반 수준으로 축소 */
     #log-search {
-        width: 100px !important;
+        width: 150px !important;
         height: 26px !important;
         font-size: 11px !important;
         padding: 2px 6px !important;
