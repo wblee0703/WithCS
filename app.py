@@ -262,7 +262,7 @@ file_handler.setLevel(logging.INFO) # [수정] INFO 레벨 로그도 기록하�
 
 app.logger.addHandler(file_handler)
 app.logger.setLevel(logging.INFO) # [수정] INFO 레벨 로그도 기록하도록 변경
-app.logger.warning('Server startup')
+# app.logger.warning('Server startup') # 불필요한 시작 로그 제거
 
 # ------------------------------------------------------------------------------
 # 3. 유틸리티 함수 (Utility Functions)
@@ -417,7 +417,7 @@ def inject_mobile_info():
 @app.errorhandler(CSRFError)
 def handle_csrf_error(e):
     # [개선] 세션 만료 후 자동 저장 요청 등에 의한 자연스러운 현상이므로 INFO 레벨로 낮춰 로그 도배 방지
-    app.logger.info(f"CSRF Expected Error (Session Expired): {e.description} (Path: {request.path})")
+    # app.logger.info(f"CSRF Expected Error (Session Expired): {e.description} (Path: {request.path})") # 자연스러운 현상이므로 로그 기록 생략
     return jsonify({"status": "fail", "message": "보안 세션이 만료되었거나 유효하지 않습니다. 페이지를 새로고침 해주세요."}), 400
 
 # [추가] 잘못된 요청(Bad Request) 전용 핸들러
