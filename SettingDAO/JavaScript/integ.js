@@ -1,168 +1,157 @@
 /* ==========================================================================
    1. 전역 변수 및 초기화 (Global State)
    ========================================================================== */
+let integEquipSelectedGroup = null;
+let integSetupSelectedSite = null;
 let integSelectedSite = null;
 let integSelectedType = null;
-let integSetupSelectedSite = null;
-let integEquipSelectedGroup = null;
 
 // 전역 함수 노출
+window.updateIntegratedDashboard = updateIntegratedDashboard;
+window.toggleIntegSetupPeriodMode = toggleIntegSetupPeriodMode;
 window.renderIntegSetupSiteStats = renderIntegSetupSiteStats;
 window.renderIntegMaintStats = renderIntegMaintStats;
 window.toggleIntegPeriodMode = toggleIntegPeriodMode;
-window.toggleIntegSetupPeriodMode = toggleIntegSetupPeriodMode;
-window.updateIntegratedDashboard = updateIntegratedDashboard; // [추가] 전역 노출
 
 /* ==========================================================================
    2. 메인 업데이트 로직 (Main Update Logic)
    ========================================================================== */
 function updateIntegratedDashboard() {
     try {
-    // 날짜/연도 컨트롤 초기화 (필터 값을 읽기 전에 초기화되어야 올바른 구간이 설정됨)
-    initDateControls();
+        // 기간 컨트롤이 비어있을 경우 초기화
+        if (!document.getElementById('integ-setup-month').value) {
+            initDateControls();
+        }
 
-    // 데이터 로드
-    let rawData = JSON.parse(localStorage.getItem('device_data')) || {};
-    let data = (typeof getDashboardData === 'function') ? getDashboardData() : (rawData.equipments || rawData);
-    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+        // 데이터 로드
+        let rawData = JSON.parse(localStorage.getItem('device_data')) || {};
+        let data = (typeof getDashboardData === 'function') ? getDashboardData() : (rawData.equipments || rawData);
+        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
 
-    let totalCount = 0;
-    let setupCount = 0;
-    let setupEquips = [];
-    let completedEquips = [];
-    let summaryActiveCount = 0;
-    let summaryCompletedCount = 0;
+        let setupCount = 0;
+        let setupEquips = [];
+        let completedEquips = [];
+        let summaryActiveCount = 0;
+        let summaryCompletedCount = 0;
 
-    // 막대그래프용 전체 집계 데이터
-    const allSiteCounts = {};
-    let totalActiveAll = 0;
+        const allSiteCounts = {};
+        let totalActiveAll = 0;
 
-    // [추가] 기간 필터 설정
-    const periodTypeEl = document.getElementById('integ-setup-period-type');
-    const periodType = periodTypeEl ? periodTypeEl.value : 'month';
-    let targetStart = null;
-    let targetEnd = null;
+        // 기간 필터 설정
+        const periodTypeEl = document.getElementById('integ-setup-period-type');
+        const periodType = periodTypeEl ? periodTypeEl.value : 'month';
+        let targetStart = null;
+        let targetEnd = null;
 
-    if (periodType === 'year') {
-        const yearSelect = document.getElementById('integ-setup-year');
-        const year = yearSelect ? parseInt(yearSelect.value) : new Date().getFullYear();
-        targetStart = new Date(year, 0, 1);
-        targetEnd = new Date(year, 11, 31, 23, 59, 59);
-    } else if (periodType === 'custom') {
-        const startInput = document.getElementById('integ-setup-start');
-        const endInput = document.getElementById('integ-setup-end');
-        if (startInput && endInput && startInput.value && endInput.value) {
-            const [sy, sm, sd] = startInput.value.split('-').map(Number);
-            const [ey, em, ed] = endInput.value.split('-').map(Number);
-            targetStart = new Date(sy, sm - 1, sd);
-            targetEnd = new Date(ey, em - 1, ed, 23, 59, 59);
+        if (periodType === 'year') {
+            const yearSelect = document.getElementById('integ-setup-year');
+            const year = yearSelect ? parseInt(yearSelect.value) : new Date().getFullYear();
+            targetStart = new Date(year, 0, 1);
+            targetEnd = new Date(year, 11, 31, 23, 59, 59);
+        } else if (periodType === 'custom') {
+            const startInput = document.getElementById('integ-setup-start');
+            const endInput = document.getElementById('integ-setup-end');
+            if (startInput && endInput && startInput.value && endInput.value) {
+                const [sy, sm, sd] = startInput.value.split('-').map(Number);
+                const [ey, em, ed] = endInput.value.split('-').map(Number);
+                targetStart = new Date(sy, sm - 1, sd);
+                targetEnd = new Date(ey, em - 1, ed, 23, 59, 59);
+            } else {
+                const now = new Date();
+                targetStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                targetEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+            }
         } else {
-            // 입력값이 없으면 현재 월 기본값 사용
-            const now = new Date();
-            targetStart = new Date(now.getFullYear(), now.getMonth(), 1);
-            targetEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+            const monthInput = document.getElementById('integ-setup-month');
+            let date = new Date();
+            if (monthInput && monthInput.value) {
+                const [y, m] = monthInput.value.split('-').map(Number);
+                date = new Date(y, m - 1, 1);
+            }
+            targetStart = new Date(date.getFullYear(), date.getMonth(), 1);
+            targetEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
         }
-    } else {
-        const monthInput = document.getElementById('integ-setup-month');
-        let date = new Date();
-        if (monthInput && monthInput.value) {
-            const [y, m] = monthInput.value.split('-').map(Number);
-            date = new Date(y, m - 1, 1);
-        }
-        targetStart = new Date(date.getFullYear(), date.getMonth(), 1);
-        targetEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59);
-    }
 
-    // 데이터 집계
-    Object.keys(data).forEach(site => {
-        if (data[site] && Array.isArray(data[site])) {
-            data[site].forEach(equip => {
-                totalCount++;
-                const equipKey = `${site}::${equip}`;
-                const detailData = setupData[equipKey];
+        // 데이터 집계
+        Object.keys(data).forEach(site => {
+            if (data[site] && Array.isArray(data[site])) {
+                data[site].forEach(equip => {
+                    const equipKey = `${site}::${equip}`;
+                    const detailData = setupData[equipKey];
 
-                let isSetup = false;
-                let progress = 0;
-                let completionDate = "";
+                    let isSetup = false;
+                    let progress = 0;
+                    let completionDate = "";
 
-                // 셋업 데이터 확인
-                if (detailData && detailData.setupDetails && detailData.setupDetails.length > 0) {
-                    const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
-                    if (completeItem && completeItem.startDate) {
-                        // [수정] 기간 필터 적용
-                        let overlaps = false;
-                        const firstItem = detailData.setupDetails.find(d => d.startDate);
-                        const setupStart = firstItem ? new Date(firstItem.startDate) : new Date(completeItem.startDate);
+                    // 셋업 기간 필터링 검사
+                    if (detailData && detailData.setupDetails && detailData.setupDetails.length > 0) {
+                        const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
+                        if (completeItem && completeItem.startDate) {
+                            let overlaps = false;
+                            const firstItem = detailData.setupDetails.find(d => d.startDate);
+                            const setupStart = firstItem ? new Date(firstItem.startDate) : new Date(completeItem.startDate);
+                            
+                            if (completeItem.completed && completeItem.date) {
+                                const setupEnd = new Date(completeItem.date);
+                                if (setupStart <= targetEnd && setupEnd >= targetStart) overlaps = true;
+                            } else {
+                                if (setupStart <= targetEnd) overlaps = true;
+                            }
+
+                            if (overlaps) {
+                                isSetup = true;
+                                if (completeItem.completed) completionDate = completeItem.date;
+                                const totalTasks = detailData.setupDetails.length;
+                                const completedTasks = detailData.setupDetails.filter(t => t.completed).length;
+                                progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
+                            }
+                        }
+                    }
+
+                    if (isSetup) {
+                        setupCount++;
                         
-                        if (completeItem.completed && completeItem.date) {
-                            const setupEnd = new Date(completeItem.date);
-                            if (setupStart <= targetEnd && setupEnd >= targetStart) overlaps = true;
-                        } else {
-                            if (setupStart <= targetEnd) overlaps = true;
-                        }
+                        // 막대그래프용 데이터 (완료 포함)
+                        allSiteCounts[site] = (allSiteCounts[site] || 0) + 1;
+                        totalActiveAll++;
 
-                        if (overlaps) {
-                            isSetup = true;
-                            if (completeItem.completed) completionDate = completeItem.date;
-                            const totalTasks = detailData.setupDetails.length;
-                            const completedTasks = detailData.setupDetails.filter(t => t.completed).length;
-                            progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-                        }
-                    }
-                }
-
-                if (isSetup) {
-                    setupCount++;
-                    
-                    // 1. 막대그래프용 전체 집계 (완료 포함)
-                    allSiteCounts[site] = (allSiteCounts[site] || 0) + 1;
-                    totalActiveAll++;
-
-                    // 요약 정보용 전체 집계 (필터 무관)
-                    if (progress === 100) {
-                        summaryCompletedCount++;
-                    } else {
-                        summaryActiveCount++;
-                    }
-
-                    // 2. 리스트용 필터링 집계
-                    if (!integSetupSelectedSite || integSetupSelectedSite === site) {
                         if (progress === 100) {
-                            completedEquips.push({ site, equip, progress, date: completionDate });
+                            summaryCompletedCount++;
                         } else {
-                            setupEquips.push({ site, equip, progress });
+                            summaryActiveCount++;
+                        }
+
+                        if (!integSetupSelectedSite || integSetupSelectedSite === site) {
+                            if (progress === 100) {
+                                completedEquips.push({ site, equip, progress, date: completionDate });
+                            } else {
+                                setupEquips.push({ site, equip, progress });
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
+        });
+
+        // 셋업 요약 텍스트 업데이트
+        const setupSummaryEl = document.getElementById('integ-setup-summary');
+        if (setupSummaryEl) {
+            setupSummaryEl.textContent = `(전체 : ${setupCount}, 진행중 : ${summaryActiveCount}, 완료 : ${summaryCompletedCount})`;
         }
-    });
 
-    // [추가] 셋업 요약 정보 업데이트
-    const setupSummaryEl = document.getElementById('integ-setup-summary');
-    if (setupSummaryEl) {
-        setupSummaryEl.textContent = `(전체 : ${setupCount}, 진행중 : ${summaryActiveCount}, 완료 : ${summaryCompletedCount})`;
-    }
+        // [1단계 복구] 장비 통합 현황 렌더링
+        renderIntegEquipStats(data);
+        
+        // [2단계 복구] 셋업 현황 렌더링
+        renderIntegSetupBarChart(allSiteCounts, totalActiveAll);
+        renderIntegSetupSiteStats();
+        renderIntegSetupList(setupEquips);
+        renderIntegCompletedList(completedEquips);
 
-    // UI 렌더링
-    renderIntegEquipStats(data); // [추가] 장비 통합 현황 렌더링
-    renderIntegSetupBarChart(allSiteCounts, totalActiveAll);
-    renderIntegSetupSiteStats();
-    renderIntegSetupList(setupEquips);
-    renderIntegCompletedList(completedEquips);
-    renderIntegMaintStats(data);
+        // [3단계 복구] 운영 현황 렌더링
+        renderIntegMaintStats(data);
     } catch (error) {
         console.error("Integrated Dashboard Rendering Error:", error);
-        const container = document.querySelector('.integ-dashboard-view') || document.getElementById('section-integrated');
-        if (container) {
-            container.innerHTML = `
-                <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; min-height:300px; color:#f85149; background:#161b22; border:1px solid #da3633; border-radius:8px; padding:20px;">
-                    <h3 style="margin-bottom:10px;">통합 현황 렌더링 오류 발생</h3>
-                    <p style="margin-bottom:10px; text-align:center;">${error.message}</p>
-                    <p style="font-size:12px; color:#8b949e;">※ 키보드 F12를 눌러 개발자 도구(Console)에서 상세 에러를 확인하거나 이 화면을 캡처해주세요.</p>
-                </div>
-            `;
-        }
     }
 }
 
@@ -174,14 +163,13 @@ function initDateControls() {
     const lastDay = new Date(currentYear, now.getMonth() + 1, 0).getDate();
     const endDate = `${currentYear}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
-    // 월간 입력창 초기화
-    ['integ-maint-month', 'integ-setup-month'].forEach(id => {
+    // 월간/연간/사용자지정 입력창 초기화
+    ['integ-setup-month', 'integ-maint-month'].forEach(id => {
         const el = document.getElementById(id);
         if (el && !el.value) el.value = currentMonth;
     });
 
-    // 연도 선택창 초기화
-    ['integ-maint-year', 'integ-setup-year'].forEach(id => {
+    ['integ-setup-year', 'integ-maint-year'].forEach(id => {
         const el = document.getElementById(id);
         if (el && el.options.length === 0) {
             for (let y = currentYear; y >= currentYear - 5; y--) {
@@ -193,17 +181,14 @@ function initDateControls() {
         }
     });
 
-    // 운영 관리 직접 입력 날짜 초기화
-    const maintStart = document.getElementById('integ-maint-start');
-    const maintEnd = document.getElementById('integ-maint-end');
-    if (maintStart && !maintStart.value) maintStart.value = startDate;
-    if (maintEnd && !maintEnd.value) maintEnd.value = endDate;
-
-    // 직접 입력 날짜 초기화
     const startInput = document.getElementById('integ-setup-start');
     const endInput = document.getElementById('integ-setup-end');
+    const maintStart = document.getElementById('integ-maint-start');
+    const maintEnd = document.getElementById('integ-maint-end');
     if (startInput && !startInput.value) startInput.value = startDate;
     if (endInput && !endInput.value) endInput.value = endDate;
+    if (maintStart && !maintStart.value) maintStart.value = startDate;
+    if (maintEnd && !maintEnd.value) maintEnd.value = endDate;
 }
 
 /* ==========================================================================
@@ -215,9 +200,6 @@ function renderIntegEquipStats(data) {
     const summaryEl = document.getElementById('integ-equip-summary');
     
     if (!siteChartEl || !modelChartEl) return;
-
-    const existingFilter = document.getElementById('integ-equip-site-filter');
-    if (existingFilter) existingFilter.remove();
 
     const groupCounts = { 'SKH 이천': 0, 'SKH 청주': 0, 'SEC 기흥': 0, '기타 사업장': 0 };
     const modelCounts = {};
@@ -243,11 +225,12 @@ function renderIntegEquipStats(data) {
                 const model = equip.split('::')[0]; // 장비명(모델) 추출
                 allModels.add(model);
                 
-                // 그룹 기반으로 모델 필터링
+                // 그룹(사업장) 기반으로 모델 필터링 적용
                 if (!integEquipSelectedGroup || integEquipSelectedGroup === groupName) {
                     if (!modelCounts[model]) modelCounts[model] = { total: 0, setup: 0 };
                     modelCounts[model].total++;
 
+                    // 셋업 중인 장비 개수 파악
                     const equipKey = `${site}::${equip}`;
                     const detailData = setupData[equipKey];
                     if (detailData && detailData.setupDetails) {
@@ -261,13 +244,13 @@ function renderIntegEquipStats(data) {
         }
     });
 
-    // 요약 정보 업데이트
+    // 요약 정보 텍스트 갱신
     if (summaryEl) {
         const modelCount = allModels.size;
         summaryEl.textContent = `(사업장 : ${actualSiteCount}, 장비 모델 : ${modelCount}, 장비수 : ${totalEquipCount})`;
     }
 
-    // 1. 그룹 별 장비 현황 (장비 수 내림차순 정렬)
+    // 1. 그룹 별 장비 현황 차트 렌더링 (장비 수 내림차순 정렬)
     const sortedGroupCounts = Object.entries(groupCounts)
         .sort(([, a], [, b]) => b - a)
         .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
@@ -284,7 +267,7 @@ function renderIntegEquipStats(data) {
         renderIntegEquipStats(data);
     }, integEquipSelectedGroup);
 
-    // 2. 모델 별 장비 현황 (장비 수 내림차순 정렬)
+    // 2. 모델 별 장비 현황 차트 렌더링 (장비 수 내림차순 정렬)
     const sortedModelCounts = Object.entries(modelCounts)
         .sort(([, a], [, b]) => b.total - a.total)
         .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
@@ -308,20 +291,16 @@ function renderIntegEquipStats(data) {
 function renderIntegSetupBarChart(siteCounts, totalCount) {
     const chartEl = document.getElementById('integ-setup-site-bar-chart');
     if (!chartEl) return;
-
     chartEl.innerHTML = '';
 
-    // 데이터 배열 생성 ('전체' 포함)
     const dataItems = [{ name: '전체', count: totalCount }];
     Object.keys(siteCounts).forEach(site => {
         dataItems.push({ name: site, count: siteCounts[site] });
     });
     
-    // 정렬 (전체 제외하고 내림차순)
     const sortedSites = dataItems.slice(1).sort((a, b) => b.count - a.count);
     const finalData = [dataItems[0], ...sortedSites];
 
-    // Y축 스케일 계산
     const maxVal = Math.max(...finalData.map(d => d.count));
     let yAxisMax = 10;
     if (maxVal > 10) yAxisMax = Math.ceil(maxVal / 5) * 5;
@@ -331,7 +310,7 @@ function renderIntegSetupBarChart(siteCounts, totalCount) {
         const count = item.count;
         const maxBarHeight = 140;
         const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
-        const bgStyle = window.getSiteGradient(item.name);
+        const bgStyle = window.getSiteGradient ? window.getSiteGradient(item.name) : '#8957e5';
 
         const isActive = (integSetupSelectedSite === item.name) || (isTotal && !integSetupSelectedSite);
         const activeClass = isActive ? 'active' : '';
@@ -366,10 +345,8 @@ function renderIntegSetupSiteStats() {
 
     if (!chartEl) return;
 
-    // 기간 필터 설정
     const periodTypeEl = document.getElementById('integ-setup-period-type');
     const periodType = periodTypeEl ? periodTypeEl.value : 'month';
-    
     let targetStart = null;
     let targetEnd = null;
 
@@ -432,10 +409,8 @@ function renderIntegSetupSiteStats() {
         }
     });
 
-    // 1. 진행중 도넛 차트
     renderDonutChart(chartEl, centerText, siteCounts, activeCount, 'Active');
 
-    // 2. 완료율 도넛 차트
     if (completeChartEl && completeCenterText) {
         if (totalForRate === 0) {
             completeChartEl.style.background = '';
@@ -448,7 +423,6 @@ function renderIntegSetupSiteStats() {
         }
     }
 
-    // 3. 완료(사업장별) 도넛 차트
     renderDonutChart(doneChartEl, doneCenterText, completedSiteCounts, completedCount, 'Done');
 }
 
@@ -463,7 +437,7 @@ function renderDonutChart(chartEl, centerText, counts, total, label) {
         const sorted = Object.keys(counts).map(k => ({ name: k, count: counts[k] })).sort((a, b) => b.count - a.count);
 
         sorted.forEach((item) => {
-            const color = window.getSiteColor(item.name);
+            const color = window.getSiteColor ? window.getSiteColor(item.name) : '#1f6feb';
             const deg = (item.count / total) * 360;
             gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
             currentDeg += deg;
@@ -478,7 +452,6 @@ function renderIntegSetupList(list) {
     const listEl = document.getElementById('integ-setup-detail-list');
     const titleEl = document.getElementById('integ-setup-active-title');
     if (titleEl) titleEl.textContent = `셋업 진행 장비 (${list.length})`;
-
     if (!listEl) return;
     listEl.innerHTML = '';
 
@@ -488,53 +461,13 @@ function renderIntegSetupList(list) {
     }
 
     list.sort((a, b) => b.progress - a.progress);
-
-    list.forEach(item => {
-        const parts = item.equip.split('::');
-        const name = parts[0];
-        const serial = parts.length > 1 ? parts[1] : '';
-        const progressColor = item.progress === 100 ? '#238636' : '#1f6feb';
-        
-        const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.equip}`)) || {};
-        const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
-
-        const li = document.createElement('li');
-        li.className = 'status-list-item';
-        
-        let subInfo = '';
-        if (custEquipName) {
-            subInfo = `[${escapeHtml(custEquipName)}]`;
-        } else if (serial) {
-            subInfo = `[${escapeHtml(serial)}]`;
-        }
-
-        const mainInfo = `${escapeHtml(item.site)} > ${escapeHtml(name)}`;
-        const fullTitle = `${mainInfo} ${subInfo}`.replace(/<[^>]*>?/gm, '').trim();
-        li.innerHTML = `
-            <span class="status-color equip-bar" style="background-color: ${progressColor};"></span>
-            <div style="flex: 1; display: flex; align-items: center; min-width: 0;">
-                <span class="status-name integ-setup-detail-col-name" title="${fullTitle}" style="margin-right: 0;">${mainInfo}${subInfo ? `<span class="equip-serial">${subInfo}</span>` : ''}</span>
-            </div>
-            <span class="status-count integ-setup-detail-col-progress">${item.progress}%</span>
-        `;
-        
-        li.onclick = () => {
-            if (typeof currentGanttFilters !== 'undefined') {
-                currentGanttFilters.site = item.site;
-                currentGanttFilters.equip = item.equip;
-            }
-            if (typeof showHomeSection === 'function') showHomeSection('setup');
-            if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
-        };
-        listEl.appendChild(li);
-    });
+    renderGenericSetupList(listEl, list, false);
 }
 
 function renderIntegCompletedList(list) {
     const listEl = document.getElementById('integ-setup-complete-list');
     const titleEl = document.getElementById('integ-setup-complete-title');
     if (titleEl) titleEl.textContent = `셋업 완료 장비 (${list.length})`;
-
     if (!listEl) return;
     listEl.innerHTML = '';
 
@@ -544,77 +477,25 @@ function renderIntegCompletedList(list) {
     }
 
     list.sort((a, b) => a.equip.localeCompare(b.equip));
-
-    list.forEach(item => {
-        const parts = item.equip.split('::');
-        const name = parts[0];
-        const serial = parts.length > 1 ? parts[1] : '';
-        
-        const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.equip}`)) || {};
-        const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
-
-        const li = document.createElement('li');
-        li.className = 'status-list-item';
-        
-        let subInfo = '';
-        if (custEquipName) {
-            subInfo = `[${escapeHtml(custEquipName)}]`;
-        } else if (serial) {
-            subInfo = `[${escapeHtml(serial)}]`;
-        }
-
-        const mainInfo = `${escapeHtml(item.site)} > ${escapeHtml(name)}`;
-        const fullTitle = `${mainInfo} ${subInfo}`.replace(/<[^>]*>?/gm, '').trim();
-        li.innerHTML = `
-            <span class="status-color equip-bar" style="background-color: #238636;"></span>
-            <div style="flex: 1; display: flex; align-items: center; min-width: 0;">
-                <span class="status-name integ-setup-complete-col-name" title="${fullTitle}" style="margin-right: 0;">${mainInfo}${subInfo ? `<span class="equip-serial">${subInfo}</span>` : ''}</span>
-            </div>
-            <span class="status-count integ-setup-complete-col-date">${item.date || ''}</span>
-        `;
-        
-        li.onclick = () => {
-            if (typeof currentGanttFilters !== 'undefined') {
-                currentGanttFilters.site = item.site;
-                currentGanttFilters.equip = item.equip;
-            }
-            if (typeof showHomeSection === 'function') showHomeSection('setup');
-            if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
-        };
-        listEl.appendChild(li);
-    });
+    renderGenericSetupList(listEl, list, true);
 }
 
 function toggleIntegSetupPeriodMode() {
     const type = document.getElementById('integ-setup-period-type').value;
-    const monthInput = document.getElementById('integ-setup-month');
-    const yearSelect = document.getElementById('integ-setup-year');
-    const startInput = document.getElementById('integ-setup-start');
-    const endInput = document.getElementById('integ-setup-end');
-    const tilde = document.getElementById('integ-setup-tilde');
-    const titleSpan = document.getElementById('integ-setup-title-period');
+    const elements = {
+        'month': document.getElementById('integ-setup-month'),
+        'year': document.getElementById('integ-setup-year'),
+        'custom': [document.getElementById('integ-setup-start'), document.getElementById('integ-setup-end'), document.getElementById('integ-setup-tilde')]
+    };
 
-    // 모든 입력 숨김
-    if (monthInput) monthInput.style.display = 'none';
-    if (yearSelect) yearSelect.style.display = 'none';
-    if (startInput) startInput.style.display = 'none';
-    if (endInput) endInput.style.display = 'none';
-    if (tilde) tilde.style.display = 'none';
+    Object.values(elements).flat().forEach(el => { if (el) el.style.display = 'none'; });
 
-    if (type === 'month') {
-        if (monthInput) monthInput.style.display = 'inline-block';
-        if (titleSpan) titleSpan.textContent = '월간';
-    } else if (type === 'year') {
-        if (yearSelect) yearSelect.style.display = 'inline-block';
-        if (titleSpan) titleSpan.textContent = '연간';
-    } else if (type === 'custom') {
-        if (startInput) startInput.style.display = 'inline-block';
-        if (endInput) endInput.style.display = 'inline-block';
-        if (tilde) tilde.style.display = 'inline-block';
-        if (titleSpan) titleSpan.textContent = '기간별';
-    }
-    
-    updateIntegratedDashboard(); // [수정] 전체 대시보드 갱신
+    if (type === 'month') elements['month'].style.display = 'inline-block';
+    else if (type === 'year') elements['year'].style.display = 'inline-block';
+    else if (type === 'custom') elements['custom'].forEach(el => el.style.display = 'inline-block');
+
+    document.getElementById('integ-setup-title-period').textContent = type === 'month' ? '월간' : (type === 'year' ? '연간' : '기간별');
+    updateIntegratedDashboard();
 }
 
 /* ==========================================================================
@@ -633,11 +514,9 @@ function renderIntegMaintStats(mainData) {
     const itemCenterText = document.getElementById('integ-maint-item-center');
     if (!chartEl || !listEl) return;
 
-    // 기간 필터 확인
     const periodTypeEl = document.getElementById('integ-period-type');
     const periodType = periodTypeEl ? periodTypeEl.value : 'month';
     
-    // [수정] 날짜 체크 함수 생성 (월간/연간/직접입력 지원)
     let dateCheckFn = null;
 
     if (periodType === 'year') {
@@ -652,7 +531,7 @@ function renderIntegMaintStats(mainData) {
         if (startInput && endInput && startInput.value && endInput.value) {
             targetStart = new Date(startInput.value);
             targetEnd = new Date(endInput.value);
-            targetEnd.setHours(23, 59, 59, 999); // 종료일의 끝까지 포함
+            targetEnd.setHours(23, 59, 59, 999);
         }
         
         dateCheckFn = (d) => {
@@ -671,7 +550,6 @@ function renderIntegMaintStats(mainData) {
     const itemCounts = {};
     const siteCounts = {};
 
-    // 데이터 집계
     Object.keys(mainData).forEach(site => {
         if (mainData[site] && Array.isArray(mainData[site])) {
             const isSiteMatch = !integSelectedSite || integSelectedSite === site;
@@ -683,8 +561,6 @@ function renderIntegMaintStats(mainData) {
                 const processItem = (type, content, date) => {
                     if (dateCheckFn(date)) {
                         siteCounts[site] = (siteCounts[site] || 0) + 1;
-                        
-                        // 요약 정보용 전체 집계 (필터 무관)
                         totalTypeCounts[type] = (totalTypeCounts[type] || 0) + 1;
 
                         if (isSiteMatch) {
@@ -707,14 +583,12 @@ function renderIntegMaintStats(mainData) {
         }
     });
 
-    // [추가] 운영 관리 요약 정보 업데이트
     const maintSummaryEl = document.getElementById('integ-maint-summary');
     if (maintSummaryEl) {
         const summaryStr = Object.entries(totalTypeCounts).map(([t, c]) => `${t} : ${c}`).join(', ');
         maintSummaryEl.textContent = `(${summaryStr})`;
     }
 
-    // 1. 작업 유형별 차트
     const typeGradients = { 
         '정기': 'linear-gradient(to top, #238636, #3fb950)', 
         '비정기': 'linear-gradient(to top, #eb371f, #ff7b72)', 
@@ -727,19 +601,17 @@ function renderIntegMaintStats(mainData) {
         renderIntegMaintStats(mainData);
     }, integSelectedType);
 
-    // 2. 사업장별 차트
     if (siteChartEl) {
         let totalSiteCount = 0;
         Object.values(siteCounts).forEach(count => totalSiteCount += count);
         
-        // 수량 기준 내림차순 정렬
         const sortedSites = Object.entries(siteCounts)
             .sort(([, a], [, b]) => b - a)
             .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
 
         const orderedSiteCounts = { '전체': totalSiteCount, ...sortedSites };
         const siteGradients = {};
-        Object.keys(orderedSiteCounts).forEach(key => siteGradients[key] = window.getSiteGradient(key));
+        Object.keys(orderedSiteCounts).forEach(key => siteGradients[key] = window.getSiteGradient ? window.getSiteGradient(key) : '#238636');
 
         renderChartWithAxis(siteChartEl, orderedSiteCounts, siteGradients, (key) => {
             integSelectedSite = (key === '전체' || integSelectedSite === key) ? null : key;
@@ -748,7 +620,6 @@ function renderIntegMaintStats(mainData) {
         }, integSelectedSite || '전체');
     }
 
-    // 3. 점검 항목 리스트 & 도넛 차트
     renderMaintItemList(listEl, itemChartEl, itemCenterText, itemCounts);
 }
 
@@ -801,45 +672,27 @@ function renderMaintItemList(listEl, chartEl, centerText, itemCounts) {
 }
 
 function toggleIntegPeriodMode() {
-    togglePeriodMode('integ-period-type', 'integ-maint-month', 'integ-maint-year', 'integ-title-period');
+    const type = document.getElementById('integ-period-type').value;
+    const elements = {
+        'month': document.getElementById('integ-maint-month'),
+        'year': document.getElementById('integ-maint-year'),
+        'custom': [document.getElementById('integ-maint-start'), document.getElementById('integ-maint-end'), document.getElementById('integ-maint-tilde')]
+    };
+
+    Object.values(elements).flat().forEach(el => { if (el) el.style.display = 'none'; });
+
+    if (type === 'month') elements['month'].style.display = 'inline-block';
+    else if (type === 'year') elements['year'].style.display = 'inline-block';
+    else if (type === 'custom') elements['custom'].forEach(el => el.style.display = 'inline-block');
+
+    document.getElementById('integ-title-period').textContent = type === 'month' ? '월간' : (type === 'year' ? '연간' : '기간별');
     renderIntegMaintStats();
 }
 
 /* ==========================================================================
    6. 헬퍼 함수 (Helpers)
    ========================================================================== */
-function togglePeriodMode(typeId, monthId, yearId, titleId) {
-    const type = document.getElementById(typeId).value;
-    const monthInput = document.getElementById(monthId);
-    const yearSelect = document.getElementById(yearId);
-    // [추가] 운영 관리용 직접 입력 필드 ID 처리 (ID가 고정되어 있으므로 하드코딩 또는 인자로 확장 가능하나, 여기서는 ID 규칙에 따라 처리)
-    const isMaint = typeId === 'integ-period-type';
-    const startInput = document.getElementById(isMaint ? 'integ-maint-start' : 'integ-setup-start');
-    const endInput = document.getElementById(isMaint ? 'integ-maint-end' : 'integ-setup-end');
-    const tilde = document.getElementById(isMaint ? 'integ-maint-tilde' : 'integ-setup-tilde');
-    const titleSpan = document.getElementById(titleId);
-
-    // 모든 입력 숨김
-    if (monthInput) monthInput.style.display = 'none';
-    if (yearSelect) yearSelect.style.display = 'none';
-    if (startInput) startInput.style.display = 'none';
-    if (endInput) endInput.style.display = 'none';
-    if (tilde) tilde.style.display = 'none';
-
-    if (type === 'month') {
-        if (monthInput) monthInput.style.display = 'inline-block';
-        if (titleSpan) titleSpan.textContent = '월간';
-    } else if (type === 'year') {
-        if (yearSelect) yearSelect.style.display = 'inline-block';
-        if (titleSpan) titleSpan.textContent = '연간';
-    } else if (type === 'custom') {
-        if (startInput) startInput.style.display = 'inline-block';
-        if (endInput) endInput.style.display = 'inline-block';
-        if (tilde) tilde.style.display = 'inline-block';
-        if (titleSpan) titleSpan.textContent = '기간별';
-    }
-}
-
+// 차트를 그려주는 공통 함수
 function renderChartWithAxis(container, dataCounts, colorMapOrArray, onClickHandler, selectedKey) {
     container.innerHTML = '';
     const values = Object.values(dataCounts).map(v => (typeof v === 'object' ? v.total : v));
@@ -872,6 +725,7 @@ function renderChartWithAxis(container, dataCounts, colorMapOrArray, onClickHand
 
         let barContent = '';
         if (setupCount > 0) {
+            // 셋업 중인 장비가 있으면 막대 안에 투명도(빗금) 패턴으로 표시해줍니다.
             const setupHeightPct = (setupCount / count) * 100;
             const setupOverlay = `<div style="width: 100%; height: ${setupHeightPct}%; background: repeating-linear-gradient(45deg, rgba(255,255,255,0.3), rgba(255,255,255,0.3) 5px, transparent 5px, transparent 10px); border-bottom: 1px solid rgba(255,255,255,0.5); position: absolute; top: 0; left: 0;" title="셋업중: ${setupCount}대"></div>`;
             
@@ -904,10 +758,46 @@ function renderChartWithAxis(container, dataCounts, colorMapOrArray, onClickHand
     });
 }
 
-// HTML 이스케이프 유틸리티 (중복 방지)
-if (typeof escapeHtml !== 'function') {
-    function escapeHtml(text) {
-        if (!text) return '';
-        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    }
+function renderGenericSetupList(listEl, list, isCompletedMode) {
+    list.forEach(item => {
+        const parts = item.equip.split('::');
+        const name = parts[0];
+        const serial = parts.length > 1 ? parts[1] : '';
+        const progressColor = item.progress === 100 ? '#238636' : '#1f6feb';
+        
+        const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.equip}`)) || {};
+        const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+
+        const li = document.createElement('li');
+        li.className = 'status-list-item';
+        
+        let subInfo = '';
+        if (custEquipName) subInfo = `[${escapeHtml(custEquipName)}]`;
+        else if (serial) subInfo = `[${escapeHtml(serial)}]`;
+
+        const mainInfo = `${escapeHtml(item.site)} > ${escapeHtml(name)}`;
+        const fullTitle = `${mainInfo} ${subInfo}`.replace(/<[^>]*>?/gm, '').trim();
+
+        const rightCol = isCompletedMode ? 
+            `<span class="status-count integ-setup-complete-col-date">${item.date || ''}</span>` : 
+            `<span class="status-count integ-setup-detail-col-progress">${item.progress}%</span>`;
+
+        li.innerHTML = `
+            <span class="status-color equip-bar" style="background-color: ${progressColor};"></span>
+            <div style="flex: 1; display: flex; align-items: center; min-width: 0;">
+                <span class="status-name ${isCompletedMode ? 'integ-setup-complete-col-name' : 'integ-setup-detail-col-name'}" title="${fullTitle}" style="margin-right: 0;">${mainInfo}${subInfo ? `<span class="equip-serial">${subInfo}</span>` : ''}</span>
+            </div>
+            ${rightCol}
+        `;
+        
+        li.onclick = () => {
+            if (typeof currentGanttFilters !== 'undefined') {
+                currentGanttFilters.site = item.site;
+                currentGanttFilters.equip = item.equip;
+            }
+            if (typeof showHomeSection === 'function') showHomeSection('setup');
+            if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+        };
+        listEl.appendChild(li);
+    });
 }

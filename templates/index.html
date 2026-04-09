@@ -34,7 +34,7 @@
                 <button onclick="showHomeSection('integrated')" class="home-big-btn btn-integrated">
                     <div class="icon">📑</div>
                     <h3>통합 관리</h3>
-                    <p>통합 관리</p>
+                    <p>통합 현황</p>
                 </button>
                 <button onclick="showHomeSection('setup')" class="home-big-btn btn-setup">
                     <div class="icon">🛠️</div>
@@ -252,157 +252,157 @@
                                 </div>
                             </div>
                         </div>
+                </div>
 
-                    <!-- 통합 관리 현황 (신규) -->
-                    
-                    <div class="dashboard-col" id="section-integrated" style="display: none;">
-                        <div class="integ-dashboard-view">
-                            <!-- [추가] 장비 통합 현황 (사업장 별 / 모델 별) -->
-                            <div class="integ-section-header">
-                                <h4 class="integ-section-title integ-title-equip">장비 통합 현황</h4>
-                                <span id="integ-equip-summary" class="integ-summary-text">(사업장 : 0, 장비 모델 : 0, 장비수 : 0)</span>
-                            </div>
-                            <div class="integ-row">
-                                <div class="status-group card-like integ-full-width-card">
-                                    <h5 class="status-group-title">사업장 별 장비 현황</h5>
-                                    <div id="integ-equip-site-chart" class="bar-chart-container"></div>
-                                </div>
-                            </div>
-                            <div class="integ-row">
-                                <div class="status-group card-like integ-full-width-card">
-                                    <h5 class="status-group-title">모델 별 장비 현황</h5>
-                                    <div id="integ-equip-model-chart" class="bar-chart-container"></div>
-                                </div>
-                            </div>
-
-                            <!-- [추가] 셋업 통합 관리 헤더 -->
-                            <div class="integ-section-header">
-                                <h4 class="integ-section-title integ-title-setup"><span id="integ-setup-title-period"></span> 셋업 통합 관리</h4>
-                                <span id="integ-setup-summary" class="integ-summary-text">(전체 : 0, 진행중 : 0, 완료 : 0)</span>
-                                <div class="integ-controls-wrapper">
-                                    <select id="integ-setup-period-type" class="modal-select"
-                                        onchange="toggleIntegSetupPeriodMode()">
-                                        <option value="month">월간</option>
-                                        <option value="year">연간</option>
-                                        <option value="custom">직접 입력</option>
-                                    </select>
-                                    <input type="month" id="integ-setup-month" class="modal-select"
-                                        onchange="updateIntegratedDashboard()">
-                                    <select id="integ-setup-year" class="modal-select" style="display: none;"
-                                        onchange="updateIntegratedDashboard()"></select>
-                                    <input type="date" id="integ-setup-start" class="modal-select"
-                                        style="display: none;" onchange="updateIntegratedDashboard()">
-                                    <span id="integ-setup-tilde" class="integ-tilde" style="display: none;">~</span>
-                                    <input type="date" id="integ-setup-end" class="modal-select" style="display: none;"
-                                        onchange="updateIntegratedDashboard()">
-                                </div>
-                            </div>
+                <!-- 통합 관리 현황 -->
+                <div class="dashboard-col" id="section-integrated" style="display: none;">
+                    <div class="integ-dashboard-view">
+                        <!-- 장비 통합 현황 -->
+                        <div class="integ-section-header">
+                            <h4 class="integ-section-title integ-title-equip">장비 통합 현황</h4>
+                            <span id="integ-equip-summary" class="integ-summary-text">(사업장 : 0, 장비 모델 : 0, 장비수 : 0)</span>
+                        </div>
+                        <div class="integ-row">
                             <div class="status-group card-like integ-full-width-card">
-                                <h5 class="status-group-title">사업장 셋업 현황</h5>
-                                <div id="integ-setup-site-bar-chart" class="bar-chart-container"></div>
+                                <h5 class="status-group-title">사업장 별 장비 현황</h5>
+                                <div id="integ-equip-site-chart" class="bar-chart-container"></div>
                             </div>
-                            <div class="integ-row">
-                                <!-- 기간별 셋업 현황 차트 -->
+                        </div>
+                        <div class="integ-row">
+                            <div class="status-group card-like integ-full-width-card">
+                                <h5 class="status-group-title">모델 별 장비 현황</h5>
+                                <div id="integ-equip-model-chart" class="bar-chart-container"></div>
+                            </div>
+                        </div>
 
-                                <div class="status-group card-like integ-setup-chart-card">
-                                    <h5 class="status-group-title">셋업 현황 차트</h5>
-                                    <div class="chart-row integ-setup-chart-row">
-                                        <div class="integ-donut-container">
-                                            <h6 class="integ-donut-title">완료율</h6>
-                                            <div class="donut-chart-wrapper">
-                                                <div class="donut-chart" id="integ-setup-complete-chart"></div>
-                                                <div class="chart-center" id="integ-setup-complete-center"></div>
-                                            </div>
-                                        </div>
-                                        <div class="integ-donut-container">
-                                            <h6 class="integ-donut-title">셋업 완료</h6>
-                                            <div class="donut-chart-wrapper">
-                                                <div class="donut-chart" id="integ-setup-done-chart"></div>
-                                                <div class="chart-center" id="integ-setup-done-center"></div>
-                                            </div>
-                                        </div>
-                                        <div class="integ-donut-container">
-                                            <h6 class="integ-donut-title">진행중</h6>
-                                            <div class="donut-chart-wrapper">
-                                                <div class="donut-chart" id="integ-setup-site-chart"></div>
-                                                <div class="chart-center" id="integ-setup-site-center"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="status-group card-like integ-setup-list-card">
-                                    <h5 class="status-group-title" id="integ-setup-complete-title">셋업 완료 장비</h5>
-                                    <div class="status-list-container status-list-flex"
-                                        id="integ-setup-complete-list-container">
-                                        <div class="status-list-header">
-                                            <span class="integ-setup-complete-header-name">장비 정보</span>
-                                            <span class="integ-setup-complete-header-date">완료일</span>
-                                        </div>
-                                        <ul class="site-status-list" id="integ-setup-complete-list"></ul>
-                                    </div>
-                                </div>
-                                <!-- 셋업 진행 리스트 -->
-                                <div class="status-group card-like integ-setup-list-card">
-                                    <h5 class="status-group-title" id="integ-setup-active-title">셋업 진행 장비</h5>
-                                    <div class="status-list-container status-list-flex"
-                                        id="integ-setup-detail-container">
-                                        <div class="status-list-header">
-                                            <span class="integ-setup-detail-header-name">장비 정보</span>
-                                            <span class="integ-setup-detail-header-count">진행률</span>
-                                        </div>
-                                        <ul class="site-status-list" id="integ-setup-detail-list"></ul>
-                                    </div>
-                                </div>
+                        <!-- 셋업 통합 관리 -->
+                        <div class="integ-section-header">
+                            <h4 class="integ-section-title integ-title-setup"><span id="integ-setup-title-period"></span> 셋업 통합 관리</h4>
+                            <span id="integ-setup-summary" class="integ-summary-text">(전체 : 0, 진행중 : 0, 완료 : 0)</span>
+                            <div class="integ-controls-wrapper">
+                                <select id="integ-setup-period-type" class="modal-select"
+                                    onchange="toggleIntegSetupPeriodMode()">
+                                    <option value="month">월간</option>
+                                    <option value="year">연간</option>
+                                    <option value="custom">직접 입력</option>
+                                </select>
+                                <input type="month" id="integ-setup-month" class="modal-select"
+                                    onchange="updateIntegratedDashboard()">
+                                <select id="integ-setup-year" class="modal-select" style="display: none;"
+                                    onchange="updateIntegratedDashboard()"></select>
+                                <input type="date" id="integ-setup-start" class="modal-select"
+                                    style="display: none;" onchange="updateIntegratedDashboard()">
+                                <span id="integ-setup-tilde" class="integ-tilde" style="display: none;">~</span>
+                                <input type="date" id="integ-setup-end" class="modal-select" style="display: none;"
+                                    onchange="updateIntegratedDashboard()">
                             </div>
-                            <!-- 운영 관리 통계 (신규) -->
-                            <div class="integ-section-header">
-                                <h4 class="integ-section-title integ-title-maint"><span id="integ-title-period"></span> 운영 통합 관리</h4>
-                                <span id="integ-maint-summary" class="integ-summary-text">(정기 : 0, 비정기 : 0, 고객대응 : 0, 용액제조 : 0, 온라인점검 : 0)</span>
-                                <div class="integ-controls-wrapper">
-                                    <select id="integ-period-type" class="modal-select"
-                                        onchange="toggleIntegPeriodMode()">
-                                        <option value="month">월간</option>
-                                        <option value="year">연간</option>
-                                        <option value="custom">직접 입력</option>
-                                    </select>
-                                    <input type="month" id="integ-maint-month" class="modal-select"
-                                        onchange="renderIntegMaintStats()">
-                                    <select id="integ-maint-year" class="modal-select" style="display: none;"
-                                        onchange="renderIntegMaintStats()"></select>
-                                    <input type="date" id="integ-maint-start" class="modal-select"
-                                        style="display: none;" onchange="renderIntegMaintStats()">
-                                    <span id="integ-maint-tilde" class="integ-tilde" style="display: none;">~</span>
-                                    <input type="date" id="integ-maint-end" class="modal-select" style="display: none;"
-                                        onchange="renderIntegMaintStats()">
-                                </div>
-                            </div>
-                            <div class="integ-row">
-                                <div class="status-group card-like integ-full-width-card">
-                                    <h5 class="status-group-title">사업장 작업 현황</h5>
-                                    <div id="integ-maint-site-chart" class="bar-chart-container"></div>
-                                </div>
-                            </div>
-                            <div class="integ-row">
-                                <div class="status-group card-like">
-                                    <h5 class="status-group-title">작업 유형별 현황</h5>
-                                    <div id="integ-maint-type-chart" class="bar-chart-container"></div>
-                                </div>
-                                <div class="status-group card-like">
-                                    <h5 class="status-group-title">점검 항목</h5>
-                                    <div class="chart-row" id="integ-maint-item-chart-row">
+                        </div>
+                        <div class="status-group card-like integ-full-width-card">
+                            <h5 class="status-group-title">사업장 셋업 현황</h5>
+                            <div id="integ-setup-site-bar-chart" class="bar-chart-container"></div>
+                        </div>
+                        <div class="integ-row">
+                            <!-- 셋업 현황 차트 -->
+                            <div class="status-group card-like integ-setup-chart-card">
+                                <h5 class="status-group-title">셋업 현황 차트</h5>
+                                <div class="chart-row integ-setup-chart-row">
+                                    <div class="integ-donut-container">
+                                        <h6 class="integ-donut-title">완료율</h6>
                                         <div class="donut-chart-wrapper">
-                                            <div class="donut-chart" id="integ-maint-item-chart"></div>
-                                            <div class="chart-center" id="integ-maint-item-center"></div>
+                                            <div class="donut-chart" id="integ-setup-complete-chart"></div>
+                                            <div class="chart-center" id="integ-setup-complete-center"></div>
                                         </div>
-                                        <div class="status-list-container status-list-flex"
-                                            id="integ-maint-item-list-container">
-                                            <div class="status-list-header">
-                                                <span class="integ-list-header-type">구분</span>
-                                                <span class="integ-list-header-name">항목명</span>
-                                                <span class="integ-list-header-count">건수</span>
-                                            </div>
-                                            <ul class="site-status-list" id="integ-maint-item-list"></ul>
+                                    </div>
+                                    <div class="integ-donut-container">
+                                        <h6 class="integ-donut-title">셋업 완료</h6>
+                                        <div class="donut-chart-wrapper">
+                                            <div class="donut-chart" id="integ-setup-done-chart"></div>
+                                            <div class="chart-center" id="integ-setup-done-center"></div>
                                         </div>
+                                    </div>
+                                    <div class="integ-donut-container">
+                                        <h6 class="integ-donut-title">진행중</h6>
+                                        <div class="donut-chart-wrapper">
+                                            <div class="donut-chart" id="integ-setup-site-chart"></div>
+                                            <div class="chart-center" id="integ-setup-site-center"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- 셋업 완료 리스트 -->
+                            <div class="status-group card-like integ-setup-list-card">
+                                <h5 class="status-group-title" id="integ-setup-complete-title">셋업 완료 장비</h5>
+                                <div class="status-list-container status-list-flex"
+                                    id="integ-setup-complete-list-container">
+                                    <div class="status-list-header">
+                                        <span class="integ-setup-complete-header-name">장비 정보</span>
+                                        <span class="integ-setup-complete-header-date">완료일</span>
+                                    </div>
+                                    <ul class="site-status-list" id="integ-setup-complete-list"></ul>
+                                </div>
+                            </div>
+                            <!-- 셋업 진행 리스트 -->
+                            <div class="status-group card-like integ-setup-list-card">
+                                <h5 class="status-group-title" id="integ-setup-active-title">셋업 진행 장비</h5>
+                                <div class="status-list-container status-list-flex"
+                                    id="integ-setup-detail-container">
+                                    <div class="status-list-header">
+                                        <span class="integ-setup-detail-header-name">장비 정보</span>
+                                        <span class="integ-setup-detail-header-count">진행률</span>
+                                    </div>
+                                    <ul class="site-status-list" id="integ-setup-detail-list"></ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 운영 관리 통계 -->
+                        <div class="integ-section-header">
+                            <h4 class="integ-section-title integ-title-maint"><span id="integ-title-period"></span> 운영 통합 관리</h4>
+                            <span id="integ-maint-summary" class="integ-summary-text">(정기 : 0, 비정기 : 0, 고객대응 : 0, 용액제조 : 0, 온라인점검 : 0)</span>
+                            <div class="integ-controls-wrapper">
+                                <select id="integ-period-type" class="modal-select"
+                                    onchange="toggleIntegPeriodMode()">
+                                    <option value="month">월간</option>
+                                    <option value="year">연간</option>
+                                    <option value="custom">직접 입력</option>
+                                </select>
+                                <input type="month" id="integ-maint-month" class="modal-select"
+                                    onchange="renderIntegMaintStats()">
+                                <select id="integ-maint-year" class="modal-select" style="display: none;"
+                                    onchange="renderIntegMaintStats()"></select>
+                                <input type="date" id="integ-maint-start" class="modal-select"
+                                    style="display: none;" onchange="renderIntegMaintStats()">
+                                <span id="integ-maint-tilde" class="integ-tilde" style="display: none;">~</span>
+                                <input type="date" id="integ-maint-end" class="modal-select" style="display: none;"
+                                    onchange="renderIntegMaintStats()">
+                            </div>
+                        </div>
+                        <div class="integ-row">
+                            <div class="status-group card-like integ-full-width-card">
+                                <h5 class="status-group-title">사업장 작업 현황</h5>
+                                <div id="integ-maint-site-chart" class="bar-chart-container"></div>
+                            </div>
+                        </div>
+                        <div class="integ-row">
+                            <div class="status-group card-like">
+                                <h5 class="status-group-title">작업 유형별 현황</h5>
+                                <div id="integ-maint-type-chart" class="bar-chart-container"></div>
+                            </div>
+                            <div class="status-group card-like">
+                                <h5 class="status-group-title">점검 항목</h5>
+                                <div class="chart-row" id="integ-maint-item-chart-row">
+                                    <div class="donut-chart-wrapper">
+                                        <div class="donut-chart" id="integ-maint-item-chart"></div>
+                                        <div class="chart-center" id="integ-maint-item-center"></div>
+                                    </div>
+                                    <div class="status-list-container status-list-flex"
+                                        id="integ-maint-item-list-container">
+                                        <div class="status-list-header">
+                                            <span class="integ-list-header-type">구분</span>
+                                            <span class="integ-list-header-name">항목명</span>
+                                            <span class="integ-list-header-count">건수</span>
+                                        </div>
+                                        <ul class="site-status-list" id="integ-maint-item-list"></ul>
                                     </div>
                                 </div>
                             </div>

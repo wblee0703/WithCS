@@ -62,12 +62,36 @@
 .bar-chart-container {
     display: flex;
     align-items: flex-end;
-    justify-content: space-around;
+    justify-content: flex-start; /* 기본: 항목이 많을 때 대비하여 시작점(왼쪽) 정렬 */
     height: 380px; /* 대각선 라벨 공간 50px 추가 확보 */
     width: 100%;
     padding: 10px 10px 140px 10px; /* 라벨 표시를 위한 하단 패딩 50px 추가 증가 */
     position: relative;
     box-sizing: border-box;
+    overflow-x: auto; /* 모델이 많아도 카드 영역을 벗어나지 않도록 가로 스크롤 적용 */
+}
+
+/* 항목 수가 적은 차트들은 카드 전체 너비 기준으로 균등 배치 */
+#integ-equip-site-chart,
+#integ-setup-site-bar-chart,
+#integ-maint-site-chart,
+#integ-maint-type-chart {
+    justify-content: space-around;
+}
+
+/* 스크롤바 디자인 */
+.bar-chart-container::-webkit-scrollbar {
+    height: 8px;
+}
+.bar-chart-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+.bar-chart-container::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 4px;
+}
+.bar-chart-container::-webkit-scrollbar-thumb:hover {
+    background: #8b949e;
 }
 
 .bar-group {
@@ -79,6 +103,8 @@
     height: 100%;
     position: relative;
     z-index: 1;
+    flex-shrink: 0; /* 가로 공간이 부족할 때 막대가 찌그러지지 않도록 크기 고정 */
+    margin: 0 15px; /* 막대 간격 여백 유지 */
 }
 
 .bar {
@@ -470,7 +496,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .bar-chart-container {
         height: 350px; /* 모바일 대각선 라벨 공간 50px 추가 확보 */
         overflow-x: auto; /* 가로 스크롤 허용 */
-        justify-content: flex-start; /* 왼쪽 정렬 */
+        justify-content: flex-start !important; /* 모바일에서는 기기 너비가 좁아 스크롤이 필요하므로 무조건 왼쪽 정렬 강제 */
         padding-bottom: 140px; /* 모바일 하단 라벨 공간 50px 추가 확보 */
     }
 
