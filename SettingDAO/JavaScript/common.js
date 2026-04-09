@@ -3134,8 +3134,8 @@ function openNextScheduleModal(options) {
                     period = match.cycle || null;
                 }
 
-                let existingItem = data.maint.find(m => (m.content === fullContent || (code && m.code === code) || m.content === sItem.content) && mergedRegItemIds.has(m.id));
-                if (!existingItem) existingItem = data.maint.find(m => m.content === fullContent || (code && m.code === code) || m.content === sItem.content);
+                let existingItem = data.maint.find(m => (m.content === fullContent || m.content === sItem.content) && mergedRegItemIds.has(m.id));
+                if (!existingItem) existingItem = data.maint.find(m => m.content === fullContent || m.content === sItem.content);
 
                 if (existingItem) {
                     const oldDate = existingItem.scheduledDate;

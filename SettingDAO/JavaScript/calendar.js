@@ -1871,7 +1871,7 @@ function saveDetailChanges() {
                 if (match) { code = match.code || ''; fullContent = match.part || val; }
                 if (partContent && idx === 0) fullContent = `${fullContent} - ${partContent}`;
 
-                let existing = sameDayItems.find(m => (m.content === fullContent || (code && m.code === code) || m.content === val));
+                let existing = sameDayItems.find(m => m.content === fullContent || m.content === val);
                 if (existing) {
                     existing.scheduledDate = targetDate;
                     existing.detailType = itemDetailType;
@@ -2109,7 +2109,7 @@ function completeScheduleWork() {
     let mergedRegItemIds = new Set();
     sameDayItems.forEach(i => {
         if (i.type === '비정기') {
-            const regItem = data.maint.find(m => m.type === '정기' && m.id !== i.id && (m.content === i.content || (m.code && i.code && m.code === i.code)));
+            const regItem = data.maint.find(m => m.type === '정기' && m.id !== i.id && m.content === i.content);
             if (regItem) {
                 regItem.date = i.date;
                 if (i.itemCost) regItem.itemCost = i.itemCost;
@@ -2298,7 +2298,7 @@ function cancelScheduleCompletion() {
             fullContent = match.part || itemText;
         }
 
-        let existingItem = data.maint.find(m => m.type === logType && (m.content === fullContent || (code && m.code === code) || m.content === itemText) && m.originalLogId == logItem.originalLogId);
+        let existingItem = data.maint.find(m => m.type === logType && (m.content === fullContent || m.content === itemText) && m.originalLogId == logItem.originalLogId);
 
 
         if (existingItem) {
@@ -3252,7 +3252,7 @@ function confirmRegisterSchedule() {
                 period = match.cycle || null;
             }
 
-            let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || (code && m.code === code) || m.content === itemText));
+            let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || m.content === itemText));
 
             if (existingItem) {
                 const oldDate = existingItem.scheduledDate;

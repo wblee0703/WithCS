@@ -136,6 +136,13 @@ function setupMaintenanceEvents() {
     const maintContent = document.getElementById('maint-content');
     if (maintContent) maintContent.spellcheck = false;
 
+        // [추가] "물품명" 라벨을 "물품 상세"로 변경 (HTML 미수정 대비)
+        document.querySelectorAll('th, label, .header-name').forEach(el => {
+            if (el.textContent.trim() === '물품명') {
+                el.textContent = '물품 상세';
+            }
+        });
+
     // [추가] 유지관리 리스트 드래그 앤 드롭 순서 변경 기능 (dragover 이벤트)
     const maintBody = document.getElementById('maint-table-body');
     if (maintBody) {
@@ -390,8 +397,6 @@ function addDetailItem() {
         const match = adminItems.find(a => a.part === content);
         if (match) {
             code = match.code || '';
-        } else if (maintType === '정기' || maintType === '비정기') {
-            return alert('물품명은 제안 박스에서 검색하여 선택해야만 등록할 수 있습니다.');
         }
     }
 
@@ -423,7 +428,8 @@ function addDetailItem() {
     let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [], memo: "" };
 
     // 동일한 타입 내에서만 중복 확인 (정기/비정기 개별 관리)
-    if (data.maint.some(m => m.type === maintType && (m.content === content || (code && m.code === code)))) {
+     // [수정] 코드명이 같아도 물품 상세(content)가 다르면 다른 물품으로 취급
+        if (data.maint.some(m => m.type === maintType && m.content === content)) {
         return alert(`이미 유지관리 물품에 등록된 항목입니다. (${maintType})`);
     }
 
@@ -570,21 +576,9 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
             window.renderMaintSuggestions();
         });
 
-        // 포커스를 잃을 때 목록에 없는 임의의 텍스트가 입력되어 있다면 이전 유효값으로 롤백
+        // 포커스를 잃을 때 목록에 없더라도 자유로운 텍스트 입력을 허용하도록 롤백 로직 제거
         contentElement.addEventListener('blur', () => {
             setTimeout(() => {
-                const activeBtn = document.querySelector('#maint-type-toggle .active');
-                if (activeBtn && (activeBtn.dataset.type === '정기' || activeBtn.dataset.type === '비정기')) {
-                    const currentVal = contentElement.value.trim();
-                    const data = JSON.parse(localStorage.getItem('admin_items')) || [];
-                    const isValid = data.some(item => item.part === currentVal);
-                    if (!isValid) {
-                        contentElement.value = contentElement.dataset.lastValid || '';
-                        if (!contentElement.value) contentElement.removeAttribute('data-code');
-                    } else {
-                        contentElement.dataset.lastValid = currentVal;
-                    }
-                }
                 ul.style.display = 'none';
             }, 150);
         });
@@ -596,7 +590,7 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
         });
     }
 
-    contentElement.placeholder = (maintType === '정기' || maintType === '비정기') ? '검색 후 선택 (직접 입력 불가)' : '항목 내용 입력';
+    contentElement.placeholder = '물품 상세 입력 (또는 검색)';
 
     // 렌더링 함수 전역 연결
     window.renderMaintSuggestions = function (showAll = forceShowAll, isInput = false) {
