@@ -8,7 +8,6 @@ var currentSearchFilters = { site: '', equip: '' };
 let currentScheduleTarget = null;
 let currentDetailTarget = null;
 let expandedViewId = null;
-let cameFromTaskSearch = false; // [추가] 작업 검색에서 상세 정보로 이동했는지 여부
 
 document.addEventListener('DOMContentLoaded', () => {
     setupCalendar();
@@ -16,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventDetailModal();
     setupRegisterScheduleModal();
     setupSearchModal();
-    setupTaskSearchModal(); // [추가]
 
     // [추가] 달력 상세 검색 제안박스 외부 클릭 시 닫기
     document.addEventListener('click', (e) => {
@@ -34,17 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
 /* ==========================================================================
    2. 핵심 로직 & 데이터 처리 (Core Logic & Data)
    ========================================================================== */
-
-/**
- * 공통: 사업장 및 장비 매핑 데이터 가져오기 (데이터 구조 변경(device_data) 대응)
- */
-function getDeviceDataMap() {
-    if (typeof storageData !== 'undefined') {
-        if (storageData.device_data) return storageData.device_data;
-        return storageData;
-    }
-    return JSON.parse(localStorage.getItem('device_data')) || {};
-}
 
 /**
  * 캘린더 표시용 일정 데이터 수집
@@ -107,7 +94,7 @@ function getScheduleForCalendar() {
 function setScheduleDate(site, equip, id, dateStr, isDelete = false, md = null, worker = null, providedReason = undefined) {
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
-    
+
     let payload = { maint_upserts: [], maint_deletes: [], log_upserts: [] };
 
     if (data.maint) {
@@ -427,7 +414,8 @@ function renderMonthGrid(year, month, titleId, gridId) {
             // 그룹화 로직
             const groupedEvents = {};
             dayEvents.forEach(event => {
-                const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}`;
+                const isExtraWork = !!event.originalLogId;
+                const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}::${isExtraWork}`;
                 if (!groupedEvents[key]) {
                     groupedEvents[key] = {
                         site: event.site,
@@ -435,6 +423,7 @@ function renderMonthGrid(year, month, titleId, gridId) {
                         isCompleted: event.isCompleted,
                         isChanged: event.isChanged,
                         type: event.type,
+                        isExtraWork: isExtraWork,
                         ids: [] // ID 목록 저장을 위해 배열 초기화
                     };
                 }
@@ -466,8 +455,11 @@ function renderMonthGrid(year, month, titleId, gridId) {
                     dragAttr = `draggable="true" data-drag-site="${escapeHtml(group.site)}" data-drag-equip="${escapeHtml(group.equip)}" data-drag-ids="${idsJson}" ondragstart="handleCalendarDragStartFromData(event)" ondragend="this.classList.remove('dragging')"`;
                 }
 
+                // [추가] 캘린더 블록에 추가 작업 표시
+                const extraBadge = group.isExtraWork ? `<span style="color:#1f6feb; font-weight:bold; margin-left:4px; font-size:10px;">&lt;추가&gt;</span>` : '';
+
                 eventsHtml += `<div class="calendar-event-item ${completedClass} ${typeClass}" ${dragAttr}>
-                    ${escapeHtml(group.site)} ${escapeHtml(equipName)} <span class="event-type-text ${typeClass}">${group.type}</span>
+                    ${escapeHtml(group.site)} ${escapeHtml(equipName)} <span class="event-type-text ${typeClass}">${group.type}</span>${extraBadge}
                 </div>`;
             });
 
@@ -609,7 +601,8 @@ function openCalendarPopup(dateStr, events) {
     } else {
         const groupedEvents = {};
         events.forEach(event => {
-            const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}`;
+                const isExtraWork = !!event.originalLogId;
+                const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}::${isExtraWork}`;
             if (!groupedEvents[key]) {
                 groupedEvents[key] = {
                     site: event.site,
@@ -617,6 +610,7 @@ function openCalendarPopup(dateStr, events) {
                     isCompleted: event.isCompleted,
                     isChanged: event.isChanged,
                     type: event.type,
+                        isExtraWork: isExtraWork,
                     items: []
                 };
             }
@@ -693,90 +687,90 @@ function openCalendarPopup(dateStr, events) {
                     rightContainer.appendChild(extraSpan);
                 }
 
-            const userRole = sessionStorage.getItem('userRole');
-            const canDelete = (!group.isCompleted && !group.isChanged) || (group.isChanged && userRole === 'superadmin');
+                const userRole = sessionStorage.getItem('userRole');
+                const canDelete = (!group.isCompleted && !group.isChanged) || (group.isChanged && userRole === 'superadmin');
 
-            if (canDelete) {
+                if (canDelete) {
                     const delBtn = document.createElement('button');
                     delBtn.className = 'btn-calendar-del';
                     delBtn.textContent = '✕';
-                delBtn.title = group.isChanged ? '변동 이력 삭제' : '일정 삭제';
+                    delBtn.title = group.isChanged ? '변동 이력 삭제' : '일정 삭제';
                     delBtn.onclick = (e) => {
                         e.stopPropagation();
-                    if (group.isChanged) {
-                        if (confirm('이 변동 이력을 삭제하시겠습니까? (삭제 후 복구할 수 없습니다)')) {
-                            const sampleItem = group.items[0];
-                            const key = `details_${sampleItem.site}_${sampleItem.equip}`;
-                            let data = JSON.parse(localStorage.getItem(key)) || {};
-                            let payload = { log_deletes: [] };
+                        if (group.isChanged) {
+                            if (confirm('이 변동 이력을 삭제하시겠습니까? (삭제 후 복구할 수 없습니다)')) {
+                                const sampleItem = group.items[0];
+                                const key = `details_${sampleItem.site}_${sampleItem.equip}`;
+                                let data = JSON.parse(localStorage.getItem(key)) || {};
+                                let payload = { log_deletes: [] };
 
-                            group.items.forEach(item => {
-                                if (data.logs) {
-                                    data.logs = data.logs.filter(l => l.id !== item.id);
+                                group.items.forEach(item => {
+                                    if (data.logs) {
+                                        data.logs = data.logs.filter(l => l.id !== item.id);
+                                    }
+                                    payload.log_deletes.push(item.id.toString());
+                                });
+
+                                localStorage.setItem(key, JSON.stringify(data));
+                                if (typeof window.syncHistoryTransaction === 'function') {
+                                    window.syncHistoryTransaction(sampleItem.site, sampleItem.equip, payload);
                                 }
-                                payload.log_deletes.push(item.id.toString());
-                            });
 
-                            localStorage.setItem(key, JSON.stringify(data));
-                            if (typeof window.syncHistoryTransaction === 'function') {
-                                window.syncHistoryTransaction(sampleItem.site, sampleItem.equip, payload);
-                            }
-
-                            if (typeof addSystemLog === 'function') {
-                                addSystemLog('DELETE_LOG', sampleItem.equip, '일정 변경 이력 삭제');
+                                if (typeof addSystemLog === 'function') {
+                                    addSystemLog('DELETE_LOG', sampleItem.equip, '일정 변경 이력 삭제');
+                                }
+                            } else {
+                                return;
                             }
                         } else {
-                            return;
-                        }
-                    } else {
-                        if (confirm('이 작업 예정일을 삭제하시겠습니까?')) {
-                            let reason = undefined;
-                            const sampleItem = group.items[0];
-                            if (sampleItem && sampleItem.scheduledDate) {
-                                const [y, m] = sampleItem.scheduledDate.split('-').map(Number);
-                                const confs = JSON.parse(localStorage.getItem('calendar_confirmations')) || {};
-                                const yyyyMm = `${y}-${String(m).padStart(2, '0')}`;
-                                const monthConf = confs[yyyyMm];
-                                if (monthConf) {
-                                    const isGlobalConfirmed = monthConf.count !== undefined;
-                                    const isSiteConfirmed = monthConf[sampleItem.site] !== undefined || (monthConf.siteCounts && monthConf.siteCounts[sampleItem.site] !== undefined);
+                            if (confirm('이 작업 예정일을 삭제하시겠습니까?')) {
+                                let reason = undefined;
+                                const sampleItem = group.items[0];
+                                if (sampleItem && sampleItem.scheduledDate) {
+                                    const [y, m] = sampleItem.scheduledDate.split('-').map(Number);
+                                    const confs = JSON.parse(localStorage.getItem('calendar_confirmations')) || {};
+                                    const yyyyMm = `${y}-${String(m).padStart(2, '0')}`;
+                                    const monthConf = confs[yyyyMm];
+                                    if (monthConf) {
+                                        const isGlobalConfirmed = monthConf.count !== undefined;
+                                        const isSiteConfirmed = monthConf[sampleItem.site] !== undefined || (monthConf.siteCounts && monthConf.siteCounts[sampleItem.site] !== undefined);
 
-                                    if (isGlobalConfirmed || isSiteConfirmed) {
-                                        reason = prompt(`[${yyyyMm} 예정 확정됨]\n해당 월은 일정이 확정되었습니다.\n일정 삭제 사유를 입력해주세요:`);
-                                        if (reason === null) return;
+                                        if (isGlobalConfirmed || isSiteConfirmed) {
+                                            reason = prompt(`[${yyyyMm} 예정 확정됨]\n해당 월은 일정이 확정되었습니다.\n일정 삭제 사유를 입력해주세요:`);
+                                            if (reason === null) return;
+                                        }
                                     }
                                 }
-                            }
 
-                            group.items.forEach(item => {
-                                setScheduleDate(item.site, item.equip, item.id, '', true, null, null, reason);
-                            });
-                        } else {
-                            return;
-                        }
-                    }
-
-                            renderCalendar();
-                            if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
-                            if (typeof renderDetails === 'function') renderDetails();
-                            if (typeof renderLogs === 'function') renderLogs();
-
-                            const dateStr = document.getElementById('popup-date-title').textContent;
-                            const allEvents = getScheduleForCalendar();
-                            let dayEvents = allEvents[dateStr] || [];
-
-                            const searchInput = document.getElementById('calendar-search');
-                            const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
-                            if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
-                                dayEvents = dayEvents.filter(event => {
-                                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
-                                    const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
-                                    const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
-                                    return matchKeyword && matchSite && matchEquip;
+                                group.items.forEach(item => {
+                                    setScheduleDate(item.site, item.equip, item.id, '', true, null, null, reason);
                                 });
+                            } else {
+                                return;
                             }
-                            openCalendarPopup(dateStr, dayEvents);
+                        }
+
+                        renderCalendar();
+                        if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+                        if (typeof renderDetails === 'function') renderDetails();
+                        if (typeof renderLogs === 'function') renderLogs();
+
+                        const dateStr = document.getElementById('popup-date-title').textContent;
+                        const allEvents = getScheduleForCalendar();
+                        let dayEvents = allEvents[dateStr] || [];
+
+                        const searchInput = document.getElementById('calendar-search');
+                        const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+                        if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
+                            dayEvents = dayEvents.filter(event => {
+                                const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
+                                const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
+                                const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
+                                return matchKeyword && matchSite && matchEquip;
+                            });
+                        }
+                        openCalendarPopup(dateStr, dayEvents);
                     };
                     rightContainer.appendChild(delBtn);
                 }
@@ -1312,7 +1306,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         completeBtn.style.display = 'block';
         completeBtn.textContent = '작업 완료';
         if (cancelBtn) cancelBtn.style.display = 'none';
-        
+
         // [추가] 취소 후 돌아왔을 때 필드 다시 활성화
         workerInput.disabled = false;
         if (trigger) {
@@ -1345,7 +1339,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
     // 항시 수정 렌더링 (모든 상태)
     buildDetailDropdown(item, site, equip);
-    
+
     // [추가] 항목 드롭다운 트리거 비활성화 (완료된 작업)
     if (isCompleted) {
         const contentTrigger = document.getElementById('detail-content-dropdown-wrapper')?.querySelector('.log-select-trigger');
@@ -1355,7 +1349,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         }
         if (contentInput) contentInput.disabled = true;
     }
-    
+
     let currentContentStr = '';
     const dWrapper = document.getElementById('detail-content-dropdown-wrapper');
     if (dWrapper) {
@@ -1438,7 +1432,7 @@ function buildDetailDropdown(item, site, equip) {
         else selectedMap[val] = '유상';
     });
 
-    const equipKey = equip; 
+    const equipKey = equip;
     const itemData = JSON.parse(localStorage.getItem('check_type_items')) || {};
     let chkKey = (type === '비정기') ? `${equipKey}::${type}::${detailType}::${detailType2}` : `${equipKey}::${type}::${detailType}`;
     let availableItems = itemData[chkKey] || [];
@@ -1747,7 +1741,7 @@ function hasDetailUnsavedChanges() {
             const cSel = el.querySelector('.item-cost-select');
             return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
         }).join(', ');
-        
+
         const pWrapper = document.getElementById('detail-edit-part-wrapper');
         if (pWrapper && pWrapper.style.display !== 'none') {
             const pList = document.getElementById('detail-edit-part-list');
@@ -1766,18 +1760,18 @@ function hasDetailUnsavedChanges() {
     if (!currentContent) currentContent = '내용 없음';
 
     return currentWorker !== window.initialEventDetail.worker ||
-           currentMd !== window.initialEventDetail.md ||
-           currentMemo !== window.initialEventDetail.memo ||
-           currentDate !== window.initialEventDetail.date ||
-           currentContent !== window.initialEventDetail.content ||
-           currentIssueShared !== window.initialEventDetail.issueShared;
+        currentMd !== window.initialEventDetail.md ||
+        currentMemo !== window.initialEventDetail.memo ||
+        currentDate !== window.initialEventDetail.date ||
+        currentContent !== window.initialEventDetail.content ||
+        currentIssueShared !== window.initialEventDetail.issueShared;
 }
 
 function saveDetailChanges() {
     const { site, equip, id, isCompleted } = currentDetailTarget;
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
-    
+
     let item = null;
     if (isCompleted) {
         item = data.logs ? data.logs.find(i => i.id == id) : null;
@@ -1791,7 +1785,7 @@ function saveDetailChanges() {
     const newMemo = document.getElementById('detail-work-memo').value.trim();
     const newDate = document.getElementById('detail-scheduled-date').value;
     if (!newDate) { alert('날짜를 선택해주세요.'); return false; }
-    
+
     let dropdownValues = [];
     const dropdownWrapper = document.getElementById('detail-content-dropdown-wrapper');
     if (dropdownWrapper) {
@@ -1822,7 +1816,7 @@ function saveDetailChanges() {
     const itemDetailType = item.detailType || '';
     let remainingIds = [];
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-    
+
     let payload = { maint_upserts: [], log_upserts: [] };
     let finalContentStr = '';
 
@@ -1833,7 +1827,7 @@ function saveDetailChanges() {
         } else {
             finalContentStr = partContent ? partContent : '내용 없음';
         }
-        
+
         if (!dropdownWrapper) {
             finalContentStr = document.getElementById('detail-content-input').value.trim();
             if (partContent) finalContentStr = finalContentStr ? `${finalContentStr} - ${partContent}` : partContent;
@@ -1845,11 +1839,11 @@ function saveDetailChanges() {
         item.memo = newMemo;
         item.md = newMd;
         item.content = finalContentStr;
-        
+
         const targetParentId = item.originalLogId || item.id;
         const issueShareCb = document.getElementById('detail-issue-share-checkbox');
         const newIssueShared = issueShareCb ? issueShareCb.checked : false;
-        
+
         data.logs.forEach(l => {
             let isModified = false;
             if (l.id === item.id) isModified = true;
@@ -1863,10 +1857,10 @@ function saveDetailChanges() {
                 payload.log_upserts.push(l);
             }
         });
-        
+
     } else {
         const sameDayItems = data.maint.filter(m => m.scheduledDate === item.scheduledDate && m.type === itemType && (m.detailType || '') === itemDetailType);
-        
+
         if (dropdownValues.length > 0) {
             dropdownValues.forEach((val, idx) => {
                 let itemCost = '';
@@ -1889,7 +1883,7 @@ function saveDetailChanges() {
                     payload.maint_upserts.push(existing);
                 } else {
                     const newId = Date.now() + idx;
-                    const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: code, content: fullContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: itemCost };
+                    const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: code, content: fullContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: itemCost, originalLogId: item.originalLogId };
                     data.maint.push(newItem);
                     remainingIds.push(newId);
                     payload.maint_upserts.push(newItem);
@@ -1911,32 +1905,31 @@ function saveDetailChanges() {
                     payload.maint_upserts.push(existing);
                 } else {
                     const newId = Date.now();
-                    const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: '' };
-                    data.maint.push(newItem);
+                    const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: '', originalLogId: item.originalLogId }; data.maint.push(newItem);
                     remainingIds.push(newId);
                     payload.maint_upserts.push(newItem);
                 }
             } else {
-            let finalContent = document.getElementById('detail-content-input').value.trim();
-            if (partContent) finalContent = `${finalContent} - ${partContent}`;
-            if (!finalContent) finalContent = '내용 없음';
-            finalContentStr = finalContent;
-            
-            let existing = sameDayItems.find(m => m.content === finalContent);
-            if (existing) {
-                existing.scheduledDate = targetDate;
-                existing.worker = newWorker;
-                existing.memo = newMemo;
-                existing.md = newMd;
-                remainingIds.push(existing.id);
-                payload.maint_upserts.push(existing);
-            } else {
-                const newId = Date.now();
-                const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd };
-                data.maint.push(newItem);
-                remainingIds.push(newId);
-                payload.maint_upserts.push(newItem);
-            }
+                let finalContent = document.getElementById('detail-content-input').value.trim();
+                if (partContent) finalContent = `${finalContent} - ${partContent}`;
+                if (!finalContent) finalContent = '내용 없음';
+                finalContentStr = finalContent;
+
+                let existing = sameDayItems.find(m => m.content === finalContent);
+                if (existing) {
+                    existing.scheduledDate = targetDate;
+                    existing.worker = newWorker;
+                    existing.memo = newMemo;
+                    existing.md = newMd;
+                    remainingIds.push(existing.id);
+                    payload.maint_upserts.push(existing);
+                } else {
+                    const newId = Date.now();
+                    const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, originalLogId: item.originalLogId };
+                    data.maint.push(newItem);
+                    remainingIds.push(newId);
+                    payload.maint_upserts.push(newItem);
+                }
             }
         }
 
@@ -1950,7 +1943,7 @@ function saveDetailChanges() {
 
     localStorage.setItem(key, JSON.stringify(data));
     window.syncHistoryTransaction(site, equip, payload);
-    
+
     if (!isCompleted && remainingIds.length > 0) {
         currentDetailTarget.id = remainingIds[0];
     }
@@ -2067,7 +2060,7 @@ function completeScheduleWork() {
     });
     const combinedContent = [...new Set(contentArr)].join(', ');
     const completeDate = maintItem.scheduledDate || new Date().toISOString().split('T')[0];
-    
+
     let payload = { log_upserts: [], maint_upserts: [], maint_deletes: [] };
 
     const newLog = {
@@ -2129,15 +2122,17 @@ function completeScheduleWork() {
     // [수정] 다음 예정일 등록 대상 항목을 data.maint 수정 전에 미리 결정
     const remainingIds = data.maint.filter(i => sameDayItems.some(s => s.id === i.id) || mergedRegItemIds.has(i.id)).map(i => i.id);
     const remainingItems = data.maint.filter(i => remainingIds.includes(i.id));
-    
+
     // [추가] Admin에 등록된 물품만 다음 예정일 등록 팝업에 표시하도록 필터링
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
     let nextScheduleItems = remainingItems.filter(item => {
+        if (item.originalLogId) return false; // [추가] 자식(추가) 작업은 다음 예정일 목록에서 제외
         return adminItems.some(a => a.part === item.content || a.code === item.content);
     });
 
     // 항목이 아예 없는 점검(내용 없음) 완료 시, 예정일 팝업에서 단일 폼(작업자/공수/예정일)만 표시되도록 생성
-    if (nextScheduleItems.length === 0) {
+    // [수정] 단독 추가 작업이 아닌 일반 작업의 경우에만 기본 폼(장비 점검) 생성
+    if (nextScheduleItems.length === 0 && !maintItem.originalLogId) {
         nextScheduleItems = [{
             id: Date.now() + 9999, // 임시 고유 ID 부여
             type: maintItem.type || '정기',
@@ -2156,10 +2151,12 @@ function completeScheduleWork() {
         if (idsToRemove.has(i.id)) return false;
         const isCompletedItem = sameDayItems.some(s => s.id === i.id);
         if (isCompletedItem) {
+            if (i.originalLogId) return false; // [추가] 추가 작업(자식 작업)은 완료 후 예정(maint) 목록에서 무조건 제거
+
             const dt = i.detailType || '';
             const isPmBm = dt === 'PM 점검' || dt === 'BM 점검' || dt.startsWith('PM 점검 >') || dt.startsWith('BM 점검 >');
             if (!isPmBm) return false;
-            
+
             // [추가] "내용 없음" 이거나 관리자(Admin) 물품 관리에 등록되지 않은 임의 항목은 유지관리 리스트(maint)에 남기지 않고 삭제
             if (i.content === '내용 없음' || i.content === '장비 점검') return false;
             const match = adminItems.some(a => a.part === i.content || a.code === i.content);
@@ -2168,7 +2165,7 @@ function completeScheduleWork() {
         return true;
     });
     const postFilterIds = new Set(data.maint.map(i => i.id));
-    
+
     preFilterIds.forEach(id => {
         if (!postFilterIds.has(id)) payload.maint_deletes.push(id.toString());
     });
@@ -2185,7 +2182,7 @@ function completeScheduleWork() {
 
     // [추가] 완료 후 다음 예정일 등록 모달 띄우기
     // 비정기 물품 교체건과 병합된 정기 항목 포함
-    if (nextScheduleItems.length > 0) {
+    if (nextScheduleItems.length > 0 && !maintItem.originalLogId) {
         // [수정] 공통 함수 호출로 변경
         openNextScheduleModal({
             site,
@@ -2277,7 +2274,7 @@ function cancelScheduleCompletion() {
     const contents = logContent.split(',').map(s => s.trim());
 
     if (!data.maint) data.maint = [];
-    
+
     let payload = { log_deletes: [id.toString()], maint_upserts: [] };
 
     let recoveredMaintId = null; // 복구된 메인 ID 추적
@@ -2301,7 +2298,7 @@ function cancelScheduleCompletion() {
             fullContent = match.part || itemText;
         }
 
-        let existingItem = data.maint.find(m => m.type === logType && (m.content === fullContent || (code && m.code === code) || m.content === itemText));
+        let existingItem = data.maint.find(m => m.type === logType && (m.content === fullContent || (code && m.code === code) || m.content === itemText) && m.originalLogId == logItem.originalLogId);
 
 
         if (existingItem) {
@@ -2316,7 +2313,7 @@ function cancelScheduleCompletion() {
             payload.maint_upserts.push(existingItem);
         } else {
             // 일회성 항목 등으로 인해 maint에서 삭제된 경우 재생성
-                const newId = Date.now() + idx; // [수정] 변수 선언 누락 오류 해결
+            const newId = Date.now() + idx; // [수정] 변수 선언 누락 오류 해결
             const newItem = {
                 id: newId,
                 type: logType,
@@ -2330,7 +2327,8 @@ function cancelScheduleCompletion() {
                 worker: recoveredWorker, // [추가]
                 md: recoveredMd,         // [추가]
                 memo: recoveredMemo,     // [추가]
-                itemCost: itemCost
+                itemCost: itemCost,
+                originalLogId: logItem.originalLogId // [수정] 원본 로그 연결 ID 복구 유지
             };
             data.maint.push(newItem);
             payload.maint_upserts.push(newItem);
@@ -2973,7 +2971,7 @@ function updateRegisterEquipSelect(site) {
         const key = `details_${site}_${equip}`;
         const detailData = JSON.parse(localStorage.getItem(key)) || {};
         const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
-        
+
         let displayValue = name;
         if (custName) {
             displayValue = `${name} [${custName}]`;
@@ -3017,7 +3015,7 @@ function updateRegisterEquipSelect(site) {
                     const tpl = getTemplateContent('equip-suggestion-item-template');
                     if (tpl) {
                         const li = tpl.querySelector('.log-select-item');
-                        
+
                         let displayValueHtml = escapeHtml(name);
                         if (custName) {
                             displayValueHtml += ` <span style="color:#3fb950;">[${escapeHtml(custName)}]</span>`;
@@ -3186,9 +3184,9 @@ function confirmRegisterSchedule() {
 
         // [수정] 추가 작업을 완료된 로그(logs)가 아닌, 예정 작업(maint)으로 먼저 등록 후 팝업 호출
         const newId = Date.now();
-        
+
         if (!data.maint) data.maint = [];
-        
+
         const newMaintItem = {
             id: newId,
             type: type,
@@ -3804,30 +3802,30 @@ function setupSearchModal() {
         };
     }
 
-        // [추가] 장비 검색 제안 박스 이벤트 연동
-        const searchTrigger = document.getElementById('search-equip-trigger');
-        const searchDropdown = document.getElementById('search-equip-dropdown');
-        const searchInput = document.getElementById('search-equip-search');
-        
-        if (searchTrigger && searchDropdown) {
-            searchTrigger.onclick = (e) => {
-                e.stopPropagation();
-                if (searchTrigger.classList.contains('disabled')) return;
-                document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== searchDropdown) d.classList.remove('show'); });
-                searchDropdown.classList.toggle('show');
-                if (searchDropdown.classList.contains('show') && window.renderSearchEquipSuggestions) {
-                    window.renderSearchEquipSuggestions(searchInput ? searchInput.value.trim() : '');
-                    if (searchInput) searchInput.focus();
-                }
-            };
-        }
-        
-        if (searchInput) {
-            searchInput.onclick = (e) => e.stopPropagation();
-            searchInput.oninput = (e) => {
-                if (window.renderSearchEquipSuggestions) window.renderSearchEquipSuggestions(e.target.value.trim());
-            };
-        }
+    // [추가] 장비 검색 제안 박스 이벤트 연동
+    const searchTrigger = document.getElementById('search-equip-trigger');
+    const searchDropdown = document.getElementById('search-equip-dropdown');
+    const searchInput = document.getElementById('search-equip-search');
+
+    if (searchTrigger && searchDropdown) {
+        searchTrigger.onclick = (e) => {
+            e.stopPropagation();
+            if (searchTrigger.classList.contains('disabled')) return;
+            document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== searchDropdown) d.classList.remove('show'); });
+            searchDropdown.classList.toggle('show');
+            if (searchDropdown.classList.contains('show') && window.renderSearchEquipSuggestions) {
+                window.renderSearchEquipSuggestions(searchInput ? searchInput.value.trim() : '');
+                if (searchInput) searchInput.focus();
+            }
+        };
+    }
+
+    if (searchInput) {
+        searchInput.onclick = (e) => e.stopPropagation();
+        searchInput.oninput = (e) => {
+            if (window.renderSearchEquipSuggestions) window.renderSearchEquipSuggestions(e.target.value.trim());
+        };
+    }
 }
 
 function openSearchModal() {
@@ -3848,29 +3846,29 @@ function openSearchModal() {
     });
 
     updateSearchEquipSelect(currentSearchFilters.site);
-        
-        // [추가] 팝업을 열었을 때 기존에 선택된 장비 정보 복원
-        if (currentSearchFilters.equip) {
-            if (equipSelect) equipSelect.value = currentSearchFilters.equip;
-            const trigger = document.getElementById('search-equip-trigger');
-            if (trigger) {
-                const parts = currentSearchFilters.equip.split('::');
-                const name = parts[0] || '';
-                const serial = parts.length > 1 ? parts[1] : '';
-                const key = `details_${currentSearchFilters.site}_${currentSearchFilters.equip}`;
-                const detailData = JSON.parse(localStorage.getItem(key)) || {};
-                const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
-                let displayValueHtml = escapeHtml(name);
-                let subInfoHtml = '';
-                if (custName) {
-                    subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(custName)}]</span>`;
-                } else if (serial) {
-                    subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(serial)}]</span>`;
-                }
-                trigger.innerHTML = `${displayValueHtml}${subInfoHtml}`;
+    // [추가] 팝업을 열었을 때 기존에 선택된 장비 정보 복원
+    if (currentSearchFilters.equip) {
+        if (equipSelect) equipSelect.value = currentSearchFilters.equip;
+        const trigger = document.getElementById('search-equip-trigger');
+        if (trigger) {
+            const parts = currentSearchFilters.equip.split('::');
+            const name = parts[0] || '';
+            const serial = parts.length > 1 ? parts[1] : '';
+            const key = `details_${currentSearchFilters.site}_${currentSearchFilters.equip}`;
+            const detailData = JSON.parse(localStorage.getItem(key)) || {};
+            const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+
+            let displayValueHtml = escapeHtml(name);
+            let subInfoHtml = '';
+            if (custName) {
+                subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(custName)}]</span>`;
+            } else if (serial) {
+                subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(serial)}]</span>`;
             }
+            trigger.innerHTML = `${displayValueHtml}${subInfoHtml}`;
         }
+    }
 
     modal.style.display = 'flex';
 }
@@ -4161,295 +4159,3 @@ window.renderCalendar = renderCalendar;
 window.goToTodayMonth = goToTodayMonth;
 window.openScheduleModal = openScheduleModal;
 window.openRegisterScheduleModal = openRegisterScheduleModal;
-
-/* ==========================================================================
-   9. 모달: 작업 검색 (Task Search Modal)
-   ========================================================================== */
-function setupTaskSearchModal() {
-    if (document.getElementById('task-search-modal')) return;
-
-    const templateContent = getTemplateContent('task-search-modal-template');
-    if (templateContent) {
-        document.body.appendChild(templateContent);
-    }
-
-    document.getElementById('btn-close-task-search-modal').onclick = () => {
-        document.getElementById('task-search-modal').style.display = 'none';
-    };
-    document.getElementById('btn-do-task-search').onclick = doTaskSearch;
-
-    const keywordInput = document.getElementById('task-search-keyword-input');
-    if (keywordInput) {
-        keywordInput.onkeypress = (e) => {
-            if (e.key === 'Enter') doTaskSearch();
-        };
-    }
-
-    const startDateInput = document.getElementById('task-search-start-date');
-    const endDateInput = document.getElementById('task-search-end-date');
-    if (startDateInput) startDateInput.addEventListener('change', doTaskSearch);
-    if (endDateInput) endDateInput.addEventListener('change', doTaskSearch);
-}
-
-function openTaskSearchModal() {
-    const modal = document.getElementById('task-search-modal');
-    const keywordInput = document.getElementById('task-search-keyword-input');
-    const resultsList = document.getElementById('task-search-results-list');
-    const startDateInput = document.getElementById('task-search-start-date');
-    const endDateInput = document.getElementById('task-search-end-date');
-
-    if (modal) {
-        resultsList.innerHTML = '<li class="list-empty-msg">검색어(작업자, 장비명 등)를 입력하고 검색하세요.</li>';
-
-        // Set default date range (today - 15 days to today + 15 days)
-        const today = new Date();
-        const pastDate = new Date(today);
-        pastDate.setDate(today.getDate() - 15);
-        const futureDate = new Date(today);
-        futureDate.setDate(today.getDate() + 15);
-
-        startDateInput.value = pastDate.toISOString().substring(0, 10);
-        endDateInput.value = futureDate.toISOString().substring(0, 10);
-
-        const userName = sessionStorage.getItem('userName') || sessionStorage.getItem('userId');
-        keywordInput.value = userName || '';
-        modal.style.display = 'flex';
-        doTaskSearch(); // Open and search immediately
-    }
-}
-
-function doTaskSearch() {
-    const keywordInput = document.getElementById('task-search-keyword-input');
-    const keyword = keywordInput.value.trim().toLowerCase();
-    const resultsList = document.getElementById('task-search-results-list');
-    const startDate = document.getElementById('task-search-start-date').value;
-    const endDate = document.getElementById('task-search-end-date').value;
-
-    if (!keyword && !startDate && !endDate) {
-        resultsList.innerHTML = '<li class="list-empty-msg">검색어를 입력하거나 기간을 선택하세요.</li>';
-        return;
-    }
-
-    let allTasks = [];
-    const mainData = getDeviceDataMap();
-
-    Object.keys(mainData).forEach(site => {
-        if (mainData[site]) {
-            mainData[site].forEach(equip => {
-                const key = `details_${site}_${equip}`;
-                try {
-                    const data = JSON.parse(localStorage.getItem(key));
-                    if (!data) return;
-                    const custEquipName = (data.setup && data.setup.custEquipName) ? data.setup.custEquipName : '';
-
-                    // Helper to check if a date falls within the range
-                    const isDateInRange = (taskDate) => {
-                        if (!taskDate) return false;
-                        const taskDateObj = new Date(taskDate);
-                        taskDateObj.setHours(0, 0, 0, 0); // Normalize to start of day
-                        const start = startDate ? new Date(startDate) : null;
-                        const end = endDate ? new Date(endDate) : null;
-                        if (start) start.setHours(0, 0, 0, 0);
-                        if (end) end.setHours(0, 0, 0, 0);
-
-                        return (!start || taskDateObj >= start) && (!end || taskDateObj <= end);
-                    };
-
-                    // 1. Completed tasks from logs
-                    if (data.logs) {
-                        data.logs.forEach(log => {
-                            const logWorker = log.worker ? log.worker.toLowerCase() : '';
-                            const logContent = log.content ? log.content.toLowerCase() : '';
-                            const equipName = equip.split('::')[0].toLowerCase();
-
-                            const matchesKeyword = !keyword || (
-                                logWorker.includes(keyword) ||
-                                equipName.includes(keyword) ||
-                                logContent.includes(keyword) ||
-                                custEquipName.toLowerCase().includes(keyword)
-                            );
-
-                            if (log.detailType !== '일정변경' && matchesKeyword && isDateInRange(log.date)) {
-                                allTasks.push({ site, equip, item: log, isCompleted: true, custEquipName: custEquipName });
-                            }
-                        });
-                    }
-
-                    // 2. Scheduled tasks from maint
-                    if (data.maint) {
-                        data.maint.forEach(item => {
-                            const itemWorker = item.worker ? item.worker.toLowerCase() : '';
-                            const itemContent = item.content ? item.content.toLowerCase() : '';
-                            const equipName = equip.split('::')[0].toLowerCase();
-
-                            const matchesKeyword = !keyword || (
-                                itemWorker.includes(keyword) ||
-                                equipName.includes(keyword) ||
-                                itemContent.includes(keyword) ||
-                                custEquipName.toLowerCase().includes(keyword)
-                            );
-
-                            if (item.scheduledDate && matchesKeyword && isDateInRange(item.scheduledDate)) {
-                                // Check if this scheduled item has already been completed and logged
-                                const isDone = data.logs && data.logs.some(l =>
-                                    l.date === item.scheduledDate &&
-                                (l.content || '').includes(item.content || '') &&
-                                (l.worker || '').includes(item.worker || '')
-                                );
-                                if (!isDone) {
-                                    allTasks.push({ site, equip, item: item, isCompleted: false, custEquipName: custEquipName });
-                                }
-                            }
-                        });
-                    }
-                } catch (e) { console.error(`Error parsing data for key ${key}:`, e); }
-            });
-        }
-    });
-
-    // [수정] 같은 날, 같은 장비 작업 그룹화
-    const groupedTasks = {};
-    allTasks.forEach(task => {
-        const date = task.isCompleted ? task.item.date : task.item.scheduledDate;
-        const type = task.item.type || '정기';
-        const detailType = task.item.detailType || '';
-        const detailType2 = task.item.detailType2 || '';
-
-        const key = `${date}_${task.site}_${task.equip}_${type}_${detailType}_${detailType2}`;
-        if (!groupedTasks[key]) {
-            groupedTasks[key] = {
-                site: task.site,
-                equip: task.equip,
-                date: date,
-                type: type,
-                items: [],
-                custEquipName: task.custEquipName,
-                isCompleted: true // Assume completed, set to false if any item is not
-            };
-        }
-        groupedTasks[key].items.push(task.item);
-        if (!task.isCompleted) {
-            groupedTasks[key].isCompleted = false;
-        }
-    });
-
-    const displayTasks = Object.values(groupedTasks);
-
-    // Sort by date, descending
-    displayTasks.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    if (displayTasks.length === 0) {
-        resultsList.innerHTML = '<li class="list-empty-msg">검색된 작업이 없습니다.</li>';
-        return;
-    }
-
-    resultsList.innerHTML = '';
-    displayTasks.forEach(group => {
-        const { site, equip, date, type, items, isCompleted, custEquipName } = group;
-        const parts = equip.split('::');
-        const equipName = parts[0];
-        const serialNo = parts.length > 1 ? `[${parts[1]}]` : '';
-
-        // Combine unique values
-        const contents = [...new Set(items.map(item => item.content || '내용 없음'))];
-        const detailTypes = [...new Set(items.map(item => {
-            if (item.detailType2) return item.detailType2;
-            if (item.detailType) return item.detailType;
-            return item.type || '정기';
-        }))];
-
-        const displayContent = contents.join(', ');
-        const displayType = type;
-        const displayDetailType = detailTypes.join(' | ');
-
-        const tpl = getTemplateContent('task-search-result-item-template');
-        if (tpl) {
-            const li = tpl.querySelector('li');
-            li.addEventListener('click', () => openTaskFromSearch(site, equip, items[0].id, isCompleted));
-
-            li.querySelector('.task-date').textContent = date;
-
-            if (isCompleted) {
-                li.classList.add('completed');
-                li.querySelector('.completed-status').style.display = 'inline';
-
-                const logItem = items[0];
-                const targetLogId = logItem.originalLogId || logItem.id; // 부모/자식 관계없이 원본 작업 ID 기준으로 처리
-                const key = `details_${site}_${equip}`;
-                const detailData = JSON.parse(localStorage.getItem(key)) || {};
-                const childLogs = (detailData.logs || []).filter(l => l.originalLogId === targetLogId);
-                const hasExtra = childLogs.length > 0;
-
-                const actionContainer = document.createElement('div');
-                actionContainer.style.display = 'flex';
-                actionContainer.style.gap = '5px';
-                actionContainer.style.marginLeft = 'auto'; // 우측 정렬
-
-                const addBtn = document.createElement('button');
-                addBtn.className = 'btn-blue-sm';
-                addBtn.textContent = '추가';
-                addBtn.style.width = '50px';
-                addBtn.style.padding = '4px 0';
-                addBtn.style.textAlign = 'center';
-                addBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    const presetData = { type: logItem.type, detailType: logItem.detailType, detailType2: logItem.detailType2, content: '', worker: logItem.worker || '' };
-                    window.currentSearchFilters = { site: site, equip: equip };
-                    window.currentAddWorkLogId = targetLogId;
-                    const todayStr = new Date().toISOString().substring(0, 10);
-                    window.openRegisterScheduleModal(todayStr, presetData);
-                    
-                    window.handleExtraWorkAdded = function(newLogId) {
-                        alert('추가 작업이 등록되었습니다.');
-                        doTaskSearch();
-                    };
-                };
-                actionContainer.appendChild(addBtn);
-
-                if (hasExtra) {
-                    const viewBtn = document.createElement('button');
-                    viewBtn.className = 'btn-green-sm';
-                    viewBtn.textContent = '확인';
-                viewBtn.style.width = '50px';
-                viewBtn.style.padding = '4px 0';
-                viewBtn.style.textAlign = 'center';
-                    viewBtn.onclick = (e) => {
-                        e.stopPropagation();
-                        if (typeof window.openExtraWorkHistoryModal === 'function') window.openExtraWorkHistoryModal(site, equip, targetLogId);
-                    };
-                    actionContainer.appendChild(viewBtn);
-                }
-                
-                const topDiv = li.querySelector('div:first-child');
-                if (topDiv) topDiv.appendChild(actionContainer);
-            }
-
-            const typeBadge = li.querySelector('.popup-type-badge');
-            typeBadge.className = `popup-type-badge type-${type}`;
-            typeBadge.textContent = `[${displayType}]`;
-
-            let subInfo = '';
-            if (custEquipName) {
-                subInfo = ` <span style="color:#3fb950;">[${escapeHtml(custEquipName)}]</span>`;
-            } else if (serialNo) {
-                subInfo = ` <span style="color:#3fb950;">${escapeHtml(serialNo)}</span>`;
-            }
-            li.querySelector('.equip-name').innerHTML = `${escapeHtml(site)} > ${escapeHtml(equipName)}${subInfo}`;
-
-            const detailsSpan = li.querySelector('.task-details');
-            detailsSpan.textContent = `${displayDetailType} : ${displayContent}`;
-            detailsSpan.title = `${displayDetailType} : ${displayContent}`;
-
-            resultsList.appendChild(li);
-        }
-    });
-}
-
-function openTaskFromSearch(site, equip, id, isCompleted) {
-    const searchModal = document.getElementById('task-search-modal');
-    if (searchModal) searchModal.style.display = 'none';
-
-    cameFromTaskSearch = true; // [추가] 플래그 설정
-    openEventDetailModal(site, equip, id, isCompleted);
-}
-window.openTaskFromSearch = openTaskFromSearch;

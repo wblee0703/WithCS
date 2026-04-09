@@ -125,6 +125,10 @@ function setupMaintenanceEvents() {
         maintLoadBtn.addEventListener('click', openMaintLoadListModal);
     }
 
+    // [추가] 유지관리 설정(톱니바퀴) 버튼 이벤트 바인딩
+    const maintSettingsBtn = document.getElementById('btn-maint-settings');
+    if (maintSettingsBtn) maintSettingsBtn.addEventListener('click', toggleMaintenanceMode);
+
     const maintDateInput = document.getElementById('maint-date');
     if (maintDateInput) maintDateInput.value = new Date().toISOString().substring(0, 10);
 
@@ -460,6 +464,9 @@ function renderDetails() {
     maintBody.innerHTML = '';
 
     data.maint.forEach(item => {
+        // [추가] 자식 항목(추가작업)은 메인 유지관리 리스트에서 숨김 처리 (부모 로그의 '확인' 버튼으로 접근)
+        if (item.originalLogId) return;
+
         // [추가] 비정기 예정 항목(완료일이 없는 상태)은 유지관리 리스트에서 숨김 처리
         if (item.type === '비정기' && !item.date) return;
 
@@ -843,32 +850,46 @@ function renderLogs() {
     }
 
     // [수정] 일정 변경(<변동>)으로 자동 생성된 이력은 장비 점검 이력 화면에서 숨김 처리
-    let displayLogs = data.logs.filter(log => log.detailType !== '일정변경');
+    // [수정] 자식 로그(추가작업)도 메인 리스트에서 숨김 처리 (부모 로그의 '확인' 버튼을 통해서만 접근)
+    let displayLogs = data.logs.filter(log => log.detailType !== '일정변경' && !log.originalLogId);
 
-    // 1. 최신순 정렬
-    let sortedLogs = displayLogs.sort((a, b) => {
-        if (b.date !== a.date) {
-            return b.date.localeCompare(a.date); // 점검일 기준 내림차순 (최신 날짜 먼저)
-        }
-        return b.id - a.id; // 날짜가 같으면 등록순
-    });
-
-    // 2. 검색 필터 적용
+    // 1. 검색 필터 적용
     const searchInput = document.getElementById('log-search');
     if (searchInput) {
         const keyword = searchInput.value.trim().toLowerCase();
         if (keyword) {
-            sortedLogs = sortedLogs.filter(log =>
-                (log.worker && log.worker.toLowerCase().includes(keyword)) ||
-                (log.date && log.date.includes(keyword)) ||
-                (log.content && log.content.toLowerCase().includes(keyword)) ||
-                (log.memo && log.memo.toLowerCase().includes(keyword)) ||
-                (log.type && log.type.toLowerCase().includes(keyword)) ||
-                (log.detailType && log.detailType.toLowerCase().includes(keyword)) ||
-                (log.md && log.md.includes(keyword))
-            );
+            displayLogs = displayLogs.filter(log => {
+                const matchParent = (
+                    (log.worker && log.worker.toLowerCase().includes(keyword)) ||
+                    (log.date && log.date.includes(keyword)) ||
+                    (log.content && log.content.toLowerCase().includes(keyword)) ||
+                    (log.memo && log.memo.toLowerCase().includes(keyword)) ||
+                    (log.type && log.type.toLowerCase().includes(keyword)) ||
+                    (log.detailType && log.detailType.toLowerCase().includes(keyword)) ||
+                    (log.md && log.md.includes(keyword))
+                );
+                
+                const childLogs = data.logs.filter(l => l.originalLogId == log.id);
+                const matchChild = childLogs.some(clog => 
+                    (clog.worker && clog.worker.toLowerCase().includes(keyword)) ||
+                    (clog.content && clog.content.toLowerCase().includes(keyword)) ||
+                    (clog.memo && clog.memo.toLowerCase().includes(keyword)) ||
+                    (clog.type && clog.type.toLowerCase().includes(keyword)) ||
+                    (clog.detailType && clog.detailType.toLowerCase().includes(keyword))
+                );
+
+                return matchParent || matchChild;
+            });
         }
     }
+
+    // 2. 최신순 정렬
+    let sortedLogs = displayLogs.sort((a, b) => {
+        if (b.date !== a.date) {
+            return b.date.localeCompare(a.date);
+        }
+        return b.id - a.id;
+    });
 
     const getLogBadgeClass = (t, dt) => {
         if (!t) return 'default';
@@ -924,8 +945,9 @@ function renderLogs() {
         const addWorkCell = tr.querySelector('.log-add-work');
         if (addWorkCell) {
             const targetLogId = log.originalLogId || log.id;
-            const childLogs = data.logs.filter(l => l.originalLogId === targetLogId);
-            const hasExtra = childLogs.length > 0;
+            const childLogs = data.logs.filter(l => l.originalLogId == targetLogId);
+            const childMaints = data.maint ? data.maint.filter(m => m.originalLogId == targetLogId) : [];
+            const hasExtra = childLogs.length > 0 || childMaints.length > 0;
             
             const btnAdd = addWorkCell.querySelector('.btn-add-extra-work');
             if (btnAdd) {
@@ -1515,7 +1537,7 @@ window.toggleIssueShare = function(logId, isChecked) {
             let logUpserts = [];
             data.logs.forEach(l => {
                 let isModified = false;
-                if (l.id === logId || l.originalLogId === logId || l.originalLogId === targetParentId || l.id === targetParentId) {
+                if (l.id == logId || l.originalLogId == logId || l.originalLogId == targetParentId || l.id == targetParentId) {
                     if (!!l.isIssueShared !== isChecked) {
                         l.isIssueShared = isChecked;
                         isModified = true;
@@ -1555,6 +1577,7 @@ function toggleMaintenanceMode() {
     const loadBtn = document.getElementById('btn-load-maint-list');
     if (loadBtn) loadBtn.style.display = isActive ? 'block' : 'none';
 }
+window.toggleMaintenanceMode = toggleMaintenanceMode; // 인라인 onclick 호환 지원용
 
 // [추가] 캘린더뷰 이동 로직
 window.moveToCalendarView = function () {

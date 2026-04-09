@@ -19,6 +19,18 @@ let currentNextScheduleTarget = null; // [추가] 다음 작업 예정일 타겟
 let sessionTimer = null; // [추가] 세션 타이머
 let sessionTimeLeft = 3600; // 60분 리셋 (3600초)
 let lastActivityTimestamp = Date.now(); // [추가] 마지막 사용자 활동 시간
+let cameFromTaskSearch = false; // [추가] 작업 검색에서 상세 정보로 이동했는지 여부
+
+/**
+ * 공통: 사업장 및 장비 매핑 데이터 가져오기
+ */
+function getDeviceDataMap() {
+    if (typeof storageData !== 'undefined') {
+        if (storageData.device_data) return storageData.device_data;
+        return storageData;
+    }
+    return JSON.parse(localStorage.getItem('device_data')) || {};
+}
 
 const setupInputIds = [
     'DeviceID-cust-equip-name', 'DeviceID-building', 'DeviceID-floor', 'DeviceID-detail-loc',
@@ -432,6 +444,7 @@ function initializeApp() {
     // [이동] HOME 화면에서도 시스템 로그 팝업 이벤트(필터, 닫기)가 동작하도록 페이지 접근 제어 이전에 먼저 실행합니다.
     setupDataManagementEvents();
     setupGlobalModalScrollLock();
+    setupTaskSearchModal(); // [추가] 전역 작업 검색 모달 초기화
 
     // 2-3. 페이지별 접근 제어
     if (!handlePageAccess()) return;
@@ -958,9 +971,9 @@ function setupDataManagementEvents() {
     const sysLogStart = document.getElementById('syslog-filter-start');
     const sysLogEnd = document.getElementById('syslog-filter-end');
     const sysLogSearch = document.getElementById('syslog-filter-search');
-    if(sysLogStart) sysLogStart.addEventListener('change', renderSystemLogs);
-    if(sysLogEnd) sysLogEnd.addEventListener('change', renderSystemLogs);
-    if(sysLogSearch) sysLogSearch.addEventListener('input', renderSystemLogs);
+    if (sysLogStart) sysLogStart.addEventListener('change', renderSystemLogs);
+    if (sysLogEnd) sysLogEnd.addEventListener('change', renderSystemLogs);
+    if (sysLogSearch) sysLogSearch.addEventListener('input', renderSystemLogs);
 
     // [추가] 시스템 로그 검색 필터 초기화 버튼
     const btnSysLogReset = document.getElementById('btn-syslog-reset');
@@ -2778,7 +2791,7 @@ async function renderSystemLogs() {
         const equipInfoMap = {};
         const equipKeys = new Set();
         const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
-        
+
         Object.keys(dataMap).forEach(site => {
             if (dataMap[site]) {
                 dataMap[site].forEach(equip => {
@@ -2801,21 +2814,21 @@ async function renderSystemLogs() {
         // [수정] 복합 다중 필터링 로직 (분류 + 날짜 + 텍스트)
         const filteredLogs = logs.filter(log => {
             const category = getLogCategory(log.action);
-            
+
             if (!currentLogFilters.includes(category)) return false;
-            
+
             if (startDate || endDate) {
                 const logDate = log.timestamp.split('T')[0];
                 if (startDate && logDate < startDate) return false;
                 if (endDate && logDate > endDate) return false;
             }
-            
+
             if (keyword) {
                 const custName = equipInfoMap[log.target] || '';
                 const searchStr = `${log.action} ${log.target} ${custName} ${log.worker || ''} ${log.details}`.toLowerCase();
                 if (!searchStr.includes(keyword)) return false;
             }
-            
+
             return true;
         });
 
@@ -2826,7 +2839,7 @@ async function renderSystemLogs() {
 
         tbody.innerHTML = filteredLogs.map(log => {
             let displayTarget = escapeHtml(log.target);
-            
+
             let isEquip = equipKeys.has(log.target);
             if (!isEquip && log.target) {
                 const modelPart = log.target.split('::')[0];
@@ -2834,25 +2847,25 @@ async function renderSystemLogs() {
                     isEquip = true;
                 }
             }
-            
+
             if (isEquip) {
                 const parts = log.target.split('::');
                 const model = parts[0];
                 const serial = parts.length > 1 ? parts[1] : '';
-                
+
                 const matchedModel = equipmentModels.find(m => m.name === model);
                 const displayModel = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : model;
-                
+
                 const custName = equipInfoMap[log.target] || '';
-                
+
                 let subInfo = '';
                 if (custName) subInfo = `[${escapeHtml(custName)}]`;
                 else if (serial) subInfo = `[${escapeHtml(serial)}]`;
-                
+
                 if (subInfo) displayTarget = `<div>${escapeHtml(displayModel)}</div><div style="font-size: 11px; color: #3fb950; margin-top: 2px; font-weight: bold;">${subInfo}</div>`;
                 else displayTarget = escapeHtml(displayModel);
             }
-            
+
             return `<tr>
                 <td>${new Date(log.timestamp).toLocaleString()}</td>
                 <td style="text-align: center;">${escapeHtml(log.worker)}</td>
@@ -3198,11 +3211,14 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     const key = `details_${site}_${equip}`;
     const data = JSON.parse(localStorage.getItem(key)) || {};
     const logs = data.logs || [];
+    const maints = data.maint || [];
 
     const parentLog = logs.find(l => l.id == originalLogId);
     const childLogs = logs.filter(l => l.originalLogId == originalLogId);
+    const childMaints = maints.filter(m => m.originalLogId == originalLogId);
 
     if (!parentLog) return alert('원본 작업을 찾을 수 없습니다.');
+
 
     // 1. 점검 구분 경로 설정
     let pathText = parentLog.type || '정기';
@@ -3284,6 +3300,48 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     // 자식 로그 렌더링
     childLogs.forEach((log, idx) => {
         tbody.appendChild(createRow(log, `추가 ${idx + 1}`, '#1f6feb', false));
+    });
+ 
+    // 예정된 자식 작업(미완료 추가작업) 렌더링
+    childMaints.forEach((maint, idx) => {
+        const tr = createRow(maint, `예정 ${idx + 1}`, '#d29922', false);
+        const dateCell = tr.querySelector('td:nth-child(2)');
+        if (dateCell) dateCell.innerHTML = `${escapeHtml(maint.scheduledDate || '-')} <span style="color:#d29922; font-size:10px; font-weight:bold;">(예정)</span>`;
+        
+        // [추가] 예정된 추가 작업 삭제 버튼
+        const contentCell = tr.querySelector('td:nth-child(3)');
+        if (contentCell) {
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn-del-sm';
+            delBtn.textContent = '✕';
+            delBtn.title = '예정된 추가 작업 삭제';
+            delBtn.style.cssText = 'float: right; margin-top: -2px; padding: 2px 6px; font-size: 10px; background: transparent; border: 1px solid #da3633; color: #da3633; border-radius: 4px; cursor: pointer;';
+            delBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (confirm('이 예정된 추가 작업을 삭제하시겠습니까?')) {
+                    const latestData = JSON.parse(localStorage.getItem(key)) || {};
+                    if (latestData.maint) {
+                        latestData.maint = latestData.maint.filter(m => m.id !== maint.id);
+                        localStorage.setItem(key, JSON.stringify(latestData));
+                        
+                        if (typeof window.syncHistoryTransaction === 'function') window.syncHistoryTransaction(site, equip, { maint_deletes: [maint.id.toString()] });
+                        if (typeof window.addSystemLog === 'function') window.addSystemLog('DELETE_SCHEDULE', equip, `예정된 추가 작업 삭제: ${maint.content}`);
+                        
+                        window.openExtraWorkHistoryModal(site, equip, originalLogId); // 팝업 새로고침
+                        if (typeof renderCalendar === 'function') renderCalendar();
+                        if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+                        if (typeof renderDetails === 'function') renderDetails();
+                    }
+                }
+            };
+            contentCell.appendChild(delBtn);
+        }
+
+        tr.onclick = () => {
+            modal.style.display = 'none';
+            openEventDetailModal(site, equip, maint.id, false);
+        };
+        tbody.appendChild(tr);
     });
 
     // 체크박스 클릭(변경) 이벤트 바인딩
@@ -3581,3 +3639,325 @@ window.getDragAfterElement = function (container, y, selector) {
         return (offset < 0 && offset > closest.offset) ? { offset: offset, element: child } : closest;
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 };
+
+/* ==========================================================================
+   12. 전역 모달 - 작업 검색 (Task Search Modal)
+   ========================================================================== */
+function setupTaskSearchModal() {
+    if (document.getElementById('task-search-modal')) return;
+
+    const templateContent = getTemplateContent('task-search-modal-template');
+    if (templateContent) {
+        document.body.appendChild(templateContent);
+    }
+
+    document.getElementById('btn-close-task-search-modal').onclick = () => {
+        document.getElementById('task-search-modal').style.display = 'none';
+    };
+    document.getElementById('btn-do-task-search').onclick = doTaskSearch;
+
+    const keywordInput = document.getElementById('task-search-keyword-input');
+    if (keywordInput) {
+        keywordInput.onkeypress = (e) => {
+            if (e.key === 'Enter') doTaskSearch();
+        };
+    }
+
+    const startDateInput = document.getElementById('task-search-start-date');
+    const endDateInput = document.getElementById('task-search-end-date');
+    if (startDateInput) startDateInput.addEventListener('change', doTaskSearch);
+    if (endDateInput) endDateInput.addEventListener('change', doTaskSearch);
+}
+
+function openTaskSearchModal() {
+    const modal = document.getElementById('task-search-modal');
+    const keywordInput = document.getElementById('task-search-keyword-input');
+    const resultsList = document.getElementById('task-search-results-list');
+    const startDateInput = document.getElementById('task-search-start-date');
+    const endDateInput = document.getElementById('task-search-end-date');
+
+    if (modal) {
+        resultsList.innerHTML = '<li class="list-empty-msg">검색어(작업자, 장비명 등)를 입력하고 검색하세요.</li>';
+
+        // Set default date range (today - 15 days to today + 15 days)
+        const today = new Date();
+        const pastDate = new Date(today);
+        pastDate.setDate(today.getDate() - 15);
+        const futureDate = new Date(today);
+        futureDate.setDate(today.getDate() + 15);
+
+        startDateInput.value = pastDate.toISOString().substring(0, 10);
+        endDateInput.value = futureDate.toISOString().substring(0, 10);
+
+        const userName = sessionStorage.getItem('userName') || sessionStorage.getItem('userId');
+        keywordInput.value = userName || '';
+        modal.style.display = 'flex';
+        doTaskSearch(); // Open and search immediately
+    }
+}
+
+function doTaskSearch() {
+    const keywordInput = document.getElementById('task-search-keyword-input');
+    const keyword = keywordInput.value.trim().toLowerCase();
+    const resultsList = document.getElementById('task-search-results-list');
+    const startDate = document.getElementById('task-search-start-date').value;
+    const endDate = document.getElementById('task-search-end-date').value;
+
+    if (!keyword && !startDate && !endDate) {
+        resultsList.innerHTML = '<li class="list-empty-msg">검색어를 입력하거나 기간을 선택하세요.</li>';
+        return;
+    }
+
+    let allTasks = [];
+    const mainData = getDeviceDataMap();
+
+    Object.keys(mainData).forEach(site => {
+        if (mainData[site]) {
+            mainData[site].forEach(equip => {
+                const key = `details_${site}_${equip}`;
+                try {
+                    const data = JSON.parse(localStorage.getItem(key));
+                    if (!data) return;
+                    const custEquipName = (data.setup && data.setup.custEquipName) ? data.setup.custEquipName : '';
+
+                    // Helper to check if a date falls within the range
+                    const isDateInRange = (taskDate) => {
+                        if (!taskDate) return false;
+                        const taskDateObj = new Date(taskDate);
+                        taskDateObj.setHours(0, 0, 0, 0); // Normalize to start of day
+                        const start = startDate ? new Date(startDate) : null;
+                        const end = endDate ? new Date(endDate) : null;
+                        if (start) start.setHours(0, 0, 0, 0);
+                        if (end) end.setHours(0, 0, 0, 0);
+
+                        return (!start || taskDateObj >= start) && (!end || taskDateObj <= end);
+                    };
+
+                    // 1. Completed tasks from logs
+                    if (data.logs) {
+                        data.logs.forEach(log => {
+                            const logWorker = log.worker ? log.worker.toLowerCase() : '';
+                            const logContent = log.content ? log.content.toLowerCase() : '';
+                            const equipName = equip.split('::')[0].toLowerCase();
+
+                            const matchesKeyword = !keyword || (
+                                logWorker.includes(keyword) ||
+                                equipName.includes(keyword) ||
+                                logContent.includes(keyword) ||
+                                custEquipName.toLowerCase().includes(keyword)
+                            );
+
+                            if (log.detailType !== '일정변경' && matchesKeyword && isDateInRange(log.date)) {
+                                // [수정] 추가 작업도 부모로 치환하지 않고 본연의 내용으로 검색 결과에 직접 노출
+                                if (!allTasks.some(t => t.item.id === log.id)) {
+                                    allTasks.push({ site, equip, item: log, isCompleted: true, custEquipName: custEquipName });
+                                }
+                            }
+                        });
+                    }
+
+                    // 2. Scheduled tasks from maint
+                    if (data.maint) {
+                        data.maint.forEach(item => {
+                            const itemWorker = item.worker ? item.worker.toLowerCase() : '';
+                            const itemContent = item.content ? item.content.toLowerCase() : '';
+                            const equipName = equip.split('::')[0].toLowerCase();
+
+                            const matchesKeyword = !keyword || (
+                                itemWorker.includes(keyword) ||
+                                equipName.includes(keyword) ||
+                                itemContent.includes(keyword) ||
+                                custEquipName.toLowerCase().includes(keyword)
+                            );
+
+                            if (item.scheduledDate && matchesKeyword && isDateInRange(item.scheduledDate)) {
+                                const isDone = data.logs && data.logs.some(l =>
+                                    l.date === item.scheduledDate &&
+                                    (l.content || '').includes(item.content || '') &&
+                                    (l.worker || '').includes(item.worker || '')
+                                );
+                                if (!isDone && !allTasks.some(t => t.item.id === item.id)) {
+                                    allTasks.push({ site, equip, item: item, isCompleted: false, custEquipName: custEquipName });
+                                }
+                            }
+                        });
+                    }
+                } catch (e) { console.error(`Error parsing data for key ${key}:`, e); }
+            });
+        }
+    });
+
+    // 같은 날, 같은 장비 작업 그룹화
+    const groupedTasks = {};
+    allTasks.forEach(task => {
+        const date = task.isCompleted ? task.item.date : task.item.scheduledDate;
+        const type = task.item.type || '정기';
+        const detailType = task.item.detailType || '';
+        const detailType2 = task.item.detailType2 || '';
+
+        const key = `${date}_${task.site}_${task.equip}_${type}_${detailType}_${detailType2}`;
+        if (!groupedTasks[key]) {
+            groupedTasks[key] = {
+                site: task.site,
+                equip: task.equip,
+                date: date,
+                type: type,
+                items: [],
+                custEquipName: task.custEquipName,
+                isCompleted: true
+            };
+        }
+        groupedTasks[key].items.push(task.item);
+        if (!task.isCompleted) {
+            groupedTasks[key].isCompleted = false;
+        }
+    });
+
+    const displayTasks = Object.values(groupedTasks);
+    displayTasks.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (displayTasks.length === 0) {
+        resultsList.innerHTML = '<li class="list-empty-msg">검색된 작업이 없습니다.</li>';
+        return;
+    }
+
+    resultsList.innerHTML = '';
+    displayTasks.forEach(group => {
+        const { site, equip, date, type, items, isCompleted, custEquipName } = group;
+        const parts = equip.split('::');
+        const equipName = parts[0];
+        const serialNo = parts.length > 1 ? `[${parts[1]}]` : '';
+
+        const contents = [...new Set(items.map(item => item.content || '내용 없음'))];
+        const detailTypes = [...new Set(items.map(item => {
+            if (item.detailType2) return item.detailType2;
+            if (item.detailType) return item.detailType;
+            return item.type || '정기';
+        }))];
+
+        const displayContent = contents.join(', ');
+        const displayType = type;
+        const displayDetailType = detailTypes.join(' | ');
+
+        const tpl = getTemplateContent('task-search-result-item-template');
+        if (tpl) {
+            const li = tpl.querySelector('li');
+            li.addEventListener('click', () => openTaskFromSearch(site, equip, items[0].id, isCompleted));
+
+            li.querySelector('.task-date').textContent = date;
+
+            // [추가] 검색 결과에 노출된 항목이 추가 작업(자식)일 경우 파란색 <추가> 뱃지 표시
+            const isExtraWork = items.some(i => i.originalLogId);
+            if (isExtraWork) {
+                const extraSpan = document.createElement('span');
+                extraSpan.textContent = '<추가>';
+                extraSpan.style.color = '#1f6feb';
+                extraSpan.style.fontWeight = 'bold';
+                extraSpan.style.fontSize = '12px';
+                extraSpan.style.marginLeft = '8px';
+                
+                const completedStatusEl = li.querySelector('.completed-status');
+                if (completedStatusEl && completedStatusEl.parentNode) {
+                    completedStatusEl.parentNode.insertBefore(extraSpan, completedStatusEl.nextSibling);
+                } else {
+                    const topDiv = li.querySelector('div > div:first-child');
+                    if (topDiv) topDiv.appendChild(extraSpan);
+                }
+            }
+
+            if (isCompleted) {
+                li.classList.add('completed');
+                li.querySelector('.completed-status').style.display = 'inline';
+
+                const logItem = items[0];
+                const targetLogId = logItem.originalLogId || logItem.id;
+                const key = `details_${site}_${equip}`;
+                const detailData = JSON.parse(localStorage.getItem(key)) || {};
+                const childLogs = (detailData.logs || []).filter(l => l.originalLogId == targetLogId);
+                const childMaints = (detailData.maint || []).filter(m => m.originalLogId == targetLogId);
+                const hasExtra = childLogs.length > 0 || childMaints.length > 0;
+
+                const actionContainer = document.createElement('div');
+                actionContainer.style.display = 'flex';
+                actionContainer.style.gap = '5px';
+                actionContainer.style.marginLeft = 'auto';
+
+                const addBtn = document.createElement('button');
+                addBtn.className = 'btn-blue-sm';
+                addBtn.textContent = '추가';
+                addBtn.style.width = '50px';
+                addBtn.style.padding = '4px 0';
+                addBtn.style.textAlign = 'center';
+                addBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    const presetData = { type: logItem.type, detailType: logItem.detailType, detailType2: logItem.detailType2, content: '', worker: logItem.worker || '' };
+                    window.currentSearchFilters = { site: site, equip: equip };
+                    window.currentAddWorkLogId = targetLogId;
+                    const todayStr = new Date().toISOString().substring(0, 10);
+                    if (typeof window.openRegisterScheduleModal === 'function') {
+                        window.openRegisterScheduleModal(todayStr, presetData);
+                    } else {
+                        let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}&action=addExtraWork&logId=${targetLogId}`;
+                        window.location.href = targetUrl;
+                    }
+
+                    window.handleExtraWorkAdded = function (newLogId) {
+                        alert('추가 작업이 등록되었습니다.');
+                        doTaskSearch();
+                    };
+                };
+                actionContainer.appendChild(addBtn);
+
+                if (hasExtra) {
+                    const viewBtn = document.createElement('button');
+                    viewBtn.className = 'btn-green-sm';
+                    viewBtn.textContent = '확인';
+                    viewBtn.style.width = '50px';
+                    viewBtn.style.padding = '4px 0';
+                    viewBtn.style.textAlign = 'center';
+                    viewBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        if (typeof window.openExtraWorkHistoryModal === 'function') window.openExtraWorkHistoryModal(site, equip, targetLogId);
+                    };
+                    actionContainer.appendChild(viewBtn);
+                }
+
+                const topDiv = li.querySelector('div:first-child');
+                if (topDiv) topDiv.appendChild(actionContainer);
+            }
+
+            const typeBadge = li.querySelector('.popup-type-badge');
+            typeBadge.className = `popup-type-badge type-${type}`;
+            typeBadge.textContent = `[${displayType}]`;
+
+            let subInfo = '';
+            if (custEquipName) {
+                subInfo = ` <span style="color:#3fb950;">[${escapeHtml(custEquipName)}]</span>`;
+            } else if (serialNo) {
+                subInfo = ` <span style="color:#3fb950;">${escapeHtml(serialNo)}</span>`;
+            }
+            li.querySelector('.equip-name').innerHTML = `${escapeHtml(site)} > ${escapeHtml(equipName)}${subInfo}`;
+
+            const detailsSpan = li.querySelector('.task-details');
+            detailsSpan.textContent = `${displayDetailType} : ${displayContent}`;
+            detailsSpan.title = `${displayDetailType} : ${displayContent}`;
+
+            resultsList.appendChild(li);
+        }
+    });
+}
+
+function openTaskFromSearch(site, equip, id, isCompleted) {
+    const searchModal = document.getElementById('task-search-modal');
+    if (searchModal) searchModal.style.display = 'none';
+
+    cameFromTaskSearch = true; // [추가] 플래그 설정
+    if (typeof openEventDetailModal === 'function') {
+        openEventDetailModal(site, equip, id, isCompleted);
+    } else {
+        let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
+        if (isCompleted && id) targetUrl += `&logId=${id}`;
+        window.location.href = targetUrl;
+    }
+}
+window.openTaskFromSearch = openTaskFromSearch;

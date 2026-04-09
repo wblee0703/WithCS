@@ -203,6 +203,7 @@ class MaintItem(db.Model):
     md = db.Column(db.String(50), default='')
     item_cost = db.Column(db.String(50), default='')
     memo = db.Column(db.Text, default='')
+    original_log_id = db.Column(db.String(50), nullable=True) # [추가] 추가 작업(미완료)과 원본(부모) 로그를 연결하는 외래 식별자
 
 class LogItem(db.Model):
     _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -379,7 +380,8 @@ def load_data():
                 "id": int(m.id) if str(m.id).isdigit() else m.id, "type": m.type, "detailType": m.detail_type,
                 "code": m.code, "content": m.content, "date": m.date, "scheduledDate": m.scheduled_date,
                 "period": int(m.period) if m.period and str(m.period).isdigit() else m.period,
-                "costType": m.cost_type, "worker": m.worker, "md": m.md, "itemCost": m.item_cost, "memo": m.memo
+                "costType": m.cost_type, "worker": m.worker, "md": m.md, "itemCost": m.item_cost, "memo": m.memo,
+                "originalLogId": int(m.original_log_id) if m.original_log_id and str(m.original_log_id).isdigit() else m.original_log_id
             })
             
         # 점검 이력(logs) 목록
@@ -1012,6 +1014,7 @@ def history_transaction():
             item.md = str(m.get('md', item.md))
             item.item_cost = m.get('itemCost', item.item_cost)
             item.memo = m.get('memo', item.memo)
+            item.original_log_id = str(m.get('originalLogId')) if m.get('originalLogId') else item.original_log_id
 
         if log_deletes:
             LogItem.query.filter(LogItem.id.in_(log_deletes)).delete(synchronize_session=False)
@@ -1111,6 +1114,13 @@ def init_db():
         # [마이그레이션] 시스템 로그 테이블에 작업자(worker) 컬럼 추가
         try:
             db.session.execute(text('ALTER TABLE system_log ADD COLUMN worker VARCHAR(100)'))
+            db.session.commit()
+        except:
+            db.session.rollback()
+        
+        # [마이그레이션] maint_item 테이블에 original_log_id 컬럼 추가 (추가 작업 DB 연동 누락 수정)
+        try:
+            db.session.execute(text('ALTER TABLE maint_item ADD COLUMN original_log_id VARCHAR(50)'))
             db.session.commit()
         except:
             db.session.rollback()
