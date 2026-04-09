@@ -57,7 +57,8 @@ window.getSiteGradient = function (siteName) {
 // [공통 헬퍼] 대시보드 데이터 로드
 function getDashboardData() {
     let deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
-    return (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) ? storageData : (deviceData.equipments || deviceData || {});
+    let baseData = (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) ? storageData : deviceData;
+    return baseData.equipments ? baseData.equipments : baseData;
 }
 
 // [공통 헬퍼] 장비 표시 이름(시리얼, 고객사 장비명 포함) 포맷팅
@@ -100,24 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const initDashboard = () => updateHomeDashboard();
     if (window.isDataLoaded) initDashboard();
     else window.addEventListener('DataLoaded', initDashboard);
-
-    const integLists = ['integ-setup-complete-list', 'integ-setup-detail-list'];
-    integLists.forEach(id => {
-        const list = document.getElementById(id);
-        if (list) {
-            // 캡처링(true)을 사용하여 기존 클릭 이벤트보다 먼저 실행
-            list.addEventListener('click', (e) => {
-                const li = e.target.closest('li');
-                if (li) {
-                    if (!confirm('해당 장비의 셋업 페이지로 이동하시겠습니까?')) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.stopImmediatePropagation();
-                    }
-                }
-            }, true);
-        }
-    });
 
     // [추가] 장비 정보 리스트 정적 검색창 이벤트 바인딩
     const equipDetailSearchInput = document.getElementById('equip-detail-search-input');
@@ -214,11 +197,11 @@ function showHomeSection(type) {
     if (type === 'maint' && document.querySelector('.btn-maint.active')) isAlreadyActive = true;
     if (type === 'integrated' && document.querySelector('.btn-integrated.active')) isAlreadyActive = true;
 
-    if (isAlreadyActive && menuContainer.classList.contains('compact')) {
-        menuContainer.classList.toggle('expanded');
-        return; // 섹션 전환 로직 실행 중단
-    }
-    menuContainer.classList.remove('expanded'); // 다른 섹션 선택 시 메뉴 접기
+        if (isAlreadyActive && menuContainer && menuContainer.classList.contains('compact')) {
+            menuContainer.classList.toggle('expanded');
+            return; // 섹션 전환 로직 실행 중단
+        }
+        if (menuContainer) menuContainer.classList.remove('expanded'); // 다른 섹션 선택 시 메뉴 접기
 
     const btnSetup = document.querySelector('.btn-setup');
     const btnMaint = document.querySelector('.btn-maint');
@@ -228,27 +211,27 @@ function showHomeSection(type) {
     if (btnIntegrated) btnIntegrated.classList.remove('active');
 
     // 메뉴 컨테이너를 컴팩트 모드로 전환 (애니메이션 효과)
-    menuContainer.classList.add('compact');
+        if (menuContainer) menuContainer.classList.add('compact');
     localStorage.setItem('lastHomeSection', type);
 
     if (type === 'setup') {
         if (btnSetup) btnSetup.classList.add('active');
-        setupSec.style.display = 'flex';
-        maintSec.style.display = 'none';
-        if (integratedSec) integratedSec.style.display = 'none';
-        renderGanttChart();
+            if (setupSec) setupSec.style.display = 'flex';
+            if (maintSec) maintSec.style.display = 'none';
+            if (integratedSec) integratedSec.style.display = 'none';
+            if (typeof renderGanttChart === 'function') renderGanttChart();
     } else if (type === 'maint') {
         if (btnMaint) btnMaint.classList.add('active');
-        setupSec.style.display = 'none';
-        maintSec.style.display = 'flex';
-        if (integratedSec) integratedSec.style.display = 'none';
-        renderCalendar();
+            if (setupSec) setupSec.style.display = 'none';
+            if (maintSec) maintSec.style.display = 'flex';
+            if (integratedSec) integratedSec.style.display = 'none';
+            if (typeof renderCalendar === 'function') renderCalendar();
     } else if (type === 'integrated') {
         if (btnIntegrated) btnIntegrated.classList.add('active');
-        setupSec.style.display = 'none';
-        maintSec.style.display = 'none';
-        if (integratedSec) integratedSec.style.display = 'flex';
-        if (typeof updateIntegratedDashboard === 'function') updateIntegratedDashboard();
+            if (setupSec) setupSec.style.display = 'none';
+            if (maintSec) maintSec.style.display = 'none';
+            if (integratedSec) integratedSec.style.display = 'flex';
+            if (typeof updateIntegratedDashboard === 'function') updateIntegratedDashboard();
     }
 }
 

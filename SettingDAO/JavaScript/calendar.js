@@ -1223,7 +1223,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             issueShareWrapper.appendChild(templateContent);
         } else {
             issueShareWrapper.innerHTML = `
-                <label for="detail-issue-share-checkbox" class="modal-checkbox-label" style="font-size: 13px; font-weight: bold; color: #f0883e; display: flex; align-items: center; cursor: pointer;">
+                <label class="modal-checkbox-label" style="font-size: 13px; font-weight: bold; color: #f0883e; display: flex; align-items: center; cursor: pointer;">
                     <input type="checkbox" id="detail-issue-share-checkbox" class="modal-checkbox-input" style="margin-right: 5px; transform: scale(1.2);">
                     이슈 공유
                 </label>
@@ -1871,7 +1871,7 @@ function saveDetailChanges() {
                 if (match) { code = match.code || ''; fullContent = match.part || val; }
                 if (partContent && idx === 0) fullContent = `${fullContent} - ${partContent}`;
 
-                let existing = sameDayItems.find(m => m.content === fullContent || m.content === val);
+                let existing = sameDayItems.find(m => (m.content === fullContent || (code && m.code === code) || m.content === val));
                 if (existing) {
                     existing.scheduledDate = targetDate;
                     existing.detailType = itemDetailType;
@@ -2109,7 +2109,7 @@ function completeScheduleWork() {
     let mergedRegItemIds = new Set();
     sameDayItems.forEach(i => {
         if (i.type === '비정기') {
-            const regItem = data.maint.find(m => m.type === '정기' && m.id !== i.id && m.content === i.content);
+            const regItem = data.maint.find(m => m.type === '정기' && m.id !== i.id && (m.content === i.content || (m.code && i.code && m.code === i.code)));
             if (regItem) {
                 regItem.date = i.date;
                 if (i.itemCost) regItem.itemCost = i.itemCost;
@@ -2126,13 +2126,11 @@ function completeScheduleWork() {
     // [추가] Admin에 등록된 물품만 다음 예정일 등록 팝업에 표시하도록 필터링
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
     let nextScheduleItems = remainingItems.filter(item => {
-        if (item.originalLogId) return false; // [추가] 자식(추가) 작업은 다음 예정일 목록에서 제외
         return adminItems.some(a => a.part === item.content || a.code === item.content);
     });
 
     // 항목이 아예 없는 점검(내용 없음) 완료 시, 예정일 팝업에서 단일 폼(작업자/공수/예정일)만 표시되도록 생성
-    // [수정] 단독 추가 작업이 아닌 일반 작업의 경우에만 기본 폼(장비 점검) 생성
-    if (nextScheduleItems.length === 0 && !maintItem.originalLogId) {
+    if (nextScheduleItems.length === 0) {
         nextScheduleItems = [{
             id: Date.now() + 9999, // 임시 고유 ID 부여
             type: maintItem.type || '정기',
@@ -2182,7 +2180,7 @@ function completeScheduleWork() {
 
     // [추가] 완료 후 다음 예정일 등록 모달 띄우기
     // 비정기 물품 교체건과 병합된 정기 항목 포함
-    if (nextScheduleItems.length > 0 && !maintItem.originalLogId) {
+    if (nextScheduleItems.length > 0) {
         // [수정] 공통 함수 호출로 변경
         openNextScheduleModal({
             site,
@@ -2298,7 +2296,7 @@ function cancelScheduleCompletion() {
             fullContent = match.part || itemText;
         }
 
-        let existingItem = data.maint.find(m => m.type === logType && (m.content === fullContent || m.content === itemText) && m.originalLogId == logItem.originalLogId);
+        let existingItem = data.maint.find(m => m.type === logType && (m.content === fullContent || (code && m.code === code) || m.content === itemText) && m.originalLogId == logItem.originalLogId);
 
 
         if (existingItem) {
@@ -3252,7 +3250,7 @@ function confirmRegisterSchedule() {
                 period = match.cycle || null;
             }
 
-            let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || m.content === itemText));
+            let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || (code && m.code === code) || m.content === itemText));
 
             if (existingItem) {
                 const oldDate = existingItem.scheduledDate;
