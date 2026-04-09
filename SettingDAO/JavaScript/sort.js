@@ -1,6 +1,7 @@
 /* ==========================================================================
    1. 초기화 (Initialization)
    ========================================================================== */
+// [1.1] DOM 로드 시 초기화 및 외부 클릭 감지
 document.addEventListener('DOMContentLoaded', () => {
     if (window.isDataLoaded) {
         initSortPage();
@@ -20,12 +21,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// [추가] 모든 형태의 로컬 데이터를 안전하게 병합하여 가져오는 헬퍼 함수
+// [1.2] 로컬 데이터 안전 조회 헬퍼: 모든 형태의 로컬 데이터를 안전하게 병합하여 가져옴
 function getSortDeviceData() {
     // 100% DB 동기화 방식에 맞춰 localStorage의 순수 device_data 맵핑 객체만 사용
     return JSON.parse(localStorage.getItem('device_data')) || {};
 }
 
+// [1.3] 정렬(검색) 페이지 메인 초기화 (캐시 복원 및 필터 세팅)
 function initSortPage() {
     let data = getSortDeviceData();
     if (!data || Object.keys(data).length === 0) {
@@ -193,6 +195,7 @@ function initSortPage() {
     setTimeout(performSortSearch, 150); // 드롭다운(연도 등) UI 렌더링을 기다리기 위해 대기 시간 증가
 }
 
+// [1.4] 사이드바 너비 조절(Resizer) 이벤트 설정
 function setupSortResizer() {
     const resizer = document.getElementById('sidebar-resizer');
     const sidebar = document.querySelector('.dashboard-sidebar');
@@ -211,6 +214,7 @@ function setupSortResizer() {
 /* ==========================================================================
    2. 커스텀 UI 유틸리티 (Custom UI Utilities)
    ========================================================================== */
+// [2.1] 커스텀 다중 선택 드롭다운의 선택된 값 배열 추출
 function getMultiValues(selectId) {
     const wrapper = document.getElementById(`${selectId}-wrapper`);
     if (wrapper) {
@@ -222,6 +226,7 @@ function getMultiValues(selectId) {
     return [];
 }
 
+// [2.2] 기본 Select 엘리먼트를 커스텀 체크박스 다중 드롭다운 UI로 변환 및 동기화
 function syncCustomMultiSelect(selectId, placeholder = '전체') {
     const selectEl = document.getElementById(selectId);
     if (!selectEl) return;
@@ -398,6 +403,7 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
 /* ==========================================================================
    3. 필터 설정 및 업데이트 (Filter Setup & Updates)
    ========================================================================== */
+// [3.1] 전체 검색 필터 초기화 및 연쇄 변경(Change) 이벤트 설정
 function setupSortFilters() {
     const siteSelect = document.getElementById('sort-site-select');
     const buildingSelect = document.getElementById('sort-building-select');
@@ -560,6 +566,7 @@ function setupSortFilters() {
     setupSortKeyword();
 }
 
+// [3.2] 결과 내 텍스트 검색창(Keyword) 드롭다운 이벤트 설정
 function setupSortKeyword() {
     const dropdown = document.getElementById('sort-keyword-dropdown');
     const confirmBtn = document.getElementById('btn-sort-keyword-confirm');
@@ -653,6 +660,7 @@ function setupSortKeyword() {
     }
 }
 
+// [3.3] 텍스트 검색창 제안(자동완성) 목록 업데이트
 function updateKeywordSuggestions() {
     const keywordList = document.getElementById('sort-keyword-list');
     if (!keywordList) return;
@@ -695,6 +703,7 @@ function updateKeywordSuggestions() {
     updateKeywordTrigger();
 }
 
+// [3.4] 텍스트 검색창 선택 결과 텍스트(트리거 문구) 업데이트
 function updateKeywordTrigger() {
     const input = document.getElementById('sort-keyword');
     const list = document.getElementById('sort-keyword-list');
@@ -712,6 +721,7 @@ function updateKeywordTrigger() {
     input.title = selected.length > 0 ? selected.map(el => el.dataset.value).join('\n') : input.value;
 }
 
+// [3.5] 사업장 선택에 따른 건물명 필터 항목 동적 업데이트
 function updateSortBuildingSelect(sites) {
     const buildingSelect = document.getElementById('sort-building-select');
     if (!buildingSelect) return;
@@ -752,6 +762,7 @@ function updateSortBuildingSelect(sites) {
     syncCustomMultiSelect('sort-building-select', '전체 건물');
 }
 
+// [3.6] 사업장/건물/모델 선택에 따른 장비명 필터 항목 동적 업데이트
 function updateSortEquipSelect(sites, buildings, models, data) {
     const equipSelect = document.getElementById('sort-equip-select');
     if (!equipSelect) return;
@@ -801,6 +812,7 @@ function updateSortEquipSelect(sites, buildings, models, data) {
     syncCustomMultiSelect('sort-equip-select', '전체 장비');
 }
 
+// [3.7] 점검 구분에 따른 세부 구분 1 필터 항목 동적 업데이트
 function updateSortDetailTypeSelect() {
     const detailTypeSelect = document.getElementById('sort-detail-type-select');
     if (!detailTypeSelect) return;
@@ -836,6 +848,7 @@ function updateSortDetailTypeSelect() {
     updateSortDetailType2Select();
 }
 
+// [3.8] '비정기' 점검 구분 선택 시 세부 구분 2 필터 표시 및 항목 동적 업데이트
 function updateSortDetailType2Select() {
     const types = getMultiValues('sort-type-select');
     const detailTypes = getMultiValues('sort-detail-type-select');
@@ -903,6 +916,7 @@ function updateSortDetailType2Select() {
 /* ==========================================================================
    4. 이벤트 및 검색 로직 (Events & Search Logic)
    ========================================================================== */
+// [4.1] 검색 버튼 클릭 및 엔터키 이벤트 설정
 function setupSortEvents() {
     const searchBtn = document.getElementById('btn-sort-search');
     const keywordInput = document.getElementById('sort-keyword');
@@ -913,6 +927,7 @@ function setupSortEvents() {
     });
 }
 
+// [4.2] 핵심 검색 로직: 선택된 필터 조건들을 매칭하여 결과 도출
 function performSortSearch() {
     const siteFilters = getMultiValues('sort-site-select');
     const buildingFilters = getMultiValues('sort-building-select');
@@ -1198,6 +1213,7 @@ function performSortSearch() {
 /* ==========================================================================
    5. UI 렌더링 (UI Rendering)
    ========================================================================== */
+// [5.1] 검색 결과 리스트 렌더링 준비 (결과 내 텍스트 검색창 생성 및 내보내기 버튼 제어)
 function renderSortList(results) {
     window.currentSortResults = results;
 
@@ -1250,7 +1266,7 @@ function renderSortList(results) {
     renderSortListTableOnly();
 }
 
-// [추가] 결과 내 검색 필터링이 적용된 테이블 렌더링 전용 함수
+// [5.2] 검색 결과 테이블 실제 렌더링 (행 Row 생성 및 데이터 매핑)
 function renderSortListTableOnly() {
     const tbody = document.getElementById('sort-result-tbody');
     const countBadge = document.getElementById('sort-result-count');
@@ -1330,6 +1346,7 @@ function renderSortListTableOnly() {
     });
 }
 
+// [5.3] 검색 결과 통계 데이터 집계 및 하단 막대 차트 렌더링
 function renderSortChart(results) {
     const container = document.getElementById('sort-chart-container');
     const yAxisContainer = document.getElementById('sort-y-axis');
@@ -1602,6 +1619,7 @@ function renderSortChart(results) {
 /* ==========================================================================
    6. 데이터 내보내기 및 헬퍼 (Export & Helpers)
    ========================================================================== */
+// [6.1] 검색된 결과를 CSV 파일 양식으로 변환 및 다운로드 추출
 function exportSortResultsToCSV(results) {
     let csvContent = '\uFEFF';
     csvContent += '날짜,상태,사업장,건물명,모델명,장비명(약어),Serial No,고객사 장비명,구분,세부구분,물품상세구분,작업내용,비용처리,작업자,공수,상세메모\n';
@@ -1640,7 +1658,7 @@ function exportSortResultsToCSV(results) {
     URL.revokeObjectURL(url);
 }
 
-// HTML escape helper
+// [6.2] 보안: XSS 공격 방지용 HTML 텍스트 이스케이프 헬퍼
 function escapeHtml(text) {
     if (!text) return text;
     return String(text).replace(/&/g, "&amp;")
