@@ -409,8 +409,8 @@ function initializeApp() {
         if (btn.textContent.trim() === 'PM') btn.textContent = '정기';
     });
 
-    // [추가] 웹 브라우저 전역 자동완성(Autofill) 팝업 강제 원천 차단
-    disableAutocompleteGlobal();
+    // [추가] 전역 자동완성 차단 및 라벨(Label) 웹 접근성 경고 82건 일괄 해결
+    applyGlobalAccessibilityAndSecurityFixes();
 
     // 2-2. 로그인 및 사용자 관리 이벤트
     setupAuthEvents();
@@ -504,27 +504,65 @@ function setupGlobalModalScrollLock() {
     });
 }
 
-// [추가] 브라우저 자동완성을 무력화하는 전역 헬퍼 함수
-function disableAutocompleteGlobal() {
-    const disableAutocomplete = (node) => {
+// [추가] 전역 웹 접근성(Label-Input 연결) 및 보안(자동완성 차단) 자동화 함수
+function applyGlobalAccessibilityAndSecurityFixes() {
+    const processNode = (node) => {
+        // 1. Autocomplete 비활성화
         if (node.tagName === 'INPUT') {
-            node.setAttribute('autocomplete', 'new-password');
+            if (!node.hasAttribute('autocomplete')) node.setAttribute('autocomplete', 'new-password');
         }
         if (node.querySelectorAll) {
             node.querySelectorAll('input').forEach(el => {
-                el.setAttribute('autocomplete', 'new-password');
+                if (!el.hasAttribute('autocomplete')) {
+                    el.setAttribute('autocomplete', 'new-password');
+                }
+            });
+
+            // 2. Label - Input 연결 (웹 접근성 / 콘솔 경고 해결)
+            const labels = node.tagName === 'LABEL' ? [node] : Array.from(node.querySelectorAll('label'));
+            labels.forEach(label => {
+                const forAttr = label.getAttribute('for');
+                if (forAttr && document.getElementById(forAttr)) return; // 이미 올바르게 연결됨
+
+                // 내부에 있는 경우
+                const innerInput = label.querySelector('input:not([type="hidden"]), select, textarea');
+                if (innerInput) {
+                    if (!innerInput.id) innerInput.id = 'auto-input-' + Math.random().toString(36).substr(2, 9);
+                    label.setAttribute('for', innerInput.id);
+                    return;
+                }
+                
+                // 인접한 형제 요소인 경우
+                let nextEl = label.nextElementSibling;
+                if (nextEl) {
+                    const targetInput = nextEl.tagName.match(/INPUT|SELECT|TEXTAREA/) 
+                        ? nextEl 
+                        : nextEl.querySelector('input:not([type="hidden"]), select, textarea');
+                    
+                    if (targetInput) {
+                        if (!targetInput.id) targetInput.id = 'auto-input-' + Math.random().toString(36).substr(2, 9);
+                        label.setAttribute('for', targetInput.id);
+                        return;
+                    }
+                }
+
+                // [추가] 매칭되는 input을 끝내 찾지 못했는데 무의미한 for 속성이 남아있는 경우 (고아 라벨)
+                // 브라우저 콘솔 경고(1 resource 에러)를 원천 차단하기 위해 해당 for 속성을 강제로 지워줍니다.
+                if (label.hasAttribute('for') && !document.getElementById(label.getAttribute('for'))) {
+                    label.removeAttribute('for');
+                }
             });
         }
     };
 
-    // 현재 화면에 있는 모든 input 처리
-    disableAutocomplete(document.body);
+    // 현재 문서 전체 적용
+    processNode(document.body);
 
-    // 팝업 창 등 동적으로 생성되는 모든 input 실시간 감지 및 처리
+    // 실시간 DOM 변경 감지 (팝업 등 동적 생성 요소 지원)
     const observer = new MutationObserver(mutations => {
         mutations.forEach(mutation => {
             mutation.addedNodes.forEach(node => {
-                if (node.nodeType === 1) disableAutocomplete(node);
+                if (node.nodeType === 1) processNode(node);
             });
         });
     });

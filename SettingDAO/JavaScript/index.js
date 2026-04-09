@@ -299,6 +299,12 @@ function updateHomeDashboard() {
     updateMaintenanceDashboard();
     updateSetupDashboard();
 
+    // [추가] 서버 데이터 비동기 로드 완료(갱신) 시, 
+    // 통합 관리 대시보드도 최신 데이터로 리프레시하도록 호출하여 빈 화면 버그를 해결합니다.
+    if (typeof updateIntegratedDashboard === 'function') {
+        updateIntegratedDashboard();
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const scrollToTarget = urlParams.get('scrollTo');
     if (scrollToTarget) {
@@ -758,8 +764,8 @@ function updateSetupDashboard() {
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
 
     Object.keys(data).forEach(site => {
-        if (data[site]) {
-            data[site].forEach(equip => {
+            if (data[site] && Array.isArray(data[site])) {
+                data[site].forEach(equip => {
                 const detailData = setupData[`${site}::${equip}`];
                 if (detailData && detailData.setupDetails && detailData.setupDetails.length > 0) {
                     const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');

@@ -1223,7 +1223,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             issueShareWrapper.appendChild(templateContent);
         } else {
             issueShareWrapper.innerHTML = `
-                <label class="modal-checkbox-label" style="font-size: 13px; font-weight: bold; color: #f0883e; display: flex; align-items: center; cursor: pointer;">
+                <label for="detail-issue-share-checkbox" class="modal-checkbox-label" style="font-size: 13px; font-weight: bold; color: #f0883e; display: flex; align-items: center; cursor: pointer;">
                     <input type="checkbox" id="detail-issue-share-checkbox" class="modal-checkbox-input" style="margin-right: 5px; transform: scale(1.2);">
                     이슈 공유
                 </label>

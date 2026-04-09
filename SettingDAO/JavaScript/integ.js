@@ -17,8 +17,13 @@ window.updateIntegratedDashboard = updateIntegratedDashboard; // [추가] 전역
    2. 메인 업데이트 로직 (Main Update Logic)
    ========================================================================== */
 function updateIntegratedDashboard() {
+    try {
+    // 날짜/연도 컨트롤 초기화 (필터 값을 읽기 전에 초기화되어야 올바른 구간이 설정됨)
+    initDateControls();
+
     // 데이터 로드
-    let data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    let rawData = JSON.parse(localStorage.getItem('device_data')) || {};
+    let data = (typeof getDashboardData === 'function') ? getDashboardData() : (rawData.equipments || rawData);
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
 
     let totalCount = 0;
@@ -70,7 +75,7 @@ function updateIntegratedDashboard() {
 
     // 데이터 집계
     Object.keys(data).forEach(site => {
-        if (data[site]) {
+        if (data[site] && Array.isArray(data[site])) {
             data[site].forEach(equip => {
                 totalCount++;
                 const equipKey = `${site}::${equip}`;
@@ -139,9 +144,6 @@ function updateIntegratedDashboard() {
         setupSummaryEl.textContent = `(전체 : ${setupCount}, 진행중 : ${summaryActiveCount}, 완료 : ${summaryCompletedCount})`;
     }
 
-    // 날짜/연도 컨트롤 초기화
-    initDateControls();
-
     // UI 렌더링
     renderIntegEquipStats(data); // [추가] 장비 통합 현황 렌더링
     renderIntegSetupBarChart(allSiteCounts, totalActiveAll);
@@ -149,6 +151,19 @@ function updateIntegratedDashboard() {
     renderIntegSetupList(setupEquips);
     renderIntegCompletedList(completedEquips);
     renderIntegMaintStats(data);
+    } catch (error) {
+        console.error("Integrated Dashboard Rendering Error:", error);
+        const container = document.querySelector('.integ-dashboard-view') || document.getElementById('section-integrated');
+        if (container) {
+            container.innerHTML = `
+                <div style="display:flex; flex-direction:column; justify-content:center; align-items:center; height:100%; min-height:300px; color:#f85149; background:#161b22; border:1px solid #da3633; border-radius:8px; padding:20px;">
+                    <h3 style="margin-bottom:10px;">통합 현황 렌더링 오류 발생</h3>
+                    <p style="margin-bottom:10px; text-align:center;">${error.message}</p>
+                    <p style="font-size:12px; color:#8b949e;">※ 키보드 F12를 눌러 개발자 도구(Console)에서 상세 에러를 확인하거나 이 화면을 캡처해주세요.</p>
+                </div>
+            `;
+        }
+    }
 }
 
 function initDateControls() {
@@ -213,7 +228,7 @@ function renderIntegEquipStats(data) {
 
     // 데이터 집계
     Object.keys(data).forEach(site => {
-        if (data[site] && data[site].length > 0) {
+        if (data[site] && Array.isArray(data[site]) && data[site].length > 0) {
             actualSiteCount++;
             
             let groupName = '기타 사업장';
@@ -606,8 +621,9 @@ function toggleIntegSetupPeriodMode() {
    5. 운영 관리 현황 섹션 (Maintenance Dashboard Section)
    ========================================================================== */
 function renderIntegMaintStats(mainData) {
-    if (!mainData) {
-        mainData = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    if (!mainData || Object.keys(mainData).length === 0) {
+        let rawData = JSON.parse(localStorage.getItem('device_data')) || {};
+        mainData = (typeof getDashboardData === 'function') ? getDashboardData() : (rawData.equipments || rawData);
     }
 
     const chartEl = document.getElementById('integ-maint-type-chart');
@@ -657,7 +673,7 @@ function renderIntegMaintStats(mainData) {
 
     // 데이터 집계
     Object.keys(mainData).forEach(site => {
-        if (mainData[site]) {
+        if (mainData[site] && Array.isArray(mainData[site])) {
             const isSiteMatch = !integSelectedSite || integSelectedSite === site;
             mainData[site].forEach(equip => {
                 const key = `details_${site}_${equip}`;
