@@ -86,6 +86,13 @@ function initSortPage() {
                 if (!values) return;
                 const list = document.getElementById(`${selectId}-list`);
                 const selectEl = document.getElementById(selectId);
+
+                // [추가] 과거 '전체 해제' 상태가 '전체 검색'으로 동작하던 캐시 데이터 호환성 보정
+                // 값이 없으면 0건이 검색되도록 로직이 수정되었으므로, 빈 배열 캐시를 불러올 경우 전체 선택 상태로 강제 복원
+                if (values.length === 0 && selectEl) {
+                    values = Array.from(selectEl.options).map(o => o.value).filter(v => v);
+                }
+
                 if (selectEl) {
                     Array.from(selectEl.options).forEach(opt => {
                         opt.selected = values.includes(opt.value);
@@ -261,6 +268,20 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
                 dropdown.classList.add('show');
             }
         };
+
+        if (selectAllBtn) {
+            selectAllBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault(); // 포커스 아웃 방지
+                e.stopPropagation();
+                list.querySelectorAll('.log-select-item').forEach(el => {
+                    el.classList.add('selected');
+                    const checkIcon = el.querySelector('.check-icon');
+                    if (checkIcon) checkIcon.style.opacity = '1';
+                });
+                updateTriggerText();
+                selectEl.dispatchEvent(new Event('change'));
+            });
+        }
 
         if (deselectAllBtn) {
             deselectAllBtn.addEventListener('mousedown', (e) => {
@@ -559,20 +580,6 @@ function setupSortKeyword() {
 
         input.onclick = showDropdown;
         input.onfocus = showDropdown;
-
-        if (selectAllBtn) {
-            selectAllBtn.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                list.querySelectorAll('.log-select-item').forEach(el => {
-                    el.classList.add('selected');
-                    const checkIcon = el.querySelector('.check-icon');
-                    if (checkIcon) checkIcon.style.opacity = '1';
-                });
-                updateTriggerText();
-                selectEl.dispatchEvent(new Event('change'));
-            });
-        }
 
         if (selectAllBtn) {
             selectAllBtn.addEventListener('mousedown', (e) => {
@@ -920,6 +927,25 @@ function performSortSearch() {
     const keywordList = document.getElementById('sort-keyword-list');
     const keywordSelected = keywordList ? Array.from(keywordList.querySelectorAll('.log-select-item.selected')).map(el => (el.dataset.value || '').toLowerCase()) : [];
 
+    // [추가] '전체 선택' 상태인지 판별하여 과거/누락된 매핑 데이터도 조건 없이 조회되도록 돕는 헬퍼 함수
+    const isAllSelected = (selectId, filtersArray) => {
+        const selectEl = document.getElementById(selectId);
+        if (!selectEl) return false;
+        const validOptions = Array.from(selectEl.options).filter(o => o.value);
+        if (validOptions.length === 0) return true; // 옵션이 없으면 전체 통과로 간주
+        return filtersArray.length >= validOptions.length;
+    };
+
+    const isSiteAll = isAllSelected('sort-site-select', siteFilters);
+    const isBuildingAll = isAllSelected('sort-building-select', buildingFilters);
+    const isModelAll = isAllSelected('sort-model-select', modelFilters);
+    const isEquipAll = isAllSelected('sort-equip-select', equipFilters);
+    const isTypeAll = isAllSelected('sort-type-select', typeFilters);
+    const isDetailTypeAll = isAllSelected('sort-detail-type-select', detailTypeFilters);
+    const isDetailType2All = isAllSelected('sort-detail-type2-select', detailType2Filters);
+    const isItemDetailTypeAll = isAllSelected('sort-item-detail-type-select', itemDetailTypeFilters);
+    const isCostTypeAll = isAllSelected('sort-cost-type-select', costTypeFilters);
+
     const currentYear = new Date().getFullYear();
     const periodType = document.getElementById('sort-period-type') ? document.getElementById('sort-period-type').value : 'custom';
     let startDate = '';
@@ -982,16 +1008,19 @@ function performSortSearch() {
 
     Object.keys(data).forEach(site => {
         if (!Array.isArray(data[site])) return;
-        if (siteFilters.length > 0 && !siteFilters.includes(site)) return;
+        if (siteFilters.length === 0) return; // 아무것도 선택 안 했으면 패스
+        if (!isSiteAll && !siteFilters.includes(site)) return; // 전체 선택이 아닐 때만 포함 여부 검사
 
         if (data[site]) {
             data[site].forEach(equip => {
                 if (typeof equip !== 'string') return;
-                if (equipFilters.length > 0 && !equipFilters.includes(equip)) return;
+                if (equipFilters.length === 0) return;
+                if (!isEquipAll && !equipFilters.includes(equip)) return;
 
                 const parts = equip.split('::');
                 const equipName = parts[0];
-                if (modelFilters.length > 0 && !modelFilters.includes(equipName)) return;
+                if (modelFilters.length === 0) return;
+                if (!isModelAll && !modelFilters.includes(equipName)) return;
 
                 const serialNo = parts.length > 1 ? parts[1] : '';
                 const matchedModel = equipmentModels.find(m => m.name === equipName);
@@ -1002,7 +1031,8 @@ function performSortSearch() {
                 const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
                 const equipBuilding = (detailData.setup && detailData.setup.building) ? detailData.setup.building : '미지정';
 
-                if (buildingFilters.length > 0 && !buildingFilters.includes(equipBuilding)) return;
+                if (buildingFilters.length === 0) return;
+                if (!isBuildingAll && !buildingFilters.includes(equipBuilding)) return;
 
                 const checkItemMatch = (itemObj, isLog) => {
                     try {
@@ -1011,7 +1041,8 @@ function performSortSearch() {
                         if (isLog && itemObj.detailType === '일정변경') return false;
 
                         const itemType = itemObj.type || '정기'; // 구버전 데이터 누락 대응
-                        if (typeFilters.length > 0 && !typeFilters.includes(itemType)) return false;
+                        if (typeFilters.length === 0) return false;
+                        if (!isTypeAll && !typeFilters.includes(itemType)) return false;
                         if (startDate && itemDate < startDate) return false;
                         if (endDate && itemDate > endDate) return false;
 
@@ -1026,8 +1057,12 @@ function performSortSearch() {
 
                         if (!dt2) dt2 = '미지정';
 
-                        if (detailTypeFilters.length > 0 && !detailTypeFilters.includes(dt1)) return false;
-                        if (itemType === '비정기' && detailType2Filters.length > 0 && !detailType2Filters.includes(dt2)) return false;
+                        if (detailTypeFilters.length === 0) return false;
+                        if (!isDetailTypeAll && !detailTypeFilters.includes(dt1)) return false;
+                        if (itemType === '비정기') {
+                            if (detailType2Filters.length === 0) return false;
+                            if (!isDetailType2All && !detailType2Filters.includes(dt2)) return false;
+                        }
 
                         const pureContent = itemObj.content || itemObj.code || '';
 
@@ -1036,7 +1071,8 @@ function performSortSearch() {
                         if (costMatch) parsedCostType = costMatch[1];
                         const itemCostType = itemObj.costType || itemObj.itemCost || parsedCostType || '유상';
 
-                        if (costTypeFilters.length > 0 && !costTypeFilters.includes(itemCostType)) return false;
+                        if (costTypeFilters.length === 0) return false;
+                        if (!isCostTypeAll && !costTypeFilters.includes(itemCostType)) return false;
 
                         let matchedItemDetailType = '';
                         const contentsList = pureContent.split(',').map(s => s.replace(/\[.*?\]\s*/g, '').trim());
@@ -1045,20 +1081,25 @@ function performSortSearch() {
                             let matchFound = false;
                             for (const c of contentsList) {
                                 let cleanContent = c.replace(/\[지연\]/g, '').trim();
+                                let partsToCheck = [cleanContent];
 
                                 if (cleanContent.includes(' - ')) {
                                     const parts = cleanContent.split(' - ');
-                                    cleanContent = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                                    partsToCheck = [parts[0].trim()];
+                                    if (parts.length > 1) partsToCheck.push(parts[1].trim());
                                 }
 
-                                const matchItem = adminItems.find(ai => ai.part === cleanContent || ai.code === cleanContent);
-                                if (matchItem && matchItem.detailType) {
-                                    matchedItemDetailType = matchItem.detailType;
-                                    if (itemDetailTypeFilters.includes(matchedItemDetailType)) {
+                                for (const pt of partsToCheck) {
+                                    const matchItem = adminItems.find(ai => ai.part === pt || ai.code === pt);
+                                    let dt = (matchItem && matchItem.detailType) ? matchItem.detailType : '미지정';
+
+                                    if (isItemDetailTypeAll || itemDetailTypeFilters.includes(dt)) {
+                                        matchedItemDetailType = dt;
                                         matchFound = true;
                                         break;
                                     }
                                 }
+                                if (matchFound) break;
                             }
                             if (!matchFound) return false;
                         } else {
