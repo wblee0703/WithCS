@@ -201,7 +201,7 @@ function renderIntegEquipStats(data) {
     
     if (!siteChartEl || !modelChartEl) return;
 
-    const groupCounts = { 'SKH 이천': 0, 'SKH 청주': 0, 'SEC 기흥': 0, '기타 사업장': 0 };
+    const groupCounts = { 'SKH 이천': 0, 'SKH 청주': 0, 'SEC': 0, '기타 사업장': 0 };
     const modelCounts = {};
     const allModels = new Set();
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
@@ -214,8 +214,10 @@ function renderIntegEquipStats(data) {
             actualSiteCount++;
             
             let groupName = '기타 사업장';
-            if (site === 'SKH 이천' || site === 'SKH 청주' || site === 'SEC 기흥') {
+            if (site === 'SKH 이천' || site === 'SKH 청주') {
                 groupName = site;
+            } else if (site.includes('SEC')) {
+                groupName = 'SEC';
             }
 
             groupCounts[groupName] += data[site].length;
@@ -258,7 +260,7 @@ function renderIntegEquipStats(data) {
     const groupGradients = {
         'SKH 이천': 'linear-gradient(to top, #1f6feb, #58a6ff)',
         'SKH 청주': 'linear-gradient(to top, #238636, #3fb950)',
-        'SEC 기흥': 'linear-gradient(to top, #d29922, #e3b341)',
+        'SEC': 'linear-gradient(to top, #d29922, #e3b341)',
         '기타 사업장': 'linear-gradient(to top, #8957e5, #a371f7)'
     };
     
