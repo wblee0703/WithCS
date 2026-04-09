@@ -13,40 +13,6 @@ window.toggleIntegPeriodMode = toggleIntegPeriodMode;
 window.toggleIntegSetupPeriodMode = toggleIntegSetupPeriodMode;
 window.updateIntegratedDashboard = updateIntegratedDashboard; // [추가] 전역 노출
 
-// [추가] 단독 페이지(integ.html) 실행을 위한 자동 초기화 이벤트
-document.addEventListener('DOMContentLoaded', () => {
-    const initInteg = () => {
-        if (document.getElementById('section-integrated') || document.querySelector('.integ-dashboard-view')) {
-            if (typeof updateIntegratedDashboard === 'function') updateIntegratedDashboard();
-        }
-    };
-    if (typeof window.isDataLoaded !== 'undefined') {
-        if (window.isDataLoaded) initInteg();
-        else window.addEventListener('DataLoaded', initInteg);
-    } else {
-        setTimeout(initInteg, 300);
-    }
-
-    // [이동] index.js에 있던 셋업 리스트 클릭 시 확인 창 띄우기 이벤트
-    const integLists = ['integ-setup-complete-list', 'integ-setup-detail-list'];
-    integLists.forEach(id => {
-        const list = document.getElementById(id);
-        if (list) {
-            // 캡처링(true)을 사용하여 기존 클릭 이벤트보다 먼저 실행
-            list.addEventListener('click', (e) => {
-                const li = e.target.closest('li');
-                if (li) {
-                    if (!confirm('해당 장비의 셋업 페이지로 이동하시겠습니까?')) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        e.stopImmediatePropagation();
-                    }
-                }
-            }, true);
-        }
-    });
-});
-
 /* ==========================================================================
    2. 메인 업데이트 로직 (Main Update Logic)
    ========================================================================== */
@@ -939,9 +905,9 @@ function renderChartWithAxis(container, dataCounts, colorMapOrArray, onClickHand
 }
 
 // HTML 이스케이프 유틸리티 (중복 방지)
-if (typeof window.escapeHtml !== 'function') {
-    window.escapeHtml = function(text) {
+if (typeof escapeHtml !== 'function') {
+    function escapeHtml(text) {
         if (!text) return '';
-        return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-    };
+        return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
 }

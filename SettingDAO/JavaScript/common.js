@@ -409,8 +409,8 @@ function initializeApp() {
         if (btn.textContent.trim() === 'PM') btn.textContent = '정기';
     });
 
-    // [추가] 웹 브라우저 전역 자동완성(Autofill) 팝업 강제 원천 차단
-    disableAutocompleteGlobal();
+    // [추가] 전역 자동완성 차단 및 라벨(Label) 웹 접근성 경고 82건 일괄 해결
+    applyGlobalAccessibilityAndSecurityFixes();
 
     // 2-2. 로그인 및 사용자 관리 이벤트
     setupAuthEvents();
@@ -504,27 +504,65 @@ function setupGlobalModalScrollLock() {
     });
 }
 
-// [추가] 브라우저 자동완성을 무력화하는 전역 헬퍼 함수
-function disableAutocompleteGlobal() {
-    const disableAutocomplete = (node) => {
+// [추가] 전역 웹 접근성(Label-Input 연결) 및 보안(자동완성 차단) 자동화 함수
+function applyGlobalAccessibilityAndSecurityFixes() {
+    const processNode = (node) => {
+        // 1. Autocomplete 비활성화
         if (node.tagName === 'INPUT') {
-            node.setAttribute('autocomplete', 'new-password');
+            if (!node.hasAttribute('autocomplete')) node.setAttribute('autocomplete', 'new-password');
         }
         if (node.querySelectorAll) {
             node.querySelectorAll('input').forEach(el => {
-                el.setAttribute('autocomplete', 'new-password');
+                if (!el.hasAttribute('autocomplete')) {
+                    el.setAttribute('autocomplete', 'new-password');
+                }
+            });
+
+            // 2. Label - Input 연결 (웹 접근성 / 콘솔 경고 해결)
+            const labels = node.tagName === 'LABEL' ? [node] : Array.from(node.querySelectorAll('label'));
+            labels.forEach(label => {
+                const forAttr = label.getAttribute('for');
+                if (forAttr && document.getElementById(forAttr)) return; // 이미 올바르게 연결됨
+
+                // 내부에 있는 경우
+                const innerInput = label.querySelector('input:not([type="hidden"]), select, textarea');
+                if (innerInput) {
+                    if (!innerInput.id) innerInput.id = 'auto-input-' + Math.random().toString(36).substr(2, 9);
+                    label.setAttribute('for', innerInput.id);
+                    return;
+                }
+                
+                // 인접한 형제 요소인 경우
+                let nextEl = label.nextElementSibling;
+                if (nextEl) {
+                    const targetInput = nextEl.tagName.match(/INPUT|SELECT|TEXTAREA/) 
+                        ? nextEl 
+                        : nextEl.querySelector('input:not([type="hidden"]), select, textarea');
+                    
+                    if (targetInput) {
+                        if (!targetInput.id) targetInput.id = 'auto-input-' + Math.random().toString(36).substr(2, 9);
+                        label.setAttribute('for', targetInput.id);
+                        return;
+                    }
+                }
+
+                // [추가] 매칭되는 input을 끝내 찾지 못했는데 무의미한 for 속성이 남아있는 경우 (고아 라벨)
+                // 브라우저 콘솔 경고(1 resource 에러)를 원천 차단하기 위해 해당 for 속성을 강제로 지워줍니다.
+                if (label.hasAttribute('for') && !document.getElementById(label.getAttribute('for'))) {
+                    label.removeAttribute('for');
+                }
             });
         }
     };
 
-    // 현재 화면에 있는 모든 input 처리
-    disableAutocomplete(document.body);
+    // 현재 문서 전체 적용
+    processNode(document.body);
 
-    // 팝업 창 등 동적으로 생성되는 모든 input 실시간 감지 및 처리
+    // 실시간 DOM 변경 감지 (팝업 등 동적 생성 요소 지원)
     const observer = new MutationObserver(mutations => {
         mutations.forEach(mutation => {
             mutation.addedNodes.forEach(node => {
-                if (node.nodeType === 1) disableAutocomplete(node);
+                if (node.nodeType === 1) processNode(node);
             });
         });
     });
@@ -3134,8 +3172,8 @@ function openNextScheduleModal(options) {
                     period = match.cycle || null;
                 }
 
-                let existingItem = data.maint.find(m => (m.content === fullContent || (code && m.code === code) || m.content === sItem.content) && mergedRegItemIds.has(m.id));
-                if (!existingItem) existingItem = data.maint.find(m => m.content === fullContent || (code && m.code === code) || m.content === sItem.content);
+                let existingItem = data.maint.find(m => (m.content === fullContent || m.content === sItem.content) && mergedRegItemIds.has(m.id));
+                if (!existingItem) existingItem = data.maint.find(m => m.content === fullContent || m.content === sItem.content);
 
                 if (existingItem) {
                     const oldDate = existingItem.scheduledDate;
@@ -3307,6 +3345,36 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         const tr = createRow(maint, `예정 ${idx + 1}`, '#d29922', false);
         const dateCell = tr.querySelector('td:nth-child(2)');
         if (dateCell) dateCell.innerHTML = `${escapeHtml(maint.scheduledDate || '-')} <span style="color:#d29922; font-size:10px; font-weight:bold;">(예정)</span>`;
+        
+        // [추가] 예정된 추가 작업 삭제 버튼
+        const contentCell = tr.querySelector('td:nth-child(3)');
+        if (contentCell) {
+            const delBtn = document.createElement('button');
+            delBtn.className = 'btn-del-sm';
+            delBtn.textContent = '✕';
+            delBtn.title = '예정된 추가 작업 삭제';
+            delBtn.style.cssText = 'float: right; margin-top: -2px; padding: 2px 6px; font-size: 10px; background: transparent; border: 1px solid #da3633; color: #da3633; border-radius: 4px; cursor: pointer;';
+            delBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (confirm('이 예정된 추가 작업을 삭제하시겠습니까?')) {
+                    const latestData = JSON.parse(localStorage.getItem(key)) || {};
+                    if (latestData.maint) {
+                        latestData.maint = latestData.maint.filter(m => m.id !== maint.id);
+                        localStorage.setItem(key, JSON.stringify(latestData));
+                        
+                        if (typeof window.syncHistoryTransaction === 'function') window.syncHistoryTransaction(site, equip, { maint_deletes: [maint.id.toString()] });
+                        if (typeof window.addSystemLog === 'function') window.addSystemLog('DELETE_SCHEDULE', equip, `예정된 추가 작업 삭제: ${maint.content}`);
+                        
+                        window.openExtraWorkHistoryModal(site, equip, originalLogId); // 팝업 새로고침
+                        if (typeof renderCalendar === 'function') renderCalendar();
+                        if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+                        if (typeof renderDetails === 'function') renderDetails();
+                    }
+                }
+            };
+            contentCell.appendChild(delBtn);
+        }
+
         tr.onclick = () => {
             modal.style.display = 'none';
             openEventDetailModal(site, equip, maint.id, false);
@@ -3430,7 +3498,7 @@ window.isHoliday = isHoliday;
 window.addBusinessDays = addBusinessDays;
 
 /* ==========================================================================
-   11. 공통 UI 렌더링 헬퍼 (Shared UI Components)
+   10-1. 통합 공통 유틸리티 (Shared Components)
    ========================================================================== */
 window.workerNamesCache = [];
 window.fetchWorkerNames = async function (site = null) {
@@ -3611,165 +3679,8 @@ window.getDragAfterElement = function (container, y, selector) {
 };
 
 /* ==========================================================================
-   11. 전역 모달 로직 (Global Modals - Task Search & Extra Work)
+   12. 전역 모달 - 작업 검색 (Task Search Modal)
    ========================================================================== */
-window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
-    const modal = document.getElementById('extra-work-history-modal');
-    const tbody = document.getElementById('extra-work-history-body');
-    const pathEl = document.getElementById('extra-work-history-path');
-    const memoEl = document.getElementById('extra-work-history-memo');
-    const moveBtn = document.getElementById('btn-move-to-extra-work-origin');
-    const workerEl = document.getElementById('extra-work-history-worker');
-    const mdEl = document.getElementById('extra-work-history-md');
-    if (!modal || !tbody) return;
-
-    const key = `details_${site}_${equip}`;
-    const data = JSON.parse(localStorage.getItem(key)) || {};
-    const logs = data.logs || [];
-    const maints = data.maint || [];
-
-    const parentLog = logs.find(l => l.id == originalLogId);
-    const childLogs = logs.filter(l => l.originalLogId == originalLogId);
-    const childMaints = maints.filter(m => m.originalLogId == originalLogId);
-
-    if (!parentLog) return alert('원본 작업을 찾을 수 없습니다.');
-
-
-    // 1. 점검 구분 경로 설정
-    let pathText = parentLog.type || '정기';
-    let detailStr = parentLog.detailType || '';
-    if (parentLog.detailType2 && !detailStr.includes(parentLog.detailType2)) {
-        detailStr += ` > ${parentLog.detailType2}`;
-    }
-    if (detailStr) {
-        pathText += ` > ${detailStr}`;
-    }
-    if (pathEl) pathEl.textContent = pathText;
-
-    // 2. 메모 텍스트에어리어 초기화
-    if (memoEl) memoEl.value = parentLog.memo || '작성된 메모가 없습니다.';
-    if (workerEl) workerEl.textContent = parentLog.worker || '-';
-    if (mdEl) mdEl.textContent = parentLog.md || '0';
-
-    // 3. 해당 장비 점검 이력으로 이동하는 버튼 이벤트
-    if (moveBtn) {
-        moveBtn.onclick = () => {
-            let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}&logId=${originalLogId}`;
-            location.href = targetUrl;
-        };
-    }
-
-    let addBtn = document.getElementById('btn-add-extra-work-from-history');
-
-    if (addBtn) {
-        addBtn.onclick = () => {
-            modal.style.display = 'none';
-            if (typeof window.openRegisterScheduleModal === 'function') {
-                const presetData = { type: parentLog.type, detailType: parentLog.detailType, detailType2: parentLog.detailType2, content: '', worker: parentLog.worker || '' };
-                window.currentSearchFilters = { site: site, equip: equip };
-                window.currentAddWorkLogId = originalLogId;
-                const todayStr = new Date().toISOString().substring(0, 10);
-                window.openRegisterScheduleModal(todayStr, presetData);
-            } else {
-                sessionStorage.setItem('openAddWorkForLog', JSON.stringify({ site, equip, logId: originalLogId }));
-                location.href = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
-            }
-        };
-    }
-
-    // [수정] 헤더에 있는 통합 이슈 공유 체크박스 사용
-    let issueShareCb = document.getElementById('extra-work-issue-share');
-
-    tbody.innerHTML = '';
-
-    const createRow = (log, badgeText, badgeColor, isParent) => {
-        const tr = document.createElement('tr');
-        tr.style.cursor = 'pointer';
-        if (isParent) tr.style.backgroundColor = 'rgba(35, 134, 54, 0.1)';
-
-        tr.innerHTML = `
-<td><span class="badge" style="background:${badgeColor}; display: inline-block; width: 45px; text-align: center; padding: 3px 0; font-size: 11px; border-radius: 4px; color: #fff; font-weight: bold;">${badgeText}</span></td>            <td>${log.date || '-'}</td>
-            <td style="text-align: left; padding-left: 10px;">${escapeHtml(log.content || '-')}</td>
-        `;
-
-        tr.dataset.logId = log.id;
-        tr.onclick = () => {
-            if (memoEl) memoEl.value = log.memo || '작성된 메모가 없습니다.';
-            if (workerEl) workerEl.textContent = log.worker || '-';
-            if (mdEl) mdEl.textContent = log.md || '0';
-            Array.from(tbody.children).forEach(child => child.classList.remove('active-row'));
-            tr.classList.add('active-row');
-        };
-
-        return tr;
-    };
-
-    // 부모 로그 렌더링
-    const parentRow = createRow(parentLog, '최초', '#238636', true);
-    parentRow.classList.add('active-row');
-    tbody.appendChild(parentRow);
-
-    // 팝업 열릴 때 부모의 상태를 우선 표시
-    if (issueShareCb) issueShareCb.checked = !!parentLog.isIssueShared;
-
-    // 자식 로그 렌더링
-    childLogs.forEach((log, idx) => {
-        tbody.appendChild(createRow(log, `추가 ${idx + 1}`, '#1f6feb', false));
-    });
- 
-    // 예정된 자식 작업(미완료 추가작업) 렌더링
-    childMaints.forEach((maint, idx) => {
-        const tr = createRow(maint, `예정 ${idx + 1}`, '#d29922', false);
-        const dateCell = tr.querySelector('td:nth-child(2)');
-        if (dateCell) dateCell.innerHTML = `${escapeHtml(maint.scheduledDate || '-')} <span style="color:#d29922; font-size:10px; font-weight:bold;">(예정)</span>`;
-        tr.onclick = () => {
-            modal.style.display = 'none';
-            if (typeof openEventDetailModal === 'function') {
-                openEventDetailModal(site, equip, maint.id, false);
-            } else {
-                location.href = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
-            }
-        };
-        tbody.appendChild(tr);
-    });
-
-    // 체크박스 클릭(변경) 이벤트 바인딩
-    if (issueShareCb) {
-        const newCb = issueShareCb.cloneNode(true);
-        issueShareCb.parentNode.replaceChild(newCb, issueShareCb);
-        issueShareCb = document.getElementById('extra-work-issue-share');
-
-        const userRole = sessionStorage.getItem('userRole');
-        issueShareCb.disabled = (userRole !== 'admin' && userRole !== 'superadmin');
-
-        issueShareCb.addEventListener('change', (e) => {
-            const isChecked = e.target.checked;
-            const data = JSON.parse(localStorage.getItem(key)) || {};
-            if (data.logs) {
-                let logUpserts = [];
-                const pLog = data.logs.find(l => l.id == originalLogId);
-                if (pLog) {
-                    pLog.isIssueShared = isChecked;
-                    logUpserts.push(pLog);
-                }
-                const cLogs = data.logs.filter(l => l.originalLogId == originalLogId);
-                cLogs.forEach(cLog => {
-                    cLog.isIssueShared = isChecked;
-                    logUpserts.push(cLog);
-                });
-                localStorage.setItem(key, JSON.stringify(data));
-                if (typeof window.syncHistoryTransaction === 'function') {
-                    window.syncHistoryTransaction(site, equip, { log_upserts: logUpserts });
-                }
-                if (typeof addSystemLog === 'function') addSystemLog('UPDATE_MEMO', equip, `이슈 공유 상태 세트 변경 (LogID: ${originalLogId})`);
-                if (typeof populateEquipmentIssues === 'function') populateEquipmentIssues();
-            }
-        });
-    }
-
-    modal.style.display = 'flex';
-};
-
 function setupTaskSearchModal() {
     if (document.getElementById('task-search-modal')) return;
 
@@ -3778,10 +3689,16 @@ function setupTaskSearchModal() {
         document.body.appendChild(templateContent);
     }
 
-    document.getElementById('btn-close-task-search-modal').onclick = () => {
-        document.getElementById('task-search-modal').style.display = 'none';
-    };
-    document.getElementById('btn-do-task-search').onclick = doTaskSearch;
+    const closeBtn = document.getElementById('btn-close-task-search-modal');
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+            const modal = document.getElementById('task-search-modal');
+            if (modal) modal.style.display = 'none';
+        };
+    }
+
+    const searchBtn = document.getElementById('btn-do-task-search');
+    if (searchBtn) searchBtn.onclick = doTaskSearch;
 
     const keywordInput = document.getElementById('task-search-keyword-input');
     if (keywordInput) {
@@ -3875,15 +3792,9 @@ function doTaskSearch() {
                             );
 
                             if (log.detailType !== '일정변경' && matchesKeyword && isDateInRange(log.date)) {
-                                if (log.originalLogId) {
-                                    const parentLog = data.logs.find(l => l.id == log.originalLogId);
-                                    if (parentLog && !allTasks.some(t => t.item.id === parentLog.id)) {
-                                        allTasks.push({ site, equip, item: parentLog, isCompleted: true, custEquipName: custEquipName });
-                                    }
-                                } else {
-                                    if (!allTasks.some(t => t.item.id === log.id)) {
-                                        allTasks.push({ site, equip, item: log, isCompleted: true, custEquipName: custEquipName });
-                                    }
+                                // [수정] 추가 작업도 부모로 치환하지 않고 본연의 내용으로 검색 결과에 직접 노출
+                                if (!allTasks.some(t => t.item.id === log.id)) {
+                                    allTasks.push({ site, equip, item: log, isCompleted: true, custEquipName: custEquipName });
                                 }
                             }
                         });
@@ -3904,20 +3815,13 @@ function doTaskSearch() {
                             );
 
                             if (item.scheduledDate && matchesKeyword && isDateInRange(item.scheduledDate)) {
-                                if (item.originalLogId) {
-                                    const parentLog = data.logs ? data.logs.find(l => l.id == item.originalLogId) : null;
-                                    if (parentLog && !allTasks.some(t => t.item.id === parentLog.id)) {
-                                        allTasks.push({ site, equip, item: parentLog, isCompleted: true, custEquipName: custEquipName });
-                                    }
-                                } else {
-                                    const isDone = data.logs && data.logs.some(l =>
-                                        l.date === item.scheduledDate &&
-                                        (l.content || '').includes(item.content || '') &&
-                                        (l.worker || '').includes(item.worker || '')
-                                    );
-                                    if (!isDone && !allTasks.some(t => t.item.id === item.id)) {
-                                        allTasks.push({ site, equip, item: item, isCompleted: false, custEquipName: custEquipName });
-                                    }
+                                const isDone = data.logs && data.logs.some(l =>
+                                    l.date === item.scheduledDate &&
+                                    (l.content || '').includes(item.content || '') &&
+                                    (l.worker || '').includes(item.worker || '')
+                                );
+                                if (!isDone && !allTasks.some(t => t.item.id === item.id)) {
+                                    allTasks.push({ site, equip, item: item, isCompleted: false, custEquipName: custEquipName });
                                 }
                             }
                         });
@@ -3985,6 +3889,25 @@ function doTaskSearch() {
             li.addEventListener('click', () => openTaskFromSearch(site, equip, items[0].id, isCompleted));
 
             li.querySelector('.task-date').textContent = date;
+
+            // [추가] 검색 결과에 노출된 항목이 추가 작업(자식)일 경우 파란색 <추가> 뱃지 표시
+            const isExtraWork = items.some(i => i.originalLogId);
+            if (isExtraWork) {
+                const extraSpan = document.createElement('span');
+                extraSpan.textContent = '<추가>';
+                extraSpan.style.color = '#1f6feb';
+                extraSpan.style.fontWeight = 'bold';
+                extraSpan.style.fontSize = '12px';
+                extraSpan.style.marginLeft = '8px';
+                
+                const completedStatusEl = li.querySelector('.completed-status');
+                if (completedStatusEl && completedStatusEl.parentNode) {
+                    completedStatusEl.parentNode.insertBefore(extraSpan, completedStatusEl.nextSibling);
+                } else {
+                    const topDiv = li.querySelector('div > div:first-child');
+                    if (topDiv) topDiv.appendChild(extraSpan);
+                }
+            }
 
             if (isCompleted) {
                 li.classList.add('completed');
