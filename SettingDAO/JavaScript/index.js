@@ -7,6 +7,7 @@ let selectedSerialFilter = null;
 let currentGanttFilters = { site: '', equip: '' };
 let setupDashboardFilter = { site: '', equip: '' };
 let isFirstLoad = true;
+let equipDetailSearchKeyword = ''; // [추가] 장비 정보 리스트 내부 검색어
 
 window.getSiteColor = function (siteName) {
     if (!siteName || siteName === '전체') return '#6e7681';
@@ -117,6 +118,15 @@ document.addEventListener('DOMContentLoaded', () => {
             }, true);
         }
     });
+
+    // [추가] 장비 정보 리스트 정적 검색창 이벤트 바인딩
+    const equipDetailSearchInput = document.getElementById('equip-detail-search-input');
+    if (equipDetailSearchInput) {
+        equipDetailSearchInput.addEventListener('input', (e) => {
+            equipDetailSearchKeyword = e.target.value.trim().toLowerCase();
+            renderEquipDetailList(getDashboardData());
+        });
+    }
 });
 
 /* ==========================================================================
@@ -533,6 +543,7 @@ function renderEquipChart(equipStats, totalEquip, allData) {
 function renderEquipDetailList(data) {
     const listEl = document.getElementById('equip-detail-list');
     if (!listEl) return;
+
     listEl.innerHTML = '';
 
     let items = [];
@@ -548,6 +559,15 @@ function renderEquipDetailList(data) {
                     items.push({ site, equip });
                 });
             }
+        });
+    }
+
+    // [추가] 검색어 필터링 적용 (텍스트 매칭)
+    if (equipDetailSearchKeyword) {
+        items = items.filter(item => {
+            const info = formatEquipDisplayInfo(item.site, item.equip, equipmentModels);
+            const searchStr = `${info.mainInfo} ${info.subInfo} ${item.equip}`.toLowerCase();
+            return searchStr.includes(equipDetailSearchKeyword);
         });
     }
 

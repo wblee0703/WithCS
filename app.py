@@ -863,16 +863,18 @@ def admin_crud():
         return jsonify({"status": "fail", "message": "권한이 없습니다."}), 403
     data = request.json
     domain = data.get('domain')
+    action = data.get('action')
+    payload = data.get('payload')
     
-    # [추가] 일반 관리자(admin)는 마스터 데이터 수정 불가 (달력 확정 기능만 예외 허용)
+    # [추가] 일반 관리자(admin)는 마스터 데이터 수정 불가 (장비 상세 정보 수정 및 달력 확정 기능만 예외 허용)
     if role == 'admin':
-        if domain in ['site', 'equip', 'item']:
-            return jsonify({"status": "fail", "message": "해당 데이터의 추가/수정/삭제는 최종 관리자(superadmin)만 가능합니다."}), 403
+        if domain == 'equip' and action == 'UPDATE':
+            pass # 장비 상세 정보 수정은 허용
+        elif domain in ['site', 'equip', 'item']:
+            return jsonify({"status": "fail", "message": "해당 데이터의 추가/삭제는 최종 관리자(superadmin)만 가능합니다."}), 403
         if domain == 'setting' and data.get('payload', {}).get('key') != 'calendar_confirmations':
             return jsonify({"status": "fail", "message": "해당 설정의 변경은 최종 관리자(superadmin)만 가능합니다."}), 403
             
-    action = data.get('action')
-    payload = data.get('payload')
     
     try:
         if domain == 'site':

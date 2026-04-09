@@ -320,6 +320,12 @@ body {
     padding-bottom: 10px;
 }
 
+.title-right-align {
+    text-align: right;
+    margin-top: 10px;
+    padding-right: 5px;
+}
+
 .section-header.center-aligned {
     display: flex;
     flex-direction: column;
@@ -393,6 +399,29 @@ body {
     align-items: center;
     gap: 20px;
     width: 100%;
+}
+
+.equip-info-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+#equip-detail-search-wrapper {
+    position: absolute;
+    right: 0;
+    display: flex;
+    align-items: center;
+}
+
+#equip-detail-search-input {
+    width: 135px;
+    height: 26px;
+    font-size: 12px;
+    padding: 0 8px;
 }
 
 .donut-chart-wrapper {
@@ -862,6 +891,26 @@ body {
     background-color: #e6edf3;
 }
 
+.mb-0 {
+    margin-bottom: 0 !important;
+}
+
+.integ-section-header {
+    flex-direction: column;
+    gap: 5px;
+}
+
+.integ-summary-text {
+    font-size: 16px;
+    color: #e6edf3;
+    font-weight: bold;
+}
+
+.integ-tilde {
+    color: #e6edf3;
+    align-self: center;
+    margin: 0 5px;
+}
 
 /* ==========================================================================
    13. 유틸리티 (Utilities)

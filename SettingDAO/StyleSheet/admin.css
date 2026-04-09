@@ -677,7 +677,7 @@ select.input-dark option {
    최종 관리자(superadmin) 전용 기능 제한 (일반 admin 숨김 처리)
    ========================================================================== */
 body.role-admin .list-footer,
-body.role-admin .form-actions,
+body.role-admin .admin-form-container:not(#admin-equip-form) .form-actions,
 body.role-admin .btn-settings,
 body.role-admin .model-actions-col,
 body.role-admin .subcat-controls,
@@ -685,6 +685,7 @@ body.role-admin .check-item-col-action,
 body.role-admin .btn-edit-sm,
 body.role-admin .btn-del-sm,
 body.role-admin .btn-del,
+body.role-admin #btn-admin-del-equip,
 body.role-admin #btn-add-building,
 body.role-admin #btn-add-item-equip,
 body.role-admin #btn-import-check-items,
@@ -693,14 +694,14 @@ body.role-admin #check-type-detail-container .form-section-divider {
     display: none !important;
 }
 
-body.role-admin .admin-form-container input,
-body.role-admin .admin-form-container select,
-body.role-admin .admin-form-container textarea {
+body.role-admin .admin-form-container:not(#admin-equip-form) input,
+body.role-admin .admin-form-container:not(#admin-equip-form) select,
+body.role-admin .admin-form-container:not(#admin-equip-form) textarea {
     pointer-events: none;
     opacity: 0.8;
 }
 
-body.role-admin .suggestion-list,
+body.role-admin .suggestion-list:not(#equip-site-suggestions):not(#equip-model-suggestions),
 body.role-admin .suggestion-box,
 body.role-admin .tag-remove {
     display: none !important;
