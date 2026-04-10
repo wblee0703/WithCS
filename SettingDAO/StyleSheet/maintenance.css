@@ -178,6 +178,26 @@ tr.dragging {
     display: table-cell;
 }
 
+/* [추가] 유지관리 폼 및 테이블 신규 스타일 분리 */
+.th-spec {
+    width: 15%;
+}
+
+.maint-content-wrapper {
+    width: 100%;
+}
+
+.maint-suggestion-list {
+    max-height: 230px;
+    overflow-y: auto;
+}
+
+.maint-spec-input {
+    height: 30px;
+    padding: 4px 8px;
+    min-width: 80px;
+}
+
 /* 로그 테이블 설정 */
 #log-list-wrapper .data-table {
     flex: 1;
@@ -915,6 +935,12 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #maint-window > .form-row > #maint-content {
         flex: 0 0 calc(100% - 105px) !important; /* 남은 너비 모두 차지하여 다음 줄로 밀어냄 */
         width: calc(100% - 105px) !important;
+    }
+
+    #maint-spec {
+        flex: 1.5 !important;
+        width: auto !important;
+        min-width: 0 !important;
     }
 
     /* 2번째 줄 (날짜 + 주기 + 등록 버튼) */

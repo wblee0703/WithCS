@@ -601,8 +601,8 @@ function openCalendarPopup(dateStr, events) {
     } else {
         const groupedEvents = {};
         events.forEach(event => {
-                const isExtraWork = !!event.originalLogId;
-                const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}::${isExtraWork}`;
+            const isExtraWork = !!event.originalLogId;
+            const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}::${isExtraWork}`;
             if (!groupedEvents[key]) {
                 groupedEvents[key] = {
                     site: event.site,
@@ -610,7 +610,7 @@ function openCalendarPopup(dateStr, events) {
                     isCompleted: event.isCompleted,
                     isChanged: event.isChanged,
                     type: event.type,
-                        isExtraWork: isExtraWork,
+                    isExtraWork: isExtraWork,
                     items: []
                 };
             }
@@ -1513,47 +1513,68 @@ function buildDetailDropdown(item, site, equip) {
         trigger.innerText = initialText;
         trigger.title = currentValues.join('\n');
 
-        let poolItems = uniqueItems;
-        if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
-            const poolMap = new Map();
-            uniqueItems.forEach(i => poolMap.set(i.content, i));
-            const allAdminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-            allAdminItems.forEach(a => {
-                if (!poolMap.has(a.part)) poolMap.set(a.part, { content: a.part, code: a.code });
-            });
-            poolItems = Array.from(poolMap.values());
-        }
+        const poolMap = new Map();
+        let registeredSet = new Set();
 
-        let registeredItems = [];
-        let otherItems = [];
-        const defaultSet = new Set(uniqueItems.map(i => i.code ? i.code : i.content));
-
-        let maintSet = new Set();
-        if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
-            const maintKey = `details_${site}_${equip}`;
-            const maintData = JSON.parse(localStorage.getItem(maintKey)) || {};
-            if (maintData.maint) {
-                maintData.maint.forEach(m => {
-                    maintSet.add(m.content);
-                    if (m.code) maintSet.add(m.code);
-                });
+        // 1. 유지관리 항목 (maint) 처리 - 가장 우선순위
+        const maintKey = `details_${site}_${equip}`;
+        const maintData = JSON.parse(localStorage.getItem(maintKey)) || {};
+        if (maintData.maint) {
+            const processRegistered = (m) => {
+                if (m.originalLogId || m.content === '내용 없음' || m.content === '장비 점검' || !m.content) return;
+                const baseName = m.code || m.content;
+                const specStr = m.spec ? ` [${m.spec}]` : '';
+                const displayValue = `${baseName}${specStr}`;
+                registeredSet.add(displayValue);
+                
+                if (!poolMap.has(displayValue)) {
+                    poolMap.set(displayValue, {
+                        content: m.content,
+                        code: m.code,
+                        spec: m.spec || '',
+                        displayValue: displayValue
+                    });
+                }
+            };
+            if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+                maintData.maint.forEach(processRegistered);
+            } else {
+                maintData.maint.filter(m => m.type === type && m.detailType === detailType).forEach(processRegistered);
             }
         }
 
+        // 2. uniqueItems (check_type_items + 현재 선택된 항목) 처리
+        uniqueItems.forEach(i => {
+            if (!i.content) return;
+            const baseName = i.code || i.content;
+            if (!poolMap.has(baseName)) {
+                poolMap.set(baseName, { content: i.content, code: i.code, spec: '', displayValue: baseName });
+            }
+        });
+
+        // 3. admin_items 처리 (PM, BM, Parts 교체인 경우)
+        if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+            const allAdminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+            allAdminItems.forEach(a => {
+                if (!a.part) return;
+                const baseName = a.code || a.part;
+                if (!poolMap.has(baseName)) {
+                    poolMap.set(baseName, { content: a.part, code: a.code, spec: '', displayValue: baseName });
+                }
+            });
+        }
+
+        let poolItems = Array.from(poolMap.values());
+        
+        let registeredItems = [];
+        let otherItems = [];
+
         poolItems.forEach(item => {
-            const val = item.code ? item.code : item.content;
-            if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
-                if (maintSet.has(val) || maintSet.has(item.content) || selectedMap.hasOwnProperty(val) || selectedMap.hasOwnProperty(item.content)) {
-                    registeredItems.push(item);
-                } else {
-                    otherItems.push(item);
-                }
+            const val = item.displayValue;
+            if (registeredSet.has(val) || selectedMap.hasOwnProperty(val)) {
+                registeredItems.push(item);
             } else {
-                if (defaultSet.has(val) || defaultSet.has(item.content) || selectedMap.hasOwnProperty(val) || selectedMap.hasOwnProperty(item.content)) {
-                    registeredItems.push(item);
-                } else {
-                    otherItems.push(item);
-                }
+                otherItems.push(item);
             }
         });
 
@@ -1578,29 +1599,29 @@ function buildDetailDropdown(item, site, equip) {
             if (searchTerm) {
                 const kws = searchTerm.toLowerCase().split(/\s+/);
                 displayItems = [...registeredItems, ...otherItems].filter(item => {
-                    const txt = `${item.content} ${item.code || ''}`.toLowerCase();
+                    const txt = `${item.displayValue || ''}`.toLowerCase();
                     return kws.every(kw => txt.includes(kw));
                 });
             }
 
             // [추가] 검색 시에도 기존 선택 항목(물품 미등록 항목 포함)이 사라지지 않도록 보정
-            const displayItemValues = new Set(displayItems.map(i => i.code ? i.code : i.content));
+            const displayItemValues = new Set(displayItems.map(i => i.displayValue));
             Object.keys(currentSelections).forEach(selectedValue => {
                 if (!displayItemValues.has(selectedValue)) {
-                    const originalItem = [...registeredItems, ...otherItems].find(i => (i.code ? i.code : i.content) === selectedValue);
+                    const originalItem = [...registeredItems, ...otherItems].find(i => i.displayValue === selectedValue);
                     if (originalItem) {
                         displayItems.unshift(originalItem); // 검색 결과에 없으면 맨 위에 추가
                     } else {
-                        displayItems.unshift({ content: selectedValue, code: '' }); // 시스템 미등록 항목 보존
+                        displayItems.unshift({ content: selectedValue, code: '', spec: '', displayValue: selectedValue }); // 시스템 미등록 항목 보존
                     }
                 }
             });
 
             list.innerHTML = '';
             displayItems.forEach(item => {
-                const val = item.code ? item.code : item.content;
-                const isSelected = currentSelections.hasOwnProperty(val) || currentSelections.hasOwnProperty(item.content);
-                const itemCost = isSelected ? (currentSelections[val] || currentSelections[item.content] || '유상') : '유상';
+                const val = item.displayValue;
+                const isSelected = currentSelections.hasOwnProperty(val);
+                const itemCost = isSelected ? currentSelections[val] : '유상';
 
                 const templateId = (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') ? 'log-part-item-template' : 'detail-content-item-template';
                 const tpl = getTemplateContent(templateId);
@@ -1867,11 +1888,21 @@ function saveDetailChanges() {
                 const costMatch = val.match(/^\[(.*?)\] (.*)$/);
                 if (costMatch) { itemCost = costMatch[1]; val = costMatch[2]; }
                 let code = ''; let fullContent = val;
-                const match = adminItems.find(a => a.part === val || a.code === val);
-                if (match) { code = match.code || ''; fullContent = match.part || val; }
+
+                let pureContent = val;
+                let spec = '';
+                const specMatch = val.match(/ \[(.*?)\]$/);
+                if (specMatch) {
+                    spec = specMatch[1];
+                    pureContent = val.replace(specMatch[0], '');
+                }
+                fullContent = pureContent;
+
+                const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
+                if (match) { code = match.code || ''; fullContent = match.part || pureContent; }
                 if (partContent && idx === 0) fullContent = `${fullContent} - ${partContent}`;
 
-                let existing = sameDayItems.find(m => m.content === fullContent || m.content === val);
+                let existing = sameDayItems.find(m => (m.content === fullContent || m.content === pureContent) && (m.spec || '') === spec);
                 if (existing) {
                     existing.scheduledDate = targetDate;
                     existing.detailType = itemDetailType;
@@ -1883,7 +1914,7 @@ function saveDetailChanges() {
                     payload.maint_upserts.push(existing);
                 } else {
                     const newId = Date.now() + idx;
-                    const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: code, content: fullContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: itemCost, originalLogId: item.originalLogId };
+                    const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: code, content: fullContent, spec: spec, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: itemCost, originalLogId: item.originalLogId };
                     data.maint.push(newItem);
                     remainingIds.push(newId);
                     payload.maint_upserts.push(newItem);
@@ -2056,7 +2087,9 @@ function completeScheduleWork() {
     const sameDayItems = data.maint.filter(i => i.scheduledDate === maintItem.scheduledDate && i.type === maintItem.type && (i.detailType || '') === (maintItem.detailType || ''));
     const contentArr = sameDayItems.map(i => {
         const val = i.code ? i.code : i.content;
-        return i.itemCost ? `[${i.itemCost}] ${val}` : val;
+        const specStr = i.spec ? ` [${i.spec}]` : '';
+        const fullVal = `${val}${specStr}`;
+        return i.itemCost ? `[${i.itemCost}] ${fullVal}` : fullVal;
     });
     const combinedContent = [...new Set(contentArr)].join(', ');
     const completeDate = maintItem.scheduledDate || new Date().toISOString().split('T')[0];
@@ -2109,7 +2142,7 @@ function completeScheduleWork() {
     let mergedRegItemIds = new Set();
     sameDayItems.forEach(i => {
         if (i.type === '비정기') {
-            const regItem = data.maint.find(m => m.type === '정기' && m.id !== i.id && m.content === i.content);
+            const regItem = data.maint.find(m => m.type === '정기' && m.id !== i.id && m.content === i.content && (m.spec || '') === (i.spec || ''));
             if (regItem) {
                 regItem.date = i.date;
                 if (i.itemCost) regItem.itemCost = i.itemCost;
@@ -2290,16 +2323,22 @@ function cancelScheduleCompletion() {
         }
 
         let code = '';
-        let fullContent = itemText;
+        let pureContent = itemText;
+        let spec = '';
+        const specMatch = itemText.match(/ \[(.*?)\]$/);
+        if (specMatch) {
+            spec = specMatch[1];
+            pureContent = itemText.replace(specMatch[0], '');
+        }
+        let fullContent = pureContent;
 
-        const match = adminItems.find(a => a.part === itemText || a.code === itemText);
+        const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
         if (match) {
             code = match.code || '';
-            fullContent = match.part || itemText;
+            fullContent = match.part || pureContent;
         }
 
-        let existingItem = data.maint.find(m => m.type === logType && (m.content === fullContent || m.content === itemText) && m.originalLogId == logItem.originalLogId);
-
+        let existingItem = data.maint.find(m => m.type === logType && (m.content === fullContent || m.content === pureContent) && (m.spec || '') === spec && m.originalLogId == logItem.originalLogId);
 
         if (existingItem) {
             existingItem.scheduledDate = logDate;
@@ -2320,6 +2359,7 @@ function cancelScheduleCompletion() {
                 detailType: logItem.detailType || '',
                 code: code,
                 content: fullContent,
+                spec: spec,
                 date: "", // 수행되지 않은 상태로 초기화
                 period: (logType === '정기' && match) ? match.cycle : null,
                 scheduledDate: logDate,
@@ -3242,17 +3282,24 @@ function confirmRegisterSchedule() {
             }
 
             let code = '';
-            let fullContent = itemText;
+            let pureContent = itemText;
+            let spec = '';
+            const specMatch = itemText.match(/ \[(.*?)\]$/);
+            if (specMatch) {
+                spec = specMatch[1];
+                pureContent = itemText.replace(specMatch[0], '');
+            }
+            let fullContent = pureContent;
             let period = null;
 
-            const match = adminItems.find(a => a.part === itemText || a.code === itemText);
+            const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
             if (match) {
                 code = match.code || '';
-                fullContent = match.part || itemText;
+                fullContent = match.part || pureContent;
                 period = match.cycle || null;
             }
 
-            let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || m.content === itemText));
+            let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || m.content === pureContent) && (m.spec || '') === spec);
 
             if (existingItem) {
                 const oldDate = existingItem.scheduledDate;
@@ -3277,6 +3324,7 @@ function confirmRegisterSchedule() {
                     detailType: finalDetailType,
                     code: code,
                     content: fullContent,
+                    spec: spec,
                     date: "",
                     period: (type === '정기') ? period : null,
                     scheduledDate: dateStr,
@@ -3578,38 +3626,61 @@ window.updateRegisterContentOptions = function () {
         const detailData = JSON.parse(localStorage.getItem(key)) || { maint: [] };
 
         let registeredSet = new Set();
+        const poolMap = new Map();
+
+        // 1. 유지관리 항목 (maint) 처리 - 가장 우선순위
+        const processRegistered = (m) => {
+            if (m.originalLogId || m.content === '내용 없음' || m.content === '장비 점검' || !m.content) return;
+            const baseName = m.code || m.content;
+            const specStr = m.spec ? ` [${m.spec}]` : '';
+            const displayValue = `${baseName}${specStr}`;
+            registeredSet.add(displayValue);
+            
+            if (!poolMap.has(displayValue)) {
+                poolMap.set(displayValue, {
+                    content: m.content,
+                    code: m.code,
+                    spec: m.spec || '',
+                    displayValue: displayValue
+                });
+            }
+        };
+
         if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
-            detailData.maint.forEach(m => {
-                registeredSet.add(m.content);
-                if (m.code) registeredSet.add(m.code);
-            });
+            detailData.maint.forEach(processRegistered);
         } else {
-            detailData.maint.filter(m => m.type === type && m.detailType === detailType).forEach(m => {
-                registeredSet.add(m.content);
-                if (m.code) registeredSet.add(m.code);
-            });
+            detailData.maint.filter(m => m.type === type && m.detailType === detailType).forEach(processRegistered);
         }
 
+        // 2. uniqueItems (check_type_items 등) 처리
+        uniqueItems.forEach(i => {
+            if (!i.content) return;
+            const baseName = i.code || i.content;
+            if (!poolMap.has(baseName)) {
+                poolMap.set(baseName, { content: i.content, code: i.code, spec: '', displayValue: baseName });
+            }
+        });
+
+        // 3. admin_items 처리 (PM, BM, Parts 교체인 경우)
+        if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+            const allAdminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+            allAdminItems.forEach(a => {
+                if (!a.part) return;
+                const baseName = a.code || a.part;
+                if (!poolMap.has(baseName)) {
+                    poolMap.set(baseName, { content: a.part, code: a.code, spec: '', displayValue: baseName });
+                }
+            });
+        }
+        
+        let poolItems = Array.from(poolMap.values());
+        
         let registeredItems = [];
         let otherItems = [];
 
-        // [수정] PM/BM 점검일 경우, 제안 박스의 "전체 물품"이 시스템에 등록된 모든 물품을 의미하도록 풀(pool) 확장
-        let poolItems = uniqueItems;
-        if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
-            const poolMap = new Map();
-            uniqueItems.forEach(i => poolMap.set(i.content, i));
-            const allAdminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-            allAdminItems.forEach(a => {
-                if (!poolMap.has(a.part)) {
-                    poolMap.set(a.part, { content: a.part, code: a.code });
-                }
-            });
-            poolItems = Array.from(poolMap.values());
-        }
-
         poolItems.forEach(item => {
-            const val = item.code ? item.code : item.content;
-            if (registeredSet.has(val) || registeredSet.has(item.content)) {
+            const val = item.displayValue;
+            if (registeredSet.has(val)) {
                 registeredItems.push(item);
             } else {
                 otherItems.push(item);
@@ -3637,27 +3708,27 @@ window.updateRegisterContentOptions = function () {
             if (searchTerm) {
                 const kws = searchTerm.toLowerCase().split(/\s+/);
                 displayItems = [...registeredItems, ...otherItems].filter(item => {
-                    const txt = `${item.content} ${item.code || ''}`.toLowerCase();
+                    const txt = `${item.displayValue || ''}`.toLowerCase();
                     return kws.every(kw => txt.includes(kw));
                 });
             }
 
             // [요청] 검색 시에도 기존 선택 항목이 사라지지 않도록 보정
-            const displayItemValues = new Set(displayItems.map(i => i.code ? i.code : i.content));
+            const displayItemValues = new Set(displayItems.map(i => i.displayValue));
             Object.keys(currentSelections).forEach(selectedValue => {
                 if (!displayItemValues.has(selectedValue)) {
-                    const originalItem = [...registeredItems, ...otherItems].find(i => (i.code ? i.code : i.content) === selectedValue);
+                    const originalItem = [...registeredItems, ...otherItems].find(i => i.displayValue === selectedValue);
                     if (originalItem) {
                         displayItems.unshift(originalItem); // 검색 결과에 없으면 맨 위에 추가
                     } else {
-                        displayItems.unshift({ content: selectedValue, code: '' }); // 시스템 미등록 항목 보존
+                        displayItems.unshift({ content: selectedValue, code: '', spec: '', displayValue: selectedValue }); // 시스템 미등록 항목 보존
                     }
                 }
             });
 
             list.innerHTML = '';
             displayItems.forEach(item => {
-                const val = item.code ? item.code : item.content;
+                const val = item.displayValue;
                 const isSelected = currentSelections.hasOwnProperty(val);
                 const itemCost = isSelected ? currentSelections[val] : '유상';
 

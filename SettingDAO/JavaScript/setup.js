@@ -1452,7 +1452,7 @@ function openSetupEquipModal() {
 
     // 상세 정보 필드 매핑
     const fields = [
-        'custEquipName', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod', 'building', 'floor', 'detailLoc',
+        'custEquipName', 'projectNo', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod', 'building', 'floor', 'detailLoc',
         'manager', 'contact', 'email',
         'custManager', 'custContact', 'custEmail'
     ];
@@ -1472,7 +1472,7 @@ function saveSetupEquipModal() {
     if (!data.setup) data.setup = {};
 
     const fields = [
-        'custEquipName', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod', 'building', 'floor', 'detailLoc',
+        'custEquipName', 'projectNo', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod', 'building', 'floor', 'detailLoc',
         'manager', 'contact', 'email',
         'custManager', 'custContact', 'custEmail'
     ];

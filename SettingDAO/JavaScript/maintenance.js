@@ -132,16 +132,22 @@ function setupMaintenanceEvents() {
     const maintDateInput = document.getElementById('maint-date');
     if (maintDateInput) maintDateInput.value = new Date().toISOString().substring(0, 10);
 
+    // [추가] 물품명과 시작일 사이에 물품 상세 텍스트 입력창 동적 추가
+    if (maintDateInput && !document.getElementById('maint-spec')) {
+        const specInput = document.createElement('input');
+        specInput.type = 'text';
+        specInput.id = 'maint-spec';
+        specInput.className = 'input-dark flex-1';
+        specInput.placeholder = '물품 상세 (선택)';
+        specInput.style.height = '30px';
+        specInput.style.padding = '4px 8px';
+        specInput.style.minWidth = '80px';
+        maintDateInput.parentNode.insertBefore(specInput, maintDateInput);
+    }
+
     // [추가] 입력창 맞춤법 검사 비활성화
     const maintContent = document.getElementById('maint-content');
     if (maintContent) maintContent.spellcheck = false;
-
-        // [추가] "물품명" 라벨을 "물품 상세"로 변경 (HTML 미수정 대비)
-        document.querySelectorAll('th, label, .header-name').forEach(el => {
-            if (el.textContent.trim() === '물품명') {
-                el.textContent = '물품 상세';
-            }
-        });
 
     // [추가] 유지관리 리스트 드래그 앤 드롭 순서 변경 기능 (dragover 이벤트)
     const maintBody = document.getElementById('maint-table-body');
@@ -385,7 +391,9 @@ function addDetailItem() {
 
     const maintType = document.querySelector('#maint-type-toggle .active').dataset.type;
     const contentEl = document.getElementById('maint-content');
+    const specEl = document.getElementById('maint-spec');
     const content = contentEl.value.trim();
+    const spec = specEl ? specEl.value.trim() : '';
     let code = contentEl.dataset ? (contentEl.dataset.code || '') : '';
 
     if (contentEl.tagName.toLowerCase() === 'select' && contentEl.selectedIndex >= 0) {
@@ -406,7 +414,7 @@ function addDetailItem() {
     const period = periodEl ? periodEl.value : '';
 
     // [추가] 에러 테두리 초기화 및 유효성 검사
-    [contentEl, dateEl, periodEl].forEach(el => {
+    [contentEl, specEl, dateEl, periodEl].forEach(el => {
         if (el) {
             el.classList.remove('error-border');
             el.removeEventListener('input', window.removeErrorBorder);
@@ -427,8 +435,8 @@ function addDetailItem() {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [], memo: "" };
 
-   // [수정] 코드명이 같아도 물품 상세(content)가 다르면 다른 물품으로 취급
-        if (data.maint.some(m => m.type === maintType && m.content === content)) {
+    // [수정] 물품명(content)이 같아도 물품 상세(spec) 텍스트가 다르면 다른 항목으로 취급하여 중복 추가 허용
+    if (data.maint.some(m => m.type === maintType && m.content === content && (m.spec || '') === spec)) {
         return alert(`이미 유지관리 물품에 등록된 항목입니다. (${maintType})`);
     }
 
@@ -438,6 +446,7 @@ function addDetailItem() {
         detailType: maintType === '정기' ? 'PM 점검' : 'BM 점검',
         code: code,
         content: content,
+        spec: spec,
         date: date,
         period: (maintType === '정기') ? period : null
     };
@@ -451,6 +460,7 @@ function addDetailItem() {
 
     // 입력창 초기화
     document.getElementById('maint-content').value = '';
+    if (specEl) specEl.value = '';
     if (maintType === '정기') document.getElementById('maint-period').value = '';
 
     renderDetails(); // 등록 후 화면 갱신
@@ -500,7 +510,18 @@ function renderDetails() {
         }
 
         tr.querySelector('.edit-code').textContent = escapeHtml(item.code || '-');
-        tr.querySelector('.edit-content').textContent = escapeHtml(item.content);
+        
+        const contentCell = tr.querySelector('.edit-content');
+        const safeContent = item.content || '';
+        contentCell.textContent = safeContent;
+        contentCell.dataset.rawContent = safeContent;
+        contentCell.dataset.rawSpec = item.spec || '';
+        
+        const specCell = tr.querySelector('.edit-spec');
+        if (specCell) {
+            specCell.textContent = escapeHtml(item.spec || '-');
+        }
+        
         tr.querySelector('.edit-date').textContent = item.date;
         tr.querySelector('.edit-period').textContent = item.period ? item.period + '일' : '-';
 
@@ -544,22 +565,11 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
 
     // 제안 박스 래퍼 생성
     let wrapper = contentElement.closest('.autocomplete-wrapper');
-    if (!wrapper) {
-        wrapper = document.createElement('div');
-        wrapper.className = 'autocomplete-wrapper flex-grow';
-        contentElement.parentNode.insertBefore(wrapper, contentElement);
-        wrapper.appendChild(contentElement);
-        contentElement.classList.remove('flex-grow');
-        contentElement.style.width = '100%';
-
-        const ul = document.createElement('ul');
-        ul.id = 'maint-content-suggestions';
-        ul.className = 'suggestion-list';
-        // [수정] 7개 항목 높이 제한 (약 230px)
-        ul.style.maxHeight = '230px';
-        ul.style.overflowY = 'auto'; // 스크롤 활성화
-        wrapper.appendChild(ul);
-
+    const ul = document.getElementById('maint-content-suggestions');
+    
+    if (wrapper && ul && contentElement.dataset.eventsBound !== 'true') {
+        contentElement.dataset.eventsBound = 'true';
+        
         // 이벤트 리스너 등록
         contentElement.addEventListener('click', () => window.renderMaintSuggestions());
         contentElement.addEventListener('input', () => {
@@ -575,6 +585,14 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
             window.renderMaintSuggestions();
         });
 
+        // [추가] 물품 상세 텍스트가 변경될 때 제안 박스 실시간 갱신 이벤트
+        const specEl = document.getElementById('maint-spec');
+        if (specEl) {
+            specEl.addEventListener('input', () => {
+                if (ul.style.display === 'block') window.renderMaintSuggestions(false, true);
+            });
+        }
+
         // 포커스를 잃을 때 목록에 없더라도 자유로운 텍스트 입력을 허용하도록 롤백 로직 제거
         contentElement.addEventListener('blur', () => {
             setTimeout(() => {
@@ -589,7 +607,7 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
         });
     }
 
-    contentElement.placeholder = '물품 상세 입력 (또는 검색)';
+    contentElement.placeholder = '물품명 입력 (또는 검색)';
 
     // 렌더링 함수 전역 연결
     window.renderMaintSuggestions = function (showAll = forceShowAll, isInput = false) {
@@ -603,15 +621,21 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
         // 이미 등록된 목록
         const key = `details_${currentPath.site}_${currentPath.equip}`;
         const currentData = JSON.parse(localStorage.getItem(key)) || { maint: [] };
-        const addedParts = currentData.maint.map(item => item.content);
 
         const query = contentElement.value.trim().toLowerCase();
         const keywords = query ? query.split(/\s+/) : [];
 
+        // [추가] 현재 입력된 물품 상세 텍스트 가져오기
+        const specEl = document.getElementById('maint-spec');
+        const currentSpec = specEl ? specEl.value.trim() : '';
+
         if (currentType === '정기' || currentType === '비정기') {
 
             let filteredItems = data.filter(item => {
-                if (addedParts.includes(item.part)) return false;
+                if (!item.part) return false; // 유령 물품(빈 데이터) 방지
+                // [수정] 물품명과 물품 상세 조합이 완전히 동일한 항목이 이미 등록된 경우에만 제안 박스에서 제외
+                const isDuplicate = currentData.maint.some(m => m.type === currentType && m.content === item.part && (m.spec || '') === currentSpec);
+                if (isDuplicate) return false;
                 return true;
             });
 
@@ -653,6 +677,7 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
                         contentElement.dataset.code = item.code || '';
                         contentElement.dataset.lastValid = item.part;
                         contentElement.classList.remove('error-border');
+
                         ul.style.display = 'none';
                     });
                     ul.appendChild(li);
@@ -743,6 +768,7 @@ function toggleEditRow(id) {
 
     const codeCell = row.querySelector('.edit-code');
     const contentCell = row.querySelector('.edit-content');
+    const specCell = row.querySelector('.edit-spec');
     const dateCell = row.querySelector('.edit-date');
     const periodCell = row.querySelector('.edit-period');
 
@@ -760,6 +786,11 @@ function toggleEditRow(id) {
             periodCell.innerHTML = `<input type="number" id="input-period-${id}" value="${escapeHtml(currentPeriod)}" class="edit-period-input" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)">`;
         }
 
+        if (specCell) {
+            const currentSpec = specCell.textContent.trim() === '-' ? '' : specCell.textContent.trim();
+            specCell.innerHTML = `<input type="text" id="input-spec-${id}" value="${escapeHtml(currentSpec)}" class="edit-spec-input input-dark" style="width: 100%; box-sizing: border-box; padding: 4px;">`;
+        }
+
         const currentDate = dateCell.textContent.trim();
         dateCell.innerHTML = `<input type="date" id="input-date-${id}" value="${escapeHtml(currentDate)}" class="edit-date-input" style="width: 100%; box-sizing: border-box;">`;
         const dateInput = document.getElementById(`input-date-${id}`);
@@ -767,7 +798,9 @@ function toggleEditRow(id) {
     } else {
         // [데이터 저장]
         const newCode = codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim();
-        const newContent = contentCell.textContent.trim();
+            const newContent = contentCell.textContent.trim();
+            const specInput = document.getElementById(`input-spec-${id}`);
+            const newSpec = specInput ? specInput.value.trim() : '';
         const dateInput = document.getElementById(`input-date-${id}`);
         const newDate = dateInput ? dateInput.value : '';
 
@@ -780,7 +813,7 @@ function toggleEditRow(id) {
 
         if (!newDate) return alert('날짜를 선택해주세요.');
 
-        updateRowData(id, newCode, newContent, newDate, newPeriod);
+        updateRowData(id, newCode, newContent, newSpec, newDate, newPeriod);
 
         row.classList.remove('editing');
         editBtn.textContent = '✏️';
@@ -790,7 +823,7 @@ function toggleEditRow(id) {
     }
 }
 
-function updateRowData(id, code, content, date, period) {
+function updateRowData(id, code, content, spec, date, period) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
     const idx = data.maint.findIndex(item => item.id === id);
@@ -798,6 +831,7 @@ function updateRowData(id, code, content, date, period) {
     if (idx > -1) {
         data.maint[idx].code = code;
         data.maint[idx].content = content;
+        data.maint[idx].spec = spec;
         data.maint[idx].date = date;
         data.maint[idx].period = (data.maint[idx].type === '정기') ? (parseInt(period) || 0) : null;
         localStorage.setItem(key, JSON.stringify(data));
@@ -852,24 +886,18 @@ function renderLogs() {
         const keyword = searchInput.value.trim().toLowerCase();
         if (keyword) {
             displayLogs = displayLogs.filter(log => {
-                const matchParent = (
-                    (log.worker && log.worker.toLowerCase().includes(keyword)) ||
-                    (log.date && log.date.includes(keyword)) ||
-                    (log.content && log.content.toLowerCase().includes(keyword)) ||
-                    (log.memo && log.memo.toLowerCase().includes(keyword)) ||
-                    (log.type && log.type.toLowerCase().includes(keyword)) ||
-                    (log.detailType && log.detailType.toLowerCase().includes(keyword)) ||
-                    (log.md && log.md.includes(keyword))
-                );
+                const searchableParentValues = [
+                    log.worker, log.date, log.content, log.memo, log.type, log.detailType, log.md
+                ];
+                const matchParent = searchableParentValues.some(val => val && val.toString().toLowerCase().includes(keyword));
                 
                 const childLogs = data.logs.filter(l => l.originalLogId == log.id);
-                const matchChild = childLogs.some(clog => 
-                    (clog.worker && clog.worker.toLowerCase().includes(keyword)) ||
-                    (clog.content && clog.content.toLowerCase().includes(keyword)) ||
-                    (clog.memo && clog.memo.toLowerCase().includes(keyword)) ||
-                    (clog.type && clog.type.toLowerCase().includes(keyword)) ||
-                    (clog.detailType && clog.detailType.toLowerCase().includes(keyword))
-                );
+                const matchChild = childLogs.some(clog => {
+                    const searchableChildValues = [
+                        clog.worker, clog.content, clog.memo, clog.type, clog.detailType
+                    ];
+                    return searchableChildValues.some(val => val && val.toString().toLowerCase().includes(keyword));
+                });
 
                 return matchParent || matchChild;
             });
@@ -1256,7 +1284,7 @@ function openMaintEquipModal() {
 
     // 상세 정보 필드 매핑
     const fields = [
-        'custEquipName', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod', 'building', 'floor', 'detailLoc',
+        'custEquipName', 'projectNo', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod', 'building', 'floor', 'detailLoc',
         'manager', 'contact', 'email',
         'custManager', 'custContact', 'custEmail'
     ];
@@ -1276,7 +1304,7 @@ function saveMaintEquipModal() {
     if (!data.setup) data.setup = {};
 
     const fields = [
-        'custEquipName', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod', 'building', 'floor', 'detailLoc',
+        'custEquipName', 'projectNo', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod', 'building', 'floor', 'detailLoc',
         'manager', 'contact', 'email',
         'custManager', 'custContact', 'custEmail'
     ];

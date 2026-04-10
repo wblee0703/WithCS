@@ -37,7 +37,7 @@ function getEquipFormState() {
     const getVal = id => document.getElementById(id) ? document.getElementById(id).value : '';
     return JSON.stringify({
         site: getVal('equip-info-site'), name: getVal('equip-info-name'), serial: getVal('equip-info-serial'),
-        building: getVal('equip-info-building'), location: getVal('equip-info-location'), status: getVal('equip-info-status'),
+        projectNo: getVal('equip-info-project-no'), building: getVal('equip-info-building'), location: getVal('equip-info-location'), status: getVal('equip-info-status'),
         deliveryDate: getVal('equip-info-delivery-date'), warrantyStart: getVal('equip-info-warranty-start'),
         warrantyPeriod: getVal('equip-info-warranty-period'), custEquipName: getVal('equip-info-cust-equip-name'),
         floor: getVal('equip-info-floor'), manager: getVal('equip-info-manager'), contact: getVal('equip-info-contact'),
@@ -957,7 +957,7 @@ function setupEquipMgmt() {
                 btnCsvImport.style.background = '#21262d';
                 btnCsvImport.style.color = '#e6edf3';
                 btnCsvImport.textContent = 'CSV 불러오기';
-                btnCsvImport.title = 'CSV 양식: 사업장, 장비명, Serial No, 고객사 장비명, 장비 구분, 납품일, 워런티시작일, 워런티 기한, 건물, 층, 세부위치, 담당자, 연락처, E-mail';
+                btnCsvImport.title = 'CSV 양식: 사업장, 장비명, Serial No, 고객사 장비명, 프로젝트 번호, 장비 구분, 납품일, 워런티시작일, 워런티 기한, 건물, 층, 세부위치, 담당자, 연락처, E-mail';
 
                 const csvInput = document.createElement('input');
                 csvInput.type = 'file';
@@ -1137,7 +1137,7 @@ function exportEquipCsv() {
     if (!hasData) return alert('내보낼 장비 데이터가 없습니다.');
 
     let csvContent = '\uFEFF'; 
-    csvContent += '사업장,장비명,Serial No,고객사 장비명,장비 구분,납품일,워런티시작일,워런티 기한,건물,층,세부위치,담당자,연락처,E-mail\n';
+    csvContent += '사업장,장비명,Serial No,고객사 장비명,프로젝트 번호,장비 구분,납품일,워런티시작일,워런티 기한,건물,층,세부위치,담당자,연락처,E-mail\n';
 
     Object.keys(storageData).sort().forEach(site => {
         const equips = storageData[site] || [];
@@ -1151,7 +1151,7 @@ function exportEquipCsv() {
 
             const row = [
                 site, name, serial,
-                setup.custEquipName || '', setup.equipStatus || '', setup.deliveryDate || '',
+                setup.custEquipName || '', setup.projectNo || '', setup.equipStatus || '', setup.deliveryDate || '',
                 setup.warrantyStart || '', setup.warrantyPeriod || '', setup.building || '',
                 setup.floor || '', setup.detailLoc || '', setup.manager || '',
                 setup.contact || '', setup.email || ''
@@ -1205,16 +1205,17 @@ function handleEquipCsvImport(event) {
                 const name = cols[1] ? cols[1].trim() : '';
                 const serial = cols[2] ? cols[2].trim() : '';
                 const custEquipName = cols[3] ? cols[3].trim() : '';
-                const equipStatus = cols[4] ? cols[4].trim() : '';
-                const deliveryDate = cols[5] ? cols[5].trim() : '';
-                const warrantyStart = cols[6] ? cols[6].trim() : '';
-                const warrantyPeriod = cols[7] ? cols[7].trim() : '';
-                const building = cols[8] ? cols[8].trim() : '';
-                const floor = cols[9] ? cols[9].trim() : '';
-                const location = cols[10] ? cols[10].trim() : '';
-                const manager = cols[11] ? cols[11].trim() : '';
-                const contact = cols[12] ? cols[12].trim() : '';
-                const email = cols[13] ? cols[13].trim() : '';
+                const projectNo = cols[4] ? cols[4].trim() : '';
+                const equipStatus = cols[5] ? cols[5].trim() : '';
+                const deliveryDate = cols[6] ? cols[6].trim() : '';
+                const warrantyStart = cols[7] ? cols[7].trim() : '';
+                const warrantyPeriod = cols[8] ? cols[8].trim() : '';
+                const building = cols[9] ? cols[9].trim() : '';
+                const floor = cols[10] ? cols[10].trim() : '';
+                const location = cols[11] ? cols[11].trim() : '';
+                const manager = cols[12] ? cols[12].trim() : '';
+                const contact = cols[13] ? cols[13].trim() : '';
+                const email = cols[14] ? cols[14].trim() : '';
 
                 if (!site || !name) {
                     skippedCount++;
@@ -1276,6 +1277,7 @@ function handleEquipCsvImport(event) {
                         maint: [], logs: [], memo: "", specialNote: "", 
                         setup: { 
                             custEquipName: custEquipName,
+                            projectNo: projectNo,
                             equipStatus: equipStatus,
                             deliveryDate: deliveryDate,
                             warrantyStart: warrantyStart,
@@ -1467,6 +1469,8 @@ function renderAdminEquipList() {
             
             updateEquipBuildingDropdown(site, setupInfo.building || '');
             document.getElementById('equip-info-cust-equip-name').value = setupInfo.custEquipName || '';
+            const projectNoEl = document.getElementById('equip-info-project-no');
+            if (projectNoEl) projectNoEl.value = setupInfo.projectNo || '';
             document.getElementById('equip-info-floor').value = setupInfo.floor || '';
             document.getElementById('equip-info-location').value = setupInfo.detailLoc || '';
             const statusEl = document.getElementById('equip-info-status');
@@ -1514,7 +1518,7 @@ function resetEquipForm() {
     const bSelect = document.getElementById('equip-info-building');
     if (bSelect) bSelect.innerHTML = '<option value="">건물 선택</option>';
 
-    ['equip-info-location', 'equip-info-status', 'equip-info-delivery-date', 'equip-info-warranty-start', 'equip-info-warranty-period', 'equip-info-cust-equip-name', 'equip-info-floor', 
+    ['equip-info-project-no', 'equip-info-location', 'equip-info-status', 'equip-info-delivery-date', 'equip-info-warranty-start', 'equip-info-warranty-period', 'equip-info-cust-equip-name', 'equip-info-floor', 
      'equip-info-manager', 'equip-info-contact', 'equip-info-email', 
      'equip-info-cust-manager', 'equip-info-cust-contact', 'equip-info-cust-email', 'equip-info-special-note'].forEach(id => {
         const el = document.getElementById(id);
@@ -1553,6 +1557,8 @@ async function handleEquipSave() {
     const wPeriodEl = document.getElementById('equip-info-warranty-period');
     const warrantyPeriod = wPeriodEl ? wPeriodEl.value : '';
     const custEquipName = document.getElementById('equip-info-cust-equip-name').value.trim();
+    const projectNoEl = document.getElementById('equip-info-project-no');
+    const projectNo = projectNoEl ? projectNoEl.value.trim() : '';
     const floor = document.getElementById('equip-info-floor').value.trim();
     const manager = document.getElementById('equip-info-manager').value.trim();
     const contact = document.getElementById('equip-info-contact').value.trim();
@@ -1587,7 +1593,7 @@ async function handleEquipSave() {
     }
 
     const setupPayload = {
-        custEquipName: custEquipName, equipStatus: equipStatus, deliveryDate: deliveryDate,
+        custEquipName: custEquipName, projectNo: projectNo, equipStatus: equipStatus, deliveryDate: deliveryDate,
         warrantyStart: warrantyStart, warrantyPeriod: warrantyPeriod, building: building,
         floor: floor, detailLoc: location, manager: manager, contact: contact, email: email,
         custManager: custManager, custContact: custContact, custEmail: custEmail, model: serial
@@ -1615,6 +1621,7 @@ async function handleEquipSave() {
         
         parsedData.setup = {
             custEquipName: custEquipName,
+            projectNo: projectNo,
             equipStatus: equipStatus,
             deliveryDate: deliveryDate,
             warrantyStart: warrantyStart,
@@ -1654,6 +1661,7 @@ async function handleEquipSave() {
         let parsedData = JSON.parse(localStorage.getItem(dataKey)) || { maint: [], logs: [], memo: "", setup: {} };
         parsedData.setup = {
             custEquipName: custEquipName,
+            projectNo: projectNo,
             equipStatus: equipStatus,
             deliveryDate: deliveryDate,
             warrantyStart: warrantyStart,
@@ -1678,6 +1686,7 @@ async function handleEquipSave() {
         // 초기 데이터 생성
         const initData = { maint: [], logs: [], memo: "", specialNote: specialNote, setup: { 
             custEquipName: custEquipName,
+            projectNo: projectNo,
             equipStatus: equipStatus,
             deliveryDate: deliveryDate,
             warrantyStart: warrantyStart,

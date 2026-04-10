@@ -318,6 +318,13 @@
     text-overflow: ellipsis;
 }
 
+/* 제안 박스 내 비용 선택 드롭다운 너비 축소 */
+.item-cost-select {
+    width: 100px !important;
+    flex: 0 0 100px !important;
+    min-width: 0 !important;
+}
+
 #task-search-results-list li {
     flex-direction: column;
     align-items: flex-start;

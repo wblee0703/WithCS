@@ -147,6 +147,7 @@ class Equipment(db.Model):
 class SetupInfo(db.Model):
     equip_id = db.Column(db.String(200), db.ForeignKey('equipment.id', ondelete='CASCADE', onupdate='CASCADE'), primary_key=True)
     cust_equip_name = db.Column(db.String(100), default='')
+    project_no = db.Column(db.String(100), default='')
     equip_status = db.Column(db.String(50), default='')
     delivery_date = db.Column(db.String(50), default='')
     warranty_start = db.Column(db.String(50), default='')
@@ -195,6 +196,7 @@ class MaintItem(db.Model):
     detail_type = db.Column(db.String(100), default='')
     code = db.Column(db.String(100), default='')
     content = db.Column(db.String(255), default='')
+    spec = db.Column(db.String(255), default='')
     date = db.Column(db.String(50), default='')
     period = db.Column(db.String(50), nullable=True)
     scheduled_date = db.Column(db.String(50), default='')
@@ -368,6 +370,7 @@ def load_data():
         if si:
             data[detail_key]["setup"] = {
                 "custEquipName": si.cust_equip_name, "equipStatus": si.equip_status, "deliveryDate": si.delivery_date,
+                "projectNo": si.project_no,
                 "warrantyStart": si.warranty_start, "warrantyPeriod": si.warranty_period, "building": si.building,
                 "floor": si.floor, "detailLoc": si.detail_loc, "manager": si.manager, "contact": si.contact,
                 "email": si.email, "custManager": si.cust_manager, "custContact": si.cust_contact,
@@ -378,7 +381,7 @@ def load_data():
         for m in maint_items.get(eq.id, []):
             data[detail_key]["maint"].append({
                 "id": int(m.id) if str(m.id).isdigit() else m.id, "type": m.type, "detailType": m.detail_type,
-                "code": m.code, "content": m.content, "date": m.date, "scheduledDate": m.scheduled_date,
+                "code": m.code, "content": m.content, "spec": m.spec, "date": m.date, "scheduledDate": m.scheduled_date,
                 "period": int(m.period) if m.period and str(m.period).isdigit() else m.period,
                 "costType": m.cost_type, "worker": m.worker, "md": m.md, "itemCost": m.item_cost, "memo": m.memo,
                 "originalLogId": int(m.original_log_id) if m.original_log_id and str(m.original_log_id).isdigit() else m.original_log_id
@@ -913,7 +916,7 @@ def admin_crud():
                 e_serial = new_id.split('::')[1] if '::' in new_id else ''
                 db.session.add(Equipment(id=db_id, site_name=site_name, name=e_name, serial=e_serial, special_note=payload.get('special_note', '')))
                 db.session.add(SetupInfo(
-                    equip_id=db_id, cust_equip_name=payload['setup'].get('custEquipName', ''), equip_status=payload['setup'].get('equipStatus', ''),
+                    equip_id=db_id, cust_equip_name=payload['setup'].get('custEquipName', ''), project_no=payload['setup'].get('projectNo', ''), equip_status=payload['setup'].get('equipStatus', ''),
                     delivery_date=payload['setup'].get('deliveryDate', ''), warranty_start=payload['setup'].get('warrantyStart', ''), warranty_period=str(payload['setup'].get('warrantyPeriod', '')),
                     building=payload['setup'].get('building', ''), floor=payload['setup'].get('floor', ''), detail_loc=payload['setup'].get('detailLoc', ''),
                     manager=payload['setup'].get('manager', ''), contact=payload['setup'].get('contact', ''), email=payload['setup'].get('email', ''),
@@ -939,6 +942,7 @@ def admin_crud():
                     # 매핑
                     s_data = payload.get('setup', {})
                     setup.cust_equip_name = s_data.get('custEquipName', '')
+                    setup.project_no = s_data.get('projectNo', '')
                     setup.equip_status = s_data.get('equipStatus', '')
                     setup.delivery_date = s_data.get('deliveryDate', '')
                     setup.warranty_start = s_data.get('warrantyStart', '')
@@ -1006,6 +1010,7 @@ def history_transaction():
             item.detail_type = m.get('detailType', item.detail_type)
             item.code = m.get('code', item.code)
             item.content = m.get('content', item.content)
+            item.spec = m.get('spec', item.spec)
             item.date = m.get('date', item.date)
             item.period = str(m.get('period')) if m.get('period') is not None else item.period
             item.scheduled_date = m.get('scheduledDate', item.scheduled_date)
@@ -1093,6 +1098,12 @@ def init_db():
         except:
             db.session.rollback()
             
+        try:
+            db.session.execute(text('ALTER TABLE setup_info ADD COLUMN project_no VARCHAR(100)'))
+            db.session.commit()
+        except:
+            db.session.rollback()
+            
         # [마이그레이션] 기존 user 테이블에 추가 정보 컬럼 추가
         try:
             db.session.execute(text('ALTER TABLE "user" ADD COLUMN department VARCHAR(100)'))
@@ -1118,6 +1129,13 @@ def init_db():
         except:
             db.session.rollback()
         
+        # [마이그레이션] maint_item 테이블에 spec 컬럼 추가
+        try:
+            db.session.execute(text('ALTER TABLE maint_item ADD COLUMN spec VARCHAR(255)'))
+            db.session.commit()
+        except:
+            db.session.rollback()
+
         # [마이그레이션] maint_item 테이블에 original_log_id 컬럼 추가 (추가 작업 DB 연동 누락 수정)
         try:
             db.session.execute(text('ALTER TABLE maint_item ADD COLUMN original_log_id VARCHAR(50)'))

@@ -33,7 +33,7 @@ function getDeviceDataMap() {
 }
 
 const setupInputIds = [
-    'DeviceID-cust-equip-name', 'DeviceID-building', 'DeviceID-floor', 'DeviceID-detail-loc',
+    'DeviceID-cust-equip-name', 'DeviceID-project-no', 'DeviceID-building', 'DeviceID-floor', 'DeviceID-detail-loc',
     'DeviceID-equip-status', 'DeviceID-delivery-date', 'DeviceID-warranty-start', 'DeviceID-warranty-period',
     'DeviceID-manager', 'DeviceID-contact', 'DeviceID-email',
     'DeviceID-cust-manager', 'DeviceID-cust-contact', 'DeviceID-cust-email'
@@ -48,6 +48,16 @@ function escapeHtml(text) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
+// [추가] 텍스트에서 물품명과 물품 상세(Spec)를 분리하는 전역 유틸리티 함수
+window.extractSpecFromContent = function(contentStr) {
+    if (!contentStr) return { spec: '', pureContent: '' };
+    const match = contentStr.match(/ \[(.*?)\]$/);
+    if (match) {
+        return { spec: match[1], pureContent: contentStr.replace(match[0], '') };
+    }
+    return { spec: '', pureContent: contentStr };
+};
 
 /* ==========================================================================
    2. DB 동기화 API 통신 (DB Sync APIs)
@@ -257,10 +267,10 @@ function migrateDataFormat() {
     }
 
     // 2. details_* 마이그레이션 (유지관리, 이력 변환 및 키 순서 정렬)
-    const maintKeyOrder = ['id', 'type', 'detailType', 'code', 'content', 'date', 'period', 'scheduledDate', 'costType', 'md', 'worker', 'memo'];
+    const maintKeyOrder = ['id', 'type', 'detailType', 'code', 'content', 'spec', 'date', 'period', 'scheduledDate', 'costType', 'md', 'worker', 'memo'];
     const logKeyOrder = ['id', 'date', 'type', 'detailType', 'detailType2', 'content', 'costType', 'md', 'worker', 'memo'];
     const setupKeyOrder = [
-        'custEquipName', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod',
+        'custEquipName', 'projectNo', 'equipStatus', 'deliveryDate', 'warrantyStart', 'warrantyPeriod',
         'building', 'floor', 'detailLoc',
         'manager', 'contact', 'email',
         'custManager', 'custContact', 'custEmail'
@@ -3560,27 +3570,79 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
         else selectedMap[val] = '유상';
     });
 
+    let siteName = '';
     let equipName = '';
+    let equipKeyFull = '';
     if (window.currentDetailTarget && window.currentDetailTarget.equip) {
-        equipName = window.currentDetailTarget.equip.split('::')[0];
+        equipKeyFull = window.currentDetailTarget.equip;
+        siteName = window.currentDetailTarget.site || '';
     } else if (document.getElementById('register-equip-select') && document.getElementById('register-equip-select').value) {
-        equipName = document.getElementById('register-equip-select').value.split('::')[0];
+        equipKeyFull = document.getElementById('register-equip-select').value;
+        const siteSel = document.getElementById('register-site-select');
+        if (siteSel) siteName = siteSel.value;
     } else if (typeof currentPath !== 'undefined' && currentPath.equip) {
-        equipName = currentPath.equip.split('::')[0];
+        equipKeyFull = currentPath.equip;
+        siteName = currentPath.site || '';
     }
+    equipName = equipKeyFull ? equipKeyFull.split('::')[0] : '';
 
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-    let matchedItems = adminItems.filter(item => item.equip && item.equip.split(',').map(e => e.trim()).includes(equipName));
+    
+    // [추가] 해당 장비 유지관리(maint) 데이터에서 우선순위 항목 추출 (물품 상세 spec 포함)
+    let maintItems = [];
+    if (siteName && equipKeyFull) {
+        const detailData = JSON.parse(localStorage.getItem(`details_${siteName}_${equipKeyFull}`)) || {};
+        if (detailData.maint) maintItems = detailData.maint;
+    }
 
-    Object.keys(selectedMap).forEach(key => {
-        if (!matchedItems.some(i => i.part === key || i.code === key)) {
-            const globalMatch = adminItems.find(i => i.part === key || i.code === key);
-            if (globalMatch) matchedItems.unshift(globalMatch);
-            else matchedItems.unshift({ part: key, code: '' });
+    let matchedItems = [];
+    const addedSet = new Set();
+
+    // 1. 해당 장비 유지관리 물품 우선 등록
+    maintItems.forEach(m => {
+        if (m.originalLogId || m.content === '내용 없음' || m.content === '장비 점검') return;
+        const baseName = m.code || m.content;
+        const specStr = m.spec ? ` [${m.spec}]` : '';
+        const displayValue = `${baseName}${specStr}`;
+        if (!addedSet.has(displayValue)) {
+            addedSet.add(displayValue);
+            matchedItems.push({ part: m.content, code: m.code, spec: m.spec || '', displayValue: displayValue });
         }
     });
 
-    let otherItems = adminItems.filter(item => !matchedItems.some(mi => mi.part === item.part));
+    // 2. adminItems 중 장비 모델 매칭 항목 추가
+    adminItems.forEach(item => {
+        if (item.equip && item.equip.split(',').map(e => e.trim()).includes(equipName)) {
+            const baseName = item.code || item.part;
+            if (!addedSet.has(baseName)) {
+                addedSet.add(baseName);
+                matchedItems.push({ part: item.part, code: item.code, spec: '', displayValue: baseName });
+            }
+        }
+    });
+
+    Object.keys(selectedMap).forEach(key => {
+        if (!addedSet.has(key)) {
+            const extracted = window.extractSpecFromContent(key);
+            const pure = extracted.pureContent, spec = extracted.spec;
+            
+            const globalMatch = adminItems.find(i => i.part === pure || i.code === pure);
+            if (globalMatch) matchedItems.unshift({ part: globalMatch.part, code: globalMatch.code, spec: spec, displayValue: key });
+            else matchedItems.unshift({ part: pure, code: '', spec: spec, displayValue: key });
+            addedSet.add(key);
+        }
+    });
+
+    let otherItems = [];
+    adminItems.forEach(item => {
+        if (!item.part) return; // 유령 물품(빈 데이터) 방지
+        const baseName = item.code || item.part;
+        if (!addedSet.has(baseName)) {
+            addedSet.add(baseName);
+            otherItems.push({ part: item.part, code: item.code, spec: '', displayValue: baseName });
+        }
+    });
+    
     let showAll = matchedItems.length === 0;
 
     // [수정] 렌더링 전 기존 선택 상태 및 비용 처리 값 백업을 함수 외부 스코프에서 관리
@@ -3599,27 +3661,27 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
         let displayItems = showAll ? [...matchedItems, ...otherItems] : matchedItems;
         if (searchTerm) {
             const kws = searchTerm.toLowerCase().split(/\s+/);
-            displayItems = [...matchedItems, ...otherItems].filter(item => kws.every(kw => `${item.part || ''} ${item.code || ''}`.toLowerCase().includes(kw)));
+            displayItems = [...matchedItems, ...otherItems].filter(item => kws.every(kw => `${item.displayValue || ''}`.toLowerCase().includes(kw)));
         }
-        const displayItemValues = new Set(displayItems.map(i => i.code ? i.code : i.part));
+        const displayItemValues = new Set(displayItems.map(i => i.displayValue));
         Object.keys(currentSelections).forEach(selectedValue => {
             if (!displayItemValues.has(selectedValue)) {
-                const originalItem = [...matchedItems, ...otherItems].find(i => (i.code ? i.code : i.part) === selectedValue);
+                const originalItem = [...matchedItems, ...otherItems].find(i => i.displayValue === selectedValue);
                 if (originalItem) displayItems.unshift(originalItem);
-                else displayItems.unshift({ part: selectedValue, code: '' });
+                else displayItems.unshift({ part: selectedValue, code: '', spec: '', displayValue: selectedValue });
             }
         });
         const uniqueItems = [];
         const seen = new Set();
         displayItems.forEach(item => {
-            const val = item.code ? item.code : item.part;
+            const val = item.displayValue;
             if (!seen.has(val)) { seen.add(val); uniqueItems.push(item); }
         });
         list.innerHTML = '';
         uniqueItems.forEach(item => {
-            const displayValue = item.code ? item.code : item.part;
-            const isSelected = currentSelections.hasOwnProperty(displayValue) || currentSelections.hasOwnProperty(item.part);
-            const itemCost = isSelected ? (currentSelections[displayValue] || currentSelections[item.part] || '유상') : '유상';
+            const displayValue = item.displayValue;
+            const isSelected = currentSelections.hasOwnProperty(displayValue);
+            const itemCost = isSelected ? currentSelections[displayValue] : '유상';
             const template = getTemplateContent('log-part-item-template');
             if (!template) return;
             const div = template.querySelector('.log-select-item');
