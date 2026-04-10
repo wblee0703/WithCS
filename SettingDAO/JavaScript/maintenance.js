@@ -122,12 +122,17 @@ function setupMaintenanceEvents() {
 
     const maintLoadBtn = document.getElementById('btn-load-maint-list');
     if (maintLoadBtn) {
+        maintLoadBtn.classList.remove('nav-admin-item'); // 권한 제한 클래스 강제 제거
         maintLoadBtn.addEventListener('click', openMaintLoadListModal);
     }
 
     // [추가] 유지관리 설정(톱니바퀴) 버튼 이벤트 바인딩
     const maintSettingsBtn = document.getElementById('btn-maint-settings');
-    if (maintSettingsBtn) maintSettingsBtn.addEventListener('click', toggleMaintenanceMode);
+    if (maintSettingsBtn) {
+        maintSettingsBtn.classList.remove('nav-admin-item'); // 권한 제한 클래스 강제 제거
+        maintSettingsBtn.style.display = ''; // 인라인 숨김 해제
+        maintSettingsBtn.addEventListener('click', toggleMaintenanceMode);
+    }
 
     const maintDateInput = document.getElementById('maint-date');
     if (maintDateInput) maintDateInput.value = new Date().toISOString().substring(0, 10);

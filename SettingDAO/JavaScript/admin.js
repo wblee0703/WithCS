@@ -632,14 +632,14 @@ function setupEquipModelMgmt() {
     }
 
     if (btnAdd) {
-        const addModel = () => {
+        const addModel = async () => {
             const name = nameInput.value.trim();
             const abbr = abbrInput.value.trim();
             if (!name || !abbr) return alert('모델명과 약어를 모두 입력해주세요.');
             if (equipmentModels.some(m => m.name === name)) return alert('이미 존재하는 모델명입니다.');
 
             equipmentModels.push({ name, abbr });
-            saveEquipmentModels();
+            await saveEquipmentModels();
             addSystemLog('ADD_EQUIP_MODEL', name, `Abbr: ${abbr}`);
             
             nameInput.value = '';
@@ -690,9 +690,9 @@ function loadEquipmentModels() {
     }
 }
 
-function saveEquipmentModels() {
+async function saveEquipmentModels() {
     localStorage.setItem('equipment_models', JSON.stringify(equipmentModels));
-    syncAdminDB('setting', 'UPDATE', { key: 'equipment_models', value: equipmentModels });
+    await syncAdminDB('setting', 'UPDATE', { key: 'equipment_models', value: equipmentModels });
     if (typeof saveData === 'function') saveData();
 }
 
@@ -760,18 +760,18 @@ function renderEquipModelList() {
         const editBtn = li.querySelector('.btn-edit-model');
         const deleteBtn = li.querySelector('.btn-delete-model');
 
-        deleteBtn.addEventListener('click', (e) => {
+        deleteBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             if (!confirm(`'${model.name}' 모델을 삭제하시겠습니까?\n이 모델을 사용하는 장비가 있을 수 있습니다.`)) return;
             equipmentModels = equipmentModels.filter(m => m.name !== model.name);
-            saveEquipmentModels();
+            await saveEquipmentModels();
             addSystemLog('DELETE_EQUIP_MODEL', model.name);
             if (currentAdminModel && currentAdminModel.name === model.name) currentAdminModel = null;
             renderEquipModelList();
             renderAdminEquipList();
         });
 
-        editBtn.addEventListener('click', (e) => {
+        editBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const isEditing = li.classList.contains('editing');
 
@@ -830,7 +830,7 @@ function renderEquipModelList() {
                         });
                         saveData();
                     }
-                    saveEquipmentModels();
+                    await saveEquipmentModels();
                     addSystemLog('UPDATE_EQUIP_MODEL', oldModelName, `To: ${newName} / ${newAbbr}`);
                     if (currentAdminModel && currentAdminModel.name === oldModelName) currentAdminModel = modelToUpdate;
                     renderEquipModelList();
@@ -1809,7 +1809,7 @@ function setupItemMgmt() {
             const success = await syncAdminDB('item', 'CREATE', { id: newItemId, detailType: '', additional: '', partno: '', code: code, part: part, spec: spec, equip: '' });
             if (!success) return alert('DB 등록 중 오류가 발생했습니다.');
 
-            adminItems.push({
+            const newItem = {
                 id: newItemId,
                 type: "",
                 detailType: '',
@@ -1820,14 +1820,29 @@ function setupItemMgmt() {
                 spec: spec,
                 cycle: "",
                 equip: ''
-            });
-            saveAdminItems();
+            };
+            
+            adminItems.push(newItem);
+            await saveAdminItems();
             addSystemLog('ADD_ITEM_ADMIN', part, `Spec: ${spec}`);
             
             if (codeInput) codeInput.value = '';
             partInput.value = '';
             specInput.value = '';
+            
+            // [수정] 물품 추가 시 즉시 리스트에서 선택 상태로 만들고 우측 상세 폼에 정보를 표시하여 완벽히 저장되었음을 인지시킴
+            currentAdminItemId = newItemId;
+            localStorage.setItem('lastAdminItemId', newItemId);
+            
             renderAdminItemList();
+            loadItemDetail(newItem);
+            scrollToAdminDetail('admin-item-form');
+            
+            setTimeout(() => {
+                const targetLi = document.querySelector(`#admin-item-list li[data-item-id="${newItemId}"]`);
+                if (targetLi) targetLi.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
+
             partInput.focus();
         });
         
@@ -1927,7 +1942,7 @@ function setupItemMgmt() {
     // [추가] 물품 불러오기 버튼 이벤트
     const btnImportItems = document.getElementById('btn-import-check-items');
     if (btnImportItems) {
-        btnImportItems.addEventListener('click', () => {
+        btnImportItems.addEventListener('click', async () => {
             if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
             if (currentCheckTypeSubCategory !== 'PM 점검' && currentCheckTypeSubCategory !== 'BM 점검') return;
 
@@ -1946,7 +1961,7 @@ function setupItemMgmt() {
                 content: mItem.part
             }));
             
-            saveCheckTypeItems();
+            await saveCheckTypeItems();
             addSystemLog('LOAD_ITEM_TO_CHECK', currentCheckTypeEquipKey, `물품 불러오기: ${currentCheckTypeSubCategory}`);
             renderCheckTypeItemList();
             alert('물품 목록을 불러왔습니다.');
@@ -1964,9 +1979,9 @@ function loadAdminItems() {
     }
 }
 
-function saveAdminItems() {
+async function saveAdminItems() {
     localStorage.setItem('admin_items', JSON.stringify(adminItems));
-    syncAdminDB('setting', 'UPDATE', { key: 'admin_items', value: adminItems });
+    await syncAdminDB('setting', 'UPDATE', { key: 'admin_items', value: adminItems });
     if (typeof saveData === 'function') saveData();
 }
 
@@ -2207,7 +2222,7 @@ async function handleItemDetailSave() {
             }
         }
 
-        saveAdminItems();
+        await saveAdminItems();
         addSystemLog('UPDATE_ITEM_ADMIN_DETAIL', part, `Code: ${code}`);
         alert('물품 정보가 저장되었습니다. (연결된 점검 이력 및 유지관리 데이터도 함께 업데이트 되었습니다.)');
         setAdminFormDirty(false, 'item'); // [추가]
@@ -2230,7 +2245,7 @@ async function handleItemDetailDelete() {
     if (!success) return false;
 
     adminItems = adminItems.filter(i => i.id !== currentAdminItemId);
-    saveAdminItems();
+    await saveAdminItems();
     addSystemLog('DELETE_ITEM_ADMIN', item.part);
     
     currentAdminItemId = null;
@@ -2366,7 +2381,7 @@ function setupCheckTypeMgmt() {
     const inputSub = document.getElementById('check-type-subcategory-input');
     
     if (btnAddSub && inputSub) {
-        btnAddSub.addEventListener('click', () => {
+        btnAddSub.addEventListener('click', async () => {
             if (!currentCheckTypeEquipKey || !currentCheckTypeCategory) {
                 alert('장비와 점검 구분을 먼저 선택해주세요.');
                 return;
@@ -2380,7 +2395,7 @@ function setupCheckTypeMgmt() {
             if (checkTypeCategoriesData[key].includes(val)) return alert('이미 존재하는 분류입니다.');
             
             checkTypeCategoriesData[key].push(val);
-            saveCheckTypeCategories();
+            await saveCheckTypeCategories();
             addSystemLog('ADD_CHECK_CATEGORY', currentCheckTypeEquipKey, `분류 추가: ${currentCheckTypeCategory} > ${val}`);
             renderCheckTypeSubCategoryList();
             inputSub.value = '';
@@ -2427,7 +2442,7 @@ function setupCheckTypeMgmt() {
     const inputContent = document.getElementById('check-type-item-content');
     
     if (btnAddItem && inputContent && selectSub) {
-        btnAddItem.addEventListener('click', () => {
+        btnAddItem.addEventListener('click', async () => {
             if (!currentCheckTypeEquipKey || !currentCheckTypeCategory) return;
             
             let content = inputContent.value.trim();
@@ -2453,7 +2468,7 @@ function setupCheckTypeMgmt() {
                 content: content
             });
             
-            saveCheckTypeItems();
+            await saveCheckTypeItems();
             addSystemLog('ADD_CHECK_ITEM', currentCheckTypeEquipKey, `항목 추가: [${subCat}] ${content}`);
             
             inputContent.value = '';
@@ -2652,15 +2667,15 @@ function loadCheckTypeCategories2() {
     } catch(e) { checkTypeCategories2Data = {}; }
 }
 
-function saveCheckTypeCategories2() {
+async function saveCheckTypeCategories2() {
     localStorage.setItem('check_type_categories2', JSON.stringify(checkTypeCategories2Data));
-    syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories2', value: checkTypeCategories2Data });
+    await syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories2', value: checkTypeCategories2Data });
     if (typeof saveData === 'function') saveData();
 }
 
-function saveCheckTypeCategories() {
+async function saveCheckTypeCategories() {
     localStorage.setItem('check_type_categories', JSON.stringify(checkTypeCategoriesData));
-    syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories', value: checkTypeCategoriesData });
+    await syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories', value: checkTypeCategoriesData });
     if (typeof saveData === 'function') saveData();
 }
 
@@ -2673,9 +2688,9 @@ function loadCheckTypeItems() {
     }
 }
 
-function saveCheckTypeItems() {
+async function saveCheckTypeItems() {
     localStorage.setItem('check_type_items', JSON.stringify(checkTypeItemsData));
-    syncAdminDB('setting', 'UPDATE', { key: 'check_type_items', value: checkTypeItemsData });
+    await syncAdminDB('setting', 'UPDATE', { key: 'check_type_items', value: checkTypeItemsData });
     if (typeof saveData === 'function') saveData();
 }
 
@@ -2914,7 +2929,7 @@ function renderCheckTypeSubCategoryList() {
 
         // [추가] 세부 구분 수정 기능 이벤트 처리
         const editBtn = li.querySelector('.btn-edit-subcat');
-        editBtn.addEventListener('click', (e) => {
+        editBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const isEditing = li.classList.contains('editing');
             const textSpan = li.querySelector('.subcategory-text');
@@ -2947,7 +2962,7 @@ function renderCheckTypeSubCategoryList() {
                         if (checkTypeCategories2Data[oldItemKey]) {
                             checkTypeCategories2Data[newItemKey] = checkTypeCategories2Data[oldItemKey];
                             delete checkTypeCategories2Data[oldItemKey];
-                            saveCheckTypeCategories2();
+                            await saveCheckTypeCategories2();
                         }
                         let itemsModified = false;
                         Object.keys(checkTypeItemsData).forEach(itemKey => {
@@ -2958,16 +2973,16 @@ function renderCheckTypeSubCategoryList() {
                                 itemsModified = true;
                             }
                         });
-                        if (itemsModified) saveCheckTypeItems();
+                        if (itemsModified) await saveCheckTypeItems();
                     } else {
                         if (checkTypeItemsData[oldItemKey]) {
                             checkTypeItemsData[newItemKey] = checkTypeItemsData[oldItemKey];
                             delete checkTypeItemsData[oldItemKey];
-                            saveCheckTypeItems();
+                            await saveCheckTypeItems();
                         }
                     }
 
-                    saveCheckTypeCategories();
+                    await saveCheckTypeCategories();
                     addSystemLog('UPDATE_CHECK_CATEGORY', key.split('::')[0], `분류명 수정: ${cat} -> ${newCat}`);
 
                     if (currentCheckTypeSubCategory === cat) {
@@ -2997,13 +3012,13 @@ function renderCheckTypeSubCategoryList() {
             }
             li.classList.add('dragging');
         });
-        li.addEventListener('dragend', () => {
+        li.addEventListener('dragend', async () => {
             li.classList.remove('dragging');
             
             // 변경된 순서 취합 및 저장
             const newOrder = Array.from(list.children).map(child => child.dataset.sub);
             checkTypeCategoriesData[key] = newOrder;
-            saveCheckTypeCategories();
+            await saveCheckTypeCategories();
             
             // UI 및 내부 index 갱신을 위해 리렌더링
             renderCheckTypeSubCategoryList();
@@ -3079,7 +3094,7 @@ function renderCheckTypeSubCategory2List() {
         });
 
         const editBtn = li.querySelector('.btn-edit-subcat2');
-        editBtn.addEventListener('click', (e) => {
+        editBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             const isEditing = li.classList.contains('editing');
             const textSpan = li.querySelector('.subcategory-text');
@@ -3109,9 +3124,9 @@ function renderCheckTypeSubCategory2List() {
                     if (checkTypeItemsData[oldItemKey]) {
                         checkTypeItemsData[newItemKey] = checkTypeItemsData[oldItemKey];
                         delete checkTypeItemsData[oldItemKey];
-                        saveCheckTypeItems();
+                        await saveCheckTypeItems();
                     }
-                    saveCheckTypeCategories2();
+                    await saveCheckTypeCategories2();
                     addSystemLog('UPDATE_CHECK_CATEGORY', key.split('::')[0], `세부구분2 수정: ${cat} -> ${newCat}`);
 
                     if (currentCheckTypeSubCategory2 === cat) {
@@ -3375,7 +3390,7 @@ function updateLoadCheckTypeEquipSelect(site) {
     });
 }
 
-function loadCheckTypeDataFromTarget() {
+async function loadCheckTypeDataFromTarget() {
     const site = document.getElementById('load-check-type-site-select').value;
     const equip = document.getElementById('load-check-type-equip-select').value;
 
@@ -3435,9 +3450,9 @@ function loadCheckTypeDataFromTarget() {
         }
     });
 
-    saveCheckTypeCategories();
-    saveCheckTypeCategories2();
-    saveCheckTypeItems();
+    await saveCheckTypeCategories();
+    await saveCheckTypeCategories2();
+    await saveCheckTypeItems();
     addSystemLog('LOAD_CHECK_TYPE', currentCheckTypeEquipKey, `From: ${sourceEquipKey}`);
 
     alert('설정을 성공적으로 불러왔습니다.');

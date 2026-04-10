@@ -1767,7 +1767,7 @@ function buildDetailDropdown(item, site, equip) {
     if (!displayListWrapper) {
         displayListWrapper = document.createElement('div');
         displayListWrapper.id = 'detail-display-list-wrapper';
-        displayListWrapper.style.marginTop = '10px';
+        displayListWrapper.style.marginTop = '0px'; /* 여백 동적 처리를 위해 초기화 */
         displayListWrapper.style.padding = '10px';
         displayListWrapper.style.background = '#161b22';
         displayListWrapper.style.border = '1px solid #30363d';
@@ -1779,6 +1779,14 @@ function buildDetailDropdown(item, site, equip) {
         parentContainer.parentNode.insertBefore(displayListWrapper, parentContainer.nextSibling);
     }
     
+    // [수정] 박스가 모달창 내부 공간 제약에 밀려 찌그러지지 않고 적정 크기를 확보하도록 속성 강제 부여
+    displayListWrapper.style.minHeight = '100px';
+    displayListWrapper.style.maxHeight = '250px';
+    displayListWrapper.style.overflowY = 'auto';
+    displayListWrapper.style.flexShrink = '0';
+    displayListWrapper.style.width = '100%';
+    displayListWrapper.style.boxSizing = 'border-box';
+
     // [추가] 하단 목록 영역 갱신 함수 (일반 항목 + 파트 항목 + 읽기 전용 모드 모두 통합 처리)
     window.updateDetailDisplayList = () => {
         const dWrapper = document.getElementById('detail-content-dropdown-wrapper');
@@ -1817,9 +1825,13 @@ function buildDetailDropdown(item, site, equip) {
         if (allVals.length > 0) {
             displayListWrapper.style.display = 'block';
             displayListWrapper.innerHTML = allVals.map(v => `<div style="margin-bottom:4px; word-break:keep-all;">• ${escapeHtml(v)}</div>`).join('');
+            const parentContainer = contentInput.closest('.form-row') || contentInput.parentNode;
+            if (parentContainer) parentContainer.style.marginBottom = '5px'; // 리스트 박스 나올 때 여백 5px
         } else {
             displayListWrapper.style.display = 'none';
             displayListWrapper.innerHTML = '';
+            const parentContainer = contentInput.closest('.form-row') || contentInput.parentNode;
+            if (parentContainer) parentContainer.style.marginBottom = '15px'; // 리스트 박스 없을 때 기본 여백 15px
         }
     };
     
@@ -3970,7 +3982,7 @@ window.updateRegisterContentOptions = function () {
     if (!displayListWrapper) {
         displayListWrapper = document.createElement('div');
         displayListWrapper.id = 'register-display-list-wrapper';
-        displayListWrapper.style.marginTop = '10px';
+        displayListWrapper.style.marginTop = '0px'; /* 여백 동적 처리를 위해 초기화 */
         displayListWrapper.style.padding = '10px';
         displayListWrapper.style.background = '#161b22';
         displayListWrapper.style.border = '1px solid #30363d';
@@ -3982,6 +3994,14 @@ window.updateRegisterContentOptions = function () {
         parentContainer.parentNode.insertBefore(displayListWrapper, parentContainer.nextSibling);
     }
     
+    // [수정] 박스가 모달창 내부 공간 제약에 밀려 찌그러지지 않고 적정 크기를 확보하도록 속성 강제 부여
+    displayListWrapper.style.minHeight = '100px';
+    displayListWrapper.style.maxHeight = '250px';
+    displayListWrapper.style.overflowY = 'auto';
+    displayListWrapper.style.flexShrink = '0';
+    displayListWrapper.style.width = '100%';
+    displayListWrapper.style.boxSizing = 'border-box';
+
     window.updateRegisterDisplayList = () => {
         let allVals = [];
         const rList = document.getElementById('register-content-list');
@@ -4011,9 +4031,13 @@ window.updateRegisterContentOptions = function () {
         if (allVals.length > 0) {
             displayListWrapper.style.display = 'block';
             displayListWrapper.innerHTML = allVals.map(v => `<div style="margin-bottom:4px; word-break:keep-all;">• ${escapeHtml(v)}</div>`).join('');
+            const parentContainer = input.closest('.form-row') || input.parentNode;
+            if (parentContainer) parentContainer.style.marginBottom = '5px'; // 리스트 박스 나올 때 여백 5px
         } else {
             displayListWrapper.style.display = 'none';
             displayListWrapper.innerHTML = '';
+            const parentContainer = input.closest('.form-row') || input.parentNode;
+            if (parentContainer) parentContainer.style.marginBottom = '15px'; // 리스트 박스 없을 때 기본 여백 15px
         }
     };
     

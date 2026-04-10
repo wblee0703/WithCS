@@ -339,11 +339,31 @@
 
 /* 모달 사이즈 */
 #schedule-modal .modal-window,
-#event-detail-modal .modal-window,
 #gantt-search-modal .modal-window,
 #calendar-search-modal .modal-window {
     width: 400px;
     height: auto;
+}
+
+/* [추가] 하단 선택 리스트 표시 박스가 찌그러지지 않고 제대로 커지도록 크기/레이아웃 보장 */
+#detail-display-list-wrapper,
+#register-display-list-wrapper {
+    min-height: 50px !important;
+    max-height: 120px !important;
+    overflow-y: auto !important;
+    flex-shrink: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    margin-top: 0 !important; /* 위쪽(입력창)과 여백 동적 제어를 위해 0 설정 */
+    margin-bottom: 15px !important; /* 아래쪽(작업자 라벨 등)과 충분한 여백 확보 */
+}
+
+#event-detail-modal .modal-window {
+    width: 400px;
+    height: auto;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
 }
 
 #next-schedule-modal .modal-window {
@@ -760,6 +780,11 @@
 
 #register-schedule-modal {
     z-index: 10002;
+}
+
+/* 작업 상세 정보 팝업창 내부 스크롤 활성화 */
+#event-detail-modal .modal-body {
+    overflow-y: auto !important;
 }
 
 /* [요청] 드롭다운 메뉴가 모달 밖으로 나갈 수 있도록 overflow 속성 해제 */

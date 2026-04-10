@@ -1014,3 +1014,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         padding-left: 8px !important;
     }
 }
+
+/* ==========================================================================
+   [추가] 유지관리 물품 관리 기능 전 권한(일반/관리자) 사용 보장 오버라이드
+   ========================================================================== */
+body[class*="role-"] #btn-maint-settings {
+    display: inline-block !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+body[class*="role-"] #maint-table-body .btn-edit-sm,
+body[class*="role-"] #maint-table-body .btn-del-sm {
+    display: inline-flex !important;
+    pointer-events: auto !important;
+    opacity: 1 !important;
+}

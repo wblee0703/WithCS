@@ -63,8 +63,21 @@ window.extractSpecFromContent = function(contentStr) {
    2. DB 동기화 API 통신 (DB Sync APIs)
    ========================================================================== */
 
+// [추가] 진행 중인 서버 동기화 요청 개수 (페이지 강제 종료 방지용)
+window.activeSyncRequests = 0;
+
+// [추가] 서버 동기화 진행 중 페이지 이탈(닫기, 새로고침) 방지
+window.addEventListener('beforeunload', (e) => {
+    if (window.activeSyncRequests > 0) {
+        e.preventDefault();
+        e.returnValue = '데이터가 서버에 저장 중입니다. 창을 닫으면 데이터가 유실될 수 있습니다.';
+        return e.returnValue;
+    }
+});
+
 // [추가] 100% DB 전환을 위한 유지관리/이력 전용 트랜잭션 동기화 함수
 window.syncHistoryTransaction = async function (site, equip, payload) {
+    window.activeSyncRequests++;
     const equip_id = `${site}::${equip}`;
     try {
         const res = await fetch('/api/history/transaction', {
@@ -78,11 +91,14 @@ window.syncHistoryTransaction = async function (site, equip, payload) {
     } catch (e) {
         console.error('DB Sync Failed:', e);
         return false;
+    } finally {
+        window.activeSyncRequests--;
     }
 };
 
 // [추가] 100% DB 전환을 위한 SETUP(셋업 상세내역/일지) 전용 동기화 함수
 window.syncSetupDataDB = async function (site, equip, details = null, logs = null) {
+    window.activeSyncRequests++;
     const equip_id = `${site}::${equip}`;
     try {
         const res = await fetch('/api/setup/sync_equip', {
@@ -95,11 +111,14 @@ window.syncSetupDataDB = async function (site, equip, details = null, logs = nul
     } catch (e) {
         console.error('Setup DB Sync Failed:', e);
         return false;
+    } finally {
+        window.activeSyncRequests--;
     }
 };
 
 // [추가] 100% DB 전환을 위한 만능 DB 동기화 비동기 헬퍼 함수 (전역 사용)
 window.syncAdminDB = async function (domain, action, payload) {
+    window.activeSyncRequests++;
     try {
         const res = await fetch('/api/admin/crud', {
             method: 'POST',
@@ -112,6 +131,8 @@ window.syncAdminDB = async function (domain, action, payload) {
     } catch (e) {
         console.error('DB Sync Failed:', e);
         return false;
+    } finally {
+        window.activeSyncRequests--;
     }
 };
 
