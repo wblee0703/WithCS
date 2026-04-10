@@ -1181,9 +1181,23 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     document.getElementById('detail-detail-type').textContent = displayDetailType;
 
     // [수정] 같은 날짜, 같은 타입, 세부구분에 예정된 항목들을 모두 표시 (비용처리 포함)
-    let displayContent = item.content || '';
-    if (!isCompleted && item.code) {
-        displayContent = item.code;
+    let displayContent = '';
+    if (isCompleted) {
+        displayContent = item.content || '';
+    } else {
+        const sameDayItems = data.maint.filter(i => 
+            i.scheduledDate === item.scheduledDate && 
+            i.type === item.type && 
+            (i.detailType || '') === (item.detailType || '') &&
+            i.originalLogId == item.originalLogId
+        );
+        const contentArr = sameDayItems.map(i => {
+            const val = i.code ? i.code : i.content;
+            const specStr = i.spec ? ` [${i.spec}]` : '';
+            const fullVal = `${val}${specStr}`;
+            return i.itemCost ? `[${i.itemCost}] ${fullVal}` : fullVal;
+        });
+        displayContent = [...new Set(contentArr)].join(', ');
     }
 
     const contentEl = document.getElementById('detail-content');
@@ -1269,7 +1283,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     if (mdInput) {
         let displayMd = item.md || '';
         if (!isCompleted && !displayMd && item.scheduledDate) {
-            const sameDayItems = data.maint.filter(i => i.scheduledDate === item.scheduledDate && i.type === item.type && (i.detailType || '') === (item.detailType || ''));
+            const sameDayItems = data.maint.filter(i => i.scheduledDate === item.scheduledDate && i.type === item.type && (i.detailType || '') === (item.detailType || '') && i.originalLogId == item.originalLogId);
             const itemWithMd = sameDayItems.find(i => i.md);
             if (itemWithMd) displayMd = itemWithMd.md;
         }
@@ -1503,12 +1517,13 @@ function buildDetailDropdown(item, site, equip) {
         const list = dropdownWrapper.querySelector('.log-select-list');
         const addBtn = dropdownWrapper.querySelector('.btn-blue-sm');
 
-        const actualValues = Object.keys(selectedMap);
         let initialText = '항목 선택';
-        if (actualValues.length > 1) {
-            initialText = `${actualValues[0]} 외 ${actualValues.length - 1}개`;
-        } else if (actualValues.length === 1) {
-            initialText = actualValues[0];
+        if (currentValues.length > 1) {
+            initialText = `${currentValues[0]} 외 ${currentValues.length - 1}개`;
+            trigger.classList.remove('multi-line');
+        } else if (currentValues.length === 1) {
+            initialText = currentValues[0];
+            trigger.classList.remove('multi-line');
         }
         trigger.innerText = initialText;
         trigger.title = currentValues.join('\n');
@@ -1690,12 +1705,16 @@ function buildDetailDropdown(item, site, equip) {
                 });
                 if (values.length > 1) {
                     trigger.innerText = `${values[0]} 외 ${values.length - 1}개`;
+                    trigger.classList.remove('multi-line');
                 } else if (values.length === 1) {
                     trigger.innerText = values[0];
+                    trigger.classList.remove('multi-line');
                 } else {
                     trigger.innerText = '항목 선택';
+                    trigger.classList.remove('multi-line');
                 }
                 trigger.title = values.join('\n');
+                if (typeof window.updateDetailDisplayList === 'function') window.updateDetailDisplayList();
             };
         };
 
@@ -1742,6 +1761,69 @@ function buildDetailDropdown(item, site, equip) {
         contentDiv.style.display = 'none';
         contentInput.style.display = 'block';
     }
+
+    // [추가] 상세 정보 입력창(드롭다운) 바로 아래에 전체 내역을 나열할 컨테이너 동적 생성
+    let displayListWrapper = document.getElementById('detail-display-list-wrapper');
+    if (!displayListWrapper) {
+        displayListWrapper = document.createElement('div');
+        displayListWrapper.id = 'detail-display-list-wrapper';
+        displayListWrapper.style.marginTop = '10px';
+        displayListWrapper.style.padding = '10px';
+        displayListWrapper.style.background = '#161b22';
+        displayListWrapper.style.border = '1px solid #30363d';
+        displayListWrapper.style.borderRadius = '4px';
+        displayListWrapper.style.fontSize = '13px';
+        displayListWrapper.style.color = '#c9d1d9';
+        
+        const parentContainer = contentInput.closest('.form-row') || contentInput.parentNode;
+        parentContainer.parentNode.insertBefore(displayListWrapper, parentContainer.nextSibling);
+    }
+    
+    // [추가] 하단 목록 영역 갱신 함수 (일반 항목 + 파트 항목 + 읽기 전용 모드 모두 통합 처리)
+    window.updateDetailDisplayList = () => {
+        const dWrapper = document.getElementById('detail-content-dropdown-wrapper');
+        const pWrapperLocal = document.getElementById('detail-edit-part-wrapper');
+        let allVals = [];
+        
+        if (dWrapper) {
+            const selected = dWrapper.querySelectorAll('.log-select-item.selected');
+            allVals = allVals.concat(Array.from(selected).map(el => {
+                const cSel = el.querySelector('.item-cost-select');
+                return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+            }));
+        } else {
+            const val = document.getElementById('detail-content-input').value.trim();
+            if (val && document.getElementById('detail-content-input').style.display !== 'none') allVals.push(val);
+        }
+        
+        if (pWrapperLocal && pWrapperLocal.style.display !== 'none') {
+            const pList = document.getElementById('detail-edit-part-list');
+            if (pList) {
+                const pSelected = pList.querySelectorAll('.log-select-item.selected');
+                allVals = allVals.concat(Array.from(pSelected).map(el => {
+                    const cSel = el.querySelector('.item-cost-select');
+                    return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+                }));
+            }
+        }
+        
+        if (!dWrapper && !pWrapperLocal && document.getElementById('detail-content')) {
+            const raw = document.getElementById('detail-content').dataset.rawContent;
+            if (raw && document.getElementById('detail-content').style.display !== 'none') {
+                allVals = raw.split(',').map(s => s.trim()).filter(s => s && s !== '내용 없음');
+            }
+        }
+        
+        if (allVals.length > 0) {
+            displayListWrapper.style.display = 'block';
+            displayListWrapper.innerHTML = allVals.map(v => `<div style="margin-bottom:4px; word-break:keep-all;">• ${escapeHtml(v)}</div>`).join('');
+        } else {
+            displayListWrapper.style.display = 'none';
+            displayListWrapper.innerHTML = '';
+        }
+    };
+    
+    window.updateDetailDisplayList();
 }
 
 function hasDetailUnsavedChanges() {
@@ -1880,7 +1962,7 @@ function saveDetailChanges() {
         });
 
     } else {
-        const sameDayItems = data.maint.filter(m => m.scheduledDate === item.scheduledDate && m.type === itemType && (m.detailType || '') === itemDetailType);
+        const sameDayItems = data.maint.filter(m => m.scheduledDate === item.scheduledDate && m.type === itemType && (m.detailType || '') === itemDetailType && m.originalLogId == item.originalLogId);
 
         if (dropdownValues.length > 0) {
             dropdownValues.forEach((val, idx) => {
@@ -2002,16 +2084,50 @@ function updateScheduleDateFromDetail() {
     const newDate = document.getElementById('detail-scheduled-date').value;
     if (!newDate) return alert('날짜를 선택해주세요.');
 
-    const success = setScheduleDate(currentDetailTarget.site, currentDetailTarget.equip, currentDetailTarget.id, newDate);
-    if (success === false) {
-        const key = `details_${currentDetailTarget.site}_${currentDetailTarget.equip}`;
-        const data = JSON.parse(localStorage.getItem(key)) || {};
-        const item = data.maint ? data.maint.find(i => i.id === currentDetailTarget.id) : null;
-        if (item && item.scheduledDate) {
-            document.getElementById('detail-scheduled-date').value = item.scheduledDate;
+    const { site, equip, id } = currentDetailTarget;
+    const key = `details_${site}_${equip}`;
+    const data = JSON.parse(localStorage.getItem(key)) || {};
+    const item = data.maint ? data.maint.find(i => i.id === id) : null;
+
+    if (item && item.scheduledDate && item.scheduledDate !== newDate) {
+        const sameDayItems = data.maint.filter(i => 
+            i.scheduledDate === item.scheduledDate && 
+            i.type === item.type && 
+            (i.detailType || '') === (item.detailType || '') &&
+            i.originalLogId == item.originalLogId
+        );
+
+        let reason = undefined;
+        const [y, m] = item.scheduledDate.split('-').map(Number);
+        const confs = JSON.parse(localStorage.getItem('calendar_confirmations')) || {};
+        const yyyyMm = `${y}-${String(m).padStart(2, '0')}`;
+        const monthConf = confs[yyyyMm];
+
+        if (monthConf) {
+            const isGlobalConfirmed = monthConf.count !== undefined;
+            const isSiteConfirmed = monthConf[site] !== undefined || (monthConf.siteCounts && monthConf.siteCounts[site] !== undefined);
+
+            if (isGlobalConfirmed || isSiteConfirmed) {
+                reason = prompt(`[${yyyyMm} 예정 확정됨]\n해당 월은 일정이 확정된 상태입니다.\n일정 변경 사유를 입력해주세요:`);
+                if (reason === null) {
+                    document.getElementById('detail-scheduled-date').value = item.scheduledDate;
+                    return;
+                }
+            }
         }
-        return;
+
+        let allSuccess = true;
+        sameDayItems.forEach(i => {
+            const success = setScheduleDate(site, equip, i.id, newDate, false, null, null, reason);
+            if (success === false) allSuccess = false;
+        });
+
+        if (!allSuccess) {
+            document.getElementById('detail-scheduled-date').value = item.scheduledDate;
+            return;
+        }
     }
+
     renderCalendar();
     if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
     if (typeof renderDetails === 'function') renderDetails();
@@ -2084,7 +2200,7 @@ function completeScheduleWork() {
     if (!data.logs) data.logs = [];
 
     // [수정] 같은 날짜, 같은 타입, 세부구분의 모든 항목 완료 처리 (비용처리 포함하여 로그에 기록)
-    const sameDayItems = data.maint.filter(i => i.scheduledDate === maintItem.scheduledDate && i.type === maintItem.type && (i.detailType || '') === (maintItem.detailType || ''));
+    const sameDayItems = data.maint.filter(i => i.scheduledDate === maintItem.scheduledDate && i.type === maintItem.type && (i.detailType || '') === (maintItem.detailType || '') && i.originalLogId == maintItem.originalLogId);
     const contentArr = sameDayItems.map(i => {
         const val = i.code ? i.code : i.content;
         const specStr = i.spec ? ` [${i.spec}]` : '';
@@ -2485,6 +2601,12 @@ function setupRegisterScheduleModal() {
         modal.style.display = 'none';
         window.currentAddWorkLogId = null; // 팝업 닫을 시 상태 초기화
         window.openDetailAfterRegister = false; // [추가] 팝업 닫을 시 상세 팝업 오픈 플래그 초기화
+        
+        // [추가] 팝업 닫을 때 제안박스 선택 상태 초기화
+        const contentList = document.getElementById('register-content-list');
+        if (contentList) contentList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
+        const partList = document.getElementById('register-part-list');
+        if (partList) partList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
     };
 
     if (siteSelect) {
@@ -2759,6 +2881,14 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
     const typeSelect = document.getElementById('register-type-select');
 
     if (!modal) return;
+
+    // [추가] 팝업 열 때 이전 물품 선택 상태 초기화
+    if (!presetData || !presetData.content) {
+        const contentList = document.getElementById('register-content-list');
+        if (contentList) contentList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
+        const partList = document.getElementById('register-part-list');
+        if (partList) partList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
+    }
 
     // [추가] 팝업 진입 경로에 따라 모달 타이틀 동적 변경
     const modalTitle = modal.querySelector('.modal-header h3');
@@ -3353,6 +3483,12 @@ function confirmRegisterSchedule() {
 
     if (costTypeSelect) costTypeSelect.value = '';
 
+    // [추가] 일정 등록 완료 후 제안박스 이전 선택 상태 초기화
+    const contentList = document.getElementById('register-content-list');
+    if (contentList) contentList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
+    const partList = document.getElementById('register-part-list');
+    if (partList) partList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
+
     renderCalendar();
     if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
     if (typeof renderDetails === 'function') renderDetails();
@@ -3593,18 +3729,21 @@ window.updateRegisterContentOptions = function () {
                 return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
             });
             if (sels.length > 1) {
-                trigger.textContent = sels[0] + ' 외 ' + (sels.length - 1) + '개';
+                trigger.textContent = `${sels[0]} 외 ${sels.length - 1}개`;
                 trigger.title = sels.join('\n');
                 trigger.classList.add('has-value');
+                trigger.classList.remove('multi-line');
             } else if (sels.length === 1) {
                 trigger.textContent = sels[0];
                 trigger.title = sels[0];
                 trigger.classList.add('has-value');
+                trigger.classList.remove('multi-line');
             } else {
                 trigger.textContent = '항목 선택';
                 trigger.title = '';
-                trigger.classList.remove('has-value');
+                trigger.classList.remove('has-value', 'multi-line');
             }
+            if (typeof window.updateRegisterDisplayList === 'function') window.updateRegisterDisplayList();
         };
 
         const dropdown = document.getElementById('register-content-dropdown');
@@ -3825,6 +3964,60 @@ window.updateRegisterContentOptions = function () {
             input.classList.remove('input-disabled');
         }
     }
+
+    // [추가] 작업 등록 모달에도 동일하게 하단에 리스트로 표시하는 기능 구현
+    let displayListWrapper = document.getElementById('register-display-list-wrapper');
+    if (!displayListWrapper) {
+        displayListWrapper = document.createElement('div');
+        displayListWrapper.id = 'register-display-list-wrapper';
+        displayListWrapper.style.marginTop = '10px';
+        displayListWrapper.style.padding = '10px';
+        displayListWrapper.style.background = '#161b22';
+        displayListWrapper.style.border = '1px solid #30363d';
+        displayListWrapper.style.borderRadius = '4px';
+        displayListWrapper.style.fontSize = '13px';
+        displayListWrapper.style.color = '#c9d1d9';
+        
+        const parentContainer = input.closest('.form-row') || input.parentNode;
+        parentContainer.parentNode.insertBefore(displayListWrapper, parentContainer.nextSibling);
+    }
+    
+    window.updateRegisterDisplayList = () => {
+        let allVals = [];
+        const rList = document.getElementById('register-content-list');
+        if (rList && wrapper.style.display !== 'none') {
+            const selected = rList.querySelectorAll('.log-select-item.selected');
+            allVals = allVals.concat(Array.from(selected).map(el => {
+                const cSel = el.querySelector('.item-cost-select');
+                return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+            }));
+        } else {
+            const val = input.value.trim();
+            if (val && wrapper.style.display === 'none') allVals.push(val);
+        }
+        
+        const pRow = document.getElementById('register-part-row');
+        if (pRow && pRow.style.display !== 'none') {
+            const pList = document.getElementById('register-part-list');
+            if (pList) {
+                const pSelected = pList.querySelectorAll('.log-select-item.selected');
+                allVals = allVals.concat(Array.from(pSelected).map(el => {
+                    const cSel = el.querySelector('.item-cost-select');
+                    return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+                }));
+            }
+        }
+        
+        if (allVals.length > 0) {
+            displayListWrapper.style.display = 'block';
+            displayListWrapper.innerHTML = allVals.map(v => `<div style="margin-bottom:4px; word-break:keep-all;">• ${escapeHtml(v)}</div>`).join('');
+        } else {
+            displayListWrapper.style.display = 'none';
+            displayListWrapper.innerHTML = '';
+        }
+    };
+    
+    window.updateRegisterDisplayList();
 };
 
 /* ==========================================================================

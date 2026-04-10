@@ -3704,11 +3704,21 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
                 const cSel = el.querySelector('.item-cost-select');
                 return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
             });
-            if (sels.length > 1) trigger.textContent = `${sels[0].split('] ')[1] || sels[0]} 외 ${sels.length - 1}개`;
-            else if (sels.length === 1) trigger.textContent = sels[0].split('] ')[1] || sels[0];
-            else trigger.textContent = '물품 선택';
-            trigger.title = sels.join('\\n');
+            if (sels.length > 1) {
+                trigger.textContent = `${sels[0]} 외 ${sels.length - 1}개`;
+                trigger.classList.remove('multi-line');
+            } else if (sels.length === 1) {
+                trigger.textContent = sels[0];
+                trigger.classList.remove('multi-line');
+            } else {
+                trigger.textContent = '물품 선택';
+                trigger.classList.remove('multi-line');
+            }
+            trigger.title = sels.join('\n');
             trigger.classList.remove('error-border');
+            
+            if (typeof window.updateDetailDisplayList === 'function') window.updateDetailDisplayList();
+            if (typeof window.updateRegisterDisplayList === 'function') window.updateRegisterDisplayList();
         };
         list.querySelectorAll('.item-cost-select').forEach(cSel => {
             cSel.addEventListener('change', (e) => { e.stopPropagation(); if (cSel.closest('.log-select-item').classList.contains('selected')) updateTriggerText(); });
