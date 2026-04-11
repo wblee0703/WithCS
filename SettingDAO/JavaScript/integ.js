@@ -6,6 +6,37 @@ let integSetupSelectedSite = null;
 let integSelectedSite = null;
 let integSelectedType = null;
 
+// [추가] 통합 관리 대시보드 HTML 템플릿 동적 주입 (HTML 파일 직접 수정 없이 자동 적용)
+(function injectIntegTemplates() {
+    if (!document.getElementById('integ-basic-bar-template')) {
+        const t1 = document.createElement('template');
+        t1.id = 'integ-basic-bar-template';
+        t1.innerHTML = `
+            <div class="bar-group integ-bar-group">
+                <div class="bar-value integ-bar-value"></div>
+                <div class="bar integ-bar"></div>
+                <div class="bar-label integ-bar-label"></div>
+            </div>
+        `;
+        document.body.appendChild(t1);
+    }
+    if (!document.getElementById('integ-md-bar-template')) {
+        const t2 = document.createElement('template');
+        t2.id = 'integ-md-bar-template';
+        t2.innerHTML = `
+            <div class="bar-group integ-bar-group">
+                <div class="bar-value integ-bar-value"></div>
+                <div class="integ-bar-wrapper">
+                    <div class="bar-total integ-bar-total"></div>
+                    <div class="bar integ-bar"></div>
+                </div>
+                <div class="bar-label integ-bar-label"></div>
+            </div>
+        `;
+        document.body.appendChild(t2);
+    }
+})();
+
 // 전역 함수 노출
 window.updateIntegratedDashboard = updateIntegratedDashboard;
 window.toggleIntegSetupPeriodMode = toggleIntegSetupPeriodMode;
@@ -213,12 +244,8 @@ function renderIntegEquipStats(data) {
         if (data[site] && Array.isArray(data[site]) && data[site].length > 0) {
             actualSiteCount++;
             
-            let groupName = '기타 사업장';
-            if (site === 'SKH 이천' || site === 'SKH 청주') {
-                groupName = site;
-            } else if (site.includes('SEC')) {
-                groupName = 'SEC';
-            }
+            let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타 사업장';
+            if (groupCounts[groupName] === undefined) groupCounts[groupName] = 0;
 
             groupCounts[groupName] += data[site].length;
 
@@ -318,14 +345,21 @@ function renderIntegSetupBarChart(siteCounts, totalCount) {
         const activeClass = isActive ? 'active' : '';
 
         const barGroup = document.createElement('div');
-        barGroup.className = 'bar-group';
+        barGroup.className = 'bar-group integ-bar-group';
         if (integSetupSelectedSite && !isActive) barGroup.classList.add('faded');
 
-        barGroup.innerHTML = `
-            <div class="bar-value">${count}</div>
-            <div class="bar ${activeClass}" style="height: ${barHeight}px; background: ${bgStyle};"></div>
-            <div class="bar-label" title="${item.name}">${item.name}</div>
-        `;
+        const tpl = typeof window.getTemplateContent === 'function' ? window.getTemplateContent('integ-basic-bar-template') : null;
+        if (tpl) {
+            barGroup.innerHTML = tpl.querySelector('.bar-group').innerHTML;
+            barGroup.querySelector('.bar-value').innerHTML = count;
+            const bar = barGroup.querySelector('.bar');
+            if (activeClass) bar.classList.add(activeClass);
+            bar.style.height = `${barHeight}px`;
+            bar.style.background = bgStyle;
+            const barLabel = barGroup.querySelector('.bar-label');
+            barLabel.textContent = item.name;
+            barLabel.title = item.name;
+        }
 
         barGroup.onclick = () => {
             integSetupSelectedSite = isTotal ? null : (integSetupSelectedSite === item.name ? null : item.name);
@@ -503,32 +537,65 @@ function toggleIntegSetupPeriodMode() {
 /* ==========================================================================
    5. 운영 관리 현황 섹션 (Maintenance Dashboard Section)
    ========================================================================== */
-function renderIntegMaintStats(mainData) {
+async function renderIntegMaintStats(mainData) {
     if (!mainData || Object.keys(mainData).length === 0) {
         let rawData = JSON.parse(localStorage.getItem('device_data')) || {};
         mainData = (typeof getDashboardData === 'function') ? getDashboardData() : (rawData.equipments || rawData);
     }
 
-    const chartEl = document.getElementById('integ-maint-type-chart');
-    const siteChartEl = document.getElementById('integ-maint-site-chart');
-    const listEl = document.getElementById('integ-maint-item-list');
-    const itemChartEl = document.getElementById('integ-maint-item-chart');
-    const itemCenterText = document.getElementById('integ-maint-item-center');
-    if (!chartEl || !listEl) return;
+    const progressChartEl = document.getElementById('integ-maint-site-chart');
+    const mdChartEl = document.getElementById('integ-maint-type-chart');
+    
+    const listEl = document.getElementById('integ-maint-item-list-container');
+    const itemChartEl = document.getElementById('integ-maint-item-chart-row');
+    if (listEl) listEl.style.display = 'none';
+    if (itemChartEl) itemChartEl.style.display = 'none';
+    
+    if (progressChartEl) {
+        const siteTitleEl = progressChartEl.closest('.status-group').querySelector('.status-group-title');
+        if (siteTitleEl) siteTitleEl.textContent = '사업장별 작업 진행률';
+    }
+    
+    if (mdChartEl) {
+        const typeTitleEl = mdChartEl.closest('.status-group').querySelector('.status-group-title');
+        if (typeTitleEl) typeTitleEl.textContent = '사업장별 공수(M/D) 현황';
+    }
+
+    // [수정] 중복되는 인라인 스타일을 모두 제거하고, 안전한 래퍼 생성 및 1:2 비율만 심플하게 적용
+    if (progressChartEl && mdChartEl) {
+        const pGroup = progressChartEl.closest('.status-group');
+        const mGroup = mdChartEl.closest('.status-group');
+        if (pGroup && mGroup) {
+            if (!pGroup.parentElement.classList.contains('integ-maint-charts-row')) {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'integ-maint-charts-row';
+                pGroup.parentElement.insertBefore(wrapper, pGroup);
+                wrapper.appendChild(pGroup);
+                wrapper.appendChild(mGroup);
+            }
+            
+            // CSS(.integ-maint-charts-row)에 의존하여 가로 배치 후, 너비를 정확히 50%씩(1:1 비율) 부여
+            pGroup.style.flex = '1';
+            mGroup.style.flex = '1';
+        }
+    }
 
     const periodTypeEl = document.getElementById('integ-period-type');
     const periodType = periodTypeEl ? periodTypeEl.value : 'month';
     
     let dateCheckFn = null;
+    let targetStart = null;
+    let targetEnd = null;
 
     if (periodType === 'year') {
         const yearSelect = document.getElementById('integ-maint-year');
         const targetPrefix = (yearSelect && yearSelect.value) ? yearSelect.value : new Date().getFullYear().toString();
         dateCheckFn = (d) => d && d.startsWith(targetPrefix);
+        targetStart = new Date(targetPrefix, 0, 1);
+        targetEnd = new Date(targetPrefix, 11, 31, 23, 59, 59);
     } else if (periodType === 'custom') {
         const startInput = document.getElementById('integ-maint-start');
         const endInput = document.getElementById('integ-maint-end');
-        let targetStart, targetEnd;
         
         if (startInput && endInput && startInput.value && endInput.value) {
             targetStart = new Date(startInput.value);
@@ -545,131 +612,203 @@ function renderIntegMaintStats(mainData) {
         const monthPicker = document.getElementById('integ-maint-month');
         const targetPrefix = (monthPicker && monthPicker.value) ? monthPicker.value : `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
         dateCheckFn = (d) => d && d.startsWith(targetPrefix);
+        const [y, m] = targetPrefix.split('-').map(Number);
+        targetStart = new Date(y, m - 1, 1);
+        targetEnd = new Date(y, m, 0, 23, 59, 59);
     }
 
-    const typeCounts = {};
-    const totalTypeCounts = {};
-    const itemCounts = {};
-    const siteCounts = {};
+    // [추가] 해당 월(기간)의 평일(월~금) 일수 계산
+    let workingDays = 0;
+    if (targetStart && targetEnd) {
+        let tempDate = new Date(targetStart);
+        tempDate.setHours(0,0,0,0);
+        while (tempDate <= targetEnd) {
+            const day = tempDate.getDay();
+            if (day !== 0 && day !== 6) workingDays++;
+            tempDate.setDate(tempDate.getDate() + 1);
+        }
+    }
+
+    // [수정] 캐시를 무시하고 최신 계정 데이터를 직접 호출하여 관리자 여부 누락 방지
+    let workers = [];
+    try {
+        // 브라우저의 강력 캐시를 완벽히 회피하기 위해 타임스탬프 파라미터 추가
+        const res = await fetch('/api/users/names?t=' + new Date().getTime(), { cache: 'no-store' });
+        if (res.ok) {
+            const wData = await res.json();
+            workers = wData.workers || wData.names || [];
+        }
+    } catch (e) { console.error(e); }
+
+    const siteWorkerCounts = { 'SKH 청주': 0, 'SKH 이천': 0, 'SEC': 0, '기타 사업장': 0 };
+    const adminNames = new Set(); // [추가] 실제 작업 공수에서 관리자를 제외하기 위한 명단
+
+    workers.forEach(w => {
+        if (typeof w === 'object' && w !== null) {
+            // [강화] 권한(role)뿐만 아니라 직급/소속에 '관리자'라는 단어가 포함되어 있어도 제외하도록 이중 안전장치 추가
+            const roleStr = (w.role || '').trim().toLowerCase();
+            const posStr = (w.position || '').trim();
+            const deptStr = (w.department || '').trim();
+            
+            if (roleStr === 'admin' || roleStr === 'superadmin' || posStr.includes('관리자') || deptStr.includes('관리자')) {
+                adminNames.add(w.name); // 관리자 이름 기록
+                return; // 총 공수(모수) 계산 인원수에서 제외
+            }
+        }
+        
+        const wSite = (typeof w === 'object' && w !== null) ? (w.site || '기타 사업장') : '기타 사업장';
+        let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(wSite) : '기타 사업장';
+        if (siteWorkerCounts[groupName] !== undefined) siteWorkerCounts[groupName]++;
+        else siteWorkerCounts['기타 사업장']++;
+    });
+
+    // [디버깅용] 브라우저 개발자 도구(F12) 콘솔창에서 계산에서 제외된 관리자 명단과 최종 인원수를 명확히 확인
+    console.log("✅ 총 공수에서 제외된 관리자 명단:", Array.from(adminNames));
+    console.log("✅ 사업장별 실제 계산에 포함된 인원수:", siteWorkerCounts);
+
+    // [추가] 실제 작업(M/D)에서 관리자의 지분을 제외하는 계산 함수
+    const calcValidMd = (workerStr, mdVal) => {
+        if (!workerStr || !mdVal) return mdVal;
+        const workerList = workerStr.split(',').map(s => s.trim()).filter(Boolean);
+        if (workerList.length === 0) return mdVal;
+        
+        const adminCount = workerList.filter(name => adminNames.has(name)).length;
+        if (adminCount === 0) return mdVal; // 관리자가 없으면 그대로 반환
+        
+        // 전체 작업자 중 관리자 비율만큼 M/D를 차감 (예: 2명 중 1명이 관리자면 M/D의 50%만 반영)
+        const validRatio = (workerList.length - adminCount) / workerList.length;
+        return mdVal * validRatio;
+    };
+
+    const groupStats = {
+        'SKH 청주': { total: 0, completed: 0, md: 0, totalMd: workingDays * siteWorkerCounts['SKH 청주'] },
+        'SKH 이천': { total: 0, completed: 0, md: 0, totalMd: workingDays * siteWorkerCounts['SKH 이천'] },
+        'SEC': { total: 0, completed: 0, md: 0, totalMd: workingDays * siteWorkerCounts['SEC'] },
+        '기타 사업장': { total: 0, completed: 0, md: 0, totalMd: workingDays * siteWorkerCounts['기타 사업장'] }
+    };
 
     Object.keys(mainData).forEach(site => {
         if (mainData[site] && Array.isArray(mainData[site])) {
-            const isSiteMatch = !integSelectedSite || integSelectedSite === site;
+            let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타 사업장';
+            if (!groupStats[groupName]) groupStats[groupName] = { total: 0, completed: 0, md: 0 };
+
             mainData[site].forEach(equip => {
                 const key = `details_${site}_${equip}`;
                 const detailData = JSON.parse(localStorage.getItem(key));
                 if (!detailData) return;
 
-                const processItem = (type, content, date) => {
-                    if (dateCheckFn(date)) {
-                        siteCounts[site] = (siteCounts[site] || 0) + 1;
-                        totalTypeCounts[type] = (totalTypeCounts[type] || 0) + 1;
+                const completedKeys = new Set();
 
-                        if (isSiteMatch) {
-                            typeCounts[type] = (typeCounts[type] || 0) + 1;
+                if (detailData.logs) {
+                    detailData.logs.forEach(l => {
+                        if (l.detailType !== '일정변경' && dateCheckFn(l.date)) {
+                            if (l.content && l.content.startsWith('[변경]')) return;
+                            
+                            groupStats[groupName].total++;
+                            groupStats[groupName].completed++;
+                            const mdVal = parseFloat(l.md) || 0;
+                            // [수정] 실제 공수 합산 시 관리자의 기여분(M/D) 제외
+                            groupStats[groupName].md += calcValidMd(l.worker, mdVal);
+                            
+                            const taskKey = `${l.date}_${l.content}_${l.originalLogId || ''}`;
+                            completedKeys.add(taskKey);
                         }
-                        const isTypeMatch = !integSelectedType || integSelectedType === type;
-                        if (isSiteMatch && isTypeMatch && content) {
-                            content.split(',').map(s => s.trim()).forEach(i => {
-                                if (i) itemCounts[`${type}::${i}`] = (itemCounts[`${type}::${i}`] || 0) + 1;
-                            });
-                        }
-                    }
-                };
+                    });
+                }
 
-                if (detailData.maint) detailData.maint.forEach(i => processItem(i.type, i.content, i.scheduledDate));
-                if (detailData.logs) detailData.logs.forEach(l => {
-                    if (l.detailType !== '일정변경') processItem(l.type, l.content, l.date);
-                });
+                if (detailData.maint) {
+                    detailData.maint.forEach(m => {
+                        if (dateCheckFn(m.scheduledDate)) {
+                            const taskKey = `${m.scheduledDate}_${m.content}_${m.originalLogId || ''}`;
+                            if (completedKeys.has(taskKey)) return; 
+                            
+                            groupStats[groupName].total++;
+                            const mdVal = parseFloat(m.md) || 0;
+                            // [수정] 예정 공수 합산 시 관리자의 기여분(M/D) 제외
+                            groupStats[groupName].md += calcValidMd(m.worker, mdVal);
+                        }
+                    });
+                }
             });
         }
     });
 
+    const groups = ['SEC', 'SKH 이천', 'SKH 청주', '기타 사업장'];
+    const groupColors = {
+        'SEC': 'linear-gradient(to top, #034EA2, #4a8eff)',
+        'SKH 이천': 'linear-gradient(to top, #F37021, #ff9e66)',
+        'SKH 청주': 'linear-gradient(to top, #F37021, #ff9e66)',
+        '기타 사업장': 'linear-gradient(to top, #8957e5, #a371f7)'
+    };
+
+    if (progressChartEl) {
+        progressChartEl.innerHTML = '';
+        progressChartEl.classList.add('integ-bar-chart-container');
+        const yAxisMax = 100;
+
+        groups.forEach(group => {
+            const stats = groupStats[group];
+            const rate = stats.total === 0 ? 0 : Math.round((stats.completed / stats.total) * 100);
+            
+            const barGroup = document.createElement('div');
+            barGroup.className = 'bar-group integ-bar-group';
+            
+            const maxBarHeight = 180;
+            const barHeight = (rate / yAxisMax) * maxBarHeight;
+            const bgStyle = groupColors[group];
+
+            const tpl = typeof window.getTemplateContent === 'function' ? window.getTemplateContent('integ-basic-bar-template') : null;
+            if (tpl) {
+                barGroup.innerHTML = tpl.querySelector('.bar-group').innerHTML;
+                barGroup.querySelector('.bar-value').innerHTML = `${rate}% <span>(${stats.completed}/${stats.total})</span>`;
+                const bar = barGroup.querySelector('.bar');
+                bar.style.height = `${barHeight}px`;
+                bar.style.background = bgStyle;
+                const barLabel = barGroup.querySelector('.bar-label');
+                barLabel.textContent = group;
+                barLabel.title = group;
+                progressChartEl.appendChild(barGroup);
+            }
+        });
+    }
+
+    if (mdChartEl) {
+        mdChartEl.innerHTML = '';
+        mdChartEl.classList.add('integ-bar-chart-container');
+        
+        const yAxisMax = 100;
+
+        groups.forEach(group => {
+            const stats = groupStats[group];
+            const mdVal = Number.isInteger(stats.md) ? stats.md : stats.md.toFixed(1);
+            const mdRate = stats.totalMd === 0 ? 0 : Math.round((stats.md / stats.totalMd) * 100);
+            
+            const barGroup = document.createElement('div');
+            barGroup.className = 'bar-group integ-bar-group';
+            
+            const maxBarHeight = 180;
+            const barHeight = Math.min((mdRate / yAxisMax) * maxBarHeight, maxBarHeight);
+            const bgStyle = groupColors[group];
+
+            const tpl = typeof window.getTemplateContent === 'function' ? window.getTemplateContent('integ-basic-bar-template') : null;
+            if (tpl) {
+                barGroup.innerHTML = tpl.querySelector('.bar-group').innerHTML;
+                barGroup.querySelector('.bar-value').innerHTML = `${mdRate}% <span>(${mdVal}/${stats.totalMd})</span>`;
+                const bar = barGroup.querySelector('.bar');
+                bar.style.height = `${barHeight}px`;
+                bar.style.background = bgStyle;
+                bar.title = `실제 공수: ${mdVal} / 총 공수: ${stats.totalMd}`;
+                const barLabel = barGroup.querySelector('.bar-label');
+                barLabel.textContent = group;
+                barLabel.title = group;
+                mdChartEl.appendChild(barGroup);
+            }
+        });
+    }
+    
     const maintSummaryEl = document.getElementById('integ-maint-summary');
     if (maintSummaryEl) {
-        const summaryStr = Object.entries(totalTypeCounts).map(([t, c]) => `${t} : ${c}`).join(', ');
-        maintSummaryEl.textContent = `(${summaryStr})`;
-    }
-
-    const typeGradients = { 
-        '정기': 'linear-gradient(to top, #238636, #3fb950)', 
-        '비정기': 'linear-gradient(to top, #eb371f, #ff7b72)', 
-        '고객대응': 'linear-gradient(to top, #d29922, #f0883e)', 
-        '용액제조': 'linear-gradient(to top, #8957e5, #a371f7)',
-        '온라인점검': 'linear-gradient(to top, #0078d4, #58a6ff)' 
-    };
-    renderChartWithAxis(chartEl, typeCounts, typeGradients, (key) => {
-        integSelectedType = (integSelectedType === key) ? null : key;
-        renderIntegMaintStats(mainData);
-    }, integSelectedType);
-
-    if (siteChartEl) {
-        let totalSiteCount = 0;
-        Object.values(siteCounts).forEach(count => totalSiteCount += count);
-        
-        const sortedSites = Object.entries(siteCounts)
-            .sort(([, a], [, b]) => b - a)
-            .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
-
-        const orderedSiteCounts = { '전체': totalSiteCount, ...sortedSites };
-        const siteGradients = {};
-        Object.keys(orderedSiteCounts).forEach(key => siteGradients[key] = window.getSiteGradient ? window.getSiteGradient(key) : '#238636');
-
-        renderChartWithAxis(siteChartEl, orderedSiteCounts, siteGradients, (key) => {
-            integSelectedSite = (key === '전체' || integSelectedSite === key) ? null : key;
-            integSelectedType = null;
-            renderIntegMaintStats(mainData);
-        }, integSelectedSite || '전체');
-    }
-
-    renderMaintItemList(listEl, itemChartEl, itemCenterText, itemCounts);
-}
-
-function renderMaintItemList(listEl, chartEl, centerText, itemCounts) {
-    listEl.innerHTML = '';
-    const typeOrder = ['정기', '비정기', '고객대응', '용액제조', '온라인점검'];
-    
-    const sortedItems = Object.keys(itemCounts).map(key => {
-        const parts = key.split('::');
-        return { type: parts[0], name: parts.slice(1).join('::'), count: itemCounts[key] };
-    }).sort((a, b) => {
-        const idxA = typeOrder.indexOf(a.type);
-        const idxB = typeOrder.indexOf(b.type);
-        if (idxA !== idxB) return (idxA !== -1 && idxB !== -1) ? idxA - idxB : (idxA !== -1 ? -1 : 1);
-        return b.count - a.count;
-    });
-    
-    const totalItemCount = sortedItems.reduce((acc, item) => acc + item.count, 0);
-    const colors = ['#1f6feb', '#238636', '#d29922', '#8957e5', '#da3633', '#f0883e', '#3fb950', '#a371f7'];
-    let gradientStr = '';
-    let currentDeg = 0;
-
-    if (sortedItems.length === 0) {
-        listEl.innerHTML = '<li class="list-empty-msg">데이터 없음</li>';
-        if (chartEl) chartEl.style.background = '';
-        if (centerText) centerText.innerHTML = `<div class="chart-center-label">Items</div><div class="chart-center-value">0</div>`;
-    } else {
-        sortedItems.forEach((item, index) => {
-            const color = colors[index % colors.length];
-            if (totalItemCount > 0) {
-                const deg = (item.count / totalItemCount) * 360;
-                gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
-                currentDeg += deg;
-            }
-
-            const li = document.createElement('li');
-            li.className = 'status-list-item';
-            li.innerHTML = `
-                <div class="integ-list-col-type"><span class="list-type-badge type-${item.type}">${item.type}</span></div>
-                <span class="status-color" style="background-color: ${color}; margin-right: 8px;"></span>
-                <span class="status-name integ-list-col-name" style="text-align: left;">${escapeHtml(item.name)}</span>
-                <span class="status-count integ-list-col-count">${item.count}</span>
-            `;
-            listEl.appendChild(li);
-        });
-
-        if (chartEl && totalItemCount > 0) chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
-        if (centerText) centerText.innerHTML = `<div class="chart-center-label">Items</div><div class="chart-center-value">${totalItemCount}</div>`;
+        maintSummaryEl.textContent = '';
     }
 }
 

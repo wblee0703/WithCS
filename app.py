@@ -687,7 +687,8 @@ def get_user_names():
                 "name": name,
                 "department": u.department or "",
                 "position": u.position or "",
-                "site": u.site or ""
+                "site": u.site or "",
+                "role": u.role
             }
             if target_site and u.site == target_site:
                 site_workers.append(worker_data)

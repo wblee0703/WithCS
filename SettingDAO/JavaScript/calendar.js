@@ -395,7 +395,7 @@ function renderMonthGrid(year, month, titleId, gridId) {
                         (event.worker && event.worker.toLowerCase().includes(keyword))
                     );
 
-                    const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
+                    const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site || (typeof window.getSiteGroupName === 'function' && window.getSiteGroupName(event.site) === currentSearchFilters.site);
                     const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
 
                     return matchKeyword && matchSite && matchEquip;
@@ -765,7 +765,7 @@ function openCalendarPopup(dateStr, events) {
                         if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
                             dayEvents = dayEvents.filter(event => {
                                 const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
-                                const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
+                                const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site || (typeof window.getSiteGroupName === 'function' && window.getSiteGroupName(event.site) === currentSearchFilters.site);
                                 const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
                                 return matchKeyword && matchSite && matchEquip;
                             });
@@ -1362,6 +1362,8 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             contentTrigger.style.pointerEvents = 'none';
         }
         if (contentInput) contentInput.disabled = true;
+    } else {
+        if (contentInput) contentInput.disabled = false;
     }
 
     let currentContentStr = '';
@@ -1471,6 +1473,8 @@ function buildDetailDropdown(item, site, equip) {
         }
     }
 
+    const hasPresetItems = availableItems.length > 0;
+
     const uniqueItems = [];
     const seenContents = new Set();
 
@@ -1500,7 +1504,7 @@ function buildDetailDropdown(item, site, equip) {
         }
     });
 
-    if (uniqueItems.length > 0 && detailType) {
+    if (hasPresetItems && uniqueItems.length > 0 && detailType) {
         contentDiv.style.display = 'none';
         contentInput.style.display = 'none';
 
@@ -1780,7 +1784,7 @@ function buildDetailDropdown(item, site, equip) {
     }
     
     // [수정] 박스가 모달창 내부 공간 제약에 밀려 찌그러지지 않고 적정 크기를 확보하도록 속성 강제 부여
-    displayListWrapper.style.minHeight = '100px';
+    displayListWrapper.style.minHeight = '40px';
     displayListWrapper.style.maxHeight = '250px';
     displayListWrapper.style.overflowY = 'auto';
     displayListWrapper.style.flexShrink = '0';
@@ -1799,9 +1803,6 @@ function buildDetailDropdown(item, site, equip) {
                 const cSel = el.querySelector('.item-cost-select');
                 return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
             }));
-        } else {
-            const val = document.getElementById('detail-content-input').value.trim();
-            if (val && document.getElementById('detail-content-input').style.display !== 'none') allVals.push(val);
         }
         
         if (pWrapperLocal && pWrapperLocal.style.display !== 'none') {
@@ -1815,14 +1816,7 @@ function buildDetailDropdown(item, site, equip) {
             }
         }
         
-        if (!dWrapper && !pWrapperLocal && document.getElementById('detail-content')) {
-            const raw = document.getElementById('detail-content').dataset.rawContent;
-            if (raw && document.getElementById('detail-content').style.display !== 'none') {
-                allVals = raw.split(',').map(s => s.trim()).filter(s => s && s !== '내용 없음');
-            }
-        }
-        
-        if (allVals.length > 0) {
+        if (allVals.length > 1) {
             displayListWrapper.style.display = 'block';
             displayListWrapper.innerHTML = allVals.map(v => `<div style="margin-bottom:4px; word-break:keep-all;">• ${escapeHtml(v)}</div>`).join('');
             const parentContainer = contentInput.closest('.form-row') || contentInput.parentNode;
@@ -2161,7 +2155,7 @@ function updateScheduleDateFromDetail() {
             if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
                 dayEvents = dayEvents.filter(event => {
                     const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
-                    const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
+                    const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site || (typeof window.getSiteGroupName === 'function' && window.getSiteGroupName(event.site) === currentSearchFilters.site);
                     const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
                     return matchKeyword && matchSite && matchEquip;
                 });
@@ -2291,9 +2285,12 @@ function completeScheduleWork() {
         return adminItems.some(a => a.part === item.content || a.code === item.content);
     });
 
+    // [추가] 정기, PM점검이거나 병합된 정기 항목이 있을 때만 다음 예정일 팝업 표시
+    const isRegularPM = (maintItem.type === '정기' && (maintItem.detailType || '').includes('PM 점검')) || mergedRegItemIds.size > 0;
+
     // 항목이 아예 없는 점검(내용 없음) 완료 시, 예정일 팝업에서 단일 폼(작업자/공수/예정일)만 표시되도록 생성
     // [수정] 단독 추가 작업이 아닌 일반 작업의 경우에만 기본 폼(장비 점검) 생성
-    if (nextScheduleItems.length === 0 && !maintItem.originalLogId) {
+    if (isRegularPM && nextScheduleItems.length === 0 && !maintItem.originalLogId) {
         nextScheduleItems = [{
             id: Date.now() + 9999, // 임시 고유 ID 부여
             type: maintItem.type || '정기',
@@ -2343,7 +2340,7 @@ function completeScheduleWork() {
 
     // [추가] 완료 후 다음 예정일 등록 모달 띄우기
     // 비정기 물품 교체건과 병합된 정기 항목 포함
-    if (nextScheduleItems.length > 0 && !maintItem.originalLogId) {
+    if (isRegularPM && nextScheduleItems.length > 0 && !maintItem.originalLogId) {
         // [수정] 공통 함수 호출로 변경
         openNextScheduleModal({
             site,
@@ -2391,7 +2388,7 @@ window.refreshCalendarPopupAfterCompletion = function () {
             if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
                 dayEvents = dayEvents.filter(event => {
                     const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
-                    const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site;
+                    const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site || (typeof window.getSiteGroupName === 'function' && window.getSiteGroupName(event.site) === currentSearchFilters.site);
                     const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
                     return matchKeyword && matchSite && matchEquip;
                 });
@@ -2566,6 +2563,7 @@ function cancelScheduleCompletion() {
             trigger.classList.remove('disabled');
             trigger.style.opacity = '1';
             trigger.style.cursor = 'pointer';
+            trigger.style.pointerEvents = 'auto';
         }
         workerInput.dispatchEvent(new Event('updateTrigger'));
     }
@@ -2585,6 +2583,26 @@ function cancelScheduleCompletion() {
         const userRole = sessionStorage.getItem('userRole');
         issueShareCb.disabled = (userRole !== 'admin' && userRole !== 'superadmin');
         issueShareCb.checked = false;
+    }
+
+    const contentInput = document.getElementById('detail-content-input');
+    if (contentInput) contentInput.disabled = false;
+
+    const contentTrigger = document.getElementById('detail-content-dropdown-wrapper')?.querySelector('.log-select-trigger');
+    if (contentTrigger) {
+        contentTrigger.classList.remove('disabled');
+        contentTrigger.style.pointerEvents = 'auto';
+    }
+
+    const saveBtn = document.getElementById('btn-save-detail-memo');
+    if (saveBtn) saveBtn.style.display = 'block';
+
+    if (window.initialEventDetail) {
+        window.initialEventDetail.worker = recoveredWorker;
+        window.initialEventDetail.md = recoveredMd;
+        window.initialEventDetail.memo = recoveredMemo;
+        window.initialEventDetail.date = logDate;
+        window.initialEventDetail.issueShared = false;
     }
 
     if (completeBtn) {
@@ -3995,7 +4013,7 @@ window.updateRegisterContentOptions = function () {
     }
     
     // [수정] 박스가 모달창 내부 공간 제약에 밀려 찌그러지지 않고 적정 크기를 확보하도록 속성 강제 부여
-    displayListWrapper.style.minHeight = '100px';
+    displayListWrapper.style.minHeight = '40px';
     displayListWrapper.style.maxHeight = '250px';
     displayListWrapper.style.overflowY = 'auto';
     displayListWrapper.style.flexShrink = '0';
@@ -4011,9 +4029,6 @@ window.updateRegisterContentOptions = function () {
                 const cSel = el.querySelector('.item-cost-select');
                 return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
             }));
-        } else {
-            const val = input.value.trim();
-            if (val && wrapper.style.display === 'none') allVals.push(val);
         }
         
         const pRow = document.getElementById('register-part-row');
@@ -4028,7 +4043,7 @@ window.updateRegisterContentOptions = function () {
             }
         }
         
-        if (allVals.length > 0) {
+        if (allVals.length > 1) {
             displayListWrapper.style.display = 'block';
             displayListWrapper.innerHTML = allVals.map(v => `<div style="margin-bottom:4px; word-break:keep-all;">• ${escapeHtml(v)}</div>`).join('');
             const parentContainer = input.closest('.form-row') || input.parentNode;

@@ -9,6 +9,19 @@ let setupDashboardFilter = { site: '', equip: '' };
 let isFirstLoad = true;
 let equipDetailSearchKeyword = ''; // [추가] 장비 정보 리스트 내부 검색어
 
+// [공통 헬퍼] 사업장 그룹화 이름 반환
+window.getSiteGroupName = function (siteName) {
+    if (siteName === 'SKH 이천' || siteName === 'SKH 청주') {
+        return siteName;
+    } else if (siteName === 'SEC 평택 본사' || siteName === 'SEC 화성 본사') {
+        return '기타 사업장';
+    } else if (siteName && siteName.includes('SEC')) {
+        return 'SEC';
+    } else {
+        return '기타 사업장';
+    }
+};
+
 window.getSiteColor = function (siteName) {
     if (!siteName || siteName === '전체') return '#6e7681';
 
@@ -248,14 +261,14 @@ function updateHomeDashboard() {
             if (savedSetupFilter) {
                 setupDashboardFilter = savedSetupFilter;
             } else if (userSite) {
-                setupDashboardFilter = { site: userSite, equip: '' };
+                setupDashboardFilter = { site: '', equip: '' };
             }
 
             const savedGanttFilter = JSON.parse(localStorage.getItem('currentGanttFilters'));
             if (savedGanttFilter) {
                 currentGanttFilters = savedGanttFilter;
             } else if (userSite) {
-                currentGanttFilters = { site: userSite, equip: '' };
+                currentGanttFilters = { site: '', equip: '' };
             }
 
             const savedMaintFilter = JSON.parse(localStorage.getItem('maintDashboardFilter'));
@@ -265,8 +278,8 @@ function updateHomeDashboard() {
                 selectedSerialFilter = savedMaintFilter.serial;
                 if (savedMaintFilter.search) currentSearchFilters = savedMaintFilter.search;
             } else if (userSite) {
-                selectedSiteFilter = userSite;
-                currentSearchFilters = { site: userSite, equip: '' };
+                selectedSiteFilter = '';
+                currentSearchFilters = { site: '', equip: '' };
             }
         } catch (e) { console.error("Failed to restore filters", e); }
 
@@ -321,15 +334,26 @@ function updateMaintenanceDashboard() {
 
     let totalEquip = 0;
     const siteStats = [];
+    const groupCounts = {};
 
     if (data) {
         Object.keys(data).forEach(site => {
             const list = data[site];
             const count = list ? list.length : 0;
             if (count > 0) {
-                siteStats.push({ name: site, count: count });
+                const groupName = window.getSiteGroupName(site);
+                groupCounts[groupName] = (groupCounts[groupName] || 0) + count;
                 totalEquip += count;
             }
+        });
+
+        // 지정된 우선순위대로 정렬
+        const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타 사업장'];
+        order.forEach(name => {
+            if (groupCounts[name]) siteStats.push({ name: name, count: groupCounts[name] });
+        });
+        Object.keys(groupCounts).forEach(name => {
+            if (!order.includes(name)) siteStats.push({ name: name, count: groupCounts[name] });
         });
     }
 
@@ -337,14 +361,18 @@ function updateMaintenanceDashboard() {
     let totalEquipForChart = 0;
 
     if (selectedSiteFilter) {
-        const list = data[selectedSiteFilter];
-        if (list && Array.isArray(list)) {
-            totalEquipForChart = list.length;
-            list.forEach(item => {
-                const name = item.split('::')[0];
-                equipCountsForChart[name] = (equipCountsForChart[name] || 0) + 1;
-            });
-        }
+        Object.keys(data).forEach(site => {
+            if (window.getSiteGroupName(site) === selectedSiteFilter) {
+                const list = data[site];
+                if (list && Array.isArray(list)) {
+                    totalEquipForChart += list.length;
+                    list.forEach(item => {
+                        const name = item.split('::')[0];
+                        equipCountsForChart[name] = (equipCountsForChart[name] || 0) + 1;
+                    });
+                }
+            }
+        });
     } else {
         Object.keys(data).forEach(site => {
             const list = data[site];
@@ -540,7 +568,7 @@ function renderEquipDetailList(data) {
 
     if (data) {
         Object.keys(data).forEach(site => {
-            if (selectedSiteFilter && site !== selectedSiteFilter) return;
+            if (selectedSiteFilter && window.getSiteGroupName(site) !== selectedSiteFilter) return;
             if (data[site]) {
                 data[site].forEach(equip => {
                     const name = equip.split('::')[0];
@@ -620,7 +648,7 @@ function renderUpcomingList(data) {
 
     if (data) {
         Object.keys(data).forEach(site => {
-            if (selectedSiteFilter && site !== selectedSiteFilter) return;
+            if (selectedSiteFilter && window.getSiteGroupName(site) !== selectedSiteFilter) return;
 
             if (data[site]) {
                 data[site].forEach(equip => {

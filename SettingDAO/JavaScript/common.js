@@ -50,7 +50,7 @@ function escapeHtml(text) {
 }
 
 // [추가] 텍스트에서 물품명과 물품 상세(Spec)를 분리하는 전역 유틸리티 함수
-window.extractSpecFromContent = function(contentStr) {
+window.extractSpecFromContent = function (contentStr) {
     if (!contentStr) return { spec: '', pureContent: '' };
     const match = contentStr.match(/ \[(.*?)\]$/);
     if (match) {
@@ -562,14 +562,14 @@ function applyGlobalAccessibilityAndSecurityFixes() {
                     label.setAttribute('for', innerInput.id);
                     return;
                 }
-                
+
                 // 인접한 형제 요소인 경우
                 let nextEl = label.nextElementSibling;
                 if (nextEl) {
-                    const targetInput = nextEl.tagName.match(/INPUT|SELECT|TEXTAREA/) 
-                        ? nextEl 
+                    const targetInput = nextEl.tagName.match(/INPUT|SELECT|TEXTAREA/)
+                        ? nextEl
                         : nextEl.querySelector('input:not([type="hidden"]), select, textarea');
-                    
+
                     if (targetInput) {
                         if (!targetInput.id) targetInput.id = 'auto-input-' + Math.random().toString(36).substr(2, 9);
                         label.setAttribute('for', targetInput.id);
@@ -1571,7 +1571,9 @@ function openAddUserModal() {
                 }
 
                 const sites = Object.keys(dataMap).filter(k => k !== 'models' && k !== 'details').sort();
-
+                if (!sites.includes('기타 사업장')) {
+                    sites.push('기타 사업장');
+                }
 
                 siteSuggestions.innerHTML = '';
                 const query = siteInput.value.trim().toLowerCase();
@@ -2084,7 +2086,13 @@ window.renderMyInfoEdit = function (user) {
         let withtechData = JSON.parse(localStorage.getItem('withtech_data')) || {};
         let dataMap = (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) ? storageData : (deviceData.equipments || deviceData);
         if (!dataMap || Object.keys(dataMap).length === 0) dataMap = withtechData;
-        Object.keys(dataMap).sort().forEach(s => {
+
+        const sites = Object.keys(dataMap).sort();
+        if (!sites.includes('기타 사업장')) {
+            sites.push('기타 사업장');
+        }
+
+        sites.forEach(s => {
             const opt = document.createElement('option');
             opt.value = s;
             opt.textContent = s;
@@ -3370,13 +3378,13 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     childLogs.forEach((log, idx) => {
         tbody.appendChild(createRow(log, `추가 ${idx + 1}`, '#1f6feb', false));
     });
- 
+
     // 예정된 자식 작업(미완료 추가작업) 렌더링
     childMaints.forEach((maint, idx) => {
         const tr = createRow(maint, `예정 ${idx + 1}`, '#d29922', false);
         const dateCell = tr.querySelector('td:nth-child(2)');
         if (dateCell) dateCell.innerHTML = `${escapeHtml(maint.scheduledDate || '-')} <span style="color:#d29922; font-size:10px; font-weight:bold;">(예정)</span>`;
-        
+
         // [추가] 예정된 추가 작업 삭제 버튼
         const contentCell = tr.querySelector('td:nth-child(3)');
         if (contentCell) {
@@ -3392,10 +3400,10 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
                     if (latestData.maint) {
                         latestData.maint = latestData.maint.filter(m => m.id !== maint.id);
                         localStorage.setItem(key, JSON.stringify(latestData));
-                        
+
                         if (typeof window.syncHistoryTransaction === 'function') window.syncHistoryTransaction(site, equip, { maint_deletes: [maint.id.toString()] });
                         if (typeof window.addSystemLog === 'function') window.addSystemLog('DELETE_SCHEDULE', equip, `예정된 추가 작업 삭제: ${maint.content}`);
-                        
+
                         window.openExtraWorkHistoryModal(site, equip, originalLogId); // 팝업 새로고침
                         if (typeof renderCalendar === 'function') renderCalendar();
                         if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
@@ -3608,7 +3616,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
     equipName = equipKeyFull ? equipKeyFull.split('::')[0] : '';
 
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-    
+
     // [추가] 해당 장비 유지관리(maint) 데이터에서 우선순위 항목 추출 (물품 상세 spec 포함)
     let maintItems = [];
     if (siteName && equipKeyFull) {
@@ -3646,7 +3654,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
         if (!addedSet.has(key)) {
             const extracted = window.extractSpecFromContent(key);
             const pure = extracted.pureContent, spec = extracted.spec;
-            
+
             const globalMatch = adminItems.find(i => i.part === pure || i.code === pure);
             if (globalMatch) matchedItems.unshift({ part: globalMatch.part, code: globalMatch.code, spec: spec, displayValue: key });
             else matchedItems.unshift({ part: pure, code: '', spec: spec, displayValue: key });
@@ -3663,7 +3671,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             otherItems.push({ part: item.part, code: item.code, spec: '', displayValue: baseName });
         }
     });
-    
+
     let showAll = matchedItems.length === 0;
 
     // [수정] 렌더링 전 기존 선택 상태 및 비용 처리 값 백업을 함수 외부 스코프에서 관리
@@ -3737,7 +3745,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             }
             trigger.title = sels.join('\n');
             trigger.classList.remove('error-border');
-            
+
             if (typeof window.updateDetailDisplayList === 'function') window.updateDetailDisplayList();
             if (typeof window.updateRegisterDisplayList === 'function') window.updateRegisterDisplayList();
         };
@@ -3992,7 +4000,7 @@ function doTaskSearch() {
                 extraSpan.style.fontWeight = 'bold';
                 extraSpan.style.fontSize = '12px';
                 extraSpan.style.marginLeft = '8px';
-                
+
                 const completedStatusEl = li.querySelector('.completed-status');
                 if (completedStatusEl && completedStatusEl.parentNode) {
                     completedStatusEl.parentNode.insertBefore(extraSpan, completedStatusEl.nextSibling);

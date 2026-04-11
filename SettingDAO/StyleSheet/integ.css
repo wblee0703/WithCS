@@ -63,9 +63,9 @@
     display: flex;
     align-items: flex-end;
     justify-content: flex-start; /* 기본: 항목이 많을 때 대비하여 시작점(왼쪽) 정렬 */
-    height: 380px; /* 대각선 라벨 공간 50px 추가 확보 */
+    height: 250px; /* 대각선 해제 및 차트 높이 복구 */
     width: 100%;
-    padding: 10px 10px 140px 10px; /* 라벨 표시를 위한 하단 패딩 50px 추가 증가 */
+    padding: 10px 10px 30px 10px; /* 하단 패딩 복구 */
     position: relative;
     box-sizing: border-box;
     overflow-x: auto; /* 모델이 많아도 카드 영역을 벗어나지 않도록 가로 스크롤 적용 */
@@ -136,7 +136,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 11px;
+    font-size: 12px;
     color: #8b949e;
 }
 
@@ -145,7 +145,7 @@
     position: absolute;
     left: 10px;
     top: 5px;
-    bottom: 135px; /* 라벨 패딩 증가(+50px)에 맞춰 Y축 하단 여백 조정 */
+    bottom: 30px; /* Y축 하단 여백 복구 */
     width: 30px;
     display: flex;
     flex-direction: column-reverse; /* 0이 아래로 오도록 */
@@ -263,14 +263,10 @@
 }
 
 .bar-chart-container .bar-label {
-    font-size: 12px;       /* 라벨 글씨 축소 및 대각선 회전 처리 */
+    font-size: 13px;
     color: #e6edf3;          /* [설정] 항목명 글씨 색상 */
     white-space: nowrap;
-    position: absolute;
-    top: calc(100% + 5px); /* 막대 하단 선 바로 아래 */
-    right: 50%; /* 막대 중앙 위치 */
-    transform: rotate(-45deg); /* -45도 대각선 회전 */
-    transform-origin: top right; /* 회전 중심을 우측 상단으로 설정 */
+    margin-top: 5px;
 }
 
 /* [추가] 셋업 진행 장비 목록 리스트 개별 설정 */
@@ -494,10 +490,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
 
     .bar-chart-container {
-        height: 350px; /* 모바일 대각선 라벨 공간 50px 추가 확보 */
+        height: 250px; /* 높이 복구 */
         overflow-x: auto; /* 가로 스크롤 허용 */
         justify-content: flex-start !important; /* 모바일에서는 기기 너비가 좁아 스크롤이 필요하므로 무조건 왼쪽 정렬 강제 */
-        padding-bottom: 140px; /* 모바일 하단 라벨 공간 50px 추가 확보 */
+        padding-bottom: 30px; /* 모바일 하단 라벨 여백 복구 */
     }
 
     .bar-group {
@@ -560,5 +556,116 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     /* [요청] 모바일에서 항목명 색상박스 숨김 */
     #integ-maint-item-list .status-color {
         display: none;
+    }
+}
+
+/* ==========================================================================
+   통합 관리 현황 차트 공통 스타일 (JS 인라인 스타일 분리)
+   ========================================================================== */
+
+/* 차트 가로열 배치 (나란히 표시) */
+.integ-maint-charts-row {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    gap: 15px;
+}
+
+.integ-maint-charts-row > .status-group {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0; /* 기존 하단 여백 제거 (래퍼에서 관리) */
+}
+
+/* 차트 내부 컨테이너 */
+.integ-bar-chart-container {
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 30px; /* 라벨 영역 */
+    padding-top: 20px;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    height: 250px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* 개별 막대 그룹 */
+.integ-bar-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    width: 50px;
+    position: relative;
+    height: 100%;
+}
+
+.integ-bar-value {
+    font-size: 12px;
+    font-weight: bold;
+    color: #e6edf3;
+    margin-bottom: 5px;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.integ-bar-value span {
+    font-size: 10px;
+    color: #8b949e;
+    font-weight: normal;
+    display: block;
+}
+
+/* 기본 막대 스타일 */
+.integ-bar {
+    width: 100%;
+    border-radius: 4px 4px 0 0;
+    transition: height 0.3s ease;
+}
+
+/* 공수 차트용 이중 겹침 막대 래퍼 */
+.integ-bar-wrapper {
+    position: relative;
+    height: 180px;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+}
+
+.integ-bar-wrapper .integ-bar-total {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed rgba(255, 255, 255, 0.3);
+    box-sizing: border-box;
+    z-index: 1;
+    border-radius: 4px 4px 0 0;
+}
+
+.integ-bar-wrapper .integ-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    z-index: 2;
+}
+
+/* 하단 라벨 (사업장명) */
+.integ-bar-label {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #8b949e;
+    white-space: nowrap;
+}
+
+/* 모바일 화면 대응 */
+@media (max-width: 950px) {
+    .integ-maint-charts-row {
+        flex-direction: column;
+        gap: 20px;
     }
 }
