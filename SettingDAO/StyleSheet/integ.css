@@ -497,9 +497,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
 
     .bar-group {
-        min-width: 30%; /* 화면에 약 3개 정도 보이도록 설정 */
+        min-width: 22%; /* 화면에 약 4~5개 정도 보이도록 너비 축소 */
         flex-shrink: 0; /* 줄어들지 않도록 고정 */
-        margin-right: 10px;
+        margin-right: 5px; /* 간격 축소 */
     }
 
     /* [요청] 모바일에서 현황 도넛 차트 숨김 */
@@ -556,6 +556,20 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     /* [요청] 모바일에서 항목명 색상박스 숨김 */
     #integ-maint-item-list .status-color {
         display: none;
+    }
+
+    /* [요청] 사업장 현황 차트는 스크롤 없이 한눈에 보이도록 (너비/간격 대폭 축소 및 균등 배치) */
+    #integ-equip-site-chart,
+    #integ-setup-site-bar-chart {
+        justify-content: space-around !important;
+        overflow-x: hidden !important;
+    }
+
+    #integ-equip-site-chart .bar-group,
+    #integ-setup-site-bar-chart .bar-group {
+        min-width: 0;
+        flex: 1;
+        margin: 0 2px;
     }
 }
 
@@ -667,5 +681,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .integ-maint-charts-row {
         flex-direction: column;
         gap: 20px;
+    }
+
+    /* [요청] 모바일 환경에서 운영/셋업 통합관리 막대그래프 두께 얇게 고정 */
+    .bar,
+    .integ-bar-wrapper {
+        width: 24px !important;
     }
 }

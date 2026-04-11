@@ -285,9 +285,9 @@ function renderIntegEquipStats(data) {
         .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
 
     const groupGradients = {
-        'SKH 이천': 'linear-gradient(to top, #1f6feb, #58a6ff)',
-        'SKH 청주': 'linear-gradient(to top, #238636, #3fb950)',
-        'SEC': 'linear-gradient(to top, #d29922, #e3b341)',
+        'SEC': 'linear-gradient(to top, #034EA2, #4a8eff)',
+        'SKH 이천': 'linear-gradient(to top, #eb371f, #ff7b72)',
+        'SKH 청주': 'linear-gradient(to top, #F37021, #ff9e66)',
         '기타 사업장': 'linear-gradient(to top, #8957e5, #a371f7)'
     };
     
@@ -736,7 +736,7 @@ async function renderIntegMaintStats(mainData) {
     const groups = ['SEC', 'SKH 이천', 'SKH 청주', '기타 사업장'];
     const groupColors = {
         'SEC': 'linear-gradient(to top, #034EA2, #4a8eff)',
-        'SKH 이천': 'linear-gradient(to top, #F37021, #ff9e66)',
+        'SKH 이천': 'linear-gradient(to top, #eb371f, #ff7b72)', // [요청] 붉은 계열로 색상 변경
         'SKH 청주': 'linear-gradient(to top, #F37021, #ff9e66)',
         '기타 사업장': 'linear-gradient(to top, #8957e5, #a371f7)'
     };
