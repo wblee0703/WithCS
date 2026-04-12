@@ -105,6 +105,7 @@
     z-index: 1;
     flex-shrink: 0; /* 가로 공간이 부족할 때 막대가 찌그러지지 않도록 크기 고정 */
     margin: 0 15px; /* 막대 간격 여백 유지 */
+    padding-bottom: 35px; /* 라벨 영역을 절대 공간으로 확보 */
 }
 
 .bar {
@@ -131,13 +132,19 @@
 }
 
 .bar-label {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
     height: 30px;
-    margin-top: 5px;
+    margin-top: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 12px;
     color: #8b949e;
+    white-space: nowrap;
 }
 
 /* Y축 스타일 */
@@ -145,7 +152,7 @@
     position: absolute;
     left: 10px;
     top: 5px;
-    bottom: 30px; /* Y축 하단 여백 복구 */
+    bottom: 35px; /* 바닥선 완벽 맞춤 */
     width: 30px;
     display: flex;
     flex-direction: column-reverse; /* 0이 아래로 오도록 */
@@ -523,20 +530,23 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     /* [요청] 셋업 리스트 글자 크기 조정 */
     #integ-setup-complete-list .status-list-item,
     #integ-setup-detail-list .status-list-item {
-        font-size: 12px; /* 기존 13px -> 12px (-1) */
+        font-size: 10px; /* 기존 12px -> 10px (-2) */
     }
 
     .integ-setup-complete-col-date,
+    .integ-setup-complete-header-date {
+        display: none; /* [요청] 모바일에서 완료일 숨김 (진행률은 노출) */
+    }
+    
     .integ-setup-detail-col-progress,
-    .integ-setup-complete-header-date,
     .integ-setup-detail-header-count {
-        display: none; /* [요청] 모바일에서 완료일/진행률 숨김 */
+        width: 50px; /* 모바일 환경에 맞춰 진행률 컬럼 너비 축소 */
     }
     
     /* 리스트 내부 카운트/날짜 텍스트 */
     #integ-setup-complete-list .status-count,
     #integ-setup-detail-list .status-count {
-        font-size: 11px;
+        font-size: 10px;
     }
 
     /* [요청] 모바일 점검 항목 리스트 스타일 조정 */
@@ -560,16 +570,30 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     /* [요청] 사업장 현황 차트는 스크롤 없이 한눈에 보이도록 (너비/간격 대폭 축소 및 균등 배치) */
     #integ-equip-site-chart,
-    #integ-setup-site-bar-chart {
+    #integ-setup-site-bar-chart,
+    #integ-maint-site-chart,
+    #integ-maint-type-chart,
+    #integ-maint-category-chart {
         justify-content: space-around !important;
         overflow-x: hidden !important;
     }
 
     #integ-equip-site-chart .bar-group,
-    #integ-setup-site-bar-chart .bar-group {
+    #integ-setup-site-bar-chart .bar-group,
+    #integ-maint-site-chart .bar-group,
+    #integ-maint-type-chart .bar-group,
+    #integ-maint-category-chart .bar-group {
         min-width: 0;
         flex: 1;
         margin: 0 2px;
+    }
+
+    /* [수정] 작업 구분별 현황 5개 항목 줄바꿈 허용 (폰트 크기는 사업장과 동일하게 상속) */
+    #integ-maint-category-chart .integ-bar-label {
+        white-space: normal !important;
+        text-align: center;
+        line-height: 1.2;
+        height: auto !important; /* 글씨가 커져서 2줄로 넘어가도 잘리지 않게 높이 보정 */
     }
 }
 
@@ -589,6 +613,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     flex: 1;
     min-width: 0;
     margin-bottom: 0; /* 기존 하단 여백 제거 (래퍼에서 관리) */
+    justify-content: flex-start; /* [수정] 양쪽 차트 컨테이너 상단 정렬 완벽 맞춤 */
 }
 
 /* 차트 내부 컨테이너 */
@@ -615,10 +640,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     width: 50px;
     position: relative;
     height: 100%;
+    padding-bottom: 30px; /* 라벨 영역을 절대 공간으로 확보 */
 }
 
 .integ-bar-value {
-    font-size: 12px;
+    font-size: 15px;
     font-weight: bold;
     color: #e6edf3;
     margin-bottom: 5px;
@@ -627,7 +653,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 .integ-bar-value span {
-    font-size: 10px;
+    font-size: 11px;
     color: #8b949e;
     font-weight: normal;
     display: block;
@@ -670,10 +696,24 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* 하단 라벨 (사업장명) */
 .integ-bar-label {
-    margin-top: 8px;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 20px;
+    margin-top: 0;
     font-size: 13px;
     color: #8b949e;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* [요청] 작업 구분별 현황 하단 라벨 글자색 흰색 처리 */
+#integ-maint-category-chart .integ-bar-label {
+    color: #e6edf3;
 }
 
 /* 모바일 화면 대응 */

@@ -549,7 +549,6 @@ async function renderIntegMaintStats(mainData) {
     const listEl = document.getElementById('integ-maint-item-list-container');
     const itemChartEl = document.getElementById('integ-maint-item-chart-row');
     if (listEl) listEl.style.display = 'none';
-    if (itemChartEl) itemChartEl.style.display = 'none';
     
     if (progressChartEl) {
         const siteTitleEl = progressChartEl.closest('.status-group').querySelector('.status-group-title');
@@ -687,10 +686,14 @@ async function renderIntegMaintStats(mainData) {
         '기타 사업장': { total: 0, completed: 0, md: 0, totalMd: workingDays * siteWorkerCounts['기타 사업장'] }
     };
 
+    const typeCounts = { '정기': 0, '비정기': 0, '고객대응': 0, '용액제조': 0, '온라인점검': 0 };
+
     Object.keys(mainData).forEach(site => {
         if (mainData[site] && Array.isArray(mainData[site])) {
             let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타 사업장';
             if (!groupStats[groupName]) groupStats[groupName] = { total: 0, completed: 0, md: 0 };
+
+            const isTypeCountValid = !integSelectedSite || integSelectedSite === groupName;
 
             mainData[site].forEach(equip => {
                 const key = `details_${site}_${equip}`;
@@ -710,6 +713,11 @@ async function renderIntegMaintStats(mainData) {
                             // [수정] 실제 공수 합산 시 관리자의 기여분(M/D) 제외
                             groupStats[groupName].md += calcValidMd(l.worker, mdVal);
                             
+                            if (isTypeCountValid) {
+                                const type = l.type || '정기';
+                                if (typeCounts[type] !== undefined) typeCounts[type]++;
+                            }
+
                             const taskKey = `${l.date}_${l.content}_${l.originalLogId || ''}`;
                             completedKeys.add(taskKey);
                         }
@@ -726,6 +734,11 @@ async function renderIntegMaintStats(mainData) {
                             const mdVal = parseFloat(m.md) || 0;
                             // [수정] 예정 공수 합산 시 관리자의 기여분(M/D) 제외
                             groupStats[groupName].md += calcValidMd(m.worker, mdVal);
+
+                            if (isTypeCountValid) {
+                                const type = m.type || '정기';
+                                if (typeCounts[type] !== undefined) typeCounts[type]++;
+                            }
                         }
                     });
                 }
@@ -809,6 +822,87 @@ async function renderIntegMaintStats(mainData) {
     const maintSummaryEl = document.getElementById('integ-maint-summary');
     if (maintSummaryEl) {
         maintSummaryEl.textContent = '';
+    }
+
+    // [추가] 작업 구분별 현황 차트 렌더링
+    if (itemChartEl) {
+        // 상위 카드 자체의 제목을 직접 변경하여 카드 중첩 현상 방지
+        const outerCard = itemChartEl.closest('.status-group');
+        if (outerCard) {
+            const cardTitle = outerCard.querySelector('.status-group-title');
+            if (cardTitle) cardTitle.textContent = '작업 구분별 현황';
+            outerCard.classList.add('integ-full-width-card');
+        }
+
+        itemChartEl.style.display = 'flex';
+        itemChartEl.style.flexDirection = 'column';
+        itemChartEl.style.alignItems = 'center';
+        itemChartEl.style.width = '100%';
+        itemChartEl.className = 'integ-maint-category-wrapper'; // 내부 중첩 카드 스타일 제거
+        itemChartEl.innerHTML = '';
+
+        const filterGroup = document.createElement('div');
+        filterGroup.style.display = 'flex';
+        filterGroup.style.gap = '10px';
+        filterGroup.style.justifyContent = 'center';
+        filterGroup.style.marginBottom = '20px';
+        filterGroup.style.flexWrap = 'wrap';
+
+        const filterOptions = ['전체', 'SEC', 'SKH 이천', 'SKH 청주', '기타 사업장'];
+        filterOptions.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.textContent = opt;
+            const isActive = (!integSelectedSite && opt === '전체') || integSelectedSite === opt;
+            btn.className = isActive ? 'btn-blue-sm' : 'btn-gray';
+            btn.onclick = () => {
+                integSelectedSite = opt === '전체' ? null : opt;
+                renderIntegMaintStats(mainData);
+            };
+            filterGroup.appendChild(btn);
+        });
+        itemChartEl.appendChild(filterGroup);
+
+        const chartContainer = document.createElement('div');
+        chartContainer.id = 'integ-maint-category-chart';
+        chartContainer.className = 'integ-bar-chart-container';
+        itemChartEl.appendChild(chartContainer);
+
+        const typeOrder = ['정기', '비정기', '고객대응', '용액제조', '온라인점검'];
+        const typeColors = {
+            '정기': 'linear-gradient(to top, #238636, #3fb950)',
+            '비정기': 'linear-gradient(to top, #eb371f, #ff7b72)',
+            '고객대응': 'linear-gradient(to top, #d29922, #f0883e)',
+            '용액제조': 'linear-gradient(to top, #8957e5, #a371f7)',
+            '온라인점검': 'linear-gradient(to top, #0078d4, #58a6ff)'
+        };
+
+        const maxY = Math.max(...Object.values(typeCounts), 10);
+        let yAxisMax = 10;
+        if (maxY > 10) yAxisMax = Math.ceil(maxY / 10) * 10;
+        if (maxY > 50) yAxisMax = Math.ceil(maxY / 50) * 50;
+        if (maxY > 100) yAxisMax = Math.ceil(maxY / 100) * 100;
+
+        typeOrder.forEach(type => {
+            const count = typeCounts[type] || 0;
+            const barGroup = document.createElement('div');
+            barGroup.className = 'bar-group integ-bar-group';
+
+            const maxBarHeight = 180;
+            const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
+
+            const tpl = typeof window.getTemplateContent === 'function' ? window.getTemplateContent('integ-basic-bar-template') : null;
+            if (tpl) {
+                barGroup.innerHTML = tpl.querySelector('.bar-group').innerHTML;
+                barGroup.querySelector('.bar-value').innerHTML = `${count}`;
+                const bar = barGroup.querySelector('.bar');
+                bar.style.height = `${barHeight}px`;
+                bar.style.background = typeColors[type];
+                const barLabel = barGroup.querySelector('.bar-label');
+                barLabel.textContent = type;
+                barLabel.title = type;
+                chartContainer.appendChild(barGroup);
+            }
+        });
     }
 }
 

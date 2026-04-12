@@ -275,6 +275,59 @@
                             </div>
                         </div>
 
+                        <!-- 운영 관리 통계 -->
+                        <div class="integ-section-header">
+                            <h4 class="integ-section-title integ-title-maint"><span id="integ-title-period"></span> 운영 통합 관리</h4>
+                            <span id="integ-maint-summary" class="integ-summary-text">(정기 : 0, 비정기 : 0, 고객대응 : 0, 용액제조 : 0, 온라인점검 : 0)</span>
+                            <div class="integ-controls-wrapper">
+                                <select id="integ-period-type" class="modal-select"
+                                    onchange="toggleIntegPeriodMode()">
+                                    <option value="month">월간</option>
+                                    <option value="year">연간</option>
+                                    <option value="custom">직접 입력</option>
+                                </select>
+                                <input type="month" id="integ-maint-month" class="modal-select"
+                                    onchange="renderIntegMaintStats()">
+                                <select id="integ-maint-year" class="modal-select" style="display: none;"
+                                    onchange="renderIntegMaintStats()"></select>
+                                <input type="date" id="integ-maint-start" class="modal-select"
+                                    style="display: none;" onchange="renderIntegMaintStats()">
+                                <span id="integ-maint-tilde" class="integ-tilde" style="display: none;">~</span>
+                                <input type="date" id="integ-maint-end" class="modal-select" style="display: none;"
+                                    onchange="renderIntegMaintStats()">
+                            </div>
+                        </div>
+                        <div class="integ-row">
+                            <div class="status-group card-like integ-full-width-card">
+                                <h5 class="status-group-title">사업장 작업 현황</h5>
+                                <div id="integ-maint-site-chart" class="bar-chart-container"></div>
+                            </div>
+                        </div>
+                        <div class="integ-row">
+                            <div class="status-group card-like">
+                                <h5 class="status-group-title">작업 유형별 현황</h5>
+                                <div id="integ-maint-type-chart" class="bar-chart-container"></div>
+                            </div>
+                            <div class="status-group card-like">
+                                <h5 class="status-group-title">점검 항목</h5>
+                                <div class="chart-row" id="integ-maint-item-chart-row">
+                                    <div class="donut-chart-wrapper">
+                                        <div class="donut-chart" id="integ-maint-item-chart"></div>
+                                        <div class="chart-center" id="integ-maint-item-center"></div>
+                                    </div>
+                                    <div class="status-list-container status-list-flex"
+                                        id="integ-maint-item-list-container">
+                                        <div class="status-list-header">
+                                            <span class="integ-list-header-type">구분</span>
+                                            <span class="integ-list-header-name">항목명</span>
+                                            <span class="integ-list-header-count">건수</span>
+                                        </div>
+                                        <ul class="site-status-list" id="integ-maint-item-list"></ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- 셋업 통합 관리 -->
                         <div class="integ-section-header">
                             <h4 class="integ-section-title integ-title-setup"><span id="integ-setup-title-period"></span> 셋업 통합 관리</h4>
@@ -351,59 +404,6 @@
                                         <span class="integ-setup-detail-header-count">진행률</span>
                                     </div>
                                     <ul class="site-status-list" id="integ-setup-detail-list"></ul>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 운영 관리 통계 -->
-                        <div class="integ-section-header">
-                            <h4 class="integ-section-title integ-title-maint"><span id="integ-title-period"></span> 운영 통합 관리</h4>
-                            <span id="integ-maint-summary" class="integ-summary-text">(정기 : 0, 비정기 : 0, 고객대응 : 0, 용액제조 : 0, 온라인점검 : 0)</span>
-                            <div class="integ-controls-wrapper">
-                                <select id="integ-period-type" class="modal-select"
-                                    onchange="toggleIntegPeriodMode()">
-                                    <option value="month">월간</option>
-                                    <option value="year">연간</option>
-                                    <option value="custom">직접 입력</option>
-                                </select>
-                                <input type="month" id="integ-maint-month" class="modal-select"
-                                    onchange="renderIntegMaintStats()">
-                                <select id="integ-maint-year" class="modal-select" style="display: none;"
-                                    onchange="renderIntegMaintStats()"></select>
-                                <input type="date" id="integ-maint-start" class="modal-select"
-                                    style="display: none;" onchange="renderIntegMaintStats()">
-                                <span id="integ-maint-tilde" class="integ-tilde" style="display: none;">~</span>
-                                <input type="date" id="integ-maint-end" class="modal-select" style="display: none;"
-                                    onchange="renderIntegMaintStats()">
-                            </div>
-                        </div>
-                        <div class="integ-row">
-                            <div class="status-group card-like integ-full-width-card">
-                                <h5 class="status-group-title">사업장 작업 현황</h5>
-                                <div id="integ-maint-site-chart" class="bar-chart-container"></div>
-                            </div>
-                        </div>
-                        <div class="integ-row">
-                            <div class="status-group card-like">
-                                <h5 class="status-group-title">작업 유형별 현황</h5>
-                                <div id="integ-maint-type-chart" class="bar-chart-container"></div>
-                            </div>
-                            <div class="status-group card-like">
-                                <h5 class="status-group-title">점검 항목</h5>
-                                <div class="chart-row" id="integ-maint-item-chart-row">
-                                    <div class="donut-chart-wrapper">
-                                        <div class="donut-chart" id="integ-maint-item-chart"></div>
-                                        <div class="chart-center" id="integ-maint-item-center"></div>
-                                    </div>
-                                    <div class="status-list-container status-list-flex"
-                                        id="integ-maint-item-list-container">
-                                        <div class="status-list-header">
-                                            <span class="integ-list-header-type">구분</span>
-                                            <span class="integ-list-header-name">항목명</span>
-                                            <span class="integ-list-header-count">건수</span>
-                                        </div>
-                                        <ul class="site-status-list" id="integ-maint-item-list"></ul>
-                                    </div>
                                 </div>
                             </div>
                         </div>
