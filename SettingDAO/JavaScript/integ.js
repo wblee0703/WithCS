@@ -337,7 +337,7 @@ function renderIntegSetupBarChart(siteCounts, totalCount) {
     finalData.forEach((item, index) => {
         const isTotal = item.name === '전체';
         const count = item.count;
-        const maxBarHeight = 140;
+        const maxBarHeight = 180; 
         const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
         const bgStyle = window.getSiteGradient ? window.getSiteGradient(item.name) : '#8957e5';
 
@@ -560,22 +560,25 @@ async function renderIntegMaintStats(mainData) {
         if (typeTitleEl) typeTitleEl.textContent = '사업장별 공수(M/D) 현황';
     }
 
-    // [수정] 중복되는 인라인 스타일을 모두 제거하고, 안전한 래퍼 생성 및 1:2 비율만 심플하게 적용
-    if (progressChartEl && mdChartEl) {
+    // [수정] 작업 진행률, 공수 현황, 작업 구분별 현황 3개의 카드를 가로 한 줄에 3:3:4 비율로 배치
+    if (progressChartEl && mdChartEl && itemChartEl) {
         const pGroup = progressChartEl.closest('.status-group');
         const mGroup = mdChartEl.closest('.status-group');
-        if (pGroup && mGroup) {
+        const iGroup = itemChartEl.closest('.status-group');
+        if (pGroup && mGroup && iGroup) {
             if (!pGroup.parentElement.classList.contains('integ-maint-charts-row')) {
                 const wrapper = document.createElement('div');
                 wrapper.className = 'integ-maint-charts-row';
                 pGroup.parentElement.insertBefore(wrapper, pGroup);
                 wrapper.appendChild(pGroup);
                 wrapper.appendChild(mGroup);
+                wrapper.appendChild(iGroup);
             }
             
-            // CSS(.integ-maint-charts-row)에 의존하여 가로 배치 후, 너비를 정확히 50%씩(1:1 비율) 부여
-            pGroup.style.flex = '1';
-            mGroup.style.flex = '1';
+            // 3:3:4 비율 할당
+            pGroup.style.flex = '3';
+            mGroup.style.flex = '3';
+            iGroup.style.flex = '4';
         }
     }
 
@@ -766,7 +769,7 @@ async function renderIntegMaintStats(mainData) {
             const barGroup = document.createElement('div');
             barGroup.className = 'bar-group integ-bar-group';
             
-            const maxBarHeight = 180;
+            const maxBarHeight = 140; // [요청] 카드 높이 축소(200px)에 맞춰 막대 최대 높이 조정
             const barHeight = (rate / yAxisMax) * maxBarHeight;
             const bgStyle = groupColors[group];
 
@@ -799,7 +802,7 @@ async function renderIntegMaintStats(mainData) {
             const barGroup = document.createElement('div');
             barGroup.className = 'bar-group integ-bar-group';
             
-            const maxBarHeight = 180;
+            const maxBarHeight = 140; // [요청] 카드 높이 축소(200px)에 맞춰 막대 최대 높이 조정
             const barHeight = Math.min((mdRate / yAxisMax) * maxBarHeight, maxBarHeight);
             const bgStyle = groupColors[group];
 
@@ -831,7 +834,7 @@ async function renderIntegMaintStats(mainData) {
         if (outerCard) {
             const cardTitle = outerCard.querySelector('.status-group-title');
             if (cardTitle) cardTitle.textContent = '작업 구분별 현황';
-            outerCard.classList.add('integ-full-width-card');
+            outerCard.classList.remove('integ-full-width-card'); // 가로 배치 시 강제 100% 클래스 제거
         }
 
         itemChartEl.style.display = 'flex';
@@ -843,9 +846,9 @@ async function renderIntegMaintStats(mainData) {
 
         const filterGroup = document.createElement('div');
         filterGroup.style.display = 'flex';
-        filterGroup.style.gap = '10px';
+        filterGroup.style.gap = '5px'; // [수정] 3개 가로 배치 시 공간 확보를 위해 버튼 간격 축소
         filterGroup.style.justifyContent = 'center';
-        filterGroup.style.marginBottom = '20px';
+        filterGroup.style.marginBottom = '5px'; // [수정] 필터 버튼 아래 여백 최소화하여 카드 높이 축소
         filterGroup.style.flexWrap = 'wrap';
 
         const filterOptions = ['전체', 'SEC', 'SKH 이천', 'SKH 청주', '기타 사업장'];
@@ -887,7 +890,7 @@ async function renderIntegMaintStats(mainData) {
             const barGroup = document.createElement('div');
             barGroup.className = 'bar-group integ-bar-group';
 
-            const maxBarHeight = 180;
+            const maxBarHeight = 140; // [요청] 카드 높이 축소(200px)에 맞춰 막대 최대 높이 조정
             const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
 
             const tpl = typeof window.getTemplateContent === 'function' ? window.getTemplateContent('integ-basic-bar-template') : null;

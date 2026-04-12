@@ -63,9 +63,9 @@
     display: flex;
     align-items: flex-end;
     justify-content: flex-start; /* 기본: 항목이 많을 때 대비하여 시작점(왼쪽) 정렬 */
-    height: 250px; /* 대각선 해제 및 차트 높이 복구 */
+    height: 250px; /* 상단 여백은 줄인 상태 유지, 하단 라벨 공간 복구 */
     width: 100%;
-    padding: 10px 10px 30px 10px; /* 하단 패딩 복구 */
+    padding: 5px 10px 15px 10px; /* 라벨 아래 하단 여백 복구 */
     position: relative;
     box-sizing: border-box;
     overflow-x: auto; /* 모델이 많아도 카드 영역을 벗어나지 않도록 가로 스크롤 적용 */
@@ -73,9 +73,7 @@
 
 /* 항목 수가 적은 차트들은 카드 전체 너비 기준으로 균등 배치 */
 #integ-equip-site-chart,
-#integ-setup-site-bar-chart,
-#integ-maint-site-chart,
-#integ-maint-type-chart {
+#integ-setup-site-bar-chart {
     justify-content: space-around;
 }
 
@@ -105,7 +103,7 @@
     z-index: 1;
     flex-shrink: 0; /* 가로 공간이 부족할 때 막대가 찌그러지지 않도록 크기 고정 */
     margin: 0 15px; /* 막대 간격 여백 유지 */
-    padding-bottom: 35px; /* 라벨 영역을 절대 공간으로 확보 */
+    padding-bottom: 35px; /* 막대와 라벨 사이 여백 복구 */
 }
 
 .bar {
@@ -500,7 +498,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         height: 250px; /* 높이 복구 */
         overflow-x: auto; /* 가로 스크롤 허용 */
         justify-content: flex-start !important; /* 모바일에서는 기기 너비가 좁아 스크롤이 필요하므로 무조건 왼쪽 정렬 강제 */
-        padding-bottom: 30px; /* 모바일 하단 라벨 여백 복구 */
+        padding-bottom: 15px; /* 모바일 하단 라벨 여백 복구 */
     }
 
     .bar-group {
@@ -628,19 +626,26 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     justify-content: flex-start; /* [수정] 양쪽 차트 컨테이너 상단 정렬 완벽 맞춤 */
 }
 
+/* 작업 구분별 현황 필터 버튼 크기 조절 (3개 1줄 배치 시 공간 확보) */
+.integ-maint-category-wrapper button {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+}
+
 /* 차트 내부 컨테이너 */
 .integ-bar-chart-container {
     padding-left: 10px;
     padding-right: 10px;
-    padding-bottom: 30px; /* 라벨 영역 */
-    padding-top: 20px;
+    padding-bottom: 15px; /* 라벨 아래 하단 여백 복구 */
+    padding-top: 5px; /* 상단 여백 최소화 */
     position: relative;
     display: flex;
     align-items: flex-end;
-    justify-content: space-around;
-    height: 250px;
+    justify-content: space-around; /* [수정] 100% 너비 활용을 위해 간격 균등 분배 */
+    height: 250px; /* 상단 여백은 줄인 상태 유지, 하단 라벨 공간 복구 */
     width: 100%;
     box-sizing: border-box;
+    margin-top: auto; /* [수정] 3개 카드의 차트 바닥 여백(위치)을 완벽히 동일하게 맞춤 */
 }
 
 /* 개별 막대 그룹 */
@@ -649,10 +654,11 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     flex-direction: column;
     align-items: center;
     justify-content: flex-end;
-    width: 50px;
+    width: 70px; /* [수정] 장비 통합 현황과 너비 동일하게 맞춤 */
+    margin: 0; /* [수정] space-around로 자동 분배되므로 고정 여백 제거 */
     position: relative;
     height: 100%;
-    padding-bottom: 30px; /* 라벨 영역을 절대 공간으로 확보 */
+    padding-bottom: 30px; /* 막대와 라벨 사이 여백 복구 */
 }
 
 .integ-bar-value {
@@ -673,7 +679,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* 기본 막대 스타일 */
 .integ-bar {
-    width: 100%;
+    width: 40px; /* [수정] 장비 통합 현황 막대 너비와 동일하게 맞춤 */
     border-radius: 4px 4px 0 0;
     transition: height 0.3s ease;
 }
@@ -681,8 +687,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* 공수 차트용 이중 겹침 막대 래퍼 */
 .integ-bar-wrapper {
     position: relative;
-    height: 180px;
-    width: 100%;
+    height: 180px; /* 막대 높이 복구 */
+    width: 40px; /* [수정] 막대 너비와 동일하게 맞춤 */
     display: flex;
     align-items: flex-end;
 }
@@ -728,6 +734,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     color: #e6edf3;
 }
 
+/* [요청] 운영 통합 관리의 3개 차트 컨테이너 높이만 200px로 축소 */
+#integ-maint-site-chart,
+#integ-maint-type-chart,
+#integ-maint-category-chart {
+    height: 200px;
+}
+
+#integ-maint-type-chart .integ-bar-wrapper {
+    height: 140px; /* 공수 현황 배경 점선 테두리 높이 동기화 */
+}
+
 /* 모바일 화면 대응 */
 @media (max-width: 950px) {
     .integ-maint-charts-row {
@@ -739,5 +756,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     .bar,
     .integ-bar-wrapper {
         width: 24px !important;
+    }
+
+    /* [요청] 모바일 환경에서 작업 구분별 현황 필터 버튼 1줄 배치 (글자/박스 크기 축소) */
+    .integ-maint-category-wrapper > div:first-child {
+        flex-wrap: nowrap !important;
+        gap: 3px !important;
+    }
+    .integ-maint-category-wrapper button {
+        padding: 4px 6px !important; /* [수정] 버튼 내 글자 좌우 여백을 늘려 숨통 확보 */
+        font-size: 10px !important;
+        white-space: nowrap;
+        flex: 1; /* 5개 버튼이 모바일 화면 너비에 맞춰 균등하게 배치되도록 설정 */
     }
 }
