@@ -493,6 +493,9 @@ function renderDetails() {
         // [추가] "내용 없음" 또는 "장비 점검" 더미 항목은 리스트에 표시하지 않음
         if (item.content === '내용 없음' || item.content === '장비 점검') return;
 
+        // [추가] 고객대응, 용액제조, 온라인점검은 유지관리 물품 리스트에 무의미하게 노출되지 않도록 차단
+        if (['고객대응', '용액제조', '온라인점검'].includes(item.type)) return;
+
         const status = calculateStatus(item.type, item.date, item.period);
 
         const template = getTemplateContent('maint-table-row-template');
@@ -1220,7 +1223,7 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
 
     // [추가] 현재 장비의 유지관리 물품에서 우선순위 항목 가져오기 (PM 점검/BM 점검)
     let priorityItems = [];
-    if (detailType === 'PM 점검' || detailType === 'BM 점검' || type === '고객대응') {
+    if (detailType === 'PM 점검' || detailType === 'BM 점검') {
         const maintKey = `details_${currentPath.site}_${currentPath.equip}`;
         const maintData = JSON.parse(localStorage.getItem(maintKey)) || {};
         if (maintData.maint) {

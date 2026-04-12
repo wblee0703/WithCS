@@ -1541,6 +1541,8 @@ function buildDetailDropdown(item, site, equip) {
         if (maintData.maint) {
             const processRegistered = (m) => {
                 if (m.originalLogId || m.content === '내용 없음' || m.content === '장비 점검' || !m.content) return;
+                // [추가] 고객대응, 용액제조, 온라인점검은 유지관리 물품 제안 목록에 추가되지 않도록 차단
+                if (['고객대응', '용액제조', '온라인점검'].includes(m.type)) return;
                 const baseName = m.code || m.content;
                 const specStr = m.spec ? ` [${m.spec}]` : '';
                 const displayValue = `${baseName}${specStr}`;
@@ -3800,6 +3802,8 @@ window.updateRegisterContentOptions = function () {
         // 1. 유지관리 항목 (maint) 처리 - 가장 우선순위
         const processRegistered = (m) => {
             if (m.originalLogId || m.content === '내용 없음' || m.content === '장비 점검' || !m.content) return;
+            // [추가] 고객대응, 용액제조, 온라인점검은 유지관리 물품 제안 목록에 추가되지 않도록 차단
+            if (['고객대응', '용액제조', '온라인점검'].includes(m.type)) return;
             const baseName = m.code || m.content;
             const specStr = m.spec ? ` [${m.spec}]` : '';
             const displayValue = `${baseName}${specStr}`;
