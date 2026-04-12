@@ -529,8 +529,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     /* [요청] 셋업 리스트 글자 크기 조정 */
     #integ-setup-complete-list .status-list-item,
-    #integ-setup-detail-list .status-list-item {
-        font-size: 10px; /* 기존 12px -> 10px (-2) */
+    #integ-setup-detail-list .status-list-item,
+    .integ-setup-complete-col-name,
+    .integ-setup-detail-col-name {
+        font-size: 11px; /* [수정] 장비 정보 글자 크기 더 축소 */
+    }
+
+    /* [수정] 시리얼 넘버(고객사명) 글자 크기도 같이 축소 */
+    #integ-setup-complete-list .equip-serial,
+    #integ-setup-detail-list .equip-serial {
+        font-size: 11px;
     }
 
     .integ-setup-complete-col-date,
@@ -543,10 +551,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         width: 50px; /* 모바일 환경에 맞춰 진행률 컬럼 너비 축소 */
     }
     
-    /* 리스트 내부 카운트/날짜 텍스트 */
-    #integ-setup-complete-list .status-count,
-    #integ-setup-detail-list .status-count {
+    #integ-setup-complete-list .status-count {
         font-size: 10px;
+    }
+
+    /* [수정] 셋업 진행 장비의 진행률 수치 크기 대폭 확대 */
+    #integ-setup-detail-list .status-count {
+        font-size: 15px;
+        font-weight: bold;
     }
 
     /* [요청] 모바일 점검 항목 리스트 스타일 조정 */
