@@ -135,7 +135,7 @@ body {
    4. 사이드바 및 리스트 (Sidebar & List)
    ========================================================================== */
 .dashboard-sidebar {
-    width: 300px;
+    width: 280px;
     display: flex;
     flex-direction: column;
     gap: 15px;
@@ -145,7 +145,7 @@ body {
 
 @media (min-width: 1400px) {
     .dashboard-sidebar {
-        width: 300px;
+        width: 280px;
     }
 }
 
@@ -628,6 +628,10 @@ button {
 /* ==========================================================================
    9. 리사이저 (Resizers)
    ========================================================================== */
+#sidebar-resizer {
+    display: none !important; /* [추가] 사이드바 크기 조절 선 숨김 (너비 고정) */
+}
+
 .resizer {
     width: 5px;
     cursor: col-resize;
@@ -689,12 +693,21 @@ button {
 
 /* [추가] 시스템 로그 모달 디자인 통일 */
 #log-modal .data-table {
-    min-width: 100%; /* 다른 페이지의 min-width 오버라이드 */
+    min-width: max-content !important; /* [수정] 팝업창 크기 안에서 컬럼 고정값을 보장하고 넘치면 가로 스크롤 생성 */
+    table-layout: fixed !important; /* [수정] 테이블 너비 고정 (자동 비율 조절 방지 강제 적용) */
 }
+
+/* 시스템 로그 데스크탑 컬럼 너비 조절 (원하는 픽셀 사이즈로 자유롭게 수정 가능) */
+#log-modal .data-table th:nth-child(1) { width: 100px !important; } /* 기간 */
+#log-modal .data-table th:nth-child(2) { width: 80px !important; } /* 작업자 */
+#log-modal .data-table th:nth-child(3) { width: 180px !important; } /* 행동 */
+#log-modal .data-table th:nth-child(4) { width: 150px !important; } /* 대상 */
+#log-modal .data-table th:nth-child(5) { width: 400px !important; }  /* [수정] 상세 컬럼 너비 고정값 부여 (가로 스크롤 대응) */
 
 #log-modal .data-table td {
     padding: 8px 10px; /* 공통 패딩 강제 */
     white-space: normal; /* 텍스트 줄바꿈 허용 */
+    word-break: break-all; /* [추가] 지정된 너비를 초과하는 긴 텍스트 강제 줄바꿈 */
     overflow: visible;   /* 내용 잘림 방지 */
     text-overflow: clip; /* 말줄임표 제거 */
 }
@@ -1057,6 +1070,42 @@ body.role-admin .btn-list-setting {
         flex: 1 !important;
         padding: 15px !important;
     }
+
+    /* 시스템 로그 모달 모바일 반응형 처리 */
+    #log-modal .modal-window {
+        width: 95vw !important;
+        max-height: 85vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    #log-modal .log-filter-bar {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 10px;
+    }
+    #log-modal .log-filter-bar > div:last-child {
+        flex-wrap: wrap;
+    }
+    #syslog-filter-search {
+        flex: 1;
+        min-width: 150px;
+        margin-left: 0 !important;
+        width: auto !important;
+    }
+    #log-modal .data-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    #log-modal .data-table {
+        min-width: max-content !important; /* [수정] 모바일에서도 설정된 고정값 합계에 맞춰 가로 스크롤 지원 */
+    }
+
+    /* 시스템 로그 모달 컬럼 너비 조절 (원하는 픽셀 사이즈로 자유롭게 수정 가능) */
+    #log-modal .data-table th:nth-child(1) { width: 140px !important; } /* 기간 */
+    #log-modal .data-table th:nth-child(2) { width: 70px !important; }  /* 작업자 */
+    #log-modal .data-table th:nth-child(3) { width: 100px !important; } /* 행동 */
+    #log-modal .data-table th:nth-child(4) { width: 140px !important; } /* 대상 */
+    #log-modal .data-table th:nth-child(5) { width: 250px !important; } /* 상세 */
 
     .item-cost-select {
         width: 80px !important;

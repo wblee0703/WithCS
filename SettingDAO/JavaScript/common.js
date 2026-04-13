@@ -1,6 +1,47 @@
 /* ==========================================================================
    1. 전역 변수 및 데이터 관리 (Global State)
    ========================================================================== */
+
+// [추가] 전역 fetch 인터셉터: 모든 API 통신 시 세션 만료(401) 및 CSRF 에러(400) 감지하여 자동 로그아웃 처리
+const originalFetch = window.fetch;
+window.fetch = async function(...args) {
+    try {
+        const response = await originalFetch(...args);
+        
+        const url = typeof args[0] === 'string' ? args[0] : (args[0] instanceof Request ? args[0].url : '');
+        
+        // 401 Unauthorized 감지 (세션 만료)
+        if (response.status === 401) {
+            // 로그인, 비밀번호 확인 등 명시적으로 401 에러 메시지를 화면에 띄워야 하는 API는 자동 튕김 예외 처리
+            const excludedUrls = ['/api/login', '/api/user/verify', '/api/user/password', '/api/user/delete', '/api/admin/user/delete'];
+            if (!excludedUrls.some(excluded => url.includes(excluded))) {
+                alert('보안 세션이 만료되었습니다. 다시 로그인해주세요.');
+                sessionStorage.clear();
+                window.location.href = '/';
+                return Promise.reject(new Error('Session expired'));
+            }
+        }
+        
+        // 400 Bad Request 중 CSRF 보안 토큰 만료 감지
+        if (response.status === 400) {
+            const clonedResponse = response.clone();
+            try {
+                const data = await clonedResponse.json();
+                if (data.status === 'fail' && data.message && data.message.includes('보안 세션이 만료되었거나')) {
+                    alert(data.message);
+                    sessionStorage.clear();
+                    window.location.href = '/';
+                    return Promise.reject(new Error('CSRF Token expired'));
+                }
+            } catch (e) {}
+        }
+
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
 // [추가] HTML 템플릿을 복제하는 헬퍼 함수
 function getTemplateContent(id) {
     const template = document.getElementById(id);
@@ -1063,14 +1104,8 @@ function setupResizers() {
     const resizer = document.getElementById('sidebar-resizer');
     const sidebar = document.querySelector('.dashboard-sidebar');
     if (resizer && sidebar) {
-        let isResizing = false;
-        resizer.addEventListener('mousedown', () => { isResizing = true; document.body.style.cursor = 'col-resize'; resizer.classList.add('resizing'); });
-        document.addEventListener('mousemove', (e) => {
-            if (!isResizing) return;
-            const newWidth = e.clientX - sidebar.getBoundingClientRect().left;
-            if (newWidth > 300 && newWidth < 600) sidebar.style.width = `${newWidth}px`;
-        });
-        document.addEventListener('mouseup', () => { isResizing = false; document.body.style.cursor = 'default'; resizer.classList.remove('resizing'); });
+        // [수정] 사이드바 너비 고정을 위해 마우스 드래그 조절(리사이징) 기능 비활성화
+        resizer.style.display = 'none';
     }
 }
 
@@ -2943,8 +2978,14 @@ async function renderSystemLogs() {
                 else displayTarget = escapeHtml(displayModel);
             }
 
+            // [수정] 날짜와 시간을 분리하고 시간은 오전/오후로 시작하도록 설정
+            const logDateObj = new Date(log.timestamp);
+            const dateStr = logDateObj.toLocaleDateString('ko-KR');
+            const timeStr = logDateObj.toLocaleTimeString('ko-KR');
+            const displayTimestamp = `<div>${dateStr}</div><div style="font-size: 11px; color: #8b949e; margin-top: 2px;">${timeStr}</div>`;
+
             return `<tr>
-                <td>${new Date(log.timestamp).toLocaleString()}</td>
+                <td>${displayTimestamp}</td>
                 <td style="text-align: center;">${escapeHtml(log.worker)}</td>
                 <td><span class="badge pm" style="background: #30363d;">${log.action}</span></td>
                 <td>${displayTarget}</td>
@@ -3046,7 +3087,19 @@ function openNextScheduleModal(options) {
 
     // 2. 공수 초기화
     const mdInput = document.getElementById('next-schedule-md');
-    if (mdInput) mdInput.value = md || '';
+    if (mdInput) {
+        mdInput.value = md || '';
+        // [추가] 작업 완료 후 다음 예정일 등록 팝업 시 공수 입력 제한
+        mdInput.oninput = function () {
+            const workerHidden = document.getElementById('next-schedule-worker-hidden');
+            const workerCount = workerHidden && workerHidden.value ? workerHidden.value.split(',').map(s => s.trim()).filter(Boolean).length : 0;
+            const currentMd = parseFloat(this.value);
+            if (!isNaN(currentMd) && currentMd > workerCount) {
+                alert(`공수(M/D)는 등록된 작업자 수(${workerCount}명)를 초과할 수 없습니다.`);
+                this.value = workerCount;
+            }
+        };
+    }
 
     // 3. 작업자 렌더링 및 드롭다운 설정
     const workerHidden = document.getElementById('next-schedule-worker-hidden');
@@ -3171,6 +3224,13 @@ function openNextScheduleModal(options) {
             if (!newDate) return alert('예정일을 선택해주세요.');
             if (dateInput && dateInput.min && newDate < dateInput.min) return alert('다음 예정일은 이전 작업일 이후 날짜로 선택해주세요.');
             if (!newWorker) return alert('작업자를 선택해주세요.');
+
+            const workerCount = newWorker.split(',').map(s => s.trim()).filter(Boolean).length;
+            if (parseFloat(newMd) > workerCount) {
+                alert(`입력된 공수(${newMd})가 등록된 작업자 수(${workerCount}명)를 초과할 수 없습니다.`);
+                if (mdInput) mdInput.value = workerCount;
+                return;
+            }
 
             const selectedItems = [];
             const itemList = document.getElementById('next-schedule-item-list');
@@ -3635,9 +3695,14 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
         const baseName = m.code || m.content;
         const specStr = m.spec ? ` [${m.spec}]` : '';
         const displayValue = `${baseName}${specStr}`;
+        
+        let partno = '';
+        const match = adminItems.find(a => a.part === m.content || a.code === m.content);
+        if (match) partno = match.partno || '';
+
         if (!addedSet.has(displayValue)) {
             addedSet.add(displayValue);
-            matchedItems.push({ part: m.content, code: m.code, spec: m.spec || '', displayValue: displayValue });
+            matchedItems.push({ part: m.content, code: m.code, partno: partno, spec: m.spec || '', displayValue: displayValue });
         }
     });
 
@@ -3647,7 +3712,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             const baseName = item.code || item.part;
             if (!addedSet.has(baseName)) {
                 addedSet.add(baseName);
-                matchedItems.push({ part: item.part, code: item.code, spec: '', displayValue: baseName });
+                matchedItems.push({ part: item.part, code: item.code, partno: item.partno || '', spec: '', displayValue: baseName });
             }
         }
     });
@@ -3657,9 +3722,12 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             const extracted = window.extractSpecFromContent(key);
             const pure = extracted.pureContent, spec = extracted.spec;
 
+            let partno = '';
             const globalMatch = adminItems.find(i => i.part === pure || i.code === pure);
-            if (globalMatch) matchedItems.unshift({ part: globalMatch.part, code: globalMatch.code, spec: spec, displayValue: key });
-            else matchedItems.unshift({ part: pure, code: '', spec: spec, displayValue: key });
+            if (globalMatch) {
+                partno = globalMatch.partno || '';
+                matchedItems.unshift({ part: globalMatch.part, code: globalMatch.code, partno: partno, spec: spec, displayValue: key });
+            } else matchedItems.unshift({ part: pure, code: '', partno: partno, spec: spec, displayValue: key });
             addedSet.add(key);
         }
     });
@@ -3670,7 +3738,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
         const baseName = item.code || item.part;
         if (!addedSet.has(baseName)) {
             addedSet.add(baseName);
-            otherItems.push({ part: item.part, code: item.code, spec: '', displayValue: baseName });
+            otherItems.push({ part: item.part, code: item.code, partno: item.partno || '', spec: '', displayValue: baseName });
         }
     });
 
@@ -3692,14 +3760,15 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
         let displayItems = showAll ? [...matchedItems, ...otherItems] : matchedItems;
         if (searchTerm) {
             const kws = searchTerm.toLowerCase().split(/\s+/);
-            displayItems = [...matchedItems, ...otherItems].filter(item => kws.every(kw => `${item.displayValue || ''}`.toLowerCase().includes(kw)));
+            // [수정] 검색 필터링 시 품번(partno)도 포함
+            displayItems = [...matchedItems, ...otherItems].filter(item => kws.every(kw => `${item.displayValue || ''} ${item.partno || ''}`.toLowerCase().includes(kw)));
         }
         const displayItemValues = new Set(displayItems.map(i => i.displayValue));
         Object.keys(currentSelections).forEach(selectedValue => {
             if (!displayItemValues.has(selectedValue)) {
                 const originalItem = [...matchedItems, ...otherItems].find(i => i.displayValue === selectedValue);
                 if (originalItem) displayItems.unshift(originalItem);
-                else displayItems.unshift({ part: selectedValue, code: '', spec: '', displayValue: selectedValue });
+                else displayItems.unshift({ part: selectedValue, code: '', partno: '', spec: '', displayValue: selectedValue });
             }
         });
         const uniqueItems = [];

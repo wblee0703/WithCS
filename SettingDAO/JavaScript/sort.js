@@ -1541,9 +1541,7 @@ function renderSortChart(results) {
                     const isFaded = localSelectedSite && localSelectedSite !== site;
                     const legDiv = document.createElement('div');
                     legDiv.className = 'legend-item';
-                    legDiv.style.cursor = 'pointer';
-                    legDiv.style.opacity = isFaded ? '0.4' : '1';
-                    legDiv.style.transition = 'opacity 0.2s';
+                    if (isFaded) legDiv.classList.add('faded');
                     legDiv.innerHTML = `<div class="legend-color-box" style="background:${siteColorMap[site]};"></div><span title="${escapeHtml(site)}">${escapeHtml(site)}</span>`;
                     legDiv.onclick = () => {
                         if (localSelectedSite === site) {

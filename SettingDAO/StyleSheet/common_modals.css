@@ -361,7 +361,7 @@
 #event-detail-modal .modal-window {
     width: 400px;
     height: auto;
-    max-height: 80vh;
+    max-height: 85vh; /* [수정] 팝업창이 조금 더 커질 수 있도록 최대 높이 확대 */
     display: flex;
     flex-direction: column;
 }
@@ -461,7 +461,7 @@
 
 #detail-work-memo {
     width: 100%;
-    height: 200px;
+    height: 125px; /* [수정] 메모 입력창 높이를 기존의 절반 수준으로 축소 */
     resize: none;
     background: #0d1117;
     border: 1px solid #30363d;

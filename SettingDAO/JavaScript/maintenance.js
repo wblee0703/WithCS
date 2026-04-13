@@ -307,6 +307,18 @@ function setupLogEvents() {
     if (memoInput) { memoInput.spellcheck = false; memoInput.readOnly = true; } // [수정] 초기 상태 읽기 전용
     if (memoWorkerInput) memoWorkerInput.spellcheck = false;
 
+    // [추가] 장비 점검 이력 상세 메모 탭 공수(M/D) 입력 제한 설정
+    if (memoMdInput) {
+        memoMdInput.addEventListener('input', function () {
+            const workerCount = memoWorkerInput && memoWorkerInput.value ? memoWorkerInput.value.split(',').map(s => s.trim()).filter(Boolean).length : 0;
+            const currentMd = parseFloat(this.value);
+            if (!isNaN(currentMd) && currentMd > workerCount) {
+                alert(`공수(M/D)는 등록된 작업자 수(${workerCount}명)를 초과할 수 없습니다.`);
+                this.value = workerCount;
+            }
+        });
+    }
+
     // [추가] 초기에는 메모 영역 전체 비활성화 (톱니바퀴로 활성화)
     setMemoFieldsDisabled(true);
 }
@@ -658,9 +670,9 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
             let itemsToShow = showAll ? filteredItems : equipMatchedItems;
 
             if (isInput && query) {
-                // 검색어가 있으면 장비 상관없이 전체에서 매칭
+                // [수정] 검색어가 있으면 장비 상관없이 전체에서 매칭 (품번 포함 검색 지원)
                 itemsToShow = filteredItems.filter(m => {
-                    const text = `${m.part || ''} ${m.code || ''}`.toLowerCase();
+                    const text = `${m.part || ''} ${m.code || ''} ${m.partno || ''}`.toLowerCase();
                     return keywords.every(kw => text.includes(kw));
                 });
             }
@@ -774,6 +786,8 @@ function toggleEditRow(id) {
     const editBtn = row.querySelector('.btn-edit-sm');
     const isEditing = row.classList.contains('editing');
 
+    const badgeEl = row.querySelector('.badge');
+    const badgeContainer = badgeEl ? badgeEl.parentElement : row.cells[0]; // fallback
     const codeCell = row.querySelector('.edit-code');
     const contentCell = row.querySelector('.edit-content');
     const specCell = row.querySelector('.edit-spec');
@@ -788,11 +802,19 @@ function toggleEditRow(id) {
 
         // [수정] 코드명, 물품명은 수정 불가하도록 contentEditable 속성 적용 제거
 
-        // [수정] 주기(Period) 입력창을 number 타입으로 변경하여 숫자만 입력 가능하게 함
-        if (row.querySelector('.badge').textContent === '정기') {
-            const currentPeriod = periodCell.textContent.replace('일', '').trim();
-            periodCell.innerHTML = `<input type="number" id="input-period-${id}" value="${escapeHtml(currentPeriod)}" class="edit-period-input" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)">`;
-        }
+        // [추가] 타입(구분) 수정 가능하게 select 로 변경
+        const currentType = badgeEl ? badgeEl.textContent.trim() : '정기';
+        badgeContainer.innerHTML = `
+            <select id="input-type-${id}" class="input-dark" style="width: 100%; box-sizing: border-box; padding: 2px;">
+                <option value="정기" ${currentType === '정기' ? 'selected' : ''}>정기</option>
+                <option value="비정기" ${currentType === '비정기' ? 'selected' : ''}>비정기</option>
+            </select>
+        `;
+
+        // [수정] 주기(Period) 입력창을 number 타입으로 변경하고, 비정기일 때는 비활성화
+        let currentPeriod = periodCell.textContent.replace('일', '').trim();
+        if (currentPeriod === '-') currentPeriod = '';
+        periodCell.innerHTML = `<input type="number" id="input-period-${id}" value="${escapeHtml(currentPeriod)}" class="edit-period-input" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)" ${currentType !== '정기' ? 'disabled style="opacity:0.5;"' : ''}>`;
 
         if (specCell) {
             const currentSpec = specCell.textContent.trim() === '-' ? '' : specCell.textContent.trim();
@@ -803,8 +825,27 @@ function toggleEditRow(id) {
         dateCell.innerHTML = `<input type="date" id="input-date-${id}" value="${escapeHtml(currentDate)}" class="edit-date-input" style="width: 100%; box-sizing: border-box;">`;
         const dateInput = document.getElementById(`input-date-${id}`);
         if (dateInput) dateInput.focus();
+
+        // [추가] 타입 변경 시 주기 입력창 활성/비활성 처리
+        const typeSelect = document.getElementById(`input-type-${id}`);
+        const periodInput = document.getElementById(`input-period-${id}`);
+        if (typeSelect && periodInput) {
+            typeSelect.addEventListener('change', function () {
+                if (this.value === '정기') {
+                    periodInput.disabled = false;
+                    periodInput.style.opacity = '1';
+                } else {
+                    periodInput.disabled = true;
+                    periodInput.style.opacity = '0.5';
+                    periodInput.value = '';
+                }
+            });
+        }
     } else {
         // [데이터 저장]
+        const typeSelect = document.getElementById(`input-type-${id}`);
+        const newType = typeSelect ? typeSelect.value : (badgeEl ? badgeEl.textContent.trim() : '정기');
+
         const newCode = codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim();
             const newContent = contentCell.textContent.trim();
             const specInput = document.getElementById(`input-spec-${id}`);
@@ -814,6 +855,7 @@ function toggleEditRow(id) {
 
         // [수정] 주기 값 가져오기 (input이 있으면 input 값, 없으면 텍스트)
         let newPeriod = periodCell.textContent.replace('일', '').trim();
+        if (newPeriod === '-') newPeriod = '';
         const periodInput = document.getElementById(`input-period-${id}`);
         if (periodInput) {
             newPeriod = periodInput.value;
@@ -821,7 +863,7 @@ function toggleEditRow(id) {
 
         if (!newDate) return alert('날짜를 선택해주세요.');
 
-        updateRowData(id, newCode, newContent, newSpec, newDate, newPeriod);
+        updateRowData(id, newCode, newContent, newSpec, newDate, newPeriod, newType);
 
         row.classList.remove('editing');
         editBtn.textContent = '✏️';
@@ -831,19 +873,24 @@ function toggleEditRow(id) {
     }
 }
 
-function updateRowData(id, code, content, spec, date, period) {
+function updateRowData(id, code, content, spec, date, period, type) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
     const idx = data.maint.findIndex(item => item.id === id);
 
     if (idx > -1) {
+        if (type !== undefined) {
+            data.maint[idx].type = type;
+            if (type === '정기') data.maint[idx].detailType = 'PM 점검';
+            else if (type === '비정기') data.maint[idx].detailType = 'BM 점검';
+        }
         data.maint[idx].code = code;
         data.maint[idx].content = content;
         data.maint[idx].spec = spec;
         data.maint[idx].date = date;
         data.maint[idx].period = (data.maint[idx].type === '정기') ? (parseInt(period) || 0) : null;
         localStorage.setItem(key, JSON.stringify(data));
-        addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `수정: [${code || '-'}] ${content} (날짜: ${date}, 주기: ${period || '-'})`);
+        addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `수정: [${code || '-'}] ${content} (구분: ${data.maint[idx].type}, 날짜: ${date}, 주기: ${period || '-'})`);
 
         window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_upserts: [data.maint[idx]] });
     }
@@ -1593,6 +1640,58 @@ function toggleMaintenanceMode() {
 
     // tbody 대신 table에 클래스 토글 (컬럼 전체 숨김/표시 제어)
     const table = tbody.closest('table');
+
+    // [추가] 관리 모드를 종료할 때, 현재 수정 중(editing)인 항목이 있다면 모두 자동 저장 처리
+    const isCurrentlyActive = table ? table.classList.contains('management-active') : false;
+    if (isCurrentlyActive) {
+        const editingRows = tbody.querySelectorAll('tr.editing');
+        let hasError = false;
+        
+        editingRows.forEach(row => {
+            const id = parseInt(row.dataset.id);
+            const dateInput = document.getElementById(`input-date-${id}`);
+            if (dateInput && !dateInput.value) hasError = true;
+        });
+
+        if (hasError) {
+            alert('날짜를 선택해주세요.');
+            return; // 끄기 취소
+        }
+
+        let hasEdits = false;
+        editingRows.forEach(row => {
+            const id = parseInt(row.dataset.id);
+            const badgeEl = row.querySelector('.badge');
+            const codeCell = row.querySelector('.edit-code');
+            const contentCell = row.querySelector('.edit-content');
+            const periodCell = row.querySelector('.edit-period');
+
+            const typeSelect = document.getElementById(`input-type-${id}`);
+            const newType = typeSelect ? typeSelect.value : (badgeEl ? badgeEl.textContent.trim() : '정기');
+
+            const newCode = codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim();
+            const newContent = contentCell.textContent.trim();
+            
+            const specInput = document.getElementById(`input-spec-${id}`);
+            const newSpec = specInput ? specInput.value.trim() : '';
+            
+            const dateInput = document.getElementById(`input-date-${id}`);
+            const newDate = dateInput ? dateInput.value : '';
+            
+            let newPeriod = periodCell.textContent.replace('일', '').trim();
+            if (newPeriod === '-') newPeriod = '';
+            const periodInput = document.getElementById(`input-period-${id}`);
+            if (periodInput) newPeriod = periodInput.value;
+
+            updateRowData(id, newCode, newContent, newSpec, newDate, newPeriod, newType);
+            hasEdits = true;
+        });
+
+        if (hasEdits) {
+            renderDetails();
+        }
+    }
+
     if (table) table.classList.toggle('management-active');
 
     if (btn) btn.classList.toggle('active');

@@ -769,7 +769,7 @@ async function renderIntegMaintStats(mainData) {
             const barGroup = document.createElement('div');
             barGroup.className = 'bar-group integ-bar-group';
             
-            const maxBarHeight = 140; // [요청] 카드 높이 축소(200px)에 맞춰 막대 최대 높이 조정
+            const maxBarHeight = 160; // [수정] 막대 최대 높이 축소
             const barHeight = (rate / yAxisMax) * maxBarHeight;
             const bgStyle = groupColors[group];
 
@@ -802,7 +802,7 @@ async function renderIntegMaintStats(mainData) {
             const barGroup = document.createElement('div');
             barGroup.className = 'bar-group integ-bar-group';
             
-            const maxBarHeight = 140; // [요청] 카드 높이 축소(200px)에 맞춰 막대 최대 높이 조정
+            const maxBarHeight = 160; // [수정] 막대 최대 높이 축소
             const barHeight = Math.min((mdRate / yAxisMax) * maxBarHeight, maxBarHeight);
             const bgStyle = groupColors[group];
 
@@ -848,7 +848,7 @@ async function renderIntegMaintStats(mainData) {
         filterGroup.style.display = 'flex';
         filterGroup.style.gap = '5px'; // [수정] 3개 가로 배치 시 공간 확보를 위해 버튼 간격 축소
         filterGroup.style.justifyContent = 'center';
-        filterGroup.style.marginBottom = '5px'; // [수정] 필터 버튼 아래 여백 최소화하여 카드 높이 축소
+        filterGroup.style.marginBottom = '0px'; // [수정] 필터 버튼과 막대그래프 사이 빈 공간(여백) 완전 제거
         filterGroup.style.flexWrap = 'wrap';
 
         const filterOptions = ['전체', 'SEC', 'SKH 이천', 'SKH 청주', '기타 사업장'];
@@ -890,7 +890,7 @@ async function renderIntegMaintStats(mainData) {
             const barGroup = document.createElement('div');
             barGroup.className = 'bar-group integ-bar-group';
 
-            const maxBarHeight = 140; // [요청] 카드 높이 축소(200px)에 맞춰 막대 최대 높이 조정
+            const maxBarHeight = 160; // [수정] 막대 최대 높이 축소
             const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
 
             const tpl = typeof window.getTemplateContent === 'function' ? window.getTemplateContent('integ-basic-bar-template') : null;

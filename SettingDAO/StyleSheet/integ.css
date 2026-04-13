@@ -623,7 +623,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     flex: 1;
     min-width: 0;
     margin-bottom: 0; /* 기존 하단 여백 제거 (래퍼에서 관리) */
-    justify-content: flex-start; /* [수정] 양쪽 차트 컨테이너 상단 정렬 완벽 맞춤 */
+        justify-content: flex-start !important; /* [수정] 요소들을 컨테이너 위쪽으로 강제 밀착 */
+        gap: 5px !important; /* [유지] 타이틀과 차트 사이 간격 강제 축소 */
+}
+
+/* [추가] 통합 현황 차트들의 제목 하단 여백 강제 제거 */
+.integ-maint-charts-row .status-group-title {
+    margin-bottom: 0 !important;
 }
 
 /* 작업 구분별 현황 필터 버튼 크기 조절 (3개 1줄 배치 시 공간 확보) */
@@ -642,10 +648,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: flex;
     align-items: flex-end;
     justify-content: space-around; /* [수정] 100% 너비 활용을 위해 간격 균등 분배 */
-    height: 250px; /* 상단 여백은 줄인 상태 유지, 하단 라벨 공간 복구 */
+    height: 270px; /* [수정] 막대그래프 확대를 위해 높이 270px로 상향 */
     width: 100%;
     box-sizing: border-box;
-    margin-top: auto; /* [수정] 3개 카드의 차트 바닥 여백(위치)을 완벽히 동일하게 맞춤 */
+    margin-top: 0 !important; /* [수정] margin-top: auto로 인해 제목 아래 빈 공간(여백)이 팽창하는 현상 완전 차단 */
 }
 
 /* 개별 막대 그룹 */
@@ -734,15 +740,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     color: #e6edf3;
 }
 
-/* [요청] 운영 통합 관리의 3개 차트 컨테이너 높이만 200px로 축소 */
+/* [수정] 운영 통합 관리 차트 컨테이너 높이 확대 (제목-그래프 간격 축소) */
 #integ-maint-site-chart,
-#integ-maint-type-chart,
+#integ-maint-type-chart {
+    height: 270px;
+}
 #integ-maint-category-chart {
-    height: 200px;
+    height: 205px; /* [수정] 필터 버튼이 차지하는 공간만큼 높이를 줄여 막대그래프를 위로 밀착 */
 }
 
 #integ-maint-type-chart .integ-bar-wrapper {
-    height: 140px; /* 공수 현황 배경 점선 테두리 높이 동기화 */
+    height: 180px; /* [수정] 공수 현황 배경 점선 테두리 높이 확대 */
 }
 
 /* 모바일 화면 대응 */
