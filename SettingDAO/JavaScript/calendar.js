@@ -2230,7 +2230,10 @@ function completeScheduleWork() {
     const memo = document.getElementById('detail-work-memo').value.trim();
     const issueShareCb = document.getElementById('detail-issue-share-checkbox');
     const isIssueShared = issueShareCb ? issueShareCb.checked : false;
+    const costTypeInput = document.getElementById('detail-cost-type');
+    const costType = costTypeInput ? costTypeInput.value : '';
 
+    if (!costType) return alert('비용처리를 선택해주세요.');
     if (!worker) return alert('작업자를 입력해주세요.');
     if (!md) return alert('공수(M/D)를 입력해주세요.');
     if (!memo) return alert('점검 결과 / 메모를 입력해주세요.');
