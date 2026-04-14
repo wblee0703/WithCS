@@ -1393,6 +1393,12 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             contentTrigger.classList.add('disabled');
             contentTrigger.style.pointerEvents = 'none';
         }
+        // [추가] 물품(Part) 추가 드롭다운 트리거 비활성화
+        const partTrigger = document.getElementById('detail-edit-part-trigger');
+        if (partTrigger) {
+            partTrigger.classList.add('disabled');
+            partTrigger.style.pointerEvents = 'none';
+        }
         if (contentInput) contentInput.disabled = true;
     } else {
         if (contentInput) contentInput.disabled = false;
@@ -2040,15 +2046,15 @@ function saveDetailChanges() {
                 if (partContent && idx === 0) fullContent = `${fullContent} - ${partContent}`;
 
                 let existingItem = sameDayItems.find(m => (m.content === fullContent || m.content === pureContent) && (m.code || '') === code && (m.spec || '') === spec);
-                if (existing) {
-                    existing.scheduledDate = targetDate;
-                    existing.detailType = itemDetailType;
-                    existing.worker = newWorker;
-                    existing.memo = newMemo;
-                    existing.md = newMd;
-                    if (itemCost) existing.itemCost = itemCost;
-                    remainingIds.push(existing.id);
-                    payload.maint_upserts.push(existing);
+                if (existingItem) {
+                    existingItem.scheduledDate = targetDate;
+                    existingItem.detailType = itemDetailType;
+                    existingItem.worker = newWorker;
+                    existingItem.memo = newMemo;
+                    existingItem.md = newMd;
+                    if (itemCost) existingItem.itemCost = itemCost;
+                    remainingIds.push(existingItem.id);
+                    payload.maint_upserts.push(existingItem);
                 } else {
                     const newId = Date.now() + idx;
                     const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: code, content: fullContent, spec: spec, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: itemCost, originalLogId: item.originalLogId };
@@ -2775,6 +2781,12 @@ function cancelScheduleCompletion() {
     if (contentTrigger) {
         contentTrigger.classList.remove('disabled');
         contentTrigger.style.pointerEvents = 'auto';
+    }
+
+    const partTrigger = document.getElementById('detail-edit-part-trigger');
+    if (partTrigger) {
+        partTrigger.classList.remove('disabled');
+        partTrigger.style.pointerEvents = 'auto';
     }
 
     const saveBtn = document.getElementById('btn-save-detail-memo');

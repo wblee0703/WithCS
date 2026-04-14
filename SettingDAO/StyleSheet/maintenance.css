@@ -255,7 +255,8 @@ tr.dragging {
 }
 
 .log-list-container {
-    height: 50%;
+    flex: 1; /* [수정] 하단 고정 영역을 제외한 남은 공간을 모두 리스트가 차지하도록 변경 */
+    min-height: 0;
     border-bottom: 1px solid #30363d;
     padding-bottom: 10px;
 }
@@ -530,6 +531,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     display: flex;
     flex-direction: column;
     padding-top: 10px;
+    min-height: 0; /* [추가] 내부 콘텐츠가 길어져도 카드 전체 높이를 뚫고 무한정 늘어나는 현상 완벽 방지 */
 }
 
 .memo-header {
@@ -1004,6 +1006,24 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     /* [요청] 모바일에서 '내용' 컬럼 좌측 정렬 및 여백 조정 */
     #log-list-wrapper .data-table td:nth-child(4) {
         padding-left: 8px !important;
+    }
+
+    /* [추가] 모바일에서 교체 물품 리스트와 메모장을 위아래로 확실히 분리 배치 */
+    #memo-flex-wrapper {
+        flex-direction: column !important;
+        height: auto !important; /* 모바일에서는 고정 높이 해제 */
+        min-height: 0 !important;
+    }
+    
+    #replaced-parts-container {
+        flex: 0 1 auto !important; /* 고정 너비(280px) 무시 */
+        width: 100% !important;    /* 가로 꽉 차게 변경 */
+        max-height: 200px !important; /* 스크롤 가능하도록 최대 높이 지정 */
+    }
+
+    /* [추가] 모바일에서 교체물품의 품명, 규격 숨김 */
+    .desktop-only-part {
+        display: none !important;
     }
 }
 

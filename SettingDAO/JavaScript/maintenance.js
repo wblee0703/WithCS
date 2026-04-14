@@ -327,37 +327,8 @@ function setupUIEvents() {
     const logResizer = document.getElementById('log-memo-resizer');
 
     if (logResizer) {
-        const prevSibling = document.getElementById('log-list-wrapper'); // 위쪽: 리스트
-        const container = logResizer.parentElement; // .card-body
-        let isResizingLog = false;
-
-        logResizer.addEventListener('mousedown', (e) => {
-            isResizingLog = true;
-            document.body.style.cursor = 'row-resize';
-            logResizer.classList.add('resizing');
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (!isResizingLog) return;
-            const containerRect = container.getBoundingClientRect();
-            // 마우스 Y 위치에서 컨테이너 상단 Y 위치와 상단 패딩(15px)을 뺌
-            let newHeight = e.clientY - containerRect.top - 15;
-
-            // 최소 높이 제한 (100px)
-            if (newHeight < 200) newHeight = 200;
-            if (newHeight > containerRect.height - 300) newHeight = containerRect.height - 300;
-
-            prevSibling.style.height = `${newHeight}px`;
-            prevSibling.style.flex = 'none'; // flex 속성 무시하고 height 적용
-        });
-
-        document.addEventListener('mouseup', () => {
-            if (isResizingLog) {
-                isResizingLog = false;
-                document.body.style.cursor = 'default';
-                logResizer.classList.remove('resizing');
-            }
-        });
+        // [수정] 작업내용 수동 높이 조절 리사이저 숨김 처리 및 기능 비활성화
+        logResizer.style.display = 'none';
     }
 }
 
@@ -1160,21 +1131,22 @@ function selectLog(id, focus = true) {
             const memoParent = memoInput.parentNode;
             
             const flexWrapper = document.createElement('div');
+            flexWrapper.id = 'memo-flex-wrapper'; // [추가] 반응형 레이아웃 제어용 ID
             flexWrapper.style.display = 'flex';
             flexWrapper.style.gap = '15px';
-            flexWrapper.style.height = '100%';
-            flexWrapper.style.flex = '1';
-            flexWrapper.style.minHeight = '0';
+            flexWrapper.style.height = '100%'; // [수정] 작업 내용(메모/교체물품) 영역 높이 유동적 확장
+            flexWrapper.style.flex = '1'; // [수정] 남은 공간을 꽉 채우도록 변경
+            flexWrapper.style.minHeight = '0'; // [수정] 카드를 뚫고 나가는 현상 완벽 방지
             
             replacedPartsContainer = document.createElement('div');
             replacedPartsContainer.id = 'replaced-parts-container';
-            replacedPartsContainer.style.flex = '0 0 280px';
             replacedPartsContainer.style.display = 'flex';
             replacedPartsContainer.style.flexDirection = 'column';
             replacedPartsContainer.style.background = '#161b22';
             replacedPartsContainer.style.border = '1px solid #30363d';
             replacedPartsContainer.style.borderRadius = '6px';
             replacedPartsContainer.style.overflow = 'hidden';
+            replacedPartsContainer.style.minHeight = '0';
             
             const partsTitle = document.createElement('div');
             partsTitle.style.padding = '8px 12px';
@@ -1193,6 +1165,7 @@ function selectLog(id, focus = true) {
             partsList.style.padding = '0';
             partsList.style.overflowY = 'auto';
             partsList.style.flex = '1';
+            partsList.style.minHeight = '0';
             replacedPartsContainer.appendChild(partsList);
             
             const memoWrapper = document.createElement('div');
@@ -1200,6 +1173,13 @@ function selectLog(id, focus = true) {
             memoWrapper.style.display = 'flex';
             memoWrapper.style.flexDirection = 'column';
             memoWrapper.style.minWidth = '0';
+
+            // [수정] 불안정한 JS 분기 대신 확실한 CSS 미디어 쿼리를 사용하여 모바일 상하 배치 제어
+            flexWrapper.style.flexDirection = 'row';
+            replacedPartsContainer.style.flex = '0 0 280px';
+            replacedPartsContainer.style.maxHeight = 'none';
+            memoWrapper.style.flex = '1';
+            memoWrapper.style.minHeight = '0'; // 부모 영역을 뚫고 나가는 현상 방지
             
             memoParent.insertBefore(flexWrapper, memoInput);
             memoWrapper.appendChild(memoInput);
@@ -1209,6 +1189,10 @@ function selectLog(id, focus = true) {
             memoInput.style.flex = '1';
             memoInput.style.width = '100%';
             memoInput.style.minHeight = '0';
+            memoInput.style.height = '100%';
+            memoInput.style.resize = 'none';
+            memoInput.style.overflowY = 'auto';
+            memoInput.style.boxSizing = 'border-box';
         }
 
         const partsList = document.getElementById('replaced-parts-list');
@@ -1289,8 +1273,8 @@ function selectLog(id, focus = true) {
                     let descHtml = `
                         <div style="display:flex; flex-direction:column; gap:2px; color:#8b949e; font-size:11px; margin-top: 2px; min-width:0;">
                             <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="물품상세: ${escapeHtml(part.spec)}">물품상세: ${escapeHtml(part.spec)}</span>
-                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="품명: ${escapeHtml(part.name)}">품명: ${escapeHtml(part.name)}</span>
-                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="규격: ${escapeHtml(part.masterSpec)}">규격: ${escapeHtml(part.masterSpec)}</span>
+                            <span class="desktop-only-part" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="품명: ${escapeHtml(part.name)}">품명: ${escapeHtml(part.name)}</span>
+                            <span class="desktop-only-part" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="규격: ${escapeHtml(part.masterSpec)}">규격: ${escapeHtml(part.masterSpec)}</span>
                         </div>
                     `;
                     
