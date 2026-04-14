@@ -60,6 +60,12 @@
     height: 30px;
 }
 
+#my-info-wrapper .autocomplete-wrapper {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+}
+
 #my-info-wrapper .input-dark {
     flex: 1;
     min-width: 0;

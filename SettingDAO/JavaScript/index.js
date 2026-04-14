@@ -338,8 +338,8 @@ function updateMaintenanceDashboard() {
 
     if (data) {
         Object.keys(data).forEach(site => {
-            const list = data[site];
-            const count = list ? list.length : 0;
+            const list = data[site] ? data[site].filter(e => e !== '기타(ETC)') : [];
+            const count = list.length;
             if (count > 0) {
                 const groupName = window.getSiteGroupName(site);
                 groupCounts[groupName] = (groupCounts[groupName] || 0) + count;
@@ -365,8 +365,9 @@ function updateMaintenanceDashboard() {
             if (window.getSiteGroupName(site) === selectedSiteFilter) {
                 const list = data[site];
                 if (list && Array.isArray(list)) {
-                    totalEquipForChart += list.length;
                     list.forEach(item => {
+                            if (item === '기타(ETC)') return;
+                            totalEquipForChart++;
                         const name = item.split('::')[0];
                         equipCountsForChart[name] = (equipCountsForChart[name] || 0) + 1;
                     });
@@ -377,8 +378,9 @@ function updateMaintenanceDashboard() {
         Object.keys(data).forEach(site => {
             const list = data[site];
             if (list && Array.isArray(list)) {
-                totalEquipForChart += list.length;
                 list.forEach(item => {
+                        if (item === '기타(ETC)') return;
+                        totalEquipForChart++;
                     const name = item.split('::')[0];
                     equipCountsForChart[name] = (equipCountsForChart[name] || 0) + 1;
                 });
@@ -571,6 +573,7 @@ function renderEquipDetailList(data) {
             if (selectedSiteFilter && window.getSiteGroupName(site) !== selectedSiteFilter) return;
             if (data[site]) {
                 data[site].forEach(equip => {
+                    if (equip === '기타(ETC)') return;
                     const name = equip.split('::')[0];
                     if (selectedEquipFilter && name !== selectedEquipFilter) return;
                     items.push({ site, equip });
@@ -652,6 +655,7 @@ function renderUpcomingList(data) {
 
             if (data[site]) {
                 data[site].forEach(equip => {
+                    if (equip === '기타(ETC)') return;
                     const equipName = equip.split('::')[0];
                     if (selectedEquipFilter && equipName !== selectedEquipFilter) return;
                     if (selectedSerialFilter && equip !== selectedSerialFilter) return;
@@ -777,6 +781,7 @@ function updateSetupDashboard() {
     Object.keys(data).forEach(site => {
             if (data[site] && Array.isArray(data[site])) {
                 data[site].forEach(equip => {
+                if (equip === '기타(ETC)') return;
                 const detailData = setupData[`${site}::${equip}`];
                 if (detailData && detailData.setupDetails && detailData.setupDetails.length > 0) {
                     const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');

@@ -885,7 +885,13 @@ def admin_crud():
     try:
         if domain == 'site':
             if action == 'CREATE':
-                db.session.add(Site(name=payload['name'], buildings='[]'))
+                site_name = payload['name']
+                db.session.add(Site(name=site_name, buildings='[]'))
+                
+                # [추가] 사업장 생성 시 '기타(ETC)' 장비 기본 등록
+                etc_id = f"{site_name}::기타(ETC)"
+                db.session.add(Equipment(id=etc_id, site_name=site_name, name="기타(ETC)", serial=""))
+                db.session.add(SetupInfo(equip_id=etc_id, model=""))
             elif action == 'UPDATE':
                 old_name = payload['old_name']
                 new_name = payload['new_name']
@@ -912,6 +918,13 @@ def admin_crud():
             site_name = payload.get('site')
             
             if action == 'CREATE':
+                # [추가] 없는 사업장에 장비 추가 시 사업장과 기타(ETC) 자동 생성 (CSV 일괄 등록 대응)
+                if not Site.query.filter_by(name=site_name).first():
+                    db.session.add(Site(name=site_name, buildings='[]'))
+                    etc_id = f"{site_name}::기타(ETC)"
+                    db.session.add(Equipment(id=etc_id, site_name=site_name, name="기타(ETC)", serial=""))
+                    db.session.add(SetupInfo(equip_id=etc_id, model=""))
+                    db.session.flush()
                 db_id = f"{site_name}::{new_id}"
                 e_name = new_id.split('::')[0]
                 e_serial = new_id.split('::')[1] if '::' in new_id else ''
@@ -1182,6 +1195,19 @@ def init_db():
                     fallback_pw = 'withtech123!'
                 u.pw = generate_password_hash(fallback_pw, method='pbkdf2:sha256:50000')
                 db.session.commit() # [수정] DB 연결 끊김 방지를 위해 1명 변환될 때마다 즉시 저장
+
+        # [마이그레이션] 기존 사업장에 '기타(ETC)' 장비 자동 추가
+        try:
+            sites = Site.query.all()
+            for site in sites:
+                etc_id = f"{site.name}::기타(ETC)"
+                if not Equipment.query.filter_by(id=etc_id).first():
+                    db.session.add(Equipment(id=etc_id, site_name=site.name, name="기타(ETC)", serial=""))
+                    db.session.add(SetupInfo(equip_id=etc_id, model=""))
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"ETC Equipment Migration Error: {str(e)}")
 
 # WSGI 서버(PythonAnywhere 등) 환경에서도 앱 구동 시 초기화가 실행되도록 __main__ 블록 밖으로 이동
 # [Phase 3] JSON 파일 관련 로직이 제거되었으므로, 폴더 생성만 수행

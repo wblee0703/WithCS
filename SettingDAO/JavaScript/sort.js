@@ -1499,11 +1499,57 @@ function renderSortChart(results) {
         if (!targetContainer || !targetYAxis) return;
 
         let localSelectedSite = null;
+        let isGrouped = false; // [추가] 그룹화 상태 변수
+
+        // [추가] 카드 제목 클릭 시 그룹/개별 보기 전환 이벤트 등록
+        const card = targetContainer.closest('.sort-half-chart, .sort-full-chart');
+        if (card) {
+            const titleEl = card.querySelector('h3, .card-title, .status-group-title') || card.firstElementChild;
+            if (titleEl && !titleEl.dataset.clickBound) {
+                titleEl.dataset.clickBound = 'true';
+                titleEl.style.cursor = 'pointer';
+                titleEl.title = '클릭 시 그룹/개별 보기 전환';
+                titleEl.addEventListener('click', () => {
+                    isGrouped = !isGrouped;
+                    localSelectedSite = null; // 뷰 전환 시 개별 막대 선택 해제
+                    renderInner();
+                });
+            }
+        }
 
         const renderInner = () => {
+            let currentDataObj = dataObj;
+            let currentSitesArray = allSitesArray;
+
+            // [추가] 그룹화 로직 적용
+            if (isGrouped) {
+                const groupedDataObj = {};
+                const groupedSitesSet = new Set();
+                
+                Object.keys(dataObj).forEach(category => {
+                    groupedDataObj[category] = {};
+                    Object.keys(dataObj[category]).forEach(site => {
+                        let groupName = '기타 사업장';
+                        if (site === 'SKH 이천' || site === 'SKH 청주') groupName = site;
+                        else if (site === 'SEC 평택 본사' || site === 'SEC 화성 본사') groupName = '기타 사업장';
+                        else if (site && site.includes('SEC')) groupName = 'SEC';
+                        
+                        groupedSitesSet.add(groupName);
+                        groupedDataObj[category][groupName] = (groupedDataObj[category][groupName] || 0) + dataObj[category][site];
+                    });
+                });
+                
+                currentDataObj = groupedDataObj;
+                const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타 사업장'];
+                currentSitesArray = order.filter(name => groupedSitesSet.has(name));
+                Array.from(groupedSitesSet).forEach(name => {
+                    if (!order.includes(name)) currentSitesArray.push(name);
+                });
+            }
+
             let maxCount = 0;
             const activeSitesInChart = new Set();
-            Object.values(dataObj).forEach(siteObj => {
+            Object.values(currentDataObj).forEach(siteObj => {
                 Object.entries(siteObj).forEach(([site, val]) => {
                     if (val > 0) activeSitesInChart.add(site);
                     if (localSelectedSite && site !== localSelectedSite) return;
@@ -1534,9 +1580,22 @@ function renderSortChart(results) {
             const siteColors = ['#1f6feb', '#3fb950', '#d29922', '#8957e5', '#da3633', '#f0883e', '#0078d4', '#8b949e'];
             const siteColorMap = {};
 
-            if (targetLegend) targetLegend.innerHTML = ''; // 범례 컨테이너 비우기
-            allSitesArray.forEach((site, idx) => {
-                siteColorMap[site] = siteColors[idx % siteColors.length];
+            // [추가] 그룹화 시 지정된 고유 색상 적용
+            if (isGrouped) {
+                currentSitesArray.forEach(site => {
+                    if (site === 'SEC') siteColorMap[site] = '#034EA2'; // 파랑
+                    else if (site === 'SKH 이천') siteColorMap[site] = '#eb371f'; // 빨강
+                    else if (site === 'SKH 청주') siteColorMap[site] = '#F37021'; // 주황
+                    else siteColorMap[site] = '#8957e5'; // 보라 (기타 사업장)
+                });
+            } else {
+                currentSitesArray.forEach((site, idx) => {
+                    siteColorMap[site] = siteColors[idx % siteColors.length];
+                });
+            }
+
+            if (targetLegend) targetLegend.innerHTML = '';
+            currentSitesArray.forEach((site) => {
                 if (targetLegend && activeSitesInChart.has(site)) {
                     const isFaded = localSelectedSite && localSelectedSite !== site;
                     const legDiv = document.createElement('div');
@@ -1556,11 +1615,11 @@ function renderSortChart(results) {
             });
 
             // [수정] 수량/건수가 많은 항목부터 내림차순으로 정렬
-            const sortedCategories = Object.keys(dataObj).map(category => {
+            const sortedCategories = Object.keys(currentDataObj).map(category => {
                 let currentTotal = 0;
-                allSitesArray.forEach(site => {
+                currentSitesArray.forEach(site => {
                     if (localSelectedSite && localSelectedSite !== site) return;
-                    currentTotal += (dataObj[category][site] || 0);
+                    currentTotal += (currentDataObj[category][site] || 0);
                 });
                 return { category, total: currentTotal };
             }).sort((a, b) => {
@@ -1576,10 +1635,10 @@ function renderSortChart(results) {
                 trackDiv.className = 'bar-track';
                 let totalInGroup = 0;
 
-                allSitesArray.forEach(site => {
+                currentSitesArray.forEach(site => {
                     if (localSelectedSite && localSelectedSite !== site) return;
 
-                    const count = dataObj[category][site] || 0;
+                    const count = currentDataObj[category][site] || 0;
                     if (count > 0) {
                         totalInGroup++;
                         const heightPct = (count / yAxisMax) * 100;

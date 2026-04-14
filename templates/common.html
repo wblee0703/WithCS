@@ -635,6 +635,15 @@
                     <div class="detail-label-row"><label class="detail-label">점검 항목</label></div>
                     <div id="detail-content"></div><input type="text" id="detail-content-input" class="input-date-dark">
                 </div>
+                <div class="detail-row"><label class="detail-label">비용처리</label>
+                    <select id="detail-cost-type" class="input-date-dark">
+                        <option value="" disabled selected hidden>비용처리 선택</option>
+                        <option value="유상">유상</option>
+                        <option value="무상(보증)">무상(보증)</option>
+                        <option value="무상(중고)">무상(중고)</option>
+                        <option value="기타">기타</option>
+                    </select>
+                </div>
                 <div class="detail-row"><label class="detail-label">작업자</label><input type="text" id="detail-worker"
                         placeholder="작업자 성명"></div>
                 <div class="detail-row"><label class="detail-label">공수</label><input type="number" id="detail-md"

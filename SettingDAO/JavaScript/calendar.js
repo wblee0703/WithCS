@@ -813,7 +813,7 @@ function setupScheduleModal() {
                 if (!date) return alert('날짜를 선택해주세요.');
                 if (!worker) return alert('작업자를 선택해주세요.');
                 if (parseFloat(md) < 0) return alert('공수는 0 이상이어야 합니다.');
-                
+
                 const workerCount = worker.split(',').map(s => s.trim()).filter(Boolean).length;
                 if (parseFloat(md) > workerCount) {
                     alert(`입력된 공수(${md})가 등록된 작업자 수(${workerCount}명)를 초과할 수 없습니다.`);
@@ -868,7 +868,7 @@ function openScheduleModal(site, equip, id) {
         mdInput.value = item ? (item.md || '') : '';
         mdInput.disabled = false; // 공수 수동 입력 허용
         mdInput.classList.remove('input-disabled');
-        
+
         // [추가] 캘린더 일정 클릭/수정 팝업 시 공수 입력 제한
         mdInput.oninput = function () {
             const workerHidden = document.getElementById('schedule-worker-hidden');
@@ -1204,9 +1204,9 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     if (isCompleted) {
         displayContent = item.content || '';
     } else {
-        const sameDayItems = data.maint.filter(i => 
-            i.scheduledDate === item.scheduledDate && 
-            i.type === item.type && 
+        const sameDayItems = data.maint.filter(i =>
+            i.scheduledDate === item.scheduledDate &&
+            i.type === item.type &&
             (i.detailType || '') === (item.detailType || '') &&
             i.originalLogId == item.originalLogId
         );
@@ -1237,6 +1237,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     const mdInput = document.getElementById('detail-md');
     const memoInput = document.getElementById('detail-work-memo');
     const dateRow = document.getElementById('detail-date-row');
+    const costTypeInput = document.getElementById('detail-cost-type');
     const completeBtn = document.getElementById('btn-complete-work');
     const contentDiv = document.getElementById('detail-content');
     const contentInput = document.getElementById('detail-content-input');
@@ -1284,6 +1285,11 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         trigger.style.cursor = 'pointer';
     }
 
+    if (costTypeInput) {
+        costTypeInput.value = item.costType || '';
+        costTypeInput.disabled = false;
+    }
+
     memoInput.value = item.memo || '';
     if (!isCompleted && !item.memo) {
         let lastMemo = '';
@@ -1308,7 +1314,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         }
         mdInput.value = displayMd;
         mdInput.disabled = false;
-        
+
         // [추가] 일정 상세 내역/완료 처리 팝업 시 공수 입력 제한
         mdInput.oninput = function () {
             const workerHidden = document.getElementById('detail-worker');
@@ -1343,8 +1349,9 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         }
         memoInput.disabled = true;
         if (mdInput) mdInput.disabled = true;
+        if (costTypeInput) costTypeInput.disabled = true;
         dateField.disabled = true;
-        if (issueShareCb && !item.originalLogId) issueShareCb.disabled = true; // 부모가 강제하는 경우가 아니면 잠금
+        if (issueShareCb) issueShareCb.disabled = true;
         if (saveBtn) saveBtn.style.display = 'none';
     } else {
         completeBtn.style.display = 'block';
@@ -1360,23 +1367,18 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         }
         memoInput.disabled = false;
         if (mdInput) mdInput.disabled = false;
+        if (costTypeInput) costTypeInput.disabled = false;
         dateField.disabled = false;
-        if (issueShareCb && !item.originalLogId) {
+        if (issueShareCb) {
             const userRole = sessionStorage.getItem('userRole');
             issueShareCb.disabled = (userRole !== 'admin' && userRole !== 'superadmin');
         }
     }
 
     if (issueShareCb) {
-        if (item.originalLogId) {
-            const parentLog = data.logs ? data.logs.find(l => l.id == item.originalLogId) : null;
-            issueShareCb.checked = parentLog ? !!parentLog.isIssueShared : false;
-            issueShareCb.disabled = true;
-        } else {
-            issueShareCb.checked = !!item.isIssueShared;
-            const userRole = sessionStorage.getItem('userRole');
-            issueShareCb.disabled = isCompleted || (userRole !== 'admin' && userRole !== 'superadmin');
-        }
+        issueShareCb.checked = !!item.isIssueShared;
+        const userRole = sessionStorage.getItem('userRole');
+        issueShareCb.disabled = isCompleted || (userRole !== 'admin' && userRole !== 'superadmin');
     }
 
     if (workerInput) workerInput.dispatchEvent(new Event('updateTrigger'));
@@ -1427,7 +1429,8 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         memo: memoInput ? memoInput.value.trim() : '',
         date: dateField.value,
         issueShared: issueShareCb ? issueShareCb.checked : false,
-        content: currentContentStr
+        content: currentContentStr,
+        costType: costTypeInput ? costTypeInput.value : ''
     };
 
     modal.style.display = 'flex';
@@ -1577,7 +1580,7 @@ function buildDetailDropdown(item, site, equip) {
                 const specStr = m.spec ? ` [${m.spec}]` : '';
                 const displayValue = `${baseName}${specStr}`;
                 registeredSet.add(displayValue);
-                
+
                 if (!poolMap.has(displayValue)) {
                     poolMap.set(displayValue, {
                         content: m.content,
@@ -1620,7 +1623,7 @@ function buildDetailDropdown(item, site, equip) {
         }
 
         let poolItems = Array.from(poolMap.values());
-        
+
         let registeredItems = [];
         let otherItems = [];
 
@@ -1815,11 +1818,11 @@ function buildDetailDropdown(item, site, equip) {
         displayListWrapper.style.borderRadius = '4px';
         displayListWrapper.style.fontSize = '13px';
         displayListWrapper.style.color = '#c9d1d9';
-        
+
         const parentContainer = contentInput.closest('.form-row') || contentInput.parentNode;
         parentContainer.parentNode.insertBefore(displayListWrapper, parentContainer.nextSibling);
     }
-    
+
     // [수정] 박스가 모달창 내부 공간 제약에 밀려 찌그러지지 않고 적정 크기를 확보하도록 속성 강제 부여
     displayListWrapper.style.minHeight = '40px';
     displayListWrapper.style.maxHeight = '250px';
@@ -1833,7 +1836,7 @@ function buildDetailDropdown(item, site, equip) {
         const dWrapper = document.getElementById('detail-content-dropdown-wrapper');
         const pWrapperLocal = document.getElementById('detail-edit-part-wrapper');
         let allVals = [];
-        
+
         if (dWrapper) {
             const selected = dWrapper.querySelectorAll('.log-select-item.selected');
             allVals = allVals.concat(Array.from(selected).map(el => {
@@ -1841,7 +1844,7 @@ function buildDetailDropdown(item, site, equip) {
                 return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
             }));
         }
-        
+
         if (pWrapperLocal && pWrapperLocal.style.display !== 'none') {
             const pList = document.getElementById('detail-edit-part-list');
             if (pList) {
@@ -1852,7 +1855,7 @@ function buildDetailDropdown(item, site, equip) {
                 }));
             }
         }
-        
+
         if (allVals.length > 1) {
             displayListWrapper.style.display = 'block';
             displayListWrapper.innerHTML = allVals.map(v => `<div style="margin-bottom:4px; word-break:keep-all;">• ${escapeHtml(v)}</div>`).join('');
@@ -1865,7 +1868,7 @@ function buildDetailDropdown(item, site, equip) {
             if (parentContainer) parentContainer.style.marginBottom = '15px'; // 리스트 박스 없을 때 기본 여백 15px
         }
     };
-    
+
     window.updateDetailDisplayList();
 }
 
@@ -1876,6 +1879,7 @@ function hasDetailUnsavedChanges() {
     const currentMd = document.getElementById('detail-md').value.trim();
     const currentMemo = document.getElementById('detail-work-memo').value.trim();
     const currentDate = document.getElementById('detail-scheduled-date').value;
+    const currentCostType = document.getElementById('detail-cost-type') ? document.getElementById('detail-cost-type').value : '';
     const issueShareCb = document.getElementById('detail-issue-share-checkbox');
     const currentIssueShared = issueShareCb ? issueShareCb.checked : false;
 
@@ -1910,7 +1914,8 @@ function hasDetailUnsavedChanges() {
         currentMemo !== window.initialEventDetail.memo ||
         currentDate !== window.initialEventDetail.date ||
         currentContent !== window.initialEventDetail.content ||
-        currentIssueShared !== window.initialEventDetail.issueShared;
+        currentIssueShared !== window.initialEventDetail.issueShared ||
+        currentCostType !== window.initialEventDetail.costType;
 }
 
 function saveDetailChanges() {
@@ -2034,7 +2039,7 @@ function saveDetailChanges() {
                 if (match) { code = match.code || ''; fullContent = match.part || pureContent; }
                 if (partContent && idx === 0) fullContent = `${fullContent} - ${partContent}`;
 
-                let existing = sameDayItems.find(m => (m.content === fullContent || m.content === pureContent) && (m.spec || '') === spec);
+                let existingItem = sameDayItems.find(m => (m.content === fullContent || m.content === pureContent) && (m.code || '') === code && (m.spec || '') === spec);
                 if (existing) {
                     existing.scheduledDate = targetDate;
                     existing.detailType = itemDetailType;
@@ -2140,9 +2145,9 @@ function updateScheduleDateFromDetail() {
     const item = data.maint ? data.maint.find(i => i.id === id) : null;
 
     if (item && item.scheduledDate && item.scheduledDate !== newDate) {
-        const sameDayItems = data.maint.filter(i => 
-            i.scheduledDate === item.scheduledDate && 
-            i.type === item.type && 
+        const sameDayItems = data.maint.filter(i =>
+            i.scheduledDate === item.scheduledDate &&
+            i.type === item.type &&
             (i.detailType || '') === (item.detailType || '') &&
             i.originalLogId == item.originalLogId
         );
@@ -2352,18 +2357,19 @@ function completeScheduleWork() {
             partsString.split(',').forEach(p => {
                 let purePart = p.replace(/\[.*?\]\s*/g, '').trim();
                 const specMatch = purePart.match(/ \[(.*?)\]$/);
-                let spec = '';
+                let spec = i.spec || '';
                 if (specMatch) {
                     spec = specMatch[1];
                     purePart = purePart.replace(specMatch[0], '');
                 }
                 if (purePart && purePart !== '내용 없음') {
-                    extractedParts.push({ 
+                    extractedParts.push({
                         sourceId: i.id,
-                        part: purePart, 
-                        spec: spec, 
-                        date: completeDate, 
-                        costType: i.itemCost 
+                        part: purePart,
+                        code: i.code || '',
+                        spec: spec,
+                        date: completeDate,
+                        costType: i.itemCost
                     });
                 }
             });
@@ -2374,18 +2380,21 @@ function completeScheduleWork() {
     extractedParts.forEach(ep => {
         // [추가] 추출된 물품명이 코드명(약어)일 경우 정식 물품명(Part)으로 변환하여 매칭 정확도 향상
         let realPartName = ep.part;
+        let codeName = ep.code;
         let adminMatch = adminItemsForExtract.find(a => a.part === ep.part || a.code === ep.part);
         if (adminMatch && adminMatch.part) {
             realPartName = adminMatch.part;
+            if (!codeName) codeName = adminMatch.code || '';
         }
 
-        let existing = data.maint.find(m => 
-            (m.type === '정기' || m.type === '비정기') && 
-            (m.content === realPartName || m.content === ep.part) && 
+        let existing = data.maint.find(m =>
+            (m.type === '정기' || m.type === '비정기') &&
+            (m.content === realPartName || m.content === ep.part) &&
+            (m.code || '') === codeName &&
             (m.spec || '') === ep.spec &&
             m.id !== ep.sourceId
         );
-        
+
         if (existing) {
             existing.date = ep.date;
             if (ep.costType) existing.itemCost = ep.costType;
@@ -2396,7 +2405,7 @@ function completeScheduleWork() {
             idsToRemove.add(ep.sourceId);
         } else {
             const sourceItem = data.maint.find(m => m.id === ep.sourceId);
-            if (sourceItem && (sourceItem.content === realPartName || sourceItem.content === ep.part) && (sourceItem.spec || '') === ep.spec) {
+            if (sourceItem && (sourceItem.content === realPartName || sourceItem.content === ep.part) && (sourceItem.code || '') === codeName && (sourceItem.spec || '') === ep.spec) {
                 sourceItem.date = ep.date;
                 if (ep.costType) sourceItem.itemCost = ep.costType;
                 mergedRegItemIds.add(sourceItem.id);
@@ -2404,10 +2413,8 @@ function completeScheduleWork() {
                     payload.maint_upserts.push(sourceItem);
                 }
             } else {
-                let code = '';
                 let period = null;
                 if (adminMatch) {
-                    code = adminMatch.code || '';
                     period = adminMatch.cycle || null;
                 }
                 const newId = Date.now() + Math.floor(Math.random() * 10000);
@@ -2415,7 +2422,7 @@ function completeScheduleWork() {
                     id: newId,
                     type: '비정기',
                     detailType: 'BM 점검',
-                    code: code,
+                    code: codeName,
                     content: realPartName,
                     spec: ep.spec,
                     date: ep.date,
@@ -2437,7 +2444,7 @@ function completeScheduleWork() {
 
     sameDayItems.forEach(i => {
         if (i.type === '비정기') {
-            const regItem = data.maint.find(m => m.type === '정기' && m.id !== i.id && m.content === i.content && (m.spec || '') === (i.spec || ''));
+            const regItem = data.maint.find(m => m.type === '정기' && m.id !== i.id && m.content === i.content && (m.code || '') === (i.code || '') && (m.spec || '') === (i.spec || ''));
             if (regItem) {
                 regItem.date = i.date;
                 if (i.itemCost) regItem.itemCost = i.itemCost;
@@ -2639,7 +2646,7 @@ function cancelScheduleCompletion() {
             fullContent = match.part || pureContent;
         }
 
-        let existingItem = data.maint.find(m => m.type === logType && (m.content === fullContent || m.content === pureContent) && (m.spec || '') === spec && m.originalLogId == logItem.originalLogId);
+        let existingItem = data.maint.find(m => m.type === logType && (m.content === fullContent || m.content === pureContent) && (m.code || '') === code && (m.spec || '') === spec && m.originalLogId == logItem.originalLogId);
 
         if (existingItem) {
             existingItem.scheduledDate = logDate;
@@ -2807,7 +2814,7 @@ function setupRegisterScheduleModal() {
         modal.style.display = 'none';
         window.currentAddWorkLogId = null; // 팝업 닫을 시 상태 초기화
         window.openDetailAfterRegister = false; // [추가] 팝업 닫을 시 상세 팝업 오픈 플래그 초기화
-        
+
         // [추가] 팝업 닫을 때 제안박스 선택 상태 초기화
         const contentList = document.getElementById('register-content-list');
         if (contentList) contentList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
@@ -3348,7 +3355,7 @@ function updateRegisterEquipSelect(site) {
     }
 
     const data = getDeviceDataMap();
-    const equips = data[site] || [];
+    const equips = data[site] ? [...data[site]] : [];
 
     equips.forEach(equip => {
         const option = document.createElement('option');
@@ -4001,7 +4008,7 @@ window.updateRegisterContentOptions = function () {
             const specStr = m.spec ? ` [${m.spec}]` : '';
             const displayValue = `${baseName}${specStr}`;
             registeredSet.add(displayValue);
-            
+
             let partno = '';
             const match = adminItems.find(a => a.part === m.content || a.code === m.content);
             if (match) partno = match.partno || '';
@@ -4047,9 +4054,9 @@ window.updateRegisterContentOptions = function () {
                 }
             });
         }
-        
+
         let poolItems = Array.from(poolMap.values());
-        
+
         let registeredItems = [];
         let otherItems = [];
 
@@ -4214,11 +4221,11 @@ window.updateRegisterContentOptions = function () {
         displayListWrapper.style.borderRadius = '4px';
         displayListWrapper.style.fontSize = '13px';
         displayListWrapper.style.color = '#c9d1d9';
-        
+
         const parentContainer = input.closest('.form-row') || input.parentNode;
         parentContainer.parentNode.insertBefore(displayListWrapper, parentContainer.nextSibling);
     }
-    
+
     // [수정] 박스가 모달창 내부 공간 제약에 밀려 찌그러지지 않고 적정 크기를 확보하도록 속성 강제 부여
     displayListWrapper.style.minHeight = '40px';
     displayListWrapper.style.maxHeight = '250px';
@@ -4237,7 +4244,7 @@ window.updateRegisterContentOptions = function () {
                 return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
             }));
         }
-        
+
         const pRow = document.getElementById('register-part-row');
         if (pRow && pRow.style.display !== 'none') {
             const pList = document.getElementById('register-part-list');
@@ -4249,7 +4256,7 @@ window.updateRegisterContentOptions = function () {
                 }));
             }
         }
-        
+
         if (allVals.length > 1) {
             displayListWrapper.style.display = 'block';
             displayListWrapper.innerHTML = allVals.map(v => `<div style="margin-bottom:4px; word-break:keep-all;">• ${escapeHtml(v)}</div>`).join('');
@@ -4262,7 +4269,7 @@ window.updateRegisterContentOptions = function () {
             if (parentContainer) parentContainer.style.marginBottom = '15px'; // 리스트 박스 없을 때 기본 여백 15px
         }
     };
-    
+
     window.updateRegisterDisplayList();
 };
 
@@ -4347,7 +4354,7 @@ function openSearchModal() {
 
     const data = getDeviceDataMap();
     siteSelect.innerHTML = '<option value="">전체 사업장</option>';
-    
+
     const sites = Object.keys(data).filter(k => k !== 'models' && k !== 'details').sort();
     if (!sites.includes('기타 사업장')) {
         sites.push('기타 사업장');
@@ -4424,7 +4431,7 @@ function updateSearchEquipSelect(site) {
     if (!site) return;
 
     const data = getDeviceDataMap();
-    const equips = data[site] || [];
+    const equips = data[site] ? [...data[site]] : [];
 
     if (equipSelect) {
         equips.forEach(equip => {

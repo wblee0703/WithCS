@@ -140,23 +140,26 @@ function updateIntegratedDashboard() {
                     }
 
                     if (isSetup) {
-                        setupCount++;
-                        
-                        // 막대그래프용 데이터 (완료 포함)
-                        allSiteCounts[site] = (allSiteCounts[site] || 0) + 1;
-                        totalActiveAll++;
+                        // [수정] '기타(ETC)' 장비는 셋업 현황 집계에서 제외
+                        if (equip !== '기타(ETC)') {
+                            setupCount++;
 
-                        if (progress === 100) {
-                            summaryCompletedCount++;
-                        } else {
-                            summaryActiveCount++;
-                        }
+                            // 막대그래프용 데이터 (완료 포함)
+                            allSiteCounts[site] = (allSiteCounts[site] || 0) + 1;
+                            totalActiveAll++;
 
-                        if (!integSetupSelectedSite || integSetupSelectedSite === site) {
                             if (progress === 100) {
-                                completedEquips.push({ site, equip, progress, date: completionDate });
+                                summaryCompletedCount++;
                             } else {
-                                setupEquips.push({ site, equip, progress });
+                                summaryActiveCount++;
+                            }
+
+                            if (!integSetupSelectedSite || integSetupSelectedSite === site) {
+                                if (progress === 100) {
+                                    completedEquips.push({ site, equip, progress, date: completionDate });
+                                } else {
+                                    setupEquips.push({ site, equip, progress });
+                                }
                             }
                         }
                     }
@@ -241,41 +244,49 @@ function renderIntegEquipStats(data) {
 
     // 데이터 집계
     Object.keys(data).forEach(site => {
-        if (data[site] && Array.isArray(data[site]) && data[site].length > 0) {
-            actualSiteCount++;
+        if (data[site] && Array.isArray(data[site])) {
+            // [수정] 기타(ETC)를 제외한 실제 유효 장비들만 필터링
+            const validEquips = data[site].filter(e => e !== '기타(ETC)');
             
-            let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타 사업장';
-            if (groupCounts[groupName] === undefined) groupCounts[groupName] = 0;
-
-            groupCounts[groupName] += data[site].length;
-
-            data[site].forEach(equip => {
-                totalEquipCount++;
-                const model = equip.split('::')[0]; // 장비명(모델) 추출
-                allModels.add(model);
+            if (validEquips.length > 0) {
+                actualSiteCount++;
                 
-                // 그룹(사업장) 기반으로 모델 필터링 적용
-                if (!integEquipSelectedGroup || integEquipSelectedGroup === groupName) {
-                    if (!modelCounts[model]) modelCounts[model] = { total: 0, setup: 0 };
-                    modelCounts[model].total++;
+                let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타 사업장';
+                if (groupCounts[groupName] === undefined) groupCounts[groupName] = 0;
 
-                    // 셋업 중인 장비 개수 파악
-                    const equipKey = `${site}::${equip}`;
-                    const detailData = setupData[equipKey];
-                    if (detailData && detailData.setupDetails) {
-                        const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
-                        if (completeItem && completeItem.startDate && !completeItem.completed) {
-                            modelCounts[model].setup++;
+                groupCounts[groupName] += validEquips.length;
+
+                validEquips.forEach(equip => {
+                    totalEquipCount++;
+                    const model = equip.split('::')[0]; // 장비명(모델) 추출
+                    allModels.add(model);
+
+                    // 그룹(사업장) 기반으로 모델 필터링 적용
+                    if (!integEquipSelectedGroup || integEquipSelectedGroup === groupName) {
+                        if (!modelCounts[model]) modelCounts[model] = { total: 0, setup: 0 };
+                        modelCounts[model].total++;
+
+                        // 셋업 중인 장비 개수 파악
+                        const equipKey = `${site}::${equip}`;
+                        const detailData = setupData[equipKey];
+                        if (detailData && detailData.setupDetails) {
+                            const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
+                            if (completeItem && completeItem.startDate && !completeItem.completed) {
+                                modelCounts[model].setup++;
+                            }
                         }
                     }
-                }
-            });
+                });
+            }
         }
     });
 
     // 요약 정보 텍스트 갱신
     if (summaryEl) {
-        const modelCount = allModels.size;
+        // [수정] 장비 모델 관리에 등록된 전체 모델 수를 표시 (등록된 값이 없으면 실 사용 모델 수로 대체)
+        const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+        const modelCount = equipmentModels.length > 0 ? equipmentModels.length : allModels.size;
+        
         summaryEl.textContent = `(사업장 : ${actualSiteCount}, 장비 모델 : ${modelCount}, 장비수 : ${totalEquipCount})`;
     }
 

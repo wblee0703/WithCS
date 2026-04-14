@@ -860,7 +860,13 @@ function setupSidebarEvents() {
                 const success = await window.syncAdminDB('site', 'CREATE', { name: val });
                 if (!success) return alert('서버 등록에 실패했습니다.');
 
-                storageData[val] = [];
+                // [수정] 사업장 생성 시 기타(ETC) 장비 기본 할당
+                storageData[val] = ['기타(ETC)'];
+                
+                // [추가] 기타(ETC) 장비 상세 데이터 초기화
+                const initData = { maint: [], logs: [], memo: "", setup: { model: "" } };
+                localStorage.setItem(`details_${val}_기타(ETC)`, JSON.stringify(initData));
+
                 saveData();
                 addSystemLog('ADD_SITE', val);
                 renderSites();
@@ -1569,6 +1575,14 @@ function openAddUserModal() {
         const btnClose = modal.querySelector('#btn-close-add-user-modal');
         if (btnClose) btnClose.onclick = closeAddUserModal;
 
+        // [추가] 소속 제안 박스 설정
+        const deptInput = modal.querySelector('#new-user-department');
+        if (deptInput) setupDepartmentSuggestion(deptInput);
+
+        // [추가] 직급 제안 박스 설정
+        const posInput = modal.querySelector('#new-user-position');
+        if (posInput) setupPositionSuggestion(posInput);
+
         // 사업장 선택 드롭다운 데이터 갱신
         const siteSelect = modal.querySelector('#new-user-site');
         let siteInput = modal.querySelector('#new-user-site-input');
@@ -2174,6 +2188,14 @@ window.renderMyInfoEdit = function (user) {
     }
 
     content.appendChild(clone);
+
+    // [추가] 소속 제안 박스 설정 (DOM에 추가된 후 실행)
+    const appendedDeptInput = document.getElementById('edit-my-dept');
+    if (appendedDeptInput) setupDepartmentSuggestion(appendedDeptInput);
+
+    // [추가] 직급 제안 박스 설정 (DOM에 추가된 후 실행)
+    const appendedPosInput = document.getElementById('edit-my-pos');
+    if (appendedPosInput) setupPositionSuggestion(appendedPosInput);
 };
 
 /* ==========================================================================
@@ -3261,18 +3283,25 @@ function openNextScheduleModal(options) {
 
             selectedItems.forEach((sItem, idx) => {
                 let code = '';
-                let fullContent = sItem.content;
+                let pureContent = sItem.content;
+                let spec = '';
+                const specMatch = pureContent.match(/ \[(.*?)\]$/);
+                if (specMatch) {
+                    spec = specMatch[1];
+                    pureContent = pureContent.replace(specMatch[0], '');
+                }
+                let fullContent = pureContent;
                 let period = null;
 
-                const match = adminItems.find(a => a.part === sItem.content || a.code === sItem.content);
+                const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
                 if (match) {
                     code = match.code || '';
-                    fullContent = match.part || sItem.content;
+                    fullContent = match.part || pureContent;
                     period = match.cycle || null;
                 }
 
-                let existingItem = data.maint.find(m => (m.content === fullContent || m.content === sItem.content) && mergedRegItemIds.has(m.id));
-                if (!existingItem) existingItem = data.maint.find(m => m.content === fullContent || m.content === sItem.content);
+                let existingItem = data.maint.find(m => (m.content === fullContent || m.content === pureContent) && (m.code || '') === code && (m.spec || '') === spec && mergedRegItemIds.has(m.id));
+                if (!existingItem) existingItem = data.maint.find(m => (m.content === fullContent || m.content === pureContent) && (m.code || '') === code && (m.spec || '') === spec);
 
                 if (existingItem) {
                     const oldDate = existingItem.scheduledDate;
@@ -4177,3 +4206,154 @@ function openTaskFromSearch(site, equip, id, isCompleted) {
     }
 }
 window.openTaskFromSearch = openTaskFromSearch;
+
+// [추가] 소속(Department) 입력창 제안 박스 설정 함수
+function setupDepartmentSuggestion(inputEl) {
+    if (!inputEl || inputEl.dataset.deptSetup === 'true') return;
+    inputEl.dataset.deptSetup = 'true';
+
+    let wrapper = inputEl.closest('.autocomplete-wrapper');
+    let suggestionList;
+
+    if (!wrapper) {
+        wrapper = document.createElement('div');
+        wrapper.className = 'autocomplete-wrapper';
+        wrapper.style.position = 'relative';
+        wrapper.style.width = '100%';
+        wrapper.style.display = 'flex';
+
+        inputEl.parentNode.insertBefore(wrapper, inputEl);
+        wrapper.appendChild(inputEl);
+
+        suggestionList = document.createElement('ul');
+        suggestionList.className = 'suggestion-list';
+        suggestionList.style.zIndex = '99999';
+        suggestionList.style.top = '100%';
+        suggestionList.style.left = '0';
+        suggestionList.style.minWidth = '100%';
+        wrapper.appendChild(suggestionList);
+    } else {
+        suggestionList = wrapper.querySelector('.suggestion-list');
+    }
+
+    // 지정된 소속 목록 (상성 -> 삼성으로 오타 교정)
+    const depts = ['운영1팀(본사)', '운영1팀(삼성)', '운영1팀(청주)', '운영(해외)', '직접 입력'];
+
+    const showSuggestions = () => {
+        suggestionList.innerHTML = '';
+        depts.forEach(dept => {
+            const li = document.createElement('li');
+            li.className = 'user-suggestion-item suggestion-item';
+            li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(dept)}</span>`;
+            li.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                if (dept === '직접 입력') {
+                    inputEl.value = '';
+                    inputEl.focus();
+                } else {
+                    inputEl.value = dept;
+                }
+                suggestionList.style.display = 'none';
+            });
+            suggestionList.appendChild(li);
+        });
+        suggestionList.style.display = 'block';
+    };
+
+    inputEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showSuggestions();
+    });
+
+    inputEl.addEventListener('focus', showSuggestions);
+
+    inputEl.addEventListener('blur', () => {
+        setTimeout(() => {
+            if (suggestionList) suggestionList.style.display = 'none';
+        }, 200);
+    });
+
+    // 외부 클릭 시 닫기
+    const outsideClickListener = (e) => {
+        if (suggestionList && suggestionList.style.display === 'block' && e.target !== inputEl && !suggestionList.contains(e.target)) {
+            suggestionList.style.display = 'none';
+        }
+    };
+    document.addEventListener('mousedown', outsideClickListener);
+    document.addEventListener('touchstart', outsideClickListener, { passive: true });
+}
+// [추가] 직급(Position) 입력창 제안 박스 설정 함수
+function setupPositionSuggestion(inputEl) {
+    if (!inputEl || inputEl.dataset.posSetup === 'true') return;
+    inputEl.dataset.posSetup = 'true';
+
+    let wrapper = inputEl.closest('.autocomplete-wrapper');
+    let suggestionList;
+
+    if (!wrapper) {
+        wrapper = document.createElement('div');
+        wrapper.className = 'autocomplete-wrapper';
+        wrapper.style.position = 'relative';
+        wrapper.style.width = '100%';
+        wrapper.style.display = 'flex';
+
+        inputEl.parentNode.insertBefore(wrapper, inputEl);
+        wrapper.appendChild(inputEl);
+
+        suggestionList = document.createElement('ul');
+        suggestionList.className = 'suggestion-list';
+        suggestionList.style.zIndex = '99999';
+        suggestionList.style.top = '100%';
+        suggestionList.style.left = '0';
+        suggestionList.style.minWidth = '100%';
+        wrapper.appendChild(suggestionList);
+    } else {
+        suggestionList = wrapper.querySelector('.suggestion-list');
+    }
+
+    // 지정된 직급 목록
+    const positions = ['사원', '주임', '대리', '과장', '차장', '부장', '직접 입력'];
+
+    const showSuggestions = () => {
+        suggestionList.innerHTML = '';
+        positions.forEach(pos => {
+            const li = document.createElement('li');
+            li.className = 'user-suggestion-item suggestion-item';
+            li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(pos)}</span>`;
+            li.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                if (pos === '직접 입력') {
+                    inputEl.value = '';
+                    inputEl.focus();
+                } else {
+                    inputEl.value = pos;
+                }
+                suggestionList.style.display = 'none';
+            });
+            suggestionList.appendChild(li);
+        });
+        suggestionList.style.display = 'block';
+    };
+
+    inputEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showSuggestions();
+    });
+
+    inputEl.addEventListener('focus', showSuggestions);
+
+    inputEl.addEventListener('blur', () => {
+        setTimeout(() => {
+            if (suggestionList) suggestionList.style.display = 'none';
+        }, 200);
+    });
+
+    // 외부 클릭 시 닫기
+    const outsideClickListener = (e) => {
+        if (suggestionList && suggestionList.style.display === 'block' && e.target !== inputEl && !suggestionList.contains(e.target)) {
+            suggestionList.style.display = 'none';
+        }
+    };
+    document.addEventListener('mousedown', outsideClickListener);
+    document.addEventListener('touchstart', outsideClickListener, { passive: true });
+}

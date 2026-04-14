@@ -55,73 +55,6 @@
     flex: 0 0 400px;
 }
 
-/* [추가] 장비 모델 검색 제안 리스트 */
-.suggestion-list {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    min-width: 100%;
-    width: max-content;
-    background: #161b22;
-    border: 1px solid #30363d;
-    border-radius: 4px;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 1000;
-    display: none;
-    list-style: none;
-    padding: 0;
-    margin-top: 2px;
-    box-sizing: border-box; /* 너비가 삐져나가지 않도록 수정 */
-}
-
-/* [추가] 복수 선택 제안 박스 스타일 */
-.suggestion-box {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    min-width: 100%;
-    width: max-content;
-    background: #161b22;
-    border: 1px solid #30363d;
-    border-radius: 4px;
-    z-index: 1000;
-    display: none;
-    flex-direction: column;
-    margin-top: 2px;
-    box-sizing: border-box;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-}
-
-.suggestion-box-footer {
-    padding: 8px;
-    border-top: 1px solid #30363d;
-    background: #21262d;
-    border-radius: 0 0 4px 4px;
-}
-
-.suggestion-item {
-    padding: 8px 10px;
-    cursor: pointer;
-    border-bottom: 1px solid #21262d;
-    color: #e6edf3;
-    font-size: 13px;
-    white-space: nowrap;
-}
-.suggestion-item:hover { background: #1f6feb; }
-.suggestion-item .abbr { color: #8b949e; font-size: 11px; margin-left: 5px; }
-
-.suggestion-item.selected {
-    background: rgba(31, 111, 235, 0.2);
-}
-
-/* 검색 제안 리스트 아이템 레이아웃 */
-.suggestion-item-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
 /* 리스트 스타일 */
 .list-header {
     display: flex;
@@ -302,12 +235,6 @@
     margin-top: 30px;
     padding-top: 20px;
     border-top: 1px solid #30363d;
-}
-
-/* 입력창 및 검색 제안 리스트 래퍼 */
-.autocomplete-wrapper {
-    position: relative;
-    width: 100%;
 }
 
 /* 입력창 그룹 유틸리티 */

@@ -523,6 +523,18 @@ input:disabled {
     margin: 0 auto;
 }
 
+/* 본인 확인 및 비밀번호 강제 변경 팝업 크기 고정 */
+#verify-pw-modal .modal-window {
+    width: 350px !important;
+    height: auto !important;
+    min-height: 0 !important;
+}
+#force-pw-change-modal .modal-window {
+    width: 400px !important;
+    height: auto !important;
+    min-height: 0 !important;
+}
+
 .login-form input {
     width: 100%;
     padding: 12px;
@@ -1071,6 +1083,14 @@ body.role-admin .btn-list-setting {
         padding: 15px !important;
     }
 
+    /* 본인 확인 및 비밀번호 강제 변경 팝업 모바일 크기 최적화 */
+    #verify-pw-modal .modal-window,
+    #force-pw-change-modal .modal-window {
+        width: 90vw !important;
+        max-width: 400px !important;
+        height: auto !important;
+    }
+
     /* 시스템 로그 모달 모바일 반응형 처리 */
     #log-modal .modal-window {
         width: 95vw !important;
@@ -1152,4 +1172,97 @@ body.role-admin .btn-list-setting {
         flex-direction: row !important;
         flex-wrap: nowrap !important;
     }
+}
+/* ==========================================================================
+   공통 제안 박스 (Autocomplete / Suggestion Box / 계정관리 드롭다운) 스타일
+   ========================================================================== */
+.autocomplete-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+}
+
+.suggestion-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 100%;
+    width: max-content;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    display: none;
+    list-style: none;
+    padding: 0;
+    margin-top: 2px;
+    margin-bottom: 0;
+    box-sizing: border-box;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.suggestion-box {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 100%;
+    width: max-content;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    z-index: 1000;
+    display: none;
+    flex-direction: column;
+    margin-top: 2px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.suggestion-box-footer {
+    padding: 8px;
+    border-top: 1px solid #30363d;
+    background: #21262d;
+    border-radius: 0 0 4px 4px;
+}
+
+.suggestion-item,
+.user-suggestion-item {
+    padding: 8px 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #21262d;
+    color: #e6edf3;
+    font-size: 13px;
+    white-space: nowrap;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.suggestion-item:last-child,
+.user-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+.suggestion-item:hover,
+.user-suggestion-item:hover {
+    background: #1f6feb;
+}
+
+.suggestion-item.selected {
+    background: rgba(31, 111, 235, 0.2);
+}
+
+.suggestion-item .abbr {
+    color: #8b949e;
+    font-size: 11px;
+    margin-left: 5px;
+}
+
+.suggestion-item-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 }

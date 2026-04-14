@@ -1180,7 +1180,7 @@ function updateGanttSearchEquipSelect(site) {
     }
 
     const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
-    const equips = data[site] || [];
+    const equips = data[site] ? [...data[site]] : [];
     
     equips.forEach(equip => {
         const option = document.createElement('option');

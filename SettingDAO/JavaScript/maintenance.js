@@ -207,98 +207,98 @@ function setupLogEvents() {
     const confirmBtn = document.getElementById('btn-memo-worker-confirm');
     const hiddenInput = document.getElementById('memo-worker');
 
-        const renderWorkers = async (searchTerm = '') => {
-            const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
-            const currentSelected = hiddenInput.value ? hiddenInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
-            const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '' } : w);
-            let displayWorkers = [...allWorkers];
+    const renderWorkers = async (searchTerm = '') => {
+        const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames() : [];
+        const currentSelected = hiddenInput.value ? hiddenInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+        const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '' } : w);
+        let displayWorkers = [...allWorkers];
 
-            if (searchTerm) {
-                const kw = searchTerm.toLowerCase();
-                displayWorkers = displayWorkers.filter(w =>
-                    w.name.toLowerCase().includes(kw) ||
-                    w.department.toLowerCase().includes(kw) ||
-                    w.position.toLowerCase().includes(kw)
-                );
-            }
-
-            const displayedNames = new Set(displayWorkers.map(w => w.name));
-            currentSelected.forEach(selectedName => {
-                if (!displayedNames.has(selectedName)) {
-                    const workerToAdd = allWorkers.find(w => w.name === selectedName);
-                    if (workerToAdd) displayWorkers.unshift(workerToAdd);
-                    else displayWorkers.unshift({ name: selectedName, department: '', position: '' });
-                }
-            });
-
-            // [추가] 선택된 이름이 최상단으로 오도록 정렬
-            const userSite = sessionStorage.getItem('userSite') || '';
-            displayWorkers.sort((a, b) => {
-                const aSelected = currentSelected.includes(a.name);
-                const bSelected = currentSelected.includes(b.name);
-                if (aSelected && !bSelected) return -1;
-                if (!aSelected && bSelected) return 1;
-
-                const aSameSite = a.site === userSite;
-                const bSameSite = b.site === userSite;
-                if (aSameSite && !bSameSite) return -1;
-                if (!aSameSite && bSameSite) return 1;
-                return a.name.localeCompare(b.name);
-            });
-
-            listContainer.innerHTML = '';
-            displayWorkers.forEach(w => {
-                const isSelected = currentSelected.includes(w.name);
-                const subInfoText = (w.department || w.position) ? `(${escapeHtml(w.department)} ${escapeHtml(w.position)})` : '';
-
-                const template = getTemplateContent('worker-list-item-template');
-                if (!template) return;
-                const div = template.querySelector('.log-select-item');
-
-                if (isSelected) div.classList.add('selected');
-                div.dataset.value = escapeHtml(w.name);
-                div.querySelector('.worker-name').textContent = escapeHtml(w.name);
-                div.querySelector('.worker-dept-pos').textContent = subInfoText ? ` ${subInfoText}` : '';
-                listContainer.appendChild(div);
-            });
-            if (displayWorkers.length === 0) listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
-            listContainer.querySelectorAll('.log-select-item').forEach(item => {
-                item.onclick = (e) => { e.stopPropagation(); item.classList.toggle('selected'); updateWorkerSelection(); };
-            });
-        };
-
-        const updateWorkerSelection = () => {
-            const selected = Array.from(listContainer.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
-            hiddenInput.value = selected.join(', ');
-            if (selected.length > 0) trigger.textContent = selected.join(' ');
-            else trigger.textContent = '작업자 선택';
-            trigger.title = selected.join(', ');
-            hiddenInput.dispatchEvent(new Event('input'));
-
-            // [추가] 작업자 수에 맞춰 공수 자동 계산
-            const mdInput = document.getElementById('memo-md');
-            if (mdInput) {
-                mdInput.value = selected.length;
-                mdInput.dispatchEvent(new Event('input'));
-            }
-        };
-
-        trigger.onclick = (e) => {
-            e.stopPropagation();
-            if (selectedLogId === null) { alert('리스트를 먼저 선택해주세요.'); return; }
-            if (trigger.classList.contains('input-disabled')) return; // [추가] 비활성화 방어
-            document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== dropdown) d.classList.remove('show'); });
-            dropdown.classList.toggle('show');
-            if (dropdown.classList.contains('show')) renderWorkers(searchInput.value.trim());
-        };
-
-        searchInput.onclick = (e) => e.stopPropagation();
-        searchInput.oninput = (e) => renderWorkers(e.target.value.trim());
-
-        confirmBtn.onclick = (e) => {
-            e.stopPropagation();
-            dropdown.classList.remove('show');
+        if (searchTerm) {
+            const kw = searchTerm.toLowerCase();
+            displayWorkers = displayWorkers.filter(w =>
+                w.name.toLowerCase().includes(kw) ||
+                w.department.toLowerCase().includes(kw) ||
+                w.position.toLowerCase().includes(kw)
+            );
         }
+
+        const displayedNames = new Set(displayWorkers.map(w => w.name));
+        currentSelected.forEach(selectedName => {
+            if (!displayedNames.has(selectedName)) {
+                const workerToAdd = allWorkers.find(w => w.name === selectedName);
+                if (workerToAdd) displayWorkers.unshift(workerToAdd);
+                else displayWorkers.unshift({ name: selectedName, department: '', position: '' });
+            }
+        });
+
+        // [추가] 선택된 이름이 최상단으로 오도록 정렬
+        const userSite = sessionStorage.getItem('userSite') || '';
+        displayWorkers.sort((a, b) => {
+            const aSelected = currentSelected.includes(a.name);
+            const bSelected = currentSelected.includes(b.name);
+            if (aSelected && !bSelected) return -1;
+            if (!aSelected && bSelected) return 1;
+
+            const aSameSite = a.site === userSite;
+            const bSameSite = b.site === userSite;
+            if (aSameSite && !bSameSite) return -1;
+            if (!aSameSite && bSameSite) return 1;
+            return a.name.localeCompare(b.name);
+        });
+
+        listContainer.innerHTML = '';
+        displayWorkers.forEach(w => {
+            const isSelected = currentSelected.includes(w.name);
+            const subInfoText = (w.department || w.position) ? `(${escapeHtml(w.department)} ${escapeHtml(w.position)})` : '';
+
+            const template = getTemplateContent('worker-list-item-template');
+            if (!template) return;
+            const div = template.querySelector('.log-select-item');
+
+            if (isSelected) div.classList.add('selected');
+            div.dataset.value = escapeHtml(w.name);
+            div.querySelector('.worker-name').textContent = escapeHtml(w.name);
+            div.querySelector('.worker-dept-pos').textContent = subInfoText ? ` ${subInfoText}` : '';
+            listContainer.appendChild(div);
+        });
+        if (displayWorkers.length === 0) listContainer.innerHTML = `<div class="log-select-empty-msg" style="padding:10px; color:#8b949e; text-align:center;">검색 결과가 없습니다.</div>`;
+        listContainer.querySelectorAll('.log-select-item').forEach(item => {
+            item.onclick = (e) => { e.stopPropagation(); item.classList.toggle('selected'); updateWorkerSelection(); };
+        });
+    };
+
+    const updateWorkerSelection = () => {
+        const selected = Array.from(listContainer.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
+        hiddenInput.value = selected.join(', ');
+        if (selected.length > 0) trigger.textContent = selected.join(' ');
+        else trigger.textContent = '작업자 선택';
+        trigger.title = selected.join(', ');
+        hiddenInput.dispatchEvent(new Event('input'));
+
+        // [추가] 작업자 수에 맞춰 공수 자동 계산
+        const mdInput = document.getElementById('memo-md');
+        if (mdInput) {
+            mdInput.value = selected.length;
+            mdInput.dispatchEvent(new Event('input'));
+        }
+    };
+
+    trigger.onclick = (e) => {
+        e.stopPropagation();
+        if (selectedLogId === null) { alert('리스트를 먼저 선택해주세요.'); return; }
+        if (trigger.classList.contains('input-disabled')) return; // [추가] 비활성화 방어
+        document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== dropdown) d.classList.remove('show'); });
+        dropdown.classList.toggle('show');
+        if (dropdown.classList.contains('show')) renderWorkers(searchInput.value.trim());
+    };
+
+    searchInput.onclick = (e) => e.stopPropagation();
+    searchInput.oninput = (e) => renderWorkers(e.target.value.trim());
+
+    confirmBtn.onclick = (e) => {
+        e.stopPropagation();
+        dropdown.classList.remove('show');
+    }
 
     const memoWorkerInput = document.getElementById('memo-worker');
     const memoMdInput = document.getElementById('memo-md');
@@ -452,9 +452,16 @@ function addDetailItem() {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [], memo: "" };
 
-    // [수정] 물품명(content)이 같아도 물품 상세(spec) 텍스트가 다르면 다른 항목으로 취급하여 중복 추가 허용
-    if (data.maint.some(m => m.type === maintType && m.content === content && (m.spec || '') === spec)) {
-        return alert(`이미 유지관리 물품에 등록된 항목입니다. (${maintType})`);
+    // [수정] 코드명이 존재하면 코드명과 물품 상세로, 없으면 물품명과 물품 상세로 완벽한 중복 등록 방지
+    const isDuplicate = data.maint.some(m => {
+        if (m.type !== maintType) return false;
+        if ((m.spec || '') !== spec) return false;
+        if (code && m.code) return m.code === code;
+        return m.content === content;
+    });
+
+    if (isDuplicate) {
+        return alert(`이미 유지관리 물품에 동일하게 등록된 항목이 있습니다. (${maintType})`);
     }
 
     const newItem = {
@@ -530,18 +537,18 @@ function renderDetails() {
         }
 
         tr.querySelector('.edit-code').textContent = escapeHtml(item.code || '-');
-        
+
         const contentCell = tr.querySelector('.edit-content');
         const safeContent = item.content || '';
         contentCell.textContent = safeContent;
         contentCell.dataset.rawContent = safeContent;
         contentCell.dataset.rawSpec = item.spec || '';
-        
+
         const specCell = tr.querySelector('.edit-spec');
         if (specCell) {
             specCell.textContent = escapeHtml(item.spec || '-');
         }
-        
+
         tr.querySelector('.edit-date').textContent = item.date;
         tr.querySelector('.edit-period').textContent = item.period ? item.period + '일' : '-';
 
@@ -586,10 +593,10 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
     // 제안 박스 래퍼 생성
     let wrapper = contentElement.closest('.autocomplete-wrapper');
     const ul = document.getElementById('maint-content-suggestions');
-    
+
     if (wrapper && ul && contentElement.dataset.eventsBound !== 'true') {
         contentElement.dataset.eventsBound = 'true';
-        
+
         // 이벤트 리스너 등록
         contentElement.addEventListener('click', () => window.renderMaintSuggestions());
         contentElement.addEventListener('input', () => {
@@ -847,9 +854,9 @@ function toggleEditRow(id) {
         const newType = typeSelect ? typeSelect.value : (badgeEl ? badgeEl.textContent.trim() : '정기');
 
         const newCode = codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim();
-            const newContent = contentCell.textContent.trim();
-            const specInput = document.getElementById(`input-spec-${id}`);
-            const newSpec = specInput ? specInput.value.trim() : '';
+        const newContent = contentCell.dataset.rawContent || contentCell.textContent.trim(); // [수정] HTML 공백 무시 방지
+        const specInput = document.getElementById(`input-spec-${id}`);
+        const newSpec = specInput ? specInput.value.trim() : '';
         const dateInput = document.getElementById(`input-date-${id}`);
         const newDate = dateInput ? dateInput.value : '';
 
@@ -862,6 +869,22 @@ function toggleEditRow(id) {
         }
 
         if (!newDate) return alert('날짜를 선택해주세요.');
+
+        // [추가] 중복 등록 검사 로직 (수정 시점)
+        const key = `details_${currentPath.site}_${currentPath.equip}`;
+        const data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
+        
+        const isDuplicate = data.maint.some(m => {
+            if (String(m.id) === String(id)) return false; // 자기 자신 제외
+            if (m.type !== newType) return false;
+            if ((m.spec || '') !== newSpec) return false;
+            if (newCode && m.code) return m.code === newCode;
+            return m.content === newContent;
+        });
+
+        if (isDuplicate) {
+            return alert(`이미 유지관리 물품에 동일하게 등록된 항목이 있습니다.`);
+        }
 
         updateRowData(id, newCode, newContent, newSpec, newDate, newPeriod, newType);
 
@@ -931,9 +954,8 @@ function renderLogs() {
         return;
     }
 
-    // [수정] 일정 변경(<변동>)으로 자동 생성된 이력은 장비 점검 이력 화면에서 숨김 처리
-    // [수정] 자식 로그(추가작업)도 메인 리스트에서 숨김 처리 (부모 로그의 '확인' 버튼을 통해서만 접근)
-    let displayLogs = data.logs.filter(log => log.detailType !== '일정변경' && !log.originalLogId);
+    // [수정] 일정 변경(<변동>)으로 자동 생성된 이력은 숨김 처리하되, 추가 작업은 리스트에 노출
+    let displayLogs = data.logs.filter(log => log.detailType !== '일정변경');
 
     // 1. 검색 필터 적용
     const searchInput = document.getElementById('log-search');
@@ -945,7 +967,7 @@ function renderLogs() {
                     log.worker, log.date, log.content, log.memo, log.type, log.detailType, log.md
                 ];
                 const matchParent = searchableParentValues.some(val => val && val.toString().toLowerCase().includes(keyword));
-                
+
                 const childLogs = data.logs.filter(l => l.originalLogId == log.id);
                 const matchChild = childLogs.some(clog => {
                     const searchableChildValues = [
@@ -1024,7 +1046,7 @@ function renderLogs() {
             const childLogs = data.logs.filter(l => l.originalLogId == targetLogId);
             const childMaints = data.maint ? data.maint.filter(m => m.originalLogId == targetLogId) : [];
             const hasExtra = childLogs.length > 0 || childMaints.length > 0;
-            
+
             const btnAdd = addWorkCell.querySelector('.btn-add-extra-work');
             if (btnAdd) {
                 btnAdd.onclick = (e) => {
@@ -1032,7 +1054,7 @@ function renderLogs() {
                     openAddWorkModal(targetLogId, escapeHtml(log.date));
                 };
             }
-            
+
             const btnView = addWorkCell.querySelector('.btn-view-extra-work');
             if (btnView) {
                 if (hasExtra) {
@@ -1046,18 +1068,24 @@ function renderLogs() {
                 }
             }
         }
-        
+
         const issueShareCell = tr.querySelector('.log-issue-share');
         if (issueShareCell) {
+            const targetParentId = log.originalLogId || log.id;
             const isShared = !!log.isIssueShared;
             const cb = issueShareCell.querySelector('.issue-share-checkbox');
             if (cb) {
+                cb.dataset.familyId = targetParentId;
                 cb.checked = isShared;
                 const userRole = sessionStorage.getItem('userRole');
                 cb.disabled = (userRole !== 'admin' && userRole !== 'superadmin');
                 cb.onclick = (e) => {
                     e.stopPropagation();
-                    window.toggleIssueShare(log.id, e.target.checked);
+                    const newChecked = e.target.checked;
+                    document.querySelectorAll(`.issue-share-checkbox[data-family-id="${targetParentId}"]`).forEach(box => {
+                        box.checked = newChecked;
+                    });
+                    window.toggleIssueShare(log.id, newChecked);
                 };
             }
         }
@@ -1082,7 +1110,7 @@ function selectLog(id, focus = true) {
     document.querySelectorAll('#log-table-body tr').forEach(tr => tr.classList.remove('active-log'));
     const targetRow = document.getElementById(`log-row-${id}`);
     if (targetRow) targetRow.classList.add('active-log');
-    
+
     // [수정] 행이 편집 모드였다면 일반 모드로 복구 (Re-render)
     renderLogs();
 
@@ -1123,9 +1151,159 @@ function selectLog(id, focus = true) {
 
         // 항상 읽기 전용(잠금) 상태 유지
         setMemoFieldsDisabled(true);
-        }
-}
+
+        // [추가] 교체 물품 카드 구성 및 렌더링
+        const memoInput = document.getElementById('device-memo');
+        let replacedPartsContainer = document.getElementById('replaced-parts-container');
         
+        if (memoInput && !replacedPartsContainer) {
+            const memoParent = memoInput.parentNode;
+            
+            const flexWrapper = document.createElement('div');
+            flexWrapper.style.display = 'flex';
+            flexWrapper.style.gap = '15px';
+            flexWrapper.style.height = '100%';
+            flexWrapper.style.flex = '1';
+            flexWrapper.style.minHeight = '0';
+            
+            replacedPartsContainer = document.createElement('div');
+            replacedPartsContainer.id = 'replaced-parts-container';
+            replacedPartsContainer.style.flex = '0 0 280px';
+            replacedPartsContainer.style.display = 'flex';
+            replacedPartsContainer.style.flexDirection = 'column';
+            replacedPartsContainer.style.background = '#161b22';
+            replacedPartsContainer.style.border = '1px solid #30363d';
+            replacedPartsContainer.style.borderRadius = '6px';
+            replacedPartsContainer.style.overflow = 'hidden';
+            
+            const partsTitle = document.createElement('div');
+            partsTitle.style.padding = '8px 12px';
+            partsTitle.style.background = '#21262d';
+            partsTitle.style.borderBottom = '1px solid #30363d';
+            partsTitle.style.fontWeight = 'bold';
+            partsTitle.style.fontSize = '13px';
+            partsTitle.style.color = '#e6edf3';
+            partsTitle.textContent = '교체 물품';
+            replacedPartsContainer.appendChild(partsTitle);
+            
+            const partsList = document.createElement('ul');
+            partsList.id = 'replaced-parts-list';
+            partsList.style.listStyle = 'none';
+            partsList.style.margin = '0';
+            partsList.style.padding = '0';
+            partsList.style.overflowY = 'auto';
+            partsList.style.flex = '1';
+            replacedPartsContainer.appendChild(partsList);
+            
+            const memoWrapper = document.createElement('div');
+            memoWrapper.style.flex = '1';
+            memoWrapper.style.display = 'flex';
+            memoWrapper.style.flexDirection = 'column';
+            memoWrapper.style.minWidth = '0';
+            
+            memoParent.insertBefore(flexWrapper, memoInput);
+            memoWrapper.appendChild(memoInput);
+            flexWrapper.appendChild(replacedPartsContainer);
+            flexWrapper.appendChild(memoWrapper);
+            
+            memoInput.style.flex = '1';
+            memoInput.style.width = '100%';
+            memoInput.style.minHeight = '0';
+        }
+
+        const partsList = document.getElementById('replaced-parts-list');
+        if (partsList) {
+            const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+            const contentStr = logItem.content || '';
+            const itemsList = contentStr.split(',').map(s => s.trim()).filter(Boolean);
+            
+            let replacedParts = [];
+            
+            itemsList.forEach(itemText => {
+                let pureContent = itemText;
+                const costMatch = pureContent.match(/^\[(.*?)\] (.*)$/);
+                let itemCost = '';
+                if (costMatch) {
+                    itemCost = costMatch[1];
+                    pureContent = costMatch[2];
+                }
+                
+                // 특수 태그 제거
+                pureContent = pureContent.replace(/\[.*?\]\s*/g, '').trim();
+
+                // 텍스트 분리 (예: '파트 이상 (교체) - 펌프' -> '펌프')
+                if (pureContent.includes(' - ')) {
+                    const parts = pureContent.split(' - ');
+                    pureContent = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                }
+
+                // 규격 분리
+                let spec = '';
+                const specMatch = pureContent.match(/ \[(.*?)\]$/);
+                if (specMatch) {
+                    spec = specMatch[1];
+                    pureContent = pureContent.replace(specMatch[0], '');
+                }
+                
+                const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
+                if (match) {
+                    // [추가] 해당 장비의 유지관리 물품 리스트(maint)에서 등록된 물품 상세(spec) 우선 확인
+                    let maintSpec = '';
+                    if (data && data.maint) {
+                        const maintMatch = data.maint.find(m => m.content === match.part || (match.code && m.code === match.code));
+                        if (maintMatch && maintMatch.spec) {
+                            maintSpec = maintMatch.spec;
+                        }
+                    }
+
+                    replacedParts.push({
+                        name: match.part,
+                        code: match.code || '',
+                        spec: maintSpec || '-',
+                        masterSpec: match.spec || '-',
+                        costType: itemCost
+                    });
+                }
+            });
+
+            partsList.innerHTML = '';
+            if (replacedParts.length > 0) {
+                replacedParts.forEach(part => {
+                    const li = document.createElement('li');
+                    li.style.padding = '10px';
+                    li.style.borderBottom = '1px solid #30363d';
+                    li.style.fontSize = '12px';
+                    li.style.color = '#c9d1d9';
+                    li.style.display = 'flex';
+                    li.style.flexDirection = 'column';
+                    li.style.gap = '4px';
+                    li.style.minWidth = '0';
+                    
+                    let titleText = part.code ? part.code : part.name;
+                    let titleHtml = `
+                        <div style="display:flex; justify-content:space-between; align-items:center; min-width:0;">
+                            <span style="font-weight:bold; color:#58a6ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</span>
+                            ${part.costType ? `<span style="font-size:10px; background:#30363d; padding:2px 6px; border-radius:4px; color:#e6edf3; flex-shrink:0; margin-left:5px;">${escapeHtml(part.costType)}</span>` : ''}
+                        </div>
+                    `;
+                    let descHtml = `
+                        <div style="display:flex; flex-direction:column; gap:2px; color:#8b949e; font-size:11px; margin-top: 2px; min-width:0;">
+                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="물품상세: ${escapeHtml(part.spec)}">물품상세: ${escapeHtml(part.spec)}</span>
+                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="품명: ${escapeHtml(part.name)}">품명: ${escapeHtml(part.name)}</span>
+                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="규격: ${escapeHtml(part.masterSpec)}">규격: ${escapeHtml(part.masterSpec)}</span>
+                        </div>
+                    `;
+                    
+                    li.innerHTML = titleHtml + descHtml;
+                    partsList.appendChild(li);
+                });
+            } else {
+                partsList.innerHTML = '<li style="padding:20px; text-align:center; color:#8b949e; font-size:12px;">교체(사용)된 등록 물품 없음</li>';
+            }
+        }
+    }
+}
+
 // [추가] 추가작업 팝업 호출 및 콜백 처리
 window.openAddWorkModal = function (logId, dateStr) {
     if (typeof openRegisterScheduleModal === 'function') {
@@ -1447,7 +1625,7 @@ function updateMaintLoadListEquipSelect(site) {
     if (!site) return;
 
     const data = JSON.parse(localStorage.getItem('device_data')) || {};
-    const equips = data[site] || [];
+    const equips = data[site] ? [...data[site]] : [];
     equips.forEach(equip => {
         const option = document.createElement('option');
         option.value = equip;
@@ -1603,7 +1781,7 @@ function setMemoFieldsDisabled(disabled) {
 }
 
 // [추가] 리스트에서 직접 이슈 공유 상태를 토글하는 함수
-window.toggleIssueShare = function(logId, isChecked) {
+window.toggleIssueShare = function (logId, isChecked) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
     if (data && data.logs) {
@@ -1646,15 +1824,55 @@ function toggleMaintenanceMode() {
     if (isCurrentlyActive) {
         const editingRows = tbody.querySelectorAll('tr.editing');
         let hasError = false;
-        
+        let hasDuplicate = false; // [추가]
+
+        const key = `details_${currentPath.site}_${currentPath.equip}`;
+        let data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
+        let tempDataMaint = JSON.parse(JSON.stringify(data.maint));
+
         editingRows.forEach(row => {
             const id = parseInt(row.dataset.id);
             const dateInput = document.getElementById(`input-date-${id}`);
             if (dateInput && !dateInput.value) hasError = true;
+            // [추가] 중복 검사
+            const badgeEl = row.querySelector('.badge');
+            const codeCell = row.querySelector('.edit-code');
+            const contentCell = row.querySelector('.edit-content');
+            const typeSelect = document.getElementById(`input-type-${id}`);
+            const newType = typeSelect ? typeSelect.value : (badgeEl ? badgeEl.textContent.trim() : '정기');
+            const newCode = codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim();
+                const newContent = contentCell.dataset.rawContent || contentCell.textContent.trim();
+            const specInput = document.getElementById(`input-spec-${id}`);
+            const newSpec = specInput ? specInput.value.trim() : '';
+
+                const isDuplicate = tempDataMaint.some(m => {
+                    if (String(m.id) === String(id)) return false; // 자기 자신 제외
+                    if (m.type !== newType) return false;
+                    if ((m.spec || '') !== newSpec) return false;
+                    if (newCode && m.code) return m.code === newCode;
+                    return m.content === newContent;
+                });
+                
+            if (isDuplicate) {
+                hasDuplicate = true;
+            } else {
+                    const mIdx = tempDataMaint.findIndex(m => String(m.id) === String(id));
+                if (mIdx > -1) {
+                    tempDataMaint[mIdx].type = newType;
+                    tempDataMaint[mIdx].content = newContent;
+                    tempDataMaint[mIdx].code = newCode;
+                    tempDataMaint[mIdx].spec = newSpec;
+                }
+            }
         });
 
         if (hasError) {
             alert('날짜를 선택해주세요.');
+            return; // 끄기 취소
+        }
+        
+        if (hasDuplicate) {
+            alert('이미 유지관리 물품에 동일하게 등록된 항목이 있어 저장할 수 없습니다.\n수정 중인 항목을 확인해주세요.');
             return; // 끄기 취소
         }
 
@@ -1670,14 +1888,14 @@ function toggleMaintenanceMode() {
             const newType = typeSelect ? typeSelect.value : (badgeEl ? badgeEl.textContent.trim() : '정기');
 
             const newCode = codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim();
-            const newContent = contentCell.textContent.trim();
-            
+            const newContent = contentCell.dataset.rawContent || contentCell.textContent.trim();
+
             const specInput = document.getElementById(`input-spec-${id}`);
             const newSpec = specInput ? specInput.value.trim() : '';
-            
+
             const dateInput = document.getElementById(`input-date-${id}`);
             const newDate = dateInput ? dateInput.value : '';
-            
+
             let newPeriod = periodCell.textContent.replace('일', '').trim();
             if (newPeriod === '-') newPeriod = '';
             const periodInput = document.getElementById(`input-period-${id}`);

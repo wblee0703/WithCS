@@ -339,77 +339,9 @@
 }
 .btn-reset:hover { background: #da3633; color: #fff; }
 
-/* 제안 박스 (Autocomplete) */
-.autocomplete-wrapper { position: relative; width: 100%; display: flex; }
-.suggestion-list { position: absolute; top: 100%; left: 0; min-width: 100%; width: max-content; background: #161b22; border: 1px solid #30363d; border-radius: 4px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none; list-style: none; padding: 0; margin-top: 2px; margin-bottom: 0; box-sizing: border-box; }
-.suggestion-item { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #21262d; color: #e6edf3; font-size: 13px; white-space: nowrap; }
-.suggestion-item:hover { background: #1f6feb; }
-.suggestion-item .abbr { color: #8b949e; font-size: 11px; margin-left: 5px; }
-.suggestion-item-content { display: flex; justify-content: space-between; align-items: center; }
-
 /* ==========================================================================
    6. 모달 (Modals)
    ========================================================================== */
-/* 모달 내부 스크롤 */
-.modal-body-scroll {
-    overflow-y: auto;
-}
-
-.modal-window.size-date-edit { width: 350px; height: auto; }
-
-/* 모달 날짜 행 */
-.modal-date-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
-    gap: 10px;
-}
-.modal-date-row.last {
-    margin-bottom: 20px;
-}
-.modal-date-label {
-    color: #8b949e;
-    font-size: 13px;
-}
-.modal-date-input-fixed {
-    width: 130px;
-}
-
-/* 모달 체크박스 */
-.modal-checkbox-label {
-    font-size: 16px;
-    color: #e6edf3;
-    cursor: pointer;
-}
-.modal-checkbox-input {
-    transform: scale(1.5);
-    margin-right: 10px;
-}
-
-/* 지연 사유 영역 */
-.delay-reason-wrapper {
-    display: none;
-    margin-top: 15px;
-    text-align: left;
-}
-.delay-reason-label {
-    display: block;
-    color: #f0883e;
-    font-size: 12px;
-    margin-bottom: 5px;
-}
-.delay-reason-textarea {
-    width: 100%;
-    height: 60px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
-    padding: 8px;
-    border-radius: 4px;
-    resize: none;
-}
-
 /* 실행 버튼 (Play) */
 .btn-play-sm {
     background: transparent;

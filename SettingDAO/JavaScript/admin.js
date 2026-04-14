@@ -1223,7 +1223,11 @@ function handleEquipCsvImport(event) {
                 }
 
                 if (!storageData[site]) {
-                    storageData[site] = [];
+                    storageData[site] = ['기타(ETC)'];
+                    
+                    // [추가] 기타(ETC) 장비 상세 데이터 초기화
+                    const initEtcData = { maint: [], logs: [], memo: "", setup: { model: "" } };
+                    localStorage.setItem(`details_${site}_기타(ETC)`, JSON.stringify(initEtcData));
                     addSystemLog('ADD_SITE', site, 'CSV 일괄 등록으로 사업장 자동 생성');
                 }
 
@@ -1939,6 +1943,41 @@ function setupItemMgmt() {
         });
     }
 
+    // [추가] 물품 관리 CSV 불러오기/내보내기 버튼 동적 생성
+    const itemListContainer = document.querySelector('.admin-item-list-container');
+    if (itemListContainer) {
+        const listHeader = itemListContainer.querySelector('.list-header > div:first-child');
+        if (listHeader) {
+            const btnCsvExport = document.createElement('button');
+            btnCsvExport.className = 'btn-settings';
+            btnCsvExport.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: 5px;';
+            btnCsvExport.textContent = 'CSV 내보내기';
+            btnCsvExport.title = '등록된 물품 데이터를 CSV 양식으로 내보냅니다.';
+            btnCsvExport.addEventListener('click', exportItemCsv);
+            listHeader.appendChild(btnCsvExport);
+            
+            const userRole = sessionStorage.getItem('userRole');
+            if (userRole === 'superadmin' || userRole === 'admin') {
+                const btnCsvImport = document.createElement('button');
+                btnCsvImport.className = 'btn-settings';
+                btnCsvImport.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: 5px;';
+                btnCsvImport.textContent = 'CSV 불러오기';
+                btnCsvImport.title = 'CSV 양식: 품번, 코드명, 물품명, 세부규격';
+
+                const csvInput = document.createElement('input');
+                csvInput.type = 'file';
+                csvInput.accept = '.csv';
+                csvInput.style.display = 'none';
+
+                csvInput.addEventListener('change', handleItemCsvImport);
+                btnCsvImport.addEventListener('click', () => csvInput.click());
+                
+                listHeader.appendChild(btnCsvImport);
+                listHeader.appendChild(csvInput);
+            }
+        }
+    }
+
     // [추가] 물품 불러오기 버튼 이벤트
     const btnImportItems = document.getElementById('btn-import-check-items');
     if (btnImportItems) {
@@ -1977,6 +2016,152 @@ function loadAdminItems() {
         console.error(e);
         adminItems = [];
     }
+}
+
+// [추가] 물품 CSV 내보내기 로직
+function exportItemCsv() {
+    if (!adminItems || adminItems.length === 0) {
+        alert('추출할 물품 데이터가 없습니다.');
+        return;
+    }
+
+    let csvContent = '\uFEFF'; 
+    csvContent += '품번,코드명,물품명,세부규격\n';
+
+    adminItems.forEach(item => {
+        const row = [
+            item.partno || '',
+            item.code || '',
+            item.part || '',
+            item.spec || ''
+        ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+        csvContent += row + '\n';
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `물품_목록_${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+// [추가] 물품 CSV 일괄 등록 (불러오기) 로직
+function handleItemCsvImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            const buffer = e.target.result;
+            let text = new TextDecoder('utf-8').decode(buffer);
+            if (text.includes('')) {
+                text = new TextDecoder('euc-kr').decode(buffer);
+            }
+
+            const lines = text.split(/\r?\n/);
+            if (lines.length < 2) {
+                alert('데이터가 없거나 잘못된 형식입니다. (첫 줄은 제목/헤더여야 합니다)');
+                return;
+            }
+
+            let importedCount = 0;
+            let skippedCount = 0;
+            
+            const existingPartNos = new Set(adminItems.filter(i => i.partno).map(i => i.partno));
+
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                const cols = [];
+                let curr = '';
+                let inQuotes = false;
+                for (let j = 0; j < line.length; j++) {
+                    const char = line[j];
+                    if (char === '"' && line[j+1] === '"') {
+                        curr += '"';
+                        j++;
+                    } else if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        cols.push(curr);
+                        curr = '';
+                    } else {
+                        curr += char;
+                    }
+                }
+                cols.push(curr);
+
+                const partno = cols[0] ? cols[0].trim() : '';
+                const code = cols[1] ? cols[1].trim() : '';
+                const part = cols[2] ? cols[2].trim() : '';
+                const spec = cols[3] ? cols[3].trim() : '';
+
+                if (!part) {
+                    skippedCount++;
+                    continue;
+                }
+
+                let isDuplicate = false;
+                if (partno && existingPartNos.has(partno)) {
+                    isDuplicate = true;
+                } else if (!partno) {
+                    const sameNameItem = adminItems.find(item => item.part === part && item.code === code);
+                    if (sameNameItem) isDuplicate = true;
+                }
+
+                if (!isDuplicate) {
+                    const newItemId = Date.now() + i;
+                    const payload = { id: newItemId, detailType: '', additional: '', partno: partno, code: code, part: part, spec: spec, equip: '' };
+                    
+                    const success = await window.syncAdminDB('item', 'CREATE', payload);
+                    
+                    if (success) {
+                        const newItem = {
+                            id: newItemId,
+                            type: "",
+                            detailType: '',
+                            additional: '',
+                            partno: partno,
+                            code: code,
+                            part: part,
+                            spec: spec,
+                            cycle: "",
+                            equip: ''
+                        };
+                        adminItems.push(newItem);
+                        if (partno) existingPartNos.add(partno);
+                        importedCount++;
+                    } else {
+                        skippedCount++;
+                    }
+                } else {
+                    skippedCount++;
+                }
+            }
+
+            if (importedCount > 0) {
+                await saveAdminItems();
+                if (typeof addSystemLog === 'function') {
+                    addSystemLog('IMPORT_ITEM_CSV', `총 ${importedCount}건 물품 등록`, `Skipped/Duplicated: ${skippedCount}건`);
+                }
+                alert(`${importedCount}건의 물품이 신규 등록되었습니다.\n(건너뜀/중복: ${skippedCount}건)`);
+                renderAdminItemList();
+            } else {
+                alert(`신규로 등록할 물품 데이터가 없습니다.\n(건너뜀/중복: ${skippedCount}건)`);
+            }
+        } catch (err) {
+            console.error(err);
+            alert('파일을 읽는 중 오류가 발생했습니다.');
+        }
+        event.target.value = '';
+    };
+    reader.readAsArrayBuffer(file);
 }
 
 async function saveAdminItems() {

@@ -1961,7 +1961,7 @@ function updateLoadListEquipSelect(site) {
     if (!site) return;
 
     const data = JSON.parse(localStorage.getItem('device_data')) || {};
-    const equips = data[site] || [];
+    const equips = data[site] ? [...data[site]] : [];
     equips.forEach(equip => {
         const option = document.createElement('option');
         option.value = equip;
@@ -2071,7 +2071,7 @@ function updateLoadInfoEquipSelect(site) {
     if (!site) return;
 
     const data = JSON.parse(localStorage.getItem('device_data')) || {};
-    const equips = data[site] || [];
+    const equips = data[site] ? [...data[site]] : [];
     equips.forEach(equip => {
         const option = document.createElement('option');
         option.value = equip;
