@@ -887,6 +887,7 @@ def admin_crud():
             if action == 'CREATE':
                 site_name = payload['name']
                 db.session.add(Site(name=site_name, buildings='[]'))
+                db.session.flush() # 부모(사업장) 레코드를 먼저 DB에 반영하여 FK 에러 방지
                 
                 # [추가] 사업장 생성 시 '기타(ETC)' 장비 기본 등록
                 etc_id = f"{site_name}::기타(ETC)"
@@ -921,6 +922,7 @@ def admin_crud():
                 # [추가] 없는 사업장에 장비 추가 시 사업장과 기타(ETC) 자동 생성 (CSV 일괄 등록 대응)
                 if not Site.query.filter_by(name=site_name).first():
                     db.session.add(Site(name=site_name, buildings='[]'))
+                    db.session.flush() # 부모 레코드 먼저 반영
                     etc_id = f"{site_name}::기타(ETC)"
                     db.session.add(Equipment(id=etc_id, site_name=site_name, name="기타(ETC)", serial=""))
                     db.session.add(SetupInfo(equip_id=etc_id, model=""))

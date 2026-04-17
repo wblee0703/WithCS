@@ -116,6 +116,11 @@
     width: 100% !important;
 }
 
+/* [추가] 작업 상세 정보 저장 버튼 숨김 처리 */
+#btn-save-detail-memo {
+    display: none !important;
+}
+
 #detail-worker-dropdown .btn-blue-sm {
     width: 100%;
 }
@@ -365,7 +370,7 @@
 }
 
 #event-detail-modal .modal-window {
-    width: 400px;
+    width: 500px;
     height: auto;
     max-height: 85vh; /* [수정] 팝업창이 조금 더 커질 수 있도록 최대 높이 확대 */
     display: flex;
@@ -436,6 +441,45 @@
     margin-bottom: 5px;
 }
 
+/* [수정] 작업 상세 정보 모달 레이아웃 (좌:라벨, 우:내용) */
+#event-detail-modal .detail-row,
+#event-detail-modal .form-row,
+#event-detail-modal .detail-label-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+/* 잘못된 last-child 속성 제거 및 실제 내용 컨테이너에 flex: 1 할당 */
+/* [수정] 컨텐츠 영역이 남은 공간을 모두 차지하도록 flex:1 적용 대상 확대 */
+#event-detail-modal .detail-row > div:not(.detail-label-row):not(.detail-label):not(.modal-label),
+#event-detail-modal .form-row > div:not(.detail-label-row):not(.detail-label):not(.modal-label),
+#event-detail-modal .detail-row > input:not([type="checkbox"]),
+#event-detail-modal .form-row > input:not([type="checkbox"]),
+#event-detail-modal .detail-row > select,
+#event-detail-modal .form-row > select,
+#event-detail-modal .detail-row > textarea,
+#event-detail-modal .form-row > textarea,
+#event-detail-modal .detail-row > .log-select-wrapper,
+#event-detail-modal .form-row > .log-select-wrapper,
+#detail-content-flex-container {
+    flex: 1;
+    min-width: 0;
+}
+
+#event-detail-modal .detail-label,
+#event-detail-modal .modal-label,
+#event-detail-modal .detail-label-row { /* [추가] 라벨 그룹에도 고정 너비 적용 */
+    flex: 0 0 80px !important;
+    padding-top: 0;
+    line-height: 1.4;
+    margin-bottom: 0;
+    font-size: 14px;
+    font-weight: bold;
+}
+
 .detail-label-row .detail-label {
     margin: 0;
 }
@@ -447,6 +491,7 @@
     color: #fff !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 4px;
+    flex: none !important;
 }
 #btn-move-to-equip:hover {
     background-color: #388bfd !important;
@@ -458,17 +503,27 @@
     color: #e6edf3;
     font-weight: bold;
     font-size: 14px;
+    flex: 1;
+    min-width: 0;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
 }
 
-#detail-type {
+#detail-type,
+#detail-detail-type {
     font-weight: bold;
     font-size: 14px;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
 }
 
 #detail-work-memo {
     width: 100%;
-    height: 125px; /* [수정] 메모 입력창 높이를 기존의 절반 수준으로 축소 */
-    resize: none;
+    min-height: 100px;
+    flex: none !important;
+    resize: vertical;
     background: #0d1117;
     border: 1px solid #30363d;
     color: #fff;
@@ -663,6 +718,7 @@
 #detail-content-input,
 #detail-worker,
 #detail-md,
+#detail-cost-type,
 #next-schedule-date,
 #next-schedule-md,
 #register-date-display,
@@ -676,7 +732,7 @@
     color: #fff;
     padding: 8px 10px;
     border-radius: 4px;
-    height: 36px;
+    height: 34px;
     box-sizing: border-box;
     font-size: 13px;
     text-align: left;
@@ -731,6 +787,21 @@
     .log-select-item span {
         flex: 1;
         min-width: 0;
+    }
+
+    /* [추가] 모바일에서 작업 상세 정보의 '세부 내용' 항목이 세로로 쌓이지 않도록 가로 배치 강제 */
+    #detail-edit-part-wrapper {
+        flex-direction: row !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+    }
+    #detail-edit-part-wrapper .modal-label {
+        flex: 0 0 80px !important;
+        width: 80px !important;
+        margin-bottom: 0 !important;
+        height: 30px;
+        display: flex;
+        align-items: center;
     }
 }
 
@@ -858,6 +929,7 @@
 #register-schedule-modal .form-row {
     display: flex;
     align-items: center;
+    margin-bottom: 15px;
     gap: 10px;
 }
 

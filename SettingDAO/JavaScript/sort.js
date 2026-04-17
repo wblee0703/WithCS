@@ -665,10 +665,9 @@ function updateKeywordSuggestions() {
     const keywordList = document.getElementById('sort-keyword-list');
     if (!keywordList) return;
 
-    // [요청] 항목/내용 검색 제안박스에 고정된 리스트만 표시하도록 수정
     const suggestionItems = [
-        "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 / 용자 이상",
-        "파트 이상 (교체)", "파트 이상 (수리)", "프로그램 이상", "단순조치", "기타"
+        "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
+        "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
     ];
 
     // [추가] 관리자가 등록한 전체 물품 DB(admin_items)를 제안 박스에 병합하여 검색 편의성 강화
@@ -1105,6 +1104,10 @@ function performSortSearch() {
                                 }
 
                                 for (const pt of partsToCheck) {
+                                    // [수정] 규격(spec) 텍스트 분리 및 제거하여 정확한 매칭 수행
+                                    const specMatch = pt.match(/ \[(.*?)\]$/);
+                                    if (specMatch) pt = pt.replace(specMatch[0], '');
+
                                     const matchItem = adminItems.find(ai => ai.part === pt || ai.code === pt);
                                     let dt = (matchItem && matchItem.detailType) ? matchItem.detailType : '미지정';
 
@@ -1124,6 +1127,10 @@ function performSortSearch() {
                                 const parts = cleanContent.split(' - ');
                                 cleanContent = parts.length > 1 ? parts[1].trim() : parts[0].trim();
                             }
+                              // [수정] 규격(spec) 텍스트 분리 및 제거하여 정확한 매칭 수행
+                            const specMatch = cleanContent.match(/ \[(.*?)\]$/);
+                            if (specMatch) cleanContent = cleanContent.replace(specMatch[0], '');
+
                             const matchItem = adminItems.find(ai => ai.part === cleanContent || ai.code === cleanContent);
                             if (matchItem) matchedItemDetailType = matchItem.detailType;
                         }
@@ -1418,8 +1425,8 @@ function renderSortChart(results) {
 
     // [추가] 비정기 점검 항목 고정 리스트 (이 항목들만 차트에 표시)
     const allowedIrregularItems = [
-        "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 / 용자 이상",
-        "파트 이상 (교체)", "파트 이상 (수리)", "프로그램 이상", "단순조치", "기타"
+        "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
+        "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
     ];
 
     results.forEach(row => {
@@ -1436,17 +1443,24 @@ function renderSortChart(results) {
                 }
                 if (pureItem) {
                     const cleanContent = pureItem.replace(/\[지연\]/g, '').trim();
-                    const matchItem = adminItems.find(ai => ai.part === cleanContent || ai.code === cleanContent);
+                    let targetContent = cleanContent;
+                    
+                    // [수정] 규격(spec) 텍스트 분리 및 제거하여 정확한 매칭 수행
+                    const specMatch = targetContent.match(/ \[(.*?)\]$/);
+                    if (specMatch) targetContent = targetContent.replace(specMatch[0], '');
+
+                    const matchItem = adminItems.find(ai => ai.part === targetContent || ai.code === targetContent);
                     const itemDetailType = matchItem ? matchItem.detailType : '';
 
                     // 물품 관리에 등록된 항목만 파츠/용액 교체 현황 차트에 표시
                     if (matchItem) {
+                        const targetKey = matchItem.code || matchItem.part || targetContent; // 동일 물품 누적을 위해 코드명 우선 사용
                         if (itemDetailType === '용액') {
-                            if (!solSiteCounts[pureItem]) solSiteCounts[pureItem] = {};
-                            solSiteCounts[pureItem][row.site] = (solSiteCounts[pureItem][row.site] || 0) + 1;
+                            if (!solSiteCounts[targetKey]) solSiteCounts[targetKey] = {};
+                            solSiteCounts[targetKey][row.site] = (solSiteCounts[targetKey][row.site] || 0) + 1;
                         } else {
-                            if (!partSiteCounts[pureItem]) partSiteCounts[pureItem] = {};
-                            partSiteCounts[pureItem][row.site] = (partSiteCounts[pureItem][row.site] || 0) + 1;
+                            if (!partSiteCounts[targetKey]) partSiteCounts[targetKey] = {};
+                            partSiteCounts[targetKey][row.site] = (partSiteCounts[targetKey][row.site] || 0) + 1;
                         }
                     }
                 }

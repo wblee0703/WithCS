@@ -374,27 +374,20 @@ function formatPhoneNumber(e) {
     e.target.value = formatted;
 }
 
-function addDetailItem() {
+async function addDetailItem() {
     if (!currentPath.equip) return alert('장비를 선택해주세요.');
 
     const maintType = document.querySelector('#maint-type-toggle .active').dataset.type;
     const contentEl = document.getElementById('maint-content');
     const specEl = document.getElementById('maint-spec');
-    const content = contentEl.value.trim();
+    const contentFromInput = contentEl.value.trim();
     const spec = specEl ? specEl.value.trim() : '';
-    let code = contentEl.dataset ? (contentEl.dataset.code || '') : '';
 
-    if (contentEl.tagName.toLowerCase() === 'select' && contentEl.selectedIndex >= 0) {
-        const selectedOpt = contentEl.options[contentEl.selectedIndex];
-        code = selectedOpt.dataset.code || '';
-    } else {
-        // 타이핑 입력인 경우 admin_items에서 코드 검색
-        const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-        const match = adminItems.find(a => a.part === content);
-        if (match) {
-            code = match.code || '';
-        }
-    }
+    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+    const match = adminItems.find(a => a.code === contentFromInput || a.part === contentFromInput);
+
+    const content = match ? match.part : contentFromInput;
+    const code = match ? (match.code || '') : '';
 
     const dateEl = document.getElementById('maint-date');
     const periodEl = document.getElementById('maint-period');
@@ -423,12 +416,13 @@ function addDetailItem() {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [], memo: "" };
 
-    // [수정] 코드명이 존재하면 코드명과 물품 상세로, 없으면 물품명과 물품 상세로 완벽한 중복 등록 방지
+    // [수정] 코드, 물품명, 물품상세가 모두 동일한 경우에만 중복으로 처리
     const isDuplicate = data.maint.some(m => {
         if (m.type !== maintType) return false;
-        if ((m.spec || '') !== spec) return false;
-        if (code && m.code) return m.code === code;
-        return m.content === content;
+        const m_code = m.code || '';
+        const m_content = m.content || '';
+        const m_spec = m.spec || '';
+        return m_code === code && m_content === content && m_spec === spec;
     });
 
     if (isDuplicate) {
@@ -446,12 +440,13 @@ function addDetailItem() {
         period: (maintType === '정기') ? period : null
     };
 
+    const success = await window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_upserts: [newItem] });
+    if (!success) return;
+
     data.maint.push(newItem);
     localStorage.setItem(key, JSON.stringify(data));
     // [수정] 상세 로그 기록
     addSystemLog('ADD_MAINTENANCE', currentPath.equip, `[${maintType}] ${content} (주기: ${period || '-'}일, 시작일: ${date})`);
-
-    window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_upserts: [newItem] });
 
     // 입력창 초기화
     document.getElementById('maint-content').value = '';
@@ -471,21 +466,18 @@ function renderDetails() {
     const table = maintBody.closest('table');
     const isManagementMode = table ? table.classList.contains('management-active') : false;
 
+    // [수정] 화면에 표시될 항목만 필터링하여 카운트 불일치 문제 해결
+    const displayItems = data.maint.filter(item => {
+        if (item.originalLogId) return false; // 자식 항목(추가작업) 숨김
+        if (item.type === '비정기' && !item.date) return false; // 예정일 없는 비정기 숨김
+        if (item.content === '내용 없음' || item.content === '장비 점검') return false; // 더미 항목 숨김
+        if (['고객대응', '용액제조', '온라인점검'].includes(item.type)) return false; // 관련 없는 타입 숨김
+        return true;
+    });
+
     maintBody.innerHTML = '';
 
-    data.maint.forEach(item => {
-        // [추가] 자식 항목(추가작업)은 메인 유지관리 리스트에서 숨김 처리 (부모 로그의 '확인' 버튼으로 접근)
-        if (item.originalLogId) return;
-
-        // [추가] 비정기 예정 항목(완료일이 없는 상태)은 유지관리 리스트에서 숨김 처리
-        if (item.type === '비정기' && !item.date) return;
-
-        // [추가] "내용 없음" 또는 "장비 점검" 더미 항목은 리스트에 표시하지 않음
-        if (item.content === '내용 없음' || item.content === '장비 점검') return;
-
-        // [추가] 고객대응, 용액제조, 온라인점검은 유지관리 물품 리스트에 무의미하게 노출되지 않도록 차단
-        if (['고객대응', '용액제조', '온라인점검'].includes(item.type)) return;
-
+    displayItems.forEach(item => {
         const status = calculateStatus(item.type, item.date, item.period);
 
         const template = getTemplateContent('maint-table-row-template');
@@ -533,7 +525,7 @@ function renderDetails() {
         maintBody.appendChild(tr);
     });
 
-    document.getElementById('maint-count').textContent = `항목: ${data.maint.length}건`;
+    document.getElementById('maint-count').textContent = `항목: ${displayItems.length}건`;
 
     // [추가] 유지관리 항목 입력 옵션 갱신
     if (typeof updateMaintContentOptions === 'function') updateMaintContentOptions();
@@ -671,9 +663,9 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
                     `;
                     li.addEventListener('mousedown', (ev) => {
                         ev.preventDefault();
-                        contentElement.value = item.part;
+                        contentElement.value = item.code || item.part;
                         contentElement.dataset.code = item.code || '';
-                        contentElement.dataset.lastValid = item.part;
+                        contentElement.dataset.lastValid = item.code || item.part;
                         contentElement.classList.remove('error-border');
 
                         ul.style.display = 'none';
@@ -731,7 +723,7 @@ function calculateStatus(type, start, period) {
     }
 }
 
-function deleteDetailItem(id) {
+async function deleteDetailItem(id) {
     if (!confirm('이 유지관리 내역을 삭제하시겠습니까?')) return;
 
     // 1. 현재 선택된 장비의 데이터 키 생성
@@ -745,6 +737,9 @@ function deleteDetailItem(id) {
         const targetItem = data.maint.find(item => item.id === id);
         const deletedContent = targetItem ? targetItem.content : 'Unknown';
 
+        const success = await window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_deletes: [id.toString()] });
+        if (!success) return;
+
         // 3. 해당 ID를 제외한 나머지 항목만 남김 (필터링)
         data.maint = data.maint.filter(item => item.id !== id);
 
@@ -752,14 +747,12 @@ function deleteDetailItem(id) {
         localStorage.setItem(key, JSON.stringify(data));
         addSystemLog('DELETE_MAINTENANCE', currentPath.equip, `삭제: ${deletedContent} (ID: ${id})`);
 
-        window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_deletes: [id.toString()] });
-
         // 5. 화면 즉시 갱신
         renderDetails();
     }
 }
 
-function toggleEditRow(id) {
+async function toggleEditRow(id) {
     const row = document.getElementById(`row-${id}`);
     const editBtn = row.querySelector('.btn-edit-sm');
     const isEditing = row.classList.contains('editing');
@@ -845,19 +838,22 @@ function toggleEditRow(id) {
         const key = `details_${currentPath.site}_${currentPath.equip}`;
         const data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
         
+        // [수정] 코드, 물품명, 물품상세가 모두 동일한 경우에만 중복으로 처리
         const isDuplicate = data.maint.some(m => {
             if (String(m.id) === String(id)) return false; // 자기 자신 제외
             if (m.type !== newType) return false;
-            if ((m.spec || '') !== newSpec) return false;
-            if (newCode && m.code) return m.code === newCode;
-            return m.content === newContent;
+            const m_code = m.code || '';
+            const m_content = m.content || '';
+            const m_spec = m.spec || '';
+            return m_code === newCode && m_content === newContent && m_spec === newSpec;
         });
 
         if (isDuplicate) {
             return alert(`이미 유지관리 물품에 동일하게 등록된 항목이 있습니다.`);
         }
 
-        updateRowData(id, newCode, newContent, newSpec, newDate, newPeriod, newType);
+        const success = await updateRowData(id, newCode, newContent, newSpec, newDate, newPeriod, newType);
+        if (!success) return;
 
         row.classList.remove('editing');
         editBtn.textContent = '✏️';
@@ -867,27 +863,35 @@ function toggleEditRow(id) {
     }
 }
 
-function updateRowData(id, code, content, spec, date, period, type) {
+async function updateRowData(id, code, content, spec, date, period, type) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
     const idx = data.maint.findIndex(item => item.id === id);
 
     if (idx > -1) {
+        // [수정] 복사본 생성 후 업데이트, 성공 시에만 원본 덮어쓰기
+        const tempItem = JSON.parse(JSON.stringify(data.maint[idx]));
         if (type !== undefined) {
-            data.maint[idx].type = type;
-            if (type === '정기') data.maint[idx].detailType = 'PM 점검';
-            else if (type === '비정기') data.maint[idx].detailType = 'BM 점검';
+            tempItem.type = type;
+            if (type === '정기') tempItem.detailType = 'PM 점검';
+            else if (type === '비정기') tempItem.detailType = 'BM 점검';
         }
-        data.maint[idx].code = code;
-        data.maint[idx].content = content;
-        data.maint[idx].spec = spec;
-        data.maint[idx].date = date;
-        data.maint[idx].period = (data.maint[idx].type === '정기') ? (parseInt(period) || 0) : null;
-        localStorage.setItem(key, JSON.stringify(data));
-        addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `수정: [${code || '-'}] ${content} (구분: ${data.maint[idx].type}, 날짜: ${date}, 주기: ${period || '-'})`);
+        tempItem.code = code;
+        tempItem.content = content;
+        tempItem.spec = spec;
+        tempItem.date = date;
+        tempItem.period = (tempItem.type === '정기') ? (parseInt(period) || 0) : null;
 
-        window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_upserts: [data.maint[idx]] });
+        const success = await window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_upserts: [tempItem] });
+        if (!success) return false;
+
+        data.maint[idx] = tempItem;
+        localStorage.setItem(key, JSON.stringify(data));
+        addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `수정: [${code || '-'}] ${content} (구분: ${tempItem.type}, 날짜: ${date}, 주기: ${period || '-'})`);
+        
+        return true;
     }
+    return false;
 }
 
 function handleMaintReorder() {
@@ -1189,7 +1193,6 @@ function selectLog(id, focus = true) {
             memoInput.style.flex = '1';
             memoInput.style.width = '100%';
             memoInput.style.minHeight = '0';
-            memoInput.style.height = '100%';
             memoInput.style.resize = 'none';
             memoInput.style.overflowY = 'auto';
             memoInput.style.boxSizing = 'border-box';
@@ -1212,8 +1215,20 @@ function selectLog(id, focus = true) {
                     pureContent = costMatch[2];
                 }
                 
-                // 특수 태그 제거
-                pureContent = pureContent.replace(/\[.*?\]\s*/g, '').trim();
+                // [추가] 내부 비용 태그 매칭 (예: 파트 이상 교체 - [유상] 펌프)
+                const innerCostMatch = pureContent.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
+                if (innerCostMatch) {
+                    if (!itemCost) itemCost = innerCostMatch[2];
+                    pureContent = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
+                }
+                
+                // [추가] 마이그레이션 전 과거 데이터 호환성 보장용 폴백
+                if (!itemCost && logItem.costType) {
+                    itemCost = logItem.costType;
+                }
+                
+                // 특수 태그 제거 ([지연]만 제거하여 [규격]이 날아가는 현상 방지)
+                pureContent = pureContent.replace(/\[지연\]\s*/g, '').trim();
 
                 // 텍스트 분리 (예: '파트 이상 (교체) - 펌프' -> '펌프')
                 if (pureContent.includes(' - ')) {
@@ -1231,19 +1246,10 @@ function selectLog(id, focus = true) {
                 
                 const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
                 if (match) {
-                    // [추가] 해당 장비의 유지관리 물품 리스트(maint)에서 등록된 물품 상세(spec) 우선 확인
-                    let maintSpec = '';
-                    if (data && data.maint) {
-                        const maintMatch = data.maint.find(m => m.content === match.part || (match.code && m.code === match.code));
-                        if (maintMatch && maintMatch.spec) {
-                            maintSpec = maintMatch.spec;
-                        }
-                    }
-
                     replacedParts.push({
                         name: match.part,
                         code: match.code || '',
-                        spec: maintSpec || '-',
+                        spec: spec || '-',
                         masterSpec: match.spec || '-',
                         costType: itemCost
                     });
@@ -1263,7 +1269,8 @@ function selectLog(id, focus = true) {
                     li.style.gap = '4px';
                     li.style.minWidth = '0';
                     
-                    let titleText = part.code ? part.code : part.name;
+                    let specDisplay = (part.spec && part.spec !== '-') ? ` [${part.spec}]` : '';
+                    let titleText = (part.code ? part.code : part.name) + specDisplay;
                     let titleHtml = `
                         <div style="display:flex; justify-content:space-between; align-items:center; min-width:0;">
                             <span style="font-weight:bold; color:#58a6ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(titleText)}">${escapeHtml(titleText)}</span>
@@ -1272,9 +1279,8 @@ function selectLog(id, focus = true) {
                     `;
                     let descHtml = `
                         <div style="display:flex; flex-direction:column; gap:2px; color:#8b949e; font-size:11px; margin-top: 2px; min-width:0;">
-                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="물품상세: ${escapeHtml(part.spec)}">물품상세: ${escapeHtml(part.spec)}</span>
-                            <span class="desktop-only-part" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="품명: ${escapeHtml(part.name)}">품명: ${escapeHtml(part.name)}</span>
-                            <span class="desktop-only-part" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="규격: ${escapeHtml(part.masterSpec)}">규격: ${escapeHtml(part.masterSpec)}</span>
+                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="품명: ${escapeHtml(part.name)}">품명: ${escapeHtml(part.name)}</span>
+                            <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="규격: ${escapeHtml(part.masterSpec)}">규격: ${escapeHtml(part.masterSpec)}</span>
                         </div>
                     `;
                     
@@ -1397,11 +1403,10 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
     if (itemData.hasOwnProperty(key)) {
         rawItems = itemData[key] || [];
     } else {
-        // 기본값 동적 생성 (Admin 방문 전 바로 사용할 경우 대비)
         if (type === '비정기' && ['Alarm', 'Hunting', 'Data / Para 이상'].includes(detailType)) {
             const defaultList = [
-                "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 / 용자 이상",
-                "파트 이상 (교체)", "파트 이상 (수리)", "프로그램 이상", "단순조치", "기타"
+                "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
+                "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
             ];
             rawItems = defaultList.map((content, index) => ({
                 id: Date.now() + index,
@@ -1514,7 +1519,7 @@ function openMaintEquipModal() {
     modal.style.display = 'flex';
 }
 
-function saveMaintEquipModal() {
+async function saveMaintEquipModal() {
     const { site, equip } = currentPath;
     const key = `details_${site}_${equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
@@ -1534,16 +1539,18 @@ function saveMaintEquipModal() {
     Object.keys(data.setup).forEach(k => {
         if (!fields.includes(k)) newSetup[k] = data.setup[k];
     });
+
+    if (typeof window.syncAdminDB === 'function') {
+        const success = await window.syncAdminDB('equip', 'UPDATE', { old_id: equip, new_id: equip, site: site, setup: newSetup, special_note: data.specialNote || '' });
+        if (!success) return;
+    }
+
     data.setup = newSetup;
 
     localStorage.setItem(key, JSON.stringify(data));
 
     if (typeof addSystemLog === 'function') {
         addSystemLog('UPDATE_SETUP', equip, '장비 정보 수정 (Maintenance Page)');
-    }
-
-    if (typeof window.syncAdminDB === 'function') {
-        window.syncAdminDB('equip', 'UPDATE', { old_id: equip, new_id: equip, site: site, setup: newSetup, special_note: data.specialNote || '' });
     }
 
     alert('저장되었습니다.');
@@ -1619,7 +1626,7 @@ function updateMaintLoadListEquipSelect(site) {
     });
 }
 
-function loadMaintListFromTarget() {
+async function loadMaintListFromTarget() {
     const site = document.getElementById('maint-load-list-site-select').value;
     const equip = document.getElementById('maint-load-list-equip-select').value;
 
@@ -1646,13 +1653,14 @@ function loadMaintListFromTarget() {
     // [추가] 100% DB 동기화를 위해 기존 항목 ID 추출
     const oldMaintIds = targetData.maint ? targetData.maint.map(m => m.id.toString()) : [];
 
+    if (typeof window.syncHistoryTransaction === 'function') {
+        const success = await window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_deletes: oldMaintIds, maint_upserts: newMaint });
+        if (!success) return;
+    }
+
     targetData.maint = newMaint;
 
     localStorage.setItem(targetKey, JSON.stringify(targetData));
-
-    if (typeof window.syncHistoryTransaction === 'function') {
-        window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_deletes: oldMaintIds, maint_upserts: newMaint });
-    }
 
     // UI 갱신
     renderDetails();
@@ -1700,17 +1708,19 @@ function closeSpecialNoteModal() {
     if (modal) modal.style.display = 'none';
 }
 
-function saveSpecialNote() {
+async function saveSpecialNote() {
     if (!currentPath.equip) return;
     const textarea = document.getElementById('special-note-textarea');
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key)) || {};
-    data.specialNote = textarea.value;
-    localStorage.setItem(key, JSON.stringify(data));
 
     if (typeof window.syncAdminDB === 'function') {
-        window.syncAdminDB('equip', 'UPDATE', { old_id: currentPath.equip, new_id: currentPath.equip, site: currentPath.site, setup: data.setup || {}, special_note: data.specialNote });
+        const success = await window.syncAdminDB('equip', 'UPDATE', { old_id: currentPath.equip, new_id: currentPath.equip, site: currentPath.site, setup: data.setup || {}, special_note: textarea.value });
+        if (!success) return;
     }
+
+    data.specialNote = textarea.value;
+    localStorage.setItem(key, JSON.stringify(data));
 
     addSystemLog('UPDATE_SPECIAL_NOTE', currentPath.equip, '특이사항 수정');
     alert('특이사항이 저장되었습니다.');
@@ -1765,7 +1775,7 @@ function setMemoFieldsDisabled(disabled) {
 }
 
 // [추가] 리스트에서 직접 이슈 공유 상태를 토글하는 함수
-window.toggleIssueShare = function (logId, isChecked) {
+window.toggleIssueShare = async function (logId, isChecked) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
     if (data && data.logs) {
@@ -1773,7 +1783,8 @@ window.toggleIssueShare = function (logId, isChecked) {
         if (idx > -1) {
             const targetParentId = data.logs[idx].originalLogId || data.logs[idx].id;
             let logUpserts = [];
-            data.logs.forEach(l => {
+            let newLogs = JSON.parse(JSON.stringify(data.logs));
+            newLogs.forEach(l => {
                 let isModified = false;
                 if (l.id == logId || l.originalLogId == logId || l.originalLogId == targetParentId || l.id == targetParentId) {
                     if (!!l.isIssueShared !== isChecked) {
@@ -1784,8 +1795,16 @@ window.toggleIssueShare = function (logId, isChecked) {
                 if (isModified) logUpserts.push(l);
             });
 
+            if (typeof window.syncHistoryTransaction === 'function') {
+                const success = await window.syncHistoryTransaction(currentPath.site, currentPath.equip, { log_upserts: logUpserts });
+                if (!success) {
+                    renderLogs(); // 통신 실패 시 UI 원상 복구
+                    return;
+                }
+            }
+
+            data.logs = newLogs;
             localStorage.setItem(key, JSON.stringify(data));
-            if (typeof window.syncHistoryTransaction === 'function') window.syncHistoryTransaction(currentPath.site, currentPath.equip, { log_upserts: logUpserts });
             if (typeof window.addSystemLog === 'function') window.addSystemLog('UPDATE_LOG_ISSUE_SHARE', currentPath.equip, `이슈 공유 ${isChecked ? '설정' : '해제'} (LogID: ${logId})`);
         }
     }
@@ -1795,7 +1814,7 @@ window.toggleIssueShare = function (logId, isChecked) {
    5. 유틸리티 (Utilities)
    ========================================================================== */
 // 유지관리 관리 모드 토글 함수
-function toggleMaintenanceMode() {
+async function toggleMaintenanceMode() {
     const tbody = document.getElementById('maint-table-body');
     const btn = document.getElementById('btn-maint-settings');
     if (!tbody) return;
@@ -1829,12 +1848,14 @@ function toggleMaintenanceMode() {
             const specInput = document.getElementById(`input-spec-${id}`);
             const newSpec = specInput ? specInput.value.trim() : '';
 
+                // [수정] 코드, 물품명, 물품상세가 모두 동일한 경우에만 중복으로 처리
                 const isDuplicate = tempDataMaint.some(m => {
                     if (String(m.id) === String(id)) return false; // 자기 자신 제외
                     if (m.type !== newType) return false;
-                    if ((m.spec || '') !== newSpec) return false;
-                    if (newCode && m.code) return m.code === newCode;
-                    return m.content === newContent;
+                    const m_code = m.code || '';
+                    const m_content = m.content || '';
+                    const m_spec = m.spec || '';
+                    return m_code === newCode && m_content === newContent && m_spec === newSpec;
                 });
                 
             if (isDuplicate) {
@@ -1861,7 +1882,7 @@ function toggleMaintenanceMode() {
         }
 
         let hasEdits = false;
-        editingRows.forEach(row => {
+        for (const row of Array.from(editingRows)) {
             const id = parseInt(row.dataset.id);
             const badgeEl = row.querySelector('.badge');
             const codeCell = row.querySelector('.edit-code');
@@ -1885,9 +1906,9 @@ function toggleMaintenanceMode() {
             const periodInput = document.getElementById(`input-period-${id}`);
             if (periodInput) newPeriod = periodInput.value;
 
-            updateRowData(id, newCode, newContent, newSpec, newDate, newPeriod, newType);
-            hasEdits = true;
-        });
+            const success = await updateRowData(id, newCode, newContent, newSpec, newDate, newPeriod, newType);
+            if (success) hasEdits = true;
+        }
 
         if (hasEdits) {
             renderDetails();

@@ -60,7 +60,7 @@ function checkAdminFormDirty(context) {
     if (context === 'site') currentState = getSiteFormState();
     else if (context === 'equip') currentState = getEquipFormState();
     else if (context === 'item') currentState = getItemFormState();
-    
+
     setAdminFormDirty(currentState !== initialAdminFormData[context], context);
 }
 
@@ -106,7 +106,7 @@ function checkAdminUnsavedChanges() {
 
 // [추가] 드래그 앤 드롭 위치 계산 함수 폴백
 if (typeof window.getDragAfterElement !== 'function') {
-    window.getDragAfterElement = function(container, y, selector) {
+    window.getDragAfterElement = function (container, y, selector) {
         const draggableElements = [...container.querySelectorAll(selector)];
         return draggableElements.reduce((closest, child) => {
             const box = child.getBoundingClientRect();
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupEquipMgmt();
         setupItemMgmt();
         setupCheckTypeMgmt();
-        
+
         // [추가] 폼 변경 감지 이벤트 위임 등록 (입력창 타이핑 및 드롭다운 선택 감지)
         const siteForm = document.getElementById('admin-site-form');
         if (siteForm) siteForm.addEventListener('input', () => checkAdminFormDirty('site'));
@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.returnValue = '';
             }
         });
-        
+
         // 모든 설정 완료 후 마지막 작업 탭 복원
         restoreLastAdminSection();
     };
@@ -184,11 +184,11 @@ function setupAdminMenu() {
             if (item.classList.contains('active')) return;
             // [추가] 다른 탭으로 이동할 때 저장 확인
             if (!checkAdminUnsavedChanges()) return;
-            
+
             // 1. 메뉴 활성화 상태 변경
             menuItems.forEach(li => li.classList.remove('active'));
             item.classList.add('active');
-            
+
             // [추가] 선택된 메뉴 상태를 로컬 스토리지에 저장
             localStorage.setItem('lastAdminSection', item.dataset.target);
 
@@ -246,21 +246,28 @@ function setupSiteMgmt() {
     // 신규 등록 버튼
     const btnAdd = document.getElementById('btn-admin-add-site');
     const inputAdd = document.getElementById('admin-site-add-input');
-    
+
     if (btnAdd && inputAdd) {
         btnAdd.addEventListener('click', async () => {
             const newName = inputAdd.value.trim();
             if (!newName) return alert('사업장 이름을 입력해주세요.');
             if (storageData[newName]) return alert('이미 존재하는 사업장입니다.');
 
-            const success = await syncAdminDB('site', 'CREATE', { name: newName });
+            // [수정] 백엔드 파라미터 호환성을 위해 new_name 및 빈 배열(buildings) 추가 전송
+            const success = await window.syncAdminDB('site', 'CREATE', { name: newName, new_name: newName, buildings: [] });
             if (!success) return alert('DB 통신 중 오류가 발생했습니다.');
 
-            // 데이터 생성
-            storageData[newName] = []; // 장비 리스트 초기화
-            saveData(); // common.js 함수 (서버 동기화 포함)
-            addSystemLog('ADD_SITE', newName, 'Admin Page');
-            
+            // [수정] 사업장 생성 시 기타(ETC) 장비 기본 할당 (사이드바 로직과 일치화)
+            storageData[newName] = ['기타(ETC)'];
+
+            // [추가] 초기 데이터 세팅 (에러 방지)
+            const initData = { maint: [], logs: [], memo: "", setup: { model: "" } };
+            localStorage.setItem(`details_${newName}_기타(ETC)`, JSON.stringify(initData));
+            localStorage.setItem(`site_meta_${newName}`, JSON.stringify({ buildings: [] }));
+
+            if (typeof saveData === 'function') saveData();
+            if (typeof addSystemLog === 'function') addSystemLog('ADD_SITE', newName, 'Admin Page');
+
             alert('사업장이 등록되었습니다.');
             inputAdd.value = '';
             renderAdminSiteList();
@@ -318,14 +325,14 @@ function exportSitesToCsv() {
     }
 
     // 엑셀에서 한글 깨짐 방지를 위한 BOM 문자 추가
-    let csvContent = '\uFEFF'; 
+    let csvContent = '\uFEFF';
     csvContent += '사업장,건물목록\n';
 
     sites.forEach(site => {
         const metaKey = `site_meta_${site}`;
         const metaData = JSON.parse(localStorage.getItem(metaKey)) || {};
         const buildings = metaData.buildings || [];
-        
+
         const siteName = site.replace(/"/g, '""');
         const buildingStr = buildings.join(', ').replace(/"/g, '""');
         csvContent += `"${siteName}","${buildingStr}"\n`;
@@ -335,7 +342,7 @@ function exportSitesToCsv() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `사업장_목록_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `사업장_목록_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -366,7 +373,7 @@ function renderAdminSiteList() {
         const li = document.createElement('li');
         li.textContent = site;
         li.dataset.site = site;
-        
+
         if (currentAdminSite === site) {
             li.classList.add('active');
         }
@@ -375,7 +382,7 @@ function renderAdminSiteList() {
             if (currentAdminSite === site) return;
             if (!checkAdminUnsavedChanges()) return; // [추가] 리스트 다른 항목 이동 시 저장 확인
             setAdminFormDirty(false, 'site');
-            
+
             currentAdminSite = site;
             localStorage.setItem('lastAdminSite', site);
             // 활성화 스타일 갱신
@@ -401,7 +408,7 @@ function renderAdminSiteList() {
 function loadSiteDetail(siteName) {
     const form = document.getElementById('admin-site-form');
     const placeholder = document.getElementById('admin-site-placeholder');
-    
+
     if (form) form.style.display = 'block';
     if (placeholder) placeholder.style.display = 'none';
 
@@ -435,7 +442,7 @@ function renderBuildingList() {
                 <span class="del-btn" style="cursor: pointer;">✕</span>
             </div>
         `;
-        
+
         li.querySelector('.del-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             currentBuildingList.splice(index, 1);
@@ -468,7 +475,7 @@ function renderBuildingList() {
                 if (newBuilding !== building) {
                     if (confirm(`건물명을 '${building}'에서 '${newBuilding}'(으)로 변경하시겠습니까?\n이 건물을 사용하는 장비들의 정보도 함께 업데이트됩니다.`)) {
                         currentBuildingList[index] = newBuilding;
-                        
+
                         renderBuildingList();
                         checkAdminFormDirty('site'); // [수정] 건물명 변경 감지
                         // 장비 데이터 건물명 일괄 업데이트
@@ -490,7 +497,7 @@ function renderBuildingList() {
                         return;
                     }
                 }
-                
+
                 li.classList.remove('editing');
             }
         });
@@ -501,7 +508,7 @@ function renderBuildingList() {
 
 async function handleSiteSave() {
     if (!currentAdminSite) return false;
-    
+
     const newName = document.getElementById('site-info-name').value.trim();
     if (!newName) { alert('사업장 이름을 입력해주세요.'); return false; }
 
@@ -527,10 +534,10 @@ async function handleSiteSave() {
                 localStorage.removeItem(key);
             }
         });
-        
+
         // 메타 데이터 삭제 (새 이름으로 저장은 아래에서 처리)
         localStorage.removeItem(`site_meta_${currentAdminSite}`);
-        
+
         addSystemLog('RENAME_SITE', currentAdminSite, `To: ${newName}`);
         currentAdminSite = newName; // 현재 선택값 갱신
     } else {
@@ -546,7 +553,7 @@ async function handleSiteSave() {
 
     if (typeof saveData === 'function') saveData(); // 전체 동기화
     alert('저장되었습니다.');
-    
+
     setAdminFormDirty(false, 'site'); // [추가] 저장 상태 리셋
     initialAdminFormData.site = getSiteFormState(); // [추가] 갱신된 초기 상태 저장
     renderAdminSiteList(); // 리스트 갱신 (이름 변경 반영)
@@ -555,7 +562,7 @@ async function handleSiteSave() {
 
 async function handleSiteDelete() {
     if (!currentAdminSite) return false;
-    
+
     // common.js 의 로직은 사이드바 UI에 의존하므로, 여기서는 데이터 처리만 수행 후 UI 갱신
     if (!confirm(`'${currentAdminSite}' 사업장을 삭제하시겠습니까?\n포함된 장비와 모든 데이터가 영구 삭제됩니다.`)) return false;
 
@@ -580,14 +587,14 @@ async function handleSiteDelete() {
 
     // 4. 메인 데이터 삭제
     delete storageData[currentAdminSite];
-    
+
     addSystemLog('DELETE_SITE', currentAdminSite, 'Admin Page');
     if (typeof saveData === 'function') saveData();
 
     alert('삭제되었습니다.');
     currentAdminSite = null;
     setAdminFormDirty(false, 'site'); // [추가]
-    
+
     // UI 초기화
     document.getElementById('admin-site-form').style.display = 'none';
     document.getElementById('admin-site-placeholder').style.display = 'flex';
@@ -605,10 +612,10 @@ function setupEquipModelMgmt() {
     const nameInput = document.getElementById('admin-model-name-input');
     const abbrInput = document.getElementById('admin-model-abbr-input');
 
-        const searchInput = document.getElementById('admin-model-search');
-        if (searchInput) {
-            searchInput.addEventListener('input', renderEquipModelList);
-        }
+    const searchInput = document.getElementById('admin-model-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', renderEquipModelList);
+    }
 
     // [추가] 장비 모델 관리 모드 토글
     const btnModelSettings = document.getElementById('btn-model-settings');
@@ -641,7 +648,7 @@ function setupEquipModelMgmt() {
             equipmentModels.push({ name, abbr });
             await saveEquipmentModels();
             addSystemLog('ADD_EQUIP_MODEL', name, `Abbr: ${abbr}`);
-            
+
             nameInput.value = '';
             abbrInput.value = '';
             renderEquipModelList();
@@ -660,7 +667,7 @@ function exportEquipmentModelsToCsv() {
     }
 
     // 엑셀에서 한글 깨짐 방지를 위한 BOM 문자 추가
-    let csvContent = '\uFEFF'; 
+    let csvContent = '\uFEFF';
     csvContent += '모델명,약어\n';
 
     equipmentModels.forEach(model => {
@@ -673,7 +680,7 @@ function exportEquipmentModelsToCsv() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `장비모델_목록_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `장비모델_목록_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -704,7 +711,7 @@ function renderEquipModelList() {
     if (!list) return;
 
     list.innerHTML = '';
-    
+
     let filteredModels = equipmentModels;
     if (keyword) {
         const keywords = keyword.split(/\s+/);
@@ -723,7 +730,7 @@ function renderEquipModelList() {
         if (currentAdminModel && currentAdminModel.name === model.name) {
             li.classList.add('active');
         }
-        
+
         li.innerHTML = `
             <div class="model-col model-name-col"><span>${model.name}</span></div>
             <div class="model-col model-abbr-col"><span>${model.abbr}</span></div>
@@ -739,7 +746,7 @@ function renderEquipModelList() {
 
             currentAdminModel = (currentAdminModel && currentAdminModel.name === model.name) ? null : model;
             renderEquipModelList();
-            
+
             if (currentAdminModel) localStorage.setItem('lastAdminModel', currentAdminModel.name);
             else localStorage.removeItem('lastAdminModel');
 
@@ -783,10 +790,10 @@ function renderEquipModelList() {
                 editBtn.classList.replace('btn-edit-sm', 'btn-green-sm');
                 const nameCol = li.querySelector('.model-name-col');
                 const abbrCol = li.querySelector('.model-abbr-col');
-                
+
                 nameCol.innerHTML = `<input type="text" class="input-dark" value="${model.name}" style="width: 100%;">`;
                 abbrCol.innerHTML = `<input type="text" class="input-dark" value="${model.abbr}" style="width: 100%;">`;
-                
+
                 nameCol.querySelector('input').focus();
             } else {
                 // 변경사항 저장
@@ -797,7 +804,7 @@ function renderEquipModelList() {
 
                 if (!newName || !newAbbr) return alert('모델명과 약어를 모두 입력해주세요.');
                 if (newName !== model.name && equipmentModels.some(m => m.name === newName)) return alert('이미 존재하는 모델명입니다.');
-                
+
                 const shouldMigrate = newName !== model.name;
                 if (shouldMigrate && !confirm(`모델명을 변경하면 이 모델을 사용하는 모든 장비의 이름이 함께 변경됩니다.\n계속하시겠습니까?`)) {
                     renderEquipModelList(); // UI 원상 복구
@@ -816,7 +823,7 @@ function renderEquipModelList() {
                                 const parts = equipKey.split('::');
                                 if (parts[0] === oldModelName) {
                                     const newEquipKey = parts.length > 1 ? `${newName}::${parts[1]}` : newName;
-                                    
+
                                     const oldDetailsKey = `details_${site}_${equipKey}`;
                                     const newDetailsKey = `details_${site}_${newEquipKey}`;
                                     if (localStorage.getItem(oldDetailsKey)) {
@@ -878,14 +885,14 @@ function setupEquipMgmt() {
         btnNew.addEventListener('click', () => {
             if (!checkAdminUnsavedChanges()) return;
             setAdminFormDirty(false, 'equip');
-            
+
             resetEquipForm();
             document.getElementById('admin-equip-form').style.display = 'block';
             document.getElementById('admin-equip-placeholder').style.display = 'none';
             const siteInput = document.getElementById('equip-info-site');
             siteInput.value = currentAdminEquipSite || '';
             siteInput.disabled = false; // 신규 등록 시에는 사업장 입력 가능
-             
+
             // [추가] 선택된 사업장이 있으면 건물 목록도 업데이트
             if (currentAdminEquipSite) {
                 updateEquipBuildingDropdown(currentAdminEquipSite);
@@ -944,7 +951,7 @@ function setupEquipMgmt() {
                 btnCsvExport.style.color = '#e6edf3';
                 btnCsvExport.textContent = 'CSV 내보내기';
                 btnCsvExport.title = '등록된 전체 장비 데이터를 CSV 양식으로 내보냅니다.';
-                
+
                 const userRole = sessionStorage.getItem('userRole');
 
                 const btnCsvImport = document.createElement('button');
@@ -966,7 +973,7 @@ function setupEquipMgmt() {
 
                 btnCsvExport.addEventListener('click', exportEquipCsv);
                 controlsDiv.appendChild(btnCsvExport);
-                
+
                 if (userRole === 'superadmin') {
                     csvInput.addEventListener('change', handleEquipCsvImport);
                     btnCsvImport.addEventListener('click', () => csvInput.click());
@@ -990,7 +997,7 @@ function setupEquipMgmt() {
 
             suggestionList.innerHTML = '';
             let matches = equipmentModels;
-            
+
             // input 이벤트 발생 시 검색어 기반 필터링
             if (e && e.type === 'input' && query) {
                 matches = equipmentModels.filter(m => {
@@ -1009,7 +1016,7 @@ function setupEquipMgmt() {
                             <span class="abbr">${m.abbr}</span>
                         </div>
                     `;
-                    
+
                     li.addEventListener('click', (ev) => {
                         nameInput.value = m.abbr || m.name;
                         nameInput.dataset.fullName = m.name;
@@ -1075,17 +1082,17 @@ function setupEquipMgmt() {
 
     // [추가] 사업장 검색 제안 (신규 등록 시)
     const siteInput = document.getElementById('equip-info-site');
-    const siteSuggestionList = document.getElementById('equip-site-suggestions');
 
-    if (siteInput && siteSuggestionList) {
+    if (siteInput) {
         const handleSiteInput = () => {
+            const siteSuggestionList = document.getElementById('equip-site-suggestions');
             if (siteInput.disabled) return;
             const query = siteInput.value.trim().toLowerCase();
             const keywords = query ? query.split(/\s+/) : [];
             const sites = Object.keys(storageData).sort();
-            
+
             // 검색어가 있으면 필터링, 없으면 전체 표시
-            const matches = query 
+            const matches = query
                 ? sites.filter(s => {
                     const text = s.toLowerCase();
                     return keywords.every(kw => text.includes(kw));
@@ -1099,6 +1106,7 @@ function setupEquipMgmt() {
                     li.className = 'suggestion-item';
                     li.textContent = site;
                     li.addEventListener('click', (e) => {
+                        const siteSuggestionList = document.getElementById('equip-site-suggestions');
                         siteInput.value = site;
                         siteSuggestionList.style.display = 'none';
                         updateEquipBuildingDropdown(site); // [추가]
@@ -1114,11 +1122,12 @@ function setupEquipMgmt() {
 
         siteInput.addEventListener('input', handleSiteInput);
         siteInput.addEventListener('focus', handleSiteInput);
-        siteInput.addEventListener('blur', () => { 
-            setTimeout(() => { 
-                siteSuggestionList.style.display = 'none'; 
-                updateEquipBuildingDropdown(siteInput.value.trim()); // [추가] 
-            }, 150); 
+        siteInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                const siteSuggestionList = document.getElementById('equip-site-suggestions');
+                if (siteSuggestionList) siteSuggestionList.style.display = 'none';
+                updateEquipBuildingDropdown(siteInput.value.trim()); // [추가]
+            }, 150);
         });
     }
 }
@@ -1136,7 +1145,7 @@ function exportEquipCsv() {
     }
     if (!hasData) return alert('내보낼 장비 데이터가 없습니다.');
 
-    let csvContent = '\uFEFF'; 
+    let csvContent = '\uFEFF';
     csvContent += '사업장,장비명,Serial No,고객사 장비명,프로젝트 번호,장비 구분,납품일,워런티시작일,워런티 기한,건물,층,세부위치,담당자,연락처,E-mail\n';
 
     Object.keys(storageData).sort().forEach(site => {
@@ -1165,7 +1174,7 @@ function exportEquipCsv() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `장비_목록_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `장비_목록_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1178,7 +1187,7 @@ function handleEquipCsvImport(event) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = async function (e) {
         try {
             const buffer = e.target.result;
             let text = new TextDecoder('utf-8').decode(buffer);
@@ -1200,22 +1209,40 @@ function handleEquipCsvImport(event) {
                 const line = lines[i].trim();
                 if (!line) continue;
 
-                const cols = line.split(',');
-                const site = cols[0] ? cols[0].trim() : '';
-                const name = cols[1] ? cols[1].trim() : '';
-                const serial = cols[2] ? cols[2].trim() : '';
-                const custEquipName = cols[3] ? cols[3].trim() : '';
-                const projectNo = cols[4] ? cols[4].trim() : '';
-                const equipStatus = cols[5] ? cols[5].trim() : '';
-                const deliveryDate = cols[6] ? cols[6].trim() : '';
-                const warrantyStart = cols[7] ? cols[7].trim() : '';
-                const warrantyPeriod = cols[8] ? cols[8].trim() : '';
-                const building = cols[9] ? cols[9].trim() : '';
-                const floor = cols[10] ? cols[10].trim() : '';
-                const location = cols[11] ? cols[11].trim() : '';
-                const manager = cols[12] ? cols[12].trim() : '';
-                const contact = cols[13] ? cols[13].trim() : '';
-                const email = cols[14] ? cols[14].trim() : '';
+                const cols = [];
+                let curr = '';
+                let inQuotes = false;
+                for (let j = 0; j < line.length; j++) {
+                    const char = line[j];
+                    if (char === '"' && line[j + 1] === '"') {
+                        curr += '"';
+                        j++;
+                    } else if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === ',' && !inQuotes) {
+                        cols.push(curr);
+                        curr = '';
+                    } else {
+                        curr += char;
+                    }
+                }
+                cols.push(curr);
+
+                const site = cols[0] || '';
+                const name = cols[1] || '';
+                const serial = cols[2] || '';
+                const custEquipName = cols[3] || '';
+                const projectNo = cols[4] || '';
+                const equipStatus = cols[5] || '';
+                const deliveryDate = cols[6] || '';
+                const warrantyStart = cols[7] || '';
+                const warrantyPeriod = cols[8] || '';
+                const building = cols[9] || '';
+                const floor = cols[10] || '';
+                const location = cols[11] || '';
+                const manager = cols[12] || '';
+                const contact = cols[13] || '';
+                const email = cols[14] || '';
 
                 if (!site || !name) {
                     skippedCount++;
@@ -1224,7 +1251,7 @@ function handleEquipCsvImport(event) {
 
                 if (!storageData[site]) {
                     storageData[site] = ['기타(ETC)'];
-                    
+
                     // [추가] 기타(ETC) 장비 상세 데이터 초기화
                     const initEtcData = { maint: [], logs: [], memo: "", setup: { model: "" } };
                     localStorage.setItem(`details_${site}_기타(ETC)`, JSON.stringify(initEtcData));
@@ -1244,18 +1271,18 @@ function handleEquipCsvImport(event) {
 
                 let newKey = serial ? `${name}::${serial}` : name;
                 let isDuplicate = false;
-                
+
                 if (storageData[site].includes(newKey)) {
                     const detailData = JSON.parse(localStorage.getItem(`details_${site}_${newKey}`)) || {};
                     const existingCustName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
-                    
+
                     if (existingCustName === custEquipName) {
                         isDuplicate = true;
                     } else {
                         let suffix = 1;
                         let altKey = serial ? `${name}::${serial}(${suffix})` : `${name}::(${suffix})`;
                         let altIsDuplicate = false;
-                        
+
                         while (storageData[site].includes(altKey)) {
                             const altDetail = JSON.parse(localStorage.getItem(`details_${site}_${altKey}`)) || {};
                             const altCustName = (altDetail.setup && altDetail.setup.custEquipName) ? altDetail.setup.custEquipName : '';
@@ -1266,7 +1293,7 @@ function handleEquipCsvImport(event) {
                             suffix++;
                             altKey = serial ? `${name}::${serial}(${suffix})` : `${name}::(${suffix})`;
                         }
-                        
+
                         if (altIsDuplicate) {
                             isDuplicate = true;
                         } else {
@@ -1277,9 +1304,9 @@ function handleEquipCsvImport(event) {
 
                 if (!isDuplicate) {
                     storageData[site].push(newKey);
-                    const initData = { 
-                        maint: [], logs: [], memo: "", specialNote: "", 
-                        setup: { 
+                    const initData = {
+                        maint: [], logs: [], memo: "", specialNote: "",
+                        setup: {
                             custEquipName: custEquipName,
                             projectNo: projectNo,
                             equipStatus: equipStatus,
@@ -1295,20 +1322,20 @@ function handleEquipCsvImport(event) {
                             custManager: "",
                             custContact: "",
                             custEmail: "",
-                            model: serial 
-                        } 
-                    }; 
+                            model: serial
+                        }
+                    };
                     localStorage.setItem(`details_${site}_${newKey}`, JSON.stringify(initData));
-                    
+
                     // [추가] 셋업(SETUP) 데이터용 기본 껍데기 함께 생성
                     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
                     setupData[`${site}::${newKey}`] = { setupDetails: [], setupLogs: [] };
                     localStorage.setItem('setup_data', JSON.stringify(setupData));
-                    
+
                     // [추가] CSV로 추가된 장비를 서버 DB에 동기화 전송
                     const setupPayload = initData.setup;
                     await window.syncAdminDB('equip', 'CREATE', { new_id: newKey, site: site, special_note: "", setup: setupPayload });
-                    
+
                     importedCount++;
                 } else {
                     skippedCount++;
@@ -1336,13 +1363,13 @@ function handleEquipCsvImport(event) {
 function updateEquipBuildingDropdown(siteName, selectedValue = '') {
     const select = document.getElementById('equip-info-building');
     if (!select) return;
-    
+
     select.innerHTML = '<option value="">건물 선택</option>';
     if (!siteName) return;
 
     const metaData = JSON.parse(localStorage.getItem(`site_meta_${siteName}`)) || {};
     const buildings = metaData.buildings || [];
-    
+
     buildings.forEach(b => {
         const opt = document.createElement('option');
         opt.value = b;
@@ -1355,17 +1382,17 @@ function updateEquipBuildingDropdown(siteName, selectedValue = '') {
 function updateEquipSiteSelect() {
     const select = document.getElementById('admin-equip-site-filter');
     if (!select) return;
-    
+
     const currentVal = select.value;
     select.innerHTML = '<option value="">전체 사업장 보기</option>';
-    
+
     Object.keys(storageData).sort().forEach(site => {
         const opt = document.createElement('option');
         opt.value = site;
         opt.textContent = site;
         select.appendChild(opt);
     });
-    
+
     const savedSite = localStorage.getItem('lastAdminEquipSite');
     if (currentVal && storageData[currentVal]) select.value = currentVal;
     else if (savedSite && storageData[savedSite]) {
@@ -1387,11 +1414,11 @@ function renderAdminEquipList() {
 
     let items = [];
     if (currentAdminEquipSite && storageData[currentAdminEquipSite]) {
-        storageData[currentAdminEquipSite].forEach(k => items.push({site: currentAdminEquipSite, key: k}));
+        storageData[currentAdminEquipSite].forEach(k => items.push({ site: currentAdminEquipSite, key: k }));
     } else {
         Object.keys(storageData).sort().forEach(site => {
             if (storageData[site]) {
-                storageData[site].forEach(k => items.push({site: site, key: k}));
+                storageData[site].forEach(k => items.push({ site: site, key: k }));
             }
         });
     }
@@ -1426,7 +1453,7 @@ function renderAdminEquipList() {
 
         const li = document.createElement('li');
         li.dataset.equipKey = fullKey;
-        
+
         // [수정] 고객사 장비명 또는 시리얼 표시
         let subInfo = '';
         if (custEquipName) {
@@ -1434,7 +1461,7 @@ function renderAdminEquipList() {
         } else if (serial) {
             subInfo = ` <span style="color:#8b949e; font-size:12px;">(${escapeHtml(serial)})</span>`;
         }
-        
+
         let content = `<span>${displayName}</span>${subInfo}`;
         if (!currentAdminEquipSite) {
             content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:#8b949e;">${site}</span><div>${content}</div></div>`;
@@ -1442,7 +1469,7 @@ function renderAdminEquipList() {
             content = `<div>${content}</div>`;
         }
         li.innerHTML = content;
-        
+
         // [수정] 활성화 체크 시 사이트 컨텍스트도 확인
         if (currentAdminEquipKey === fullKey && (!currentAdminEquipSiteContext || currentAdminEquipSiteContext === site)) li.classList.add('active');
 
@@ -1450,19 +1477,19 @@ function renderAdminEquipList() {
             if (currentAdminEquipKey === fullKey && (!currentAdminEquipSiteContext || currentAdminEquipSiteContext === site)) return;
             if (!checkAdminUnsavedChanges()) return; // [추가] 리스트 다른 항목 이동 시 저장 확인
             setAdminFormDirty(false, 'equip');
-            
+
             currentAdminEquipKey = fullKey;
             currentAdminEquipSiteContext = site; // 컨텍스트 저장
             localStorage.setItem('lastAdminEquipKey', fullKey);
             // UI 업데이트
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
-            
+
             // 폼 로드
             document.getElementById('admin-equip-form').style.display = 'block';
             document.getElementById('admin-equip-placeholder').style.display = 'none';
-            document.getElementById('equip-info-site').value = site; // [수정] 아이템의 실제 사업장 입력
-            document.getElementById('equip-info-site').disabled = true; // [추가] 기존 장비 수정 시 사업장 변경 불가
+            document.getElementById('equip-info-site').value = site;
+            document.getElementById('equip-info-site').disabled = false; // [수정] 사업장 변경 허용
             document.getElementById('equip-info-name').value = displayName;
             document.getElementById('equip-info-name').dataset.fullName = name;
             document.getElementById('equip-info-serial').value = serial;
@@ -1470,7 +1497,7 @@ function renderAdminEquipList() {
             // [추가] 건물명 및 세부위치 렌더링
             const detailData = JSON.parse(localStorage.getItem(`details_${site}_${fullKey}`)) || {};
             const setupInfo = detailData.setup || {};
-            
+
             updateEquipBuildingDropdown(site, setupInfo.building || '');
             document.getElementById('equip-info-cust-equip-name').value = setupInfo.custEquipName || '';
             const projectNoEl = document.getElementById('equip-info-project-no');
@@ -1522,25 +1549,26 @@ function resetEquipForm() {
     const bSelect = document.getElementById('equip-info-building');
     if (bSelect) bSelect.innerHTML = '<option value="">건물 선택</option>';
 
-    ['equip-info-project-no', 'equip-info-location', 'equip-info-status', 'equip-info-delivery-date', 'equip-info-warranty-start', 'equip-info-warranty-period', 'equip-info-cust-equip-name', 'equip-info-floor', 
-     'equip-info-manager', 'equip-info-contact', 'equip-info-email', 
-     'equip-info-cust-manager', 'equip-info-cust-contact', 'equip-info-cust-email', 'equip-info-special-note'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-    });
+    ['equip-info-project-no', 'equip-info-location', 'equip-info-status', 'equip-info-delivery-date', 'equip-info-warranty-start', 'equip-info-warranty-period', 'equip-info-cust-equip-name', 'equip-info-floor',
+        'equip-info-manager', 'equip-info-contact', 'equip-info-email',
+        'equip-info-cust-manager', 'equip-info-cust-contact', 'equip-info-cust-email', 'equip-info-special-note'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
 
     // 자동완성 목록 숨김
     const suggestionList = document.getElementById('equip-model-suggestions');
     if (suggestionList) suggestionList.style.display = 'none';
     const siteSuggestionList = document.getElementById('equip-site-suggestions');
     if (siteSuggestionList) siteSuggestionList.style.display = 'none';
-    
+
     const list = document.getElementById('admin-equip-list');
-    if(list) list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
+    if (list) list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
 }
 
 async function handleEquipSave() {
     // [수정] 현재 필터값이 없어도(전체보기) 폼에 입력된 사업장 기준으로 저장 수행
+    const originalSite = currentAdminEquipSiteContext;
     const targetSite = document.getElementById('equip-info-site').value.trim();
     if (!targetSite) { alert('사업장을 선택하거나 목록에서 장비를 선택해주세요.'); return false; }
     if (!storageData[targetSite]) { alert('존재하지 않는 사업장입니다. 사업장 관리에서 먼저 등록해주세요.'); return false; }
@@ -1548,7 +1576,7 @@ async function handleEquipSave() {
     const nameInput = document.getElementById('equip-info-name');
     const nameVal = nameInput.value.trim();
     const serial = document.getElementById('equip-info-serial').value.trim();
-    
+
     // [추가]
     const building = document.getElementById('equip-info-building').value;
     const location = document.getElementById('equip-info-location').value.trim();
@@ -1587,10 +1615,10 @@ async function handleEquipSave() {
     if (!matchedModel) {
         alert('장비명은 제안 박스에서 검색하여 선택해야만 등록할 수 있습니다.'); return false;
     }
-    
+
     const finalName = matchedModel.name;
     const newKey = serial ? `${finalName}::${serial}` : finalName;
-    
+
     // 중복 체크 (수정이면 자기 자신 제외)
     if (currentAdminEquipKey !== newKey && storageData[targetSite].includes(newKey)) {
         alert('해당 사업장에 이미 동일한 장비가 존재합니다.'); return false;
@@ -1604,7 +1632,7 @@ async function handleEquipSave() {
     };
 
     if (currentAdminEquipKey) {
-        const success = await syncAdminDB('equip', 'UPDATE', { old_id: currentAdminEquipKey, new_id: newKey, site: targetSite, special_note: specialNote, setup: setupPayload });
+        const success = await syncAdminDB('equip', 'UPDATE', { old_id: currentAdminEquipKey, new_id: newKey, old_site: originalSite, new_site: targetSite, special_note: specialNote, setup: setupPayload });
         if (!success) { alert('서버 장비 정보 수정에 실패했습니다.'); return false; }
     } else {
         const success = await syncAdminDB('equip', 'CREATE', { new_id: newKey, site: targetSite, special_note: specialNote, setup: setupPayload });
@@ -1612,17 +1640,23 @@ async function handleEquipSave() {
     }
 
     // 수정 (Rename) 처리
-    if (currentAdminEquipKey && currentAdminEquipKey !== newKey) {
-        if(!confirm('장비 정보를 변경하시겠습니까?\n기존 데이터가 새 정보로 이동됩니다.')) return false;
-        
-        // 리스트 내 키 변경
-        const idx = storageData[targetSite].indexOf(currentAdminEquipKey);
-        if (idx !== -1) storageData[targetSite][idx] = newKey;
-        
+    if (currentAdminEquipKey && (currentAdminEquipKey !== newKey || originalSite !== targetSite)) {
+        if (!confirm('장비 정보를 변경하시겠습니까?\n기존 데이터가 새 정보로 이동됩니다.')) return false;
+
+        // 1. 기존 위치에서 장비 키 제거
+        if (originalSite && storageData[originalSite]) {
+            storageData[originalSite] = storageData[originalSite].filter(k => k !== currentAdminEquipKey);
+        }
+
+        // 2. 새 위치에 장비 키 추가
+        if (!storageData[targetSite]) storageData[targetSite] = [];
+        if (!storageData[targetSite].includes(newKey)) storageData[targetSite].push(newKey);
+
         // details 데이터 이동
-        const oldData = localStorage.getItem(`details_${targetSite}_${currentAdminEquipKey}`);
+        const oldDataKey = `details_${originalSite}_${currentAdminEquipKey}`;
+        const oldData = localStorage.getItem(oldDataKey);
         let parsedData = oldData ? JSON.parse(oldData) : { maint: [], logs: [], memo: "", setup: {} };
-        
+
         parsedData.setup = {
             custEquipName: custEquipName,
             projectNo: projectNo,
@@ -1643,25 +1677,25 @@ async function handleEquipSave() {
         };
         parsedData.specialNote = specialNote;
 
-        localStorage.setItem(`details_${targetSite}_${newKey}`, JSON.stringify(parsedData));
-        if (oldData) {
-            localStorage.removeItem(`details_${targetSite}_${currentAdminEquipKey}`);
-        }
-        
+        const newDataKey = `details_${targetSite}_${newKey}`;
+        localStorage.setItem(newDataKey, JSON.stringify(parsedData));
+        if (oldDataKey !== newDataKey) localStorage.removeItem(oldDataKey);
+
         // setup_data 이동
         const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-        const oldSetupKey = `${targetSite}::${currentAdminEquipKey}`;
+        const oldSetupKey = `${originalSite}::${currentAdminEquipKey}`;
         if (setupData[oldSetupKey]) {
-            setupData[`${targetSite}::${newKey}`] = setupData[oldSetupKey];
+            const newSetupKey = `${targetSite}::${newKey}`;
+            setupData[newSetupKey] = setupData[oldSetupKey];
             delete setupData[oldSetupKey];
             localStorage.setItem('setup_data', JSON.stringify(setupData));
         }
-        
+
         addSystemLog('UPDATE_EQUIP', newKey, `From: ${currentAdminEquipKey}`);
-    } 
+    }
     // 기존 정보 단순 업데이트
     else if (currentAdminEquipKey && currentAdminEquipKey === newKey) {
-        const dataKey = `details_${targetSite}_${newKey}`;
+        const dataKey = `details_${originalSite}_${newKey}`;
         let parsedData = JSON.parse(localStorage.getItem(dataKey)) || { maint: [], logs: [], memo: "", setup: {} };
         parsedData.setup = {
             custEquipName: custEquipName,
@@ -1688,31 +1722,33 @@ async function handleEquipSave() {
     else if (!currentAdminEquipKey) {
         storageData[targetSite].push(newKey);
         // 초기 데이터 생성
-        const initData = { maint: [], logs: [], memo: "", specialNote: specialNote, setup: { 
-            custEquipName: custEquipName,
-            projectNo: projectNo,
-            equipStatus: equipStatus,
-            deliveryDate: deliveryDate,
-            warrantyStart: warrantyStart,
-            warrantyPeriod: warrantyPeriod,
-            building: building,
-            floor: floor,
-            detailLoc: location,
-            manager: manager,
-            contact: contact,
-            email: email,
-            custManager: custManager,
-            custContact: custContact,
-            custEmail: custEmail,
-            model: serial
-        } }; 
+        const initData = {
+            maint: [], logs: [], memo: "", specialNote: specialNote, setup: {
+                custEquipName: custEquipName,
+                projectNo: projectNo,
+                equipStatus: equipStatus,
+                deliveryDate: deliveryDate,
+                warrantyStart: warrantyStart,
+                warrantyPeriod: warrantyPeriod,
+                building: building,
+                floor: floor,
+                detailLoc: location,
+                manager: manager,
+                contact: contact,
+                email: email,
+                custManager: custManager,
+                custContact: custContact,
+                custEmail: custEmail,
+                model: serial
+            }
+        };
         localStorage.setItem(`details_${targetSite}_${newKey}`, JSON.stringify(initData));
-        
+
         // [추가] 셋업(SETUP) 데이터용 기본 껍데기도 함께 생성하여 타 탭 이동 시 데이터 유실 방지
         const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
         setupData[`${targetSite}::${newKey}`] = { setupDetails: [], setupLogs: [] };
         localStorage.setItem('setup_data', JSON.stringify(setupData));
-        
+
         addSystemLog('ADD_EQUIP', newKey, `Site: ${targetSite}`);
     }
 
@@ -1732,6 +1768,7 @@ async function handleEquipSave() {
     setAdminFormDirty(false, 'equip'); // [추가] 저장 완료 후 상태 리셋
     initialAdminFormData.equip = getEquipFormState(); // [추가] 스냅샷 갱신
     currentAdminEquipKey = newKey; // 키 갱신
+    currentAdminEquipSiteContext = targetSite; // [추가] 사업장 컨텍스트 갱신
     renderAdminEquipList();
     return true;
 }
@@ -1739,7 +1776,7 @@ async function handleEquipSave() {
 async function handleEquipDelete() {
     const targetSite = document.getElementById('equip-info-site').value;
     if (!targetSite || !currentAdminEquipKey) return false;
-    
+
     if (!confirm(`'${currentAdminEquipKey}' 장비를 삭제하시겠습니까?\n모든 점검 이력과 데이터가 삭제됩니다.`)) return false;
 
     const success = await syncAdminDB('equip', 'DELETE', { id: currentAdminEquipKey, site: targetSite });
@@ -1747,17 +1784,17 @@ async function handleEquipDelete() {
 
     // 리스트에서 제거
     storageData[targetSite] = storageData[targetSite].filter(k => k !== currentAdminEquipKey);
-    
+
     // details 제거
     localStorage.removeItem(`details_${targetSite}_${currentAdminEquipKey}`);
-    
+
     // setup_data 제거
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     delete setupData[`${targetSite}::${currentAdminEquipKey}`];
     localStorage.setItem('setup_data', JSON.stringify(setupData));
-    
+
     addSystemLog('DELETE_EQUIP', currentAdminEquipKey, `Site: ${targetSite}`);
-    
+
     if (typeof saveData === 'function') saveData();
     alert('삭제되었습니다.');
     setAdminFormDirty(false, 'equip'); // [추가]
@@ -1778,7 +1815,7 @@ function setupItemMgmt() {
 
     // [추가] 코드명에 쉼표(,) 입력 실시간 차단
     if (codeInput) {
-        codeInput.addEventListener('input', function() {
+        codeInput.addEventListener('input', function () {
             if (this.value.includes(',')) {
                 this.value = this.value.replace(/,/g, '');
                 alert('코드명에는 쉼표(,)를 입력할 수 없습니다.');
@@ -1787,7 +1824,7 @@ function setupItemMgmt() {
     }
     const detailCodeInput = document.getElementById('item-info-code');
     if (detailCodeInput) {
-        detailCodeInput.addEventListener('input', function() {
+        detailCodeInput.addEventListener('input', function () {
             if (this.value.includes(',')) {
                 this.value = this.value.replace(/,/g, '');
                 alert('코드명에는 쉼표(,)를 입력할 수 없습니다.');
@@ -1825,23 +1862,23 @@ function setupItemMgmt() {
                 cycle: "",
                 equip: ''
             };
-            
+
             adminItems.push(newItem);
             await saveAdminItems();
             addSystemLog('ADD_ITEM_ADMIN', part, `Spec: ${spec}`);
-            
+
             if (codeInput) codeInput.value = '';
             partInput.value = '';
             specInput.value = '';
-            
+
             // [수정] 물품 추가 시 즉시 리스트에서 선택 상태로 만들고 우측 상세 폼에 정보를 표시하여 완벽히 저장되었음을 인지시킴
             currentAdminItemId = newItemId;
             localStorage.setItem('lastAdminItemId', newItemId);
-            
+
             renderAdminItemList();
             loadItemDetail(newItem);
             scrollToAdminDetail('admin-item-form');
-            
+
             setTimeout(() => {
                 const targetLi = document.querySelector(`#admin-item-list li[data-item-id="${newItemId}"]`);
                 if (targetLi) targetLi.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -1849,10 +1886,10 @@ function setupItemMgmt() {
 
             partInput.focus();
         });
-        
+
         if (codeInput) codeInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') partInput.focus(); });
         partInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') specInput.focus(); });
-        specInput.addEventListener('keypress', (e) => { 
+        specInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 btnAdd.click();
             }
@@ -1877,7 +1914,7 @@ function setupItemMgmt() {
         btnAddEquip.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            
+
             if (equipSuggestionBox.style.display === 'flex') {
                 equipSuggestionBox.style.display = 'none';
                 return;
@@ -1885,7 +1922,7 @@ function setupItemMgmt() {
 
             equipSuggestionList.innerHTML = '';
             const matches = equipmentModels;
-            
+
             if (matches.length > 0) {
                 const currentEquips = equipHiddenInput.value ? equipHiddenInput.value.split(',').map(ev => ev.trim()).filter(ev => ev) : [];
                 matches.forEach(m => {
@@ -1901,7 +1938,7 @@ function setupItemMgmt() {
                             </div>
                         </div>
                     `;
-                    
+
                     if (currentEquips.includes(m.name)) li.classList.add('selected');
 
                     li.addEventListener('click', (ev) => {
@@ -1949,17 +1986,17 @@ function setupItemMgmt() {
         const listHeader = itemListContainer.querySelector('.list-header > div:first-child');
         if (listHeader) {
             const btnCsvExport = document.createElement('button');
-            btnCsvExport.className = 'btn-settings';
+            btnCsvExport.className = 'btn-settings item-csv-btn';
             btnCsvExport.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: 5px;';
             btnCsvExport.textContent = 'CSV 내보내기';
             btnCsvExport.title = '등록된 물품 데이터를 CSV 양식으로 내보냅니다.';
             btnCsvExport.addEventListener('click', exportItemCsv);
             listHeader.appendChild(btnCsvExport);
-            
+
             const userRole = sessionStorage.getItem('userRole');
             if (userRole === 'superadmin' || userRole === 'admin') {
                 const btnCsvImport = document.createElement('button');
-                btnCsvImport.className = 'btn-settings';
+                btnCsvImport.className = 'btn-settings item-csv-btn';
                 btnCsvImport.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: 5px;';
                 btnCsvImport.textContent = 'CSV 불러오기';
                 btnCsvImport.title = 'CSV 양식: 품번, 코드명, 물품명, 세부규격';
@@ -1971,7 +2008,7 @@ function setupItemMgmt() {
 
                 csvInput.addEventListener('change', handleItemCsvImport);
                 btnCsvImport.addEventListener('click', () => csvInput.click());
-                
+
                 listHeader.appendChild(btnCsvImport);
                 listHeader.appendChild(csvInput);
             }
@@ -1999,7 +2036,7 @@ function setupItemMgmt() {
                 id: Date.now() + index,
                 content: mItem.part
             }));
-            
+
             await saveCheckTypeItems();
             addSystemLog('LOAD_ITEM_TO_CHECK', currentCheckTypeEquipKey, `물품 불러오기: ${currentCheckTypeSubCategory}`);
             renderCheckTypeItemList();
@@ -2025,7 +2062,7 @@ function exportItemCsv() {
         return;
     }
 
-    let csvContent = '\uFEFF'; 
+    let csvContent = '\uFEFF';
     csvContent += '품번,코드명,물품명,세부규격\n';
 
     adminItems.forEach(item => {
@@ -2042,7 +2079,7 @@ function exportItemCsv() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `물품_목록_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `물품_목록_${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -2055,7 +2092,7 @@ function handleItemCsvImport(event) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = async function (e) {
         try {
             const buffer = e.target.result;
             let text = new TextDecoder('utf-8').decode(buffer);
@@ -2071,7 +2108,7 @@ function handleItemCsvImport(event) {
 
             let importedCount = 0;
             let skippedCount = 0;
-            
+
             const existingPartNos = new Set(adminItems.filter(i => i.partno).map(i => i.partno));
 
             for (let i = 1; i < lines.length; i++) {
@@ -2083,7 +2120,7 @@ function handleItemCsvImport(event) {
                 let inQuotes = false;
                 for (let j = 0; j < line.length; j++) {
                     const char = line[j];
-                    if (char === '"' && line[j+1] === '"') {
+                    if (char === '"' && line[j + 1] === '"') {
                         curr += '"';
                         j++;
                     } else if (char === '"') {
@@ -2118,9 +2155,9 @@ function handleItemCsvImport(event) {
                 if (!isDuplicate) {
                     const newItemId = Date.now() + i;
                     const payload = { id: newItemId, detailType: '', additional: '', partno: partno, code: code, part: part, spec: spec, equip: '' };
-                    
+
                     const success = await window.syncAdminDB('item', 'CREATE', payload);
-                    
+
                     if (success) {
                         const newItem = {
                             id: newItemId,
@@ -2178,7 +2215,7 @@ function renderAdminItemList() {
     if (!list) return;
 
     list.innerHTML = '';
-    
+
     let filteredItems = adminItems;
     if (keyword) {
         const keywords = keyword.split(/\s+/);
@@ -2196,7 +2233,7 @@ function renderAdminItemList() {
         if (currentAdminItemId === item.id) {
             li.classList.add('active');
         }
-            
+
         li.innerHTML = `
             <div class="model-col col-item-code" title="${escapeHtml(item.code || '-')}">
                 ${escapeHtml(item.code || '-')}
@@ -2213,12 +2250,12 @@ function renderAdminItemList() {
             if (currentAdminItemId === item.id) return;
             if (!checkAdminUnsavedChanges()) return; // [추가] 리스트 다른 항목 이동 시 저장 확인
             setAdminFormDirty(false, 'item');
-            
+
             currentAdminItemId = item.id;
             localStorage.setItem('lastAdminItemId', item.id);
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
-            
+
             loadItemDetail(item);
             scrollToAdminDetail('admin-item-form'); // [추가] 모바일 스크롤 이동
         });
@@ -2243,7 +2280,7 @@ function renderEquipTags() {
 
     equipTagsContainer.innerHTML = '';
     const currentEquips = equipHiddenInput.value ? equipHiddenInput.value.split(',').map(e => e.trim()).filter(e => e) : [];
-    
+
     currentEquips.forEach(equip => {
         const tag = document.createElement('div');
         tag.className = 'tag-item';
@@ -2262,7 +2299,7 @@ function renderEquipTags() {
 function loadItemDetail(item) {
     const form = document.getElementById('admin-item-form');
     const placeholder = document.getElementById('admin-item-placeholder');
-    
+
     if (form) form.style.display = 'block';
     if (placeholder) placeholder.style.display = 'none';
 
@@ -2270,18 +2307,18 @@ function loadItemDetail(item) {
     document.getElementById('item-info-additional').value = item.additional || '';
     document.getElementById('item-info-part').value = item.part || '';
     document.getElementById('item-info-spec').value = item.spec || '';
-    
+
     document.getElementById('item-info-code').value = item.code || '';
     document.getElementById('item-info-partno').value = item.partno || '';
     document.getElementById('item-info-equip').value = item.equip || '';
-    
+
     renderEquipTags(); // 기존 저장된 장비 데이터들을 태그로 변환하여 표시
     initialAdminFormData.item = getItemFormState(); // [추가] 스냅샷 저장
 }
 
 async function handleItemDetailSave() {
     if (!currentAdminItemId) return false;
-    
+
     const detailType = document.getElementById('item-info-detail-type').value.trim();
     const additional = document.getElementById('item-info-additional').value.trim();
     const part = document.getElementById('item-info-part').value.trim();
@@ -2300,7 +2337,7 @@ async function handleItemDetailSave() {
         const oldPart = oldItem.part || '';
         const oldCode = oldItem.code || '';
         const oldDisplayValue = oldCode ? oldCode : oldPart;
-        
+
         const newPart = part;
         const newCode = code;
         const newDisplayValue = newCode ? newCode : newPart;
@@ -2330,7 +2367,7 @@ async function handleItemDetailSave() {
                     let isModified = false;
                     try {
                         const detailData = JSON.parse(localStorage.getItem(key));
-                        
+
                         // maint 동기화
                         if (detailData.maint) {
                             detailData.maint.forEach(m => {
@@ -2341,32 +2378,32 @@ async function handleItemDetailSave() {
                                 }
                             });
                         }
-                        
+
                         // logs 동기화
                         if (detailData.logs) {
                             detailData.logs.forEach(log => {
                                 if (log.content) {
                                     let originalContent = log.content;
-                                    
+
                                     // 긴 문자열부터 우선 치환하여 중복 변경 방지
                                     const targets = [oldDisplayValue, oldPart, oldCode].filter(Boolean);
                                     targets.sort((a, b) => b.length - a.length);
                                     const uniqueTargets = [...new Set(targets)];
-                                    
+
                                     for (const target of uniqueTargets) {
                                         if (log.content.includes(target)) {
                                             log.content = log.content.split(target).join(newDisplayValue);
                                             break; // 하나라도 찾아서 바꿨으면 중단
                                         }
                                     }
-                                    
+
                                     if (originalContent !== log.content) {
                                         isModified = true;
                                     }
                                 }
                             });
                         }
-                        
+
                         if (isModified) {
                             localStorage.setItem(key, JSON.stringify(detailData));
                         }
@@ -2382,7 +2419,7 @@ async function handleItemDetailSave() {
                 if (checkTypeItemsDataStr) {
                     let checkTypeData = JSON.parse(checkTypeItemsDataStr);
                     let isCheckModified = false;
-                    
+
                     Object.keys(checkTypeData).forEach(catKey => {
                         let items = checkTypeData[catKey];
                         if (Array.isArray(items)) {
@@ -2394,7 +2431,7 @@ async function handleItemDetailSave() {
                             });
                         }
                     });
-                    
+
                     if (isCheckModified) {
                         localStorage.setItem('check_type_items', JSON.stringify(checkTypeData));
                         if (typeof checkTypeItemsData !== 'undefined') {
@@ -2420,7 +2457,7 @@ async function handleItemDetailSave() {
 
 async function handleItemDetailDelete() {
     if (!currentAdminItemId) return false;
-    
+
     const item = adminItems.find(i => i.id === currentAdminItemId);
     if (!item) return false;
 
@@ -2432,12 +2469,12 @@ async function handleItemDetailDelete() {
     adminItems = adminItems.filter(i => i.id !== currentAdminItemId);
     await saveAdminItems();
     addSystemLog('DELETE_ITEM_ADMIN', item.part);
-    
+
     currentAdminItemId = null;
     setAdminFormDirty(false, 'item'); // [추가]
     document.getElementById('admin-item-form').style.display = 'none';
     document.getElementById('admin-item-placeholder').style.display = 'flex';
-    
+
     renderAdminItemList();
 }
 
@@ -2496,12 +2533,12 @@ function setupCheckTypeMgmt() {
                 alert('대상 장비를 먼저 선택해주세요.');
                 return;
             }
-            
+
             categoryItems.forEach(item => item.classList.remove('active'));
             li.classList.add('active');
             currentCheckTypeCategory = li.dataset.type;
             localStorage.setItem('lastCheckTypeCategory', currentCheckTypeCategory);
-            
+
             // [변경] 분류 패널 활성화
             const subList = document.getElementById('check-type-subcategory-list');
             const subFooter = document.getElementById('check-type-subcategory-footer');
@@ -2514,12 +2551,12 @@ function setupCheckTypeMgmt() {
             } else {
                 subFooter.style.display = 'none';
             }
-            
+
             currentCheckTypeSubCategory = null;
             const btnImportItems = document.getElementById('btn-import-check-items');
             if (btnImportItems) btnImportItems.style.display = 'none';
             renderCheckTypeSubCategoryList();
-            
+
             if (currentCheckTypeCategory === '비정기') {
                 const p2 = ensureSubCategory2Panel();
                 if (p2) {
@@ -2531,7 +2568,7 @@ function setupCheckTypeMgmt() {
                 document.getElementById('check-type-detail-container').style.display = 'none';
                 document.getElementById('check-type-detail-desc').textContent = '세부구분 2를 선택해주세요.';
                 scrollToAdminDetail('check-type-subcategory-list');
-                
+
                 // [개선] 세부구분 상태 자동 복원
                 if (!currentCheckTypeSubCategory) {
                     const savedSub = localStorage.getItem('lastCheckTypeSubCategory');
@@ -2543,12 +2580,12 @@ function setupCheckTypeMgmt() {
             } else {
                 const p2 = document.getElementById('check-type-subcategory2-container');
                 if (p2) p2.style.display = 'none';
-                
+
                 document.getElementById('check-type-detail-placeholder').style.display = 'flex';
                 document.getElementById('check-type-detail-container').style.display = 'none';
                 document.getElementById('check-type-detail-desc').textContent = '장비, 점검 구분, 분류를 순서대로 선택해주세요.';
                 scrollToAdminDetail('check-type-subcategory-list'); // [추가] 모바일 스크롤 이동
-                
+
                 // [개선] 세부구분 상태 자동 복원
                 if (!currentCheckTypeSubCategory) {
                     const savedSub = localStorage.getItem('lastCheckTypeSubCategory');
@@ -2564,7 +2601,7 @@ function setupCheckTypeMgmt() {
     // [추가] 분류 추가 이벤트
     const btnAddSub = document.getElementById('btn-add-check-type-subcategory');
     const inputSub = document.getElementById('check-type-subcategory-input');
-    
+
     if (btnAddSub && inputSub) {
         btnAddSub.addEventListener('click', async () => {
             if (!currentCheckTypeEquipKey || !currentCheckTypeCategory) {
@@ -2573,12 +2610,12 @@ function setupCheckTypeMgmt() {
             }
             const val = inputSub.value.trim();
             if (!val) return alert('분류명을 입력해주세요.');
-            
+
             const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}`;
             if (!checkTypeCategoriesData[key]) checkTypeCategoriesData[key] = [];
-            
+
             if (checkTypeCategoriesData[key].includes(val)) return alert('이미 존재하는 분류입니다.');
-            
+
             checkTypeCategoriesData[key].push(val);
             await saveCheckTypeCategories();
             addSystemLog('ADD_CHECK_CATEGORY', currentCheckTypeEquipKey, `분류 추가: ${currentCheckTypeCategory} > ${val}`);
@@ -2597,13 +2634,13 @@ function setupCheckTypeMgmt() {
         selectSub.addEventListener('change', (e) => {
             const isIrregular = currentCheckTypeCategory === '비정기';
             const value = e.target.value;
-            
+
             if (isIrregular) currentCheckTypeSubCategory2 = value;
             else currentCheckTypeSubCategory = value;
 
             const listId = isIrregular ? 'check-type-subcategory2-list' : 'check-type-subcategory-list';
             const dataKey = isIrregular ? 'sub2' : 'sub';
-            
+
             const subList = document.getElementById(listId);
             if (subList) {
                 subList.querySelectorAll('li').forEach(li => {
@@ -2612,12 +2649,12 @@ function setupCheckTypeMgmt() {
                 });
             }
 
-            const descText = isIrregular 
+            const descText = isIrregular
                 ? `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' > '${currentCheckTypeSubCategory2}' 세부 항목을 관리합니다.`
                 : `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' 세부 항목을 관리합니다.`;
-                
+
             document.getElementById('check-type-detail-desc').textContent = descText;
-            
+
             renderCheckTypeItemList();
         });
     }
@@ -2625,39 +2662,39 @@ function setupCheckTypeMgmt() {
     // [추가] 점검 세부 항목 추가 이벤트
     const btnAddItem = document.getElementById('btn-add-check-type-item');
     const inputContent = document.getElementById('check-type-item-content');
-    
+
     if (btnAddItem && inputContent && selectSub) {
         btnAddItem.addEventListener('click', async () => {
             if (!currentCheckTypeEquipKey || !currentCheckTypeCategory) return;
-            
+
             let content = inputContent.value.trim();
             const subCat = selectSub.value;
-            
+
             if (!subCat) return alert('세부 구분을 선택해주세요.');
 
             if (!content) {
                 return alert('작업 세부 내용을 입력해주세요.');
             }
-            
+
             let key;
             if (currentCheckTypeCategory === '비정기') {
                 key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}::${subCat}`;
             } else {
                 key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${subCat}`;
             }
-            
+
             if (!checkTypeItemsData[key]) checkTypeItemsData[key] = [];
-            
+
             checkTypeItemsData[key].push({
                 id: Date.now(),
                 content: content
             });
-            
+
             await saveCheckTypeItems();
             addSystemLog('ADD_CHECK_ITEM', currentCheckTypeEquipKey, `항목 추가: [${subCat}] ${content}`);
-            
+
             inputContent.value = '';
-            
+
             let shouldTrigger = false;
             if (currentCheckTypeCategory === '비정기') {
                 shouldTrigger = currentCheckTypeSubCategory2 !== subCat;
@@ -2672,7 +2709,7 @@ function setupCheckTypeMgmt() {
             }
             inputContent.focus();
         });
-        
+
         inputContent.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') btnAddItem.click();
         });
@@ -2734,7 +2771,7 @@ function setupCheckTypeMgmt() {
         });
     }
 
-        // [추가] 세부 구분 리스트 드래그 앤 드롭 (순서 변경) 이벤트
+    // [추가] 세부 구분 리스트 드래그 앤 드롭 (순서 변경) 이벤트
     const subList = document.getElementById('check-type-subcategory-list');
     if (subList) {
         subList.addEventListener('dragover', (e) => {
@@ -2754,7 +2791,7 @@ function loadCheckTypeCategories() {
     try {
         const data = localStorage.getItem('check_type_categories');
         checkTypeCategoriesData = data ? JSON.parse(data) : {};
-    } catch(e) {
+    } catch (e) {
         checkTypeCategoriesData = {};
     }
 }
@@ -2768,13 +2805,13 @@ function ensureSubCategory2Panel() {
         const subList = document.getElementById('check-type-subcategory-list');
         if (!subList) return null;
         const panel1 = subList.closest('.admin-col-list');
-        
+
         panel2 = document.createElement('div');
         panel2.id = 'check-type-subcategory2-container';
         panel2.className = 'admin-col-list';
         // [수정] 아래 cssText에서 220px 값을 변경하여 세부 구분 2 리스트 너비를 고정으로 조절할 수 있습니다.
         panel2.style.cssText = 'display: none; flex: 0 0 220px; max-width: 220px;';
-        
+
         panel2.innerHTML = `
             <div class="list-header">
                 <div style="display: flex; align-items: center; gap: 5px;">
@@ -2788,14 +2825,14 @@ function ensureSubCategory2Panel() {
                 <button id="btn-add-check-type-subcategory2" class="btn-green full-width">추가</button>
             </div>
         `;
-        
+
         panel1.parentNode.insertBefore(panel2, panel1.nextSibling);
-        
+
         const btnAdd = panel2.querySelector('#btn-add-check-type-subcategory2');
         const input = panel2.querySelector('#check-type-subcategory2-input');
         const btnSubCategory2Settings = panel2.querySelector('#btn-subcategory2-settings');
         const subCategory2Footer = panel2.querySelector('#check-type-subcategory2-footer');
-        
+
         // [추가] 세부 구분 2 관리 모드 토글 이벤트 연결
         btnSubCategory2Settings.addEventListener('click', () => {
             panel2.classList.toggle('management-active');
@@ -2808,17 +2845,17 @@ function ensureSubCategory2Panel() {
             }
             renderCheckTypeSubCategory2List();
         });
-        
+
         btnAdd.addEventListener('click', () => {
             if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
             const val = input.value.trim();
             if (!val) return alert('분류명을 입력해주세요.');
-            
+
             const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}`;
             if (!checkTypeCategories2Data[key]) checkTypeCategories2Data[key] = [];
-            
+
             if (checkTypeCategories2Data[key].includes(val)) return alert('이미 존재하는 분류입니다.');
-            
+
             checkTypeCategories2Data[key].push(val);
             saveCheckTypeCategories2();
             addSystemLog('ADD_CHECK_CATEGORY', currentCheckTypeEquipKey, `세부구분2 추가: ${currentCheckTypeCategory} > ${currentCheckTypeSubCategory} > ${val}`);
@@ -2826,7 +2863,7 @@ function ensureSubCategory2Panel() {
             input.value = '';
             input.focus();
         });
-        
+
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') btnAdd.click();
         });
@@ -2849,7 +2886,7 @@ function loadCheckTypeCategories2() {
     try {
         const data = localStorage.getItem('check_type_categories2');
         checkTypeCategories2Data = data ? JSON.parse(data) : {};
-    } catch(e) { checkTypeCategories2Data = {}; }
+    } catch (e) { checkTypeCategories2Data = {}; }
 }
 
 async function saveCheckTypeCategories2() {
@@ -2868,7 +2905,7 @@ function loadCheckTypeItems() {
     try {
         const data = localStorage.getItem('check_type_items');
         checkTypeItemsData = data ? JSON.parse(data) : {};
-    } catch(e) {
+    } catch (e) {
         checkTypeItemsData = {};
     }
 }
@@ -2882,17 +2919,17 @@ async function saveCheckTypeItems() {
 function updateCheckTypeSiteSelect() {
     const select = document.getElementById('check-type-site-filter');
     if (!select) return;
-    
+
     const currentVal = select.value;
     select.innerHTML = '<option value="">전체 사업장 보기</option>';
-    
+
     Object.keys(storageData).sort().forEach(site => {
         const opt = document.createElement('option');
         opt.value = site;
         opt.textContent = site;
         select.appendChild(opt);
     });
-    
+
     // [추가] 마지막으로 선택했던 점검 구분 사업장 필터 복원
     const savedSite = localStorage.getItem('lastCheckTypeSiteContext');
     if (currentVal && storageData[currentVal]) select.value = currentVal;
@@ -2913,11 +2950,11 @@ function renderCheckTypeEquipList() {
 
     let items = [];
     if (currentCheckTypeSiteContext && storageData[currentCheckTypeSiteContext]) {
-        storageData[currentCheckTypeSiteContext].forEach(k => items.push({site: currentCheckTypeSiteContext, key: k}));
+        storageData[currentCheckTypeSiteContext].forEach(k => items.push({ site: currentCheckTypeSiteContext, key: k }));
     } else {
         Object.keys(storageData).sort().forEach(site => {
             if (storageData[site]) {
-                storageData[site].forEach(k => items.push({site: site, key: k}));
+                storageData[site].forEach(k => items.push({ site: site, key: k }));
             }
         });
     }
@@ -2948,7 +2985,7 @@ function renderCheckTypeEquipList() {
 
         const li = document.createElement('li');
         li.dataset.equipKey = fullKey;
-        
+
         let content = `<span>${displayName}</span> <span style="color:#8b949e; font-size:12px;">${serial ? '(' + serial + ')' : ''}</span>`;
         if (!currentCheckTypeSiteContext) {
             content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:#8b949e;">${site}</span><div>${content}</div></div>`;
@@ -2956,16 +2993,16 @@ function renderCheckTypeEquipList() {
             content = `<div>${content}</div>`;
         }
         li.innerHTML = content;
-        
+
         if (currentCheckTypeEquipKey === fullKey) li.classList.add('active');
 
         li.addEventListener('click', () => {
             currentCheckTypeEquipKey = fullKey;
             localStorage.setItem('lastCheckTypeEquipKey', fullKey);
-            
+
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
-            
+
             const p2 = document.getElementById('check-type-subcategory2-container');
             if (p2) {
                 p2.style.opacity = '0.5';
@@ -2974,10 +3011,10 @@ function renderCheckTypeEquipList() {
 
             const categoryList = document.getElementById('check-type-category-list');
             categoryList.style.opacity = '1';
-            
+
             currentCheckTypeCategory = null;
             categoryList.querySelectorAll('li').forEach(l => l.classList.remove('active'));
-            
+
             // 서브카테고리(분류) 패널 초기화
             currentCheckTypeSubCategory = null;
             const btnImportItems = document.getElementById('btn-import-check-items');
@@ -2996,15 +3033,15 @@ function renderCheckTypeEquipList() {
             document.getElementById('check-type-detail-container').style.display = 'none';
             document.getElementById('check-type-detail-desc').textContent = '장비, 점검 구분, 분류를 순서대로 선택해주세요.';
             scrollToAdminDetail('check-type-category-list'); // [추가] 모바일 스크롤 이동
-                
-                // [개선] 분류 상태 자동 복원
-                if (!currentCheckTypeCategory) {
-                    const savedCat = localStorage.getItem('lastCheckTypeCategory');
-                    if (savedCat) {
-                        const targetCat = Array.from(categoryList.children).find(li => li.dataset.type === savedCat);
-                        if (targetCat) setTimeout(() => targetCat.click(), 50);
-                    }
+
+            // [개선] 분류 상태 자동 복원
+            if (!currentCheckTypeCategory) {
+                const savedCat = localStorage.getItem('lastCheckTypeCategory');
+                if (savedCat) {
+                    const targetCat = Array.from(categoryList.children).find(li => li.dataset.type === savedCat);
+                    if (targetCat) setTimeout(() => targetCat.click(), 50);
                 }
+            }
         });
 
         list.appendChild(li);
@@ -3023,11 +3060,11 @@ function renderCheckTypeSubCategoryList() {
     const list = document.getElementById('check-type-subcategory-list');
     if (!list) return;
     list.innerHTML = '';
-    
+
     if (!currentCheckTypeEquipKey || !currentCheckTypeCategory) return;
-    
+
     const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}`;
-    
+
     // [추가] 점검 구분별 세부 구분 초기값 설정
     const defaultSubCategories = {
         '정기': ['PM 점검'],
@@ -3049,7 +3086,7 @@ function renderCheckTypeSubCategoryList() {
     const categories = checkTypeCategoriesData[key] || [];
     const container = list.closest('.admin-col-list');
     const isMgmtActive = container ? container.classList.contains('management-active') : false;
-    
+
     categories.forEach((cat, index) => {
         const li = document.createElement('li');
         li.dataset.sub = cat; // [추가] 연동을 위한 데이터 속성
@@ -3063,16 +3100,16 @@ function renderCheckTypeSubCategoryList() {
                 </div>
             </div>
         `;
-        
+
         if (currentCheckTypeSubCategory === cat) li.classList.add('active');
-        
+
         li.addEventListener('click', () => {
             if (li.classList.contains('editing')) return; // 수정 중일 때 클릭(선택) 방지
             currentCheckTypeSubCategory = cat;
             localStorage.setItem('lastCheckTypeSubCategory', cat);
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
-            
+
             if (currentCheckTypeCategory === '비정기') {
                 currentCheckTypeSubCategory2 = null;
                 const p2 = ensureSubCategory2Panel();
@@ -3092,7 +3129,7 @@ function renderCheckTypeSubCategoryList() {
                 document.getElementById('check-type-detail-container').style.display = 'none';
                 document.getElementById('check-type-detail-desc').textContent = '세부구분 2를 선택해주세요.';
                 scrollToAdminDetail('check-type-subcategory2-list');
-                
+
                 // [개선] 세부구분2 상태 자동 복원
                 if (!currentCheckTypeSubCategory2) {
                     const savedSub2 = localStorage.getItem('lastCheckTypeSubCategory2');
@@ -3105,7 +3142,7 @@ function renderCheckTypeSubCategoryList() {
                 document.getElementById('check-type-detail-placeholder').style.display = 'none';
                 document.getElementById('check-type-detail-container').style.display = 'block';
                 document.getElementById('check-type-detail-desc').textContent = `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' 세부 항목을 관리합니다.`;
-                
+
                 updateCheckTypeSubCategoryDropdown();
                 renderCheckTypeItemList();
                 scrollToAdminDetail('check-type-detail-container');
@@ -3138,11 +3175,11 @@ function renderCheckTypeSubCategoryList() {
 
                 if (newCat !== cat) {
                     checkTypeCategoriesData[key][index] = newCat;
-                    
+
                     // 관련 세부 항목 데이터 키 마이그레이션
                     const oldItemKey = `${key}::${cat}`;
                     const newItemKey = `${key}::${newCat}`;
-                    
+
                     if (currentCheckTypeCategory === '비정기') {
                         if (checkTypeCategories2Data[oldItemKey]) {
                             checkTypeCategories2Data[newItemKey] = checkTypeCategories2Data[oldItemKey];
@@ -3178,7 +3215,7 @@ function renderCheckTypeSubCategoryList() {
                         }
                     }
                 }
-                
+
                 renderCheckTypeSubCategoryList();
                 if (currentCheckTypeCategory === '비정기') {
                     renderCheckTypeSubCategory2List();
@@ -3199,19 +3236,19 @@ function renderCheckTypeSubCategoryList() {
         });
         li.addEventListener('dragend', async () => {
             li.classList.remove('dragging');
-            
+
             // 변경된 순서 취합 및 저장
             const newOrder = Array.from(list.children).map(child => child.dataset.sub);
             checkTypeCategoriesData[key] = newOrder;
             await saveCheckTypeCategories();
-            
+
             // UI 및 내부 index 갱신을 위해 리렌더링
             renderCheckTypeSubCategoryList();
         });
-        
+
         list.appendChild(li);
     });
-    
+
     updateCheckTypeSubCategoryDropdown();
 }
 
@@ -3219,11 +3256,11 @@ function renderCheckTypeSubCategory2List() {
     const list = document.getElementById('check-type-subcategory2-list');
     if (!list) return;
     list.innerHTML = '';
-    
+
     if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
-    
+
     const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}`;
-    
+
     // [추가] 세부구분 2 초기값 설정
     const defaultSubCategories2 = {
         'BM 점검': ['BM 물품 교체'],
@@ -3245,7 +3282,7 @@ function renderCheckTypeSubCategory2List() {
     const categories = checkTypeCategories2Data[key] || [];
     const container = list.closest('.admin-col-list');
     const isMgmtActive = container ? container.classList.contains('management-active') : false;
-    
+
     categories.forEach((cat, index) => {
         const li = document.createElement('li');
         li.dataset.sub2 = cat;
@@ -3259,20 +3296,20 @@ function renderCheckTypeSubCategory2List() {
                 </div>
             </div>
         `;
-        
+
         if (currentCheckTypeSubCategory2 === cat) li.classList.add('active');
-        
+
         li.addEventListener('click', () => {
             if (li.classList.contains('editing')) return;
             currentCheckTypeSubCategory2 = cat;
             localStorage.setItem('lastCheckTypeSubCategory2', cat);
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
-            
+
             document.getElementById('check-type-detail-placeholder').style.display = 'none';
             document.getElementById('check-type-detail-container').style.display = 'block';
             document.getElementById('check-type-detail-desc').textContent = `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' > '${currentCheckTypeSubCategory2}' 세부 항목을 관리합니다.`;
-            
+
             updateCheckTypeSubCategoryDropdown();
             renderCheckTypeItemList();
             scrollToAdminDetail('check-type-detail-container');
@@ -3303,7 +3340,7 @@ function renderCheckTypeSubCategory2List() {
 
                 if (newCat !== cat) {
                     checkTypeCategories2Data[key][index] = newCat;
-                    
+
                     const oldItemKey = `${key}::${cat}`;
                     const newItemKey = `${key}::${newCat}`;
                     if (checkTypeItemsData[oldItemKey]) {
@@ -3320,7 +3357,7 @@ function renderCheckTypeSubCategory2List() {
                         if (desc) desc.textContent = `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' > '${currentCheckTypeSubCategory2}' 세부 항목을 관리합니다.`;
                     }
                 }
-                
+
                 renderCheckTypeSubCategory2List();
                 if (currentCheckTypeSubCategory2 === newCat) {
                     renderCheckTypeItemList();
@@ -3339,83 +3376,83 @@ function renderCheckTypeSubCategory2List() {
             saveCheckTypeCategories2();
             renderCheckTypeSubCategory2List();
         });
-        
+
         list.appendChild(li);
     });
 }
 
-window.deleteCheckTypeSubCategory2 = function(key, index) {
+window.deleteCheckTypeSubCategory2 = function (key, index) {
     if (!confirm('이 세부구분 2를 삭제하시겠습니까?\n하위 점검 항목 데이터도 함께 연결이 끊어질 수 있습니다.')) return;
-    
+
     const catName = checkTypeCategories2Data[key][index];
     checkTypeCategories2Data[key].splice(index, 1);
     saveCheckTypeCategories2();
     addSystemLog('DELETE_CHECK_CATEGORY', key, `세부구분2 삭제: ${catName}`);
-    
+
     if (currentCheckTypeSubCategory2 === catName) {
         currentCheckTypeSubCategory2 = null;
         document.getElementById('check-type-detail-placeholder').style.display = 'flex';
         document.getElementById('check-type-detail-container').style.display = 'none';
     }
-    
+
     renderCheckTypeSubCategory2List();
 }
 
 function updateCheckTypeSubCategoryDropdown() {
     const selectSub = document.getElementById('check-type-item-subcategory-select');
     if (!selectSub) return;
-    
+
     selectSub.innerHTML = '';
-    
+
     if (!currentCheckTypeEquipKey || !currentCheckTypeCategory) return;
 
     const isIrregular = currentCheckTypeCategory === '비정기';
-    const key = isIrregular 
+    const key = isIrregular
         ? `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}`
         : `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}`;
-        
+
     const categories = (isIrregular ? checkTypeCategories2Data[key] : checkTypeCategoriesData[key]) || [];
-    
+
     categories.forEach(cat => {
         const opt = document.createElement('option');
         opt.value = cat;
         opt.textContent = cat;
         selectSub.appendChild(opt);
     });
-    
+
     const targetSub = isIrregular ? currentCheckTypeSubCategory2 : currentCheckTypeSubCategory;
     if (targetSub && categories.includes(targetSub)) {
         selectSub.value = targetSub;
     }
 }
 
-window.deleteCheckTypeSubCategory = function(key, index) {
+window.deleteCheckTypeSubCategory = function (key, index) {
     if (!confirm('이 분류를 삭제하시겠습니까?\n하위 점검 항목 데이터도 함께 연결이 끊어질 수 있습니다.')) return;
-    
+
     const catName = checkTypeCategoriesData[key][index];
     checkTypeCategoriesData[key].splice(index, 1);
     saveCheckTypeCategories();
     addSystemLog('DELETE_CHECK_CATEGORY', key, `분류 삭제: ${catName}`);
-    
+
     if (currentCheckTypeSubCategory === catName) {
         currentCheckTypeSubCategory = null;
         document.getElementById('check-type-detail-placeholder').style.display = 'flex';
         document.getElementById('check-type-detail-container').style.display = 'none';
-        
+
         if (currentCheckTypeCategory === '비정기') {
             const p2 = document.getElementById('check-type-subcategory2-container');
             if (p2) { p2.style.opacity = '0.5'; p2.style.pointerEvents = 'none'; }
             currentCheckTypeSubCategory2 = null;
         }
     }
-    
+
     renderCheckTypeSubCategoryList();
 }
 
 function renderCheckTypeItemList() {
     const list = document.getElementById('check-type-item-list');
     if (!list) return;
-    
+
     list.innerHTML = '';
 
     // [추가] 물품 불러오기 버튼 표시 조건 처리
@@ -3427,9 +3464,9 @@ function renderCheckTypeItemList() {
             btnImportItems.style.display = 'none';
         }
     }
-    
+
     if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
-    
+
     let key;
     if (currentCheckTypeCategory === '비정기') {
         if (!currentCheckTypeSubCategory2) return;
@@ -3437,7 +3474,7 @@ function renderCheckTypeItemList() {
     } else {
         key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}`;
     }
-    
+
     // [수정] 데이터가 아예 생성된 적이 없는 경우에만(처음 1회만) 물품 관리에 등록된 정보를 기본값으로 가져옴
     if (!checkTypeItemsData.hasOwnProperty(key)) {
         let defaultItems = [];
@@ -3457,8 +3494,8 @@ function renderCheckTypeItemList() {
             }
         } else if (currentCheckTypeCategory === '비정기' && ['Alarm', 'Hunting', 'Data / Para 이상'].includes(currentCheckTypeSubCategory)) {
             const defaultList = [
-                "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 / 용자 이상",
-                "파트 이상 (교체)", "파트 이상 (수리)", "프로그램 이상", "단순조치", "기타"
+                "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
+                "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
             ];
             defaultItems = defaultList.map((content, index) => ({
                 id: Date.now() + index,
@@ -3471,12 +3508,12 @@ function renderCheckTypeItemList() {
     }
 
     let items = checkTypeItemsData[key] || [];
-    
+
     if (items.length === 0) {
         list.innerHTML = '<li class="list-empty-msg">등록된 항목이 없습니다.</li>';
         return;
     }
-    
+
     items.forEach(item => {
         const li = document.createElement('li');
         li.className = 'check-item-row';
@@ -3495,9 +3532,9 @@ function renderCheckTypeItemList() {
     });
 }
 
-window.deleteCheckTypeItem = function(key, id) {
+window.deleteCheckTypeItem = function (key, id) {
     if (!confirm('이 항목을 삭제하시겠습니까?')) return;
-    
+
     if (checkTypeItemsData[key]) {
         const item = checkTypeItemsData[key].find(i => i.id === id);
         if (item) {
@@ -3580,7 +3617,7 @@ async function loadCheckTypeDataFromTarget() {
     const equip = document.getElementById('load-check-type-equip-select').value;
 
     if (!site || !equip) return alert('정보를 불러올 원본 장비를 선택해주세요.');
-    
+
     const sourceEquipKey = equip;
 
     if (sourceEquipKey === currentCheckTypeEquipKey) return alert('원본 장비와 대상 장비가 같습니다. 다른 장비를 선택해주세요.');
@@ -3612,7 +3649,7 @@ async function loadCheckTypeDataFromTarget() {
             checkTypeCategoriesData[newKey] = JSON.parse(JSON.stringify(checkTypeCategoriesData[k]));
         }
     });
-    
+
     // 3. 비정기 3뎁스(세부구분2) 데이터 복사
     Object.keys(checkTypeCategories2Data).forEach(k => {
         if (k.startsWith(`${sourceEquipKey}::`)) {

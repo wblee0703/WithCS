@@ -890,9 +890,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #device-memo,
     #setup-log-detail-memo,
     textarea.delay-reason-textarea {
-        height: 200px !important;
-        /* [수정] 300px -> 200px (2/3 축소) */
-        min-height: 200px !important;
         max-height: 800px !important;
         overflow-y: auto !important;
     }
@@ -1019,11 +1016,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         flex: 0 1 auto !important; /* 고정 너비(280px) 무시 */
         width: 100% !important;    /* 가로 꽉 차게 변경 */
         max-height: 200px !important; /* 스크롤 가능하도록 최대 높이 지정 */
-    }
-
-    /* [추가] 모바일에서 교체물품의 품명, 규격 숨김 */
-    .desktop-only-part {
-        display: none !important;
     }
 }
 

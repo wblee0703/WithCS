@@ -63,7 +63,8 @@
             </ul>
             <div class="mobile-user-controls">
                 <span class="user-info" id="mobile-user-info" style="display: none;"></span>
-                <button id="mobile-btn-view-logs" class="btn-gray" style="display: none;" onclick="openLogModal(); document.getElementById('hamburger-menu').click();">📜 시스템 로그</button>
+                <button id="mobile-btn-view-logs" class="btn-gray" style="display: none;"
+                    onclick="openLogModal(); document.getElementById('hamburger-menu').click();">📜 시스템 로그</button>
                 <button id="mobile-btn-user-settings" class="btn-gray" style="display: none;">⚙️ 설정</button>
                 <button id="mobile-btn-login-logout" class="btn-blue">로그인</button>
             </div>
@@ -76,7 +77,8 @@
                 <button class="btn-gray btn-extend-session" onclick="extendSession()">연장</button>
             </div>
             <span id="user-info" class="user-info" style="display: none;"></span>
-            <button id="btn-header-view-logs" class="btn-gray" style="display: none;" onclick="openLogModal()">📜 시스템 로그</button>
+            <button id="btn-header-view-logs" class="btn-gray" style="display: none;" onclick="openLogModal()">📜 시스템
+                로그</button>
             <button id="btn-login-logout" class="btn-gray">로그인</button>
             <button id="btn-user-settings" class="btn-gray" style="display: none;">⚙️ 설정</button>
         </div>
@@ -94,7 +96,8 @@
                 <h3>시스템 로그</h3>
                 <button class="btn-del-sm" id="btn-close-modal">✕</button>
             </div>
-            <div class="log-filter-bar" style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;">
+            <div class="log-filter-bar"
+                style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;">
                 <div style="display: flex; gap: 5px;">
                     <!-- [수정] 전체 버튼 제거, 복수 선택을 위해 모두 활성화된 상태로 시작, Admin 추가 -->
                     <button class="btn-filter active" data-filter="common">공통</button>
@@ -103,11 +106,17 @@
                     <button class="btn-filter active" data-filter="admin">Admin</button>
                 </div>
                 <div style="display: flex; gap: 5px; align-items: center;">
-                    <input type="date" id="syslog-filter-start" class="input-dark" style="padding: 4px 6px; font-size: 12px; height: 26px;">
+                    <input type="date" id="syslog-filter-start" class="input-dark"
+                        style="padding: 4px 6px; font-size: 12px; height: 26px;">
                     <span style="color: #8b949e; font-size: 12px;">~</span>
-                    <input type="date" id="syslog-filter-end" class="input-dark" style="padding: 4px 6px; font-size: 12px; height: 26px;">
-                    <input type="text" id="syslog-filter-search" class="input-dark" placeholder="행동, 대상, 상세 내용 검색" autocomplete="off" style="padding: 4px 8px; font-size: 12px; width: 220px; height: 26px; margin-left: 5px;">
-                    <button id="btn-syslog-reset" class="btn-gray" style="padding: 4px 8px; font-size: 14px; height: 26px; display: flex; align-items: center; justify-content: center;" title="필터 초기화">↺</button>
+                    <input type="date" id="syslog-filter-end" class="input-dark"
+                        style="padding: 4px 6px; font-size: 12px; height: 26px;">
+                    <input type="text" id="syslog-filter-search" class="input-dark" placeholder="행동, 대상, 상세 내용 검색"
+                        autocomplete="off"
+                        style="padding: 4px 8px; font-size: 12px; width: 220px; height: 26px; margin-left: 5px;">
+                    <button id="btn-syslog-reset" class="btn-gray"
+                        style="padding: 4px 8px; font-size: 14px; height: 26px; display: flex; align-items: center; justify-content: center;"
+                        title="필터 초기화">↺</button>
                 </div>
             </div>
             <div class="modal-body">
@@ -151,7 +160,8 @@
             <div class="modal-header">
                 <h3>계정 관리</h3>
                 <div style="display: flex; gap: 8px; align-items: center;">
-                    <button id="btn-modal-add-user" class="btn-green" style="display: none; padding: 4px 10px; font-size: 12px;">➕ 계정 추가</button>
+                    <button id="btn-modal-add-user" class="btn-green"
+                        style="display: none; padding: 4px 10px; font-size: 12px;">➕ 계정 추가</button>
                     <button class="btn-del-sm" id="btn-close-user-modal">✕</button>
                 </div>
             </div>
@@ -171,7 +181,8 @@
                         <input type="password" id="change-pw-current" class="input-dark" placeholder="현재 비밀번호">
                     </div>
                     <div id="change-pw-new-wrapper" class="form-row">
-                        <input type="password" id="change-pw-new" class="input-dark" placeholder="새 비밀번호 (영문,숫자,특수기호 포함 8자 이상)">
+                        <input type="password" id="change-pw-new" class="input-dark"
+                            placeholder="새 비밀번호 (영문,숫자,특수기호 포함 8자 이상)">
                         <input type="password" id="change-pw-confirm" class="input-dark" placeholder="새 비밀번호 확인">
                         <button class="btn-blue" id="btn-change-pw">변경</button>
                     </div>
@@ -181,14 +192,16 @@
                 <h4 class="modal-section-title-blue" style="font-size: 14px; margin: 0 0 12px 0;">계정 삭제</h4>
                 <div class="form-row form-col" style="margin-bottom: 0;">
                     <div id="delete-account-wrapper" class="form-row">
-                        <input type="password" id="delete-account-pw" class="input-dark" placeholder="현재 비밀번호 입력 (계정 삭제용)">
+                        <input type="password" id="delete-account-pw" class="input-dark"
+                            placeholder="현재 비밀번호 입력 (계정 삭제용)">
                         <button id="btn-delete-account" class="btn-del">삭제</button>
                     </div>
 
                     <div id="admin-user-delete-wrapper" class="form-row">
                         <div style="flex: 1; min-width: 0;">
                             <div class="autocomplete-wrapper">
-                                <input type="text" id="admin-delete-user-input" class="input-dark" placeholder="삭제할 일반 계정 검색 (이름, 소속, 아이디)" autocomplete="off">
+                                <input type="text" id="admin-delete-user-input" class="input-dark"
+                                    placeholder="삭제할 일반 계정 검색 (이름, 소속, 아이디)" autocomplete="off">
                                 <ul id="admin-delete-user-suggestions" class="user-suggestion-list"></ul>
                                 <button id="btn-admin-delete-user" class="btn-del">삭제</button>
                             </div>
@@ -212,7 +225,8 @@
                         <input type="text" id="new-user-id" class="input-dark" placeholder="아이디">
                     </div>
                     <div id="new-user-pw-wrapper" class="form-row">
-                        <input type="password" id="new-user-pw" class="input-dark" placeholder="비밀번호 (영문,숫자,특수기호 포함 8자 이상)">
+                        <input type="password" id="new-user-pw" class="input-dark"
+                            placeholder="비밀번호 (영문,숫자,특수기호 포함 8자 이상)">
                         <input type="password" id="new-user-pw-confirm" class="input-dark" placeholder="비밀번호 확인">
                     </div>
                     <div id="new-user-extra-wrapper" class="form-row">
@@ -244,10 +258,13 @@
             <div class="modal-header">
                 <h3>추가 작업 내역</h3>
                 <div style="display: flex; align-items: center; gap: 15px;">
-                    <label class="modal-checkbox-label" style="font-size: 13px; font-weight: bold; color: #f0883e; display: flex; align-items: center; cursor: pointer; margin: 0;">
-                        <input type="checkbox" id="extra-work-issue-share" class="modal-checkbox-input" style="margin-right: 5px; transform: scale(1.2);"> 이슈 공유
+                    <label class="modal-checkbox-label"
+                        style="font-size: 13px; font-weight: bold; color: #f0883e; display: flex; align-items: center; cursor: pointer; margin: 0;">
+                        <input type="checkbox" id="extra-work-issue-share" class="modal-checkbox-input"
+                            style="margin-right: 5px; transform: scale(1.2);"> 이슈 공유
                     </label>
-                    <button class="btn-del-sm" onclick="document.getElementById('extra-work-history-modal').style.display='none'">✕</button>
+                    <button class="btn-del-sm"
+                        onclick="document.getElementById('extra-work-history-modal').style.display='none'">✕</button>
                 </div>
             </div>
             <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; gap: 10px;">
@@ -256,11 +273,14 @@
                         <!-- 원본 작업 점검 구분 경로 -->
                     </div>
                     <div style="display: flex; gap: 8px;">
-                        <button id="btn-add-extra-work-from-history" class="btn-blue-sm" style="padding: 4px 0; width: 60px; font-size: 12px; text-align: center;">추가</button>
-                        <button id="btn-move-to-extra-work-origin" class="btn-green-sm" style="padding: 4px 0; width: 60px; font-size: 12px; text-align: center;">이동</button>
+                        <button id="btn-add-extra-work-from-history" class="btn-blue-sm"
+                            style="padding: 4px 0; width: 60px; font-size: 12px; text-align: center;">추가</button>
+                        <button id="btn-move-to-extra-work-origin" class="btn-green-sm"
+                            style="padding: 4px 0; width: 60px; font-size: 12px; text-align: center;">이동</button>
                     </div>
                 </div>
-                <div class="data-table-wrapper" style="margin: 0; flex: 1; border: 1px solid #30363d; border-radius: 4px;">
+                <div class="data-table-wrapper"
+                    style="margin: 0; flex: 1; border: 1px solid #30363d; border-radius: 4px;">
                     <table class="data-table" style="margin: 0; width: 100%;">
                         <thead>
                             <tr>
@@ -281,7 +301,8 @@
                             <span style="color: #8b949e;">공수:</span> <span id="extra-work-history-md">-</span>
                         </div>
                     </div>
-                    <textarea id="extra-work-history-memo" class="input-dark" style="flex: 1; resize: none;" readonly></textarea>
+                    <textarea id="extra-work-history-memo" class="input-dark" style="flex: 1; resize: none;"
+                        readonly></textarea>
                 </div>
             </div>
         </div>
@@ -291,11 +312,13 @@
     <div id="verify-pw-modal" class="modal-overlay" style="display: none; z-index: 11000;">
         <div class="modal-window size-date-edit">
             <div class="modal-header">
-                <h3>본인 확인</h3><button class="btn-del-sm" onclick="document.getElementById('verify-pw-modal').style.display='none'">✕</button>
+                <h3>본인 확인</h3><button class="btn-del-sm"
+                    onclick="document.getElementById('verify-pw-modal').style.display='none'">✕</button>
             </div>
             <div class="modal-body">
                 <div class="form-row">
-                    <input type="password" id="verify-pw-input" class="input-dark" style="width: 100%; text-align: center;" placeholder="현재 비밀번호를 입력하세요">
+                    <input type="password" id="verify-pw-input" class="input-dark"
+                        style="width: 100%; text-align: center;" placeholder="현재 비밀번호를 입력하세요">
                 </div>
             </div>
             <div class="modal-footer"><button class="btn-blue" id="btn-verify-pw-confirm">확인</button></div>
@@ -309,11 +332,14 @@
                 <h3>비밀번호 정기 변경 안내</h3>
             </div>
             <div class="modal-body">
-                <p style="color: #f85149; font-size: 13px; margin-bottom: 15px; text-align: center; font-weight: bold;">마지막으로 비밀번호를 변경한 지 1개월이 지났습니다.<br>안전한 시스템 사용을 위해 새로운 비밀번호로 변경해주세요.</p>
+                <p style="color: #f85149; font-size: 13px; margin-bottom: 15px; text-align: center; font-weight: bold;">
+                    마지막으로 비밀번호를 변경한 지 1개월이 지났습니다.<br>안전한 시스템 사용을 위해 새로운 비밀번호로 변경해주세요.</p>
                 <div class="form-row form-col">
-                    <div class="form-row"><input type="password" id="force-pw-current" class="input-dark" placeholder="현재 비밀번호"></div>
+                    <div class="form-row"><input type="password" id="force-pw-current" class="input-dark"
+                            placeholder="현재 비밀번호"></div>
                     <div class="form-row">
-                        <input type="password" id="force-pw-new" class="input-dark" placeholder="새 비밀번호 (영문,숫자,특수기호 포함 8자 이상)">
+                        <input type="password" id="force-pw-new" class="input-dark"
+                            placeholder="새 비밀번호 (영문,숫자,특수기호 포함 8자 이상)">
                         <input type="password" id="force-pw-confirm" class="input-dark" placeholder="새 비밀번호 확인">
                     </div>
                 </div>
@@ -327,7 +353,7 @@
 
     <!-- 4. 스크립트 (Scripts) -->
     <!-- 계정 정보 조회 모드 템플릿 -->
-    <template id="my-info-view-template"> 
+    <template id="my-info-view-template">
         <div class="form-row">
             <input type="text" id="view-my-dept" class="input-dark" disabled title="소속" placeholder="소속 미지정">
             <input type="text" id="view-my-pos" class="input-dark" disabled title="직급" placeholder="직급 미지정">
@@ -341,7 +367,7 @@
     </template>
 
     <!-- 계정 정보 수정 모드 템플릿 -->
-    <template id="my-info-edit-template"> 
+    <template id="my-info-edit-template">
         <div class="form-row">
             <input type="text" id="edit-my-dept" class="input-dark" placeholder="소속 (필수)">
             <input type="text" id="edit-my-pos" class="input-dark" placeholder="직급 (필수)">
@@ -389,12 +415,6 @@
         </div>
     </template>
 
-    <template id="detail-issue-share-template">
-        <input type="checkbox" id="detail-issue-share-checkbox">
-        <label for="detail-issue-share-checkbox" style="color: #e6edf3; font-size: 13px; cursor: pointer;">특이 이슈 공유 (홈
-            대시보드 노출)</label>
-    </template>
-
     <template id="edit-content-dropdown-template">
         <div class="log-select-trigger">항목 선택</div>
         <div class="log-select-dropdown" style="width: 100%;">
@@ -406,18 +426,6 @@
         </div>
     </template>
 
-    <template id="detail-edit-part-wrapper-template">
-        <div id="detail-edit-part-trigger" class="log-select-trigger">물품 선택</div>
-        <div id="detail-edit-part-dropdown" class="log-select-dropdown">
-            <input type="text" id="detail-edit-part-search" class="dropdown-search-input" placeholder="물품 검색..."
-                autocomplete="off">
-            <div id="detail-edit-part-list" class="log-select-list"></div>
-            <div class="log-select-footer"><button type="button" class="btn-blue-sm"
-                    onclick="document.getElementById('detail-edit-part-dropdown').classList.remove('show')">선택
-                    완료</button></div>
-        </div>
-    </template>
-
     <!-- [3] 작업 예정일 등록 모달 (Register Schedule Modal) -->
     <template id="register-equip-template">
         <div id="register-equip-trigger" class="log-select-trigger">사업장을 먼저 선택해주세요</div>
@@ -425,20 +433,6 @@
             <input type="text" id="register-equip-search" class="dropdown-search-input" placeholder="장비 검색..."
                 autocomplete="off">
             <div id="register-equip-suggestions" class="log-select-list"></div>
-        </div>
-    </template>
-
-    <template id="register-part-row-template">
-        <label class="form-label">세부내용</label>
-        <div id="register-part-wrapper" class="log-select-wrapper">
-            <div id="register-part-trigger" class="log-select-trigger">물품 선택</div>
-            <div id="register-part-dropdown" class="log-select-dropdown">
-                <input type="text" id="register-part-search" class="dropdown-search-input" placeholder="물품 검색..."
-                    autocomplete="off">
-                <div id="register-part-list" class="log-select-list"></div>
-                <div class="log-select-footer"><button type="button" id="btn-register-part-add"
-                        class="btn-blue-sm">선택 완료</button></div>
-            </div>
         </div>
     </template>
 
@@ -457,10 +451,14 @@
     <template id="task-search-modal-template">
         <style>
             @media (max-width: 950px) {
-                #task-search-start-date, #task-search-end-date, #task-search-keyword-input {
+
+                #task-search-start-date,
+                #task-search-end-date,
+                #task-search-keyword-input {
                     height: 38px !important;
                     font-size: 14px !important;
                 }
+
                 #btn-do-task-search {
                     height: 38px !important;
                     font-size: 14px !important;
@@ -563,11 +561,11 @@
             </div>
         </li>
     </template>
-    
+
     <!-- ========================================================================== 
          [추가] 페이지별 모달 및 템플릿 
-         ========================================================================== --> 
-    
+         ========================================================================== -->
+
     <!-- [A] HOME / MAINTENANCE - Calendar & Gantt Modals -->
     <div id="calendar-popup" class="modal-overlay" style="display: none;">
         <div class="modal-window">
@@ -614,8 +612,8 @@
             </div>
             <div class="modal-body">
                 <div class="detail-row">
-                    <div class="detail-label-row"><label class="detail-label">장비 정보</label><button
-                            class="btn-shortcut" id="btn-move-to-equip">이동</button></div>
+                    <div class="detail-label-row"><label class="detail-label">장비 정보</label><button class="btn-shortcut"
+                            id="btn-move-to-equip">이동</button></div>
                     <div id="detail-equip-info"></div>
                 </div>
                 <div class="detail-row"><label class="detail-label">Serial No.</label>
@@ -632,7 +630,7 @@
                     <div id="detail-detail-type"></div>
                 </div>
                 <div class="detail-row large-margin">
-                    <div class="detail-label-row"><label class="detail-label">점검 항목</label></div>
+                    <div class="detail-label-row"><label class="detail-label">내용</label></div>
                     <div id="detail-content"></div><input type="text" id="detail-content-input" class="input-date-dark">
                 </div>
                 <div class="detail-row"><label class="detail-label">비용처리</label>
@@ -651,10 +649,10 @@
                 </div>
                 <div class="detail-row"><label class="detail-label">점검 결과 / 메모</label><textarea id="detail-work-memo"
                         placeholder="작업 내용을 입력하세요" spellcheck="false"></textarea></div>
-                <div class="modal-btn-group"><button class="btn-blue" id="btn-save-detail-memo">저장</button><button
-                        class="btn-gray" id="btn-close-detail-footer">닫기</button><button class="btn-del"
-                        id="btn-cancel-completion">작업완료 취소</button><button class="btn-green"
-                        id="btn-complete-work">작업 완료</button></div>
+                <div class="modal-btn-group"><button class="btn-gray" id="btn-close-detail-footer">닫기</button><button
+                        class="btn-del" id="btn-cancel-completion">작업완료 취소</button><button class="btn-green"
+                        id="btn-complete-work">작업
+                        완료</button></div>
             </div>
         </div>
     </div>
@@ -665,20 +663,24 @@
                     onclick="document.getElementById('next-schedule-modal').style.display='none'; if(typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();">✕</button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom:15px; color:#e6edf3; font-size:13px; text-align:center;">작업이 완료되었습니다.<br><span style="color:#58a6ff; font-weight:bold;">다음 작업 예정일</span>을 등록하시겠습니까?</p>
+                <p style="margin-bottom:15px; color:#e6edf3; font-size:13px; text-align:center;">작업이 완료되었습니다.<br><span
+                        style="color:#58a6ff; font-weight:bold;">다음 작업 예정일</span>을 등록하시겠습니까?</p>
                 <div class="form-row">
                     <label class="form-label">예정일</label>
                     <input type="date" id="next-schedule-date" class="input-dark" style="flex:1;">
                 </div>
                 <div class="form-row">
                     <label class="form-label">작업자</label>
-                    <div id="next-schedule-worker-wrapper" class="log-select-wrapper" style="flex:1; margin:0; min-width:0;">
+                    <div id="next-schedule-worker-wrapper" class="log-select-wrapper"
+                        style="flex:1; margin:0; min-width:0;">
                         <div id="next-schedule-worker-trigger" class="log-select-trigger">작업자 선택</div>
                         <div id="next-schedule-worker-dropdown" class="log-select-dropdown">
-                            <input type="text" id="next-schedule-worker-search" class="dropdown-search-input" placeholder="이름 검색...">
+                            <input type="text" id="next-schedule-worker-search" class="dropdown-search-input"
+                                placeholder="이름 검색...">
                             <div id="next-schedule-worker-list" class="log-select-list"></div>
                             <div class="log-select-footer">
-                                <button type="button" id="btn-next-schedule-worker-confirm" class="btn-blue-sm" style="width:100%;">선택 완료</button>
+                                <button type="button" id="btn-next-schedule-worker-confirm" class="btn-blue-sm"
+                                    style="width:100%;">선택 완료</button>
                             </div>
                         </div>
                     </div>
@@ -686,17 +688,21 @@
                 </div>
                 <div class="form-row">
                     <label class="form-label">공수</label>
-                    <input type="number" id="next-schedule-md" class="input-dark" placeholder="공수(M/D)" min="0" step="0.5" style="flex:1;">
+                    <input type="number" id="next-schedule-md" class="input-dark" placeholder="공수(M/D)" min="0"
+                        step="0.5" style="flex:1;">
                 </div>
                 <div class="form-row" style="margin-bottom: 20px;">
-                    <label class="form-label">점검 항목</label>
-                    <div id="next-schedule-item-wrapper" class="log-select-wrapper" style="flex:1; margin:0; min-width:0;">
+                    <label class="form-label">내용</label>
+                    <div id="next-schedule-item-wrapper" class="log-select-wrapper"
+                        style="flex:1; margin:0; min-width:0;">
                         <div id="next-schedule-item-trigger" class="log-select-trigger">항목 선택</div>
                         <div id="next-schedule-item-dropdown" class="log-select-dropdown">
-                            <input type="text" id="next-schedule-item-search" class="dropdown-search-input" placeholder="항목 검색...">
+                            <input type="text" id="next-schedule-item-search" class="dropdown-search-input"
+                                placeholder="항목 검색...">
                             <div id="next-schedule-item-list" class="log-select-list"></div>
                             <div class="log-select-footer">
-                                <button type="button" id="btn-next-schedule-item-confirm" class="btn-blue-sm" style="width:100%;">선택 완료</button>
+                                <button type="button" id="btn-next-schedule-item-confirm" class="btn-blue-sm"
+                                    style="width:100%;">선택 완료</button>
                             </div>
                         </div>
                     </div>
@@ -714,20 +720,20 @@
                 <h3>작업 등록</h3><button class="btn-del-sm" id="btn-close-register-modal">✕</button>
             </div>
             <div class="modal-body">
-                <div class="form-row"><label class="form-label">예정일</label><input type="date"
-                        id="register-date-display" class="input-dark"></div>
+                <div class="form-row"><label class="form-label">예정일</label><input type="date" id="register-date-display"
+                        class="input-dark"></div>
                 <div class="form-row"><label class="form-label">사업장</label><select id="register-site-select"
                         class="modal-select"></select></div>
                 <div class="form-row"><label class="form-label">장비</label><select id="register-equip-select"
                         class="modal-select" disabled></select></div>
                 <div class="form-row"><label class="form-label">구분</label><select id="register-type-select"
                         class="modal-select"></select></div>
-                <div class="form-row"><label class="form-label">세부구분</label><select
-                        id="register-detail-type-select" class="modal-select" disabled></select></div>
+                <div class="form-row"><label class="form-label">세부구분</label><select id="register-detail-type-select"
+                        class="modal-select" disabled></select></div>
                 <div class="form-row" id="register-detail-type2-row"><label class="form-label">세부구분 2</label><select
                         id="register-detail-type2-select" class="modal-select" disabled></select></div>
-                <div class="form-row"><label class="form-label">내용</label><input type="text"
-                        id="register-content-input" class="input-dark" placeholder="내용을 입력하세요">
+                <div class="form-row"><label class="form-label">내용</label><input type="text" id="register-content-input"
+                        class="input-dark" placeholder="내용을 입력하세요">
                     <div id="register-content-wrapper" class="log-select-wrapper">
                         <div id="register-content-trigger" class="log-select-trigger">항목 선택</div>
                         <div id="register-content-dropdown" class="log-select-dropdown">
@@ -761,6 +767,10 @@
             <div class="modal-footer"><button class="btn-blue" id="btn-confirm-register-schedule">등록</button></div>
         </div>
     </div>
+    <!-- ==========================================================================
+   공통 모달 템플릿 (common_modals.js)
+   ========================================================================== -->
+
     <div id="calendar-search-modal" class="modal-overlay" style="display: none;">
         <div class="modal-window">
             <div class="modal-header">
@@ -771,9 +781,11 @@
                         class="modal-select"></select></div>
                 <div class="form-row"><label class="form-label">장비</label>
                     <div id="search-equip-wrapper" class="log-select-wrapper" style="flex: 1; margin: 0; min-width: 0;">
-                        <div id="search-equip-trigger" class="log-select-trigger disabled" style="color: #8b949e; cursor: not-allowed; opacity: 0.5;">사업장을 먼저 선택해주세요</div>
+                        <div id="search-equip-trigger" class="log-select-trigger disabled"
+                            style="color: #8b949e; cursor: not-allowed; opacity: 0.5;">사업장을 먼저 선택해주세요</div>
                         <div id="search-equip-dropdown" class="log-select-dropdown">
-                            <input type="text" id="search-equip-search" class="dropdown-search-input" placeholder="장비 검색..." autocomplete="off">
+                            <input type="text" id="search-equip-search" class="dropdown-search-input"
+                                placeholder="장비 검색..." autocomplete="off">
                             <div id="search-equip-list" class="log-select-list"></div>
                         </div>
                     </div>
@@ -1175,7 +1187,7 @@
                     style="width: 100%;">선택 완료</button></div>
         </div>
     </template>
-    
+
     <template id="maint-table-row-template">
         <tr>
             <td><span class="badge"></span></td>
@@ -1198,8 +1210,10 @@
             <td class="log-content"></td>
             <td class="log-add-work">
                 <div style="display: flex; justify-content: center; align-items: center; width: 100%; gap: 4px;">
-                    <button class="btn-blue-sm btn-add-extra-work" style="padding: 2px 8px; font-size: 11px;">추가</button>
-                    <button class="btn-green-sm btn-view-extra-work" style="padding: 2px 8px; font-size: 11px; display: none;">확인</button>
+                    <button class="btn-blue-sm btn-add-extra-work"
+                        style="padding: 2px 8px; font-size: 11px;">추가</button>
+                    <button class="btn-green-sm btn-view-extra-work"
+                        style="padding: 2px 8px; font-size: 11px; display: none;">확인</button>
                 </div>
             </td>
             <td class="log-issue-share">
@@ -1230,6 +1244,7 @@
         </div>
     </template>
 
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}"></script>
     <!-- 페이지별 추가 스크립트 -->
     {% block extra_js %}{% endblock %}

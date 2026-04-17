@@ -709,7 +709,35 @@ function renderUpcomingList(data) {
 
         const clone = template.content.cloneNode(true);
         const div = clone.querySelector('.upcoming-item');
-        div.onclick = () => openScheduleModal(obj.site, obj.equip, obj.item.id);
+
+        // [수정] 완료된 작업인지 확인하여 다른 모달을 열도록 처리
+        let isCompleted = false;
+        let logId = null;
+        const key = `details_${obj.site}_${obj.equip}`;
+        const detailData = JSON.parse(localStorage.getItem(key));
+
+        // 예정일이 있는 작업에 대해서만 완료 여부 확인
+        if (obj.item.scheduledDate && detailData && detailData.logs) {
+            const logEntry = detailData.logs.find(l =>
+                l.date === obj.item.scheduledDate &&
+                (l.content || '').includes(obj.item.content) &&
+                !l.detailType.includes('일정변경')
+            );
+            if (logEntry) {
+                isCompleted = true;
+                logId = logEntry.id;
+            }
+        }
+
+        div.onclick = () => {
+            if (isCompleted) {
+                openEventDetailModal(obj.site, obj.equip, logId, true);
+            } else if (typeof window.openScheduleModal === 'function') {
+                window.openScheduleModal(obj.site, obj.equip, obj.item.id);
+            } else {
+                openEventDetailModal(obj.site, obj.equip, obj.item.id, false);
+            }
+        };
 
         if (obj.item.scheduledDate) {
             div.classList.add('scheduled-item');

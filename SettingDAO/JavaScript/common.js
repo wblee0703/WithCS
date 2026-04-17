@@ -4,12 +4,12 @@
 
 // [추가] 전역 fetch 인터셉터: 모든 API 통신 시 세션 만료(401) 및 CSRF 에러(400) 감지하여 자동 로그아웃 처리
 const originalFetch = window.fetch;
-window.fetch = async function(...args) {
+window.fetch = async function (...args) {
     try {
         const response = await originalFetch(...args);
-        
+
         const url = typeof args[0] === 'string' ? args[0] : (args[0] instanceof Request ? args[0].url : '');
-        
+
         // 401 Unauthorized 감지 (세션 만료)
         if (response.status === 401) {
             // 로그인, 비밀번호 확인 등 명시적으로 401 에러 메시지를 화면에 띄워야 하는 API는 자동 튕김 예외 처리
@@ -21,7 +21,7 @@ window.fetch = async function(...args) {
                 return Promise.reject(new Error('Session expired'));
             }
         }
-        
+
         // 400 Bad Request 중 CSRF 보안 토큰 만료 감지
         if (response.status === 400) {
             const clonedResponse = response.clone();
@@ -33,7 +33,7 @@ window.fetch = async function(...args) {
                     window.location.href = '/';
                     return Promise.reject(new Error('CSRF Token expired'));
                 }
-            } catch (e) {}
+            } catch (e) { }
         }
 
         return response;
@@ -57,10 +57,11 @@ let originalMemo = "";
 let originalSetupData = null;
 let currentLogFilters = ['common', 'setup', 'maint', 'admin']; // [수정] 현재 로그 필터 상태 (복수 선택 지원)
 let currentNextScheduleTarget = null; // [추가] 다음 작업 예정일 타겟
+let currentDetailTarget = null; // [추가] 작업 상세 정보 팝업 타겟
 let sessionTimer = null; // [추가] 세션 타이머
 let sessionTimeLeft = 3600; // 60분 리셋 (3600초)
 let lastActivityTimestamp = Date.now(); // [추가] 마지막 사용자 활동 시간
-let cameFromTaskSearch = false; // [추가] 작업 검색에서 상세 정보로 이동했는지 여부
+let cameFromTaskSearch = false; // [추가] 작업 검색에서 왔는지 여부 (상태 유지용)
 
 /**
  * 공통: 사업장 및 장비 매핑 데이터 가져오기
@@ -225,7 +226,7 @@ function fetchServerData(callback) {
             if (!response.ok) throw new Error('Network response was not ok');
             return response.json();
         })
-        .then(data => {
+        .then(async data => {
             // [핵심 수정] 기존 데이터 전체를 무조건 날리지 않고(localStorage.clear), 
             // 사용자가 선택했던 마지막 UI 상태(last... 등) 관련 키들은 안전하게 백업 후 복원합니다.
             const keysToKeep = [];
@@ -251,7 +252,7 @@ function fetchServerData(callback) {
             window.isDataLoaded = true;
 
             // [추가] 데이터 로드 후 기존 데이터 마이그레이션 및 JSON 키 순서 정렬
-            migrateDataFormat();
+            await migrateDataFormat();
 
             // [추가] 워런티 만료 장비 자동 전환
             updateWarrantyStatusAutomatically();
@@ -303,7 +304,7 @@ function checkPendingModals() {
 }
 
 // [수정] 기존 PM 데이터 변환 및 JSON 저장 시 원하는 키 순서로 자동 재정렬하는 함수
-function migrateDataFormat() {
+async function migrateDataFormat() {
     let isModified = false;
 
     const reorderObject = (obj, order, fillEmpty = false) => {
@@ -326,6 +327,103 @@ function migrateDataFormat() {
     if (JSON.stringify(adminItems) !== JSON.stringify(newAdminItems)) {
         localStorage.setItem('admin_items', JSON.stringify(newAdminItems));
         isModified = true;
+    }
+
+    // [개선] 점검 항목 명칭 통일 및 과거 누락된 비용처리 라벨 일괄 복구 마이그레이션
+    const migrationVersion = 'v1.6'; // 마이그레이션 버전 업데이트
+    const lastMigration = localStorage.getItem('keywordMigrationVersion');
+
+    if (lastMigration !== migrationVersion) {
+        console.log(`Running keyword migration to ${migrationVersion}...`);
+        const migrationMap = {
+            '용액 / 용자 이상': '용액 용자 이상',
+            '파트 이상 (교체)': '파트 이상 교체', '파트 이상 (수리)': '파트 이상 수리',
+            '파츠 이상 교체': '파트 이상 교체', '파츠 이상 수리': '파트 이상 수리',
+            '파츠 이상 (교체)': '파트 이상 교체', '파츠 이상 (수리)': '파트 이상 수리',
+            '물품 이상 (교체)': '파트 이상 교체', '물품 이상 (수리)': '파트 이상 수리',
+            '물품 이상 교체': '파트 이상 교체', '물품 이상 수리': '파트 이상 수리'
+        };
+
+        const migrateString = (str) => {
+            if (typeof str !== 'string') return str;
+            let newStr = str;
+            Object.entries(migrationMap).forEach(([oldKw, newKw]) => {
+                newStr = newStr.split(oldKw).join(newKw);
+            });
+            return newStr;
+        };
+
+        // 안전한 순회를 위해 키 목록 먼저 추출
+        const storageKeys = [];
+        for (let i = 0; i < localStorage.length; i++) storageKeys.push(localStorage.key(i));
+
+        for (const key of storageKeys) {
+            try {
+                if (key.startsWith('details_')) {
+                    let data = JSON.parse(localStorage.getItem(key));
+                    let isModified = false;
+                    let payload = { maint_upserts: [], log_upserts: [] }; // DB 전송용 페이로드
+                    
+                    ['logs', 'maint'].forEach(arrKey => {
+                        if (data[arrKey] && Array.isArray(data[arrKey])) {
+                            data[arrKey].forEach(item => {
+                                if (item.content) {
+                                    const original = item.content;
+                                    item.content = migrateString(item.content);
+                                    
+                                    // [추가] 과거 누락된 비용처리 라벨([유상], [무상]) 일괄 복구 마이그레이션
+                                    const generalCost = item.costType || item.itemCost || '';
+                                    if (generalCost && !item.content.includes(`[${generalCost}]`) && !item.content.match(/\[(유상|무상|기타)\]/)) {
+                                        if (!item.content.startsWith('[변경]')) {
+                                            const itemsArr = item.content.split(',').map(s => s.trim());
+                                            const formattedArr = itemsArr.map(partStr => {
+                                                if (partStr.match(/\[(유상|무상|기타)\]/)) return partStr;
+                                                const kwMatch = partStr.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+                                                if (kwMatch) return `${kwMatch[1].trim()} - [${generalCost}] ${kwMatch[2].trim()}`;
+                                                return `[${generalCost}] ${partStr}`;
+                                            });
+                                            item.content = formattedArr.join(', ');
+                                        }
+                                    }
+
+                                    if (item.content !== original) {
+                                        isModified = true;
+                                        if (arrKey === 'maint') payload.maint_upserts.push(item);
+                                        else if (arrKey === 'logs') payload.log_upserts.push(item);
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    if (isModified) {
+                        localStorage.setItem(key, JSON.stringify(data));
+                        // DB로 변경된 이력 동기화
+                        const parts = key.split('_');
+                        if (parts.length >= 3) {
+                            const site = parts[1];
+                            const equip = parts.slice(2).join('_');
+                            await window.syncHistoryTransaction(site, equip, payload);
+                            await new Promise(resolve => setTimeout(resolve, 50)); // 서버 과부하 방지 딜레이
+                        }
+                    }
+                } else if (key === 'check_type_items' || key === 'admin_items') {
+                    let data = JSON.parse(localStorage.getItem(key));
+                    let isModified = false;
+                    Object.values(data).forEach(val => {
+                        if (Array.isArray(val)) val.forEach(item => { if (item.content) { const o = item.content; item.content = migrateString(o); if (o !== item.content) isModified = true; } });
+                        else if (val.part) { const o = val.part; val.part = migrateString(o); if (o !== val.part) isModified = true; }
+                    });
+                    if (isModified) {
+                        localStorage.setItem(key, JSON.stringify(data));
+                        await window.syncAdminDB('setting', 'UPDATE', { key: key, value: data });
+                        await new Promise(resolve => setTimeout(resolve, 50)); // 서버 과부하 방지 딜레이
+                    }
+                }
+            } catch (e) { console.error(`Migration error on key ${key}:`, e); }
+        }
+        localStorage.setItem('keywordMigrationVersion', migrationVersion);
+        console.log(`Keyword migration to ${migrationVersion} completed.`);
+        if (isModified) location.reload();
     }
 
     // 2. details_* 마이그레이션 (유지관리, 이력 변환 및 키 순서 정렬)
@@ -516,7 +614,9 @@ function initializeApp() {
     // [이동] HOME 화면에서도 시스템 로그 팝업 이벤트(필터, 닫기)가 동작하도록 페이지 접근 제어 이전에 먼저 실행합니다.
     setupDataManagementEvents();
     setupGlobalModalScrollLock();
-    setupTaskSearchModal(); // [추가] 전역 작업 검색 모달 초기화
+    if (typeof window.setupTaskSearchModal === 'function') window.setupTaskSearchModal();
+    if (typeof window.setupEventDetailModal === 'function') window.setupEventDetailModal();
+    if (typeof window.setupRegisterScheduleModal === 'function') window.setupRegisterScheduleModal();
 
     // 2-3. 페이지별 접근 제어
     if (!handlePageAccess()) return;
@@ -862,7 +962,7 @@ function setupSidebarEvents() {
 
                 // [수정] 사업장 생성 시 기타(ETC) 장비 기본 할당
                 storageData[val] = ['기타(ETC)'];
-                
+
                 // [추가] 기타(ETC) 장비 상세 데이터 초기화
                 const initData = { maint: [], logs: [], memo: "", setup: { model: "" } };
                 localStorage.setItem(`details_${val}_기타(ETC)`, JSON.stringify(initData));
@@ -3044,7 +3144,6 @@ function getLogCategory(action) {
     // 나머지는 운영관리(maint)로 간주 (ADD_MAINTENANCE, ADD_LOG 등)
     return 'maint';
 }
-
 /* ==========================================================================
    8. 다음 작업 예정일 등록 모달 (Next Schedule Modal)
    ========================================================================== */
@@ -3283,13 +3382,9 @@ function openNextScheduleModal(options) {
 
             selectedItems.forEach((sItem, idx) => {
                 let code = '';
-                let pureContent = sItem.content;
-                let spec = '';
-                const specMatch = pureContent.match(/ \[(.*?)\]$/);
-                if (specMatch) {
-                    spec = specMatch[1];
-                    pureContent = pureContent.replace(specMatch[0], '');
-                }
+                const extracted = window.extractSpecFromContent(sItem.content);
+                let pureContent = extracted.pureContent;
+                let spec = extracted.spec;
                 let fullContent = pureContent;
                 let period = null;
 
@@ -3300,8 +3395,8 @@ function openNextScheduleModal(options) {
                     period = match.cycle || null;
                 }
 
-                let existingItem = data.maint.find(m => (m.content === fullContent || m.content === pureContent) && (m.code || '') === code && (m.spec || '') === spec && mergedRegItemIds.has(m.id));
-                if (!existingItem) existingItem = data.maint.find(m => (m.content === fullContent || m.content === pureContent) && (m.code || '') === code && (m.spec || '') === spec);
+                let existingItem = data.maint.find(m => (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) && (m.spec || '') === (spec || '') && mergedRegItemIds.has(m.id));
+                if (!existingItem) existingItem = data.maint.find(m => (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) && (m.spec || '') === (spec || ''));
 
                 if (existingItem) {
                     const oldDate = existingItem.scheduledDate;
@@ -3482,15 +3577,18 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
             delBtn.textContent = '✕';
             delBtn.title = '예정된 추가 작업 삭제';
             delBtn.style.cssText = 'float: right; margin-top: -2px; padding: 2px 6px; font-size: 10px; background: transparent; border: 1px solid #da3633; color: #da3633; border-radius: 4px; cursor: pointer;';
-            delBtn.onclick = (e) => {
+            delBtn.onclick = async (e) => {
                 e.stopPropagation();
                 if (confirm('이 예정된 추가 작업을 삭제하시겠습니까?')) {
                     const latestData = JSON.parse(localStorage.getItem(key)) || {};
                     if (latestData.maint) {
+                        if (typeof window.syncHistoryTransaction === 'function') {
+                            const success = await window.syncHistoryTransaction(site, equip, { maint_deletes: [maint.id.toString()] });
+                            if (!success) return;
+                        }
                         latestData.maint = latestData.maint.filter(m => m.id !== maint.id);
                         localStorage.setItem(key, JSON.stringify(latestData));
 
-                        if (typeof window.syncHistoryTransaction === 'function') window.syncHistoryTransaction(site, equip, { maint_deletes: [maint.id.toString()] });
                         if (typeof window.addSystemLog === 'function') window.addSystemLog('DELETE_SCHEDULE', equip, `예정된 추가 작업 삭제: ${maint.content}`);
 
                         window.openExtraWorkHistoryModal(site, equip, originalLogId); // 팝업 새로고침
@@ -3519,25 +3617,30 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         const userRole = sessionStorage.getItem('userRole');
         issueShareCb.disabled = (userRole !== 'admin' && userRole !== 'superadmin');
 
-        issueShareCb.addEventListener('change', (e) => {
+        issueShareCb.addEventListener('change', async (e) => {
             const isChecked = e.target.checked;
             const data = JSON.parse(localStorage.getItem(key)) || {};
             if (data.logs) {
                 let logUpserts = [];
-                const pLog = data.logs.find(l => l.id == originalLogId);
+                let newLogs = JSON.parse(JSON.stringify(data.logs));
+                const pLog = newLogs.find(l => l.id == originalLogId);
                 if (pLog) {
                     pLog.isIssueShared = isChecked;
                     logUpserts.push(pLog);
                 }
-                const cLogs = data.logs.filter(l => l.originalLogId == originalLogId);
+                const cLogs = newLogs.filter(l => l.originalLogId == originalLogId);
                 cLogs.forEach(cLog => {
                     cLog.isIssueShared = isChecked;
                     logUpserts.push(cLog);
                 });
+
+                data.logs = newLogs; // 수정된 상태를 원본 데이터에 반영
+
                 localStorage.setItem(key, JSON.stringify(data));
                 window.syncHistoryTransaction(site, equip, { log_upserts: logUpserts });
                 if (typeof addSystemLog === 'function') addSystemLog('UPDATE_MEMO', equip, `이슈 공유 상태 세트 변경 (LogID: ${originalLogId})`);
-                if (typeof populateEquipmentIssues === 'function') populateEquipmentIssues();
+                if (typeof window.populateEquipmentIssues === 'function') window.populateEquipmentIssues();
+                if (typeof window.renderLogs === 'function') window.renderLogs();
             }
         });
     }
@@ -3691,7 +3794,11 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
     let siteName = '';
     let equipName = '';
     let equipKeyFull = '';
-    if (window.currentDetailTarget && window.currentDetailTarget.equip) {
+    
+    if (typeof currentDetailTarget !== 'undefined' && currentDetailTarget && currentDetailTarget.equip) {
+        equipKeyFull = currentDetailTarget.equip;
+        siteName = currentDetailTarget.site || '';
+    } else if (window.currentDetailTarget && window.currentDetailTarget.equip) {
         equipKeyFull = window.currentDetailTarget.equip;
         siteName = window.currentDetailTarget.site || '';
     } else if (document.getElementById('register-equip-select') && document.getElementById('register-equip-select').value) {
@@ -3721,18 +3828,58 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
         if (m.originalLogId || m.content === '내용 없음' || m.content === '장비 점검') return;
         // [추가] 고객대응, 용액제조, 온라인점검은 유지관리 물품 제안 목록에 추가되지 않도록 차단
         if (['고객대응', '용액제조', '온라인점검'].includes(m.type)) return;
-        const baseName = m.code || m.content;
-        const specStr = m.spec ? ` [${m.spec}]` : '';
-        const displayValue = `${baseName}${specStr}`;
         
-        let partno = '';
-        const match = adminItems.find(a => a.part === m.content || a.code === m.content);
-        if (match) partno = match.partno || '';
+        let pureContent = m.content;
+        const partKeywords = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'];
+        
+        // [수정] 키워드 자체가 독립적으로 들어간 경우 물품으로 인식하지 않도록 예외 처리
+        if (partKeywords.some(kw => pureContent === kw || pureContent.endsWith(kw))) return;
 
-        if (!addedSet.has(displayValue)) {
-            addedSet.add(displayValue);
-            matchedItems.push({ part: m.content, code: m.code, partno: partno, spec: m.spec || '', displayValue: displayValue });
+        for (const keyword of partKeywords) {
+            const idx = pureContent.indexOf(keyword);
+            if (idx !== -1) {
+                pureContent = pureContent.substring(idx + keyword.length).replace(/^[\s-]+/, '');
+                break;
+            }
         }
+        
+        if (!pureContent) return;
+
+        // [수정] 여러 물품이 콤마로 묶여 있을 경우 분리해서 개별 물품으로 인식
+        const partsArray = pureContent.split(',').map(s => s.trim()).filter(Boolean);
+        
+        partsArray.forEach(pText => {
+            let actualPart = pText;
+            // 비용 태그 제거
+            const costMatch = actualPart.match(/^\[(.*?)\] (.*)$/);
+            if (costMatch) actualPart = costMatch[2];
+            
+            // 규격 제거
+            const extracted = window.extractSpecFromContent(actualPart);
+            let spec = extracted.spec || m.spec || ''; // 텍스트에 규격이 있으면 우선 적용
+            actualPart = extracted.pureContent;
+
+            // 등록된 물품이 아닌 기본 현장 이슈 항목들은 드롭다운에서 제외
+            const nonPartKeywords = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "프로그램 이상", "단순조치", "기타"];
+            if (nonPartKeywords.includes(actualPart) || partKeywords.includes(actualPart)) return;
+
+            let code = '';
+            let partno = '';
+            const match = adminItems.find(a => a.part === actualPart || a.code === actualPart);
+            if (match) {
+                code = match.code || '';
+                partno = match.partno || '';
+            }
+
+            const finalBaseName = code || actualPart;
+            const specStr = spec ? ` [${spec}]` : '';
+            const displayValue = `${finalBaseName}${specStr}`;
+
+            if (!addedSet.has(displayValue)) {
+                addedSet.add(displayValue);
+                matchedItems.push({ part: actualPart, code: code, partno: partno, spec: spec, displayValue: displayValue });
+            }
+        });
     });
 
     // 2. adminItems 중 장비 모델 매칭 항목 추가
@@ -3816,7 +3963,39 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             const div = template.querySelector('.log-select-item');
             if (isSelected) div.classList.add('selected');
             div.dataset.value = escapeHtml(displayValue);
-            div.querySelector('.item-name').textContent = escapeHtml(displayValue);
+            
+            const itemNameEl = div.querySelector('.item-name');
+            itemNameEl.innerHTML = `<span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(displayValue)}</span>`;
+            itemNameEl.style.display = 'flex';
+            itemNameEl.style.alignItems = 'center';
+
+            if (!item.spec) {
+                const addSpecBtn = document.createElement('button');
+                addSpecBtn.innerHTML = '＋';
+                addSpecBtn.style.cssText = 'margin-left: 5px; background: transparent; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 14px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1;';
+                addSpecBtn.title = '물품 상세 추가';
+                addSpecBtn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
+                addSpecBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (typeof window.openAddPartSpecModal === 'function') {
+                        window.openAddPartSpecModal(siteName, equipKeyFull, item, (newItem) => {
+                            const newDisplayValue = newItem.code ? `${newItem.code} [${newItem.spec}]` : `${newItem.content} [${newItem.spec}]`;
+                            const currentSelsArray = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => {
+                                const cSel = el.querySelector('.item-cost-select');
+                                return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+                            });
+                            if (!currentSelsArray.some(v => v.includes(newDisplayValue))) {
+                                currentSelsArray.push(`[유상] ${newDisplayValue}`);
+                            }
+                            if (searchInput) searchInput.value = '';
+                            window.renderLogPartOptions(wrapperId, triggerId, listId, searchId, currentSelsArray.join(', '));
+                        });
+                    }
+                };
+                itemNameEl.appendChild(addSpecBtn);
+            }
+
             div.querySelector('.item-cost-select').value = itemCost;
             list.appendChild(div);
         });
@@ -3829,19 +4008,19 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             list.appendChild(moreBtn);
         }
         const updateTriggerText = () => {
-            const sels = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => {
-                const cSel = el.querySelector('.item-cost-select');
-                return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
-            });
+            const sels = Array.from(list.querySelectorAll('.selected')).map(el => el.dataset.value);
             if (sels.length > 1) {
                 trigger.textContent = `${sels[0]} 외 ${sels.length - 1}개`;
                 trigger.classList.remove('multi-line');
+                trigger.style.color = '#fff'; // 선택된 내용 글자 색상 흰색
             } else if (sels.length === 1) {
                 trigger.textContent = sels[0];
                 trigger.classList.remove('multi-line');
+                trigger.style.color = '#fff'; // 선택된 내용 글자 색상 흰색
             } else {
                 trigger.textContent = '물품 선택';
                 trigger.classList.remove('multi-line');
+                trigger.style.color = '#8b949e'; // 기본 텍스트 회색
             }
             trigger.title = sels.join('\n');
             trigger.classList.remove('error-border');
@@ -3866,6 +4045,99 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
     render();
 };
 
+// [추가] 물품 상세 추가 팝업 생성 및 처리
+window.openAddPartSpecModal = function(site, equip, itemObj, onAddCallback) {
+    let modal = document.getElementById('add-part-spec-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'add-part-spec-modal';
+        modal.className = 'modal-overlay';
+        modal.style.zIndex = '11000';
+        modal.innerHTML = `
+            <div class="modal-window" style="width: 400px; height: auto; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h3>물품 추가</h3>
+                    <button id="btn-close-add-part-spec" style="background: none; border: none; color: #8b949e; cursor: pointer; font-size: 16px;">✕</button>
+                </div>
+                <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; gap: 10px;">
+                    <div class="form-row" style="margin-bottom: 0;">
+                        <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px;">코드명</label>
+                        <input type="text" id="add-part-spec-code" class="input-dark" readonly style="opacity: 0.6; cursor: not-allowed; font-size: 13px;">
+                    </div>
+                    <div class="form-row" style="margin-bottom: 0;">
+                        <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px;">물품명</label>
+                        <input type="text" id="add-part-spec-part" class="input-dark" readonly style="opacity: 0.6; cursor: not-allowed; font-size: 13px;">
+                    </div>
+                    <div class="form-row" style="margin-bottom: 0;">
+                        <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px;">규격</label>
+                        <input type="text" id="add-part-spec-master" class="input-dark" readonly style="opacity: 0.6; cursor: not-allowed; font-size: 13px;">
+                    </div>
+                    <div class="form-row" style="margin-bottom: 0;">
+                        <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px;">물품 상세</label>
+                        <input type="text" id="add-part-spec-input" class="input-dark" placeholder="물품 상세 입력 (예: 100ml)" style="font-size: 13px;">
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <button id="btn-confirm-add-part-spec" class="btn-blue-sm" style="width: 100%; padding: 8px; font-size: 14px;">추가</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        document.getElementById('btn-close-add-part-spec').onclick = () => modal.style.display = 'none';
+    }
+
+    const codeInput = document.getElementById('add-part-spec-code');
+    const partInput = document.getElementById('add-part-spec-part');
+    const masterInput = document.getElementById('add-part-spec-master');
+    const specInput = document.getElementById('add-part-spec-input');
+    const confirmBtn = document.getElementById('btn-confirm-add-part-spec');
+
+    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+    const match = adminItems.find(a => a.part === itemObj.part || a.code === itemObj.part);
+    const masterSpec = match ? (match.spec || '') : '';
+    const cycle = match ? (match.cycle || null) : null;
+
+    codeInput.value = itemObj.code || '';
+    partInput.value = itemObj.part || '';
+    masterInput.value = masterSpec;
+    specInput.value = '';
+
+    confirmBtn.onclick = async () => {
+        const newSpec = specInput.value.trim();
+        if (!newSpec) { alert('물품 상세를 입력해주세요.'); specInput.focus(); return; }
+
+        if (!site || !equip) {
+            alert('장비 정보를 찾을 수 없습니다. 다시 시도해주세요.');
+            modal.style.display = 'none';
+            return;
+        }
+
+        const key = `details_${site}_${equip}`;
+        let data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
+        if (!data.maint) data.maint = [];
+
+        const isDuplicate = data.maint.some(m => (m.content === itemObj.part || (m.code && itemObj.code && m.code === itemObj.code)) && (m.spec || '') === newSpec && m.type === '비정기');
+        if (isDuplicate) return alert('이미 동일한 물품명과 물품 상세를 가진 항목이 존재합니다.');
+
+        const newItem = { id: Date.now(), type: '비정기', detailType: 'BM 점검', code: itemObj.code || '', content: itemObj.part, spec: newSpec, date: '', period: cycle, scheduledDate: null };
+        const success = await window.syncHistoryTransaction(site, equip, { maint_upserts: [newItem] });
+        if (!success) return alert('서버 등록에 실패했습니다.');
+
+        data.maint.push(newItem);
+        localStorage.setItem(key, JSON.stringify(data));
+
+        if (typeof window.addSystemLog === 'function') window.addSystemLog('ADD_MAINTENANCE', equip, `물품 상세 추가: ${itemObj.part} [${newSpec}]`);
+
+        modal.style.display = 'none';
+        if (onAddCallback) onAddCallback(newItem);
+    };
+
+    specInput.onkeypress = (e) => { if (e.key === 'Enter') confirmBtn.click(); };
+    modal.style.display = 'flex';
+    specInput.focus();
+};
+
 window.removeErrorBorder = function (e) {
     if (e.target) e.target.classList.remove('error-border');
 };
@@ -3879,6 +4151,157 @@ window.getDragAfterElement = function (container, y, selector) {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 };
 
+// [추가] 소속(Department) 입력창 제안 박스 설정 함수
+function setupDepartmentSuggestion(inputEl) {
+    if (!inputEl || inputEl.dataset.deptSetup === 'true') return;
+    inputEl.dataset.deptSetup = 'true';
+
+    let wrapper = inputEl.closest('.autocomplete-wrapper');
+    let suggestionList;
+
+    if (!wrapper) {
+        wrapper = document.createElement('div');
+        wrapper.className = 'autocomplete-wrapper';
+        wrapper.style.position = 'relative';
+        wrapper.style.width = '100%';
+        wrapper.style.display = 'flex';
+
+        inputEl.parentNode.insertBefore(wrapper, inputEl);
+        wrapper.appendChild(inputEl);
+
+        suggestionList = document.createElement('ul');
+        suggestionList.className = 'suggestion-list';
+        suggestionList.style.zIndex = '99999';
+        suggestionList.style.top = '100%';
+        suggestionList.style.left = '0';
+        suggestionList.style.minWidth = '100%';
+        wrapper.appendChild(suggestionList);
+    } else {
+        suggestionList = wrapper.querySelector('.suggestion-list');
+    }
+
+    // 지정된 소속 목록 (상성 -> 삼성으로 오타 교정)
+    const depts = ['운영1팀(본사)', '운영1팀(삼성)', '운영1팀(청주)', '운영(해외)', '직접 입력'];
+
+    const showSuggestions = () => {
+        suggestionList.innerHTML = '';
+        depts.forEach(dept => {
+            const li = document.createElement('li');
+            li.className = 'user-suggestion-item suggestion-item';
+            li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(dept)}</span>`;
+            li.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                if (dept === '직접 입력') {
+                    inputEl.value = '';
+                    inputEl.focus();
+                } else {
+                    inputEl.value = dept;
+                }
+                suggestionList.style.display = 'none';
+            });
+            suggestionList.appendChild(li);
+        });
+        suggestionList.style.display = 'block';
+    };
+
+    inputEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showSuggestions();
+    });
+
+    inputEl.addEventListener('focus', showSuggestions);
+
+    inputEl.addEventListener('blur', () => {
+        setTimeout(() => {
+            if (suggestionList) suggestionList.style.display = 'none';
+        }, 200);
+    });
+
+    // 외부 클릭 시 닫기
+    const outsideClickListener = (e) => {
+        if (suggestionList && suggestionList.style.display === 'block' && e.target !== inputEl && !suggestionList.contains(e.target)) {
+            suggestionList.style.display = 'none';
+        }
+    };
+    document.addEventListener('mousedown', outsideClickListener);
+    document.addEventListener('touchstart', outsideClickListener, { passive: true });
+}
+
+// [추가] 직급(Position) 입력창 제안 박스 설정 함수
+function setupPositionSuggestion(inputEl) {
+    if (!inputEl || inputEl.dataset.posSetup === 'true') return;
+    inputEl.dataset.posSetup = 'true';
+
+    let wrapper = inputEl.closest('.autocomplete-wrapper');
+    let suggestionList;
+
+    if (!wrapper) {
+        wrapper = document.createElement('div');
+        wrapper.className = 'autocomplete-wrapper';
+        wrapper.style.position = 'relative';
+        wrapper.style.width = '100%';
+        wrapper.style.display = 'flex';
+
+        inputEl.parentNode.insertBefore(wrapper, inputEl);
+        wrapper.appendChild(inputEl);
+
+        suggestionList = document.createElement('ul');
+        suggestionList.className = 'suggestion-list';
+        suggestionList.style.zIndex = '99999';
+        suggestionList.style.top = '100%';
+        suggestionList.style.left = '0';
+        suggestionList.style.minWidth = '100%';
+        wrapper.appendChild(suggestionList);
+    } else {
+        suggestionList = wrapper.querySelector('.suggestion-list');
+    }
+
+    // 지정된 직급 목록
+    const positions = ['사원', '주임', '대리', '과장', '차장', '부장', '직접 입력'];
+
+    const showSuggestions = () => {
+        suggestionList.innerHTML = '';
+        positions.forEach(pos => {
+            const li = document.createElement('li');
+            li.className = 'user-suggestion-item suggestion-item';
+            li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(pos)}</span>`;
+            li.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                if (pos === '직접 입력') {
+                    inputEl.value = '';
+                    inputEl.focus();
+                } else {
+                    inputEl.value = pos;
+                }
+                suggestionList.style.display = 'none';
+            });
+            suggestionList.appendChild(li);
+        });
+        suggestionList.style.display = 'block';
+    };
+
+    inputEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showSuggestions();
+    });
+
+    inputEl.addEventListener('focus', showSuggestions);
+
+    inputEl.addEventListener('blur', () => {
+        setTimeout(() => {
+            if (suggestionList) suggestionList.style.display = 'none';
+        }, 200);
+    });
+
+    // 외부 클릭 시 닫기
+    const outsideClickListener = (e) => {
+        if (suggestionList && suggestionList.style.display === 'block' && e.target !== inputEl && !suggestionList.contains(e.target)) {
+            suggestionList.style.display = 'none';
+        }
+    };
+    document.addEventListener('mousedown', outsideClickListener);
+    document.addEventListener('touchstart', outsideClickListener, { passive: true });
+}
 /* ==========================================================================
    12. 전역 모달 - 작업 검색 (Task Search Modal)
    ========================================================================== */
@@ -4197,8 +4620,8 @@ function openTaskFromSearch(site, equip, id, isCompleted) {
     if (searchModal) searchModal.style.display = 'none';
 
     cameFromTaskSearch = true; // [추가] 플래그 설정
-    if (typeof openEventDetailModal === 'function') {
-        openEventDetailModal(site, equip, id, isCompleted);
+    if (typeof window.openEventDetailModal === 'function') {
+        window.openEventDetailModal(site, equip, id, isCompleted);
     } else {
         let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
         if (isCompleted && id) targetUrl += `&logId=${id}`;
@@ -4206,154 +4629,3 @@ function openTaskFromSearch(site, equip, id, isCompleted) {
     }
 }
 window.openTaskFromSearch = openTaskFromSearch;
-
-// [추가] 소속(Department) 입력창 제안 박스 설정 함수
-function setupDepartmentSuggestion(inputEl) {
-    if (!inputEl || inputEl.dataset.deptSetup === 'true') return;
-    inputEl.dataset.deptSetup = 'true';
-
-    let wrapper = inputEl.closest('.autocomplete-wrapper');
-    let suggestionList;
-
-    if (!wrapper) {
-        wrapper = document.createElement('div');
-        wrapper.className = 'autocomplete-wrapper';
-        wrapper.style.position = 'relative';
-        wrapper.style.width = '100%';
-        wrapper.style.display = 'flex';
-
-        inputEl.parentNode.insertBefore(wrapper, inputEl);
-        wrapper.appendChild(inputEl);
-
-        suggestionList = document.createElement('ul');
-        suggestionList.className = 'suggestion-list';
-        suggestionList.style.zIndex = '99999';
-        suggestionList.style.top = '100%';
-        suggestionList.style.left = '0';
-        suggestionList.style.minWidth = '100%';
-        wrapper.appendChild(suggestionList);
-    } else {
-        suggestionList = wrapper.querySelector('.suggestion-list');
-    }
-
-    // 지정된 소속 목록 (상성 -> 삼성으로 오타 교정)
-    const depts = ['운영1팀(본사)', '운영1팀(삼성)', '운영1팀(청주)', '운영(해외)', '직접 입력'];
-
-    const showSuggestions = () => {
-        suggestionList.innerHTML = '';
-        depts.forEach(dept => {
-            const li = document.createElement('li');
-            li.className = 'user-suggestion-item suggestion-item';
-            li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(dept)}</span>`;
-            li.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                if (dept === '직접 입력') {
-                    inputEl.value = '';
-                    inputEl.focus();
-                } else {
-                    inputEl.value = dept;
-                }
-                suggestionList.style.display = 'none';
-            });
-            suggestionList.appendChild(li);
-        });
-        suggestionList.style.display = 'block';
-    };
-
-    inputEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showSuggestions();
-    });
-
-    inputEl.addEventListener('focus', showSuggestions);
-
-    inputEl.addEventListener('blur', () => {
-        setTimeout(() => {
-            if (suggestionList) suggestionList.style.display = 'none';
-        }, 200);
-    });
-
-    // 외부 클릭 시 닫기
-    const outsideClickListener = (e) => {
-        if (suggestionList && suggestionList.style.display === 'block' && e.target !== inputEl && !suggestionList.contains(e.target)) {
-            suggestionList.style.display = 'none';
-        }
-    };
-    document.addEventListener('mousedown', outsideClickListener);
-    document.addEventListener('touchstart', outsideClickListener, { passive: true });
-}
-// [추가] 직급(Position) 입력창 제안 박스 설정 함수
-function setupPositionSuggestion(inputEl) {
-    if (!inputEl || inputEl.dataset.posSetup === 'true') return;
-    inputEl.dataset.posSetup = 'true';
-
-    let wrapper = inputEl.closest('.autocomplete-wrapper');
-    let suggestionList;
-
-    if (!wrapper) {
-        wrapper = document.createElement('div');
-        wrapper.className = 'autocomplete-wrapper';
-        wrapper.style.position = 'relative';
-        wrapper.style.width = '100%';
-        wrapper.style.display = 'flex';
-
-        inputEl.parentNode.insertBefore(wrapper, inputEl);
-        wrapper.appendChild(inputEl);
-
-        suggestionList = document.createElement('ul');
-        suggestionList.className = 'suggestion-list';
-        suggestionList.style.zIndex = '99999';
-        suggestionList.style.top = '100%';
-        suggestionList.style.left = '0';
-        suggestionList.style.minWidth = '100%';
-        wrapper.appendChild(suggestionList);
-    } else {
-        suggestionList = wrapper.querySelector('.suggestion-list');
-    }
-
-    // 지정된 직급 목록
-    const positions = ['사원', '주임', '대리', '과장', '차장', '부장', '직접 입력'];
-
-    const showSuggestions = () => {
-        suggestionList.innerHTML = '';
-        positions.forEach(pos => {
-            const li = document.createElement('li');
-            li.className = 'user-suggestion-item suggestion-item';
-            li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(pos)}</span>`;
-            li.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                if (pos === '직접 입력') {
-                    inputEl.value = '';
-                    inputEl.focus();
-                } else {
-                    inputEl.value = pos;
-                }
-                suggestionList.style.display = 'none';
-            });
-            suggestionList.appendChild(li);
-        });
-        suggestionList.style.display = 'block';
-    };
-
-    inputEl.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showSuggestions();
-    });
-
-    inputEl.addEventListener('focus', showSuggestions);
-
-    inputEl.addEventListener('blur', () => {
-        setTimeout(() => {
-            if (suggestionList) suggestionList.style.display = 'none';
-        }, 200);
-    });
-
-    // 외부 클릭 시 닫기
-    const outsideClickListener = (e) => {
-        if (suggestionList && suggestionList.style.display === 'block' && e.target !== inputEl && !suggestionList.contains(e.target)) {
-            suggestionList.style.display = 'none';
-        }
-    };
-    document.addEventListener('mousedown', outsideClickListener);
-    document.addEventListener('touchstart', outsideClickListener, { passive: true });
-}
