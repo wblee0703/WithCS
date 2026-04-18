@@ -914,7 +914,7 @@ function buildDetailDropdown(item, site, equip) {
                         if (!item.spec && templateId === 'log-part-item-template') {
                             const addSpecBtn = document.createElement('button');
                             addSpecBtn.innerHTML = '＋';
-                            addSpecBtn.style.cssText = 'margin-left: 5px; background: transparent; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 14px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1;';
+                            addSpecBtn.style.cssText = 'margin-left: 5px; background: #0d1117; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 14px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1; position: relative; z-index: 10;';
                             addSpecBtn.title = '물품 상세 추가';
                             addSpecBtn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
                             addSpecBtn.onclick = (e) => {
@@ -3483,7 +3483,7 @@ window.updateRegisterContentOptions = function () {
                         if (!item.spec && templateId === 'log-part-item-template') {
                             const addSpecBtn = document.createElement('button');
                             addSpecBtn.innerHTML = '＋';
-                            addSpecBtn.style.cssText = 'margin-left: 5px; background: transparent; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 14px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1;';
+                            addSpecBtn.style.cssText = 'margin-left: 5px; background: #0d1117; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 14px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1; position: relative; z-index: 10;';
                             addSpecBtn.title = '물품 상세 추가';
                             addSpecBtn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
                             addSpecBtn.onclick = (e) => {
