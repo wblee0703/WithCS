@@ -803,6 +803,12 @@
         display: flex;
         align-items: center;
     }
+
+    /* [요청] 모바일 환경에서 제안박스 내 비용처리 선택 드롭다운 너비 축소 (약 2/3 수준) */
+    .item-cost-select {
+        width: 70px !important;
+        flex: 0 0 70px !important;
+    }
 }
 
 #task-search-results-list li>div {
