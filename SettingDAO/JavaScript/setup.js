@@ -227,7 +227,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         window.addEventListener('beforeunload', (e) => {
             // 셋업 일지 메모 변경 확인
-            if (selectedSetupLogId !== null && document.getElementById('setup-log-detail-memo').value !== originalSetupLogMemo) {
+            const memoArea = document.getElementById('setup-log-detail-memo');
+            if (selectedSetupLogId !== null && memoArea && memoArea.value !== originalSetupLogMemo) {
                 e.preventDefault();
                 e.returnValue = '';
             }

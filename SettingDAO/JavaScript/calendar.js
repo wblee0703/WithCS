@@ -563,6 +563,7 @@ function renderMonthGrid(year, month, titleId, gridId) {
 }
 
 function openCalendarPopup(dateStr, events) {
+    if (typeof window.checkSessionValid === 'function' && !window.checkSessionValid()) return;
     const popup = document.getElementById('calendar-popup');
     const title = document.getElementById('popup-date-title');
     const list = document.getElementById('popup-event-list');
@@ -981,6 +982,7 @@ function setupScheduleModal() {
 }
 
 function openScheduleModal(site, equip, id) {
+    if (typeof window.checkSessionValid === 'function' && !window.checkSessionValid()) return;
     const modal = document.getElementById('schedule-modal');
     if (!modal) return;
     currentScheduleTarget = { site, equip, id };

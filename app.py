@@ -540,6 +540,7 @@ def handle_data():
 
 @app.route('/api/login', methods=['POST'])
 @limiter.limit("5 per minute")
+@csrf.exempt
 def login():
     data = request.json
     user_id = data.get('id', '').strip()  # [수정] 모바일/복붙 시 발생하는 보이지 않는 끝 공백 제거
@@ -610,6 +611,7 @@ def login():
     return jsonify({"status": "fail", "message": message}), 401
 
 @app.route('/api/logout', methods=['POST'])
+@csrf.exempt
 def logout():
     session.clear()
     return jsonify({"status": "success"})
@@ -830,6 +832,7 @@ def admin_delete_target_user():
 # [추가] DB 기반 로그 API
 @app.route('/api/log/add', methods=['POST'])
 @login_required
+@limiter.exempt
 def add_log():
     data = request.json
     user_id = session.get('user_id')
@@ -863,6 +866,7 @@ def get_logs():
 # [추가] 통합 Admin 설정 관리를 위한 만능 DB CRUD API
 @app.route('/api/admin/crud', methods=['POST'])
 @login_required
+@limiter.exempt
 def admin_crud():
     role = session.get('role')
     if role not in ['admin', 'superadmin']:
@@ -1004,6 +1008,7 @@ def admin_crud():
 # [추가] 유지관리 및 캘린더 장비 이력 100% DB 동기화 전용 트랜잭션 API
 @app.route('/api/history/transaction', methods=['POST'])
 @login_required
+@limiter.exempt
 def history_transaction():
     data = request.json
     equip_id = data.get('equip_id')
@@ -1070,6 +1075,7 @@ def history_transaction():
 # [추가] 셋업 화면 데이터 전용 100% DB 동기화 API
 @app.route('/api/setup/sync_equip', methods=['POST'])
 @login_required
+@limiter.exempt
 def sync_setup_equip():
     data = request.json
     equip_id = data.get('equip_id')

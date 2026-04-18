@@ -2,6 +2,17 @@
    1. 일정 상세 정보 모달 (Event Detail Modal)
    ========================================================================== */
 
+window.restoreTaskSearchModal = function() {
+    if (typeof cameFromTaskSearch !== 'undefined' && cameFromTaskSearch) {
+        const searchModal = document.getElementById('task-search-modal');
+        if (searchModal) {
+            searchModal.style.display = 'flex';
+            if (typeof window.doTaskSearch === 'function') window.doTaskSearch(); // 최신 데이터로 즉시 갱신
+        }
+        cameFromTaskSearch = false; // 플래그 리셋
+    }
+};
+
 /* --- 1.1 초기화 (Setup) --- */
 function setupEventDetailModal() {
     const modal = document.getElementById('event-detail-modal');
@@ -21,15 +32,7 @@ function setupEventDetailModal() {
             }
         }
         modal.style.display = 'none';
-
-        // [추가] 작업 검색에서 왔다면 검색 모달 다시 표시
-        if (cameFromTaskSearch) {
-            const searchModal = document.getElementById('task-search-modal');
-            if (searchModal) {
-                searchModal.style.display = 'flex';
-            }
-            cameFromTaskSearch = false; // 플래그 리셋
-        }
+        if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
     };
 
     if (closeBtn) closeBtn.onclick = closeModal;
@@ -167,6 +170,7 @@ function setupEventDetailModal() {
 
 /* --- 1.2 모달 열기 (Open) --- */
 function openEventDetailModal(site, equip, id, isCompleted) {
+    if (typeof window.checkSessionValid === 'function' && !window.checkSessionValid()) return;
     const modal = document.getElementById('event-detail-modal');
     if (!modal) return;
 
@@ -183,6 +187,16 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     }
 
     if (!item) return;
+
+    // [추가] 모달 타이틀 변경 (추가 작업 여부에 따라)
+    const modalTitle = modal.querySelector('.modal-header h3');
+    if (modalTitle) {
+        if (item.originalLogId) {
+            modalTitle.textContent = '추가 작업 상세 정보';
+        } else {
+            modalTitle.textContent = '작업 상세 정보';
+        }
+    }
 
     const parts = equip.split('::');
     document.getElementById('detail-equip-info').textContent = `${site} > ${parts[0]}`;
@@ -210,19 +224,24 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             i.originalLogId == item.originalLogId
         );
         const contentArr = sameDayItems.map(i => {
-            let val = i.code ? i.code : i.content;
+            let val = i.content;
+            let itemDisplay = i.code ? i.code : '';
             
             // [수정] 파트 이상 교체 등 키워드가 있는 경우, i.code가 적용되더라도 키워드가 날아가지 않도록 보존
             const kwMatch = (i.content || '').match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
-            if (kwMatch && i.code) {
-                val = `${kwMatch[1].trim()} - ${i.code}`;
-            } else if (kwMatch) {
-                val = i.content;
+            
+            if (kwMatch) {
+                if (!itemDisplay) itemDisplay = kwMatch[2].trim();
+                if (i.itemCost) itemDisplay = `[${i.itemCost}] ${itemDisplay}`;
+                val = `${kwMatch[1].trim()} - ${itemDisplay}`;
+            } else {
+                if (!itemDisplay) itemDisplay = i.content;
+                if (i.itemCost) itemDisplay = `[${i.itemCost}] ${itemDisplay}`;
+                val = itemDisplay;
             }
 
             const specStr = i.spec ? ` [${i.spec}]` : '';
-            const fullVal = `${val}${specStr}`;
-            return i.itemCost ? `[${i.itemCost}] ${fullVal}` : fullVal;
+            return `${val}${specStr}`;
         });
         displayContent = [...new Set(contentArr)].join(', ');
     }
@@ -233,8 +252,12 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
     // [수정] 텍스트 모드로 표시할 때 불필요한 비용 태그 제거
     const cleanItemsArr = itemsArr.map(s => {
-        const match = s.match(/^\[(.*?)\] (.*)$/);
-        return match ? match[2] : s;
+        let cleanV = s;
+        const m1 = cleanV.match(/^\[.*?\]\s*(.*)$/);
+        if (m1) cleanV = m1[1];
+        const m2 = cleanV.match(/^(.*?)\s*-\s*\[.*?\]\s*(.*)$/);
+        if (m2) cleanV = `${m2[1]} - ${m2[2]}`;
+        return cleanV;
     });
 
     if (cleanItemsArr.length > 1) {
@@ -545,6 +568,12 @@ function buildDetailDropdown(item, site, equip) {
             let suffix = match[2].replace(/^[\s-]+/, '').trim();
             
             let cost = '';
+            const innerCostMatch = suffix.match(/^\[(.*?)\]\s*(.*)$/);
+            if (innerCostMatch) {
+                cost = innerCostMatch[1];
+                suffix = innerCostMatch[2];
+            }
+
             const costMatch = prefix.match(/^\[(.*?)\]\s*(.*)$/);
             if (costMatch) {
                 cost = costMatch[1];
@@ -687,39 +716,100 @@ function buildDetailDropdown(item, site, equip) {
                 if (['고객대응', '용액제조', '온라인점검'].includes(m.type)) return;
 
                 let pureContent = m.content;
-                const keywordMap = {
-                    '파트 이상 교체': '파트 이상 교체',
-                    '파트 이상 수리': '파트 이상 수리',
-                    '용액 용자 이상': '용액 용자 이상',
-                    '파트 이상 (교체)': '파트 이상 교체',
-                    '파트 이상 (수리)': '파트 이상 수리',
-                    '용액 / 용자 이상': '용액 용자 이상'
-                };
 
-                for (const [oldKw, newKw] of Object.entries(keywordMap)) {
-                    if (pureContent.startsWith(oldKw + ' - ')) {
-                        pureContent = newKw;
-                        break;
-                    } else if (pureContent === oldKw) {
-                        pureContent = newKw;
-                        break;
+                // [추가] 오염된 텍스트 정제 (비용 태그 등)
+                const costMatch = pureContent.match(/^\[(.*?)\]\s*(.*)$/);
+                if (costMatch) pureContent = costMatch[2];
+                pureContent = pureContent.replace(/\[(유상|무상|기타)\]/g, '').trim();
+                pureContent = pureContent.replace(/\s*-\s*$/, '').trim();
+
+                if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+                    const partKeywords = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리', '파트 이상 (교체)', '파츠 이상 교체', '파트 이상', '파츠 이상'];
+                    if (partKeywords.some(kw => pureContent === kw || pureContent.endsWith(kw))) return;
+
+                    for (const keyword of partKeywords) {
+                        const idx = pureContent.indexOf(keyword);
+                        if (idx !== -1) {
+                            pureContent = pureContent.substring(idx + keyword.length).replace(/^[\s-]+/, '');
+                            break;
+                        }
+                    }
+                    if (!pureContent) return;
+
+                    const partsArray = pureContent.split(',').map(s => s.trim()).filter(Boolean);
+                    partsArray.forEach(pText => {
+                        let actualPart = pText;
+                        const innerCostMatch = actualPart.match(/^\[(.*?)\]\s*(.*)$/);
+                        if (innerCostMatch) actualPart = innerCostMatch[2];
+
+                        if (!actualPart) return; 
+
+                        const extracted = typeof window.extractSpecFromContent === 'function' ? window.extractSpecFromContent(actualPart) : { spec: '', pureContent: actualPart };
+                        let spec = extracted.spec || m.spec || '';
+                        actualPart = extracted.pureContent;
+
+                        const nonPartKeywords = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "프로그램 이상", "단순조치", "기타"];
+                        if (nonPartKeywords.includes(actualPart) || partKeywords.some(kw => actualPart === kw || actualPart.startsWith(kw + ' - '))) return;
+
+                        let code = '';
+                        let partno = '';
+                        const match = adminItems.find(a => a.part === actualPart || a.code === actualPart);
+                        if (match) {
+                            code = match.code || '';
+                            partno = match.partno || '';
+                        }
+
+                        const baseName = code || actualPart;
+                        const specStr = spec ? ` [${spec}]` : '';
+                        const displayValue = `${baseName}${specStr}`;
+                        registeredSet.add(displayValue);
+
+                        if (!poolMap.has(displayValue)) {
+                            poolMap.set(displayValue, {
+                                content: actualPart,
+                                code: code,
+                                partno: partno,
+                                spec: spec,
+                                displayValue: displayValue
+                            });
+                        }
+                    });
+                } else {
+                    const keywordMap = {
+                        '파트 이상 교체': '파트 이상 교체',
+                        '파트 이상 수리': '파트 이상 수리',
+                        '용액 용자 이상': '용액 용자 이상',
+                        '파트 이상 (교체)': '파트 이상 교체',
+                        '파트 이상 (수리)': '파트 이상 수리',
+                        '용액 / 용자 이상': '용액 용자 이상'
+                    };
+
+                    for (const [oldKw, newKw] of Object.entries(keywordMap)) {
+                        if (pureContent.startsWith(oldKw + ' - ')) {
+                            pureContent = newKw;
+                            break;
+                        } else if (pureContent === oldKw) {
+                            pureContent = newKw;
+                            break;
+                        }
+                    }
+
+                    const baseName = m.code || pureContent;
+                    const specStr = m.spec ? ` [${m.spec}]` : '';
+                    const displayValue = `${baseName}${specStr}`;
+                    registeredSet.add(displayValue);
+
+                    if (!poolMap.has(displayValue)) {
+                        poolMap.set(displayValue, {
+                            content: pureContent,
+                            code: m.code,
+                            spec: m.spec || '',
+                            displayValue: displayValue
+                        });
                     }
                 }
-
-                const baseName = m.code || pureContent;
-                const specStr = m.spec ? ` [${m.spec}]` : '';
-                const displayValue = `${baseName}${specStr}`;
-                registeredSet.add(displayValue);
-
-                if (!poolMap.has(displayValue)) {
-                    poolMap.set(displayValue, {
-                        content: pureContent,
-                        code: m.code,
-                        spec: m.spec || '',
-                        displayValue: displayValue
-                    });
-                }
             };
+
             if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
                 maintData.maint.forEach(processRegistered);
             } else {
@@ -815,7 +905,43 @@ function buildDetailDropdown(item, site, equip) {
                         const div = tpl.querySelector('.log-select-item');
                         if (isSelected) div.classList.add('selected');
                         div.dataset.value = val;
-                        div.querySelector('.item-name').textContent = val;
+                        
+                        const itemNameEl = div.querySelector('.item-name');
+                        itemNameEl.innerHTML = `<span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(val)}</span>`;
+                        itemNameEl.style.display = 'flex';
+                        itemNameEl.style.alignItems = 'center';
+
+                        if (!item.spec && templateId === 'log-part-item-template') {
+                            const addSpecBtn = document.createElement('button');
+                            addSpecBtn.innerHTML = '＋';
+                            addSpecBtn.style.cssText = 'margin-left: 5px; background: transparent; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 14px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1;';
+                            addSpecBtn.title = '물품 상세 추가';
+                            addSpecBtn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
+                            addSpecBtn.onclick = (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (typeof window.openAddPartSpecModal === 'function') {
+                                    window.openAddPartSpecModal(site, equip, item, (newItem) => {
+                                        const newDisplayValue = newItem.code ? `${newItem.code} [${newItem.spec}]` : `${newItem.content} [${newItem.spec}]`;
+                                        
+                                        registeredItems.unshift({
+                                            content: newItem.content,
+                                            code: newItem.code,
+                                            partno: item.partno || '',
+                                            spec: newItem.spec,
+                                            displayValue: newDisplayValue
+                                        });
+                                        registeredSet.add(newDisplayValue);
+                                        currentSelections[newDisplayValue] = '유상';
+                                        
+                                        if (searchInput) searchInput.value = '';
+                                        renderDropdownItems();
+                                        updateTriggerText();
+                                    });
+                                }
+                            };
+                            itemNameEl.appendChild(addSpecBtn);
+                        }
 
                         const cSel = div.querySelector('.item-cost-select');
                         if (cSel) {
@@ -852,7 +978,10 @@ function buildDetailDropdown(item, site, equip) {
                                 const selectedItems = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
                                 const isPartIssue = selectedItems.some(v => v.match(/(파트|물품) 이상\s*\(?(교체|수리)\)?/) || v.includes('용액 용자 이상') || v.includes('용액 / 용자 이상'));
                                 const pList = document.getElementById('detail-edit-part-list');
-                                if (isPartIssueSelected && pList && typeof window.renderLogPartOptions === 'function') {
+                                
+                                pWrapper.style.display = isPartIssue ? 'flex' : 'none';
+                                
+                                if (isPartIssue && pList && typeof window.renderLogPartOptions === 'function') {
                                     window.renderLogPartOptions('detail-edit-part-wrapper', 'detail-edit-part-trigger', 'detail-edit-part-list', 'detail-edit-part-search', partContentStr);
                                 }
                             }
@@ -1449,6 +1578,13 @@ async function saveDetailChanges() {
             } else {
                 let finalContent = document.getElementById('detail-content-input').value.trim();
                 if (!finalContent) finalContent = '내용 없음';
+                
+                // [수정] 수동 입력 저장 시에도 혹시 모를 비용 라벨 찌꺼기 완벽 제거
+                const costMatch = finalContent.match(/^\[(.*?)\]\s*(.*)$/);
+                if (costMatch) finalContent = costMatch[2];
+                const innerMatch = finalContent.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
+                if (innerMatch) finalContent = `${innerMatch[1]} - ${innerMatch[3]}`;
+                
                 finalContentStr = finalContent;
 
                 let pureContent = finalContent;
@@ -1712,13 +1848,17 @@ async function completeScheduleWork() {
         }
 
         if (isPartReplacement && partsString) {
-            partsString.split(',').forEach(p => {
+            const parts = partsString.split(',').map(s => s.trim());
+            parts.forEach(p => {
                 let purePart = p.replace(/\[.*?\]\s*/g, '').trim();
                 const specMatch = purePart.match(/ \[(.*?)\]$/);
-                let spec = i.spec || '';
+                let spec = '';
                 if (specMatch) {
                     spec = specMatch[1];
                     purePart = purePart.replace(specMatch[0], '');
+                } else if (parts.length === 1) {
+                    // [수정] 부품이 하나일 때만 maint 항목의 개별 spec 필드를 사용 (다중 부품 시 spec 오염 방지)
+                    spec = i.spec || '';
                 }
                 if (purePart && purePart !== '내용 없음') {
                     extractedParts.push({
@@ -1747,6 +1887,7 @@ async function completeScheduleWork() {
         let existing = data.maint.find(m => {
             if (m.id === ep.sourceId) return false;
             if (m.type !== '정기' && m.type !== '비정기') return false;
+            if (m.originalLogId) return false; // [수정] 추가 작업의 임시 데이터는 existing 대상에서 제외하여 원본과 매칭 보장
             if ((m.spec || '') !== (ep.spec || '')) return false;
             return (m.content === realPartName || m.content === ep.part || (m.code && codeName && m.code === codeName));
         });
@@ -1761,7 +1902,8 @@ async function completeScheduleWork() {
             idsToRemove.add(ep.sourceId);
         } else {
             const sourceItem = data.maint.find(m => m.id === ep.sourceId);
-                if (sourceItem && (sourceItem.content === realPartName || sourceItem.content === ep.part) && (sourceItem.spec || '') === (ep.spec || '')) {
+            // [수정] sourceItem이 원본 항목(!originalLogId)일 때만 재사용 (임시 항목 재사용 시 필터에서 삭제되어버리는 버그 방지)
+            if (sourceItem && !sourceItem.originalLogId && (sourceItem.content === realPartName || sourceItem.content === ep.part) && (sourceItem.spec || '') === (ep.spec || '')) {
                 sourceItem.date = ep.date;
                 if (ep.costType) sourceItem.itemCost = ep.costType;
                 mergedRegItemIds.add(sourceItem.id);
@@ -1886,7 +2028,10 @@ async function completeScheduleWork() {
                 md: md,
                 originalMaintMap: originalMaintMap,
                 mergedRegItemIds: mergedRegItemIds,
-                onClose: window.refreshCalendarPopupAfterCompletion,
+                        onClose: () => {
+                            if (typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();
+                            if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
+                        },
                 onDateChange: (site, oldDate, newDate) => {
                     const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
                     const newMonth = newDate.substring(0, 7);
@@ -1901,6 +2046,7 @@ async function completeScheduleWork() {
     } else {
         alert('작업이 완료되었습니다.');
         if (typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();
+                if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
     }
 }
 
@@ -2110,11 +2256,8 @@ async function cancelScheduleCompletion() {
                 }
             }
 
-            if (recoveredMaintId) {
-                openEventDetailModal(site, equip, recoveredMaintId, false);
-            } else {
-                document.getElementById('event-detail-modal').style.display = 'none';
-            }
+            document.getElementById('event-detail-modal').style.display = 'none';
+            if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
         } catch (error) {
             console.error('Cancel Completion Error:', error);
             alert('작업 취소 처리 중 알 수 없는 오류가 발생했습니다. 브라우저 콘솔을 확인해주세요.');
@@ -2156,6 +2299,8 @@ function setupRegisterScheduleModal() {
         if (contentList) contentList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
         const partList = document.getElementById('register-part-list');
         if (partList) partList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
+                
+                if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
     };
 
     if (siteSelect) {
@@ -2461,6 +2606,7 @@ function setupRegisterScheduleModal() {
 
 /* --- 2.2 모달 열기 (Open) --- */
 function openRegisterScheduleModal(dateStr, presetData = null) {
+    if (typeof window.checkSessionValid === 'function' && !window.checkSessionValid()) return;
     const modal = document.getElementById('register-schedule-modal');
     const dateDisplay = document.getElementById('register-date-display');
     const siteSelect = document.getElementById('register-site-select');
@@ -3091,46 +3237,111 @@ window.updateRegisterContentOptions = function () {
 
         // 1. 유지관리 항목 (maint) 처리 - 가장 우선순위
         const processRegistered = (m) => {
-            if (m.originalLogId || m.content === '내용 없음' || m.content === '장비 점검' || !m.content) return;
+            if (m.originalLogId && m.originalLogId != window.currentAddWorkLogId) return; // [수정] 다른 추가 작업의 자식 항목만 제외하고, 기본 물품은 제안 풀에 포함
+            if (m.content === '내용 없음' || m.content === '장비 점검' || !m.content) return;
             if (['고객대응', '용액제조', '온라인점검'].includes(m.type)) return;
 
             let pureContent = m.content;
-            const keywordMap = {
-                '파트 이상 교체': '파트 이상 교체',
-                '파트 이상 수리': '파트 이상 수리',
-                '용액 용자 이상': '용액 용자 이상',
-                '파트 이상 (교체)': '파트 이상 교체',
-                '파트 이상 (수리)': '파트 이상 수리',
-                '용액 / 용자 이상': '용액 용자 이상'
-            };
-
-            for (const [oldKw, newKw] of Object.entries(keywordMap)) {
-                if (pureContent.startsWith(oldKw + ' - ')) {
-                    pureContent = newKw;
-                    break;
-                } else if (pureContent === oldKw) {
-                    pureContent = newKw;
-                    break;
-                }
+            
+            // 비용 태그 파싱
+            const costMatch = pureContent.match(/^\[(.*?)\]\s*(.*)$/);
+            if (costMatch) {
+                pureContent = costMatch[2];
             }
+            
+            // [추가] 오염된 텍스트 추가 정제 (사용자 요구사항 해결)
+            pureContent = pureContent.replace(/\[(유상|무상|기타)\]/g, '').trim();
+            pureContent = pureContent.replace(/\s*-\s*$/, '').trim();
 
-            const baseName = m.code || pureContent;
-            const specStr = m.spec ? ` [${m.spec}]` : '';
-            const displayValue = `${baseName}${specStr}`;
-            registeredSet.add(displayValue);
+            if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+                const partKeywords = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리', '파트 이상 (교체)', '파츠 이상 교체', '파트 이상', '파츠 이상'];
+                if (partKeywords.some(kw => pureContent === kw || pureContent.endsWith(kw))) return;
 
-            let partno = '';
-            const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
-            if (match) partno = match.partno || '';
+                for (const keyword of partKeywords) {
+                    const idx = pureContent.indexOf(keyword);
+                    if (idx !== -1) {
+                        pureContent = pureContent.substring(idx + keyword.length).replace(/^[\s-]+/, '');
+                        break;
+                    }
+                }
+                if (!pureContent) return;
 
-            if (!poolMap.has(displayValue)) {
-                poolMap.set(displayValue, {
-                    content: pureContent,
-                    code: m.code,
-                    partno: partno,
-                    spec: m.spec || '',
-                    displayValue: displayValue
+                const partsArray = pureContent.split(',').map(s => s.trim()).filter(Boolean);
+                partsArray.forEach(pText => {
+                    let actualPart = pText;
+                    const innerCostMatch = actualPart.match(/^\[(.*?)\]\s*(.*)$/);
+                    if (innerCostMatch) actualPart = innerCostMatch[2];
+
+                    if (!actualPart) return; // [수정] 비용 태그만 있는 잘못된 데이터 필터링
+                    
+                    const extracted = typeof window.extractSpecFromContent === 'function' ? window.extractSpecFromContent(actualPart) : { spec: '', pureContent: actualPart };
+                    let spec = extracted.spec || m.spec || '';
+                    actualPart = extracted.pureContent;
+
+                    const nonPartKeywords = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "프로그램 이상", "단순조치", "기타"];
+                    if (nonPartKeywords.includes(actualPart) || partKeywords.some(kw => actualPart === kw || actualPart.startsWith(kw + ' - '))) return;
+
+                    let code = '';
+                    let partno = '';
+                    const match = adminItems.find(a => a.part === actualPart || a.code === actualPart);
+                    if (match) {
+                        code = match.code || '';
+                        partno = match.partno || '';
+                    }
+
+                    const baseName = code || actualPart;
+                    const specStr = spec ? ` [${spec}]` : '';
+                    const displayValue = `${baseName}${specStr}`;
+                    registeredSet.add(displayValue);
+
+                    if (!poolMap.has(displayValue)) {
+                        poolMap.set(displayValue, {
+                            content: actualPart,
+                            code: code,
+                            partno: partno,
+                            spec: spec,
+                            displayValue: displayValue
+                        });
+                    }
                 });
+            } else {
+                const keywordMap = {
+                    '파트 이상 교체': '파트 이상 교체',
+                    '파트 이상 수리': '파트 이상 수리',
+                    '용액 용자 이상': '용액 용자 이상',
+                    '파트 이상 (교체)': '파트 이상 교체',
+                    '파트 이상 (수리)': '파트 이상 수리',
+                    '용액 / 용자 이상': '용액 용자 이상'
+                };
+
+                for (const [oldKw, newKw] of Object.entries(keywordMap)) {
+                    if (pureContent.startsWith(oldKw + ' - ')) {
+                        pureContent = newKw;
+                        break;
+                    } else if (pureContent === oldKw) {
+                        pureContent = newKw;
+                        break;
+                    }
+                }
+
+                const baseName = m.code || pureContent;
+                const specStr = m.spec ? ` [${m.spec}]` : '';
+                const displayValue = `${baseName}${specStr}`;
+                registeredSet.add(displayValue);
+
+                let partno = '';
+                const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
+                if (match) partno = match.partno || '';
+
+                if (!poolMap.has(displayValue)) {
+                    poolMap.set(displayValue, {
+                        content: pureContent,
+                        code: m.code,
+                        partno: partno,
+                        spec: m.spec || '',
+                        displayValue: displayValue
+                    });
+                }
             }
         };
 
@@ -3233,7 +3444,45 @@ window.updateRegisterContentOptions = function () {
                         const div = tpl.querySelector('.log-select-item');
                         if (isSelected) div.classList.add('selected');
                         div.dataset.value = val;
-                        div.querySelector('.item-name').textContent = val;
+                        
+                        const itemNameEl = div.querySelector('.item-name');
+                        itemNameEl.innerHTML = `<span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(val)}</span>`;
+                        itemNameEl.style.display = 'flex';
+                        itemNameEl.style.alignItems = 'center';
+
+                        if (!item.spec && templateId === 'log-part-item-template') {
+                            const addSpecBtn = document.createElement('button');
+                            addSpecBtn.innerHTML = '＋';
+                            addSpecBtn.style.cssText = 'margin-left: 5px; background: transparent; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 14px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1;';
+                            addSpecBtn.title = '물품 상세 추가';
+                            addSpecBtn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
+                            addSpecBtn.onclick = (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (typeof window.openAddPartSpecModal === 'function') {
+                                    const siteSelect = document.getElementById('register-site-select');
+                                    const siteName = siteSelect ? siteSelect.value : '';
+                                    window.openAddPartSpecModal(siteName, equipKey, item, (newItem) => {
+                                        const newDisplayValue = newItem.code ? `${newItem.code} [${newItem.spec}]` : `${newItem.content} [${newItem.spec}]`;
+                                        
+                                        registeredItems.unshift({
+                                            content: newItem.content,
+                                            code: newItem.code,
+                                            partno: item.partno || '',
+                                            spec: newItem.spec,
+                                            displayValue: newDisplayValue
+                                        });
+                                        registeredSet.add(newDisplayValue);
+                                        currentSelections[newDisplayValue] = '유상';
+                                        
+                                        if (searchInput) searchInput.value = '';
+                                        renderDropdownItems();
+                                        updateTriggerText();
+                                    });
+                                }
+                            };
+                            itemNameEl.appendChild(addSpecBtn);
+                        }
 
                         const cSel = div.querySelector('.item-cost-select');
                         if (cSel) {
@@ -3403,308 +3652,300 @@ window.updateRegisterContentOptions = function () {
 
 /* --- 2.4 데이터 처리 및 액션 (Data & Actions) --- */
 async function confirmRegisterSchedule() {
-    const dateStr = document.getElementById('register-date-display').value;
-    const site = document.getElementById('register-site-select').value;
-    const equip = document.getElementById('register-equip-select').value;
-    const typeSelect = document.getElementById('register-type-select');
-    const type = typeSelect ? typeSelect.value : '';
-    const detailTypeSelect = document.getElementById('register-detail-type-select');
-    const detailType = detailTypeSelect ? detailTypeSelect.value : '';
-    const detailType2Select = document.getElementById('register-detail-type2-select');
-    const detailType2 = detailType2Select && detailType2Select.style.display !== 'none' ? detailType2Select.value : '';
-    const costTypeSelect = document.getElementById('register-cost-type');
-    const costType = costTypeSelect ? costTypeSelect.value : '';
-    const mdInput = document.getElementById('register-md');
-    const md = mdInput ? mdInput.value.trim() : '';
-    const workerHidden = document.getElementById('register-worker-hidden');
-    const worker = workerHidden ? workerHidden.value.trim() : '';
+    try {
+        const dateStr = document.getElementById('register-date-display').value;
+        const site = document.getElementById('register-site-select').value;
+        const equip = document.getElementById('register-equip-select').value;
+        const typeSelect = document.getElementById('register-type-select');
+        const type = typeSelect ? typeSelect.value : '';
+        const detailTypeSelect = document.getElementById('register-detail-type-select');
+        const detailType = detailTypeSelect ? detailTypeSelect.value : '';
+        const detailType2Select = document.getElementById('register-detail-type2-select');
+        const detailType2 = detailType2Select && detailType2Select.style.display !== 'none' ? detailType2Select.value : '';
+        const costTypeSelect = document.getElementById('register-cost-type');
+        const costType = costTypeSelect ? costTypeSelect.value : '';
+        const mdInput = document.getElementById('register-md');
+        const md = mdInput ? mdInput.value.trim() : '';
+        const workerHidden = document.getElementById('register-worker-hidden');
+        const worker = workerHidden ? workerHidden.value.trim() : '';
 
-    let lastProcessedId = null; // [추가] 등록된 작업 ID 추적
+        let lastProcessedId = null;
 
-    let hasError = false;
-    const checkField = (id) => {
-        const el = document.getElementById(id);
-        if (id === 'register-equip-select' && document.getElementById('register-equip-trigger')) {
-            const triggerEl = document.getElementById('register-equip-trigger');
-            if (!el.value) {
-                triggerEl.classList.add('error-border');
+        let hasError = false;
+        const checkField = (id) => {
+            const el = document.getElementById(id);
+            if (id === 'register-equip-select' && document.getElementById('register-equip-trigger')) {
+                const triggerEl = document.getElementById('register-equip-trigger');
+                if (!el.value) {
+                    triggerEl.classList.add('error-border');
+                    hasError = true;
+                }
+                return;
+            }
+            if (el && !el.disabled && (!el.value || el.value.trim() === '')) {
+                el.classList.add('error-border');
                 hasError = true;
             }
-            return;
-        }
-        if (el && !el.disabled && (!el.value || el.value.trim() === '')) {
-            el.classList.add('error-border');
+        };
+
+        checkField('register-date-display');
+        checkField('register-site-select');
+        checkField('register-equip-select');
+        checkField('register-type-select');
+
+        if (detailTypeSelect && !detailTypeSelect.disabled && !detailType) {
+            detailTypeSelect.classList.add('error-border');
             hasError = true;
         }
-    };
-
-    checkField('register-date-display');
-    checkField('register-site-select');
-    checkField('register-equip-select');
-    checkField('register-type-select');
-
-    if (detailTypeSelect && !detailTypeSelect.disabled && !detailType) {
-        detailTypeSelect.classList.add('error-border');
-        hasError = true;
-    }
-    if (type === '비정기' && detailType2Select && !detailType2Select.disabled && !detailType2) {
-        detailType2Select.classList.add('error-border');
-        hasError = true;
-    }
-    checkField('register-cost-type');
-
-    if (!worker) {
-        const workerTrigger = document.getElementById('register-worker-trigger');
-        if (workerTrigger) workerTrigger.classList.add('error-border');
-        hasError = true;
-    }
-
-    let content = '';
-    const wrapper = document.getElementById('register-content-wrapper');
-    if (wrapper && wrapper.style.display !== 'none') {
-        const selected = document.querySelectorAll('#register-content-list .log-select-item.selected');
-        content = Array.from(selected).map(el => {
-            const costSelect = el.querySelector('.item-cost-select');
-            return costSelect ? `[${costSelect.value}] ${el.dataset.value}` : el.dataset.value;
-        }).join(', ');
-    } else {
-        const input = document.getElementById('register-content-input');
-        if (input) {
-            content = input.value.trim();
+        if (type === '비정기' && detailType2Select && !detailType2Select.disabled && !detailType2) {
+            detailType2Select.classList.add('error-border');
+            hasError = true;
         }
-    }
+        checkField('register-cost-type');
 
-    // [추가] 파트 내용 병합
-    const partRow = document.getElementById('register-part-row');
-    if (partRow && partRow.style.display !== 'none') {
-        const partList = document.getElementById('register-part-list');
-        if (partList) {
-            const selectedParts = partList.querySelectorAll('.log-select-item.selected');
-            const partContent = Array.from(selectedParts).map(el => {
-                const cSel = el.querySelector('.item-cost-select');
-                return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+        if (!worker) {
+            const workerTrigger = document.getElementById('register-worker-trigger');
+            if (workerTrigger) workerTrigger.classList.add('error-border');
+            hasError = true;
+        }
+
+        let content = '';
+        const wrapper = document.getElementById('register-content-wrapper');
+        if (wrapper && wrapper.style.display !== 'none') {
+            const selected = document.querySelectorAll('#register-content-list .log-select-item.selected');
+            content = Array.from(selected).map(el => {
+                const costSelect = el.querySelector('.item-cost-select');
+                return costSelect ? `[${costSelect.value}] ${el.dataset.value}` : el.dataset.value;
             }).join(', ');
-            if (!partContent) return alert('교체/수리할 물품을 선택해주세요.');
-
-            if (content) {
-                const contentArr = content.split(',').map(s => s.trim());
-                let newContentArr = [];
-                contentArr.forEach(val => {
-
-                    let baseCost = '유상';
-                    const bMatch = val.match(/^\[(.*?)\] (.*)$/);
-                    if (bMatch) { baseCost = bMatch[1]; val = bMatch[2]; }
-
-                    const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
-                    if (isPartKeyword) {
-                        const partsArray = partContent.split(',').map(s => s.trim()).filter(Boolean);
-                        // [수정] 비용 라벨이 앞에 붙지 않고, 각 물품에만 붙도록 수정
-                        partsArray.forEach(p => newContentArr.push(`${val} - ${p}`));
-                    } else {
-                        newContentArr.push(`[${baseCost}] ${val}`);
-                    }
-                });
-                content = newContentArr.join(', ');
-            } else {
-                content = partContent;
+        } else {
+            const input = document.getElementById('register-content-input');
+            if (input) {
+                content = input.value.trim();
             }
         }
-    }
 
-    if (hasError) return alert('빨간색 테두리로 표시된 필수 항목을 모두 입력/선택해주세요.');
+        const partRow = document.getElementById('register-part-row');
+        if (partRow && partRow.style.display !== 'none') {
+            const partList = document.getElementById('register-part-list');
+            if (partList) {
+                const selectedParts = partList.querySelectorAll('.log-select-item.selected');
+                const partContent = Array.from(selectedParts).map(el => {
+                    const cSel = el.querySelector('.item-cost-select');
+                    return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+                }).join(', ');
+                if (!partContent) return alert('교체/수리할 물품을 선택해주세요.');
 
-    const workerCount = worker ? worker.split(',').map(s => s.trim()).filter(Boolean).length : 0;
-    if (parseFloat(md) > workerCount) {
-        alert(`입력된 공수(${md})가 등록된 작업자 수(${workerCount}명)를 초과할 수 없습니다.`);
-        if (mdInput) mdInput.value = workerCount;
-        return;
-    }
+                if (content) {
+                    const contentArr = content.split(',').map(s => s.trim());
+                    let newContentArr = [];
+                    contentArr.forEach(val => {
+                        let baseCost = '유상';
+                        const bMatch = val.match(/^\[(.*?)\] (.*)$/);
+                        if (bMatch) { baseCost = bMatch[1]; val = bMatch[2]; }
 
-    const finalDetailType = (type === '비정기' && detailType2) ? `${detailType} > ${detailType2}` : detailType;
-
-    // [추가] 같은 장비, 같은 날짜에 정기 PM 중복 등록 방지
-    if (!window.currentAddWorkLogId && type === '정기' && finalDetailType.includes('PM 점검')) {
-        const key = `details_${site}_${equip}`;
-        let checkData = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
-
-        // 1. 완료된 이력 확인
-        const completedLog = (checkData.logs || []).find(l => l.date === dateStr && l.type === '정기' && (l.detailType || '').includes('PM 점검') && l.detailType !== '일정변경');
-        if (completedLog) {
-            alert('이미 등록된 작업입니다.');
-            document.getElementById('register-schedule-modal').style.display = 'none';
-            setTimeout(() => { openEventDetailModal(site, equip, completedLog.id, true); }, 100);
-            return;
-        }
-
-        // 2. 예정된 작업 확인
-        const scheduledMaint = (checkData.maint || []).find(m => m.scheduledDate === dateStr && m.type === '정기' && (m.detailType || '').includes('PM 점검'));
-        if (scheduledMaint) {
-            alert('이미 등록된 작업입니다.');
-            document.getElementById('register-schedule-modal').style.display = 'none';
-            setTimeout(() => { openEventDetailModal(site, equip, scheduledMaint.id, false); }, 100);
-            return;
-        }
-    }
-
-    const key = `details_${site}_${equip}`;
-    let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
-    if (!data.maint) data.maint = [];
-    let payload = { maint_upserts: [] };
-
-    const itemsList = content ? content.split(', ').map(s => s.trim()).filter(s => s) : ['내용 없음'];
-    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-
-    itemsList.forEach((itemText, idx) => {
-        let itemCost = '';
-        const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
-        if (costMatch) {
-            itemCost = costMatch[1];
-            itemText = costMatch[2];
-        }
-
-        const innerCostMatch = itemText.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
-        if (innerCostMatch) {
-            if (!itemCost) itemCost = innerCostMatch[2];
-            itemText = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
-        }
-
-        let code = '';
-        let pureContent = itemText;
-        let spec = '';
-        const specMatch = itemText.match(/ \[(.*?)\]$/);
-        if (specMatch) {
-            spec = specMatch[1];
-            pureContent = itemText.replace(specMatch[0], '');
-        }
-        let fullContent = pureContent;
-        let period = null;
-
-        const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
-        if (match) {
-            code = match.code || '';
-            fullContent = match.part || pureContent;
-            period = match.cycle || null;
-        }
-
-        // [수정] 추가 작업 등록 시에도 itemCost가 정상적으로 누락없이 할당되도록 통합
-        if (window.currentAddWorkLogId) {
-            const newId = Date.now() + idx;
-            const newMaintItem = {
-                id: newId,
-                type: type,
-                detailType: finalDetailType,
-                code: code,
-                content: fullContent,
-                spec: spec,
-                date: "",
-                period: null,
-                scheduledDate: dateStr,
-                costType: costType,
-                worker: worker,
-                md: md,
-                itemCost: itemCost,
-                originalLogId: window.currentAddWorkLogId 
-            };
-            if (idx === 0) lastProcessedId = newMaintItem.id;
-            data.maint.push(newMaintItem);
-            payload.maint_upserts.push(newMaintItem);
-        } else {
-            let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || m.content === pureContent) && (m.spec || '') === spec);
-
-            if (existingItem) {
-                const oldDate = existingItem.scheduledDate;
-                existingItem.scheduledDate = dateStr;
-                existingItem.detailType = finalDetailType;
-                if (costType) existingItem.costType = costType;
-                existingItem.md = md;
-                existingItem.worker = worker;
-                if (itemCost) existingItem.itemCost = itemCost;
-                if (idx === 0) lastProcessedId = existingItem.id;
-                existingItem.content = fullContent;
-
-                const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
-                const newMonth = dateStr.substring(0, 7);
-                if (oldMonth !== newMonth) {
-                    if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
+                        const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
+                        if (isPartKeyword) {
+                            const partsArray = partContent.split(',').map(s => s.trim()).filter(Boolean);
+                            partsArray.forEach(p => newContentArr.push(`${val} - ${p}`));
+                        } else {
+                            newContentArr.push(`[${baseCost}] ${val}`);
+                        }
+                    });
+                    content = newContentArr.join(', ');
+                } else {
+                    content = partContent;
                 }
-                payload.maint_upserts.push(existingItem);
-            } else {
-                const newItem = {
-                    id: Date.now() + idx,
+            }
+        }
+
+        if (hasError) return alert('빨간색 테두리로 표시된 필수 항목을 모두 입력/선택해주세요.');
+
+        const workerCount = worker ? worker.split(',').map(s => s.trim()).filter(Boolean).length : 0;
+        if (parseFloat(md) > workerCount) {
+            alert(`입력된 공수(${md})가 등록된 작업자 수(${workerCount}명)를 초과할 수 없습니다.`);
+            if (mdInput) mdInput.value = workerCount;
+            return;
+        }
+
+        const finalDetailType = (type === '비정기' && detailType2) ? `${detailType} > ${detailType2}` : detailType;
+
+        if (!window.currentAddWorkLogId && type === '정기' && finalDetailType.includes('PM 점검')) {
+            const key = `details_${site}_${equip}`;
+            let checkData = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
+            const completedLog = (checkData.logs || []).find(l => l.date === dateStr && l.type === '정기' && (l.detailType || '').includes('PM 점검') && l.detailType !== '일정변경');
+            if (completedLog) {
+                alert('이미 등록된 작업입니다.');
+                document.getElementById('register-schedule-modal').style.display = 'none';
+                setTimeout(() => { openEventDetailModal(site, equip, completedLog.id, true); }, 100);
+                return;
+            }
+
+            const scheduledMaint = (checkData.maint || []).find(m => m.scheduledDate === dateStr && m.type === '정기' && (m.detailType || '').includes('PM 점검'));
+            if (scheduledMaint) {
+                alert('이미 등록된 작업입니다.');
+                document.getElementById('register-schedule-modal').style.display = 'none';
+                setTimeout(() => { openEventDetailModal(site, equip, scheduledMaint.id, false); }, 100);
+                return;
+            }
+        }
+
+        const key = `details_${site}_${equip}`;
+        let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
+        if (!data.maint) data.maint = [];
+        let payload = { maint_upserts: [] };
+
+        const itemsList = content ? content.split(', ').map(s => s.trim()).filter(s => s) : ['내용 없음'];
+        const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+
+        itemsList.forEach((itemText, idx) => {
+            let itemCost = '';
+            const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
+            if (costMatch) {
+                itemCost = costMatch[1];
+                itemText = costMatch[2];
+            }
+
+            const innerCostMatch = itemText.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
+            if (innerCostMatch) {
+                if (!itemCost) itemCost = innerCostMatch[2];
+                itemText = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
+            }
+
+            let code = '';
+            let pureContent = itemText;
+            let spec = '';
+            const specMatch = itemText.match(/ \[(.*?)\]$/);
+            if (specMatch) {
+                spec = specMatch[1];
+                pureContent = itemText.replace(specMatch[0], '');
+            }
+            let fullContent = pureContent;
+            let period = null;
+
+            const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
+            if (match) {
+                code = match.code || '';
+                fullContent = match.part || pureContent;
+                period = match.cycle || null;
+            }
+
+            if (window.currentAddWorkLogId) {
+                const newId = Date.now() + idx;
+                const newMaintItem = {
+                    id: newId,
                     type: type,
                     detailType: finalDetailType,
                     code: code,
                     content: fullContent,
                     spec: spec,
                     date: "",
-                    period: (type === '정기') ? period : null,
+                    period: null,
                     scheduledDate: dateStr,
                     costType: costType,
                     worker: worker,
                     md: md,
-                    itemCost: itemCost
+                    itemCost: itemCost,
+                    originalLogId: window.currentAddWorkLogId 
                 };
-                if (idx === 0) lastProcessedId = newItem.id;
-                data.maint.push(newItem);
-                payload.maint_upserts.push(newItem);
+                if (idx === 0) lastProcessedId = newMaintItem.id;
+                data.maint.push(newMaintItem);
+                payload.maint_upserts.push(newMaintItem);
+            } else {
+                let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || m.content === pureContent) && (m.spec || '') === spec);
 
-                if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
+                if (existingItem) {
+                    const oldDate = existingItem.scheduledDate;
+                    existingItem.scheduledDate = dateStr;
+                    existingItem.detailType = finalDetailType;
+                    if (costType) existingItem.costType = costType;
+                    existingItem.md = md;
+                    existingItem.worker = worker;
+                    if (itemCost) existingItem.itemCost = itemCost;
+                    if (idx === 0) lastProcessedId = existingItem.id;
+                    existingItem.content = fullContent;
+
+                    const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
+                    const newMonth = dateStr.substring(0, 7);
+                    if (oldMonth !== newMonth) {
+                        if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
+                    }
+                    payload.maint_upserts.push(existingItem);
+                } else {
+                    const newItem = {
+                        id: Date.now() + idx,
+                        type: type,
+                        detailType: finalDetailType,
+                        code: code,
+                        content: fullContent,
+                        spec: spec,
+                        date: "",
+                        period: (type === '정기') ? period : null,
+                        scheduledDate: dateStr,
+                        costType: costType,
+                        worker: worker,
+                        md: md,
+                        itemCost: itemCost
+                    };
+                    if (idx === 0) lastProcessedId = newItem.id;
+                    data.maint.push(newItem);
+                    payload.maint_upserts.push(newItem);
+
+                    if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
+                }
+            }
+        });
+
+        const success = await window.syncHistoryTransaction(site, equip, payload);
+        if (!success) return;
+
+        localStorage.setItem(key, JSON.stringify(data));
+
+        if (window.currentAddWorkLogId) {
+            if (typeof addSystemLog === 'function') {
+                addSystemLog('ADD_SCHEDULE_EXTRA', equip, `예정일: ${dateStr}, 내용: ${content} (추가 작업 등록)`);
+            }
+            document.getElementById('register-schedule-modal').style.display = 'none';
+            setTimeout(() => {
+                if (typeof openEventDetailModal === 'function' && lastProcessedId) {
+                    window.currentDetailTarget = { site: site, equip: equip }; 
+                    openEventDetailModal(site, equip, lastProcessedId, false);
+                }
+            }, 100);
+            window.currentAddWorkLogId = null;
+            return;
+        } else {
+            if (typeof addSystemLog === 'function') {
+                addSystemLog('ADD_SCHEDULE', equip, `예정일: ${dateStr}, 구분: ${type}, 내용: ${content}`);
             }
         }
-    });
 
-    const success = await window.syncHistoryTransaction(site, equip, payload);
-    if (!success) return;
-
-    localStorage.setItem(key, JSON.stringify(data));
-
-    if (window.currentAddWorkLogId) {
-        if (typeof addSystemLog === 'function') {
-            addSystemLog('ADD_SCHEDULE_EXTRA', equip, `예정일: ${dateStr}, 내용: ${content} (추가 작업 등록)`);
-        }
-
+        alert('일정이 등록되었습니다.');
         document.getElementById('register-schedule-modal').style.display = 'none';
 
-        setTimeout(() => {
-            if (typeof openEventDetailModal === 'function' && lastProcessedId) {
-                window.currentDetailTarget = { site: site, equip: equip }; 
+        if (costTypeSelect) costTypeSelect.value = '';
+
+        const contentList = document.getElementById('register-content-list');
+        if (contentList) contentList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
+        const partList = document.getElementById('register-part-list');
+        if (partList) partList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
+
+        renderCalendar();
+        if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+        if (typeof renderDetails === 'function') renderDetails();
+        if (typeof renderLogs === 'function') renderLogs();
+        const popup = document.getElementById('calendar-popup');
+        if (popup) popup.style.display = 'none';
+
+        if ((window.isMobileRegisterFlow || window.openDetailAfterRegister) && lastProcessedId) {
+            window.isMobileRegisterFlow = false;
+            window.openDetailAfterRegister = false;
+            setTimeout(() => {
                 openEventDetailModal(site, equip, lastProcessedId, false);
-            }
-        }, 100);
-
-        window.currentAddWorkLogId = null;
-        return;
-    } else {
-        if (typeof addSystemLog === 'function') {
-            addSystemLog('ADD_SCHEDULE', equip, `예정일: ${dateStr}, 구분: ${type}, 내용: ${content}`);
+            }, 100);
         }
-    }
-
-    alert('일정이 등록되었습니다.');
-    document.getElementById('register-schedule-modal').style.display = 'none';
-
-    if (costTypeSelect) costTypeSelect.value = '';
-
-    // [추가] 일정 등록 완료 후 제안박스 이전 선택 상태 초기화
-    const contentList = document.getElementById('register-content-list');
-    if (contentList) contentList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
-    const partList = document.getElementById('register-part-list');
-    if (partList) partList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
-
-    renderCalendar();
-    if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
-    if (typeof renderDetails === 'function') renderDetails();
-    if (typeof renderLogs === 'function') renderLogs();
-    const popup = document.getElementById('calendar-popup');
-    if (popup) popup.style.display = 'none';
-
-    // [수정] 모바일 플로우 또는 장비 점검 이력에서 등록 시: 등록 후 바로 상세 팝업 오픈
-    if ((window.isMobileRegisterFlow || window.openDetailAfterRegister) && lastProcessedId) {
-        window.isMobileRegisterFlow = false;
-        window.openDetailAfterRegister = false; // 플래그 초기화
-        setTimeout(() => {
-            openEventDetailModal(site, equip, lastProcessedId, false);
-        }, 100);
+    } catch (err) {
+        console.error('Task Registration Error:', err);
+        alert('작업 등록 처리 중 예기치 못한 오류가 발생했습니다.\n상세: ' + err.message);
     }
 }
 

@@ -502,7 +502,12 @@ function renderDetails() {
         tr.querySelector('.edit-code').textContent = escapeHtml(item.code || '-');
 
         const contentCell = tr.querySelector('.edit-content');
-        const safeContent = item.content || '';
+        let safeContent = item.content || '';
+        
+        // [강력 조치] 유지관리 리스트 화면에 비용 라벨이 절대 노출되지 않도록 렌더링 시점에서도 강제 정제
+        safeContent = safeContent.replace(/\[(유상|무상|기타)\]\s*/g, '').trim();
+        safeContent = safeContent.replace(/\s*-\s*(?=,|$)/g, '').trim();
+
         contentCell.textContent = safeContent;
         contentCell.dataset.rawContent = safeContent;
         contentCell.dataset.rawSpec = item.spec || '';
@@ -623,8 +628,14 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
 
             let filteredItems = data.filter(item => {
                 if (!item.part) return false; // 유령 물품(빈 데이터) 방지
-                // [수정] 물품명과 물품 상세 조합이 완전히 동일한 항목이 이미 등록된 경우에만 제안 박스에서 제외
-                const isDuplicate = currentData.maint.some(m => m.type === currentType && m.content === item.part && (m.spec || '') === currentSpec);
+                
+                // [수정] 물품명, 코드명, 물품 상세 조합이 완전히 동일한 항목이 이미 등록된 경우에만 제안 박스에서 제외
+                const isDuplicate = currentData.maint.some(m => 
+                    m.type === currentType && 
+                    m.content === item.part && 
+                    (m.code || '') === (item.code || '') && 
+                    (m.spec || '') === currentSpec
+                );
                 if (isDuplicate) return false;
                 return true;
             });
@@ -734,18 +745,25 @@ async function deleteDetailItem(id) {
 
     if (data && data.maint) {
         // [추가] 삭제될 아이템 정보 미리 저장
-        const targetItem = data.maint.find(item => item.id === id);
+            const targetItem = data.maint.find(item => String(item.id) === String(id));
         const deletedContent = targetItem ? targetItem.content : 'Unknown';
 
         const success = await window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_deletes: [id.toString()] });
-        if (!success) return;
+            if (!success) {
+                alert('서버 통신 오류로 삭제에 실패했습니다.');
+                return;
+            }
 
         // 3. 해당 ID를 제외한 나머지 항목만 남김 (필터링)
-        data.maint = data.maint.filter(item => item.id !== id);
+            data.maint = data.maint.filter(item => String(item.id) !== String(id));
 
         // 4. 변경된 데이터 저장
         localStorage.setItem(key, JSON.stringify(data));
-        addSystemLog('DELETE_MAINTENANCE', currentPath.equip, `삭제: ${deletedContent} (ID: ${id})`);
+            if (typeof window.addSystemLog === 'function') {
+                window.addSystemLog('DELETE_MAINTENANCE', currentPath.equip, `삭제: ${deletedContent} (ID: ${id})`);
+            } else if (typeof addSystemLog === 'function') {
+                addSystemLog('DELETE_MAINTENANCE', currentPath.equip, `삭제: ${deletedContent} (ID: ${id})`);
+            }
 
         // 5. 화면 즉시 갱신
         renderDetails();
@@ -866,7 +884,7 @@ async function toggleEditRow(id) {
 async function updateRowData(id, code, content, spec, date, period, type) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
-    const idx = data.maint.findIndex(item => item.id === id);
+        const idx = data.maint.findIndex(item => String(item.id) === String(id));
 
     if (idx > -1) {
         // [수정] 복사본 생성 후 업데이트, 성공 시에만 원본 덮어쓰기
