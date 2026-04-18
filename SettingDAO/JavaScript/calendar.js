@@ -805,6 +805,20 @@ function setupScheduleModal() {
         // [추가] 작업자 및 공수 입력창 동적 생성 (기존 HTML에 누락되어 있을 경우 자동 주입)
         let dateInputRow = dateInput ? (dateInput.closest('.modal-date-row') || dateInput.closest('.form-row') || dateInput.parentNode) : null;
         if (dateInputRow && !document.getElementById('schedule-worker-wrapper')) {
+            // [수정] 기존 예정일 입력 행을 작업자/공수 행과 동일한 레이아웃으로 강제 변환하여 너비 일치화
+            dateInputRow.style.display = 'flex';
+            dateInputRow.style.alignItems = 'center';
+            dateInputRow.style.gap = '10px';
+            const dLabel = dateInputRow.querySelector('label');
+            if (dLabel) {
+                dLabel.style.width = '80px';
+                dLabel.style.flexShrink = '0';
+                dLabel.style.marginBottom = '0';
+                dLabel.style.fontWeight = 'bold';
+            }
+            dateInput.style.flex = '1';
+            dateInput.style.minWidth = '0';
+
             // 1. 작업자 행(Row) 생성
             const workerRow = document.createElement('div');
             workerRow.className = 'form-row';
@@ -816,7 +830,7 @@ function setupScheduleModal() {
                 <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px; font-weight: bold;">작업자</label>
                 <div id="schedule-worker-wrapper" class="log-select-wrapper" style="flex: 1; width: 100%; min-width: 0; margin: 0; display: flex; align-items: center;">
                     <input type="hidden" id="schedule-worker-hidden">
-                    <div id="schedule-worker-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; min-height:30px; display:flex; align-items:center; background:#0d1117; color:#8b949e; border:1px solid #30363d; border-radius:4px; padding:6px 10px; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;">작업자 선택</div>
+                    <div id="schedule-worker-trigger" class="log-select-trigger" style="width: 100%; box-sizing: border-box; min-height:34px; display:flex; align-items:center; background:#0d1117; color:#8b949e; border:1px solid #30363d; border-radius:4px; padding:8px 10px; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;">작업자 선택</div>
                     <div id="schedule-worker-dropdown" class="log-select-dropdown" style="width:100%; position:absolute; top:100%; left:0; z-index:1000; margin-top:4px; background:#161b22; border:1px solid #30363d; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); box-sizing:border-box;">
                         <input type="text" id="schedule-worker-search" class="dropdown-search-input" placeholder="작업자 검색..." style="width: calc(100% - 12px); margin: 5px 6px; padding: 6px 10px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; box-sizing: border-box;" autocomplete="off">
                         <div id="schedule-worker-list" class="log-select-list" style="max-height: 200px; overflow-y: auto; padding: 8px;"></div>
@@ -838,7 +852,7 @@ function setupScheduleModal() {
                 mdRow.style.marginBottom = '20px';
                 mdRow.innerHTML = `
                     <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px; font-weight: bold;">공수(M/D)</label>
-                    <input type="number" id="schedule-md-input" class="input-dark" style="flex: 1; min-height: 30px; padding: 6px 10px;" min="0" step="0.1">
+                    <input type="number" id="schedule-md-input" class="input-dark" style="flex: 1; min-height: 34px; height: 34px; box-sizing: border-box; padding: 8px 10px;" min="0" step="0.1">
                 `;
                 workerRow.parentNode.insertBefore(mdRow, workerRow.nextSibling);
             }

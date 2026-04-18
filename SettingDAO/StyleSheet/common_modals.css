@@ -110,6 +110,27 @@
     width: 100%;
 }
 
+/* [추가] 작업 예정일 설정 모달의 입력창 너비 일치화 강제 */
+#schedule-modal .modal-date-row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-bottom: 15px !important;
+}
+#schedule-modal .modal-date-row label {
+    width: 80px !important;
+    flex-shrink: 0 !important;
+    margin-bottom: 0 !important;
+    color: #8b949e !important;
+    font-size: 13px !important;
+    font-weight: bold !important;
+}
+#schedule-modal .modal-date-row input[type="date"] {
+    flex: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
 /* --- 4. 일정 상세 정보 모달 (Event Detail Modal) --- */
 /* [추가] 모달 내 드롭다운 래퍼가 텍스트 크기로 줄어들지 않고 전체 너비를 사용하도록 강제 설정 */
 #event-detail-modal .log-select-wrapper {
@@ -723,9 +744,12 @@
 #next-schedule-md,
 #register-date-display,
 #register-content-input,
+#schedule-date-input,
+#schedule-md-input,
 #event-detail-modal .log-select-trigger,
 #register-schedule-modal .log-select-trigger,
-#next-schedule-modal .log-select-trigger {
+#next-schedule-modal .log-select-trigger,
+#schedule-modal .log-select-trigger {
     width: 100%;
     background: #0d1117;
     border: 1px solid #30363d;
