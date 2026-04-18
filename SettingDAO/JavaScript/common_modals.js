@@ -1829,21 +1829,16 @@ async function completeScheduleWork() {
         let isPartReplacement = false;
         let partsString = '';
 
-        if (type === '비정기') {
-            if (dt.includes('BM 점검') || dt.includes('BM 물품 교체') || dt2.includes('BM 물품 교체')) {
+        // [개선] 타입에 관계없이 PM 점검, BM 점검, Parts 교체 등 물품과 관련된 내용이면 모두 추출 대상으로 삼아 중복 생성을 막고 기존 아이템 갱신 보장
+        const isPmBm = dt.includes('PM 점검') || dt.includes('BM 점검') || dt.includes('BM 물품 교체') || dt2.includes('BM 물품 교체') || dt.includes('Parts 교체');
+        if (isPmBm) {
+            isPartReplacement = true;
+            partsString = content;
+        } else {
+            const match = content.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|파츠 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))(.*)$/);
+            if (match) {
                 isPartReplacement = true;
-                partsString = content;
-            } else {
-                const match = content.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|파츠 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))(.*)$/);
-                if (match) {
-                    isPartReplacement = true;
-                    partsString = match[2].replace(/^[\s-]+/, '').trim();
-                }
-            }
-        } else if (type === '고객대응') {
-            if (dt.includes('Parts 교체')) {
-                isPartReplacement = true;
-                partsString = content;
+                partsString = match[2].replace(/^[\s-]+/, '').trim();
             }
         }
 
@@ -1887,9 +1882,27 @@ async function completeScheduleWork() {
         let existing = data.maint.find(m => {
             if (m.id === ep.sourceId) return false;
             if (m.type !== '정기' && m.type !== '비정기') return false;
-            if (m.originalLogId) return false; // [수정] 추가 작업의 임시 데이터는 existing 대상에서 제외하여 원본과 매칭 보장
+            if (m.originalLogId) return false; // 추가 작업의 임시 데이터는 existing 대상에서 제외하여 원본과 매칭 보장
             if ((m.spec || '') !== (ep.spec || '')) return false;
-            return (m.content === realPartName || m.content === ep.part || (m.code && codeName && m.code === codeName));
+            
+            // [개선] 동일 품목 매칭을 위해 대상 물품명/코드명을 최대한 포괄적으로 비교하여 중복 추가 방지
+            const mCode = m.code || '';
+            const mContent = m.content || '';
+            let mRealName = mContent;
+            let mRealCode = mCode;
+            if (!mRealCode) {
+                let aMatch = adminItemsForExtract.find(a => a.part === mContent || a.code === mContent);
+                if (aMatch) {
+                    mRealName = aMatch.part;
+                    mRealCode = aMatch.code || '';
+                }
+            }
+
+            if (codeName && mRealCode && codeName === mRealCode) return true;
+            if (realPartName && mRealName && realPartName === mRealName) return true;
+            if (mContent === ep.part) return true;
+
+            return false;
         });
 
         if (existing) {
@@ -1916,10 +1929,14 @@ async function completeScheduleWork() {
                     period = adminMatch.cycle || null;
                 }
                 const newId = Date.now() + Math.floor(Math.random() * 10000);
+                
+                const sourceType = sourceItem ? sourceItem.type : '비정기';
+                const sourceDetailType = sourceItem ? sourceItem.detailType : 'BM 점검';
+                
                 const newMaintItem = {
                     id: newId,
-                    type: '비정기',
-                    detailType: 'BM 점검',
+                    type: sourceType,
+                    detailType: sourceDetailType,
                     code: codeName,
                     content: realPartName,
                     spec: ep.spec,
@@ -1942,7 +1959,20 @@ async function completeScheduleWork() {
 
     sameDayItems.forEach(i => {
         if (i.type === '비정기') {
-            const regItem = data.maint.find(m => m.type === '정기' && m.id !== i.id && (m.content === i.content || (m.code && i.code && m.code === i.code)) && (m.spec || '') === (i.spec || ''));
+            const regItem = data.maint.find(m => {
+                if (m.type !== '정기' || m.id === i.id) return false;
+                if ((m.spec || '') !== (i.spec || '')) return false;
+                
+                const mCode = m.code || '';
+                const mContent = m.content || '';
+                const iCode = i.code || '';
+                const iContent = i.content || '';
+                
+                if (iCode && mCode && iCode === mCode) return true;
+                if (iContent === mContent) return true;
+                
+                return false;
+            });
             if (regItem) {
                 regItem.date = i.date;
                 if (i.itemCost) regItem.itemCost = i.itemCost;
