@@ -2,7 +2,7 @@
    1. 일정 상세 정보 모달 (Event Detail Modal)
    ========================================================================== */
 
-window.restoreTaskSearchModal = function() {
+window.restoreTaskSearchModal = function () {
     if (typeof cameFromTaskSearch !== 'undefined' && cameFromTaskSearch) {
         const searchModal = document.getElementById('task-search-modal');
         if (searchModal) {
@@ -226,10 +226,10 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         const contentArr = sameDayItems.map(i => {
             let val = i.content;
             let itemDisplay = i.code ? i.code : '';
-            
+
             // [수정] 파트 이상 교체 등 키워드가 있는 경우, i.code가 적용되더라도 키워드가 날아가지 않도록 보존
             const kwMatch = (i.content || '').match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
-            
+
             if (kwMatch) {
                 if (!itemDisplay) itemDisplay = kwMatch[2].trim();
                 if (i.itemCost) itemDisplay = `[${i.itemCost}] ${itemDisplay}`;
@@ -566,7 +566,7 @@ function buildDetailDropdown(item, site, equip) {
         if (match) {
             let prefix = match[1].trim();
             let suffix = match[2].replace(/^[\s-]+/, '').trim();
-            
+
             let cost = '';
             const innerCostMatch = suffix.match(/^\[(.*?)\]\s*(.*)$/);
             if (innerCostMatch) {
@@ -742,7 +742,7 @@ function buildDetailDropdown(item, site, equip) {
                         const innerCostMatch = actualPart.match(/^\[(.*?)\]\s*(.*)$/);
                         if (innerCostMatch) actualPart = innerCostMatch[2];
 
-                        if (!actualPart) return; 
+                        if (!actualPart) return;
 
                         const extracted = typeof window.extractSpecFromContent === 'function' ? window.extractSpecFromContent(actualPart) : { spec: '', pureContent: actualPart };
                         let spec = extracted.spec || m.spec || '';
@@ -905,7 +905,7 @@ function buildDetailDropdown(item, site, equip) {
                         const div = tpl.querySelector('.log-select-item');
                         if (isSelected) div.classList.add('selected');
                         div.dataset.value = val;
-                        
+
                         const itemNameEl = div.querySelector('.item-name');
                         itemNameEl.innerHTML = `<span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(val)}</span>`;
                         itemNameEl.style.display = 'flex';
@@ -923,7 +923,7 @@ function buildDetailDropdown(item, site, equip) {
                                 if (typeof window.openAddPartSpecModal === 'function') {
                                     window.openAddPartSpecModal(site, equip, item, (newItem) => {
                                         const newDisplayValue = newItem.code ? `${newItem.code} [${newItem.spec}]` : `${newItem.content} [${newItem.spec}]`;
-                                        
+
                                         registeredItems.unshift({
                                             content: newItem.content,
                                             code: newItem.code,
@@ -933,7 +933,7 @@ function buildDetailDropdown(item, site, equip) {
                                         });
                                         registeredSet.add(newDisplayValue);
                                         currentSelections[newDisplayValue] = '유상';
-                                        
+
                                         if (searchInput) searchInput.value = '';
                                         renderDropdownItems();
                                         updateTriggerText();
@@ -978,9 +978,9 @@ function buildDetailDropdown(item, site, equip) {
                                 const selectedItems = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
                                 const isPartIssue = selectedItems.some(v => v.match(/(파트|물품) 이상\s*\(?(교체|수리)\)?/) || v.includes('용액 용자 이상') || v.includes('용액 / 용자 이상'));
                                 const pList = document.getElementById('detail-edit-part-list');
-                                
+
                                 pWrapper.style.display = isPartIssue ? 'flex' : 'none';
-                                
+
                                 if (isPartIssue && pList && typeof window.renderLogPartOptions === 'function') {
                                     window.renderLogPartOptions('detail-edit-part-wrapper', 'detail-edit-part-trigger', 'detail-edit-part-list', 'detail-edit-part-search', partContentStr);
                                 }
@@ -1578,13 +1578,13 @@ async function saveDetailChanges() {
             } else {
                 let finalContent = document.getElementById('detail-content-input').value.trim();
                 if (!finalContent) finalContent = '내용 없음';
-                
+
                 // [수정] 수동 입력 저장 시에도 혹시 모를 비용 라벨 찌꺼기 완벽 제거
                 const costMatch = finalContent.match(/^\[(.*?)\]\s*(.*)$/);
                 if (costMatch) finalContent = costMatch[2];
                 const innerMatch = finalContent.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
                 if (innerMatch) finalContent = `${innerMatch[1]} - ${innerMatch[3]}`;
-                
+
                 finalContentStr = finalContent;
 
                 let pureContent = finalContent;
@@ -1753,10 +1753,10 @@ async function completeScheduleWork() {
     const contentArr = sameDayItems.map(i => {
         let val = i.content;
         let itemDisplay = i.code ? i.code : '';
-        
+
         // [수정] 파트 이상 교체 등 키워드가 있는 경우, i.code가 적용되더라도 키워드가 날아가지 않도록 보존
         const kwMatch = (i.content || '').match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
-        
+
         if (kwMatch) {
             if (!itemDisplay) itemDisplay = kwMatch[2].trim();
             if (i.itemCost) itemDisplay = `[${i.itemCost}] ${itemDisplay}`;
@@ -1884,7 +1884,7 @@ async function completeScheduleWork() {
             if (m.type !== '정기' && m.type !== '비정기') return false;
             if (m.originalLogId) return false; // 추가 작업의 임시 데이터는 existing 대상에서 제외하여 원본과 매칭 보장
             if ((m.spec || '') !== (ep.spec || '')) return false;
-            
+
             // [개선] 동일 품목 매칭을 위해 대상 물품명/코드명을 최대한 포괄적으로 비교하여 중복 추가 방지
             const mCode = m.code || '';
             const mContent = m.content || '';
@@ -1929,10 +1929,10 @@ async function completeScheduleWork() {
                     period = adminMatch.cycle || null;
                 }
                 const newId = Date.now() + Math.floor(Math.random() * 10000);
-                
+
                 const sourceType = sourceItem ? sourceItem.type : '비정기';
                 const sourceDetailType = sourceItem ? sourceItem.detailType : 'BM 점검';
-                
+
                 const newMaintItem = {
                     id: newId,
                     type: sourceType,
@@ -1962,15 +1962,15 @@ async function completeScheduleWork() {
             const regItem = data.maint.find(m => {
                 if (m.type !== '정기' || m.id === i.id) return false;
                 if ((m.spec || '') !== (i.spec || '')) return false;
-                
+
                 const mCode = m.code || '';
                 const mContent = m.content || '';
                 const iCode = i.code || '';
                 const iContent = i.content || '';
-                
+
                 if (iCode && mCode && iCode === mCode) return true;
                 if (iContent === mContent) return true;
-                
+
                 return false;
             });
             if (regItem) {
@@ -2034,11 +2034,11 @@ async function completeScheduleWork() {
     payload.maint_upserts = payload.maint_upserts.filter(i => postFilterIds.has(i.id));
 
     const success = await window.syncHistoryTransaction(site, equip, payload);
-        if (!success) {
-            alert('서버 통신 오류로 작업 완료 취소에 실패했습니다.');
-            location.reload();
-            return;
-        }
+    if (!success) {
+        alert('서버 통신 오류로 작업 완료 취소에 실패했습니다.');
+        location.reload();
+        return;
+    }
 
     localStorage.setItem(key, JSON.stringify(data));
 
@@ -2058,10 +2058,10 @@ async function completeScheduleWork() {
                 md: md,
                 originalMaintMap: originalMaintMap,
                 mergedRegItemIds: mergedRegItemIds,
-                        onClose: () => {
-                            if (typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();
-                            if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
-                        },
+                onClose: () => {
+                    if (typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();
+                    if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
+                },
                 onDateChange: (site, oldDate, newDate) => {
                     const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
                     const newMonth = newDate.substring(0, 7);
@@ -2076,7 +2076,7 @@ async function completeScheduleWork() {
     } else {
         alert('작업이 완료되었습니다.');
         if (typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();
-                if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
+        if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
     }
 }
 
@@ -2119,179 +2119,178 @@ async function cancelScheduleCompletion() {
 
     if (!confirm('작업 완료를 취소하고 예정 상태로 되돌리시겠습니까?')) return;
 
-        try {
-            const { site, equip, id } = currentDetailTarget;
-            const key = `details_${site}_${equip}`;
-            let data = JSON.parse(localStorage.getItem(key)) || {};
+    try {
+        const { site, equip, id } = currentDetailTarget;
+        const key = `details_${site}_${equip}`;
+        let data = JSON.parse(localStorage.getItem(key)) || {};
 
-            if (!data.logs) return;
+        if (!data.logs) return;
 
-            const logIndex = data.logs.findIndex(l => l.id == id);
-            if (logIndex === -1) return;
+        const logIndex = data.logs.findIndex(l => l.id == id);
+        if (logIndex === -1) return;
 
-            const logItem = data.logs[logIndex];
-            const logContent = logItem.content || '';
-            const logType = logItem.type;
-            const logDate = logItem.date;
+        const logItem = data.logs[logIndex];
+        const logContent = logItem.content || '';
+        const logType = logItem.type;
+        const logDate = logItem.date;
 
-            const recoveredWorker = logItem.worker || '';
-            const recoveredMd = logItem.md || '';
-            const recoveredMemo = logItem.memo || '';
+        const recoveredWorker = logItem.worker || '';
+        const recoveredMd = logItem.md || '';
+        const recoveredMemo = logItem.memo || '';
 
-            data.logs.splice(logIndex, 1);
+        data.logs.splice(logIndex, 1);
 
-            const contents = logContent.split(',').map(s => s.trim()).filter(Boolean);
+        const contents = logContent.split(',').map(s => s.trim()).filter(Boolean);
 
-            if (!data.maint) data.maint = [];
+        if (!data.maint) data.maint = [];
 
-            let payload = { log_deletes: [id.toString()], maint_upserts: [] };
+        let payload = { log_deletes: [id.toString()], maint_upserts: [] };
 
-            let recoveredMaintId = null;
+        let recoveredMaintId = null;
 
-            const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+        const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
-            if (contents.length === 0) contents.push('내용 없음');
+        if (contents.length === 0) contents.push('내용 없음');
 
-            const matchedMaintIds = new Set(); // [추가] 중복 매칭 방지
+        const matchedMaintIds = new Set(); // [추가] 중복 매칭 방지
 
-            contents.forEach((itemText, idx) => {
-                let itemCost = '';
-                const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
-                if (costMatch) {
-                    itemCost = costMatch[1];
-                    itemText = costMatch[2];
-                }
-
-                const innerCostMatch = itemText.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
-                if (innerCostMatch) {
-                    if (!itemCost) itemCost = innerCostMatch[2];
-                    itemText = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
-                }
-
-                let keywordPart = '';
-                let pureContent = itemText;
-                const kwMatch = pureContent.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
-                if (kwMatch) {
-                    keywordPart = kwMatch[1].trim();
-                    pureContent = kwMatch[2].trim();
-                }
-
-                let spec = '';
-                const specMatch = pureContent.match(/ \[(.*?)\]$/);
-                if (specMatch) {
-                    spec = specMatch[1];
-                    pureContent = pureContent.replace(specMatch[0], '');
-                }
-                
-                let code = '';
-                let fullContent = pureContent;
-
-                const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
-                if (match) {
-                    code = match.code || '';
-                    fullContent = match.part || pureContent;
-                }
-
-                if (keywordPart) {
-                    fullContent = `${keywordPart} - ${fullContent}`;
-                }
-
-                let existingItem = data.maint.find(m => !matchedMaintIds.has(m.id) && m.type === logType && (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) && (m.spec || '') === (spec || '') && (m.originalLogId || null) == (logItem.originalLogId || null) && (!m.scheduledDate || m.scheduledDate === logDate));
-
-                if (existingItem) {
-                    matchedMaintIds.add(existingItem.id);
-                    existingItem.scheduledDate = logDate;
-                    existingItem.date = ""; // [중요] 완료 상태를 완전히 해제하기 위해 기존 완료일 초기화
-                    existingItem.worker = recoveredWorker;
-                    existingItem.md = recoveredMd;
-                    existingItem.memo = recoveredMemo;
-                    existingItem.costType = logItem.costType || '';
-                    if (itemCost) existingItem.itemCost = itemCost;
-                    if (idx === 0) recoveredMaintId = existingItem.id;
-                    payload.maint_upserts.push(existingItem);
-                } else {
-                    let restoredDetailType = logItem.detailType || '';
-                    if (logType === '비정기' && logItem.detailType2) {
-                        restoredDetailType = `${logItem.detailType} > ${logItem.detailType2}`;
-                    }
-
-                    const newId = Date.now() + idx;
-                    const newItem = {
-                        id: newId,
-                        type: logType,
-                        detailType: restoredDetailType,
-                        code: code,
-                        content: fullContent,
-                        spec: spec,
-                        date: "",
-                        period: (logType === '정기' && match) ? match.cycle : null,
-                        scheduledDate: logDate,
-                        costType: logItem.costType || '',
-                        worker: recoveredWorker,
-                        md: recoveredMd,
-                        memo: recoveredMemo,
-                        itemCost: itemCost,
-                        originalLogId: logItem.originalLogId
-                    };
-                    data.maint.push(newItem);
-                    payload.maint_upserts.push(newItem);
-                    if (idx === 0) recoveredMaintId = newId;
-                }
-            });
-
-            const success = await window.syncHistoryTransaction(site, equip, payload);
-            if (!success) {
-                alert('서버 통신 오류로 작업 완료 취소에 실패했습니다.');
-                location.reload();
-                return;
+        contents.forEach((itemText, idx) => {
+            let itemCost = '';
+            const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
+            if (costMatch) {
+                itemCost = costMatch[1];
+                itemText = costMatch[2];
             }
 
-            localStorage.setItem(key, JSON.stringify(data));
-
-            if (typeof addSystemLog === 'function') {
-                addSystemLog('CANCEL_COMPLETION', equip, `예정일: ${logDate}, 내용: ${logContent}`);
+            const innerCostMatch = itemText.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
+            if (innerCostMatch) {
+                if (!itemCost) itemCost = innerCostMatch[2];
+                itemText = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
             }
 
-            alert('작업 완료가 취소되었습니다.');
+            let keywordPart = '';
+            let pureContent = itemText;
+            const kwMatch = pureContent.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+            if (kwMatch) {
+                keywordPart = kwMatch[1].trim();
+                pureContent = kwMatch[2].trim();
+            }
 
-            if (typeof window.renderCalendar === 'function') window.renderCalendar();
-            if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
-            if (typeof renderDetails === 'function') renderDetails();
-            if (typeof renderLogs === 'function') renderLogs();
+            let spec = '';
+            const specMatch = pureContent.match(/ \[(.*?)\]$/);
+            if (specMatch) {
+                spec = specMatch[1];
+                pureContent = pureContent.replace(specMatch[0], '');
+            }
 
-            const popup = document.getElementById('calendar-popup');
-            if (popup && popup.style.display !== 'none') {
-                const dateTitle = document.getElementById('popup-date-title');
-                if (dateTitle) {
-                    const dateStr = dateTitle.textContent;
-                    let dayEvents = [];
-                    if (typeof window.getScheduleForCalendar === 'function') {
-                        const allEvents = window.getScheduleForCalendar();
-                        dayEvents = allEvents[dateStr] || [];
-                    }
+            let code = '';
+            let fullContent = pureContent;
 
-                    const searchInput = document.getElementById('calendar-search');
-                    const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+            const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
+            if (match) {
+                code = match.code || '';
+                fullContent = match.part || pureContent;
+            }
 
-                    if (keyword || (typeof currentSearchFilters !== 'undefined' && (currentSearchFilters.site || currentSearchFilters.equip))) {
-                        dayEvents = dayEvents.filter(event => {
-                            const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
-                            const matchSite = (typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.site) || event.site === currentSearchFilters.site || (typeof window.getSiteGroupName === 'function' && window.getSiteGroupName(event.site) === currentSearchFilters.site);
-                            const matchEquip = (typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.equip) || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
-                            return matchKeyword && matchSite && matchEquip;
-                        });
-                    }
+            if (keywordPart) {
+                fullContent = `${keywordPart} - ${fullContent}`;
+            }
 
-                    if (typeof window.openCalendarPopup === 'function') window.openCalendarPopup(dateStr, dayEvents);
+            let existingItem = data.maint.find(m => !matchedMaintIds.has(m.id) && m.type === logType && (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) && (m.spec || '') === (spec || '') && (m.originalLogId || null) == (logItem.originalLogId || null) && (!m.scheduledDate || m.scheduledDate === logDate));
+            if (existingItem) {
+                matchedMaintIds.add(existingItem.id);
+                existingItem.scheduledDate = logDate;
+                existingItem.date = ""; // [중요] 완료 상태를 완전히 해제하기 위해 기존 완료일 초기화
+                existingItem.worker = recoveredWorker;
+                existingItem.md = recoveredMd;
+                existingItem.memo = recoveredMemo;
+                existingItem.costType = logItem.costType || '';
+                if (itemCost) existingItem.itemCost = itemCost;
+                if (idx === 0) recoveredMaintId = existingItem.id;
+                payload.maint_upserts.push(existingItem);
+            } else {
+                let restoredDetailType = logItem.detailType || '';
+                if (logType === '비정기' && logItem.detailType2) {
+                    restoredDetailType = `${logItem.detailType} > ${logItem.detailType2}`;
                 }
-            }
 
-            document.getElementById('event-detail-modal').style.display = 'none';
-            if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
-        } catch (error) {
-            console.error('Cancel Completion Error:', error);
-            alert('작업 취소 처리 중 알 수 없는 오류가 발생했습니다. 브라우저 콘솔을 확인해주세요.');
+                const newId = Date.now() + idx;
+                const newItem = {
+                    id: newId,
+                    type: logType,
+                    detailType: restoredDetailType,
+                    code: code,
+                    content: fullContent,
+                    spec: spec,
+                    date: "",
+                    period: (logType === '정기' && match) ? match.cycle : null,
+                    scheduledDate: logDate,
+                    costType: logItem.costType || '',
+                    worker: recoveredWorker,
+                    md: recoveredMd,
+                    memo: recoveredMemo,
+                    itemCost: itemCost,
+                    originalLogId: logItem.originalLogId
+                };
+                data.maint.push(newItem);
+                payload.maint_upserts.push(newItem);
+                if (idx === 0) recoveredMaintId = newId;
+            }
+        });
+
+        const success = await window.syncHistoryTransaction(site, equip, payload);
+        if (!success) {
+            alert('서버 통신 오류로 작업 완료 취소에 실패했습니다.');
+            location.reload();
+            return;
         }
+
+        localStorage.setItem(key, JSON.stringify(data));
+
+        if (typeof addSystemLog === 'function') {
+            addSystemLog('CANCEL_COMPLETION', equip, `예정일: ${logDate}, 내용: ${logContent}`);
+        }
+
+        alert('작업 완료가 취소되었습니다.');
+
+        if (typeof window.renderCalendar === 'function') window.renderCalendar();
+        if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+        if (typeof renderDetails === 'function') renderDetails();
+        if (typeof renderLogs === 'function') renderLogs();
+
+        const popup = document.getElementById('calendar-popup');
+        if (popup && popup.style.display !== 'none') {
+            const dateTitle = document.getElementById('popup-date-title');
+            if (dateTitle) {
+                const dateStr = dateTitle.textContent;
+                let dayEvents = [];
+                if (typeof window.getScheduleForCalendar === 'function') {
+                    const allEvents = window.getScheduleForCalendar();
+                    dayEvents = allEvents[dateStr] || [];
+                }
+
+                const searchInput = document.getElementById('calendar-search');
+                const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+                if (keyword || (typeof currentSearchFilters !== 'undefined' && (currentSearchFilters.site || currentSearchFilters.equip))) {
+                    dayEvents = dayEvents.filter(event => {
+                        const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
+                        const matchSite = (typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.site) || event.site === currentSearchFilters.site || (typeof window.getSiteGroupName === 'function' && window.getSiteGroupName(event.site) === currentSearchFilters.site);
+                        const matchEquip = (typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.equip) || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
+                        return matchKeyword && matchSite && matchEquip;
+                    });
+                }
+
+                if (typeof window.openCalendarPopup === 'function') window.openCalendarPopup(dateStr, dayEvents);
+            }
+        }
+
+        document.getElementById('event-detail-modal').style.display = 'none';
+        if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
+    } catch (error) {
+        console.error('Cancel Completion Error:', error);
+        alert('작업 취소 처리 중 알 수 없는 오류가 발생했습니다. 브라우저 콘솔을 확인해주세요.');
+    }
 }
 
 /* --- 1.5 전역 노출 (Exports) --- */
@@ -2329,8 +2328,8 @@ function setupRegisterScheduleModal() {
         if (contentList) contentList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
         const partList = document.getElementById('register-part-list');
         if (partList) partList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
-                
-                if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
+
+        if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
     };
 
     if (siteSelect) {
@@ -3272,13 +3271,13 @@ window.updateRegisterContentOptions = function () {
             if (['고객대응', '용액제조', '온라인점검'].includes(m.type)) return;
 
             let pureContent = m.content;
-            
+
             // 비용 태그 파싱
             const costMatch = pureContent.match(/^\[(.*?)\]\s*(.*)$/);
             if (costMatch) {
                 pureContent = costMatch[2];
             }
-            
+
             // [추가] 오염된 텍스트 추가 정제 (사용자 요구사항 해결)
             pureContent = pureContent.replace(/\[(유상|무상|기타)\]/g, '').trim();
             pureContent = pureContent.replace(/\s*-\s*$/, '').trim();
@@ -3303,7 +3302,7 @@ window.updateRegisterContentOptions = function () {
                     if (innerCostMatch) actualPart = innerCostMatch[2];
 
                     if (!actualPart) return; // [수정] 비용 태그만 있는 잘못된 데이터 필터링
-                    
+
                     const extracted = typeof window.extractSpecFromContent === 'function' ? window.extractSpecFromContent(actualPart) : { spec: '', pureContent: actualPart };
                     let spec = extracted.spec || m.spec || '';
                     actualPart = extracted.pureContent;
@@ -3474,7 +3473,7 @@ window.updateRegisterContentOptions = function () {
                         const div = tpl.querySelector('.log-select-item');
                         if (isSelected) div.classList.add('selected');
                         div.dataset.value = val;
-                        
+
                         const itemNameEl = div.querySelector('.item-name');
                         itemNameEl.innerHTML = `<span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(val)}</span>`;
                         itemNameEl.style.display = 'flex';
@@ -3494,7 +3493,7 @@ window.updateRegisterContentOptions = function () {
                                     const siteName = siteSelect ? siteSelect.value : '';
                                     window.openAddPartSpecModal(siteName, equipKey, item, (newItem) => {
                                         const newDisplayValue = newItem.code ? `${newItem.code} [${newItem.spec}]` : `${newItem.content} [${newItem.spec}]`;
-                                        
+
                                         registeredItems.unshift({
                                             content: newItem.content,
                                             code: newItem.code,
@@ -3504,7 +3503,7 @@ window.updateRegisterContentOptions = function () {
                                         });
                                         registeredSet.add(newDisplayValue);
                                         currentSelections[newDisplayValue] = '유상';
-                                        
+
                                         if (searchInput) searchInput.value = '';
                                         renderDropdownItems();
                                         updateTriggerText();
@@ -3607,7 +3606,7 @@ window.updateRegisterContentOptions = function () {
     if (!displayListWrapper) {
         displayListWrapper = document.createElement('div');
         displayListWrapper.id = 'register-display-list-wrapper';
-        displayListWrapper.style.marginTop = '0px'; 
+        displayListWrapper.style.marginTop = '0px';
         displayListWrapper.style.padding = '10px';
         displayListWrapper.style.background = '#161b22';
         displayListWrapper.style.border = '1px solid #30363d';
@@ -3622,14 +3621,14 @@ window.updateRegisterContentOptions = function () {
             insertAfterTarget.parentNode.insertBefore(displayListWrapper, insertAfterTarget.nextSibling);
         }
     }
-    
+
     const currentParentContainer = input.closest('.form-row') || input.parentNode;
     const currentPartRow = document.getElementById('register-part-row');
     const currentInsertAfterTarget = currentPartRow || currentParentContainer;
     if (currentInsertAfterTarget && currentInsertAfterTarget.parentNode && displayListWrapper.previousSibling !== currentInsertAfterTarget) {
         currentInsertAfterTarget.parentNode.insertBefore(displayListWrapper, currentInsertAfterTarget.nextSibling);
     }
-    
+
     displayListWrapper.style.minHeight = '40px';
     displayListWrapper.style.maxHeight = '250px';
     displayListWrapper.style.overflowY = 'auto';
@@ -3655,7 +3654,7 @@ window.updateRegisterContentOptions = function () {
             }
 
             baseVals.forEach(val => {
-                const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상'); 
+                const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
                 if (isPartKeyword && partValsStr) {
                     const pArr = partValsStr.split(',').map(s => s.trim()).filter(Boolean);
                     pArr.forEach(p => allVals.push(`${val} - ${p}`));
@@ -3799,6 +3798,26 @@ async function confirmRegisterSchedule() {
 
         const finalDetailType = (type === '비정기' && detailType2) ? `${detailType} > ${detailType2}` : detailType;
 
+        if (!window.currentAddWorkLogId && type === '정기' && finalDetailType.includes('PM 점검')) {
+            const key = `details_${site}_${equip}`;
+            let checkData = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
+            const completedLog = (checkData.logs || []).find(l => l.date === dateStr && l.type === '정기' && (l.detailType || '').includes('PM 점검') && l.detailType !== '일정변경');
+            if (completedLog) {
+                alert('이미 등록된 작업입니다.');
+                document.getElementById('register-schedule-modal').style.display = 'none';
+                setTimeout(() => { openEventDetailModal(site, equip, completedLog.id, true); }, 100);
+                return;
+            }
+
+            const scheduledMaint = (checkData.maint || []).find(m => m.scheduledDate === dateStr && m.type === '정기' && (m.detailType || '').includes('PM 점검'));
+            if (scheduledMaint) {
+                alert('이미 등록된 작업입니다.');
+                document.getElementById('register-schedule-modal').style.display = 'none';
+                setTimeout(() => { openEventDetailModal(site, equip, scheduledMaint.id, false); }, 100);
+                return;
+            }
+        }
+
         const key = `details_${site}_${equip}`;
         let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
         if (!data.maint) data.maint = [];
@@ -3855,14 +3874,13 @@ async function confirmRegisterSchedule() {
                     worker: worker,
                     md: md,
                     itemCost: itemCost,
-                    originalLogId: window.currentAddWorkLogId 
+                    originalLogId: window.currentAddWorkLogId
                 };
                 if (idx === 0) lastProcessedId = newMaintItem.id;
                 data.maint.push(newMaintItem);
                 payload.maint_upserts.push(newMaintItem);
             } else {
                 let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || m.content === pureContent) && (m.spec || '') === spec && (!m.scheduledDate || m.scheduledDate === dateStr));
-
                 if (existingItem) {
                     const oldDate = existingItem.scheduledDate;
                     existingItem.scheduledDate = dateStr;
@@ -3917,7 +3935,7 @@ async function confirmRegisterSchedule() {
             document.getElementById('register-schedule-modal').style.display = 'none';
             setTimeout(() => {
                 if (typeof openEventDetailModal === 'function' && lastProcessedId) {
-                    window.currentDetailTarget = { site: site, equip: equip }; 
+                    window.currentDetailTarget = { site: site, equip: equip };
                     openEventDetailModal(site, equip, lastProcessedId, false);
                 }
             }, 100);
