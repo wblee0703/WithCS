@@ -578,14 +578,14 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         display: none;
     }
 
-    /* [요청] 사업장 현황 차트는 스크롤 없이 한눈에 보이도록 (너비/간격 대폭 축소 및 균등 배치) */
+    /* [수정] 항목 수가 많아질 경우 겹침 현상을 방지하기 위해 가로 스크롤 허용 및 왼쪽 정렬 */
     #integ-equip-site-chart,
     #integ-setup-site-bar-chart,
     #integ-maint-site-chart,
     #integ-maint-type-chart,
     #integ-maint-category-chart {
-        justify-content: space-around !important;
-        overflow-x: hidden !important;
+        justify-content: flex-start !important;
+        overflow-x: auto !important;
     }
 
     #integ-equip-site-chart .bar-group,
@@ -593,9 +593,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #integ-maint-site-chart .bar-group,
     #integ-maint-type-chart .bar-group,
     #integ-maint-category-chart .bar-group {
-        min-width: 0;
-        flex: 1;
-        margin: 0 2px;
+        min-width: 60px; /* 찌그러지지 않고 스크롤을 유도하기 위한 고정 최소 너비 */
+        flex: 0 0 auto;
+        margin: 0 8px;
     }
 
     /* [수정] 작업 구분별 현황 5개 항목 줄바꿈 허용 (폰트 크기는 사업장과 동일하게 상속) */

@@ -811,7 +811,16 @@ async function renderIntegMaintStats(mainData) {
         progressChartEl.classList.add('integ-bar-chart-container');
         const yAxisMax = 100;
 
-        groups.forEach(group => {
+        const sortedProgressGroups = [...groups].sort((a, b) => {
+            const statsA = groupStats[a];
+            const statsB = groupStats[b];
+            const rateA = statsA.total === 0 ? 0 : Math.round((statsA.completed / statsA.total) * 100);
+            const rateB = statsB.total === 0 ? 0 : Math.round((statsB.completed / statsB.total) * 100);
+            if (rateB !== rateA) return rateB - rateA;
+            return a.localeCompare(b);
+        });
+
+        sortedProgressGroups.forEach(group => {
             const stats = groupStats[group];
             const rate = stats.total === 0 ? 0 : Math.round((stats.completed / stats.total) * 100);
             
@@ -843,7 +852,16 @@ async function renderIntegMaintStats(mainData) {
         
         const yAxisMax = 100;
 
-        groups.forEach(group => {
+        const sortedMdGroups = [...groups].sort((a, b) => {
+            const statsA = groupStats[a];
+            const statsB = groupStats[b];
+            const mdRateA = statsA.totalMd === 0 ? 0 : Math.round((statsA.md / statsA.totalMd) * 100);
+            const mdRateB = statsB.totalMd === 0 ? 0 : Math.round((statsB.md / statsB.totalMd) * 100);
+            if (mdRateB !== mdRateA) return mdRateB - mdRateA;
+            return a.localeCompare(b);
+        });
+
+        sortedMdGroups.forEach(group => {
             const stats = groupStats[group];
             const mdVal = Number.isInteger(stats.md) ? stats.md : stats.md.toFixed(1);
             const mdRate = stats.totalMd === 0 ? 0 : Math.round((stats.md / stats.totalMd) * 100);
