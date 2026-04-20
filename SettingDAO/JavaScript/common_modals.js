@@ -2196,7 +2196,7 @@ async function cancelScheduleCompletion() {
                     fullContent = `${keywordPart} - ${fullContent}`;
                 }
 
-                let existingItem = data.maint.find(m => !matchedMaintIds.has(m.id) && m.type === logType && (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) && (m.spec || '') === (spec || '') && (m.originalLogId || null) == (logItem.originalLogId || null));
+                let existingItem = data.maint.find(m => !matchedMaintIds.has(m.id) && m.type === logType && (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) && (m.spec || '') === (spec || '') && (m.originalLogId || null) == (logItem.originalLogId || null) && (!m.scheduledDate || m.scheduledDate === logDate));
 
                 if (existingItem) {
                     matchedMaintIds.add(existingItem.id);
@@ -3861,7 +3861,7 @@ async function confirmRegisterSchedule() {
                 data.maint.push(newMaintItem);
                 payload.maint_upserts.push(newMaintItem);
             } else {
-                let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || m.content === pureContent) && (m.spec || '') === spec);
+                let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || m.content === pureContent) && (m.spec || '') === spec && (!m.scheduledDate || m.scheduledDate === dateStr));
 
                 if (existingItem) {
                     const oldDate = existingItem.scheduledDate;
