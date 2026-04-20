@@ -3799,26 +3799,6 @@ async function confirmRegisterSchedule() {
 
         const finalDetailType = (type === '비정기' && detailType2) ? `${detailType} > ${detailType2}` : detailType;
 
-        if (!window.currentAddWorkLogId && type === '정기' && finalDetailType.includes('PM 점검')) {
-            const key = `details_${site}_${equip}`;
-            let checkData = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
-            const completedLog = (checkData.logs || []).find(l => l.date === dateStr && l.type === '정기' && (l.detailType || '').includes('PM 점검') && l.detailType !== '일정변경');
-            if (completedLog) {
-                alert('이미 등록된 작업입니다.');
-                document.getElementById('register-schedule-modal').style.display = 'none';
-                setTimeout(() => { openEventDetailModal(site, equip, completedLog.id, true); }, 100);
-                return;
-            }
-
-            const scheduledMaint = (checkData.maint || []).find(m => m.scheduledDate === dateStr && m.type === '정기' && (m.detailType || '').includes('PM 점검'));
-            if (scheduledMaint) {
-                alert('이미 등록된 작업입니다.');
-                document.getElementById('register-schedule-modal').style.display = 'none';
-                setTimeout(() => { openEventDetailModal(site, equip, scheduledMaint.id, false); }, 100);
-                return;
-            }
-        }
-
         const key = `details_${site}_${equip}`;
         let data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
         if (!data.maint) data.maint = [];
