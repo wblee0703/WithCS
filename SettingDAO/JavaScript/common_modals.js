@@ -2103,7 +2103,7 @@ window.refreshCalendarPopupAfterCompletion = function () {
             if (keyword || (typeof currentSearchFilters !== 'undefined' && (currentSearchFilters.site || currentSearchFilters.equip))) {
                 dayEvents = dayEvents.filter(event => {
                     const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
-                    const matchSite = (typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.site) || event.site === currentSearchFilters.site || (typeof window.getSiteGroupName === 'function' && window.getSiteGroupName(event.site) === currentSearchFilters.site);
+                    const matchSite = typeof window.isSiteMatched === 'function' ? window.isSiteMatched(event.site, currentSearchFilters.site) : ((typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.site) || event.site === currentSearchFilters.site);
                     const matchEquip = (typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.equip) || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
                     return matchKeyword && matchSite && matchEquip;
                 });
@@ -2196,11 +2196,24 @@ async function cancelScheduleCompletion() {
                 fullContent = `${keywordPart} - ${fullContent}`;
             }
 
+            // [추가] 이전 작업일(시작일) 복구를 위해 이전 로그 검색
+            let prevDate = "";
+            const prevLog = data.logs
+                .filter(l => l.id !== logItem.id && l.type === logType && (l.content || '').includes(pureContent))
+                .sort((a, b) => {
+                    if (b.date !== a.date) return new Date(b.date) - new Date(a.date);
+                    return b.id - a.id;
+                })[0];
+            
+            if (prevLog) {
+                prevDate = prevLog.date;
+            }
+
             let existingItem = data.maint.find(m => !matchedMaintIds.has(m.id) && m.type === logType && (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) && (m.spec || '') === (spec || '') && (m.originalLogId || null) == (logItem.originalLogId || null) && (!m.scheduledDate || m.scheduledDate === logDate));
             if (existingItem) {
                 matchedMaintIds.add(existingItem.id);
                 existingItem.scheduledDate = logDate;
-                existingItem.date = ""; // [중요] 완료 상태를 완전히 해제하기 위해 기존 완료일 초기화
+                existingItem.date = prevDate; // [수정] 빈 문자열 대신 이전 로그의 날짜(시작일)로 복구
                 existingItem.worker = recoveredWorker;
                 existingItem.md = recoveredMd;
                 existingItem.memo = recoveredMemo;
@@ -2222,7 +2235,7 @@ async function cancelScheduleCompletion() {
                     code: code,
                     content: fullContent,
                     spec: spec,
-                    date: "",
+                    date: prevDate, // [수정] 빈 문자열 대신 이전 로그의 날짜(시작일)로 복구
                     period: (logType === '정기' && match) ? match.cycle : null,
                     scheduledDate: logDate,
                     costType: logItem.costType || '',
@@ -2275,7 +2288,7 @@ async function cancelScheduleCompletion() {
                 if (keyword || (typeof currentSearchFilters !== 'undefined' && (currentSearchFilters.site || currentSearchFilters.equip))) {
                     dayEvents = dayEvents.filter(event => {
                         const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
-                        const matchSite = (typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.site) || event.site === currentSearchFilters.site || (typeof window.getSiteGroupName === 'function' && window.getSiteGroupName(event.site) === currentSearchFilters.site);
+                        const matchSite = typeof window.isSiteMatched === 'function' ? window.isSiteMatched(event.site, currentSearchFilters.site) : ((typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.site) || event.site === currentSearchFilters.site);
                         const matchEquip = (typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.equip) || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
                         return matchKeyword && matchSite && matchEquip;
                     });

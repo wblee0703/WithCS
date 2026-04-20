@@ -1279,8 +1279,10 @@ function setupDataManagementEvents() {
     const btnSysLogReset = document.getElementById('btn-syslog-reset');
     if (btnSysLogReset) {
         btnSysLogReset.addEventListener('click', () => {
-            if (sysLogStart) sysLogStart.value = '';
-            if (sysLogEnd) sysLogEnd.value = '';
+            const now = new Date();
+            const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            if (sysLogStart) sysLogStart.value = todayStr;
+            if (sysLogEnd) sysLogEnd.value = todayStr;
             if (sysLogSearch) sysLogSearch.value = '';
             currentLogFilters = ['common', 'setup', 'maint', 'admin'];
             const filters = document.querySelectorAll('#log-modal .btn-filter');
@@ -1512,6 +1514,25 @@ function checkLoginStatus() {
 
         const btnModalAddUser = document.getElementById('btn-modal-add-user');
         if (btnModalAddUser) btnModalAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
+
+        // [추가] 최종 관리자 전용 '모든 계정 관리' 버튼 생성 및 노출 제어
+        let btnAllUsers = document.getElementById('btn-modal-all-users');
+        if (role === 'superadmin') {
+            if (!btnAllUsers && btnModalAddUser && btnModalAddUser.parentNode) {
+                btnAllUsers = document.createElement('button');
+                btnAllUsers.id = 'btn-modal-all-users';
+                btnAllUsers.className = 'btn-green';
+                btnAllUsers.textContent = '모든 계정 관리';
+                btnAllUsers.style.marginLeft = '10px';
+                btnAllUsers.style.padding = '4px 10px';
+                btnAllUsers.style.fontSize = '12px';
+                btnAllUsers.onclick = window.openAllUsersModal;
+                btnModalAddUser.parentNode.insertBefore(btnAllUsers, btnModalAddUser.nextSibling);
+            }
+            if (btnAllUsers) btnAllUsers.style.display = 'inline-block';
+        } else {
+            if (btnAllUsers) btnAllUsers.style.display = 'none';
+        }
 
         const adminItems = document.querySelectorAll('.nav-admin-item');
         adminItems.forEach(el => el.style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none');
@@ -3083,7 +3104,16 @@ function addSystemLog(action, target, details = "") {
 
 function openLogModal() {
     const modal = document.getElementById('log-modal');
-    if (modal) { modal.style.display = 'flex'; renderSystemLogs(); }
+    if (modal) { 
+        const now = new Date();
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const startInput = document.getElementById('syslog-filter-start');
+        const endInput = document.getElementById('syslog-filter-end');
+        if (startInput) startInput.value = todayStr;
+        if (endInput) endInput.value = todayStr;
+        modal.style.display = 'flex'; 
+        renderSystemLogs(); 
+    }
 }
 
 function closeLogModal() {
@@ -4276,10 +4306,23 @@ function setupDepartmentSuggestion(inputEl) {
         wrapper.appendChild(suggestionList);
     } else {
         suggestionList = wrapper.querySelector('.suggestion-list');
+        if (!suggestionList) {
+            suggestionList = document.createElement('ul');
+            suggestionList.className = 'suggestion-list';
+            suggestionList.style.zIndex = '99999';
+            suggestionList.style.top = '100%';
+            suggestionList.style.left = '0';
+            suggestionList.style.minWidth = '100%';
+            wrapper.appendChild(suggestionList);
+        }
     }
 
-    // 지정된 소속 목록 (상성 -> 삼성으로 오타 교정)
-    const depts = ['운영1팀(본사)', '운영1팀(삼성)', '운영1팀(청주)', '운영(해외)', '직접 입력'];
+    // 지정된 소속 목록 ('직접 입력' 제거 및 '기타' 추가)
+    const depts = ['운영1팀(본사)', '운영1팀(삼성)', '운영1팀(청주)', '운영1팀(이천)', '해외(서안)', '해외(우시)', '해외(기타)', '기타'];
+
+    // 직접 입력을 차단하고 드롭다운 선택만 허용
+    inputEl.readOnly = true;
+    inputEl.style.cursor = 'pointer';
 
     const showSuggestions = () => {
         suggestionList.innerHTML = '';
@@ -4289,12 +4332,7 @@ function setupDepartmentSuggestion(inputEl) {
             li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(dept)}</span>`;
             li.addEventListener('mousedown', (e) => {
                 e.preventDefault();
-                if (dept === '직접 입력') {
-                    inputEl.value = '';
-                    inputEl.focus();
-                } else {
-                    inputEl.value = dept;
-                }
+                inputEl.value = dept;
                 suggestionList.style.display = 'none';
             });
             suggestionList.appendChild(li);
@@ -4352,6 +4390,15 @@ function setupPositionSuggestion(inputEl) {
         wrapper.appendChild(suggestionList);
     } else {
         suggestionList = wrapper.querySelector('.suggestion-list');
+        if (!suggestionList) {
+            suggestionList = document.createElement('ul');
+            suggestionList.className = 'suggestion-list';
+            suggestionList.style.zIndex = '99999';
+            suggestionList.style.top = '100%';
+            suggestionList.style.left = '0';
+            suggestionList.style.minWidth = '100%';
+            wrapper.appendChild(suggestionList);
+        }
     }
 
     // 지정된 직급 목록
@@ -4400,6 +4447,207 @@ function setupPositionSuggestion(inputEl) {
     document.addEventListener('mousedown', outsideClickListener);
     document.addEventListener('touchstart', outsideClickListener, { passive: true });
 }
+
+// [추가] 모든 계정 관리 모달 생성 및 로직 (최종 관리자 전용)
+window.openAllUsersModal = function() {
+    let modal = document.getElementById('all-users-modal');
+    if (!modal) {
+        console.error('all-users-modal HTML 요소를 찾을 수 없습니다. common.html에 포함되어 있는지 확인해주세요.');
+        return;
+    }
+
+    // 초기 이벤트 리스너 바인딩 (1회만 실행)
+    if (!modal.dataset.initialized) {
+        modal.dataset.initialized = 'true';
+        
+        document.getElementById('btn-close-all-users').onclick = () => { modal.style.display = 'none'; };
+
+        // 소속/직급 제안 박스 연동
+        setupDepartmentSuggestion(document.getElementById('edit-all-dept'));
+        setupPositionSuggestion(document.getElementById('edit-all-pos'));
+
+        document.getElementById('btn-save-all-user').onclick = async () => {
+            const targetId = document.getElementById('edit-all-id').value;
+            const name = document.getElementById('edit-all-name').value.trim();
+            const dept = document.getElementById('edit-all-dept').value.trim();
+            const pos = document.getElementById('edit-all-pos').value.trim();
+            const role = document.getElementById('edit-all-role').value;
+            const site = document.getElementById('edit-all-site').value;
+
+            if (!name || !dept || !pos) return alert('이름, 소속, 직급을 입력해주세요.');
+
+            const payload = { id: targetId, name, department: dept, position: pos, role, site };
+
+            try {
+                const res = await fetch('/api/admin/user/update_all', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('계정 정보가 성공적으로 수정되었습니다.');
+                    window.loadAllUsersList(); 
+                    if (typeof addSystemLog === 'function') addSystemLog('UPDATE_USER', targetId, '최종 관리자에 의한 계정 수정');
+                } else {
+                    alert(data.message || '수정 실패');
+                }
+            } catch(e) {
+                alert('서버 통신 오류가 발생했습니다.');
+            }
+        };
+
+        document.getElementById('btn-reset-all-user-pw').onclick = async () => {
+            const targetId = document.getElementById('edit-all-id').value;
+            if (!targetId) return;
+            if (!confirm(`'${targetId}' 계정의 비밀번호를 초기 상태(withtech123!)로 변경하시겠습니까?`)) return;
+            
+            try {
+                const res = await fetch('/api/admin/user/update_all', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+                    body: JSON.stringify({ id: targetId, pw: 'withtech123!' })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('비밀번호가 초기화되었습니다.');
+                    if (typeof addSystemLog === 'function') addSystemLog('UPDATE_USER', targetId, '최종 관리자에 의한 비밀번호 초기화');
+                } else {
+                    alert(data.message || '초기화 실패');
+                }
+            } catch(e) {
+                alert('서버 통신 오류가 발생했습니다.');
+            }
+        };
+
+        document.getElementById('btn-delete-all-user').onclick = async () => {
+            const targetId = document.getElementById('edit-all-id').value;
+            if (!targetId) return;
+            if (!confirm(`'${targetId}' 계정을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+
+            try {
+                const res = await fetch('/api/admin/user/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+                    body: JSON.stringify({ target_id: targetId })
+                });
+                const data = await res.json();
+                if (data.status === 'success') {
+                    alert('계정이 삭제되었습니다.');
+                    if (typeof addSystemLog === 'function') addSystemLog('DELETE_USER', targetId, '최종 관리자에 의한 타 계정 삭제');
+                    const editForm = document.getElementById('all-users-edit-form');
+                    if (editForm) { editForm.style.opacity = '0.3'; editForm.style.pointerEvents = 'none'; }
+                    window.loadAllUsersList();
+                } else {
+                    alert(data.message || '계정 삭제 실패');
+                }
+            } catch(e) {
+                alert('서버 통신 오류가 발생했습니다.');
+            }
+        };
+
+        const searchInput = document.getElementById('all-users-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                const kw = searchInput.value.trim().toLowerCase();
+                let visibleCount = 0;
+                document.querySelectorAll('#all-users-list li').forEach(li => {
+                    const text = li.dataset.search.toLowerCase();
+                    if (text.includes(kw)) {
+                        li.style.display = 'flex';
+                        visibleCount++;
+                    } else {
+                        li.style.display = 'none';
+                    }
+                });
+                const countEl = document.getElementById('all-users-count');
+                if (countEl) countEl.textContent = `총 ${visibleCount}건`;
+            });
+        }
+    }
+
+    // 사업장 드롭다운 채우기
+    const siteSelect = document.getElementById('edit-all-site');
+    siteSelect.innerHTML = '<option value="">전체 사업장</option>';
+    const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
+    Object.keys(deviceData).forEach(s => {
+        if(s !== 'models' && s !== 'details') {
+            siteSelect.insertAdjacentHTML('beforeend', `<option value="${s}">${s}</option>`);
+        }
+    });
+    siteSelect.insertAdjacentHTML('beforeend', `<option value="기타사업장">기타사업장</option>`);
+
+    window.loadAllUsersList();
+    modal.style.display = 'flex';
+    
+    const editForm = document.getElementById('all-users-edit-form');
+    if (editForm) { editForm.style.opacity = '0.3'; editForm.style.pointerEvents = 'none'; }
+};
+
+// [추가] 모든 계정 리스트 불러오기 및 렌더링
+window.loadAllUsersList = function() {
+    fetch('/api/admin/users/all', { headers: { 'X-CSRFToken': getCookie('csrf_token') } })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const list = document.getElementById('all-users-list');
+                list.innerHTML = '';
+                data.users.forEach(u => {
+                    const li = document.createElement('li');
+                    li.dataset.search = `${u.id} ${u.name} ${u.department} ${u.position} ${u.role}`;
+                    
+                    let roleBadge = '';
+                    if (u.role === 'superadmin') roleBadge = '<span class="badge" style="background: #f85149; font-size: 12px; padding: 4px 8px;">최종 관리자</span>';
+                    else if (u.role === 'admin') roleBadge = '<span class="badge" style="background: #d29922; font-size: 12px; padding: 4px 8px;">관리자</span>';
+                    else roleBadge = '<span class="badge" style="background: #30363d; font-size: 12px; padding: 4px 8px;">일반</span>';
+
+                    li.innerHTML = `
+                        <div style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+                            <strong style="color:#e6edf3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(u.name || '이름 없음')} <span style="color:#8b949e; font-weight:normal;">(${escapeHtml(u.id)})</span></strong>
+                            <span style="font-size:11px; color:#8b949e; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(u.department || '-')} ${escapeHtml(u.position || '-')}</span>
+                        </div>
+                        <div style="flex-shrink:0; margin-left:10px;">${roleBadge}</div>
+                    `;
+                    
+                    li.onclick = () => {
+                        document.querySelectorAll('#all-users-list li').forEach(el => el.classList.remove('active'));
+                        li.classList.add('active');
+
+                        const editForm = document.getElementById('all-users-edit-form');
+                        if (editForm) { editForm.style.opacity = '1'; editForm.style.pointerEvents = 'auto'; }
+
+                        document.getElementById('edit-all-id').value = u.id;
+                        document.getElementById('edit-all-id-display').value = u.id;
+                        document.getElementById('edit-all-name').value = u.name || '';
+                        document.getElementById('edit-all-dept').value = u.department || '';
+                        document.getElementById('edit-all-pos').value = u.position || '';
+                        document.getElementById('edit-all-role').value = u.role || 'user';
+                        document.getElementById('edit-all-site').value = u.site || '';
+                    };
+                    list.appendChild(li);
+                });
+                
+                // 현재 검색창에 텍스트가 남아있다면 필터링 유지
+                const kw = document.getElementById('all-users-search').value.trim().toLowerCase();
+                let visibleCount = 0;
+                if (kw) {
+                    list.querySelectorAll('li').forEach(li => {
+                        if (li.dataset.search.toLowerCase().includes(kw)) {
+                            li.style.display = 'flex';
+                            visibleCount++;
+                        } else {
+                            li.style.display = 'none';
+                        }
+                    });
+                } else {
+                    visibleCount = data.users.length;
+                }
+                const countEl = document.getElementById('all-users-count');
+                if (countEl) countEl.textContent = `총 ${visibleCount}건`;
+            }
+        });
+};
+
 /* ==========================================================================
    12. 전역 모달 - 작업 검색 (Task Search Modal)
    ========================================================================== */

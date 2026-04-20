@@ -11,19 +11,28 @@ let equipDetailSearchKeyword = ''; // [추가] 장비 정보 리스트 내부 �
 
 // [공통 헬퍼] 사업장 그룹화 이름 반환
 window.getSiteGroupName = function (siteName) {
-    if (siteName === 'SKH 이천' || siteName === 'SKH 청주') {
-        return siteName;
-    } else if (siteName === 'SEC 평택 본사' || siteName === 'SEC 화성 본사') {
-        return '기타 사업장';
-    } else if (siteName && siteName.includes('SEC')) {
-        return 'SEC';
-    } else {
-        return '기타 사업장';
-    }
+    try {
+        const metaKey = `site_meta_${siteName}`;
+        const metaData = JSON.parse(localStorage.getItem(metaKey));
+        if (metaData && metaData.group) {
+            return metaData.group;
+        }
+    } catch (e) {}
+
+    return '기타사업장';
 };
 
 window.getSiteColor = function (siteName) {
     if (!siteName || siteName === '전체') return '#6e7681';
+
+    // 그룹명에 대한 명시적 색상 반환
+    if (siteName === 'SEC') return '#034EA2';
+    if (siteName === 'SKH 이천') return '#eb371f';
+    if (siteName === 'SKH 청주') return '#F37021';
+    if (siteName === 'SCS 서안') return '#0096D6';
+    if (siteName === 'SKH 우시') return '#d29922';
+    if (siteName === '해외 기타') return '#1b7c83';
+    if (siteName === '기타사업장') return '#8957e5';
 
     const nameUpper = siteName.toUpperCase();
     if (nameUpper.includes('SKH')) return '#F37021'; // 주황색 (Orange)
@@ -45,26 +54,17 @@ window.getSiteColor = function (siteName) {
 
 window.getSiteGradient = function (siteName) {
     if (!siteName || siteName === '전체') return 'linear-gradient(to top, #6e7681, #8b949e)';
+
+    if (siteName === 'SEC') return 'linear-gradient(to top, #034EA2, #4a8eff)';
+    if (siteName === 'SKH 이천') return 'linear-gradient(to top, #eb371f, #ff7b72)';
+    if (siteName === 'SKH 청주') return 'linear-gradient(to top, #F37021, #ff9e66)';
+    if (siteName === 'SCS 서안') return 'linear-gradient(to top, #0096D6, #66c2ff)';
+    if (siteName === 'SKH 우시') return 'linear-gradient(to top, #d29922, #e3b341)';
+    if (siteName === '해외 기타') return 'linear-gradient(to top, #1b7c83, #3fb950)';
+    if (siteName === '기타사업장') return 'linear-gradient(to top, #8957e5, #a371f7)';
+
     const color = window.getSiteColor(siteName);
-    const gradientMap = {
-        '#1f6feb': 'linear-gradient(to top, #1f6feb, #58a6ff)',
-        '#238636': 'linear-gradient(to top, #238636, #3fb950)',
-        '#d29922': 'linear-gradient(to top, #d29922, #f0883e)',
-        '#8957e5': 'linear-gradient(to top, #8957e5, #a371f7)',
-        '#da3633': 'linear-gradient(to top, #da3633, #ff7b72)',
-        '#f0883e': 'linear-gradient(to top, #f0883e, #ffb066)',
-        '#3fb950': 'linear-gradient(to top, #3fb950, #6bc47d)',
-        '#a371f7': 'linear-gradient(to top, #a371f7, #c4a7f7)',
-        '#9e6a03': 'linear-gradient(to top, #9e6a03, #d29922)',
-        '#1b7c83': 'linear-gradient(to top, #1b7c83, #3fb950)',
-        '#6e40c9': 'linear-gradient(to top, #6e40c9, #8957e5)',
-        '#F37021': 'linear-gradient(to top, #F37021, #ff9e66)', // SKH
-        '#034EA2': 'linear-gradient(to top, #034EA2, #4a8eff)', // SEC
-        '#0096D6': 'linear-gradient(to top, #0096D6, #66c2ff)', // ENF
-        '#1D3546': 'linear-gradient(to top, #1D3546, #3a5a70)', // Onsemi
-        '#6B6B6B': 'linear-gradient(to top, #6B6B6B, #9e9e9e)'  // LG
-    };
-    return gradientMap[color] || 'linear-gradient(to top, #30363d, #57606a)';
+    return `linear-gradient(to top, ${color}, #8b949e)`;
 };
 
 // [공통 헬퍼] 대시보드 데이터 로드
@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // [공통 헬퍼] 필터 기반 페이지 이동 로직
 function navigateWithFilters(targetPage, savedPathKey, targetSite, targetEquipName, targetSerial) {
     const data = getDashboardData();
-    let site = targetSite;
+    let site = Array.isArray(targetSite) ? (targetSite.length > 0 ? targetSite[0] : '') : targetSite;
     let serial = targetSerial;
     let equipName = targetEquipName;
 
@@ -348,7 +348,7 @@ function updateMaintenanceDashboard() {
         });
 
         // 지정된 우선순위대로 정렬
-        const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타 사업장'];
+        const order = ['SEC', 'SKH 이천', 'SKH 청주', 'SCS 서안', 'SKH 우시', '해외 기타', '기타사업장'];
         order.forEach(name => {
             if (groupCounts[name]) siteStats.push({ name: name, count: groupCounts[name] });
         });
@@ -807,6 +807,7 @@ function updateSetupDashboard() {
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
 
     Object.keys(data).forEach(site => {
+        let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장';
             if (data[site] && Array.isArray(data[site])) {
                 data[site].forEach(equip => {
                 if (equip === '기타(ETC)') return;
@@ -818,7 +819,7 @@ function updateSetupDashboard() {
 
                     if (!isCompleted && hasScheduledDate) {
                         activeSetupEquips.push({ site, equip });
-                        siteStats[site] = (siteStats[site] || 0) + 1;
+                        siteStats[groupName] = (siteStats[groupName] || 0) + 1;
                         const equipName = equip.split('::')[0];
                         equipCounts[equipName] = (equipCounts[equipName] || 0) + 1;
                     }
@@ -956,7 +957,7 @@ function renderSetupEquipChart(equipStats, totalEquip, activeEquips) {
 
     let filteredEquips = activeEquips;
     if (setupDashboardFilter.site) {
-        filteredEquips = activeEquips.filter(e => e.site === setupDashboardFilter.site);
+        filteredEquips = activeEquips.filter(e => window.getSiteGroupName(e.site) === setupDashboardFilter.site);
     }
 
     let filteredStats = {};
@@ -1022,7 +1023,7 @@ function renderSetupEquipDetailList(activeEquips) {
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
     let filtered = activeEquips;
-    if (setupDashboardFilter.site) filtered = filtered.filter(e => e.site === setupDashboardFilter.site);
+    if (setupDashboardFilter.site) filtered = filtered.filter(e => window.getSiteGroupName(e.site) === setupDashboardFilter.site);
     if (setupDashboardFilter.equip) filtered = filtered.filter(e => e.equip.split('::')[0] === setupDashboardFilter.equip);
 
     if (filtered.length === 0) {
@@ -1080,7 +1081,7 @@ function renderSetupUpcomingList(activeEquips) {
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
 
     activeEquips.forEach(eq => {
-        if (setupDashboardFilter.site && eq.site !== setupDashboardFilter.site) return;
+        if (setupDashboardFilter.site && window.getSiteGroupName(eq.site) !== setupDashboardFilter.site) return;
         if (setupDashboardFilter.equip && eq.equip.split('::')[0] !== setupDashboardFilter.equip) return;
         if (currentGanttFilters.equip && eq.equip !== currentGanttFilters.equip) return;
 

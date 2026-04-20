@@ -859,7 +859,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     
      /* [요청] 모바일에서 드롭다운 너비 확장 */
     .log-select-dropdown {
-        width: 200% !important;
+        width: 100% !important;
         min-width: 100% !important;
         max-width: none !important;
     }
@@ -890,6 +890,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #device-memo,
     #setup-log-detail-memo,
     textarea.delay-reason-textarea {
+        height: 150px !important; /* [수정] 모바일에서 메모창 높이를 약 3배로 확대 */
+        min-height: 150px !important;
         max-height: 800px !important;
         overflow-y: auto !important;
     }
@@ -983,7 +985,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
      /* [요청] 모바일 환경에서 제안 박스 너비 및 위치 조정 */
     #log-content-dropdown {
-        width: 200%;
+        width: 100%;
     }
     #log-worker-dropdown,
     #memo-worker-dropdown {

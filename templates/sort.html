@@ -225,6 +225,50 @@
                 </div>
             </div>
         </div>
+        <!-- === [추가] 자바스크립트 렌더링용 HTML 템플릿 모음 === -->
+        <template id="sort-multi-select-template">
+            <div class="log-select-wrapper full-width sort-wrapper">
+                <div class="log-select-trigger sort-trigger"></div>
+                <div class="log-select-dropdown sort-dropdown">
+                    <div class="log-select-list sort-list"></div>
+                    <div class="log-select-footer sort-footer">
+                        <button type="button" class="btn-gray btn-select-all flex-1">전체 선택</button>
+                        <button type="button" class="btn-gray btn-deselect-all flex-1">전체 해제</button>
+                        <button type="button" class="btn-blue-sm btn-confirm flex-1">선택 완료</button>
+                    </div>
+                </div>
+            </div>
+        </template>
+        
+        <template id="sort-select-item-template">
+            <div class="log-select-item">
+                <span class="check-icon sort-check-icon">✓</span>
+                <span class="item-text sort-item-text"></span>
+            </div>
+        </template>
+        
+        <template id="sort-inner-search-template">
+            <div class="sort-inner-search-container">
+                <input type="text" id="sort-inner-search" class="input-dark sort-inner-input" placeholder="결과 내 텍스트 검색...">
+            </div>
+        </template>
+        
+        <template id="sort-table-row-template">
+            <tr class="sort-result-row">
+                <td class="col-date"></td>
+                <td class="col-site"></td>
+                <td class="col-model"></td>
+                <td class="col-equip text-left pl-10"></td>
+                <td class="col-type"><span class="badge sort-badge"></span></td>
+                <td class="col-detail text-left pl-10"></td>
+                <td class="col-content text-left pl-10"></td>
+                <td class="col-cost"></td>
+                <td class="col-worker"></td>
+                <td class="col-md"></td>
+                <td class="col-status sort-status-text"></td>
+            </tr>
+        </template>
+        
     </section>
 </main>
 {% endblock %}

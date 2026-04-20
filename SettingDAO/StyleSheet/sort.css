@@ -247,6 +247,199 @@
     overflow: visible;
     padding: 0;
 }
+/* === [추가] sort.js에서 분리된 스타일 클래스 === */
+
+/* 기간 필터 그룹 및 입력창 */
+.sort-period-flex-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.sort-period-type {
+    flex: 0 0 auto;
+    width: auto;
+    margin: 0;
+}
+
+.sort-period-type.full-width-mode {
+    flex: 1 1 100%;
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+.sort-period-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.sort-period-custom {
+    flex: 1 1 100%;
+    min-width: 0;
+}
+
+/* 필터 드롭다운 UI 관련 */
+.sort-group-filter-container {
+    padding: 8px;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    background: #21262d;
+    border-radius: 4px 4px 0 0;
+}
+
+.sort-filter-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.sort-wrapper {
+    margin: 0;
+    position: relative;
+}
+
+.sort-trigger {
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    background: #0d1117;
+    color: #8b949e;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sort-dropdown {
+    width: 100%;
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    margin-top: 4px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    box-sizing: border-box;
+}
+
+.sort-list {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.sort-footer {
+    padding: 8px;
+    border-top: 1px solid #30363d;
+    background: #21262d;
+    display: flex;
+    gap: 5px;
+}
+
+.sort-check-icon {
+    flex: 1;
+    text-align: center;
+    font-weight: bold;
+    color: #58a6ff;
+}
+
+.sort-item-text {
+    flex: 9;
+    padding-left: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sort-dropdown-empty {
+    padding: 10px;
+    color: #8b949e;
+    text-align: center;
+    font-size: 12px;
+}
+
+/* 테이블 내부 요소 (Row & Cell) */
+.sort-inner-search-container {
+    display: inline-flex;
+    margin-left: 15px;
+    align-items: center;
+}
+
+.sort-inner-input {
+    padding: 4px 8px;
+    font-size: 12px;
+    height: 26px;
+    width: 200px;
+}
+
+.sort-empty-row {
+    text-align: center;
+    padding: 20px;
+    color: #8b949e;
+}
+
+.sort-result-row {
+    cursor: pointer;
+}
+
+.sort-result-row:hover {
+    background-color: #21262d;
+}
+
+.site-group-text {
+    font-size: 11px;
+    color: #8b949e;
+    margin-bottom: 2px;
+}
+
+.equip-sub-info {
+    color: #3fb950;
+    font-weight: bold;
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.detail-sub-text {
+    color: #8b949e;
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.sort-badge {
+    padding: 2px 6px;
+    font-size: 11px;
+}
+
+.sort-status-text {
+    font-weight: bold;
+}
+
+.status-complete {
+    color: #3fb950;
+}
+
+.status-pending {
+    color: #d29922;
+}
+
+.sort-chart-empty {
+    width: 100%;
+    text-align: center;
+    margin-top: auto;
+    margin-bottom: auto;
+}
 
 /* 모바일 화면에서는 세로 배치 및 전체 스크롤 허용 */
 @media (max-width: 950px) {

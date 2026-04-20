@@ -251,6 +251,72 @@
             </div>
         </div>
     </div>
+<!-- 모든 계정 관리 모달 (최종 관리자 전용) -->
+<div id="all-users-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-window all-users-modal-window">
+        <div class="modal-header">
+            <h3>모든 계정 관리</h3>
+            <button id="btn-close-all-users" class="btn-close-transparent">✕</button>
+        </div>
+        <div class="modal-body all-users-modal-body">
+            <!-- 좌측: 유저 리스트 -->
+            <div class="all-users-list-panel">
+                <div class="all-users-search-container" style="display: flex; align-items: center; gap: 10px;">
+                    <input type="text" id="all-users-search" class="input-dark" placeholder="아이디/이름/소속 검색..." style="flex: 1; min-width: 0;">
+                    <span id="all-users-count" style="color: #8b949e; font-size: 12px; white-space: nowrap; font-weight: bold;">총 0건</span>
+                </div>
+                <ul id="all-users-list" class="all-users-list"></ul>
+            </div>
+            <!-- 우측: 정보 수정 폼 -->
+            <div id="all-users-edit-form">
+                <h4>선택 계정 수정</h4>
+                <input type="hidden" id="edit-all-id">
+                <div class="form-row all-users-form-row">
+                    <label class="modal-label all-users-label">아이디</label>
+                    <input type="text" id="edit-all-id-display" class="input-dark" disabled>
+                </div>
+                <div class="form-row all-users-form-row">
+                    <label class="modal-label all-users-label">이름</label>
+                    <input type="text" id="edit-all-name" class="input-dark">
+                </div>
+                <div class="form-row all-users-form-row">
+                    <label class="modal-label all-users-label">소속</label>
+                    <div class="autocomplete-wrapper" style="flex:1;">
+                        <input type="text" id="edit-all-dept" class="input-dark" style="width:100%;">
+                    </div>
+                </div>
+                <div class="form-row all-users-form-row">
+                    <label class="modal-label all-users-label">직급</label>
+                    <div class="autocomplete-wrapper" style="flex:1;">
+                        <input type="text" id="edit-all-pos" class="input-dark" style="width:100%;">
+                    </div>
+                </div>
+                <div class="form-row all-users-form-row">
+                    <label class="modal-label all-users-label">권한</label>
+                    <select id="edit-all-role" class="input-dark all-users-select">
+                        <option value="user">일반</option>
+                        <option value="admin">관리자</option>
+                        <option value="superadmin">최종관리자</option>
+                    </select>
+                </div>
+                <div class="form-row all-users-form-row last-row">
+                    <label class="modal-label all-users-label">사업장</label>
+                    <select id="edit-all-site" class="input-dark all-users-select">
+                        <option value="">전체 사업장</option>
+                    </select>
+                </div>
+                <div class="form-row all-users-form-row">
+                    <label class="modal-label all-users-label">비밀번호</label>
+                    <button id="btn-reset-all-user-pw" class="btn-gray" style="flex: 1; padding: 6px 10px; font-size: 13px;">비밀번호 초기상태(withtech123!)로 변경</button>
+                </div>
+                <div class="all-users-actions">
+                    <button id="btn-save-all-user" class="btn-blue-sm">수정 사항 저장</button>
+                    <button id="btn-delete-all-user" class="btn-del-sm">계정 삭제</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
     <!-- 추가 작업 내역 모달 -->
     <div id="extra-work-history-modal" class="modal-overlay" style="display: none; z-index: 10005;">
@@ -777,8 +843,21 @@
                 <h3>달력 상세 검색</h3><button class="btn-del-sm" id="btn-close-search-modal">✕</button>
             </div>
             <div class="modal-body">
-                <div class="form-row"><label class="form-label">사업장</label><select id="search-site-select"
-                        class="modal-select"></select></div>
+                <div class="form-row"><label class="form-label">사업장</label>
+                    <div id="search-site-wrapper" class="log-select-wrapper" style="flex: 1; margin: 0; min-width: 0;">
+                        <div id="search-site-trigger" class="log-select-trigger" style="cursor: pointer;">전체 사업장</div>
+                        <div id="search-site-dropdown" class="log-select-dropdown">
+                            <div id="search-site-list" class="log-select-list" style="max-height: 200px; overflow-y: auto;"></div>
+                            <div class="log-select-footer" style="display: flex; flex-direction: column; gap: 5px;">
+                                <div style="display: flex; gap: 5px;">
+                                    <button type="button" id="btn-search-site-all" class="btn-gray" style="flex: 1; padding: 4px 0; font-size: 12px;">전체 선택</button>
+                                    <button type="button" id="btn-search-site-clear" class="btn-gray" style="flex: 1; padding: 4px 0; font-size: 12px;">전체 해제</button>
+                                </div>
+                                <button type="button" id="btn-search-site-confirm" class="btn-blue-sm" style="width: 100%;">선택 완료</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="form-row"><label class="form-label">장비</label>
                     <div id="search-equip-wrapper" class="log-select-wrapper" style="flex: 1; margin: 0; min-width: 0;">
                         <div id="search-equip-trigger" class="log-select-trigger disabled"

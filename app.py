@@ -135,6 +135,7 @@ class SystemLog(db.Model):
 # ------------------------------------------------------------------------------
 class Site(db.Model):
     name = db.Column(db.String(100), primary_key=True)
+    group = db.Column(db.String(50), default='기타사업장') # [추가] 사업장 구분
     buildings = db.Column(db.Text, default='[]') # JSON string
 
 class Equipment(db.Model):
@@ -339,7 +340,7 @@ def load_data():
         device_data[site.name] = []
         try: buildings = json.loads(site.buildings)
         except: buildings = []
-        data[f"site_meta_{site.name}"] = {"buildings": buildings}
+        data[f"site_meta_{site.name}"] = {"buildings": buildings, "group": site.group or '기타사업장'}
 
     data['device_data'] = device_data
     data['setup_data'] = {}
@@ -829,6 +830,46 @@ def admin_delete_target_user():
     db.session.commit()
     return jsonify({"status": "success"})
 
+# [추가] 최종 관리자 전용 모든 사용자 목록 조회 API
+@app.route('/api/admin/users/all', methods=['GET'])
+@login_required
+def get_all_users_for_admin():
+    if session.get('role') != 'superadmin':
+        return jsonify({"status": "fail", "message": "최종 관리자 권한이 필요합니다."}), 403
+    users = User.query.order_by(User.name).all()
+    user_list = [{
+        "id": u.id, "name": u.name or '', "department": u.department or '',
+        "position": u.position or '', "role": u.role, "site": u.site or ''
+    } for u in users]
+    return jsonify({"status": "success", "users": user_list})
+
+# [추가] 최종 관리자 전용 타 계정 정보 강제 수정 API
+@app.route('/api/admin/user/update_all', methods=['POST'])
+@login_required
+def admin_update_any_user():
+    if session.get('role') != 'superadmin':
+        return jsonify({"status": "fail", "message": "최종 관리자 권한이 필요합니다."}), 403
+    data = request.json
+    target_id = data.get('id')
+    user = User.query.filter_by(id=target_id).first()
+    if not user:
+        return jsonify({"status": "fail", "message": "사용자를 찾을 수 없습니다."}), 404
+
+    if target_id in ['admin', os.environ.get('APP_ADMIN_ID', 'admin')] and data.get('role') != 'superadmin':
+        return jsonify({"status": "fail", "message": "시스템 보호: 최고 관리자 계정의 권한은 하향할 수 없습니다."}), 403
+
+    if 'department' in data: user.department = data['department']
+    if 'position' in data: user.position = data['position']
+    if 'name' in data: user.name = data['name']
+    if 'site' in data: user.site = data['site']
+    if 'role' in data: user.role = data['role']
+    if 'pw' in data and data['pw']: # 비밀번호 변경(입력) 시에만 적용
+        user.pw = generate_password_hash(data['pw'], method='pbkdf2:sha256:50000')
+        user.pw_changed_at = get_utc_now()
+
+    db.session.commit()
+    return jsonify({"status": "success"})
+
 # [추가] DB 기반 로그 API
 @app.route('/api/log/add', methods=['POST'])
 @login_required
@@ -890,7 +931,8 @@ def admin_crud():
         if domain == 'site':
             if action == 'CREATE':
                 site_name = payload['name']
-                db.session.add(Site(name=site_name, buildings='[]'))
+                site_group = payload.get('group', '기타사업장')
+                db.session.add(Site(name=site_name, group=site_group, buildings='[]'))
                 db.session.flush() # 부모(사업장) 레코드를 먼저 DB에 반영하여 FK 에러 방지
                 
                 # [추가] 사업장 생성 시 '기타(ETC)' 장비 기본 등록
@@ -914,7 +956,10 @@ def admin_crud():
                         new_eq_id = f"{new_name}::{frontend_id}"
                         db.session.execute(text("UPDATE equipment SET id=:n WHERE id=:o"), {'n':new_eq_id, 'o':eq.id})
                 site = Site.query.filter_by(name=new_name).first()
-                if site: site.buildings = json.dumps(payload.get('buildings', []), ensure_ascii=False)
+                if site: 
+                    site.buildings = json.dumps(payload.get('buildings', []), ensure_ascii=False)
+                    if 'group' in payload:
+                        site.group = payload['group']
             elif action == 'DELETE':
                 db.session.execute(text("DELETE FROM site WHERE name=:n"), {'n':payload['name']})
                 
@@ -1112,10 +1157,17 @@ def init_db():
     with app.app_context():
         db.create_all()
         
+        # [마이그레이션] 기존 site 테이블에 group 컬럼 추가 (사업장 구분)
+        try:
+            db.session.execute(text('ALTER TABLE site ADD COLUMN `group` VARCHAR(50) DEFAULT \'기타사업장\''))
+            db.session.commit()
+        except:
+            db.session.rollback()
+
         # [마이그레이션] 기존 user 테이블에 site 컬럼 추가 (DB 업데이트)
         try:
             # [개선] 예약어 충돌 방지를 위해 테이블명을 큰따옴표로 감쌈
-            db.session.execute(text('ALTER TABLE "user" ADD COLUMN site VARCHAR(100)'))
+            db.session.execute(text('ALTER TABLE `user` ADD COLUMN site VARCHAR(100)'))
             db.session.commit()
         except:
             db.session.rollback()
@@ -1128,18 +1180,18 @@ def init_db():
             
         # [마이그레이션] 기존 user 테이블에 추가 정보 컬럼 추가
         try:
-            db.session.execute(text('ALTER TABLE "user" ADD COLUMN department VARCHAR(100)'))
-            db.session.execute(text('ALTER TABLE "user" ADD COLUMN position VARCHAR(100)'))
-            db.session.execute(text('ALTER TABLE "user" ADD COLUMN name VARCHAR(100)'))
+            db.session.execute(text('ALTER TABLE `user` ADD COLUMN department VARCHAR(100)'))
+            db.session.execute(text('ALTER TABLE `user` ADD COLUMN position VARCHAR(100)'))
+            db.session.execute(text('ALTER TABLE `user` ADD COLUMN name VARCHAR(100)'))
             db.session.commit()
         except:
             db.session.rollback()
         
         # [마이그레이션] 비밀번호 변경일(보안) 컬럼 추가
         try:
-            db.session.execute(text('ALTER TABLE "user" ADD COLUMN pw_changed_at DATETIME'))
+            db.session.execute(text('ALTER TABLE `user` ADD COLUMN pw_changed_at DATETIME'))
             db.session.commit()
-            db.session.execute(text('UPDATE "user" SET pw_changed_at = CURRENT_TIMESTAMP WHERE pw_changed_at IS NULL'))
+            db.session.execute(text('UPDATE `user` SET pw_changed_at = CURRENT_TIMESTAMP WHERE pw_changed_at IS NULL'))
             db.session.commit()
         except:
             db.session.rollback()
@@ -1181,15 +1233,6 @@ def init_db():
             db.session.commit()
             print(f"[*] Admin Account '{admin_id}' elevated to 'superadmin'")
             
-        # 일반 사용자(User) 초기 계정 자동 생성
-        user_id = os.environ.get('APP_USER_ID', 'user')
-        if not User.query.filter_by(id=user_id).first():
-            user_pw = os.environ.get('APP_USER_PW', secrets.token_urlsafe(8))
-            normal_user = User(id=user_id, pw=generate_password_hash(user_pw, method='pbkdf2:sha256:50000'), role='user', pw_changed_at=get_utc_now())
-            db.session.add(normal_user)
-            db.session.commit()
-            app.logger.warning(f"Initial User PW generated in DB: {user_pw}")
-            print(f"[*] User Account Created -> ID: {user_id} / PW: {user_pw}")
 
         # [수정] 가비아 서버(Python 3.9)에서 지원하지 않는 scrypt 해시를 pbkdf2로 강제 변환 및 평문 비밀번호 해싱
         all_users = User.query.all()

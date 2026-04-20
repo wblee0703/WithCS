@@ -240,17 +240,34 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
         wrapper.style.margin = '0';
         wrapper.style.position = 'relative'; // 부모 영역 기준점 설정
 
-        wrapper.innerHTML = `
-            <div id="${selectId}-trigger" data-placeholder="${placeholder}" class="log-select-trigger" style="min-height:30px; display:flex; align-items:center; background:#0d1117; color:#8b949e; border:1px solid #30363d; border-radius:4px; padding:6px 10px; font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${placeholder}</div>
-            <div id="${selectId}-dropdown" class="log-select-dropdown" style="width:100%; display:none; position:absolute; top:100%; left:0; z-index:1000; margin-top:4px; background:#161b22; border:1px solid #30363d; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); box-sizing:border-box;">
-                <div id="${selectId}-list" class="log-select-list" style="max-height: 200px; overflow-y: auto; padding: 8px;"></div>
-                <div class="log-select-footer" style="padding: 8px; border-top: 1px solid #30363d; background: #21262d; display: flex; gap: 5px;">
-                    <button type="button" class="btn-gray btn-select-all" style="flex: 1; padding: 4px 0; font-size: 12px;">전체 선택</button>
-                    <button type="button" class="btn-gray btn-deselect-all" style="flex: 1; padding: 4px 0; font-size: 12px;">전체 해제</button>
-                    <button type="button" class="btn-blue-sm btn-confirm" style="flex: 1;">선택 완료</button>
-                </div>
-            </div>
-        `;
+        let extraHeader = '';
+        if (selectId === 'sort-equip-select') {
+            const groups = ['전체', 'SEC', 'SKH 이천', 'SKH 청주', 'SCS 서안', 'SKH 우시', '해외 기타', '기타사업장'];
+            let btns = groups.map(g => `<button type="button" class="btn-gray equip-group-filter-btn sort-filter-btn" data-group="${g}">${g}</button>`).join('');
+            extraHeader = `<div id="equip-group-filter-container" class="sort-group-filter-container">${btns}</div>`;
+        } else if (selectId === 'sort-site-select') {
+            const siteGroups = ['SEC', 'SKH 이천', 'SKH 청주', 'SCS 서안', 'SKH 우시', '해외 기타', '기타사업장'];
+            let btns = siteGroups.map(g => `<button type="button" class="btn-gray site-group-toggle-btn sort-filter-btn" data-group="${g}">${g}</button>`).join('');
+            extraHeader = `<div id="site-group-toggle-container" class="sort-group-filter-container">${btns}</div>`;
+        }
+
+        const tpl = typeof getTemplateContent === 'function' ? getTemplateContent('sort-multi-select-template') : null;
+        if (tpl) {
+            const clone = tpl.firstElementChild.cloneNode(true);
+            const trigger = clone.querySelector('.log-select-trigger');
+            trigger.id = `${selectId}-trigger`;
+            trigger.dataset.placeholder = placeholder;
+            trigger.textContent = placeholder;
+
+            const dropdown = clone.querySelector('.log-select-dropdown');
+            dropdown.id = `${selectId}-dropdown`;
+            if (extraHeader) dropdown.insertAdjacentHTML('afterbegin', extraHeader);
+
+            const list = clone.querySelector('.log-select-list');
+            list.id = `${selectId}-list`;
+
+            wrapper.appendChild(clone);
+        }
         selectEl.parentNode.insertBefore(wrapper, selectEl.nextSibling);
 
         const trigger = wrapper.querySelector(`#${selectId}-trigger`);
@@ -279,9 +296,11 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
                 e.preventDefault(); // 포커스 아웃 방지
                 e.stopPropagation();
                 list.querySelectorAll('.log-select-item').forEach(el => {
-                    el.classList.add('selected');
-                    const checkIcon = el.querySelector('.check-icon');
-                    if (checkIcon) checkIcon.style.opacity = '1';
+                    if (el.style.display !== 'none') {
+                        el.classList.add('selected');
+                        const checkIcon = el.querySelector('.check-icon');
+                        if (checkIcon) checkIcon.style.opacity = '1';
+                    }
                 });
                 updateTriggerText();
                 selectEl.dispatchEvent(new Event('change'));
@@ -293,14 +312,79 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
                 e.preventDefault(); // 포커스 아웃 방지
                 e.stopPropagation();
                 list.querySelectorAll('.log-select-item').forEach(el => {
-                    el.classList.remove('selected');
-                    const checkIcon = el.querySelector('.check-icon');
-                    if (checkIcon) checkIcon.style.opacity = '0';
+                    if (el.style.display !== 'none') {
+                        el.classList.remove('selected');
+                        const checkIcon = el.querySelector('.check-icon');
+                        if (checkIcon) checkIcon.style.opacity = '0';
+                    }
                 });
                 updateTriggerText();
                 selectEl.dispatchEvent(new Event('change'));
             });
         }
+
+        if (selectId === 'sort-equip-select') {
+            const filterBtns = wrapper.querySelectorAll('.equip-group-filter-btn');
+            const targetList = wrapper.querySelector(`#${selectId}-list`);
+            filterBtns.forEach(btn => {
+                btn.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const targetGroup = btn.dataset.group;
+
+                    filterBtns.forEach(b => {
+                        if (b === btn) { b.classList.remove('btn-gray'); b.classList.add('btn-blue-sm'); }
+                        else { b.classList.remove('btn-blue-sm'); b.classList.add('btn-gray'); }
+                    });
+
+                    targetList.querySelectorAll('.log-select-item').forEach(item => {
+                        if (targetGroup === '전체' || item.dataset.siteGroup === targetGroup) {
+                            item.style.display = 'flex';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                });
+            });
+
+            const defaultBtn = wrapper.querySelector('.equip-group-filter-btn[data-group="전체"]');
+            if (defaultBtn) {
+                defaultBtn.classList.remove('btn-gray');
+                defaultBtn.classList.add('btn-blue-sm');
+            }
+        } else if (selectId === 'sort-site-select') {
+            const toggleBtns = wrapper.querySelectorAll('.site-group-toggle-btn');
+            const targetList = wrapper.querySelector(`#${selectId}-list`);
+            toggleBtns.forEach(btn => {
+                btn.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const targetGroup = btn.dataset.group;
+
+                    const groupItems = Array.from(targetList.querySelectorAll('.log-select-item')).filter(item => item.dataset.siteGroup === targetGroup);
+                    if (groupItems.length === 0) return;
+
+                    const allSelected = groupItems.every(item => item.classList.contains('selected'));
+
+                    groupItems.forEach(el => {
+                        if (allSelected) {
+                            el.classList.remove('selected');
+                            const checkIcon = el.querySelector('.check-icon');
+                            if (checkIcon) checkIcon.style.opacity = '0';
+                        } else {
+                            el.classList.add('selected');
+                            const checkIcon = el.querySelector('.check-icon');
+                            if (checkIcon) checkIcon.style.opacity = '1';
+                        }
+                    });
+
+                    updateTriggerText();
+                    selectEl.dispatchEvent(new Event('change'));
+                });
+            });
+        }
+
+
 
         confirmBtn.addEventListener('mousedown', (e) => {
             e.preventDefault(); // 포커스 아웃 방지
@@ -336,10 +420,16 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
 
     const options = Array.from(selectEl.options).filter(opt => opt.value);
     if (options.length === 0) {
-        list.innerHTML = '<div style="padding:10px; color:#8b949e; text-align:center; font-size:12px;">항목이 없습니다.</div>';
+        list.innerHTML = '<div class="list-empty-msg sort-dropdown-empty">항목이 없습니다.</div>';
         wrapper.dataset.knownValues = '[]';
     } else {
         const currentValues = [];
+        let activeGroup = '전체';
+        if (selectId === 'sort-equip-select') {
+            const activeBtn = wrapper.querySelector('.equip-group-filter-btn.btn-blue-sm');
+            if (activeBtn) activeGroup = activeBtn.dataset.group;
+        }
+
         options.forEach(opt => {
             const val = opt.value;
             const text = opt.textContent;
@@ -347,6 +437,14 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
             const div = document.createElement('div');
             div.className = 'log-select-item';
             div.dataset.value = val;
+            const siteGroup = opt.dataset.siteGroup || '기타사업장';
+            div.dataset.siteGroup = siteGroup;
+
+            if (activeGroup !== '전체' && siteGroup !== activeGroup) {
+                div.style.display = 'none';
+            } else {
+                div.style.display = 'flex';
+            }
 
             let isSelected = false;
             if (!isInitialized) {
@@ -362,7 +460,18 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
 
             if (isSelected) div.classList.add('selected');
 
-            div.innerHTML = `<span class="check-icon" style="margin-right:8px; opacity:${isSelected ? '1' : '0'}; font-weight:bold; color:#58a6ff; flex-shrink:0;">✓</span><span class="item-text" style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(text)}</span>`;
+            const itemTpl = typeof getTemplateContent === 'function' ? getTemplateContent('sort-select-item-template') : null;
+            if (itemTpl) {
+                const clone = itemTpl.firstElementChild.cloneNode(true);
+                const icon = clone.querySelector('.check-icon');
+                if (icon) icon.style.opacity = isSelected ? '1' : '0';
+                const textEl = clone.querySelector('.item-text');
+                if (textEl) textEl.textContent = text;
+                div.appendChild(clone);
+            } else {
+                div.innerHTML = `<span class="check-icon" style="opacity:${isSelected ? '1' : '0'};">✓</span><span class="item-text">${escapeHtml(text)}</span>`;
+            }
+
             div.addEventListener('mousedown', (e) => {
                 e.preventDefault(); // 클릭 시 포커스 잃음(blur) 방지로 클릭 이벤트 보장
                 e.stopPropagation();
@@ -419,9 +528,17 @@ function setupSortFilters() {
     siteSelect.innerHTML = '<option value="">전체 사업장</option>';
     Object.keys(data).sort().forEach(site => {
         if (!Array.isArray(data[site])) return;
+
+        let siteGroup = '기타사업장';
+        try {
+            const metaData = JSON.parse(localStorage.getItem(`site_meta_${site}`));
+            if (metaData && metaData.group) siteGroup = metaData.group;
+        } catch (e) { }
+
         const opt = document.createElement('option');
         opt.value = site;
-        opt.textContent = site;
+        opt.dataset.siteGroup = siteGroup;
+        opt.textContent = `[${siteGroup}] ${site}`;
         siteSelect.appendChild(opt);
     });
 
@@ -470,37 +587,27 @@ function setupSortFilters() {
     if (periodType && periodType.parentElement && !document.getElementById('sort-period-flex-wrapper')) {
         const flexWrapper = document.createElement('div');
         flexWrapper.id = 'sort-period-flex-wrapper';
-        flexWrapper.style.display = 'flex';
-        flexWrapper.style.flexWrap = 'wrap'; // [수정] 직접 입력 시 줄바꿈을 위해 추가
-        flexWrapper.style.gap = '5px';
-        flexWrapper.style.alignItems = 'center';
-        flexWrapper.style.width = '100%';
-        flexWrapper.style.marginBottom = '15px'; // 하단 여백 추가
+        flexWrapper.className = 'sort-period-flex-wrapper';
 
         periodType.parentElement.insertBefore(flexWrapper, periodType);
 
         periodType.classList.remove('full-width', 'mb-5');
-        periodType.style.flex = '0 0 auto';
-        periodType.style.width = 'auto';
-        periodType.style.margin = '0';
+        periodType.classList.add('sort-period-type');
         flexWrapper.appendChild(periodType);
 
         if (monthInput) {
-            monthInput.style.flex = '1';
-            monthInput.style.minWidth = '0';
             monthInput.classList.remove('mt-10');
+            monthInput.classList.add('sort-period-input');
             flexWrapper.appendChild(monthInput);
         }
         if (yearInput) {
-            yearInput.style.flex = '1';
-            yearInput.style.minWidth = '0';
             yearInput.classList.remove('mt-10');
+            yearInput.classList.add('sort-period-input');
             flexWrapper.appendChild(yearInput);
         }
         if (customInput) {
-            customInput.style.flex = '1 1 100%'; // [수정] 아래 줄 전체 너비 차지
-            customInput.style.minWidth = '0';
             customInput.classList.remove('mt-10');
+            customInput.classList.add('sort-period-custom');
             flexWrapper.appendChild(customInput);
         }
     }
@@ -529,21 +636,15 @@ function setupSortFilters() {
 
             if (e.target.value === 'month') {
                 if (monthInput) monthInput.style.display = 'block';
-                periodType.style.flex = '0 0 auto';
-                periodType.style.width = 'auto';
-                periodType.style.marginBottom = '0';
+                periodType.classList.remove('full-width-mode');
             }
             else if (e.target.value === 'year') {
                 if (yearInput) yearInput.style.display = 'block';
-                periodType.style.flex = '0 0 auto';
-                periodType.style.width = 'auto';
-                periodType.style.marginBottom = '0';
+                periodType.classList.remove('full-width-mode');
             }
             else {
                 if (customInput) customInput.style.display = 'flex';
-                periodType.style.flex = '1 1 100%';
-                periodType.style.width = '100%';
-                periodType.style.marginBottom = '5px';
+                periodType.classList.add('full-width-mode');
             }
         });
     }
@@ -687,7 +788,18 @@ function updateKeywordSuggestions() {
         const isSelected = currentSelected.includes(content);
         if (isSelected) div.classList.add('selected');
         div.dataset.value = content;
-        div.innerHTML = `<span class="check-icon" style="margin-right:8px; opacity:${isSelected ? '1' : '0'}; font-weight:bold; color:#58a6ff; flex-shrink:0;">✓</span><span style="flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(content)}</span>`;
+
+        const itemTpl = typeof getTemplateContent === 'function' ? getTemplateContent('sort-select-item-template') : null;
+        if (itemTpl) {
+            const clone = itemTpl.firstElementChild.cloneNode(true);
+            const icon = clone.querySelector('.check-icon');
+            if (icon) icon.style.opacity = isSelected ? '1' : '0';
+            const textEl = clone.querySelector('.item-text');
+            if (textEl) textEl.textContent = content;
+            div.appendChild(clone);
+        } else {
+            div.innerHTML = `<span class="check-icon" style="opacity:${isSelected ? '1' : '0'};">✓</span><span class="item-text">${escapeHtml(content)}</span>`;
+        }
         div.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -778,6 +890,13 @@ function updateSortEquipSelect(sites, buildings, models, data) {
 
     sites.forEach(site => {
         if (!data[site] || !Array.isArray(data[site])) return;
+
+        let siteGroup = '기타사업장';
+        try {
+            const metaData = JSON.parse(localStorage.getItem(`site_meta_${site}`));
+            if (metaData && metaData.group) siteGroup = metaData.group;
+        } catch (e) { }
+
         data[site].forEach(equip => {
             if (typeof equip !== 'string') return;
             const detailData = JSON.parse(localStorage.getItem(`details_${site}_${equip}`)) || {};
@@ -803,6 +922,7 @@ function updateSortEquipSelect(sites, buildings, models, data) {
 
             const opt = document.createElement('option');
             opt.value = equip;
+            opt.dataset.siteGroup = siteGroup;
             opt.textContent = sites.length > 1 ? `${site} - ${displayText}` : displayText;
             equipSelect.appendChild(opt);
         });
@@ -1025,6 +1145,12 @@ function performSortSearch() {
         if (siteFilters.length === 0) return; // 아무것도 선택 안 했으면 패스
         if (!isSiteAll && !siteFilters.includes(site)) return; // 전체 선택이 아닐 때만 포함 여부 검사
 
+        let siteGroup = '기타사업장';
+        try {
+            const metaData = JSON.parse(localStorage.getItem(`site_meta_${site}`));
+            if (metaData && metaData.group) siteGroup = metaData.group;
+        } catch (e) { }
+
         if (data[site]) {
             data[site].forEach(equip => {
                 if (typeof equip !== 'string') return;
@@ -1127,7 +1253,7 @@ function performSortSearch() {
                                 const parts = cleanContent.split(' - ');
                                 cleanContent = parts.length > 1 ? parts[1].trim() : parts[0].trim();
                             }
-                              // [수정] 규격(spec) 텍스트 분리 및 제거하여 정확한 매칭 수행
+                            // [수정] 규격(spec) 텍스트 분리 및 제거하여 정확한 매칭 수행
                             const specMatch = cleanContent.match(/ \[(.*?)\]$/);
                             if (specMatch) cleanContent = cleanContent.replace(specMatch[0], '');
 
@@ -1155,6 +1281,7 @@ function performSortSearch() {
                         return {
                             id: itemObj.id,
                             date: itemDate,
+                            siteGroup: siteGroup,
                             site: site,
                             building: equipBuilding,
                             equipRaw: equip,
@@ -1232,19 +1359,13 @@ function renderSortList(results) {
         if (headerContainer && !document.getElementById('sort-inner-search-container')) {
             let searchContainer = document.createElement('div');
             searchContainer.id = 'sort-inner-search-container';
-            searchContainer.style.display = 'inline-flex';
-            searchContainer.style.marginLeft = '15px';
-            searchContainer.style.alignItems = 'center';
+            searchContainer.className = 'sort-inner-search-container';
 
             let input = document.createElement('input');
             input.type = 'text';
             input.id = 'sort-inner-search';
             input.className = 'input-dark';
             input.placeholder = '결과 내 텍스트 검색...';
-            input.style.padding = '4px 8px';
-            input.style.fontSize = '12px';
-            input.style.height = '26px';
-            input.style.width = '200px';
 
             input.addEventListener('input', () => {
                 renderSortListTableOnly();
@@ -1285,7 +1406,7 @@ function renderSortListTableOnly() {
     if (keyword) {
         const keywords = keyword.split(/\s+/);
         results = results.filter(row => {
-            const text = `${row.date} ${row.site} ${row.modelName} ${row.equipName} ${row.serial} ${row.custName} ${row.type} ${row.detailType} ${row.content} ${row.costType} ${row.worker} ${row.md} ${row.status} ${row.memo}`.toLowerCase();
+            const text = `${row.date} ${row.siteGroup} ${row.site} ${row.modelName} ${row.equipName} ${row.serial} ${row.custName} ${row.type} ${row.detailType} ${row.content} ${row.costType} ${row.worker} ${row.md} ${row.status} ${row.memo}`.toLowerCase();
             return keywords.every(kw => text.includes(kw));
         });
     }
@@ -1299,59 +1420,85 @@ function renderSortListTableOnly() {
     if (!tbody) return;
     tbody.innerHTML = '';
 
+
     if (results.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" class="list-empty-msg" style="text-align:center; padding: 20px; color:#8b949e;">검색된 결과가 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="11" class="list-empty-msg sort-empty-row">검색된 결과가 없습니다.</td></tr>';
         return;
     }
 
     results.forEach(row => {
         const tr = document.createElement('tr');
-        tr.style.cursor = 'pointer';
-        tr.onmouseover = () => tr.style.backgroundColor = '#21262d';
-        tr.onmouseout = () => tr.style.backgroundColor = 'transparent';
+        tr.className = 'sort-result-row';
 
         // [요청] 장비명 표시를 모델명(약어), 시리얼, 고객사장비명 순으로 3줄로 변경
         let subInfo = '';
         if (row.custName) {
-            subInfo = `<div style="color:#3fb950; font-weight:bold; font-size: 12px; margin-top: 2px;">[${escapeHtml(row.custName)}]</div>`;
+            subInfo = `<div class="equip-sub-info">[${escapeHtml(row.custName)}]</div>`;
         } else if (row.serial) {
-            subInfo = `<div style="color:#3fb950; font-weight:bold; font-size: 12px; margin-top: 2px;">[${escapeHtml(row.serial)}]</div>`;
+            subInfo = `<div class="equip-sub-info">[${escapeHtml(row.serial)}]</div>`;
         }
         let equipDisplayHtml = `<div>${escapeHtml(row.equipName)}</div>${subInfo}`;
 
         let detailHtml = escapeHtml(row.detailType);
         if (row.detailType && row.detailType.includes(' > ')) {
             const parts = row.detailType.split(' > ');
-            detailHtml = `<div>${escapeHtml(parts[0])}</div><div style="color:#8b949e; font-size: 12px; margin-top: 2px;">${escapeHtml(parts[1])}</div>`;
+            detailHtml = `<div>${escapeHtml(parts[0])}</div><div class="detail-sub-text">${escapeHtml(parts[1])}</div>`;
         }
 
         const badgeClass = row.type ? row.type.replace(/\s/g, '') : 'default';
-        const statusColor = row.status === '완료' ? '#3fb950' : '#d29922';
+        const statusClass = row.status === '완료' ? 'status-complete' : 'status-pending';
 
-        tr.innerHTML = `
-            <td>${row.date}</td>
-            <td>${escapeHtml(row.site)}</td>
-            <td>${escapeHtml(row.modelName)}</td>
-            <td style="text-align: left; padding-left: 10px;">${equipDisplayHtml}</td>
-            <td><span class="badge ${badgeClass}" style="padding: 2px 6px; font-size: 11px;">${escapeHtml(row.type)}</span></td>
-            <td style="text-align: left; padding-left: 10px;">${detailHtml}</td>
-            <td style="text-align: left; padding-left: 10px;">${escapeHtml(row.content)}</td>
-            <td>${escapeHtml(row.costType)}</td>
-            <td title="${escapeHtml(row.worker)}">${escapeHtml(row.worker) || '-'}</td>
-            <td>${escapeHtml(row.md)}</td>
-            <td style="color: ${statusColor}; font-weight: bold;">${row.status}</td>
-        `;
+        let siteDisplayHtml = `<div class="site-group-text">${escapeHtml(row.siteGroup)}</div><div class="site-name">${escapeHtml(row.site)}</div>`;
 
-        tr.onclick = () => {
-            // [수정] 작업이 완료된 로그일 경우 해당 로그 ID를 파라미터로 넘겨 상세 팝업이 바로 뜨도록 연동
-            let url = `maintenance.html?site=${encodeURIComponent(row.site)}&equip=${encodeURIComponent(row.equipRaw)}`;
-            if (row.status === '완료' && row.id) url += `&logId=${row.id}`;
-            window.location.href = url;
-        };
+        const rowTpl = typeof getTemplateContent === 'function' ? getTemplateContent('sort-table-row-template') : null;
+        if (rowTpl) {
+            const clone = rowTpl.firstElementChild.cloneNode(true);
+            clone.querySelector('.col-date').textContent = row.date;
+            clone.querySelector('.col-site').innerHTML = siteDisplayHtml;
+            clone.querySelector('.col-model').textContent = row.modelName;
+            clone.querySelector('.col-equip').innerHTML = equipDisplayHtml;
+            clone.querySelector('.col-type').innerHTML = `<span class="badge ${badgeClass} sort-badge">${escapeHtml(row.type)}</span>`;
+            clone.querySelector('.col-detail').innerHTML = detailHtml;
+            clone.querySelector('.col-content').textContent = row.content;
+            clone.querySelector('.col-cost').textContent = row.costType;
+            const workerTd = clone.querySelector('.col-worker');
+            workerTd.title = row.worker;
+            workerTd.textContent = row.worker || '-';
+            clone.querySelector('.col-md').textContent = row.md;
+            const statusTd = clone.querySelector('.col-status');
+            statusTd.classList.add(statusClass);
+            statusTd.textContent = row.status;
 
-        tbody.appendChild(tr);
+            clone.onclick = () => {
+                let url = `maintenance.html?site=${encodeURIComponent(row.site)}&equip=${encodeURIComponent(row.equipRaw)}`;
+                if (row.status === '완료' && row.id) url += `&logId=${row.id}`;
+                window.location.href = url;
+            };
+            tbody.appendChild(clone);
+        } else {
+            tr.innerHTML = `
+                <td>${row.date}</td>
+                <td>${siteDisplayHtml}</td>
+                <td>${escapeHtml(row.modelName)}</td>
+                <td class="text-left pl-10">${equipDisplayHtml}</td>
+                <td><span class="badge ${badgeClass} sort-badge">${escapeHtml(row.type)}</span></td>
+                <td class="text-left pl-10">${detailHtml}</td>
+                <td class="text-left pl-10">${escapeHtml(row.content)}</td>
+                <td>${escapeHtml(row.costType)}</td>
+                <td title="${escapeHtml(row.worker)}">${escapeHtml(row.worker) || '-'}</td>
+                <td>${escapeHtml(row.md)}</td>
+                <td class="sort-status-text ${statusClass}">${row.status}</td>
+            `;
+            tr.onclick = () => {
+                let url = `maintenance.html?site=${encodeURIComponent(row.site)}&equip=${encodeURIComponent(row.equipRaw)}`;
+                if (row.status === '완료' && row.id) url += `&logId=${row.id}`;
+                window.location.href = url;
+            };
+            tbody.appendChild(tr);
+        }
     });
 }
+
 
 // [5.3] 검색 결과 통계 데이터 집계 및 하단 막대 차트 렌더링
 function renderSortChart(results) {
@@ -1399,12 +1546,12 @@ function renderSortChart(results) {
     if (irregularLegend) irregularLegend.innerHTML = '';
 
     if (results.length === 0) {
-        container.innerHTML = '<div class="list-empty-msg" style="width: 100%; text-align: center; margin-top: auto; margin-bottom: auto;">검색된 결과가 없습니다.</div>';
-        if (solContainer) solContainer.innerHTML = '<div class="list-empty-msg" style="width: 100%; text-align: center; margin-top: auto; margin-bottom: auto;">검색된 결과가 없습니다.</div>';
-        if (typeContainer) typeContainer.innerHTML = '<div class="list-empty-msg" style="width: 100%; text-align: center; margin-top: auto; margin-bottom: auto;">검색된 결과가 없습니다.</div>';
-        if (detailTypeContainer) detailTypeContainer.innerHTML = '<div class="list-empty-msg" style="width: 100%; text-align: center; margin-top: auto; margin-bottom: auto;">검색된 결과가 없습니다.</div>';
-        if (detailType2Container) detailType2Container.innerHTML = '<div class="list-empty-msg" style="width: 100%; text-align: center; margin-top: auto; margin-bottom: auto;">검색된 결과가 없습니다.</div>';
-        if (irregularContainer) irregularContainer.innerHTML = '<div class="list-empty-msg" style="width: 100%; text-align: center; margin-top: auto; margin-bottom: auto;">검색된 결과가 없습니다.</div>';
+        container.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
+        if (solContainer) solContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
+        if (typeContainer) typeContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
+        if (detailTypeContainer) detailTypeContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
+        if (detailType2Container) detailType2Container.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
+        if (irregularContainer) irregularContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
         return;
     }
 
@@ -1444,7 +1591,7 @@ function renderSortChart(results) {
                 if (pureItem) {
                     const cleanContent = pureItem.replace(/\[지연\]/g, '').trim();
                     let targetContent = cleanContent;
-                    
+
                     // [수정] 규격(spec) 텍스트 분리 및 제거하여 정확한 매칭 수행
                     const specMatch = targetContent.match(/ \[(.*?)\]$/);
                     if (specMatch) targetContent = targetContent.replace(specMatch[0], '');
@@ -1539,22 +1686,25 @@ function renderSortChart(results) {
             if (isGrouped) {
                 const groupedDataObj = {};
                 const groupedSitesSet = new Set();
-                
+
                 Object.keys(dataObj).forEach(category => {
                     groupedDataObj[category] = {};
                     Object.keys(dataObj[category]).forEach(site => {
-                        let groupName = '기타 사업장';
-                        if (site === 'SKH 이천' || site === 'SKH 청주') groupName = site;
-                        else if (site === 'SEC 평택 본사' || site === 'SEC 화성 본사') groupName = '기타 사업장';
-                        else if (site && site.includes('SEC')) groupName = 'SEC';
-                        
+                        let groupName = '기타사업장';
+                        try {
+                            const metaData = JSON.parse(localStorage.getItem(`site_meta_${site}`));
+                            if (metaData && metaData.group) {
+                                groupName = metaData.group;
+                            }
+                        } catch (e) { }
+
                         groupedSitesSet.add(groupName);
                         groupedDataObj[category][groupName] = (groupedDataObj[category][groupName] || 0) + dataObj[category][site];
                     });
                 });
-                
+
                 currentDataObj = groupedDataObj;
-                const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타 사업장'];
+                const order = ['SEC', 'SKH 이천', 'SKH 청주', 'SCS 서안', 'SKH 우시', '해외 기타', '기타사업장'];
                 currentSitesArray = order.filter(name => groupedSitesSet.has(name));
                 Array.from(groupedSitesSet).forEach(name => {
                     if (!order.includes(name)) currentSitesArray.push(name);
@@ -1572,7 +1722,7 @@ function renderSortChart(results) {
             });
 
             if (maxCount === 0) {
-                targetContainer.innerHTML = '<div class="list-empty-msg" style="width: 100%; text-align: center; margin-top: auto; margin-bottom: auto;">표시할 데이터가 없습니다.</div>';
+                targetContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">표시할 데이터가 없습니다.</div>';
                 if (targetLegend) targetLegend.innerHTML = ''; // 범례도 비움
                 if (targetYAxis) targetYAxis.innerHTML = ''; // Y축도 비움
                 return;
@@ -1597,10 +1747,15 @@ function renderSortChart(results) {
             // [추가] 그룹화 시 지정된 고유 색상 적용
             if (isGrouped) {
                 currentSitesArray.forEach(site => {
-                    if (site === 'SEC') siteColorMap[site] = '#034EA2'; // 파랑
-                    else if (site === 'SKH 이천') siteColorMap[site] = '#eb371f'; // 빨강
-                    else if (site === 'SKH 청주') siteColorMap[site] = '#F37021'; // 주황
-                    else siteColorMap[site] = '#8957e5'; // 보라 (기타 사업장)
+                    let color = '#8957e5';
+                    if (site === 'SEC') color = '#034EA2';
+                    else if (site === 'SKH 이천') color = '#eb371f';
+                    else if (site === 'SKH 청주') color = '#F37021';
+                    else if (site === 'SCS 서안') color = '#0096D6';
+                    else if (site === 'SKH 우시') color = '#d29922';
+                    else if (site === '해외 기타') color = '#1b7c83';
+
+                    siteColorMap[site] = color;
                 });
             } else {
                 currentSitesArray.forEach((site, idx) => {
@@ -1649,7 +1804,15 @@ function renderSortChart(results) {
                 trackDiv.className = 'bar-track';
                 let totalInGroup = 0;
 
-                currentSitesArray.forEach(site => {
+                // [수정] 항목(category)마다 사업장(site) 막대를 수량 내림차순으로 정렬
+                const sortedSitesForCategory = [...currentSitesArray].sort((a, b) => {
+                    const countA = currentDataObj[category][a] || 0;
+                    const countB = currentDataObj[category][b] || 0;
+                    if (countB !== countA) return countB - countA;
+                    return a.localeCompare(b);
+                });
+
+                sortedSitesForCategory.forEach(site => {
                     if (localSelectedSite && localSelectedSite !== site) return;
 
                     const count = currentDataObj[category][site] || 0;
@@ -1693,12 +1856,13 @@ function renderSortChart(results) {
 // [6.1] 검색된 결과를 CSV 파일 양식으로 변환 및 다운로드 추출
 function exportSortResultsToCSV(results) {
     let csvContent = '\uFEFF';
-    csvContent += '날짜,상태,사업장,건물명,모델명,장비명(약어),Serial No,고객사 장비명,구분,세부구분,물품상세구분,작업내용,비용처리,작업자,공수,상세메모\n';
+    csvContent += '날짜,상태,사업장 구분,사업장,건물명,모델명,장비명(약어),Serial No,고객사 장비명,구분,세부구분,물품상세구분,작업내용,비용처리,작업자,공수,상세메모\n';
 
     results.forEach(row => {
         const cols = [
             row.date,
             row.status,
+            row.siteGroup,
             row.site,
             row.building,
             row.modelName,

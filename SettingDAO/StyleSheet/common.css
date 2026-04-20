@@ -600,6 +600,143 @@ input:disabled {
 #add-user-modal .modal-body {
     overflow: visible !important;
 }
+/* ==========================================================================
+   모든 계정 관리 팝업 스타일 (All Users Management)
+   ========================================================================== */
+#all-users-modal {
+    z-index: 11000;
+}
+.all-users-modal-window {
+    width: 800px;
+    height: 600px;
+    max-height: 90vh;
+    max-width: 95vw;
+    display: flex;
+    flex-direction: column;
+}
+.all-users-modal-body {
+    display: flex;
+    flex-direction: row;
+    gap: 15px;
+    padding: 15px;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    flex-wrap: nowrap;
+}
+.all-users-list-panel {
+    flex: 1;
+    width: 50%;
+    min-height: 0;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    background: #0d1117;
+    box-sizing: border-box;
+}
+.all-users-search-container {
+    padding: 10px;
+    border-bottom: 1px solid #30363d;
+}
+.all-users-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+.all-users-list li {
+    padding: 10px;
+    border-bottom: 1px solid #30363d;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #c9d1d9;
+    font-size: 13px;
+}
+.all-users-list li.active {
+    background-color: #1f6feb;
+}
+#all-users-edit-form {
+    flex: 1;
+    width: 50%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #21262d;
+    padding: 15px;
+    border-radius: 4px;
+    border: 1px solid #30363d;
+    overflow-y: auto;
+    box-sizing: border-box;
+    opacity: 0.3;
+    pointer-events: none;
+}
+#all-users-edit-form h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #58a6ff;
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 5px;
+}
+.all-users-form-row {
+    margin-bottom: 5px;
+}
+.all-users-form-row.last-row {
+    margin-bottom: 15px;
+}
+.all-users-label {
+    width: 80px;
+    flex-shrink: 0;
+}
+.all-users-select {
+    flex: 1;
+    min-width: 0;
+    height: 34px;
+    padding: 6px 10px;
+    font-size: 13px;
+    box-sizing: border-box;
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    border-radius: 4px;
+    cursor: pointer;
+    outline: none;
+}
+.all-users-select:focus {
+    border-color: #58a6ff;
+}
+.all-users-select option {
+    background-color: #161b22;
+    color: #e6edf3;
+}
+.all-users-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+}
+.all-users-actions button {
+    flex: 1;
+    padding: 10px;
+    font-size: 14px;
+}
+#btn-delete-all-user {
+    background: #da3633;
+    color: #fff;
+    border: 1px solid #da3633;
+    justify-content: center;
+}
+.btn-close-transparent {
+    background: none;
+    border: none;
+    color: #8b949e;
+    cursor: pointer;
+    font-size: 16px;
+}
 
 /* ==========================================================================
    8. 버튼 (Buttons)
@@ -1081,6 +1218,16 @@ body.role-admin .btn-list-setting {
         overflow: visible !important;
         flex: 1 !important;
         padding: 15px !important;
+    }
+
+    /* 모든 계정 관리 팝업 모바일 대응 */
+    .all-users-modal-body {
+        flex-direction: column !important;
+        overflow-y: auto !important;
+    }
+    .all-users-list-panel, #all-users-edit-form {
+        width: 100% !important;
+        flex: none !important;
     }
 
     /* 본인 확인 및 비밀번호 강제 변경 팝업 모바일 크기 최적화 */

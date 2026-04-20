@@ -29,6 +29,7 @@ let initialAdminFormData = { site: null, equip: null, item: null };
 function getSiteFormState() {
     return JSON.stringify({
         name: document.getElementById('site-info-name') ? document.getElementById('site-info-name').value : '',
+        group: document.getElementById('site-info-group') ? document.getElementById('site-info-group').value : '기타사업장',
         buildings: currentBuildingList
     });
 }
@@ -142,7 +143,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // [추가] 폼 변경 감지 이벤트 위임 등록 (입력창 타이핑 및 드롭다운 선택 감지)
         const siteForm = document.getElementById('admin-site-form');
-        if (siteForm) siteForm.addEventListener('input', () => checkAdminFormDirty('site'));
+        if (siteForm) {
+            siteForm.addEventListener('input', () => checkAdminFormDirty('site'));
+            siteForm.addEventListener('change', () => checkAdminFormDirty('site'));
+        }
 
         const equipForm = document.getElementById('admin-equip-form');
         if (equipForm) {
@@ -237,6 +241,15 @@ function setupSiteMgmt() {
     // 초기 리스트 렌더링
     renderAdminSiteList();
 
+    // [추가] 사업장 구분 드롭다운 크기(높이) 조절
+    const groupSelect = document.getElementById('site-info-group');
+    if (groupSelect) {
+        groupSelect.style.height = '34px';
+        groupSelect.style.padding = '6px 10px';
+        groupSelect.style.fontSize = '13px';
+        groupSelect.style.boxSizing = 'border-box';
+    }
+
     // 검색 필터
     const searchInput = document.getElementById('admin-site-search');
     if (searchInput) {
@@ -254,7 +267,7 @@ function setupSiteMgmt() {
             if (storageData[newName]) return alert('이미 존재하는 사업장입니다.');
 
             // [수정] 백엔드 파라미터 호환성을 위해 new_name 및 빈 배열(buildings) 추가 전송
-            const success = await window.syncAdminDB('site', 'CREATE', { name: newName, new_name: newName, buildings: [] });
+            const success = await window.syncAdminDB('site', 'CREATE', { name: newName, new_name: newName, buildings: [], group: '기타사업장' });
             if (!success) return alert('DB 통신 중 오류가 발생했습니다.');
 
             // [수정] 사업장 생성 시 기타(ETC) 장비 기본 할당 (사이드바 로직과 일치화)
@@ -326,16 +339,17 @@ function exportSitesToCsv() {
 
     // 엑셀에서 한글 깨짐 방지를 위한 BOM 문자 추가
     let csvContent = '\uFEFF';
-    csvContent += '사업장,건물목록\n';
+    csvContent += '사업장,사업장구분,건물목록\n';
 
     sites.forEach(site => {
         const metaKey = `site_meta_${site}`;
         const metaData = JSON.parse(localStorage.getItem(metaKey)) || {};
         const buildings = metaData.buildings || [];
+        const group = metaData.group || '기타사업장';
 
         const siteName = site.replace(/"/g, '""');
         const buildingStr = buildings.join(', ').replace(/"/g, '""');
-        csvContent += `"${siteName}","${buildingStr}"\n`;
+        csvContent += `"${siteName}","${group}","${buildingStr}"\n`;
     });
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
@@ -418,6 +432,9 @@ function loadSiteDetail(siteName) {
     // 2. 추가 정보 (메타데이터) 로드
     const metaKey = `site_meta_${siteName}`;
     const metaData = JSON.parse(localStorage.getItem(metaKey)) || {};
+
+    const groupSelect = document.getElementById('site-info-group');
+    if (groupSelect) groupSelect.value = metaData.group || '기타사업장';
 
     currentBuildingList = metaData.buildings || [];
     renderBuildingList();
@@ -512,12 +529,15 @@ async function handleSiteSave() {
     const newName = document.getElementById('site-info-name').value.trim();
     if (!newName) { alert('사업장 이름을 입력해주세요.'); return false; }
 
+    const groupSelect = document.getElementById('site-info-group');
+    const groupVal = groupSelect ? groupSelect.value : '기타사업장';
+
     // 1. 이름 변경 시 처리
     if (newName !== currentAdminSite) {
         if (storageData[newName]) { alert('이미 존재하는 사업장 이름입니다.'); return false; }
         if (!confirm(`사업장 이름을 '${currentAdminSite}'에서 '${newName}'(으)로 변경하시겠습니까?\n관련된 모든 장비 및 데이터가 이동됩니다.`)) return false;
 
-        const success = await syncAdminDB('site', 'UPDATE', { old_name: currentAdminSite, new_name: newName, buildings: currentBuildingList });
+        const success = await syncAdminDB('site', 'UPDATE', { old_name: currentAdminSite, new_name: newName, buildings: currentBuildingList, group: groupVal });
         if (!success) return alert('DB 수정 중 오류가 발생했습니다.');
 
         // 데이터 마이그레이션 (handleRename 로직 응용)
@@ -541,12 +561,13 @@ async function handleSiteSave() {
         addSystemLog('RENAME_SITE', currentAdminSite, `To: ${newName}`);
         currentAdminSite = newName; // 현재 선택값 갱신
     } else {
-        const success = await syncAdminDB('site', 'UPDATE', { old_name: currentAdminSite, new_name: currentAdminSite, buildings: currentBuildingList });
+        const success = await syncAdminDB('site', 'UPDATE', { old_name: currentAdminSite, new_name: currentAdminSite, buildings: currentBuildingList, group: groupVal });
         if (!success) return alert('DB 수정 중 오류가 발생했습니다.');
     }
 
     // 2. 메타데이터 저장 (localStorage에 별도 저장)
     const metaData = {
+        group: groupVal,
         buildings: currentBuildingList
     };
     localStorage.setItem(`site_meta_${currentAdminSite}`, JSON.stringify(metaData));

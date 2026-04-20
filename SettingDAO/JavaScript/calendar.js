@@ -8,6 +8,17 @@ var currentSearchFilters = { site: '', equip: '' };
 let currentScheduleTarget = null;
 let expandedViewId = null;
 
+// [추가] 필터 사업장 매칭 헬퍼 함수
+window.isSiteMatched = function(eventSite, filterSite) {
+    if (!filterSite) return true;
+    const siteGroup = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(eventSite) : null;
+    if (Array.isArray(filterSite)) {
+        if (filterSite.length === 0) return true;
+        return filterSite.includes(eventSite) || (siteGroup && filterSite.includes(siteGroup));
+    }
+    return eventSite === filterSite || siteGroup === filterSite;
+};
+
 document.addEventListener('DOMContentLoaded', () => {
     setupCalendar();
     setupSearchModal();
@@ -241,10 +252,18 @@ function setupCalendar() {
         });
     }
     if (filterBtn) {
-        filterBtn.onclick = () => openSearchModal();
+        filterBtn.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openSearchModal();
+        };
     }
     if (targetInfoEl) {
-        targetInfoEl.onclick = () => openSearchModal();
+        targetInfoEl.onclick = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openSearchModal();
+        };
         targetInfoEl.style.cursor = 'pointer';
         targetInfoEl.title = '클릭하여 상세 검색 열기';
     }
@@ -309,8 +328,9 @@ function renderCalendar() {
 
     if (targetInfoEl) {
         let infoText = '';
-        if (currentSearchFilters.site) {
-            infoText = `<${currentSearchFilters.site}`;
+        const siteText = Array.isArray(currentSearchFilters.site) ? currentSearchFilters.site.join(', ') : currentSearchFilters.site;
+        if (siteText) {
+            infoText = `<${siteText}`;
             if (currentSearchFilters.equip) {
                 const parts = currentSearchFilters.equip.split('::');
                 infoText += `, ${parts[0]}`;
@@ -391,7 +411,7 @@ function renderMonthGrid(year, month, titleId, gridId) {
                         (event.worker && event.worker.toLowerCase().includes(keyword))
                     );
 
-                    const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site || (typeof window.getSiteGroupName === 'function' && window.getSiteGroupName(event.site) === currentSearchFilters.site);
+                    const matchSite = window.isSiteMatched(event.site, currentSearchFilters.site);
                     const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
 
                     return matchKeyword && matchSite && matchEquip;
@@ -767,7 +787,7 @@ function openCalendarPopup(dateStr, events) {
                         if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
                             dayEvents = dayEvents.filter(event => {
                                 const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
-                                const matchSite = !currentSearchFilters.site || event.site === currentSearchFilters.site || (typeof window.getSiteGroupName === 'function' && window.getSiteGroupName(event.site) === currentSearchFilters.site);
+                                const matchSite = window.isSiteMatched(event.site, currentSearchFilters.site);
                                 const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
                                 return matchKeyword && matchSite && matchEquip;
                             });
@@ -1059,27 +1079,87 @@ function setupSearchModal() {
     const closeBtn = document.getElementById('btn-close-search-modal');
     const resetBtn = document.getElementById('btn-reset-search-filter');
     const applyBtn = document.getElementById('btn-apply-search-filter');
-    const siteSelect = document.getElementById('search-site-select');
     const equipSelect = document.getElementById('search-equip-select');
 
     if (!modal) return;
 
     if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
 
-    if (siteSelect) {
-        siteSelect.onchange = () => {
-            updateSearchEquipSelect(siteSelect.value);
+    // 사업장 다중 선택 드롭다운 이벤트
+    const siteTrigger = document.getElementById('search-site-trigger');
+    const siteDropdown = document.getElementById('search-site-dropdown');
+    const siteList = document.getElementById('search-site-list');
+    const btnSiteAll = document.getElementById('btn-search-site-all');
+    const btnSiteClear = document.getElementById('btn-search-site-clear');
+    const btnSiteConfirm = document.getElementById('btn-search-site-confirm');
+
+    if (siteTrigger && siteDropdown) {
+        siteTrigger.onclick = (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== siteDropdown) d.classList.remove('show'); });
+            siteDropdown.classList.toggle('show');
         };
+
+        if (btnSiteAll) {
+            btnSiteAll.onclick = (e) => {
+                e.stopPropagation();
+                if (siteList) {
+                    siteList.querySelectorAll('.log-select-item').forEach(el => {
+                        el.classList.add('selected');
+                        const icon = el.querySelector('.check-icon');
+                        if (icon) icon.style.opacity = '1';
+                    });
+                    updateSiteTriggerText();
+                    updateSearchEquipSelect(getSelectedSites());
+                }
+            };
+        }
+
+        if (btnSiteClear) {
+            btnSiteClear.onclick = (e) => {
+                e.stopPropagation();
+                if (siteList) {
+                    siteList.querySelectorAll('.log-select-item').forEach(el => {
+                        el.classList.remove('selected');
+                        const icon = el.querySelector('.check-icon');
+                        if (icon) icon.style.opacity = '0';
+                    });
+                    updateSiteTriggerText();
+                    updateSearchEquipSelect(getSelectedSites());
+                }
+            };
+        }
+
+        if (btnSiteConfirm) {
+            btnSiteConfirm.onclick = (e) => {
+                e.stopPropagation();
+                siteDropdown.classList.remove('show');
+            };
+        }
     }
 
     if (resetBtn) {
         resetBtn.textContent = '내 사업장 검색';
         resetBtn.onclick = () => {
             const userSite = sessionStorage.getItem('userSite') || '';
-            if (siteSelect) siteSelect.value = userSite;
-            updateSearchEquipSelect(userSite);
+                currentSearchFilters = { site: userSite ? [userSite] : [], equip: '' };
+                const siteList = document.getElementById('search-site-list');
+                if (siteList) {
+                    siteList.querySelectorAll('.log-select-item').forEach(el => {
+                        if (el.dataset.value === userSite) {
+                            el.classList.add('selected');
+                            const icon = el.querySelector('.check-icon');
+                            if (icon) icon.style.opacity = '1';
+                        } else {
+                            el.classList.remove('selected');
+                            const icon = el.querySelector('.check-icon');
+                            if (icon) icon.style.opacity = '0';
+                        }
+                    });
+                    updateSiteTriggerText();
+                }
+            updateSearchEquipSelect(currentSearchFilters.site);
             if (equipSelect) equipSelect.value = '';
-            currentSearchFilters = { site: userSite, equip: '' };
             modal.style.display = 'none';
             renderCalendar();
         };
@@ -1088,9 +1168,13 @@ function setupSearchModal() {
 
     if (applyBtn) {
         applyBtn.onclick = () => {
-            const site = siteSelect.value;
-            const equip = equipSelect.value;
-            currentSearchFilters = { site, equip };
+            let sites = getSelectedSites();
+            const totalSites = document.querySelectorAll('#search-site-list .log-select-item').length;
+            if (sites.length === totalSites || sites.length === 0) {
+                sites = []; // 전체 선택 또는 선택 없음 시 빈 배열 할당
+            }
+                const eq = equipSelect ? equipSelect.value : '';
+                currentSearchFilters = { site: sites, equip: eq };
             modal.style.display = 'none';
             renderCalendar();
         };
@@ -1124,28 +1208,44 @@ function setupSearchModal() {
 
 function openSearchModal() {
     const modal = document.getElementById('calendar-search-modal');
-    const siteSelect = document.getElementById('search-site-select');
     const equipSelect = document.getElementById('search-equip-select');
+    const siteList = document.getElementById('search-site-list');
 
-    if (!modal) return;
-
-    const data = getDeviceDataMap();
-    siteSelect.innerHTML = '<option value="">전체 사업장</option>';
-
+    if (!modal || !siteList) return;
+     const data = getDeviceDataMap();
     const sites = Object.keys(data).filter(k => k !== 'models' && k !== 'details').sort();
     if (!sites.includes('기타 사업장')) {
         sites.push('기타 사업장');
     }
 
+    siteList.innerHTML = '';
+    
+    const currentFilterSites = Array.isArray(currentSearchFilters.site) ? currentSearchFilters.site : (currentSearchFilters.site ? [currentSearchFilters.site] : []);
+    const isAllSelected = currentFilterSites.length === 0;
+
     sites.forEach(site => {
-        const option = document.createElement('option');
-        option.value = site;
-        option.textContent = site;
-        if (currentSearchFilters.site === site) option.selected = true;
-        siteSelect.appendChild(option);
+        const isSelected = isAllSelected || currentFilterSites.includes(site);
+        const div = document.createElement('div');
+        div.className = 'log-select-item';
+        if (isSelected) div.classList.add('selected');
+        div.dataset.value = site;
+        div.innerHTML = `<span class="check-icon" style="flex: 1; text-align: center; opacity:${isSelected ? '1' : '0'}; font-weight:bold; color:#58a6ff;">✓</span><span class="item-text" style="flex: 9; padding-left: 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(site)}</span>`;
+        
+        div.onclick = (e) => {
+            e.stopPropagation();
+            div.classList.toggle('selected');
+            const icon = div.querySelector('.check-icon');
+            if (icon) icon.style.opacity = div.classList.contains('selected') ? '1' : '0';
+            updateSiteTriggerText();
+            updateSearchEquipSelect(getSelectedSites());
+        };
+        siteList.appendChild(div);
     });
 
+    updateSiteTriggerText();
+
     updateSearchEquipSelect(currentSearchFilters.site);
+
 
     // [추가] 팝업을 열었을 때 기존에 선택된 장비 정보 복원
     if (currentSearchFilters.equip) {
@@ -1155,7 +1255,8 @@ function openSearchModal() {
             const parts = currentSearchFilters.equip.split('::');
             const name = parts[0] || '';
             const serial = parts.length > 1 ? parts[1] : '';
-            const key = `details_${currentSearchFilters.site}_${currentSearchFilters.equip}`;
+            const targetSite = Array.isArray(currentSearchFilters.site) ? (currentSearchFilters.site.length > 0 ? currentSearchFilters.site[0] : '') : currentSearchFilters.site;
+            const key = `details_${targetSite}_${currentSearchFilters.equip}`;
             const detailData = JSON.parse(localStorage.getItem(key)) || {};
             const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
@@ -1173,6 +1274,33 @@ function openSearchModal() {
     modal.style.display = 'flex';
 }
 
+function getSelectedSites() {
+    const list = document.getElementById('search-site-list');
+    if (!list) return [];
+    return Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
+}
+
+function updateSiteTriggerText() {
+    const list = document.getElementById('search-site-list');
+    const trigger = document.getElementById('search-site-trigger');
+    if (!list || !trigger) return;
+    
+    const selected = Array.from(list.querySelectorAll('.log-select-item.selected'));
+    const total = list.querySelectorAll('.log-select-item').length;
+
+    if (selected.length === total || selected.length === 0) {
+        trigger.textContent = '전체 사업장';
+        trigger.style.color = '#e6edf3';
+    } else if (selected.length === 1) {
+        trigger.textContent = selected[0].dataset.value;
+        trigger.style.color = '#e6edf3';
+    } else {
+        trigger.textContent = `${selected[0].dataset.value} 외 ${selected.length - 1}개`;
+        trigger.style.color = '#e6edf3';
+    }
+    trigger.title = selected.map(el => el.dataset.value).join('\n');
+}
+
 function updateSearchEquipSelect(site) {
     const equipSelect = document.getElementById('search-equip-select');
     const trigger = document.getElementById('search-equip-trigger');
@@ -1185,8 +1313,10 @@ function updateSearchEquipSelect(site) {
         equipSelect.value = '';
     }
 
+    let siteArr = Array.isArray(site) ? site : (site ? [site] : []);
+
     if (trigger) {
-        if (!site) {
+        if (siteArr.length === 0) {
             trigger.textContent = '사업장을 먼저 선택해주세요';
             trigger.classList.add('disabled');
             trigger.style.color = '#8b949e';
@@ -1205,15 +1335,20 @@ function updateSearchEquipSelect(site) {
         }
     }
 
-    if (!site) return;
+    if (siteArr.length === 0) return;
 
     const data = getDeviceDataMap();
-    const equips = data[site] ? [...data[site]] : [];
+    let equips = [];
+    siteArr.forEach(s => {
+        if (data[s]) {
+            data[s].forEach(eq => equips.push({ site: s, equip: eq }));
+        }
+    });
 
     if (equipSelect) {
-        equips.forEach(equip => {
+        equips.forEach(item => {
             const option = document.createElement('option');
-            option.value = equip;
+            option.value = item.equip;
             equipSelect.appendChild(option);
         });
     }
@@ -1224,11 +1359,11 @@ function updateSearchEquipSelect(site) {
         list.innerHTML = '';
         const keywords = searchTerm.toLowerCase().split(/\s+/);
 
-        let matches = equips.filter(equip => {
-            const parts = equip.split('::');
+        let matches = equips.filter(item => {
+            const parts = item.equip.split('::');
             const name = parts[0] || '';
             const serial = parts.length > 1 ? parts[1] : '';
-            const key = `details_${site}_${equip}`;
+            const key = `details_${item.site}_${item.equip}`;
             const detailData = JSON.parse(localStorage.getItem(key)) || {};
             const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
@@ -1253,12 +1388,12 @@ function updateSearchEquipSelect(site) {
         }
 
         if (matches.length > 0) {
-            matches.forEach(equip => {
-                const parts = equip.split('::');
+            matches.forEach(item => {
+                const parts = item.equip.split('::');
                 const name = parts[0] || '';
                 const serial = parts.length > 1 ? parts[1] : '';
 
-                const key = `details_${site}_${equip}`;
+                const key = `details_${item.site}_${item.equip}`;
                 const detailData = JSON.parse(localStorage.getItem(key)) || {};
                 const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
@@ -1281,7 +1416,7 @@ function updateSearchEquipSelect(site) {
 
                 li.addEventListener('mousedown', (ev) => {
                     ev.preventDefault();
-                    if (equipSelect) equipSelect.value = equip;
+                    if (equipSelect) equipSelect.value = item.equip;
                     trigger.innerHTML = `${escapeHtml(name)}${subInfoHtml}`;
                     trigger.title = plainDisplayValue;
                     if (dropdown) dropdown.classList.remove('show');

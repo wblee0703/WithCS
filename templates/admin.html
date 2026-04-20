@@ -42,9 +42,12 @@
                                     <span>등록된 사업장</span>
                                     <span id="admin-site-count" class="badge">0</span>
                                 </div>
-                                <button id="btn-export-site-csv" class="btn-settings" title="CSV 내보내기" style="font-size: 12px; padding: 2px 6px; border-radius: 4px; border: 1px solid #30363d; background: #21262d; color: #e6edf3;">CSV 내보내기</button>
+                                <button id="btn-export-site-csv" class="btn-settings" title="CSV 내보내기"
+                                    style="font-size: 12px; padding: 2px 6px; border-radius: 4px; border: 1px solid #30363d; background: #21262d; color: #e6edf3;">CSV
+                                    내보내기</button>
                             </div>
-                            <input type="text" id="admin-site-search" class="input-dark full-width compact-select" placeholder="사업장명 검색" autocomplete="off">
+                            <input type="text" id="admin-site-search" class="input-dark full-width compact-select"
+                                placeholder="사업장명 검색" autocomplete="off">
                         </div>
                         <ul id="admin-site-list" class="admin-list">
                             <!-- JS로 렌더링 -->
@@ -66,6 +69,18 @@
                             <div class="form-group">
                                 <label>사업장명 (ID)</label>
                                 <input type="text" id="site-info-name" class="input-dark">
+                            </div>
+                            <div class="form-group">
+                                <label>사업장 구분</label>
+                            <select id="site-info-group" class="input-dark">
+                                <option value="SEC">SEC</option>
+                                <option value="SKH 이천">SKH 이천</option>
+                                <option value="SKH 청주">SKH 청주</option>
+                                <option value="기타사업장" selected>기타사업장</option>
+                                <option value="SCS 서안">SCS 서안</option>
+                                <option value="SKH 우시">SKH 우시</option>
+                                <option value="해외 기타">해외 기타</option>
+                            </select>
                             </div>
                             <div class="form-group">
                                 <label>건물 목록</label>
@@ -105,7 +120,9 @@
                                     <span>장비 모델</span>
                                     <span id="admin-model-count" class="badge">0</span>
                                     <button id="btn-model-settings" class="btn-settings" title="관리 모드 토글">⚙️</button>
-                                    <button id="btn-export-model-csv" class="btn-settings" title="CSV 내보내기" style="font-size: 12px; padding: 2px 6px; border-radius: 4px; border: 1px solid #30363d; background: #21262d; color: #e6edf3;">CSV 내보내기</button>
+                                    <button id="btn-export-model-csv" class="btn-settings" title="CSV 내보내기"
+                                        style="font-size: 12px; padding: 2px 6px; border-radius: 4px; border: 1px solid #30363d; background: #21262d; color: #e6edf3;">CSV
+                                        내보내기</button>
                                 </div>
                             </div>
                             <input type="text" id="admin-model-search" class="input-dark compact-select full-width"
@@ -167,7 +184,8 @@
                                 <div class="flex-12">
                                     <label class="form-label-custom">장비명 (모델)</label>
                                     <div class="autocomplete-wrapper">
-                                        <input type="text" id="equip-info-name" class="input-dark full-width cursor-pointer"
+                                        <input type="text" id="equip-info-name"
+                                            class="input-dark full-width cursor-pointer"
                                             placeholder="검색 후 선택 (직접 입력 불가)" autocomplete="off">
                                         <ul id="equip-model-suggestions" class="suggestion-list"></ul>
                                     </div>
@@ -187,11 +205,14 @@
                             <div class="flex-row-gap-10" style="margin-top: 10px;">
                                 <div class="flex-10">
                                     <label class="form-label-custom">프로젝트 번호</label>
-                                    <input type="text" id="equip-info-project-no" class="input-dark full-width" placeholder="프로젝트 번호" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
+                                    <input type="text" id="equip-info-project-no" class="input-dark full-width"
+                                        placeholder="프로젝트 번호"
+                                        style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                 </div>
                                 <div class="flex-10">
                                     <label class="form-label-custom">장비 구분</label>
-                                    <select id="equip-info-status" class="input-dark full-width" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
+                                    <select id="equip-info-status" class="input-dark full-width"
+                                        style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                         <option value="">장비 구분 선택</option>
                                         <option value="셋업 장비">셋업 장비</option>
                                         <option value="가동 장비">가동 장비</option>
@@ -201,15 +222,22 @@
                                 </div>
                                 <div class="flex-10">
                                     <label class="form-label-custom">납품일</label>
-                                    <input type="date" id="equip-info-delivery-date" class="input-dark full-width custom-date-icon" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
+                                    <input type="date" id="equip-info-delivery-date"
+                                        class="input-dark full-width custom-date-icon"
+                                        style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                 </div>
                                 <div class="flex-10">
                                     <label class="form-label-custom">워런티 시작일</label>
-                                    <input type="date" id="equip-info-warranty-start" class="input-dark full-width custom-date-icon" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
+                                    <input type="date" id="equip-info-warranty-start"
+                                        class="input-dark full-width custom-date-icon"
+                                        style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                 </div>
                                 <div class="flex-10">
                                     <label class="form-label-custom">워런티 기간(개월)</label>
-                                    <input type="number" id="equip-info-warranty-period" class="input-dark full-width" min="0" placeholder="개월 수 입력" oninput="if(this.value < 0) this.value = Math.abs(this.value)" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
+                                    <input type="number" id="equip-info-warranty-period" class="input-dark full-width"
+                                        min="0" placeholder="개월 수 입력"
+                                        oninput="if(this.value < 0) this.value = Math.abs(this.value)"
+                                        style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                 </div>
                             </div>
 
@@ -219,17 +247,22 @@
                                 <div class="flex-row-gap-10">
                                     <div class="flex-10">
                                         <label class="form-label-custom">건물명</label>
-                                        <select id="equip-info-building" class="input-dark full-width" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
+                                        <select id="equip-info-building" class="input-dark full-width"
+                                            style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                             <option value="">건물 선택</option>
                                         </select>
                                     </div>
                                     <div class="flex-05">
                                         <label class="form-label-custom">층</label>
-                                        <input type="text" id="equip-info-floor" class="input-dark full-width" placeholder="층수" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
+                                        <input type="text" id="equip-info-floor" class="input-dark full-width"
+                                            placeholder="층수"
+                                            style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                     </div>
                                     <div class="flex-10">
                                         <label class="form-label-custom">세부 위치</label>
-                                        <input type="text" id="equip-info-location" class="input-dark full-width" placeholder="세부 위치" style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
+                                        <input type="text" id="equip-info-location" class="input-dark full-width"
+                                            placeholder="세부 위치"
+                                            style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                     </div>
                                 </div>
 
@@ -301,7 +334,8 @@
                                 <span>등록된 물품 목록</span>
                                 <span id="admin-item-count" class="badge">0</span>
                             </div>
-                            <input type="text" id="admin-item-search" class="input-dark compact-select search-input-right" placeholder="전체 정보 검색"
+                            <input type="text" id="admin-item-search"
+                                class="input-dark compact-select search-input-right" placeholder="전체 정보 검색"
                                 autocomplete="off">
                         </div>
                         <div class="admin-item-scroll-wrapper">
@@ -378,14 +412,16 @@
                             <div class="form-group">
                                 <div class="flex-between-center mb-5">
                                     <label class="m-0">사용 장비 (모델명)</label>
-                                    <button id="btn-add-item-equip" class="btn-green-sm btn-green-micro" type="button">추가</button>
+                                    <button id="btn-add-item-equip" class="btn-green-sm btn-green-micro"
+                                        type="button">추가</button>
                                 </div>
                                 <div class="autocomplete-wrapper tag-input-container">
                                     <div id="item-equip-tags" class="tag-container" style="flex: 1; min-height: 24px;">
                                     </div>
                                     <input type="hidden" id="item-info-equip">
                                     <div id="item-equip-suggestions-box" class="suggestion-box">
-                                        <ul id="item-equip-suggestions-list" class="suggestion-list static-suggestion-list">
+                                        <ul id="item-equip-suggestions-list"
+                                            class="suggestion-list static-suggestion-list">
                                         </ul>
                                         <div class="suggestion-box-footer">
                                             <button type="button" id="btn-apply-equip-selection"
@@ -448,19 +484,22 @@
                                 <li data-type="온라인점검">온라인점검</li>
                             </ul>
                         </div>
-    
+
                         <!-- 중앙2: 분류 선택 -->
                         <!-- [수정] 아래 style 속성에서 250px 값을 변경하여 세부 구분 리스트 너비를 고정으로 조절할 수 있습니다. -->
-                        <div class="admin-col-list" id="check-type-subcategory-panel" style="flex: 0 0 220px; max-width: 220px;">
+                        <div class="admin-col-list" id="check-type-subcategory-panel"
+                            style="flex: 0 0 220px; max-width: 220px;">
                             <div class="list-header">
                                 <div style="display: flex; align-items: center; gap: 5px;">
                                     <span>세부 구분</span>
-                                    <button id="btn-subcategory-settings" class="btn-settings" title="관리 모드 토글">⚙️</button>
+                                    <button id="btn-subcategory-settings" class="btn-settings"
+                                        title="관리 모드 토글">⚙️</button>
                                 </div>
                             </div>
                             <ul id="check-type-subcategory-list" class="admin-list opacity-50">
                             </ul>
-                            <div class="list-footer opacity-50" id="check-type-subcategory-footer" style="display: none;">
+                            <div class="list-footer opacity-50" id="check-type-subcategory-footer"
+                                style="display: none;">
                                 <input type="text" id="check-type-subcategory-input" placeholder="분류명 추가"
                                     class="input-dark full-width">
                                 <button id="btn-add-check-type-subcategory" class="btn-green full-width">추가</button>
@@ -479,7 +518,8 @@
                             </div>
                             <p class="detail-desc" id="check-type-detail-desc">장비와 점검 구분을 선택하면 세부 항목을 관리할 수 있습니다.</p>
                         </div>
-                        <div id="check-type-detail-container" class="admin-form-container max-w-100" style="display:none;">
+                        <div id="check-type-detail-container" class="admin-form-container max-w-100"
+                            style="display:none;">
                             <div class="admin-list-header mb-0">
                                 <div class="model-col col-center-1">구분</div>
                                 <div class="model-col col-center-3">작업 세부 내용</div>
@@ -491,10 +531,12 @@
                             <div class="form-group form-section-divider">
                                 <label style="margin-bottom: 5px;">신규 점검 항목 추가</label>
                                 <div style="display: flex; gap: 5px;">
-                                    <select id="check-type-item-subcategory-select" class="input-dark select-add-item"></select>
+                                    <select id="check-type-item-subcategory-select"
+                                        class="input-dark select-add-item"></select>
                                     <div class="autocomplete-wrapper" style="flex: 3;">
-                                        <input type="text" id="check-type-item-content" class="input-dark full-width input-add-item"
-                                            placeholder="작업 세부 내용 입력" autocomplete="off">
+                                        <input type="text" id="check-type-item-content"
+                                            class="input-dark full-width input-add-item" placeholder="작업 세부 내용 입력"
+                                            autocomplete="off">
                                         <ul id="check-type-item-suggestions" class="suggestion-list"></ul>
                                     </div>
                                     <button id="btn-add-check-type-item" class="btn-green-sm btn-add-item">추가</button>
@@ -526,7 +568,8 @@
                     </div>
                     <div class="form-group">
                         <label>원본 장비 선택</label>
-                        <select id="load-check-type-equip-select" class="input-dark full-width modal-select-lg" disabled>
+                        <select id="load-check-type-equip-select" class="input-dark full-width modal-select-lg"
+                            disabled>
                             <option value="">장비 선택</option>
                         </select>
                     </div>

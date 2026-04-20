@@ -105,6 +105,7 @@ function updateIntegratedDashboard() {
 
         // 데이터 집계
         Object.keys(data).forEach(site => {
+            let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장';
             if (data[site] && Array.isArray(data[site])) {
                 data[site].forEach(equip => {
                     const equipKey = `${site}::${equip}`;
@@ -145,7 +146,7 @@ function updateIntegratedDashboard() {
                             setupCount++;
 
                             // 막대그래프용 데이터 (완료 포함)
-                            allSiteCounts[site] = (allSiteCounts[site] || 0) + 1;
+                            allSiteCounts[groupName] = (allSiteCounts[groupName] || 0) + 1;
                             totalActiveAll++;
 
                             if (progress === 100) {
@@ -154,7 +155,7 @@ function updateIntegratedDashboard() {
                                 summaryActiveCount++;
                             }
 
-                            if (!integSetupSelectedSite || integSetupSelectedSite === site) {
+                            if (!integSetupSelectedSite || integSetupSelectedSite === groupName) {
                                 if (progress === 100) {
                                     completedEquips.push({ site, equip, progress, date: completionDate });
                                 } else {
@@ -235,7 +236,15 @@ function renderIntegEquipStats(data) {
     
     if (!siteChartEl || !modelChartEl) return;
 
-    const groupCounts = { 'SKH 이천': 0, 'SKH 청주': 0, 'SEC': 0, '기타 사업장': 0 };
+    const groupCounts = {
+        'SEC': { total: 0, setup: 0 },
+        'SKH 이천': { total: 0, setup: 0 },
+        'SKH 청주': { total: 0, setup: 0 },
+        'SCS 서안': { total: 0, setup: 0 },
+        'SKH 우시': { total: 0, setup: 0 },
+        '해외 기타': { total: 0, setup: 0 },
+        '기타사업장': { total: 0, setup: 0 }
+    };
     const modelCounts = {};
     const allModels = new Set();
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
@@ -251,29 +260,34 @@ function renderIntegEquipStats(data) {
             if (validEquips.length > 0) {
                 actualSiteCount++;
                 
-                let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타 사업장';
-                if (groupCounts[groupName] === undefined) groupCounts[groupName] = 0;
-
-                groupCounts[groupName] += validEquips.length;
+                let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장';
+                if (!groupCounts[groupName]) groupCounts[groupName] = { total: 0, setup: 0 };
 
                 validEquips.forEach(equip => {
                     totalEquipCount++;
+                    groupCounts[groupName].total++;
+
                     const model = equip.split('::')[0]; // 장비명(모델) 추출
                     allModels.add(model);
+
+                    let isSetupEquip = false;
+                    // 셋업 중인 장비 개수 파악
+                    const equipKey = `${site}::${equip}`;
+                    const detailData = setupData[equipKey];
+                    if (detailData && detailData.setupDetails) {
+                        const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
+                        if (completeItem && completeItem.startDate && !completeItem.completed) {
+                            isSetupEquip = true;
+                            groupCounts[groupName].setup++;
+                        }
+                    }
 
                     // 그룹(사업장) 기반으로 모델 필터링 적용
                     if (!integEquipSelectedGroup || integEquipSelectedGroup === groupName) {
                         if (!modelCounts[model]) modelCounts[model] = { total: 0, setup: 0 };
                         modelCounts[model].total++;
-
-                        // 셋업 중인 장비 개수 파악
-                        const equipKey = `${site}::${equip}`;
-                        const detailData = setupData[equipKey];
-                        if (detailData && detailData.setupDetails) {
-                            const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
-                            if (completeItem && completeItem.startDate && !completeItem.completed) {
-                                modelCounts[model].setup++;
-                            }
+                        if (isSetupEquip) {
+                            modelCounts[model].setup++;
                         }
                     }
                 });
@@ -292,14 +306,18 @@ function renderIntegEquipStats(data) {
 
     // 1. 그룹 별 장비 현황 차트 렌더링 (장비 수 내림차순 정렬)
     const sortedGroupCounts = Object.entries(groupCounts)
-        .sort(([, a], [, b]) => b - a)
+        .filter(([, v]) => v.total > 0) // 장비가 1대 이상 있는 그룹만 표시
+        .sort(([, a], [, b]) => b.total - a.total)
         .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
 
     const groupGradients = {
         'SEC': 'linear-gradient(to top, #034EA2, #4a8eff)',
         'SKH 이천': 'linear-gradient(to top, #eb371f, #ff7b72)',
         'SKH 청주': 'linear-gradient(to top, #F37021, #ff9e66)',
-        '기타 사업장': 'linear-gradient(to top, #8957e5, #a371f7)'
+        'SCS 서안': 'linear-gradient(to top, #0096D6, #66c2ff)',
+        'SKH 우시': 'linear-gradient(to top, #d29922, #e3b341)',
+        '해외 기타': 'linear-gradient(to top, #1b7c83, #3fb950)',
+        '기타사업장': 'linear-gradient(to top, #8957e5, #a371f7)'
     };
     
     renderChartWithAxis(siteChartEl, sortedGroupCounts, groupGradients, (key) => {
@@ -309,6 +327,7 @@ function renderIntegEquipStats(data) {
 
     // 2. 모델 별 장비 현황 차트 렌더링 (장비 수 내림차순 정렬)
     const sortedModelCounts = Object.entries(modelCounts)
+        .filter(([, v]) => v.total > 0)
         .sort(([, a], [, b]) => b.total - a.total)
         .reduce((r, [k, v]) => ({ ...r, [k]: v }), {});
 
@@ -423,9 +442,10 @@ function renderIntegSetupSiteStats() {
     Object.keys(setupData).forEach(key => {
         const parts = key.split('::');
         const site = parts[0];
+        let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장';
         const data = setupData[key];
 
-        if (integSetupSelectedSite && site !== integSetupSelectedSite) return;
+        if (integSetupSelectedSite && groupName !== integSetupSelectedSite) return;
 
         if (data && data.setupDetails) {
             let hasActivity = false;
@@ -447,10 +467,10 @@ function renderIntegSetupSiteStats() {
                 totalForRate++;
                 if (completeItem && completeItem.completed) {
                     completedCount++;
-                    completedSiteCounts[site] = (completedSiteCounts[site] || 0) + 1;
+                    completedSiteCounts[groupName] = (completedSiteCounts[groupName] || 0) + 1;
                 } else {
                     activeCount++;
-                    siteCounts[site] = (siteCounts[site] || 0) + 1;
+                    siteCounts[groupName] = (siteCounts[groupName] || 0) + 1;
                 }
             }
         }
@@ -571,7 +591,7 @@ async function renderIntegMaintStats(mainData) {
         if (typeTitleEl) typeTitleEl.textContent = '사업장별 공수(M/D) 현황';
     }
 
-    // [수정] 작업 진행률, 공수 현황, 작업 구분별 현황 3개의 카드를 가로 한 줄에 3:3:4 비율로 배치
+    // [수정] 작업 진행률, 공수 현황, 작업 구분별 현황 3개의 카드를 가로 한 줄에 1:1:1 비율로 배치
     if (progressChartEl && mdChartEl && itemChartEl) {
         const pGroup = progressChartEl.closest('.status-group');
         const mGroup = mdChartEl.closest('.status-group');
@@ -586,10 +606,10 @@ async function renderIntegMaintStats(mainData) {
                 wrapper.appendChild(iGroup);
             }
             
-            // 3:3:4 비율 할당
-            pGroup.style.flex = '3';
-            mGroup.style.flex = '3';
-            iGroup.style.flex = '4';
+            // 1:1:1 비율 할당
+            pGroup.style.flex = '1';
+            mGroup.style.flex = '1';
+            iGroup.style.flex = '1';
         }
     }
 
@@ -653,7 +673,7 @@ async function renderIntegMaintStats(mainData) {
         }
     } catch (e) { console.error(e); }
 
-    const siteWorkerCounts = { 'SKH 청주': 0, 'SKH 이천': 0, 'SEC': 0, '기타 사업장': 0 };
+    const siteWorkerCounts = { 'SEC': 0, 'SKH 이천': 0, 'SKH 청주': 0, 'SCS 서안': 0, 'SKH 우시': 0, '해외 기타': 0, '기타사업장': 0 };
     const adminNames = new Set(); // [추가] 실제 작업 공수에서 관리자를 제외하기 위한 명단
 
     workers.forEach(w => {
@@ -669,10 +689,22 @@ async function renderIntegMaintStats(mainData) {
             }
         }
         
-        const wSite = (typeof w === 'object' && w !== null) ? (w.site || '기타 사업장') : '기타 사업장';
-        let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(wSite) : '기타 사업장';
-        if (siteWorkerCounts[groupName] !== undefined) siteWorkerCounts[groupName]++;
-        else siteWorkerCounts['기타 사업장']++;
+        // [수정] 사업장 기준이 아닌 소속(Department) 기준으로 총 공수(인원) 계산 매핑
+        const deptToGroupMap = {
+            '운영1팀(삼성)': 'SEC',
+            '운영1팀(이천)': 'SKH 이천',
+            '운영1팀(청주)': 'SKH 청주',
+            '운영1팀(본사)': '기타사업장',
+            '해외(서안)': 'SCS 서안',
+            '해외(우시)': 'SKH 우시',
+            '해외(기타)': '해외 기타'
+        };
+        const wDept = (typeof w === 'object' && w !== null) ? (w.department || '').trim() : '';
+        let groupName = deptToGroupMap[wDept];
+
+        if (groupName && siteWorkerCounts[groupName] !== undefined) {
+            siteWorkerCounts[groupName]++;
+        }
     });
 
     // [디버깅용] 브라우저 개발자 도구(F12) 콘솔창에서 계산에서 제외된 관리자 명단과 최종 인원수를 명확히 확인
@@ -694,17 +726,20 @@ async function renderIntegMaintStats(mainData) {
     };
 
     const groupStats = {
+        'SEC': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['SEC'] || 0) },
         'SKH 청주': { total: 0, completed: 0, md: 0, totalMd: workingDays * siteWorkerCounts['SKH 청주'] },
         'SKH 이천': { total: 0, completed: 0, md: 0, totalMd: workingDays * siteWorkerCounts['SKH 이천'] },
-        'SEC': { total: 0, completed: 0, md: 0, totalMd: workingDays * siteWorkerCounts['SEC'] },
-        '기타 사업장': { total: 0, completed: 0, md: 0, totalMd: workingDays * siteWorkerCounts['기타 사업장'] }
+        'SCS 서안': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['SCS 서안'] || 0) },
+        'SKH 우시': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['SKH 우시'] || 0) },
+        '해외 기타': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['해외 기타'] || 0) },
+        '기타사업장': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['기타사업장'] || 0) }
     };
 
     const typeCounts = { '정기': 0, '비정기': 0, '고객대응': 0, '용액제조': 0, '온라인점검': 0 };
 
     Object.keys(mainData).forEach(site => {
         if (mainData[site] && Array.isArray(mainData[site])) {
-            let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타 사업장';
+            let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장';
             if (!groupStats[groupName]) groupStats[groupName] = { total: 0, completed: 0, md: 0 };
 
             const isTypeCountValid = !integSelectedSite || integSelectedSite === groupName;
@@ -760,12 +795,15 @@ async function renderIntegMaintStats(mainData) {
         }
     });
 
-    const groups = ['SEC', 'SKH 이천', 'SKH 청주', '기타 사업장'];
+    const groups = ['SEC', 'SKH 이천', 'SKH 청주', 'SCS 서안', 'SKH 우시', '해외 기타', '기타사업장'];
     const groupColors = {
         'SEC': 'linear-gradient(to top, #034EA2, #4a8eff)',
         'SKH 이천': 'linear-gradient(to top, #eb371f, #ff7b72)', // [요청] 붉은 계열로 색상 변경
         'SKH 청주': 'linear-gradient(to top, #F37021, #ff9e66)',
-        '기타 사업장': 'linear-gradient(to top, #8957e5, #a371f7)'
+        'SCS 서안': 'linear-gradient(to top, #0096D6, #66c2ff)',
+        'SKH 우시': 'linear-gradient(to top, #d29922, #e3b341)',
+        '해외 기타': 'linear-gradient(to top, #1b7c83, #3fb950)',
+        '기타사업장': 'linear-gradient(to top, #8957e5, #a371f7)'
     };
 
     if (progressChartEl) {
@@ -862,7 +900,7 @@ async function renderIntegMaintStats(mainData) {
         filterGroup.style.marginBottom = '0px'; // [수정] 필터 버튼과 막대그래프 사이 빈 공간(여백) 완전 제거
         filterGroup.style.flexWrap = 'wrap';
 
-        const filterOptions = ['전체', 'SEC', 'SKH 이천', 'SKH 청주', '기타 사업장'];
+        const filterOptions = ['전체', 'SEC', 'SKH 이천', 'SKH 청주', 'SCS 서안', 'SKH 우시', '해외 기타', '기타사업장'];
         filterOptions.forEach(opt => {
             const btn = document.createElement('button');
             btn.textContent = opt;
