@@ -321,6 +321,7 @@
 
 .sort-dropdown {
     width: 100%;
+    min-width: 260px; /* 드롭다운 창 최소 너비 확보 */
     display: none;
     position: absolute;
     top: 100%;
@@ -349,14 +350,15 @@
 }
 
 .sort-check-icon {
-    flex: 1;
+    flex: 0 0 16px; /* 비율 대신 고정 너비 할당 */
     text-align: center;
     font-weight: bold;
     color: #58a6ff;
 }
 
 .sort-item-text {
-    flex: 9;
+    flex: 1; /* 남은 전체 너비 사용 */
+    min-width: 0; /* 말줄임표 처리를 위한 필수 속성 */
     padding-left: 8px;
     white-space: nowrap;
     overflow: hidden;

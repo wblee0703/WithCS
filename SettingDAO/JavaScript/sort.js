@@ -469,7 +469,7 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
                 if (textEl) textEl.textContent = text;
                 div.appendChild(clone);
             } else {
-                div.innerHTML = `<span class="check-icon" style="opacity:${isSelected ? '1' : '0'};">✓</span><span class="item-text">${escapeHtml(text)}</span>`;
+                div.innerHTML = `<span class="check-icon sort-check-icon" style="opacity:${isSelected ? '1' : '0'};">✓</span><span class="item-text sort-item-text">${escapeHtml(text)}</span>`;
             }
 
             div.addEventListener('mousedown', (e) => {
@@ -798,7 +798,7 @@ function updateKeywordSuggestions() {
             if (textEl) textEl.textContent = content;
             div.appendChild(clone);
         } else {
-            div.innerHTML = `<span class="check-icon" style="opacity:${isSelected ? '1' : '0'};">✓</span><span class="item-text">${escapeHtml(content)}</span>`;
+            div.innerHTML = `<span class="check-icon sort-check-icon" style="opacity:${isSelected ? '1' : '0'};">✓</span><span class="item-text sort-item-text">${escapeHtml(content)}</span>`;
         }
         div.addEventListener('mousedown', (e) => {
             e.preventDefault();
