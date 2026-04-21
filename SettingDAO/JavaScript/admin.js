@@ -1249,21 +1249,26 @@ function handleEquipCsvImport(event) {
                 }
                 cols.push(curr);
 
-                const site = cols[0] || '';
-                const name = cols[1] || '';
-                const serial = cols[2] || '';
-                const custEquipName = cols[3] || '';
-                const projectNo = cols[4] || '';
-                const equipStatus = cols[5] || '';
-                const deliveryDate = cols[6] || '';
-                const warrantyStart = cols[7] || '';
-                const warrantyPeriod = cols[8] || '';
-                const building = cols[9] || '';
-                const floor = cols[10] || '';
-                const location = cols[11] || '';
-                const manager = cols[12] || '';
-                const contact = cols[13] || '';
-                const email = cols[14] || '';
+                const site = cols[0] ? cols[0].trim() : '';
+                const name = cols[1] ? cols[1].trim() : '';
+                const serial = cols[2] ? cols[2].trim() : '';
+                const custEquipName = cols[3] ? cols[3].trim() : '';
+                const projectNo = cols[4] ? cols[4].trim() : '';
+                let equipStatus = cols[5] ? cols[5].trim() : '';
+                const deliveryDate = cols[6] ? cols[6].trim() : '';
+                const warrantyStart = cols[7] ? cols[7].trim() : '';
+                const warrantyPeriod = cols[8] ? cols[8].trim() : '';
+                const building = cols[9] ? cols[9].trim() : '';
+                const floor = cols[10] ? cols[10].trim() : '';
+                const location = cols[11] ? cols[11].trim() : '';
+                const manager = cols[12] ? cols[12].trim() : '';
+                const contact = cols[13] ? cols[13].trim() : '';
+                const email = cols[14] ? cols[14].trim() : '';
+
+                // [추가] 장비 구분(드롭다운) 값 매칭을 위한 띄어쓰기 오입력 자동 보정
+                if (equipStatus === '셋업장비') equipStatus = '셋업 장비';
+                if (equipStatus === '가동장비') equipStatus = '가동 장비';
+                if (equipStatus === '유휴장비') equipStatus = '유휴 장비';
 
                 if (!site || !name) {
                     skippedCount++;
@@ -1653,7 +1658,7 @@ async function handleEquipSave() {
     };
 
     if (currentAdminEquipKey) {
-        const success = await syncAdminDB('equip', 'UPDATE', { old_id: currentAdminEquipKey, new_id: newKey, old_site: originalSite, new_site: targetSite, special_note: specialNote, setup: setupPayload });
+        const success = await syncAdminDB('equip', 'UPDATE', { old_id: currentAdminEquipKey, new_id: newKey, site: targetSite, old_site: originalSite, new_site: targetSite, special_note: specialNote, setup: setupPayload });
         if (!success) { alert('서버 장비 정보 수정에 실패했습니다.'); return false; }
     } else {
         const success = await syncAdminDB('equip', 'CREATE', { new_id: newKey, site: targetSite, special_note: specialNote, setup: setupPayload });

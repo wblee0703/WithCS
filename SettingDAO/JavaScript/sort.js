@@ -242,11 +242,11 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
 
         let extraHeader = '';
         if (selectId === 'sort-equip-select') {
-            const groups = ['전체', 'SEC', 'SKH 이천', 'SKH 청주', 'SCS 서안', 'SKH 우시', '해외 기타', '기타사업장'];
+            const groups = ['전체', 'SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
             let btns = groups.map(g => `<button type="button" class="btn-gray equip-group-filter-btn sort-filter-btn" data-group="${g}">${g}</button>`).join('');
             extraHeader = `<div id="equip-group-filter-container" class="sort-group-filter-container">${btns}</div>`;
         } else if (selectId === 'sort-site-select') {
-            const siteGroups = ['SEC', 'SKH 이천', 'SKH 청주', 'SCS 서안', 'SKH 우시', '해외 기타', '기타사업장'];
+            const siteGroups = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
             let btns = siteGroups.map(g => `<button type="button" class="btn-gray site-group-toggle-btn sort-filter-btn" data-group="${g}">${g}</button>`).join('');
             extraHeader = `<div id="site-group-toggle-container" class="sort-group-filter-container">${btns}</div>`;
         }
@@ -1704,7 +1704,7 @@ function renderSortChart(results) {
                 });
 
                 currentDataObj = groupedDataObj;
-                const order = ['SEC', 'SKH 이천', 'SKH 청주', 'SCS 서안', 'SKH 우시', '해외 기타', '기타사업장'];
+                const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
                 currentSitesArray = order.filter(name => groupedSitesSet.has(name));
                 Array.from(groupedSitesSet).forEach(name => {
                     if (!order.includes(name)) currentSitesArray.push(name);
@@ -1753,7 +1753,7 @@ function renderSortChart(results) {
                     else if (site === 'SKH 청주') color = '#F37021';
                     else if (site === 'SCS 서안') color = '#0096D6';
                     else if (site === 'SKH 우시') color = '#d29922';
-                    else if (site === '해외 기타') color = '#1b7c83';
+                    else if (site === '기타') color = '#1b7c83';
 
                     siteColorMap[site] = color;
                 });

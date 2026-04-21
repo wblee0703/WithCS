@@ -240,16 +240,17 @@ function renderIntegEquipStats(data) {
         'SEC': { total: 0, setup: 0 },
         'SKH 이천': { total: 0, setup: 0 },
         'SKH 청주': { total: 0, setup: 0 },
+        '기타사업장': { total: 0, setup: 0 },
         'SCS 서안': { total: 0, setup: 0 },
         'SKH 우시': { total: 0, setup: 0 },
-        '해외 기타': { total: 0, setup: 0 },
-        '기타사업장': { total: 0, setup: 0 }
+        '기타': { total: 0, setup: 0 }
     };
     const modelCounts = {};
     const allModels = new Set();
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     let totalEquipCount = 0;
     let actualSiteCount = 0;
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
     // 데이터 집계
     Object.keys(data).forEach(site => {
@@ -268,6 +269,10 @@ function renderIntegEquipStats(data) {
                     groupCounts[groupName].total++;
 
                     const model = equip.split('::')[0]; // 장비명(모델) 추출
+
+                    const matchedModel = equipmentModels.find(m => m.name === model);
+                    const displayModel = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : model;
+
                     allModels.add(model);
 
                     let isSetupEquip = false;
@@ -284,10 +289,10 @@ function renderIntegEquipStats(data) {
 
                     // 그룹(사업장) 기반으로 모델 필터링 적용
                     if (!integEquipSelectedGroup || integEquipSelectedGroup === groupName) {
-                        if (!modelCounts[model]) modelCounts[model] = { total: 0, setup: 0 };
-                        modelCounts[model].total++;
+                        if (!modelCounts[displayModel]) modelCounts[displayModel] = { total: 0, setup: 0 };
+                        modelCounts[displayModel].total++;
                         if (isSetupEquip) {
-                            modelCounts[model].setup++;
+                            modelCounts[displayModel].setup++;
                         }
                     }
                 });
@@ -314,10 +319,10 @@ function renderIntegEquipStats(data) {
         'SEC': 'linear-gradient(to top, #034EA2, #4a8eff)',
         'SKH 이천': 'linear-gradient(to top, #eb371f, #ff7b72)',
         'SKH 청주': 'linear-gradient(to top, #F37021, #ff9e66)',
+        '기타사업장': 'linear-gradient(to top, #8957e5, #a371f7)',
         'SCS 서안': 'linear-gradient(to top, #0096D6, #66c2ff)',
         'SKH 우시': 'linear-gradient(to top, #d29922, #e3b341)',
-        '해외 기타': 'linear-gradient(to top, #1b7c83, #3fb950)',
-        '기타사업장': 'linear-gradient(to top, #8957e5, #a371f7)'
+        '기타': 'linear-gradient(to top, #1b7c83, #3fb950)'        
     };
     
     renderChartWithAxis(siteChartEl, sortedGroupCounts, groupGradients, (key) => {
@@ -673,7 +678,7 @@ async function renderIntegMaintStats(mainData) {
         }
     } catch (e) { console.error(e); }
 
-    const siteWorkerCounts = { 'SEC': 0, 'SKH 이천': 0, 'SKH 청주': 0, 'SCS 서안': 0, 'SKH 우시': 0, '해외 기타': 0, '기타사업장': 0 };
+    const siteWorkerCounts = { 'SEC': 0, 'SKH 이천': 0, 'SKH 청주': 0, '기타사업장': 0, 'SCS 서안': 0, 'SKH 우시': 0, '기타': 0 };
     const adminNames = new Set(); // [추가] 실제 작업 공수에서 관리자를 제외하기 위한 명단
 
     workers.forEach(w => {
@@ -697,7 +702,7 @@ async function renderIntegMaintStats(mainData) {
             '운영1팀(본사)': '기타사업장',
             '해외(서안)': 'SCS 서안',
             '해외(우시)': 'SKH 우시',
-            '해외(기타)': '해외 기타'
+            '해외(기타)': '기타'
         };
         const wDept = (typeof w === 'object' && w !== null) ? (w.department || '').trim() : '';
         let groupName = deptToGroupMap[wDept];
@@ -729,10 +734,10 @@ async function renderIntegMaintStats(mainData) {
         'SEC': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['SEC'] || 0) },
         'SKH 청주': { total: 0, completed: 0, md: 0, totalMd: workingDays * siteWorkerCounts['SKH 청주'] },
         'SKH 이천': { total: 0, completed: 0, md: 0, totalMd: workingDays * siteWorkerCounts['SKH 이천'] },
+        '기타사업장': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['기타사업장'] || 0) },
         'SCS 서안': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['SCS 서안'] || 0) },
         'SKH 우시': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['SKH 우시'] || 0) },
-        '해외 기타': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['해외 기타'] || 0) },
-        '기타사업장': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['기타사업장'] || 0) }
+        '기타': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['기타'] || 0) }
     };
 
     const typeCounts = { '정기': 0, '비정기': 0, '고객대응': 0, '용액제조': 0, '온라인점검': 0 };
@@ -795,15 +800,15 @@ async function renderIntegMaintStats(mainData) {
         }
     });
 
-    const groups = ['SEC', 'SKH 이천', 'SKH 청주', 'SCS 서안', 'SKH 우시', '해외 기타', '기타사업장'];
+    const groups = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
     const groupColors = {
         'SEC': 'linear-gradient(to top, #034EA2, #4a8eff)',
         'SKH 이천': 'linear-gradient(to top, #eb371f, #ff7b72)', // [요청] 붉은 계열로 색상 변경
         'SKH 청주': 'linear-gradient(to top, #F37021, #ff9e66)',
+        '기타사업장': 'linear-gradient(to top, #8957e5, #a371f7)',
         'SCS 서안': 'linear-gradient(to top, #0096D6, #66c2ff)',
         'SKH 우시': 'linear-gradient(to top, #d29922, #e3b341)',
-        '해외 기타': 'linear-gradient(to top, #1b7c83, #3fb950)',
-        '기타사업장': 'linear-gradient(to top, #8957e5, #a371f7)'
+        '기타': 'linear-gradient(to top, #1b7c83, #3fb950)'
     };
 
     if (progressChartEl) {
@@ -918,7 +923,7 @@ async function renderIntegMaintStats(mainData) {
         filterGroup.style.marginBottom = '0px'; // [수정] 필터 버튼과 막대그래프 사이 빈 공간(여백) 완전 제거
         filterGroup.style.flexWrap = 'wrap';
 
-        const filterOptions = ['전체', 'SEC', 'SKH 이천', 'SKH 청주', 'SCS 서안', 'SKH 우시', '해외 기타', '기타사업장'];
+        const filterOptions = ['전체', 'SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
         filterOptions.forEach(opt => {
             const btn = document.createElement('button');
             btn.textContent = opt;
@@ -1064,10 +1069,15 @@ function renderChartWithAxis(container, dataCounts, colorMapOrArray, onClickHand
 }
 
 function renderGenericSetupList(listEl, list, isCompletedMode) {
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+
     list.forEach(item => {
         const parts = item.equip.split('::');
         const name = parts[0];
         const serial = parts.length > 1 ? parts[1] : '';
+        
+        const matchedModel = equipmentModels.find(m => m.name === name);
+        const displayModel = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
         const progressColor = item.progress === 100 ? '#238636' : '#1f6feb';
         
         const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.equip}`)) || {};
@@ -1080,7 +1090,7 @@ function renderGenericSetupList(listEl, list, isCompletedMode) {
         if (custEquipName) subInfo = `[${escapeHtml(custEquipName)}]`;
         else if (serial) subInfo = `[${escapeHtml(serial)}]`;
 
-        const mainInfo = `${escapeHtml(item.site)} > ${escapeHtml(name)}`;
+        const mainInfo = `${escapeHtml(item.site)} > ${escapeHtml(displayModel)}`;
         const fullTitle = `${mainInfo} ${subInfo}`.replace(/<[^>]*>?/gm, '').trim();
 
         const rightCol = isCompletedMode ? 

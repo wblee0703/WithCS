@@ -989,13 +989,12 @@ def admin_crud():
                 ))
             elif action == 'UPDATE':
                 old_id = payload['old_id']
-                db_old_id = f"{site_name}::{old_id}"
+                old_site = payload.get('old_site', site_name)
+                db_old_id = f"{old_site}::{old_id}"
                 db_new_id = f"{site_name}::{new_id}"
                 
-                if old_id != new_id:
+                if db_old_id != db_new_id:
                     db.session.execute(text("UPDATE equipment SET id=:n WHERE id=:o1 OR id=:o2"), {'n':db_new_id, 'o1':db_old_id, 'o2':old_id})
-                else:
-                    db.session.execute(text("UPDATE equipment SET id=:n WHERE id=:o"), {'n':db_new_id, 'o':old_id})
                     
                 equip = Equipment.query.filter_by(id=db_new_id).first()
                 if equip:

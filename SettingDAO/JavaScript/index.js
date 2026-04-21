@@ -31,7 +31,7 @@ window.getSiteColor = function (siteName) {
     if (siteName === 'SKH 청주') return '#F37021';
     if (siteName === 'SCS 서안') return '#0096D6';
     if (siteName === 'SKH 우시') return '#d29922';
-    if (siteName === '해외 기타') return '#1b7c83';
+    if (siteName === '기타') return '#1b7c83';
     if (siteName === '기타사업장') return '#8957e5';
 
     const nameUpper = siteName.toUpperCase();
@@ -60,7 +60,7 @@ window.getSiteGradient = function (siteName) {
     if (siteName === 'SKH 청주') return 'linear-gradient(to top, #F37021, #ff9e66)';
     if (siteName === 'SCS 서안') return 'linear-gradient(to top, #0096D6, #66c2ff)';
     if (siteName === 'SKH 우시') return 'linear-gradient(to top, #d29922, #e3b341)';
-    if (siteName === '해외 기타') return 'linear-gradient(to top, #1b7c83, #3fb950)';
+    if (siteName === '기타') return 'linear-gradient(to top, #1b7c83, #3fb950)';
     if (siteName === '기타사업장') return 'linear-gradient(to top, #8957e5, #a371f7)';
 
     const color = window.getSiteColor(siteName);
@@ -348,7 +348,7 @@ function updateMaintenanceDashboard() {
         });
 
         // 지정된 우선순위대로 정렬
-        const order = ['SEC', 'SKH 이천', 'SKH 청주', 'SCS 서안', 'SKH 우시', '해외 기타', '기타사업장'];
+        const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
         order.forEach(name => {
             if (groupCounts[name]) siteStats.push({ name: name, count: groupCounts[name] });
         });
