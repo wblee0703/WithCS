@@ -27,6 +27,15 @@ function getSortDeviceData() {
     return JSON.parse(localStorage.getItem('device_data')) || {};
 }
 
+// [1.4] 전체 선택 상태인지 판별하는 공통 헬퍼 함수
+function isAllSelected(selectId, filtersArray) {
+    const selectEl = document.getElementById(selectId);
+    if (!selectEl) return false;
+    const validOptions = Array.from(selectEl.options).filter(o => o.value);
+    if (validOptions.length === 0) return true; // 옵션이 없으면 전체 통과로 간주
+    return filtersArray && filtersArray.length >= validOptions.length;
+}
+
 // [1.3] 정렬(검색) 페이지 메인 초기화 (캐시 복원 및 필터 세팅)
 function initSortPage() {
     let data = getSortDeviceData();
@@ -140,17 +149,26 @@ function initSortPage() {
                     let data = getSortDeviceData();
 
                     applyCustomMultiSelect('sort-site-select', lastSortFilters.siteFilters);
-                    updateSortBuildingSelect(getMultiValues('sort-site-select'));
+                    const sites = getMultiValues('sort-site-select');
+                    updateSortBuildingSelect(sites);
                     applyCustomMultiSelect('sort-building-select', lastSortFilters.buildingFilters);
-
+                    const buildings = getMultiValues('sort-building-select');
+                    
+                    updateSortModelSelect(sites, buildings, data);
                     applyCustomMultiSelect('sort-model-select', lastSortFilters.modelFilters);
-                    updateSortEquipSelect(getMultiValues('sort-site-select'), getMultiValues('sort-building-select'), getMultiValues('sort-model-select'), data);
+                    const models = getMultiValues('sort-model-select');
+
+                    updateSortEquipSelect(sites, buildings, models, data);
                     applyCustomMultiSelect('sort-equip-select', lastSortFilters.equipFilters);
 
                     applyCustomMultiSelect('sort-type-select', lastSortFilters.typeFilters);
-                    updateSortDetailTypeSelect();
+                    const types = getMultiValues('sort-type-select');
+                    
+                    updateSortDetailTypeSelect(types);
                     applyCustomMultiSelect('sort-detail-type-select', lastSortFilters.detailTypeFilters);
-                    updateSortDetailType2Select();
+                    const detailTypes = getMultiValues('sort-detail-type-select');
+                    
+                    updateSortDetailType2Select(types, detailTypes);
                     applyCustomMultiSelect('sort-detail-type2-select', lastSortFilters.detailType2Filters);
 
                     applyCustomMultiSelect('sort-cost-type-select', lastSortFilters.costTypeFilters);
@@ -187,10 +205,16 @@ function initSortPage() {
     }
 
     // [추가] 초기 진입 시 연쇄 업데이트를 통한 하위 필터(건물, 장비 등) 생성 및 전부 선택 활성화 유도
-    const siteSelect = document.getElementById('sort-site-select');
-    if (siteSelect) {
-        siteSelect.dispatchEvent(new Event('change'));
-    }
+    data = getSortDeviceData(); // [수정] 위에서 선언된 let data 변수를 재사용하여 SyntaxError(중복 선언) 방지
+    const sites = Object.keys(data);
+    updateSortBuildingSelect(sites);
+    updateSortModelSelect(sites, [], data); // 건물 전체
+    updateSortEquipSelect(sites, [], [], data); // 모델 전체
+    
+    // 구분, 세부구분 초기화
+    const types = ['정기', '비정기', '고객대응', '용액제조', '온라인점검'];
+    updateSortDetailTypeSelect(types);
+    updateSortDetailType2Select(types, []);
 
     setTimeout(performSortSearch, 150); // 드롭다운(연도 등) UI 렌더링을 기다리기 위해 대기 시간 증가
 }
@@ -462,12 +486,12 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
 
             const itemTpl = typeof getTemplateContent === 'function' ? getTemplateContent('sort-select-item-template') : null;
             if (itemTpl) {
-                const clone = itemTpl.firstElementChild.cloneNode(true);
-                const icon = clone.querySelector('.check-icon');
+                // [수정] 템플릿 자체에 log-select-item 클래스가 있어 중첩(2배 뻥튀기)되는 현상 방지
+                div.innerHTML = itemTpl.firstElementChild.innerHTML;
+                const icon = div.querySelector('.check-icon');
                 if (icon) icon.style.opacity = isSelected ? '1' : '0';
-                const textEl = clone.querySelector('.item-text');
+                const textEl = div.querySelector('.item-text');
                 if (textEl) textEl.textContent = text;
-                div.appendChild(clone);
             } else {
                 div.innerHTML = `<span class="check-icon sort-check-icon" style="opacity:${isSelected ? '1' : '0'};">✓</span><span class="item-text sort-item-text">${escapeHtml(text)}</span>`;
             }
@@ -506,6 +530,7 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
         trigger.title = selected.map(el => el.querySelector('.item-text').textContent).join('\n');
     };
 
+    wrapper.updateTriggerText = updateTriggerText; // [추가] 외부(전체 선택 버튼 등)에서 트리거 텍스트를 업데이트할 수 있도록 노출
     updateTriggerText();
 }
 
@@ -542,36 +567,47 @@ function setupSortFilters() {
         siteSelect.appendChild(opt);
     });
 
-    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
-    if (modelSelect) {
-        modelSelect.innerHTML = '<option value="">전체 모델</option>';
-        equipmentModels.forEach(m => {
-            const opt = document.createElement('option');
-            opt.value = m.name;
-            opt.textContent = m.name;
-            modelSelect.appendChild(opt);
-        });
-        modelSelect.addEventListener('change', (e) => {
-            updateSortEquipSelect(getMultiValues('sort-site-select'), getMultiValues('sort-building-select'), getMultiValues('sort-model-select'), data);
-        });
-    }
-
     siteSelect.addEventListener('change', (e) => {
         const sites = getMultiValues('sort-site-select');
         updateSortBuildingSelect(sites);
-        updateSortEquipSelect(sites, [], getMultiValues('sort-model-select'), data);
+        const buildings = getMultiValues('sort-building-select');
+        updateSortModelSelect(sites, buildings, data);
+        const models = getMultiValues('sort-model-select');
+        updateSortEquipSelect(sites, buildings, models, data);
     });
 
     if (buildingSelect) {
         buildingSelect.addEventListener('change', (e) => {
-            updateSortEquipSelect(getMultiValues('sort-site-select'), getMultiValues('sort-building-select'), getMultiValues('sort-model-select'), data);
+            const sites = getMultiValues('sort-site-select');
+            const buildings = getMultiValues('sort-building-select');
+            updateSortModelSelect(sites, buildings, data);
+            const models = getMultiValues('sort-model-select');
+            updateSortEquipSelect(sites, buildings, models, data);
+        });
+    }
+
+    if (modelSelect) {
+        modelSelect.addEventListener('change', (e) => {
+            const sites = getMultiValues('sort-site-select');
+            const buildings = getMultiValues('sort-building-select');
+            const models = getMultiValues('sort-model-select');
+            updateSortEquipSelect(sites, buildings, models, data);
         });
     }
 
     if (typeSelect) {
         typeSelect.addEventListener('change', () => {
             updateKeywordSuggestions();
-            updateSortDetailType2Select(); // '비정기' 선택에 따른 세부구분2 가시성 제어
+            const types = getMultiValues('sort-type-select');
+            updateSortDetailTypeSelect(types);
+        });
+    }
+    
+    if (detailTypeSelect) {
+        detailTypeSelect.addEventListener('change', () => {
+            const types = getMultiValues('sort-type-select');
+            const detailTypes = getMultiValues('sort-detail-type-select');
+            updateSortDetailType2Select(types, detailTypes);
         });
     }
 
@@ -650,9 +686,6 @@ function setupSortFilters() {
     }
 
     // 필터 메뉴 초기화 (모든 옵션 로드)
-    updateSortDetailTypeSelect();
-    updateSortDetailType2Select();
-
     // 초기 커스텀 다중 선택 UI 동기화
     syncCustomMultiSelect('sort-site-select', '전체 사업장');
     syncCustomMultiSelect('sort-building-select', '전체 건물');
@@ -665,6 +698,92 @@ function setupSortFilters() {
     syncCustomMultiSelect('sort-cost-type-select', '전체 비용 처리');
 
     setupSortKeyword();
+    addGlobalSelectAllButton(); // [수정] 단일 전체선택 버튼 생성
+}
+
+// [추가] 모든 필터를 한 번에 '전체선택'으로 변경하는 단일 버튼 추가
+function addGlobalSelectAllButton() {
+    const sidebar = document.querySelector('.dashboard-sidebar');
+    if (!sidebar || document.getElementById('btn-global-select-all')) return;
+
+    const btn = document.createElement('button');
+    btn.id = 'btn-global-select-all';
+    btn.type = 'button';
+    btn.className = 'btn-blue-sm';
+    btn.textContent = '전체 선택';
+    btn.style.cssText = 'padding: 4px 8px; font-size: 11px; cursor: pointer; white-space: nowrap; margin-left: auto;';
+
+    btn.onclick = async (e) => {
+        e.preventDefault();
+        
+        // 연쇄 필터(사업장->건물->장비 등) 업데이트를 고려하여 순차적으로 선택 이벤트 발생
+        const selectAllFor = (selectId) => {
+            return new Promise(resolve => {
+                const wrapper = document.getElementById(`${selectId}-wrapper`);
+                const selectEl = document.getElementById(selectId);
+                if (wrapper && selectEl && !selectEl.disabled) {
+                    const list = wrapper.querySelector('.log-select-list');
+                    if (list) {
+                        list.querySelectorAll('.log-select-item').forEach(el => {
+                            if (el.style.display !== 'none') {
+                                el.classList.add('selected');
+                                const icon = el.querySelector('.check-icon');
+                                if (icon) {
+                                    icon.style.opacity = '1';
+                                    icon.style.visibility = 'visible';
+                                }
+                                
+                                // [추가] 원본 옵션 동기화 보장
+                                Array.from(selectEl.options).forEach(o => {
+                                    if (o.value === el.dataset.value) o.selected = true;
+                                });
+                            }
+                        });
+                        if (typeof wrapper.updateTriggerText === 'function') wrapper.updateTriggerText();
+                        selectEl.dispatchEvent(new Event('change'));
+                    }
+                }
+                setTimeout(resolve, 40); // [수정] UI 렌더링 및 연쇄 옵션 생성이 완벽히 끝날 때까지 대기 시간 확보
+            });
+        };
+
+        // 상위부터 하위 종속 순서로 실행
+        await selectAllFor('sort-site-select');
+        await selectAllFor('sort-building-select');
+        await selectAllFor('sort-model-select');
+        await selectAllFor('sort-equip-select');
+        await selectAllFor('sort-type-select');
+        await selectAllFor('sort-detail-type-select');
+        await selectAllFor('sort-detail-type2-select');
+        await selectAllFor('sort-item-detail-type-select');
+        await selectAllFor('sort-cost-type-select');
+
+        setTimeout(performSortSearch, 50); // 모든 선택 완료 후 즉시 검색 실행
+    };
+
+    // [수정] 'Sort Menu' 제목을 찾아 우측에 버튼 배치
+    let targetHeader = null;
+    const headings = sidebar.querySelectorAll('h1, h2, h3, h4, h5, h6, .sidebar-title');
+    for (let h of headings) {
+        if (h.textContent.includes('Sort Menu') || h.textContent.includes('SORT')) {
+            targetHeader = h;
+            break;
+        }
+    }
+
+    if (targetHeader) {
+        targetHeader.style.display = 'flex';
+        targetHeader.style.justifyContent = 'space-between';
+        targetHeader.style.alignItems = 'center';
+        targetHeader.appendChild(btn);
+    } else {
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'flex';
+        wrapper.style.justifyContent = 'flex-end';
+        wrapper.style.marginBottom = '10px';
+        wrapper.appendChild(btn);
+        sidebar.insertBefore(wrapper, sidebar.firstChild);
+    }
 }
 
 // [3.2] 결과 내 텍스트 검색창(Keyword) 드롭다운 이벤트 설정
@@ -791,12 +910,11 @@ function updateKeywordSuggestions() {
 
         const itemTpl = typeof getTemplateContent === 'function' ? getTemplateContent('sort-select-item-template') : null;
         if (itemTpl) {
-            const clone = itemTpl.firstElementChild.cloneNode(true);
-            const icon = clone.querySelector('.check-icon');
+            div.innerHTML = itemTpl.firstElementChild.innerHTML;
+            const icon = div.querySelector('.check-icon');
             if (icon) icon.style.opacity = isSelected ? '1' : '0';
-            const textEl = clone.querySelector('.item-text');
+            const textEl = div.querySelector('.item-text');
             if (textEl) textEl.textContent = content;
-            div.appendChild(clone);
         } else {
             div.innerHTML = `<span class="check-icon sort-check-icon" style="opacity:${isSelected ? '1' : '0'};">✓</span><span class="item-text sort-item-text">${escapeHtml(content)}</span>`;
         }
@@ -823,13 +941,15 @@ function updateKeywordTrigger() {
     const selected = Array.from(list ? list.querySelectorAll('.log-select-item.selected') : []);
 
     if (selected.length > 0) {
-        const text = selected.map(el => el.dataset.value).join(', ');
-        input.value = selected.length > 1 ? `${selected[0].dataset.value} 외 ${selected.length - 1}개` : text;
+        const uniqueSelected = Array.from(new Set(selected.map(el => el.dataset.value)));
+        const text = uniqueSelected.join(', ');
+        input.value = uniqueSelected.length > 1 ? `${uniqueSelected[0]} 외 ${uniqueSelected.length - 1}개` : text;
         input.style.color = '#58a6ff';
+        input.title = uniqueSelected.join('\n');
     } else {
         input.style.color = '#e6edf3';
+        input.title = '';
     }
-    input.title = selected.length > 0 ? selected.map(el => el.dataset.value).join('\n') : input.value;
 }
 
 // [3.5] 사업장 선택에 따른 건물명 필터 항목 동적 업데이트
@@ -873,6 +993,49 @@ function updateSortBuildingSelect(sites) {
     syncCustomMultiSelect('sort-building-select', '전체 건물');
 }
 
+// [3.5.5] 사업장, 건물 선택에 따른 모델명 필터 항목 동적 업데이트
+function updateSortModelSelect(sites, buildings, data) {
+    const modelSelect = document.getElementById('sort-model-select');
+    if (!modelSelect) return;
+    
+    modelSelect.innerHTML = '<option value="">전체 모델</option>';
+    if (!sites || sites.length === 0) {
+        modelSelect.disabled = true;
+        syncCustomMultiSelect('sort-model-select', '전체 모델');
+        return;
+    }
+
+    const isBuildingAll = isAllSelected('sort-building-select', buildings);
+    let availableModels = new Set();
+
+    sites.forEach(site => {
+        if (!data[site] || !Array.isArray(data[site])) return;
+        data[site].forEach(equip => {
+            const detailData = JSON.parse(localStorage.getItem(`details_${site}_${equip}`)) || {};
+            const setup = detailData.setup || {};
+            const equipBuilding = setup.building ? setup.building : '미지정';
+            
+            if (!isBuildingAll && buildings && buildings.length > 0 && !buildings.includes(equipBuilding)) return;
+
+            const parts = equip.split('::');
+            const equipName = parts[0];
+            if (equipName !== '기타(ETC)') {
+                availableModels.add(equipName);
+            }
+        });
+    });
+
+    Array.from(availableModels).sort().forEach(modelName => {
+        const opt = document.createElement('option');
+        opt.value = modelName;
+        opt.textContent = modelName;
+        modelSelect.appendChild(opt);
+    });
+
+    modelSelect.disabled = false;
+    syncCustomMultiSelect('sort-model-select', '전체 모델');
+}
+
 // [3.6] 사업장/건물/모델 선택에 따른 장비명 필터 항목 동적 업데이트
 function updateSortEquipSelect(sites, buildings, models, data) {
     const equipSelect = document.getElementById('sort-equip-select');
@@ -884,6 +1047,9 @@ function updateSortEquipSelect(sites, buildings, models, data) {
         syncCustomMultiSelect('sort-equip-select', '전체 장비');
         return;
     }
+
+    const isBuildingAll = isAllSelected('sort-building-select', buildings);
+    const isModelAll = isAllSelected('sort-model-select', models);
 
     // 장비 모델 약어 매핑 (ADMIN 정보 연동)
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
@@ -902,11 +1068,12 @@ function updateSortEquipSelect(sites, buildings, models, data) {
             const detailData = JSON.parse(localStorage.getItem(`details_${site}_${equip}`)) || {};
             const setup = detailData.setup || {};
 
-            if (buildings && buildings.length > 0 && !buildings.includes(setup.building)) return;
+            const equipBuilding = setup.building ? setup.building : '미지정';
+            if (!isBuildingAll && buildings && buildings.length > 0 && !buildings.includes(equipBuilding)) return;
 
             const parts = equip.split('::');
             const equipName = parts[0];
-            if (models && models.length > 0 && !models.includes(equipName)) return;
+            if (!isModelAll && models && models.length > 0 && !models.includes(equipName)) return;
 
             const serialNo = parts.length > 1 ? parts[1] : '';
             const matchedModel = equipmentModels.find(m => m.name === equipName);
@@ -932,28 +1099,41 @@ function updateSortEquipSelect(sites, buildings, models, data) {
 }
 
 // [3.7] 점검 구분에 따른 세부 구분 1 필터 항목 동적 업데이트
-function updateSortDetailTypeSelect() {
+function updateSortDetailTypeSelect(types) {
     const detailTypeSelect = document.getElementById('sort-detail-type-select');
     if (!detailTypeSelect) return;
 
     detailTypeSelect.innerHTML = '<option value="">전체 세부 구분</option>';
+
+    if (!types || types.length === 0) {
+        detailTypeSelect.disabled = true;
+        syncCustomMultiSelect('sort-detail-type-select', '전체 세부 구분');
+        updateSortDetailType2Select([], []);
+        return;
+    }
 
     detailTypeSelect.disabled = false;
 
     const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
     let subCategories = new Set();
 
-    // [추가] 기본 점검 구분 설정 (관리자 페이지 미저장 시 필터가 비어있는 현상 방지)
-    const defaultSubCategories = [
-        'PM 점검', 'BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상', '기타',
-        '순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정',
-        '용액제조', '온라인점검'
-    ];
-    defaultSubCategories.forEach(cat => subCategories.add(cat));
+    const defaultSubCategories = {
+        '정기': ['PM 점검'],
+        '비정기': ['BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상', '기타'],
+        '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
+        '용액제조': ['용액제조'],
+        '온라인점검': ['온라인점검']
+    };
 
-    // 모든 세부 구분 항목을 가져옴
-    Object.keys(catData).forEach(key => {
-        catData[key].forEach(cat => subCategories.add(cat));
+    types.forEach(type => {
+        if (defaultSubCategories[type]) {
+            defaultSubCategories[type].forEach(cat => subCategories.add(cat));
+        }
+        Object.keys(catData).forEach(key => {
+            if (key.includes(`::${type}`)) {
+                catData[key].forEach(cat => subCategories.add(cat));
+            }
+        });
     });
 
     Array.from(subCategories).sort().forEach(sub => {
@@ -964,22 +1144,25 @@ function updateSortDetailTypeSelect() {
 
     });
     syncCustomMultiSelect('sort-detail-type-select', '전체 세부 구분');
-    updateSortDetailType2Select();
+    
+    updateSortDetailType2Select(types, getMultiValues('sort-detail-type-select'));
 }
 
 // [3.8] '비정기' 점검 구분 선택 시 세부 구분 2 필터 표시 및 항목 동적 업데이트
-function updateSortDetailType2Select() {
-    const types = getMultiValues('sort-type-select');
-    const detailTypes = getMultiValues('sort-detail-type-select');
+function updateSortDetailType2Select(types, detailTypes) {
     const detailType2Group = document.getElementById('sort-detail-type2-group');
     const detailType2Select = document.getElementById('sort-detail-type2-select');
 
     if (!detailType2Select) return;
     detailType2Select.innerHTML = '<option value="">전체 세부 구분 2</option>';
 
-    // [수정] 아무것도 선택되지 않은 '전체' 상태일 때는 '비정기'도 포함이므로 숨기지 않음
-    if (types.length > 0 && !types.includes('비정기')) {
+    const isTypeAll = isAllSelected('sort-type-select', types);
+    const includesIrregular = isTypeAll || (types && types.includes('비정기'));
+
+    if (!types || types.length === 0 || !includesIrregular) {
         if (detailType2Group) detailType2Group.style.display = 'none';
+        detailType2Select.disabled = true;
+        syncCustomMultiSelect('sort-detail-type2-select', '전체 세부 구분 2');
         return;
     }
     if (detailType2Group) detailType2Group.style.display = 'block';
@@ -998,8 +1181,9 @@ function updateSortDetailType2Select() {
         '기타': ['배수 펌프 이슈', '구동 이상']
     };
 
-    if (!detailTypes || detailTypes.length === 0) {
-        // 세부 구분 1이 선택되지 않았으면 전체 세부구분 2를 로드
+    const isDetailTypeAll = isAllSelected('sort-detail-type-select', detailTypes);
+
+    if (isDetailTypeAll || !detailTypes || detailTypes.length === 0) {
         Object.keys(defaultSubCategories2).forEach(k => {
             defaultSubCategories2[k].forEach(cat => subCategories2.add(cat));
         });
@@ -1060,15 +1244,6 @@ function performSortSearch() {
     const keywordInputVal = document.getElementById('sort-keyword') ? document.getElementById('sort-keyword').value.trim().toLowerCase() : '';
     const keywordList = document.getElementById('sort-keyword-list');
     const keywordSelected = keywordList ? Array.from(keywordList.querySelectorAll('.log-select-item.selected')).map(el => (el.dataset.value || '').toLowerCase()) : [];
-
-    // [추가] '전체 선택' 상태인지 판별하여 과거/누락된 매핑 데이터도 조건 없이 조회되도록 돕는 헬퍼 함수
-    const isAllSelected = (selectId, filtersArray) => {
-        const selectEl = document.getElementById(selectId);
-        if (!selectEl) return false;
-        const validOptions = Array.from(selectEl.options).filter(o => o.value);
-        if (validOptions.length === 0) return true; // 옵션이 없으면 전체 통과로 간주
-        return filtersArray.length >= validOptions.length;
-    };
 
     const isSiteAll = isAllSelected('sort-site-select', siteFilters);
     const isBuildingAll = isAllSelected('sort-building-select', buildingFilters);
@@ -1142,7 +1317,7 @@ function performSortSearch() {
 
     Object.keys(data).forEach(site => {
         if (!Array.isArray(data[site])) return;
-        if (siteFilters.length === 0) return; // 아무것도 선택 안 했으면 패스
+        if (!isSiteAll && siteFilters.length === 0) return; // 사용자가 명시적으로 모두 해제한 경우 패스
         if (!isSiteAll && !siteFilters.includes(site)) return; // 전체 선택이 아닐 때만 포함 여부 검사
 
         let siteGroup = '기타사업장';
@@ -1154,12 +1329,12 @@ function performSortSearch() {
         if (data[site]) {
             data[site].forEach(equip => {
                 if (typeof equip !== 'string') return;
-                if (equipFilters.length === 0) return;
+                if (!isEquipAll && equipFilters.length === 0) return;
                 if (!isEquipAll && !equipFilters.includes(equip)) return;
 
                 const parts = equip.split('::');
                 const equipName = parts[0];
-                if (modelFilters.length === 0) return;
+                if (!isModelAll && modelFilters.length === 0) return;
                 if (!isModelAll && !modelFilters.includes(equipName)) return;
 
                 const serialNo = parts.length > 1 ? parts[1] : '';
@@ -1171,7 +1346,7 @@ function performSortSearch() {
                 const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
                 const equipBuilding = (detailData.setup && detailData.setup.building) ? detailData.setup.building : '미지정';
 
-                if (buildingFilters.length === 0) return;
+                if (!isBuildingAll && buildingFilters.length === 0) return;
                 if (!isBuildingAll && !buildingFilters.includes(equipBuilding)) return;
 
                 const checkItemMatch = (itemObj, isLog) => {
@@ -1181,7 +1356,7 @@ function performSortSearch() {
                         if (isLog && itemObj.detailType === '일정변경') return false;
 
                         const itemType = itemObj.type || '정기'; // 구버전 데이터 누락 대응
-                        if (typeFilters.length === 0) return false;
+                        if (!isTypeAll && typeFilters.length === 0) return false;
                         if (!isTypeAll && !typeFilters.includes(itemType)) return false;
                         if (startDate && itemDate < startDate) return false;
                         if (endDate && itemDate > endDate) return false;
@@ -1197,10 +1372,10 @@ function performSortSearch() {
 
                         if (!dt2) dt2 = '미지정';
 
-                        if (detailTypeFilters.length === 0) return false;
+                        if (!isDetailTypeAll && detailTypeFilters.length === 0) return false;
                         if (!isDetailTypeAll && !detailTypeFilters.includes(dt1)) return false;
                         if (itemType === '비정기') {
-                            if (detailType2Filters.length === 0) return false;
+                            if (!isDetailType2All && detailType2Filters.length === 0) return false;
                             if (!isDetailType2All && !detailType2Filters.includes(dt2)) return false;
                         }
 
@@ -1211,11 +1386,13 @@ function performSortSearch() {
                         if (costMatch) parsedCostType = costMatch[1];
                         const itemCostType = itemObj.costType || itemObj.itemCost || parsedCostType || '유상';
 
-                        if (costTypeFilters.length === 0) return false;
+                        if (!isCostTypeAll && costTypeFilters.length === 0) return false;
                         if (!isCostTypeAll && !costTypeFilters.includes(itemCostType)) return false;
 
                         let matchedItemDetailType = '';
                         const contentsList = pureContent.split(',').map(s => s.replace(/\[.*?\]\s*/g, '').trim());
+
+                        if (!isItemDetailTypeAll && itemDetailTypeFilters.length === 0) return false;
 
                         if (itemDetailTypeFilters.length > 0) {
                             let matchFound = false;

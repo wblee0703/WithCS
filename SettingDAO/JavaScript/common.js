@@ -778,13 +778,19 @@ function applyGlobalAccessibilityAndSecurityFixes() {
             const labels = node.tagName === 'LABEL' ? [node] : Array.from(node.querySelectorAll('label'));
             labels.forEach(label => {
                 const forAttr = label.getAttribute('for');
-                if (forAttr && document.getElementById(forAttr)) return; // 이미 올바르게 연결됨
+                
+                // [수정] 존재하지 않는 ID를 가리키는 for 속성은 브라우저 경고를 유발하므로 즉시 제거
+                if (forAttr && !document.getElementById(forAttr)) {
+                    label.removeAttribute('for');
+                } else if (forAttr && document.getElementById(forAttr)) {
+                    return; // 이미 올바르게 연결됨
+                }
 
                 // 내부에 있는 경우
                 const innerInput = label.querySelector('input:not([type="hidden"]), select, textarea');
                 if (innerInput) {
                     if (!innerInput.id) innerInput.id = 'auto-input-' + Math.random().toString(36).substr(2, 9);
-                    label.setAttribute('for', innerInput.id);
+                    label.htmlFor = innerInput.id; // [수정] DOM 속성인 htmlFor를 사용하여 안전하게 할당
                     return;
                 }
 
@@ -797,15 +803,9 @@ function applyGlobalAccessibilityAndSecurityFixes() {
 
                     if (targetInput) {
                         if (!targetInput.id) targetInput.id = 'auto-input-' + Math.random().toString(36).substr(2, 9);
-                        label.setAttribute('for', targetInput.id);
+                        label.htmlFor = targetInput.id; // [수정] DOM 속성인 htmlFor를 사용하여 안전하게 할당
                         return;
                     }
-                }
-
-                // [추가] 매칭되는 input을 끝내 찾지 못했는데 무의미한 for 속성이 남아있는 경우 (고아 라벨)
-                // 브라우저 콘솔 경고(1 resource 에러)를 원천 차단하기 위해 해당 for 속성을 강제로 지워줍니다.
-                if (label.hasAttribute('for') && !document.getElementById(label.getAttribute('for'))) {
-                    label.removeAttribute('for');
                 }
             });
         }
