@@ -153,7 +153,7 @@ function initSortPage() {
                     updateSortBuildingSelect(sites);
                     applyCustomMultiSelect('sort-building-select', lastSortFilters.buildingFilters);
                     const buildings = getMultiValues('sort-building-select');
-                    
+
                     updateSortModelSelect(sites, buildings, data);
                     applyCustomMultiSelect('sort-model-select', lastSortFilters.modelFilters);
                     const models = getMultiValues('sort-model-select');
@@ -163,25 +163,29 @@ function initSortPage() {
 
                     applyCustomMultiSelect('sort-type-select', lastSortFilters.typeFilters);
                     const types = getMultiValues('sort-type-select');
-                    
+
                     updateSortDetailTypeSelect(types);
                     applyCustomMultiSelect('sort-detail-type-select', lastSortFilters.detailTypeFilters);
                     const detailTypes = getMultiValues('sort-detail-type-select');
-                    
+
                     updateSortDetailType2Select(types, detailTypes);
                     applyCustomMultiSelect('sort-detail-type2-select', lastSortFilters.detailType2Filters);
 
                     applyCustomMultiSelect('sort-cost-type-select', lastSortFilters.costTypeFilters);
                     applyCustomMultiSelect('sort-item-detail-type-select', lastSortFilters.itemDetailTypeFilters);
 
-                    if (lastSortFilters.keywordSelected && lastSortFilters.keywordSelected.length > 0) {
+                    if (lastSortFilters.keywordSelected !== undefined) {
                         const kwList = document.getElementById('sort-keyword-list');
                         if (kwList) {
                             kwList.querySelectorAll('.log-select-item').forEach(el => {
-                                if (lastSortFilters.keywordSelected.includes(el.dataset.value)) {
+                                if (lastSortFilters.keywordSelected.includes((el.dataset.value || '').toLowerCase())) {
                                     el.classList.add('selected');
                                     const icon = el.querySelector('.check-icon');
                                     if (icon) icon.style.opacity = '1';
+                                } else {
+                                    el.classList.remove('selected');
+                                    const icon = el.querySelector('.check-icon');
+                                    if (icon) icon.style.opacity = '0';
                                 }
                             });
                             updateKeywordTrigger();
@@ -210,7 +214,7 @@ function initSortPage() {
     updateSortBuildingSelect(sites);
     updateSortModelSelect(sites, [], data); // 건물 전체
     updateSortEquipSelect(sites, [], [], data); // 모델 전체
-    
+
     // 구분, 세부구분 초기화
     const types = ['정기', '비정기', '고객대응', '용액제조', '온라인점검'];
     updateSortDetailTypeSelect(types);
@@ -602,7 +606,7 @@ function setupSortFilters() {
             updateSortDetailTypeSelect(types);
         });
     }
-    
+
     if (detailTypeSelect) {
         detailTypeSelect.addEventListener('change', () => {
             const types = getMultiValues('sort-type-select');
@@ -712,7 +716,7 @@ function addGlobalSelectAllButton() {
 
     btn.onclick = async (e) => {
         e.preventDefault();
-        
+
         // 연쇄 필터(사업장->건물->장비 등) 업데이트를 고려하여 순차적으로 선택 이벤트 발생
         const selectAllFor = (selectId) => {
             return new Promise(resolve => {
@@ -729,7 +733,7 @@ function addGlobalSelectAllButton() {
                                     icon.style.opacity = '1';
                                     icon.style.visibility = 'visible';
                                 }
-                                
+
                                 // [추가] 원본 옵션 동기화 보장
                                 Array.from(selectEl.options).forEach(o => {
                                     if (o.value === el.dataset.value) o.selected = true;
@@ -754,6 +758,19 @@ function addGlobalSelectAllButton() {
         await selectAllFor('sort-detail-type2-select');
         await selectAllFor('sort-item-detail-type-select');
         await selectAllFor('sort-cost-type-select');
+
+        // [추가] 항목/내용 검색 드롭다운(키워드 리스트) 전체 선택 적용
+        const keywordList = document.getElementById('sort-keyword-list');
+        if (keywordList) {
+            keywordList.querySelectorAll('.log-select-item').forEach(el => {
+                if (el.style.display !== 'none') {
+                    el.classList.add('selected');
+                    const icon = el.querySelector('.check-icon');
+                    if (icon) icon.style.opacity = '1';
+                }
+            });
+            if (typeof updateKeywordTrigger === 'function') updateKeywordTrigger();
+        }
 
         setTimeout(performSortSearch, 50); // 모든 선택 완료 후 즉시 검색 실행
     };
@@ -882,6 +899,9 @@ function updateKeywordSuggestions() {
     const keywordList = document.getElementById('sort-keyword-list');
     if (!keywordList) return;
 
+    const isInitialized = keywordList.dataset.initialized === 'true';
+    keywordList.dataset.initialized = 'true';
+
     const suggestionItems = [
         "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
         "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
@@ -890,8 +910,9 @@ function updateKeywordSuggestions() {
     // [추가] 관리자가 등록한 전체 물품 DB(admin_items)를 제안 박스에 병합하여 검색 편의성 강화
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
     adminItems.forEach(item => {
-        if (item.part && !suggestionItems.includes(item.part)) {
-            suggestionItems.push(item.part);
+        const displayName = item.code || item.part; // [수정] 물품명 대신 코드명 우선 노출
+        if (displayName && !suggestionItems.includes(displayName)) {
+            suggestionItems.push(displayName);
         }
     });
 
@@ -901,7 +922,14 @@ function updateKeywordSuggestions() {
     Array.from(suggestionItems).sort().forEach(content => {
         const div = document.createElement('div');
         div.className = 'log-select-item';
-        const isSelected = currentSelected.includes(content);
+
+        let isSelected = false;
+        if (!isInitialized) {
+            isSelected = true; // [개선] 초기 상태에서는 전체 선택이 기본값으로 동작하도록 수정
+        } else {
+            isSelected = currentSelected.includes(content);
+        }
+
         if (isSelected) div.classList.add('selected');
         div.dataset.value = content;
 
@@ -936,15 +964,23 @@ function updateKeywordTrigger() {
     if (!input) return;
 
     const selected = Array.from(list ? list.querySelectorAll('.log-select-item.selected') : []);
+    const total = list ? list.querySelectorAll('.log-select-item').length : 0;
 
-    if (selected.length > 0) {
+    if (total > 0 && selected.length === total) {
+        input.value = '';
+        input.placeholder = '항목/내용 검색 (전체)';
+        input.style.color = '#e6edf3';
+        input.title = '전체 선택됨';
+    } else if (selected.length > 0) {
         const uniqueSelected = Array.from(new Set(selected.map(el => el.dataset.value)));
         const text = uniqueSelected.join(', ');
         input.value = uniqueSelected.length > 1 ? `${uniqueSelected[0]} 외 ${uniqueSelected.length - 1}개` : text;
         input.style.color = '#58a6ff';
         input.title = uniqueSelected.join('\n');
     } else {
-        input.style.color = '#e6edf3';
+        input.value = '';
+        input.placeholder = '선택 없음';
+        input.style.color = '#8b949e';
         input.title = '';
     }
 }
@@ -994,7 +1030,7 @@ function updateSortBuildingSelect(sites) {
 function updateSortModelSelect(sites, buildings, data) {
     const modelSelect = document.getElementById('sort-model-select');
     if (!modelSelect) return;
-    
+
     modelSelect.innerHTML = '<option value="">전체 모델</option>';
     if (!sites || sites.length === 0) {
         modelSelect.disabled = true;
@@ -1011,7 +1047,7 @@ function updateSortModelSelect(sites, buildings, data) {
             const detailData = JSON.parse(localStorage.getItem(`details_${site}_${equip}`)) || {};
             const setup = detailData.setup || {};
             const equipBuilding = setup.building ? setup.building : '미지정';
-            
+
             if (!isBuildingAll && buildings && buildings.length > 0 && !buildings.includes(equipBuilding)) return;
 
             const parts = equip.split('::');
@@ -1141,7 +1177,7 @@ function updateSortDetailTypeSelect(types) {
 
     });
     syncCustomMultiSelect('sort-detail-type-select', '전체 세부 구분');
-    
+
     updateSortDetailType2Select(types, getMultiValues('sort-detail-type-select'));
 }
 
@@ -1235,10 +1271,24 @@ function performSortSearch() {
     const itemDetailTypeFilters = getMultiValues('sort-item-detail-type-select');
     const costTypeFilters = getMultiValues('sort-cost-type-select');
     window.chartSelectedSiteFilter = null; // [추가] 새 검색 시 차트 범례 필터 초기화
-    const keywordInputVal = document.getElementById('sort-keyword') ? document.getElementById('sort-keyword').value.trim().toLowerCase() : '';
+    const keywordInputEl = document.getElementById('sort-keyword');
+    const keywordInputVal = keywordInputEl ? keywordInputEl.value.trim().toLowerCase() : '';
     const keywordList = document.getElementById('sort-keyword-list');
-    const keywordSelected = keywordList ? Array.from(keywordList.querySelectorAll('.log-select-item.selected')).map(el => (el.dataset.value || '').toLowerCase()) : [];
+    const keywordItemEls = keywordList ? Array.from(keywordList.querySelectorAll('.log-select-item')) : [];
+    const keywordSelected = keywordItemEls.filter(el => el.classList.contains('selected')).map(el => (el.dataset.value || '').toLowerCase());
 
+    const isKeywordAll = keywordItemEls.length > 0 && keywordSelected.length === keywordItemEls.length;
+    const isKeywordNone = keywordItemEls.length > 0 && keywordSelected.length === 0;
+
+    let manualKeyword = keywordInputVal;
+    if (keywordSelected.length > 0) {
+        const firstKw = keywordSelected[0];
+        if (keywordSelected.length > 1 && manualKeyword.includes('외') && manualKeyword.includes('개') && manualKeyword.startsWith(firstKw)) {
+            manualKeyword = ''; // 드롭다운 자동 생성 문구는 수동 타이핑 검색어에서 제외
+        } else if (keywordSelected.length === 1 && manualKeyword === firstKw) {
+            manualKeyword = '';
+        }
+    }
     const isSiteAll = isAllSelected('sort-site-select', siteFilters);
     const isBuildingAll = isAllSelected('sort-building-select', buildingFilters);
     const isModelAll = isAllSelected('sort-model-select', modelFilters);
@@ -1375,79 +1425,106 @@ function performSortSearch() {
 
                         const pureContent = itemObj.content || itemObj.code || '';
 
-                        let parsedCostType = '';
-                        const costMatch = pureContent.match(/\[(.*?)\]/);
-                        if (costMatch) parsedCostType = costMatch[1];
-                        const itemCostType = itemObj.costType || itemObj.itemCost || parsedCostType || '유상';
+                        const workerText = itemObj.worker || '';
+                        
+                        let baseParsedCostType = '';
+                        const baseCostMatch = pureContent.match(/\[(.*?)\]/);
+                        if (baseCostMatch) baseParsedCostType = baseCostMatch[1];
+                        const rowCostType = itemObj.costType || itemObj.itemCost || baseParsedCostType || '유상';
 
                         if (!isCostTypeAll && costTypeFilters.length === 0) return false;
-                        if (!isCostTypeAll && !costTypeFilters.includes(itemCostType)) return false;
-
-                        let matchedItemDetailType = '';
-                        const contentsList = pureContent.split(',').map(s => s.replace(/\[.*?\]\s*/g, '').trim());
-
                         if (!isItemDetailTypeAll && itemDetailTypeFilters.length === 0) return false;
 
-                        if (itemDetailTypeFilters.length > 0) {
-                            let matchFound = false;
-                            for (const c of contentsList) {
-                                let cleanContent = c.replace(/\[지연\]/g, '').trim();
-                                let partsToCheck = [cleanContent];
+                        const rawItemsList = pureContent.split(',').map(s => s.trim()).filter(Boolean);
+                        let matchedRawItems = [];
+                        let matchedItemDetailType = '';
 
-                                if (cleanContent.includes(' - ')) {
-                                    const parts = cleanContent.split(' - ');
-                                    partsToCheck = [parts[0].trim()];
-                                    if (parts.length > 1) partsToCheck.push(parts[1].trim());
-                                }
+                        const rowSearchTargetBase = `${workerText} ${displayEquipName} ${serialNo} ${custEquipName} ${siteGroup} ${site} ${equipBuilding} ${itemType} ${dt1} ${dt2} ${itemObj.memo || ''}`.toLowerCase();
 
-                                for (const pt of partsToCheck) {
-                                    // [수정] 규격(spec) 텍스트 분리 및 제거하여 정확한 매칭 수행
-                                    const specMatch = pt.match(/ \[(.*?)\]$/);
-                                    if (specMatch) pt = pt.replace(specMatch[0], '');
+                        for (const rawItem of rawItemsList) {
+                            let isItemMatch = true;
 
-                                    const matchItem = adminItems.find(ai => ai.part === pt || ai.code === pt);
-                                    let dt = (matchItem && matchItem.detailType) ? matchItem.detailType : '미지정';
+                            // 1. 개별 아이템의 비용 처리 필터
+                            let itemCostType = rowCostType;
+                            const itemCostMatch = rawItem.match(/^\[(.*?)\]/);
+                            if (itemCostMatch) itemCostType = itemCostMatch[1];
 
-                                    if (isItemDetailTypeAll || itemDetailTypeFilters.includes(dt)) {
-                                        matchedItemDetailType = dt;
-                                        matchFound = true;
-                                        break;
-                                    }
-                                }
-                                if (matchFound) break;
+                            if (!isCostTypeAll && !costTypeFilters.includes(itemCostType)) {
+                                isItemMatch = false;
                             }
-                            if (!matchFound) return false;
-                        } else {
-                            let cleanContent = contentsList[0] || '';
-                            cleanContent = cleanContent.replace(/\[지연\]/g, '').trim();
+
+                            // 2. 개별 아이템의 세부 구분(물품 상세) 필터
+                            let cleanContent = rawItem.replace(/\[.*?\]\s*/g, '').replace(/\[지연\]/g, '').trim();
+                            let partsToCheck = [cleanContent];
                             if (cleanContent.includes(' - ')) {
                                 const parts = cleanContent.split(' - ');
-                                cleanContent = parts.length > 1 ? parts[1].trim() : parts[0].trim();
+                                partsToCheck = [parts[0].trim()];
+                                if (parts.length > 1) partsToCheck.push(parts[1].trim());
                             }
-                            // [수정] 규격(spec) 텍스트 분리 및 제거하여 정확한 매칭 수행
-                            const specMatch = cleanContent.match(/ \[(.*?)\]$/);
-                            if (specMatch) cleanContent = cleanContent.replace(specMatch[0], '');
 
-                            const matchItem = adminItems.find(ai => ai.part === cleanContent || ai.code === cleanContent);
-                            if (matchItem) matchedItemDetailType = matchItem.detailType;
+                            let itemDt = '미지정';
+                            let itemKeywords = itemObj.code || '';
+
+                            for (let pt of partsToCheck) {
+                                const specMatch = pt.match(/ \[(.*?)\]$/);
+                                if (specMatch) pt = pt.replace(specMatch[0], '');
+
+                                const matchItem = adminItems.find(ai => ai.part === pt || ai.code === pt);
+                                if (matchItem) {
+                                    let dt = matchItem.detailType;
+                                    if (dt === '선택 안함' || dt === '') dt = '미지정';
+                                    itemDt = dt;
+                                    itemKeywords += ` ${matchItem.code || ''} ${matchItem.partno || ''} ${matchItem.part || ''}`;
+                                    break;
+                                }
+                            }
+
+                            if (!isItemDetailTypeAll && itemDetailTypeFilters.length > 0) {
+                                const isMatchDt = itemDetailTypeFilters.includes(itemDt) || (itemDt === '미지정' && itemDetailTypeFilters.some(f => f.includes('미지정')));
+                                if (!isMatchDt) {
+                                    isItemMatch = false;
+                                }
+                            }
+
+                            // 3. 개별 아이템의 텍스트(키워드) 필터
+                            if (isItemMatch) {
+                                if (isKeywordNone && !manualKeyword) {
+                                    isItemMatch = false;
+                                } else if (!isKeywordAll || manualKeyword) {
+                                    // [개선] 매뉴얼 키워드(타이핑)일 때는 전체 정보를 검색하고, 
+                                    // 드롭다운 선택 키워드일 때는 물품 관련 정보에 대해서만 엄격하게 매칭하여, 
+                                    // 선택 해제된 항목이 사업장명('기타사업장' 등)과 같은 다른 메타데이터와 겹쳐서 필터링을 우회하는 현상 차단
+                                    const globalSearchTarget = `${rawItem} ${cleanContent} ${itemKeywords} ${itemCostType} ${itemDt} ${rowSearchTargetBase}`.toLowerCase();
+                                    const itemSpecificTarget = `${rawItem} ${cleanContent} ${itemKeywords} ${itemCostType} ${itemDt}`.toLowerCase();
+                                    
+                                    if (manualKeyword) {
+                                        const kws = manualKeyword.split(/\s+/);
+                                        if (!kws.every(kw => globalSearchTarget.includes(kw))) {
+                                            isItemMatch = false;
+                                        }
+                                    } else if (keywordSelected.length > 0) {
+                                        if (!keywordSelected.some(kw => itemSpecificTarget.includes(kw))) {
+                                            isItemMatch = false;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (isItemMatch) {
+                                matchedRawItems.push(rawItem);
+                                if (!matchedItemDetailType) matchedItemDetailType = itemDt;
+                            }
                         }
+
+                        if (matchedRawItems.length === 0) return false;
 
                         if (!matchedItemDetailType) matchedItemDetailType = '미지정';
-
-                        const workerText = itemObj.worker || '';
-                        if (keywordInputVal || keywordSelected.length > 0) {
-                            const searchTarget = `${pureContent} ${workerText} ${displayEquipName} ${custEquipName}`.toLowerCase();
-                            let isMatch = false;
-
-                            if (keywordSelected.length > 0) {
-                                isMatch = keywordSelected.some(kw => searchTarget.includes(kw));
-                            } else if (keywordInputVal) {
-                                const kws = keywordInputVal.split(/\s+/);
-                                isMatch = kws.every(kw => searchTarget.includes(kw));
-                            }
-
-                            if (!isMatch) return false;
-                        }
+                        
+                        let finalCostType = rowCostType;
+                        const firstMatchedCostMatch = matchedRawItems[0].match(/^\[(.*?)\]/);
+                        if (firstMatchedCostMatch) finalCostType = firstMatchedCostMatch[1];
+                        
+                        let finalContent = matchedRawItems.join(', ');
 
                         return {
                             id: itemObj.id,
@@ -1462,10 +1539,10 @@ function performSortSearch() {
                             custName: custEquipName,
                             type: itemType,
                             detailType: dt2 ? `${dt1} > ${dt2}` : dt1,
-                            content: pureContent,
+                            content: finalContent,
                             worker: workerText,
                             md: itemObj.md || '0',
-                            costType: itemCostType,
+                            costType: finalCostType,
                             itemDetailType: matchedItemDetailType,
                             status: isLog ? '완료' : '예정',
                             memo: itemObj.memo || ''
@@ -1576,8 +1653,8 @@ function renderSortListTableOnly() {
 
     // [추가] 차트 범례 라벨 클릭 시 해당 사업장 데이터만 테이블에 필터링
     if (window.chartSelectedSiteFilter) {
-        results = results.filter(row => 
-            row.site === window.chartSelectedSiteFilter || 
+        results = results.filter(row =>
+            row.site === window.chartSelectedSiteFilter ||
             row.siteGroup === window.chartSelectedSiteFilter
         );
     }
@@ -1705,6 +1782,9 @@ function renderSortChart(results) {
 
     if (!container) return;
 
+    const itemDetailTypeFilters = getMultiValues('sort-item-detail-type-select');
+    const isItemDetailTypeAll = isAllSelected('sort-item-detail-type-select', itemDetailTypeFilters);
+
     container.innerHTML = '';
     if (yAxisContainer) yAxisContainer.innerHTML = '';
     if (partLegend) partLegend.innerHTML = '';
@@ -1776,7 +1856,14 @@ function renderSortChart(results) {
                     if (specMatch) targetContent = targetContent.replace(specMatch[0], '');
 
                     const matchItem = adminItems.find(ai => ai.part === targetContent || ai.code === targetContent);
-                    const itemDetailType = matchItem ? matchItem.detailType : '';
+                    let itemDetailType = matchItem ? matchItem.detailType : '';
+                    if (itemDetailType === '선택 안함' || itemDetailType === '') itemDetailType = '미지정';
+
+                    // [개선] 물품 상세 구분 필터가 특정 항목(예: 용액)으로 한정되어 있다면, 해당하지 않는 파츠 등은 통계에서 제외
+                    if (!isItemDetailTypeAll && itemDetailTypeFilters.length > 0) {
+                        const isMatchDt = itemDetailTypeFilters.includes(itemDetailType) || (itemDetailType === '미지정' && itemDetailTypeFilters.some(f => f.includes('미지정')));
+                        if (!isMatchDt) return;
+                    }
 
                     // 물품 관리에 등록된 항목만 파츠/용액 교체 현황 차트에 표시
                     if (matchItem) {
@@ -1953,13 +2040,13 @@ function renderSortChart(results) {
                     legDiv.onclick = () => {
                         if (localSelectedSite === site) {
                             localSelectedSite = null; // 토글 해제 (전체 보기)
-                    window.chartSelectedSiteFilter = null; // [추가] 테이블 필터 해제
+                            window.chartSelectedSiteFilter = null; // [추가] 테이블 필터 해제
                         } else {
                             localSelectedSite = site; // 개별 보기
-                    window.chartSelectedSiteFilter = site; // [추가] 테이블 필터 적용
+                            window.chartSelectedSiteFilter = site; // [추가] 테이블 필터 적용
                         }
                         renderInner(); // 해당 차트만 재렌더링
-                if (typeof renderSortListTableOnly === 'function') renderSortListTableOnly(); // [추가] 결과 리스트 테이블도 함께 필터링 연동
+                        if (typeof renderSortListTableOnly === 'function') renderSortListTableOnly(); // [추가] 결과 리스트 테이블도 함께 필터링 연동
                     };
                     targetLegend.appendChild(legDiv);
                 }
