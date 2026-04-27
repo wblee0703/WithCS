@@ -445,6 +445,15 @@ def handle_bad_request(e):
 def handle_too_many_requests(e):
     return jsonify({"status": "fail", "message": "짧은 시간에 너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요."}), 429
 
+# [추가] 서버 내부 예외(500) 전용 핸들러 (가비아 자체 500 에러 페이지 리다이렉트로 인한 CORS 차단 방지)
+@app.errorhandler(Exception)
+def handle_exception(e):
+    app.logger.error(f"Unhandled Exception: {str(e)} (Path: {request.path})", exc_info=True)
+    # API 요청인 경우 JSON 형태로 에러 메시지를 반환하여 CORS 에러 대신 깔끔한 알림창이 뜨도록 처리
+    if request.path.startswith('/api/'):
+        return jsonify({"status": "fail", "message": "서버 내부 오류가 발생했습니다. (DB 연결 상태 및 비밀번호를 확인해주세요.)"}), 500
+    return "서버 내부 오류가 발생했습니다.", 500
+
 def login_required(f):
     """로그인 여부를 확인하는 데코레이터"""
     @wraps(f)
