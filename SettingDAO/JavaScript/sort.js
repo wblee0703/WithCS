@@ -1835,6 +1835,8 @@ function renderSortChart(results) {
         "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
     ];
 
+    window.chartRenderers = []; // [추가] 글로벌 차트 렌더러 초기화
+
     results.forEach(row => {
         // [수정] 통계 차트에는 작업이 '완료'된 내역만 포함하도록 필터링
         if (row.status !== '완료') return;
@@ -1921,31 +1923,67 @@ function renderSortChart(results) {
         }
     });
 
-    // 사업장별 그룹 차트를 그리는 공통 헬퍼 함수
+      // 사업장별 그룹 차트를 그리는 공통 헬퍼 함수
     const drawGroupedChart = (dataObj, targetContainer, targetYAxis, targetLegend, allSitesArray) => {
         if (!targetContainer || !targetYAxis) return;
 
-        let localSelectedSite = null;
         let isGrouped = false; // [추가] 그룹화 상태 변수
 
         // [추가] 카드 제목 클릭 시 그룹/개별 보기 전환 이벤트 등록
         const card = targetContainer.closest('.sort-half-chart, .sort-full-chart');
         if (card) {
-            const titleEl = card.querySelector('h3, .card-title, .status-group-title') || card.firstElementChild;
-            if (titleEl && !titleEl.dataset.clickBound) {
+            let titleEl = card.querySelector('h3, .card-title, .status-group-title') || card.firstElementChild;
+            if (titleEl) {
+                // [개선] 검색이나 필터 적용 시 차트가 새로 그려지면서 발생하던 이전 이벤트 리스너(클로저) 꼬임 현상 해결
+                const newTitleEl = titleEl.cloneNode(true);
+                titleEl.parentNode.replaceChild(newTitleEl, titleEl);
+                titleEl = newTitleEl;
+
                 titleEl.dataset.clickBound = 'true';
                 titleEl.style.cursor = 'pointer';
                 titleEl.title = '클릭 시 그룹/개별 보기 전환';
                 titleEl.addEventListener('click', () => {
                     isGrouped = !isGrouped;
-                    localSelectedSite = null; // 뷰 전환 시 개별 막대 선택 해제
-                    renderInner();
+                    window.chartSelectedSiteFilter = null; // [추가] 뷰 전환 시 전역 필터 해제
+                    if (window.chartRenderers) window.chartRenderers.forEach(fn => fn()); // [개선] 모든 차트 동기화
+                    if (typeof renderSortListTableOnly === 'function') renderSortListTableOnly();
                 });
             }
         }
 
+        const getSiteGroupName = (s) => {
+            try {
+                const meta = JSON.parse(localStorage.getItem(`site_meta_${s}`));
+                if (meta && meta.group) return meta.group;
+            } catch (e) { }
+            return '기타사업장';
+        };
+
+        const isMatch = (siteOrGroup) => {
+            const filter = window.chartSelectedSiteFilter;
+            if (!filter) return true;
+            if (filter === siteOrGroup) return true;
+            if (isGrouped) {
+                return getSiteGroupName(filter) === siteOrGroup;
+            } else {
+                return getSiteGroupName(siteOrGroup) === filter;
+            }
+        };
+
         const renderInner = () => {
-            let currentDataObj = dataObj;
+            // [개선] 메인 필터(sort menu)의 사업장 필터가 차트의 그룹/개별 보기 상태에 관계없이 항상 유지되도록 데이터 소스를 명시적으로 재필터링
+            // allSitesArray는 performSortSearch에서 이미 필터링된 results에서 생성되었으므로 신뢰할 수 있는 필터 기준임.
+            const filteredDataObj = {};
+            Object.keys(dataObj).forEach(category => {
+                filteredDataObj[category] = {};
+                Object.keys(dataObj[category]).forEach(site => {
+                    if (allSitesArray.includes(site)) {
+                        filteredDataObj[category][site] = dataObj[category][site];
+                    }
+                });
+            });
+
+            let currentDataObj = filteredDataObj;
             let currentSitesArray = allSitesArray;
 
             // [추가] 그룹화 로직 적용
@@ -1956,15 +1994,8 @@ function renderSortChart(results) {
                 Object.keys(dataObj).forEach(category => {
                     groupedDataObj[category] = {};
                     Object.keys(dataObj[category]).forEach(site => {
-                        let groupName = '기타사업장';
-                        try {
-                            const metaData = JSON.parse(localStorage.getItem(`site_meta_${site}`));
-                            if (metaData && metaData.group) {
-                                groupName = metaData.group;
-                            }
-                        } catch (e) { }
-
-                        groupedSitesSet.add(groupName);
+                        let groupName = getSiteGroupName(site);
+                         groupedSitesSet.add(groupName);
                         groupedDataObj[category][groupName] = (groupedDataObj[category][groupName] || 0) + dataObj[category][site];
                     });
                 });
@@ -1982,7 +2013,7 @@ function renderSortChart(results) {
             Object.values(currentDataObj).forEach(siteObj => {
                 Object.entries(siteObj).forEach(([site, val]) => {
                     if (val > 0) activeSitesInChart.add(site);
-                    if (localSelectedSite && site !== localSelectedSite) return;
+                    if (!isMatch(site)) return;
                     if (val > maxCount) maxCount = val;
                 });
             });
@@ -2032,20 +2063,18 @@ function renderSortChart(results) {
             if (targetLegend) targetLegend.innerHTML = '';
             currentSitesArray.forEach((site) => {
                 if (targetLegend && activeSitesInChart.has(site)) {
-                    const isFaded = localSelectedSite && localSelectedSite !== site;
+                    const isFaded = !isMatch(site);
                     const legDiv = document.createElement('div');
                     legDiv.className = 'legend-item';
                     if (isFaded) legDiv.classList.add('faded');
                     legDiv.innerHTML = `<div class="legend-color-box" style="background:${siteColorMap[site]};"></div><span title="${escapeHtml(site)}">${escapeHtml(site)}</span>`;
                     legDiv.onclick = () => {
-                        if (localSelectedSite === site) {
-                            localSelectedSite = null; // 토글 해제 (전체 보기)
-                            window.chartSelectedSiteFilter = null; // [추가] 테이블 필터 해제
+                        if (window.chartSelectedSiteFilter === site) {
+                            window.chartSelectedSiteFilter = null; // 토글 해제 (전체 보기)
                         } else {
-                            localSelectedSite = site; // 개별 보기
                             window.chartSelectedSiteFilter = site; // [추가] 테이블 필터 적용
                         }
-                        renderInner(); // 해당 차트만 재렌더링
+                        if (window.chartRenderers) window.chartRenderers.forEach(fn => fn()); // [개선] 모든 차트 시각적 동기화
                         if (typeof renderSortListTableOnly === 'function') renderSortListTableOnly(); // [추가] 결과 리스트 테이블도 함께 필터링 연동
                     };
                     targetLegend.appendChild(legDiv);
@@ -2056,7 +2085,7 @@ function renderSortChart(results) {
             const sortedCategories = Object.keys(currentDataObj).map(category => {
                 let currentTotal = 0;
                 currentSitesArray.forEach(site => {
-                    if (localSelectedSite && localSelectedSite !== site) return;
+                    if (!isMatch(site)) return;
                     currentTotal += (currentDataObj[category][site] || 0);
                 });
                 return { category, total: currentTotal };
@@ -2082,7 +2111,7 @@ function renderSortChart(results) {
                 });
 
                 sortedSitesForCategory.forEach(site => {
-                    if (localSelectedSite && localSelectedSite !== site) return;
+                    if (!isMatch(site)) return;
 
                     const count = currentDataObj[category][site] || 0;
                     if (count > 0) {
@@ -2107,8 +2136,12 @@ function renderSortChart(results) {
             });
         };
 
+        if (!window.chartRenderers) window.chartRenderers = [];
+        window.chartRenderers.push(renderInner);
+
         renderInner();
     };
+
 
     const sitesArray = Array.from(allSites).sort();
     drawGroupedChart(partSiteCounts, container, yAxisContainer, partLegend, sitesArray);
