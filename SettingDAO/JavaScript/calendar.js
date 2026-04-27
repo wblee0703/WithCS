@@ -1100,6 +1100,45 @@ function setupSearchModal() {
             siteDropdown.classList.toggle('show');
         };
 
+        // [추가] 사업장 그룹 일괄 선택/해제 버튼 (Sort 메뉴 스타일)
+        if (!document.getElementById('calendar-site-group-toggle-container')) {
+            const siteGroups = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
+            const btnsHtml = siteGroups.map(g => `<button type="button" class="btn-gray site-group-toggle-btn" data-group="${g}" style="padding: 2px 6px; font-size: 11px; margin-right: 4px; margin-bottom: 4px; cursor: pointer;">${g}</button>`).join('');
+            const extraHeader = `<div id="calendar-site-group-toggle-container" style="padding: 8px 8px 4px 8px; border-bottom: 1px solid #30363d; display: flex; flex-wrap: wrap;">${btnsHtml}</div>`;
+            
+            siteDropdown.insertAdjacentHTML('afterbegin', extraHeader);
+
+            const toggleBtns = siteDropdown.querySelectorAll('.site-group-toggle-btn');
+            toggleBtns.forEach(btn => {
+                btn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const targetGroup = btn.dataset.group;
+                    if (!siteList) return;
+
+                    const groupItems = Array.from(siteList.querySelectorAll('.log-select-item')).filter(item => item.dataset.siteGroup === targetGroup);
+                    if (groupItems.length === 0) return;
+
+                    const allSelected = groupItems.every(item => item.classList.contains('selected'));
+
+                    groupItems.forEach(el => {
+                        if (allSelected) {
+                            el.classList.remove('selected');
+                            const icon = el.querySelector('.check-icon');
+                            if (icon) icon.style.opacity = '0';
+                        } else {
+                            el.classList.add('selected');
+                            const icon = el.querySelector('.check-icon');
+                            if (icon) icon.style.opacity = '1';
+                        }
+                    });
+
+                    updateSiteTriggerText();
+                    updateSearchEquipSelect(getSelectedSites());
+                };
+            });
+        }
+
         if (btnSiteAll) {
             btnSiteAll.onclick = (e) => {
                 e.stopPropagation();
@@ -1214,9 +1253,6 @@ function openSearchModal() {
     if (!modal || !siteList) return;
      const data = getDeviceDataMap();
     const sites = Object.keys(data).filter(k => k !== 'models' && k !== 'details').sort();
-    if (!sites.includes('기타 사업장')) {
-        sites.push('기타 사업장');
-    }
 
     siteList.innerHTML = '';
     
@@ -1229,6 +1265,7 @@ function openSearchModal() {
         div.className = 'log-select-item';
         if (isSelected) div.classList.add('selected');
         div.dataset.value = site;
+        div.dataset.siteGroup = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장'; // [추가]
         div.innerHTML = `<span class="check-icon" style="flex: 1; text-align: center; opacity:${isSelected ? '1' : '0'}; font-weight:bold; color:#58a6ff;">✓</span><span class="item-text" style="flex: 9; padding-left: 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(site)}</span>`;
         
         div.onclick = (e) => {

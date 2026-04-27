@@ -672,15 +672,12 @@ function setupSortFilters() {
 
             if (e.target.value === 'month') {
                 if (monthInput) monthInput.style.display = 'block';
-                periodType.classList.remove('full-width-mode');
             }
             else if (e.target.value === 'year') {
                 if (yearInput) yearInput.style.display = 'block';
-                periodType.classList.remove('full-width-mode');
             }
             else {
                 if (customInput) customInput.style.display = 'flex';
-                periodType.classList.add('full-width-mode');
             }
         });
     }
@@ -1209,10 +1206,6 @@ function updateSortDetailType2Select(types, detailTypes) {
         opt.textContent = sub;
         detailType2Select.appendChild(opt);
     });
-    const optUnspecified = document.createElement('option');
-    optUnspecified.value = '미지정';
-    optUnspecified.textContent = '미지정';
-    detailType2Select.appendChild(optUnspecified);
     syncCustomMultiSelect('sort-detail-type2-select', '전체 세부 구분 2');
 }
 
@@ -1241,6 +1234,7 @@ function performSortSearch() {
     const detailType2Filters = getMultiValues('sort-detail-type2-select');
     const itemDetailTypeFilters = getMultiValues('sort-item-detail-type-select');
     const costTypeFilters = getMultiValues('sort-cost-type-select');
+    window.chartSelectedSiteFilter = null; // [추가] 새 검색 시 차트 범례 필터 초기화
     const keywordInputVal = document.getElementById('sort-keyword') ? document.getElementById('sort-keyword').value.trim().toLowerCase() : '';
     const keywordList = document.getElementById('sort-keyword-list');
     const keywordSelected = keywordList ? Array.from(keywordList.querySelectorAll('.log-select-item.selected')).map(el => (el.dataset.value || '').toLowerCase()) : [];
@@ -1580,6 +1574,14 @@ function renderSortListTableOnly() {
 
     let results = window.currentSortResults || [];
 
+    // [추가] 차트 범례 라벨 클릭 시 해당 사업장 데이터만 테이블에 필터링
+    if (window.chartSelectedSiteFilter) {
+        results = results.filter(row => 
+            row.site === window.chartSelectedSiteFilter || 
+            row.siteGroup === window.chartSelectedSiteFilter
+        );
+    }
+
     if (keyword) {
         const keywords = keyword.split(/\s+/);
         results = results.filter(row => {
@@ -1810,7 +1812,7 @@ function renderSortChart(results) {
             if (!detailTypeSiteCounts[dt1]) detailTypeSiteCounts[dt1] = {};
             detailTypeSiteCounts[dt1][row.site] = (detailTypeSiteCounts[dt1][row.site] || 0) + 1;
         }
-        if (dt2 && row.site) {
+        if (dt2 && dt2 !== '미지정' && row.site) {
             if (!detailType2SiteCounts[dt2]) detailType2SiteCounts[dt2] = {};
             detailType2SiteCounts[dt2][row.site] = (detailType2SiteCounts[dt2][row.site] || 0) + 1;
         }
@@ -1951,10 +1953,13 @@ function renderSortChart(results) {
                     legDiv.onclick = () => {
                         if (localSelectedSite === site) {
                             localSelectedSite = null; // 토글 해제 (전체 보기)
+                    window.chartSelectedSiteFilter = null; // [추가] 테이블 필터 해제
                         } else {
                             localSelectedSite = site; // 개별 보기
+                    window.chartSelectedSiteFilter = site; // [추가] 테이블 필터 적용
                         }
                         renderInner(); // 해당 차트만 재렌더링
+                if (typeof renderSortListTableOnly === 'function') renderSortListTableOnly(); // [추가] 결과 리스트 테이블도 함께 필터링 연동
                     };
                     targetLegend.appendChild(legDiv);
                 }
