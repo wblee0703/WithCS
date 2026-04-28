@@ -359,6 +359,7 @@ function updateMaintenanceDashboard() {
 
     const equipCountsForChart = {};
     let totalEquipForChart = 0;
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
     if (selectedSiteFilter) {
         Object.keys(data).forEach(site => {
@@ -369,7 +370,9 @@ function updateMaintenanceDashboard() {
                             if (item === '기타(ETC)') return;
                             totalEquipForChart++;
                         const name = item.split('::')[0];
-                        equipCountsForChart[name] = (equipCountsForChart[name] || 0) + 1;
+                        const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+                        const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+                        equipCountsForChart[displayName] = (equipCountsForChart[displayName] || 0) + 1;
                     });
                 }
             }
@@ -382,7 +385,9 @@ function updateMaintenanceDashboard() {
                         if (item === '기타(ETC)') return;
                         totalEquipForChart++;
                     const name = item.split('::')[0];
-                    equipCountsForChart[name] = (equipCountsForChart[name] || 0) + 1;
+                    const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+                    const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+                    equipCountsForChart[displayName] = (equipCountsForChart[displayName] || 0) + 1;
                 });
             }
         });
@@ -575,7 +580,9 @@ function renderEquipDetailList(data) {
                 data[site].forEach(equip => {
                     if (equip === '기타(ETC)') return;
                     const name = equip.split('::')[0];
-                    if (selectedEquipFilter && name !== selectedEquipFilter) return;
+                    const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+                    const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+                    if (selectedEquipFilter && displayName !== selectedEquipFilter) return;
                     items.push({ site, equip });
                 });
             }
@@ -657,7 +664,9 @@ function renderUpcomingList(data) {
                 data[site].forEach(equip => {
                     if (equip === '기타(ETC)') return;
                     const equipName = equip.split('::')[0];
-                    if (selectedEquipFilter && equipName !== selectedEquipFilter) return;
+                    const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
+                    const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
+                    if (selectedEquipFilter && displayName !== selectedEquipFilter) return;
                     if (selectedSerialFilter && equip !== selectedSerialFilter) return;
 
                     const key = `details_${site}_${equip}`;
@@ -805,6 +814,7 @@ function updateSetupDashboard() {
     let equipCounts = {};
 
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
     Object.keys(data).forEach(site => {
         let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장';
@@ -821,7 +831,9 @@ function updateSetupDashboard() {
                         activeSetupEquips.push({ site, equip });
                         siteStats[groupName] = (siteStats[groupName] || 0) + 1;
                         const equipName = equip.split('::')[0];
-                        equipCounts[equipName] = (equipCounts[equipName] || 0) + 1;
+                        const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
+                        const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
+                        equipCounts[displayName] = (equipCounts[displayName] || 0) + 1;
                     }
                 }
             });
@@ -961,9 +973,12 @@ function renderSetupEquipChart(equipStats, totalEquip, activeEquips) {
     }
 
     let filteredStats = {};
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
     filteredEquips.forEach(e => {
         const name = e.equip.split('::')[0];
-        filteredStats[name] = (filteredStats[name] || 0) + 1;
+        const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+        const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+        filteredStats[displayName] = (filteredStats[displayName] || 0) + 1;
     });
 
     const statsArr = Object.keys(filteredStats).map(key => ({ name: key, count: filteredStats[key] }));
@@ -1024,7 +1039,14 @@ function renderSetupEquipDetailList(activeEquips) {
 
     let filtered = activeEquips;
     if (setupDashboardFilter.site) filtered = filtered.filter(e => window.getSiteGroupName(e.site) === setupDashboardFilter.site);
-    if (setupDashboardFilter.equip) filtered = filtered.filter(e => e.equip.split('::')[0] === setupDashboardFilter.equip);
+    if (setupDashboardFilter.equip) {
+        filtered = filtered.filter(e => {
+            const name = e.equip.split('::')[0];
+            const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+            const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+            return displayName === setupDashboardFilter.equip;
+        });
+    }
 
     if (filtered.length === 0) {
         listEl.innerHTML = '<li class="list-empty-msg">데이터 없음</li>';
@@ -1082,7 +1104,12 @@ function renderSetupUpcomingList(activeEquips) {
 
     activeEquips.forEach(eq => {
         if (setupDashboardFilter.site && window.getSiteGroupName(eq.site) !== setupDashboardFilter.site) return;
-        if (setupDashboardFilter.equip && eq.equip.split('::')[0] !== setupDashboardFilter.equip) return;
+        if (setupDashboardFilter.equip) {
+            const name = eq.equip.split('::')[0];
+            const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+            const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+            if (displayName !== setupDashboardFilter.equip) return;
+        }
         if (currentGanttFilters.equip && eq.equip !== currentGanttFilters.equip) return;
 
         const data = setupData[`${eq.site}::${eq.equip}`];

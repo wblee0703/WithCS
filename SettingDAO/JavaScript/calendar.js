@@ -332,8 +332,12 @@ function renderCalendar() {
         if (siteText) {
             infoText = `<${siteText}`;
             if (currentSearchFilters.equip) {
+                const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
                 const parts = currentSearchFilters.equip.split('::');
-                infoText += `, ${parts[0]}`;
+                const rawName = parts[0];
+                const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+                const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
+                infoText += `, ${displayName}`;
                 if (parts.length > 1) infoText += ` (${parts[1]})`;
             }
             infoText += '>';
@@ -403,16 +407,23 @@ function renderMonthGrid(year, month, titleId, gridId) {
             dayEvents = pmEvents[dateStr];
 
             if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
+                const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
                 dayEvents = dayEvents.filter(event => {
+                    const equipParts = event.equip ? event.equip.split('::') : [];
+                    const rawName = equipParts[0] || '';
+                    const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+                    const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
+
                     const matchKeyword = !keyword || (
                         (event.site && event.site.toLowerCase().includes(keyword)) ||
                         (event.equip && event.equip.toLowerCase().includes(keyword)) ||
+                        (displayName.toLowerCase().includes(keyword)) ||
                         (event.content && event.content.toLowerCase().includes(keyword)) ||
                         (event.worker && event.worker.toLowerCase().includes(keyword))
                     );
 
                     const matchSite = window.isSiteMatched(event.site, currentSearchFilters.site);
-                    const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
+                    const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || rawName === currentSearchFilters.equip || displayName === currentSearchFilters.equip;
 
                     return matchKeyword && matchSite && matchEquip;
                 });
@@ -454,13 +465,17 @@ function renderMonthGrid(year, month, titleId, gridId) {
             const maxAllowed = isSingleMonthMode ? 3 : 4;
             const visibleCount = isSingleMonthMode ? 2 : 3;
 
+            const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
             let renderGroups = groups;
             if (groups.length > maxAllowed) {
                 renderGroups = groups.slice(0, visibleCount);
             }
 
             renderGroups.forEach(group => {
-                const equipName = group.equip.split('::')[0];
+                const equipParts = group.equip.split('::');
+                const rawName = equipParts[0];
+                const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+                const equipName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
                 const typeClass = `type-${group.type}`;
                 const completedClass = (group.isCompleted || group.isChanged) ? 'completed' : '';
 
@@ -642,6 +657,7 @@ function openCalendarPopup(dateStr, events) {
             return aDone ? 1 : -1;
         });
 
+        const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
         groupedList.forEach(group => {
             const tpl = getTemplateContent('popup-event-item-template');
             if (tpl) {
@@ -649,8 +665,10 @@ function openCalendarPopup(dateStr, events) {
 
                 const textClass = (group.isCompleted || group.isChanged) ? 'completed' : '';
                 const parts = group.equip.split('::');
-                const equipName = parts[0];
+                const rawName = parts[0];
                 const serialNo = parts.length > 1 ? parts[1] : '';
+                const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+                const equipName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
 
                 const key = `details_${group.site}_${group.equip}`;
                 const detailData = JSON.parse(localStorage.getItem(key)) || {};
@@ -785,10 +803,16 @@ function openCalendarPopup(dateStr, events) {
                         const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
                         if (keyword || currentSearchFilters.site || currentSearchFilters.equip) {
+                            const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
                             dayEvents = dayEvents.filter(event => {
-                                const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
+                                const equipParts = event.equip ? event.equip.split('::') : [];
+                                const rawName = equipParts[0] || '';
+                                const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+                                const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
+
+                                const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (displayName.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
                                 const matchSite = window.isSiteMatched(event.site, currentSearchFilters.site);
-                                const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
+                                const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || rawName === currentSearchFilters.equip || displayName === currentSearchFilters.equip;
                                 return matchKeyword && matchSite && matchEquip;
                             });
                         }
@@ -1289,15 +1313,18 @@ function openSearchModal() {
         if (equipSelect) equipSelect.value = currentSearchFilters.equip;
         const trigger = document.getElementById('search-equip-trigger');
         if (trigger) {
+            const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
             const parts = currentSearchFilters.equip.split('::');
-            const name = parts[0] || '';
+            const rawName = parts[0] || '';
             const serial = parts.length > 1 ? parts[1] : '';
+            const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+            const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
             const targetSite = Array.isArray(currentSearchFilters.site) ? (currentSearchFilters.site.length > 0 ? currentSearchFilters.site[0] : '') : currentSearchFilters.site;
             const key = `details_${targetSite}_${currentSearchFilters.equip}`;
             const detailData = JSON.parse(localStorage.getItem(key)) || {};
             const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
-            let displayValueHtml = escapeHtml(name);
+            let displayValueHtml = escapeHtml(displayName);
             let subInfoHtml = '';
             if (custName) {
                 subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(custName)}]</span>`;
@@ -1395,16 +1422,19 @@ function updateSearchEquipSelect(site) {
         if (!list) return;
         list.innerHTML = '';
         const keywords = searchTerm.toLowerCase().split(/\s+/);
+        const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
         let matches = equips.filter(item => {
             const parts = item.equip.split('::');
-            const name = parts[0] || '';
+            const rawName = parts[0] || '';
+            const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+            const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
             const serial = parts.length > 1 ? parts[1] : '';
             const key = `details_${item.site}_${item.equip}`;
             const detailData = JSON.parse(localStorage.getItem(key)) || {};
             const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
-            const text = `${name} ${serial} ${custName}`.toLowerCase();
+            const text = `${rawName} ${displayName} ${serial} ${custName}`.toLowerCase();
             return keywords.every(kw => text.includes(kw));
         });
 
@@ -1427,14 +1457,16 @@ function updateSearchEquipSelect(site) {
         if (matches.length > 0) {
             matches.forEach(item => {
                 const parts = item.equip.split('::');
-                const name = parts[0] || '';
+                const rawName = parts[0] || '';
+                const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+                const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
                 const serial = parts.length > 1 ? parts[1] : '';
 
                 const key = `details_${item.site}_${item.equip}`;
                 const detailData = JSON.parse(localStorage.getItem(key)) || {};
                 const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
-                let displayValueHtml = escapeHtml(name);
+                let displayValueHtml = escapeHtml(displayName);
                 let subInfoHtml = '';
                 if (custName) {
                     subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(custName)}]</span>`;
@@ -1442,7 +1474,7 @@ function updateSearchEquipSelect(site) {
                     subInfoHtml = ` <span style="color:#3fb950;">[${escapeHtml(serial)}]</span>`;
                 }
 
-                let plainDisplayValue = name;
+                let plainDisplayValue = displayName;
                 if (custName) plainDisplayValue += ` [${custName}]`;
                 else if (serial) plainDisplayValue += ` [${serial}]`;
 
@@ -1454,7 +1486,7 @@ function updateSearchEquipSelect(site) {
                 li.addEventListener('mousedown', (ev) => {
                     ev.preventDefault();
                     if (equipSelect) equipSelect.value = item.equip;
-                    trigger.innerHTML = `${escapeHtml(name)}${subInfoHtml}`;
+                    trigger.innerHTML = `${escapeHtml(displayName)}${subInfoHtml}`;
                     trigger.title = plainDisplayValue;
                     if (dropdown) dropdown.classList.remove('show');
                 });

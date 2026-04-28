@@ -2464,7 +2464,7 @@ function renderEquips(siteName) {
 
             // [수정] 모델명 대신 약어(abbr)가 있으면 적용
             let displayEquipName = equipName;
-            const modelObj = equipmentModels.find(m => m.name === equipName);
+            const modelObj = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
             if (modelObj && modelObj.abbr) {
                 displayEquipName = modelObj.abbr;
             }
@@ -3200,7 +3200,7 @@ async function renderSystemLogs() {
                 const model = parts[0];
                 const serial = parts.length > 1 ? parts[1] : '';
 
-                const matchedModel = equipmentModels.find(m => m.name === model);
+                const matchedModel = equipmentModels.find(m => m.name === model || m.abbr === model);
                 const displayModel = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : model;
 
                 const custName = equipInfoMap[log.target] || '';
@@ -4725,6 +4725,7 @@ function doTaskSearch() {
 
     let allTasks = [];
     const mainData = getDeviceDataMap();
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
     Object.keys(mainData).forEach(site => {
         if (mainData[site]) {
@@ -4734,6 +4735,10 @@ function doTaskSearch() {
                     const data = JSON.parse(localStorage.getItem(key));
                     if (!data) return;
                     const custEquipName = (data.setup && data.setup.custEquipName) ? data.setup.custEquipName : '';
+
+                    const equipRawName = equip.split('::')[0];
+                    const matchedModel = equipmentModels.find(m => m.name === equipRawName || m.abbr === equipRawName);
+                    const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr.toLowerCase() : equipRawName.toLowerCase();
 
                     // Helper to check if a date falls within the range
                     const isDateInRange = (taskDate) => {
@@ -4758,6 +4763,7 @@ function doTaskSearch() {
                             const matchesKeyword = !keyword || (
                                 logWorker.includes(keyword) ||
                                 equipName.includes(keyword) ||
+                            displayName.includes(keyword) ||
                                 logContent.includes(keyword) ||
                                 custEquipName.toLowerCase().includes(keyword)
                             );
@@ -4781,6 +4787,7 @@ function doTaskSearch() {
                             const matchesKeyword = !keyword || (
                                 itemWorker.includes(keyword) ||
                                 equipName.includes(keyword) ||
+                            displayName.includes(keyword) ||
                                 itemContent.includes(keyword) ||
                                 custEquipName.toLowerCase().includes(keyword)
                             );
@@ -4840,7 +4847,9 @@ function doTaskSearch() {
     displayTasks.forEach(group => {
         const { site, equip, date, type, items, isCompleted, custEquipName } = group;
         const parts = equip.split('::');
-        const equipName = parts[0];
+        const rawName = parts[0];
+        const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+        const equipName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
         const serialNo = parts.length > 1 ? `[${parts[1]}]` : '';
 
         const contents = [...new Set(items.map(item => item.content || '내용 없음'))];

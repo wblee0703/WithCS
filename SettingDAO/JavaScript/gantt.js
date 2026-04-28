@@ -210,11 +210,14 @@ function renderGanttChart() {
     // 선택된 장비 정보 표시
     if (targetInfoEl) {
         let infoText = '';
+        const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
         if (currentGanttFilters.site && currentGanttFilters.equip) {
             const parts = currentGanttFilters.equip.split('::');
-            const name = parts[0];
+            const rawName = parts[0];
+            const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+            const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
             const serial = parts.length > 1 ? parts[1] : '';
-            infoText = `${currentGanttFilters.site} > ${name} ${serial ? `(${serial})` : ''}`;
+            infoText = `${currentGanttFilters.site} > ${displayName} ${serial ? `(${serial})` : ''}`;
 
             const data = setupData[`${currentGanttFilters.site}::${currentGanttFilters.equip}`];
             if (data && data.setupDetails && data.setupDetails.length > 0) {
@@ -1181,12 +1184,16 @@ function updateGanttSearchEquipSelect(site) {
 
     const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
     const equips = data[site] ? [...data[site]] : [];
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
     
     equips.forEach(equip => {
         const option = document.createElement('option');
         option.value = equip;
         const parts = equip.split('::');
-        option.textContent = parts.length > 1 ? `${parts[0]} (${parts[1]})` : parts[0];
+        const rawName = parts[0];
+        const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+        const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
+        option.textContent = parts.length > 1 ? `${displayName} (${parts[1]})` : displayName;
         equipSelect.appendChild(option);
     });
     

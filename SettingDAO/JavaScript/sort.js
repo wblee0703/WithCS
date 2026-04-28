@@ -1109,7 +1109,7 @@ function updateSortEquipSelect(sites, buildings, models, data) {
             if (!isModelAll && models && models.length > 0 && !models.includes(equipName)) return;
 
             const serialNo = parts.length > 1 ? parts[1] : '';
-            const matchedModel = equipmentModels.find(m => m.name === equipName);
+            const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
             const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
 
             const custEquipName = setup.custEquipName || '';
@@ -1382,7 +1382,7 @@ function performSortSearch() {
                 if (!isModelAll && !modelFilters.includes(equipName)) return;
 
                 const serialNo = parts.length > 1 ? parts[1] : '';
-                const matchedModel = equipmentModels.find(m => m.name === equipName);
+                const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
                 const displayEquipName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
 
                 const key = `details_${site}_${equip}`;

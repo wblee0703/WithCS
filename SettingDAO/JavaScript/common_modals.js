@@ -199,7 +199,11 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     }
 
     const parts = equip.split('::');
-    document.getElementById('detail-equip-info').textContent = `${site} > ${parts[0]}`;
+    const rawName = parts[0];
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+    const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+    const equipName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
+    document.getElementById('detail-equip-info').textContent = `${site} > ${equipName}`;
     let serialText = parts.length > 1 ? parts[1] : '-';
     const custName = (data.setup && data.setup.custEquipName) ? data.setup.custEquipName : '';
     if (custName) {
@@ -2101,10 +2105,16 @@ window.refreshCalendarPopupAfterCompletion = function () {
             const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
             if (keyword || (typeof currentSearchFilters !== 'undefined' && (currentSearchFilters.site || currentSearchFilters.equip))) {
+                const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
                 dayEvents = dayEvents.filter(event => {
-                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
+                    const equipParts = event.equip ? event.equip.split('::') : [];
+                    const rawName = equipParts[0] || '';
+                    const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+                    const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
+
+                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (displayName.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
                     const matchSite = typeof window.isSiteMatched === 'function' ? window.isSiteMatched(event.site, currentSearchFilters.site) : ((typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.site) || event.site === currentSearchFilters.site);
-                    const matchEquip = (typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.equip) || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
+                    const matchEquip = (typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.equip) || event.equip === currentSearchFilters.equip || rawName === currentSearchFilters.equip || displayName === currentSearchFilters.equip;
                     return matchKeyword && matchSite && matchEquip;
                 });
             }
@@ -2286,10 +2296,16 @@ async function cancelScheduleCompletion() {
                 const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
 
                 if (keyword || (typeof currentSearchFilters !== 'undefined' && (currentSearchFilters.site || currentSearchFilters.equip))) {
+                    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
                     dayEvents = dayEvents.filter(event => {
-                        const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
+                        const equipParts = event.equip ? event.equip.split('::') : [];
+                        const rawName = equipParts[0] || '';
+                        const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+                        const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
+
+                        const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (displayName.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
                         const matchSite = typeof window.isSiteMatched === 'function' ? window.isSiteMatched(event.site, currentSearchFilters.site) : ((typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.site) || event.site === currentSearchFilters.site);
-                        const matchEquip = (typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.equip) || event.equip === currentSearchFilters.equip || event.equip.split('::')[0] === currentSearchFilters.equip;
+                        const matchEquip = (typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.equip) || event.equip === currentSearchFilters.equip || rawName === currentSearchFilters.equip || displayName === currentSearchFilters.equip;
                         return matchKeyword && matchSite && matchEquip;
                     });
                 }

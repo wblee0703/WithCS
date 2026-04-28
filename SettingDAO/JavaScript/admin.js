@@ -1455,7 +1455,7 @@ function renderAdminEquipList() {
             const parts = item.key.split('::');
             const name = parts[0] || '';
             const serial = parts.length > 1 ? parts[1] : '';
-            const matchedModel = equipmentModels.find(m => m.name === name);
+        const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
             const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
             const text = `${item.site} ${name} ${displayName} ${serial}`.toLowerCase();
             return keywords.every(kw => text.includes(kw));
@@ -1470,7 +1470,7 @@ function renderAdminEquipList() {
         const parts = fullKey.split('::');
         const name = parts[0];
         const serial = parts.length > 1 ? parts[1] : '';
-        const matchedModel = equipmentModels.find(m => m.name === name);
+        const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
         const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
 
         // [추가] 고객사 장비명 가져오기
@@ -2991,7 +2991,7 @@ function renderCheckTypeEquipList() {
             const parts = item.key.split('::');
             const name = parts[0] || '';
             const serial = parts.length > 1 ? parts[1] : '';
-            const matchedModel = equipmentModels.find(m => m.name === name);
+        const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
             const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
             const text = `${item.site} ${name} ${displayName} ${serial}`.toLowerCase();
             return keywords.every(kw => text.includes(kw));
@@ -3006,7 +3006,7 @@ function renderCheckTypeEquipList() {
         const parts = fullKey.split('::');
         const name = parts[0];
         const serial = parts.length > 1 ? parts[1] : '';
-        const matchedModel = equipmentModels.find(m => m.name === name);
+        const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
         const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
 
         const li = document.createElement('li');
