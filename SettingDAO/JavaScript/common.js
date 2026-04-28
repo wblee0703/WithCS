@@ -3165,7 +3165,13 @@ async function renderSystemLogs() {
             if (!currentLogFilters.includes(category)) return false;
 
             if (startDate || endDate) {
-                const logDate = log.timestamp.split('T')[0];
+                // [수정] UTC 기준의 timestamp 문자열을 로컬 시간으로 변환 후 날짜 비교
+                const logDateObj = new Date(log.timestamp);
+                const localYear = logDateObj.getFullYear();
+                const localMonth = String(logDateObj.getMonth() + 1).padStart(2, '0');
+                const localDay = String(logDateObj.getDate()).padStart(2, '0');
+                const logDate = `${localYear}-${localMonth}-${localDay}`;
+
                 if (startDate && logDate < startDate) return false;
                 if (endDate && logDate > endDate) return false;
             }
