@@ -1138,6 +1138,24 @@ function setupSidebarEvents() {
                 const initData = { maint: [], logs: [], memo: "", setup: { model: equipModelVal } };
                 localStorage.setItem(key, JSON.stringify(initData));
 
+                // [추가] 셋업(SETUP) 데이터 템플릿 적용 및 동기화
+                const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+                const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
+                let templateToUse = templates[equipVal] || templates['default'] || [
+                    { category: "장비 반입 및 정위치", content: "장비 도면 부착", estDays: "1" },
+                    { category: "통신 상태 및 유틸리티", content: "Utility 배관 공사 및 연결", estDays: "5" },
+                    { category: "셋업 평가", content: "분석부 안정화 및 오염제어", estDays: "5" },
+                    { category: "셋업 완료", content: "셋업 완료", estDays: "0" }
+                ];
+                const initialSetupDetails = templateToUse.map((item, idx) => ({
+                    id: Date.now() + idx, category: item.category, content: item.content,
+                    startDate: "", date: "", estDays: item.estDays || "1",
+                    completed: false, execStartDate: "", delayReason: ""
+                }));
+                setupData[`${siteName}::${fullEquipName}`] = { setupDetails: initialSetupDetails, setupLogs: [] };
+                localStorage.setItem('setup_data', JSON.stringify(setupData));
+                window.syncSetupDataDB(siteName, fullEquipName, initialSetupDetails, []);
+
                 addSystemLog('ADD_EQUIP', fullEquipName, `Site: ${siteName}`);
                 renderEquips(siteName);
                 equipInput.value = '';
@@ -3780,7 +3798,7 @@ window.getHolidayName = function (year, month, day) {
     const fullKey = `${year}-${mm}-${dd}`;
 
     const solarHolidays = {
-        "01-01": "신정", "03-01": "삼일절", "05-05": "어린이날",
+        "01-01": "신정", "03-01": "삼일절", "05-01": "근로자의 날", "05-05": "어린이날",
         "06-06": "현충일", "08-15": "광복절", "10-03": "개천절",
         "10-09": "한글날", "12-25": "성탄절"
     };
@@ -4324,7 +4342,7 @@ function setupDepartmentSuggestion(inputEl) {
     }
 
     // 지정된 소속 목록 ('직접 입력' 제거 및 '기타' 추가)
-    const depts = ['운영1팀(본사)', '운영1팀(삼성)', '운영1팀(청주)', '운영1팀(이천)', '해외(서안)', '해외(우시)', '해외(기타)', '기타'];
+    const depts = ['운영1팀(본사)', '운영1팀(삼성)', '운영1팀(청주)', '운영1팀(이천)', '셋업', '해외(서안)', '해외(우시)', '해외(기타)', '기타'];
 
     // 직접 입력을 차단하고 드롭다운 선택만 허용
     inputEl.readOnly = true;

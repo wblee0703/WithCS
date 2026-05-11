@@ -496,6 +496,12 @@
     background: #21262d;
 }
 
+/* [추가] 차트 CSV 추출 버튼 호버 스타일 */
+.btn-export-chart-csv:hover {
+    color: #e6edf3 !important;
+    background-color: #21262d !important;
+}
+
 /* [추가] 그래프 카드를 구분하기 위한 스타일 */
 .sort-half-chart,
 .sort-full-chart {

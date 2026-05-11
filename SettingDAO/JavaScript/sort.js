@@ -1931,8 +1931,11 @@ function renderSortChart(results) {
 
         // [추가] 카드 제목 클릭 시 그룹/개별 보기 전환 이벤트 등록
         const card = targetContainer.closest('.sort-half-chart, .sort-full-chart');
+        let titleEl = null;
+        let exportBtn = null;
+        
         if (card) {
-            let titleEl = card.querySelector('h3, .card-title, .status-group-title') || card.firstElementChild;
+            titleEl = card.querySelector('h3, .card-title, .status-group-title') || card.firstElementChild;
             if (titleEl) {
                 // [개선] 검색이나 필터 적용 시 차트가 새로 그려지면서 발생하던 이전 이벤트 리스너(클로저) 꼬임 현상 해결
                 const newTitleEl = titleEl.cloneNode(true);
@@ -1942,6 +1945,22 @@ function renderSortChart(results) {
                 titleEl.dataset.clickBound = 'true';
                 titleEl.style.cursor = 'pointer';
                 titleEl.title = '클릭 시 그룹/개별 보기 전환';
+                
+                // [추가] 제목 영역을 flex로 만들고 CSV 추출 버튼 삽입
+                titleEl.style.display = 'flex';
+                titleEl.style.justifyContent = 'space-between';
+                titleEl.style.alignItems = 'center';
+                
+                exportBtn = titleEl.querySelector('.btn-export-chart-csv');
+                if (!exportBtn) {
+                    exportBtn = document.createElement('button');
+                    exportBtn.className = 'btn-export-chart-csv';
+                    exportBtn.innerHTML = '⬇️ CSV';
+                    exportBtn.title = '차트 데이터 CSV 추출';
+                    exportBtn.style.cssText = 'padding: 2px 6px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid #30363d; background: transparent; color: #8b949e; margin-left: auto;';
+                    titleEl.appendChild(exportBtn);
+                }
+
                 titleEl.addEventListener('click', () => {
                     isGrouped = !isGrouped;
                     window.chartSelectedSiteFilter = null; // [추가] 뷰 전환 시 전역 필터 해제
@@ -2093,6 +2112,45 @@ function renderSortChart(results) {
                 if (b.total !== a.total) return b.total - a.total; // 1차 정렬: 수량 많은 순
                 return (a.category || '').localeCompare(b.category || ''); // 2차 정렬: 수량이 같으면 가나다순 (Null 에러 방어)
             }).map(item => item.category);
+
+            // [추가] 추출 버튼 클릭 이벤트 업데이트 (렌더링 시 최신 데이터/필터 반영)
+            if (exportBtn && titleEl) {
+                exportBtn.onclick = (e) => {
+                    e.stopPropagation(); // 그룹/개별 보기 전환 방지
+                    
+                    let csvContent = '\uFEFF'; // 한글 깨짐 방지 BOM
+                    const sites = currentSitesArray.filter(site => isMatch(site));
+                    csvContent += `항목명,${sites.map(s => '"' + String(s).replace(/"/g, '""') + '"').join(',')}\n`;
+                    
+                    sortedCategories.forEach(category => {
+                        let row = [`"${String(category).replace(/"/g, '""')}"`];
+                        let hasDataInRow = false;
+                        sites.forEach(site => {
+                            const val = currentDataObj[category][site] || 0;
+                            row.push(val);
+                            if (val > 0) hasDataInRow = true;
+                        });
+                        if (hasDataInRow) {
+                            csvContent += row.join(',') + '\n';
+                        }
+                    });
+                    
+                    const rawTitle = titleEl.cloneNode(true);
+                    const btnToRemove = rawTitle.querySelector('.btn-export-chart-csv');
+                    if (btnToRemove) btnToRemove.remove();
+                    const titleName = rawTitle.textContent.trim().replace(/\s+/g, '_');
+                    
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `SORT_통계_${titleName}_${new Date().toISOString().slice(0, 10)}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                };
+            }
 
             targetContainer.innerHTML = '';
             sortedCategories.forEach(category => {

@@ -633,6 +633,41 @@ body.role-admin .suggestion-box,
 body.role-admin .tag-remove {
     display: none !important;
 }
+/* admin.css 에 추가 */
+#section-setup-template-mgmt .category-header-row {
+    background-color: #21262d;
+}
+#section-setup-template-mgmt .category-header {
+    padding: 8px 10px;
+    font-weight: bold;
+    color: #8b949e;
+    font-size: 13px;
+    border-bottom: 1px solid #30363d;
+    text-align: left;
+}
+#section-setup-template-mgmt .category-title {
+    margin-right: 10px;
+}
+#section-setup-template-mgmt .btn-add-category {
+    background: transparent;
+    color: #3fb950;
+    border: none;
+    padding: 0 5px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+#section-setup-template-mgmt .btn-add-category:hover {
+    color: #2ea043;
+    transform: scale(1.2);
+}
+#section-setup-template-mgmt .display-none {
+    display: none;
+}
+#section-setup-template-mgmt .item-row {
+    cursor: grab;
+}
 
 /* ==========================================================================
    모바일 반응형 (Mobile Responsive)

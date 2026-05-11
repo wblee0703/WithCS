@@ -359,6 +359,13 @@
     color: var(--gantt-text-title);
     margin: 0;
     font-size: 20px;
+    cursor: pointer;
+    transition: color 0.2s;
+    user-select: none;
+}
+
+.gantt__subtitle:hover {
+    color: var(--gantt-blue-light);
 }
 
 .gantt__target-info {

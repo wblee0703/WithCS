@@ -217,10 +217,7 @@
 }
 
 .log-input-row {
-    padding: 10px;
-    border-bottom: 1px solid #30363d;
-    display: flex;
-    gap: 5px;
+    display: none !important;
 }
 
 .input-dark {
@@ -420,10 +417,6 @@
         width: 0;
     }
 
-    .log-input-row {
-        flex-wrap: wrap;
-    }
-
     /* [요청] 셋업 일지 리스트 높이 수정 (작업일지처럼) */
     .log-list-wrapper {
         height: 150px !important;
@@ -472,23 +465,14 @@
         padding: 8px 4px;
         font-size: 11px;
     }
-
-    /* [리팩토링] 모바일 일반 모드에서는 날짜 입력창 숨기고 텍스트 표시 */
-    #setup-detail-card:not(.edit-mode) .date-display-text {
-        display: block;
-        font-size: 11px; /* [요청] 예정일/완료일 글자 크기 2px 축소 */
-    }
-    #setup-detail-card:not(.edit-mode) .detail-start-date-input,
-    #setup-detail-card:not(.edit-mode) .detail-date-input {
-        display: none;
-    }
-
+    
     /* [추가] 일반 모드 컬럼 너비 */
     #setup-detail-card:not(.edit-mode) .data-table th:nth-child(1) { width: auto; } /* 내용 */
     #setup-detail-card:not(.edit-mode) .data-table th:nth-child(2) { width: 35px; } /* 작업일 */
-    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(3) { width: 75px; } /* 예정일 */
-    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(4) { width: 75px; } /* 완료일 */
-    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(5) { width: 35px; } /* 상태 */
+    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(3) { width: 65px; } /* 예정일 */
+    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(4) { width: 65px; } /* 시작일 */
+    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(5) { width: 65px; } /* 완료일 */
+    #setup-detail-card:not(.edit-mode) .data-table th:nth-child(6) { width: 35px; } /* 상태 */
 
     /* 2. 편집 모드 (톱니바퀴 클릭): 모든 컬럼 표시 및 너비 고정 */
     /* 헤더 및 셀 패딩 축소 */
@@ -505,13 +489,28 @@
     /* 컬럼 너비 설정 (합계가 화면 너비를 넘지 않도록 조정, 날짜는 고정) */
     #setup-detail-card.edit-mode .data-table th:nth-child(1) { width: auto; } /* 내용 */
     #setup-detail-card.edit-mode .data-table th:nth-child(2) { width: 30px; } /* 작업일 */
-    #setup-detail-card.edit-mode .data-table th:nth-child(3) { width: 75px; } /* 예정일 */
-    #setup-detail-card.edit-mode .data-table th:nth-child(4) { width: 75px; } /* 완료일 */
-    #setup-detail-card.edit-mode .data-table th:nth-child(5) { width: 35px; } /* 상태 */
-    #setup-detail-card.edit-mode .data-table th:nth-child(6) { width: 30px; } /* 삭제 */
+    #setup-detail-card.edit-mode .data-table th:nth-child(3) { width: 65px; } /* 예정일 */
+    #setup-detail-card.edit-mode .data-table th:nth-child(4) { width: 65px; } /* 시작일 */
+    #setup-detail-card.edit-mode .data-table th:nth-child(5) { width: 65px; } /* 완료일 */
+    #setup-detail-card.edit-mode .data-table th:nth-child(6) { width: 35px; } /* 상태 */
+    #setup-detail-card.edit-mode .data-table th:nth-child(7) { width: 30px; } /* 삭제 */
 
-    /* 입력창 스타일 */
-    #setup-detail-card.edit-mode .data-table input[type="date"] {
+    /* [추가] 모바일 셋업 일지 리스트 가로 스크롤 및 컬럼 너비 재조정 */
+    #setup-log-card .data-table-wrapper {
+        overflow-x: auto;
+    }
+    #setup-log-card .data-table {
+        min-width: 500px; /* 테이블 크기 축소 (컬럼 삭제 반영) */
+    }
+    #setup-log-card .data-table th:nth-child(1) { width: 80px !important; }
+    #setup-log-card .data-table th:nth-child(2) { width: auto !important; } /* 내용 */
+    #setup-log-card .data-table th:nth-child(3) { width: 80px !important; } /* 작업자 */
+    #setup-log-card .data-table th:nth-child(4) { width: 40px !important; } /* 공수 */
+    #setup-log-card .data-table th:nth-child(5) { width: 50px !important; } /* 관리 */
+
+    /* 모든 모드 공통 입력창 스타일 축소 */
+    #setup-detail-card .data-table input[type="date"],
+    #setup-detail-card .data-table input[type="text"] {
         width: 100%;
         min-width: 0;
         font-size: 10px;
@@ -521,24 +520,6 @@
     #setup-detail-card #setup-detail-card.edit-mode .detail-est-days-input {
         width: 100% !important;
         font-size: 11px;
-    }
-
-    /* [요청] 작업 완료 등록 팝업 모바일 최적화 */
-    #setup-completion-modal .modal-window {
-        width: 90% !important;
-        height: auto !important;
-        max-height: 80vh !important;
-        min-width: 0 !important;
-        display: flex;
-        flex-direction: column;
-    }
-    #setup-completion-modal .modal-body {
-        overflow-y: auto;
-        flex: 1;
-    }
-    /* [요청] 셋업 이력 작업 내용 메모장 크기 확대 */
-    #setup-setup-log-content {
-        height: 120px !important;
     }
 
     /* [요청] 모바일 헤더 레이아웃 조정 */
@@ -563,18 +544,24 @@
         margin-right: 8px; /* 진행률과 접기 버튼 사이 간격 */
     }
 
-    /* [요청] 편집 모드 버튼 (초기화, 불러오기) 줄바꿈 및 정렬 */
+    /* [요청] 편집 모드 버튼 (초기화, 불러오기, 정렬) 줄바꿈 및 정렬 */
     /* 초기화 버튼: 다음 줄 좌측 정렬 */
     #btn-reset-setup-date {
         order: 5;
         margin-top: 5px;
-        margin-right: auto;
         margin-left: 0;
+    }
+
+    /* 정렬 버튼: 초기화 버튼 옆 */
+    #btn-align-setup-today {
+        order: 6;
+        margin-top: 5px;
+        margin-right: auto;
     }
 
     /* 불러오기 버튼: 다음 줄 우측 정렬 (진행률 아래) */
     #btn-load-setup-list {
-        order: 6;
+        order: 7;
         margin-top: 5px;
         margin-left: auto;
     }
@@ -628,6 +615,19 @@
             max-height: 90vh !important;
         }
     }
+
+    /* [추가] 모바일에서 교체 물품 리스트와 메모장을 위아래로 확실히 분리 배치 (셋업) */
+    #setup-memo-flex-wrapper {
+        flex-direction: column !important;
+        height: auto !important; /* 모바일에서는 고정 높이 해제 */
+        min-height: 0 !important;
+    }
+    
+    #setup-replaced-parts-container {
+        flex: 0 1 auto !important; /* 고정 너비 무시 */
+        width: 100% !important;    /* 가로 꽉 차게 변경 */
+        max-height: 150px !important; /* 스크롤 가능하도록 최대 높이 지정 */
+    }
 }
 
 /* ==========================================================================
@@ -674,3 +674,20 @@
 .tag-delayed { color: #f0883e; font-weight: bold; }
 .btn-editing-active { background-color: #238636 !important; color: #ffffff !important; }
 .input-edit-cell { width: 100%; background: #0d1117; border: 1px solid #30363d; color: #fff; padding: 2px; border-radius: 4px; }
+
+/* ==========================================================================
+   [추가] 셋업 기능 전 권한(일반/관리자) 사용 보장 오버라이드
+   ========================================================================== */
+body[class*="role-"] #setup-detail-card .btn-list-setting {
+    display: inline-block !important;
+    pointer-events: auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+body[class*="role-"] #setup-detail-card.edit-mode .btn-del-sm,
+body[class*="role-"] #setup-detail-card.edit-mode .btn-add-category {
+    display: inline-flex !important;
+    pointer-events: auto !important;
+    opacity: 1 !important;
+}

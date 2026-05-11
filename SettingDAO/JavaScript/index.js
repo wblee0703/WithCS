@@ -107,6 +107,57 @@ function formatEquipDisplayInfo(site, equipKey, equipmentModels = null) {
     };
 }
 
+// [공통 헬퍼] 대시보드 도넛 차트 및 리스트 렌더링 (코드 중복 제거 및 분리 관리용)
+window.renderSharedStatusChart = function(options) {
+    const {
+        chartId, listId, centerTextId, centerLabel, centerValue,
+        stats, totalCount, activeFilter, colorResolver,
+        onItemClick, onAllClick, emptyMsg
+    } = options;
+
+    const chartEl = document.getElementById(chartId);
+    const listEl = document.getElementById(listId);
+    const centerText = document.getElementById(centerTextId);
+
+    if (!chartEl || !listEl) return;
+    listEl.innerHTML = '';
+
+    if (totalCount === 0) {
+        chartEl.style.background = '';
+        if (centerText) centerText.innerHTML = `<div class="chart-center-label">${centerLabel}</div><div class="chart-center-value">0</div>`;
+        listEl.innerHTML = `<li class="list-empty-msg">${emptyMsg || '데이터 없음'}</li>`;
+        return;
+    }
+
+    let gradientStr = '';
+    let currentDeg = 0;
+    const sortedStats = [...stats].sort((a, b) => b.count - a.count);
+
+    const allLi = document.createElement('li');
+    allLi.className = 'status-list-item';
+    if (!activeFilter) allLi.classList.add('active');
+    allLi.innerHTML = `<span class="status-color status-color-all"></span><span class="status-name">전체</span><span class="status-count">${totalCount}</span>`;
+    allLi.onclick = onAllClick;
+    listEl.appendChild(allLi);
+
+    sortedStats.forEach((stat, index) => {
+        let color = typeof colorResolver === 'function' ? colorResolver(stat.name, index) : colorResolver[index % colorResolver.length];
+        const deg = (stat.count / totalCount) * 360;
+        gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
+        currentDeg += deg;
+
+        const li = document.createElement('li');
+        li.className = 'status-list-item';
+        if (activeFilter === stat.name) li.classList.add('active');
+        li.innerHTML = `<span class="status-color" style="background-color: ${color};"></span><span class="status-name" title="${escapeHtml(stat.name)}">${escapeHtml(stat.name)}</span><span class="status-count">${stat.count}</span>`;
+        li.onclick = () => onItemClick(stat.name);
+        listEl.appendChild(li);
+    });
+
+    chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
+    if (centerText) centerText.innerHTML = `<div class="chart-center-label">${centerLabel}</div><div class="chart-center-value">${centerValue}</div>`;
+};
+
 /* ==========================================================================
    2. 초기화 및 이벤트 리스너 (Initialization)
    ========================================================================== */
@@ -404,164 +455,69 @@ function updateMaintenanceDashboard() {
 }
 
 function renderSiteStatus(siteStats, totalEquip, allData) {
-    const chartEl = document.getElementById('site-status-chart');
-    const listEl = document.getElementById('site-status-list');
-    const centerText = document.getElementById('site-chart-center');
-
-    if (!chartEl || !listEl) return;
-    listEl.innerHTML = '';
-
-    if (totalEquip === 0) {
-        chartEl.style.background = ''; 
-        if (centerText) centerText.innerHTML = `<div class="chart-center-label">Site</div><div class="chart-center-value">0</div>`;
-        listEl.innerHTML = '<li class="list-empty-msg">데이터 없음</li>';
-        return;
-    }
-
-    let gradientStr = '';
-    let currentDeg = 0;
-    siteStats.sort((a, b) => b.count - a.count);
-
-    const allLi = document.createElement('li');
-    allLi.className = 'status-list-item';
-    if (selectedSiteFilter === null) {
-        allLi.classList.add('active');
-    }
-    allLi.innerHTML = `
-        <span class="status-color status-color-all"></span>
-        <span class="status-name">전체</span>
-        <span class="status-count">${totalEquip}</span>
-    `;
-    allLi.onclick = () => {
-        selectedSiteFilter = null;
-        selectedEquipFilter = null; 
-        selectedSerialFilter = null;
-        currentSearchFilters = { site: '', equip: '' };
-        saveMaintFilters(); 
-        updateMaintenanceDashboard();
-        renderCalendar();
-    };
-    listEl.appendChild(allLi);
-
-    siteStats.forEach((site, index) => {
-        const color = window.getSiteColor(site.name);
-        const deg = (site.count / totalEquip) * 360;
-        gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
-        currentDeg += deg;
-
-        const li = document.createElement('li');
-        li.className = 'status-list-item';
-        if (selectedSiteFilter === site.name) {
-            li.classList.add('active');
-        }
-
-        li.innerHTML = `
-            <span class="status-color" style="background-color: ${color};"></span>
-            <span class="status-name" title="${escapeHtml(site.name)}">${escapeHtml(site.name)}</span>
-            <span class="status-count">${site.count}</span>
-        `;
-
-        li.onclick = () => {
-            if (selectedSiteFilter === site.name) {
-                selectedSiteFilter = null; 
-                currentSearchFilters.site = '';
-            } else {
-                selectedSiteFilter = site.name; 
-                currentSearchFilters.site = site.name;
-            }
+    window.renderSharedStatusChart({
+        chartId: 'site-status-chart',
+        listId: 'site-status-list',
+        centerTextId: 'site-chart-center',
+        centerLabel: 'Site',
+        centerValue: siteStats.length,
+        stats: siteStats,
+        totalCount: totalEquip,
+        activeFilter: selectedSiteFilter,
+        colorResolver: (name) => window.getSiteColor(name),
+        onAllClick: () => {
+            selectedSiteFilter = null;
+            selectedEquipFilter = null; 
+            selectedSerialFilter = null;
+            currentSearchFilters = { site: '', equip: '' };
+            saveMaintFilters(); 
+            updateMaintenanceDashboard();
+            renderCalendar();
+        },
+        onItemClick: (name) => {
+            selectedSiteFilter = (selectedSiteFilter === name) ? null : name;
+            currentSearchFilters.site = selectedSiteFilter || '';
             selectedEquipFilter = null; 
             selectedSerialFilter = null;
             currentSearchFilters.equip = '';
             saveMaintFilters(); 
             updateMaintenanceDashboard();
             renderCalendar();
-        };
-        listEl.appendChild(li);
+        },
+        emptyMsg: '데이터 없음'
     });
-
-    chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
-    if (centerText) centerText.innerHTML = `<div class="chart-center-label">Site</div><div class="chart-center-value">${siteStats.length}</div>`;
 }
 
 function renderEquipChart(equipStats, totalEquip, allData) {
-    const chartEl = document.getElementById('equip-status-chart');
-    const listEl = document.getElementById('equip-status-list');
-    const centerText = document.getElementById('equip-chart-center');
-
-    if (!chartEl) return;
-    if (listEl) listEl.innerHTML = '';
-
-    if (totalEquip === 0) {
-        chartEl.style.background = ''; 
-        if (centerText) centerText.innerHTML = `<div class="chart-center-label">Equip</div><div class="chart-center-value">0</div>`;
-        if (listEl) listEl.innerHTML = '<li class="list-empty-msg">데이터 없음</li>';
-        return;
-    }
-
     const colors = ['#a371f7', '#f0883e', '#3fb950', '#da3633', '#8957e5', '#d29922', '#238636', '#1f6feb'];
-    let gradientStr = '';
-    let currentDeg = 0;
-    equipStats.sort((a, b) => b.count - a.count);
-
-    if (listEl) {
-        const allLi = document.createElement('li');
-        allLi.className = 'status-list-item';
-        if (selectedEquipFilter === null) {
-            allLi.classList.add('active');
-        }
-        allLi.innerHTML = `
-            <span class="status-color status-color-all"></span>
-            <span class="status-name">전체</span>
-            <span class="status-count">${totalEquip}</span>
-        `;
-        allLi.onclick = () => {
+    window.renderSharedStatusChart({
+        chartId: 'equip-status-chart',
+        listId: 'equip-status-list',
+        centerTextId: 'equip-chart-center',
+        centerLabel: 'Equip',
+        centerValue: totalEquip,
+        stats: equipStats,
+        totalCount: totalEquip,
+        activeFilter: selectedEquipFilter,
+        colorResolver: colors,
+        onAllClick: () => {
             selectedEquipFilter = null;
             selectedSerialFilter = null;
             currentSearchFilters.equip = ''; 
             saveMaintFilters(); 
             updateMaintenanceDashboard();
             renderCalendar();
-        };
-        listEl.appendChild(allLi);
-    }
-
-    equipStats.forEach((equip, index) => {
-        const color = colors[index % colors.length];
-        const deg = (equip.count / totalEquip) * 360;
-
-        gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
-        currentDeg += deg;
-
-        if (listEl) {
-            const li = document.createElement('li');
-            li.className = 'status-list-item';
-            if (selectedEquipFilter === equip.name) {
-                li.classList.add('active');
-            }
-            li.innerHTML = `
-                <span class="status-color" style="background-color: ${color};"></span>
-                <span class="status-name" title="${escapeHtml(equip.name)}">${escapeHtml(equip.name)}</span>
-                <span class="status-count">${equip.count}</span>
-            `;
-            li.onclick = () => {
-                if (selectedEquipFilter === equip.name) {
-                    selectedEquipFilter = null;
-                    currentSearchFilters.equip = '';
-                } else {
-                    selectedEquipFilter = equip.name;
-                    currentSearchFilters.equip = equip.name;
-                }
-                selectedSerialFilter = null; 
-                saveMaintFilters(); 
-                updateMaintenanceDashboard();
-                renderCalendar();
-            };
-            listEl.appendChild(li);
-        }
+        },
+        onItemClick: (name) => {
+            selectedEquipFilter = (selectedEquipFilter === name) ? null : name;
+            currentSearchFilters.equip = selectedEquipFilter || '';
+            selectedSerialFilter = null; 
+            saveMaintFilters(); 
+            updateMaintenanceDashboard();
+            renderCalendar();
+        },
+        emptyMsg: '데이터 없음'
     });
-
-    chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
-    if (centerText) centerText.innerHTML = `<div class="chart-center-label">Equip</div><div class="chart-center-value">${totalEquip}</div>`;
 }
 
 function renderEquipDetailList(data) {
@@ -852,121 +808,82 @@ function updateSetupDashboard() {
 }
 
 function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
-    const chartEl = document.getElementById('setup-site-status-chart');
-    const listEl = document.getElementById('setup-site-status-list');
-    const centerText = document.getElementById('setup-site-chart-center');
     const barChartEl = document.getElementById('setup-site-bar-chart');
 
-    if (!chartEl || !listEl) return;
-    listEl.innerHTML = '';
-
-    if (totalEquip === 0) {
-        chartEl.style.background = '';
-        if (centerText) centerText.innerHTML = `<div class="chart-center-label">Site</div><div class="chart-center-value">0</div>`;
-        listEl.innerHTML = '<li class="list-empty-msg">진행 중인 셋업 없음</li>';
-        if (barChartEl) barChartEl.innerHTML = '<div class="list-empty-msg" style="width:100%; text-align:center;">데이터 없음</div>';
-        return;
-    }
-
-    let gradientStr = '';
-    let currentDeg = 0;
-    siteStats.sort((a, b) => b.count - a.count);
-
     if (barChartEl) {
-        barChartEl.innerHTML = '';
-        const sortedSiteStats = [...siteStats].sort((a, b) => a.name.localeCompare(b.name));
-        const barData = [{ name: '전체', count: totalEquip }, ...sortedSiteStats];
+        if (barChartEl) barChartEl.innerHTML = '<div class="list-empty-msg" style="width:100%; text-align:center;">데이터 없음</div>';
+        if (totalEquip > 0) {
+            barChartEl.innerHTML = '';
+            const sortedSiteStats = [...siteStats].sort((a, b) => a.name.localeCompare(b.name));
+            const barData = [{ name: '전체', count: totalEquip }, ...sortedSiteStats];
 
-        const maxVal = Math.max(...barData.map(d => d.count));
-        let yAxisMax = 10;
-        if (maxVal > 10) {
-            yAxisMax = Math.ceil(maxVal / 5) * 5;
+            const maxVal = Math.max(...barData.map(d => d.count));
+            let yAxisMax = 10;
+            if (maxVal > 10) yAxisMax = Math.ceil(maxVal / 5) * 5;
+
+            barData.forEach((item, index) => {
+                const isTotal = item.name === '전체';
+                const count = item.count;
+                const maxBarHeight = 140; 
+                const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
+                let bgStyle = window.getSiteGradient(item.name);
+                const isActive = (setupDashboardFilter.site === item.name) || (isTotal && !setupDashboardFilter.site);
+                const activeClass = isActive ? 'active' : '';
+
+                const barGroup = document.createElement('div');
+                barGroup.className = 'bar-group';
+                if (setupDashboardFilter.site && !isActive) barGroup.classList.add('faded');
+
+                barGroup.innerHTML = `
+                    <div class="bar-value">${count}</div>
+                    <div class="bar ${activeClass}" style="height: ${barHeight}px; background: ${bgStyle};"></div>
+                    <div class="bar-label" title="${item.name}">${item.name}</div>
+                `;
+
+                barGroup.onclick = () => {
+                    setupDashboardFilter.site = isTotal ? '' : (setupDashboardFilter.site === item.name ? '' : item.name);
+                    setupDashboardFilter.equip = '';
+                    currentGanttFilters = { site: '', equip: '' };
+                    currentSearchFilters = { site: '', equip: '' };
+                    renderCalendar();
+                    updateSetupDashboard();
+                };
+
+                barGroup.style.cursor = 'pointer';
+                barChartEl.appendChild(barGroup);
+            });
         }
-
-        barData.forEach((item, index) => {
-            const isTotal = item.name === '전체';
-            const count = item.count;
-            const maxBarHeight = 140; 
-            const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
-            let bgStyle = window.getSiteGradient(item.name);
-            const isActive = (setupDashboardFilter.site === item.name) || (isTotal && !setupDashboardFilter.site);
-            const activeClass = isActive ? 'active' : '';
-
-            const barGroup = document.createElement('div');
-            barGroup.className = 'bar-group';
-            if (setupDashboardFilter.site && !isActive) {
-                barGroup.classList.add('faded');
-            }
-
-            barGroup.innerHTML = `
-                <div class="bar-value">${count}</div>
-                <div class="bar ${activeClass}" style="height: ${barHeight}px; background: ${bgStyle};"></div>
-                <div class="bar-label" title="${item.name}">${item.name}</div>
-            `;
-
-            barGroup.onclick = () => {
-                if (isTotal) {
-                    setupDashboardFilter.site = '';
-                } else {
-                    setupDashboardFilter.site = (setupDashboardFilter.site === item.name) ? '' : item.name;
-                }
-                setupDashboardFilter.equip = '';
-                currentGanttFilters = { site: '', equip: '' };
-                currentSearchFilters = { site: '', equip: '' };
-                renderCalendar();
-                updateSetupDashboard();
-            };
-
-            barGroup.style.cursor = 'pointer';
-            barChartEl.appendChild(barGroup);
-        });
     }
 
-    const allLi = document.createElement('li');
-    allLi.className = 'status-list-item';
-    if (!setupDashboardFilter.site) allLi.classList.add('active');
-    allLi.innerHTML = `<span class="status-color status-color-all"></span><span class="status-name">전체</span><span class="status-count">${totalEquip}</span>`;
-    allLi.onclick = () => {
-        setupDashboardFilter.site = '';
-        setupDashboardFilter.equip = '';
-        currentGanttFilters = { site: '', equip: '' }; 
-        currentSearchFilters = { site: '', equip: '' };
-        renderCalendar();
-        updateSetupDashboard();
-    };
-    listEl.appendChild(allLi);
-
-    siteStats.forEach((site, index) => {
-        const color = window.getSiteColor(site.name);
-        const deg = (site.count / totalEquip) * 360;
-        gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
-        currentDeg += deg;
-
-        const li = document.createElement('li');
-        li.className = 'status-list-item';
-        if (setupDashboardFilter.site === site.name) li.classList.add('active');
-        li.innerHTML = `<span class="status-color" style="background-color: ${color};"></span><span class="status-name">${escapeHtml(site.name)}</span><span class="status-count">${site.count}</span>`;
-        li.onclick = () => {
-            setupDashboardFilter.site = (setupDashboardFilter.site === site.name) ? '' : site.name;
+    window.renderSharedStatusChart({
+        chartId: 'setup-site-status-chart',
+        listId: 'setup-site-status-list',
+        centerTextId: 'setup-site-chart-center',
+        centerLabel: 'Site',
+        centerValue: siteStats.length,
+        stats: siteStats,
+        totalCount: totalEquip,
+        activeFilter: setupDashboardFilter.site,
+        colorResolver: (name) => window.getSiteColor(name),
+        onAllClick: () => {
+            setupDashboardFilter.site = '';
+            setupDashboardFilter.equip = '';
+            currentGanttFilters = { site: '', equip: '' }; 
+            currentSearchFilters = { site: '', equip: '' };
+            renderCalendar();
+            updateSetupDashboard();
+        },
+        onItemClick: (name) => {
+            setupDashboardFilter.site = (setupDashboardFilter.site === name) ? '' : name;
             setupDashboardFilter.equip = '';
             currentGanttFilters = { site: '', equip: '' }; 
             updateSetupDashboard();
-        };
-        listEl.appendChild(li);
+        },
+        emptyMsg: '진행 중인 셋업 없음'
     });
-
-    chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
-    if (centerText) centerText.innerHTML = `<div class="chart-center-label">Site</div><div class="chart-center-value">${siteStats.length}</div>`;
 }
 
 function renderSetupEquipChart(equipStats, totalEquip, activeEquips) {
-    const chartEl = document.getElementById('setup-equip-status-chart');
-    const listEl = document.getElementById('setup-equip-status-list');
-    const centerText = document.getElementById('setup-equip-chart-center');
-
-    if (!chartEl || !listEl) return;
-    listEl.innerHTML = '';
-
     let filteredEquips = activeEquips;
     if (setupDashboardFilter.site) {
         filteredEquips = activeEquips.filter(e => window.getSiteGroupName(e.site) === setupDashboardFilter.site);
@@ -983,52 +900,31 @@ function renderSetupEquipChart(equipStats, totalEquip, activeEquips) {
 
     const statsArr = Object.keys(filteredStats).map(key => ({ name: key, count: filteredStats[key] }));
     const filteredTotal = filteredEquips.length;
-
-    if (filteredTotal === 0) {
-        chartEl.style.background = '';
-        if (centerText) centerText.innerHTML = `<div class="chart-center-label">Equip</div><div class="chart-center-value">0</div>`;
-        listEl.innerHTML = '<li class="list-empty-msg">데이터 없음</li>';
-        return;
-    }
-
     const colors = ['#a371f7', '#f0883e', '#3fb950', '#da3633', '#8957e5', '#d29922', '#238636', '#1f6feb'];
-    let gradientStr = '';
-    let currentDeg = 0;
-    statsArr.sort((a, b) => b.count - a.count);
-
-    const allLi = document.createElement('li');
-    allLi.className = 'status-list-item';
-    if (!setupDashboardFilter.equip) allLi.classList.add('active');
-    allLi.innerHTML = `<span class="status-color status-color-all"></span><span class="status-name">전체</span><span class="status-count">${filteredTotal}</span>`;
-    allLi.onclick = () => {
-        setupDashboardFilter.equip = '';
-        currentGanttFilters.equip = ''; 
-        currentSearchFilters.equip = ''; 
-        renderCalendar();
-        updateSetupDashboard();
-    };
-    listEl.appendChild(allLi);
-
-    statsArr.forEach((equip, index) => {
-        const color = colors[index % colors.length];
-        const deg = (equip.count / filteredTotal) * 360;
-        gradientStr += `${color} ${currentDeg}deg ${currentDeg + deg}deg, `;
-        currentDeg += deg;
-
-        const li = document.createElement('li');
-        li.className = 'status-list-item';
-        if (setupDashboardFilter.equip === equip.name) li.classList.add('active');
-        li.innerHTML = `<span class="status-color" style="background-color: ${color};"></span><span class="status-name">${escapeHtml(equip.name)}</span><span class="status-count">${equip.count}</span>`;
-        li.onclick = () => {
-            setupDashboardFilter.equip = (setupDashboardFilter.equip === equip.name) ? '' : equip.name;
+    window.renderSharedStatusChart({
+        chartId: 'setup-equip-status-chart',
+        listId: 'setup-equip-status-list',
+        centerTextId: 'setup-equip-chart-center',
+        centerLabel: 'Equip',
+        centerValue: filteredTotal,
+        stats: statsArr,
+        totalCount: filteredTotal,
+        activeFilter: setupDashboardFilter.equip,
+        colorResolver: colors,
+        onAllClick: () => {
+            setupDashboardFilter.equip = '';
+            currentGanttFilters.equip = ''; 
+            currentSearchFilters.equip = ''; 
+            renderCalendar();
+            updateSetupDashboard();
+        },
+        onItemClick: (name) => {
+            setupDashboardFilter.equip = (setupDashboardFilter.equip === name) ? '' : name;
             currentGanttFilters = { site: '', equip: '' }; 
             updateSetupDashboard();
-        };
-        listEl.appendChild(li);
+        },
+        emptyMsg: '데이터 없음'
     });
-
-    chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
-    if (centerText) centerText.innerHTML = `<div class="chart-center-label">Equip</div><div class="chart-center-value">${filteredTotal}</div>`;
 }
 
 function renderSetupEquipDetailList(activeEquips) {

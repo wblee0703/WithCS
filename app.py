@@ -324,6 +324,7 @@ def load_data():
     if 'check_type_categories' not in data: data['check_type_categories'] = {}
     if 'check_type_categories2' not in data: data['check_type_categories2'] = {}
     if 'check_type_items' not in data: data['check_type_items'] = {}
+    if 'setup_templates' not in data: data['setup_templates'] = {}
 
     # 2. 물품 관리 마스터 데이터
     admin_items = AdminItem.query.all()
