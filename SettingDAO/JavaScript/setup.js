@@ -498,8 +498,8 @@ function renderSetupDetailList() {
             if (isInProgress) {
                 tr.classList.add('in-progress');
             }
-
-            const checkedAttr = item.completed ? 'checked' : '';
+            
+            tr.dataset.completed = item.completed ? 'true' : 'false';
 
             const checkboxVisibilityClass = (!item.execStartDate && !item.completed && cat !== '셋업 완료') ? 'visibility-hidden' : '';
 
@@ -536,8 +536,18 @@ function renderSetupDetailList() {
                 estDaysHtml = `<button type="button" class="btn-recalc-date" onclick="triggerSetupScheduleCalculation()">↺</button>`;
             }
 
-            // [수정] 실행 버튼(▶) 삭제, 항상 완료 체크박스만 표시
-            const actionCellHtml = `<input type="checkbox" class="detail-complete-checkbox" ${checkedAttr}>`;
+            // [개선] 완료 체크박스 대신 등록된 로그 수 기반 진행률(%) 텍스트 표시
+            const taskLogs = (data.setupLogs || []).filter(l => l.content === item.content);
+            const workedDays = new Set(taskLogs.map(l => l.date)).size;
+            const estDaysCount = parseInt(item.estDays) || 1;
+            const progressPct = estDaysCount > 0 ? Math.min(100, Math.round((workedDays / estDaysCount) * 100)) : (item.completed ? 100 : 0);
+            
+            let progressColor = '#8b949e'; // 기본
+            if (workedDays > estDaysCount) progressColor = '#f85149'; // 지연 (빨강)
+            else if (progressPct === 100 || item.completed) progressColor = '#3fb950'; // 완료 (초록)
+            else if (progressPct > 0) progressColor = '#58a6ff'; // 진행중 (파랑)
+            
+            const actionCellHtml = `<div style="font-weight:bold; color:${progressColor}; font-size:12px;">${progressPct}%</div>`;
 
             tr.innerHTML = `
                 <td>${contentCellHtml}</td>
@@ -577,8 +587,6 @@ function renderSetupDetailList() {
                     input.addEventListener('change', () => checkAndAlertHoliday(input));
                 }
             });
-
-            attachSetupCheckboxListener(tr);
 
             // 셋업 완료 예정일 입력 시 자동 계산
             if (cat === '셋업 완료' && item.content === '셋업 완료') {
@@ -638,7 +646,7 @@ function addSetupDetailItem(category) {
             <td><input type="date" class="detail-start-date-input" value=""></td>
             <td><input type="date" class="detail-exec-start-date-input" value=""></td>
             <td><input type="date" class="detail-date-input" value=""></td>
-            <td style="text-align: center;"><input type="checkbox" class="detail-complete-checkbox"></td>
+            <td style="text-align: center;"><div style="font-weight:bold; color:#8b949e; font-size:12px;">0%</div></td>
         <td style="text-align: center;"><button class="btn-del-sm" onclick="deleteSetupDetailItem(${id})">✕</button></td>
     `;
     tr.addEventListener('dragstart', () => tr.classList.add('dragging'));
@@ -669,8 +677,6 @@ function addSetupDetailItem(category) {
             input.addEventListener('change', () => checkAndAlertHoliday(input));
         }
     });
-
-    attachSetupCheckboxListener(tr);
 
     // 작업일수 수정 시 아래 항목들 시작일 자동 계산
     const estInput = tr.querySelector('.detail-est-days-input');
@@ -704,9 +710,6 @@ function addSetupDetailItem(category) {
 
     if (insertAfterNode && insertAfterNode.nextSibling) tbody.insertBefore(tr, insertAfterNode.nextSibling);
     else tbody.appendChild(tr);
-
-    // [수정] 새 항목에 체크박스 리스너 즉시 연결
-    attachSetupCheckboxListener(tr);
 
     saveSetupDetails('ADD_SETUP_ITEM', `Category: ${category}`); // 항목 추가 후 자동 저장 및 로그
 }
@@ -773,8 +776,7 @@ function saveSetupDetails(logAction = 'UPDATE_SETUP_DETAILS', logDetails = '셋�
         // 기존 아이템 가져오기
         const originalItem = originalDetailsMap.get(id) || {};
 
-        const checkbox = row.querySelector('.detail-complete-checkbox');
-        const completed = checkbox ? checkbox.checked : (originalItem.completed || false);
+        const completed = row.dataset.completed === 'true';
 
         // 입력 요소가 없으면(모바일 뷰 등) 기존 데이터 유지
         const contentInput = row.querySelector('.detail-content-input');
@@ -839,9 +841,16 @@ function saveSetupDetails(logAction = 'UPDATE_SETUP_DETAILS', logDetails = '셋�
 function updateExecutionRate(completed, total) {
     // 인자가 없으면 DOM에서 다시 계산
     if (completed === undefined || total === undefined) {
-        const rows = document.querySelectorAll('#setup-detail-body tr.item-row');
-        total = rows.length;
-        completed = Array.from(rows).filter(r => r.querySelector('.detail-complete-checkbox')?.checked).length;
+        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+        if (typeof currentPath !== 'undefined' && currentPath.site && currentPath.equip) {
+            const equipKey = `${currentPath.site}::${currentPath.equip}`;
+            const data = setupData[equipKey] || {};
+            const details = data.setupDetails || [];
+            total = details.length;
+            completed = details.filter(d => d.completed).length;
+        } else {
+            total = 0; completed = 0;
+        }
     }
 
     const rate = total === 0 ? 0 : Math.round((completed / total) * 100);
@@ -853,79 +862,6 @@ function updateExecutionRate(completed, total) {
         else if (rate > 0) rateEl.classList.add('rate-text-mid');
         else rateEl.classList.add('rate-text-0');
     }
-}
-
-// 체크박스 이벤트 리스너 (체크 해제 시 실행 버튼 복구 로직 포함)
-function attachSetupCheckboxListener(row) {
-    const checkbox = row.querySelector('.detail-complete-checkbox');
-    // const dateInput = row.querySelector('.detail-date-input'); // [제거] 아래에서 안전하게 접근
-    if (!checkbox) return;
-
-    checkbox.addEventListener('click', (e) => {
-        if (!checkbox.checked) {
-            if (!confirm("완료 상태를 해제하시겠습니까?\n해당 작업에 기록된 셋업 일지도 모두 삭제됩니다.")) {
-                e.preventDefault();
-                checkbox.checked = true; // [추가] 취소 시 체크 상태 복구
-                return;
-            }
-            // [수정] 입력창이 있을 때만 값 초기화
-            const dateInput = row.querySelector('.detail-date-input');
-            if (dateInput) dateInput.value = '';
-
-            // [추가] 모바일 대응: 데이터셋 날짜 초기화 (입력창 없을 때 저장 시 반영용)
-            row.dataset.date = "";
-
-            // [FIX] delete 대신 빈 문자열 할당하여 saveSetupDetails에서 원본 데이터로 복구되는 것 방지
-            row.dataset.delayReason = "";
-            row.dataset.execStartDate = "";
-            row.classList.remove('in-progress');
-
-            // 입력 필드 활성화 (체크 해제 시 수정 가능하도록)
-            const inputs = row.querySelectorAll('input[type="text"], input[type="date"]');
-            inputs.forEach(input => {
-                input.disabled = false;
-                input.style.color = '#e6edf3';
-            });
-
-            // [추가] 셋업 일지 삭제 로직
-            const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-            const equipKey = `${currentPath.site}::${currentPath.equip}`;
-            let data = setupData[equipKey] || {};
-            const taskId = parseInt(row.dataset.id);
-            const targetTask = (data.setupDetails || []).find(t => t.id === taskId);
-            const taskContent = targetTask ? targetTask.content : '';
-
-            let logsUpdated = false;
-            if (data.setupLogs && taskContent) {
-                const originalLength = data.setupLogs.length;
-                data.setupLogs = data.setupLogs.filter(l => l.content !== taskContent);
-                if (data.setupLogs.length !== originalLength) {
-                     setupData[equipKey] = data;
-                     localStorage.setItem('setup_data', JSON.stringify(setupData));
-                     logsUpdated = true;
-                }
-            }
-
-            // [요청] 즉시 반영을 위해 저장 (데이터 정합성 유지)
-            saveSetupDetails('UPDATE_SETUP_STATUS', '완료 상태 해제');
-
-            if (logsUpdated) {
-                window.syncSetupDataDB(currentPath.site, currentPath.equip, null, data.setupLogs);
-                if (typeof renderSetupLogList === 'function') renderSetupLogList();
-                if (typeof renderGanttChart === 'function') renderGanttChart();
-            }
-            renderSetupDetailList(); // [추가] 화면 갱신 (모바일 텍스트 반영)
-        } else {
-            e.preventDefault();
-            if (typeof window.openSetupLogRegisterModal === 'function') {
-                const taskContent = row.querySelector('.detail-content-input') ? row.querySelector('.detail-content-input').value : "";
-                const safeContent = taskContent.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-                window.openSetupLogRegisterModal(currentPath.site, currentPath.equip, safeContent, '', true);
-            } else {
-                alert("팝업을 열 수 없습니다.");
-            }
-        }
-    });
 }
 
 /* ==========================================================================
@@ -959,8 +895,7 @@ window.calculateSetupSchedule = function (targetDateStr) {
         }
 
         if (startCalc) {
-            const checkbox = row.querySelector('.detail-complete-checkbox');
-            const isCompleted = checkbox ? checkbox.checked : false;
+            const isCompleted = row.dataset.completed === 'true';
             const estInput = row.querySelector('.detail-est-days-input');
             const startInput = row.querySelector('.detail-start-date-input');
 
@@ -1022,8 +957,7 @@ function calculateScheduleForward(startRow, skipSave = false) {
         const row = rows[i];
         const rowStartInput = row.querySelector('.detail-start-date-input');
         const rowEstInput = row.querySelector('.detail-est-days-input');
-        const checkbox = row.querySelector('.detail-complete-checkbox');
-        const isCompleted = checkbox ? checkbox.checked : false;
+        const isCompleted = row.dataset.completed === 'true';
 
         if (rowStartInput) {
             if (!isCompleted) {
@@ -1066,8 +1000,7 @@ function calculateScheduleBackward(startRow, skipSave = false) {
             // 위쪽으로 역순 순회
             for (let i = startIndex - 1; i >= 0; i--) {
                 const row = rows[i];
-                const checkbox = row.querySelector('.detail-complete-checkbox');
-                const isCompleted = checkbox ? checkbox.checked : false;
+                const isCompleted = row.dataset.completed === 'true';
 
                 if (isCompleted) break; // 완료된 작업을 만나면 역산 중단 (고정점)
 
@@ -1112,6 +1045,24 @@ window.triggerSetupScheduleCalculation = function () {
 function renderSetupLogList() {
     const tbody = document.getElementById('setup-log-body');
     if (!tbody || !currentPath.site || !currentPath.equip) return;
+
+    // [추가] 셋업 일지 테이블 헤더에 '공수' 컬럼 동적 추가 (HTML 수정 불필요)
+    const table = tbody.closest('table');
+    if (table) {
+        const theadTr = table.querySelector('thead tr');
+        if (theadTr && !theadTr.dataset.mdAdded && !theadTr.textContent.includes('공수')) {
+            theadTr.dataset.mdAdded = 'true';
+            const thMd = document.createElement('th');
+            thMd.textContent = '공수';
+            thMd.className = 'th-w50';
+            const manageCol = theadTr.querySelector('.manage-col');
+            if (manageCol) {
+                theadTr.insertBefore(thMd, manageCol);
+            } else {
+                theadTr.appendChild(thMd);
+            }
+        }
+    }
 
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const equipKey = `${currentPath.site}::${currentPath.equip}`;
@@ -1339,10 +1290,17 @@ function deleteSetupLogItem(id) {
     let data = setupData[equipKey] || {};
 
     if (data.setupLogs) {
+        const targetLog = data.setupLogs.find(l => l.id == id);
         data.setupLogs = data.setupLogs.filter(l => l.id !== id);
+        
+        // [추가] 로그 삭제 후 Task 상태 재계산
+        if (targetLog && data.setupDetails && typeof recalculateSetupTaskStatus === 'function') {
+            recalculateSetupTaskStatus(data, targetLog.content);
+        }
+        
         setupData[equipKey] = data;
         localStorage.setItem('setup_data', JSON.stringify(setupData));
-        window.syncSetupDataDB(currentPath.site, currentPath.equip, null, data.setupLogs); // [DB 동기화]
+        window.syncSetupDataDB(currentPath.site, currentPath.equip, data.setupDetails, data.setupLogs); // [DB 동기화 변경]
 
         if (selectedSetupLogId === id) {
             selectedSetupLogId = null;
@@ -1350,6 +1308,8 @@ function deleteSetupLogItem(id) {
             document.getElementById('setup-log-detail-memo').value = "";
         }
         renderSetupLogList();
+        renderSetupDetailList(); // 리스트의 진행률 갱신
+        if (typeof renderGanttChart === 'function') renderGanttChart(); // 간트 갱신
 
         if (typeof addSystemLog === 'function') {
             addSystemLog('DELETE_SETUP_LOG', currentPath.equip, `ID: ${id}`);
@@ -1392,10 +1352,12 @@ function toggleSetupLogEdit(id) {
         const dateCell = row.querySelector('.log-date');
         const contentCell = row.querySelector('.log-content');
         const workerCell = row.querySelector('.log-worker');
+        const mdCell = row.querySelector('.log-md');
 
         const currentDate = dateCell.textContent;
         const currentContent = contentCell.textContent;
         const currentWorker = workerCell.textContent;
+        const currentMd = mdCell.textContent;
 
         dateCell.innerHTML = `<input type="date" class="edit-log-date input-edit-cell" value="${escapeHtml(currentDate)}" onclick="event.stopPropagation()">`;
 
@@ -1408,12 +1370,13 @@ function toggleSetupLogEdit(id) {
         contentCell.appendChild(select);
 
         workerCell.innerHTML = `<input type="text" class="edit-log-worker input-edit-cell" value="${escapeHtml(currentWorker)}" placeholder="작업자" spellcheck="false" onclick="event.stopPropagation()">`;
+        mdCell.innerHTML = `<input type="number" class="edit-log-md input-edit-cell" value="${escapeHtml(currentMd)}" min="0" step="0.1" onclick="event.stopPropagation()" style="width: 50px; text-align: center;">`;
 
     } else {
         const newDate = row.querySelector('.edit-log-date').value;
         const newContent = row.querySelector('.edit-log-content').value;
         const newWorker = row.querySelector('.edit-log-worker').value;
-        const newMd = newWorker.split(',').filter(Boolean).length.toString(); // [추가]
+        const newMd = row.querySelector('.edit-log-md').value;
 
         if (!newDate || !newContent || !newWorker) {
             alert('날짜, 작업 내용, 작업자는 필수 항목입니다.');
@@ -1424,7 +1387,7 @@ function toggleSetupLogEdit(id) {
             date: newDate,
             content: newContent,
             worker: newWorker,
-            md: newMd
+            md: newMd || '0'
         };
 
         updateSetupLogItem(id, newData);
@@ -1729,8 +1692,7 @@ function alignSetupScheduleToToday() {
 
     // 첫 번째 미완료 항목 찾기
     for (const row of rows) {
-        const checkbox = row.querySelector('.detail-complete-checkbox');
-        if (checkbox && !checkbox.checked) {
+        if (row.dataset.completed !== 'true') {
             activeRow = row;
             break;
         }

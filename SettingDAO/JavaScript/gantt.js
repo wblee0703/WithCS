@@ -278,27 +278,24 @@ function renderGanttChart() {
                             let execEnd = null;
                             let statusClass = '';
 
-                            if (task.date || task.execStartDate) {
-                                execStart = task.execStartDate || task.startDate;
-                                execEnd = task.date || execStart;
-
-                                if (execEnd < execStart) execEnd = execStart;
-
-                                const planEndDate = new Date(pEnd);
-                                const actualEndDate = new Date(execEnd);
-                                planEndDate.setHours(0, 0, 0, 0);
-                                actualEndDate.setHours(0, 0, 0, 0);
-
-                                if (actualEndDate > planEndDate) {
+                            // [개선] 등록된 로그 수 기반으로 상태 판단
+                            const taskLogs = (data.setupLogs || []).filter(l => l.content === displayName);
+                            const workedDays = new Set(taskLogs.map(l => l.date)).size;
+                            
+                            if (taskLogs.length > 0) {
+                                taskLogs.sort((a,b) => new Date(a.date) - new Date(b.date));
+                                execStart = taskLogs[0].date;
+                                execEnd = task.date || taskLogs[taskLogs.length - 1].date;
+                                
+                                if (workedDays > estDays) {
                                     statusClass = 'exec-delayed';
-                                } else if (!task.completed) {
-                                    statusClass = 'exec-progress';
-                                } else {
+                                } else if (task.completed || workedDays >= estDays) {
                                     statusClass = 'exec';
+                                } else {
+                                    statusClass = 'exec-progress';
                                 }
                             }
 
-                            const taskLogs = (data.setupLogs || []).filter(l => l.content === displayName);
                             const logDates = taskLogs.map(l => l.date).filter(Boolean);
 
                             allTasks.push({
@@ -547,32 +544,13 @@ function renderGanttChart() {
             const progressSpan = clone.querySelector('.gantt__task-progress');
             if (t.execStart && t.execEnd) {
                 let pct = 0;
-                if (t.completed) {
+                const estDaysCount = parseInt(t.estDays) || 1;
+                const wDays = new Set(t.logDates || []).size;
+                if (wDays > 0) {
+                    pct = Math.round((wDays / estDaysCount) * 100);
+                    if (pct > 100) pct = 100;
+                } else if (t.completed) {
                     pct = 100;
-                } else {
-                    const estDays = parseInt(t.estDays) || 1;
-                    if (estDays === 1) {
-                        pct = 0;
-                    } else {
-                        let execDuration = 0;
-                        let temp = new Date(t.execStart);
-                        const end = new Date(t.execEnd);
-                        temp.setHours(0, 0, 0, 0);
-                        end.setHours(0, 0, 0, 0);
-
-                        if (temp <= end) {
-                            while (temp <= end) {
-                                const d = temp.getDay();
-                                const isHol = getHolidayName(temp.getFullYear(), temp.getMonth(), temp.getDate());
-                                if (d !== 0 && d !== 6 && !isHol) {
-                                    execDuration++;
-                                }
-                                temp.setDate(temp.getDate() + 1);
-                            }
-                        }
-                        pct = Math.round((execDuration / estDays) * 100);
-                        if (pct > 99) pct = 99;
-                    }
                 }
 
                 progressSpan.textContent = `${pct}%`;
@@ -789,20 +767,8 @@ function renderGanttChart() {
             planTitle = `계획: ${t.estDays}일 소요`;
 
             if (t.execStart && t.execEnd) {
-                let execDuration = 0;
-                let temp = new Date(t.execStart);
-                const end = new Date(t.execEnd);
-                temp.setHours(0, 0, 0, 0);
-                end.setHours(0, 0, 0, 0);
-                if (temp <= end) {
-                    while (temp <= end) {
-                        const d = temp.getDay();
-                        const isHol = typeof window.getHolidayName === 'function' ? window.getHolidayName(temp.getFullYear(), temp.getMonth(), temp.getDate()) : null;
-                        if (d !== 0 && d !== 6 && !isHol) execDuration++;
-                        temp.setDate(temp.getDate() + 1);
-                    }
-                }
-                execTitle = `실행: ${execDuration}일 소요`;
+                const wDays = new Set(t.logDates || []).size;
+                execTitle = `실행: ${wDays}일 진행됨`;
             }
         }
 
@@ -815,22 +781,13 @@ function renderGanttChart() {
                 const equipKey = `${t.site}::${t.equip}`;
                 const equipLogs = (setupData[equipKey] && setupData[equipKey].setupLogs) ? setupData[equipKey].setupLogs : [];
 
-                // [추가] Offset(날짜 차이) 계산
-                const origStart = t.originalPlanStart || t.planStart;
                 const virtStart = t.planStart;
-                let offsetDays = 0;
-                if (origStart && virtStart) {
-                    const d1 = new Date(origStart); d1.setHours(0,0,0,0);
-                    const d2 = new Date(virtStart); d2.setHours(0,0,0,0);
-                    offsetDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
-                }
+                let currentVirtDate = new Date(virtStart);
 
                 const uniqueDates = [...new Set(t.logDates)].sort();
                 uniqueDates.forEach(dateStr => {
-                    // 실제 기록 날짜에 offset을 더하여 가상 캘린더 상의 정확한 위치 찾기
-                    const d = new Date(dateStr);
-                    d.setDate(d.getDate() + offsetDays);
-                    const virtDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    // [수정] 실제 날짜 간격과 무관하게 가상 캘린더 시작일부터 순차적으로 칸을 채움 (연속 기록)
+                    const virtDateStr = `${currentVirtDate.getFullYear()}-${String(currentVirtDate.getMonth() + 1).padStart(2, '0')}-${String(currentVirtDate.getDate()).padStart(2, '0')}`;
 
                     const colIndex = getIndex(virtDateStr, false);
                     if (colIndex !== -1) {
@@ -846,6 +803,9 @@ function renderGanttChart() {
                             <div class="gantt__bar-segment" style="left: 0px; width: ${width}px;"></div>
                         </div>`;
                     }
+                    
+                    // 다음 기록은 무조건 다음 칸에 배치되도록 가상 날짜 1일 증가
+                    currentVirtDate.setDate(currentVirtDate.getDate() + 1);
                 });
             } else if (t.completed && t.execStart) {
                 // [수정] 일수 모드에서 기록이 없지만 완료 처리된 항목도 클릭하여 팝업을 띄울 수 있도록 속성 추가
@@ -853,8 +813,34 @@ function renderGanttChart() {
             }
             // 일수 모드 & 기록 없음 & 미완료 상태면 임의의 실행바를 그리지 않음 (기록한 부분만 표시)
         } else if (t.execStart) {
-            // 일반 달력 모드에서는 기존 방식대로 연속된 구간 표시
-            execBarsHtml = `<div class="gantt__bar ${statusModifier}" style="left: ${eLeft}px; width: ${eWidth}px;" title="${execTitle}" data-id="${t.id}" data-type="exec" data-site="${t.site}" data-equip="${t.equip}" data-completed="${t.completed}">${eSegments}${resizeHandles}</div>`;
+            // [개선] 일반 달력 모드에서도 개별 작업 기록을 클릭하여 수정할 수 있도록 변경
+            if (t.logDates && t.logDates.length > 0) {
+                const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+                const equipKey = `${t.site}::${t.equip}`;
+                const equipLogs = (setupData[equipKey] && setupData[equipKey].setupLogs) ? setupData[equipKey].setupLogs : [];
+
+                const uniqueDates = [...new Set(t.logDates)].sort();
+                uniqueDates.forEach(dateStr => {
+                    const colIndex = getIndex(dateStr, false);
+                    if (colIndex !== -1) {
+                        const log = equipLogs.find(l => l.date === dateStr && l.content === t.displayName);
+                        const logId = log ? log.id : null;
+                        const logTitle = log ? `작업자: ${log.worker}\n내용: ${log.memo}` : `작업 기록: ${dateStr}`;
+                        const clickHandler = logId ? `onclick="openLogForEditing('${t.site}', '${t.equip}', '${logId}')"` : '';
+
+                        const left = colIndex * ganttDayWidth;
+                        const width = ganttDayWidth;
+                        execBarsHtml += `<div class="gantt__bar ${statusModifier}" style="left: ${left}px; width: ${width}px; cursor: pointer; pointer-events: auto;" title="${escapeHtml(logTitle)}" ${clickHandler}>
+                            <div class="gantt__bar-segment" style="left: 0px; width: ${width}px;"></div>
+                        </div>`;
+                    }
+                });
+            }
+            
+            // [추가] 로그가 없는 경우에도 드래그/리사이즈가 가능한 빈 실행바를 표시
+            if (execBarsHtml === '') {
+                execBarsHtml = `<div class="gantt__bar ${statusModifier}" style="left: ${eLeft}px; width: ${eWidth}px;" title="${execTitle}" data-id="${t.id}" data-type="exec" data-site="${t.site}" data-equip="${t.equip}" data-completed="${t.completed}">${eSegments}${resizeHandles}</div>`;
+            }
         }
 
         bodyHtml += `
@@ -902,24 +888,40 @@ function renderGanttChart() {
             let clickedDateStr = null;
             if (colIndex >= 0 && colIndex < ganttValidDates.length) {
                 if (isDayCountMode) {
-                    const virtualClickedStr = ganttValidDates[colIndex].str;
                     const task = allTasks.find(t => t.id == taskId);
-                    let offsetDays = 0;
-                    if (task && task.originalPlanStart && task.planStart) {
-                        const d1 = new Date(task.originalPlanStart); d1.setHours(0,0,0,0);
-                        const d2 = new Date(task.planStart); d2.setHours(0,0,0,0);
-                        offsetDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+                    if (task && task.logDates && task.logDates.length > 0) {
+                        // 이미 기록이 있는 경우 마지막 기록의 다음 날짜 제안
+                        const lastDateStr = [...task.logDates].sort().pop();
+                        const d = new Date(lastDateStr);
+                        d.setDate(d.getDate() + 1); // 다음 일차이므로 1일 더함
+                        clickedDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    } else {
+                        clickedDateStr = ''; // 빈 값을 넘겨 모달에서 오늘 날짜로 셋팅되도록 함
                     }
-                    const d = new Date(virtualClickedStr);
-                    d.setDate(d.getDate() - offsetDays);
-                    clickedDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
                 } else {
                     clickedDateStr = ganttValidDates[colIndex].str;
                 }
             }
-            
-            if (typeof window.openSetupLogRegisterModal === 'function') {
-                window.openSetupLogRegisterModal(site, equip, taskName, clickedDateStr);
+
+            // [개선] 이미 작업이 등록되어(로그가 존재) 실행바가 있는 경우, 새로운 팝업 대신 기존 기록을 수정 모드로 열어 중복 등록 방지
+            const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+            const equipKey = `${site}::${equip}`;
+            const data = setupData[equipKey] || {};
+            const taskLogs = (data.setupLogs || []).filter(l => l.content === taskName);
+
+            if (taskLogs.length > 0) {
+                taskLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
+                // 클릭한 날짜에 해당하는 로그가 있으면 그걸 열고, 없으면 가장 마지막 로그를 엽니다.
+                let targetLog = taskLogs.find(l => l.date === clickedDateStr);
+                if (!targetLog) targetLog = taskLogs[taskLogs.length - 1];
+                
+                if (typeof window.openLogForEditing === 'function') {
+                    window.openLogForEditing(site, equip, targetLog.id);
+                }
+            } else {
+                if (typeof window.openSetupLogRegisterModal === 'function') {
+                    window.openSetupLogRegisterModal(site, equip, taskName, clickedDateStr);
+                }
             }
         });
     });

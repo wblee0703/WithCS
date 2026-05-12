@@ -136,19 +136,22 @@ window.saveSetupExecStart = saveSetupExecStart;
    [추가] 셋업 작업 기록 모달 (간트 일수 모드 연동)
    ========================================================================== */
 window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, forceComplete = false, isDropdownMode = false) {
-    const modal = document.getElementById('setup-log-register-modal');
-    if (!modal) return;
+    // [핵심 해결] SETUP 페이지 등에 남아있는 하드코딩된 중복 모달 ID로 인해 값이 엉뚱한 곳에 입력되어 공수가 0으로 초기화되는 버그 방지
+    const modals = document.querySelectorAll('#setup-log-register-modal');
+    if (modals.length === 0) return;
+    const modal = modals[modals.length - 1]; // 항상 가장 최신(활성화된) 모달을 타겟으로 함
     
-    document.getElementById('setup-log-reg-site').value = site;
-    document.getElementById('setup-log-reg-equip').value = equip;
-    const idInput = document.getElementById('setup-log-reg-id');
+    modal.querySelector('#setup-log-reg-site').value = site;
+    modal.querySelector('#setup-log-reg-equip').value = equip;
+    const idInput = modal.querySelector('#setup-log-reg-id');
     if (idInput) idInput.value = ''; // 신규 등록이므로 ID 초기화
-    document.getElementById('setup-log-reg-date').value = defaultDate || getLocalYYYYMMDD();
-    document.getElementById('setup-log-reg-memo').value = '';
+    modal.querySelector('#setup-log-reg-date').value = defaultDate || getLocalYYYYMMDD();
+    const memoInput = modal.querySelector('#setup-log-reg-memo');
+    if (memoInput) memoInput.value = '';
 
     // [추가] 작업명 입력 방식을 드롭다운/읽기 전용으로 분기 처리
-    const taskInput = document.getElementById('setup-log-reg-task');
-    let taskWrapper = document.getElementById('setup-log-reg-task-wrapper');
+    const taskInput = modal.querySelector('#setup-log-reg-task');
+    let taskWrapper = modal.querySelector('#setup-log-reg-task-wrapper');
     if (!taskWrapper && taskInput) {
         taskWrapper = document.createElement('div');
         taskWrapper.id = 'setup-log-reg-task-wrapper';
@@ -172,10 +175,10 @@ window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, 
             taskInput.value = '';
         }
         
-        const trigger = document.getElementById('setup-log-reg-task-trigger');
-        const dropdown = document.getElementById('setup-log-reg-task-dropdown');
-        const list = document.getElementById('setup-log-reg-task-list');
-        const search = document.getElementById('setup-log-reg-task-search');
+        const trigger = modal.querySelector('#setup-log-reg-task-trigger');
+        const dropdown = modal.querySelector('#setup-log-reg-task-dropdown');
+        const list = modal.querySelector('#setup-log-reg-task-list');
+        const search = modal.querySelector('#setup-log-reg-task-search');
 
         if (trigger) {
             trigger.textContent = '작업명 선택';
@@ -212,7 +215,7 @@ window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, 
                     if (dropdown) dropdown.classList.remove('show');
                     
                     // 항목 선택 시, 해당 작업의 기존 완료 상태 불러오기
-                    const completeCb = document.getElementById('setup-log-reg-complete');
+                    const completeCb = modal.querySelector('#setup-log-reg-complete');
                     if (completeCb) completeCb.checked = !!d.completed;
                 };
                 list.appendChild(div);
@@ -252,53 +255,12 @@ window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, 
         }
     }
 
-    // [추가] 셋업 물품 입력 UI 동적 생성 (메모창 바로 위에 삽입)
-    const memoInput = document.getElementById('setup-log-reg-memo');
-    const memoRow = memoInput ? memoInput.closest('.setup-log-form-col') : null;
-    if (memoRow && !document.getElementById('setup-log-reg-part-wrapper')) {
-        const partRow = document.createElement('div');
-        partRow.className = 'setup-log-form-row';
-        partRow.innerHTML = `
-            <label class="setup-log-label">셋업 물품</label>
-            <div id="setup-log-reg-part-wrapper" class="log-select-wrapper" style="flex:1; width:100%; min-width:0; margin:0;">
-                <div id="setup-log-reg-part-trigger" class="log-select-trigger" style="height:34px; width:100%; background:#0d1117; border:1px solid #30363d; color:#8b949e; padding:0 10px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:flex-start; text-align:left; box-sizing:border-box; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">물품 선택</div>
-                <div id="setup-log-reg-part-dropdown" class="log-select-dropdown" style="z-index: 12000; width:100%; box-sizing:border-box;">
-                    <input type="text" id="setup-log-reg-part-search" class="dropdown-search-input" placeholder="검색..." style="width: calc(100% - 12px); margin: 5px 6px; padding: 6px 10px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; box-sizing: border-box;" autocomplete="off">
-                    <ul id="setup-log-reg-part-list" class="log-select-list" style="list-style:none; padding:5px; margin:0; max-height: 150px; overflow-y: auto;"></ul>
-                    <div class="log-select-footer" style="padding: 8px; border-top: 1px solid #30363d; background: #21262d;">
-                        <button type="button" id="btn-setup-log-reg-part-add" class="btn-blue-sm" style="width:100%;">선택 완료</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        const displayRow = document.createElement('div');
-        displayRow.className = 'setup-log-form-row';
-        displayRow.innerHTML = `
-            <label class="setup-log-label"></label>
-            <div id="setup-log-reg-part-display" style="flex:1; width:100%; min-width:0; min-height:50px; max-height:120px; overflow-y:auto; background:#0d1117; border:1px solid #30363d; border-radius:4px; padding:8px; box-sizing:border-box;"></div>
-            <input type="hidden" id="setup-log-reg-part-hidden">
-        `;
-        memoRow.parentNode.insertBefore(partRow, memoRow);
-        memoRow.parentNode.insertBefore(displayRow, memoRow);
-    }
-
-    // [추가] 작업의 기존 상태(완료 여부 등)를 불러와서 모달에 자동 세팅
-    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `${site}::${equip}`;
-    const targetTask = (setupData[equipKey] && setupData[equipKey].setupDetails) ? setupData[equipKey].setupDetails.find(t => t.content === taskName) : null;
-
-    const completeCb = document.getElementById('setup-log-reg-complete');
-    if (completeCb) {
-        if (forceComplete) {
-            completeCb.checked = true;
-        } else {
-            completeCb.checked = targetTask ? targetTask.completed : false;
-        }
-    }
+    const delBtn = modal.querySelector('#btn-delete-setup-log-reg');
+    if (delBtn) delBtn.style.display = 'none';
     
     // 작업자 세팅 (로그인 정보 기반)
-    const wTrigger = document.getElementById('setup-log-reg-worker-trigger');
-    const wHidden = document.getElementById('setup-log-reg-worker');
+    const wTrigger = modal.querySelector('#setup-log-reg-worker-trigger');
+    const wHidden = modal.querySelector('#setup-log-reg-worker');
     const defaultWorker = sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '';
     
     if (wHidden) wHidden.value = defaultWorker;
@@ -315,22 +277,23 @@ window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, 
     }
     
     // 공수 자동 세팅
-    const mdInput = document.getElementById('setup-log-reg-md');
+    const mdInput = modal.querySelector('#setup-log-reg-md');
     if (mdInput) {
         mdInput.value = defaultWorker ? defaultWorker.split(',').filter(Boolean).length : 0;
     }
     
-    setupSetupLogRegWorkerDropdown();
+    setupSetupLogRegWorkerDropdown(modal);
     // [추가] 셋업 물품 드롭다운 초기화 (기본값 없음)
-    setupSetupLogRegPartDropdown(site, equip, '');
+    setupSetupLogRegPartDropdown(modal, site, equip, '');
     
     modal.style.display = 'flex';
 };
 
 // [추가] 간트뷰에서 기존 로그를 수정하기 위해 모달을 여는 함수
 window.openLogForEditing = function(site, equip, logId) {
-    const modal = document.getElementById('setup-log-register-modal');
-    if (!modal) return;
+    const modals = document.querySelectorAll('#setup-log-register-modal');
+    if (modals.length === 0) return;
+    const modal = modals[modals.length - 1];
 
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const equipKey = `${site}::${equip}`;
@@ -341,8 +304,8 @@ window.openLogForEditing = function(site, equip, logId) {
 
     // 모달 필드 채우기
     // [추가] 수정 모드일 때는 드롭다운 래퍼를 숨기고 일반 읽기전용 텍스트 인풋으로 복구
-    const taskInput = document.getElementById('setup-log-reg-task');
-    const taskWrapper = document.getElementById('setup-log-reg-task-wrapper');
+    const taskInput = modal.querySelector('#setup-log-reg-task');
+    const taskWrapper = modal.querySelector('#setup-log-reg-task-wrapper');
     if (taskWrapper) taskWrapper.style.display = 'none';
     if (taskInput) {
         taskInput.type = 'text';
@@ -351,28 +314,23 @@ window.openLogForEditing = function(site, equip, logId) {
         taskInput.style.color = '#fff';
     }
 
-    document.getElementById('setup-log-reg-site').value = site;
-    document.getElementById('setup-log-reg-equip').value = equip;
-    const idInput = document.getElementById('setup-log-reg-id');
+    modal.querySelector('#setup-log-reg-site').value = site;
+    modal.querySelector('#setup-log-reg-equip').value = equip;
+    const idInput = modal.querySelector('#setup-log-reg-id');
     if (idInput) idInput.value = logId;
-    document.getElementById('setup-log-reg-date').value = log.date;
-    document.getElementById('setup-log-reg-task').value = log.content;
-    document.getElementById('setup-log-reg-memo').value = log.memo || '';
+    modal.querySelector('#setup-log-reg-date').value = log.date;
+    modal.querySelector('#setup-log-reg-task').value = log.content;
+    const memoInput = modal.querySelector('#setup-log-reg-memo');
+    if (memoInput) memoInput.value = log.memo || '';
 
-    // 완료 처리 상태 셋팅
-    const completeCb = document.getElementById('setup-log-reg-complete');
-    if (completeCb) {
-        const targetTask = (setupData[equipKey] && setupData[equipKey].setupDetails) ? setupData[equipKey].setupDetails.find(t => t.content === log.content) : null;
-        if (targetTask) {
-            completeCb.checked = targetTask.completed;
-        } else {
-            completeCb.checked = false;
-        }
+    const delBtn = modal.querySelector('#btn-delete-setup-log-reg');
+    if (delBtn) {
+        delBtn.style.display = 'inline-block';
     }
 
     // 작업자 드롭다운 셋팅
-    const wTrigger = document.getElementById('setup-log-reg-worker-trigger');
-    const wHidden = document.getElementById('setup-log-reg-worker');
+    const wTrigger = modal.querySelector('#setup-log-reg-worker-trigger');
+    const wHidden = modal.querySelector('#setup-log-reg-worker');
     if (wHidden) wHidden.value = log.worker || '';
     if (wTrigger) {
         if (log.worker) {
@@ -386,54 +344,25 @@ window.openLogForEditing = function(site, equip, logId) {
         }
     }
 
-    // [추가] 셋업 물품 입력 UI 동적 생성
-    const memoInput = document.getElementById('setup-log-reg-memo');
-    const memoRow = memoInput ? memoInput.closest('.setup-log-form-col') : null;
-    if (memoRow && !document.getElementById('setup-log-reg-part-wrapper')) {
-        const partRow = document.createElement('div');
-        partRow.className = 'setup-log-form-row';
-        partRow.innerHTML = `
-            <label class="setup-log-label">셋업 물품</label>
-            <div id="setup-log-reg-part-wrapper" class="log-select-wrapper" style="flex:1; width:100%; min-width:0; margin:0;">
-                <div id="setup-log-reg-part-trigger" class="log-select-trigger" style="height:34px; width:100%; background:#0d1117; border:1px solid #30363d; color:#8b949e; padding:0 10px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:flex-start; text-align:left; box-sizing:border-box; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">물품 선택</div>
-                <div id="setup-log-reg-part-dropdown" class="log-select-dropdown" style="z-index: 12000; width:100%; box-sizing:border-box;">
-                    <input type="text" id="setup-log-reg-part-search" class="dropdown-search-input" placeholder="검색..." style="width: calc(100% - 12px); margin: 5px 6px; padding: 6px 10px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; box-sizing: border-box;" autocomplete="off">
-                    <ul id="setup-log-reg-part-list" class="log-select-list" style="list-style:none; padding:5px; margin:0; max-height: 150px; overflow-y: auto;"></ul>
-                    <div class="log-select-footer" style="padding: 8px; border-top: 1px solid #30363d; background: #21262d;">
-                        <button type="button" id="btn-setup-log-reg-part-add" class="btn-blue-sm" style="width:100%;">선택 완료</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        const displayRow = document.createElement('div');
-        displayRow.className = 'setup-log-form-row';
-        displayRow.innerHTML = `
-            <label class="setup-log-label"></label>
-            <div id="setup-log-reg-part-display" style="flex:1; width:100%; min-width:0; min-height:50px; max-height:120px; overflow-y:auto; background:#0d1117; border:1px solid #30363d; border-radius:4px; padding:8px; box-sizing:border-box;"></div>
-            <input type="hidden" id="setup-log-reg-part-hidden">
-        `;
-        memoRow.parentNode.insertBefore(partRow, memoRow);
-        memoRow.parentNode.insertBefore(displayRow, memoRow);
-    }
-
-    const mdInput = document.getElementById('setup-log-reg-md');
+    const mdInput = modal.querySelector('#setup-log-reg-md');
     if (mdInput) mdInput.value = log.md || '0';
     
-    setupSetupLogRegWorkerDropdown();
+    setupSetupLogRegWorkerDropdown(modal);
     // [추가] 셋업 물품 드롭다운 초기화 (저장된 parts 불러오기)
-    setupSetupLogRegPartDropdown(site, equip, log.parts || '');
+    setupSetupLogRegPartDropdown(modal, site, equip, log.parts || '');
 
     modal.style.display = 'flex';
 };
 
-function setupSetupLogRegWorkerDropdown() {
-    const wTrigger = document.getElementById('setup-log-reg-worker-trigger');
-    const wDropdown = document.getElementById('setup-log-reg-worker-dropdown');
-    const wSearch = document.getElementById('setup-log-reg-worker-search');
-    const wList = document.getElementById('setup-log-reg-worker-list');
-    const wConfirm = document.getElementById('btn-setup-log-reg-worker-confirm');
-    const wHidden = document.getElementById('setup-log-reg-worker');
-    const mdInput = document.getElementById('setup-log-reg-md');
+function setupSetupLogRegWorkerDropdown(modalContext) {
+    const context = modalContext || document;
+    const wTrigger = context.querySelector('#setup-log-reg-worker-trigger');
+    const wDropdown = context.querySelector('#setup-log-reg-worker-dropdown');
+    const wSearch = context.querySelector('#setup-log-reg-worker-search');
+    const wList = context.querySelector('#setup-log-reg-worker-list');
+    const wConfirm = context.querySelector('#btn-setup-log-reg-worker-confirm');
+    const wHidden = context.querySelector('#setup-log-reg-worker');
+    const mdInput = context.querySelector('#setup-log-reg-md');
     
     if(!wTrigger || !wDropdown || wDropdown.dataset.bound === 'true') return;
     wDropdown.dataset.bound = 'true';
@@ -452,7 +381,8 @@ function setupSetupLogRegWorkerDropdown() {
     });
 
     const renderWorkers = async (searchTerm = '') => {
-        const site = document.getElementById('setup-log-reg-site').value;
+        const siteEl = context.querySelector('#setup-log-reg-site');
+        const site = siteEl ? siteEl.value : '';
         const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames(site) : [];
         const currentSelected = wHidden && wHidden.value ? wHidden.value.split(',').map(s => s.trim()).filter(Boolean) : [];
         const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '', site: '' } : w);
@@ -505,14 +435,15 @@ function setupSetupLogRegWorkerDropdown() {
 }
 
 // [추가] 셋업 물품 제안박스(다중 선택) 설정 함수
-function setupSetupLogRegPartDropdown(site, equip, presetParts = '') {
-    const trigger = document.getElementById('setup-log-reg-part-trigger');
-    const dropdown = document.getElementById('setup-log-reg-part-dropdown');
-    const search = document.getElementById('setup-log-reg-part-search');
-    const list = document.getElementById('setup-log-reg-part-list');
-    const displayBox = document.getElementById('setup-log-reg-part-display');
-    const hiddenInput = document.getElementById('setup-log-reg-part-hidden');
-    const addBtn = document.getElementById('btn-setup-log-reg-part-add');
+function setupSetupLogRegPartDropdown(modalContext, site, equip, presetParts = '') {
+    const context = modalContext || document;
+    const trigger = context.querySelector('#setup-log-reg-part-trigger');
+    const dropdown = context.querySelector('#setup-log-reg-part-dropdown');
+    const search = context.querySelector('#setup-log-reg-part-search');
+    const list = context.querySelector('#setup-log-reg-part-list');
+    const displayBox = context.querySelector('#setup-log-reg-part-display');
+    const hiddenInput = context.querySelector('#setup-log-reg-part-hidden');
+    const addBtn = context.querySelector('#btn-setup-log-reg-part-add');
 
     if(!trigger || !dropdown) return;
 
@@ -681,23 +612,99 @@ function setupSetupLogRegPartDropdown(site, equip, presetParts = '') {
     renderDisplayBox();
 }
 
+// [추가] 셋업 작업 상태(진행률, 시작/완료일) 자동 재계산 유틸리티
+function recalculateSetupTaskStatus(data, taskContent) {
+    if (!data.setupDetails) return false;
+    const task = data.setupDetails.find(t => t.content === taskContent);
+    if (!task) return false;
+
+    const taskLogs = (data.setupLogs || []).filter(l => l.content === taskContent);
+    taskLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    if (taskLogs.length === 0) {
+        task.execStartDate = "";
+        task.date = "";
+        task.completed = false;
+        task.delayReason = "";
+    } else {
+        task.execStartDate = taskLogs[0].date;
+        const workedDays = new Set(taskLogs.map(l => l.date)).size;
+        const estDays = parseInt(task.estDays) || 1;
+
+        if (workedDays >= estDays) {
+            task.completed = true;
+            task.date = taskLogs[taskLogs.length - 1].date; // 가장 마지막 로그 날짜를 완료일로
+        } else {
+            task.completed = false;
+            task.date = "";
+        }
+    }
+    return true;
+}
+
 // 저장 이벤트 처리
 document.addEventListener('DOMContentLoaded', () => {
     document.body.addEventListener('click', async (e) => {
         if (e.target.id === 'btn-close-setup-log-reg') {
-            document.getElementById('setup-log-register-modal').style.display = 'none';
+            const modal = e.target.closest('.modal-overlay');
+            if (modal) modal.style.display = 'none';
+        } else if (e.target.id === 'btn-delete-setup-log-reg') {
+            const modal = e.target.closest('.modal-overlay') || document;
+            const logId = modal.querySelector('#setup-log-reg-id') ? modal.querySelector('#setup-log-reg-id').value : '';
+            const site = modal.querySelector('#setup-log-reg-site') ? modal.querySelector('#setup-log-reg-site').value : '';
+            const equip = modal.querySelector('#setup-log-reg-equip') ? modal.querySelector('#setup-log-reg-equip').value : '';
+            
+            if (!logId || !site || !equip) return;
+            
+            if (!confirm('해당 셋업 작업 기록을 삭제하시겠습니까?')) return;
+            
+            const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+            const equipKey = `${site}::${equip}`;
+            let data = setupData[equipKey] || {};
+            
+            if (data.setupLogs) {
+                const targetLog = data.setupLogs.find(l => l.id == logId);
+                data.setupLogs = data.setupLogs.filter(l => l.id != logId);
+                
+                if (targetLog && data.setupDetails && typeof recalculateSetupTaskStatus === 'function') {
+                    recalculateSetupTaskStatus(data, targetLog.content);
+                }
+                
+                setupData[equipKey] = data;
+                localStorage.setItem('setup_data', JSON.stringify(setupData));
+                
+                if (typeof window.syncSetupDataDB === 'function') {
+                    window.syncSetupDataDB(site, equip, data.setupDetails, data.setupLogs);
+                }
+                
+                if (typeof addSystemLog === 'function') {
+                    addSystemLog('DELETE_SETUP_LOG', equip, `LogID: ${logId}`);
+                }
+                
+                const parentModal = e.target.closest('.modal-overlay');
+                if (parentModal) parentModal.style.display = 'none';
+                alert('기록이 삭제되었습니다.');
+                
+                if (typeof renderSetupLogList === 'function' && typeof currentPath !== 'undefined' && currentPath.equip === equip) {
+                    renderSetupLogList();
+                }
+                if (typeof renderSetupDetailList === 'function' && typeof currentPath !== 'undefined' && currentPath.equip === equip) {
+                    renderSetupDetailList();
+                }
+                if (typeof renderGanttChart === 'function') renderGanttChart();
+            }
         } else if (e.target.id === 'btn-save-setup-log-reg') {
-            const site = document.getElementById('setup-log-reg-site').value;
-            const equip = document.getElementById('setup-log-reg-equip').value;
-            const date = document.getElementById('setup-log-reg-date').value;
-            const task = document.getElementById('setup-log-reg-task').value;
-            const worker = document.getElementById('setup-log-reg-worker').value;
-            const md = document.getElementById('setup-log-reg-md').value;
-            const memo = document.getElementById('setup-log-reg-memo').value;
-            const isCompleted = document.getElementById('setup-log-reg-complete') ? document.getElementById('setup-log-reg-complete').checked : false;
+            const modal = e.target.closest('.modal-overlay') || document;
+            const site = modal.querySelector('#setup-log-reg-site').value;
+            const equip = modal.querySelector('#setup-log-reg-equip').value;
+            const date = modal.querySelector('#setup-log-reg-date').value;
+            const task = modal.querySelector('#setup-log-reg-task').value;
+            const worker = modal.querySelector('#setup-log-reg-worker').value;
+            const md = modal.querySelector('#setup-log-reg-md').value;
+            const memo = modal.querySelector('#setup-log-reg-memo').value;
             // [추가] 선택된 셋업 물품 데이터
-            const parts = document.getElementById('setup-log-reg-part-hidden') ? document.getElementById('setup-log-reg-part-hidden').value : '';
-            const logId = document.getElementById('setup-log-reg-id') ? document.getElementById('setup-log-reg-id').value : ''; // 수정 모드 식별자
+            const parts = modal.querySelector('#setup-log-reg-part-hidden') ? modal.querySelector('#setup-log-reg-part-hidden').value : '';
+            const logId = modal.querySelector('#setup-log-reg-id') ? modal.querySelector('#setup-log-reg-id').value : ''; // 수정 모드 식별자
             
             if(!date || !worker || !md || !task) return alert('작업일, 작업명, 작업자, 공수를 모두 입력해주세요.');
             
@@ -735,48 +742,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.setupLogs.push(newLog);
             }
 
-            // [수정] 실행 시작일 및 완료 상태 처리 로직 개선
-            let setupDetailsUpdated = false;
-            if (data.setupDetails) {
-                const targetTask = data.setupDetails.find(t => t.content === task);
-                if (targetTask) {
-                    // 작업을 완료시키는 경우
-                    if (isCompleted && !targetTask.completed) {
-                        targetTask.completed = true;
-                        targetTask.date = date; // 완료일을 로그 날짜로 설정
-
-                        // 실행 시작일이 아직 없으면, 완료일과 예상 소요일을 기준으로 역산하여 설정
-                        if (!targetTask.execStartDate) {
-                            const estDays = parseInt(targetTask.estDays, 10) || 1;
-                            const daysToSubtract = estDays > 0 ? estDays - 1 : 0;
-                            const [y, m, d] = date.split('-').map(Number);
-                            const completionDate = new Date(y, m - 1, d);
-                            const execStartDateObj = window.addBusinessDays(completionDate, -daysToSubtract);
-                            targetTask.execStartDate = getLocalYYYYMMDD(execStartDateObj);
-                        }
-                        setupDetailsUpdated = true;
-                    } else if (!isCompleted && targetTask.completed) {
-                        if (!confirm("완료 상태를 해제하면 해당 작업에 기록된 셋업 일지가 모두 삭제됩니다.\n저장하시겠습니까?")) {
-                            return; // 취소 시 저장 중단
-                        }
-                        // [추가] 작업 완료 상태를 해제하는 경우 (실행바 및 진행률 초기화)
-                        targetTask.completed = false;
-                        targetTask.date = "";
-                        targetTask.execStartDate = "";
-                        targetTask.delayReason = "";
-                        setupDetailsUpdated = true;
-
-                        // [추가] 완료 해제 시 셋업 일지 삭제 (방금 남긴 기록 포함)
-                        if (data.setupLogs) {
-                            data.setupLogs = data.setupLogs.filter(l => l.content !== task);
-                        }
-                    } else if (!isCompleted && !targetTask.execStartDate) {
-                        // 작업을 완료시키지 않고, 첫 로그를 기록하는 경우: 해당 로그 날짜를 실행 시작일로 설정
-                        targetTask.execStartDate = date;
-                        setupDetailsUpdated = true;
-                    }
-                }
-            }
+            // [개선] 셋업 로그 기록 수에 따라 완료/지연 상태를 자동 재계산
+            const setupDetailsUpdated = recalculateSetupTaskStatus(data, task);
 
             setupData[equipKey] = data;
             localStorage.setItem('setup_data', JSON.stringify(setupData));
@@ -787,7 +754,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (typeof addSystemLog === 'function') addSystemLog(isUpdating ? 'UPDATE_SETUP_LOG' : 'ADD_SETUP_LOG', equip, `[${task}] ${worker} (${md}MD)`);
             
-            document.getElementById('setup-log-register-modal').style.display = 'none';
+            const parentModal = e.target.closest('.modal-overlay');
+            if (parentModal) parentModal.style.display = 'none';
             alert('기록이 저장되었습니다.');
             
             if (typeof renderSetupLogList === 'function' && typeof currentPath !== 'undefined' && currentPath.equip === equip) {

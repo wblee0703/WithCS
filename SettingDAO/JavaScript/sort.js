@@ -1389,6 +1389,10 @@ function performSortSearch() {
                 const detailData = JSON.parse(localStorage.getItem(key)) || {};
                 const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
                 const equipBuilding = (detailData.setup && detailData.setup.building) ? detailData.setup.building : '미지정';
+                const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
+
+                // [추가] 셋업 장비는 데이터 통계 및 검색에서 완전히 제외 (셋업 작업 물품/공수 혼동 방지)
+                if (equipStatus === '셋업 장비') return;
 
                 if (!isBuildingAll && buildingFilters.length === 0) return;
                 if (!isBuildingAll && !buildingFilters.includes(equipBuilding)) return;
@@ -1450,6 +1454,11 @@ function performSortSearch() {
                             if (itemCostMatch) itemCostType = itemCostMatch[1];
 
                             if (!isCostTypeAll && !costTypeFilters.includes(itemCostType)) {
+                                isItemMatch = false;
+                            }
+
+                            // [추가] 셋업 작업 관련 물품/공수 혼동 방지를 위해 '무상(셋업)' 등 셋업 물품 제외
+                            if (itemCostType === '무상(셋업)' || itemCostType.includes('셋업')) {
                                 isItemMatch = false;
                             }
 

@@ -407,7 +407,8 @@
 #setup-log-register-modal .setup-log-input,
 #setup-log-reg-date,
 #setup-log-reg-task,
-#setup-log-reg-md {
+#setup-log-reg-md,
+#setup-log-reg-part {
     width: 100%;
     height: 34px !important;
     box-sizing: border-box !important;
@@ -499,7 +500,11 @@
     flex-shrink: 0;
 }
 
-.setup-log-input {
+.setup-log-input,
+#setup-log-reg-date,
+#setup-log-reg-task,
+#setup-log-reg-md,
+#setup-log-reg-part {
     flex: 1;
 }
 

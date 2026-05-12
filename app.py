@@ -188,6 +188,8 @@ class SetupLog(db.Model):
     content = db.Column(db.String(255), default='')
     company = db.Column(db.String(100), default='위드텍')
     memo = db.Column(db.Text, default='')
+    md = db.Column(db.String(50), default='0')
+    parts = db.Column(db.Text, default='')
 
 class MaintItem(db.Model):
     _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -412,7 +414,8 @@ def load_data():
                 } for sd in sd_list],
                 "setupLogs": [{
                     "id": int(sl.id) if str(sl.id).isdigit() else sl.id, "date": sl.date, "worker": sl.worker,
-                    "content": sl.content, "company": sl.company, "memo": sl.memo
+                    "content": sl.content, "company": sl.company, "memo": sl.memo,
+                    "md": sl.md, "parts": sl.parts
                 } for sl in sl_list]
             }
 
@@ -1141,7 +1144,8 @@ def sync_setup_equip():
             for sl in logs:
                 db.session.add(SetupLog(
                     id=str(sl.get('id', '')), equip_id=equip_id, date=sl.get('date', ''), worker=sl.get('worker', ''),
-                    content=sl.get('content', ''), company=sl.get('company', ''), memo=sl.get('memo', '')
+                    content=sl.get('content', ''), company=sl.get('company', ''), memo=sl.get('memo', ''),
+                    md=str(sl.get('md', '0')), parts=sl.get('parts', '')
                 ))
         db.session.commit()
         return jsonify({"status": "success"})
@@ -1213,6 +1217,14 @@ def init_db():
         # [마이그레이션] maint_item 테이블에 original_log_id 컬럼 추가 (추가 작업 DB 연동 누락 수정)
         try:
             db.session.execute(text('ALTER TABLE maint_item ADD COLUMN original_log_id VARCHAR(50)'))
+            db.session.commit()
+        except:
+            db.session.rollback()
+            
+        # [마이그레이션] setup_log 테이블에 md, parts 컬럼 추가 (데이터 유실 방지)
+        try:
+            db.session.execute(text('ALTER TABLE setup_log ADD COLUMN md VARCHAR(50) DEFAULT "0"'))
+            db.session.execute(text('ALTER TABLE setup_log ADD COLUMN parts TEXT DEFAULT ""'))
             db.session.commit()
         except:
             db.session.rollback()

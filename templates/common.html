@@ -913,6 +913,7 @@
                 <button id="btn-close-setup-log-reg" class="btn-del-sm">✕</button>
             </div>
             <div class="modal-body setup-log-register-body">
+                <input type="hidden" id="setup-log-reg-id">
                 <input type="hidden" id="setup-log-reg-site">
                 <input type="hidden" id="setup-log-reg-equip">
                 <div class="form-row setup-log-form-row">
@@ -941,18 +942,31 @@
                     <label class="setup-log-label">공수(M/D)</label>
                     <input type="number" id="setup-log-reg-md" class="input-dark setup-log-input" min="0" step="0.1">
                 </div>
+                <div class="form-row setup-log-form-row">
+                    <label class="setup-log-label">셋업 물품</label>
+                    <div id="setup-log-reg-part-wrapper" class="log-select-wrapper setup-log-worker-wrapper">
+                        <div id="setup-log-reg-part-trigger" class="log-select-trigger">물품 선택</div>
+                        <div id="setup-log-reg-part-dropdown" class="log-select-dropdown setup-log-worker-dropdown">
+                            <input type="text" id="setup-log-reg-part-search" class="dropdown-search-input" placeholder="검색..." autocomplete="off">
+                            <ul id="setup-log-reg-part-list" class="log-select-list setup-log-worker-list" style="list-style:none; margin:0;"></ul>
+                            <div class="log-select-footer">
+                                <button type="button" id="btn-setup-log-reg-part-add" class="btn-blue-sm setup-log-btn-full">선택 완료</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row setup-log-form-row">
+                    <label class="setup-log-label"></label>
+                    <div id="setup-log-reg-part-display" style="flex:1; width:100%; min-width:0; min-height:50px; max-height:120px; overflow-y:auto; background:#0d1117; border:1px solid #30363d; border-radius:4px; padding:8px; box-sizing:border-box;"></div>
+                    <input type="hidden" id="setup-log-reg-part-hidden">
+                </div>
                 <div class="setup-log-form-col">
                     <label class="setup-log-memo-label">작업 내용 / 특이사항</label>
                     <textarea id="setup-log-reg-memo" class="input-dark setup-log-memo-input" spellcheck="false"></textarea>
                 </div>
-                <div class="form-row setup-log-form-row center">
-                    <label class="modal-checkbox-label setup-log-checkbox-label">
-                        <input type="checkbox" id="setup-log-reg-complete" class="modal-checkbox-input setup-log-checkbox-input">
-                        작업 완료
-                    </label>
-                </div>
             </div>
             <div class="modal-footer">
+                <button id="btn-delete-setup-log-reg" class="btn-del" style="display: none; margin-right: auto;">기록 삭제</button>
                 <button id="btn-save-setup-log-reg" class="btn-blue">기록 저장</button>
             </div>
         </div>

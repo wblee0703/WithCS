@@ -754,6 +754,10 @@ async function renderIntegMaintStats(mainData) {
                 const detailData = JSON.parse(localStorage.getItem(key));
                 if (!detailData) return;
 
+                    // [추가] 셋업 장비는 운영 현황 통계에서 제외
+                    const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
+                    if (equipStatus === '셋업 장비') return;
+
                 const completedKeys = new Set();
 
                 if (detailData.logs) {
