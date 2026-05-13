@@ -889,12 +889,51 @@ function renderGanttChart() {
             if (colIndex >= 0 && colIndex < ganttValidDates.length) {
                 if (isDayCountMode) {
                     const task = allTasks.find(t => t.id == taskId);
-                    if (task && task.logDates && task.logDates.length > 0) {
-                        // 이미 기록이 있는 경우 마지막 기록의 다음 날짜 제안
-                        const lastDateStr = [...task.logDates].sort().pop();
-                        const d = new Date(lastDateStr);
-                        d.setDate(d.getDate() + 1); // 다음 일차이므로 1일 더함
-                        clickedDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    if (task) {
+                        let foundLogDate = null;
+                        
+                        // 1. 현재 클릭한 작업의 로그가 있는지 확인
+                        if (task.logDates && task.logDates.length > 0) {
+                            const uniqueDates = [...new Set(task.logDates)].sort();
+                            const virtStartColIndex = getIndex(task.planStart, false);
+                            const logIndex = colIndex - virtStartColIndex;
+                            if (logIndex >= 0 && logIndex < uniqueDates.length) {
+                                foundLogDate = uniqueDates[logIndex];
+                            }
+                        }
+
+                        if (foundLogDate) {
+                            clickedDateStr = foundLogDate;
+                        } else {
+                            // 2. 같은 일차(세로 열)에 다른 작업의 기록이 있다면 그 날짜를 제안
+                            let matchedRealDate = null;
+                            for (const t of allTasks) {
+                                if (t.site === site && t.equip === equip && t.logDates && t.logDates.length > 0) {
+                                    const uniqueDates = [...new Set(t.logDates)].sort();
+                                    const virtStartColIndex = getIndex(t.planStart, false);
+                                    const logIdx = colIndex - virtStartColIndex;
+                                    if (logIdx >= 0 && logIdx < uniqueDates.length) {
+                                        matchedRealDate = uniqueDates[logIdx];
+                                        break; // 찾았으면 중단
+                                    }
+                                }
+                            }
+
+                            if (matchedRealDate) {
+                                clickedDateStr = matchedRealDate;
+                            } else {
+                                // 3. 같은 일차에 등록된 기록이 아예 없다면 마지막 기록의 다음 날짜 제안
+                                if (task.logDates && task.logDates.length > 0) {
+                                    const uniqueDates = [...new Set(task.logDates)].sort();
+                                    const lastDateStr = uniqueDates[uniqueDates.length - 1];
+                                    const d = new Date(lastDateStr);
+                                    d.setDate(d.getDate() + 1); // 다음 일차이므로 1일 더함
+                                    clickedDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                                } else {
+                                    clickedDateStr = '';
+                                }
+                            }
+                        }
                     } else {
                         clickedDateStr = ''; // 빈 값을 넘겨 모달에서 오늘 날짜로 셋팅되도록 함
                     }
@@ -911,12 +950,17 @@ function renderGanttChart() {
 
             if (taskLogs.length > 0) {
                 taskLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
-                // 클릭한 날짜에 해당하는 로그가 있으면 그걸 열고, 없으면 가장 마지막 로그를 엽니다.
                 let targetLog = taskLogs.find(l => l.date === clickedDateStr);
-                if (!targetLog) targetLog = taskLogs[taskLogs.length - 1];
                 
-                if (typeof window.openLogForEditing === 'function') {
-                    window.openLogForEditing(site, equip, targetLog.id);
+                // [수정] 빈 공간(다른 일차)을 클릭했을 때는 기존 기록을 수정하는 대신, 추가 기록을 남길 수 있도록 신규 등록 팝업을 띄움
+                if (targetLog) {
+                    if (typeof window.openLogForEditing === 'function') {
+                        window.openLogForEditing(site, equip, targetLog.id);
+                    }
+                } else {
+                    if (typeof window.openSetupLogRegisterModal === 'function') {
+                        window.openSetupLogRegisterModal(site, equip, taskName, clickedDateStr);
+                    }
                 }
             } else {
                 if (typeof window.openSetupLogRegisterModal === 'function') {

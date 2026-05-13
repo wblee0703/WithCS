@@ -256,7 +256,16 @@ window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, 
     }
 
     const delBtn = modal.querySelector('#btn-delete-setup-log-reg');
-    if (delBtn) delBtn.style.display = 'none';
+    const saveBtn = modal.querySelector('#btn-save-setup-log-reg');
+    
+    // [수정] 하단 버튼 영역을 1:1 비율로 분할하여 버튼 크기 동일하게 맞춤
+    if (delBtn && saveBtn && delBtn.parentNode === saveBtn.parentNode) {
+        delBtn.parentNode.style.display = 'flex';
+        delBtn.parentNode.style.gap = '10px';
+        delBtn.style.flex = '1';
+        saveBtn.style.flex = '1';
+    }
+    if (delBtn) delBtn.style.display = 'none'; // 신규 등록 시에는 삭제 버튼 숨김
     
     // 작업자 세팅 (로그인 정보 기반)
     const wTrigger = modal.querySelector('#setup-log-reg-worker-trigger');
@@ -324,8 +333,17 @@ window.openLogForEditing = function(site, equip, logId) {
     if (memoInput) memoInput.value = log.memo || '';
 
     const delBtn = modal.querySelector('#btn-delete-setup-log-reg');
+    const saveBtn = modal.querySelector('#btn-save-setup-log-reg');
+    
+    // [수정] 하단 버튼 영역을 1:1 비율로 분할하여 버튼 크기 동일하게 맞춤
+    if (delBtn && saveBtn && delBtn.parentNode === saveBtn.parentNode) {
+        delBtn.parentNode.style.display = 'flex';
+        delBtn.parentNode.style.gap = '10px';
+        delBtn.style.flex = '1';
+        saveBtn.style.flex = '1';
+    }
     if (delBtn) {
-        delBtn.style.display = 'inline-block';
+        delBtn.style.display = 'block'; // 플렉스 아이템으로 표시되도록 block으로 변경
     }
 
     // 작업자 드롭다운 셋팅

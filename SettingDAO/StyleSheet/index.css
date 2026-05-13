@@ -1008,6 +1008,18 @@ body {
         flex: none !important;
     }
 
+    /* [수정] 셋업 관리 모바일에서 사업장 현황과 장비 현황을 가로 1줄에 1:1 비율로 배치 */
+    #setup-split-view .maint-left-charts {
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+    }
+    
+    #setup-split-view .maint-left-charts > .status-group:nth-child(1),
+    #setup-split-view .maint-left-charts > .status-group:nth-child(2) {
+        width: calc(50% - 5px) !important;
+        flex: 1 1 calc(50% - 5px) !important;
+    }
+
     /* [추가] 장비 이슈 공유 카드 모바일 고정 높이 및 스크롤 (약 3개 항목 표시) */
     #home-issue-card {
         height: 300px !important;
