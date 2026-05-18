@@ -1476,7 +1476,12 @@ function renderAdminEquipList() {
             const serial = parts.length > 1 ? parts[1] : '';
         const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
             const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
-            const text = `${item.site} ${name} ${displayName} ${serial}`.toLowerCase();
+            
+            // [추가] 장비 구분(equipStatus) 정보를 가져와 검색 대상 텍스트에 포함
+            const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.key}`)) || {};
+            const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
+            
+            const text = `${item.site} ${name} ${displayName} ${serial} ${equipStatus}`.toLowerCase();
             return keywords.every(kw => text.includes(kw));
         });
     }
@@ -1492,9 +1497,10 @@ function renderAdminEquipList() {
         const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
         const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
 
-        // [추가] 고객사 장비명 가져오기
+        // [추가] 고객사 장비명 및 장비 구분 가져오기
         const detailData = JSON.parse(localStorage.getItem(`details_${site}_${fullKey}`)) || {};
         const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+        const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
 
         const li = document.createElement('li');
         li.dataset.equipKey = fullKey;
@@ -1505,6 +1511,15 @@ function renderAdminEquipList() {
             subInfo = ` <span style="color:#58a6ff; font-size:12px;">[${escapeHtml(custEquipName)}]</span>`;
         } else if (serial) {
             subInfo = ` <span style="color:#8b949e; font-size:12px;">(${escapeHtml(serial)})</span>`;
+        }
+
+        if (equipStatus) {
+            let statusColor = '#8b949e';
+            if (equipStatus === '가동 장비') statusColor = '#3fb950';
+            else if (equipStatus.includes('셋업')) statusColor = '#d29922';
+            else if (equipStatus === '워런티') statusColor = '#1f6feb';
+            
+            subInfo += ` <span style="color:${statusColor}; font-size:11px; margin-left:2px;">[${escapeHtml(equipStatus)}]</span>`;
         }
 
         let content = `<span>${displayName}</span>${subInfo}`;
@@ -3007,9 +3022,14 @@ function renderCheckTypeEquipList() {
             const parts = item.key.split('::');
             const name = parts[0] || '';
             const serial = parts.length > 1 ? parts[1] : '';
-        const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+            const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
             const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
-            const text = `${item.site} ${name} ${displayName} ${serial}`.toLowerCase();
+
+            // [추가] 장비 구분(equipStatus) 정보를 가져와 검색 대상 텍스트에 포함
+            const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.key}`)) || {};
+            const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
+
+            const text = `${item.site} ${name} ${displayName} ${serial} ${equipStatus}`.toLowerCase();
             return keywords.every(kw => text.includes(kw));
         });
     }

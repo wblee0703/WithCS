@@ -56,11 +56,19 @@ function getScheduleForCalendar() {
                     const data = JSON.parse(localStorage.getItem(key));
                     if (!data) return;
 
+                    // [추가] 셋업 장비는 캘린더 및 운영 통계에서 제외
+                    const equipStatus = (data.setup && data.setup.equipStatus) ? data.setup.equipStatus : '';
+                    if (equipStatus === '셋업 장비') return;
+
                     if (data.maint) {
                         data.maint.forEach(item => {
                             let targetDateStr = '';
                             if (item.scheduledDate) {
-                                targetDateStr = item.scheduledDate;
+                                // [추가] 이미 이력으로 완료 처리된 항목은 캘린더 예정(maint)에서 중복 노출 방지
+                                const isDone = data.logs && data.logs.some(l => l.date === item.scheduledDate && (l.content || '').includes(item.content || ''));
+                                if (!isDone) {
+                                    targetDateStr = item.scheduledDate;
+                                }
                             }
                             if (targetDateStr) {
                                 if (!events[targetDateStr]) events[targetDateStr] = [];
@@ -429,15 +437,6 @@ function renderMonthGrid(year, month, titleId, gridId) {
                 });
             }
 
-            // [추가] 통계 계산 (일정 변경 이력은 카운트에서 제외하여 통계 왜곡 방지)
-            dayEvents.forEach(event => {
-                if (event.content && event.content.startsWith('[변경]')) return;
-                monthTotalTasks++;
-                if (event.isCompleted) monthCompletedTasks++;
-                const mdVal = parseFloat(event.md);
-                if (!isNaN(mdVal)) monthTotalMd += mdVal;
-            });
-
             // 그룹화 로직
             const groupedEvents = {};
             dayEvents.forEach(event => {
@@ -451,6 +450,8 @@ function renderMonthGrid(year, month, titleId, gridId) {
                         isChanged: event.isChanged,
                         type: event.type,
                         isExtraWork: isExtraWork,
+                        worker: event.worker, // [추가] 작업자
+                    md: parseFloat(event.md) || 0, // 중복 방지를 위해 그룹당 1개의 공수만 저장
                         ids: [] // ID 목록 저장을 위해 배열 초기화
                     };
                 }
@@ -458,6 +459,29 @@ function renderMonthGrid(year, month, titleId, gridId) {
             });
 
             const groups = Object.values(groupedEvents);
+
+        // [수정] 통계 계산을 세부 항목 단위가 아닌 화면에 보이는 "그룹(블록)" 단위로 변경하여 수치 뻥튀기 현상 방지
+        groups.forEach(group => {
+            if (group.isChanged) return; // 일정 변경 이력은 카운트에서 제외
+            monthTotalTasks++;
+            if (group.isCompleted) monthCompletedTasks++;
+            
+            // [수정] 관리자 지분 차감 공통 로직 적용
+            if (typeof window.calcValidMd === 'function') {
+                monthTotalMd += window.calcValidMd(group.worker, group.md);
+            } else {
+                monthTotalMd += group.md;
+            }
+        });
+
+            // [추가] 캘린더 화면에서 미완료(작업 예정) 일정을 완료된 일정보다 항상 위에 표시하도록 정렬
+            groups.sort((a, b) => {
+                const aDone = a.isCompleted || a.isChanged;
+                const bDone = b.isCompleted || b.isChanged;
+                if (aDone === bDone) return 0;
+                return aDone ? 1 : -1;
+            });
+
             displayCount = groups.length;
 
             // [추가] 1달/2달 보기에 따른 최대 표시 항목 수 제한

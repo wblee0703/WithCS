@@ -667,30 +667,14 @@ async function renderIntegMaintStats(mainData) {
         }
     }
 
-    // [수정] 캐시를 무시하고 최신 계정 데이터를 직접 호출하여 관리자 여부 누락 방지
-    let workers = [];
-    try {
-        // 브라우저의 강력 캐시를 완벽히 회피하기 위해 타임스탬프 파라미터 추가
-        const res = await fetch('/api/users/names?t=' + new Date().getTime(), { cache: 'no-store' });
-        if (res.ok) {
-            const wData = await res.json();
-            workers = wData.workers || wData.names || [];
-        }
-    } catch (e) { console.error(e); }
-
+    // [수정] 공통 헬퍼 함수를 통해 작업자 목록과 관리자 제외 목록 일관되게 적용
+    const workers = await window.fetchWorkerNames();
     const siteWorkerCounts = { 'SEC': 0, 'SKH 이천': 0, 'SKH 청주': 0, '기타사업장': 0, 'SCS 서안': 0, 'SKH 우시': 0, '기타': 0 };
-    const adminNames = new Set(); // [추가] 실제 작업 공수에서 관리자를 제외하기 위한 명단
 
     workers.forEach(w => {
         if (typeof w === 'object' && w !== null) {
-            // [강화] 권한(role)뿐만 아니라 직급/소속에 '관리자'라는 단어가 포함되어 있어도 제외하도록 이중 안전장치 추가
-            const roleStr = (w.role || '').trim().toLowerCase();
-            const posStr = (w.position || '').trim();
-            const deptStr = (w.department || '').trim();
-            
-            if (roleStr === 'admin' || roleStr === 'superadmin' || posStr.includes('관리자') || deptStr.includes('관리자')) {
-                adminNames.add(w.name); // 관리자 이름 기록
-                return; // 총 공수(모수) 계산 인원수에서 제외
+            if (window.adminNamesCache && window.adminNamesCache.has(w.name)) {
+                return; // 총 공수(모수) 계산 인원수에서 관리자 제외
             }
         }
         
@@ -712,22 +696,8 @@ async function renderIntegMaintStats(mainData) {
         }
     });
 
-    // [디버깅용] 브라우저 개발자 도구(F12) 콘솔창에서 계산에서 제외된 관리자 명단과 최종 인원수를 명확히 확인
-    console.log("✅ 총 공수에서 제외된 관리자 명단:", Array.from(adminNames));
-    console.log("✅ 사업장별 실제 계산에 포함된 인원수:", siteWorkerCounts);
-
-    // [추가] 실제 작업(M/D)에서 관리자의 지분을 제외하는 계산 함수
     const calcValidMd = (workerStr, mdVal) => {
-        if (!workerStr || !mdVal) return mdVal;
-        const workerList = workerStr.split(',').map(s => s.trim()).filter(Boolean);
-        if (workerList.length === 0) return mdVal;
-        
-        const adminCount = workerList.filter(name => adminNames.has(name)).length;
-        if (adminCount === 0) return mdVal; // 관리자가 없으면 그대로 반환
-        
-        // 전체 작업자 중 관리자 비율만큼 M/D를 차감 (예: 2명 중 1명이 관리자면 M/D의 50%만 반영)
-        const validRatio = (workerList.length - adminCount) / workerList.length;
-        return mdVal * validRatio;
+        return typeof window.calcValidMd === 'function' ? window.calcValidMd(workerStr, mdVal) : mdVal;
     };
 
     const groupStats = {
@@ -749,35 +719,35 @@ async function renderIntegMaintStats(mainData) {
 
             const isTypeCountValid = !integSelectedSite || integSelectedSite === groupName;
 
+            // [수정] 캘린더의 통계 기준과 일치하도록 세부 항목(content) 단위가 아닌 그룹(블록) 단위로 먼저 묶어줌
+            const groupMap = new Map();
+
             mainData[site].forEach(equip => {
                 const key = `details_${site}_${equip}`;
                 const detailData = JSON.parse(localStorage.getItem(key));
                 if (!detailData) return;
 
-                    // [추가] 셋업 장비는 운영 현황 통계에서 제외
-                    const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
-                    if (equipStatus === '셋업 장비') return;
-
-                const completedKeys = new Set();
+                // 셋업 장비는 운영 현황 통계에서 제외
+                const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
+                if (equipStatus === '셋업 장비') return;
 
                 if (detailData.logs) {
                     detailData.logs.forEach(l => {
                         if (l.detailType !== '일정변경' && dateCheckFn(l.date)) {
                             if (l.content && l.content.startsWith('[변경]')) return;
                             
-                            groupStats[groupName].total++;
-                            groupStats[groupName].completed++;
-                            const mdVal = parseFloat(l.md) || 0;
-                            // [수정] 실제 공수 합산 시 관리자의 기여분(M/D) 제외
-                            groupStats[groupName].md += calcValidMd(l.worker, mdVal);
-                            
-                            if (isTypeCountValid) {
-                                const type = l.type || '정기';
-                                if (typeCounts[type] !== undefined) typeCounts[type]++;
-                            }
+                            const isExtraWork = !!l.originalLogId;
+                            const type = l.type || '정기';
+                            const groupKey = `${site}::${equip}::${l.date}::true::${type}::${isExtraWork}`;
 
-                            const taskKey = `${l.date}_${l.content}_${l.originalLogId || ''}`;
-                            completedKeys.add(taskKey);
+                            if (!groupMap.has(groupKey)) {
+                                groupMap.set(groupKey, {
+                                    isCompleted: true,
+                                    type: type,
+                                    worker: l.worker,
+                                    md: parseFloat(l.md) || 0
+                                });
+                            }
                         }
                     });
                 }
@@ -785,20 +755,35 @@ async function renderIntegMaintStats(mainData) {
                 if (detailData.maint) {
                     detailData.maint.forEach(m => {
                         if (dateCheckFn(m.scheduledDate)) {
-                            const taskKey = `${m.scheduledDate}_${m.content}_${m.originalLogId || ''}`;
-                            if (completedKeys.has(taskKey)) return; 
+                            const isDone = detailData.logs && detailData.logs.some(l => l.date === m.scheduledDate && (l.content || '').includes(m.content || ''));
+                            if (isDone) return;
                             
-                            groupStats[groupName].total++;
-                            const mdVal = parseFloat(m.md) || 0;
-                            // [수정] 예정 공수 합산 시 관리자의 기여분(M/D) 제외
-                            groupStats[groupName].md += calcValidMd(m.worker, mdVal);
+                            const isExtraWork = !!m.originalLogId;
+                            const type = m.type || '정기';
+                            const groupKey = `${site}::${equip}::${m.scheduledDate}::false::${type}::${isExtraWork}`;
 
-                            if (isTypeCountValid) {
-                                const type = m.type || '정기';
-                                if (typeCounts[type] !== undefined) typeCounts[type]++;
+                            if (!groupMap.has(groupKey)) {
+                                groupMap.set(groupKey, {
+                                    isCompleted: false,
+                                    type: type,
+                                    worker: m.worker,
+                                    md: parseFloat(m.md) || 0
+                                });
                             }
                         }
                     });
+                }
+            });
+
+            groupMap.forEach(group => {
+                groupStats[groupName].total++;
+                if (group.isCompleted) {
+                    groupStats[groupName].completed++;
+                }
+                groupStats[groupName].md += calcValidMd(group.worker, group.md);
+
+                if (isTypeCountValid) {
+                    if (typeCounts[group.type] !== undefined) typeCounts[group.type]++;
                 }
             });
         }

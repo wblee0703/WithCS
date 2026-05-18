@@ -226,6 +226,40 @@ function saveData() {
     localStorage.setItem('device_data', JSON.stringify(storageData));
 }
 
+// [추가] 운영 관리 공수 계산 시 관리자(어드민) 지분을 차감하기 위한 캐시 및 헬퍼 함수
+window.adminNamesCache = new Set();
+window.initAdminNamesCache = async function() {
+    try {
+        const workers = await window.fetchWorkerNames();
+        const admins = new Set();
+        workers.forEach(w => {
+            if (typeof w === 'object' && w !== null) {
+                const roleStr = (w.role || '').trim().toLowerCase();
+                const posStr = (w.position || '').trim();
+                const deptStr = (w.department || '').trim();
+                if (roleStr === 'admin' || roleStr === 'superadmin' || posStr.includes('관리자') || deptStr.includes('관리자')) {
+                    admins.add(w.name);
+                }
+            }
+        });
+        window.adminNamesCache = admins;
+    } catch (e) {
+        console.error("Admin Names Cache Error:", e);
+    }
+};
+
+window.calcValidMd = function(workerStr, mdVal) {
+    if (!workerStr || !mdVal) return mdVal;
+    const workerList = workerStr.split(',').map(s => s.trim()).filter(Boolean);
+    if (workerList.length === 0) return mdVal;
+    
+    const adminCount = workerList.filter(name => window.adminNamesCache.has(name)).length;
+    if (adminCount === 0) return mdVal; 
+    
+    const validRatio = (workerList.length - adminCount) / workerList.length;
+    return mdVal * validRatio;
+};
+
 /* ==========================================================================
    3. 초기화 및 네비게이션 (Initialization & Navigation)
    ========================================================================== */
@@ -286,6 +320,11 @@ function fetchServerData(callback) {
 
             // [추가] 워런티 만료 장비 자동 전환
             updateWarrantyStatusAutomatically();
+
+            // [추가] 관리자 공수 차감 계산을 위한 캐시 로드
+            if (typeof window.initAdminNamesCache === 'function') {
+                await window.initAdminNamesCache();
+            }
 
             // [추가] 데이터 갱신 후 UI 리프레시 (화면 깜빡임 없이 데이터만 최신화)
             refreshAppViews();
@@ -594,7 +633,18 @@ function updateWarrantyStatusAutomatically() {
 
                                 const parts = key.split('_');
                                 if (parts.length >= 3) {
+                                    const site = parts[1];
                                     const equipName = parts.slice(2).join('_');
+
+                                    // [추가] 서버(DB)에도 자동 전환 상태를 동기화 반영
+                                    if (typeof window.syncAdminDB === 'function') {
+                                        window.syncAdminDB('equip', 'UPDATE', {
+                                            old_id: equipName, new_id: equipName,
+                                            site: site, old_site: site, new_site: site,
+                                            setup: detailData.setup, special_note: detailData.specialNote || ''
+                                        });
+                                    }
+
                                     if (typeof addSystemLog === 'function') {
                                         addSystemLog('UPDATE_EQUIP_STATUS', equipName, '워런티 기간 만료에 따른 가동 장비 자동 전환');
                                     }
