@@ -767,4 +767,19 @@
         flex: none !important;
         height: 150px;
     }
+
+    /* 모바일 셋업 이력 리스트 가로 스크롤 및 고정 너비 설정 */
+    .setup-history-table-wrapper {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .setup-history-table {
+        min-width: 600px !important; /* 컬럼 너비 합계 이상으로 최소 너비 설정하여 스크롤 유도 */
+    }
+
+    .setup-history-table .th-date { width: 100px !important; }
+    .setup-history-table .th-content { width: 200px !important; }
+    .setup-history-table .th-worker { width: 150px !important; }
+    .setup-history-table .th-md { width: 50px !important; }
 }
