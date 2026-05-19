@@ -338,6 +338,36 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
         window.addEventListener('DataLoaded', initSetup);
     }
+
+    // [추가] 간트뷰 렌더링 시 왼쪽에 '셋업 이력' 버튼 자동 주입
+    const setupGanttObserver = new MutationObserver((mutations) => {
+        mutations.forEach(mutation => {
+            if (mutation.addedNodes.length) {
+                const titleWrapper = document.querySelector('.gantt__title-wrapper');
+                if (titleWrapper && !document.getElementById('btn-gantt-history')) {
+                    const leftToolbar = document.createElement('div');
+                    leftToolbar.className = 'gantt__left-toolbar';
+                    
+                    const historyBtn = document.createElement('button');
+                    historyBtn.id = 'btn-gantt-history';
+                    historyBtn.className = 'btn-gray btn-text-sm';
+                    historyBtn.innerHTML = '📜 셋업 이력';
+                    historyBtn.onclick = () => {
+                        if (!currentPath.site || !currentPath.equip) {
+                            alert('장비를 먼저 선택해주세요.');
+                            return;
+                        }
+                        if (typeof openSetupHistoryModal === 'function') {
+                            openSetupHistoryModal(currentPath.site, currentPath.equip);
+                        }
+                    };
+                    leftToolbar.appendChild(historyBtn);
+                    titleWrapper.appendChild(leftToolbar);
+                }
+            }
+        });
+    });
+    setupGanttObserver.observe(document.body, { childList: true, subtree: true });
 });
 
 function setupSetupLogResizer() {

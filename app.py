@@ -1288,7 +1288,16 @@ if __name__ == '__main__':
     try:
         from waitress import serve
         print(f" * Serving with Waitress on http://0.0.0.0:{port}")
-        serve(app, host='0.0.0.0', port=port, threads=12) # [수정] 동시 처리 스레드 수 증가 (Queue depth 경고 방지)
+        serve(app, host='0.0.0.0', port=port, threads=12)
+    except PermissionError:
+        # [추가] 포트 충돌(PermissionError) 발생 시 자동으로 다음 포트 시도
+        new_port = port + 1
+        print(f"\n ! Port {port} is in use or requires permissions. Trying port {new_port}...")
+        try:
+            serve(app, host='0.0.0.0', port=new_port, threads=12)
+        except Exception as e:
+            print(f" ! Failed to start server on port {new_port} as well. Please check your firewall or use a different port.")
+            print(f"   Error: {e}")
     except ImportError:
         # Waitress가 설치되지 않은 경우 기존 Flask 개발 서버 사용
         print(" * Waitress not found. Running with basic Flask server.")

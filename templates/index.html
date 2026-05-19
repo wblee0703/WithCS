@@ -6,6 +6,7 @@
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/calendar.css') }}?v=7">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/gantt.css') }}">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/integ.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_setup.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -53,30 +54,27 @@
                     <div class="maint-split-view" id="setup-split-view">
                         <!-- 왼쪽: 차트 영역 -->
                         <div class="maint-left-charts">
-                            <div class="status-group card-like">
-                                <h5 class="status-group-title">사업장 현황</h5>
-                                <div class="chart-row">
-                                    <div class="donut-chart-wrapper">
-                                        <div class="donut-chart" id="setup-site-status-chart"></div>
-                                        <div class="chart-center" id="setup-site-chart-center"></div>
+                            <div class="status-group card-like" style="flex: 1;">
+                                <h5 class="status-group-title">셋업 완료 장비</h5>
+                                <div class="status-list-container status-list-flex">
+                                    <div class="status-list-header">
+                                        <span class="header-name">장비 정보</span>
+                                        <span class="header-count">완료일</span>
                                     </div>
-                                    <div class="status-list-container status-list-flex">
+                                    <ul class="site-status-list" id="setup-completed-list"></ul>
+                                </div>
+                            </div>
+                            <div class="status-group card-like" style="flex: 1;">
+                                <h5 class="status-group-title">사업장 및 장비 현황</h5>
+                                <div class="chart-row" style="align-items: stretch; margin: 0; height: 100%;">
+                                    <div class="status-list-container status-list-flex" style="height: 100%;">
                                         <div class="status-list-header">
                                             <span class="header-name">사업장</span>
                                             <span class="header-count">장비수</span>
                                         </div>
                                         <ul class="site-status-list" id="setup-site-status-list"></ul>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="status-group card-like">
-                                <h5 class="status-group-title">장비 현황</h5>
-                                <div class="chart-row">
-                                    <div class="donut-chart-wrapper">
-                                        <div class="donut-chart" id="setup-equip-status-chart"></div>
-                                        <div class="chart-center" id="setup-equip-chart-center"></div>
-                                    </div>
-                                    <div class="status-list-container status-list-flex">
+                                    <div class="status-list-container status-list-flex" style="height: 100%;">
                                         <div class="status-list-header">
                                             <span class="header-name">장비명</span>
                                             <span class="header-count">장비수</span>
@@ -85,7 +83,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="status-group card-like" id="setup-equip-info-group">
+                            <div class="status-group card-like" id="setup-equip-info-group" style="flex: 1;">
                                 <h5 class="status-group-title">장비 정보</h5>
                                 <div id="setup-equip-detail-container" class="status-list-container status-list-flex">
                                     <ul class="site-status-list" id="setup-equip-detail-list"></ul>
@@ -406,6 +404,83 @@
                                     <ul class="site-status-list" id="integ-setup-detail-list"></ul>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- [추가] 셋업 완료 처리 모달 -->
+        <div id="setup-complete-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-window setup-complete-modal-window">
+                <div class="modal-header">
+                    <h3>셋업 완료 처리</h3>
+                    <button id="btn-close-setup-complete-modal" class="setup-btn-close">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p id="setup-complete-target-info" class="setup-complete-target-info"></p>
+                    <div class="form-row setup-complete-form-row">
+                        <label for="setup-complete-cust-equip-name" class="modal-label setup-complete-label">고객사 장비명</label>
+                        <input type="text" id="setup-complete-cust-equip-name" class="input-dark setup-complete-input" placeholder="고객사 장비명 입력 (선택)">
+                    </div>
+                    <div class="form-row setup-complete-form-row">
+                        <label for="setup-complete-warranty-start" class="modal-label setup-complete-label">워런티 시작일</label>
+                        <input type="date" id="setup-complete-warranty-start" class="input-dark setup-complete-input">
+                    </div>
+                    <div class="form-row setup-complete-form-row">
+                        <label for="setup-complete-warranty-period" class="modal-label setup-complete-label">워런티 기한 (개월)</label>
+                        <input type="number" id="setup-complete-warranty-period" class="input-dark setup-complete-input" min="0" placeholder="숫자만 입력">
+                    </div>
+                    <hr class="setup-complete-hr">
+                    <div class="form-row setup-complete-form-row">
+                        <label for="setup-complete-cust-manager" class="modal-label setup-complete-label">고객사 담당자</label>
+                        <input type="text" id="setup-complete-cust-manager" class="input-dark setup-complete-input" placeholder="담당자명 입력">
+                    </div>
+                    <div class="form-row setup-complete-form-row">
+                        <label for="setup-complete-cust-contact" class="modal-label setup-complete-label">담당자 연락처</label>
+                        <input type="text" id="setup-complete-cust-contact" class="input-dark setup-complete-input" placeholder="연락처 입력">
+                    </div>
+                    <div class="form-row setup-complete-form-row mb-15">
+                        <label for="setup-complete-cust-email" class="modal-label setup-complete-label">담당자 이메일</label>
+                        <input type="email" id="setup-complete-cust-email" class="input-dark setup-complete-input" placeholder="이메일 입력">
+                    </div>
+                    <div class="modal-footer setup-complete-footer">
+                        <button id="btn-cancel-setup-complete" class="btn-gray setup-complete-btn">취소</button>
+                        <button id="btn-confirm-setup-complete" class="btn-blue setup-complete-btn">완료 처리</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- [추가] 셋업 이력 팝업 모달 -->
+        <div id="setup-history-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-window">
+                <div class="modal-header">
+                    <h3 id="setup-history-title">셋업 이력</h3>
+                    <button class="setup-btn-close" id="btn-close-setup-history-modal">✕</button>
+                </div>
+                <div class="modal-body setup-history-modal-body">
+                    <!-- 상단: 셋업 일지 리스트 -->
+                    <div class="setup-history-table-wrapper">
+                        <table class="data-table setup-history-table">
+                            <thead>
+                                <tr>
+                                    <th class="th-date">날짜</th>
+                                    <th class="th-content">작업 내용</th>
+                                    <th class="th-worker">작업자</th>
+                                    <th class="th-md">공수</th>
+                                </tr>
+                            </thead>
+                            <tbody id="setup-history-list-body"></tbody>
+                        </table>
+                    </div>
+                    <!-- 하단: 메모 및 물품 정보 -->
+                    <div class="setup-history-detail-wrapper">
+                        <div class="setup-history-parts-container">
+                            <div class="setup-history-parts-title">셋업 물품</div>
+                            <ul id="setup-history-parts-list" class="setup-history-parts-list"></ul>
+                        </div>
+                        <div class="setup-history-memo-container">
+                            <div class="setup-history-memo-title">메모 / 특이사항</div>
+                            <textarea id="setup-history-memo" class="textarea-dark setup-history-memo" readonly></textarea>
                         </div>
                     </div>
                 </div>

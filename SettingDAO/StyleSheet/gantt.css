@@ -340,6 +340,17 @@
     min-height: 40px;
 }
 
+/* [추가] 간트 타이틀 좌측 툴바 (이력 버튼 등) */
+.gantt__left-toolbar {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    z-index: 10;
+}
+
 .gantt__center-title {
     display: flex;
     flex-direction: column;
@@ -421,6 +432,14 @@
     /* [추가] 모바일 기본 레이아웃 (가로 배치 유지, 스크롤 활용) */
     .gantt__wrapper {
         flex-direction: row;
+    }
+
+    /* [추가] 모바일 간트 타이틀 좌측 툴바 정렬 변경 */
+    .gantt__left-toolbar {
+        position: static !important;
+        transform: none !important;
+        margin-bottom: 5px;
+        justify-content: center;
     }
 
     /* [추가] 모바일에서 리사이저 숨김 */

@@ -75,7 +75,7 @@ function getDashboardData() {
 }
 
 // [공통 헬퍼] 장비 표시 이름(시리얼, 고객사 장비명 포함) 포맷팅
-function formatEquipDisplayInfo(site, equipKey, equipmentModels = null) {
+window.formatEquipDisplayInfo = function formatEquipDisplayInfo(site, equipKey, equipmentModels = null) {
     const parts = equipKey.split('::');
     const name = parts[0];
     const serial = parts.length > 1 ? parts[1] : '';
@@ -174,6 +174,38 @@ document.addEventListener('DOMContentLoaded', () => {
             renderEquipDetailList(getDashboardData());
         });
     }
+
+    // [추가] 간트뷰 렌더링 시 왼쪽에 '셋업 이력' 버튼 자동 주입
+    const homeGanttObserver = new MutationObserver((mutations) => {
+        mutations.forEach(mutation => {
+            if (mutation.addedNodes.length) {
+                const titleWrapper = document.querySelector('.gantt__title-wrapper');
+                if (titleWrapper && !document.getElementById('btn-gantt-history')) {
+                    const leftToolbar = document.createElement('div');
+                    leftToolbar.className = 'gantt__left-toolbar';
+                    
+                    const historyBtn = document.createElement('button');
+                    historyBtn.id = 'btn-gantt-history';
+                    historyBtn.className = 'btn-gray btn-text-sm';
+                    historyBtn.innerHTML = '📜 셋업 이력';
+                    historyBtn.onclick = () => {
+                        const site = currentGanttFilters.site;
+                        const equip = currentGanttFilters.equip;
+                        if (!site || !equip) {
+                            alert('장비를 먼저 선택해주세요.');
+                            return;
+                        }
+                        if (typeof openSetupHistoryModal === 'function') {
+                            openSetupHistoryModal(site, equip);
+                        }
+                    };
+                    leftToolbar.appendChild(historyBtn);
+                    titleWrapper.appendChild(leftToolbar);
+                }
+            }
+        });
+    });
+    homeGanttObserver.observe(document.body, { childList: true, subtree: true });
 });
 
 /* ==========================================================================
@@ -766,6 +798,7 @@ function updateSetupDashboard() {
 
     const data = getDashboardData();
     let activeSetupEquips = [];
+    let completedSetupEquips = []; // [추가] 완료된 셋업
     let siteStats = {};
     let equipCounts = {};
 
@@ -784,102 +817,122 @@ function updateSetupDashboard() {
                     const hasScheduledDate = detailData.setupDetails.some(d => d.startDate);
 
                     if (!isCompleted && hasScheduledDate) {
-                        activeSetupEquips.push({ site, equip });
+                        activeSetupEquips.push({ site, equip, isCompleted: false });
                         siteStats[groupName] = (siteStats[groupName] || 0) + 1;
                         const equipName = equip.split('::')[0];
                         const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
                         const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
                         equipCounts[displayName] = (equipCounts[displayName] || 0) + 1;
+                    } else if (isCompleted) {
+                        const detailKey = `details_${site}_${equip}`;
+                        const equipDetailData = JSON.parse(localStorage.getItem(detailKey)) || {};
+                        const equipStatus = (equipDetailData.setup && equipDetailData.setup.equipStatus) ? equipDetailData.setup.equipStatus : '';
+
+                        // [수정] 완료 처리(워런티 등)가 아직 안 된 장비들을 완료 대기 리스트에 추가 (증발 방지)
+                        if (equipStatus !== '워런티' && equipStatus !== '가동 장비' && equipStatus !== '유휴 장비') {
+                            completedSetupEquips.push({ site, equip, date: completeItem.date });
+                            
+                            // [추가] 셋업 완료된 장비도 '장비 정보' 리스트에 계속 표시되도록 활성 리스트에 포함
+                            activeSetupEquips.push({ site, equip, isCompleted: true });
+
+                            // [추가] 승인 대기 중인 장비도 사업장 및 장비 현황 차트에 포함시켜 수치 오차 방지
+                            siteStats[groupName] = (siteStats[groupName] || 0) + 1;
+                            const equipName = equip.split('::')[0];
+                            const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
+                            const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
+                            equipCounts[displayName] = (equipCounts[displayName] || 0) + 1;
+                        }
                     }
                 }
             });
         }
     });
 
-    const totalActive = activeSetupEquips.length;
+    const allSetupEquips = activeSetupEquips; // [수정] activeSetupEquips에 완료된 항목도 포함되었으므로 통합 배열로 사용
+    const totalActive = allSetupEquips.length;
     const siteStatsArr = Object.keys(siteStats).map(key => ({ name: key, count: siteStats[key] }));
     const equipStatsArr = Object.keys(equipCounts).map(key => ({ name: key, count: equipCounts[key] }));
 
-    renderSetupSiteStatus(siteStatsArr, totalActive, activeSetupEquips);
-    renderSetupEquipChart(equipStatsArr, totalActive, activeSetupEquips);
+    renderSetupCompletedList(completedSetupEquips); // [수정] 셋업 완료 장비 리스트 렌더링
+    renderSetupSiteStatus(siteStatsArr, totalActive, allSetupEquips);
+    renderSetupEquipChart(equipStatsArr, totalActive, allSetupEquips);
     renderSetupEquipDetailList(activeSetupEquips);
     renderSetupUpcomingList(activeSetupEquips);
     if (typeof renderGanttChart === 'function') renderGanttChart();
 }
 
-function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
-    const barChartEl = document.getElementById('setup-site-bar-chart');
+function renderSetupCompletedList(completedEquips) {
+    const listEl = document.getElementById('setup-completed-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
 
-    if (barChartEl) {
-        if (barChartEl) barChartEl.innerHTML = '<div class="list-empty-msg" style="width:100%; text-align:center;">데이터 없음</div>';
-        if (totalEquip > 0) {
-            barChartEl.innerHTML = '';
-            const sortedSiteStats = [...siteStats].sort((a, b) => a.name.localeCompare(b.name));
-            const barData = [{ name: '전체', count: totalEquip }, ...sortedSiteStats];
-
-            const maxVal = Math.max(...barData.map(d => d.count));
-            let yAxisMax = 10;
-            if (maxVal > 10) yAxisMax = Math.ceil(maxVal / 5) * 5;
-
-            barData.forEach((item, index) => {
-                const isTotal = item.name === '전체';
-                const count = item.count;
-                const maxBarHeight = 140; 
-                const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
-                let bgStyle = window.getSiteGradient(item.name);
-                const isActive = (setupDashboardFilter.site === item.name) || (isTotal && !setupDashboardFilter.site);
-                const activeClass = isActive ? 'active' : '';
-
-                const barGroup = document.createElement('div');
-                barGroup.className = 'bar-group';
-                if (setupDashboardFilter.site && !isActive) barGroup.classList.add('faded');
-
-                barGroup.innerHTML = `
-                    <div class="bar-value">${count}</div>
-                    <div class="bar ${activeClass}" style="height: ${barHeight}px; background: ${bgStyle};"></div>
-                    <div class="bar-label" title="${item.name}">${item.name}</div>
-                `;
-
-                barGroup.onclick = () => {
-                    setupDashboardFilter.site = isTotal ? '' : (setupDashboardFilter.site === item.name ? '' : item.name);
-                    setupDashboardFilter.equip = '';
-                    currentGanttFilters = { site: '', equip: '' };
-                    currentSearchFilters = { site: '', equip: '' };
-                    renderCalendar();
-                    updateSetupDashboard();
-                };
-
-                barGroup.style.cursor = 'pointer';
-                barChartEl.appendChild(barGroup);
-            });
-        }
+    if (completedEquips.length === 0) {
+        listEl.innerHTML = `<li class="list-empty-msg">완료된 셋업 장비 없음</li>`;
+        return;
     }
 
-    window.renderSharedStatusChart({
-        chartId: 'setup-site-status-chart',
-        listId: 'setup-site-status-list',
-        centerTextId: 'setup-site-chart-center',
-        centerLabel: 'Site',
-        centerValue: siteStats.length,
-        stats: siteStats,
-        totalCount: totalEquip,
-        activeFilter: setupDashboardFilter.site,
-        colorResolver: (name) => window.getSiteColor(name),
-        onAllClick: () => {
-            setupDashboardFilter.site = '';
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+
+    // Sort by completion date, newest first
+    completedEquips.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+    completedEquips.forEach(item => {
+        const info = formatEquipDisplayInfo(item.site, item.equip, equipmentModels);
+
+        const li = document.createElement('li');
+        li.className = 'status-list-item';
+        
+        li.innerHTML = `
+            <div style="flex: 1; display: flex; align-items: center; min-width: 0;">
+                <span class="status-name" title="${info.fullTitle}">${info.mainInfo}${info.subInfo ? `<span class="equip-serial">${info.subInfo}</span>` : ''}</span>
+            </div>
+            <span class="status-count" style="font-size: 12px; color: #8b949e;">${item.date || '-'}</span>
+        `;
+        
+        li.onclick = () => window.openSetupCompleteModal(item.site, item.equip);
+        listEl.appendChild(li);
+    });
+}
+
+function renderSetupSiteStatus(siteStats, totalEquip, activeEquips) {
+    const listEl = document.getElementById('setup-site-status-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    if (totalEquip === 0) {
+        listEl.innerHTML = `<li class="list-empty-msg">진행 중인 셋업 없음</li>`;
+        return;
+    }
+
+    const sortedStats = [...siteStats].sort((a, b) => b.count - a.count);
+
+    const allLi = document.createElement('li');
+    allLi.className = 'status-list-item';
+    if (!setupDashboardFilter.site) allLi.classList.add('active');
+    allLi.innerHTML = `<span class="status-color status-color-all"></span><span class="status-name">전체</span><span class="status-count">${totalEquip}</span>`;
+    allLi.onclick = () => {
+        setupDashboardFilter.site = '';
+        setupDashboardFilter.equip = '';
+        currentGanttFilters = { site: '', equip: '' }; 
+        currentSearchFilters = { site: '', equip: '' };
+        renderCalendar();
+        updateSetupDashboard();
+    };
+    listEl.appendChild(allLi);
+
+    sortedStats.forEach((stat) => {
+        const color = window.getSiteColor(stat.name);
+        const li = document.createElement('li');
+        li.className = 'status-list-item';
+        if (setupDashboardFilter.site === stat.name) li.classList.add('active');
+        li.innerHTML = `<span class="status-color" style="background-color: ${color};"></span><span class="status-name" title="${escapeHtml(stat.name)}">${escapeHtml(stat.name)}</span><span class="status-count">${stat.count}</span>`;
+        li.onclick = () => {
+            setupDashboardFilter.site = (setupDashboardFilter.site === stat.name) ? '' : stat.name;
             setupDashboardFilter.equip = '';
             currentGanttFilters = { site: '', equip: '' }; 
-            currentSearchFilters = { site: '', equip: '' };
-            renderCalendar();
             updateSetupDashboard();
-        },
-        onItemClick: (name) => {
-            setupDashboardFilter.site = (setupDashboardFilter.site === name) ? '' : name;
-            setupDashboardFilter.equip = '';
-            currentGanttFilters = { site: '', equip: '' }; 
-            updateSetupDashboard();
-        },
-        emptyMsg: '진행 중인 셋업 없음'
+        };
+        listEl.appendChild(li);
     });
 }
 
@@ -900,30 +953,44 @@ function renderSetupEquipChart(equipStats, totalEquip, activeEquips) {
 
     const statsArr = Object.keys(filteredStats).map(key => ({ name: key, count: filteredStats[key] }));
     const filteredTotal = filteredEquips.length;
+
+    const listEl = document.getElementById('setup-equip-status-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    if (filteredTotal === 0) {
+        listEl.innerHTML = `<li class="list-empty-msg">데이터 없음</li>`;
+        return;
+    }
+
     const colors = ['#a371f7', '#f0883e', '#3fb950', '#da3633', '#8957e5', '#d29922', '#238636', '#1f6feb'];
-    window.renderSharedStatusChart({
-        chartId: 'setup-equip-status-chart',
-        listId: 'setup-equip-status-list',
-        centerTextId: 'setup-equip-chart-center',
-        centerLabel: 'Equip',
-        centerValue: filteredTotal,
-        stats: statsArr,
-        totalCount: filteredTotal,
-        activeFilter: setupDashboardFilter.equip,
-        colorResolver: colors,
-        onAllClick: () => {
-            setupDashboardFilter.equip = '';
-            currentGanttFilters.equip = ''; 
-            currentSearchFilters.equip = ''; 
-            renderCalendar();
-            updateSetupDashboard();
-        },
-        onItemClick: (name) => {
-            setupDashboardFilter.equip = (setupDashboardFilter.equip === name) ? '' : name;
+    const sortedStats = [...statsArr].sort((a, b) => b.count - a.count);
+
+    const allLi = document.createElement('li');
+    allLi.className = 'status-list-item';
+    if (!setupDashboardFilter.equip) allLi.classList.add('active');
+    allLi.innerHTML = `<span class="status-color status-color-all"></span><span class="status-name">전체</span><span class="status-count">${filteredTotal}</span>`;
+    allLi.onclick = () => {
+        setupDashboardFilter.equip = '';
+        currentGanttFilters.equip = ''; 
+        currentSearchFilters.equip = ''; 
+        renderCalendar();
+        updateSetupDashboard();
+    };
+    listEl.appendChild(allLi);
+
+    sortedStats.forEach((stat, index) => {
+        const color = colors[index % colors.length];
+        const li = document.createElement('li');
+        li.className = 'status-list-item';
+        if (setupDashboardFilter.equip === stat.name) li.classList.add('active');
+        li.innerHTML = `<span class="status-color" style="background-color: ${color};"></span><span class="status-name" title="${escapeHtml(stat.name)}">${escapeHtml(stat.name)}</span><span class="status-count">${stat.count}</span>`;
+        li.onclick = () => {
+            setupDashboardFilter.equip = (setupDashboardFilter.equip === stat.name) ? '' : stat.name;
             currentGanttFilters = { site: '', equip: '' }; 
             updateSetupDashboard();
-        },
-        emptyMsg: '데이터 없음'
+        };
+        listEl.appendChild(li);
     });
 }
 
@@ -958,11 +1025,14 @@ function renderSetupEquipDetailList(activeEquips) {
             li.classList.add('active');
         }
 
+        const progressColor = item.isCompleted ? '#3fb950' : '#1f6feb'; // 완료: 녹색, 진행중: 파란색
+
         li.innerHTML = `
-            <span class="status-color equip-bar"></span>
+            <span class="status-color equip-bar" style="background-color: ${progressColor};"></span>
             <div style="flex: 1; display: flex; align-items: center; min-width: 0;">
                 <span class="status-name" title="${info.fullTitle}" style="margin-right: 0;">${info.mainInfo}${info.subInfo ? `<span class="equip-serial">${info.subInfo}</span>` : ''}</span>
             </div>
+            <button class="btn-shortcut" style="margin-left: 10px;">이력</button>
         `;
         li.onclick = () => {
             if (currentGanttFilters.site === item.site && currentGanttFilters.equip === item.equip) {
@@ -981,6 +1051,14 @@ function renderSetupEquipDetailList(activeEquips) {
             }
             updateSetupDashboard();
         };
+        
+        const btn = li.querySelector('.btn-shortcut');
+        if (btn) {
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                if (typeof openSetupHistoryModal === 'function') openSetupHistoryModal(item.site, item.equip);
+            };
+        }
         listEl.appendChild(li);
     });
 }
@@ -1060,7 +1138,12 @@ function renderSetupUpcomingList(activeEquips) {
         const clone = template.content.cloneNode(true);
         const div = clone.querySelector('.upcoming-item');
         div.onclick = () => {
-            location.href = `setup.html?site=${encodeURIComponent(item.site)}&equip=${encodeURIComponent(item.equip)}`;
+            if (typeof window.openSetupLogRegisterModal === 'function') {
+                const todayStr = new Date().toISOString().substring(0, 10);
+                window.openSetupLogRegisterModal(item.site, item.equip, item.task.content, todayStr);
+            } else {
+                location.href = `setup.html?site=${encodeURIComponent(item.site)}&equip=${encodeURIComponent(item.equip)}`;
+            }
         };
 
         clone.querySelector('.upcoming-info-site').textContent = info.mainInfo; 

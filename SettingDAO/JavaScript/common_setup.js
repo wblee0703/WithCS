@@ -4,6 +4,7 @@
 
 // [전역 변수] 모달에서 현재 타겟팅하는 항목 정보
 let currentExecStartTarget = null;
+let currentSetupCompleteTarget = null; // [추가] 셋업 완료 처리 대상
 
 // [추가] 로컬 타임존 기준 YYYY-MM-DD 포맷 변환 헬퍼 (UTC 변환 시 하루 밀리는 현상 방지)
 function getLocalYYYYMMDD(d = new Date()) {
@@ -121,6 +122,10 @@ async function saveSetupExecStart() {
             // 현재 페이지에 따라 적절한 렌더링 함수 호출
             if (typeof renderGanttChart === 'function') renderGanttChart();
             if (typeof renderSetupDetailList === 'function') renderSetupDetailList();
+
+            // [추가] 대시보드 리스트 즉시 갱신
+            if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+            if (typeof updateIntegratedDashboard === 'function') updateIntegratedDashboard();
         }
     }
 
@@ -660,6 +665,209 @@ function recalculateSetupTaskStatus(data, taskContent) {
     return true;
 }
 
+/* ==========================================================================
+   셋업 완료 처리 및 이력 모달 (Setup Complete & History Modals)
+   ========================================================================== */
+window.openSetupCompleteModal = function(site, equip) {
+    const modal = document.getElementById('setup-complete-modal');
+    if (!modal) return;
+
+    const userRole = sessionStorage.getItem('userRole');
+    if (userRole !== 'admin' && userRole !== 'superadmin') {
+        alert('셋업 완료 처리는 관리자만 가능합니다.');
+        return;
+    }
+
+    currentSetupCompleteTarget = { site, equip };
+
+    const infoEl = document.getElementById('setup-complete-target-info');
+    const custEquipNameInput = document.getElementById('setup-complete-cust-equip-name');
+    const startInput = document.getElementById('setup-complete-warranty-start');
+    const periodInput = document.getElementById('setup-complete-warranty-period');
+
+    const custManagerInput = document.getElementById('setup-complete-cust-manager');
+    const custContactInput = document.getElementById('setup-complete-cust-contact');
+    const custEmailInput = document.getElementById('setup-complete-cust-email');
+
+    const confirmBtn = document.getElementById('btn-confirm-setup-complete');
+    const cancelBtn = document.getElementById('btn-cancel-setup-complete');
+    const closeBtn = document.getElementById('btn-close-setup-complete-modal');
+
+    const info = window.formatEquipDisplayInfo(site, equip);
+    // [수정] Serial No(또는 고객사 장비명) 부분을 녹색으로 강조하여 표시 및 이력 조회 버튼 추가
+    if (infoEl) {
+        infoEl.style.display = 'flex';
+        infoEl.style.alignItems = 'center';
+        infoEl.style.justifyContent = 'center';
+        infoEl.style.gap = '10px';
+        infoEl.innerHTML = `
+            <span>${info.mainInfo} <span style="color: #3fb950;">${info.subInfo}</span></span>
+            <button id="btn-setup-complete-history" class="btn-shortcut" style="padding: 2px 8px; font-size: 11px;">이력</button>
+        `;
+        const historyBtn = infoEl.querySelector('#btn-setup-complete-history');
+        if (historyBtn) {
+            historyBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (typeof window.openSetupHistoryModal === 'function') {
+                    window.openSetupHistoryModal(site, equip);
+                }
+            };
+        }
+    }
+
+    // Set default warranty start date to today
+    if (startInput) startInput.value = new Date().toISOString().split('T')[0];
+    if (periodInput) periodInput.value = '';
+
+    // 고객사 정보 기존 데이터 세팅 (수정하지 않으면 기존 정보 유지됨)
+    const key = `details_${site}_${equip}`;
+    const detailData = JSON.parse(localStorage.getItem(key)) || {};
+    const setupInfo = detailData.setup || {};
+
+    if (custEquipNameInput) custEquipNameInput.value = setupInfo.custEquipName || '';
+    if (custManagerInput) custManagerInput.value = setupInfo.custManager || '';
+    if (custContactInput) custContactInput.value = setupInfo.custContact || '';
+    if (custEmailInput) custEmailInput.value = setupInfo.custEmail || '';
+
+    const closeModal = () => {
+        modal.style.display = 'none';
+        currentSetupCompleteTarget = null;
+    };
+
+    cancelBtn.onclick = closeModal;
+    closeBtn.onclick = closeModal;
+
+    confirmBtn.onclick = async () => {
+        if (!currentSetupCompleteTarget) return;
+
+        const warrantyStart = startInput.value;
+        const warrantyPeriod = periodInput.value;
+
+        if (!warrantyStart || !warrantyPeriod) {
+            alert('워런티 시작일과 기한을 모두 입력해주세요.');
+            return;
+        }
+
+        const custEquipName = custEquipNameInput ? custEquipNameInput.value.trim() : '';
+        const custManager = custManagerInput ? custManagerInput.value.trim() : '';
+        const custContact = custContactInput ? custContactInput.value.trim() : '';
+        const custEmail = custEmailInput ? custEmailInput.value.trim() : '';
+
+        const { site, equip } = currentSetupCompleteTarget;
+        // 저장 전 최신 데이터 로드
+        const currentDetailData = JSON.parse(localStorage.getItem(`details_${site}_${equip}`)) || {};
+        if (!currentDetailData.setup) currentDetailData.setup = {};
+
+        currentDetailData.setup.equipStatus = '워런티';
+        currentDetailData.setup.warrantyStart = warrantyStart;
+        currentDetailData.setup.warrantyPeriod = warrantyPeriod;
+        
+        // 고객사 정보 업데이트 반영
+        currentDetailData.setup.custEquipName = custEquipName;
+        currentDetailData.setup.custManager = custManager;
+        currentDetailData.setup.custContact = custContact;
+        currentDetailData.setup.custEmail = custEmail;
+
+        // DB Sync
+        const success = await window.syncAdminDB('equip', 'UPDATE', {
+            old_id: equip, new_id: equip, site: site, old_site: site, new_site: site,
+            setup: currentDetailData.setup, special_note: currentDetailData.specialNote || ''
+        });
+
+        if (success) {
+            localStorage.setItem(`details_${site}_${equip}`, JSON.stringify(currentDetailData));
+            if (typeof addSystemLog === 'function') addSystemLog('UPDATE_EQUIP_STATUS', equip, '셋업 완료 처리 -> 워런티 장비로 전환');
+            alert('셋업 완료 처리가 완료되었습니다.');
+            closeModal();
+            if (typeof updateSetupDashboard === 'function') updateSetupDashboard(); // Refresh dashboard
+        } else {
+            alert('서버에 완료 상태를 저장하는 중 오류가 발생했습니다.');
+        }
+    };
+
+    modal.style.display = 'flex';
+}
+
+window.openSetupHistoryModal = function(site, equip) {
+    const modal = document.getElementById('setup-history-modal');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('setup-history-title');
+    const tbody = document.getElementById('setup-history-list-body');
+    const memoEl = document.getElementById('setup-history-memo');
+    const partsList = document.getElementById('setup-history-parts-list');
+    
+    tbody.innerHTML = '';
+    memoEl.value = '';
+    partsList.innerHTML = '<li style="padding:20px; text-align:center; color:#8b949e; font-size:12px;">일지를 선택해주세요</li>';
+    
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+    const info = window.formatEquipDisplayInfo(site, equip, equipmentModels);
+    
+    titleEl.innerHTML = `셋업 이력 - ${info.mainInfo} <span style="color:#3fb950; font-size: 14px;">${info.subInfo}</span>`;
+
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${site}::${equip}`;
+    const data = setupData[equipKey] || {};
+    const logs = data.setupLogs || [];
+
+    const sortedLogs = [...logs].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    if (sortedLogs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:#8b949e;">셋업 일지 기록이 없습니다.</td></tr>';
+    } else {
+        sortedLogs.forEach(log => {
+            const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+            
+            const contentHtml = (typeof escapeHtml === 'function' ? escapeHtml(log.content) || '-' : log.content || '-').replace(/\[지연\]/g, '<span class="tag-delayed" style="color: #f0883e; font-weight: bold;">[지연]</span>');
+
+            tr.innerHTML = `
+                <td style="text-align:center; padding: 8px 10px; border-bottom: 1px solid #21262d;">${typeof escapeHtml === 'function' ? escapeHtml(log.date) : log.date}</td>
+                <td style="text-align:left; padding: 8px 10px; border-bottom: 1px solid #21262d;">${contentHtml}</td>
+                <td style="text-align:center; padding: 8px 10px; border-bottom: 1px solid #21262d;">${typeof escapeHtml === 'function' ? escapeHtml(log.worker) : log.worker}</td>
+                <td style="text-align:center; color:#d29922; font-weight:bold; padding: 8px 10px; border-bottom: 1px solid #21262d;">${typeof escapeHtml === 'function' ? escapeHtml(log.md || '0') : log.md || '0'}</td>
+            `;
+
+            tr.onclick = () => {
+                Array.from(tbody.children).forEach(row => row.style.backgroundColor = '');
+                tr.style.backgroundColor = 'rgba(35, 134, 54, 0.1)';
+
+                memoEl.value = log.memo || '작성된 메모가 없습니다.';
+
+                partsList.innerHTML = '';
+                if (log.parts) {
+                    const partsArr = log.parts.split(',').map(s => s.trim()).filter(Boolean);
+                    partsArr.forEach(partText => {
+                        let pureContent = partText;
+                        let itemCost = '';
+                        const costMatch = pureContent.match(/^\[(.*?)\]\s*(.*)$/);
+                        if (costMatch) { itemCost = costMatch[1]; pureContent = costMatch[2]; }
+                        
+                        const li = document.createElement('li');
+                        li.style.cssText = 'padding: 8px 10px; border-bottom: 1px solid #30363d; font-size: 12px; color: #c9d1d9; display: flex; justify-content: space-between; align-items: center;';
+                        li.innerHTML = `
+                            <span style="font-weight:bold; color:#58a6ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${typeof escapeHtml === 'function' ? escapeHtml(pureContent) : pureContent}">${typeof escapeHtml === 'function' ? escapeHtml(pureContent) : pureContent}</span>
+                            ${itemCost ? `<span style="font-size:10px; background:#30363d; padding:2px 6px; border-radius:4px; color:#e6edf3; flex-shrink:0;">${typeof escapeHtml === 'function' ? escapeHtml(itemCost) : itemCost}</span>` : ''}
+                        `;
+                        partsList.appendChild(li);
+                    });
+                } else {
+                    partsList.innerHTML = '<li style="padding:20px; text-align:center; color:#8b949e; font-size:12px;">선택된 물품 없음</li>';
+                }
+            };
+            tbody.appendChild(tr);
+        });
+        
+        if (tbody.firstChild) tbody.firstChild.click();
+    }
+
+    modal.style.display = 'flex';
+    const closeBtn = document.getElementById('btn-close-setup-history-modal');
+    if (closeBtn) closeBtn.onclick = () => { modal.style.display = 'none'; };
+};
+
 // 저장 이벤트 처리
 document.addEventListener('DOMContentLoaded', () => {
     document.body.addEventListener('click', async (e) => {
@@ -710,6 +918,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderSetupDetailList();
                 }
                 if (typeof renderGanttChart === 'function') renderGanttChart();
+
+                // [추가] 대시보드 리스트 즉시 갱신
+                if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+                if (typeof updateIntegratedDashboard === 'function') updateIntegratedDashboard();
             }
         } else if (e.target.id === 'btn-save-setup-log-reg') {
             const modal = e.target.closest('.modal-overlay') || document;
@@ -788,6 +1000,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderSetupDetailList(); // 셋업 세부사항 리스트 리프레시
                 }
             }
+
+            // [추가] 대시보드 리스트 즉시 갱신
+            if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+            if (typeof updateIntegratedDashboard === 'function') updateIntegratedDashboard();
         }
     });
 });
