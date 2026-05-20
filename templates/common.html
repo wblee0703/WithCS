@@ -1021,6 +1021,14 @@
                 <h3>간트 차트 상세 검색</h3><button class="btn-del-sm" id="btn-close-gantt-search-modal">✕</button>
             </div>
             <div class="modal-body">
+                <div class="form-row">
+                    <label class="form-label">상태</label>
+                    <div style="display: flex; align-items: center; flex: 1;">
+                        <label style="color: #e6edf3; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; margin: 0;">
+                            <input type="checkbox" id="gantt-filter-status-ing" style="margin: 0; cursor: pointer; flex-shrink: 0; width: 14px; height: 14px;"> <span>셋업 중</span>
+                        </label>
+                    </div>
+                </div>
                 <div class="form-row"><label class="form-label">사업장</label><select id="gantt-site-select"
                         class="modal-select"></select></div>
                 <div class="form-row"><label class="form-label">장비</label><select id="gantt-equip-select"

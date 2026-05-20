@@ -255,6 +255,16 @@ function renderGanttChart() {
                 const data = setupData[`${site}::${equip}`];
 
                 if (data && data.setupDetails) {
+                    // [추가] 장비 단위 셋업 완료 여부 판단 및 상태 필터링
+                    const completeTask = data.setupDetails.find(t => t.content === '셋업 완료' || t.category === '셋업 완료');
+                    const isEquipCompleted = completeTask && completeTask.completed;
+                    
+                    const showIng = currentGanttFilters.showIng !== false; // 기본값 true
+                    const showDone = currentGanttFilters.showDone !== false; // 기본값 true
+
+                    if (!showIng && !isEquipCompleted) return;
+                    if (!showDone && isEquipCompleted) return;
+
                     data.setupDetails.forEach((task, idx) => {
                         if (!task.startDate) return;
 
@@ -1125,11 +1135,69 @@ function setupGanttSearchModal() {
         };
     }
 
+    const cbIng = document.getElementById('gantt-filter-status-ing');
+
+    const handleStatusFilterChange = () => {
+        if (siteSelect) siteSelect.value = '';
+        const equipSelect = document.getElementById('gantt-equip-select');
+        if (equipSelect) {
+            equipSelect.innerHTML = '<option value="">전체 장비</option>';
+            equipSelect.disabled = true;
+        }
+
+        const showIng = cbIng ? cbIng.checked : false;
+
+        if (typeof currentGanttFilters !== 'undefined') {
+            currentGanttFilters = { site: '', equip: '', showIng };
+        }
+
+        if (siteSelect) {
+            const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+            const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+            siteSelect.innerHTML = '<option value="">전체 사업장</option>';
+            Object.keys(data).forEach(site => {
+                let hasValidEquip = false;
+                const equips = data[site] || [];
+                for (let equip of equips) {
+                    if (equip === '기타(ETC)') continue;
+                    const equipData = setupData[`${site}::${equip}`];
+                    let isCompleted = false;
+                    let hasScheduledDate = false;
+                    if (equipData && equipData.setupDetails) {
+                        const completeTask = equipData.setupDetails.find(t => t.content === '셋업 완료' || t.category === '셋업 완료');
+                        isCompleted = completeTask && completeTask.completed;
+                        hasScheduledDate = equipData.setupDetails.some(d => d.startDate);
+                    }
+                    const isIng = !isCompleted && hasScheduledDate;
+                if (!showIng || (showIng && isIng)) {
+                        hasValidEquip = true;
+                        break;
+                    }
+                }
+                if (hasValidEquip) {
+                    const option = document.createElement('option');
+                    option.value = site;
+                    option.textContent = site;
+                    siteSelect.appendChild(option);
+                }
+            });
+        }
+
+        renderGanttChart();
+        if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+    };
+
+    if (cbIng) cbIng.onchange = handleStatusFilterChange;
+
     if (resetBtn) {
         resetBtn.onclick = () => {
             if (typeof currentGanttFilters !== 'undefined') {
-                currentGanttFilters = { site: '', equip: '' };
+                currentGanttFilters = { site: '', equip: '', showIng: false };
             }
+            
+            const cbIng = document.getElementById('gantt-filter-status-ing');
+            if (cbIng) cbIng.checked = false;
+
             modal.style.display = 'none';
             renderGanttChart();
             if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
@@ -1140,9 +1208,10 @@ function setupGanttSearchModal() {
         applyBtn.onclick = () => {
             const site = document.getElementById('gantt-site-select').value;
             const equip = document.getElementById('gantt-equip-select').value;
+            const showIng = document.getElementById('gantt-filter-status-ing') ? document.getElementById('gantt-filter-status-ing').checked : false;
 
             if (typeof currentGanttFilters !== 'undefined') {
-                currentGanttFilters = { site, equip };
+                currentGanttFilters = { site, equip, showIng };
             }
 
             modal.style.display = 'none';
@@ -1159,19 +1228,50 @@ function openGanttSearchModal() {
 
     if (!modal) return;
 
+    const cbIng = document.getElementById('gantt-filter-status-ing');
+    if (cbIng) {
+        if (typeof currentGanttFilters !== 'undefined') {
+            cbIng.checked = currentGanttFilters.showIng === true;
+        }
+    }
+
+    const showIng = cbIng ? cbIng.checked : false;
+
     // Load Sites
     const data = typeof storageData !== 'undefined' ? storageData : JSON.parse(localStorage.getItem('withtech_data')) || {};
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
 
     if (siteSelect) {
         siteSelect.innerHTML = '<option value="">전체 사업장</option>';
         Object.keys(data).forEach(site => {
-            const option = document.createElement('option');
-            option.value = site;
-            option.textContent = site;
-            if (typeof currentGanttFilters !== 'undefined' && currentGanttFilters.site === site) {
-                option.selected = true;
+            let hasValidEquip = false;
+            const equips = data[site] || [];
+            for (let equip of equips) {
+                if (equip === '기타(ETC)') continue;
+                const equipData = setupData[`${site}::${equip}`];
+                let isCompleted = false;
+                let hasScheduledDate = false;
+                if (equipData && equipData.setupDetails) {
+                    const completeTask = equipData.setupDetails.find(t => t.content === '셋업 완료' || t.category === '셋업 완료');
+                    isCompleted = completeTask && completeTask.completed;
+                    hasScheduledDate = equipData.setupDetails.some(d => d.startDate);
+                }
+                const isIng = !isCompleted && hasScheduledDate;
+                if (!showIng || (showIng && isIng)) {
+                    hasValidEquip = true;
+                    break;
+                }
             }
-            siteSelect.appendChild(option);
+            
+            if (hasValidEquip) {
+                const option = document.createElement('option');
+                option.value = site;
+                option.textContent = site;
+                if (typeof currentGanttFilters !== 'undefined' && currentGanttFilters.site === site) {
+                    option.selected = true;
+                }
+                siteSelect.appendChild(option);
+            }
         });
     }
 
@@ -1201,15 +1301,34 @@ function updateGanttSearchEquipSelect(site) {
     const equips = data[site] ? [...data[site]] : [];
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const cbIng = document.getElementById('gantt-filter-status-ing');
+    const showIng = cbIng ? cbIng.checked : false;
+
     equips.forEach(equip => {
-        const option = document.createElement('option');
-        option.value = equip;
-        const parts = equip.split('::');
-        const rawName = parts[0];
-        const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
-        const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
-        option.textContent = parts.length > 1 ? `${displayName} (${parts[1]})` : displayName;
-        equipSelect.appendChild(option);
+        if (equip === '기타(ETC)') return; // 기타(ETC) 장비 제외
+
+        // 셋업 진행 중 여부 확인
+        const equipData = setupData[`${site}::${equip}`];
+        let isCompleted = false;
+        let hasScheduledDate = false;
+        if (equipData && equipData.setupDetails) {
+            const completeTask = equipData.setupDetails.find(t => t.content === '셋업 완료' || t.category === '셋업 완료');
+            isCompleted = completeTask && completeTask.completed;
+            hasScheduledDate = equipData.setupDetails.some(d => d.startDate);
+        }
+        const isIng = !isCompleted && hasScheduledDate;
+
+        if (!showIng || (showIng && isIng)) {
+            const option = document.createElement('option');
+            option.value = equip;
+            const parts = equip.split('::');
+            const rawName = parts[0];
+            const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+            const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
+            option.textContent = parts.length > 1 ? `${displayName} (${parts[1]})` : displayName;
+            equipSelect.appendChild(option);
+        }
     });
 
     equipSelect.disabled = false;

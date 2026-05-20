@@ -8,6 +8,7 @@ let currentGanttFilters = { site: '', equip: '' };
 let setupDashboardFilter = { site: '', equip: '' };
 let isFirstLoad = true;
 let equipDetailSearchKeyword = ''; // [추가] 장비 정보 리스트 내부 검색어
+let setupEquipDetailSearchKeyword = ''; // [추가] 셋업 장비 정보 리스트 내부 검색어
 
 // [공통 헬퍼] 사업장 그룹화 이름 반환
 window.getSiteGroupName = function (siteName) {
@@ -179,6 +180,15 @@ document.addEventListener('DOMContentLoaded', () => {
         equipDetailSearchInput.addEventListener('input', (e) => {
             equipDetailSearchKeyword = e.target.value.trim().toLowerCase();
             renderEquipDetailList(getDashboardData());
+        });
+    }
+
+    // [추가] 셋업 장비 정보 리스트 정적 검색창 이벤트 바인딩
+    const setupEquipDetailSearchInput = document.getElementById('setup-equip-detail-search-input');
+    if (setupEquipDetailSearchInput) {
+        setupEquipDetailSearchInput.addEventListener('input', (e) => {
+            setupEquipDetailSearchKeyword = e.target.value.trim().toLowerCase();
+            updateSetupDashboard(); // 검색어 입력 시 셋업 대시보드 리스트 즉시 리프레시
         });
     }
 
@@ -1052,6 +1062,18 @@ function renderSetupEquipDetailList(activeEquips) {
             const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
             const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
             return displayName === setupDashboardFilter.equip;
+        });
+    }
+
+    // [추가] 검색어 필터링 적용 (사업장, 모델명, 시리얼, 고객사 장비명, 프로젝트 번호)
+    if (setupEquipDetailSearchKeyword) {
+        const kws = setupEquipDetailSearchKeyword.split(/\s+/);
+        filtered = filtered.filter(item => {
+            const info = formatEquipDisplayInfo(item.site, item.equip, equipmentModels);
+            const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.equip}`)) || {};
+            const projectNo = (detailData.setup && detailData.setup.projectNo) ? detailData.setup.projectNo : '';
+            const searchStr = `${info.mainInfo} ${info.subInfo} ${item.equip} ${projectNo}`.toLowerCase();
+            return kws.every(kw => searchStr.includes(kw));
         });
     }
 

@@ -4025,7 +4025,10 @@ window.setupEquipTransferModal = function() {
             <div class="modal-window" style="width: 600px; height: auto; max-height: 80vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
                     <h3>장비 이관 확인</h3>
-                    <button id="btn-close-equip-transfer" style="background: none; border: none; color: #8b949e; cursor: pointer; font-size: 16px;">✕</button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button id="btn-show-transfer-history" class="btn-blue-sm" style="padding: 4px 10px; font-size: 12px;">이관 내역</button>
+                        <button id="btn-close-equip-transfer" class="btn-del-sm">✕</button>
+                    </div>
                 </div>
                 <div class="modal-body" style="padding: 15px; overflow-y: auto; flex: 1;">
                     <ul id="equip-transfer-list" style="list-style: none; padding: 0; margin: 0;"></ul>
@@ -4036,6 +4039,11 @@ window.setupEquipTransferModal = function() {
 
         document.getElementById('btn-close-equip-transfer').onclick = () => {
             modal.style.display = 'none';
+        };
+
+        document.getElementById('btn-show-transfer-history').onclick = () => {
+            modal.style.display = 'none';
+            if (typeof window.openTransferHistoryModal === 'function') window.openTransferHistoryModal();
         };
     }
 };
@@ -4222,4 +4230,174 @@ window.handleEquipTransfer = async function(site, equip, newStatus, rejectReason
     if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
     if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
     if (typeof renderDetails === 'function') renderDetails();
+};
+
+window.setupTransferHistoryModal = function() {
+    let modal = document.getElementById('transfer-history-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'transfer-history-modal';
+        modal.className = 'modal-overlay';
+        modal.style.zIndex = '11000';
+        modal.style.display = 'none';
+        modal.innerHTML = `
+            <div class="modal-window" style="width: 700px; height: auto; max-height: 80vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h3>이관 완료 내역</h3>
+                    <button id="btn-close-transfer-history" class="btn-del-sm">✕</button>
+                </div>
+                <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; flex: 1;">
+                    <div style="display: flex; gap: 10px; align-items: center; flex-shrink: 0;">
+                        <input type="date" id="transfer-history-start" class="input-dark" style="width: 120px; font-size: 12px; padding: 4px;">
+                        <span style="color: #8b949e;">~</span>
+                        <input type="date" id="transfer-history-end" class="input-dark" style="width: 120px; font-size: 12px; padding: 4px;">
+                        <input type="text" id="transfer-history-search" class="input-dark" style="flex: 1; font-size: 12px; padding: 4px 8px;" placeholder="사업장, 장비명, 시리얼, 고객사명 검색...">
+                    </div>
+                    <div class="data-table-wrapper" style="flex: 1; overflow-y: auto; margin-top: 10px; border: 1px solid #30363d; border-radius: 4px;">
+                        <table class="data-table" style="margin: 0; width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 110px;">이관일</th>
+                                    <th style="width: 120px;">사업장</th>
+                                    <th>장비 정보</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transfer-history-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        document.getElementById('btn-close-transfer-history').onclick = () => {
+            modal.style.display = 'none';
+            if (typeof window.openEquipTransferModal === 'function') window.openEquipTransferModal();
+        };
+
+        ['transfer-history-start', 'transfer-history-end', 'transfer-history-search'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.addEventListener('input', window.renderTransferHistoryList);
+        });
+    }
+};
+
+window.openTransferHistoryModal = function() {
+    if (typeof window.setupTransferHistoryModal === 'function') window.setupTransferHistoryModal();
+    const modal = document.getElementById('transfer-history-modal');
+    if (!modal) return;
+    
+    const startInput = document.getElementById('transfer-history-start');
+    const endInput = document.getElementById('transfer-history-end');
+    const searchInput = document.getElementById('transfer-history-search');
+    
+    const today = new Date();
+    const lastMonth = new Date(today);
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    
+    if (startInput) startInput.value = lastMonth.toISOString().split('T')[0];
+    if (endInput) endInput.value = today.toISOString().split('T')[0];
+    if (searchInput) searchInput.value = '';
+
+    window.renderTransferHistoryList();
+    modal.style.display = 'flex';
+};
+
+window.renderTransferHistoryList = function() {
+    const tbody = document.getElementById('transfer-history-body');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    const startStr = document.getElementById('transfer-history-start').value;
+    const endStr = document.getElementById('transfer-history-end').value;
+    const searchStr = document.getElementById('transfer-history-search').value.toLowerCase().trim();
+    
+    const data = JSON.parse(localStorage.getItem('device_data')) || {};
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+    
+    const userRole = sessionStorage.getItem('userRole');
+    const userSite = sessionStorage.getItem('userSite');
+    let targetSite = '';
+    if (userRole === 'admin') targetSite = userSite;
+    
+    const allSites = Object.keys(data).filter(k => k !== 'models' && k !== 'details');
+    let sitesToSearch = allSites;
+    if (targetSite) {
+        if (allSites.includes(targetSite)) sitesToSearch = [targetSite];
+        else {
+            sitesToSearch = allSites.filter(site => {
+                const groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장';
+                return groupName === targetSite;
+            });
+            if (sitesToSearch.length === 0) sitesToSearch = allSites.filter(site => site.includes(targetSite));
+        }
+    }
+    
+    let historyList = [];
+    sitesToSearch.forEach(site => {
+        const equips = data[site] || [];
+        equips.forEach(equip => {
+            if (equip === '기타(ETC)') return;
+            const detailKey = `details_${site}_${equip}`;
+            const detailData = JSON.parse(localStorage.getItem(detailKey)) || {};
+            const setupInfo = detailData.setup || {};
+            
+            if (['워런티', '가동 장비', '유휴 장비'].includes(setupInfo.equipStatus)) {
+                const transferDate = setupInfo.warrantyStart || '';
+                if (transferDate) {
+                    historyList.push({ site, equip, setupInfo, date: transferDate });
+                }
+            }
+        });
+    });
+    
+    historyList = historyList.filter(item => {
+        if (startStr && item.date && item.date < startStr) return false;
+        if (endStr && item.date && item.date > endStr) return false;
+        if (searchStr) {
+            const parts = item.equip.split('::');
+            const name = parts[0];
+            const serial = parts.length > 1 ? parts[1] : '';
+            const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+            const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+            const custName = item.setupInfo.custEquipName || '';
+            const fullText = `${item.site} ${name} ${displayName} ${serial} ${custName}`.toLowerCase();
+            const keywords = searchStr.split(/\s+/);
+            if (!keywords.every(kw => fullText.includes(kw))) return false;
+        }
+        return true;
+    });
+    
+    historyList.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    
+    if (historyList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #8b949e; padding: 20px;">검색된 이관 내역이 없습니다.</td></tr>';
+        return;
+    }
+    
+    historyList.forEach(item => {
+        const parts = item.equip.split('::');
+        const name = parts[0];
+        const serial = parts.length > 1 ? parts[1] : '';
+        const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+        const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+        const custName = item.setupInfo.custEquipName || '';
+        
+        let subInfo = '';
+        if (custName) subInfo = `<span style="color: #3fb950; font-size: 11px; font-weight: bold; margin-left: 5px;">[${escapeHtml(custName)}]</span>`;
+        else if (serial) subInfo = `<span style="color: #3fb950; font-size: 11px; font-weight: bold; margin-left: 5px;">[${escapeHtml(serial)}]</span>`;
+        
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="text-align: center; padding: 8px 10px; border-bottom: 1px solid #21262d;">${item.date || '-'}</td>
+            <td style="text-align: center; padding: 8px 10px; border-bottom: 1px solid #21262d;">${escapeHtml(item.site)}</td>
+            <td style="padding: 8px 10px; border-bottom: 1px solid #21262d;">
+                <div style="display: flex; align-items: center;">
+                    <span style="font-weight: bold; color: #e6edf3;">${escapeHtml(displayName)}</span>
+                    ${subInfo}
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
 };
