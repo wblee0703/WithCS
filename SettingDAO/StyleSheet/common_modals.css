@@ -1159,7 +1159,9 @@
 }
 
 @media (max-width: 950px) {
-    #extra-work-history-modal .modal-window {
+    #extra-work-history-modal .modal-window,
+    #equip-transfer-modal .modal-window,
+    #transfer-history-modal .modal-window {
         width: 95% !important;
     }
 }
