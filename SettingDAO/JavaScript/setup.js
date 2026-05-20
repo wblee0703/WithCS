@@ -1325,7 +1325,7 @@ function deleteSetupLogItem(id) {
         
         // [추가] 로그 삭제 후 Task 상태 재계산
         if (targetLog && data.setupDetails && typeof recalculateSetupTaskStatus === 'function') {
-            recalculateSetupTaskStatus(data, targetLog.content);
+            recalculateSetupTaskStatus(data, targetLog.content, currentPath.site, currentPath.equip);
         }
         
         setupData[equipKey] = data;

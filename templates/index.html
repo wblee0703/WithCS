@@ -58,8 +58,9 @@
                                 <h5 class="status-group-title">셋업 완료 장비</h5>
                                 <div class="status-list-container status-list-flex">
                                     <div class="status-list-header">
-                                        <span class="header-name">장비 정보</span>
-                                        <span class="header-count">완료일</span>
+                                        <span class="header-name" style="flex: 1;">장비 정보</span>
+                                        <span style="width: 70px; text-align: center; font-size: 12px; font-weight: bold; color: #8b949e;">상태</span>
+                                        <span class="header-count" style="width: 80px; text-align: center;">완료일</span>
                                     </div>
                                     <ul class="site-status-list" id="setup-completed-list"></ul>
                                 </div>
@@ -142,6 +143,7 @@
                 <!-- 오른쪽: 유지관리 현황 -->
                 <div class="dashboard-col" id="section-maint" style="display: none;">
                     <div class="mobile-only-btn-group">
+                        <button id="btn-equip-transfer" class="btn-purple-sm" style="display: none;" onclick="openEquipTransferModal()">📤 장비 이관</button>
                         <button id="btn-mobile-search-task" class="btn-blue-sm">🔍 작업 검색</button>
                         <button id="btn-mobile-register-task" class="btn-green-sm">➕ 작업 등록</button>
                     </div>
@@ -386,8 +388,9 @@
                                 <div class="status-list-container status-list-flex"
                                     id="integ-setup-complete-list-container">
                                     <div class="status-list-header">
-                                        <span class="integ-setup-complete-header-name">장비 정보</span>
-                                        <span class="integ-setup-complete-header-date">완료일</span>
+                                        <span class="integ-setup-complete-header-name" style="flex: 1;">장비 정보</span>
+                                        <span style="width: 70px; text-align: center; font-size: 12px; font-weight: bold; color: #8b949e;">상태</span>
+                                        <span class="integ-setup-complete-header-date" style="width: 90px; text-align: center;">완료일</span>
                                     </div>
                                     <ul class="site-status-list" id="integ-setup-complete-list"></ul>
                                 </div>
@@ -418,6 +421,15 @@
                 </div>
                 <div class="modal-body">
                     <p id="setup-complete-target-info" class="setup-complete-target-info"></p>
+                    <!-- 반려 관련 정보 추가 -->
+                    <div id="setup-complete-reject-info" style="display: none; background: rgba(218, 54, 51, 0.1); border-left: 4px solid #da3633; padding: 10px; margin-bottom: 15px;">
+                        <div style="color: #da3633; font-weight: bold; font-size: 12px; margin-bottom: 5px;">[이관 반려됨] 반려 사유:</div>
+                        <div id="setup-complete-reject-reason" style="color: #e6edf3; font-size: 12px; word-break: break-all;"></div>
+                        <div style="margin-top: 10px;">
+                            <label for="setup-complete-reject-memo" class="modal-label" style="color: #8b949e; font-size: 12px;">수정/보완 사항 입력 (재이관 요청 사유)</label>
+                            <textarea id="setup-complete-reject-memo" class="textarea-dark" style="width: 100%; height: 60px; margin-top: 5px; box-sizing: border-box;"></textarea>
+                        </div>
+                    </div>
                     <div class="form-row setup-complete-form-row">
                         <label for="setup-complete-cust-equip-name" class="modal-label setup-complete-label">고객사 장비명</label>
                         <input type="text" id="setup-complete-cust-equip-name" class="input-dark setup-complete-input" placeholder="고객사 장비명 입력 (선택)">
@@ -443,9 +455,13 @@
                         <label for="setup-complete-cust-email" class="modal-label setup-complete-label">담당자 이메일</label>
                         <input type="email" id="setup-complete-cust-email" class="input-dark setup-complete-input" placeholder="이메일 입력">
                     </div>
+                    <div class="form-row setup-complete-form-row mb-15" style="align-items: flex-start;">
+                        <label for="setup-complete-transfer-comment" class="modal-label setup-complete-label" style="padding-top: 5px;">이관 코멘트</label>
+                        <textarea id="setup-complete-transfer-comment" class="textarea-dark" style="flex: 1; min-width: 0; height: 60px; box-sizing: border-box;" placeholder="이관 시 전달할 내용"></textarea>
+                    </div>
                     <div class="modal-footer setup-complete-footer">
                         <button id="btn-cancel-setup-complete" class="btn-gray setup-complete-btn">취소</button>
-                        <button id="btn-confirm-setup-complete" class="btn-blue setup-complete-btn">완료 처리</button>
+                        <button id="btn-confirm-setup-complete" class="btn-blue setup-complete-btn">이관</button>
                     </div>
                 </div>
             </div>

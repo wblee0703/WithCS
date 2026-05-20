@@ -889,6 +889,10 @@
     z-index: 10002;
 }
 
+#setup-complete-modal {
+    z-index: 12000 !important;
+}
+
 /* 작업 상세 정보 팝업창 내부 스크롤 활성화 */
 #event-detail-modal .modal-body {
     overflow-y: auto !important;

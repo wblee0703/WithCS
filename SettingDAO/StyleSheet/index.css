@@ -876,6 +876,21 @@ body {
     background-color: #4edf69;
 }
 
+/* [추가] 보라색 소형 버튼 스타일 (장비 이관 등) */
+.btn-purple-sm {
+    background-color: #8957e5;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-purple-sm:hover {
+    background-color: #a371f7;
+}
 
 /* ==========================================================
    모바일 반응형 스타일 (Mobile Responsive Styles)

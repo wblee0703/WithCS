@@ -1583,6 +1583,9 @@ function checkLoginStatus() {
         const btnModalAddUser = document.getElementById('btn-modal-add-user');
         if (btnModalAddUser) btnModalAddUser.style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
 
+        const btnEquipTransfer = document.getElementById('btn-equip-transfer');
+        if (btnEquipTransfer) btnEquipTransfer.style.display = (role === 'admin' || role === 'superadmin') ? 'inline-block' : 'none';
+
         // [추가] 최종 관리자 전용 '모든 계정 관리' 버튼 생성 및 노출 제어
         let btnAllUsers = document.getElementById('btn-modal-all-users');
         if (role === 'superadmin') {
@@ -1659,6 +1662,9 @@ function checkLoginStatus() {
 
         const btnModalAddUser = document.getElementById('btn-modal-add-user');
         if (btnModalAddUser) btnModalAddUser.style.display = 'none';
+
+        const btnEquipTransfer = document.getElementById('btn-equip-transfer');
+        if (btnEquipTransfer) btnEquipTransfer.style.display = 'none';
 
         const adminItems = document.querySelectorAll('.nav-admin-item');
         adminItems.forEach(el => el.style.display = 'none');
@@ -1889,9 +1895,15 @@ function openAddUserModal() {
                     dataMap = storageData;
                 }
 
-                const sites = Object.keys(dataMap).filter(k => k !== 'models' && k !== 'details').sort();
-                if (!sites.includes('기타 사업장')) {
-                    sites.push('기타 사업장');
+                const siteGroups = new Set();
+                Object.keys(dataMap).forEach(site => {
+                    if (site !== 'models' && site !== 'details') {
+                        siteGroups.add(typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장');
+                    }
+                });
+                const sites = Array.from(siteGroups).sort();
+                if (!sites.includes('기타사업장')) {
+                    sites.push('기타사업장');
                 }
 
                 siteSuggestions.innerHTML = '';
@@ -1973,7 +1985,13 @@ function openAddUserModal() {
                     if (Object.keys(dataMap).length === 0 && typeof storageData !== 'undefined') {
                         dataMap = storageData;
                     }
-                    const sites = Object.keys(dataMap).filter(k => k !== 'models' && k !== 'details');
+                    const siteGroups = new Set();
+                    Object.keys(dataMap).forEach(site => {
+                        if (site !== 'models' && site !== 'details') {
+                            siteGroups.add(typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장');
+                        }
+                    });
+                    const sites = Array.from(siteGroups);
 
                     if (currentVal === '') {
                         siteInput.dataset.lastValid = '';
@@ -2406,9 +2424,15 @@ window.renderMyInfoEdit = function (user) {
         let dataMap = (typeof storageData !== 'undefined' && Object.keys(storageData).length > 0) ? storageData : (deviceData.equipments || deviceData);
         if (!dataMap || Object.keys(dataMap).length === 0) dataMap = withtechData;
 
-        const sites = Object.keys(dataMap).sort();
-        if (!sites.includes('기타 사업장')) {
-            sites.push('기타 사업장');
+        const siteGroups = new Set();
+        Object.keys(dataMap).forEach(site => {
+            if (site !== 'models' && site !== 'details') {
+                siteGroups.add(typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장');
+            }
+        });
+        const sites = Array.from(siteGroups).sort();
+        if (!sites.includes('기타사업장')) {
+            sites.push('기타사업장');
         }
 
         sites.forEach(s => {
@@ -3924,7 +3948,11 @@ window.workerNamesCache = [];
 window.fetchWorkerNames = async function (site = null) {
     if (!site && window.workerNamesCache.length > 0) return window.workerNamesCache;
     try {
-        const url = site ? `/api/users/names?site=${encodeURIComponent(site)}` : '/api/users/names';
+        let querySite = site;
+        if (site && typeof window.getSiteGroupName === 'function') {
+            querySite = window.getSiteGroupName(site);
+        }
+        const url = querySite ? `/api/users/names?site=${encodeURIComponent(querySite)}` : '/api/users/names';
         const res = await fetch(url);
         if (res.ok) {
             const data = await res.json();
@@ -4644,12 +4672,17 @@ window.openAllUsersModal = function() {
     const siteSelect = document.getElementById('edit-all-site');
     siteSelect.innerHTML = '<option value="">전체 사업장</option>';
     const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
+    const siteGroups = new Set();
     Object.keys(deviceData).forEach(s => {
         if(s !== 'models' && s !== 'details') {
-            siteSelect.insertAdjacentHTML('beforeend', `<option value="${s}">${s}</option>`);
+            siteGroups.add(typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(s) : '기타사업장');
         }
     });
-    siteSelect.insertAdjacentHTML('beforeend', `<option value="기타사업장">기타사업장</option>`);
+    const siteGroupArray = Array.from(siteGroups).sort();
+    if (!siteGroupArray.includes('기타사업장')) siteGroupArray.push('기타사업장');
+    siteGroupArray.forEach(g => {
+        siteSelect.insertAdjacentHTML('beforeend', `<option value="${g}">${g}</option>`);
+    });
 
     window.loadAllUsersList();
     modal.style.display = 'flex';

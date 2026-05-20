@@ -4009,3 +4009,217 @@ async function confirmRegisterSchedule() {
 /* --- 2.5 전역 노출 (Exports) --- */
 window.setupRegisterScheduleModal = setupRegisterScheduleModal;
 window.openRegisterScheduleModal = openRegisterScheduleModal;
+
+/* ==========================================================================
+   10. 장비 이관 모달 (Equip Transfer Modal)
+   ========================================================================== */
+window.setupEquipTransferModal = function() {
+    let modal = document.getElementById('equip-transfer-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'equip-transfer-modal';
+        modal.className = 'modal-overlay';
+        modal.style.zIndex = '11000';
+        modal.style.display = 'none';
+        modal.innerHTML = `
+            <div class="modal-window" style="width: 600px; height: auto; max-height: 80vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h3>장비 이관 확인</h3>
+                    <button id="btn-close-equip-transfer" style="background: none; border: none; color: #8b949e; cursor: pointer; font-size: 16px;">✕</button>
+                </div>
+                <div class="modal-body" style="padding: 15px; overflow-y: auto; flex: 1;">
+                    <ul id="equip-transfer-list" style="list-style: none; padding: 0; margin: 0;"></ul>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        document.getElementById('btn-close-equip-transfer').onclick = () => {
+            modal.style.display = 'none';
+        };
+    }
+};
+
+window.openEquipTransferModal = function() {
+    const userRole = sessionStorage.getItem('userRole');
+    const userSite = sessionStorage.getItem('userSite');
+    if (userRole !== 'admin' && userRole !== 'superadmin') {
+        alert('장비 이관 확인은 관리자 권한이 필요합니다.');
+        return;
+    }
+
+    const modal = document.getElementById('equip-transfer-modal');
+    if (!modal) return;
+    
+    const listEl = document.getElementById('equip-transfer-list');
+    listEl.innerHTML = '';
+    
+    // [수정] 화면 필터 대신 사용자 계정 권한/사업장 정보를 기준으로 타겟 사업장 결정
+    let targetSite = '';
+    if (userRole === 'admin') {
+        targetSite = userSite; // 관리자는 자신의 사업장 그룹만
+        // superadmin은 targetSite가 ''로 유지되어 전체를 조회
+    }
+
+    const data = JSON.parse(localStorage.getItem('device_data')) || {};
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const allSites = Object.keys(data).filter(k => k !== 'models' && k !== 'details');
+    
+    const transferEquips = [];
+    
+    let sitesToSearch = allSites;
+    if (targetSite) {
+        if (allSites.includes(targetSite)) {
+            sitesToSearch = [targetSite];
+        } else {
+            sitesToSearch = allSites.filter(site => {
+                const groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장';
+                return groupName === targetSite;
+            });
+            if (sitesToSearch.length === 0) {
+                sitesToSearch = allSites.filter(site => site.includes(targetSite));
+            }
+        }
+    }
+
+    sitesToSearch.forEach(site => {
+        const equips = data[site] || [];
+        equips.forEach(equip => {
+            if (equip === '기타(ETC)') return;
+            
+            const detailKey = `details_${site}_${equip}`;
+            const detailData = JSON.parse(localStorage.getItem(detailKey)) || {};
+            const setupInfo = detailData.setup || {};
+            
+            const sData = setupData[`${site}::${equip}`] || {};
+            let isSetupCompleted = false;
+            let resubmitMemo = '';
+            let transferComment = '';
+            if (sData.setupDetails) {
+                const completeItem = sData.setupDetails.find(d => d.content === '셋업 완료');
+                if (completeItem && completeItem.completed) {
+                    isSetupCompleted = true;
+                    resubmitMemo = completeItem.delayReason || '';
+                    transferComment = completeItem.transferComment || '';
+                }
+            }
+            
+            if (isSetupCompleted && setupInfo.equipStatus === '이관 대기') {
+                transferEquips.push({ site, equip, setupInfo, resubmitMemo, transferComment });
+            }
+        });
+    });
+    
+    if (transferEquips.length === 0) {
+        const msg = targetSite ? `[${targetSite}] 사업장(그룹)에 이관 대기 중인 셋업 완료 장비가 없습니다.` : `이관 대기 중인 셋업 완료 장비가 없습니다.`;
+        listEl.innerHTML = `<li style="padding: 15px; text-align: center; color: #8b949e;">${msg}</li>`;
+    } else {
+        transferEquips.forEach(item => {
+            const parts = item.equip.split('::');
+            const name = parts[0];
+            const serial = parts.length > 1 ? parts[1] : '';
+            const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+            const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+            const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+            
+            const custName = item.setupInfo.custEquipName ? item.setupInfo.custEquipName : '';
+            let subInfo = '';
+            if (custName) subInfo = `[${escapeHtml(custName)}]`;
+            else if (serial) subInfo = `[${escapeHtml(serial)}]`;
+            
+            let resubmitHtml = '';
+            if (item.resubmitMemo) {
+                resubmitHtml = `<div style="color: #58a6ff; font-size: 11px; margin-top: 2px; word-break: break-all;">🔄 수정/보완: ${escapeHtml(item.resubmitMemo)}</div>`;
+            }
+            
+            let transferCommentHtml = '';
+            if (item.transferComment) {
+                transferCommentHtml = `<div style="color: #a371f7; font-size: 11px; margin-top: 2px; word-break: break-all;">💬 코멘트: ${escapeHtml(item.transferComment)}</div>`;
+            }
+
+            const li = document.createElement('li');
+            li.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #30363d;';
+            li.innerHTML = `
+                <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px;">
+                    <span class="transfer-equip-name" style="color: #58a6ff; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; text-decoration: underline;" title="클릭하여 상세 내용 확인">[${escapeHtml(item.site)}] ${escapeHtml(displayName)} <span style="color: #3fb950;">${subInfo}</span></span>
+                    <span style="color: #8b949e; font-size: 11px;">상태: ${escapeHtml(item.setupInfo.equipStatus || '미지정')}</span>
+                    ${resubmitHtml}
+                    ${transferCommentHtml}
+                </div>
+                <div style="display: flex; gap: 5px; flex-shrink: 0; align-items: center;">
+                    <button class="btn-green-sm btn-transfer-confirm" style="padding: 4px 8px; font-size: 12px;">이관 확인</button>
+                    <button class="btn-orange-sm btn-transfer-reject" style="padding: 4px 8px; font-size: 12px;">반려</button>
+                </div>
+            `;
+            
+            const nameSpan = li.querySelector('.transfer-equip-name');
+            if (nameSpan) {
+                nameSpan.onclick = () => {
+                    if (typeof window.openSetupCompleteModal === 'function') {
+                        window.openSetupCompleteModal(item.site, item.equip, true);
+                    }
+                };
+            }
+
+            li.querySelector('.btn-transfer-confirm').onclick = async () => {
+                if (confirm(`해당 장비(${displayName})를 '워런티' 상태로 이관하시겠습니까?`)) {
+                    await handleEquipTransfer(item.site, item.equip, '워런티');
+                    openEquipTransferModal(); 
+                }
+            };
+            
+            li.querySelector('.btn-transfer-reject').onclick = async () => {
+                const reason = prompt(`해당 장비(${displayName})의 셋업 완료 처리를 반려합니다.\n반려 사유를 입력해주세요:`);
+                if (reason === null) return;
+                
+                await handleEquipTransfer(item.site, item.equip, '이관 반려', reason);
+                openEquipTransferModal(); 
+            };
+            
+            listEl.appendChild(li);
+        });
+    }
+    
+    modal.style.display = 'flex';
+};
+
+window.handleEquipTransfer = async function(site, equip, newStatus, rejectReason = '') {
+    const detailKey = `details_${site}_${equip}`;
+    const detailData = JSON.parse(localStorage.getItem(detailKey)) || {};
+    if (!detailData.setup) detailData.setup = {};
+    
+    detailData.setup.equipStatus = newStatus;
+    
+    if (newStatus === '이관 반려') {
+        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+        const sData = setupData[`${site}::${equip}`];
+        if (sData && sData.setupDetails) {
+            const completeTask = sData.setupDetails.find(t => t.content === '셋업 완료');
+            if (completeTask) {
+                completeTask.rejectReason = rejectReason;
+            }
+            localStorage.setItem('setup_data', JSON.stringify(setupData));
+            if (typeof window.syncSetupDataDB === 'function') {
+                await window.syncSetupDataDB(site, equip, sData.setupDetails, sData.setupLogs);
+            }
+        }
+        if (typeof addSystemLog === 'function') addSystemLog('REJECT_SETUP', equip, `반려 사유: ${rejectReason}`);
+    } else {
+        if (typeof addSystemLog === 'function') addSystemLog('TRANSFER_EQUIP', equip, `상태 변경: ${newStatus}`);
+    }
+    
+    localStorage.setItem(detailKey, JSON.stringify(detailData));
+    
+    if (typeof window.syncAdminDB === 'function') {
+        await window.syncAdminDB('equip', 'UPDATE', {
+            old_id: equip, new_id: equip, site: site, old_site: site, new_site: site,
+            setup: detailData.setup, special_note: detailData.specialNote || ''
+        });
+    }
+    
+    alert(`장비가 ${newStatus} 상태로 변경되었습니다.`);
+    
+    if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+    if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+    if (typeof renderDetails === 'function') renderDetails();
+};

@@ -636,13 +636,15 @@ function setupSetupLogRegPartDropdown(modalContext, site, equip, presetParts = '
 }
 
 // [추가] 셋업 작업 상태(진행률, 시작/완료일) 자동 재계산 유틸리티
-function recalculateSetupTaskStatus(data, taskContent) {
+function recalculateSetupTaskStatus(data, taskContent, site = null, equip = null) {
     if (!data.setupDetails) return false;
     const task = data.setupDetails.find(t => t.content === taskContent);
     if (!task) return false;
 
     const taskLogs = (data.setupLogs || []).filter(l => l.content === taskContent);
     taskLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    let prevCompleted = task.completed;
 
     if (taskLogs.length === 0) {
         task.execStartDate = "";
@@ -662,13 +664,38 @@ function recalculateSetupTaskStatus(data, taskContent) {
             task.date = "";
         }
     }
+
+    // [추가] 셋업 완료 기록이 삭제되어 미완료 상태로 롤백된 경우, 장비 상태를 셋업 장비로 복구
+    if (prevCompleted && !task.completed && (task.category === '셋업 완료' || task.content === '셋업 완료')) {
+        const targetSite = site || (typeof currentPath !== 'undefined' ? currentPath.site : null);
+        const targetEquip = equip || (typeof currentPath !== 'undefined' ? currentPath.equip : null);
+        
+        if (targetSite && targetEquip) {
+            const detailKey = `details_${targetSite}_${targetEquip}`;
+            const detailData = JSON.parse(localStorage.getItem(detailKey)) || {};
+            if (detailData.setup && ['워런티', '가동 장비', '유휴 장비', '이관 대기'].includes(detailData.setup.equipStatus)) {
+                detailData.setup.equipStatus = '셋업 장비';
+                detailData.setup.warrantyStart = '';
+                detailData.setup.warrantyPeriod = '';
+                localStorage.setItem(detailKey, JSON.stringify(detailData));
+                
+                if (typeof window.syncAdminDB === 'function') {
+                    window.syncAdminDB('equip', 'UPDATE', {
+                        old_id: targetEquip, new_id: targetEquip, site: targetSite, old_site: targetSite, new_site: targetSite,
+                        setup: detailData.setup, special_note: detailData.specialNote || ''
+                    });
+                }
+            }
+        }
+    }
+
     return true;
 }
 
 /* ==========================================================================
    셋업 완료 처리 및 이력 모달 (Setup Complete & History Modals)
    ========================================================================== */
-window.openSetupCompleteModal = function(site, equip) {
+window.openSetupCompleteModal = function(site, equip, readOnly = false) {
     const modal = document.getElementById('setup-complete-modal');
     if (!modal) return;
 
@@ -680,6 +707,27 @@ window.openSetupCompleteModal = function(site, equip) {
 
     currentSetupCompleteTarget = { site, equip };
 
+    const key = `details_${site}_${equip}`;
+    const detailData = JSON.parse(localStorage.getItem(key)) || {};
+    const setupInfo = detailData.setup || {};
+
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const sData = setupData[`${site}::${equip}`] || {};
+    let isRejected = false;
+    let rejectReasonText = '';
+    let existingTransferComment = '';
+    
+    if (sData.setupDetails) {
+        const completeTask = sData.setupDetails.find(t => t.content === '셋업 완료');
+        if (completeTask) {
+            existingTransferComment = completeTask.transferComment || '';
+            if (completeTask.rejectReason && setupInfo.equipStatus === '이관 반려') {
+                isRejected = true;
+                rejectReasonText = completeTask.rejectReason;
+            }
+        }
+    }
+
     const infoEl = document.getElementById('setup-complete-target-info');
     const custEquipNameInput = document.getElementById('setup-complete-cust-equip-name');
     const startInput = document.getElementById('setup-complete-warranty-start');
@@ -688,6 +736,7 @@ window.openSetupCompleteModal = function(site, equip) {
     const custManagerInput = document.getElementById('setup-complete-cust-manager');
     const custContactInput = document.getElementById('setup-complete-cust-contact');
     const custEmailInput = document.getElementById('setup-complete-cust-email');
+    const transferCommentInput = document.getElementById('setup-complete-transfer-comment');
 
     const confirmBtn = document.getElementById('btn-confirm-setup-complete');
     const cancelBtn = document.getElementById('btn-cancel-setup-complete');
@@ -716,19 +765,71 @@ window.openSetupCompleteModal = function(site, equip) {
         }
     }
 
-    // Set default warranty start date to today
-    if (startInput) startInput.value = new Date().toISOString().split('T')[0];
-    if (periodInput) periodInput.value = '';
+    const rejectInfoEl = document.getElementById('setup-complete-reject-info');
+    const rejectReasonEl = document.getElementById('setup-complete-reject-reason');
+    const rejectMemoInput = document.getElementById('setup-complete-reject-memo');
 
-    // 고객사 정보 기존 데이터 세팅 (수정하지 않으면 기존 정보 유지됨)
-    const key = `details_${site}_${equip}`;
-    const detailData = JSON.parse(localStorage.getItem(key)) || {};
-    const setupInfo = detailData.setup || {};
+    if (rejectInfoEl && rejectReasonEl && rejectMemoInput) {
+        if (isRejected) {
+            rejectInfoEl.style.display = 'block';
+            rejectReasonEl.textContent = rejectReasonText || '사유 없음';
+            rejectMemoInput.value = '';
+        } else {
+            rejectInfoEl.style.display = 'none';
+        }
+    }
 
-    if (custEquipNameInput) custEquipNameInput.value = setupInfo.custEquipName || '';
-    if (custManagerInput) custManagerInput.value = setupInfo.custManager || '';
-    if (custContactInput) custContactInput.value = setupInfo.custContact || '';
-    if (custEmailInput) custEmailInput.value = setupInfo.custEmail || '';
+    // 이관 완료 상태 확인
+    const isTransferComplete = ['워런티', '가동 장비', '유휴 장비'].includes(setupInfo.equipStatus);
+    const isPendingTransfer = setupInfo.equipStatus === '이관 대기';
+
+    // [적용 완료] 장비 마스터(setupInfo)에 이미 저장된 고객사 정보가 있다면 해당 값을 미리 팝업 필드에 채워줍니다.
+    if (startInput) {
+        startInput.value = setupInfo.warrantyStart || new Date().toISOString().split('T')[0];
+        startInput.disabled = isTransferComplete || isPendingTransfer || readOnly;
+    }
+    if (periodInput) {
+        periodInput.value = setupInfo.warrantyPeriod || '';
+        periodInput.disabled = isTransferComplete || isPendingTransfer || readOnly;
+    }
+    if (custEquipNameInput) {
+        custEquipNameInput.value = setupInfo.custEquipName || '';
+        custEquipNameInput.disabled = isTransferComplete || isPendingTransfer || readOnly;
+    }
+    if (custManagerInput) {
+        custManagerInput.value = setupInfo.manager || '';
+        custManagerInput.disabled = isTransferComplete || isPendingTransfer || readOnly;
+    }
+    if (custContactInput) {
+        custContactInput.value = setupInfo.contact || '';
+        custContactInput.disabled = isTransferComplete || isPendingTransfer || readOnly;
+    }
+    if (custEmailInput) {
+        custEmailInput.value = setupInfo.email || '';
+        custEmailInput.disabled = isTransferComplete || isPendingTransfer || readOnly;
+    }
+    if (transferCommentInput) {
+        transferCommentInput.value = existingTransferComment;
+        transferCommentInput.disabled = isTransferComplete || isPendingTransfer || readOnly;
+    }
+    
+    if (confirmBtn) {
+        if (isTransferComplete || readOnly) {
+            confirmBtn.style.display = 'none';
+        } else {
+            confirmBtn.style.display = 'inline-block';
+            if (isPendingTransfer) {
+                confirmBtn.textContent = '이관 취소';
+                confirmBtn.classList.remove('btn-blue');
+                confirmBtn.classList.add('btn-orange');
+            } else {
+                confirmBtn.textContent = '이관';
+                confirmBtn.classList.remove('btn-orange');
+                confirmBtn.classList.add('btn-blue');
+            }
+        }
+    }
+    if (cancelBtn) cancelBtn.textContent = (isTransferComplete || isPendingTransfer || readOnly) ? '닫기' : '취소';
 
     const closeModal = () => {
         modal.style.display = 'none';
@@ -739,6 +840,48 @@ window.openSetupCompleteModal = function(site, equip) {
     closeBtn.onclick = closeModal;
 
     confirmBtn.onclick = async () => {
+        if (isPendingTransfer) {
+            if (confirm('장비 이관을 취소하고 셋업 장비 상태로 되돌리시겠습니까?')) {
+                const { site, equip } = currentSetupCompleteTarget;
+                const detailKey = `details_${site}_${equip}`;
+                const detailData = JSON.parse(localStorage.getItem(detailKey)) || {};
+                if (detailData.setup) {
+                    detailData.setup.equipStatus = '셋업 장비';
+
+                    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+                    const sData = setupData[`${site}::${equip}`];
+                    if (sData && sData.setupDetails) {
+                        const completeTask = sData.setupDetails.find(t => t.content === '셋업 완료');
+                        if (completeTask) {
+                            completeTask.rejectReason = '';
+                            completeTask.delayReason = '';
+                            completeTask.transferComment = '';
+                            localStorage.setItem('setup_data', JSON.stringify(setupData));
+                            if (typeof window.syncSetupDataDB === 'function') {
+                                await window.syncSetupDataDB(site, equip, sData.setupDetails, sData.setupLogs);
+                            }
+                        }
+                    }
+
+                    const success = await window.syncAdminDB('equip', 'UPDATE', {
+                        old_id: equip, new_id: equip, site: site, old_site: site, new_site: site,
+                        setup: detailData.setup, special_note: detailData.specialNote || ''
+                    });
+
+                    if (success) {
+                        localStorage.setItem(detailKey, JSON.stringify(detailData));
+                        if (typeof addSystemLog === 'function') addSystemLog('CANCEL_TRANSFER', equip, '이관 대기 상태 취소 -> 셋업 장비로 전환');
+                        alert('이관이 취소되었습니다. 장비가 셋업 장비 상태로 변경되었습니다.');
+                        closeModal();
+                        if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+                    } else {
+                        alert('서버에 상태를 저장하는 중 오류가 발생했습니다.');
+                    }
+                }
+            }
+            return;
+        }
+
         if (!currentSetupCompleteTarget) return;
 
         const warrantyStart = startInput.value;
@@ -753,21 +896,55 @@ window.openSetupCompleteModal = function(site, equip) {
         const custManager = custManagerInput ? custManagerInput.value.trim() : '';
         const custContact = custContactInput ? custContactInput.value.trim() : '';
         const custEmail = custEmailInput ? custEmailInput.value.trim() : '';
+        const transferComment = transferCommentInput ? transferCommentInput.value.trim() : '';
+
+        const rejectInfoEl = document.getElementById('setup-complete-reject-info');
+        const rejectMemoInput = document.getElementById('setup-complete-reject-memo');
+        const rejectMemo = (rejectInfoEl && rejectInfoEl.style.display !== 'none' && rejectMemoInput) ? rejectMemoInput.value.trim() : '';
 
         const { site, equip } = currentSetupCompleteTarget;
         // 저장 전 최신 데이터 로드
         const currentDetailData = JSON.parse(localStorage.getItem(`details_${site}_${equip}`)) || {};
         if (!currentDetailData.setup) currentDetailData.setup = {};
 
-        currentDetailData.setup.equipStatus = '워런티';
+        const isReSubmit = (currentDetailData.setup.equipStatus === '이관 반려' || (rejectInfoEl && rejectInfoEl.style.display !== 'none'));
+
+        currentDetailData.setup.equipStatus = '이관 대기';
         currentDetailData.setup.warrantyStart = warrantyStart;
         currentDetailData.setup.warrantyPeriod = warrantyPeriod;
         
         // 고객사 정보 업데이트 반영
         currentDetailData.setup.custEquipName = custEquipName;
-        currentDetailData.setup.custManager = custManager;
-        currentDetailData.setup.custContact = custContact;
-        currentDetailData.setup.custEmail = custEmail;
+        currentDetailData.setup.manager = custManager;
+        currentDetailData.setup.contact = custContact;
+        currentDetailData.setup.email = custEmail;
+
+        // 반려 재처리 및 코멘트 갱신 시 setup_data 동기화
+        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+        const sDataToUpdate = setupData[`${site}::${equip}`];
+        if (sDataToUpdate && sDataToUpdate.setupDetails) {
+            const completeTask = sDataToUpdate.setupDetails.find(t => t.content === '셋업 완료');
+            if (completeTask) {
+                let isSetupDataModified = false;
+                if (isReSubmit) {
+                    completeTask.rejectReason = '';
+                    if (rejectMemo) {
+                        completeTask.delayReason = rejectMemo; // 수정/보완 사항 저장
+                    }
+                    isSetupDataModified = true;
+                }
+                if (completeTask.transferComment !== transferComment) {
+                    completeTask.transferComment = transferComment;
+                    isSetupDataModified = true;
+                }
+                if (isSetupDataModified) {
+                    localStorage.setItem('setup_data', JSON.stringify(setupData));
+                    if (typeof window.syncSetupDataDB === 'function') {
+                        window.syncSetupDataDB(site, equip, sDataToUpdate.setupDetails, sDataToUpdate.setupLogs);
+                    }
+                }
+            }
+        }
 
         // DB Sync
         const success = await window.syncAdminDB('equip', 'UPDATE', {
@@ -777,8 +954,12 @@ window.openSetupCompleteModal = function(site, equip) {
 
         if (success) {
             localStorage.setItem(`details_${site}_${equip}`, JSON.stringify(currentDetailData));
-            if (typeof addSystemLog === 'function') addSystemLog('UPDATE_EQUIP_STATUS', equip, '셋업 완료 처리 -> 워런티 장비로 전환');
-            alert('셋업 완료 처리가 완료되었습니다.');
+            
+            let logDetails = '셋업 완료 처리 -> 이관 대기로 전환';
+            if (isReSubmit && rejectMemo) logDetails += ` (수정사항: ${rejectMemo})`;
+            
+            if (typeof addSystemLog === 'function') addSystemLog('UPDATE_EQUIP_STATUS', equip, logDetails);
+            alert('셋업 완료 및 이관 처리가 완료되었습니다.\n장비가 이관 대기 상태로 변경되었습니다.');
             closeModal();
             if (typeof updateSetupDashboard === 'function') updateSetupDashboard(); // Refresh dashboard
         } else {
@@ -893,7 +1074,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.setupLogs = data.setupLogs.filter(l => l.id != logId);
                 
                 if (targetLog && data.setupDetails && typeof recalculateSetupTaskStatus === 'function') {
-                    recalculateSetupTaskStatus(data, targetLog.content);
+                    recalculateSetupTaskStatus(data, targetLog.content, site, equip);
                 }
                 
                 setupData[equipKey] = data;
@@ -973,7 +1154,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // [개선] 셋업 로그 기록 수에 따라 완료/지연 상태를 자동 재계산
-            const setupDetailsUpdated = recalculateSetupTaskStatus(data, task);
+            const setupDetailsUpdated = recalculateSetupTaskStatus(data, task, site, equip);
 
             setupData[equipKey] = data;
             localStorage.setItem('setup_data', JSON.stringify(setupData));

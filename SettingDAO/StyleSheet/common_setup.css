@@ -308,6 +308,19 @@
     #setup-setup-log-content {
         height: 120px !important;
     }
+
+    /* 모바일 환경에서 셋업 완료 처리 모달 폼 가로 배치 유지 */
+    .setup-complete-form-row {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+    }
+
+    .setup-complete-label {
+        width: 120px !important;
+        /* 모바일 환경에 맞춰 라벨 너비 축소 */
+        margin-bottom: 0 !important;
+    }
 }
 
 /* ==========================================================
@@ -577,10 +590,12 @@
         flex-wrap: nowrap !important;
         align-items: center !important;
     }
+
     .setup-log-form-col {
         flex-direction: column !important;
         align-items: stretch !important;
     }
+
     .setup-log-label {
         width: 80px !important;
         margin-bottom: 0 !important;
@@ -693,10 +708,24 @@
     white-space: nowrap;
 }
 
-.setup-history-table .th-date { width: 120px; text-align: center; }
-.setup-history-table .th-content { text-align: center; }
-.setup-history-table .th-worker { width: 150px; text-align: center; }
-.setup-history-table .th-md { width: 50px; text-align: center; }
+.setup-history-table .th-date {
+    width: 120px;
+    text-align: center;
+}
+
+.setup-history-table .th-content {
+    text-align: center;
+}
+
+.setup-history-table .th-worker {
+    width: 150px;
+    text-align: center;
+}
+
+.setup-history-table .th-md {
+    width: 50px;
+    text-align: center;
+}
 
 .setup-history-detail-wrapper {
     display: flex;
@@ -757,13 +786,13 @@
     #setup-history-modal .modal-window {
         width: 95vw !important;
     }
-    
+
     .setup-history-detail-wrapper {
         flex-direction: column !important;
         height: auto !important;
     }
-    
-    .setup-history-detail-wrapper > div {
+
+    .setup-history-detail-wrapper>div {
         flex: none !important;
         height: 150px;
     }
@@ -775,11 +804,23 @@
     }
 
     .setup-history-table {
-        min-width: 600px !important; /* 컬럼 너비 합계 이상으로 최소 너비 설정하여 스크롤 유도 */
+        min-width: 600px !important;
+        /* 컬럼 너비 합계 이상으로 최소 너비 설정하여 스크롤 유도 */
     }
 
-    .setup-history-table .th-date { width: 100px !important; }
-    .setup-history-table .th-content { width: 200px !important; }
-    .setup-history-table .th-worker { width: 150px !important; }
-    .setup-history-table .th-md { width: 50px !important; }
+    .setup-history-table .th-date {
+        width: 100px !important;
+    }
+
+    .setup-history-table .th-content {
+        width: 200px !important;
+    }
+
+    .setup-history-table .th-worker {
+        width: 150px !important;
+    }
+
+    .setup-history-table .th-md {
+        width: 50px !important;
+    }
 }

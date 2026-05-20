@@ -162,7 +162,14 @@ window.renderSharedStatusChart = function(options) {
    2. 초기화 및 이벤트 리스너 (Initialization)
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
-    const initDashboard = () => updateHomeDashboard();
+    const initDashboard = () => {
+        updateHomeDashboard();
+        
+        // [추가] 장비 이관 팝업 및 버튼 초기화 (HOME 화면용)
+        if (typeof window.setupEquipTransferModal === 'function') {
+            window.setupEquipTransferModal();
+        }
+    };
     if (window.isDataLoaded) initDashboard();
     else window.addEventListener('DataLoaded', initDashboard);
 
@@ -828,9 +835,23 @@ function updateSetupDashboard() {
                         const equipDetailData = JSON.parse(localStorage.getItem(detailKey)) || {};
                         const equipStatus = (equipDetailData.setup && equipDetailData.setup.equipStatus) ? equipDetailData.setup.equipStatus : '';
 
-                        // [수정] 완료 처리(워런티 등)가 아직 안 된 장비들을 완료 대기 리스트에 추가 (증발 방지)
-                        if (equipStatus !== '워런티' && equipStatus !== '가동 장비' && equipStatus !== '유휴 장비') {
-                            completedSetupEquips.push({ site, equip, date: completeItem.date });
+                        // [추가] 완료일 기준 1달(한 달) 이내인지 확인
+                        let isWithinOneMonth = true;
+                        if (completeItem.date) {
+                            const [y, m, d] = completeItem.date.split('-').map(Number);
+                            const compDate = new Date(y, m - 1, d);
+                            const oneMonthAgo = new Date();
+                            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                            oneMonthAgo.setHours(0, 0, 0, 0);
+                            
+                            if (compDate < oneMonthAgo) {
+                                isWithinOneMonth = false;
+                            }
+                        }
+
+                        // [수정] 완료 처리(워런티 등)가 안 된 장비이거나, 완료 처리되었더라도 1달이 지나지 않은 장비 표시
+                        if (equipStatus !== '워런티' && equipStatus !== '가동 장비' && equipStatus !== '유휴 장비' || isWithinOneMonth) {
+                            completedSetupEquips.push({ site, equip, date: completeItem.date, rejectReason: completeItem.rejectReason, equipStatus: equipStatus });
                             
                             // [추가] 셋업 완료된 장비도 '장비 정보' 리스트에 계속 표시되도록 활성 리스트에 포함
                             activeSetupEquips.push({ site, equip, isCompleted: true });
@@ -879,15 +900,38 @@ function renderSetupCompletedList(completedEquips) {
     completedEquips.forEach(item => {
         const info = formatEquipDisplayInfo(item.site, item.equip, equipmentModels);
 
+        let displayStatus = '셋업 완료';
+        if (item.equipStatus === '이관 대기') displayStatus = '이관 대기';
+        else if (['워런티', '가동 장비', '유휴 장비'].includes(item.equipStatus)) displayStatus = '이관 완료';
+
+        let statusColor = '#1f6feb'; // 파랑 (셋업 완료)
+        if (displayStatus === '이관 대기') statusColor = '#d29922'; // 주황
+        else if (displayStatus === '이관 완료') statusColor = '#3fb950'; // 초록
+
         const li = document.createElement('li');
         li.className = 'status-list-item';
         
-        li.innerHTML = `
-            <div style="flex: 1; display: flex; align-items: center; min-width: 0;">
-                <span class="status-name" title="${info.fullTitle}">${info.mainInfo}${info.subInfo ? `<span class="equip-serial">${info.subInfo}</span>` : ''}</span>
-            </div>
-            <span class="status-count" style="font-size: 12px; color: #8b949e;">${item.date || '-'}</span>
-        `;
+        if (item.rejectReason) {
+            li.style.borderLeft = '4px solid #da3633';
+            li.innerHTML = `
+                <div style="flex: 1; display: flex; flex-direction: column; min-width: 0; padding-left: 5px;">
+                    <div style="display: flex; align-items: center;">
+                        <span class="status-name" title="${info.fullTitle}" style="margin-right: 0;">${info.mainInfo}${info.subInfo ? `<span class="equip-serial">${info.subInfo}</span>` : ''}</span>
+                    </div>
+                    <div style="font-size: 11px; color: #da3633; margin-top: 2px;">반려 사유: ${escapeHtml(item.rejectReason)}</div>
+                </div>
+                <span style="width: 70px; text-align: center; font-size: 12px; color: ${statusColor}; font-weight: bold; flex-shrink: 0;">${displayStatus}</span>
+                <span class="status-count" style="width: 80px; text-align: center; font-size: 12px; color: #8b949e; flex-shrink: 0;">${item.date || '-'}</span>
+            `;
+        } else {
+            li.innerHTML = `
+                <div style="flex: 1; display: flex; align-items: center; min-width: 0;">
+                    <span class="status-name" title="${info.fullTitle}">${info.mainInfo}${info.subInfo ? `<span class="equip-serial">${info.subInfo}</span>` : ''}</span>
+                </div>
+                <span style="width: 70px; text-align: center; font-size: 12px; color: ${statusColor}; font-weight: bold; flex-shrink: 0;">${displayStatus}</span>
+                <span class="status-count" style="width: 80px; text-align: center; font-size: 12px; color: #8b949e; flex-shrink: 0;">${item.date || '-'}</span>
+            `;
+        }
         
         li.onclick = () => window.openSetupCompleteModal(item.site, item.equip);
         listEl.appendChild(li);

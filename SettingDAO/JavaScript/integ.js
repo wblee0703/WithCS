@@ -157,7 +157,8 @@ function updateIntegratedDashboard() {
 
                             if (!integSetupSelectedSite || integSetupSelectedSite === groupName) {
                                 if (progress === 100) {
-                                    completedEquips.push({ site, equip, progress, date: completionDate });
+                                    const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
+                                    completedEquips.push({ site, equip, progress, date: completionDate, equipStatus: equipStatus });
                                 } else {
                                     setupEquips.push({ site, equip, progress });
                                 }
@@ -1082,9 +1083,23 @@ function renderGenericSetupList(listEl, list, isCompletedMode) {
         const mainInfo = `${escapeHtml(item.site)} > ${escapeHtml(displayModel)}`;
         const fullTitle = `${mainInfo} ${subInfo}`.replace(/<[^>]*>?/gm, '').trim();
 
-        const rightCol = isCompletedMode ? 
-            `<span class="status-count integ-setup-complete-col-date">${item.date || ''}</span>` : 
-            `<span class="status-count integ-setup-detail-col-progress">${item.progress}%</span>`;
+        let rightCol = '';
+        if (isCompletedMode) {
+            let displayStatus = '셋업 완료';
+            if (item.equipStatus === '이관 대기') displayStatus = '이관 대기';
+            else if (['워런티', '가동 장비', '유휴 장비'].includes(item.equipStatus)) displayStatus = '이관 완료';
+
+            let statusColor = '#1f6feb';
+            if (displayStatus === '이관 대기') statusColor = '#d29922';
+            else if (displayStatus === '이관 완료') statusColor = '#3fb950';
+
+            rightCol = `
+                <span style="width: 70px; text-align: center; font-size: 12px; color: ${statusColor}; font-weight: bold; flex-shrink: 0;">${displayStatus}</span>
+                <span class="status-count integ-setup-complete-col-date">${item.date || ''}</span>
+            `;
+        } else {
+            rightCol = `<span class="status-count integ-setup-detail-col-progress">${item.progress}%</span>`;
+        }
 
         li.innerHTML = `
             <span class="status-color equip-bar" style="background-color: ${progressColor};"></span>
