@@ -54,7 +54,7 @@ function getTemplateContent(id) {
     return null;
 }
 
-window.handleSessionExpired = function() {
+window.handleSessionExpired = function () {
     if (typeof stopSessionTimer === 'function') stopSessionTimer();
     alert('보안을 위해 세션이 만료되었습니다.\n다시 로그인해주세요.');
     fetch('/api/logout', {
@@ -66,7 +66,7 @@ window.handleSessionExpired = function() {
     });
 };
 
-window.checkSessionValid = function() {
+window.checkSessionValid = function () {
     if (sessionStorage.getItem('isLoggedIn') !== 'true') return false;
     const expiry = parseInt(sessionStorage.getItem('sessionExpiryTime'), 10);
     if (!expiry || Date.now() > expiry) {
@@ -228,7 +228,7 @@ function saveData() {
 
 // [추가] 운영 관리 공수 계산 시 관리자(어드민) 지분을 차감하기 위한 캐시 및 헬퍼 함수
 window.adminNamesCache = new Set();
-window.initAdminNamesCache = async function() {
+window.initAdminNamesCache = async function () {
     try {
         const workers = await window.fetchWorkerNames();
         const admins = new Set();
@@ -248,14 +248,14 @@ window.initAdminNamesCache = async function() {
     }
 };
 
-window.calcValidMd = function(workerStr, mdVal) {
+window.calcValidMd = function (workerStr, mdVal) {
     if (!workerStr || !mdVal) return mdVal;
     const workerList = workerStr.split(',').map(s => s.trim()).filter(Boolean);
     if (workerList.length === 0) return mdVal;
-    
+
     const adminCount = workerList.filter(name => window.adminNamesCache.has(name)).length;
-    if (adminCount === 0) return mdVal; 
-    
+    if (adminCount === 0) return mdVal;
+
     const validRatio = (workerList.length - adminCount) / workerList.length;
     return mdVal * validRatio;
 };
@@ -828,7 +828,7 @@ function applyGlobalAccessibilityAndSecurityFixes() {
             const labels = node.tagName === 'LABEL' ? [node] : Array.from(node.querySelectorAll('label'));
             labels.forEach(label => {
                 const forAttr = label.getAttribute('for');
-                
+
                 // [수정] 존재하지 않는 ID를 가리키는 for 속성은 브라우저 경고를 유발하므로 즉시 제거
                 if (forAttr && !document.getElementById(forAttr)) {
                     label.removeAttribute('for');
@@ -1167,13 +1167,18 @@ function setupSidebarEvents() {
                     equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
                 } catch (e) { }
 
-                if (!equipmentModels.some(m => m.name === equipVal)) {
+                const matchedModel = equipmentModels.find(m => m.name === equipVal || m.abbr === equipVal);
+                if (!matchedModel) {
                     return alert('등록되지 않은 장비 명입니다. 검색 제안 박스에서 항목을 선택해주세요.');
                 }
 
-                const fullEquipName = equipModelVal ? `${equipVal}::${equipModelVal}` : equipVal;
+                const actualModelName = matchedModel.name;
+
+                const fullEquipName = equipModelVal ? `${actualModelName}::${equipModelVal}` : actualModelName;
                 if (!storageData[siteName]) storageData[siteName] = [];
                 if (storageData[siteName].includes(fullEquipName)) return alert('이미 존재하는 장비(Serial No.)입니다.');
+
+
 
                 const setupPayload = { model: equipModelVal };
                 const success = await window.syncAdminDB('equip', 'CREATE', { new_id: fullEquipName, site: siteName, setup: setupPayload });
@@ -1487,7 +1492,7 @@ function startSessionTimer() {
             window.handleSessionExpired();
             return;
         }
-        
+
         updateTimerUI();
 
         // [추가] 세션 만료 5분 전, 최근 5분 내 활동이 있었으면 자동 연장
@@ -3196,15 +3201,15 @@ function addSystemLog(action, target, details = "") {
 
 function openLogModal() {
     const modal = document.getElementById('log-modal');
-    if (modal) { 
+    if (modal) {
         const now = new Date();
         const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         const startInput = document.getElementById('syslog-filter-start');
         const endInput = document.getElementById('syslog-filter-end');
         if (startInput) startInput.value = todayStr;
         if (endInput) endInput.value = todayStr;
-        modal.style.display = 'flex'; 
-        renderSystemLogs(); 
+        modal.style.display = 'flex';
+        renderSystemLogs();
     }
 }
 
@@ -3672,7 +3677,7 @@ function openNextScheduleModal(options) {
    9. 추가 작업 내역 확인 모달 (Extra Work History Modal)
    ========================================================================== */
 window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
-   if (typeof window.checkSessionValid === 'function' && !window.checkSessionValid()) return;
+    if (typeof window.checkSessionValid === 'function' && !window.checkSessionValid()) return;
     const modal = document.getElementById('extra-work-history-modal');
     const tbody = document.getElementById('extra-work-history-body');
     const pathEl = document.getElementById('extra-work-history-path');
@@ -4551,7 +4556,7 @@ function setupPositionSuggestion(inputEl) {
 }
 
 // [추가] 모든 계정 관리 모달 생성 및 로직 (최종 관리자 전용)
-window.openAllUsersModal = function() {
+window.openAllUsersModal = function () {
     let modal = document.getElementById('all-users-modal');
     if (!modal) {
         console.error('all-users-modal HTML 요소를 찾을 수 없습니다. common.html에 포함되어 있는지 확인해주세요.');
@@ -4561,7 +4566,7 @@ window.openAllUsersModal = function() {
     // 초기 이벤트 리스너 바인딩 (1회만 실행)
     if (!modal.dataset.initialized) {
         modal.dataset.initialized = 'true';
-        
+
         document.getElementById('btn-close-all-users').onclick = () => { modal.style.display = 'none'; };
 
         // 소속/직급 제안 박스 연동
@@ -4589,12 +4594,12 @@ window.openAllUsersModal = function() {
                 const data = await res.json();
                 if (data.status === 'success') {
                     alert('계정 정보가 성공적으로 수정되었습니다.');
-                    window.loadAllUsersList(); 
+                    window.loadAllUsersList();
                     if (typeof addSystemLog === 'function') addSystemLog('UPDATE_USER', targetId, '최종 관리자에 의한 계정 수정');
                 } else {
                     alert(data.message || '수정 실패');
                 }
-            } catch(e) {
+            } catch (e) {
                 alert('서버 통신 오류가 발생했습니다.');
             }
         };
@@ -4603,7 +4608,7 @@ window.openAllUsersModal = function() {
             const targetId = document.getElementById('edit-all-id').value;
             if (!targetId) return;
             if (!confirm(`'${targetId}' 계정의 비밀번호를 초기 상태(withtech123!)로 변경하시겠습니까?`)) return;
-            
+
             try {
                 const res = await fetch('/api/admin/user/update_all', {
                     method: 'POST',
@@ -4617,7 +4622,7 @@ window.openAllUsersModal = function() {
                 } else {
                     alert(data.message || '초기화 실패');
                 }
-            } catch(e) {
+            } catch (e) {
                 alert('서버 통신 오류가 발생했습니다.');
             }
         };
@@ -4643,7 +4648,7 @@ window.openAllUsersModal = function() {
                 } else {
                     alert(data.message || '계정 삭제 실패');
                 }
-            } catch(e) {
+            } catch (e) {
                 alert('서버 통신 오류가 발생했습니다.');
             }
         };
@@ -4674,7 +4679,7 @@ window.openAllUsersModal = function() {
     const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
     const siteGroups = new Set();
     Object.keys(deviceData).forEach(s => {
-        if(s !== 'models' && s !== 'details') {
+        if (s !== 'models' && s !== 'details') {
             siteGroups.add(typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(s) : '기타사업장');
         }
     });
@@ -4686,13 +4691,13 @@ window.openAllUsersModal = function() {
 
     window.loadAllUsersList();
     modal.style.display = 'flex';
-    
+
     const editForm = document.getElementById('all-users-edit-form');
     if (editForm) { editForm.style.opacity = '0.3'; editForm.style.pointerEvents = 'none'; }
 };
 
 // [추가] 모든 계정 리스트 불러오기 및 렌더링
-window.loadAllUsersList = function() {
+window.loadAllUsersList = function () {
     fetch('/api/admin/users/all', { headers: { 'X-CSRFToken': getCookie('csrf_token') } })
         .then(res => res.json())
         .then(data => {
@@ -4702,7 +4707,7 @@ window.loadAllUsersList = function() {
                 data.users.forEach(u => {
                     const li = document.createElement('li');
                     li.dataset.search = `${u.id} ${u.name} ${u.department} ${u.position} ${u.role}`;
-                    
+
                     let roleBadge = '';
                     if (u.role === 'superadmin') roleBadge = '<span class="badge" style="background: #f85149; font-size: 12px; padding: 4px 8px;">최종 관리자</span>';
                     else if (u.role === 'admin') roleBadge = '<span class="badge" style="background: #d29922; font-size: 12px; padding: 4px 8px;">관리자</span>';
@@ -4715,7 +4720,7 @@ window.loadAllUsersList = function() {
                         </div>
                         <div style="flex-shrink:0; margin-left:10px;">${roleBadge}</div>
                     `;
-                    
+
                     li.onclick = () => {
                         document.querySelectorAll('#all-users-list li').forEach(el => el.classList.remove('active'));
                         li.classList.add('active');
@@ -4733,7 +4738,7 @@ window.loadAllUsersList = function() {
                     };
                     list.appendChild(li);
                 });
-                
+
                 // 현재 검색창에 텍스트가 남아있다면 필터링 유지
                 const kw = document.getElementById('all-users-search').value.trim().toLowerCase();
                 let visibleCount = 0;
@@ -4791,7 +4796,7 @@ function setupTaskSearchModal() {
 }
 
 function openTaskSearchModal() {
-   if (typeof window.checkSessionValid === 'function' && !window.checkSessionValid()) return;
+    if (typeof window.checkSessionValid === 'function' && !window.checkSessionValid()) return;
     const modal = document.getElementById('task-search-modal');
     const keywordInput = document.getElementById('task-search-keyword-input');
     const resultsList = document.getElementById('task-search-results-list');
@@ -4870,7 +4875,7 @@ function doTaskSearch() {
                             const matchesKeyword = !keyword || (
                                 logWorker.includes(keyword) ||
                                 equipName.includes(keyword) ||
-                            displayName.includes(keyword) ||
+                                displayName.includes(keyword) ||
                                 logContent.includes(keyword) ||
                                 custEquipName.toLowerCase().includes(keyword)
                             );
@@ -4894,7 +4899,7 @@ function doTaskSearch() {
                             const matchesKeyword = !keyword || (
                                 itemWorker.includes(keyword) ||
                                 equipName.includes(keyword) ||
-                            displayName.includes(keyword) ||
+                                displayName.includes(keyword) ||
                                 itemContent.includes(keyword) ||
                                 custEquipName.toLowerCase().includes(keyword)
                             );
@@ -5021,7 +5026,7 @@ function doTaskSearch() {
                 addBtn.style.textAlign = 'center';
                 addBtn.onclick = (e) => {
                     e.stopPropagation();
-                    
+
                     // [추가] 검색 모달 잠시 숨기고 상세 팝업 종료 시 돌아오기 위한 플래그 설정
                     const searchModal = document.getElementById('task-search-modal');
                     if (searchModal) searchModal.style.display = 'none';

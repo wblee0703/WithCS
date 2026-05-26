@@ -441,10 +441,15 @@ function renderSetupDetailList() {
     if (!data.setupDetails) {
         const detailKey = `details_${currentPath.site}_${currentPath.equip}`;
         const detailData = JSON.parse(localStorage.getItem(detailKey)) || {};
-        const modelName = (detailData.setup && detailData.setup.model) ? detailData.setup.model : '';
+
+        const equipParts = currentPath.equip.split('::');
+        const equipRawName = equipParts[0];
+        const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+        const matchedModel = equipmentModels.find(m => m.name === equipRawName || m.abbr === equipRawName);
+        const actualModelName = matchedModel ? matchedModel.name : equipRawName;
 
         const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-        let templateToUse = templates[modelName];
+        let templateToUse = templates[actualModelName];
 
         if (!templateToUse || templateToUse.length === 0) {
             templateToUse = templates['default'] || [

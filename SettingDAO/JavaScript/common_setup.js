@@ -812,6 +812,91 @@ window.openSetupCompleteModal = function(site, equip, readOnly = false) {
         transferCommentInput.value = existingTransferComment;
         transferCommentInput.disabled = isTransferComplete || isPendingTransfer || readOnly;
     }
+
+    // [추가] 장비 이관 확인 팝업 등에서 고객사 정보만 수정할 수 있는 기능 추가
+    let btnModifyCustInfo = document.getElementById('btn-modify-cust-info');
+    if (!btnModifyCustInfo) {
+        btnModifyCustInfo = document.createElement('button');
+        btnModifyCustInfo.id = 'btn-modify-cust-info';
+        btnModifyCustInfo.style.marginLeft = '10px';
+        if (confirmBtn && confirmBtn.parentNode) {
+            confirmBtn.parentNode.insertBefore(btnModifyCustInfo, confirmBtn.nextSibling);
+        }
+    }
+    
+    let isCustInfoDirty = false;
+
+    if (!isTransferComplete && (readOnly || isPendingTransfer)) {
+        btnModifyCustInfo.style.display = 'inline-block';
+        btnModifyCustInfo.className = 'btn-green';
+        btnModifyCustInfo.textContent = '고객사 정보 수정';
+        
+        if (custEquipNameInput) custEquipNameInput.disabled = false;
+        if (custManagerInput) custManagerInput.disabled = false;
+        if (custContactInput) custContactInput.disabled = false;
+        if (custEmailInput) custEmailInput.disabled = false;
+
+        const getCustInfoState = () => {
+            return {
+                name: custEquipNameInput ? custEquipNameInput.value.trim() : '',
+                manager: custManagerInput ? custManagerInput.value.trim() : '',
+                contact: custContactInput ? custContactInput.value.trim() : '',
+                email: custEmailInput ? custEmailInput.value.trim() : ''
+            };
+        };
+        
+        let initialCustInfoStr = JSON.stringify(getCustInfoState());
+
+        const checkDirty = () => {
+            const currentStr = JSON.stringify(getCustInfoState());
+            if (currentStr !== initialCustInfoStr) {
+                isCustInfoDirty = true;
+                btnModifyCustInfo.className = 'btn-orange'; 
+            } else {
+                isCustInfoDirty = false;
+                btnModifyCustInfo.className = 'btn-green';
+            }
+        };
+
+        if (custEquipNameInput) custEquipNameInput.oninput = checkDirty;
+        if (custManagerInput) custManagerInput.oninput = checkDirty;
+        if (custContactInput) custContactInput.oninput = checkDirty;
+        if (custEmailInput) custEmailInput.oninput = checkDirty;
+
+        btnModifyCustInfo.onclick = async () => {
+            if (!isCustInfoDirty) {
+                alert('수정된 고객사 정보가 없습니다.');
+                return;
+            }
+            
+            const currentCustInfo = getCustInfoState();
+            const detailKey = `details_${site}_${equip}`;
+            const currentDetailData = JSON.parse(localStorage.getItem(detailKey)) || {};
+            if (!currentDetailData.setup) currentDetailData.setup = {};
+            
+            currentDetailData.setup.custEquipName = currentCustInfo.name;
+            currentDetailData.setup.manager = currentCustInfo.manager;
+            currentDetailData.setup.contact = currentCustInfo.contact;
+            currentDetailData.setup.email = currentCustInfo.email;
+            
+            const success = await window.syncAdminDB('equip', 'UPDATE', {
+                old_id: equip, new_id: equip, site: site, old_site: site, new_site: site,
+                setup: currentDetailData.setup, special_note: currentDetailData.specialNote || ''
+            });
+            
+            if (success) {
+                localStorage.setItem(detailKey, JSON.stringify(currentDetailData));
+                initialCustInfoStr = JSON.stringify(currentCustInfo);
+                checkDirty(); 
+                alert('고객사 정보가 성공적으로 수정되었습니다.');
+            } else {
+                alert('고객사 정보 저장 중 오류가 발생했습니다.');
+            }
+        };
+    } else {
+        btnModifyCustInfo.style.display = 'none';
+        isCustInfoDirty = false;
+    }
     
     if (confirmBtn) {
         if (isTransferComplete || readOnly) {
@@ -832,8 +917,19 @@ window.openSetupCompleteModal = function(site, equip, readOnly = false) {
     if (cancelBtn) cancelBtn.textContent = (isTransferComplete || isPendingTransfer || readOnly) ? '닫기' : '취소';
 
     const closeModal = () => {
+        if (isCustInfoDirty) {
+            alert('수정된 고객사 정보가 저장되지 않았습니다. 수정 버튼을 눌러 저장해주세요.');
+            return;
+        }
         modal.style.display = 'none';
         currentSetupCompleteTarget = null;
+        
+        const transferModal = document.getElementById('equip-transfer-modal');
+        if (transferModal && transferModal.style.display !== 'none') {
+            if (typeof window.openEquipTransferModal === 'function') {
+                window.openEquipTransferModal(); 
+            }
+        }
     };
 
     cancelBtn.onclick = closeModal;

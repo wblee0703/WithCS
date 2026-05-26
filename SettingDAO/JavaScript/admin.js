@@ -1361,7 +1361,7 @@ function handleEquipCsvImport(event) {
                     // [수정] 셋업(SETUP) 데이터 생성 시 모델명 템플릿 적용 및 납품일 기준 자동 계산
                     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
                     const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-                    let templateToUse = templates[name] || templates['default'] || [
+                let templateToUse = templates[actualModelName] || templates['default'] || [
                         { category: "장비 반입 및 정위치", content: "장비 도면 부착", estDays: "1" },
                         { category: "통신 상태 및 유틸리티", content: "Utility 배관 공사 및 연결", estDays: "5" },
                         { category: "셋업 평가", content: "분석부 안정화 및 오염제어", estDays: "5" },
@@ -1825,7 +1825,12 @@ async function handleEquipSave() {
         // [수정] 셋업(SETUP) 데이터 껍데기 생성 시 모델명 템플릿 적용 및 납품일 기준 자동 계산
         const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
         const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-        let templateToUse = templates[finalName] || templates['default'] || [
+                    
+                    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+                    const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+                    const actualModelName = matchedModel ? matchedModel.name : name;
+                    
+                    let templateToUse = templates[actualModelName] || templates['default'] || [
             { category: "장비 반입 및 정위치", content: "장비 도면 부착", estDays: "1" },
             { category: "통신 상태 및 유틸리티", content: "Utility 배관 공사 및 연결", estDays: "5" },
             { category: "셋업 평가", content: "분석부 안정화 및 오염제어", estDays: "5" },
