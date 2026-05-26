@@ -341,6 +341,8 @@ function renderGanttChart() {
     }
 
     // [추가] 일수 모드 적용 (날짜 갭을 무시하고 모든 일정을 연속되게 재배치)
+    let equipRealToVirtMap = {}; // [추가] 장비 단위 실제 날짜 -> 가상 날짜 매핑 
+    
     if (isDayCountMode) {
         const groupedTasks = {};
         allTasks.forEach(t => {
@@ -372,19 +374,55 @@ function renderGanttChart() {
             if (activeIndex === -1) activeIndex = tasks.length - 1; // 모두 완료 시 마지막 작업
             if (activeIndex === -1) return;
 
-            // 1. 순방향 계산 (현재 진행 작업부터 끝까지)
-            let currentStart = new Date(today);
-            for (let i = activeIndex; i < tasks.length; i++) {
-                const t = tasks[i];
-                t.originalPlanStart = t.planStart; // [추가] 실제 달력의 계획 시작일 보존
+            // [수정] 계획일이 동일한 작업은 같은 일차(가상 날짜)로 묶어서 처리
+            const dateGroups = [];
+            tasks.forEach(t => {
+                t.originalPlanStart = t.planStart;
                 let estDays = parseInt(t.estDays) || 1;
                 if (t.category === '셋업 완료' || t.displayName === '셋업 완료') estDays = 1;
 
-                const end = addContinuousDays(currentStart, estDays - 1);
-                
-                t.planStart = formatDate(currentStart);
-                t.planEnd = formatDate(end);
-                
+                let group = dateGroups.find(g => g.realStart === t.originalPlanStart);
+                if (!group) {
+                    group = { realStart: t.originalPlanStart, maxEstDays: estDays, tasks: [] };
+                    dateGroups.push(group);
+                } else {
+                    if (estDays > group.maxEstDays) group.maxEstDays = estDays;
+                }
+                group.tasks.push(t);
+            });
+
+            // activeIndex에 해당하는 작업의 그룹을 찾음
+            const activeGroupIndex = dateGroups.findIndex(g => g.tasks.includes(tasks[activeIndex]));
+
+            const virtStartMap = new Map();
+            let currentVirtStart = new Date(today);
+
+            // 1. 순방향 배정 (현재 그룹부터 끝까지)
+            for (let i = activeGroupIndex; i < dateGroups.length; i++) {
+                const g = dateGroups[i];
+                virtStartMap.set(g.realStart, new Date(currentVirtStart));
+                currentVirtStart = addContinuousDays(currentVirtStart, g.maxEstDays); 
+            }
+
+            // 2. 역방향 배정 (현재 그룹 이전부터 처음까지)
+            let currentVirtEnd = addContinuousDays(today, -1);
+            for (let i = activeGroupIndex - 1; i >= 0; i--) {
+                const g = dateGroups[i];
+                const start = addContinuousDays(currentVirtEnd, -(g.maxEstDays - 1));
+                virtStartMap.set(g.realStart, new Date(start));
+                currentVirtEnd = addContinuousDays(start, -1);
+            }
+
+            // 3. 각 Task에 가상 날짜 배정
+            tasks.forEach(t => {
+                const virtStart = virtStartMap.get(t.originalPlanStart);
+                let estDays = parseInt(t.estDays) || 1;
+                if (t.category === '셋업 완료' || t.displayName === '셋업 완료') estDays = 1;
+                const virtEnd = addContinuousDays(virtStart, estDays - 1);
+
+                t.planStart = formatDate(virtStart);
+                t.planEnd = formatDate(virtEnd);
+
                 if (t.execStart) {
                     t.execStart = t.planStart;
                     if (t.completed) {
@@ -394,29 +432,35 @@ function renderGanttChart() {
                         t.execEnd = formatDate(today);
                     }
                 }
-                
-                currentStart = addContinuousDays(end, 1);
-            }
+            });
 
-            // 2. 역방향 계산 (현재 진행 작업 이전부터 처음까지)
-            let currentEnd = addContinuousDays(today, -1);
-            for (let i = activeIndex - 1; i >= 0; i--) {
-                const t = tasks[i];
-                t.originalPlanStart = t.planStart; // [추가] 실제 달력의 계획 시작일 보존
-                let estDays = parseInt(t.estDays) || 1;
-                if (t.category === '셋업 완료' || t.displayName === '셋업 완료') estDays = 1;
-
-                const start = addContinuousDays(currentEnd, -(estDays - 1));
-                
-                t.planStart = formatDate(start);
-                t.planEnd = formatDate(currentEnd);
-                
-                if (t.execStart) {
-                    t.execStart = t.planStart;
-                    t.execEnd = t.planEnd;
+            // [추가] 장비의 전체 실제 로그 날짜를 수집하여 가상 일차에 매핑
+            const equipLogsSet = new Set();
+            tasks.forEach(t => {
+                if (t.logDates) {
+                    t.logDates.forEach(d => equipLogsSet.add(d));
                 }
-                
-                currentEnd = addContinuousDays(start, -1);
+            });
+            const uniqueRealDates = [...equipLogsSet].sort();
+
+            // 장비의 가상 시작일(첫 번째 계획일) 찾기
+            let equipVirtStartStr = null;
+            tasks.forEach(t => {
+                if (!equipVirtStartStr || t.planStart < equipVirtStartStr) {
+                    equipVirtStartStr = t.planStart;
+                }
+            });
+
+            if (equipVirtStartStr && uniqueRealDates.length > 0) {
+                const equipMap = {};
+                let currentVirtDate = new Date(equipVirtStartStr);
+                uniqueRealDates.forEach(rDate => {
+                    const virtDateStr = `${currentVirtDate.getFullYear()}-${String(currentVirtDate.getMonth() + 1).padStart(2, '0')}-${String(currentVirtDate.getDate()).padStart(2, '0')}`;
+                    equipMap[rDate] = virtDateStr;
+                    currentVirtDate.setDate(currentVirtDate.getDate() + 1);
+                });
+                const equipKey = `${tasks[0].site}::${tasks[0].equip}`;
+                equipRealToVirtMap[equipKey] = equipMap;
             }
 
             sequencedTasks.push(...tasks);
@@ -791,13 +835,18 @@ function renderGanttChart() {
                 const equipKey = `${t.site}::${t.equip}`;
                 const equipLogs = (setupData[equipKey] && setupData[equipKey].setupLogs) ? setupData[equipKey].setupLogs : [];
 
-                const virtStart = t.planStart;
-                let currentVirtDate = new Date(virtStart);
+                const equipMap = equipRealToVirtMap[equipKey]; // [추가] 장비 글로벌 날짜 매핑 사용
 
                 const uniqueDates = [...new Set(t.logDates)].sort();
                 uniqueDates.forEach(dateStr => {
-                    // [수정] 실제 날짜 간격과 무관하게 가상 캘린더 시작일부터 순차적으로 칸을 채움 (연속 기록)
-                    const virtDateStr = `${currentVirtDate.getFullYear()}-${String(currentVirtDate.getMonth() + 1).padStart(2, '0')}-${String(currentVirtDate.getDate()).padStart(2, '0')}`;
+                    // [수정] 개별 작업의 계획 시작일이 아닌, 장비 글로벌 가상 날짜 매핑을 사용하여 동일한 실제 날짜는 동일한 일차(열)에 표시
+                    let virtDateStr;
+                    if (equipMap && equipMap[dateStr]) {
+                        virtDateStr = equipMap[dateStr];
+                    } else {
+                        // 매핑 실패 시 fallback
+                        virtDateStr = t.planStart;
+                    }
 
                     const colIndex = getIndex(virtDateStr, false);
                     if (colIndex !== -1) {
@@ -813,9 +862,6 @@ function renderGanttChart() {
                             <div class="gantt__bar-segment" style="left: 0px; width: ${width}px;"></div>
                         </div>`;
                     }
-                    
-                    // 다음 기록은 무조건 다음 칸에 배치되도록 가상 날짜 1일 증가
-                    currentVirtDate.setDate(currentVirtDate.getDate() + 1);
                 });
             } else if (t.completed && t.execStart) {
                 // [수정] 일수 모드에서 기록이 없지만 완료 처리된 항목도 클릭하여 팝업을 띄울 수 있도록 속성 추가
@@ -898,54 +944,37 @@ function renderGanttChart() {
             let clickedDateStr = null;
             if (colIndex >= 0 && colIndex < ganttValidDates.length) {
                 if (isDayCountMode) {
-                    const task = allTasks.find(t => t.id == taskId);
-                    if (task) {
-                        let foundLogDate = null;
-                        
-                        // 1. 현재 클릭한 작업의 로그가 있는지 확인
-                        if (task.logDates && task.logDates.length > 0) {
-                            const uniqueDates = [...new Set(task.logDates)].sort();
-                            const virtStartColIndex = getIndex(task.planStart, false);
-                            const logIndex = colIndex - virtStartColIndex;
-                            if (logIndex >= 0 && logIndex < uniqueDates.length) {
-                                foundLogDate = uniqueDates[logIndex];
+                    const virtDateStr = ganttValidDates[colIndex].str;
+                    const equipKey = `${site}::${equip}`;
+                    const equipMap = equipRealToVirtMap[equipKey];
+                    let foundRealDate = null;
+                    
+                    if (equipMap) {
+                        for (const [rDate, vDate] of Object.entries(equipMap)) {
+                            if (vDate === virtDateStr) {
+                                foundRealDate = rDate;
+                                break;
                             }
                         }
+                    }
 
-                        if (foundLogDate) {
-                            clickedDateStr = foundLogDate;
-                        } else {
-                            // 2. 같은 일차(세로 열)에 다른 작업의 기록이 있다면 그 날짜를 제안
-                            let matchedRealDate = null;
-                            for (const t of allTasks) {
-                                if (t.site === site && t.equip === equip && t.logDates && t.logDates.length > 0) {
-                                    const uniqueDates = [...new Set(t.logDates)].sort();
-                                    const virtStartColIndex = getIndex(t.planStart, false);
-                                    const logIdx = colIndex - virtStartColIndex;
-                                    if (logIdx >= 0 && logIdx < uniqueDates.length) {
-                                        matchedRealDate = uniqueDates[logIdx];
-                                        break; // 찾았으면 중단
-                                    }
-                                }
-                            }
-
-                            if (matchedRealDate) {
-                                clickedDateStr = matchedRealDate;
-                            } else {
-                                // 3. 같은 일차에 등록된 기록이 아예 없다면 마지막 기록의 다음 날짜 제안
-                                if (task.logDates && task.logDates.length > 0) {
-                                    const uniqueDates = [...new Set(task.logDates)].sort();
-                                    const lastDateStr = uniqueDates[uniqueDates.length - 1];
-                                    const d = new Date(lastDateStr);
-                                    d.setDate(d.getDate() + 1); // 다음 일차이므로 1일 더함
-                                    clickedDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-                                } else {
-                                    clickedDateStr = '';
-                                }
-                            }
-                        }
+                    if (foundRealDate) {
+                        clickedDateStr = foundRealDate;
                     } else {
-                        clickedDateStr = ''; // 빈 값을 넘겨 모달에서 오늘 날짜로 셋팅되도록 함
+                        // 매핑된 실제 날짜가 없는 빈 열을 클릭한 경우
+                        if (equipMap) {
+                            const allRealDates = Object.keys(equipMap).sort();
+                            if (allRealDates.length > 0) {
+                                const lastDateStr = allRealDates[allRealDates.length - 1];
+                                const d = new Date(lastDateStr);
+                                d.setDate(d.getDate() + 1); // 마지막 기록 다음 날짜 제안
+                                clickedDateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                            } else {
+                                clickedDateStr = '';
+                            }
+                        } else {
+                            clickedDateStr = '';
+                        }
                     }
                 } else {
                     clickedDateStr = ganttValidDates[colIndex].str;
