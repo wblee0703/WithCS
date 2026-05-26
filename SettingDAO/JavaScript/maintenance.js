@@ -132,6 +132,20 @@ function setupMaintenanceEvents() {
         maintSettingsBtn.classList.remove('nav-admin-item'); // 권한 제한 클래스 강제 제거
         maintSettingsBtn.style.display = ''; // 인라인 숨김 해제
         maintSettingsBtn.addEventListener('click', toggleMaintenanceMode);
+
+        // [추가] 유지관리 물품 이력 버튼 동적 추가
+        const btnContainer = maintSettingsBtn.parentNode;
+        if (btnContainer && !document.getElementById('btn-maint-history')) {
+            const historyBtn = document.createElement('button');
+            historyBtn.id = 'btn-maint-history';
+            historyBtn.className = 'btn-settings';
+            historyBtn.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-right: 5px;';
+            historyBtn.innerHTML = '📜 물품 이력';
+            historyBtn.title = '해당 장비의 과거 유지관리 물품 변동(교체) 이력을 확인합니다.';
+            historyBtn.addEventListener('click', openMaintHistoryModal);
+            
+            btnContainer.insertBefore(historyBtn, maintSettingsBtn);
+        }
     }
 
     const maintDateInput = document.getElementById('maint-date');
@@ -505,7 +519,7 @@ function renderDetails() {
         let safeContent = item.content || '';
         
         // [강력 조치] 유지관리 리스트 화면에 비용 라벨이 절대 노출되지 않도록 렌더링 시점에서도 강제 정제
-        safeContent = safeContent.replace(/\[(유상|무상|기타)\]\s*/g, '').trim();
+        safeContent = safeContent.replace(/\[(?:유상|무상[^\]]*|기타)\]\s*/g, '').trim();
         safeContent = safeContent.replace(/\s*-\s*(?=,|$)/g, '').trim();
 
         contentCell.textContent = safeContent;
@@ -1022,11 +1036,36 @@ function renderLogs() {
         const contentCell = tr.querySelector('.log-content');
         let displayContent = log.content || '-';
         let tooltipContent = log.content || '';
-        if (log.content && log.content.includes(', ')) {
-            const items = log.content.split(', ').map(s => s.trim());
-            if (items.length > 1) {
-                displayContent = `${items[0]} 외 ${items.length - 1}개`;
-                tooltipContent = items.join('\n');
+        
+        // [수정] 리스트 화면에 비용처리 태그([유상], [무상] 등)가 표시되지 않도록 텍스트 정제
+        if (log.content && log.content !== '내용 없음') {
+            const tooltipItems = [];
+            const displayItems = [];
+
+            log.content.split(',').forEach(s => {
+                let cleanV = s.trim();
+                // [개선] 비용처리 태그(유상, 무상, 무상(보증) 등)를 위치에 관계없이 명시적으로 모두 제거
+                cleanV = cleanV.replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').replace(/\s+/g, ' ').trim();
+                 
+                let tooltipV = cleanV;
+                const kwMatch = cleanV.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|파츠 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+                if (kwMatch) {
+                    tooltipV = kwMatch[2].replace(/\s*-\s*$/, '').trim();
+                } else {
+                    tooltipV = tooltipV.replace(/\s*-\s*$/, '').trim();
+                }
+                
+                tooltipItems.push(tooltipV);
+                displayItems.push(cleanV.replace(/\s*-\s*$/, '').trim());
+            });
+            
+            tooltipContent = tooltipItems.join('\n');
+            
+            // [수정] 물품이 2개 이상일 때 'A 외 N개' 형태로 축약 표시 (리스트에는 수식어 포함)
+            if (displayItems.length > 1) {
+                displayContent = `${displayItems[0]} 외 ${displayItems.length - 1}개`;
+            } else {
+                displayContent = displayItems[0];
             }
         }
         contentCell.title = escapeHtml(tooltipContent);
@@ -1973,4 +2012,135 @@ window.moveToCalendarView = function () {
 
     // 홈 화면으로 이동
     window.location.href = '/?scrollTo=calendar';
+};
+
+// [추가] 유지관리 물품 이력 팝업창 호출 및 렌더링 함수
+window.openMaintHistoryModal = function () {
+    if (!currentPath.site || !currentPath.equip) {
+        alert('장비를 먼저 선택해주세요.');
+        return;
+    }
+
+    let modal = document.getElementById('maint-history-modal');
+    if (!modal) {
+        console.error('maint-history-modal HTML 요소를 찾을 수 없습니다. maintenance.html에 포함되어 있는지 확인해주세요.');
+        return;
+    }
+
+    // 장비 정보 표시
+    const equipInfoEl = document.getElementById('maint-history-equip-info');
+    const info = typeof formatEquipDisplayInfo === 'function' ? formatEquipDisplayInfo(currentPath.site, currentPath.equip) : { fullTitle: `${currentPath.site} > ${currentPath.equip}` };
+    equipInfoEl.textContent = info.fullTitle || `${currentPath.site} > ${currentPath.equip}`;
+
+    // 이력 데이터 추출
+    const key = `details_${currentPath.site}_${currentPath.equip}`;
+    const data = JSON.parse(localStorage.getItem(key)) || {};
+    const logs = data.logs || [];
+
+    let historyItems = [];
+    logs.forEach(log => {
+        if (log.detailType === '일정변경') return;
+        let contents = (log.content || '').split(',').map(s => s.trim()).filter(Boolean);
+        contents.forEach(content => {
+            if (content === '내용 없음' || content === '장비 점검') return;
+            
+            let pureContent = content;
+            let costTypeHtml = '';
+            
+            // 1. 문장 맨 앞 비용 태그 추출
+            const costMatch = pureContent.match(/^\[(.*?)\]\s*(.*)$/);
+            if (costMatch) {
+                let costColor = '#8b949e';
+                if (costMatch[1] === '유상') costColor = '#d29922';
+                else if (costMatch[1] === '무상') costColor = '#3fb950';
+                costTypeHtml = `<span style="font-size: 10px; background: #30363d; color: ${costColor}; padding: 2px 4px; border-radius: 4px; margin-right: 5px;">${costMatch[1]}</span>`;
+                pureContent = costMatch[2].trim();
+            }
+            
+            // 2. 작업구분(키워드) 및 '-' 제거
+            const splitMatch = pureContent.match(/^(.*?)\s*-\s*(.*)$/);
+            if (splitMatch) {
+                pureContent = splitMatch[2].trim();
+                
+                // 3. '-' 뒤에 비용 태그가 있는 경우 재추출
+                const innerCostMatch = pureContent.match(/^\[(.*?)\]\s*(.*)$/);
+                if (innerCostMatch) {
+                    if (!costTypeHtml) {
+                        let costColor = '#8b949e';
+                        if (innerCostMatch[1] === '유상') costColor = '#d29922';
+                        else if (innerCostMatch[1] === '무상') costColor = '#3fb950';
+                        costTypeHtml = `<span style="font-size: 10px; background: #30363d; color: ${costColor}; padding: 2px 4px; border-radius: 4px; margin-right: 5px;">${innerCostMatch[1]}</span>`;
+                    }
+                    pureContent = innerCostMatch[2].trim();
+                }
+            }
+            
+            historyItems.push({
+                date: log.date,
+                type: log.type,
+                detailType: log.detailType2 ? `${log.detailType || ''} > ${log.detailType2}` : (log.detailType || '-'),
+                contentHtml: `${costTypeHtml}${escapeHtml(pureContent)}`,
+                worker: log.worker,
+                id: log.id
+            });
+        });
+    });
+
+    historyItems.sort((a, b) => {
+        if (b.date !== a.date) return (b.date || '').localeCompare(a.date || '');
+        return b.id - a.id;
+    });
+
+    const tbody = document.getElementById('maint-history-tbody');
+    const searchInput = document.getElementById('maint-history-search');
+
+    const renderTable = (searchTerm) => {
+        tbody.innerHTML = '';
+        let filteredItems = historyItems;
+        
+        if (searchTerm) {
+            const kw = searchTerm.toLowerCase();
+            filteredItems = historyItems.filter(item => {
+                return (item.date || '').toLowerCase().includes(kw) ||
+                       (item.type || '').toLowerCase().includes(kw) ||
+                       (item.detailType || '').toLowerCase().includes(kw) ||
+                       (item.contentHtml || '').replace(/<[^>]*>?/gm, '').toLowerCase().includes(kw) ||
+                       (item.worker || '').toLowerCase().includes(kw);
+            });
+        }
+
+        if (filteredItems.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #8b949e; padding: 20px;">검색된 이력이 없습니다.</td></tr>';
+        } else {
+            filteredItems.forEach(item => {
+                const tr = document.createElement('tr');
+                let typeColor = '#8b949e';
+                if (item.type === '정기') typeColor = '#238636';
+                else if (item.type === '비정기') typeColor = '#eb371f';
+                else if (item.type === '고객대응') typeColor = '#d29922';
+                else if (item.type === '용액제조') typeColor = '#8957e5';
+                else if (item.type === '온라인점검') typeColor = '#0078d4';
+                
+                tr.innerHTML = `
+                    <td>${item.date || '-'}</td>
+                    <td><span style="color: ${typeColor}; font-weight: bold;">${item.type || '-'}</span></td>
+                    <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px;" title="${escapeHtml(item.detailType)}">${escapeHtml(item.detailType)}</td>
+                    <td style="text-align: left; padding-left: 10px;">${item.contentHtml}</td>
+                    <td>${escapeHtml(item.worker || '-')}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    };
+
+    renderTable('');
+
+    if (searchInput) {
+        searchInput.value = '';
+        const newSearchInput = searchInput.cloneNode(true);
+        searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+        newSearchInput.addEventListener('input', (e) => renderTable(e.target.value.trim()));
+    }
+
+    modal.style.display = 'flex';
 };

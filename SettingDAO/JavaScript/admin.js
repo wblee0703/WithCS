@@ -1358,7 +1358,7 @@ function handleEquipCsvImport(event) {
                     };
                     localStorage.setItem(`details_${site}_${newKey}`, JSON.stringify(initData));
 
-                    // [수정] 셋업(SETUP) 데이터 생성 시 모델명 기반 템플릿 적용
+                    // [수정] 셋업(SETUP) 데이터 생성 시 모델명 템플릿 적용 및 납품일 기준 자동 계산
                     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
                     const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
                     let templateToUse = templates[name] || templates['default'] || [
@@ -1373,6 +1373,24 @@ function handleEquipCsvImport(event) {
                         startDate: "", date: "", estDays: item.estDays || "1",
                         completed: false, execStartDate: "", delayReason: ""
                     }));
+                    
+                    if (deliveryDate) {
+                        let currentStartDate = new Date(deliveryDate);
+                        initialSetupDetails.forEach(item => {
+                            let estDays = parseInt(item.estDays);
+                            if (isNaN(estDays) || estDays <= 0) estDays = 1;
+                            if (item.category === '셋업 완료' || item.content === '셋업 완료') estDays = 1;
+
+                            const y = currentStartDate.getFullYear();
+                            const m = String(currentStartDate.getMonth() + 1).padStart(2, '0');
+                            const d = String(currentStartDate.getDate()).padStart(2, '0');
+                            item.startDate = `${y}-${m}-${d}`;
+
+                            const currentEndDate = typeof window.addBusinessDays === 'function' ? window.addBusinessDays(currentStartDate, estDays - 1) : new Date(currentStartDate.getTime() + (estDays - 1) * 86400000);
+                            currentStartDate = typeof window.addBusinessDays === 'function' ? window.addBusinessDays(currentEndDate, 1) : new Date(currentEndDate.getTime() + 86400000);
+                        });
+                    }
+
                     setupData[`${site}::${newKey}`] = { setupDetails: initialSetupDetails, setupLogs: [] };
                     localStorage.setItem('setup_data', JSON.stringify(setupData));
                     await window.syncSetupDataDB(site, newKey, initialSetupDetails, []);
@@ -1804,7 +1822,7 @@ async function handleEquipSave() {
         };
         localStorage.setItem(`details_${targetSite}_${newKey}`, JSON.stringify(initData));
 
-        // [수정] 셋업(SETUP) 데이터 껍데기 생성 시 모델명 템플릿 적용
+        // [수정] 셋업(SETUP) 데이터 껍데기 생성 시 모델명 템플릿 적용 및 납품일 기준 자동 계산
         const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
         const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
         let templateToUse = templates[finalName] || templates['default'] || [
@@ -1818,6 +1836,24 @@ async function handleEquipSave() {
             startDate: "", date: "", estDays: item.estDays || "1",
             completed: false, execStartDate: "", delayReason: ""
         }));
+
+        if (deliveryDate) {
+            let currentStartDate = new Date(deliveryDate);
+            initialSetupDetails.forEach(item => {
+                let estDays = parseInt(item.estDays);
+                if (isNaN(estDays) || estDays <= 0) estDays = 1;
+                if (item.category === '셋업 완료' || item.content === '셋업 완료') estDays = 1;
+
+                const y = currentStartDate.getFullYear();
+                const m = String(currentStartDate.getMonth() + 1).padStart(2, '0');
+                const d = String(currentStartDate.getDate()).padStart(2, '0');
+                item.startDate = `${y}-${m}-${d}`;
+
+                const currentEndDate = typeof window.addBusinessDays === 'function' ? window.addBusinessDays(currentStartDate, estDays - 1) : new Date(currentStartDate.getTime() + (estDays - 1) * 86400000);
+                currentStartDate = typeof window.addBusinessDays === 'function' ? window.addBusinessDays(currentEndDate, 1) : new Date(currentEndDate.getTime() + 86400000);
+            });
+        }
+
         setupData[`${targetSite}::${newKey}`] = { setupDetails: initialSetupDetails, setupLogs: [] };
         localStorage.setItem('setup_data', JSON.stringify(setupData));
         window.syncSetupDataDB(targetSite, newKey, initialSetupDetails, []); // DB 동기화

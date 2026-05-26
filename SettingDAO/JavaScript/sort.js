@@ -113,12 +113,8 @@ function initSortPage() {
                     list.querySelectorAll('.log-select-item').forEach(el => {
                         if (values.includes(el.dataset.value)) {
                             el.classList.add('selected');
-                            const icon = el.querySelector('.check-icon');
-                            if (icon) icon.style.opacity = '1';
                         } else {
                             el.classList.remove('selected');
-                            const icon = el.querySelector('.check-icon');
-                            if (icon) icon.style.opacity = '0';
                         }
                     });
                     const trigger = document.getElementById(`${selectId}-trigger`);
@@ -180,12 +176,8 @@ function initSortPage() {
                             kwList.querySelectorAll('.log-select-item').forEach(el => {
                                 if (lastSortFilters.keywordSelected.includes((el.dataset.value || '').toLowerCase())) {
                                     el.classList.add('selected');
-                                    const icon = el.querySelector('.check-icon');
-                                    if (icon) icon.style.opacity = '1';
                                 } else {
                                     el.classList.remove('selected');
-                                    const icon = el.querySelector('.check-icon');
-                                    if (icon) icon.style.opacity = '0';
                                 }
                             });
                             updateKeywordTrigger();
@@ -326,8 +318,6 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
                 list.querySelectorAll('.log-select-item').forEach(el => {
                     if (el.style.display !== 'none') {
                         el.classList.add('selected');
-                        const checkIcon = el.querySelector('.check-icon');
-                        if (checkIcon) checkIcon.style.opacity = '1';
                     }
                 });
                 updateTriggerText();
@@ -342,8 +332,6 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
                 list.querySelectorAll('.log-select-item').forEach(el => {
                     if (el.style.display !== 'none') {
                         el.classList.remove('selected');
-                        const checkIcon = el.querySelector('.check-icon');
-                        if (checkIcon) checkIcon.style.opacity = '0';
                     }
                 });
                 updateTriggerText();
@@ -397,12 +385,8 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
                     groupItems.forEach(el => {
                         if (allSelected) {
                             el.classList.remove('selected');
-                            const checkIcon = el.querySelector('.check-icon');
-                            if (checkIcon) checkIcon.style.opacity = '0';
                         } else {
                             el.classList.add('selected');
-                            const checkIcon = el.querySelector('.check-icon');
-                            if (checkIcon) checkIcon.style.opacity = '1';
                         }
                     });
 
@@ -493,19 +477,17 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
                 // [수정] 템플릿 자체에 log-select-item 클래스가 있어 중첩(2배 뻥튀기)되는 현상 방지
                 div.innerHTML = itemTpl.firstElementChild.innerHTML;
                 const icon = div.querySelector('.check-icon');
-                if (icon) icon.style.opacity = isSelected ? '1' : '0';
+                if (icon) icon.remove();
                 const textEl = div.querySelector('.item-text');
                 if (textEl) textEl.textContent = text;
             } else {
-                div.innerHTML = `<span class="check-icon sort-check-icon" style="opacity:${isSelected ? '1' : '0'};">✓</span><span class="item-text sort-item-text">${escapeHtml(text)}</span>`;
+                div.innerHTML = `<span class="item-text sort-item-text" style="flex: 1; padding-left: 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(text)}</span>`;
             }
 
             div.addEventListener('mousedown', (e) => {
                 e.preventDefault(); // 클릭 시 포커스 잃음(blur) 방지로 클릭 이벤트 보장
                 e.stopPropagation();
                 div.classList.toggle('selected');
-                const checkIcon = div.querySelector('.check-icon');
-                if (checkIcon) checkIcon.style.opacity = div.classList.contains('selected') ? '1' : '0';
                 updateTriggerText();
                 selectEl.dispatchEvent(new Event('change'));
             });
@@ -728,11 +710,6 @@ function addGlobalSelectAllButton() {
                         list.querySelectorAll('.log-select-item').forEach(el => {
                             if (el.style.display !== 'none') {
                                 el.classList.add('selected');
-                                const icon = el.querySelector('.check-icon');
-                                if (icon) {
-                                    icon.style.opacity = '1';
-                                    icon.style.visibility = 'visible';
-                                }
 
                                 // [추가] 원본 옵션 동기화 보장
                                 Array.from(selectEl.options).forEach(o => {
@@ -765,8 +742,6 @@ function addGlobalSelectAllButton() {
             keywordList.querySelectorAll('.log-select-item').forEach(el => {
                 if (el.style.display !== 'none') {
                     el.classList.add('selected');
-                    const icon = el.querySelector('.check-icon');
-                    if (icon) icon.style.opacity = '1';
                 }
             });
             if (typeof updateKeywordTrigger === 'function') updateKeywordTrigger();
@@ -831,8 +806,6 @@ function setupSortKeyword() {
                     list.querySelectorAll('.log-select-item').forEach(el => {
                         if (el.style.display !== 'none') {
                             el.classList.add('selected');
-                            const icon = el.querySelector('.check-icon');
-                            if (icon) icon.style.opacity = '1';
                         }
                     });
                     updateKeywordTrigger();
@@ -849,8 +822,6 @@ function setupSortKeyword() {
                 if (list) {
                     list.querySelectorAll('.log-select-item').forEach(el => {
                         el.classList.remove('selected');
-                        const icon = el.querySelector('.check-icon');
-                        if (icon) icon.style.opacity = '0';
                     });
                     updateKeywordTrigger();
                     performSortSearch();
@@ -937,18 +908,16 @@ function updateKeywordSuggestions() {
         if (itemTpl) {
             div.innerHTML = itemTpl.firstElementChild.innerHTML;
             const icon = div.querySelector('.check-icon');
-            if (icon) icon.style.opacity = isSelected ? '1' : '0';
+            if (icon) icon.remove();
             const textEl = div.querySelector('.item-text');
             if (textEl) textEl.textContent = content;
         } else {
-            div.innerHTML = `<span class="check-icon sort-check-icon" style="opacity:${isSelected ? '1' : '0'};">✓</span><span class="item-text sort-item-text">${escapeHtml(content)}</span>`;
+            div.innerHTML = `<span class="item-text sort-item-text" style="flex: 1; padding-left: 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(content)}</span>`;
         }
         div.addEventListener('mousedown', (e) => {
             e.preventDefault();
             e.stopPropagation();
             div.classList.toggle('selected');
-            const checkIcon = div.querySelector('.check-icon');
-            if (checkIcon) checkIcon.style.opacity = div.classList.contains('selected') ? '1' : '0';
             updateKeywordTrigger();
         });
         keywordList.appendChild(div);

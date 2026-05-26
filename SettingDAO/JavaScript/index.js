@@ -286,9 +286,10 @@ function navigateWithFilters(targetPage, savedPathKey, targetSite, targetEquipNa
 }
 
 function goToSetupPage() {
-    let targetSite = setupDashboardFilter.site || currentGanttFilters.site;
-    let targetEquipName = setupDashboardFilter.equip;
+    // 간트 뷰에서 검색 중인 장비가 있다면 가장 우선적으로 적용하도록 변경
+    let targetSite = currentGanttFilters.site || setupDashboardFilter.site;
     let targetSerial = currentGanttFilters.equip;
+    let targetEquipName = targetSerial ? '' : setupDashboardFilter.equip;
     navigateWithFilters('setup.html', 'lastSetupPath', targetSite, targetEquipName, targetSerial);
 }
 
@@ -1388,11 +1389,14 @@ function populateEquipmentIssues() {
         const dateStr = log.date || '';
 
         let displayContent = log.content || '';
-        if (displayContent.includes(',')) {
-            const items = displayContent.split(',').map(s => s.trim()).filter(Boolean);
-            if (items.length > 1) {
-                displayContent = `${items[0]} 외 ${items.length - 1}개`;
-            }
+        // 비용처리 태그 제거 및 외 N개 처리
+        if (displayContent && displayContent !== '내용 없음') {
+            const items = displayContent.split(',').map(s => {
+                return s.replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').replace(/\s+/g, ' ').replace(/\s*-\s*$/, '').trim();
+            }).filter(Boolean);
+            
+            if (items.length > 1) displayContent = `${items[0]} 외 ${items.length - 1}개`;
+            else if (items.length === 1) displayContent = items[0];
         }
 
         const line2Text = `${detailStr} : ${displayContent}`;

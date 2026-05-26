@@ -935,6 +935,15 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         width: auto !important;
         min-width: 0 !important;
     }
+    
+    /* 유지관리 물품 이력 팝업 모바일 최적화 */
+    #maint-history-modal .modal-window {
+        width: 95vw !important;
+        height: 80vh !important;
+    }
+    #maint-history-modal .table-wrapper {
+        overflow-x: auto !important;
+    }
 
     /* 2번째 줄 (날짜 + 주기 + 등록 버튼) */
     #maint-date {
@@ -1036,4 +1045,31 @@ body[class*="role-"] #maint-table-body .btn-del-sm {
     display: inline-flex !important;
     pointer-events: auto !important;
     opacity: 1 !important;
+}
+
+/* ==========================================================================
+   유지관리 물품 이력 팝업 스타일
+   ========================================================================== */
+#maint-history-modal {
+    z-index: 12000;
+}
+#maint-history-modal .modal-window {
+    width: 700px;
+    max-width: 95%;
+    height: 600px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+#maint-history-modal .modal-body {
+    padding: 15px;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+#maint-history-modal .maint-history-table {
+    width: 100%;
+    min-width: 500px;
 }

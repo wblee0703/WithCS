@@ -4247,10 +4247,12 @@ window.setupTransferHistoryModal = function() {
                     <button id="btn-close-transfer-history" class="btn-del-sm">✕</button>
                 </div>
                 <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; flex: 1;">
-                    <div style="display: flex; gap: 10px; align-items: center; flex-shrink: 0;">
-                        <input type="date" id="transfer-history-start" class="input-dark" style="width: 120px; font-size: 12px; padding: 4px;">
-                        <span style="color: #8b949e;">~</span>
-                        <input type="date" id="transfer-history-end" class="input-dark" style="width: 120px; font-size: 12px; padding: 4px;">
+                    <div class="transfer-history-filter-wrapper" style="display: flex; gap: 10px; align-items: center; flex-shrink: 0;">
+                        <div class="transfer-history-date-group" style="display: flex; align-items: center; gap: 5px;">
+                            <input type="date" id="transfer-history-start" class="input-dark" style="width: 120px; font-size: 12px; padding: 4px;">
+                            <span style="color: #8b949e;">~</span>
+                            <input type="date" id="transfer-history-end" class="input-dark" style="width: 120px; font-size: 12px; padding: 4px;">
+                        </div>
                         <input type="text" id="transfer-history-search" class="input-dark" style="flex: 1; font-size: 12px; padding: 4px 8px;" placeholder="사업장, 장비명, 시리얼, 고객사명 검색...">
                     </div>
                     <div class="data-table-wrapper" style="flex: 1; overflow-y: auto; margin-top: 10px; border: 1px solid #30363d; border-radius: 4px;">

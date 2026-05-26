@@ -1164,6 +1164,22 @@
     #transfer-history-modal .modal-window {
         width: 95% !important;
     }
+
+    /* 이관 내역 팝업창 검색 영역 모바일 배치 최적화 */
+    .transfer-history-filter-wrapper {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    
+    .transfer-history-date-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .transfer-history-date-group input[type="date"] {
+        flex: 1;
+        width: auto !important;
+    }
 }
 
 /* SETUP */
