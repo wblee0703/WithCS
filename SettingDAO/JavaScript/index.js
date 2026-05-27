@@ -1027,7 +1027,7 @@ function renderSetupEquipChart(equipStats, totalEquip, activeEquips) {
     allLi.innerHTML = `<span class="status-color status-color-all"></span><span class="status-name">전체</span><span class="status-count">${filteredTotal}</span>`;
     allLi.onclick = () => {
         setupDashboardFilter.equip = '';
-        currentGanttFilters.equip = ''; 
+        currentGanttFilters = { site: '', equip: '' }; 
         currentSearchFilters.equip = ''; 
         renderCalendar();
         updateSetupDashboard();

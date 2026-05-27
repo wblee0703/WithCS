@@ -583,6 +583,47 @@
     width: auto !important;
 }
 
+/* 셋업 작업 기록 하단 삭제/저장 버튼 레이아웃 */
+.setup-log-action-buttons {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+}
+
+.setup-log-action-buttons button {
+    flex: 1;
+}
+
+/* 셋업 작업 기록 팝업창 헤더 버튼 레이아웃 */
+.setup-log-footer-buttons {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+    justify-content: flex-start;
+}
+
+.setup-log-footer-buttons h3 {
+    margin-right: auto;
+    margin-bottom: 0;
+}
+
+.setup-log-footer-buttons button {
+    flex: 1;
+}
+
+.setup-log-footer-buttons #btn-save-setup-log-reg {
+    margin-right: auto;
+}
+
+.setup-log-footer-buttons #btn-goto-setup-page,
+.setup-log-footer-buttons #btn-close-setup-log-reg {
+    flex: none !important;
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+    width: auto !important;
+}
+
 /* 모바일 환경에서 셋업 작업 기록 모달 가로 배치 강제 유지 */
 @media (max-width: 950px) {
     .setup-log-form-row {

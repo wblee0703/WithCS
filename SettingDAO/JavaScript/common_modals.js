@@ -1536,7 +1536,7 @@ async function saveDetailChanges() {
                     payload.maint_upserts.push(existingItem);
                     generateDateChangeLog(existingItem, oldDate, idx);
                 } else {
-                    const newId = Date.now() + idx;
+                    const newId = Date.now() + Math.floor(Math.random() * 10000) + idx;
                     const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: code, content: fullContent, spec: spec, date: "", period: (itemType === '정기' ? period : null), scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: itemCost, costType: newCostType, originalLogId: item.originalLogId };
                     data.maint.push(newItem);
                     remainingIds.push(newId);
@@ -1573,7 +1573,7 @@ async function saveDetailChanges() {
                     payload.maint_upserts.push(existing);
                     generateDateChangeLog(existing, oldDate, 0);
                 } else {
-                    const newId = Date.now();
+                    const newId = Date.now() + Math.floor(Math.random() * 10000);
                     const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: '', costType: newCostType, originalLogId: item.originalLogId };
                     data.maint.push(newItem);
                     remainingIds.push(newId);
@@ -1627,7 +1627,7 @@ async function saveDetailChanges() {
                     payload.maint_upserts.push(existing);
                     generateDateChangeLog(existing, oldDate, 0);
                 } else {
-                    const newId = Date.now();
+                    const newId = Date.now() + Math.floor(Math.random() * 10000);
                     const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, costType: newCostType, originalLogId: item.originalLogId };
                     data.maint.push(newItem);
                     remainingIds.push(newId);
@@ -1874,7 +1874,7 @@ async function completeScheduleWork() {
     });
 
     const adminItemsForExtract = JSON.parse(localStorage.getItem('admin_items')) || [];
-    extractedParts.forEach(ep => {
+    extractedParts.forEach((ep, idx) => {
         let realPartName = ep.part;
         let codeName = ep.code;
         let adminMatch = adminItemsForExtract.find(a => a.part === ep.part || a.code === ep.part);
@@ -1885,6 +1885,7 @@ async function completeScheduleWork() {
 
         let existing = data.maint.find(m => {
             if (m.id === ep.sourceId) return false;
+            if (mergedRegItemIds.has(m.id)) return false;
             if (m.type !== '정기' && m.type !== '비정기') return false;
             if (m.originalLogId) return false; // 추가 작업의 임시 데이터는 existing 대상에서 제외하여 원본과 매칭 보장
             if ((m.spec || '') !== (ep.spec || '')) return false;
@@ -1932,7 +1933,7 @@ async function completeScheduleWork() {
                 if (adminMatch) {
                     period = adminMatch.cycle || null;
                 }
-                const newId = Date.now() + Math.floor(Math.random() * 10000);
+                const newId = Date.now() + Math.floor(Math.random() * 10000) + idx;
 
                 const sourceType = sourceItem ? sourceItem.type : '비정기';
                 const sourceDetailType = sourceItem ? sourceItem.detailType : 'BM 점검';
@@ -3888,7 +3889,7 @@ async function confirmRegisterSchedule() {
             }
 
             if (window.currentAddWorkLogId) {
-                const newId = Date.now() + idx;
+                const newId = Date.now() + Math.floor(Math.random() * 10000) + idx;
                 const newMaintItem = {
                     id: newId,
                     type: type,
@@ -3929,7 +3930,7 @@ async function confirmRegisterSchedule() {
                     payload.maint_upserts.push(existingItem);
                 } else {
                     const newItem = {
-                        id: Date.now() + idx,
+                        id: Date.now() + Math.floor(Math.random() * 10000) + idx,
                         type: type,
                         detailType: finalDetailType,
                         code: code,

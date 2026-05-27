@@ -575,7 +575,13 @@ function renderSetupDetailList() {
             const taskLogs = (data.setupLogs || []).filter(l => l.content === item.content);
             const workedDays = new Set(taskLogs.map(l => l.date)).size;
             const estDaysCount = parseInt(item.estDays) || 1;
-            const progressPct = estDaysCount > 0 ? Math.min(100, Math.round((workedDays / estDaysCount) * 100)) : (item.completed ? 100 : 0);
+            
+            let progressPct;
+            if (item.completed) {
+                progressPct = 100;
+            } else {
+                progressPct = estDaysCount > 0 ? Math.min(100, Math.round((workedDays / estDaysCount) * 100)) : 0;
+            }
             
             let progressColor = '#8b949e'; // 기본
             if (workedDays > estDaysCount) progressColor = '#f85149'; // 지연 (빨강)

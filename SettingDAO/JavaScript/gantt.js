@@ -241,7 +241,7 @@ function renderGanttChart() {
         if (wrapper) wrapper.style.display = 'none';
         if (emptyMsg) {
             emptyMsg.style.display = 'block';
-            emptyMsg.textContent = '장비를 검색하면 셋업 일정이 표시됩니다.';
+            emptyMsg.textContent = '장비 정보에서 리스트를 클릭하면 간트뷰 일정이 표시됩니다.';
         }
         return;
     }
@@ -600,11 +600,11 @@ function renderGanttChart() {
                 let pct = 0;
                 const estDaysCount = parseInt(t.estDays) || 1;
                 const wDays = new Set(t.logDates || []).size;
-                if (wDays > 0) {
+                if (t.completed) {
+                    pct = 100;
+                } else if (wDays > 0) {
                     pct = Math.round((wDays / estDaysCount) * 100);
                     if (pct > 100) pct = 100;
-                } else if (t.completed) {
-                    pct = 100;
                 }
 
                 progressSpan.textContent = `${pct}%`;
@@ -991,14 +991,15 @@ function renderGanttChart() {
                 taskLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
                 let targetLog = taskLogs.find(l => l.date === clickedDateStr);
                 
-                // [수정] 빈 공간(다른 일차)을 클릭했을 때는 기존 기록을 수정하는 대신, 추가 기록을 남길 수 있도록 신규 등록 팝업을 띄움
+                // [수정] 해당 작업에 이미 기록이 존재한다면, 빈 칸을 누르더라도 가장 최근의 작업 기록 수정 팝업을 띄움
                 if (targetLog) {
                     if (typeof window.openLogForEditing === 'function') {
                         window.openLogForEditing(site, equip, targetLog.id);
                     }
                 } else {
-                    if (typeof window.openSetupLogRegisterModal === 'function') {
-                        window.openSetupLogRegisterModal(site, equip, taskName, clickedDateStr);
+                    const lastLog = taskLogs[taskLogs.length - 1];
+                    if (typeof window.openLogForEditing === 'function') {
+                        window.openLogForEditing(site, equip, lastLog.id);
                     }
                 }
             } else {

@@ -222,6 +222,17 @@ window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, 
                     // 항목 선택 시, 해당 작업의 기존 완료 상태 불러오기
                     const completeCb = modal.querySelector('#setup-log-reg-complete');
                     if (completeCb) completeCb.checked = !!d.completed;
+                    
+                    const compBtn = modal.querySelector('#btn-setup-log-reg-complete');
+                    if (compBtn) {
+                        if (d.completed) {
+                            compBtn.classList.remove('btn-gray');
+                            compBtn.classList.add('btn-green');
+                        } else {
+                            compBtn.classList.remove('btn-green');
+                            compBtn.classList.add('btn-gray');
+                        }
+                    }
                 };
                 list.appendChild(div);
             });
@@ -259,16 +270,124 @@ window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, 
             taskInput.style.color = '#fff';
         }
     }
+    
+    const dateInput = modal.querySelector('#setup-log-reg-date');
+    let completeBtn = modal.querySelector('#btn-setup-log-reg-complete');
+    
+    if (dateInput && !completeBtn) {
+        const dateRow = dateInput.closest('.form-row') || dateInput.parentNode;
+        if (dateRow) {
+            dateRow.style.display = 'flex';
+            dateRow.style.flexDirection = 'row';
+            dateRow.style.alignItems = 'center';
+            dateRow.style.flexWrap = 'nowrap';
+            const dateLabel = dateRow.querySelector('label');
+            if (dateLabel) {
+                dateLabel.style.width = '80px';
+                dateLabel.style.flexShrink = '0';
+                dateLabel.style.whiteSpace = 'nowrap';
+                dateLabel.style.marginBottom = '0';
+            }
+        }
+        
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'flex';
+        wrapper.style.gap = '5px';
+        wrapper.style.width = '100%';
+        wrapper.style.minWidth = '0';
+        
+        dateInput.parentNode.insertBefore(wrapper, dateInput);
+        wrapper.appendChild(dateInput);
+        dateInput.style.flex = '1';
+        dateInput.style.minWidth = '0';
+        
+        completeBtn = document.createElement('button');
+        completeBtn.id = 'btn-setup-log-reg-complete';
+        completeBtn.type = 'button';
+        completeBtn.className = 'btn-gray';
+        completeBtn.textContent = '완료';
+        completeBtn.style.padding = '0 15px';
+        completeBtn.style.height = '34px';
+        completeBtn.style.fontSize = '13px';
+        completeBtn.style.whiteSpace = 'nowrap';
+        completeBtn.style.borderRadius = '4px';
+        completeBtn.style.cursor = 'pointer';
+        completeBtn.style.flexShrink = '0';
+        
+        completeBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (completeBtn.classList.contains('btn-green')) {
+                completeBtn.classList.remove('btn-green');
+                completeBtn.classList.add('btn-gray');
+            } else {
+                completeBtn.classList.remove('btn-gray');
+                completeBtn.classList.add('btn-green');
+            }
+        };
+        wrapper.appendChild(completeBtn);
+    }
+
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${site}::${equip}`;
+    const data = setupData[equipKey] || {};
+    let isTaskCompleted = false;
+    if (data.setupDetails && taskName) {
+        const taskObj = data.setupDetails.find(t => t.content === taskName);
+        if (taskObj && taskObj.completed) isTaskCompleted = true;
+    } else if (forceComplete) {
+        isTaskCompleted = true;
+    }
+    
+    if (completeBtn) {
+        if (isTaskCompleted) {
+            completeBtn.classList.remove('btn-gray');
+            completeBtn.classList.add('btn-green');
+        } else {
+            completeBtn.classList.remove('btn-green');
+            completeBtn.classList.add('btn-gray');
+        }
+    }
 
     const delBtn = modal.querySelector('#btn-delete-setup-log-reg');
     const saveBtn = modal.querySelector('#btn-save-setup-log-reg');
     
-    // [수정] 하단 버튼 영역을 1:1 비율로 분할하여 버튼 크기 동일하게 맞춤
     if (delBtn && saveBtn && delBtn.parentNode === saveBtn.parentNode) {
-        delBtn.parentNode.style.display = 'flex';
-        delBtn.parentNode.style.gap = '10px';
-        delBtn.style.flex = '1';
-        saveBtn.style.flex = '1';
+        const actionBtnContainer = delBtn.parentNode;
+        actionBtnContainer.classList.add('setup-log-action-buttons');
+        actionBtnContainer.style.display = '';
+        actionBtnContainer.style.gap = '';
+        actionBtnContainer.style.width = '';
+        delBtn.style.flex = '';
+        saveBtn.style.flex = '';
+    }
+
+    // [추가] 장비 이동 버튼 추가 및 하단 버튼 레이아웃 전체 조정
+    const closeBtn = modal.querySelector('#btn-close-setup-log-reg');
+    if (closeBtn && closeBtn.parentNode) {
+        const buttonContainer = closeBtn.parentNode;
+        
+        buttonContainer.classList.add('setup-log-footer-buttons');
+        buttonContainer.style.display = '';
+        buttonContainer.style.gap = '';
+        Array.from(buttonContainer.children).forEach(btn => { if (btn.tagName === 'BUTTON') btn.style.flex = ''; });
+
+        let gotoBtn = buttonContainer.querySelector('#btn-goto-setup-page');
+        if (!gotoBtn) {
+            gotoBtn = document.createElement('button');
+            gotoBtn.id = 'btn-goto-setup-page';
+            gotoBtn.type = 'button';
+            gotoBtn.className = 'btn-gray';
+            gotoBtn.textContent = '장비 이동';
+            
+            gotoBtn.onclick = () => {
+                const currentSite = modal.querySelector('#setup-log-reg-site').value;
+                const currentEquip = modal.querySelector('#setup-log-reg-equip').value;
+                if (currentSite && currentEquip) {
+                    window.location.href = `setup.html?site=${encodeURIComponent(currentSite)}&equip=${encodeURIComponent(currentEquip)}`;
+                }
+            };
+            buttonContainer.insertBefore(gotoBtn, closeBtn);
+        }
     }
     if (delBtn) delBtn.style.display = 'none'; // 신규 등록 시에는 삭제 버튼 숨김
     
@@ -334,18 +453,122 @@ window.openLogForEditing = function(site, equip, logId) {
     if (idInput) idInput.value = logId;
     modal.querySelector('#setup-log-reg-date').value = log.date;
     modal.querySelector('#setup-log-reg-task').value = log.content;
+    
+    const dateInput = modal.querySelector('#setup-log-reg-date');
+    let completeBtn = modal.querySelector('#btn-setup-log-reg-complete');
+    
+    if (dateInput && !completeBtn) {
+        const dateRow = dateInput.closest('.form-row') || dateInput.parentNode;
+        if (dateRow) {
+            dateRow.style.display = 'flex';
+            dateRow.style.flexDirection = 'row';
+            dateRow.style.alignItems = 'center';
+            dateRow.style.flexWrap = 'nowrap';
+            const dateLabel = dateRow.querySelector('label');
+            if (dateLabel) {
+                dateLabel.style.width = '80px';
+                dateLabel.style.flexShrink = '0';
+                dateLabel.style.whiteSpace = 'nowrap';
+                dateLabel.style.marginBottom = '0';
+            }
+        }
+        
+        const wrapper = document.createElement('div');
+        wrapper.style.display = 'flex';
+        wrapper.style.gap = '5px';
+        wrapper.style.width = '100%';
+        wrapper.style.minWidth = '0';
+        
+        dateInput.parentNode.insertBefore(wrapper, dateInput);
+        wrapper.appendChild(dateInput);
+        dateInput.style.flex = '1';
+        dateInput.style.minWidth = '0';
+        
+        completeBtn = document.createElement('button');
+        completeBtn.id = 'btn-setup-log-reg-complete';
+        completeBtn.type = 'button';
+        completeBtn.className = 'btn-gray';
+        completeBtn.textContent = '완료';
+        completeBtn.style.padding = '0 15px';
+        completeBtn.style.height = '34px';
+        completeBtn.style.fontSize = '13px';
+        completeBtn.style.whiteSpace = 'nowrap';
+        completeBtn.style.borderRadius = '4px';
+        completeBtn.style.cursor = 'pointer';
+        completeBtn.style.flexShrink = '0';
+        
+        completeBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (completeBtn.classList.contains('btn-green')) {
+                completeBtn.classList.remove('btn-green');
+                completeBtn.classList.add('btn-gray');
+            } else {
+                completeBtn.classList.remove('btn-gray');
+                completeBtn.classList.add('btn-green');
+            }
+        };
+        wrapper.appendChild(completeBtn);
+    }
+
+    let isTaskCompleted = false;
+    if (setupData[equipKey] && setupData[equipKey].setupDetails) {
+        const taskObj = setupData[equipKey].setupDetails.find(t => t.content === log.content);
+        if (taskObj && taskObj.completed) isTaskCompleted = true;
+    }
+    
+    if (completeBtn) {
+        if (isTaskCompleted) {
+            completeBtn.classList.remove('btn-gray');
+            completeBtn.classList.add('btn-green');
+        } else {
+            completeBtn.classList.remove('btn-green');
+            completeBtn.classList.add('btn-gray');
+        }
+    }
+
     const memoInput = modal.querySelector('#setup-log-reg-memo');
     if (memoInput) memoInput.value = log.memo || '';
 
     const delBtn = modal.querySelector('#btn-delete-setup-log-reg');
     const saveBtn = modal.querySelector('#btn-save-setup-log-reg');
     
-    // [수정] 하단 버튼 영역을 1:1 비율로 분할하여 버튼 크기 동일하게 맞춤
     if (delBtn && saveBtn && delBtn.parentNode === saveBtn.parentNode) {
-        delBtn.parentNode.style.display = 'flex';
-        delBtn.parentNode.style.gap = '10px';
-        delBtn.style.flex = '1';
-        saveBtn.style.flex = '1';
+        const actionBtnContainer = delBtn.parentNode;
+        actionBtnContainer.classList.add('setup-log-action-buttons');
+        actionBtnContainer.style.display = '';
+        actionBtnContainer.style.gap = '';
+        actionBtnContainer.style.width = '';
+        delBtn.style.flex = '';
+        saveBtn.style.flex = '';
+    }
+
+    // [추가] 장비 이동 버튼 추가 및 하단 버튼 레이아웃 전체 조정
+    const closeBtn = modal.querySelector('#btn-close-setup-log-reg');
+    if (closeBtn && closeBtn.parentNode) {
+        const buttonContainer = closeBtn.parentNode;
+        
+        buttonContainer.classList.add('setup-log-footer-buttons');
+        buttonContainer.style.display = '';
+        buttonContainer.style.gap = '';
+        Array.from(buttonContainer.children).forEach(btn => { if (btn.tagName === 'BUTTON') btn.style.flex = ''; });
+
+        let gotoBtn = buttonContainer.querySelector('#btn-goto-setup-page');
+        if (!gotoBtn) {
+            gotoBtn = document.createElement('button');
+            gotoBtn.id = 'btn-goto-setup-page';
+            gotoBtn.type = 'button';
+            gotoBtn.className = 'btn-gray';
+            gotoBtn.textContent = '장비 이동';
+            
+            gotoBtn.onclick = () => {
+                const currentSite = modal.querySelector('#setup-log-reg-site').value;
+                const currentEquip = modal.querySelector('#setup-log-reg-equip').value;
+                if (currentSite && currentEquip) {
+                    window.location.href = `setup.html?site=${encodeURIComponent(currentSite)}&equip=${encodeURIComponent(currentEquip)}`;
+                }
+            };
+            buttonContainer.insertBefore(gotoBtn, closeBtn);
+        }
     }
     if (delBtn) {
         delBtn.style.display = 'block'; // 플렉스 아이템으로 표시되도록 block으로 변경
@@ -636,7 +859,7 @@ function setupSetupLogRegPartDropdown(modalContext, site, equip, presetParts = '
 }
 
 // [추가] 셋업 작업 상태(진행률, 시작/완료일) 자동 재계산 유틸리티
-function recalculateSetupTaskStatus(data, taskContent, site = null, equip = null) {
+function recalculateSetupTaskStatus(data, taskContent, site = null, equip = null, isManualCompleted = null) {
     if (!data.setupDetails) return false;
     const task = data.setupDetails.find(t => t.content === taskContent);
     if (!task) return false;
@@ -656,12 +879,20 @@ function recalculateSetupTaskStatus(data, taskContent, site = null, equip = null
         const workedDays = new Set(taskLogs.map(l => l.date)).size;
         const estDays = parseInt(task.estDays) || 1;
 
-        if (workedDays >= estDays) {
+        if (isManualCompleted === true) {
             task.completed = true;
-            task.date = taskLogs[taskLogs.length - 1].date; // 가장 마지막 로그 날짜를 완료일로
-        } else {
+            task.date = taskLogs[taskLogs.length - 1].date;
+        } else if (isManualCompleted === false) {
             task.completed = false;
             task.date = "";
+        } else {
+            if (workedDays >= estDays) {
+                task.completed = true;
+                task.date = taskLogs[taskLogs.length - 1].date; // 가장 마지막 로그 날짜를 완료일로
+            } else {
+                task.completed = false;
+                task.date = "";
+            }
         }
     }
 
@@ -1213,6 +1444,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const parts = modal.querySelector('#setup-log-reg-part-hidden') ? modal.querySelector('#setup-log-reg-part-hidden').value : '';
             const logId = modal.querySelector('#setup-log-reg-id') ? modal.querySelector('#setup-log-reg-id').value : ''; // 수정 모드 식별자
             
+            const completeBtn = modal.querySelector('#btn-setup-log-reg-complete');
+            const isManualCompleted = completeBtn ? completeBtn.classList.contains('btn-green') : null;
+            
             if(!date || !worker || !md || !task) return alert('작업일, 작업명, 작업자, 공수를 모두 입력해주세요.');
             
             const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
@@ -1250,7 +1484,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // [개선] 셋업 로그 기록 수에 따라 완료/지연 상태를 자동 재계산
-            const setupDetailsUpdated = recalculateSetupTaskStatus(data, task, site, equip);
+            const setupDetailsUpdated = recalculateSetupTaskStatus(data, task, site, equip, isManualCompleted);
 
             setupData[equipKey] = data;
             localStorage.setItem('setup_data', JSON.stringify(setupData));
