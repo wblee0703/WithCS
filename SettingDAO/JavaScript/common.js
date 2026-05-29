@@ -399,7 +399,7 @@ async function migrateDataFormat() {
     }
 
     // [개선] 유지관리 물품(maint) 등에 잘못 삽입된 비용처리 라벨 일괄 제거 마이그레이션
-    const migrationVersion = 'v1.8'; // 마이그레이션 버전 업데이트 (비용 라벨 재오염 클렌징)
+    const migrationVersion = 'v1.9'; // 마이그레이션 버전 업데이트 (비용 라벨 무상(보증) 포함 클렌징)
     const lastMigration = localStorage.getItem('keywordMigrationVersion');
 
     if (lastMigration !== migrationVersion) {
@@ -445,27 +445,35 @@ async function migrateDataFormat() {
 
                                     if (arrKey === 'logs') {
                                         // 완료된 로그(logs)에는 비용처리 라벨을 유지/추가
-                                        if (generalCost && !item.content.includes(`[${generalCost}]`) && !item.content.match(/\[(유상|무상|기타)\]/)) {
-                                            if (!item.content.startsWith('[변경]')) {
-                                                const itemsArr = item.content.split(',').map(s => s.trim());
-                                                const formattedArr = itemsArr.map(partStr => {
-                                                    if (partStr.match(/\[(유상|무상|기타)\]/)) return partStr;
-                                                    const kwMatch = partStr.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
-                                                    if (kwMatch) return `${kwMatch[1].trim()} - [${generalCost}] ${kwMatch[2].trim()}`;
-                                                    return `[${generalCost}] ${partStr}`;
-                                                });
-                                                item.content = formattedArr.join(', ');
-                                            }
-                                        }
-                                    } else if (arrKey === 'maint') {
-                                        // 예정된 유지관리(maint) 데이터에는 비용 라벨이 있으면 안됨 -> 제거
-                                        if (item.content.match(/\[(유상|무상|기타)\]/)) {
+                                        if (!item.content.startsWith('[변경]')) {
                                             const itemsArr = item.content.split(',').map(s => s.trim());
                                             const formattedArr = itemsArr.map(partStr => {
                                                 let cleanV = partStr;
-                                                const m1 = cleanV.match(/^\[(유상|무상|기타)\]\s*(.*)$/);
+                                                
+                                                // 중복 태그 오염 클렌징: [유상] 파트 이상 교체 - [무상(보증)] A 형태일 때 앞의 불필요한 태그 제거
+                                                const doubleTagMatch = cleanV.match(/^\[(?:유상|무상[^\]]*|기타)\]\s*(.*?\s*-\s*\[(?:유상|무상[^\]]*|기타)\].*)$/);
+                                                if (doubleTagMatch) {
+                                                    cleanV = doubleTagMatch[1];
+                                                }
+                                                
+                                                if (generalCost && !cleanV.match(/\[(유상|무상[^\]]*|기타)\]/)) {
+                                                    const kwMatch = cleanV.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+                                                    if (kwMatch) return `${kwMatch[1].trim()} - [${generalCost}] ${kwMatch[2].trim()}`;
+                                                    return `[${generalCost}] ${cleanV}`;
+                                                }
+                                                return cleanV;
+                                            });
+                                            item.content = formattedArr.join(', ');
+                                        }
+                                    } else if (arrKey === 'maint') {
+                                        // 예정된 유지관리(maint) 데이터에는 비용 라벨이 있으면 안됨 -> 제거
+                                        if (item.content.match(/\[(유상|무상[^\]]*|기타)\]/)) {
+                                            const itemsArr = item.content.split(',').map(s => s.trim());
+                                            const formattedArr = itemsArr.map(partStr => {
+                                                let cleanV = partStr;
+                                                const m1 = cleanV.match(/^\[(유상|무상[^\]]*|기타)\]\s*(.*)$/);
                                                 if (m1) cleanV = m1[2];
-                                                const m2 = cleanV.match(/^(.*?)\s*-\s*\[(유상|무상|기타)\]\s*(.*)$/);
+                                                const m2 = cleanV.match(/^(.*?)\s*-\s*\[(유상|무상[^\]]*|기타)\]\s*(.*)$/);
                                                 if (m2) cleanV = `${m2[1]} - ${m2[3]}`;
                                                 return cleanV;
                                             });
@@ -500,9 +508,9 @@ async function migrateDataFormat() {
                     const removeCostLabel = (str) => {
                         if (typeof str !== 'string') return str;
                         let cleanV = str;
-                        const m1 = cleanV.match(/^\[(유상|무상|기타)\]\s*(.*)$/);
+                        const m1 = cleanV.match(/^\[(유상|무상[^\]]*|기타)\]\s*(.*)$/);
                         if (m1) cleanV = m1[2];
-                        const m2 = cleanV.match(/^(.*?)\s*-\s*\[(유상|무상|기타)\]\s*(.*)$/);
+                        const m2 = cleanV.match(/^(.*?)\s*-\s*\[(유상|무상[^\]]*|기타)\]\s*(.*)$/);
                         if (m2) cleanV = `${m2[1]} - ${m2[3]}`;
                         return cleanV;
                     };
@@ -4059,7 +4067,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
         }
 
         // [추가] 오염된 텍스트 정제
-        pureContent = pureContent.replace(/\[(유상|무상|기타)\]/g, '').trim();
+            pureContent = pureContent.replace(/\[(유상|무상[^\]]*|기타)\]/g, '').trim();
         pureContent = pureContent.replace(/\s*-\s*$/, '').trim();
 
         const partKeywords = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리', '파트 이상 (교체)', '파츠 이상 교체', '파트 이상', '파츠 이상'];

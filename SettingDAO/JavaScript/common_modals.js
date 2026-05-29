@@ -724,7 +724,7 @@ function buildDetailDropdown(item, site, equip) {
                 // [추가] 오염된 텍스트 정제 (비용 태그 등)
                 const costMatch = pureContent.match(/^\[(.*?)\]\s*(.*)$/);
                 if (costMatch) pureContent = costMatch[2];
-                pureContent = pureContent.replace(/\[(유상|무상|기타)\]/g, '').trim();
+                pureContent = pureContent.replace(/\[(유상|무상[^\]]*|기타)\]/g, '').trim();
                 pureContent = pureContent.replace(/\s*-\s*$/, '').trim();
 
                 if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
