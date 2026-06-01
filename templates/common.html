@@ -48,6 +48,8 @@
                             class="{% if active_page == 'setup' %}active{% endif %}">SETUP</a></li>
                     <li><a href="{{ url_for('maintenance') }}"
                             class="{% if active_page == 'maintenance' %}active{% endif %}">MAINT</a></li>
+                    <li><a href="{{ url_for('trouble') }}"
+                            class="{% if active_page == 'trouble' %}active{% endif %}">TROUBLE</a></li>
                     <li><a href="{{ url_for('sort') }}" class="{% if active_page == 'sort' %}active{% endif %}">SORT</a>
                     </li>
                     <li class="nav-admin-item" style="display: none;"><a href="{{ url_for('admin') }}"
@@ -80,8 +82,8 @@
             <span id="user-info" class="user-info" style="display: none;"></span>
             <button id="btn-header-view-logs" class="btn-gray" style="display: none;" onclick="openLogModal()">📜 시스템
                 로그</button>
-            <button id="btn-login-logout" class="btn-gray">로그인</button>
             <button id="btn-user-settings" class="btn-gray" style="display: none;">⚙️ 설정</button>
+            <button id="btn-login-logout" class="btn-gray">로그인</button>
         </div>
     </header>
 

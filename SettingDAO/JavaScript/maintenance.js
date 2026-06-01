@@ -29,6 +29,8 @@ let originalWorker = "";
 let originalIssueShared = false;
 let originalMd = "";
 let originalCostType = "";
+let originalStartTime = "";
+let originalEndTime = "";
 
 // [추가] 에러 테두리 제거 헬퍼 함수
 if (typeof window.removeErrorBorder !== 'function') {
@@ -331,6 +333,38 @@ function setupLogEvents() {
                 this.value = workerCount;
             }
         });
+    }
+
+    const memoStartTimeInput = document.getElementById('memo-start-time');
+    const memoEndTimeInput = document.getElementById('memo-end-time');
+    const memoSaveBtn = document.getElementById('btn-save-memo');
+
+    const handleTimeChange = () => {
+        if (!selectedLogId) return;
+        const currentStart = memoStartTimeInput ? memoStartTimeInput.value : "";
+        const currentEnd = memoEndTimeInput ? memoEndTimeInput.value : "";
+
+        if (currentStart !== originalStartTime || currentEnd !== originalEndTime) {
+            if (memoSaveBtn) {
+                memoSaveBtn.classList.remove('btn-green-sm');
+                memoSaveBtn.classList.add('btn-orange-sm');
+            }
+        } else {
+            if (memoSaveBtn) {
+                memoSaveBtn.classList.remove('btn-orange-sm');
+                memoSaveBtn.classList.add('btn-green-sm');
+            }
+        }
+
+        // [추가] 시작/종료일시 변경 시 작업시간 계산 및 표시
+        calculateAndDisplayDuration();
+    };
+
+    if (memoStartTimeInput) memoStartTimeInput.addEventListener('input', handleTimeChange);
+    if (memoEndTimeInput) memoEndTimeInput.addEventListener('input', handleTimeChange);
+
+    if (memoSaveBtn) {
+        memoSaveBtn.addEventListener('click', saveMemoTimes);
     }
 
     // [추가] 초기에는 메모 영역 전체 비활성화 (톱니바퀴로 활성화)
@@ -944,9 +978,52 @@ function handleMaintReorder() {
    3. 점검 이력 및 메모 (Inspection Logs & Memo)
    ========================================================================== */
 
+// [추가] 작업 시간(Duration) 계산 및 표시 함수
+function calculateAndDisplayDuration() {
+    const startInput = document.getElementById('memo-start-time');
+    const endInput = document.getElementById('memo-end-time');
+    const durationDisplay = document.getElementById('memo-time-duration');
+    
+    if (!startInput || !endInput || !durationDisplay) return;
+
+    const startVal = startInput.value;
+    const endVal = endInput.value;
+
+    if (startVal && endVal) {
+        const startTime = new Date(startVal);
+        const endTime = new Date(endVal);
+        const diffMs = endTime - startTime;
+
+        if (diffMs < 0) {
+            durationDisplay.textContent = "(종료일시 오류)";
+            durationDisplay.style.color = "#f85149";
+        } else {
+            const diffMins = Math.floor(diffMs / 60000);
+            const hours = Math.floor(diffMins / 60);
+            const mins = diffMins % 60;
+            
+            let durationText = "";
+            if (hours > 0) durationText += `${hours}시간 `;
+            if (mins > 0 || hours === 0) durationText += `${mins}분`;
+            
+            durationDisplay.textContent = `(작업시간: ${durationText.trim()})`;
+            durationDisplay.style.color = "#58a6ff";
+        }
+    } else {
+        durationDisplay.textContent = "";
+    }
+}
+
 // [추가] 다른 작업 수행 전, 저장되지 않은 메모 변경사항을 확인하고 처리하는 함수
 function checkMemoUnsavedChanges() {
-    // 점검 이력은 모두 완료처리된 작업이므로(읽기 전용) 저장 변경사항 확인할 필요 없음
+    const memoStartTimeInput = document.getElementById('memo-start-time');
+    const memoEndTimeInput = document.getElementById('memo-end-time');
+    
+    if (memoStartTimeInput && memoEndTimeInput) {
+        if (memoStartTimeInput.value !== originalStartTime || memoEndTimeInput.value !== originalEndTime) {
+            return confirm('저장되지 않은 시작/종료 일시가 있습니다. 무시하고 이동하시겠습니까?');
+        }
+    }
     return true;
 }
 
@@ -1129,7 +1206,7 @@ function renderLogs() {
 function selectLog(id, focus = true) {
     // 다른 로그 선택 시 저장되지 않은 메모 확인
     if (selectedLogId !== null && selectedLogId !== id) {
-        checkMemoUnsavedChanges();
+        if (!checkMemoUnsavedChanges()) return;
     }
 
     // 이미 선택된 항목을 다시 클릭하면 무시
@@ -1156,6 +1233,8 @@ function selectLog(id, focus = true) {
         const worker = logItem.worker || "";
         const md = logItem.md || "";
         const costType = logItem.costType || "유상";
+        const startTime = logItem.startTime || "";
+        const endTime = logItem.endTime || "";
 
         document.getElementById('device-memo').value = memo;
         const workerInput = document.getElementById('memo-worker');
@@ -1176,10 +1255,28 @@ function selectLog(id, focus = true) {
         const memoCostTypeInput = document.getElementById('memo-cost-type');
         if (memoCostTypeInput) memoCostTypeInput.value = costType;
 
+        const memoStartTimeInput = document.getElementById('memo-start-time');
+        if (memoStartTimeInput) memoStartTimeInput.value = startTime;
+        
+        const memoEndTimeInput = document.getElementById('memo-end-time');
+        if (memoEndTimeInput) memoEndTimeInput.value = endTime;
+
         originalMemo = memo; // 원본 저장
         originalWorker = worker; // 원본 저장
         originalMd = md;
         originalCostType = costType;
+        originalStartTime = startTime;
+        originalEndTime = endTime;
+
+        // [추가] 기존 이력 선택 시 작업시간 계산 및 표시
+        calculateAndDisplayDuration();
+
+        const memoSaveBtn = document.getElementById('btn-save-memo');
+        if (memoSaveBtn) {
+            memoSaveBtn.style.display = 'inline-block';
+            memoSaveBtn.classList.remove('btn-orange-sm');
+            memoSaveBtn.classList.add('btn-green-sm');
+        }
 
         // 항상 읽기 전용(잠금) 상태 유지
         setMemoFieldsDisabled(true);
@@ -1347,6 +1444,50 @@ function selectLog(id, focus = true) {
             } else {
                 partsList.innerHTML = '<li style="padding:20px; text-align:center; color:#8b949e; font-size:12px;">교체(사용)된 등록 물품 없음</li>';
             }
+        }
+    }
+}
+
+// [추가] 시작일시/종료일시 저장 로직
+async function saveMemoTimes() {
+    if (!selectedLogId) return;
+
+    const memoStartTimeInput = document.getElementById('memo-start-time');
+    const memoEndTimeInput = document.getElementById('memo-end-time');
+    
+    const newStart = memoStartTimeInput ? memoStartTimeInput.value : "";
+    const newEnd = memoEndTimeInput ? memoEndTimeInput.value : "";
+
+    const key = `details_${currentPath.site}_${currentPath.equip}`;
+    let data = JSON.parse(localStorage.getItem(key));
+    
+    if (data && data.logs) {
+        const logIndex = data.logs.findIndex(l => l.id === selectedLogId);
+        if (logIndex > -1) {
+            data.logs[logIndex].startTime = newStart;
+            data.logs[logIndex].endTime = newEnd;
+            
+            if (typeof window.syncHistoryTransaction === 'function') {
+                const success = await window.syncHistoryTransaction(currentPath.site, currentPath.equip, { log_upserts: [data.logs[logIndex]] });
+                if (!success) return;
+            }
+            
+            localStorage.setItem(key, JSON.stringify(data));
+            
+            originalStartTime = newStart;
+            originalEndTime = newEnd;
+            
+            const memoSaveBtn = document.getElementById('btn-save-memo');
+            if (memoSaveBtn) {
+                memoSaveBtn.classList.remove('btn-orange-sm');
+                memoSaveBtn.classList.add('btn-green-sm');
+            }
+            
+            if (typeof addSystemLog === 'function') {
+                addSystemLog('UPDATE_LOG_TIME', currentPath.equip, `시작/종료 일시 수정 (LogID: ${selectedLogId})`);
+            }
+            
+            alert('시간 정보가 저장되었습니다.');
         }
     }
 }

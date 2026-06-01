@@ -1454,3 +1454,12 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* 달력/시간 아이콘 스타일 (회색 계열) */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="month"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator,
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+    cursor: pointer;
+}

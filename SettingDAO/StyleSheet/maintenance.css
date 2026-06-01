@@ -550,7 +550,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .memo-worker-wrapper {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px 10px;
     margin-bottom: 10px;
     flex-wrap: wrap;
 }
@@ -695,6 +695,54 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* [요청] 카드 접기 버튼 데스크탑 숨김 */
 .btn-collapse {
     display: none;
+}
+
+/* ==========================================================================
+   작업 내용 (Memo) 시간 입력 및 헤더 스타일
+   ========================================================================== */
+.memo-header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#btn-save-memo {
+    display: none;
+}
+
+.memo-row-time {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    margin-top: 0;
+    gap: 15px; /* Space between time groups and duration */
+}
+
+.memo-time-group {
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Space between label and input */
+}
+
+.memo-row-time label {
+    color: #8b949e;
+    font-size: 13px;
+    min-width: 50px;
+}
+
+.memo-time-input {
+    width: 200px;
+    height: 30px;
+    font-size: 12px;
+    padding: 0 8px;
+}
+
+.memo-time-duration {
+    margin-left: 10px;
+    color: #58a6ff;
+    font-size: 13px;
+    font-weight: bold;
+    white-space: nowrap;
 }
 
 /* ==========================================================
@@ -1027,6 +1075,24 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         flex: 0 1 auto !important; /* 고정 너비(280px) 무시 */
         width: 100% !important;    /* 가로 꽉 차게 변경 */
         max-height: 200px !important; /* 스크롤 가능하도록 최대 높이 지정 */
+    }
+
+    /* [추가] 모바일에서 시작/종료일시 입력창 세로 배치 및 여백 조정 */
+    #memo-time-inputs-wrapper {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .memo-time-group {
+        gap: 10px; /* 모바일에서 라벨과 입력창 사이 여백 증가 */
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .memo-time-input {
+        flex-grow: 0 !important;
+        width: 210px !important;
     }
 }
 

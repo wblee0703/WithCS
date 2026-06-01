@@ -225,6 +225,55 @@
                 </div>
             </div>
         </div>
+        
+        <!-- [추가] 장비 이력 팝업 모달 -->
+        <div id="sort-history-modal" class="modal-overlay" style="display: none; z-index: 10000;">
+            <div class="modal-window" style="width: 800px; height: 600px; max-height: 90vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h3 id="sort-history-title">장비 점검 이력</h3>
+                    <button class="btn-close-transparent" onclick="document.getElementById('sort-history-modal').style.display='none'">✕</button>
+                </div>
+                <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; overflow: hidden; flex: 1;">
+                    <div class="data-table-wrapper" style="flex: 1; overflow-y: auto; overflow-x: auto;">
+                        <table class="data-table" style="min-width: 700px;">
+                            <thead>
+                                <tr>
+                                    <th style="width: 100px;">날짜</th>
+                                    <th style="width: 80px;">구분</th>
+                                    <th style="width: 180px;">세부구분</th>
+                                    <th style="width: auto;">작업내용 (물품)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sort-history-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- [추가] 작업 상세 내용 팝업 모달 -->
+        <div id="sort-detail-modal" class="modal-overlay" style="display: none; z-index: 10001;">
+            <div class="modal-window" style="width: 500px; height: 650px; max-height: 90vh; display: flex; flex-direction: column;">
+                <div class="modal-header">
+                    <h3>작업 상세 내용</h3>
+                    <button class="btn-close-transparent" onclick="document.getElementById('sort-detail-modal').style.display='none'">✕</button>
+                </div>
+                <div class="modal-body" style="padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;">
+                    <div class="form-row" style="display: flex; align-items: center; gap: 10px; margin-bottom: 0;"><label class="form-label-custom" style="width: 80px; margin: 0;">장비명</label><input type="text" id="sort-detail-equip" class="input-dark flex-1" readonly></div>
+                    <div class="form-row" style="display: flex; align-items: center; gap: 10px; margin-bottom: 0;"><label class="form-label-custom" style="width: 80px; margin: 0;">날짜</label><input type="text" id="sort-detail-date" class="input-dark flex-1" readonly></div>
+                    <div class="form-row" style="display: flex; align-items: center; gap: 10px; margin-bottom: 0;"><label class="form-label-custom" style="width: 80px; margin: 0;">작업 구분</label><input type="text" id="sort-detail-type" class="input-dark flex-1" readonly></div>
+                    <div class="form-row" style="display: flex; align-items: center; gap: 10px; margin-bottom: 0;"><label class="form-label-custom" style="width: 80px; margin: 0;">작업 내용</label><input type="text" id="sort-detail-content" class="input-dark flex-1" readonly></div>
+                    <div class="form-row" style="display: flex; align-items: center; gap: 10px; margin-bottom: 0;"><label class="form-label-custom" style="width: 80px; margin: 0;">비용 처리</label><input type="text" id="sort-detail-cost" class="input-dark flex-1" readonly></div>
+                    <div class="form-row" style="display: flex; align-items: center; gap: 10px; margin-bottom: 0;"><label class="form-label-custom" style="width: 80px; margin: 0;">작업자</label><input type="text" id="sort-detail-worker" class="input-dark flex-1" readonly><label class="form-label-custom" style="width: 40px; text-align: right; margin: 0;">공수</label><input type="text" id="sort-detail-md" class="input-dark" style="width: 60px;" readonly></div>
+                    <div class="form-row" style="display: flex; flex-direction: column; align-items: stretch; margin-top: 10px; margin-bottom: 0; flex: 1;">
+                        <label class="form-label-custom" style="margin-bottom: 5px;">세부 내용 (메모)</label>
+                        <textarea id="sort-detail-memo" class="input-dark" style="flex: 1; resize: none; min-height: 200px;" readonly></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- === [추가] 자바스크립트 렌더링용 HTML 템플릿 모음 === -->
         <template id="sort-multi-select-template">
             <div class="log-select-wrapper full-width sort-wrapper">

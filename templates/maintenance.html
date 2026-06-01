@@ -140,8 +140,9 @@
                         </div>
                         <div class="resizer-vertical" id="log-memo-resizer"></div>
                         <div class="memo-section">
-                            <div class="memo-header">
+                            <div class="memo-header memo-header-flex">
                                 <h4 class="memo-title">작업 내용</h4>
+                                <button class="btn-green-sm" id="btn-save-memo">저장</button>
                             </div>
                             <div id="memo-worker-wrapper" class="memo-worker-wrapper">
                                 <div class="memo-row-top">
@@ -168,6 +169,17 @@
                                         </div>
                                     </div>
                                     <input type="hidden" id="memo-worker" value="">
+                                </div>
+                                <div class="memo-row-time" id="memo-time-inputs-wrapper">
+                                    <div class="memo-time-group">
+                                        <label for="memo-start-time">시작일시</label>
+                                        <input type="datetime-local" id="memo-start-time" class="input-dark memo-time-input">
+                                    </div>
+                                    <div class="memo-time-group">
+                                        <label for="memo-end-time">종료일시</label>
+                                        <input type="datetime-local" id="memo-end-time" class="input-dark memo-time-input">
+                                        <span id="memo-time-duration" class="memo-time-duration"></span>
+                                    </div>
                                 </div>
                             </div>
                             <textarea id="device-memo" placeholder="상세 내용을 입력하세요." class="memo-textarea"></textarea>

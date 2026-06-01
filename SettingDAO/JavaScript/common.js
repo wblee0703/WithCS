@@ -721,6 +721,16 @@ function initializeApp() {
         if (btn.textContent.trim() === 'PM') btn.textContent = '정기';
     });
 
+    // [추가] 헤더 우측 상단 메뉴 2줄 배치를 위한 강제 줄바꿈 요소 삽입
+    const userControls = document.querySelector('.user-controls');
+    const userInfo = document.getElementById('user-info');
+    if (userControls && userInfo && !document.getElementById('header-flex-break')) {
+        const breakEl = document.createElement('div');
+        breakEl.id = 'header-flex-break';
+        breakEl.style.cssText = 'flex-basis: 100%; height: 0; margin: 0; padding: 0;';
+        userInfo.parentNode.insertBefore(breakEl, userInfo.nextSibling);
+    }
+
     // [추가] 전역 자동완성 차단 및 라벨(Label) 웹 접근성 경고 82건 일괄 해결
     applyGlobalAccessibilityAndSecurityFixes();
 
@@ -1709,9 +1719,11 @@ function checkLoginStatus() {
     if (mobileNav) {
         const setupLink = mobileNav.querySelector('a[href*="setup"]');
         const maintLink = mobileNav.querySelector('a[href*="maintenance"]');
+        const troubleLink = mobileNav.querySelector('a[href*="trouble"]');
         const sortLink = mobileNav.querySelector('a[href*="sort"]');
         if (setupLink) setupLink.style.display = isLoggedIn ? 'block' : 'none';
         if (maintLink) maintLink.style.display = isLoggedIn ? 'block' : 'none';
+        if (troubleLink) troubleLink.style.display = isLoggedIn ? 'block' : 'none';
         if (sortLink) sortLink.style.display = isLoggedIn ? 'block' : 'none';
     }
 }

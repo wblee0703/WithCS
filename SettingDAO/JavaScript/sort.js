@@ -1399,7 +1399,7 @@ function performSortSearch() {
                         const pureContent = itemObj.content || itemObj.code || '';
 
                         const workerText = itemObj.worker || '';
-                        
+
                         let baseParsedCostType = '';
                         const baseCostMatch = pureContent.match(/\[(.*?)\]/);
                         if (baseCostMatch) baseParsedCostType = baseCostMatch[1];
@@ -1474,7 +1474,7 @@ function performSortSearch() {
                                     // 선택 해제된 항목이 사업장명('기타사업장' 등)과 같은 다른 메타데이터와 겹쳐서 필터링을 우회하는 현상 차단
                                     const globalSearchTarget = `${rawItem} ${cleanContent} ${itemKeywords} ${itemCostType} ${itemDt} ${rowSearchTargetBase}`.toLowerCase();
                                     const itemSpecificTarget = `${rawItem} ${cleanContent} ${itemKeywords} ${itemCostType} ${itemDt}`.toLowerCase();
-                                    
+
                                     if (manualKeyword) {
                                         const kws = manualKeyword.split(/\s+/);
                                         if (!kws.every(kw => globalSearchTarget.includes(kw))) {
@@ -1497,11 +1497,11 @@ function performSortSearch() {
                         if (matchedRawItems.length === 0) return false;
 
                         if (!matchedItemDetailType) matchedItemDetailType = '미지정';
-                        
+
                         let finalCostType = rowCostType;
                         const firstMatchedCostMatch = matchedRawItems[0].match(/^\[(.*?)\]/);
                         if (firstMatchedCostMatch) finalCostType = firstMatchedCostMatch[1];
-                        
+
                         let finalContent = matchedRawItems.join(', ');
 
                         return {
@@ -1539,20 +1539,64 @@ function performSortSearch() {
                     });
                 }
 
-                // 2. Maint (캘린더 예정 작업 추출)
-                if (detailData.maint) {
-                    detailData.maint.forEach(m => {
-                        // 중복 체크 (해당 일자에 이미 로그로 완료 처리된 항목은 예정에서 제외)
-                        const isDone = detailData.logs && detailData.logs.some(l => l.date === m.scheduledDate && (l.content || '').includes(m.content || ''));
-                        if (isDone) return;
-
-                        const res = checkItemMatch(m, false);
-                        if (res) results.push(res);
-                    });
-                }
+                // [수정] SORT 검색 결과에는 '완료'된 작업만 표시되도록 예정 작업(Maint) 추출 부분 제외
+                // // 2. Maint (캘린더 예정 작업 추출)
+                // if (detailData.maint) {
+                //     detailData.maint.forEach(m => {
+                //         // 중복 체크 (해당 일자에 이미 로그로 완료 처리된 항목은 예정에서 제외)
+                //         const isDone = detailData.logs && detailData.logs.some(l => l.date === m.scheduledDate && (l.content || '').includes(m.content || ''));
+                //         if (isDone) return;
+                // 
+                //         const res = checkItemMatch(m, false);
+                //         if (res) results.push(res);
+                //     });
+                // }
             });
         }
     });
+
+    // [추가] 장비, 날짜, 상태, 구분, 세부구분이 동일한 작업 물품 항목들을 하나의 행(Row)으로 병합
+    const groupedResultsMap = new Map();
+    results.forEach(item => {
+        const groupKey = `${item.equipRaw}_${item.date}_${item.status}_${item.type}_${item.detailType}`;
+
+        if (!groupedResultsMap.has(groupKey)) {
+            groupedResultsMap.set(groupKey, { ...item });
+        } else {
+            const existing = groupedResultsMap.get(groupKey);
+
+            // 내용(물품) 병합
+            const existingContents = existing.content.split(',').map(s => s.trim()).filter(Boolean);
+            const newContents = item.content.split(',').map(s => s.trim()).filter(Boolean);
+            newContents.forEach(c => {
+                if (!existingContents.includes(c)) existingContents.push(c);
+            });
+            existing.content = existingContents.join(', ');
+
+            // 작업자 병합
+            const existingWorkers = existing.worker ? existing.worker.split(',').map(s => s.trim()).filter(Boolean) : [];
+            const newWorkers = item.worker ? item.worker.split(',').map(s => s.trim()).filter(Boolean) : [];
+            newWorkers.forEach(w => {
+                if (!existingWorkers.includes(w)) existingWorkers.push(w);
+            });
+            existing.worker = existingWorkers.join(', ');
+
+            // 공수 병합 (가장 큰 값 기준 적용)
+            const md1 = parseFloat(existing.md) || 0;
+            const md2 = parseFloat(item.md) || 0;
+            existing.md = Math.max(md1, md2).toString();
+
+            // 비용 처리 병합
+            if (item.costType && item.costType !== existing.costType) {
+                const existingCosts = existing.costType.split(',').map(s => s.trim());
+                if (!existingCosts.includes(item.costType)) {
+                    existingCosts.push(item.costType);
+                    existing.costType = existingCosts.join(', ');
+                }
+            }
+        }
+    });
+    results = Array.from(groupedResultsMap.values());
 
     // 날짜 내림차순 정렬, 동일 날짜일 경우 예정(미완료) 먼저 
     results.sort((a, b) => {
@@ -1704,9 +1748,7 @@ function renderSortListTableOnly() {
             statusTd.textContent = row.status;
 
             clone.onclick = () => {
-                let url = `maintenance.html?site=${encodeURIComponent(row.site)}&equip=${encodeURIComponent(row.equipRaw)}`;
-                if (row.status === '완료' && row.id) url += `&logId=${row.id}`;
-                window.location.href = url;
+                openSortHistoryModal(row.site, row.equipRaw);
             };
             tbody.appendChild(clone);
         } else {
@@ -1724,9 +1766,7 @@ function renderSortListTableOnly() {
                 <td class="sort-status-text ${statusClass}">${row.status}</td>
             `;
             tr.onclick = () => {
-                let url = `maintenance.html?site=${encodeURIComponent(row.site)}&equip=${encodeURIComponent(row.equipRaw)}`;
-                if (row.status === '완료' && row.id) url += `&logId=${row.id}`;
-                window.location.href = url;
+                openSortHistoryModal(row.site, row.equipRaw);
             };
             tbody.appendChild(tr);
         }
@@ -1901,7 +1941,7 @@ function renderSortChart(results) {
         }
     });
 
-      // 사업장별 그룹 차트를 그리는 공통 헬퍼 함수
+    // 사업장별 그룹 차트를 그리는 공통 헬퍼 함수
     const drawGroupedChart = (dataObj, targetContainer, targetYAxis, targetLegend, allSitesArray) => {
         if (!targetContainer || !targetYAxis) return;
 
@@ -1911,7 +1951,7 @@ function renderSortChart(results) {
         const card = targetContainer.closest('.sort-half-chart, .sort-full-chart');
         let titleEl = null;
         let exportBtn = null;
-        
+
         if (card) {
             titleEl = card.querySelector('h3, .card-title, .status-group-title') || card.firstElementChild;
             if (titleEl) {
@@ -1923,12 +1963,12 @@ function renderSortChart(results) {
                 titleEl.dataset.clickBound = 'true';
                 titleEl.style.cursor = 'pointer';
                 titleEl.title = '클릭 시 그룹/개별 보기 전환';
-                
+
                 // [추가] 제목 영역을 flex로 만들고 CSV 추출 버튼 삽입
                 titleEl.style.display = 'flex';
                 titleEl.style.justifyContent = 'space-between';
                 titleEl.style.alignItems = 'center';
-                
+
                 exportBtn = titleEl.querySelector('.btn-export-chart-csv');
                 if (!exportBtn) {
                     exportBtn = document.createElement('button');
@@ -1992,7 +2032,7 @@ function renderSortChart(results) {
                     groupedDataObj[category] = {};
                     Object.keys(dataObj[category]).forEach(site => {
                         let groupName = getSiteGroupName(site);
-                         groupedSitesSet.add(groupName);
+                        groupedSitesSet.add(groupName);
                         groupedDataObj[category][groupName] = (groupedDataObj[category][groupName] || 0) + dataObj[category][site];
                     });
                 });
@@ -2095,13 +2135,18 @@ function renderSortChart(results) {
             if (exportBtn && titleEl) {
                 exportBtn.onclick = (e) => {
                     e.stopPropagation(); // 그룹/개별 보기 전환 방지
-                    
+
                     let csvContent = '\uFEFF'; // 한글 깨짐 방지 BOM
                     const sites = currentSitesArray.filter(site => isMatch(site));
                     csvContent += `항목명,${sites.map(s => '"' + String(s).replace(/"/g, '""') + '"').join(',')}\n`;
-                    
+
                     sortedCategories.forEach(category => {
-                        let row = [`"${String(category).replace(/"/g, '""')}"`];
+                        let catStr = String(category || '');
+                        // [수정] 엑셀 수식 자동 변환 방지 (CSV 인젝션 방어)
+                        if (/^[=+\-@\(]/.test(catStr.trim())) {
+                            catStr = "'" + catStr;
+                        }
+                        let row = [`"${catStr.replace(/"/g, '""')}"`];
                         let hasDataInRow = false;
                         sites.forEach(site => {
                             const val = currentDataObj[category][site] || 0;
@@ -2112,12 +2157,12 @@ function renderSortChart(results) {
                             csvContent += row.join(',') + '\n';
                         }
                     });
-                    
+
                     const rawTitle = titleEl.cloneNode(true);
                     const btnToRemove = rawTitle.querySelector('.btn-export-chart-csv');
                     if (btnToRemove) btnToRemove.remove();
                     const titleName = rawTitle.textContent.trim().replace(/\s+/g, '_');
-                    
+
                     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                     const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
@@ -2215,7 +2260,14 @@ function exportSortResultsToCSV(results) {
             row.worker,
             row.md,
             row.memo
-        ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(',');
+        ].map(v => {
+            let strVal = String(v || '');
+            // [수정] 엑셀 수식 및 음수 자동 변환 방지: =, -, +, @, ( 로 시작하면 앞에 싱글 쿼테이션(')을 붙여 텍스트로 강제 인식시킴
+            if (/^[=+\-@\(]/.test(strVal.trim())) {
+                strVal = "'" + strVal;
+            }
+            return `"${strVal.replace(/"/g, '""')}"`;
+        }).join(',');
 
         csvContent += cols + '\n';
     });
@@ -2239,4 +2291,171 @@ function escapeHtml(text) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
+}
+
+// [추가] 장비 작업 이력 팝업 모달 열기
+function openSortHistoryModal(site, equip) {
+    const modal = document.getElementById('sort-history-modal');
+    if (!modal) return;
+
+    const titleEl = document.getElementById('sort-history-title');
+    const tbody = document.getElementById('sort-history-tbody');
+
+    // 장비명 표시 문자열 구성
+    const parts = equip.split('::');
+    const rawName = parts[0];
+    const serial = parts.length > 1 ? parts[1] : '';
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+    const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+    const equipName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
+
+    const detailData = JSON.parse(localStorage.getItem(`details_${site}_${equip}`)) || {};
+    const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+
+    let displayStr = `${site} > ${equipName}`;
+    if (custName) displayStr += ` [${custName}]`;
+    else if (serial) displayStr += ` (${serial})`;
+
+    if (titleEl) titleEl.textContent = `${displayStr} 작업 이력`;
+
+    // 이력 데이터 통합 (완료된 로그 + 예정된 유지관리)
+    const logs = detailData.logs || [];
+    const maints = detailData.maint || [];
+    let allHistory = [];
+
+    logs.forEach(l => {
+        if (l.detailType !== '일정변경') {
+            allHistory.push({ ...l, isCompleted: true, status: '완료' });
+        }
+    });
+
+
+    // [추가] 팝업에서도 동일 장비, 동일 일자, 동일 구분의 작업을 하나로 병합
+    const groupedHistory = new Map();
+    allHistory.forEach(item => {
+        const detailStr = item.detailType || '';
+        const detailStr2 = item.detailType2 || '';
+        const groupKey = `${item.date}_${item.status}_${item.type}_${detailStr}_${detailStr2}`;
+
+        if (!groupedHistory.has(groupKey)) {
+            groupedHistory.set(groupKey, { ...item });
+        } else {
+            const existing = groupedHistory.get(groupKey);
+            const existingContents = (existing.content || '').split(',').map(s => s.trim()).filter(Boolean);
+            const newContents = (item.content || '').split(',').map(s => s.trim()).filter(Boolean);
+            newContents.forEach(c => {
+                if (!existingContents.includes(c)) existingContents.push(c);
+            });
+            existing.content = existingContents.join(', ');
+
+            const existingWorkers = (existing.worker || '').split(',').map(s => s.trim()).filter(Boolean);
+            const newWorkers = (item.worker || '').split(',').map(s => s.trim()).filter(Boolean);
+            newWorkers.forEach(w => {
+                if (!existingWorkers.includes(w)) existingWorkers.push(w);
+            });
+            existing.worker = existingWorkers.join(', ');
+
+            const md1 = parseFloat(existing.md) || 0;
+            const md2 = parseFloat(item.md) || 0;
+            existing.md = Math.max(md1, md2).toString();
+
+            const itemCost = item.costType || item.itemCost || '유상';
+            const existCost = existing.costType || existing.itemCost || '유상';
+            if (itemCost !== existCost) {
+                const existingCosts = existCost.split(',').map(s => s.trim());
+                if (!existingCosts.includes(itemCost)) {
+                    existingCosts.push(itemCost);
+                    existing.costType = existingCosts.join(', ');
+                    existing.itemCost = existing.costType; // 하위 호환성
+                }
+            }
+        }
+    });
+    allHistory = Array.from(groupedHistory.values());
+
+    // 날짜 내림차순 정렬
+    allHistory.sort((a, b) => {
+        const dateA = a.date || '';
+        const dateB = b.date || '';
+        if (dateB !== dateA) return dateB.localeCompare(dateA);
+        return 0; 
+    });
+
+    tbody.innerHTML = '';
+    if (allHistory.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="list-empty-msg" style="text-align: center; padding: 30px;">작업 이력이 없습니다.</td></tr>';
+    } else {
+        allHistory.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+            tr.className = 'sort-result-row';
+
+            const badgeClass = item.type ? item.type.replace(/\s/g, '') : 'default';
+            const statusClass = item.status === '완료' ? 'status-complete' : 'status-pending';
+
+            let dt = item.detailType || '-';
+            if (item.detailType2) dt += ` > ${item.detailType2}`;
+
+            // 비용 태그 및 내용 정제
+            let content = item.content || '-';
+            let costType = item.costType || item.itemCost || '유상';
+
+            const costMatch = content.match(/^\[(.*?)\] (.*)$/);
+            if (costMatch) {
+                costType = costMatch[1];
+                content = costMatch[2];
+            }
+            content = content.replace(/\[(?:유상|무상[^\]]*|기타)\]\s*/g, '').trim();
+            content = content.replace(/\s*-\s*(?=,|$)/g, '').trim();
+
+            let displayContent = content;
+            const itemsList = content.split(',').map(s => s.trim()).filter(Boolean);
+            if (itemsList.length > 1) {
+                displayContent = `${itemsList[0]} 외 ${itemsList.length - 1}개`;
+            } else if (itemsList.length === 1) {
+                displayContent = itemsList[0];
+            }
+
+            tr.innerHTML = `
+                <td style="text-align: center;">${item.date || '-'}</td>
+                <td style="text-align: center;"><span class="badge ${badgeClass} sort-badge">${escapeHtml(item.type || '-')}</span></td>
+                <td class="text-left pl-10" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;" title="${escapeHtml(dt)}">${escapeHtml(dt)}</td>
+                <td class="text-left pl-10" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px;" title="${escapeHtml(content)}">${escapeHtml(displayContent)}</td>
+            `;
+
+            // 마우스 호버 효과
+            tr.addEventListener('mouseenter', () => { tr.style.backgroundColor = '#21262d'; });
+            tr.addEventListener('mouseleave', () => { tr.style.backgroundColor = ''; });
+
+            tr.onclick = () => {
+                openSortDetailModal(displayStr, item, content, costType);
+            };
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    modal.style.display = 'flex';
+}
+
+// [추가] 작업 상세 내용 팝업 모달 열기
+function openSortDetailModal(equipDisplay, item, cleanContent, costType) {
+    const modal = document.getElementById('sort-detail-modal');
+    if (!modal) return;
+
+    document.getElementById('sort-detail-equip').value = equipDisplay;
+    document.getElementById('sort-detail-date').value = item.date || '-';
+
+    let typeStr = item.type || '-';
+    if (item.detailType) typeStr += ` > ${item.detailType}`;
+    if (item.detailType2) typeStr += ` > ${item.detailType2}`;
+
+    document.getElementById('sort-detail-type').value = typeStr;
+    document.getElementById('sort-detail-content').value = cleanContent || '-';
+    document.getElementById('sort-detail-cost').value = costType || '-';
+    document.getElementById('sort-detail-worker').value = item.worker || '-';
+    document.getElementById('sort-detail-md').value = item.md || '0';
+    document.getElementById('sort-detail-memo').value = item.memo || '작성된 메모가 없습니다.';
+
+    modal.style.display = 'flex';
 }

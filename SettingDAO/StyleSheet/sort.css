@@ -462,6 +462,11 @@
         flex-direction: column !important;
         height: auto !important; /* [추가] 모바일 가로 배치 해제 시 높이 자동 조절 */
     }
+
+#sort-history-modal .modal-window,
+#sort-detail-modal .modal-window {
+    width: 95vw !important;
+}
 }
 
 /* 제안박스(드롭다운) 여백 및 리스트 스타일 개선 */

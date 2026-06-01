@@ -208,7 +208,10 @@ class MaintItem(db.Model):
     md = db.Column(db.String(50), default='')
     item_cost = db.Column(db.String(50), default='')
     memo = db.Column(db.Text, default='')
+    trouble_details = db.Column(db.Text, nullable=True) # [추가] 트러블 진행 경과 (JSON)
+    trouble_occur_date = db.Column(db.String(50), default='') # [추가] 트러블 발생 일시
     original_log_id = db.Column(db.String(50), nullable=True) # [추가] 추가 작업(미완료)과 원본(부모) 로그를 연결하는 외래 식별자
+    image_data = db.Column(db.Text(length=2000000), nullable=True) # [추가]
 
 class LogItem(db.Model):
     _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -224,9 +227,14 @@ class LogItem(db.Model):
     md = db.Column(db.String(50), default='')
     worker = db.Column(db.String(100), default='')
     memo = db.Column(db.Text, default='')
+    start_time = db.Column(db.String(50), default='')
+    end_time = db.Column(db.String(50), default='')
+    trouble_details = db.Column(db.Text, nullable=True) # [추가] 트러블 진행 경과 (JSON)
+    trouble_occur_date = db.Column(db.String(50), default='') # [추가] 트러블 발생 일시
     is_issue_shared = db.Column(db.Boolean, default=False)
     original_log_id = db.Column(db.String(50), nullable=True)
     add_work_log_id = db.Column(db.String(50), nullable=True)
+    image_data = db.Column(db.Text(length=2000000), nullable=True) # [추가]
 
 # [추가] 관리자 물품 관리 테이블 (AdminItem)
 class AdminItem(db.Model):
@@ -243,6 +251,19 @@ class AdminItem(db.Model):
 class SystemSetting(db.Model):
     key = db.Column(db.String(100), primary_key=True)
     value = db.Column(db.Text)
+
+# [추가] Trouble 이력 관리 모델
+class TroubleLog(db.Model):
+    _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.String(50))
+    equip_id = db.Column(db.String(200), db.ForeignKey('equipment.id', ondelete='CASCADE', onupdate='CASCADE'))
+    occur_date = db.Column(db.String(50), default='')
+    action_date = db.Column(db.String(50), default='') # [추가] 조치 일 (작업일)
+    content = db.Column(db.Text, default='')
+    memo = db.Column(db.Text, default='') # [추가] 진행 경과 저장용 컬럼
+    worker = db.Column(db.String(100), default='')
+    status = db.Column(db.String(50), default='조치중')
+    image_data = db.Column(db.Text(length=2000000), nullable=True) # [추가] 사진 Base64 저장 컬럼
 
 # ------------------------------------------------------------------------------
 # 2. 경로 및 로깅 설정 (Paths & Logging Setup)
@@ -395,7 +416,8 @@ def load_data():
         for l in log_items.get(eq.id, []):
             data[detail_key]["logs"].append({
                 "id": int(l.id) if str(l.id).isdigit() else l.id, "date": l.date, "type": l.type,
-                "detailType": l.detail_type, "detailType2": l.detail_type2, "content": l.content,
+                "detailType": l.detail_type, "detailType2": l.detail_type2, "content": l.content, "startTime": l.start_time,
+                "endTime": l.end_time,
                 "addWork": l.add_work, "costType": l.cost_type, "md": l.md, "worker": l.worker, "memo": l.memo,
                 "isIssueShared": l.is_issue_shared,
                 "originalLogId": int(l.original_log_id) if l.original_log_id and str(l.original_log_id).isdigit() else l.original_log_id,
@@ -501,6 +523,13 @@ def maintenance():
     if 'user_id' not in session:
         return redirect('/')
     return render_template('maintenance.html')
+
+@app.route('/trouble')
+@app.route('/trouble.html')
+def trouble():
+    if 'user_id' not in session:
+        return redirect('/')
+    return render_template('trouble.html')
 
 @app.route('/admin')
 @app.route('/admin.html')
@@ -1109,6 +1138,8 @@ def history_transaction():
             item.md = str(l.get('md', item.md))
             item.worker = l.get('worker', item.worker)
             item.memo = l.get('memo', item.memo)
+            item.start_time = l.get('startTime', item.start_time)
+            item.end_time = l.get('endTime', item.end_time)
             item.is_issue_shared = bool(l.get('isIssueShared', item.is_issue_shared))
             item.original_log_id = str(l.get('originalLogId')) if l.get('originalLogId') else item.original_log_id
             item.add_work_log_id = str(l.get('addWorkLogId')) if l.get('addWorkLogId') else item.add_work_log_id
@@ -1152,6 +1183,232 @@ def sync_setup_equip():
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Setup DB Sync Error: {str(e)}", exc_info=True)
+        return jsonify({"status": "fail", "message": str(e)}), 500
+
+# [추가] Trouble 이력 리스트 조회 API
+@app.route('/api/trouble/list', methods=['GET'])
+@login_required
+def get_trouble_list():
+    troubles = TroubleLog.query.all()
+    log_items = LogItem.query.filter_by(type='비정기').all()
+    
+    equips = {eq.id: eq for eq in Equipment.query.all()}
+    setup_infos = {si.equip_id: si for si in SetupInfo.query.all()}
+    
+    def get_eq_info(equip_id):
+        if equip_id:
+            eq = equips.get(equip_id)
+            si = setup_infos.get(equip_id)
+            cust_name = si.cust_equip_name if si and si.cust_equip_name else ""
+            if eq:
+                equip_name = f"{eq.name}"
+                if cust_name:
+                    equip_name += f" [{cust_name}]"
+                elif eq.serial:
+                    equip_name += f" ({eq.serial})"
+                return eq.site_name, equip_name
+            else:
+                parts = equip_id.split('::')
+                return parts[0], parts[1] if len(parts) > 1 else ""
+        return "", ""
+
+    result = []
+    for t in troubles:
+        site_name, equip_name = get_eq_info(t.equip_id)
+
+        # [복구] 기존에 잘못된 포맷(파이썬 딕셔너리 문자열)으로 저장된 경우 JSON 포맷으로 강제 변환
+        safe_content = t.content
+        if safe_content and safe_content.startswith("{") and "'" in safe_content and '"' not in safe_content:
+            safe_content = safe_content.replace("'", '"')
+            
+        result.append({
+            "id": t.id,
+            "source": "trouble",
+            "equip_id": t.equip_id,
+            "site": site_name,
+            "equip": equip_name,
+            "occur_date": t.occur_date,
+            "action_date": getattr(t, 'action_date', ''),
+            "type": "-",
+            "detail_type": "-",
+            "detail_type2": "-",
+            "check_item": "-",
+            "content": safe_content,
+            "memo": getattr(t, 'memo', ''), # [추가] 진행 경과 반환
+            "worker": t.worker,
+            "status": t.status,
+            "image_data": t.image_data,
+            "group_key": f"trouble_{t.id}"
+        })
+        
+    for l in log_items:
+        site_name, equip_name = get_eq_info(l.equip_id)
+        group_key = f"log_{l.original_log_id if l.original_log_id else l.id}"
+        safe_content = getattr(l, 'trouble_details', '') or ''
+        result.append({
+            "id": l.id,
+            "source": "log",
+            "equip_id": l.equip_id,
+            "site": site_name,
+            "equip": equip_name,
+            "occur_date": getattr(l, 'trouble_occur_date', ''),
+            "action_date": l.date,
+            "type": l.type,
+            "detail_type": l.detail_type,
+            "detail_type2": l.detail_type2,
+            "check_item": l.content,
+            "content": safe_content,
+            "memo": l.memo,
+            "worker": l.worker,
+            "status": "조치완료",
+            "image_data": getattr(l, 'image_data', ''),
+            "group_key": group_key
+        })
+        
+    grouped = {}
+    for item in result:
+        key = item['group_key']
+        if key not in grouped:
+            grouped[key] = item
+            grouped[key]['_check_items'] = set([x.strip() for x in str(item['check_item']).split(',') if x.strip() and x.strip() != '-'])
+        else:
+            for x in str(item['check_item']).split(','):
+                x = x.strip()
+                if x and x != '-':
+                    grouped[key]['_check_items'].add(x)
+            
+            if item['content'] and str(item['content']).strip() != '' and item['content'] != '-':
+                if not grouped[key]['content'] or str(grouped[key]['content']).strip() == '' or grouped[key]['content'] == '-':
+                    grouped[key]['content'] = item['content']
+                elif item['content'] not in grouped[key]['content']:
+                    grouped[key]['content'] += f" | {item['content']}"
+            
+            # [추가] 병합 시 이미지 데이터 우선 보존
+            if item.get('image_data'):
+                if not grouped[key].get('image_data'):
+                    grouped[key]['image_data'] = item['image_data']
+
+    final_result = []
+    for item in grouped.values():
+        check_items = list(item['_check_items'])
+        if check_items:
+            item['check_item'] = ", ".join(check_items)
+        else:
+            item['check_item'] = "-"
+        del item['_check_items']
+        
+        if not item['content'] or str(item['content']).strip() == "":
+            item['content'] = "-"
+            
+        final_result.append(item)
+        
+    final_result.sort(key=lambda x: x.get('action_date') or x.get('occur_date') or '', reverse=True)
+    
+    return jsonify({"status": "success", "data": final_result})
+
+# [추가] Trouble 이력 CRUD(등록/수정/삭제) 통합 API
+@app.route('/api/trouble/crud', methods=['POST'])
+@login_required
+@limiter.exempt
+def trouble_crud():
+    data = request.json
+    action = data.get('action')
+    payload = data.get('payload')
+    user = User.query.filter_by(id=session.get('user_id')).first()
+    worker_name = user.name if user and user.name else session.get('user_id')
+    
+    try:
+        if action == 'CREATE':
+            content_val = payload.get('content', '')
+            if isinstance(content_val, (dict, list)):
+                content_val = json.dumps(content_val, ensure_ascii=False)
+            else:
+                content_val = str(content_val) if content_val is not None else ''
+
+            new_log = TroubleLog(
+                id=str(payload.get('id')), 
+                equip_id=payload.get('equip_id'), 
+                occur_date=payload.get('occur_date', ''), 
+                action_date=payload.get('action_date', ''), 
+                content=content_val, 
+                memo=payload.get('memo', ''), 
+                worker=payload.get('worker', ''), 
+                status=payload.get('status', '조치중'), 
+                image_data=payload.get('image_data', '')
+            )
+            db.session.add(new_log)
+            db.session.add(SystemLog(action='ADD_TROUBLE', target=payload.get('equip_id'), details="Trouble 등록", worker=worker_name))
+        elif action == 'UPDATE':
+            source = payload.get('source', 'trouble')
+            if source == 'trouble':
+                log = TroubleLog.query.filter_by(id=str(payload.get('id'))).first()
+                if log:
+                    # [수정] 필드별 명시적 업데이트 (content와 memo의 데이터 교차 덮어쓰기 버그 방지)
+                    if 'equip_id' in payload: log.equip_id = payload.get('equip_id')
+                    if 'occur_date' in payload: log.occur_date = payload.get('occur_date')
+                    if 'action_date' in payload: log.action_date = payload.get('action_date')
+                    if 'content' in payload: 
+                        c_val = payload.get('content')
+                        if isinstance(c_val, (dict, list)):
+                            log.content = json.dumps(c_val, ensure_ascii=False)
+                        else:
+                            log.content = str(c_val) if c_val is not None else ''
+                    if 'memo' in payload: log.memo = payload.get('memo') # 세부 내용 (우측 메모장)
+                    if 'worker' in payload: log.worker = payload.get('worker')
+                    if 'status' in payload: log.status = payload.get('status')
+                    if 'image_data' in payload: log.image_data = payload.get('image_data')
+                        
+                    db.session.add(SystemLog(action='UPDATE_TROUBLE', target=log.equip_id, details="Trouble 수정", worker=worker_name))
+            elif source == 'log':
+                log_item = LogItem.query.filter_by(id=str(payload.get('id'))).first()
+                if log_item:
+                    if 'memo' in payload:
+                        log_item.memo = payload.get('memo')
+                    if 'action_date' in payload: log_item.date = payload.get('action_date', log_item.date)
+                    if 'occur_date' in payload: log_item.trouble_occur_date = payload.get('occur_date', '')
+
+                    if 'content' in payload: 
+                        c_val = payload.get('content')
+                        if isinstance(c_val, (dict, list)):
+                            log_item.trouble_details = json.dumps(c_val, ensure_ascii=False)
+                        else:
+                            log_item.trouble_details = str(c_val) if c_val is not None else ''
+
+                    if 'image_data' in payload:
+                        log_item.image_data = payload.get('image_data', log_item.image_data)
+                    db.session.add(SystemLog(action='UPDATE_LOG', target=log_item.equip_id, details=f"점검 이력 수정(Trouble 팝업): {log_item.memo}", worker=worker_name))
+            elif source == 'maint':
+                maint_item = MaintItem.query.filter_by(id=str(payload.get('id'))).first()
+                if maint_item:
+                    if 'memo' in payload:
+                        maint_item.memo = payload.get('memo')
+                    if 'action_date' in payload: 
+                        maint_item.date = payload.get('action_date', maint_item.date)
+                        maint_item.scheduled_date = payload.get('action_date', maint_item.scheduled_date)
+                    if 'occur_date' in payload: maint_item.trouble_occur_date = payload.get('occur_date', '')
+
+                    if 'content' in payload: 
+                        c_val = payload.get('content')
+                        if isinstance(c_val, (dict, list)):
+                            maint_item.trouble_details = json.dumps(c_val, ensure_ascii=False)
+                        else:
+                            maint_item.trouble_details = str(c_val) if c_val is not None else ''
+
+                    if 'image_data' in payload:
+                        maint_item.image_data = payload.get('image_data', maint_item.image_data)
+                    db.session.add(SystemLog(action='UPDATE_MAINT', target=maint_item.equip_id, details=f"예정 작업 수정(Trouble 팝업): {maint_item.memo}", worker=worker_name))
+        elif action == 'DELETE':
+            log = TroubleLog.query.filter_by(id=str(payload.get('id'))).first()
+            if log:
+                equip_id = log.equip_id; content = log.content
+                db.session.delete(log)
+                db.session.add(SystemLog(action='DELETE_TROUBLE', target=equip_id, details=f"Trouble 삭제: {content}", worker=worker_name))
+            
+        db.session.commit()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Trouble CRUD Error ({action}): {str(e)}", exc_info=True)
         return jsonify({"status": "fail", "message": str(e)}), 500
 
 # ------------------------------------------------------------------------------
@@ -1221,6 +1478,53 @@ def init_db():
         except:
             db.session.rollback()
             
+        # [마이그레이션] LogItem 테이블에 startTime, endTime 컬럼 추가
+        try:
+            db.session.execute(text('ALTER TABLE log_item ADD COLUMN start_time VARCHAR(50) DEFAULT ""'))
+            db.session.execute(text('ALTER TABLE log_item ADD COLUMN end_time VARCHAR(50) DEFAULT ""'))
+            db.session.commit()
+        except:
+            db.session.rollback()
+            
+        # [마이그레이션] trouble_log 테이블에 사진 컬럼 추가
+        try:
+            db.session.execute(text('ALTER TABLE trouble_log ADD COLUMN image_data LONGTEXT'))
+            db.session.commit()
+        except:
+            db.session.rollback()
+            try:
+                db.session.execute(text('ALTER TABLE trouble_log ADD COLUMN image_data TEXT'))
+                db.session.commit()
+            except:
+                db.session.rollback()
+            
+        # [마이그레이션] trouble_log 테이블에 memo 컬럼 추가 (진행 경과 저장용)
+        try:
+            db.session.execute(text('ALTER TABLE trouble_log ADD COLUMN memo TEXT DEFAULT ""'))
+            db.session.commit()
+        except:
+            db.session.rollback()
+            
+        # [마이그레이션] LogItem, MaintItem 테이블에 사진 컬럼 추가
+        try:
+            db.session.execute(text('ALTER TABLE log_item ADD COLUMN image_data LONGTEXT'))
+            db.session.commit()
+        except:
+            db.session.rollback()
+            try:
+                db.session.execute(text('ALTER TABLE log_item ADD COLUMN image_data TEXT'))
+                db.session.commit()
+            except: pass
+        try:
+            db.session.execute(text('ALTER TABLE maint_item ADD COLUMN image_data LONGTEXT'))
+            db.session.commit()
+        except:
+            db.session.rollback()
+            try:
+                db.session.execute(text('ALTER TABLE maint_item ADD COLUMN image_data TEXT'))
+                db.session.commit()
+            except: pass
+            
         # [마이그레이션] setup_log 테이블에 md, parts 컬럼 추가 (데이터 유실 방지)
         try:
             db.session.execute(text('ALTER TABLE setup_log ADD COLUMN md VARCHAR(50) DEFAULT "0"'))
@@ -1228,6 +1532,35 @@ def init_db():
             db.session.commit()
         except:
             db.session.rollback()
+        
+        # [마이그레이션] LogItem, MaintItem 테이블에 trouble_details 컬럼 추가
+        try:
+            db.session.execute(text('ALTER TABLE log_item ADD COLUMN trouble_details TEXT'))
+            db.session.commit()
+        except: pass
+        try:
+            db.session.execute(text('ALTER TABLE maint_item ADD COLUMN trouble_details TEXT'))
+            db.session.commit()
+        except: pass
+        
+        # [마이그레이션] trouble_log 테이블에 action_date 컬럼 추가 및 복사
+        try:
+            db.session.execute(text('ALTER TABLE trouble_log ADD COLUMN action_date VARCHAR(50) DEFAULT ""'))
+            db.session.commit()
+            db.session.execute(text('UPDATE trouble_log SET action_date = SUBSTR(occur_date, 1, 10) WHERE action_date = "" OR action_date IS NULL'))
+            db.session.commit()
+        except:
+            db.session.rollback()
+            
+        # [마이그레이션] LogItem, MaintItem 테이블에 trouble_occur_date 컬럼 추가
+        try:
+            db.session.execute(text('ALTER TABLE log_item ADD COLUMN trouble_occur_date VARCHAR(50) DEFAULT ""'))
+            db.session.commit()
+        except: pass
+        try:
+            db.session.execute(text('ALTER TABLE maint_item ADD COLUMN trouble_occur_date VARCHAR(50) DEFAULT ""'))
+            db.session.commit()
+        except: pass
         
         # [DB 마이그레이션] 사용자 데이터
         # Admin 초기 계정 생성
