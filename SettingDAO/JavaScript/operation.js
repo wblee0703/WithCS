@@ -252,7 +252,7 @@ function renderEquipMonthlyTable(statsList, year) {
     
     tbody.innerHTML = '';
     if (statsList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="14" class="empty-msg">선택된 장비가 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="15" class="empty-msg">선택된 장비가 없습니다.</td></tr>';
         return;
     }
 
@@ -271,19 +271,43 @@ function renderEquipMonthlyTable(statsList, year) {
         tr.style.cursor = 'pointer';
         let html = `<td>${escapeHtml(stat.site)}</td><td style="text-align: left; white-space: nowrap;">${escapeHtml(stat.equipName)}</td>`;
         
+        let yearlyTotalHours = 0;
+        let yearlyDownHours = 0;
+        let monthlyHtml = '';
+        
         for (let m = 1; m <= 12; m++) {
             const downHours = stat.monthlyDownHours[m];
             const totalHours = monthlyTotalHours[m];
             
+            yearlyTotalHours += totalHours;
+            yearlyDownHours += downHours;
+            
             let rate = totalHours > 0 ? ((totalHours - downHours) / totalHours) * 100 : 100;
             if (rate < 0) rate = 0;
             
-            let rateColor = '#3fb950';
-            if (rate < 95) rateColor = '#d29922';
-            if (rate < 90) rateColor = '#f85149';
+            let rateColor = '#3fb950'; // 녹색 (98% 초과)
+            if (rate <= 90) {
+                rateColor = '#f85149'; // 빨강 (90% 이하)
+            } else if (rate <= 98) {
+                rateColor = '#d29922'; // 주황 (90% 초과 ~ 98% 이하)
+            }
 
-            html += `<td style="color: ${rateColor}; font-weight: bold;">${rate.toFixed(1)}%</td>`;
+            monthlyHtml += `<td style="color: ${rateColor}; font-weight: bold;">${rate.toFixed(1)}%</td>`;
         }
+        
+        let yearlyRate = yearlyTotalHours > 0 ? ((yearlyTotalHours - yearlyDownHours) / yearlyTotalHours) * 100 : 100;
+        if (yearlyRate < 0) yearlyRate = 0;
+        
+        let yearlyRateColor = '#3fb950'; // 녹색 (98% 초과)
+        if (yearlyRate <= 90) {
+            yearlyRateColor = '#f85149'; // 빨강 (90% 이하)
+        } else if (yearlyRate <= 98) {
+            yearlyRateColor = '#d29922'; // 주황 (90% 초과 ~ 98% 이하)
+        }
+        
+        html += `<td style="color: ${yearlyRateColor}; font-weight: bold; background-color: rgba(255, 255, 255, 0.03);">${yearlyRate.toFixed(1)}%</td>`;
+        html += monthlyHtml;
+        
         tr.innerHTML = html;
         
         tr.addEventListener('click', () => {
@@ -341,6 +365,14 @@ function renderDowntimeTable(list) {
             dt2 = parts[1].trim();
         }
         
+        const hours = item.hours;
+        let hourColor = '#3fb950'; // 녹색 (12시간 이하)
+        if (hours > 24) {
+            hourColor = '#f85149'; // 빨강 (24시간 초과)
+        } else if (hours > 12) {
+            hourColor = '#d29922'; // 주황 (12시간 초과 ~ 24시간 이하)
+        }
+        
         const formatDateHtml = (dObj) => {
             const dateStr = dObj.toLocaleDateString('ko-KR');
             const timeStr = dObj.toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' });
@@ -361,7 +393,7 @@ function renderDowntimeTable(list) {
             <td>${escapeHtml(dt1)}</td>
             <td>${escapeHtml(dt2)}</td>
             <td style="text-align: left;" title="${escapeHtml(tooltipContent)}">${escapeHtml(contentDisplay)}</td>
-            <td style="color: #f85149; font-weight: bold;">${item.hours.toFixed(1)} h</td>
+            <td style="color: ${hourColor}; font-weight: bold;">${item.hours.toFixed(1)} h</td>
         `;
         tbody.appendChild(tr);
     });
