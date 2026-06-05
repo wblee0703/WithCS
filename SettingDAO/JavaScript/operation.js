@@ -1,7 +1,7 @@
 /* ==========================================================================
    Operation (가동율 분석) 전용 JavaScript
    ========================================================================== */
-let currentOpFilters = { siteGroup: 'ALL', equip: 'ALL', selectedEquipSite: 'ALL', year: new Date().getFullYear() };
+let currentOpFilters = { sites: [], equip: 'ALL', selectedEquipSite: 'ALL', year: new Date().getFullYear() };
 
 document.addEventListener('DOMContentLoaded', () => {
     if (window.isDataLoaded) {
@@ -51,28 +51,43 @@ function setupOperationEvents() {
             });
         });
     }
+
+    const btnExportCsv = document.getElementById('btn-export-operation-csv');
+    if (btnExportCsv) {
+        btnExportCsv.addEventListener('click', exportOperationCsv);
+    }
 }
 
 function renderOperationSites() {
-    const siteList = document.getElementById('operation-site-list');
-    if (!siteList) return;
+    const wrapper = document.getElementById('operation-site-filter-wrapper');
+    if (!wrapper) return;
     
+    // [수정] HTML 구조를 템플릿에서 복제하여 사용
+    const tpl = document.getElementById('operation-site-filter-template');
+    if (!tpl) return;
+    wrapper.innerHTML = ''; // Clear previous content
+    wrapper.appendChild(tpl.content.cloneNode(true));
+
+    const trigger = document.getElementById('operation-site-select-trigger');
+    const dropdown = document.getElementById('operation-site-select-dropdown');
+    const list = document.getElementById('operation-site-list');
+    const groupContainer = document.getElementById('operation-site-group-toggle-container');
+
+    // Populate sites and groups
     const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
-    siteList.innerHTML = `<li data-site-group="ALL" class="active">전체 사업장</li>`;
-    
-    const sites = Object.keys(deviceData).filter(s => s !== 'models' && s !== 'details').sort();
+    const allSites = Object.keys(deviceData).filter(s => s !== 'models' && s !== 'details').sort();
     const groupedSites = {};
-    
-    // 사업장별 구분을 추출하여 그룹화
-    sites.forEach(site => {
+    const siteToGroupMap = {};
+
+    allSites.forEach(site => {
         const meta = JSON.parse(localStorage.getItem(`site_meta_${site}`)) || {};
         const group = meta.group || '기타사업장';
         if (!groupedSites[group]) groupedSites[group] = [];
         groupedSites[group].push(site);
+        siteToGroupMap[site] = group;
     });
-    
-    // 그룹명 기준 정렬 (시스템 공통 지정 순서 우선, 그 외 가나다순)
-    const order = ['기타사업장','SEC', 'SKH 이천', 'SKH 청주', 'SCS 서안', 'SKH 우시', '기타'];
+
+    const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
     const groups = Object.keys(groupedSites).sort((a, b) => {
         const idxA = order.indexOf(a);
         const idxB = order.indexOf(b);
@@ -81,26 +96,112 @@ function renderOperationSites() {
         if (idxB !== -1) return 1;
         return a.localeCompare(b);
     });
-    
+
     // 리스트 렌더링
-    groups.forEach(group => {
-        siteList.insertAdjacentHTML('beforeend', `<li data-site-group="${escapeHtml(group)}"><span>${escapeHtml(group)}</span></li>`);
+    groupContainer.innerHTML = groups.map(g => `<button type="button" class="btn-gray site-group-toggle-btn sort-filter-btn" data-group="${g}">${g}</button>`).join('');
+
+    list.innerHTML = '';
+    allSites.forEach(site => {
+        // [수정] HTML 구조를 템플릿에서 복제하여 사용
+        const itemTpl = document.getElementById('operation-site-item-template');
+        if (!itemTpl) return;
+        const li = itemTpl.content.cloneNode(true).firstElementChild;
+
+        const group = siteToGroupMap[site];
+        li.dataset.value = site;
+        li.dataset.siteGroup = group;
+        li.querySelector('.item-text').textContent = escapeHtml(site);
+
+        list.appendChild(li);
     });
 
-    siteList.querySelectorAll('li').forEach(li => {
-        li.addEventListener('click', () => {
-            siteList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
-            li.classList.add('active');
-            currentOpFilters.siteGroup = li.dataset.siteGroup;
-            currentOpFilters.equip = 'ALL';
-            renderOperationEquips(currentOpFilters.siteGroup);
-            calculateOperationRate();
+    // Add event listeners
+    trigger.onclick = (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
+    };
+
+    dropdown.querySelector('.btn-confirm').onclick = (e) => {
+        e.stopPropagation();
+        dropdown.classList.remove('show');
+    };
+
+    dropdown.querySelector('.btn-select-all').onclick = (e) => {
+        e.stopPropagation();
+        list.querySelectorAll('.log-select-item').forEach(el => {
+            el.classList.add('selected');
+            el.querySelector('.check-icon').style.opacity = '1';
         });
+        updateTriggerText();
+        handleFilterChange();
+    };
+
+    dropdown.querySelector('.btn-deselect-all').onclick = (e) => {
+        e.stopPropagation();
+        list.querySelectorAll('.log-select-item').forEach(el => {
+            el.classList.remove('selected');
+            el.querySelector('.check-icon').style.opacity = '0';
+        });
+        updateTriggerText();
+        handleFilterChange();
+    };
+
+    groupContainer.querySelectorAll('.site-group-toggle-btn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            const targetGroup = btn.dataset.group;
+            const groupItems = Array.from(list.querySelectorAll(`.log-select-item[data-site-group="${targetGroup}"]`));
+            const allSelected = groupItems.every(item => item.classList.contains('selected'));
+            groupItems.forEach(el => {
+                if (allSelected) {
+                    el.classList.remove('selected');
+                    el.querySelector('.check-icon').style.opacity = '0';
+                } else {
+                    el.classList.add('selected');
+                    el.querySelector('.check-icon').style.opacity = '1';
+                }
+            });
+            updateTriggerText();
+            handleFilterChange();
+        };
     });
-    renderOperationEquips('ALL');
+
+    list.querySelectorAll('.log-select-item').forEach(item => {
+        item.onclick = (e) => {
+            e.stopPropagation();
+            item.classList.toggle('selected');
+            item.querySelector('.check-icon').style.opacity = item.classList.contains('selected') ? '1' : '0';
+            updateTriggerText();
+            handleFilterChange();
+        };
+    });
+
+    function updateTriggerText() {
+        const selected = Array.from(list.querySelectorAll('.log-select-item.selected'));
+        const total = list.querySelectorAll('.log-select-item').length;
+        if (selected.length === total || selected.length === 0) {
+            trigger.textContent = '전체 사업장';
+        } else if (selected.length === 1) {
+            trigger.textContent = selected[0].dataset.value;
+        } else {
+            trigger.textContent = `${selected[0].dataset.value} 외 ${selected.length - 1}개`;
+        }
+    }
+
+    function handleFilterChange() {
+        const selectedSites = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
+        currentOpFilters.sites = selectedSites;
+        currentOpFilters.equip = 'ALL';
+        renderOperationEquips(currentOpFilters.sites);
+        calculateOperationRate();
+    }
+    
+    // Initial state
+    currentOpFilters.sites = allSites;
+    renderOperationEquips(currentOpFilters.sites);
 }
 
-function renderOperationEquips(siteGroup) {
+function renderOperationEquips(sites) {
     const equipList = document.getElementById('operation-equip-list');
     if (!equipList) return;
     
@@ -109,11 +210,11 @@ function renderOperationEquips(siteGroup) {
     equipList.innerHTML = `<li data-equip="ALL" class="active">전체 장비</li>`;
     
     let equips = [];
+    const isAllSites = sites.length === 0 || sites.length === Object.keys(deviceData).filter(s => s !== 'models' && s !== 'details').length;
+
     Object.keys(deviceData).forEach(site => {
         if (site === 'models' || site === 'details') return;
-        const meta = JSON.parse(localStorage.getItem(`site_meta_${site}`)) || {};
-        const group = meta.group || '기타사업장';
-        if (siteGroup === 'ALL' || group === siteGroup) {
+        if (isAllSites || sites.includes(site)) {
             deviceData[site].forEach(e => equips.push({ site: site, equip: e }));
         }
     });
@@ -130,10 +231,18 @@ function renderOperationEquips(siteGroup) {
         const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
         const subText = custEquipName ? ` [${custEquipName}]` : (serial ? ` [${serial}]` : '');
         
-        const displayHtml = `<div style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 11px; color: #8b949e;">${escapeHtml(item.site)}</span><span>${escapeHtml(displayName)}${escapeHtml(subText)}</span></div>`;
-            
         const searchText = `${item.site} ${displayName} ${subText}`.toLowerCase();
-        equipList.insertAdjacentHTML('beforeend', `<li data-equip="${escapeHtml(item.equip)}" data-site="${escapeHtml(item.site)}" data-search="${escapeHtml(searchText)}">${displayHtml}</li>`);
+
+        // [수정] HTML 구조를 템플릿에서 복제하여 사용
+        const itemTpl = document.getElementById('operation-equip-item-template');
+        if (!itemTpl) return;
+        const li = itemTpl.content.cloneNode(true).firstElementChild;
+        li.dataset.equip = escapeHtml(item.equip);
+        li.dataset.site = escapeHtml(item.site);
+        li.dataset.search = escapeHtml(searchText);
+        li.querySelector('.equip-item-site').textContent = escapeHtml(item.site);
+        li.querySelector('.equip-item-name').textContent = `${escapeHtml(displayName)}${escapeHtml(subText)}`;
+        equipList.appendChild(li);
     });
     
     equipList.querySelectorAll('li').forEach(li => {
@@ -144,24 +253,23 @@ function renderOperationEquips(siteGroup) {
             if (li.dataset.equip !== 'ALL') currentOpFilters.selectedEquipSite = li.dataset.site;
             calculateOperationRate();
         });
-        });
+    });
 }
 
 function calculateOperationRate() {
-    const { siteGroup, equip, selectedEquipSite, year } = currentOpFilters;
+    const { sites, equip, selectedEquipSite, year } = currentOpFilters;
     if (!year) return alert('조회 연도를 설정해주세요.');
     
     const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
     let targetEquipList = [];
     
+    const isAllSites = sites.length === 0 || sites.length === Object.keys(deviceData).filter(s => s !== 'models' && s !== 'details').length;
+
     if (equip !== 'ALL') {
         targetEquipList.push({ site: selectedEquipSite, equip: equip });
-    } else if (siteGroup !== 'ALL') {
-        const sites = Object.keys(deviceData).filter(s => s !== 'models' && s !== 'details');
+    } else if (!isAllSites) {
         sites.forEach(site => {
-            const meta = JSON.parse(localStorage.getItem(`site_meta_${site}`)) || {};
-            const group = meta.group || '기타사업장';
-            if (group === siteGroup && deviceData[site]) {
+            if (deviceData[site]) {
                 const equips = deviceData[site].filter(e => e !== '기타(ETC)');
                 equips.forEach(e => targetEquipList.push({ site, equip: e }));
             }
@@ -174,6 +282,13 @@ function calculateOperationRate() {
             }
         });
     }
+
+    // [추가] 셋업 장비 및 유류 장비 등 가동과 무관한 장비는 통계 모수에서 제외하여 평균 가동율 왜곡 방지
+    targetEquipList = targetEquipList.filter(eq => {
+        const detailData = JSON.parse(localStorage.getItem(`details_${eq.site}_${eq.equip}`)) || {};
+        const status = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
+        return status !== '셋업 장비' && status !== '유류장비';
+    });
     
     const equipMonthlyStats = [];
     const allDowntimeList = [];
@@ -203,7 +318,8 @@ function calculateOperationRate() {
                 const dStart = new Date(logItem.startTime);
                 const dEnd = new Date(logItem.endTime);
                 
-                if (dStart < dEnd) {
+                // [수정] 날짜 형식이 잘못되어 발생하는 NaN 오류가 전체 평균 계산을 고장내는 현상 방지
+                if (!isNaN(dStart) && !isNaN(dEnd) && dStart < dEnd) {
                     for (let m = 1; m <= 12; m++) {
                         const monthStart = new Date(year, m - 1, 1, 0, 0, 0);
                         const monthEnd = new Date(year, m, 0, 23, 59, 59, 999);
@@ -213,21 +329,23 @@ function calculateOperationRate() {
                         
                         if (overlapStart < overlapEnd) {
                             const downHours = (overlapEnd - overlapStart) / (1000 * 60 * 60);
-                            monthlyDownHours[m] += downHours;
+                            if (!isNaN(downHours) && downHours > 0) {
+                                monthlyDownHours[m] += downHours;
                             
-                            const dtInfo = {
-                                start: overlapStart,
-                                end: overlapEnd,
-                                equipName: displayName,
-                                subText: subText,
-                                fullEquipName: fullEquipName,
-                                type: logItem.type || '-',
-                                detailType: logItem.detailType || '',
-                                detailType2: logItem.detailType2 || '',
-                                content: logItem.content || logItem.memo || '-',
-                                hours: downHours
-                            };
-                            allDowntimeList.push(dtInfo);
+                                const dtInfo = {
+                                    start: overlapStart,
+                                    end: overlapEnd,
+                                    equipName: displayName,
+                                    subText: subText,
+                                    fullEquipName: fullEquipName,
+                                    type: logItem.type || '-',
+                                    detailType: logItem.detailType || '',
+                                    detailType2: logItem.detailType2 || '',
+                                    content: logItem.content || logItem.memo || '-',
+                                    hours: downHours
+                                };
+                                allDowntimeList.push(dtInfo);
+                            }
                         }
                     }
                 }
@@ -237,6 +355,9 @@ function calculateOperationRate() {
         equipMonthlyStats.push({
             site: eq.site,
             equipName: fullEquipName,
+            modelName: displayName,
+            serial: serial,
+            custEquipName: custEquipName,
             monthlyDownHours: monthlyDownHours
         });
     });
@@ -252,8 +373,76 @@ function renderEquipMonthlyTable(statsList, year) {
     
     tbody.innerHTML = '';
     if (statsList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="15" class="empty-msg">선택된 장비가 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="17" class="empty-msg">조회할 가동 장비가 없습니다. (미가동/셋업 장비 제외됨)</td></tr>';
         return;
+    }
+
+    // [수정] 전체 평균을 단순히 전체 시간 대비 다운타임이 아닌, 각 장비 가동율의 산술 평균으로 계산하여 사용자 직관과 100% 일치하도록 변경
+    const totalMonthlyRates = {};
+    for (let m = 1; m <= 12; m++) totalMonthlyRates[m] = 0;
+    let totalYearlyRateSum = 0;
+    let validEquipCount = statsList.length;
+
+    statsList.forEach(stat => {
+        let equipYearlyTotal = 0;
+        let equipYearlyDown = 0;
+        for (let m = 1; m <= 12; m++) {
+            const totalHours = new Date(year, m, 0).getDate() * 24;
+            const downHours = stat.monthlyDownHours[m] || 0;
+            equipYearlyTotal += totalHours;
+            equipYearlyDown += downHours;
+            
+            let rate = totalHours > 0 ? ((totalHours - downHours) / totalHours) * 100 : 100;
+            if (rate < 0) rate = 0;
+            totalMonthlyRates[m] += rate;
+        }
+        let equipYearlyRate = equipYearlyTotal > 0 ? ((equipYearlyTotal - equipYearlyDown) / equipYearlyTotal) * 100 : 100;
+        if (equipYearlyRate < 0) equipYearlyRate = 0;
+        totalYearlyRateSum += equipYearlyRate;
+    });
+
+    const totalTr = document.createElement('tr');
+    totalTr.className = 'total-avg-row';
+    let totalHtml = `<th colspan="4" style="text-align: center; color: #e6edf3;">전체 평균</th>`;
+    let totalMonthlyHtml = '';
+
+    for (let m = 1; m <= 12; m++) {
+        let avgRate = validEquipCount > 0 ? (totalMonthlyRates[m] / validEquipCount) : 100;
+        let rateColor = '#3fb950'; if (avgRate <= 90) rateColor = '#f85149'; else if (avgRate <= 98) rateColor = '#d29922';
+        totalMonthlyHtml += `<th style="color: ${rateColor}; font-weight: bold;">${avgRate.toFixed(1)}%</th>`;
+    }
+    
+    let avgYearlyRate = validEquipCount > 0 ? (totalYearlyRateSum / validEquipCount) : 100;
+    let yearlyRateColor = '#3fb950'; if (avgYearlyRate <= 90) yearlyRateColor = '#f85149'; else if (avgYearlyRate <= 98) yearlyRateColor = '#d29922';
+    
+    totalHtml += `<th style="color: ${yearlyRateColor}; background-color: #1c2128; font-weight: bold;">${avgYearlyRate.toFixed(1)}%</th>`;
+    totalHtml += totalMonthlyHtml;
+    totalTr.innerHTML = totalHtml;
+
+    // [수정] 렌더링 계층 문제(z-index 무시)를 근본적으로 해결하기 위해 tbody가 아닌 thead 영역에 삽입
+    const thead = document.querySelector('#operation-monthly-table thead');
+    if (thead) {
+        const headerRow = thead.querySelector('tr:not(.total-avg-row)');
+        const existingTotal = thead.querySelector('.total-avg-row');
+        if (existingTotal) existingTotal.remove();
+        
+        // [수정] '전체 평균' 행을 컬럼 제목 행 아래에 삽입
+        thead.appendChild(totalTr);
+
+        // [수정] 컬럼 제목 행을 최상단에, '전체 평균' 행을 그 아래에 고정 (동적 렌더링 지연 및 겹침 방지)
+        const updateHeaderPosition = () => {
+            const avgRow = thead.querySelector('.total-avg-row');
+            const mainHeaderRow = thead.querySelector('tr:not(.total-avg-row)');
+            if (avgRow && mainHeaderRow) {
+                const mainHeaderHeight = mainHeaderRow.getBoundingClientRect().height;
+                if (mainHeaderHeight > 0) {
+                    avgRow.querySelectorAll('th').forEach(th => th.style.top = `${mainHeaderHeight - 1}px`);
+                }
+            }
+        };
+        requestAnimationFrame(updateHeaderPosition);
+        setTimeout(updateHeaderPosition, 50);
+        setTimeout(updateHeaderPosition, 300);
     }
 
     const monthlyTotalHours = {};
@@ -269,7 +458,12 @@ function renderEquipMonthlyTable(statsList, year) {
     statsList.forEach(stat => {
         const tr = document.createElement('tr');
         tr.style.cursor = 'pointer';
-        let html = `<td>${escapeHtml(stat.site)}</td><td style="text-align: left; white-space: nowrap;">${escapeHtml(stat.equipName)}</td>`;
+        
+        let html = `
+            <td>${escapeHtml(stat.site)}</td>
+            <td style="white-space: nowrap;">${escapeHtml(stat.modelName)}</td>
+            <td>${escapeHtml(stat.serial || '-')}</td>
+            <td>${escapeHtml(stat.custEquipName || '-')}</td>`;
         
         let yearlyTotalHours = 0;
         let yearlyDownHours = 0;
@@ -325,6 +519,57 @@ function renderEquipMonthlyTable(statsList, year) {
 
         tbody.appendChild(tr);
     });
+}
+
+// [추가] 운영장비 가동율 리스트 CSV 내보내기
+function exportOperationCsv() {
+    const year = currentOpFilters.year || new Date().getFullYear();
+    const thead = document.querySelector('#operation-monthly-table thead');
+    const tbody = document.getElementById('operation-monthly-tbody');
+    
+    if (!tbody || tbody.querySelectorAll('tr').length === 0 || tbody.querySelector('.empty-msg')) {
+        alert('추출할 가동율 데이터가 없습니다.');
+        return;
+    }
+
+    let csvContent = '\uFEFF'; // 한글 깨짐 방지 BOM
+    csvContent += '사업장,장비명(모델),S/N,고객사 장비명,연 가동율,1월,2월,3월,4월,5월,6월,7월,8월,9월,10월,11월,12월\n';
+
+    const parseRow = (row) => {
+        const cols = row.querySelectorAll('td, th');
+        const rowData = [];
+        cols.forEach(col => {
+            let text = col.textContent.trim();
+            if (/^[=+\-@\(]/.test(text)) text = "'" + text; // 엑셀 수식 자동 변환 방지
+            
+            if (col.hasAttribute('colspan')) {
+                const colspan = parseInt(col.getAttribute('colspan'), 10);
+                rowData.push(`"${text.replace(/"/g, '""')}"`);
+                for (let i = 1; i < colspan; i++) rowData.push('""'); // colspan 넓이만큼 빈 칸 채우기
+            } else {
+                rowData.push(`"${text.replace(/"/g, '""')}"`);
+            }
+        });
+        return rowData.join(',');
+    };
+
+    if (thead) {
+        const avgRow = thead.querySelector('.total-avg-row');
+        if (avgRow) csvContent += parseRow(avgRow) + '\n';
+    }
+
+    const rows = tbody.querySelectorAll('tr');
+    rows.forEach(row => csvContent += parseRow(row) + '\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `운영장비_가동율_${year}년_${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
 }
 
 function renderDowntimeTable(list) {
@@ -384,17 +629,23 @@ function renderDowntimeTable(list) {
             equipHtml = `<div>${escapeHtml(item.equipName)}</div><div style="font-size: 11px; color: #3fb950; margin-top: 2px; font-weight: bold;">${escapeHtml(item.subText)}</div>`;
         }
         
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td>${formatDateHtml(item.start)}</td>
-            <td>${formatDateHtml(item.end)}</td>
-            <td>${equipHtml}</td>
-            <td>${escapeHtml(item.type || '-')}</td>
-            <td>${escapeHtml(dt1)}</td>
-            <td>${escapeHtml(dt2)}</td>
-            <td style="text-align: left;" title="${escapeHtml(tooltipContent)}">${escapeHtml(contentDisplay)}</td>
-            <td style="color: ${hourColor}; font-weight: bold;">${item.hours.toFixed(1)} h</td>
-        `;
+        // [수정] HTML 구조를 템플릿에서 복제하여 사용
+        const tpl = document.getElementById('operation-downtime-row-template');
+        if (!tpl) return;
+        const tr = tpl.content.cloneNode(true).firstElementChild;
+
+        tr.querySelector('.downtime-start').innerHTML = formatDateHtml(item.start);
+        tr.querySelector('.downtime-end').innerHTML = formatDateHtml(item.end);
+        tr.querySelector('.downtime-equip').innerHTML = equipHtml;
+        tr.querySelector('.downtime-type').textContent = escapeHtml(item.type || '-');
+        tr.querySelector('.downtime-dt1').textContent = escapeHtml(dt1);
+        tr.querySelector('.downtime-dt2').textContent = escapeHtml(dt2);
+        const contentCell = tr.querySelector('.downtime-content');
+        contentCell.title = escapeHtml(tooltipContent);
+        contentCell.textContent = escapeHtml(contentDisplay);
+        const hoursCell = tr.querySelector('.downtime-hours');
+        hoursCell.style.color = hourColor;
+        hoursCell.textContent = `${item.hours.toFixed(1)} h`;
         tbody.appendChild(tr);
     });
 }

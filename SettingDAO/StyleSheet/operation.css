@@ -1,11 +1,16 @@
 /* ==========================================================================
    Operation (가동율 분석) 전용 StyleSheet
    ========================================================================== */
+
+/* [요청] Operation 페이지 사이드바 너비 확장 (280px -> 300px) */
+.dashboard-sidebar {
+    width: 300px;
+}
    
 /* 사이드바 그룹 레이아웃 비율 */
 .op-year-group { flex: 0 0 auto; }
 .op-site-group { flex: 1; }
-.op-equip-group { flex: 2; }
+.op-equip-group { flex: 1; }
 
 /* 연도 선택 드롭다운 디자인 커스텀 */
 #operation-year-select { 
@@ -53,7 +58,7 @@
 .op-monthly-body .data-table-wrapper { flex: 1; overflow-y: auto; overflow-x: auto; min-height: 0; }
 
 /* 다운타임 상세 내역이 남은 공간을 모두 차지하도록 설정 */
-.operation-detail-card { flex: 1; min-height: 0; }
+.operation-detail-card { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 
 @media (max-width: 950px) {
     .operation-row-top { flex-direction: column; flex: none; height: auto; }
@@ -62,6 +67,32 @@
 
 #operation-monthly-table th, #operation-monthly-table td {
     padding: 8px 10px;
+}
+
+/* [수정] 스크롤 시 '전체 평균' 행이 다른 행 아래로 지나가지 않고 완벽하게 차단되도록 계층(z-index) 구조 개편 */
+#operation-monthly-table thead tr:not(.total-avg-row) th {
+    position: sticky; /* [추가] 스크롤 시 위치 고정 강제 */
+    z-index: 10; /* 메인 제목 헤더가 최상단 */
+    background-color: #161b22; /* 스크롤 시 아래 내용이 비치지 않도록 강제 */
+    top: 0;
+}
+
+#operation-monthly-table thead .total-avg-row th {
+    position: sticky; /* [추가] 스크롤 시 위치 고정 강제 */
+    z-index: 9; /* '전체 평균' 행이 그 다음 */
+    top: 37px; /* JS 계산 지연 시 기본 고정 위치 부여 */
+    background-color: #0d1117;
+    border-bottom: 3px solid #30363d; /* [요청] 구분선을 더 두껍게 처리 */
+}
+
+/* [추가] 가동율 분석 화면에서는 데스크탑(PC)에서도 카드 접기 버튼 표시 */
+.operation-main-content .btn-collapse {
+    display: block !important;
+}
+
+/* [추가] 카드를 접어 본문(리스트)이 사라졌을 때 카드가 빈 공간을 모두 차지하는 현상 방지 */
+.operation-main-content .card:has(.card-body[style*="display: none"]) {
+    flex: none !important;
 }
 
 /* 월별 가동율 테이블 행 클릭(Hover 및 Active) 효과 */
@@ -93,6 +124,223 @@
 #operation-downtime-table th:nth-child(8) { width: 120px; } /* 다운타임(시간) */
 
 #operation-downtime-table td {
+    padding-top: 12px;
+    padding-bottom: 12px;
     white-space: normal;
     word-break: break-word; /* 긴 텍스트가 칸을 뚫고 나가지 않도록 줄바꿈 */
 }
+
+/* 테이블 헤더(라벨명)와 리스트(첫 번째 행) 사이 여백 추가 */
+#operation-downtime-table tbody tr:first-child td {
+    padding-top: 20px;
+}
+
+/* ==========================================================================
+   커스텀 다중 선택 드롭다운 (Custom Multi-select Dropdown)
+   ========================================================================== */
+.operation-site-filter-wrapper {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+.operation-site-filter-wrapper .log-select-wrapper {
+    margin: 0;
+    position: relative;
+    width: 100%;
+    display: block;
+    flex: none;
+}
+.operation-site-filter-wrapper .log-select-trigger {
+    width: 100%;
+    height: 34px;
+    padding: 6px 10px;
+    font-size: 13px;
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.operation-site-filter-wrapper .log-select-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    z-index: 100;
+    margin-top: 2px;
+}
+.operation-site-filter-wrapper .log-select-dropdown.show {
+    display: block;
+}
+.operation-site-filter-wrapper .sort-group-filter-container {
+    padding: 8px;
+    border-bottom: 1px solid #30363d;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+.operation-site-filter-wrapper .sort-filter-btn {
+    padding: 2px 8px;
+    font-size: 11px;
+}
+.operation-site-filter-wrapper .log-select-list {
+    list-style: none;
+    padding: 5px;
+    margin: 0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+.operation-site-filter-wrapper .log-select-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 13px;
+    border-radius: 4px;
+}
+.operation-site-filter-wrapper .log-select-item:hover {
+    background-color: #21262d;
+}
+.operation-site-filter-wrapper .log-select-footer {
+    padding: 8px;
+    border-top: 1px solid #30363d;
+    display: flex;
+    gap: 5px;
+    justify-content: flex-end;
+}
+.operation-site-filter-wrapper .log-select-footer button {
+    padding: 4px 10px;
+    font-size: 12px;
+}
+
+/* 선택된 사업장 리스트 (스크롤) */
+.operation-selected-sites-list {
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+.operation-selected-sites-list li {
+    background: #21262d;
+    border: 1px solid #30363d;
+    padding: 8px 10px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.operation-selected-sites-list li.empty-selection {
+    background: transparent;
+    border: none;
+    color: #8b949e;
+    font-size: 12px;
+    justify-content: center;
+    padding: 10px;
+}
+.operation-selected-sites-list .site-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.operation-selected-sites-list .site-group-label { font-size: 10px; color: #8b949e; }
+.operation-selected-sites-list .site-name-label { font-size: 12px; color: #e6edf3; font-weight: bold; }
+
+.operation-selected-sites-list .btn-remove-site {
+    color: #f85149;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 4px;
+    font-weight: bold;
+}
+.operation-selected-sites-list .btn-remove-site:hover {
+    color: #ff7b72;
+}
+
+/* ==========================================================================
+   [정리] 인라인 스타일 -> CSS 클래스
+   ========================================================================== */
+.op-year-filter-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 0;
+    align-items: center;
+}
+.op-year-filter-row select {
+    flex: 1;
+}
+.op-year-filter-row button {
+    flex: 0 0 80px;
+    height: 34px;
+    padding: 0;
+}
+
+#operation-equip-search {
+    margin: 0;
+    padding: 4px 8px;
+    font-size: 12px;
+    width: 140px;
+    height: 26px;
+}
+
+.no-padding {
+    padding: 0 !important;
+}
+
+#operation-monthly-table .th-site {
+    min-width: 100px;
+}
+#operation-monthly-table .th-equip {
+    min-width: 150px;
+}
+#operation-monthly-table .th-yearly-rate {
+    min-width: 100px;
+}
+#operation-monthly-table .th-serial {
+    min-width: 100px;
+}
+#operation-monthly-table .th-cust-equip {
+    min-width: 130px;
+}
+
+/* ==========================================================================
+   [추가] 템플릿 요소 스타일
+   ========================================================================== */
+.log-select-item .check-icon {
+    flex: 0 0 20px;
+    text-align: center;
+    opacity: 0;
+    font-weight: bold;
+    color: #58a6ff;
+    transition: opacity 0.2s;
+}
+.log-select-item.selected .check-icon {
+    opacity: 1;
+}
+.log-select-item .item-text {
+    flex: 1;
+    padding-left: 8px;
+}
+
+.equip-item-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.equip-item-site { font-size: 10px; color: #8b949e; }
+.equip-item-name { font-size: 12px; color: #e6edf3; font-weight: bold; }
+.downtime-content { text-align: left; }
+.downtime-hours { font-weight: bold; }
