@@ -547,6 +547,13 @@ def sort():
         return redirect('/')
     return render_template('sort.html')
 
+@app.route('/operation')
+@app.route('/operation.html')
+def operation():
+    if 'user_id' not in session:
+        return redirect('/')
+    return render_template('operation.html')
+
 # [추가] SettingDAO 폴더 정적 파일 서빙
 @app.route('/SettingDAO/<path:filename>')
 @limiter.exempt
@@ -1362,8 +1369,8 @@ def trouble_crud():
             elif source == 'log':
                 log_item = LogItem.query.filter_by(id=str(payload.get('id'))).first()
                 if log_item:
-                    if 'memo' in payload:
-                        log_item.memo = payload.get('memo')
+                    if 'maint_memo' in payload:
+                        log_item.memo = payload.get('maint_memo')
                     if 'action_date' in payload: log_item.date = payload.get('action_date', log_item.date)
                     if 'occur_date' in payload: log_item.trouble_occur_date = payload.get('occur_date', '')
 
@@ -1380,8 +1387,8 @@ def trouble_crud():
             elif source == 'maint':
                 maint_item = MaintItem.query.filter_by(id=str(payload.get('id'))).first()
                 if maint_item:
-                    if 'memo' in payload:
-                        maint_item.memo = payload.get('memo')
+                    if 'maint_memo' in payload:
+                        maint_item.memo = payload.get('maint_memo')
                     if 'action_date' in payload: 
                         maint_item.date = payload.get('action_date', maint_item.date)
                         maint_item.scheduled_date = payload.get('action_date', maint_item.scheduled_date)

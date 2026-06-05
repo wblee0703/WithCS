@@ -834,12 +834,22 @@ function applyGlobalAccessibilityAndSecurityFixes() {
         // 1. Autocomplete 비활성화
         if (node.tagName === 'INPUT') {
             if (!node.hasAttribute('autocomplete')) node.setAttribute('autocomplete', 'new-password');
+
+            // [추가] 시간 관련 입력창 24시간제(00~23) 강제 적용 (오전/오후 분리 방지)
+            if (node.type === 'datetime-local' || node.type === 'time') {
+                if (!node.hasAttribute('lang') || node.getAttribute('lang') !== 'en-GB') node.setAttribute('lang', 'en-GB'); // en-GB 로케일: 24시간제 지원
+            }
         }
         if (node.querySelectorAll) {
             node.querySelectorAll('input').forEach(el => {
                 if (!el.hasAttribute('autocomplete')) {
                     el.setAttribute('autocomplete', 'new-password');
                 }
+            });
+
+            // [추가] 하위 노드의 시간 입력창 24시간제 일괄 적용
+            node.querySelectorAll('input[type="datetime-local"], input[type="time"]').forEach(el => {
+                if (!el.hasAttribute('lang') || el.getAttribute('lang') !== 'en-GB') el.setAttribute('lang', 'en-GB');
             });
 
             // 2. Label - Input 연결 (웹 접근성 / 콘솔 경고 해결)
@@ -1721,10 +1731,12 @@ function checkLoginStatus() {
         const maintLink = mobileNav.querySelector('a[href*="maintenance"]');
         const troubleLink = mobileNav.querySelector('a[href*="trouble"]');
         const sortLink = mobileNav.querySelector('a[href*="sort"]');
+        const operationLink = mobileNav.querySelector('a[href*="operation"]');
         if (setupLink) setupLink.style.display = isLoggedIn ? 'block' : 'none';
         if (maintLink) maintLink.style.display = isLoggedIn ? 'block' : 'none';
         if (troubleLink) troubleLink.style.display = isLoggedIn ? 'block' : 'none';
         if (sortLink) sortLink.style.display = isLoggedIn ? 'block' : 'none';
+        if (operationLink) operationLink.style.display = isLoggedIn ? 'block' : 'none';
     }
 }
 
@@ -3336,10 +3348,10 @@ async function renderSystemLogs() {
                 else displayTarget = escapeHtml(displayModel);
             }
 
-            // [수정] 날짜와 시간을 분리하고 시간은 오전/오후로 시작하도록 설정
+            // [수정] 날짜와 시간을 분리하고 시간은 24시간제로 표시
             const logDateObj = new Date(log.timestamp);
             const dateStr = logDateObj.toLocaleDateString('ko-KR');
-            const timeStr = logDateObj.toLocaleTimeString('ko-KR');
+            const timeStr = logDateObj.toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' });
             const displayTimestamp = `<div>${dateStr}</div><div style="font-size: 11px; color: #8b949e; margin-top: 2px;">${timeStr}</div>`;
 
             return `<tr>

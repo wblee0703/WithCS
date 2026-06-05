@@ -542,7 +542,7 @@
 
 #detail-work-memo {
     width: 100%;
-    min-height: 100px;
+    min-height: 200px;
     flex: none !important;
     resize: vertical;
     background: #0d1117;

@@ -57,7 +57,7 @@ body {
 
 .nav-links {
     display: flex;
-    gap: 60px;
+    gap: 30px;
     list-style: none;
     align-items: center;
 }
@@ -83,6 +83,11 @@ body {
     align-items: center;
     gap: 8px 15px;
     max-width: 700px;
+    pointer-events: none; /* 빈 영역 클릭 무시 (메뉴 덮음 방지) */
+}
+
+.user-controls > * {
+    pointer-events: auto; /* 내부 버튼 및 요소 클릭 활성화 */
 }
 
 .user-info {

@@ -192,9 +192,124 @@ function applyTroubleFilter() {
     renderTroubleList(filtered);
 }
 
+function setupTroubleLoadHistoryEvent() {
+    const btnLoadHistory = document.getElementById('btn-load-trouble-history');
+    const loadHistoryModal = document.getElementById('trouble-load-history-modal');
+    const btnCloseLoadHistory = document.getElementById('btn-close-trouble-load-history');
+
+    if (btnLoadHistory) {
+        btnLoadHistory.addEventListener('click', () => {
+            const modal = document.getElementById('trouble-detail-modal');
+            const equipId = modal.dataset.equipId;
+            if (!equipId) {
+                alert('장비를 먼저 선택해주세요. (목록에서 이력 선택 필요)');
+                return;
+            }
+
+            const currentTroubleId = modal.dataset.troubleId;
+            const equipHistories = allTroubles.filter(t => {
+                if (t.equip_id !== equipId || String(t.id) === String(currentTroubleId)) return false;
+                
+                // [추가] 발생 일시가 작성된 내역만 필터링
+                const isRecorded = t.occur_date && String(t.occur_date).trim() !== '' && t.occur_date !== '-';
+                if (!isRecorded) return false;
+
+                let hasContent = false;
+                if (t.content) {
+                    if (typeof t.content === 'string' && t.content.startsWith('{')) {
+                        try {
+                            const parsed = JSON.parse(t.content);
+                            if (parsed.situation || parsed.symptom || parsed.cause || parsed.action || parsed.prevention) hasContent = true;
+                        } catch(e) {}
+                    } else if (String(t.content).trim() !== '' && String(t.content).trim() !== '-') {
+                        hasContent = true;
+                    }
+                }
+                if (t.memo && String(t.memo).trim() !== '') hasContent = true;
+                if (t.image_data) hasContent = true;
+                
+                return hasContent;
+            });
+            
+            equipHistories.sort((a, b) => {
+                const dateA = a.action_date || a.occur_date || '';
+                const dateB = b.action_date || b.occur_date || '';
+                return dateB.localeCompare(dateA);
+            });
+
+            const listEl = document.getElementById('trouble-load-history-list');
+            if (!listEl) return;
+
+            if (equipHistories.length === 0) {
+                listEl.innerHTML = '<li style="text-align: center; color: #8b949e; padding: 20px;">불러올 이전 작업 이력이 없습니다.</li>';
+            } else {
+                listEl.innerHTML = equipHistories.map(h => {
+                    let displayContent = h.content || '-';
+                    let tooltipContent = displayContent;
+                    if (typeof displayContent === 'string' && displayContent.startsWith('{')) {
+                        try {
+                            const parsed = JSON.parse(displayContent);
+                            const arr = [];
+                            let sit = parsed.situation || '';
+                            if (h.source === 'log' || h.source === 'maint') sit = h.memo || '';
+                            if (sit) arr.push(`[상황] ${sit}`);
+                            if (parsed.symptom) arr.push(`[증상] ${parsed.symptom}`);
+                            if (parsed.cause) arr.push(`[원인] ${parsed.cause}`);
+                            if (parsed.trouble_memo) arr.push(`[메모] ${parsed.trouble_memo}`);
+                            
+                            displayContent = arr.length > 0 ? arr.join(' / ') : '-';
+                            tooltipContent = arr.join('\n');
+                        } catch(e) {}
+                    } else {
+                        if (h.source === 'log' || h.source === 'maint') {
+                            displayContent = h.memo || '-';
+                            tooltipContent = h.memo || '';
+                        }
+                    }
+                    const dateStr = h.action_date || h.occur_date || '-';
+                    return `<li data-id="${h.id}" data-source="${h.source}" style="padding: 12px; border-bottom: 1px solid #30363d; cursor: pointer; display: flex; flex-direction: column; gap: 5px; background: #161b22; border-radius: 4px; margin-bottom: 8px; transition: background 0.2s;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: #58a6ff; font-weight: bold; font-size: 13px;">${dateStr}</span>
+                            <span style="color: #8b949e; font-size: 11px; background: #21262d; padding: 2px 6px; border-radius: 4px;">${h.source === 'log' ? '점검이력' : 'Trouble'}</span>
+                        </div>
+                        <div title="${escapeHtml(tooltipContent)}" style="color: #e6edf3; font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">${escapeHtml(displayContent)}</div>
+                    </li>`;
+                }).join('');
+
+                listEl.querySelectorAll('li').forEach(li => {
+                    li.addEventListener('mouseover', () => li.style.background = '#21262d');
+                    li.addEventListener('mouseout', () => li.style.background = '#161b22');
+                    li.addEventListener('click', () => {
+                        if (!confirm('선택한 작업내용과 사진을 현재 창에 불러오시겠습니까?\n(입력되어 있던 내용은 덮어씌워집니다.)')) return;
+                        
+                        const hId = li.dataset.id;
+                        const hSource = li.dataset.source;
+                        const targetData = equipHistories.find(t => String(t.id) === String(hId) && t.source === hSource);
+                        
+                        if (targetData) {
+                            bindTroubleContentAndImage(targetData, true); // [수정] 불러오기 시 세부사항(메모)은 제외
+                            alert('데이터를 불러왔습니다.');
+                            if (loadHistoryModal) loadHistoryModal.style.display = 'none';
+                        }
+                    });
+                });
+            }
+
+            if (loadHistoryModal) loadHistoryModal.style.display = 'flex';
+        });
+    }
+
+    if (btnCloseLoadHistory) {
+        btnCloseLoadHistory.addEventListener('click', () => {
+            if (loadHistoryModal) loadHistoryModal.style.display = 'none';
+        });
+    }
+}
+
 function setupTroubleEvents() {
     // 모달 닫기 버튼 클릭
     const btnCloseModal = document.getElementById('btn-close-trouble-modal');
+
     if (btnCloseModal) {
         btnCloseModal.addEventListener('click', closeTroubleModal);
     }
@@ -244,6 +359,8 @@ function setupTroubleEvents() {
         });
     }
 
+    setupTroubleLoadHistoryEvent();
+
     // 모달 내부 저장 버튼 클릭
     const btnSave = document.getElementById('btn-save-trouble');
     if (btnSave) {
@@ -252,6 +369,7 @@ function setupTroubleEvents() {
             const mode = modal.dataset.mode || 'add';
             const troubleId = modal.dataset.troubleId || Date.now();
             const equipId = modal.dataset.equipId || '';
+            const source = modal.dataset.source || 'trouble';
             
             // [추가] 5개 항목(JSON) 및 진행경과(memo) 분리 수집
             const situationEl = document.getElementById('trouble-modal-situation');
@@ -270,9 +388,13 @@ function setupTroubleEvents() {
                     action: actionEl ? actionEl.value : '',
                     prevention: preventionEl ? preventionEl.value : ''
                 };
+                if (source === 'log' || source === 'maint') {
+                    contentData.trouble_memo = memoEl ? memoEl.value : '';
+                }
             }
 
             const memoVal = memoEl ? memoEl.value : '';
+            const maintMemoVal = situationEl ? situationEl.value : '';
 
             const payload = {
                 id: troubleId,
@@ -281,10 +403,11 @@ function setupTroubleEvents() {
                 action_date: document.getElementById('trouble-modal-action-date').value,
                 content: contentData, // [수정] JSON 객체로 전송
                 memo: memoVal, // [추가] 진행 경과 분리 전송
+                maint_memo: maintMemoVal,
                 worker: document.getElementById('trouble-modal-worker').value,
                 status: document.getElementById('trouble-modal-status') ? document.getElementById('trouble-modal-status').value : '조치완료',
                 image_data: currentTroubleImageBase64,
-                source: modal.dataset.source || 'trouble'
+                source: source
             };
 
             const action = mode === 'add' ? 'CREATE' : 'UPDATE';
@@ -443,29 +566,7 @@ function openTroubleModal(mode, id = null, source = null) {
             if (workerInput) workerInput.value = troubleData.worker || '';
             
             // [수정] source 제약 없이 모든 트러블 이력 소스에 대해 진행 경과(JSON) 바인딩 수행
-            if (troubleData.content) {
-                let parsed = troubleData.content;
-                if (typeof parsed === 'string' && parsed.startsWith('{')) {
-                    try { parsed = JSON.parse(parsed); } catch(e) {}
-                }
-                
-                if (typeof parsed === 'object' && parsed !== null) {
-                    if (situationEl) situationEl.value = parsed.situation || '';
-                    if (symptomEl) symptomEl.value = parsed.symptom || '';
-                    if (causeEl) causeEl.value = parsed.cause || '';
-                    if (actionEl) actionEl.value = parsed.action || '';
-                    if (preventionEl) preventionEl.value = parsed.prevention || '';
-                }
-            }
-            
-            if (memoInput) memoInput.value = troubleData.memo || '';
-
-            if (troubleData.image_data) {
-                currentTroubleImageBase64 = troubleData.image_data;
-                if (previewImg) previewImg.src = currentTroubleImageBase64;
-                if (previewContainer) previewContainer.style.display = 'block';
-                if (removeBtn) removeBtn.style.display = 'inline-block';
-            }
+            bindTroubleContentAndImage(troubleData);
             
             // [추가] Trouble 테이블 원본 데이터인 경우에만 삭제 버튼 노출
             if (btnDelete) {
@@ -480,6 +581,55 @@ function openTroubleModal(mode, id = null, source = null) {
     }
 
     if (modal) modal.style.display = 'flex';
+}
+
+function bindTroubleContentAndImage(data, excludeMemo = false) {
+    const situationEl = document.getElementById('trouble-modal-situation');
+    const symptomEl = document.getElementById('trouble-modal-symptom');
+    const causeEl = document.getElementById('trouble-modal-cause');
+    const actionEl = document.getElementById('trouble-modal-action-taken');
+    const preventionEl = document.getElementById('trouble-modal-preventive');
+    const memoInput = document.getElementById('trouble-modal-content');
+    const previewContainer = document.getElementById('trouble-image-preview-container');
+    const previewImg = document.getElementById('trouble-image-preview');
+    const removeBtn = document.getElementById('btn-remove-trouble-image');
+
+    let parsed = null;
+    if (data.content) {
+        parsed = data.content;
+        if (typeof parsed === 'string' && parsed.startsWith('{')) {
+            try { parsed = JSON.parse(parsed); } catch(e) {}
+        }
+        
+        if (typeof parsed === 'object' && parsed !== null) {
+            if (situationEl) situationEl.value = parsed.situation || '';
+            if (symptomEl) symptomEl.value = parsed.symptom || '';
+            if (causeEl) causeEl.value = parsed.cause || '';
+            if (actionEl) actionEl.value = parsed.action || '';
+            if (preventionEl) preventionEl.value = parsed.prevention || '';
+            if (memoInput && (data.source === 'log' || data.source === 'maint')) {
+                memoInput.value = parsed.trouble_memo || '';
+            }
+        } else {
+            if (situationEl) situationEl.value = data.content || '';
+        }
+    }
+    
+    if (data.source === 'log' || data.source === 'maint') {
+        if (situationEl) situationEl.value = data.memo || '';
+        if (memoInput && (!parsed || typeof parsed !== 'object' || !parsed.trouble_memo)) {
+            memoInput.value = '';
+        }
+    } else {
+        if (!excludeMemo && memoInput) memoInput.value = data.memo || '';
+    }
+
+    if (data.image_data) {
+        currentTroubleImageBase64 = data.image_data;
+        if (previewImg) previewImg.src = currentTroubleImageBase64;
+        if (previewContainer) previewContainer.style.display = 'block';
+        if (removeBtn) removeBtn.style.display = 'inline-block';
+    }
 }
 
 function closeTroubleModal() {
@@ -539,16 +689,25 @@ function renderTroubleList(dataList = []) {
                 try {
                     const parsed = JSON.parse(displayContent);
                     const arr = [];
-                    if (parsed.situation) arr.push(`[상황] ${parsed.situation}`);
+                    let sit = parsed.situation || '';
+                    if (t.source === 'log' || t.source === 'maint') sit = t.memo || '';
+                    
+                    if (sit) arr.push(`[상황] ${sit}`);
                     if (parsed.symptom) arr.push(`[증상] ${parsed.symptom}`);
                     if (parsed.cause) arr.push(`[원인] ${parsed.cause}`);
                     if (parsed.action) arr.push(`[조치] ${parsed.action}`);
                     if (parsed.prevention) arr.push(`[대책] ${parsed.prevention}`);
+                    if (parsed.trouble_memo) arr.push(`[메모] ${parsed.trouble_memo}`);
                     
                     // [수정] 화면에는 '트러블 상황'에 입력된 내용만 단독으로 표시 (툴팁은 전체 내용 유지)
-                    displayContent = parsed.situation || '-';
+                    displayContent = sit || '-';
                     tooltipContent = arr.join('\n');
                 } catch(e) {}
+            } else {
+                if (t.source === 'log' || t.source === 'maint') {
+                    displayContent = t.memo || '-';
+                    tooltipContent = t.memo || '';
+                }
             }
             
             // [추가] 기록여부 판단 (발생 일시 유무 기준)

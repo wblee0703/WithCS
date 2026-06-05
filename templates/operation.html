@@ -1,0 +1,79 @@
+{% extends 'common.html' %}
+{% set active_page = 'operation' %}
+
+{% block title %}가동율 분석 - WithTech{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/operation.css') }}">
+{% endblock %}
+
+{% block content %}
+
+    <div class="dashboard-wrapper">
+        <aside class="dashboard-sidebar">
+            <div class="sidebar-group op-year-group">
+                <div class="group-header"><h3>조회 연도</h3></div>
+                <div class="form-group" style="display: flex; gap: 10px; margin-bottom: 0; align-items: center;">
+                    <select id="operation-year-select" class="input-dark" style="flex: 1;"></select>
+                    <button id="btn-apply-operation-filter" class="btn-blue" style="flex: 0 0 80px; height: 34px; padding: 0;">조회하기</button>
+                </div>
+            </div>
+
+            <div class="sidebar-group op-site-group">
+                <div class="group-header"><h3>사업장</h3></div>
+                <ul id="operation-site-list" class="list-data"></ul>
+            </div>
+            
+            <div class="sidebar-group op-equip-group">
+                <div class="sidebar-header-row">
+                    <h3>장비명</h3>
+                    <input type="text" id="operation-equip-search" class="input-dark" style="margin: 0; padding: 4px 8px; font-size: 12px; width: 140px; height: 26px;" placeholder="장비 검색...">
+                </div>
+                <ul id="operation-equip-list" class="list-data"></ul>
+            </div>
+        </aside>
+
+        <main class="dashboard-main">
+            <div class="operation-main-content">
+                <div class="operation-row-top">
+                    <div class="card operation-monthly-card">
+                        <div class="card-header"><h3>운영장비 가동율</h3></div>
+                        <div class="card-body op-monthly-body">
+                            <div class="data-table-wrapper">
+                                <table class="data-table" id="operation-monthly-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="min-width: 100px;">사업장</th>
+                                            <th style="min-width: 150px;">장비명</th>
+                                            <th>1월</th><th>2월</th><th>3월</th><th>4월</th><th>5월</th><th>6월</th>
+                                            <th>7월</th><th>8월</th><th>9월</th><th>10월</th><th>11월</th><th>12월</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="operation-monthly-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card operation-detail-card">
+                    <div class="card-header"><h3>다운타임 상세 내역</h3></div>
+                    <div class="card-body" style="padding: 0;">
+                        <div class="data-table-wrapper">
+                            <table class="data-table" id="operation-downtime-table">
+                                <thead>
+                                    <tr><th>발생/시작일시</th><th>조치/종료일시</th><th>장비명</th><th>작업/점검 구분</th><th>세부 구분1</th><th>세부 구분2</th><th>내용</th><th>다운타임(시간)</th></tr>
+                                </thead>
+                                <tbody id="operation-downtime-tbody"><tr><td colspan="8" class="empty-msg">데이터가 없습니다.</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('SettingDAO', filename='JavaScript/operation.js') }}"></script>
+{% endblock %}

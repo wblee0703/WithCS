@@ -145,7 +145,7 @@ function setupMaintenanceEvents() {
             historyBtn.innerHTML = '📜 물품 이력';
             historyBtn.title = '해당 장비의 과거 유지관리 물품 변동(교체) 이력을 확인합니다.';
             historyBtn.addEventListener('click', openMaintHistoryModal);
-            
+
             btnContainer.insertBefore(historyBtn, maintSettingsBtn);
         }
     }
@@ -337,12 +337,31 @@ function setupLogEvents() {
 
     const memoStartTimeInput = document.getElementById('memo-start-time');
     const memoEndTimeInput = document.getElementById('memo-end-time');
+
+    // [추가] 시작일시/종료일시 입력창을 오전/오후(AM/PM) 대신 24시간제(00~23) 및 연-월-일 형식으로 강제 표시
+    if (memoStartTimeInput) memoStartTimeInput.lang = 'en-GB';
+    if (memoEndTimeInput) memoEndTimeInput.lang = 'en-GB';
+
     const memoSaveBtn = document.getElementById('btn-save-memo');
+
+    // [추가] 브라우저 기본 포맷(오전/오후)을 덮어쓰고 24시간제로 표시하기 위한 가짜 텍스트 설정
+    const updateDisplayTime = (input) => {
+        if (input && input.value) {
+            input.setAttribute('data-display', input.value.replace('T', ' '));
+            input.classList.add('has-value-display');
+        } else if (input) {
+            input.setAttribute('data-display', '');
+            input.classList.remove('has-value-display');
+        }
+    };
 
     const handleTimeChange = () => {
         if (!selectedLogId) return;
         const currentStart = memoStartTimeInput ? memoStartTimeInput.value : "";
         const currentEnd = memoEndTimeInput ? memoEndTimeInput.value : "";
+
+        updateDisplayTime(memoStartTimeInput);
+        updateDisplayTime(memoEndTimeInput);
 
         if (currentStart !== originalStartTime || currentEnd !== originalEndTime) {
             if (memoSaveBtn) {
@@ -551,7 +570,7 @@ function renderDetails() {
 
         const contentCell = tr.querySelector('.edit-content');
         let safeContent = item.content || '';
-        
+
         // [강력 조치] 유지관리 리스트 화면에 비용 라벨이 절대 노출되지 않도록 렌더링 시점에서도 강제 정제
         safeContent = safeContent.replace(/\[(?:유상|무상[^\]]*|기타)\]\s*/g, '').trim();
         safeContent = safeContent.replace(/\s*-\s*(?=,|$)/g, '').trim();
@@ -676,12 +695,12 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
 
             let filteredItems = data.filter(item => {
                 if (!item.part) return false; // 유령 물품(빈 데이터) 방지
-                
+
                 // [수정] 물품명, 코드명, 물품 상세 조합이 완전히 동일한 항목이 이미 등록된 경우에만 제안 박스에서 제외
-                const isDuplicate = currentData.maint.some(m => 
-                    m.type === currentType && 
-                    m.content === item.part && 
-                    (m.code || '') === (item.code || '') && 
+                const isDuplicate = currentData.maint.some(m =>
+                    m.type === currentType &&
+                    m.content === item.part &&
+                    (m.code || '') === (item.code || '') &&
                     (m.spec || '') === currentSpec
                 );
                 if (isDuplicate) return false;
@@ -793,25 +812,25 @@ async function deleteDetailItem(id) {
 
     if (data && data.maint) {
         // [추가] 삭제될 아이템 정보 미리 저장
-            const targetItem = data.maint.find(item => String(item.id) === String(id));
+        const targetItem = data.maint.find(item => String(item.id) === String(id));
         const deletedContent = targetItem ? targetItem.content : 'Unknown';
 
         const success = await window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_deletes: [id.toString()] });
-            if (!success) {
-                alert('서버 통신 오류로 삭제에 실패했습니다.');
-                return;
-            }
+        if (!success) {
+            alert('서버 통신 오류로 삭제에 실패했습니다.');
+            return;
+        }
 
         // 3. 해당 ID를 제외한 나머지 항목만 남김 (필터링)
-            data.maint = data.maint.filter(item => String(item.id) !== String(id));
+        data.maint = data.maint.filter(item => String(item.id) !== String(id));
 
         // 4. 변경된 데이터 저장
         localStorage.setItem(key, JSON.stringify(data));
-            if (typeof window.addSystemLog === 'function') {
-                window.addSystemLog('DELETE_MAINTENANCE', currentPath.equip, `삭제: ${deletedContent} (ID: ${id})`);
-            } else if (typeof addSystemLog === 'function') {
-                addSystemLog('DELETE_MAINTENANCE', currentPath.equip, `삭제: ${deletedContent} (ID: ${id})`);
-            }
+        if (typeof window.addSystemLog === 'function') {
+            window.addSystemLog('DELETE_MAINTENANCE', currentPath.equip, `삭제: ${deletedContent} (ID: ${id})`);
+        } else if (typeof addSystemLog === 'function') {
+            addSystemLog('DELETE_MAINTENANCE', currentPath.equip, `삭제: ${deletedContent} (ID: ${id})`);
+        }
 
         // 5. 화면 즉시 갱신
         renderDetails();
@@ -903,7 +922,7 @@ async function toggleEditRow(id) {
         // [추가] 중복 등록 검사 로직 (수정 시점)
         const key = `details_${currentPath.site}_${currentPath.equip}`;
         const data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
-        
+
         // [수정] 코드, 물품명, 물품상세가 모두 동일한 경우에만 중복으로 처리
         const isDuplicate = data.maint.some(m => {
             if (String(m.id) === String(id)) return false; // 자기 자신 제외
@@ -932,7 +951,7 @@ async function toggleEditRow(id) {
 async function updateRowData(id, code, content, spec, date, period, type) {
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
-        const idx = data.maint.findIndex(item => String(item.id) === String(id));
+    const idx = data.maint.findIndex(item => String(item.id) === String(id));
 
     if (idx > -1) {
         // [수정] 복사본 생성 후 업데이트, 성공 시에만 원본 덮어쓰기
@@ -954,7 +973,7 @@ async function updateRowData(id, code, content, spec, date, period, type) {
         data.maint[idx] = tempItem;
         localStorage.setItem(key, JSON.stringify(data));
         addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `수정: [${code || '-'}] ${content} (구분: ${tempItem.type}, 날짜: ${date}, 주기: ${period || '-'})`);
-        
+
         return true;
     }
     return false;
@@ -983,7 +1002,7 @@ function calculateAndDisplayDuration() {
     const startInput = document.getElementById('memo-start-time');
     const endInput = document.getElementById('memo-end-time');
     const durationDisplay = document.getElementById('memo-time-duration');
-    
+
     if (!startInput || !endInput || !durationDisplay) return;
 
     const startVal = startInput.value;
@@ -995,17 +1014,17 @@ function calculateAndDisplayDuration() {
         const diffMs = endTime - startTime;
 
         if (diffMs < 0) {
-            durationDisplay.textContent = "(종료일시 오류)";
+            durationDisplay.textContent = "(오류: 시작 일시가 종료 일시보다 늦습니다)";
             durationDisplay.style.color = "#f85149";
         } else {
             const diffMins = Math.floor(diffMs / 60000);
             const hours = Math.floor(diffMins / 60);
             const mins = diffMins % 60;
-            
+
             let durationText = "";
             if (hours > 0) durationText += `${hours}시간 `;
             if (mins > 0 || hours === 0) durationText += `${mins}분`;
-            
+
             durationDisplay.textContent = `(작업시간: ${durationText.trim()})`;
             durationDisplay.style.color = "#58a6ff";
         }
@@ -1018,7 +1037,7 @@ function calculateAndDisplayDuration() {
 function checkMemoUnsavedChanges() {
     const memoStartTimeInput = document.getElementById('memo-start-time');
     const memoEndTimeInput = document.getElementById('memo-end-time');
-    
+
     if (memoStartTimeInput && memoEndTimeInput) {
         if (memoStartTimeInput.value !== originalStartTime || memoEndTimeInput.value !== originalEndTime) {
             return confirm('저장되지 않은 시작/종료 일시가 있습니다. 무시하고 이동하시겠습니까?');
@@ -1113,7 +1132,7 @@ function renderLogs() {
         const contentCell = tr.querySelector('.log-content');
         let displayContent = log.content || '-';
         let tooltipContent = log.content || '';
-        
+
         // [수정] 리스트 화면에 비용처리 태그([유상], [무상] 등)가 표시되지 않도록 텍스트 정제
         if (log.content && log.content !== '내용 없음') {
             const tooltipItems = [];
@@ -1123,7 +1142,7 @@ function renderLogs() {
                 let cleanV = s.trim();
                 // [개선] 비용처리 태그(유상, 무상, 무상(보증) 등)를 위치에 관계없이 명시적으로 모두 제거
                 cleanV = cleanV.replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').replace(/\s+/g, ' ').trim();
-                 
+
                 let tooltipV = cleanV;
                 const kwMatch = cleanV.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|파츠 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
                 if (kwMatch) {
@@ -1131,13 +1150,13 @@ function renderLogs() {
                 } else {
                     tooltipV = tooltipV.replace(/\s*-\s*$/, '').trim();
                 }
-                
+
                 tooltipItems.push(tooltipV);
                 displayItems.push(cleanV.replace(/\s*-\s*$/, '').trim());
             });
-            
+
             tooltipContent = tooltipItems.join('\n');
-            
+
             // [수정] 물품이 2개 이상일 때 'A 외 N개' 형태로 축약 표시 (리스트에는 수식어 포함)
             if (displayItems.length > 1) {
                 displayContent = `${displayItems[0]} 외 ${displayItems.length - 1}개`;
@@ -1255,11 +1274,33 @@ function selectLog(id, focus = true) {
         const memoCostTypeInput = document.getElementById('memo-cost-type');
         if (memoCostTypeInput) memoCostTypeInput.value = costType;
 
+        // [추가] 이전 저장 데이터 형식이 datetime-local 표준 형식과 다를 경우 수정 반영이 안되는 현상 방지
+        const formatDatetimeLocal = (val) => {
+            if (!val) return "";
+            let formatted = val.trim();
+            if (formatted.includes(' ')) formatted = formatted.replace(' ', 'T');
+            if (formatted.length === 10) formatted += 'T00:00';
+            if (formatted.length > 16 && formatted.includes('T')) formatted = formatted.substring(0, 16);
+            return formatted;
+        };
+
         const memoStartTimeInput = document.getElementById('memo-start-time');
-        if (memoStartTimeInput) memoStartTimeInput.value = startTime;
-        
+        if (memoStartTimeInput) {
+            memoStartTimeInput.value = formatDatetimeLocal(startTime);
+            if (memoStartTimeInput.value) {
+                memoStartTimeInput.setAttribute('data-display', memoStartTimeInput.value.replace('T', ' '));
+                memoStartTimeInput.classList.add('has-value-display');
+            } else memoStartTimeInput.classList.remove('has-value-display');
+        }
+
         const memoEndTimeInput = document.getElementById('memo-end-time');
-        if (memoEndTimeInput) memoEndTimeInput.value = endTime;
+        if (memoEndTimeInput) {
+            memoEndTimeInput.value = formatDatetimeLocal(endTime);
+            if (memoEndTimeInput.value) {
+                memoEndTimeInput.setAttribute('data-display', memoEndTimeInput.value.replace('T', ' '));
+                memoEndTimeInput.classList.add('has-value-display');
+            } else memoEndTimeInput.classList.remove('has-value-display');
+        }
 
         originalMemo = memo; // 원본 저장
         originalWorker = worker; // 원본 저장
@@ -1284,10 +1325,10 @@ function selectLog(id, focus = true) {
         // [추가] 교체 물품 카드 구성 및 렌더링
         const memoInput = document.getElementById('device-memo');
         let replacedPartsContainer = document.getElementById('replaced-parts-container');
-        
+
         if (memoInput && !replacedPartsContainer) {
             const memoParent = memoInput.parentNode;
-            
+
             const flexWrapper = document.createElement('div');
             flexWrapper.id = 'memo-flex-wrapper'; // [추가] 반응형 레이아웃 제어용 ID
             flexWrapper.style.display = 'flex';
@@ -1295,7 +1336,7 @@ function selectLog(id, focus = true) {
             flexWrapper.style.height = '100%'; // [수정] 작업 내용(메모/교체물품) 영역 높이 유동적 확장
             flexWrapper.style.flex = '1'; // [수정] 남은 공간을 꽉 채우도록 변경
             flexWrapper.style.minHeight = '0'; // [수정] 카드를 뚫고 나가는 현상 완벽 방지
-            
+
             replacedPartsContainer = document.createElement('div');
             replacedPartsContainer.id = 'replaced-parts-container';
             replacedPartsContainer.style.display = 'flex';
@@ -1305,7 +1346,7 @@ function selectLog(id, focus = true) {
             replacedPartsContainer.style.borderRadius = '6px';
             replacedPartsContainer.style.overflow = 'hidden';
             replacedPartsContainer.style.minHeight = '0';
-            
+
             const partsTitle = document.createElement('div');
             partsTitle.style.padding = '8px 12px';
             partsTitle.style.background = '#21262d';
@@ -1315,7 +1356,7 @@ function selectLog(id, focus = true) {
             partsTitle.style.color = '#e6edf3';
             partsTitle.textContent = '교체 물품';
             replacedPartsContainer.appendChild(partsTitle);
-            
+
             const partsList = document.createElement('ul');
             partsList.id = 'replaced-parts-list';
             partsList.style.listStyle = 'none';
@@ -1325,7 +1366,7 @@ function selectLog(id, focus = true) {
             partsList.style.flex = '1';
             partsList.style.minHeight = '0';
             replacedPartsContainer.appendChild(partsList);
-            
+
             const memoWrapper = document.createElement('div');
             memoWrapper.style.flex = '1';
             memoWrapper.style.display = 'flex';
@@ -1338,12 +1379,12 @@ function selectLog(id, focus = true) {
             replacedPartsContainer.style.maxHeight = 'none';
             memoWrapper.style.flex = '1';
             memoWrapper.style.minHeight = '0'; // 부모 영역을 뚫고 나가는 현상 방지
-            
+
             memoParent.insertBefore(flexWrapper, memoInput);
             memoWrapper.appendChild(memoInput);
             flexWrapper.appendChild(replacedPartsContainer);
             flexWrapper.appendChild(memoWrapper);
-            
+
             memoInput.style.flex = '1';
             memoInput.style.width = '100%';
             memoInput.style.minHeight = '0';
@@ -1357,9 +1398,9 @@ function selectLog(id, focus = true) {
             const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
             const contentStr = logItem.content || '';
             const itemsList = contentStr.split(',').map(s => s.trim()).filter(Boolean);
-            
+
             let replacedParts = [];
-            
+
             itemsList.forEach(itemText => {
                 let pureContent = itemText;
                 const costMatch = pureContent.match(/^\[(.*?)\] (.*)$/);
@@ -1368,19 +1409,19 @@ function selectLog(id, focus = true) {
                     itemCost = costMatch[1];
                     pureContent = costMatch[2];
                 }
-                
+
                 // [추가] 내부 비용 태그 매칭 (예: 파트 이상 교체 - [유상] 펌프)
                 const innerCostMatch = pureContent.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
                 if (innerCostMatch) {
                     if (!itemCost) itemCost = innerCostMatch[2];
                     pureContent = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
                 }
-                
+
                 // [추가] 마이그레이션 전 과거 데이터 호환성 보장용 폴백
                 if (!itemCost && logItem.costType) {
                     itemCost = logItem.costType;
                 }
-                
+
                 // 특수 태그 제거 ([지연]만 제거하여 [규격]이 날아가는 현상 방지)
                 pureContent = pureContent.replace(/\[지연\]\s*/g, '').trim();
 
@@ -1397,7 +1438,7 @@ function selectLog(id, focus = true) {
                     spec = specMatch[1];
                     pureContent = pureContent.replace(specMatch[0], '');
                 }
-                
+
                 const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
                 if (match) {
                     replacedParts.push({
@@ -1422,7 +1463,7 @@ function selectLog(id, focus = true) {
                     li.style.flexDirection = 'column';
                     li.style.gap = '4px';
                     li.style.minWidth = '0';
-                    
+
                     let specDisplay = (part.spec && part.spec !== '-') ? ` [${part.spec}]` : '';
                     let titleText = (part.code ? part.code : part.name) + specDisplay;
                     let titleHtml = `
@@ -1437,7 +1478,7 @@ function selectLog(id, focus = true) {
                             <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="규격: ${escapeHtml(part.masterSpec)}">규격: ${escapeHtml(part.masterSpec)}</span>
                         </div>
                     `;
-                    
+
                     li.innerHTML = titleHtml + descHtml;
                     partsList.appendChild(li);
                 });
@@ -1454,39 +1495,46 @@ async function saveMemoTimes() {
 
     const memoStartTimeInput = document.getElementById('memo-start-time');
     const memoEndTimeInput = document.getElementById('memo-end-time');
-    
+
     const newStart = memoStartTimeInput ? memoStartTimeInput.value : "";
     const newEnd = memoEndTimeInput ? memoEndTimeInput.value : "";
 
+    if (newStart && newEnd) {
+        if (new Date(newStart) > new Date(newEnd)) {
+            alert('시작 일시는 종료 일시보다 늦을 수 없습니다.\n입력하신 시간을 다시 확인해주세요.');
+            return;
+        }
+    }
+
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
-    
+
     if (data && data.logs) {
         const logIndex = data.logs.findIndex(l => l.id === selectedLogId);
         if (logIndex > -1) {
             data.logs[logIndex].startTime = newStart;
             data.logs[logIndex].endTime = newEnd;
-            
+
             if (typeof window.syncHistoryTransaction === 'function') {
                 const success = await window.syncHistoryTransaction(currentPath.site, currentPath.equip, { log_upserts: [data.logs[logIndex]] });
                 if (!success) return;
             }
-            
+
             localStorage.setItem(key, JSON.stringify(data));
-            
+
             originalStartTime = newStart;
             originalEndTime = newEnd;
-            
+
             const memoSaveBtn = document.getElementById('btn-save-memo');
             if (memoSaveBtn) {
                 memoSaveBtn.classList.remove('btn-orange-sm');
                 memoSaveBtn.classList.add('btn-green-sm');
             }
-            
+
             if (typeof addSystemLog === 'function') {
                 addSystemLog('UPDATE_LOG_TIME', currentPath.equip, `시작/종료 일시 수정 (LogID: ${selectedLogId})`);
             }
-            
+
             alert('시간 정보가 저장되었습니다.');
         }
     }
@@ -2042,24 +2090,24 @@ async function toggleMaintenanceMode() {
             const typeSelect = document.getElementById(`input-type-${id}`);
             const newType = typeSelect ? typeSelect.value : (badgeEl ? badgeEl.textContent.trim() : '정기');
             const newCode = codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim();
-                const newContent = contentCell.dataset.rawContent || contentCell.textContent.trim();
+            const newContent = contentCell.dataset.rawContent || contentCell.textContent.trim();
             const specInput = document.getElementById(`input-spec-${id}`);
             const newSpec = specInput ? specInput.value.trim() : '';
 
-                // [수정] 코드, 물품명, 물품상세가 모두 동일한 경우에만 중복으로 처리
-                const isDuplicate = tempDataMaint.some(m => {
-                    if (String(m.id) === String(id)) return false; // 자기 자신 제외
-                    if (m.type !== newType) return false;
-                    const m_code = m.code || '';
-                    const m_content = m.content || '';
-                    const m_spec = m.spec || '';
-                    return m_code === newCode && m_content === newContent && m_spec === newSpec;
-                });
-                
+            // [수정] 코드, 물품명, 물품상세가 모두 동일한 경우에만 중복으로 처리
+            const isDuplicate = tempDataMaint.some(m => {
+                if (String(m.id) === String(id)) return false; // 자기 자신 제외
+                if (m.type !== newType) return false;
+                const m_code = m.code || '';
+                const m_content = m.content || '';
+                const m_spec = m.spec || '';
+                return m_code === newCode && m_content === newContent && m_spec === newSpec;
+            });
+
             if (isDuplicate) {
                 hasDuplicate = true;
             } else {
-                    const mIdx = tempDataMaint.findIndex(m => String(m.id) === String(id));
+                const mIdx = tempDataMaint.findIndex(m => String(m.id) === String(id));
                 if (mIdx > -1) {
                     tempDataMaint[mIdx].type = newType;
                     tempDataMaint[mIdx].content = newContent;
@@ -2073,7 +2121,7 @@ async function toggleMaintenanceMode() {
             alert('날짜를 선택해주세요.');
             return; // 끄기 취소
         }
-        
+
         if (hasDuplicate) {
             alert('이미 유지관리 물품에 동일하게 등록된 항목이 있어 저장할 수 없습니다.\n수정 중인 항목을 확인해주세요.');
             return; // 끄기 취소
@@ -2184,10 +2232,10 @@ window.openMaintHistoryModal = function () {
         let contents = (log.content || '').split(',').map(s => s.trim()).filter(Boolean);
         contents.forEach(content => {
             if (content === '내용 없음' || content === '장비 점검') return;
-            
+
             let pureContent = content;
             let costTypeHtml = '';
-            
+
             // 1. 문장 맨 앞 비용 태그 추출
             const costMatch = pureContent.match(/^\[(.*?)\]\s*(.*)$/);
             if (costMatch) {
@@ -2197,12 +2245,12 @@ window.openMaintHistoryModal = function () {
                 costTypeHtml = `<span style="font-size: 10px; background: #30363d; color: ${costColor}; padding: 2px 4px; border-radius: 4px; margin-right: 5px;">${costMatch[1]}</span>`;
                 pureContent = costMatch[2].trim();
             }
-            
+
             // 2. 작업구분(키워드) 및 '-' 제거
             const splitMatch = pureContent.match(/^(.*?)\s*-\s*(.*)$/);
             if (splitMatch) {
                 pureContent = splitMatch[2].trim();
-                
+
                 // 3. '-' 뒤에 비용 태그가 있는 경우 재추출
                 const innerCostMatch = pureContent.match(/^\[(.*?)\]\s*(.*)$/);
                 if (innerCostMatch) {
@@ -2215,7 +2263,7 @@ window.openMaintHistoryModal = function () {
                     pureContent = innerCostMatch[2].trim();
                 }
             }
-            
+
             historyItems.push({
                 date: log.date,
                 type: log.type,
@@ -2238,15 +2286,15 @@ window.openMaintHistoryModal = function () {
     const renderTable = (searchTerm) => {
         tbody.innerHTML = '';
         let filteredItems = historyItems;
-        
+
         if (searchTerm) {
             const kw = searchTerm.toLowerCase();
             filteredItems = historyItems.filter(item => {
                 return (item.date || '').toLowerCase().includes(kw) ||
-                       (item.type || '').toLowerCase().includes(kw) ||
-                       (item.detailType || '').toLowerCase().includes(kw) ||
-                       (item.contentHtml || '').replace(/<[^>]*>?/gm, '').toLowerCase().includes(kw) ||
-                       (item.worker || '').toLowerCase().includes(kw);
+                    (item.type || '').toLowerCase().includes(kw) ||
+                    (item.detailType || '').toLowerCase().includes(kw) ||
+                    (item.contentHtml || '').replace(/<[^>]*>?/gm, '').toLowerCase().includes(kw) ||
+                    (item.worker || '').toLowerCase().includes(kw);
             });
         }
 
@@ -2261,7 +2309,7 @@ window.openMaintHistoryModal = function () {
                 else if (item.type === '고객대응') typeColor = '#d29922';
                 else if (item.type === '용액제조') typeColor = '#8957e5';
                 else if (item.type === '온라인점검') typeColor = '#0078d4';
-                
+
                 tr.innerHTML = `
                     <td>${item.date || '-'}</td>
                     <td><span style="color: ${typeColor}; font-weight: bold;">${item.type || '-'}</span></td>

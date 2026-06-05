@@ -527,7 +527,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
    5. 메모 섹션 (Memo)
    ========================================================================== */
 .memo-section {
-    flex: 1;
+    flex: 1.5; /* [수정] 이력 리스트와 작업 내용의 비율을 1:1.3으로 조정 */
     display: flex;
     flex-direction: column;
     padding-top: 10px;
@@ -735,6 +735,24 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     height: 30px;
     font-size: 12px;
     padding: 0 8px;
+    position: relative;
+}
+
+/* [추가] OS 강제 오전/오후 텍스트를 숨기고 24시간제 텍스트로 덮어쓰기 (포커스 시에는 원래 입력창 노출) */
+.memo-time-input.has-value-display:not(:focus) {
+    color: transparent !important;
+}
+
+.memo-time-input.has-value-display:not(:focus)::before {
+    content: attr(data-display);
+    position: absolute;
+    left: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #fff;
+    pointer-events: none;
+    font-family: inherit;
+    font-size: 12px;
 }
 
 .memo-time-duration {
@@ -938,8 +956,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #device-memo,
     #setup-log-detail-memo,
     textarea.delay-reason-textarea {
-        height: 150px !important; /* [수정] 모바일에서 메모창 높이를 약 3배로 확대 */
-        min-height: 150px !important;
+        height: 250px !important; /* [수정] 모바일에서 메모창(작업내용) 높이를 더 크게 확대 */
+        min-height: 250px !important;
         max-height: 800px !important;
         overflow-y: auto !important;
     }

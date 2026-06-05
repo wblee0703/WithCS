@@ -52,6 +52,8 @@
                             class="{% if active_page == 'trouble' %}active{% endif %}">TROUBLE</a></li>
                     <li><a href="{{ url_for('sort') }}" class="{% if active_page == 'sort' %}active{% endif %}">SORT</a>
                     </li>
+                    <li><a href="{{ url_for('operation') }}" class="{% if active_page == 'operation' %}active{% endif %}">OPERATION</a>
+                    </li>
                     <li class="nav-admin-item" style="display: none;"><a href="{{ url_for('admin') }}"
                             class="{% if active_page == 'admin' %}active{% endif %}">ADMIN</a></li>
                 </ul>
