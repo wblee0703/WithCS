@@ -72,7 +72,7 @@ function getScheduleForCalendar() {
                             }
                             if (targetDateStr) {
                                 if (!events[targetDateStr]) events[targetDateStr] = [];
-                                events[targetDateStr].push({ site, equip, type: item.type || '정기', content: item.code ? item.code : item.content, id: item.id, md: item.md || 0, originalLogId: item.originalLogId, worker: item.worker });
+                                events[targetDateStr].push({ site, equip, type: item.type || '정기', detailType: item.detailType || '', content: item.code ? item.code : item.content, id: item.id, md: item.md || 0, originalLogId: item.originalLogId, worker: item.worker });
                             }
                         });
                     }
@@ -86,6 +86,7 @@ function getScheduleForCalendar() {
                                     site,
                                     equip,
                                     type: log.type || '정기',
+                                    detailType: log.detailType || '',
                                     content: log.content || log.memo || '내용 없음',
                                     id: log.id,
                                     isCompleted: !isChanged,
@@ -422,12 +423,17 @@ function renderMonthGrid(year, month, titleId, gridId) {
                     const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
                     const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
 
+                    const kwStr = keyword.replace(/\s/g, '');
                     const matchKeyword = !keyword || (
-                        (event.site && event.site.toLowerCase().includes(keyword)) ||
-                        (event.equip && event.equip.toLowerCase().includes(keyword)) ||
-                        (displayName.toLowerCase().includes(keyword)) ||
-                        (event.content && event.content.toLowerCase().includes(keyword)) ||
-                        (event.worker && event.worker.toLowerCase().includes(keyword))
+                        (event.site && event.site.toLowerCase().includes(keyword)) || 
+                        (event.equip && event.equip.toLowerCase().includes(keyword)) || 
+                        (displayName.toLowerCase().includes(keyword)) || 
+                        (event.content && event.content.toLowerCase().includes(keyword)) || 
+                        (event.worker && event.worker.toLowerCase().includes(keyword)) ||
+                        (event.type && event.type.toLowerCase().includes(keyword)) ||
+                        (event.detailType && event.detailType.toLowerCase().includes(keyword)) ||
+                        (event.content && event.content.replace(/\s/g, '').toLowerCase().includes(kwStr)) ||
+                        (event.detailType && event.detailType.replace(/\s/g, '').toLowerCase().includes(kwStr))
                     );
 
                     const matchSite = window.isSiteMatched(event.site, currentSearchFilters.site);
@@ -834,7 +840,18 @@ function openCalendarPopup(dateStr, events) {
                                 const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
                                 const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
 
-                                const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (displayName.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
+                                const kwStr = keyword.replace(/\s/g, '');
+                                const matchKeyword = !keyword || (
+                                    (event.site && event.site.toLowerCase().includes(keyword)) || 
+                                    (event.equip && event.equip.toLowerCase().includes(keyword)) || 
+                                    (displayName.toLowerCase().includes(keyword)) || 
+                                    (event.content && event.content.toLowerCase().includes(keyword)) || 
+                                    (event.worker && event.worker.toLowerCase().includes(keyword)) ||
+                                    (event.type && event.type.toLowerCase().includes(keyword)) ||
+                                    (event.detailType && event.detailType.toLowerCase().includes(keyword)) ||
+                                    (event.content && event.content.replace(/\s/g, '').toLowerCase().includes(kwStr)) ||
+                                    (event.detailType && event.detailType.replace(/\s/g, '').toLowerCase().includes(kwStr))
+                                );
                                 const matchSite = window.isSiteMatched(event.site, currentSearchFilters.site);
                                 const matchEquip = !currentSearchFilters.equip || event.equip === currentSearchFilters.equip || rawName === currentSearchFilters.equip || displayName === currentSearchFilters.equip;
                                 return matchKeyword && matchSite && matchEquip;

@@ -499,7 +499,7 @@ async function addDetailItem() {
     const newItem = {
         id: Date.now(),
         type: maintType,
-        detailType: maintType === '정기' ? 'PM 점검' : 'BM 점검',
+        detailType: maintType === '정기' ? 'PM 점검' : '',
         code: code,
         content: content,
         spec: spec,
@@ -959,7 +959,7 @@ async function updateRowData(id, code, content, spec, date, period, type) {
         if (type !== undefined) {
             tempItem.type = type;
             if (type === '정기') tempItem.detailType = 'PM 점검';
-            else if (type === '비정기') tempItem.detailType = 'BM 점검';
+            else if (type === '비정기') tempItem.detailType = '';
         }
         tempItem.code = code;
         tempItem.content = content;
@@ -1598,7 +1598,7 @@ function getSubCategories(type) {
     const key = `${equipKey}::${type}`;
     const defaultSubCategories = {
         '정기': ['PM 점검'],
-        '비정기': ['BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상', '기타'],
+        '비정기': ['Alarm', 'Hunting', 'Data / Para 이상', '기타'],
         '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
         '용액제조': ['용액제조'],
         '온라인점검': ['온라인점검']
@@ -1616,7 +1616,6 @@ function getSubCategories2(equipKey, type, detailType) {
     const catData = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
     const key = `${equipKey}::${type}::${detailType}`;
     const defaultSubCategories2 = {
-        'BM 점검': ['BM 물품 교체'],
         'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
         'Hunting': ['Air Peak_헌팅', 'HPLC_헌팅', 'Flow_헌팅', 'WD_헌팅', 'BASE_헌팅', 'ETC_헌팅'],
         'Data / Para 이상': ['REF_PORT', 'RT_흔들림', 'HPLC 압력변동', '에어 유량 변동', '미지피크_발생', '콤플렉스_피크', '프로그램_오류', '베이스 값 이상', 'Data 변동', 'Data 전송 이슈', '딜리버리펌프_이슈', '클리닝펌프_이슈', '용액 이슈'],
@@ -1658,7 +1657,7 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
                 id: Date.now() + index,
                 content: content
             }));
-        } else if (detailType === 'PM 점검' || detailType === 'BM 점검' || type === '고객대응') {
+        } else if (detailType === 'PM 점검' ||type === '고객대응') {
             const equipName = equipKey.split('::')[0];
             const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
             let matchedItems = adminItems.filter(item => {
@@ -1683,7 +1682,7 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
 
     // [추가] 현재 장비의 유지관리 물품에서 우선순위 항목 가져오기 (PM 점검/BM 점검)
     let priorityItems = [];
-    if (detailType === 'PM 점검' || detailType === 'BM 점검') {
+    if (detailType === 'PM 점검') {
         const maintKey = `details_${currentPath.site}_${currentPath.equip}`;
         const maintData = JSON.parse(localStorage.getItem(maintKey)) || {};
         if (maintData.maint) {

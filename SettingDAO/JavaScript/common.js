@@ -669,8 +669,10 @@ function updateWarrantyStatusAutomatically() {
     try {
         let catData = JSON.parse(localStorage.getItem('check_type_categories'));
         let catData2 = JSON.parse(localStorage.getItem('check_type_categories2'));
+        let itemData = JSON.parse(localStorage.getItem('check_type_items'));
         let catModified = false;
         let cat2Modified = false;
+        let itemModified = false;
 
         if (catData) {
             Object.keys(catData).forEach(key => {
@@ -679,11 +681,17 @@ function updateWarrantyStatusAutomatically() {
                         catData[key].push('기타');
                         catModified = true;
                     }
+                    // 'BM 점검' 일괄 삭제
+                    const bmIdx = catData[key].indexOf('BM 점검');
+                    if (bmIdx > -1) {
+                        catData[key].splice(bmIdx, 1);
+                        catModified = true;
+                    }
                 }
             });
             if (catModified) {
                 localStorage.setItem('check_type_categories', JSON.stringify(catData));
-                isModified = true;
+                if (typeof window.syncAdminDB === 'function') window.syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories', value: catData });
             }
         }
 
@@ -702,9 +710,31 @@ function updateWarrantyStatusAutomatically() {
             }
         });
 
+        // 세부구분 2 'BM 점검' 관련 데이터 삭제
+        Object.keys(catData2).forEach(key => {
+            if (key.includes('::비정기::BM 점검')) {
+                delete catData2[key];
+                cat2Modified = true;
+            }
+        });
+
         if (cat2Modified) {
             localStorage.setItem('check_type_categories2', JSON.stringify(catData2));
-            isModified = true;
+            if (typeof window.syncAdminDB === 'function') window.syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories2', value: catData2 });
+        }
+
+        // 점검 세부 항목 'BM 점검' 관련 데이터 삭제
+        if (itemData) {
+            Object.keys(itemData).forEach(key => {
+                if (key.includes('::비정기::BM 점검')) {
+                    delete itemData[key];
+                    itemModified = true;
+                }
+            });
+            if (itemModified) {
+                localStorage.setItem('check_type_items', JSON.stringify(itemData));
+                if (typeof window.syncAdminDB === 'function') window.syncAdminDB('setting', 'UPDATE', { key: 'check_type_items', value: itemData });
+            }
         }
     } catch (e) { console.error('Category migration error', e); }
 }
@@ -4387,7 +4417,7 @@ window.openAddPartSpecModal = function (site, equip, itemObj, onAddCallback) {
         const isDuplicate = data.maint.some(m => (m.content === itemName || (m.code && itemObj.code && m.code === itemObj.code)) && (m.spec || '') === newSpec && m.type === '비정기');
         if (isDuplicate) return alert('이미 동일한 물품명과 물품 상세를 가진 항목이 존재합니다.');
 
-        const newItem = { id: Date.now(), type: '비정기', detailType: 'BM 점검', code: itemObj.code || '', content: itemName, spec: newSpec, date: '', period: cycle, scheduledDate: null };
+        const newItem = { id: Date.now(), type: '비정기', detailType: '', code: itemObj.code || '', content: itemName, spec: newSpec, date: '', period: cycle, scheduledDate: null };
         const success = await window.syncHistoryTransaction(site, equip, { maint_upserts: [newItem] });
         if (!success) return alert('서버 등록에 실패했습니다.');
 

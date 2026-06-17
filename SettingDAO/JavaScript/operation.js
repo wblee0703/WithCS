@@ -112,6 +112,10 @@ function renderOperationSites() {
         li.dataset.siteGroup = group;
         li.querySelector('.item-text').textContent = escapeHtml(site);
 
+        // [수정] 초기 렌더링 시 전체 사업장을 선택된 상태로 명시적으로 표시
+        li.classList.add('selected');
+        li.querySelector('.check-icon').style.opacity = '1';
+
         list.appendChild(li);
     });
 
@@ -188,17 +192,78 @@ function renderOperationSites() {
         }
     }
 
+    // [추가] 선택된 사업장을 드롭다운 아래 리스트 형태로 렌더링
+    function updateSelectedSitesList() {
+        // [수정] 템플릿에 이미 존재하는 ul(operation-selected-sites-display)을 우선 사용하여 중복 생성(높이 반토막) 방지
+        let selectedListContainer = document.getElementById('operation-selected-sites-display') || document.getElementById('operation-selected-sites-list');
+        if (!selectedListContainer) {
+            selectedListContainer = document.createElement('ul');
+            selectedListContainer.id = 'operation-selected-sites-list';
+            selectedListContainer.className = 'operation-selected-sites-list';
+            
+            // [수정] 템플릿 내 다른 요소들보다 우선하여 드롭다운 입력창 바로 아래에 위치하도록 삽입
+            const logSelectWrapper = wrapper.querySelector('.log-select-wrapper');
+            if (logSelectWrapper) {
+                if (logSelectWrapper.nextSibling) logSelectWrapper.parentNode.insertBefore(selectedListContainer, logSelectWrapper.nextSibling);
+                else logSelectWrapper.parentNode.appendChild(selectedListContainer);
+            } else {
+                wrapper.appendChild(selectedListContainer);
+            }
+        }
+
+        const selectedElements = Array.from(list.querySelectorAll('.log-select-item.selected'));
+        selectedListContainer.innerHTML = '';
+
+        if (selectedElements.length === 0) {
+            selectedListContainer.innerHTML = '<li class="empty-selection">선택된 사업장이 없습니다.</li>';
+        } else {
+            selectedElements.forEach(el => {
+                const siteName = el.dataset.value;
+                const siteGroup = el.dataset.siteGroup;
+                
+                // [수정] HTML 구조를 템플릿에서 복제하여 사용하도록 변경
+                const tpl = document.getElementById('operation-selected-site-item-template');
+                let li;
+                if (tpl) {
+                    li = tpl.content.cloneNode(true).firstElementChild;
+                    li.querySelector('.site-group-label').textContent = siteGroup;
+                    li.querySelector('.site-name-label').textContent = siteName;
+                    li.querySelector('.btn-remove-site').dataset.site = siteName;
+                } else {
+                    li = document.createElement('li');
+                    li.innerHTML = `
+                        <div class="site-info">
+                            <span class="site-group-label">${escapeHtml(siteGroup)}</span>
+                            <span class="site-name-label">${escapeHtml(siteName)}</span>
+                        </div>
+                        <span class="btn-remove-site" data-site="${escapeHtml(siteName)}">✕</span>
+                    `;
+                }
+                
+                li.querySelector('.btn-remove-site').onclick = (e) => {
+                    e.stopPropagation();
+                    el.classList.remove('selected');
+                    el.querySelector('.check-icon').style.opacity = '0';
+                    updateTriggerText();
+                    handleFilterChange();
+                };
+                selectedListContainer.appendChild(li);
+            });
+        }
+    }
+
     function handleFilterChange() {
         const selectedSites = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
         currentOpFilters.sites = selectedSites;
         currentOpFilters.equip = 'ALL';
         renderOperationEquips(currentOpFilters.sites);
         calculateOperationRate();
+        updateSelectedSitesList();
     }
     
     // Initial state
-    currentOpFilters.sites = allSites;
-    renderOperationEquips(currentOpFilters.sites);
+    updateTriggerText();
+    handleFilterChange();
 }
 
 function renderOperationEquips(sites) {
@@ -415,34 +480,28 @@ function renderEquipMonthlyTable(statsList, year) {
     let avgYearlyRate = validEquipCount > 0 ? (totalYearlyRateSum / validEquipCount) : 100;
     let yearlyRateColor = '#3fb950'; if (avgYearlyRate <= 90) yearlyRateColor = '#f85149'; else if (avgYearlyRate <= 98) yearlyRateColor = '#d29922';
     
-    totalHtml += `<th style="color: ${yearlyRateColor}; background-color: #1c2128; font-weight: bold;">${avgYearlyRate.toFixed(1)}%</th>`;
+    totalHtml += `<th style="color: ${yearlyRateColor}; font-weight: bold;">${avgYearlyRate.toFixed(1)}%</th>`;
     totalHtml += totalMonthlyHtml;
     totalTr.innerHTML = totalHtml;
 
-    // [수정] 렌더링 계층 문제(z-index 무시)를 근본적으로 해결하기 위해 tbody가 아닌 thead 영역에 삽입
-    const thead = document.querySelector('#operation-monthly-table thead');
-    if (thead) {
-        const headerRow = thead.querySelector('tr:not(.total-avg-row)');
-        const existingTotal = thead.querySelector('.total-avg-row');
-        if (existingTotal) existingTotal.remove();
+    // [수정] 전체 평균 행을 테이블 최하단(tfoot)에 삽입
+    const table = document.getElementById('operation-monthly-table');
+    if (table) {
+        let tfoot = table.querySelector('tfoot');
+        if (!tfoot) {
+            tfoot = document.createElement('tfoot');
+            table.appendChild(tfoot);
+        } else {
+            tfoot.innerHTML = '';
+        }
+        tfoot.appendChild(totalTr);
         
-        // [수정] '전체 평균' 행을 컬럼 제목 행 아래에 삽입
-        thead.appendChild(totalTr);
-
-        // [수정] 컬럼 제목 행을 최상단에, '전체 평균' 행을 그 아래에 고정 (동적 렌더링 지연 및 겹침 방지)
-        const updateHeaderPosition = () => {
-            const avgRow = thead.querySelector('.total-avg-row');
-            const mainHeaderRow = thead.querySelector('tr:not(.total-avg-row)');
-            if (avgRow && mainHeaderRow) {
-                const mainHeaderHeight = mainHeaderRow.getBoundingClientRect().height;
-                if (mainHeaderHeight > 0) {
-                    avgRow.querySelectorAll('th').forEach(th => th.style.top = `${mainHeaderHeight - 1}px`);
-                }
-            }
-        };
-        requestAnimationFrame(updateHeaderPosition);
-        setTimeout(updateHeaderPosition, 50);
-        setTimeout(updateHeaderPosition, 300);
+        // 기존 thead에 남아있을 수 있는 total-avg-row 제거
+        const thead = table.querySelector('thead');
+        if (thead) {
+            const existingTotal = thead.querySelector('.total-avg-row');
+            if (existingTotal) existingTotal.remove();
+        }
     }
 
     const monthlyTotalHours = {};
@@ -524,7 +583,6 @@ function renderEquipMonthlyTable(statsList, year) {
 // [추가] 운영장비 가동율 리스트 CSV 내보내기
 function exportOperationCsv() {
     const year = currentOpFilters.year || new Date().getFullYear();
-    const thead = document.querySelector('#operation-monthly-table thead');
     const tbody = document.getElementById('operation-monthly-tbody');
     
     if (!tbody || tbody.querySelectorAll('tr').length === 0 || tbody.querySelector('.empty-msg')) {
@@ -553,13 +611,14 @@ function exportOperationCsv() {
         return rowData.join(',');
     };
 
-    if (thead) {
-        const avgRow = thead.querySelector('.total-avg-row');
-        if (avgRow) csvContent += parseRow(avgRow) + '\n';
-    }
-
     const rows = tbody.querySelectorAll('tr');
     rows.forEach(row => csvContent += parseRow(row) + '\n');
+
+    const tfoot = document.querySelector('#operation-monthly-table tfoot');
+    if (tfoot) {
+        const avgRow = tfoot.querySelector('.total-avg-row');
+        if (avgRow) csvContent += parseRow(avgRow) + '\n';
+    }
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);

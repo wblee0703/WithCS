@@ -181,9 +181,9 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
     let item = null;
     if (isCompleted) {
-        item = data.logs ? data.logs.find(l => l.id == id) : null;
+        item = data.logs ? data.logs.find(l => String(l.id) === String(id)) : null;
     } else {
-        item = data.maint ? data.maint.find(i => i.id == id) : null;
+        item = data.maint ? data.maint.find(i => String(i.id) === String(id)) : null;
     }
 
     if (!item) return;
@@ -212,8 +212,49 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     document.getElementById('detail-serial-no').textContent = serialText;
     document.getElementById('detail-type').textContent = item.type || '정기';
     let displayDetailType = item.detailType;
+
+    // [추가] 세부구분 파싱 로직 (초기값 설정용)
+    // HTML 엔티티(&gt;)로 저장된 경우를 대비하여 디코딩 후 파싱합니다.
+    let initialDetailType = '';
+    let initialDetailType2 = '';
+    if (displayDetailType) {
+        const decodedDetailType = displayDetailType.replace(/&gt;/g, '>');
+        if (decodedDetailType.includes(' > ')) {
+            const parts = decodedDetailType.split(' > ');
+            initialDetailType = parts[0].trim();
+            initialDetailType2 = parts[1].trim();
+        } else {
+            initialDetailType = decodedDetailType;
+        }
+    }
+
+    // [추가] 수정 모드용 select 요소들 미리 찾아두기
+    const typeEl = document.getElementById('detail-type');
+    const detailTypeEl = document.getElementById('detail-detail-type');
+    let typeSelect = document.getElementById('detail-type-select');
+    let detailTypeSelect = document.getElementById('detail-detail-type-select');
+    let detailType2Select = document.getElementById('detail-detail-type2-select');
+
+    // [추가] 동적으로 select 요소 생성 (최초 1회)
+    if (!typeSelect && typeEl) {
+        typeSelect = document.createElement('select');
+        typeSelect.id = 'detail-type-select';
+        typeSelect.className = 'input-dark';
+        typeSelect.style.width = '120px';
+        typeEl.parentNode.insertBefore(typeSelect, typeEl);
+    }
+    if (!detailTypeSelect && detailTypeEl) {
+        const wrapper = document.createElement('div');
+        wrapper.id = 'detail-detail-type-wrapper';
+        wrapper.style.cssText = 'display: flex; gap: 5px; flex: 1;';
+        wrapper.innerHTML = `<select id="detail-detail-type-select" class="input-dark" style="flex: 1;"></select><select id="detail-detail-type2-select" class="input-dark" style="flex: 1;"></select>`;
+        detailTypeEl.parentNode.insertBefore(wrapper, detailTypeEl);
+        detailTypeSelect = document.getElementById('detail-detail-type-select');
+        detailType2Select = document.getElementById('detail-detail-type2-select');
+    }
+
     if (!displayDetailType) {
-        displayDetailType = (item.type === '정기') ? 'PM 점검' : 'BM 점검';
+        displayDetailType = (item.type === '정기') ? 'PM 점검' : '';
     }
     document.getElementById('detail-detail-type').textContent = displayDetailType;
 
@@ -281,6 +322,15 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     const dateRow = document.getElementById('detail-date-row');
     const costTypeInput = document.getElementById('detail-cost-type');
     const completeBtn = document.getElementById('btn-complete-work');
+    const detailTypeWrapper = document.getElementById('detail-detail-type-wrapper');
+
+    // [수정] UI 요소 초기화
+    if (typeSelect) typeSelect.style.display = 'none';
+    if (detailTypeWrapper) detailTypeWrapper.style.display = 'none';
+    if (typeEl) typeEl.style.display = 'inline';
+    if (detailTypeEl) detailTypeEl.style.display = 'inline';
+
+
     const contentDiv = document.getElementById('detail-content');
     const contentInput = document.getElementById('detail-content-input');
     const cancelBtn = document.getElementById('btn-cancel-completion');
@@ -401,6 +451,8 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             if (item.detailType === '일정변경') cancelBtn.style.display = 'none';
             else cancelBtn.style.display = 'block';
         }
+        typeEl.textContent = item.type || '정기';
+        detailTypeEl.textContent = displayDetailType;
         workerInput.disabled = true;
         if (trigger) {
             trigger.classList.add('disabled');
@@ -416,6 +468,81 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         completeBtn.style.display = 'block';
         completeBtn.textContent = '작업 완료';
         if (cancelBtn) cancelBtn.style.display = 'none';
+
+        // [추가] 미완료(예정) 작업일 때 구분/세부구분 편집 가능하도록 드롭다운으로 변경
+        if (typeEl) typeEl.style.display = 'none';
+        if (detailTypeEl) detailTypeEl.style.display = 'none';
+        if (typeSelect) typeSelect.style.display = 'inline-block';
+        if (detailTypeWrapper) detailTypeWrapper.style.display = 'flex';
+
+        const categories = ['정기', '비정기', '고객대응', '용액제조', '온라인점검'];
+        typeSelect.innerHTML = categories.map(c => `<option value="${c}">${c}</option>`).join('');
+        typeSelect.value = item.type || '정기';
+
+        const updateDetailType2s = () => {
+            const selectedType = typeSelect.value;
+            const selectedDetailType = detailTypeSelect.value;
+            if (selectedType !== '비정기' || !selectedDetailType) {
+                if (detailType2Select) detailType2Select.style.display = 'none';
+                buildDetailDropdown(item, site, equip);
+                return;
+            }
+            if (detailType2Select) detailType2Select.style.display = 'inline-block';
+            
+            const equipKey = `${site}::${equip}`;
+            const catData2 = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
+            const key2 = `${equipKey}::${selectedType}::${selectedDetailType}`;
+            const defaultSubCategories2 = {
+                'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
+                'Hunting': ['Air Peak_헌팅', 'HPLC_헌팅', 'Flow_헌팅', 'WD_헌팅', 'BASE_헌팅', 'ETC_헌팅'],
+                'Data / Para 이상': ['REF_PORT', 'RT_흔들림', 'HPLC 압력변동', '에어 유량 변동', '미지피크_발생', '콤플렉스_피크', '프로그램_오류', '베이스 값 이상', 'Data 변동', 'Data 전송 이슈', '딜리버리펌프_이슈', '클리닝펌프_이슈', '용액 이슈'],
+                '기타': ['배수 펌프 이슈', '구동 이상']
+            };
+            let subCategories2 = catData2[key2] || (defaultSubCategories2[selectedDetailType] || []);
+            
+            detailType2Select.innerHTML = subCategories2.map(s => `<option value="${s}">${s}</option>`).join('');
+            buildDetailDropdown(item, site, equip);
+        };
+
+        const updateDetailTypes = () => {
+            const selectedType = typeSelect.value;
+            const equipKey = `${site}::${equip}`;
+            const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
+            const key = `${equipKey}::${selectedType}`;
+            const defaultSubCategories = {
+                '정기': ['PM 점검'],
+                '비정기': ['Alarm', 'Hunting', 'Data / Para 이상', '기타'],
+                '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
+                '용액제조': ['용액제조'],
+                '온라인점검': ['온라인점검']
+            };
+            let subCategories = catData[key] && catData[key].length > 0 ? catData[key] : defaultSubCategories[selectedType] || [];
+            
+            detailTypeSelect.innerHTML = subCategories.map(s => `<option value="${s}">${s}</option>`).join('');
+            
+            if (selectedType === '비정기') {
+                updateDetailType2s();
+            } else {
+                if (detailType2Select) detailType2Select.style.display = 'none';
+                buildDetailDropdown(item, site, equip);
+            }
+        };
+
+        typeSelect.onchange = updateDetailTypes;
+        detailTypeSelect.onchange = updateDetailType2s;
+        detailType2Select.onchange = () => buildDetailDropdown(item, site, equip);
+
+        updateDetailTypes();
+
+        if (Array.from(detailTypeSelect.options).some(opt => opt.value === initialDetailType)) {
+            detailTypeSelect.value = initialDetailType;
+            if (typeSelect.value === '비정기') {
+                updateDetailType2s();
+                if (Array.from(detailType2Select.options).some(opt => opt.value === initialDetailType2)) {
+                    detailType2Select.value = initialDetailType2;
+                }
+            }
+        }
 
         workerInput.disabled = false;
         if (trigger) {
@@ -542,8 +669,23 @@ function buildDetailDropdown(item, site, equip) {
     document.querySelectorAll('#detail-edit-part-wrapper').forEach(el => el.remove());
     document.querySelectorAll('#detail-display-list-wrapper').forEach(el => el.remove());
 
-    const type = item.type || '정기';
-    const detailTypeFull = item.detailType || (type === '정기' ? 'PM 점검' : 'BM 점검');
+    // [수정] UI에 드롭다운이 렌더링되어 있으면 값을 우선 사용하여, 구분/세부구분 변경 시 제안박스 항목이 갱신되도록 처리
+    const typeSelect = document.getElementById('detail-type-select');
+    const detailTypeSelect = document.getElementById('detail-detail-type-select');
+    const detailType2Select = document.getElementById('detail-detail-type2-select');
+    const detailTypeWrapper = document.getElementById('detail-detail-type-wrapper');
+
+    let type = item.type || '정기';
+    if (typeSelect && typeSelect.style.display !== 'none') type = typeSelect.value;
+
+    let detailTypeFull = item.detailType || (type === '정기' ? 'PM 점검' : '');
+    if (detailTypeWrapper && detailTypeWrapper.style.display !== 'none' && detailTypeSelect) {
+        detailTypeFull = detailTypeSelect.value;
+        if (type === '비정기' && detailType2Select && detailType2Select.style.display !== 'none') {
+            detailTypeFull += ` > ${detailType2Select.value}`;
+        }
+    }
+
     let detailType = detailTypeFull;
     let detailType2 = '';
 
@@ -624,7 +766,7 @@ function buildDetailDropdown(item, site, equip) {
                 "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
             ];
             availableItems = defaultList.map(content => ({ content: content }));
-        } else if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+        } else if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
             isDropdownMode = true;
             const equipName = equipKey.split('::')[0];
             let matchedItems = adminItems.filter(ai => {
@@ -728,7 +870,7 @@ function buildDetailDropdown(item, site, equip) {
                 pureContent = pureContent.replace(/\[(유상|무상[^\]]*|기타)\]/g, '').trim();
                 pureContent = pureContent.replace(/\s*-\s*$/, '').trim();
 
-                if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+            if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
                     const partKeywords = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리', '파트 이상 (교체)', '파츠 이상 교체', '파트 이상', '파츠 이상'];
                     if (partKeywords.some(kw => pureContent === kw || pureContent.endsWith(kw))) return;
 
@@ -815,10 +957,10 @@ function buildDetailDropdown(item, site, equip) {
                 }
             };
 
-            if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+        if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
                 maintData.maint.forEach(processRegistered);
             } else {
-                maintData.maint.filter(m => m.type === type && m.detailType === detailType).forEach(processRegistered);
+                maintData.maint.filter(m => m.type === type && (m.detailType || '') === (detailType || '')).forEach(processRegistered);
             }
         }
 
@@ -834,7 +976,7 @@ function buildDetailDropdown(item, site, equip) {
             }
         });
 
-        if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+        if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
             const allAdminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
             allAdminItems.forEach(a => {
                 if (!a.part) return;
@@ -904,7 +1046,7 @@ function buildDetailDropdown(item, site, equip) {
                     const isSelected = currentSelections.hasOwnProperty(val);
                     const itemCost = isSelected ? currentSelections[val] : '유상';
 
-                    const templateId = (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') ? 'log-part-item-template' : 'detail-content-item-template';
+                    const templateId = (detailType === 'PM 점검' || detailType === 'Parts 교체') ? 'log-part-item-template' : 'detail-content-item-template';
                     const tpl = getTemplateContent(templateId);
                     if (tpl) {
                         const div = tpl.querySelector('.log-select-item');
@@ -967,14 +1109,14 @@ function buildDetailDropdown(item, site, equip) {
                             if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
                             e.preventDefault();
                             e.stopPropagation();
-                            if (type === '비정기' && detailType !== 'BM 점검') {
+                            if (type === '비정기') {
                                 list.querySelectorAll('.log-select-item.selected').forEach(el => {
                                     if (el !== div) el.classList.remove('selected');
                                 });
                             }
                             div.classList.toggle('selected');
                             updateTriggerText();
-                            if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
+                            if (type === '비정기' && div.classList.contains('selected')) {
                                 dropdown.classList.remove('show');
                             }
 
@@ -1032,8 +1174,12 @@ function buildDetailDropdown(item, site, equip) {
         renderDropdownItems();
         dropdown.insertBefore(list, dropdown.querySelector('.log-select-footer'));
 
-        addBtn.onclick = (e) => { e.stopPropagation(); dropdown.classList.remove('show'); };
-        if (type === '비정기' && detailType !== 'BM 점검') { addBtn.parentElement.style.display = 'none'; }
+        addBtn.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropdown.classList.remove('show');
+        });
+        if (type === '비정기') { addBtn.parentElement.style.display = 'none'; }
 
         trigger.onclick = (e) => {
             e.stopPropagation();
@@ -1294,9 +1440,9 @@ async function saveDetailChanges() {
 
     let item = null;
     if (isCompleted) {
-        item = data.logs ? data.logs.find(i => i.id == id) : null;
+        item = data.logs ? data.logs.find(i => String(i.id) === String(id)) : null;
     } else {
-        item = data.maint ? data.maint.find(i => i.id == id) : null;
+        item = data.maint ? data.maint.find(i => String(i.id) === String(id)) : null;
     }
     if (!item) return true;
 
@@ -1304,6 +1450,22 @@ async function saveDetailChanges() {
     const newMd = document.getElementById('detail-md').value.trim();
     const newMemo = document.getElementById('detail-work-memo').value.trim();
     const newDate = document.getElementById('detail-scheduled-date').value;
+    let newType = item.type;
+    let newDetailType = item.detailType || '';
+
+    if (!isCompleted) {
+        const typeSelect = document.getElementById('detail-type-select');
+        const detailTypeSelect = document.getElementById('detail-detail-type-select');
+        const detailType2Select = document.getElementById('detail-detail-type2-select');
+
+        if (typeSelect) newType = typeSelect.value;
+        if (detailTypeSelect) {
+            newDetailType = detailTypeSelect.value;
+            if (newType === '비정기' && detailType2Select && detailType2Select.style.display !== 'none' && detailType2Select.value) {
+                newDetailType += ` > ${detailType2Select.value}`;
+            }
+        }
+    }
     const newCostType = document.getElementById('detail-cost-type') ? document.getElementById('detail-cost-type').value : '';
     if (!newDate) { alert('날짜를 선택해주세요.'); return false; }
 
@@ -1360,8 +1522,6 @@ async function saveDetailChanges() {
     }
 
     const targetDate = newDate;
-    const itemType = item.type;
-    const itemDetailType = item.detailType || '';
     let remainingIds = [];
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
@@ -1468,7 +1628,7 @@ async function saveDetailChanges() {
         });
 
     } else {
-        const sameDayItems = data.maint.filter(m => m.scheduledDate === item.scheduledDate && m.type === itemType && (m.detailType || '') === itemDetailType && m.originalLogId == item.originalLogId);
+        const sameDayItems = data.maint.filter(m => m.scheduledDate === item.scheduledDate && m.type === item.type && (m.detailType || '') === (item.detailType || '') && m.originalLogId == item.originalLogId);
 
         if (expandedDropdownValues.length > 0) {
             expandedDropdownValues.forEach((val, idx) => {
@@ -1514,8 +1674,8 @@ async function saveDetailChanges() {
 
                 if (!existingItem) {
                     existingItem = data.maint.find(m =>
-                        m.type === itemType &&
-                        (m.detailType || '') === itemDetailType &&
+                        m.type === item.type &&
+                        (m.detailType || '') === (item.detailType || '') &&
                         m.originalLogId == item.originalLogId &&
                         (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) &&
                         (m.spec || '') === (spec || '') &&
@@ -1525,8 +1685,9 @@ async function saveDetailChanges() {
 
                 if (existingItem) {
                     const oldDate = existingItem.scheduledDate;
+                    existingItem.type = newType;
+                    existingItem.detailType = newDetailType;
                     existingItem.scheduledDate = targetDate;
-                    existingItem.detailType = itemDetailType;
                     existingItem.worker = newWorker;
                     existingItem.memo = newMemo;
                     existingItem.md = newMd;
@@ -1538,7 +1699,7 @@ async function saveDetailChanges() {
                     generateDateChangeLog(existingItem, oldDate, idx);
                 } else {
                     const newId = Date.now() + Math.floor(Math.random() * 10000) + idx;
-                    const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: code, content: fullContent, spec: spec, date: "", period: (itemType === '정기' ? period : null), scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: itemCost, costType: newCostType, originalLogId: item.originalLogId };
+                    const newItem = { id: newId, type: newType, detailType: newDetailType, code: code, content: fullContent, spec: spec, date: "", period: (newType === '정기' ? period : null), scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: itemCost, costType: newCostType, originalLogId: item.originalLogId };
                     data.maint.push(newItem);
                     remainingIds.push(newId);
                     payload.maint_upserts.push(newItem);
@@ -1553,8 +1714,8 @@ async function saveDetailChanges() {
                 let existing = sameDayItems.find(m => m.content === finalContent);
                 if (!existing) {
                     existing = data.maint.find(m =>
-                        m.type === itemType &&
-                        (m.detailType || '') === itemDetailType &&
+                        m.type === newType &&
+                        (m.detailType || '') === newDetailType &&
                         m.originalLogId == item.originalLogId &&
                         m.content === finalContent &&
                         (!m.scheduledDate || m.scheduledDate === targetDate)
@@ -1564,7 +1725,8 @@ async function saveDetailChanges() {
                 if (existing) {
                     const oldDate = existing.scheduledDate;
                     existing.scheduledDate = targetDate;
-                    existing.detailType = itemDetailType;
+                    existing.type = newType;
+                    existing.detailType = newDetailType;
                     existing.worker = newWorker;
                     existing.memo = newMemo;
                     existing.md = newMd;
@@ -1575,7 +1737,7 @@ async function saveDetailChanges() {
                     generateDateChangeLog(existing, oldDate, 0);
                 } else {
                     const newId = Date.now() + Math.floor(Math.random() * 10000);
-                    const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: '', costType: newCostType, originalLogId: item.originalLogId };
+                    const newItem = { id: newId, type: newType, detailType: newDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: '', costType: newCostType, originalLogId: item.originalLogId };
                     data.maint.push(newItem);
                     remainingIds.push(newId);
                     payload.maint_upserts.push(newItem);
@@ -1607,8 +1769,8 @@ async function saveDetailChanges() {
                 let existing = sameDayItems.find(m => (m.content === finalContent || (m.code && code && m.code === code)) && (m.spec || '') === spec);
                 if (!existing) {
                     existing = data.maint.find(m =>
-                        m.type === itemType &&
-                        (m.detailType || '') === itemDetailType &&
+                        m.type === newType &&
+                        (m.detailType || '') === newDetailType &&
                         m.originalLogId == item.originalLogId &&
                         (m.content === finalContent || (m.code && code && m.code === code)) &&
                         (m.spec || '') === spec &&
@@ -1629,7 +1791,7 @@ async function saveDetailChanges() {
                     generateDateChangeLog(existing, oldDate, 0);
                 } else {
                     const newId = Date.now() + Math.floor(Math.random() * 10000);
-                    const newItem = { id: newId, type: itemType, detailType: itemDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, costType: newCostType, originalLogId: item.originalLogId };
+                    const newItem = { id: newId, type: newType, detailType: newDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, costType: newCostType, originalLogId: item.originalLogId };
                     data.maint.push(newItem);
                     remainingIds.push(newId);
                     payload.maint_upserts.push(newItem);
@@ -1835,7 +1997,7 @@ async function completeScheduleWork() {
         let partsString = '';
 
         // [개선] 타입에 관계없이 PM 점검, BM 점검, Parts 교체 등 물품과 관련된 내용이면 모두 추출 대상으로 삼아 중복 생성을 막고 기존 아이템 갱신 보장
-        const isPmBm = dt.includes('PM 점검') || dt.includes('BM 점검') || dt.includes('BM 물품 교체') || dt2.includes('BM 물품 교체') || dt.includes('Parts 교체');
+        const isPmBm = dt.includes('PM 점검') || dt.includes('Parts 교체');
         if (isPmBm) {
             isPartReplacement = true;
             partsString = content;
@@ -1937,7 +2099,7 @@ async function completeScheduleWork() {
                 const newId = Date.now() + Math.floor(Math.random() * 10000) + idx;
 
                 const sourceType = sourceItem ? sourceItem.type : '비정기';
-                const sourceDetailType = sourceItem ? sourceItem.detailType : 'BM 점검';
+                const sourceDetailType = sourceItem ? sourceItem.detailType : '';
 
                 const newMaintItem = {
                     id: newId,
@@ -2023,7 +2185,7 @@ async function completeScheduleWork() {
             if (i.originalLogId) return false;
 
             const dt = i.detailType || '';
-            const isPmBm = dt === 'PM 점검' || dt === 'BM 점검' || dt.startsWith('PM 점검 >') || dt.startsWith('BM 점검 >');
+            const isPmBm = dt === 'PM 점검' || dt.startsWith('PM 점검 >');
             if (!isPmBm) return false;
 
             if (i.content === '내용 없음' || i.content === '장비 점검') return false;
@@ -2114,7 +2276,18 @@ window.refreshCalendarPopupAfterCompletion = function () {
                     const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
                     const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
 
-                    const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (displayName.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
+                    const kwStr = keyword.replace(/\s/g, '');
+                    const matchKeyword = !keyword || (
+                        (event.site && event.site.toLowerCase().includes(keyword)) || 
+                        (event.equip && event.equip.toLowerCase().includes(keyword)) || 
+                        (displayName.toLowerCase().includes(keyword)) || 
+                        (event.content && event.content.toLowerCase().includes(keyword)) || 
+                        (event.worker && event.worker.toLowerCase().includes(keyword)) ||
+                        (event.type && event.type.toLowerCase().includes(keyword)) ||
+                        (event.detailType && event.detailType.toLowerCase().includes(keyword)) ||
+                        (event.content && event.content.replace(/\s/g, '').toLowerCase().includes(kwStr)) ||
+                        (event.detailType && event.detailType.replace(/\s/g, '').toLowerCase().includes(kwStr))
+                    );
                     const matchSite = typeof window.isSiteMatched === 'function' ? window.isSiteMatched(event.site, currentSearchFilters.site) : ((typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.site) || event.site === currentSearchFilters.site);
                     const matchEquip = (typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.equip) || event.equip === currentSearchFilters.equip || rawName === currentSearchFilters.equip || displayName === currentSearchFilters.equip;
                     return matchKeyword && matchSite && matchEquip;
@@ -2140,7 +2313,7 @@ async function cancelScheduleCompletion() {
 
         const logIndex = data.logs.findIndex(l => l.id == id);
         if (logIndex === -1) return;
-
+        
         const logItem = data.logs[logIndex];
         const logContent = logItem.content || '';
         const logType = logItem.type;
@@ -2195,7 +2368,7 @@ async function cancelScheduleCompletion() {
                 pureContent = pureContent.replace(specMatch[0], '');
             }
 
-            let code = '';
+            let code = ''; 
             let fullContent = pureContent;
 
             const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
@@ -2221,7 +2394,7 @@ async function cancelScheduleCompletion() {
                 prevDate = prevLog.date;
             }
 
-            let existingItem = data.maint.find(m => !matchedMaintIds.has(m.id) && m.type === logType && (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) && (m.spec || '') === (spec || '') && (m.originalLogId || null) == (logItem.originalLogId || null) && (!m.scheduledDate || m.scheduledDate === logDate));
+            let existingItem = data.maint.find(m => !matchedMaintIds.has(m.id) && m.type === logType && (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) && (m.spec || '') === (spec || '') && (m.originalLogId || null) == (logItem.originalLogId || null) && (!m.scheduledDate || m.scheduledDate === logDate || !m.date));
             if (existingItem) {
                 matchedMaintIds.add(existingItem.id);
                 existingItem.scheduledDate = logDate;
@@ -2305,7 +2478,18 @@ async function cancelScheduleCompletion() {
                         const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
                         const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
 
-                        const matchKeyword = !keyword || ((event.site && event.site.toLowerCase().includes(keyword)) || (event.equip && event.equip.toLowerCase().includes(keyword)) || (displayName.toLowerCase().includes(keyword)) || (event.content && event.content.toLowerCase().includes(keyword)) || (event.worker && event.worker.toLowerCase().includes(keyword)));
+                        const kwStr = keyword.replace(/\s/g, '');
+                        const matchKeyword = !keyword || (
+                            (event.site && event.site.toLowerCase().includes(keyword)) || 
+                            (event.equip && event.equip.toLowerCase().includes(keyword)) || 
+                            (displayName.toLowerCase().includes(keyword)) || 
+                            (event.content && event.content.toLowerCase().includes(keyword)) || 
+                            (event.worker && event.worker.toLowerCase().includes(keyword)) ||
+                            (event.type && event.type.toLowerCase().includes(keyword)) ||
+                            (event.detailType && event.detailType.toLowerCase().includes(keyword)) ||
+                            (event.content && event.content.replace(/\s/g, '').toLowerCase().includes(kwStr)) ||
+                            (event.detailType && event.detailType.replace(/\s/g, '').toLowerCase().includes(kwStr))
+                        );
                         const matchSite = typeof window.isSiteMatched === 'function' ? window.isSiteMatched(event.site, currentSearchFilters.site) : ((typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.site) || event.site === currentSearchFilters.site);
                         const matchEquip = (typeof currentSearchFilters !== 'undefined' && !currentSearchFilters.equip) || event.equip === currentSearchFilters.equip || rawName === currentSearchFilters.equip || displayName === currentSearchFilters.equip;
                         return matchKeyword && matchSite && matchEquip;
@@ -3096,7 +3280,7 @@ window.updateRegisterDetailTypeOptions = function () {
     const key = `${equipKey}::${type}`;
     const defaultSubCategories = {
         '정기': ['PM 점검'],
-        '비정기': ['BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상', '기타'],
+        '비정기': ['Alarm', 'Hunting', 'Data / Para 이상', '기타'],
         '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
         '용액제조': ['용액제조'],
         '온라인점검': ['온라인점검']
@@ -3141,7 +3325,6 @@ window.updateRegisterDetailType2Options = function () {
     const catData = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
     const key = `${equipKey}::${type}::${detailType}`;
     const defaultSubCategories2 = {
-        'BM 점검': ['BM 물품 교체'],
         'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
         'Hunting': ['Air Peak_헌팅', 'HPLC_헌팅', 'Flow_헌팅', 'WD_헌팅', 'BASE_헌팅', 'ETC_헌팅'],
         'Data / Para 이상': ['REF_PORT', 'RT_흔들림', 'HPLC 압력변동', '에어 유량 변동', '미지피크_발생', '콤플렉스_피크', '프로그램_오류', '베이스 값 이상', 'Data 변동', 'Data 전송 이슈', '딜리버리펌프_이슈', '클리닝펌프_이슈', '용액 이슈'],
@@ -3217,7 +3400,7 @@ window.updateRegisterContentOptions = function () {
                 "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
             ];
             items = defaultList.map(content => ({ content: content }));
-        } else if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+        } else if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
             const equipName = equipKey.split('::')[0];
             const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
             let matchedItems = adminItems.filter(item => {
@@ -3313,7 +3496,7 @@ window.updateRegisterContentOptions = function () {
             pureContent = pureContent.replace(/\[(유상|무상|기타)\]/g, '').trim();
             pureContent = pureContent.replace(/\s*-\s*$/, '').trim();
 
-            if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+            if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
                 const partKeywords = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리', '파트 이상 (교체)', '파츠 이상 교체', '파트 이상', '파츠 이상'];
                 if (partKeywords.some(kw => pureContent === kw || pureContent.endsWith(kw))) return;
 
@@ -3405,7 +3588,7 @@ window.updateRegisterContentOptions = function () {
             }
         };
 
-        if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+        if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
             detailData.maint.forEach(processRegistered);
         } else {
             detailData.maint.filter(m => m.type === type && m.detailType === detailType).forEach(processRegistered);
@@ -3425,7 +3608,7 @@ window.updateRegisterContentOptions = function () {
         });
 
         // 3. admin_items 처리 (PM, BM, Parts 교체인 경우)
-        if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+        if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
             const allAdminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
             allAdminItems.forEach(a => {
                 if (!a.part) return;
@@ -3496,7 +3679,7 @@ window.updateRegisterContentOptions = function () {
                     const isSelected = currentSelections.hasOwnProperty(val);
                     const itemCost = isSelected ? currentSelections[val] : '유상';
 
-                    const templateId = (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체')
+                    const templateId = (detailType === 'PM 점검' || detailType === 'Parts 교체')
                         ? 'log-part-item-template' : 'detail-content-item-template';
 
                     const tpl = getTemplateContent(templateId);
@@ -3559,11 +3742,13 @@ window.updateRegisterContentOptions = function () {
                             }
                         }
 
-                        div.addEventListener('click', (e) => {
+                        div.addEventListener('mousedown', (e) => {
+                            if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option' || e.target.tagName.toLowerCase() === 'button') return;
+                            e.preventDefault();
                             e.stopPropagation();
                             trigger.classList.remove('error-border');
 
-                            if (type === '비정기' && detailType !== 'BM 점검') {
+                            if (type === '비정기') {
                                 list.querySelectorAll('.log-select-item.selected').forEach(el => {
                                     if (el !== div) el.classList.remove('selected');
                                 });
@@ -3571,17 +3756,20 @@ window.updateRegisterContentOptions = function () {
                             div.classList.toggle('selected');
                             updateTriggerText();
 
-                            if (type === '비정기' && detailType !== 'BM 점검' && div.classList.contains('selected')) {
-                                if (dropdown) dropdown.classList.remove('show');
+                            if (type === '비정기' && div.classList.contains('selected')) {
+                                dropdown.classList.remove('show');
                             }
 
-                            const partRow = document.getElementById('register-part-row');
-                            if (partRow) {
+                            const pWrapper = document.getElementById('detail-edit-part-wrapper');
+                            if (pWrapper) {
                                 const selectedItems = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
                                 const isPartIssue = selectedItems.some(v => v.match(/(파트|물품) 이상\s*\(?(교체|수리)\)?/) || v.includes('용액 용자 이상') || v.includes('용액 / 용자 이상'));
-                                partRow.style.display = isPartIssue ? 'flex' : 'none';
-                                if (isPartIssue && typeof window.renderLogPartOptions === 'function') {
-                                    window.renderLogPartOptions('register-part-wrapper', 'register-part-trigger', 'register-part-list', 'register-part-search');
+                                const pList = document.getElementById('detail-edit-part-list');
+
+                                pWrapper.style.display = isPartIssue ? 'flex' : 'none';
+
+                                if (isPartIssue && pList && typeof window.renderLogPartOptions === 'function') {
+                                    window.renderLogPartOptions('detail-edit-part-wrapper', 'detail-edit-part-trigger', 'detail-edit-part-list', 'detail-edit-part-search', partContentStr);
                                 }
                             }
                         });
@@ -3617,11 +3805,11 @@ window.updateRegisterContentOptions = function () {
         renderDropdownItems();
 
         const footer = dropdown ? dropdown.querySelector('.log-select-footer') : null;
-        if (footer) footer.style.display = (type === '비정기' && detailType !== 'BM 점검') ? 'none' : 'block';
+        if (footer) footer.style.display = (type === '비정기') ? 'none' : 'block';
     } else {
         wrapper.style.display = 'none';
         input.style.display = 'block';
-        if (detailType === 'PM 점검' || detailType === 'BM 점검' || detailType === 'Parts 교체') {
+        if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
             input.placeholder = '항목을 추가해 주세요';
             input.value = '';
             input.disabled = true;

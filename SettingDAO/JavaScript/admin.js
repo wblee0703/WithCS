@@ -2134,7 +2134,7 @@ function setupItemMgmt() {
     if (btnImportItems) {
         btnImportItems.addEventListener('click', async () => {
             if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
-            if (currentCheckTypeSubCategory !== 'PM 점검' && currentCheckTypeSubCategory !== 'BM 점검') return;
+            if (currentCheckTypeSubCategory !== 'PM 점검') return;
 
             if (!confirm(`물품 관리에 등록된 '${currentCheckTypeSubCategory}' 물품을 불러오시겠습니까?\n현재 목록이 모두 지워지고 물품 데이터로 덮어쓰기 됩니다.`)) return;
 
@@ -2833,7 +2833,7 @@ function setupCheckTypeMgmt() {
     const suggestionList = document.getElementById('check-type-item-suggestions');
     if (inputContent && suggestionList) {
         const showItemSuggestions = () => {
-            if (currentCheckTypeSubCategory !== 'PM 점검' && currentCheckTypeSubCategory !== 'BM 점검') {
+            if (currentCheckTypeSubCategory !== 'PM 점검') {
                 suggestionList.style.display = 'none';
                 return;
             }
@@ -3171,7 +3171,7 @@ function renderCheckTypeSubCategoryList() {
     // [추가] 점검 구분별 세부 구분 초기값 설정
     const defaultSubCategories = {
         '정기': ['PM 점검'],
-        '비정기': ['BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상', '기타'],
+        '비정기': ['Alarm', 'Hunting', 'Data / Para 이상', '기타'],
         '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
         '용액제조': ['용액제조'],
         '온라인점검': ['온라인점검']
@@ -3366,7 +3366,6 @@ function renderCheckTypeSubCategory2List() {
 
     // [추가] 세부구분 2 초기값 설정
     const defaultSubCategories2 = {
-        'BM 점검': ['BM 물품 교체'],
         'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
         'Hunting': ['Air Peak_헌팅', 'HPLC_헌팅', 'Flow_헌팅', 'WD_헌팅', 'BASE_헌팅', 'ETC_헌팅'],
         'Data / Para 이상': ['REF_PORT', 'RT_흔들림', 'HPLC 압력변동', '에어 유량 변동', '미지피크_발생', '콤플렉스_피크', '프로그램_오류', '베이스 값 이상', 'Data 변동', 'Data 전송 이슈', '딜리버리펌프_이슈', '클리닝펌프_이슈', '용액 이슈'],
@@ -3561,7 +3560,7 @@ function renderCheckTypeItemList() {
     // [추가] 물품 불러오기 버튼 표시 조건 처리
     const btnImportItems = document.getElementById('btn-import-check-items');
     if (btnImportItems) {
-        if (currentCheckTypeSubCategory === 'PM 점검' || currentCheckTypeSubCategory === 'BM 점검') {
+        if (currentCheckTypeSubCategory === 'PM 점검') {
             btnImportItems.style.display = 'inline-block';
         } else {
             btnImportItems.style.display = 'none';
@@ -3581,7 +3580,7 @@ function renderCheckTypeItemList() {
     // [수정] 데이터가 아예 생성된 적이 없는 경우에만(처음 1회만) 물품 관리에 등록된 정보를 기본값으로 가져옴
     if (!checkTypeItemsData.hasOwnProperty(key)) {
         let defaultItems = [];
-        if (currentCheckTypeSubCategory === 'PM 점검' || currentCheckTypeSubCategory === 'BM 점검') {
+        if (currentCheckTypeSubCategory === 'PM 점검') {
             const equipName = currentCheckTypeEquipKey.split('::')[0];
             const matchedItems = adminItems.filter(item => {
                 if (!item.equip) return false;

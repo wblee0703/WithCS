@@ -137,6 +137,37 @@
     width: 100% !important;
 }
 
+/* [추가] 작업 상세 정보 모달 내 동적 생성 드롭다운 스타일 통일 */
+#event-detail-modal select.input-dark {
+    /* [수정] 다른 입력창과 높이/여백을 통일하여 디자인 일관성 확보 */
+    height: 34px;
+    box-sizing: border-box;
+    padding: 6px 10px;
+    text-align: left;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%238b949e'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    padding-right: 30px;
+    /* 화살표 아이콘 공간 확보 */
+}
+
+#event-detail-modal select.input-dark option {
+    background-color: #161b22;
+    color: #e6edf3;
+}
+
+#event-detail-modal #detail-type-select {
+    /* [수정] JS 인라인 스타일(width: 120px)을 덮어쓰고, 남은 공간을 모두 차지하도록 flex 속성 사용 */
+    flex: 1;
+    width: auto !important;
+}
+
 /* [추가] 작업 상세 정보 저장 버튼 숨김 처리 */
 #btn-save-detail-memo {
     display: none !important;
