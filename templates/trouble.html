@@ -2,7 +2,7 @@
 {% set active_page = 'trouble' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/trouble.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/trouble.css') }}?v=2">
 {% endblock %}
 
 {% block content %}
@@ -13,6 +13,9 @@
         <div class="sidebar-group trouble-sidebar-group site-group">
             <div class="group-header">
                 <h3>사업장 필터</h3>
+                <div class="equip-search-wrapper">
+                    <input type="text" id="trouble-site-search-filter" class="input-dark" placeholder="사업장 검색..." autocomplete="off">
+                </div>
             </div>
             <ul class="list-data" id="trouble-site-list">
                 <!-- JS 렌더링 -->
@@ -22,6 +25,9 @@
         <div class="sidebar-group trouble-sidebar-group model-group">
             <div class="group-header">
                 <h3>모델 필터</h3>
+                <div class="equip-search-wrapper">
+                    <input type="text" id="trouble-model-search-filter" class="input-dark" placeholder="모델 검색..." autocomplete="off">
+                </div>
             </div>
             <ul class="list-data" id="trouble-model-list">
                 <!-- JS 렌더링 -->
@@ -29,11 +35,11 @@
         </div>
 
         <div class="sidebar-group trouble-sidebar-group equip-group">
-            <div class="group-header" style="justify-content: space-between;">
+            <div class="group-header">
                 <h3>장비 필터</h3>
-            </div>
-            <div class="equip-search-wrapper">
-                <input type="text" id="trouble-equip-search-filter" class="input-dark full-width" placeholder="장비 검색..." autocomplete="off">
+                <div class="equip-search-wrapper">
+                    <input type="text" id="trouble-equip-search-filter" class="input-dark" placeholder="장비 검색..." autocomplete="off">
+                </div>
             </div>
             <ul class="list-data" id="trouble-equip-list">
                 <!-- JS 렌더링 -->
@@ -55,6 +61,7 @@
                     <div class="trouble-filters">
                         <input type="text" id="trouble-search-input" class="input-dark" placeholder="장비명, Trouble 내용 검색...">
                         <button id="btn-trouble-search" class="btn-blue-sm">검색</button>
+                        <button id="btn-toggle-completed-trouble" class="btn-gray-sm">작성완료</button>
                     </div>
                 </div>
 
@@ -116,7 +123,10 @@
                                 </div>
                                 <div class="form-row" style="margin-bottom: 0;">
                                     <label class="modal-label" style="width: 100px; flex-shrink: 0;">완료 여부</label>
-                                    <input type="text" id="trouble-modal-status" class="input-dark" style="flex: 1;" readonly>
+                                    <select id="trouble-modal-status" class="input-dark" style="flex: 1; height: 34px;">
+                                        <option value="조치중">조치중</option>
+                                        <option value="조치완료">조치완료</option>
+                                    </select>
                                 </div>
                                 <div class="form-row" style="margin-bottom: 0;">
                                     <label class="modal-label" style="width: 100px; flex-shrink: 0;">조치 담당자</label>
@@ -132,7 +142,7 @@
                                 <button type="button" id="btn-load-trouble-history" class="btn-blue-sm" style="padding: 4px 10px; font-size: 11px;">작업내용 불러오기</button>
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 10px;">
-                                <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label class="modal-label" style="width: 100px; flex-shrink: 0; padding-top: 5px;">트러블 상황</label><textarea id="trouble-modal-situation" class="input-dark" rows="2" style="flex: 1; resize: vertical;"></textarea></div>
+                                <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label class="modal-label" style="width: 100px; flex-shrink: 0; padding-top: 5px;">트러블 상황</label><textarea id="trouble-modal-situation" class="input-dark" rows="5" style="flex: 1; resize: vertical;"></textarea></div>
                                 <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label class="modal-label" style="width: 100px; flex-shrink: 0; padding-top: 5px;">증상</label><textarea id="trouble-modal-symptom" class="input-dark" rows="2" style="flex: 1; resize: vertical;"></textarea></div>
                                 <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label class="modal-label" style="width: 100px; flex-shrink: 0; padding-top: 5px;">원인</label><textarea id="trouble-modal-cause" class="input-dark" rows="2" style="flex: 1; resize: vertical;"></textarea></div>
                                 <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label class="modal-label" style="width: 100px; flex-shrink: 0; padding-top: 5px;">조치사항</label><textarea id="trouble-modal-action-taken" class="input-dark" rows="2" style="flex: 1; resize: vertical;"></textarea></div>
@@ -232,6 +242,40 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     observer.observe(tbody, { childList: true, subtree: true });
+
+    // 사업장 검색 필터
+    const siteSearchInput = document.getElementById('trouble-site-search-filter');
+    if (siteSearchInput) {
+        siteSearchInput.addEventListener('input', function() {
+            const keyword = this.value.toLowerCase().trim();
+            const items = document.querySelectorAll('#trouble-site-list li');
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(keyword)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    // 모델 검색 필터
+    const modelSearchInput = document.getElementById('trouble-model-search-filter');
+    if (modelSearchInput) {
+        modelSearchInput.addEventListener('input', function() {
+            const keyword = this.value.toLowerCase().trim();
+            const items = document.querySelectorAll('#trouble-model-list li');
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(keyword)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    }
 });
 </script>
 {% endblock %}

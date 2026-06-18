@@ -43,6 +43,8 @@
     border-radius: 6px 6px 0 0;
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 10px;
     flex-shrink: 0; /* 제목 헤더가 찌그러지거나 레이아웃을 밀어내지 않도록 보호 */
 }
 
@@ -50,6 +52,8 @@
     margin: 0;
     font-size: 13px;
     color: #e6edf3;
+    white-space: nowrap;
+    flex-shrink: 0; /* 라벨 텍스트가 줄어들지 않도록 보호 */
 }
 
 .trouble-sidebar-group ul.list-data {
@@ -63,10 +67,19 @@
 
 /* 장비 검색 필터 영역 */
 .equip-search-wrapper {
-    padding: 5px 10px;
-    background: #21262d;
-    border-bottom: 1px solid #30363d;
-    flex-shrink: 0; /* 검색창이 찌그러지지 않도록 보호 */
+    flex: 1;
+    min-width: 0; /* 검색창이 카드를 벗어나지 않게 축소 허용 */
+    padding: 0;
+    background: transparent;
+    border: none;
+}
+
+.equip-search-wrapper input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 4px 8px;
+    font-size: 12px;
+    height: 26px;
 }
 
 /* 3. 오른쪽 메인 영역 */
@@ -155,6 +168,36 @@
     margin-right: 10px;
 }
 
+/* [추가] 필터 그룹 레이아웃 및 버튼 스타일 */
+.trouble-filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#btn-toggle-completed-trouble {
+    background-color: #21262d;
+    color: #e6edf3;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    padding: 6px 15px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    height: 34px;
+}
+
+#btn-toggle-completed-trouble:hover {
+    background-color: #30363d;
+}
+
+#btn-toggle-completed-trouble.active {
+    background-color: #238636;
+    border-color: #3fb950;
+    color: #fff;
+}
+
 /* 모바일 반응형 */
 @media (max-width: 950px) {
     .trouble-dashboard-wrapper {
@@ -167,7 +210,16 @@
         height: auto;
     }
     .trouble-sidebar-group {
-        min-height: 150px;
+        height: 200px; /* 항목이 많아도 화면을 다 덮지 않도록 고정 */
+        min-height: 0;
+        flex: none;
+    }
+
+    /* [추가] Trouble 리스트 모바일 세로/가로 스크롤 활성화 */
+    .trouble-table-wrapper {
+        height: 450px !important;
+        max-height: 60vh;
+        flex: none !important;
     }
 
     /* Trouble 상세 정보 팝업창 모바일 위아래 배치 */
@@ -241,4 +293,21 @@
     max-height: 450px;
     border-radius: 4px;
     object-fit: contain;
+}
+
+/* 완료 여부 등 드롭다운(Select) 다크 테마 공통 적용 */
+select.input-dark {
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 4px 30px 4px 10px;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%238b949e'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+}
+select.input-dark option {
+    background-color: #161b22;
+    color: #fff;
 }

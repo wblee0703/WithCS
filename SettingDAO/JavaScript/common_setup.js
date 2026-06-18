@@ -3,8 +3,8 @@
    ========================================================================== */
 
 // [전역 변수] 모달에서 현재 타겟팅하는 항목 정보
-let currentExecStartTarget = null;
-let currentSetupCompleteTarget = null; // [추가] 셋업 완료 처리 대상
+var currentExecStartTarget = null;
+var currentSetupCompleteTarget = null; // [추가] 셋업 완료 처리 대상
 
 // [추가] 로컬 타임존 기준 YYYY-MM-DD 포맷 변환 헬퍼 (UTC 변환 시 하루 밀리는 현상 방지)
 function getLocalYYYYMMDD(d = new Date()) {
@@ -138,6 +138,69 @@ window.openSetupExecStartModal = openSetupExecStartModal;
 window.saveSetupExecStart = saveSetupExecStart;
 
 /* ==========================================================================
+   [추가] 셋업 작업 등록 또는 수정 모달 분기 호출 헬퍼
+   ========================================================================== */
+window.openLogRegisterOrEditMode = function(site, equip, taskName, fallbackDate, forceComplete = false) {
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${site}::${equip}`;
+    const data = setupData[equipKey] || {};
+    const taskLogs = (data.setupLogs || []).filter(l => l.content === taskName);
+    
+    if (taskLogs.length > 0) {
+        taskLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const lastLog = taskLogs[taskLogs.length - 1];
+        if (typeof window.openLogForEditing === 'function') {
+            window.openLogForEditing(site, equip, lastLog.id);
+            if (forceComplete) {
+                setTimeout(() => {
+                    const completeBtn = document.getElementById('btn-setup-log-reg-complete');
+                    if (completeBtn && !completeBtn.classList.contains('btn-green')) completeBtn.click();
+                }, 100);
+            }
+            return;
+        }
+    }
+    
+    if (typeof window.openSetupLogRegisterModal === 'function') window.openSetupLogRegisterModal(site, equip, taskName, fallbackDate, forceComplete);
+    else alert('팝업을 열 수 없습니다.');
+};
+
+/* ==========================================================================
+   [추가] 셋업 작업 등록 또는 수정 모달 분기 호출 헬퍼 (인덱스 지정)
+   ========================================================================== */
+window.openLogRegisterOrEditModeWithIndex = function(site, equip, taskName, fallbackDate, forceComplete = false, logIndexType = 'last') {
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${site}::${equip}`;
+    const data = setupData[equipKey] || {};
+    const taskLogs = (data.setupLogs || []).filter(l => l.content === taskName);
+    
+    if (taskLogs.length > 0) {
+        taskLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        let targetLog;
+        if (logIndexType === 'first') {
+            targetLog = taskLogs[0];
+        } else { // 'last' or default
+            targetLog = taskLogs[taskLogs.length - 1];
+        }
+
+        if (targetLog && typeof window.openLogForEditing === 'function') {
+            window.openLogForEditing(site, equip, targetLog.id);
+            if (forceComplete) {
+                setTimeout(() => {
+                    const completeBtn = document.getElementById('btn-setup-log-reg-complete');
+                    if (completeBtn && !completeBtn.classList.contains('btn-green')) completeBtn.click();
+                }, 100);
+            }
+            return;
+        }
+    }
+    
+    if (typeof window.openSetupLogRegisterModal === 'function') window.openSetupLogRegisterModal(site, equip, taskName, fallbackDate, forceComplete);
+    else alert('팝업을 열 수 없습니다.');
+};
+
+/* ==========================================================================
    [추가] 셋업 작업 기록 모달 (간트 일수 모드 연동)
    ========================================================================== */
 window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, forceComplete = false, isDropdownMode = false) {
@@ -163,13 +226,20 @@ window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, 
         taskWrapper.className = 'log-select-wrapper';
         taskWrapper.style.flex = '1';
         taskWrapper.style.minWidth = '0';
-        taskWrapper.innerHTML = `
-            <div id="setup-log-reg-task-trigger" class="log-select-trigger" style="height:34px; background:#0d1117; border:1px solid #30363d; color:#8b949e; padding:0 10px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:flex-start; text-align:left; box-sizing:border-box; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">작업명 선택</div>
-            <div id="setup-log-reg-task-dropdown" class="log-select-dropdown" style="z-index: 12000; width:100%; box-sizing:border-box;">
-                <input type="text" id="setup-log-reg-task-search" class="dropdown-search-input" placeholder="검색..." style="width: calc(100% - 12px); margin: 5px 6px; padding: 6px 10px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; box-sizing: border-box;" autocomplete="off">
-                <div id="setup-log-reg-task-list" class="log-select-list" style="max-height: 150px; overflow-y: auto;"></div>
-            </div>
-        `;
+        
+        // [수정] 템플릿에서 복제하여 사용 (템플릿이 없을 경우를 대비한 안전장치 유지)
+        const tpl = document.getElementById('setup-log-reg-task-wrapper-template');
+        if (tpl) {
+            taskWrapper.appendChild(tpl.content.cloneNode(true));
+        } else {
+            taskWrapper.innerHTML = `
+                <div id="setup-log-reg-task-trigger" class="log-select-trigger" style="height:34px; background:#0d1117; border:1px solid #30363d; color:#8b949e; padding:0 10px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:flex-start; text-align:left; box-sizing:border-box; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">작업명 선택</div>
+                <div id="setup-log-reg-task-dropdown" class="log-select-dropdown" style="z-index: 12000; width:100%; box-sizing:border-box;">
+                    <input type="text" id="setup-log-reg-task-search" class="dropdown-search-input" placeholder="검색..." style="width: calc(100% - 12px); margin: 5px 6px; padding: 6px 10px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; box-sizing: border-box;" autocomplete="off">
+                    <div id="setup-log-reg-task-list" class="log-select-list" style="max-height: 150px; overflow-y: auto;"></div>
+                </div>
+            `;
+        }
         taskInput.parentNode.insertBefore(taskWrapper, taskInput);
     }
 
@@ -223,6 +293,9 @@ window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, 
                     const completeCb = modal.querySelector('#setup-log-reg-complete');
                     if (completeCb) completeCb.checked = !!d.completed;
                     
+                    const planDateInput = modal.querySelector('#setup-log-reg-plan-date');
+                    if (planDateInput) planDateInput.value = d.startDate || '';
+
                     const compBtn = modal.querySelector('#btn-setup-log-reg-complete');
                     if (compBtn) {
                         if (d.completed) {
@@ -331,12 +404,19 @@ window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, 
     const equipKey = `${site}::${equip}`;
     const data = setupData[equipKey] || {};
     let isTaskCompleted = false;
+    let planDate = '';
     if (data.setupDetails && taskName) {
         const taskObj = data.setupDetails.find(t => t.content === taskName);
-        if (taskObj && taskObj.completed) isTaskCompleted = true;
+        if (taskObj) {
+            isTaskCompleted = !!taskObj.completed;
+            planDate = taskObj.startDate || '';
+        }
     } else if (forceComplete) {
         isTaskCompleted = true;
     }
+    
+    const planDateInput = modal.querySelector('#setup-log-reg-plan-date');
+    if (planDateInput) planDateInput.value = planDate;
     
     if (completeBtn) {
         if (isTaskCompleted) {
@@ -511,10 +591,17 @@ window.openLogForEditing = function(site, equip, logId) {
     }
 
     let isTaskCompleted = false;
+    let planDate = '';
     if (setupData[equipKey] && setupData[equipKey].setupDetails) {
         const taskObj = setupData[equipKey].setupDetails.find(t => t.content === log.content);
-        if (taskObj && taskObj.completed) isTaskCompleted = true;
+        if (taskObj) {
+            isTaskCompleted = !!taskObj.completed;
+            planDate = taskObj.startDate || '';
+        }
     }
+    
+    const planDateInput = modal.querySelector('#setup-log-reg-plan-date');
+    if (planDateInput) planDateInput.value = planDate;
     
     if (completeBtn) {
         if (isTaskCompleted) {
@@ -876,23 +963,13 @@ function recalculateSetupTaskStatus(data, taskContent, site = null, equip = null
         task.delayReason = "";
     } else {
         task.execStartDate = taskLogs[0].date;
-        const workedDays = new Set(taskLogs.map(l => l.date)).size;
-        const estDays = parseInt(task.estDays) || 1;
 
         if (isManualCompleted === true) {
             task.completed = true;
-            task.date = taskLogs[taskLogs.length - 1].date;
+            task.date = taskLogs[taskLogs.length - 1]?.date || new Date().toISOString().split('T')[0];
         } else if (isManualCompleted === false) {
             task.completed = false;
             task.date = "";
-        } else {
-            if (workedDays >= estDays) {
-                task.completed = true;
-                task.date = taskLogs[taskLogs.length - 1].date; // 가장 마지막 로그 날짜를 완료일로
-            } else {
-                task.completed = false;
-                task.date = "";
-            }
         }
     }
 
@@ -1435,6 +1512,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const modal = e.target.closest('.modal-overlay') || document;
             const site = modal.querySelector('#setup-log-reg-site').value;
             const equip = modal.querySelector('#setup-log-reg-equip').value;
+            const planDate = modal.querySelector('#setup-log-reg-plan-date') ? modal.querySelector('#setup-log-reg-plan-date').value : '';
             const date = modal.querySelector('#setup-log-reg-date').value;
             const task = modal.querySelector('#setup-log-reg-task').value;
             const worker = modal.querySelector('#setup-log-reg-worker').value;
@@ -1465,6 +1543,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     existingLog.memo = memo;
                     existingLog.parts = parts; // [추가] 물품 업데이트
                     isUpdating = true;
+                }
+            }
+            
+            if (planDate && data.setupDetails) {
+                const taskObj = data.setupDetails.find(t => t.content === task);
+                if (taskObj) {
+                    taskObj.startDate = planDate;
                 }
             }
 
@@ -1518,3 +1603,97 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+/* ==========================================================================
+   [추가] 간트 차트 셋업 작업 추가 팝업 모달
+   ========================================================================== */
+window.openAddSetupTaskModal = function(site, equip, defaultCategory) {
+    let modal = document.getElementById('add-setup-task-modal');
+    if (!modal) {
+        return alert('셋업 작업 추가 모달 템플릿을 찾을 수 없습니다.');
+    }
+
+    // [수정] 이벤트 리스너 중복 바인딩 방지 (초기 1회만 설정)
+    if (!modal.dataset.initialized) {
+        modal.dataset.initialized = 'true';
+        document.getElementById('btn-close-add-setup-task').onclick = () => modal.style.display = 'none';
+        document.getElementById('btn-cancel-add-setup-task').onclick = () => modal.style.display = 'none';
+        
+        const confirmBtn = document.getElementById('btn-confirm-add-setup-task');
+        const nameInput = document.getElementById('add-setup-task-name');
+
+        confirmBtn.onclick = async () => {
+            const site = modal.dataset.site;
+            const equip = modal.dataset.equip;
+            const category = document.getElementById('add-setup-task-category').value;
+            const taskName = nameInput.value.trim();
+
+            if (!taskName) {
+                alert('작업명을 입력해주세요.');
+                nameInput.focus();
+                return;
+            }
+
+            const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+            const equipKey = `${site}::${equip}`;
+            let data = setupData[equipKey] || {};
+            if (!data.setupDetails) data.setupDetails = [];
+
+            // 중복 확인
+            if (data.setupDetails.some(t => t.content === taskName)) {
+                alert('이미 존재하는 작업명입니다.');
+                nameInput.focus();
+                return;
+            }
+
+            const newTask = {
+                id: Date.now(),
+                category: category,
+                content: taskName,
+                startDate: "", date: "", estDays: "1",
+                completed: false, execStartDate: "", delayReason: ""
+            };
+
+            // 해당 카테고리의 가장 마지막 위치에 삽입
+            let insertIndex = data.setupDetails.length;
+            let prevStartDate = "";
+            for (let i = data.setupDetails.length - 1; i >= 0; i--) {
+                if (data.setupDetails[i].category === category) {
+                    insertIndex = i + 1;
+                    prevStartDate = data.setupDetails[i].startDate;
+                    break;
+                }
+            }
+            const completeIdx = data.setupDetails.findIndex(t => t.content === '셋업 완료' || t.category === '셋업 완료');
+            if (completeIdx !== -1 && insertIndex > completeIdx) insertIndex = completeIdx;
+
+            // [수정] 새로 추가된 항목이 간트 뷰 필터링에서 무시되지 않도록 이전 항목의 시작일 또는 오늘 날짜를 기본 부여
+            if (!prevStartDate && insertIndex > 0) prevStartDate = data.setupDetails[insertIndex - 1].startDate;
+            newTask.startDate = prevStartDate || new Date().toISOString().split('T')[0];
+
+            data.setupDetails.splice(insertIndex, 0, newTask);
+            setupData[equipKey] = data;
+            localStorage.setItem('setup_data', JSON.stringify(setupData));
+
+            if (typeof window.syncSetupDataDB === 'function') await window.syncSetupDataDB(site, equip, data.setupDetails, data.setupLogs);
+            if (typeof addSystemLog === 'function') addSystemLog('ADD_SETUP_ITEM', equip, `간트뷰에서 작업 추가: [${category}] ${taskName}`);
+
+            modal.style.display = 'none';
+            
+            if (typeof renderGanttChart === 'function') renderGanttChart();
+            if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+            if (typeof renderSetupDetailList === 'function' && typeof currentPath !== 'undefined' && currentPath.equip === equip) renderSetupDetailList();
+        };
+
+        nameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') confirmBtn.click(); });
+    }
+
+    modal.dataset.site = site;
+    modal.dataset.equip = equip;
+    const categorySelect = document.getElementById('add-setup-task-category');
+    if (categorySelect) categorySelect.value = (defaultCategory && defaultCategory !== '셋업 완료') ? defaultCategory : '장비 반입 및 정위치';
+    document.getElementById('add-setup-task-name').value = '';
+
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('add-setup-task-name').focus(), 100);
+};

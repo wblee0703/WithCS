@@ -12,7 +12,7 @@ const GANTT_PADDING_END = 1;
 let ganttExtraWeeks = 0;
 let ganttValidDates = [];
 let isHoveringHoliday = false;
-let isDayCountMode = false; // [추가] 일수 모드 플래그
+let isDayCountMode = true; // [수정] 일수 모드를 기본값으로 설정
 
 // 드래그 앤 드롭 관련 변수
 let isDraggingBar = false;
@@ -36,18 +36,93 @@ document.addEventListener('DOMContentLoaded', () => {
     setupGanttResizer();
     setupEquipInfoResizer();
     setupGanttSearchModal();
-    // [추가] 일수 모드 토글 이벤트
+    // [수정] 제목 클릭 대신 버튼으로 모드 전환하도록 로직 변경 (아래 MutationObserver에서 버튼 생성)
     const subtitleEl = document.querySelector('.gantt__subtitle');
     if (subtitleEl) {
-        subtitleEl.addEventListener('click', () => {
+        subtitleEl.innerHTML = '셋업 일정'; // 기본 텍스트로 고정
+    }
+
+    // HTML로 분리된 일수/날짜 모드 전환 버튼 이벤트 연결
+    const viewToggleBtn = document.getElementById('btn-gantt-view-toggle');
+    if (viewToggleBtn) {
+        const updateButtonText = () => {
+            viewToggleBtn.innerHTML = isDayCountMode ? '📅 날짜 모드' : '🔢 일수 모드';
+        };
+
+        viewToggleBtn.onclick = () => {
             isDayCountMode = !isDayCountMode;
-            if (isDayCountMode) {
-                subtitleEl.innerHTML = '셋업 일정 <span style="font-size:12px; color:#58a6ff; margin-left:5px;">(일수 모드)</span>';
-            } else {
-                subtitleEl.innerHTML = '셋업 일정';
-            }
+            updateButtonText();
             renderGanttChart();
+        };
+        updateButtonText();
+    }
+
+    // [추가] "작업명" 헤더 옆 글로벌 작업 추가 버튼 생성
+    const sidebarHeader = document.querySelector('.gantt__sidebar .gantt__header-cell--fixed');
+    if (sidebarHeader && !document.getElementById('btn-gantt-settings')) {
+        sidebarHeader.style.position = 'relative';
+
+        const settingBtn = document.createElement('button');
+        settingBtn.id = 'btn-gantt-settings';
+        settingBtn.className = 'btn-settings';
+        settingBtn.innerHTML = '⚙️';
+        settingBtn.title = '간트 리스트 편집';
+        settingBtn.style.position = 'absolute';
+        settingBtn.style.right = '10px';
+        settingBtn.style.zIndex = '100';
+        settingBtn.style.display = 'none';
+        settingBtn.style.cursor = 'pointer';
+
+        const addBtn = document.createElement('button');
+        addBtn.id = 'btn-gantt-add-task';
+        addBtn.className = 'gantt__btn-add'; // 기존 스타일 재활용
+        addBtn.innerHTML = '＋';
+        addBtn.title = '셋업 작업 추가';
+        // [수정] 인라인 스타일 충돌 방지를 위해 개별 속성으로 안전하게 할당
+        addBtn.style.position = 'absolute';
+        addBtn.style.right = '35px';
+        addBtn.style.zIndex = '100';
+        addBtn.style.display = 'none';
+        addBtn.style.cursor = 'pointer';
+
+        settingBtn.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); });
+        settingBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const ganttArea = document.getElementById('gantt-chart-area');
+            if (ganttArea) {
+                ganttArea.classList.toggle('edit-mode');
+                settingBtn.classList.toggle('active');
+                if (ganttArea.classList.contains('edit-mode')) {
+                    addBtn.style.display = 'flex';
+                } else {
+                    addBtn.style.display = 'none';
+                    renderGanttChart(); // 닫을 때 편집 중인 텍스트 입력창 롤백
+                }
+            }
         });
+
+        // [수정] 부모 요소의 드래그나 클릭 이벤트에 가로채이지 않도록 이벤트 전파(stopPropagation) 완벽 차단
+        addBtn.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); });
+        addBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const targetSite = currentGanttFilters.site || (typeof setupDashboardFilter !== 'undefined' ? setupDashboardFilter.site : '');
+            const targetEquip = currentGanttFilters.equip;
+
+            if (targetSite && targetEquip) {
+                if (typeof window.openAddSetupTaskModal === 'function') {
+                    window.openAddSetupTaskModal(targetSite, targetEquip, '장비 반입 및 정위치');
+                } else {
+                    alert('작업 추가 팝업 기능을 찾을 수 없습니다. 페이지를 새로고침 해주세요.');
+                }
+            } else {
+                alert('장비를 먼저 선택해주세요.');
+            }
+        });
+        sidebarHeader.appendChild(addBtn);
+        sidebarHeader.appendChild(settingBtn);
     }
 });
 
@@ -158,27 +233,44 @@ function updateTaskDate(site, equip, id, type, change, mode = 'move') {
         }
         else if (mode === 'visual-update') {
             if (type === 'exec') {
-                if (change.newStart) task.execStartDate = change.newStart;
-                if (change.newEnd) task.date = change.newEnd;
+                if (change.newStart && !isDayCountMode) task.execStartDate = change.newStart;
+                if (change.newEnd && !isDayCountMode) task.date = change.newEnd;
             } else if (type === 'plan') {
-                if (change.newStart) task.startDate = change.newStart;
-                if (change.newStart && change.newEnd) {
-                    let days = 0;
-                    let curr = new Date(change.newStart);
-                    const end = new Date(change.newEnd);
-                    while (curr <= end) {
-                        const d = curr.getDay();
-                        const isHol = (d === 0 || d === 6) || !!getHolidayName(curr.getFullYear(), curr.getMonth(), curr.getDate());
-                        if (!isHol) days++;
-                        curr.setDate(curr.getDate() + 1);
+                if (isDayCountMode) {
+                    // [추가] 일수 모드에서는 가상 날짜 대신 실제 이동한 칸 수(delta)를 원본 날짜에 반영
+                    if (change.deltaStartDays !== undefined && change.deltaStartDays !== 0 && task.startDate) {
+                        const originalDate = new Date(task.startDate);
+                        originalDate.setDate(originalDate.getDate() + change.deltaStartDays);
+                        task.startDate = originalDate.toISOString().split('T')[0];
                     }
-                    task.estDays = days.toString();
+                    if (change.newEstDays !== undefined && change.newEstDays > 0) {
+                        task.estDays = change.newEstDays.toString();
+                    }
+                } else {
+                    if (change.newStart) task.startDate = change.newStart;
+                    if (change.newStart && change.newEnd) {
+                        let days = 0;
+                        let curr = new Date(change.newStart);
+                        const end = new Date(change.newEnd);
+                        while (curr <= end) {
+                            const d = curr.getDay();
+                            const isHol = (d === 0 || d === 6) || !!getHolidayName(curr.getFullYear(), curr.getMonth(), curr.getDate());
+                            if (!isHol) days++;
+                            curr.setDate(curr.getDate() + 1);
+                        }
+                        task.estDays = days.toString();
+                    }
                 }
             }
         }
 
         setupData[equipKey] = data;
         localStorage.setItem('setup_data', JSON.stringify(setupData));
+        
+        // [추가] 변경된 예정일 데이터를 서버에 동기화하고 타 화면(리스트)에 즉시 갱신
+        if (typeof window.syncSetupDataDB === 'function') window.syncSetupDataDB(site, equip, data.setupDetails, data.setupLogs);
+        if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+        if (typeof renderSetupDetailList === 'function' && typeof currentPath !== 'undefined' && currentPath.equip === equip) renderSetupDetailList();
         renderGanttChart();
     }
 }
@@ -236,6 +328,8 @@ function renderGanttChart() {
         targetInfoEl.textContent = infoText;
     }
 
+    const btnGanttAddTask = document.getElementById('btn-gantt-add-task');
+    const btnGanttSettings = document.getElementById('btn-gantt-settings');
     const hasActiveFilter = currentGanttFilters.site || currentGanttFilters.equip;
     if (!hasActiveFilter) {
         if (wrapper) wrapper.style.display = 'none';
@@ -243,7 +337,17 @@ function renderGanttChart() {
             emptyMsg.style.display = 'block';
             emptyMsg.textContent = '장비 정보에서 리스트를 클릭하면 간트뷰 일정이 표시됩니다.';
         }
+        if (btnGanttAddTask) btnGanttAddTask.style.display = 'none';
+        if (btnGanttSettings) btnGanttSettings.style.display = 'none';
         return;
+    } else {
+        if (btnGanttSettings) btnGanttSettings.style.display = 'flex';
+        const ganttArea = document.getElementById('gantt-chart-area');
+        if (ganttArea && ganttArea.classList.contains('edit-mode')) {
+            if (btnGanttAddTask) btnGanttAddTask.style.display = 'flex';
+        } else {
+            if (btnGanttAddTask) btnGanttAddTask.style.display = 'none';
+        }
     }
 
     let allTasks = [];
@@ -258,7 +362,7 @@ function renderGanttChart() {
                     // [추가] 장비 단위 셋업 완료 여부 판단 및 상태 필터링
                     const completeTask = data.setupDetails.find(t => t.content === '셋업 완료' || t.category === '셋업 완료');
                     const isEquipCompleted = completeTask && completeTask.completed;
-                    
+
                     const showIng = currentGanttFilters.showIng !== false; // 기본값 true
                     const showDone = currentGanttFilters.showDone !== false; // 기본값 true
 
@@ -291,15 +395,13 @@ function renderGanttChart() {
                             // [개선] 등록된 로그 수 기반으로 상태 판단
                             const taskLogs = (data.setupLogs || []).filter(l => l.content === displayName);
                             const workedDays = new Set(taskLogs.map(l => l.date)).size;
-                            
+
                             if (taskLogs.length > 0) {
-                                taskLogs.sort((a,b) => new Date(a.date) - new Date(b.date));
+                                taskLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
                                 execStart = taskLogs[0].date;
                                 execEnd = task.date || taskLogs[taskLogs.length - 1].date;
-                                
-                                if (workedDays > estDays) {
-                                    statusClass = 'exec-delayed';
-                                } else if (task.completed || workedDays >= estDays) {
+
+                                if (task.completed) {
                                     statusClass = 'exec';
                                 } else {
                                     statusClass = 'exec-progress';
@@ -342,7 +444,7 @@ function renderGanttChart() {
 
     // [추가] 일수 모드 적용 (날짜 갭을 무시하고 모든 일정을 연속되게 재배치)
     let equipRealToVirtMap = {}; // [추가] 장비 단위 실제 날짜 -> 가상 날짜 매핑 
-    
+
     if (isDayCountMode) {
         const groupedTasks = {};
         allTasks.forEach(t => {
@@ -395,22 +497,37 @@ function renderGanttChart() {
             const activeGroupIndex = dateGroups.findIndex(g => g.tasks.includes(tasks[activeIndex]));
 
             const virtStartMap = new Map();
-            let currentVirtStart = new Date(today);
 
             // 1. 순방향 배정 (현재 그룹부터 끝까지)
+            let currentVirtStart = new Date(today);
             for (let i = activeGroupIndex; i < dateGroups.length; i++) {
                 const g = dateGroups[i];
-                virtStartMap.set(g.realStart, new Date(currentVirtStart));
-                currentVirtStart = addContinuousDays(currentVirtStart, g.maxEstDays); 
+                if (i === activeGroupIndex) {
+                    virtStartMap.set(g.realStart, new Date(currentVirtStart));
+                } else {
+                    const prevG = dateGroups[i - 1];
+                    const rCurr = new Date(g.realStart);
+                    const rPrev = new Date(prevG.realStart);
+                    rCurr.setHours(0, 0, 0, 0); 
+                    rPrev.setHours(0, 0, 0, 0);
+                    const diffDays = Math.round((rCurr - rPrev) / 86400000);
+                    currentVirtStart = addContinuousDays(currentVirtStart, diffDays);
+                    virtStartMap.set(g.realStart, new Date(currentVirtStart));
+                }
             }
 
             // 2. 역방향 배정 (현재 그룹 이전부터 처음까지)
-            let currentVirtEnd = addContinuousDays(today, -1);
+            let currentVirtEnd = new Date(today);
             for (let i = activeGroupIndex - 1; i >= 0; i--) {
                 const g = dateGroups[i];
-                const start = addContinuousDays(currentVirtEnd, -(g.maxEstDays - 1));
-                virtStartMap.set(g.realStart, new Date(start));
-                currentVirtEnd = addContinuousDays(start, -1);
+                const nextG = dateGroups[i + 1];
+                const rCurr = new Date(g.realStart);
+                const rNext = new Date(nextG.realStart);
+                rCurr.setHours(0, 0, 0, 0); 
+                rNext.setHours(0, 0, 0, 0);
+                const diffDays = Math.round((rNext - rCurr) / 86400000);
+                currentVirtEnd = addContinuousDays(currentVirtEnd, -diffDays);
+                virtStartMap.set(g.realStart, new Date(currentVirtEnd));
             }
 
             // 3. 각 Task에 가상 날짜 배정
@@ -465,7 +582,7 @@ function renderGanttChart() {
 
             sequencedTasks.push(...tasks);
         });
-        
+
         allTasks = sequencedTasks;
     }
 
@@ -576,6 +693,22 @@ function renderGanttChart() {
         const template = document.getElementById('gantt-task-template');
         taskList.innerHTML = '';
 
+        // [추가] 드래그 앤 드롭을 위한 dragover 이벤트 등록 (최초 1회)
+        if (!taskList.dataset.dragBound) {
+            taskList.dataset.dragBound = 'true';
+            taskList.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                if (typeof window.getDragAfterElement === 'function') {
+                    const afterElement = window.getDragAfterElement(taskList, e.clientY, '.gantt__task-item:not(.dragging)');
+                    const draggable = document.querySelector('.gantt__task-item.dragging');
+                    if (draggable) {
+                        if (afterElement == null) taskList.appendChild(draggable);
+                        else taskList.insertBefore(draggable, afterElement);
+                    }
+                }
+            });
+        }
+
         allTasks.forEach((t, index) => {
             const clone = template.content.cloneNode(true);
             const taskDiv = clone.querySelector('.gantt__task-item');
@@ -587,25 +720,35 @@ function renderGanttChart() {
                 if (!isDayCountMode) openDateEditModal(t.site, t.equip, t.id, 'plan');
             };
 
+            // [추가] 특정 장비가 단일 선택된 경우에만 순서 변경 드래그 활성화
+            if (currentGanttFilters.site && currentGanttFilters.equip) {
+                taskDiv.draggable = true;
+                taskDiv.style.cursor = 'grab';
+                taskDiv.addEventListener('dragstart', () => {
+                    taskDiv.classList.add('dragging');
+                });
+                taskDiv.addEventListener('dragend', () => {
+                    taskDiv.classList.remove('dragging');
+                    if (typeof reorderGanttTasks === 'function') {
+                        reorderGanttTasks(t.site, t.equip);
+                    }
+                });
+            }
+
             const label = clone.querySelector('.gantt__task-label');
             label.title = `${t.site} > ${t.equip}`;
             label.textContent = t.displayName;
 
             const btnAdd = clone.querySelector('.gantt__btn-add');
-            // [수정] 날짜/일수 모드 관계없이 실행 버튼(▶) 항상 제거
-            btnAdd.remove();
+            if (btnAdd) {
+                btnAdd.remove(); // [수정] 개별 항목의 추가 버튼 일괄 제거
+            }
 
             const progressSpan = clone.querySelector('.gantt__task-progress');
             if (t.execStart && t.execEnd) {
-                let pct = 0;
-                const estDaysCount = parseInt(t.estDays) || 1;
-                const wDays = new Set(t.logDates || []).size;
-                if (t.completed) {
-                    pct = 100;
-                } else if (wDays > 0) {
-                    pct = Math.round((wDays / estDaysCount) * 100);
-                    if (pct > 100) pct = 100;
-                }
+                let pct = 0; // [개선] 50% 100% 고정 상태 판단
+                if (t.completed) pct = 100;
+                else if (t.execStart) pct = 50;
 
                 progressSpan.textContent = `${pct}%`;
 
@@ -618,11 +761,81 @@ function renderGanttChart() {
             }
 
             const btnDel = clone.querySelector('.btn-del-sm');
+
+            // [추가] 편집 버튼 (작업명 수정) 생성
+            const btnEdit = document.createElement('button');
+            btnEdit.className = 'btn-edit-sm';
+            btnEdit.innerHTML = '✏️';
+            btnEdit.title = '작업명 수정';
+
             if (t.completed) {
-                btnDel.disabled = true;
-                btnDel.title = '완료된 작업은 삭제할 수 없습니다.';
+                if (btnDel) {
+                    btnDel.disabled = true;
+                    btnDel.title = '완료된 작업은 삭제할 수 없습니다.';
+                }
+                btnEdit.disabled = true;
+                btnEdit.title = '완료된 작업은 수정할 수 없습니다.';
             } else {
-                btnDel.onclick = () => deleteSetupTask(t.site, t.equip, t.id);
+                if (btnDel) btnDel.onclick = () => deleteSetupTask(t.site, t.equip, t.id);
+                btnEdit.onclick = (e) => {
+                    e.stopPropagation();
+                    const isEditing = taskDiv.classList.contains('editing');
+                    if (!isEditing) {
+                        taskDiv.classList.add('editing');
+                        taskDiv.draggable = false;
+                        btnEdit.textContent = '✅';
+
+                        const currentName = label.textContent;
+                        // 텍스트 너비 고정을 위해 flex 사용 설정 반영
+                        label.innerHTML = `<input type="text" class="input-dark input-edit-small" value="${escapeHtml(currentName)}" onclick="event.stopPropagation()" style="width:100%;">`;
+                        const input = label.querySelector('input');
+                        input.focus();
+                        input.addEventListener('keypress', (ev) => {
+                            if (ev.key === 'Enter') btnEdit.click();
+                        });
+                    } else {
+                        const input = label.querySelector('input');
+                        const newName = input.value.trim();
+                        if (!newName) {
+                            alert('작업명을 입력해주세요.');
+                            return;
+                        }
+
+                        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+                        const equipKey = `${t.site}::${t.equip}`;
+                        const data = setupData[equipKey] || {};
+                        if (data.setupDetails) {
+                            if (newName !== t.displayName && data.setupDetails.some(item => item.content === newName)) {
+                                alert('이미 존재하는 작업명입니다.');
+                                return;
+                            }
+
+                            const taskObj = data.setupDetails.find(item => item.id === t.id);
+                            if (taskObj) {
+                                taskObj.content = newName;
+                                setupData[equipKey] = data;
+                                localStorage.setItem('setup_data', JSON.stringify(setupData));
+                                if (typeof window.syncSetupDataDB === 'function') {
+                                    window.syncSetupDataDB(t.site, t.equip, data.setupDetails, data.setupLogs);
+                                }
+                                if (typeof addSystemLog === 'function') {
+                                    addSystemLog('UPDATE_SETUP_ITEM', t.equip, `간트뷰 작업명 변경: ${t.displayName} -> ${newName}`);
+                                }
+                            }
+                        }
+
+                        taskDiv.classList.remove('editing');
+                        btnEdit.textContent = '✏️';
+
+                        renderGanttChart();
+                        if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+                        if (typeof renderSetupDetailList === 'function' && typeof currentPath !== 'undefined' && currentPath.equip === t.equip) renderSetupDetailList();
+                    }
+                };
+            }
+
+            if (btnDel && btnDel.parentNode) {
+                btnDel.parentNode.insertBefore(btnEdit, btnDel);
             }
 
             taskList.appendChild(clone);
@@ -664,6 +877,23 @@ function renderGanttChart() {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
+    // [추가] 가상 날짜 -> 실제 표시 날짜 매핑 계산
+    const virtToRealMap = new Map();
+    const activeEquipKey = currentGanttFilters.equip ? `${currentGanttFilters.site}::${currentGanttFilters.equip}` : null;
+
+    let targetEquipMap = null;
+    if (activeEquipKey && equipRealToVirtMap[activeEquipKey]) {
+        targetEquipMap = equipRealToVirtMap[activeEquipKey];
+    } else if (Object.keys(equipRealToVirtMap).length > 0) {
+        targetEquipMap = Object.values(equipRealToVirtMap)[0];
+    }
+
+    if (targetEquipMap) {
+        for (const [rDate, vDate] of Object.entries(targetEquipMap)) {
+            virtToRealMap.set(vDate, rDate);
+        }
+    }
+
     // [추가] 일수 모드일 때 하이라이트(오늘) 기준일을 '마지막 완료일의 다음 날'로 재설정
     let highlightDateStr = todayStr;
     if (isDayCountMode) {
@@ -674,7 +904,7 @@ function renderGanttChart() {
                 if (!maxCompDate || d > maxCompDate) maxCompDate = d;
             }
         });
-        
+
         if (maxCompDate) {
             maxCompDate.setHours(0, 0, 0, 0);
             const nextValid = ganttValidDates.find(dObj => {
@@ -689,6 +919,7 @@ function renderGanttChart() {
     }
 
     let relativeDayCount = 1;
+    let lastDisplayDateObj = null;
 
     ganttValidDates.forEach((dObj, i) => {
         let cellClass = 'gantt__date-cell gantt__date-cell--day';
@@ -698,14 +929,40 @@ function renderGanttChart() {
         const d = new Date(dObj.date);
         d.setHours(0, 0, 0, 0);
 
-        // [수정] 일수 모드일 경우에만 상대 일수 표시 (기본 모드는 달력 날짜 표시)
+        // [수정] 일수 모드일 경우 상대 일수(Day N)와 기록된 날짜를 연동하여 2줄로 표시
         if (isDayCountMode) {
             if (projectStartDate && d >= projectStartDate) {
-                content = relativeDayCount++;
-                tooltip = `Day ${content}`; // [수정] 일수 모드에서 날짜 표시 툴팁 제거
+                const dayNum = relativeDayCount++;
+
+                let displayDateObj = null;
+                let isMapped = false;
+
+                if (virtToRealMap.has(dObj.str)) {
+                    const rDateStr = virtToRealMap.get(dObj.str);
+                    const [y, m, day] = rDateStr.split('-').map(Number);
+                    displayDateObj = new Date(y, m - 1, day);
+                    isMapped = true;
+                } else {
+                    if (lastDisplayDateObj) {
+                        displayDateObj = new Date(lastDisplayDateObj);
+                        displayDateObj.setDate(displayDateObj.getDate() + 1);
+                    } else {
+                        displayDateObj = new Date(d); // 기본 가상 날짜
+                    }
+                }
+
+                lastDisplayDateObj = new Date(displayDateObj);
+
+                const shortDate = `${String(displayDateObj.getMonth() + 1).padStart(2, '0')}/${String(displayDateObj.getDate()).padStart(2, '0')}`;
+                const dateColor = isMapped ? 'color: #58a6ff;' : 'color: #8b949e;';
+
+                content = `<div style="display:flex; flex-direction:column; gap:4px; align-items:center;"><span style="color:var(--gantt-text-primary); font-weight:bold; font-size:10px; line-height:1;">Day ${dayNum}</span><span style="font-size:9px; line-height:1; ${dateColor}">${shortDate}</span></div>`;
+
+                const displayFullDate = `${displayDateObj.getFullYear()}-${String(displayDateObj.getMonth() + 1).padStart(2, '0')}-${String(displayDateObj.getDate()).padStart(2, '0')}`;
+                tooltip = `Day ${dayNum} (${displayFullDate}${isMapped ? ' - 실제 기록됨' : ' - 예상'})`;
             } else {
                 content = '-';
-                tooltip = ''; // [수정] 빈 공간 툴팁 제거
+                tooltip = '';
             }
         }
 
@@ -826,7 +1083,6 @@ function renderGanttChart() {
             }
         }
 
-        
         // [수정] 일수 모드에서는 원본 날짜와 가상 날짜의 차이(offset)를 계산하여, 실제 작업한 날짜가 클릭한 칸에 정확히 매칭되도록 블록 생성
         let execBarsHtml = '';
         if (isDayCountMode) {
@@ -892,7 +1148,7 @@ function renderGanttChart() {
                     }
                 });
             }
-            
+
             // [추가] 로그가 없는 경우에도 드래그/리사이즈가 가능한 빈 실행바를 표시
             if (execBarsHtml === '') {
                 execBarsHtml = `<div class="gantt__bar ${statusModifier}" style="left: ${eLeft}px; width: ${eWidth}px;" title="${execTitle}" data-id="${t.id}" data-type="exec" data-site="${t.site}" data-equip="${t.equip}" data-completed="${t.completed}">${eSegments}${resizeHandles}</div>`;
@@ -901,7 +1157,7 @@ function renderGanttChart() {
 
         bodyHtml += `
             <div class="gantt__row" data-id="${t.id}" data-site="${t.site}" data-equip="${t.equip}" data-task-name="${t.displayName}" style="cursor: pointer; pointer-events: auto;">
-                <div class="gantt__bar gantt__bar--plan" style="left: ${pLeft}px; width: ${pWidth}px;" title="${planTitle}" data-id="${t.id}" data-type="plan" data-site="${t.site}" data-equip="${t.equip}">${pSegments}</div>
+                <div class="gantt__bar gantt__bar--plan" style="left: ${pLeft}px; width: ${pWidth}px; cursor: ${t.completed ? 'default' : 'grab'}; pointer-events: auto;" title="${planTitle}" data-id="${t.id}" data-type="plan" data-site="${t.site}" data-equip="${t.equip}" data-completed="${t.completed}">${pSegments}${resizeHandles}</div>
                 ${execBarsHtml}
             </div>`;
     });
@@ -936,11 +1192,11 @@ function renderGanttChart() {
             const equip = row.dataset.equip;
             const taskName = row.dataset.taskName;
             const taskId = row.dataset.id;
-            
+
             const rect = row.getBoundingClientRect();
             const offsetX = e.clientX - rect.left;
             const colIndex = Math.floor(offsetX / ganttDayWidth);
-            
+
             let clickedDateStr = null;
             if (colIndex >= 0 && colIndex < ganttValidDates.length) {
                 if (isDayCountMode) {
@@ -948,7 +1204,7 @@ function renderGanttChart() {
                     const equipKey = `${site}::${equip}`;
                     const equipMap = equipRealToVirtMap[equipKey];
                     let foundRealDate = null;
-                    
+
                     if (equipMap) {
                         for (const [rDate, vDate] of Object.entries(equipMap)) {
                             if (vDate === virtDateStr) {
@@ -987,25 +1243,13 @@ function renderGanttChart() {
             const data = setupData[equipKey] || {};
             const taskLogs = (data.setupLogs || []).filter(l => l.content === taskName);
 
-            if (taskLogs.length > 0) {
-                taskLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
-                let targetLog = taskLogs.find(l => l.date === clickedDateStr);
-                
-                // [수정] 해당 작업에 이미 기록이 존재한다면, 빈 칸을 누르더라도 가장 최근의 작업 기록 수정 팝업을 띄움
-                if (targetLog) {
-                    if (typeof window.openLogForEditing === 'function') {
-                        window.openLogForEditing(site, equip, targetLog.id);
-                    }
-                } else {
-                    const lastLog = taskLogs[taskLogs.length - 1];
-                    if (typeof window.openLogForEditing === 'function') {
-                        window.openLogForEditing(site, equip, lastLog.id);
-                    }
-                }
+            let targetLog = taskLogs.find(l => l.date === clickedDateStr);
+
+            // [수정] 빈 칸 클릭 시 항상 신규 등록 팝업을 띄워 개별 추가가 가능하도록 변경
+            if (targetLog) {
+                if (typeof window.openLogForEditing === 'function') window.openLogForEditing(site, equip, targetLog.id);
             } else {
-                if (typeof window.openSetupLogRegisterModal === 'function') {
-                    window.openSetupLogRegisterModal(site, equip, taskName, clickedDateStr);
-                }
+                if (typeof window.openSetupLogRegisterModal === 'function') window.openSetupLogRegisterModal(site, equip, taskName, clickedDateStr);
             }
         });
     });
@@ -1018,8 +1262,6 @@ function setupGanttBarDrag() {
     const bars = document.querySelectorAll('.gantt__bar');
     bars.forEach(bar => {
         bar.addEventListener('mousedown', (e) => {
-            if (isDayCountMode) return; // [추가] 일수 모드에서는 편집 비활성화
-            if (bar.dataset.type === 'plan') return;
 
             e.stopPropagation();
             isDraggingBar = true;
@@ -1054,28 +1296,28 @@ document.addEventListener('mousemove', (e) => {
     const deltaX = e.clientX - dragStartX;
     if (Math.abs(deltaX) > 2) hasMoved = true;
 
-    if (dragBarEl.dataset.type === 'exec') {
-        let targetIndex = -1;
-        if (dragMode === 'move') {
-            const newLeft = dragBarInitialLeft + deltaX;
-            targetIndex = Math.round(newLeft / ganttDayWidth);
-        } else if (dragMode === 'resize-right') {
-            const newWidth = Math.max(ganttDayWidth, dragBarInitialWidth + deltaX);
-            const currentLeft = parseFloat(dragBarEl.style.left);
-            targetIndex = Math.round((currentLeft + newWidth) / ganttDayWidth) - 1;
-        } else if (dragMode === 'resize-left') {
-            let newWidth = dragBarInitialWidth - deltaX;
-            if (newWidth < ganttDayWidth) newWidth = ganttDayWidth;
-            const newLeft = dragBarInitialLeft + (dragBarInitialWidth - newWidth);
-            targetIndex = Math.round(newLeft / ganttDayWidth);
-        }
-
-        if (targetIndex >= 0 && targetIndex < ganttValidDates.length && ganttValidDates[targetIndex].holiday) {
-            isHoveringHoliday = true;
-            return;
-        }
-        isHoveringHoliday = false;
+    // [수정] 계획(plan) 막대와 실행(exec) 막대 모두 공통으로 충돌 및 위치 계산 수행
+    let targetIndex = -1;
+    if (dragMode === 'move') {
+        const newLeft = dragBarInitialLeft + deltaX;
+        targetIndex = Math.round(newLeft / ganttDayWidth);
+    } else if (dragMode === 'resize-right') {
+        const newWidth = Math.max(ganttDayWidth, dragBarInitialWidth + deltaX);
+        const currentLeft = parseFloat(dragBarEl.style.left);
+        targetIndex = Math.round((currentLeft + newWidth) / ganttDayWidth) - 1;
+    } else if (dragMode === 'resize-left') {
+        let newWidth = dragBarInitialWidth - deltaX;
+        if (newWidth < ganttDayWidth) newWidth = ganttDayWidth;
+        const newLeft = dragBarInitialLeft + (dragBarInitialWidth - newWidth);
+        targetIndex = Math.round(newLeft / ganttDayWidth);
     }
+
+    // [수정] 일수 모드일 때는 휴일 칸 위를 지나가도 걸리지 않고 부드럽게 넘어가도록 예외 처리
+    if (!isDayCountMode && targetIndex >= 0 && targetIndex < ganttValidDates.length && ganttValidDates[targetIndex].holiday) {
+        isHoveringHoliday = true;
+        return;
+    }
+    isHoveringHoliday = false;
 
     if (dragMode === 'move') {
         dragBarEl.style.left = `${dragBarInitialLeft + deltaX}px`;
@@ -1095,7 +1337,7 @@ document.addEventListener('mouseup', (e) => {
 
         if (dragMode !== 'locked') dragBarEl.style.cursor = 'grab';
 
-        if (dragBarEl.dataset.type === 'exec' && isHoveringHoliday) {
+        if (!isDayCountMode && isHoveringHoliday) {
             dragBarEl.style.left = `${dragBarInitialLeft}px`;
             dragBarEl.style.width = `${dragBarInitialWidth}px`;
             isDraggingBar = false;
@@ -1109,6 +1351,9 @@ document.addEventListener('mouseup', (e) => {
                 const safeTaskName = taskName ? taskName.replace(/'/g, "\\'").replace(/"/g, "&quot;") : '';
                 window.openSetupLogRegisterModal(dragBarEl.dataset.site, dragBarEl.dataset.equip, safeTaskName, '');
             }
+            if (dragMode === 'move') dragBarEl.style.left = `${dragBarInitialLeft}px`;
+            else { dragBarEl.style.width = `${dragBarInitialWidth}px`; dragBarEl.style.left = `${dragBarInitialLeft}px`; }
+        } else if (!hasMoved && dragBarEl.dataset.type === 'plan') {
             if (dragMode === 'move') dragBarEl.style.left = `${dragBarInitialLeft}px`;
             else { dragBarEl.style.width = `${dragBarInitialWidth}px`; dragBarEl.style.left = `${dragBarInitialLeft}px`; }
         } else {
@@ -1127,14 +1372,22 @@ document.addEventListener('mouseup', (e) => {
 
             if (ganttValidDates[startIdx] && ganttValidDates[endIdx]) {
                 const newStartDate = ganttValidDates[startIdx].str;
-                const newEndDate = ganttValidDates[endIdx].str;
+                               const newEndDate = ganttValidDates[endIdx].str;
+                
+                const deltaStartDays = Math.round((currentLeft - dragBarInitialLeft) / ganttDayWidth);
+                const newEstDays = Math.round(currentWidth / ganttDayWidth);
 
                 updateTaskDate(
                     dragBarEl.dataset.site,
                     dragBarEl.dataset.equip,
                     dragBarEl.dataset.id,
                     dragBarEl.dataset.type,
-                    { newStart: newStartDate, newEnd: newEndDate },
+                    { 
+                        newStart: newStartDate, 
+                        newEnd: newEndDate,
+                        deltaStartDays: deltaStartDays,
+                        newEstDays: newEstDays
+                    },
                     'visual-update'
                 );
             } else {
@@ -1144,6 +1397,58 @@ document.addEventListener('mouseup', (e) => {
         isDraggingBar = false; dragBarEl = null; dragMode = null;
     }
 });
+
+/* ==========================================================================
+   [10] 간트 차트 작업 순서 재정렬 (Drag & Drop)
+   ========================================================================== */
+function reorderGanttTasks(site, equip) {
+    if (!site || !equip) return;
+
+    const taskList = document.getElementById('gantt-task-list');
+    if (!taskList) return;
+
+    // 화면상에 변경된 DOM 엘리먼트의 순서를 가져옴
+    const items = taskList.querySelectorAll('.gantt__task-item');
+    const newOrderIds = Array.from(items).map(item => parseInt(item.dataset.id));
+
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${site}::${equip}`;
+    let data = setupData[equipKey] || {};
+
+    if (data.setupDetails) {
+        const detailsMap = new Map(data.setupDetails.map(d => [d.id, d]));
+        const reorderedDetails = [];
+
+        // 1. 드래그로 변경된 새로운 순서대로 객체 재배치
+        newOrderIds.forEach(id => {
+            if (detailsMap.has(id)) {
+                reorderedDetails.push(detailsMap.get(id));
+                detailsMap.delete(id);
+            }
+        });
+
+        // 2. 화면에 없던 항목(혹시 모를 예외 상황 방어용)은 그대로 뒤에 붙임
+        data.setupDetails.forEach(d => {
+            if (detailsMap.has(d.id)) {
+                reorderedDetails.push(d);
+            }
+        });
+
+        data.setupDetails = reorderedDetails;
+        setupData[equipKey] = data;
+        localStorage.setItem('setup_data', JSON.stringify(setupData));
+
+        if (typeof window.syncSetupDataDB === 'function') window.syncSetupDataDB(site, equip, data.setupDetails, data.setupLogs);
+        if (typeof addSystemLog === 'function') addSystemLog('REORDER_SETUP', equip, '간트 뷰에서 작업 순서 변경');
+
+        // UI 업데이트
+        renderGanttChart();
+        if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+        if (typeof renderSetupDetailList === 'function' && typeof currentPath !== 'undefined' && currentPath.equip === equip) {
+            renderSetupDetailList();
+        }
+    }
+}
 
 /* ==========================================================================
    [9] 모달: 간트 차트 검색 (Gantt Search Modal)
@@ -1199,7 +1504,7 @@ function setupGanttSearchModal() {
                         hasScheduledDate = equipData.setupDetails.some(d => d.startDate);
                     }
                     const isIng = !isCompleted && hasScheduledDate;
-                if (!showIng || (showIng && isIng)) {
+                    if (!showIng || (showIng && isIng)) {
                         hasValidEquip = true;
                         break;
                     }
@@ -1224,7 +1529,7 @@ function setupGanttSearchModal() {
             if (typeof currentGanttFilters !== 'undefined') {
                 currentGanttFilters = { site: '', equip: '', showIng: false };
             }
-            
+
             const cbIng = document.getElementById('gantt-filter-status-ing');
             if (cbIng) cbIng.checked = false;
 
@@ -1292,7 +1597,7 @@ function openGanttSearchModal() {
                     break;
                 }
             }
-            
+
             if (hasValidEquip) {
                 const option = document.createElement('option');
                 option.value = site;

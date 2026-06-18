@@ -192,37 +192,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // [추가] 간트뷰 렌더링 시 왼쪽에 '셋업 이력' 버튼 자동 주입
-    const homeGanttObserver = new MutationObserver((mutations) => {
-        mutations.forEach(mutation => {
-            if (mutation.addedNodes.length) {
-                const titleWrapper = document.querySelector('.gantt__title-wrapper');
-                if (titleWrapper && !document.getElementById('btn-gantt-history')) {
-                    const leftToolbar = document.createElement('div');
-                    leftToolbar.className = 'gantt__left-toolbar';
-                    
-                    const historyBtn = document.createElement('button');
-                    historyBtn.id = 'btn-gantt-history';
-                    historyBtn.className = 'btn-gray btn-text-sm';
-                    historyBtn.innerHTML = '📜 셋업 이력';
-                    historyBtn.onclick = () => {
-                        const site = currentGanttFilters.site;
-                        const equip = currentGanttFilters.equip;
-                        if (!site || !equip) {
-                            alert('장비를 먼저 선택해주세요.');
-                            return;
-                        }
-                        if (typeof openSetupHistoryModal === 'function') {
-                            openSetupHistoryModal(site, equip);
-                        }
-                    };
-                    leftToolbar.appendChild(historyBtn);
-                    titleWrapper.appendChild(leftToolbar);
-                }
+    // [수정] 정적으로 분리된 셋업 이력 버튼에 이벤트 직접 연결
+    const btnGanttHistory = document.getElementById('btn-gantt-history');
+    if (btnGanttHistory) {
+        btnGanttHistory.addEventListener('click', () => {
+            const site = currentGanttFilters.site || setupDashboardFilter.site;
+            const equip = currentGanttFilters.equip;
+            if (!site || !equip) {
+                alert('장비를 먼저 선택해주세요.');
+                return;
             }
+            if (typeof openSetupHistoryModal === 'function') openSetupHistoryModal(site, equip);
         });
-    });
-    homeGanttObserver.observe(document.body, { childList: true, subtree: true });
+    }
 });
 
 /* ==========================================================================

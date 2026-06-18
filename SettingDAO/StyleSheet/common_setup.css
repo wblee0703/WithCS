@@ -428,6 +428,7 @@
 
 /* 셋업 작업 기록 팝업창 입력 요소 일관성 및 정렬 */
 #setup-log-register-modal .setup-log-input,
+#setup-log-reg-plan-date,
 #setup-log-reg-date,
 #setup-log-reg-task,
 #setup-log-reg-md,
@@ -522,6 +523,7 @@
 }
 
 .setup-log-input,
+#setup-log-reg-plan-date,
 #setup-log-reg-date,
 #setup-log-reg-task,
 #setup-log-reg-md,
@@ -706,6 +708,7 @@
 
 #setup-history-modal .modal-window {
     width: 600px;
+    height: 800px;
     max-width: 95%;
     max-height: 90vh;
     display: flex;
@@ -770,8 +773,9 @@
 
 .setup-history-detail-wrapper {
     display: flex;
+    flex-direction: column;
     gap: 15px;
-    height: 200px;
+    height: 400px;
     flex-shrink: 0;
 }
 
@@ -803,7 +807,7 @@
 }
 
 .setup-history-memo-container {
-    flex: 1.2;
+    flex: 2.3;
     display: flex;
     flex-direction: column;
 }

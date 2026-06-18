@@ -1374,22 +1374,6 @@ function handleEquipCsvImport(event) {
                         completed: false, execStartDate: "", delayReason: ""
                     }));
                     
-                    if (deliveryDate) {
-                        let currentStartDate = new Date(deliveryDate);
-                        initialSetupDetails.forEach(item => {
-                            let estDays = parseInt(item.estDays);
-                            if (isNaN(estDays) || estDays <= 0) estDays = 1;
-                            if (item.category === '셋업 완료' || item.content === '셋업 완료') estDays = 1;
-
-                            const y = currentStartDate.getFullYear();
-                            const m = String(currentStartDate.getMonth() + 1).padStart(2, '0');
-                            const d = String(currentStartDate.getDate()).padStart(2, '0');
-                            item.startDate = `${y}-${m}-${d}`;
-
-                            const currentEndDate = typeof window.addBusinessDays === 'function' ? window.addBusinessDays(currentStartDate, estDays - 1) : new Date(currentStartDate.getTime() + (estDays - 1) * 86400000);
-                            currentStartDate = typeof window.addBusinessDays === 'function' ? window.addBusinessDays(currentEndDate, 1) : new Date(currentEndDate.getTime() + 86400000);
-                        });
-                    }
 
                     setupData[`${site}::${newKey}`] = { setupDetails: initialSetupDetails, setupLogs: [] };
                     localStorage.setItem('setup_data', JSON.stringify(setupData));
@@ -1842,22 +1826,6 @@ async function handleEquipSave() {
             completed: false, execStartDate: "", delayReason: ""
         }));
 
-        if (deliveryDate) {
-            let currentStartDate = new Date(deliveryDate);
-            initialSetupDetails.forEach(item => {
-                let estDays = parseInt(item.estDays);
-                if (isNaN(estDays) || estDays <= 0) estDays = 1;
-                if (item.category === '셋업 완료' || item.content === '셋업 완료') estDays = 1;
-
-                const y = currentStartDate.getFullYear();
-                const m = String(currentStartDate.getMonth() + 1).padStart(2, '0');
-                const d = String(currentStartDate.getDate()).padStart(2, '0');
-                item.startDate = `${y}-${m}-${d}`;
-
-                const currentEndDate = typeof window.addBusinessDays === 'function' ? window.addBusinessDays(currentStartDate, estDays - 1) : new Date(currentStartDate.getTime() + (estDays - 1) * 86400000);
-                currentStartDate = typeof window.addBusinessDays === 'function' ? window.addBusinessDays(currentEndDate, 1) : new Date(currentEndDate.getTime() + 86400000);
-            });
-        }
 
         setupData[`${targetSite}::${newKey}`] = { setupDetails: initialSetupDetails, setupLogs: [] };
         localStorage.setItem('setup_data', JSON.stringify(setupData));

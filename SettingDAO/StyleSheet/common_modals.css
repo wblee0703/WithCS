@@ -147,9 +147,9 @@
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
-    background-color: #0d1117;
-    border: 1px solid #30363d;
-    color: #e6edf3;
+    background-color: #0d1117 !important;
+    border: 1px solid #30363d !important;
+    color: #e6edf3 !important;
     background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%238b949e'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 8px center;
@@ -550,8 +550,7 @@
 }
 
 #detail-equip-info,
-#detail-serial-no,
-#detail-content {
+#detail-serial-no {
     color: #e6edf3;
     font-weight: bold;
     font-size: 14px;
@@ -563,10 +562,20 @@
 }
 
 #detail-type,
-#detail-detail-type {
-    font-weight: bold;
-    font-size: 14px;
+#detail-detail-type,
+#detail-content {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    padding: 8px 10px;
+    border-radius: 4px;
     min-height: 34px;
+    height: auto;
+    box-sizing: border-box;
+    font-size: 13px;
     display: flex;
     align-items: center;
 }
@@ -780,7 +789,10 @@
 #event-detail-modal .log-select-trigger,
 #register-schedule-modal .log-select-trigger,
 #next-schedule-modal .log-select-trigger,
-#schedule-modal .log-select-trigger {
+#schedule-modal .log-select-trigger,
+#detail-type-select,
+#detail-detail-type-select,
+#detail-detail-type2-select {
     width: 100%;
     background: #0d1117;
     border: 1px solid #30363d;

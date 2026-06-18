@@ -560,6 +560,12 @@ def operation():
 def SettingDAO(filename):
     return send_from_directory(os.path.join(app.root_path, 'SettingDAO'), filename)
 
+# [추가] favicon.ico 404 에러 방지 (파일이 없을 경우 조용히 빈 응답 반환)
+@app.route('/favicon.ico')
+@limiter.exempt
+def favicon():
+    return '', 204
+
 # [추가] 보안: 데이터베이스(.db), 로그, 환경변수 등 민감한 폴더에 대한 웹 브라우저 직접 경로 접근(다운로드) 원천 차단
 @app.route('/data/<path:filename>')
 @app.route('/logs/<path:filename>')

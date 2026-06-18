@@ -6,6 +6,7 @@
 
 let allTroubles = [];
 let currentTroubleFilter = { site: 'ALL', model: 'ALL', equip: 'ALL', keyword: '' };
+let showCompletedOnly = false; // [추가] 작성완료 필터 상태
 let currentTroubleImageBase64 = ''; // 사진 Base64 저장 변수
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -187,6 +188,11 @@ function applyTroubleFilter() {
             (t.detail_type && t.detail_type.toLowerCase().includes(currentTroubleFilter.keyword)) ||
             (t.check_item && t.check_item.toLowerCase().includes(currentTroubleFilter.keyword))
         );
+    }
+    
+    // [수정] 작성완료 필터 적용: 발생 일시가 기록된 항목(기록여부 녹색)만 표시
+    if (showCompletedOnly) {
+        filtered = filtered.filter(t => t.occur_date && String(t.occur_date).trim() !== '' && t.occur_date !== '-');
     }
     
     renderTroubleList(filtered);
@@ -479,6 +485,16 @@ function setupTroubleEvents() {
         if (e.key === 'Enter') applyTroubleFilter();
     });
 
+    // [추가] 작성완료 필터 버튼 이벤트
+    const btnToggleCompleted = document.getElementById('btn-toggle-completed-trouble');
+    if (btnToggleCompleted) {
+        btnToggleCompleted.addEventListener('click', () => {
+            btnToggleCompleted.classList.toggle('active');
+            showCompletedOnly = btnToggleCompleted.classList.contains('active');
+            applyTroubleFilter();
+        });
+    };
+
     // 사이드바 장비 목록 텍스트 검색 필터
     const equipSearchFilter = document.getElementById('trouble-equip-search-filter');
     if (equipSearchFilter) {
@@ -535,7 +551,7 @@ function openTroubleModal(mode, id = null, source = null) {
     if (equipInput) equipInput.value = '';
     if (occurDateInput) occurDateInput.value = '';
     if (actionDateInput) actionDateInput.value = '';
-    if (statusInput) statusInput.value = '조치완료';
+    if (statusInput) statusInput.value = '조치중'; // [수정] 신규 등록 시 기본값을 '조치중'으로 변경
     if (workerInput) workerInput.value = '';
     if (memoInput) memoInput.value = '';
     if (situationEl) situationEl.value = '';
@@ -562,7 +578,7 @@ function openTroubleModal(mode, id = null, source = null) {
                 actionDateInput.value = troubleData.action_date.substring(0, 10);
             }
             
-            if (statusInput) statusInput.value = troubleData.status || '조치완료';
+            if (statusInput) statusInput.value = troubleData.status || '조치중';
             if (workerInput) workerInput.value = troubleData.worker || '';
             
             // [수정] source 제약 없이 모든 트러블 이력 소스에 대해 진행 경과(JSON) 바인딩 수행
