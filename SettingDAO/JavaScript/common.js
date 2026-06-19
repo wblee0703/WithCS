@@ -547,7 +547,7 @@ async function migrateDataFormat() {
                     if (isModified) {
                         localStorage.setItem(key, JSON.stringify(data));
                         const userRole = sessionStorage.getItem('userRole');
-                        if (typeof window.syncAdminDB === 'function' && (userRole === 'admin' || userRole === 'superadmin')) {
+                        if (typeof window.syncAdminDB === 'function' && userRole === 'superadmin') {
                             await window.syncAdminDB('setting', 'UPDATE', { key: key, value: data });
                             await new Promise(resolve => setTimeout(resolve, 50)); // 서버 과부하 방지 딜레이
                         }
@@ -696,7 +696,7 @@ function updateWarrantyStatusAutomatically() {
             if (catModified) {
                 localStorage.setItem('check_type_categories', JSON.stringify(catData));
                 const userRole = sessionStorage.getItem('userRole');
-                if (typeof window.syncAdminDB === 'function' && (userRole === 'admin' || userRole === 'superadmin')) {
+                if (typeof window.syncAdminDB === 'function' && userRole === 'superadmin') {
                     window.syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories', value: catData });
                 }
             }
@@ -728,7 +728,7 @@ function updateWarrantyStatusAutomatically() {
         if (cat2Modified) {
             localStorage.setItem('check_type_categories2', JSON.stringify(catData2));
             const userRole = sessionStorage.getItem('userRole');
-            if (typeof window.syncAdminDB === 'function' && (userRole === 'admin' || userRole === 'superadmin')) {
+            if (typeof window.syncAdminDB === 'function' && userRole === 'superadmin') {
                  window.syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories2', value: catData2 });
             }
         }
@@ -744,7 +744,7 @@ function updateWarrantyStatusAutomatically() {
             if (itemModified) {
                 localStorage.setItem('check_type_items', JSON.stringify(itemData));
                 const userRole = sessionStorage.getItem('userRole');
-                if (typeof window.syncAdminDB === 'function' && (userRole === 'admin' || userRole === 'superadmin')) {
+                if (typeof window.syncAdminDB === 'function' && userRole === 'superadmin') {
                     window.syncAdminDB('setting', 'UPDATE', { key: 'check_type_items', value: itemData });
                 }
             }
