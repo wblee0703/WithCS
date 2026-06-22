@@ -1648,7 +1648,7 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
     if (itemData.hasOwnProperty(key)) {
         rawItems = itemData[key] || [];
     } else {
-        if (type === '비정기' && ['Alarm', 'Hunting', 'Data / Para 이상'].includes(detailType)) {
+        if (type === '비정기' && ['Alarm', 'Hunting', 'Data / Para 이상', '기타'].includes(detailType)) {
             const defaultList = [
                 "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
                 "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"

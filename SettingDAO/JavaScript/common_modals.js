@@ -642,7 +642,9 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         date: dateField.value,
         issueShared: issueShareCb ? issueShareCb.checked : false,
         content: currentContentStr,
-        costType: costTypeInput ? costTypeInput.value : ''
+        costType: costTypeInput ? costTypeInput.value : '',
+        type: item.type || '정기',
+        detailType: displayDetailType || ''
     };
 
     modal.style.display = 'flex';
@@ -759,7 +761,7 @@ function buildDetailDropdown(item, site, equip) {
     if (availableItems.length > 0) isDropdownMode = true;
 
     if (availableItems.length === 0) {
-        if (type === '비정기' && ['Alarm', 'Hunting', 'Data / Para 이상'].includes(detailType)) {
+        if (type === '비정기' && ['Alarm', 'Hunting', 'Data / Para 이상', '기타'].includes(detailType)) {
             isDropdownMode = true;
             const defaultList = [
                 "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
@@ -1376,6 +1378,21 @@ function hasDetailUnsavedChanges() {
     const issueShareCb = document.getElementById('detail-issue-share-checkbox');
     const currentIssueShared = issueShareCb ? issueShareCb.checked : false;
 
+    const typeSelect = document.getElementById('detail-type-select');
+    const detailTypeSelect = document.getElementById('detail-detail-type-select');
+    const detailType2Select = document.getElementById('detail-detail-type2-select');
+
+    let currentType = window.initialEventDetail.type || '정기';
+    if (typeSelect && typeSelect.style.display !== 'none') currentType = typeSelect.value;
+
+    let currentDetailType = window.initialEventDetail.detailType || '';
+    if (detailTypeSelect && detailTypeSelect.style.display !== 'none') {
+        currentDetailType = detailTypeSelect.value;
+        if (currentType === '비정기' && detailType2Select && detailType2Select.style.display !== 'none' && detailType2Select.value) {
+            currentDetailType += ` > ${detailType2Select.value}`;
+        }
+    }
+
     let currentContent = '';
     let expandedDropdownValues = [];
     const dropdownWrapper = document.getElementById('detail-content-dropdown-wrapper');
@@ -1430,7 +1447,9 @@ function hasDetailUnsavedChanges() {
         currentDate !== window.initialEventDetail.date ||
         currentContent !== window.initialEventDetail.content ||
         currentIssueShared !== window.initialEventDetail.issueShared ||
-        currentCostType !== window.initialEventDetail.costType;
+        currentCostType !== window.initialEventDetail.costType ||
+        currentType !== window.initialEventDetail.type ||
+        currentDetailType !== window.initialEventDetail.detailType;
 }
 
 async function saveDetailChanges() {
@@ -1861,7 +1880,9 @@ async function saveDetailChanges() {
         date: targetDate,
         issueShared: issueShareCb ? issueShareCb.checked : false,
         content: savedContentStr,
-        costType: newCostType
+        costType: newCostType,
+        type: newType,
+        detailType: newDetailType
     };
 
     if (typeof window.refreshCalendarPopupAfterCompletion === 'function') {
@@ -1880,6 +1901,16 @@ async function saveDetailChanges() {
 async function completeScheduleWork() {
     if (!currentDetailTarget || currentDetailTarget.isCompleted) return;
 
+    const { site, equip, id } = currentDetailTarget;
+    const key = `details_${site}_${equip}`;
+    let data = JSON.parse(localStorage.getItem(key)) || {};
+
+    const maintItem = data.maint ? data.maint.find(i => i.id == id) : null;
+    if (!maintItem) return;
+
+    const typeSelect = document.getElementById('detail-type-select');
+    const taskType = typeSelect && typeSelect.style.display !== 'none' ? typeSelect.value : (maintItem.type || '정기');
+
     const worker = document.getElementById('detail-worker').value.trim();
     const mdInput = document.getElementById('detail-md');
     const md = mdInput ? mdInput.value.trim() : '';
@@ -1892,29 +1923,6 @@ async function completeScheduleWork() {
     if (!costType) return alert('비용처리를 선택해주세요.');
     if (!worker) return alert('작업자를 입력해주세요.');
     if (!md) return alert('공수(M/D)를 입력해주세요.');
-    if (!memo) return alert('점검 결과 / 메모를 입력해주세요.');
-
-    const workerCount = worker.split(',').map(s => s.trim()).filter(Boolean).length;
-    if (parseFloat(md) > workerCount) {
-        alert(`입력된 공수(${md})가 등록된 작업자 수(${workerCount}명)를 초과할 수 없습니다.`);
-        if (mdInput) mdInput.value = workerCount;
-        return;
-    }
-
-    if (!confirm('해당 작업을 완료 처리하시겠습니까?')) return;
-
-    localStorage.setItem('lastWorkerName', worker);
-
-    const { site, equip, id } = currentDetailTarget;
-    const key = `details_${site}_${equip}`;
-    let data = JSON.parse(localStorage.getItem(key)) || {};
-
-    const originalMaintMap = new Map((data.maint || []).map(m => [m.id, { ...m }]));
-
-    const maintItem = data.maint ? data.maint.find(i => i.id == id) : null;
-    if (!maintItem) return;
-
-    if (!data.logs) data.logs = [];
 
     const sameDayItems = data.maint.filter(i => i.scheduledDate === maintItem.scheduledDate && i.type === maintItem.type && (i.detailType || '') === (maintItem.detailType || '') && i.originalLogId == maintItem.originalLogId);
     const contentArr = sameDayItems.map(i => {
@@ -1938,6 +1946,31 @@ async function completeScheduleWork() {
         return `${val}${specStr}`;
     });
     const combinedContent = [...new Set(contentArr)].join(', ');
+
+    // 내용(content) 및 메모(memo) 유효성 검사 (정기일 때만 생략 가능, 비정기/고객대응 등 정기 제외 시 필수)
+    if (taskType !== '정기') {
+        if (!memo) return alert('점검 결과 / 메모를 입력해주세요.');
+        const cleanContent = combinedContent.replace(/내용 없음/g, '').trim();
+        if (!cleanContent) {
+            return alert('내용을 입력해주세요.');
+        }
+    }
+
+    const workerCount = worker.split(',').map(s => s.trim()).filter(Boolean).length;
+    if (parseFloat(md) > workerCount) {
+        alert(`입력된 공수(${md})가 등록된 작업자 수(${workerCount}명)를 초과할 수 없습니다.`);
+        if (mdInput) mdInput.value = workerCount;
+        return;
+    }
+
+    if (!confirm('해당 작업을 완료 처리하시겠습니까?')) return;
+
+    localStorage.setItem('lastWorkerName', worker);
+
+    const originalMaintMap = new Map((data.maint || []).map(m => [m.id, { ...m }]));
+
+    if (!data.logs) data.logs = [];
+
     const completeDate = maintItem.scheduledDate || new Date().toISOString().split('T')[0];
 
     let payload = { log_upserts: [], maint_upserts: [], maint_deletes: [] };
@@ -3394,7 +3427,7 @@ window.updateRegisterContentOptions = function () {
     let items = itemData[chkKey] || [];
 
     if (items.length === 0) {
-        if (type === '비정기' && ['Alarm', 'Hunting', 'Data / Para 이상'].includes(detailType)) {
+        if (type === '비정기' && ['Alarm', 'Hunting', 'Data / Para 이상', '기타'].includes(detailType)) {
             const defaultList = [
                 "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
                 "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"

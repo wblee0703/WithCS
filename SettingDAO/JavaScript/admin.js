@@ -2567,6 +2567,7 @@ function setupCheckTypeMgmt() {
     loadCheckTypeCategories();
     loadCheckTypeCategories2();
     loadCheckTypeItems();
+    migrateCheckTypeItemsForIrregularOthers();
 
     const siteSelect = document.getElementById('check-type-site-filter');
     if (siteSelect) {
@@ -2980,6 +2981,64 @@ async function saveCheckTypeItems() {
     localStorage.setItem('check_type_items', JSON.stringify(checkTypeItemsData));
     await syncAdminDB('setting', 'UPDATE', { key: 'check_type_items', value: checkTypeItemsData });
     if (typeof saveData === 'function') saveData();
+}
+
+function migrateCheckTypeItemsForIrregularOthers() {
+    const defaultList = [
+        "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
+        "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
+    ];
+    let migrated = false;
+    
+    Object.keys(storageData).forEach(site => {
+        const equips = storageData[site] || [];
+        equips.forEach(equipKey => {
+            const subcategories2 = ['배수 펌프 이슈', '구동 이상'];
+            
+            // 1. categories에 '기타' 추가
+            const catKey = `${equipKey}::비정기`;
+            if (!checkTypeCategoriesData[catKey]) {
+                checkTypeCategoriesData[catKey] = ['Alarm', 'Hunting', 'Data / Para 이상', '기타'];
+                migrated = true;
+            } else if (!checkTypeCategoriesData[catKey].includes('기타')) {
+                checkTypeCategoriesData[catKey].push('기타');
+                migrated = true;
+            }
+            
+            // 2. categories2에 '배수 펌프 이슈'와 '구동 이상' 추가
+            const cat2Key = `${equipKey}::비정기::기타`;
+            if (!checkTypeCategories2Data[cat2Key]) {
+                checkTypeCategories2Data[cat2Key] = ['배수 펌프 이슈', '구동 이상'];
+                migrated = true;
+            } else {
+                subcategories2.forEach(sub2 => {
+                    if (!checkTypeCategories2Data[cat2Key].includes(sub2)) {
+                        checkTypeCategories2Data[cat2Key].push(sub2);
+                        migrated = true;
+                    }
+                });
+            }
+            
+            // 3. checkTypeItemsData에 defaultList 항목 추가
+            subcategories2.forEach(sub2 => {
+                const itemKey = `${equipKey}::비정기::기타::${sub2}`;
+                if (!checkTypeItemsData[itemKey] || checkTypeItemsData[itemKey].length === 0) {
+                    checkTypeItemsData[itemKey] = defaultList.map((content, index) => ({
+                        id: Date.now() + Math.floor(Math.random() * 1000000) + index,
+                        content: content
+                    }));
+                    migrated = true;
+                }
+            });
+        });
+    });
+    
+    if (migrated) {
+        saveCheckTypeCategories();
+        saveCheckTypeCategories2();
+        saveCheckTypeItems();
+        console.log("Check type items migrated successfully.");
+    }
 }
 
 function updateCheckTypeSiteSelect() {
@@ -3562,7 +3621,7 @@ function renderCheckTypeItemList() {
                     content: mItem.part
                 }));
             }
-        } else if (currentCheckTypeCategory === '비정기' && ['Alarm', 'Hunting', 'Data / Para 이상'].includes(currentCheckTypeSubCategory)) {
+        } else if (currentCheckTypeCategory === '비정기' && ['Alarm', 'Hunting', 'Data / Para 이상', '기타'].includes(currentCheckTypeSubCategory)) {
             const defaultList = [
                 "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
                 "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
