@@ -615,7 +615,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             const bMatch = val.match(/^\[(.*?)\] (.*)$/);
             if (bMatch) { baseCost = bMatch[1]; val = bMatch[2]; }
 
-            const isPartKeyword = val.includes('파트 이상 교체') || val.includes('파트 이상 수리') || val.includes('용액 용자 이상');
+            const isPartKeyword = val.includes('파트 이상 교체') || val.includes('파트 이상 수리') || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
             if (isPartKeyword && partContentList.length > 0) {
                 partContentList.forEach(p => {
                     initialExpandedDropdownValues.push(`${val} - ${p}`);
@@ -1264,7 +1264,7 @@ function buildDetailDropdown(item, site, equip) {
             pAddBtn.addEventListener('click', (e) => e.stopPropagation());
         }
 
-        const hasPartIssue = currentValues.some(val => val.includes('파트 이상 교체') || val.includes('파트 이상 수리') || val.includes('파트 이상 (교체)') || val.includes('파트 이상 (수리)') || val.includes('용액 / 용자 이상'));
+        const hasPartIssue = currentValues.some(val => val.includes('파트 이상 교체') || val.includes('파트 이상 수리') || val.includes('파트 이상 (교체)') || val.includes('파트 이상 (수리)') || val.includes('용액 / 용자 이상') || val.includes('용액 용자 이상'));
         pWrapper.style.display = hasPartIssue ? 'flex' : 'none';
         if (hasPartIssue && typeof window.renderLogPartOptions === 'function') {
             window.renderLogPartOptions('detail-edit-part-wrapper', 'detail-edit-part-trigger', 'detail-edit-part-list', 'detail-edit-part-search', partContentStr);
@@ -3101,9 +3101,23 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
 
                 const partRow = document.getElementById('register-part-row');
                 if (partRow) {
-                    partRow.style.display = 'none';
-                    const partTrigger = document.getElementById('register-part-trigger');
-                    if (partTrigger) partTrigger.textContent = '물품 선택';
+                    const presetContent = presetData.content || '';
+                    const isPartIssue = presetContent.split(',').map(s => s.trim()).some(v => v.match(/(파트|물품) 이상\s*\(?(교체|수리)\)?/) || v.includes('용액 용자 이상') || v.includes('용액 / 용자 이상'));
+                    partRow.style.display = isPartIssue ? 'flex' : 'none';
+                    
+                    if (isPartIssue && typeof window.renderLogPartOptions === 'function') {
+                        let presetParts = [];
+                        presetContent.split(',').map(s => s.trim()).forEach(v => {
+                            const kwMatch = v.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+                            if (kwMatch) {
+                                presetParts.push(kwMatch[2].trim());
+                            }
+                        });
+                        window.renderLogPartOptions('register-part-wrapper', 'register-part-trigger', 'register-part-list', 'register-part-search', presetParts.join(', '));
+                    } else {
+                        const partTrigger = document.getElementById('register-part-trigger');
+                        if (partTrigger) partTrigger.textContent = '물품 선택';
+                    }
                 }
             }, 100);
         }, 100);
@@ -3793,16 +3807,17 @@ window.updateRegisterContentOptions = function () {
                                 dropdown.classList.remove('show');
                             }
 
-                            const pWrapper = document.getElementById('detail-edit-part-wrapper');
+                            const pWrapper = document.getElementById('register-part-row');
                             if (pWrapper) {
                                 const selectedItems = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
                                 const isPartIssue = selectedItems.some(v => v.match(/(파트|물품) 이상\s*\(?(교체|수리)\)?/) || v.includes('용액 용자 이상') || v.includes('용액 / 용자 이상'));
-                                const pList = document.getElementById('detail-edit-part-list');
+                                const pList = document.getElementById('register-part-list');
 
                                 pWrapper.style.display = isPartIssue ? 'flex' : 'none';
 
                                 if (isPartIssue && pList && typeof window.renderLogPartOptions === 'function') {
-                                    window.renderLogPartOptions('detail-edit-part-wrapper', 'detail-edit-part-trigger', 'detail-edit-part-list', 'detail-edit-part-search', partContentStr);
+                                    const currentPartSels = Array.from(pList.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value).join(', ');
+                                    window.renderLogPartOptions('register-part-wrapper', 'register-part-trigger', 'register-part-list', 'register-part-search', currentPartSels);
                                 }
                             }
                         });

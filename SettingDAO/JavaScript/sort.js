@@ -1926,6 +1926,7 @@ function renderSortChart(results) {
         // 비정기 점검 항목(내용) 파싱 및 사업장별 데이터 수집
         if (row.type === '비정기' && row.content) {
             const items = row.content.split(',').map(s => s.trim());
+            const seenItems = new Set();
             items.forEach(item => {
                 let pureItem = item.replace(/\[.*?\]\s*/g, '').trim();
                 if (pureItem.includes(' - ')) {
@@ -1933,9 +1934,12 @@ function renderSortChart(results) {
                 }
                 // [수정] 지정된 10가지 비정기 항목만 필터링하여 차트에 집계
                 if (pureItem && row.site && allowedIrregularItems.includes(pureItem)) {
-                    if (!irregularSiteCounts[pureItem]) irregularSiteCounts[pureItem] = {};
-                    irregularSiteCounts[pureItem][row.site] = (irregularSiteCounts[pureItem][row.site] || 0) + 1;
+                    seenItems.add(pureItem);
                 }
+            });
+            seenItems.forEach(pureItem => {
+                if (!irregularSiteCounts[pureItem]) irregularSiteCounts[pureItem] = {};
+                irregularSiteCounts[pureItem][row.site] = (irregularSiteCounts[pureItem][row.site] || 0) + 1;
             });
         }
     });

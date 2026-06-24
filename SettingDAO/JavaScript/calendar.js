@@ -447,7 +447,8 @@ function renderMonthGrid(year, month, titleId, gridId) {
             const groupedEvents = {};
             dayEvents.forEach(event => {
                 const isExtraWork = !!event.originalLogId;
-                const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}::${isExtraWork}`;
+                // [수정] 세부 구분(detailType)이 다르면 다른 작업으로 분류하고, 같으면 물품 여러 개 등록 시에도 같은 작업으로 묶이도록 key에 detailType을 포함합니다.
+                const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}::${event.detailType || ''}::${isExtraWork}`;
                 if (!groupedEvents[key]) {
                     groupedEvents[key] = {
                         site: event.site,
@@ -455,9 +456,10 @@ function renderMonthGrid(year, month, titleId, gridId) {
                         isCompleted: event.isCompleted,
                         isChanged: event.isChanged,
                         type: event.type,
+                        detailType: event.detailType,
                         isExtraWork: isExtraWork,
                         worker: event.worker, // [추가] 작업자
-                    md: parseFloat(event.md) || 0, // 중복 방지를 위해 그룹당 1개의 공수만 저장
+                        md: parseFloat(event.md) || 0, // 중복 방지를 위해 그룹당 1개의 공수만 저장
                         ids: [] // ID 목록 저장을 위해 배열 초기화
                     };
                 }
@@ -664,7 +666,8 @@ function openCalendarPopup(dateStr, events) {
         const groupedEvents = {};
         events.forEach(event => {
             const isExtraWork = !!event.originalLogId;
-            const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}::${isExtraWork}`;
+            // [수정] 세부 구분(detailType)이 다르면 다른 작업으로 분류하고, 같으면 물품 여러 개 등록 시에도 같은 작업으로 묶이도록 key에 detailType을 포함합니다.
+            const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}::${event.detailType || ''}::${isExtraWork}`;
             if (!groupedEvents[key]) {
                 groupedEvents[key] = {
                     site: event.site,
@@ -672,6 +675,7 @@ function openCalendarPopup(dateStr, events) {
                     isCompleted: event.isCompleted,
                     isChanged: event.isChanged,
                     type: event.type,
+                    detailType: event.detailType,
                     isExtraWork: isExtraWork,
                     items: []
                 };
