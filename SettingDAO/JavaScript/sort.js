@@ -185,8 +185,6 @@ function initSortPage() {
                     }
                 } catch (e) {
                     console.error('Filter restore error:', e);
-                } finally {
-                    performSortSearch();
                 }
             }, 100);
             return;
@@ -211,8 +209,6 @@ function initSortPage() {
     const types = ['정기', '비정기', '고객대응', '용액제조', '온라인점검'];
     updateSortDetailTypeSelect(types);
     updateSortDetailType2Select(types, []);
-
-    setTimeout(performSortSearch, 150); // 드롭다운(연도 등) UI 렌더링을 기다리기 위해 대기 시간 증가
 }
 
 // [1.4] 사이드바 너비 조절(Resizer) 이벤트 설정
@@ -1948,7 +1944,7 @@ function renderSortChart(results) {
     const drawGroupedChart = (dataObj, targetContainer, targetYAxis, targetLegend, allSitesArray) => {
         if (!targetContainer || !targetYAxis) return;
 
-        let isGrouped = false; // [추가] 그룹화 상태 변수
+        let isGrouped = true; // [추가] 그룹화 상태 변수
 
         // [추가] 카드 제목 클릭 시 그룹/개별 보기 전환 이벤트 등록
         const card = targetContainer.closest('.sort-half-chart, .sort-full-chart');
