@@ -2,6 +2,55 @@
    1. 전역 변수 및 데이터 관리 (Global State)
    ========================================================================== */
 
+// [추가] iOS/Safari 및 개인정보 보호 모드(Private Browsing) 대응을 위한 로컬 스토리지(Storage) 안전망 폴리필
+// iOS Safari의 5MB 용량 초과 에러(QuotaExceededError) 또는 스토리지 접근 차단 시 예외를 방지하고 인메모리(in-memory) 백업으로 안전하게 전환합니다.
+(function() {
+    window.storageFallback = {};
+    const originalSetItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function(key, value) {
+        try {
+            originalSetItem.call(this, key, value);
+        } catch (e) {
+            console.warn('로컬 스토리지 setItem 실패 (인메모리 백업 저장):', e);
+            window.storageFallback[key] = String(value);
+        }
+    };
+
+    const originalGetItem = Storage.prototype.getItem;
+    Storage.prototype.getItem = function(key) {
+        try {
+            const val = originalGetItem.call(this, key);
+            if (val !== null) return val;
+        } catch (e) {
+            console.warn('로컬 스토리지 getItem 실패 (인메모리 백업 조회):', e);
+        }
+        return window.storageFallback.hasOwnProperty(key) ? window.storageFallback[key] : null;
+    };
+
+    const originalRemoveItem = Storage.prototype.removeItem;
+    Storage.prototype.removeItem = function(key) {
+        try {
+            originalRemoveItem.call(this, key);
+        } catch (e) {
+            console.warn('로컬 스토리지 removeItem 실패:', e);
+        }
+        if (window.storageFallback.hasOwnProperty(key)) {
+            delete window.storageFallback[key];
+        }
+    };
+
+    const originalClear = Storage.prototype.clear;
+    Storage.prototype.clear = function() {
+        try {
+            originalClear.call(this);
+        } catch (e) {
+            console.warn('로컬 스토리지 clear 실패:', e);
+        }
+        window.storageFallback = {};
+    };
+})();
+
+
 // [추가] 전역 fetch 인터셉터: 모든 API 통신 시 세션 만료(401) 및 CSRF 에러(400) 감지하여 자동 로그아웃 처리
 const originalFetch = window.fetch;
 window.fetch = async function (...args) {
