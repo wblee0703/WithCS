@@ -889,7 +889,7 @@ function setupSetupLogRegPartDropdown(modalContext, site, equip, presetParts = '
                 </select>
             `;
 
-            li.addEventListener('mousedown', (e) => {
+            li.addEventListener('pointerdown', (e) => {
                 if(e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;
                 e.preventDefault();
                 e.stopPropagation();

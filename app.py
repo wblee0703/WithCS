@@ -654,7 +654,7 @@ def login():
         user.lockout_until = now + timedelta(minutes=5)
         message = f"비밀번호 5회 오류.\n계정이 5분간 잠깁니다."
 
-    db.session.commit()
+        db.session.commit()
     return jsonify({"status": "fail", "message": message}), 401
 
 @app.route('/api/logout', methods=['POST'])

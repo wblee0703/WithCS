@@ -1325,7 +1325,7 @@ function setupSidebarEvents() {
                             ${m.abbr ? `<span class="abbr">${escapeHtml(m.abbr)}</span>` : ''}
                         </div>
                     `;
-                    li.addEventListener('mousedown', (ev) => {
+                    li.addEventListener('pointerdown', (ev) => {
                         ev.preventDefault();
                         equipInput.value = m.name;
                         equipSuggestionList.style.display = 'none';
@@ -2759,7 +2759,7 @@ function createListItem(id, text, type, onSelect, subText = '') {
                                     ${m.abbr ? `<span class="abbr">${escapeHtml(m.abbr)}</span>` : ''}
                                 </div>
                             `;
-                            sugLi.addEventListener('mousedown', (ev) => {
+                            sugLi.addEventListener('pointerdown', (ev) => {
                                 ev.preventDefault();
                                 nameInput.value = m.name;
                                 suggestionList.style.display = 'none';
@@ -4555,7 +4555,7 @@ function setupDepartmentSuggestion(inputEl) {
             const li = document.createElement('li');
             li.className = 'user-suggestion-item suggestion-item';
             li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(dept)}</span>`;
-            li.addEventListener('mousedown', (e) => {
+            li.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
                 inputEl.value = dept;
                 suggestionList.style.display = 'none';
@@ -4635,7 +4635,7 @@ function setupPositionSuggestion(inputEl) {
             const li = document.createElement('li');
             li.className = 'user-suggestion-item suggestion-item';
             li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(pos)}</span>`;
-            li.addEventListener('mousedown', (e) => {
+            li.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
                 if (pos === '직접 입력') {
                     inputEl.value = '';

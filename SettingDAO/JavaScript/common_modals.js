@@ -1107,7 +1107,7 @@ function buildDetailDropdown(item, site, equip) {
                             }
                         }
 
-                        div.addEventListener('mousedown', (e) => {
+                        div.addEventListener('pointerdown', (e) => {
                             if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
                             e.preventDefault();
                             e.stopPropagation();
@@ -1145,7 +1145,7 @@ function buildDetailDropdown(item, site, equip) {
                 moreBtn.className = 'show-all-btn';
                 moreBtn.innerHTML = '⬇️ 더보기 (전체 물품)';
                 moreBtn.type = 'button';
-                moreBtn.addEventListener('mousedown', (e) => {
+                moreBtn.addEventListener('pointerdown', (e) => {
                     e.preventDefault(); e.stopPropagation(); showAll = true; renderDropdownItems(searchInput.value);
                 });
                 list.appendChild(moreBtn);
@@ -1176,7 +1176,7 @@ function buildDetailDropdown(item, site, equip) {
         renderDropdownItems();
         dropdown.insertBefore(list, dropdown.querySelector('.log-select-footer'));
 
-        addBtn.addEventListener('mousedown', (e) => {
+        addBtn.addEventListener('pointerdown', (e) => {
             e.preventDefault();
             e.stopPropagation();
             dropdown.classList.remove('show');
@@ -1236,7 +1236,7 @@ function buildDetailDropdown(item, site, equip) {
         const pAddBtn = pWrapper.querySelector('#btn-detail-edit-part-add') || pWrapper.querySelector('.btn-blue-sm');
 
         if (pTrigger && pDropdown) {
-            pTrigger.addEventListener('mousedown', (e) => {
+            pTrigger.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 if (pTrigger.classList.contains('disabled')) return;
@@ -1245,18 +1245,18 @@ function buildDetailDropdown(item, site, equip) {
             });
             pTrigger.addEventListener('click', (e) => e.stopPropagation());
 
-            pDropdown.addEventListener('mousedown', (e) => e.stopPropagation());
+            pDropdown.addEventListener('pointerdown', (e) => e.stopPropagation());
             pDropdown.addEventListener('click', (e) => e.stopPropagation());
 
             const pSearch = pDropdown.querySelector('.dropdown-search-input');
             if (pSearch) {
-                pSearch.addEventListener('mousedown', (e) => e.stopPropagation());
+                pSearch.addEventListener('pointerdown', (e) => e.stopPropagation());
                 pSearch.addEventListener('click', (e) => e.stopPropagation());
             }
         }
 
         if (pAddBtn && pDropdown) {
-            pAddBtn.addEventListener('mousedown', (e) => {
+            pAddBtn.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 pDropdown.classList.remove('show');
@@ -2430,6 +2430,8 @@ async function cancelScheduleCompletion() {
             let existingItem = data.maint.find(m => !matchedMaintIds.has(m.id) && m.type === logType && (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) && (m.spec || '') === (spec || '') && (m.originalLogId || null) == (logItem.originalLogId || null) && (!m.scheduledDate || m.scheduledDate === logDate || !m.date));
             if (existingItem) {
                 matchedMaintIds.add(existingItem.id);
+                existingItem.content = fullContent; // [수정] 완료 취소 시 파트 이상 교체/수리 등 접두어 키워드와 함께 내용 복원
+                if (code) existingItem.code = code;
                 existingItem.scheduledDate = logDate;
                 existingItem.date = prevDate; // [수정] 빈 문자열 대신 이전 로그의 날짜(시작일)로 복구
                 existingItem.worker = recoveredWorker;
@@ -2737,7 +2739,7 @@ function setupRegisterScheduleModal() {
             const pa = document.getElementById('btn-register-part-add') || (pd ? pd.querySelector('.btn-blue-sm') : null);
 
             if (pt && pd) {
-                pt.addEventListener('mousedown', (e) => {
+                pt.addEventListener('pointerdown', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     if (pt.classList.contains('disabled')) return;
@@ -2746,17 +2748,17 @@ function setupRegisterScheduleModal() {
                 });
                 pt.addEventListener('click', (e) => e.stopPropagation());
 
-                pd.addEventListener('mousedown', (e) => e.stopPropagation());
+                pd.addEventListener('pointerdown', (e) => e.stopPropagation());
                 pd.addEventListener('click', (e) => e.stopPropagation());
 
                 const ps = pd.querySelector('.dropdown-search-input');
                 if (ps) {
-                    ps.addEventListener('mousedown', (e) => e.stopPropagation());
+                    ps.addEventListener('pointerdown', (e) => e.stopPropagation());
                     ps.addEventListener('click', (e) => e.stopPropagation());
                 }
             }
             if (pa && pd) {
-                pa.addEventListener('mousedown', (e) => { e.preventDefault(); e.stopPropagation(); pd.classList.remove('show'); });
+                pa.addEventListener('pointerdown', (e) => { e.preventDefault(); e.stopPropagation(); pd.classList.remove('show'); });
                 pa.addEventListener('click', (e) => e.stopPropagation());
             }
         }
@@ -3234,7 +3236,7 @@ function updateRegisterEquipSelect(site) {
                         const contentDiv = li.querySelector('.suggestion-item-content') || li;
                         contentDiv.innerHTML = `<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayValueHtml}</span>`;
 
-                        li.addEventListener('mousedown', (e) => {
+                        li.addEventListener('pointerdown', (e) => {
                             e.preventDefault();
                             equipSelect.value = equip;
 
@@ -3789,7 +3791,7 @@ window.updateRegisterContentOptions = function () {
                             }
                         }
 
-                        div.addEventListener('mousedown', (e) => {
+                        div.addEventListener('pointerdown', (e) => {
                             if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option' || e.target.tagName.toLowerCase() === 'button') return;
                             e.preventDefault();
                             e.stopPropagation();
@@ -4065,23 +4067,45 @@ async function confirmRegisterSchedule() {
 
         const finalDetailType = (type === '비정기' && detailType2) ? `${detailType} > ${detailType2}` : detailType;
 
-        if (!window.currentAddWorkLogId && type === '정기' && finalDetailType.includes('PM 점검')) {
-            const key = `details_${site}_${equip}`;
-            let checkData = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [] };
-            const completedLog = (checkData.logs || []).find(l => l.date === dateStr && l.type === '정기' && (l.detailType || '').includes('PM 점검') && l.detailType !== '일정변경');
-            if (completedLog) {
-                alert('이미 등록된 작업입니다.');
-                document.getElementById('register-schedule-modal').style.display = 'none';
-                setTimeout(() => { openEventDetailModal(site, equip, completedLog.id, true); }, 100);
-                return;
-            }
+        if (!window.currentAddWorkLogId && equip) {
+            const targetParts = equip.split('::');
+            const targetSerial = (targetParts.length > 1 ? targetParts[1] : '').trim().toLowerCase();
+            const targetKey = `details_${site}_${equip}`;
+            const targetDetailData = JSON.parse(localStorage.getItem(targetKey)) || {};
+            const targetCustName = (targetDetailData.setup && targetDetailData.setup.custEquipName) ? targetDetailData.setup.custEquipName.trim().toLowerCase() : '';
 
-            const scheduledMaint = (checkData.maint || []).find(m => m.scheduledDate === dateStr && m.type === '정기' && (m.detailType || '').includes('PM 점검'));
-            if (scheduledMaint) {
-                alert('이미 등록된 작업입니다.');
-                document.getElementById('register-schedule-modal').style.display = 'none';
-                setTimeout(() => { openEventDetailModal(site, equip, scheduledMaint.id, false); }, 100);
-                return;
+            if (targetSerial || targetCustName) {
+                const deviceDataMap = getDeviceDataMap();
+                let hasDuplicate = false;
+
+                for (const sName in deviceDataMap) {
+                    const equipsList = deviceDataMap[sName] || [];
+                    for (const eqName of equipsList) {
+                        const eqParts = eqName.split('::');
+                        const eqSerial = (eqParts.length > 1 ? eqParts[1] : '').trim().toLowerCase();
+                        const eqKey = `details_${sName}_${eqName}`;
+                        const eqDetailData = JSON.parse(localStorage.getItem(eqKey)) || {};
+                        const eqCustName = (eqDetailData.setup && eqDetailData.setup.custEquipName) ? eqDetailData.setup.custEquipName.trim().toLowerCase() : '';
+
+                        const isSameSerial = targetSerial && eqSerial && targetSerial === eqSerial;
+                        const isSameCustName = targetCustName && eqCustName && targetCustName === eqCustName;
+
+                        if (isSameSerial || isSameCustName) {
+                            const hasMaint = (eqDetailData.maint || []).some(m => m.scheduledDate === dateStr);
+                            const hasLog = (eqDetailData.logs || []).some(l => l.date === dateStr);
+                            if (hasMaint || hasLog) {
+                                hasDuplicate = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (hasDuplicate) break;
+                }
+
+                if (hasDuplicate) {
+                    alert('이미 등록한 작업이 있습니다.');
+                    return;
+                }
             }
         }
 

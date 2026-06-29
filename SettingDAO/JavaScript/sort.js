@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 드롭다운 외부 클릭 시 닫기
-    document.addEventListener('click', (e) => {
+    const closeDropdownsOnOutsideClick = (e) => {
         document.querySelectorAll('.log-select-dropdown').forEach(d => {
             const wrapper = d.closest('.log-select-wrapper');
             if (wrapper && !wrapper.contains(e.target)) {
@@ -18,7 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 d.classList.remove('show');
             }
         });
-    });
+    };
+    document.addEventListener('click', closeDropdownsOnOutsideClick);
+    document.addEventListener('touchstart', closeDropdownsOnOutsideClick, { passive: true });
 });
 
 // [1.2] 로컬 데이터 안전 조회 헬퍼: 모든 형태의 로컬 데이터를 안전하게 병합하여 가져옴
@@ -308,7 +310,7 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
         };
 
         if (selectAllBtn) {
-            selectAllBtn.addEventListener('mousedown', (e) => {
+            selectAllBtn.addEventListener('pointerdown', (e) => {
                 e.preventDefault(); // 포커스 아웃 방지
                 e.stopPropagation();
                 list.querySelectorAll('.log-select-item').forEach(el => {
@@ -322,7 +324,7 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
         }
 
         if (deselectAllBtn) {
-            deselectAllBtn.addEventListener('mousedown', (e) => {
+            deselectAllBtn.addEventListener('pointerdown', (e) => {
                 e.preventDefault(); // 포커스 아웃 방지
                 e.stopPropagation();
                 list.querySelectorAll('.log-select-item').forEach(el => {
@@ -339,7 +341,7 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
             const filterBtns = wrapper.querySelectorAll('.equip-group-filter-btn');
             const targetList = wrapper.querySelector(`#${selectId}-list`);
             filterBtns.forEach(btn => {
-                btn.addEventListener('mousedown', (e) => {
+                btn.addEventListener('pointerdown', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     const targetGroup = btn.dataset.group;
@@ -368,7 +370,7 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
             const toggleBtns = wrapper.querySelectorAll('.site-group-toggle-btn');
             const targetList = wrapper.querySelector(`#${selectId}-list`);
             toggleBtns.forEach(btn => {
-                btn.addEventListener('mousedown', (e) => {
+                btn.addEventListener('pointerdown', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                     const targetGroup = btn.dataset.group;
@@ -394,7 +396,7 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
 
 
 
-        confirmBtn.addEventListener('mousedown', (e) => {
+        confirmBtn.addEventListener('pointerdown', (e) => {
             e.preventDefault(); // 포커스 아웃 방지
             e.stopPropagation();
             dropdown.style.display = 'none';
@@ -480,7 +482,7 @@ function syncCustomMultiSelect(selectId, placeholder = '전체') {
                 div.innerHTML = `<span class="item-text sort-item-text" style="flex: 1; padding-left: 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(text)}</span>`;
             }
 
-            div.addEventListener('mousedown', (e) => {
+            div.addEventListener('pointerdown', (e) => {
                 e.preventDefault(); // 클릭 시 포커스 잃음(blur) 방지로 클릭 이벤트 보장
                 e.stopPropagation();
                 div.classList.toggle('selected');
@@ -794,7 +796,7 @@ function setupSortKeyword() {
         input.onfocus = showDropdown;
 
         if (selectAllBtn) {
-            selectAllBtn.addEventListener('mousedown', (e) => {
+            selectAllBtn.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 const list = document.getElementById('sort-keyword-list');
@@ -811,7 +813,7 @@ function setupSortKeyword() {
         }
 
         if (deselectBtn) {
-            deselectBtn.addEventListener('mousedown', (e) => {
+            deselectBtn.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 const list = document.getElementById('sort-keyword-list');
@@ -826,7 +828,7 @@ function setupSortKeyword() {
         }
 
         if (confirmBtn) {
-            confirmBtn.addEventListener('mousedown', (e) => {
+            confirmBtn.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 dropdown.style.display = 'none';
@@ -910,7 +912,7 @@ function updateKeywordSuggestions() {
         } else {
             div.innerHTML = `<span class="item-text sort-item-text" style="flex: 1; padding-left: 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(content)}</span>`;
         }
-        div.addEventListener('mousedown', (e) => {
+        div.addEventListener('pointerdown', (e) => {
             e.preventDefault();
             e.stopPropagation();
             div.classList.toggle('selected');

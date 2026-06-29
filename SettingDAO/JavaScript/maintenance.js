@@ -739,7 +739,7 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
                             ${item.code ? `<span class="abbr">${escapeHtml(item.part)}</span>` : ''}
                         </div>
                     `;
-                    li.addEventListener('mousedown', (ev) => {
+                    li.addEventListener('pointerdown', (ev) => {
                         ev.preventDefault();
                         contentElement.value = item.code || item.part;
                         contentElement.dataset.code = item.code || '';
@@ -764,7 +764,7 @@ window.updateMaintContentOptions = function (forceShowAll = false) {
                     moreLi.style.background = '#161b22';
                     moreLi.style.padding = '10px';
                     moreLi.textContent = '⬇️ 더보기 (전체 물품)';
-                    moreLi.addEventListener('mousedown', (ev) => {
+                    moreLi.addEventListener('pointerdown', (ev) => {
                         ev.preventDefault();
                         window.renderMaintSuggestions(true);
                     });

@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupScheduleModal(); // [추가] 누락되었던 팝업 이벤트 초기화(버튼 바인딩) 호출 복구
 
     // [추가] 달력 상세 검색 제안박스 외부 클릭 시 닫기
-    document.addEventListener('click', (e) => {
+    const closeSearchDropdownOnOutsideClick = (e) => {
         const searchDropdown = document.getElementById('search-equip-dropdown');
         const searchTrigger = document.getElementById('search-equip-trigger');
         if (searchDropdown && searchDropdown.classList.contains('show')) {
@@ -33,7 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 searchDropdown.classList.remove('show');
             }
         }
-    });
+    };
+    document.addEventListener('click', closeSearchDropdownOnOutsideClick);
+    document.addEventListener('touchstart', closeSearchDropdownOnOutsideClick, { passive: true });
 
 });
 
@@ -1488,7 +1490,7 @@ function updateSearchEquipSelect(site) {
             allLi.className = 'log-select-item';
             allLi.style.padding = '10px 8px';
             allLi.innerHTML = `<span>전체 장비</span>`;
-            allLi.addEventListener('mousedown', (ev) => {
+            allLi.addEventListener('pointerdown', (ev) => {
                 ev.preventDefault();
                 if (equipSelect) equipSelect.value = '';
                 trigger.textContent = '전체 장비';
@@ -1528,7 +1530,7 @@ function updateSearchEquipSelect(site) {
                 li.style.padding = '10px 8px';
                 li.innerHTML = `<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayValueHtml}${subInfoHtml}</span>`;
 
-                li.addEventListener('mousedown', (ev) => {
+                li.addEventListener('pointerdown', (ev) => {
                     ev.preventDefault();
                     if (equipSelect) equipSelect.value = item.equip;
                     trigger.innerHTML = `${escapeHtml(displayName)}${subInfoHtml}`;
