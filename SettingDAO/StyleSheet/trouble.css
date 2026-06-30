@@ -16,8 +16,10 @@
     flex-direction: column;
     gap: 15px;
     height: 100%;
-    min-height: 0; /* 브라우저 높이가 작아져도 전체 컨테이너가 줄어들 수 있게 함 */
-    overflow: hidden; /* 사이드바 전체가 창을 뚫고 나가지 않도록 확실히 제한 */
+    min-height: 0;
+    /* 브라우저 높이가 작아져도 전체 컨테이너가 줄어들 수 있게 함 */
+    overflow: hidden;
+    /* 사이드바 전체가 창을 뚫고 나가지 않도록 확실히 제한 */
 }
 
 /* 사이드바 내 각 필터 그룹 비율 지정 */
@@ -27,14 +29,25 @@
     background-color: #161b22;
     border: 1px solid #30363d;
     border-radius: 6px;
-    min-height: 0; /* 부모 크기에 맞춰 내부 스크롤이 생성되도록 강제 높이 제거 */
+    min-height: 0;
+    /* 부모 크기에 맞춰 내부 스크롤이 생성되도록 강제 높이 제거 */
     margin-bottom: 0;
     overflow: hidden;
 }
 
-.site-group { flex: 1 1 0; }
-.model-group { flex: 1 1 0; }
-.equip-group { flex: 1.5 1 0; } /* 장비가 가장 많으므로 공간을 더 할당 */
+.site-group {
+    flex: 1 1 0;
+}
+
+.model-group {
+    flex: 1 1 0;
+}
+
+.equip-group {
+    flex: 1.5 1 0;
+}
+
+/* 장비가 가장 많으므로 공간을 더 할당 */
 
 .trouble-sidebar-group .group-header {
     padding: 10px 15px;
@@ -45,7 +58,8 @@
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    flex-shrink: 0; /* 제목 헤더가 찌그러지거나 레이아웃을 밀어내지 않도록 보호 */
+    flex-shrink: 0;
+    /* 제목 헤더가 찌그러지거나 레이아웃을 밀어내지 않도록 보호 */
 }
 
 .trouble-sidebar-group .group-header h3 {
@@ -53,7 +67,8 @@
     font-size: 13px;
     color: #e6edf3;
     white-space: nowrap;
-    flex-shrink: 0; /* 라벨 텍스트가 줄어들지 않도록 보호 */
+    flex-shrink: 0;
+    /* 라벨 텍스트가 줄어들지 않도록 보호 */
 }
 
 .trouble-sidebar-group ul.list-data {
@@ -62,13 +77,15 @@
     margin: 0;
     padding: 0;
     list-style: none;
-    min-height: 0; /* 내부 리스트 항목이 많아질 때 부모 비율을 무시하고 무한정 늘어나는 현상 방지 */
+    min-height: 0;
+    /* 내부 리스트 항목이 많아질 때 부모 비율을 무시하고 무한정 늘어나는 현상 방지 */
 }
 
 /* 장비 검색 필터 영역 */
 .equip-search-wrapper {
     flex: 1;
-    min-width: 0; /* 검색창이 카드를 벗어나지 않게 축소 허용 */
+    min-width: 0;
+    /* 검색창이 카드를 벗어나지 않게 축소 허용 */
     padding: 0;
     background: transparent;
     border: none;
@@ -105,7 +122,8 @@
     border: 1px solid #30363d;
     border-radius: 6px;
     padding: 20px;
-    flex: 1; /* 화면 높이에 꽉 차게 변경 */
+    flex: 1;
+    /* 화면 높이에 꽉 차게 변경 */
     display: flex;
     flex-direction: column;
     min-height: 0;
@@ -140,16 +158,56 @@
 }
 
 /* 각 컬럼별 고정 너비 설정 */
-#trouble-table th:nth-child(1) { width: 70px; }   /* 기록여부 */
-#trouble-table th:nth-child(2) { width: 110px; }  /* 작업일(조치일) */
-#trouble-table th:nth-child(3) { width: 110px; }  /* 사업장 */
-#trouble-table th:nth-child(4) { width: 140px; }  /* 장비명 */
-#trouble-table th:nth-child(5) { width: 80px; }   /* 작업 구분 */
-#trouble-table th:nth-child(6) { width: 120px; }  /* 세부 구분1 */
-#trouble-table th:nth-child(7) { width: 140px; }  /* 세부 구분2 */
-#trouble-table th:nth-child(8) { width: 320px; }  /* 점검 항목 */
-#trouble-table th:nth-child(9) { width: auto; }   /* Trouble 내용 (증상) - 남은 영역 모두 차지 */
-#trouble-table th:nth-child(10) { width: 100px; } /* 조치자 */
+#trouble-table th:nth-child(1) {
+    width: 70px;
+}
+
+/* 기록여부 */
+#trouble-table th:nth-child(2) {
+    width: 110px;
+}
+
+/* 작업일(조치일) */
+#trouble-table th:nth-child(3) {
+    width: 110px;
+}
+
+/* 사업장 */
+#trouble-table th:nth-child(4) {
+    width: 140px;
+}
+
+/* 장비명 */
+#trouble-table th:nth-child(5) {
+    width: 80px;
+}
+
+/* 작업 구분 */
+#trouble-table th:nth-child(6) {
+    width: 120px;
+}
+
+/* 세부 구분1 */
+#trouble-table th:nth-child(7) {
+    width: 140px;
+}
+
+/* 세부 구분2 */
+#trouble-table th:nth-child(8) {
+    width: 320px;
+}
+
+/* 점검 항목 */
+#trouble-table th:nth-child(9) {
+    width: auto;
+}
+
+/* Trouble 내용 (증상) - 남은 영역 모두 차지 */
+#trouble-table th:nth-child(10) {
+    width: 100px;
+}
+
+/* 조치자 */
 
 #trouble-table td {
     padding: 8px 10px;
@@ -205,12 +263,15 @@
         height: auto;
         overflow: auto;
     }
+
     .trouble-sidebar {
         width: 100%;
         height: auto;
     }
+
     .trouble-sidebar-group {
-        height: 200px; /* 항목이 많아도 화면을 다 덮지 않도록 고정 */
+        height: 200px;
+        /* 항목이 많아도 화면을 다 덮지 않도록 고정 */
         min-height: 0;
         flex: none;
     }
@@ -227,11 +288,52 @@
         flex-direction: column !important;
         overflow-y: auto !important;
     }
-    .trouble-modal-large .modal-body > div {
+
+    .trouble-modal-large .modal-body>div {
         width: 100% !important;
         height: auto !important;
         padding-right: 0 !important;
         overflow-y: visible !important;
+    }
+
+    /* [개선] Trouble 검색 영역 모바일 반응형 정렬 최적화 (한 줄 맞춤) */
+    .trouble-header-actions {
+        width: 100%;
+        padding: 0;
+        /* 컨테이너 패딩을 따르도록 패딩 제거 */
+        box-sizing: border-box;
+    }
+
+    .trouble-filters {
+        width: 100%;
+    }
+
+    .trouble-filters input {
+        flex: 1;
+        min-width: 0;
+        width: auto;
+        margin-right: 0;
+        /* flex gap을 활용하므로 기존 우측 마진 제거 */
+    }
+
+    /* [개선] 모바일 전체 너비 확장 및 여백 최소화 */
+    .trouble-main {
+        padding: 10px 0px;
+        /* 좌우 8px 여백을 두어 잘림 현상 방지 */
+    }
+
+    .trouble-container {
+        padding: 15px 5px 10px 5px;
+        /* 내부 좌우 8px 여백 확보 */
+        border: 1px solid #30363d;
+        /* 보더 및 라운드 코너 복원 */
+        border-radius: 6px;
+    }
+
+    .trouble-table-wrapper {
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        margin-top: 15px;
     }
 }
 
@@ -247,12 +349,16 @@
     transition: background 0.2s, color 0.2s;
 }
 
-#trouble-site-list li:hover, #trouble-model-list li:hover, #trouble-equip-list li:hover {
+#trouble-site-list li:hover,
+#trouble-model-list li:hover,
+#trouble-equip-list li:hover {
     background: #21262d;
     color: #e6edf3;
 }
 
-#trouble-site-list li.active, #trouble-model-list li.active, #trouble-equip-list li.active {
+#trouble-site-list li.active,
+#trouble-model-list li.active,
+#trouble-equip-list li.active {
     background: rgba(88, 166, 255, 0.1);
     color: #58a6ff;
     font-weight: bold;
@@ -280,6 +386,7 @@
     gap: 10px;
     margin-bottom: 5px;
 }
+
 .trouble-image-preview-container {
     display: none;
     background: #0d1117;
@@ -288,6 +395,7 @@
     padding: 10px;
     text-align: center;
 }
+
 .trouble-image-preview {
     max-width: 100%;
     max-height: 450px;
@@ -307,6 +415,7 @@ select.input-dark {
     background-repeat: no-repeat;
     background-position: right 8px center;
 }
+
 select.input-dark option {
     background-color: #161b22;
     color: #fff;

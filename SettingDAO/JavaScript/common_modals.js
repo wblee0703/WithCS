@@ -4087,12 +4087,14 @@ async function confirmRegisterSchedule() {
                         const eqDetailData = JSON.parse(localStorage.getItem(eqKey)) || {};
                         const eqCustName = (eqDetailData.setup && eqDetailData.setup.custEquipName) ? eqDetailData.setup.custEquipName.trim().toLowerCase() : '';
 
-                        const isSameSerial = targetSerial && eqSerial && targetSerial === eqSerial;
-                        const isSameCustName = targetCustName && eqCustName && targetCustName === eqCustName;
+                        const invalidSerials = ['n/a', 'none', '-', '없음', 'null', 'undefined', ''];
+                        const isValidSerial = targetSerial && !invalidSerials.includes(targetSerial);
+                        const isSameSerial = isValidSerial && eqSerial && targetSerial === eqSerial && sName === site;
+                        const isSameCustName = targetCustName && eqCustName && targetCustName === eqCustName && sName === site;
 
                         if (isSameSerial || isSameCustName) {
-                            const hasMaint = (eqDetailData.maint || []).some(m => m.scheduledDate === dateStr);
-                            const hasLog = (eqDetailData.logs || []).some(l => l.date === dateStr);
+                            const hasMaint = (eqDetailData.maint || []).some(m => m.scheduledDate === dateStr && (m.type || '정기') === type);
+                            const hasLog = (eqDetailData.logs || []).some(l => l.date === dateStr && (l.type || '정기') === type);
                             if (hasMaint || hasLog) {
                                 hasDuplicate = true;
                                 break;
