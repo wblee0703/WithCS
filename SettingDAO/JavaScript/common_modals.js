@@ -4088,13 +4088,14 @@ async function confirmRegisterSchedule() {
                         const eqCustName = (eqDetailData.setup && eqDetailData.setup.custEquipName) ? eqDetailData.setup.custEquipName.trim().toLowerCase() : '';
 
                         const invalidSerials = ['n/a', 'none', '-', '없음', 'null', 'undefined', ''];
-                        const isValidSerial = targetSerial && !invalidSerials.includes(targetSerial);
+                        const cleanSerial = targetSerial ? targetSerial.replace(/[^a-z0-9]/g, '') : '';
+                        const isValidSerial = cleanSerial && cleanSerial.length > 3 && !invalidSerials.includes(targetSerial);
                         const isSameSerial = isValidSerial && eqSerial && targetSerial === eqSerial && sName === site;
                         const isSameCustName = targetCustName && eqCustName && targetCustName === eqCustName && sName === site;
 
                         if (isSameSerial || isSameCustName) {
                             const hasMaint = (eqDetailData.maint || []).some(m => m.scheduledDate === dateStr && (m.type || '정기') === type);
-                            const hasLog = (eqDetailData.logs || []).some(l => l.date === dateStr && (l.type || '정기') === type);
+                            const hasLog = (eqDetailData.logs || []).some(l => l.date === dateStr && l.detailType !== '일정변경' && (l.type || '정기') === type);
                             if (hasMaint || hasLog) {
                                 hasDuplicate = true;
                                 break;
