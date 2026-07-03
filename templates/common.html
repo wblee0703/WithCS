@@ -1327,11 +1327,14 @@
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}"></script>
+    {% if session.get('role') == 'superadmin' %}
     <script src="{{ url_for('SettingDAO', filename='JavaScript/chatbot.js') }}"></script>
+    {% endif %}
     <!-- 페이지별 추가 스크립트 -->
     {% block extra_js %}{% endblock %}
 
     <!-- 4. AI 챗봇 플로팅 위젯 -->
+    {% if session.get('role') == 'superadmin' %}
     <div id="ai-chatbot-container" style="display: none;">
         <!-- 챗봇 열기 버튼 -->
         <button id="chatbot-toggle-btn" class="chatbot-toggle-btn" title="AI 비서와 대화">
@@ -1360,6 +1363,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
     
     <!-- [추가] 연관 추가 작업 내역 모달 -->
     <div id="additional-works-modal" class="modal-overlay" style="display: none; z-index: 2000;">
