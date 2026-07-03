@@ -245,12 +245,21 @@ window.syncAdminDB = async function (domain, action, payload) {
         const data = await res.json();
         if (data.status !== 'success') {
             console.error('DB Sync Error:', data.message);
-            alert(`관리자 설정 동기화 중 오류가 발생했습니다.\n사유: ${data.message || '알 수 없음'}`);
+            // [개선] 일반 관리자(admin) 계정은 권한 부족(403) 오류가 나더라도
+            // 조회 목적으로 시스템에서 백그라운드로 자동 실행하는 마이그레이션/저장 시나리오가 많으므로,
+            // 내용 확인(조회)에 지장이 없도록 경고(alert) 팝업을 노출하지 않고 콘솔 에러로만 기록합니다.
+            const userRole = sessionStorage.getItem('userRole');
+            if (userRole !== 'admin') {
+                alert(`관리자 설정 동기화 중 오류가 발생했습니다.\n사유: ${data.message || '알 수 없음'}`);
+            }
         }
         return data.status === 'success';
     } catch (e) {
         console.error('DB Sync Failed:', e);
-        alert('서버와의 통신에 실패했습니다. 네트워크 상태를 확인해주세요.');
+        const userRole = sessionStorage.getItem('userRole');
+        if (userRole !== 'admin') {
+            alert('서버와의 통신에 실패했습니다. 네트워크 상태를 확인해주세요.');
+        }
         return false;
     } finally {
         window.activeSyncRequests--;

@@ -160,29 +160,16 @@
                         <!-- 왼쪽: 차트 영역 -->
                         <div class="maint-left-charts">
                             <div class="status-group card-like">
-                                <h5 class="status-group-title">사업장 현황</h5>
-                                <div class="chart-row">
-                                    <div class="donut-chart-wrapper">
-                                        <div class="donut-chart" id="site-status-chart"></div>
-                                        <div class="chart-center" id="site-chart-center"></div>
-                                    </div>
-                                    <div class="status-list-container status-list-flex">
+                                <h5 class="status-group-title">사업장 및 장비 현황</h5>
+                                <div class="chart-row" style="display: flex; flex-direction: row; gap: 15px; width: 100%;">
+                                    <div class="status-list-container status-list-flex" style="flex: 1; min-width: 0;">
                                         <div class="status-list-header">
                                             <span class="header-name">사업장</span>
                                             <span class="header-count">장비수</span>
                                         </div>
                                         <ul class="site-status-list" id="site-status-list"></ul>
                                     </div>
-                                </div>
-                            </div>
-                            <div class="status-group card-like">
-                                <h5 class="status-group-title">장비 현황</h5>
-                                <div class="chart-row">
-                                    <div class="donut-chart-wrapper">
-                                        <div class="donut-chart" id="equip-status-chart"></div>
-                                        <div class="chart-center" id="equip-chart-center"></div>
-                                    </div>
-                                    <div class="status-list-container status-list-flex">
+                                    <div class="status-list-container status-list-flex" style="flex: 1; min-width: 0;">
                                         <div class="status-list-header">
                                             <span class="header-name">장비명</span>
                                             <span class="header-count">장비수</span>

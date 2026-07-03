@@ -471,6 +471,24 @@ def handle_bad_request(e):
 def handle_too_many_requests(e):
     return jsonify({"status": "fail", "message": "짧은 시간에 너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요."}), 429
 
+# [추가] 해킹 IP 차단 관리 (메모리 캐시)
+IP_ABUSE_COUNTER = {} # { "ip": { "count": int, "last_attempt": datetime } }
+IP_BLACKLIST = {}     # { "ip": ban_until_datetime }
+
+@app.before_request
+def check_ip_blacklist():
+    """모든 요청 진입 전에 블랙리스트에 의한 강제 IP 차단을 검사합니다."""
+    ip = get_remote_address()
+    if ip in IP_BLACKLIST:
+        ban_until = IP_BLACKLIST[ip]
+        if datetime.now(timezone.utc) < ban_until:
+            app.logger.warning(f"Blocked request from blacklisted IP: {ip} (Path: {request.path})")
+            return jsonify({"status": "fail", "message": "보안 정책 위반으로 인해 해당 IP로부터의 접속이 일시적으로 차단되었습니다."}), 403
+        else:
+            # 차단 만료 시간 경과 시 자동 제거
+            IP_BLACKLIST.pop(ip, None)
+            IP_ABUSE_COUNTER.pop(ip, None)
+
 def login_required(f):
     """로그인 여부를 확인하는 데코레이터"""
     @wraps(f)
@@ -681,6 +699,816 @@ def get_user_info():
             "name": user.name or ""
         }
     })
+
+# ------------------------------------------------------------------------------
+# [추가] AI 챗봇 및 DB 데이터 외부 유출 방지 (AI Chatbot & Security Filter)
+# ------------------------------------------------------------------------------
+import re
+import urllib.request
+import urllib.error
+
+class AIChatSecurityManager:
+    def __init__(self):
+        self.email_pattern = re.compile(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+')
+        self.phone_pattern = re.compile(r'\b\d{2,3}[-\s]?\d{3,4}[-\s]?\d{4}\b')
+        self.ip_pattern = re.compile(r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b')
+        # 영대문자 및 숫자가 섞인 시리얼 번호 매칭 예: WT-12345, ABC12345
+        self.serial_pattern = re.compile(r'\b[A-Z0-9]{2,}-[A-Z0-9]{4,}\b|\b[A-Z]+[0-9]{4,}\b')
+
+    def mask_data(self, text, mapping, site_list=None):
+        if not text:
+            return text
+
+        # 1. 사이트 명칭 마스킹 (등록된 사업장 리스트 기준)
+        if site_list:
+            for site in sorted(site_list, key=len, reverse=True):
+                if site in text:
+                    token = self._get_or_create_token(mapping, site, "SITE")
+                    text = text.replace(site, token)
+
+        # 2. 이메일 마스킹
+        emails = self.email_pattern.findall(text)
+        for email in set(emails):
+            token = self._get_or_create_token(mapping, email, "EMAIL")
+            text = text.replace(email, token)
+
+        # 3. 전화번호 마스킹
+        phones = self.phone_pattern.findall(text)
+        for phone in set(phones):
+            token = self._get_or_create_token(mapping, phone, "PHONE")
+            text = text.replace(phone, token)
+
+        # 4. IP 주소 마스킹
+        ips = self.ip_pattern.findall(text)
+        for ip in set(ips):
+            token = self._get_or_create_token(mapping, ip, "IP")
+            text = text.replace(ip, token)
+
+        # 5. 장비 시리얼 마스킹
+        serials = self.serial_pattern.findall(text)
+        for serial in set(serials):
+            if len(serial) >= 5:
+                token = self._get_or_create_token(mapping, serial, "SERIAL")
+                text = text.replace(serial, token)
+
+        return text
+
+    def _get_or_create_token(self, mapping, value, token_type):
+        for k, v in mapping.items():
+            if v == value:
+                return k
+        token = f"[MASK_{token_type}_{len(mapping) + 1}]"
+        mapping[token] = value
+        return token
+
+    def demask_data(self, text, mapping):
+        if not text:
+            return text
+        for token in sorted(mapping.keys(), key=len, reverse=True):
+            text = text.replace(token, mapping[token])
+        return text
+
+security_manager = AIChatSecurityManager()
+
+def build_rag_context(user, user_message):
+    """
+    유저의 세션 권한 및 메시지 키워드를 정밀 분석하여
+    의도(Intent)와 엔티티(Entity)를 파악한 뒤, 관련 DB 데이터를 타겟팅 쿼리하여 반환합니다.
+    """
+    user_site = user.site
+    # 보안 보완: 빈 공백 및 문자열 "None", "null" 방어 처리
+    if not user_site or not str(user_site).strip() or str(user_site).lower() in ['none', 'null']:
+        user_site = None
+        
+    # [개선] superadmin 및 admin 권한의 관리자 계정은 사업장 제한 필터를 해제하여 전체 데이터를 RAG 조회할 수 있도록 허용
+    if user.role in ['superadmin', 'admin']:
+        user_site = None
+
+    context_lines = []
+    
+    if user_site:
+        context_lines.append(f"접속자 소속 사업장: {user_site}")
+    
+    # 보안 보완: RAG 검색 키워드에서 특수문자 및 유해 문자 소거 (SQL 인젝션 및 비정상 구문 방지)
+    sanitized_message = re.sub(r'[^a-zA-Z0-9가-힣\s\-_]', '', user_message)
+    msg_lower = sanitized_message.lower()
+    raw_msg_lower = user_message.lower()
+    msg_no_space = re.sub(r'[^a-zA-Z0-9가-힣]', '', user_message).lower()
+
+    # [디버그 로그] RAG 매칭 진입 정보 기록 (디버깅용)
+    app.logger.info(f"[AI Chat RAG Debug] User ID: '{user.id}', Site Filter: '{user_site}', Cleaned Msg: '{msg_lower}'")
+
+    # 1. 엔티티 추출
+    
+    # (1) 사업장(Site) 매칭
+    matched_site = None
+    all_sites = Site.query.all()
+    for site in sorted(all_sites, key=lambda s: len(s.name), reverse=True):
+        site_clean = re.sub(r'[^a-zA-Z0-9가-힣]', '', site.name).lower()
+        if (site.name.lower() in raw_msg_lower) or (site_clean in msg_no_space):
+            # 로그인한 유저가 특정 사업장에 묶여있는데 다른 사업장을 물어본 경우 보안 필터링
+            if user_site and user_site != site.name:
+                continue
+            matched_site = site.name
+            break
+            
+    # 만약 명시적 사업장 매칭이 없어도 유저가 특정 사업장 소속이면 해당 사업장으로 고정
+    if not matched_site and user_site:
+        matched_site = user_site
+
+    # (2) 작업자(Worker) 매칭
+    matched_worker = None
+    all_users = User.query.all()
+    for u in all_users:
+        names_to_check = []
+        if u.name:
+            names_to_check.append(u.name)
+        if u.id and u.id not in ['admin', 'user', 'superadmin']:
+            names_to_check.append(u.id)
+            
+        for n in sorted(names_to_check, key=len, reverse=True):
+            n_clean = re.sub(r'[^a-zA-Z0-9가-힣]', '', n).lower()
+            if len(n_clean) >= 2:
+                if (n.lower() in raw_msg_lower) or (n_clean in msg_no_space):
+                    matched_worker = u.name if u.name else u.id
+                    break
+        if matched_worker:
+            break
+
+    # (3) 장비(Equipment) 매칭 (시리얼, 장비명, 고객사 장비명)
+    equip_query = Equipment.query
+    if matched_site:
+        equip_query = equip_query.filter_by(site_name=matched_site)
+    all_equips = equip_query.all()
+
+    # N+1 쿼리 최적화를 위해 SetupInfo 사전 일괄 로드
+    setup_infos_map = { si.equip_id: si for si in SetupInfo.query.all() }
+
+    matched_equips = []
+    for eq in all_equips:
+        serial_strip = eq.serial.strip() if eq.serial else ""
+        name_strip = eq.name.strip() if eq.name else ""
+        
+        # 고객사 장비명 파싱
+        si_info = setup_infos_map.get(eq.id)
+        cust_name_strip = si_info.cust_equip_name.strip() if si_info and si_info.cust_equip_name else ""
+        
+        serial_clean = re.sub(r'[^a-zA-Z0-9]', '', serial_strip).lower()
+        name_clean = re.sub(r'[^a-zA-Z0-9가-힣]', '', name_strip).lower()
+        cust_name_clean = re.sub(r'[^a-zA-Z0-9가-힣]', '', cust_name_strip).lower()
+        
+        serial_match = False
+        if len(serial_clean) >= 2:
+            serial_match = (serial_strip.lower() in raw_msg_lower) or (serial_clean in msg_no_space)
+            
+        name_match = False
+        if len(name_clean) >= 2 and name_clean not in ['기타', 'etc']:
+            name_match = (name_strip.lower() in raw_msg_lower) or (name_clean in msg_no_space)
+
+        cust_name_match = False
+        if len(cust_name_clean) >= 2:
+            cust_name_match = (cust_name_strip.lower() in raw_msg_lower) or (cust_name_clean in msg_no_space)
+
+        if serial_match or name_match or cust_name_match:
+            matched_equips.append(eq)
+
+    # (4) 장비 모델명(Model) 매칭
+    matched_model = None
+    system_models = []
+    model_setting = SystemSetting.query.filter_by(key='equipment_models').first()
+    if model_setting:
+        try:
+            models_data = json.loads(model_setting.value)
+            for m in models_data:
+                if isinstance(m, dict):
+                    if m.get('name'):
+                        system_models.append(m['name'])
+                    if m.get('abbr'):
+                        system_models.append(m['abbr'])
+                elif isinstance(m, str):
+                    system_models.append(m)
+        except Exception as e:
+            app.logger.error(f"Error parsing equipment_models setting: {str(e)}")
+    
+    db_models = [eq_info.model for eq_info in SetupInfo.query.with_entities(SetupInfo.model).distinct() if eq_info.model]
+    all_models = list(set(system_models + db_models))
+    
+    for m in sorted(all_models, key=len, reverse=True):
+        m_clean = re.sub(r'[^a-zA-Z0-9가-힣]', '', m).lower()
+        if len(m_clean) >= 2:
+            if (m.lower() in raw_msg_lower) or (m_clean in msg_no_space):
+                matched_model = m
+                break
+
+    # (5) 정렬 및 개수(Limit) 조건 파싱
+    limit_num = 10  # 기본값
+    limit_match = re.search(r'(?:최근|최신|마지막)\s*(\d+)\s*(?:개|건|명|대|가지|번)', user_message)
+    if limit_match:
+        limit_num = min(int(limit_match.group(1)), 30)
+    elif "최근" in user_message or "최신" in user_message or "마지막" in user_message:
+        limit_num = 5
+
+    is_recent_requested = any(k in user_message for k in ["최근", "최신", "마지막", "과거", "이력", "최근에"])
+
+    # (6) 날짜 및 기간 필터 추출
+    target_period = None
+    period_label = ""
+    month_match = re.search(r'(?:(\d{4})\s*년\s*)?(\d{1,2})\s*월', user_message)
+    if month_match:
+        year_part = month_match.group(1) if month_match.group(1) else str(datetime.now().year)
+        month_part = f"{int(month_match.group(2)):02d}"
+        target_period = f"{year_part}-{month_part}"
+        period_label = f"{year_part}년 {month_part}월"
+    elif "오늘" in user_message:
+        target_period = datetime.now().strftime("%Y-%m-%d")
+        period_label = "오늘"
+    elif "어제" in user_message:
+        target_period = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+        period_label = "어제"
+
+    is_work_completion_query = any(k in msg_no_space for k in ["작업완료", "점검완료", "완료건수", "완료한", "완료된", "조치완료", "해결된", "수리완료", "조치건수", "해결건수"])
+
+    # 2. 질문 의도(Intent) 분석
+    intent_count = any(k in msg_no_space for k in ["몇대", "몇개", "수량", "개수", "얼마나", "건수", "몇건", "몇명", "총수", "합계", "통계"])
+    intent_trouble = any(k in msg_no_space for k in ["트러블", "장애", "에러", "고장", "문제", "조치", "수리", "해결", "오류", "이상", "경과", "안됨", "불량", "알람"])
+    intent_schedule = any(k in msg_no_space for k in ["점검", "일정", "계획", "언제", "예정", "유지보수", "스케줄", "날짜", "달력", "작업"])
+    intent_setup = any(k in msg_no_space for k in ["셋업", "설치", "setup", "진행", "진척"])
+    intent_detail = any(k in msg_no_space for k in ["상세", "정보", "디테일", "연락처", "담당자", "위치", "스펙", "전화번호", "이메일", "어디", "누구"])
+
+    app.logger.info(f"[AI Chat RAG] 의도 분석 결과 -> Site: {matched_site}, Worker: {matched_worker}, Model: {matched_model}, Equips: {[e.id for e in matched_equips]}")
+    app.logger.info(f"[AI Chat RAG] 의도 분류 -> COUNT:{intent_count}, TROUBLE:{intent_trouble}, SCHEDULE:{intent_schedule}, SETUP:{intent_setup}, DETAIL:{intent_detail}")
+
+    # 3. 데이터베이스 쿼리 및 컨텍스트 작성
+    
+    # 3-1. 메타 요약 정보 (기본 통계 제공)
+    maint_count_query = MaintItem.query
+    trouble_count_query = TroubleLog.query
+    log_count_query = LogItem.query
+    
+    if matched_site:
+        maint_count_query = maint_count_query.filter(MaintItem.equip_id.like(f"{matched_site}::%"))
+        trouble_count_query = trouble_count_query.filter(TroubleLog.equip_id.like(f"{matched_site}::%"))
+        log_count_query = log_count_query.filter(LogItem.equip_id.like(f"{matched_site}::%"))
+        
+    total_maint = maint_count_query.count()
+    total_trouble = trouble_count_query.count()
+    active_trouble = trouble_count_query.filter_by(status='조치중').count()
+    total_shared_log = log_count_query.filter_by(is_issue_shared=True).count()
+
+    context_lines.append("[사내 데이터 요약 통계]")
+    if target_period:
+        context_lines.append(f"- 분석 조회 기준 기간: {period_label}")
+    if matched_site:
+        context_lines.append(f"- 소속/권한 범위: {matched_site}")
+        context_lines.append(f"- [{matched_site}] 등록 장비 총 수량: {len(all_equips)}대")
+        if target_period:
+            period_maint = MaintItem.query.filter(MaintItem.equip_id.like(f"{matched_site}::%"), MaintItem.scheduled_date.like(f"{target_period}%")).count()
+            period_trouble = TroubleLog.query.filter(TroubleLog.equip_id.like(f"{matched_site}::%"), TroubleLog.occur_date.like(f"{target_period}%")).count()
+            context_lines.append(f"- [{matched_site}] {period_label} 점검 예정 일정 건수: {period_maint}건")
+            context_lines.append(f"- [{matched_site}] {period_label} 장애 발생 건수: {period_trouble}건")
+        else:
+            context_lines.append(f"- [{matched_site}] 누적 장비 점검/유지관리 일정 건수: {total_maint}건")
+            context_lines.append(f"- [{matched_site}] 누적 장애(Trouble) 로그 건수: {total_trouble}건 (현재 조치 중: {active_trouble}건)")
+    else:
+        context_lines.append(f"- 소속/권한 범위: 전체 사업장")
+        context_lines.append(f"- 전체 등록 장비 총 수량: {len(all_equips)}대")
+        if target_period:
+            period_maint = MaintItem.query.filter(MaintItem.scheduled_date.like(f"{target_period}%")).count()
+            period_trouble = TroubleLog.query.filter(TroubleLog.occur_date.like(f"{target_period}%")).count()
+            context_lines.append(f"- 전체 {period_label} 점검 예정 일정 건수: {period_maint}건")
+            context_lines.append(f"- 전체 {period_label} 장애 발생 건수: {period_trouble}건")
+        else:
+            context_lines.append(f"- 전체 누적 장비 점검/유지관리 일정 건수: {total_maint}건")
+            context_lines.append(f"- 전체 누적 장애(Trouble) 로그 건수: {total_trouble}건 (현재 조치 중: {active_trouble}건)")
+
+    # 3-2. 수량(COUNT) 관련 명확한 데이터 분석 제공
+    if intent_count:
+        context_lines.append("\n[수량 및 건수 집계 데이터]")
+        if not matched_site:
+            site_counts = {}
+            for eq in all_equips:
+                site_counts[eq.site_name] = site_counts.get(eq.site_name, 0) + 1
+            for s_name, count in site_counts.items():
+                context_lines.append(f"- 사업장 [{s_name}] 장비 수량: {count}대")
+        else:
+            context_lines.append(f"- 사업장 [{matched_site}]의 장비 수량: {len(all_equips)}대")
+            
+        model_counts = {}
+        for eq in all_equips:
+            si = SetupInfo.query.filter_by(equip_id=eq.id).first()
+            m_name = si.model if si and si.model else "미지정"
+            model_counts[m_name] = model_counts.get(m_name, 0) + 1
+        model_summary = ", ".join([f"{k}: {v}대" for k, v in model_counts.items()])
+        context_lines.append(f"- 모델별 장비 수량 분포: {model_summary}")
+
+        t_status_counts = {"조치완료": 0, "조치중": 0}
+        t_query = TroubleLog.query
+        if matched_site:
+            t_query = t_query.filter(TroubleLog.equip_id.like(f"{matched_site}::%"))
+        for tl in t_query.all():
+            status = tl.status if tl.status else "조치중"
+            t_status_counts[status] = t_status_counts.get(status, 0) + 1
+        context_lines.append(f"- 장애 조치 상태별 현황: 조치중 {t_status_counts.get('조치중', 0)}건, 완료 {t_status_counts.get('조치완료', 0)}건")
+
+    # 3-2-2. 작업 완료 건수 및 이력 통계 제공 (사용자 질문이 완료 건수를 물어보는 경우)
+    if is_work_completion_query or (intent_count and any(k in msg_no_space for k in ["작업", "점검", "조치", "셋업"])):
+        context_lines.append(f"\n[{period_label if period_label else '전체 기간'} 작업 완료 및 조치 건수 통계]")
+        
+        # 1) 점검 완료 건수 (LogItem)
+        log_query = LogItem.query
+        if matched_site:
+            log_query = log_query.filter(LogItem.equip_id.like(f"{matched_site}::%"))
+        if target_period:
+            log_query = log_query.filter(LogItem.date.like(f"{target_period}%"))
+        
+        completed_maint_count = log_query.count()
+        context_lines.append(f"- 정상 완료된 점검 및 유지보수 작업 일지 건수 (성공 작업이며 오류 발생 기록이 아님): {completed_maint_count}건")
+        
+        # 2) 장애 조치 완료 건수 (TroubleLog)
+        trouble_query = TroubleLog.query.filter_by(status='조치완료')
+        if matched_site:
+            trouble_query = trouble_query.filter(TroubleLog.equip_id.like(f"{matched_site}::%"))
+        if target_period:
+            trouble_query = trouble_query.filter(TroubleLog.action_date.like(f"{target_period}%"))
+            
+        completed_trouble_count = trouble_query.count()
+        context_lines.append(f"- 정상적으로 조치(해결) 완료된 장애/트러블 건수 (성공 해결이며 현재 에러가 아님): {completed_trouble_count}건")
+        
+        # 3) 셋업 완료 건수 (SetupDetail)
+        setup_query = SetupDetail.query.filter_by(completed=True)
+        if matched_site:
+            setup_query = setup_query.filter(SetupDetail.equip_id.like(f"{matched_site}::%"))
+        if target_period:
+            setup_query = setup_query.filter(SetupDetail.date.like(f"{target_period}%"))
+            
+        completed_setup_count = setup_query.count()
+        context_lines.append(f"- 완료된 장비 셋업 작업 건수(Setup Completed): {completed_setup_count}건")
+
+        # 세부 목록 간략 제시
+        if completed_maint_count > 0:
+            context_lines.append(f"  * 주요 완료 점검 내역 (최근 5건):")
+            recent_logs = log_query.order_by(LogItem.date.desc()).limit(5).all()
+            for rl in recent_logs:
+                context_lines.append(f"    - [{rl.date}] {rl.equip_id.split('::')[-1]} 장비: {rl.content} (담당: {rl.worker})")
+        if completed_trouble_count > 0:
+            context_lines.append(f"  * 주요 장애 해결 내역 (최근 5건):")
+            recent_troubles = trouble_query.order_by(TroubleLog.action_date.desc()).limit(5).all()
+            for rt in recent_troubles:
+                context_lines.append(f"    - [{rt.action_date}] {rt.equip_id.split('::')[-1]} 장비: {rt.content} (담당: {rt.worker})")
+
+    # 3-3. 특정 장비가 매칭된 경우 (장비 타겟 정보 제공)
+    if matched_equips:
+        context_lines.append("\n[타겟 장비 분석 정보]")
+        
+        # 1) 매칭된 장비가 5대 이하로 소량인 경우: 기존과 같이 각 장비의 상세 개별 이력 제공
+        if len(matched_equips) <= 5:
+            for eq in matched_equips:
+                si = setup_infos_map.get(eq.id)
+                cust_name = si.cust_equip_name if si else "N/A"
+                status = si.equip_status if si else "N/A"
+                loc = f"{si.building} {si.floor} {si.detail_loc}".strip() if si else "N/A"
+                manager = si.manager if si else "N/A"
+                model = si.model if si else "N/A"
+                contact = si.contact if si else "N/A"
+                email = si.email if si else "N/A"
+                cust_manager = si.cust_manager if si else "N/A"
+                cust_contact = si.cust_contact if si else "N/A"
+                
+                context_lines.append(f"■ 장비 식별 정보:")
+                context_lines.append(f"  - 장비명: {eq.name}, 일련번호 (시리얼): {eq.serial}, 모델: {model}")
+                context_lines.append(f"  - 사업장: {eq.site_name}, 고객 장비명: {cust_name}, 가동 상태: {status}")
+                context_lines.append(f"  - 설치 위치: {loc}")
+                context_lines.append(f"  - 담당 관리자: {manager} (연락처: {contact}, 이메일: {email})")
+                context_lines.append(f"  - 고객사 담당자: {cust_manager} (연락처: {cust_contact})")
+                
+                m_items = MaintItem.query.filter_by(equip_id=eq.id).order_by(MaintItem.scheduled_date).limit(5).all()
+                if m_items:
+                    context_lines.append(f"  - 예정된 점검 일정:")
+                    for mi in m_items:
+                        context_lines.append(f"    * 예정일: {mi.scheduled_date}, 구분: {mi.type}, 작업내용: {mi.detail_type}, 담당: {mi.worker}")
+                
+                s_details = SetupDetail.query.filter_by(equip_id=eq.id, completed=False).all()
+                if s_details:
+                    context_lines.append(f"  - 미완료 셋업 과제:")
+                    for sd in s_details:
+                        context_lines.append(f"    * 구분: {sd.category}, 내용: {sd.content}, 목표일: {sd.date}")
+                
+                t_logs = TroubleLog.query.filter_by(equip_id=eq.id)
+                if is_recent_requested:
+                    t_logs = t_logs.order_by(TroubleLog.occur_date.desc())
+                t_logs = t_logs.limit(limit_num).all()
+                
+                if t_logs:
+                    context_lines.append(f"  - 최근 장애/트러블 및 조치 이력 (최대 {limit_num}건):")
+                    for tl in t_logs:
+                        context_lines.append(f"    * 발생일: {tl.occur_date}, 조치일: {tl.action_date or '미조치'}, 상태: {tl.status}, 담당: {tl.worker}")
+                        context_lines.append(f"      현상: {tl.content}")
+                        context_lines.append(f"      조치/메모: {tl.memo if tl.memo else '기록 없음'}")
+
+        # 2) 매칭된 장비가 5대를 초과하여 다량인 경우: 토큰 폭발 방지를 위해 사전 통계 분석 및 핵심 연관 조치사례(Top-5) 요약 제공
+        else:
+            eq_ids = [eq.id for eq in matched_equips]
+            context_lines.append(f"※ 총 {len(matched_equips)}대의 많은 장비가 매칭되어 통계 집계 데이터 및 연관 핵심 이력만 요약 제공합니다.")
+            
+            # (A) 사전 가동 상태 및 모델 분포 집계 (Pre-aggregation)
+            status_counts = {}
+            model_counts = {}
+            for eq in matched_equips:
+                si = setup_infos_map.get(eq.id)
+                status_val = si.equip_status if si and si.equip_status else "미지정"
+                status_counts[status_val] = status_counts.get(status_val, 0) + 1
+                
+                model_val = si.model if si and si.model else "미지정"
+                model_counts[model_val] = model_counts.get(model_val, 0) + 1
+                
+            status_summary = ", ".join([f"{k}: {v}대" for k, v in status_counts.items()])
+            model_summary = ", ".join([f"{k}: {v}대" for k, v in model_counts.items()])
+            
+            context_lines.append(f"▶ 장비 그룹 종합 현황:")
+            context_lines.append(f"  - 검색된 총 수량: {len(matched_equips)}대")
+            context_lines.append(f"  - 가동 상태 분포: {status_summary}")
+            context_lines.append(f"  - 모델 분포: {model_summary}")
+            
+            # (B) 과거 장애 및 조치 이력 분석 사전 통계화 및 연관 장애 조치 이력 상위 5건 추출 (Top-K)
+            all_trouble_query = TroubleLog.query.filter(TroubleLog.equip_id.in_(eq_ids))
+            
+            # 질문과 유사한 키워드가 겹치는 트러블 로그 우선 검색
+            search_keywords = [w for w in sanitized_message.split() if len(w) >= 2 and w not in ["pm", "작업", "완료", "건수", "분석", "해줘", "알려줘", "7월", "이번달"]]
+            
+            related_troubles = []
+            if search_keywords:
+                for kw in search_keywords:
+                    kw_troubles = all_trouble_query.filter(TroubleLog.content.like(f"%{kw}%") | TroubleLog.memo.like(f"%{kw}%")).all()
+                    related_troubles.extend(kw_troubles)
+                seen_t = set()
+                related_troubles = [t for t in related_troubles if not (t._unique_id in seen_t or seen_t.add(t._unique_id))]
+            
+            # 연관 사례가 부족할 경우 최근 해결 완료된 주요 조치 로그로 보충
+            if len(related_troubles) < 5:
+                extra_troubles = all_trouble_query.filter_by(status='조치완료').order_by(TroubleLog.action_date.desc()).limit(5 - len(related_troubles)).all()
+                for et in extra_troubles:
+                    if et._unique_id not in [t._unique_id for t in related_troubles]:
+                        related_troubles.append(et)
+            
+            top_troubles = related_troubles[:5]
+            if top_troubles:
+                context_lines.append(f"\n▶ [과거 유사 장애 해결 및 조치 성공 사례 (최우수 레퍼런스 5건)]")
+                for rt in top_troubles:
+                    eq_serial = rt.equip_id.split('::')[-1]
+                    context_lines.append(f"  * 발생일: {rt.occur_date} | 조치완료일: {rt.action_date or '미조치'} | 장비: {eq_serial} (담당: {rt.worker})")
+                    context_lines.append(f"    - 고장 현상: {rt.content}")
+                    context_lines.append(f"    - 해결 조치 내용: {rt.memo if rt.memo else '기록 없음'}")
+            else:
+                context_lines.append(f"\n▶ [과거 유사 장애 해결 및 조치 성공 사례]\n  - 해당 장비 그룹의 조치 완료된 트러블 이력이 없습니다.")
+
+            # (C) 임박한 점검 예정 일정 요약 (최대 5건)
+            upcoming_maint = MaintItem.query.filter(MaintItem.equip_id.in_(eq_ids)).order_by(MaintItem.scheduled_date).limit(5).all()
+            if upcoming_maint:
+                context_lines.append(f"\n▶ [다가오는 주요 점검 예정 일정 (임박 5건)]")
+                for um in upcoming_maint:
+                    eq_serial = um.equip_id.split('::')[-1]
+                    context_lines.append(f"  - [{um.scheduled_date}] {eq_serial} ({um.type}): {um.detail_type} (담당: {um.worker})")
+
+            # (D) 장비 목록 요약 (최대 10개만 대표 노출)
+            context_lines.append(f"\n▶ [대상 장비 목록 요약 (상위 10대)]")
+            for eq in matched_equips[:10]:
+                si = setup_infos_map.get(eq.id)
+                cust_name = si.cust_equip_name if si else "N/A"
+                status = si.equip_status if si else "N/A"
+                model = si.model if si else "N/A"
+                context_lines.append(f"  - {eq.name} (시리얼: {eq.serial}, 모델: {model}, 고객장비명: {cust_name}, 상태: {status})")
+            if len(matched_equips) > 10:
+                context_lines.append(f"  - 그 외 {len(matched_equips) - 10}대의 장비가 더 존재합니다.")
+
+    # 3-4. 장비 매칭은 없지만 모델 매칭이 된 경우
+    elif matched_model:
+        context_lines.append(f"\n[모델명 '{matched_model}' 관련 장비 목록]")
+        model_equips = Equipment.query.join(SetupInfo, Equipment.id == SetupInfo.equip_id).filter(SetupInfo.model == matched_model)
+        if matched_site:
+            model_equips = model_equips.filter(Equipment.site_name == matched_site)
+        m_eqs = model_equips.all()
+        for eq in m_eqs[:10]:
+            si = SetupInfo.query.filter_by(equip_id=eq.id).first()
+            cust_name = si.cust_equip_name if si else "N/A"
+            status = si.equip_status if si else "N/A"
+            context_lines.append(f"- 장비명: {eq.name}, 일련번호: {eq.serial}, 사업장: {eq.site_name}, 고객 장비명: {cust_name}, 상태: {status}")
+        if len(m_eqs) > 10:
+            context_lines.append(f"  (외 {len(m_eqs) - 10}대의 장비가 더 존재합니다.)")
+
+    # 3-5. 작업자(Worker) 매칭이 된 경우 관련 이력 조회
+    if matched_worker:
+        context_lines.append(f"\n[작업자 '{matched_worker}' 관련 배정 내역]")
+        
+        worker_maint = MaintItem.query.filter(MaintItem.worker.like(f"%{matched_worker}%"))
+        if matched_site:
+            worker_maint = worker_maint.filter(MaintItem.equip_id.like(f"{matched_site}::%"))
+        wm_list = worker_maint.order_by(MaintItem.scheduled_date).limit(limit_num).all()
+        if wm_list:
+            context_lines.append(f"  - 점검 및 유지보수 일정 (최대 {limit_num}건):")
+            for mi in wm_list:
+                context_lines.append(f"    * 예정일: {mi.scheduled_date}, 장비ID: {mi.equip_id}, 구분: {mi.type}, 작업명: {mi.detail_type}")
+        
+        worker_trouble = TroubleLog.query.filter(TroubleLog.worker.like(f"%{matched_worker}%"))
+        if matched_site:
+            worker_trouble = worker_trouble.filter(TroubleLog.equip_id.like(f"{matched_site}::%"))
+        wt_list = worker_trouble.order_by(TroubleLog.occur_date.desc()).limit(limit_num).all()
+        if wt_list:
+            context_lines.append(f"  - 장애/트러블 조치 이력 (최대 {limit_num}건):")
+            for tl in wt_list:
+                context_lines.append(f"    * 발생일: {tl.occur_date}, 조치일: {tl.action_date or '미조치'}, 상태: {tl.status}, 장비ID: {tl.equip_id}")
+                context_lines.append(f"      현상: {tl.content}")
+                context_lines.append(f"      조치/메모: {tl.memo if tl.memo else '기록 없음'}")
+
+    # 3-6. 일반 의도별 다중 쿼리 (장비/작업자 개별 지목이 없는 경우)
+    if not matched_equips and not matched_worker and not matched_model:
+        # (1) 장애/트러블(INTENT_TROUBLE) 조회
+        if intent_trouble:
+            query = TroubleLog.query
+            if matched_site:
+                query = query.filter(TroubleLog.equip_id.like(f"{matched_site}::%"))
+                
+            if "조치중" in user_message or "미해결" in user_message or "진행중" in user_message:
+                query = query.filter_by(status='조치중')
+            elif "완료" in user_message or "해결" in user_message:
+                query = query.filter_by(status='조치완료')
+                
+            t_logs = query.order_by(TroubleLog.occur_date.desc()).limit(limit_num).all()
+            if t_logs:
+                context_lines.append(f"\n[최근 트러블 및 조치 이력 (최대 {limit_num}건)]")
+                for tl in t_logs:
+                    context_lines.append(f"- 장비ID: {tl.equip_id}, 발생일: {tl.occur_date}, 조치일: {tl.action_date or '미조치'}, 상태: {tl.status}, 담당: {tl.worker}")
+                    context_lines.append(f"  현상: {tl.content}")
+                    context_lines.append(f"  조치/경과: {tl.memo if tl.memo else '기록 없음'}")
+            else:
+                context_lines.append("\n[최근 트러블 및 조치 이력]\n- 등록된 트러블 내역이 없습니다.")
+
+        # (2) 점검/일정(INTENT_SCHEDULE) 조회
+        if intent_schedule:
+            query = MaintItem.query
+            if matched_site:
+                query = query.filter(MaintItem.equip_id.like(f"{matched_site}::%"))
+            maint_items = query.order_by(MaintItem.scheduled_date).limit(limit_num).all()
+            if maint_items:
+                context_lines.append(f"\n[유지관리 점검 일정 (최대 {limit_num}건)]")
+                for mi in maint_items:
+                    context_lines.append(f"- 예정일: {mi.scheduled_date}, 장비ID: {mi.equip_id}, 구분: {mi.type}, 작업명: {mi.detail_type}, 담당: {mi.worker}")
+            else:
+                context_lines.append("\n[유지관리 점검 일정]\n- 예정된 점검 일정이 없습니다.")
+
+        # (3) 셋업(INTENT_SETUP) 조회
+        if intent_setup:
+            setup_query = SetupDetail.query
+            if matched_site:
+                setup_query = setup_query.filter(SetupDetail.equip_id.like(f"{matched_site}::%"))
+            
+            if "미완료" in user_message or "대기" in user_message or "진행" in user_message:
+                setup_query = setup_query.filter_by(completed=False)
+            elif "완료" in user_message:
+                setup_query = setup_query.filter_by(completed=True)
+                
+            setup_details = setup_query.order_by(SetupDetail.date).limit(limit_num).all()
+            if setup_details:
+                context_lines.append(f"\n[셋업 일정 및 상태 (최대 {limit_num}건)]")
+                for sd in setup_details:
+                    status_str = "완료" if sd.completed else "진행중"
+                    context_lines.append(f"- 장비ID: {sd.equip_id}, 카테고리: {sd.category}, 작업내용: {sd.content}, 목표일: {sd.date}, 상태: {status_str}")
+            else:
+                context_lines.append("\n[셋업 일정]\n- 등록된 셋업 일정이 없습니다.")
+
+        # (4) 기본: 키워드가 없거나 단순 장비 목록 조회인 경우
+        if not intent_trouble and not intent_schedule and not intent_setup:
+            # [개선] 특정 장비 지목 없이 사업장 단위의 분석을 요청한 경우, 사업장의 복합 이력을 추출해 컨텍스트 질을 비약적으로 상승시킵니다.
+            if matched_site:
+                context_lines.append(f"\n[{matched_site} 사업장 종합 현황 및 이력 분석 데이터]")
+                
+                # 1) 소속 장비 최근 장애/트러블 이력
+                site_troubles = TroubleLog.query.filter(TroubleLog.equip_id.like(f"{matched_site}::%")).order_by(TroubleLog.occur_date.desc()).limit(5).all()
+                if site_troubles:
+                    context_lines.append(f"  * 최근 발생 장애 내역:")
+                    for st in site_troubles:
+                        context_lines.append(f"    - [{st.occur_date}] {st.equip_id.split('::')[-1]} (상태: {st.status}, 조치일: {st.action_date or '미조치'}): {st.content}")
+                        if st.memo:
+                            context_lines.append(f"      조치 세부내역: {st.memo}")
+                else:
+                    context_lines.append(f"  * 최근 발생한 장애 내역이 없습니다.")
+
+                # 2) 소속 장비 최근 점검 이력
+                site_completed_logs = LogItem.query.filter(LogItem.equip_id.like(f"{matched_site}::%")).order_by(LogItem.date.desc()).limit(5).all()
+                if site_completed_logs:
+                    context_lines.append(f"  * 최근 점검 수행 내역:")
+                    for scl in site_completed_logs:
+                        context_lines.append(f"    - [{scl.date}] {scl.equip_id.split('::')[-1]}: {scl.content} (담당: {scl.worker})")
+
+                # 3) 소속 장비 다가오는 점검 예정 일정
+                site_upcoming_maint = MaintItem.query.filter(MaintItem.equip_id.like(f"{matched_site}::%")).order_by(MaintItem.scheduled_date).limit(5).all()
+                if site_upcoming_maint:
+                    context_lines.append(f"  * 예정된 점검 일정:")
+                    for sumi in site_upcoming_maint:
+                        context_lines.append(f"    - [{sumi.scheduled_date}] {sumi.equip_id.split('::')[-1]} ({sumi.type}): {sumi.detail_type} (담당: {sumi.worker})")
+
+            context_lines.append("\n[등록 장비 현황]")
+            for eq in all_equips[:15]:
+                si = SetupInfo.query.filter_by(equip_id=eq.id).first()
+                cust_name = si.cust_equip_name if si else "N/A"
+                status = si.equip_status if si else "N/A"
+                model = si.model if si else "N/A"
+                context_lines.append(f"- 장비명: {eq.name}, 일련번호: {eq.serial}, 모델: {model}, 사업장: {eq.site_name}, 고객 장비명: {cust_name}, 상태: {status}")
+            if len(all_equips) > 15:
+                context_lines.append(f"  (외 {len(all_equips) - 15}대의 장비가 더 존재합니다. 특정 장비명이나 시리얼로 정확하게 검색하실 수 있습니다.)")
+
+    return "\n".join(context_lines)
+
+def call_external_chat_api(prompt, system_instruction):
+    """환경변수에 설정된 AI API를 호출하여 결과를 가져옵니다."""
+    api_type = os.environ.get('CHAT_API_TYPE', 'openai').lower()
+    api_key = os.environ.get('CHAT_API_KEY', '')
+    
+    if not api_key:
+        return "AI API 인증 키(CHAT_API_KEY)가 설정되지 않았습니다. 서버 환경설정을 확인해주세요."
+
+    try:
+        if api_type == 'gemini':
+            model = os.environ.get('CHAT_API_MODEL', 'gemini-2.5-flash')
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+            
+            headers = {"Content-Type": "application/json"}
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": f"{system_instruction}\n\n[참고 데이터]\n{prompt}"}
+                        ]
+                    }
+                ]
+            }
+        else:
+            model = os.environ.get('CHAT_API_MODEL', 'gpt-4o-mini')
+            url = os.environ.get('CHAT_API_URL', 'https://api.openai.com/v1/chat/completions')
+            
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}"
+            }
+            payload = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": system_instruction},
+                    {"role": "user", "content": prompt}
+                ]
+            }
+
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode('utf-8'),
+            headers=headers,
+            method='POST'
+        )
+
+        with urllib.request.urlopen(req, timeout=30) as response:
+            res_data = json.loads(response.read().decode('utf-8'))
+            
+            if api_type == 'gemini':
+                reply = res_data['candidates'][0]['content']['parts'][0]['text']
+            else:
+                reply = res_data['choices'][0]['message']['content']
+                
+            return reply.strip()
+
+    except urllib.error.HTTPError as e:
+        error_msg = e.read().decode('utf-8')
+        app.logger.error(f"AI API HTTP Error: {e.code} - {error_msg}")
+        if e.code == 429:
+            return "현재 구글 AI Studio 무료 API Key의 일일/분당 호출 횟수 제한(Quota Exceeded)을 초과했습니다. 잠시 후(약 30초~1분 뒤) 다시 질문해 주시거나, 결제 카드가 등록된 API Key로 업그레이드해 주세요."
+        return f"AI API 호출 오류가 발생했습니다. (코드: {e.code})"
+    except Exception as e:
+        app.logger.error(f"AI API Connection Error: {str(e)}")
+        return "AI API 서버 연결에 실패했습니다. 네트워크 상태 또는 환경변수를 확인해주세요."
+
+@app.route('/api/chat', methods=['POST'])
+@login_required
+@limiter.limit("20 per minute")
+def ai_chatbot():
+    try:
+        data = request.json or {}
+        user_message = data.get('message', '').strip()
+        if not user_message:
+            return jsonify({"status": "fail", "message": "질문 내용이 비어있습니다."}), 400
+
+        # 보안 보완 1: 입력 데이터 길이 제한 (500자)
+        if len(user_message) > 500:
+            return jsonify({"status": "fail", "message": "질문 길이는 최대 500자 이하로 제한됩니다."}), 400
+
+        # 보안 보완 2: 프롬프트 인젝션 키워드 차단 및 반복 시 IP 차단(밴) 실행
+        injection_keywords = ["ignore instruction", "규칙 무시", "system prompt", "지침 무시", "마스킹 해제", "masking table"]
+        if any(keyword in user_message.lower() for keyword in injection_keywords):
+            ip = get_remote_address()
+            now = datetime.now(timezone.utc)
+            
+            if ip not in IP_ABUSE_COUNTER:
+                IP_ABUSE_COUNTER[ip] = {"count": 1, "last_attempt": now}
+            else:
+                attempt_info = IP_ABUSE_COUNTER[ip]
+                if (now - attempt_info["last_attempt"]).total_seconds() < 3600:
+                    attempt_info["count"] += 1
+                else:
+                    attempt_info["count"] = 1
+                attempt_info["last_attempt"] = now
+            
+            current_abuse_count = IP_ABUSE_COUNTER[ip]["count"]
+            app.logger.warning(f"AI Prompt Injection attempt detected from IP: {ip}, User: {session.get('user_id')} (Abuse Count: {current_abuse_count}/3)")
+
+            if current_abuse_count >= 3:
+                ban_until = now + timedelta(hours=24)
+                IP_BLACKLIST[ip] = ban_until
+                session.clear()
+                app.logger.error(f"IP {ip} has been BANNED for 24 hours due to repeated prompt injection.")
+                return jsonify({"status": "fail", "message": "보안 정책 반복 위반으로 인해 해당 IP 및 계정 접속이 24시간 동안 차단됩니다."}), 403
+
+            return jsonify({"status": "fail", "message": "보안 위협이 감지되어 요청이 차단되었습니다."}), 400
+
+        # 보안 보완 3: 세션 쿨다운 타이머 체크 (1.5초 연속 호출 차단)
+        now = datetime.now(timezone.utc)
+        last_time_str = session.get('last_chat_time')
+        if last_time_str:
+            try:
+                last_time = datetime.fromisoformat(last_time_str)
+                if (now - last_time).total_seconds() < 1.5:
+                    return jsonify({"status": "fail", "message": "요청이 너무 빠릅니다. 잠시 후 다시 전송해주세요."}), 429
+            except Exception:
+                pass
+        session['last_chat_time'] = now.isoformat()
+
+        # 정당한 가입 유저 활성화 여부 확인
+        user = User.query.filter_by(id=session.get('user_id')).first()
+        if not user:
+            return jsonify({"status": "fail", "message": "세션 정보가 유효하지 않습니다."}), 401
+
+        # 계정 잠금 여부 재차 체크
+        if user.lockout_until and user.lockout_until > datetime.now():
+            return jsonify({"status": "fail", "message": "해당 계정은 현재 잠금 상태입니다."}), 403
+
+        # 1. RAG 기반 DB 컨텍스트 수집
+        db_context = build_rag_context(user, user_message)
+
+        # 2. 비식별화(마스킹) 처리
+        mapping_table = {}
+        all_sites = [s.name for s in Site.query.all()]
+        
+        masked_user_message = security_manager.mask_data(user_message, mapping_table, all_sites)
+        masked_db_context = security_manager.mask_data(db_context, mapping_table, all_sites)
+
+        # 보안 보완 4: AI 대화 요청에 대한 마스킹 처리된 감사 로그 기록
+        try:
+            audit_log = SystemLog(
+                action='AI_CHAT',
+                target=user.id,
+                details=f"AI 질의 수행 (마스킹된 내용: {masked_user_message})",
+                worker=user.name or user.id
+            )
+            db.session.add(audit_log)
+            db.session.commit()
+        except Exception as log_err:
+            db.session.rollback()
+            app.logger.error(f"Failed to write AI chat audit log: {str(log_err)}")
+
+        # 3. 프롬프트 및 지침 작성 (트러블슈팅 분석 및 통계 가이드 전문 정체성 부여)
+        system_instruction = (
+            "너는 위드텍(WITHTECH) 사내 장비 점검/유지보수 데이터 및 장애(Trouble) 로그 분석 전문 수석 엔지니어 AI 비서이다.\n"
+            "너가 제공받는 컨텍스트 데이터(Context) 및 사용자 질문은 보안 유출 방지를 위해 마스킹 처리되어 전달된다.\n"
+            "답변을 작성할 때 [MASK_SITE_*], [MASK_SERIAL_*], [MASK_NAME_*], [MASK_PHONE_*], [MASK_EMAIL_*] 등의 "
+            "마스킹 토큰은 실제 기밀 데이터가 치환된 중요한 보안 키이므로 절대 임의로 복원하거나 변경(예: 이름 추측 등)하지 말고, "
+            "대답 문장 내에서 그 형태 그대로(예: '[MASK_SERIAL_1]') 포함하여 문맥에 맞춰 안전하게 답변해야 한다.\n"
+            "답변 구성 시 사용자의 '질문 의도'에 맞춰 유연하게 대처해라:\n"
+            "  - [상황 A] 사용자가 고장, 에러, 트러블 분석, 유지보수 대응 방안 등을 물어볼 때:\n"
+            "    제공된 [참고 컨텍스트]를 분석하여 (1) 관련 장애 현황 통계, (2) 과거 유사 조치 이력 분석, (3) 1차 초기 대응 방안(SOP) 및 권장 점검 주기를 개조식 포맷(1., 2., 3.)으로 전문적이게 답해라.\n"
+            "  - [상황 B] 사용자가 단순히 수량(몇 대인가, 몇 건인가), 일정 날짜 확인, 단순 인사 등 단발성 정보를 물어볼 때:\n"
+            "    불필요한 대응 방안이나 조치 SOP를 억지로 지어내지 말고, 질문한 핵심 정답 수치와 날짜 정보만 명료하고 간결하게(1~2줄 내외) 한두 문장으로 신속하게 대답해라.\n"
+            "만약 사용자가 장비, 점검 일정, 장애 이력 등 '사내 데이터'에 관해 질문했는데 제공된 [참고 컨텍스트]에 관련 정보가 전혀 없는 경우라면 억지로 거짓말을 꾸며내지 말고 정중하게 모른다고 대답해라.\n"
+            "단순 인사, 자아정체성(너는 누구니 등), 일반 상식 대화는 [참고 컨텍스트]에 정보가 없더라도 AI가 가진 일반 지식을 바탕으로 자연스럽고 친절하게 응답해주어라.\n"
+            "친절하고 정중한 높임말로 답변해라.\n"
+            "**[중요 주의사항]**: 제공받는 컨텍스트 중 완료된 점검 및 유지보수 작업 일지 건수(Maint Logs)와 조치 완료된 트러블 건수는 현재 장애가 지속되고 있는 '오류 발생 건수'가 아니라 엔지니어들이 성공적으로 점검과 장애 해결을 **완료(성공)한 정상 실적 건수**입니다. 이 건수(예: 30건)를 '시스템 오류 30건 발생' 또는 '30건의 결함 발생'으로 오인하여 오답을 내지 않도록 엄격히 주의하십시오."
+        )
+
+        full_prompt = (
+            f"[참고 컨텍스트]\n{masked_db_context if masked_db_context else '관련 데이터 없음'}\n\n"
+            f"[사용자 질문]\n{masked_user_message}"
+        )
+
+        # 4. 외부 API 호출
+        api_reply = call_external_chat_api(full_prompt, system_instruction)
+
+        # 5. 역마스킹 복원
+        demasked_reply = security_manager.demask_data(api_reply, mapping_table)
+
+        return jsonify({
+            "status": "success",
+            "reply": demasked_reply
+        })
+
+    except Exception as e:
+        # 보안 보완 5: 내부 시스템 예외 노출 전면 차단
+        app.logger.error(f"Unexpected error in ai_chatbot endpoint: {str(e)}")
+        return jsonify({"status": "fail", "message": "요청을 처리하는 중 서버 오류가 발생했습니다. 관리자에게 문의하세요."}), 500
 
 # [추가] 비밀번호 확인 API (수정 전 인증용)
 @app.route('/api/user/verify', methods=['POST'])
@@ -1375,8 +2203,6 @@ def trouble_crud():
             elif source == 'log':
                 log_item = LogItem.query.filter_by(id=str(payload.get('id'))).first()
                 if log_item:
-                    if 'maint_memo' in payload:
-                        log_item.memo = payload.get('maint_memo')
                     if 'action_date' in payload: log_item.date = payload.get('action_date', log_item.date)
                     if 'occur_date' in payload: log_item.trouble_occur_date = payload.get('occur_date', '')
 
@@ -1393,8 +2219,6 @@ def trouble_crud():
             elif source == 'maint':
                 maint_item = MaintItem.query.filter_by(id=str(payload.get('id'))).first()
                 if maint_item:
-                    if 'maint_memo' in payload:
-                        maint_item.memo = payload.get('maint_memo')
                     if 'action_date' in payload: 
                         maint_item.date = payload.get('action_date', maint_item.date)
                         maint_item.scheduled_date = payload.get('action_date', maint_item.scheduled_date)
@@ -1423,6 +2247,105 @@ def trouble_crud():
         db.session.rollback()
         app.logger.error(f"Trouble CRUD Error ({action}): {str(e)}", exc_info=True)
         return jsonify({"status": "fail", "message": str(e)}), 500
+
+# [추가] DB 연결 상태 확인용 디버그 API (브라우저 확인용)
+@app.route('/api/debug/db-check', methods=['GET'])
+@csrf.exempt
+def db_connection_check():
+    try:
+        from sqlalchemy import text
+        db.session.execute(text('SELECT 1'))
+        equip_count = Equipment.query.count()
+        user_count = User.query.count()
+        return jsonify({
+            "status": "success",
+            "message": "데이터베이스 연결 상태가 양호합니다.",
+            "db_type": os.environ.get('DB_TYPE', 'sqlite'),
+            "stats": {
+                "total_equipments": equip_count,
+                "total_users": user_count
+            }
+        }), 200
+    except Exception as e:
+        app.logger.error(f"DB Connection Check Failed: {str(e)}")
+        return jsonify({
+            "status": "fail",
+            "message": "데이터베이스 연결에 실패했습니다.",
+            "error_detail": str(e)
+        }), 500
+
+# [추가] 프론트엔드 작업 보안 감사 로그 API (CSV 내보내기 등)
+@app.route('/api/log/action', methods=['POST'])
+@login_required
+def audit_log_action():
+    data = request.json or {}
+    action_val = data.get('action')
+    details_val = data.get('details', '')
+    target_val = data.get('target', '')
+    
+    if not action_val:
+        return jsonify({"status": "fail", "message": "작업 유형(action)이 누락되었습니다."}), 400
+        
+    user = User.query.filter_by(id=session.get('user_id')).first()
+    worker_name = user.name if user and user.name else session.get('user_id')
+    
+    try:
+        audit_log = SystemLog(
+            action=action_val,
+            target=target_val,
+            details=details_val,
+            worker=worker_name
+        )
+        db.session.add(audit_log)
+        db.session.commit()
+        return jsonify({"status": "success"}), 200
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Audit log writing failed: {str(e)}")
+        return jsonify({"status": "fail", "message": "로그 기록 실패"}), 500
+
+# [추가] 특정 작업에 대한 연관 추가 작업 조회 API
+@app.route('/api/maintenance/additional-works', methods=['GET'])
+@login_required
+def get_additional_works():
+    parent_id = request.args.get('parent_id')
+    if not parent_id:
+        return jsonify({"status": "fail", "message": "부모 작업 ID(parent_id)가 누락되었습니다."}), 400
+        
+    try:
+        additional_maint = MaintItem.query.filter_by(original_log_id=str(parent_id)).all()
+        additional_logs = LogItem.query.filter_by(original_log_id=str(parent_id)).all()
+        
+        result = []
+        for m in additional_maint:
+            result.append({
+                "id": m.id,
+                "date": m.scheduled_date or m.date,
+                "type": m.type,
+                "detail_type": m.detail_type,
+                "content": m.content,
+                "worker": m.worker,
+                "status": "예정",
+                "memo": m.memo or ""
+            })
+            
+        for l in additional_logs:
+            result.append({
+                "id": l.id,
+                "date": l.date,
+                "type": l.type,
+                "detail_type": l.detail_type,
+                "content": l.content,
+                "worker": l.worker,
+                "status": "완료",
+                "memo": l.memo or ""
+            })
+            
+        result.sort(key=lambda x: x['date'], reverse=True)
+        return jsonify({"status": "success", "data": result}), 200
+    except Exception as e:
+        app.logger.error(f"Failed to query additional works: {str(e)}")
+        return jsonify({"status": "fail", "message": "추가 작업 조회 중 오류 발생"}), 500
 
 # ------------------------------------------------------------------------------
 # 8. 앱 초기화 및 실행 (Initialization & Main Execution)

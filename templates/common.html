@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common.css') }}">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_modals.css') }}">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_setup.css') }}">
+    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/chatbot.css') }}">
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Noto+Sans+KR:wght@100;300;500;700&display=swap"
         rel="stylesheet">
@@ -720,7 +721,7 @@
                 </div>
                 <div class="detail-row"><label class="detail-label">점검 결과 / 메모</label><textarea id="detail-work-memo"
                         placeholder="작업 내용을 입력하세요" spellcheck="false"></textarea></div>
-                <div class="modal-btn-group"><button class="btn-gray" id="btn-close-detail-footer">닫기</button><button
+                <div class="modal-btn-group"><button class="btn-blue" id="btn-show-additional-works" style="display: none; background-color: #1f6feb; border: 1px solid #388bfd; color: #ffffff; padding: 6px 12px; font-size: 13px; border-radius: 4px; cursor: pointer;">추가작업 확인</button><button class="btn-gray" id="btn-close-detail-footer">닫기</button><button
                         class="btn-del" id="btn-cancel-completion">작업완료 취소</button><button class="btn-green"
                         id="btn-complete-work">작업
                         완료</button></div>
@@ -1326,8 +1327,58 @@
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/chatbot.js') }}"></script>
     <!-- 페이지별 추가 스크립트 -->
     {% block extra_js %}{% endblock %}
+
+    <!-- 4. AI 챗봇 플로팅 위젯 -->
+    <div id="ai-chatbot-container" style="display: none;">
+        <!-- 챗봇 열기 버튼 -->
+        <button id="chatbot-toggle-btn" class="chatbot-toggle-btn" title="AI 비서와 대화">
+            💬
+        </button>
+
+        <!-- 챗봇 대화창 -->
+        <div id="chatbot-window" class="chatbot-window">
+            <div class="chatbot-header">
+                <div class="chatbot-header-title">
+                    <span class="chatbot-status-indicator"></span>
+                    <h4>WITHTECH AI 비서</h4>
+                </div>
+                <button id="chatbot-close-btn" class="chatbot-close-btn">✕</button>
+            </div>
+            <div id="chatbot-messages" class="chatbot-messages">
+                <div class="chatbot-msg-row chatbot-msg-ai">
+                    <div class="chatbot-msg-bubble">
+                        안녕하세요! 위드텍 설비 관리 지원 AI 비서입니다. 무엇을 도와드릴까요?
+                    </div>
+                </div>
+            </div>
+            <div class="chatbot-input-area">
+                <input type="text" id="chatbot-input-field" class="chatbot-input-field" placeholder="질문을 입력하세요..." autocomplete="off">
+                <button id="chatbot-send-btn" class="chatbot-send-btn">전송</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- [추가] 연관 추가 작업 내역 모달 -->
+    <div id="additional-works-modal" class="modal-overlay" style="display: none; z-index: 2000;">
+        <div class="modal-window" style="max-width: 600px; width: 90%; background-color: #0d1117; border: 1px solid #30363d; border-radius: 8px;">
+            <div class="modal-header" style="border-bottom: 1px solid #30363d; padding: 12px 16px;">
+                <h3 style="color: #e6edf3; margin: 0; font-size: 16px;">연관 추가 작업 내역</h3>
+                <button class="btn-del-sm" onclick="document.getElementById('additional-works-modal').style.display='none';" style="background: transparent; border: none; color: #8b949e; cursor: pointer; font-size: 16px;">✕</button>
+            </div>
+            <div class="modal-body" style="padding: 16px; max-height: 450px; overflow-y: auto;">
+                <div id="additional-works-list-container" style="display: flex; flex-direction: column; gap: 10px;">
+                    <!-- 동적 카드 리스트 생성 영역 -->
+                </div>
+            </div>
+            <div class="modal-btn-group" style="border-top: 1px solid #30363d; padding: 12px 16px; display: flex; justify-content: flex-end;">
+                <button class="btn-gray" onclick="document.getElementById('additional-works-modal').style.display='none';" style="padding: 6px 12px; font-size: 13px;">닫기</button>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>

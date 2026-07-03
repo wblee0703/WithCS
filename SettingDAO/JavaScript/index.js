@@ -120,12 +120,14 @@ window.renderSharedStatusChart = function(options) {
     const listEl = document.getElementById(listId);
     const centerText = document.getElementById(centerTextId);
 
-    if (!chartEl || !listEl) return;
+    if (!listEl) return;
     listEl.innerHTML = '';
 
     if (totalCount === 0) {
-        chartEl.style.background = '';
-        if (centerText) centerText.innerHTML = `<div class="chart-center-label">${centerLabel}</div><div class="chart-center-value">0</div>`;
+        if (chartEl) {
+            chartEl.style.background = '';
+            if (centerText) centerText.innerHTML = `<div class="chart-center-label">${centerLabel}</div><div class="chart-center-value">0</div>`;
+        }
         listEl.innerHTML = `<li class="list-empty-msg">${emptyMsg || '데이터 없음'}</li>`;
         return;
     }
@@ -155,8 +157,10 @@ window.renderSharedStatusChart = function(options) {
         listEl.appendChild(li);
     });
 
-    chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
-    if (centerText) centerText.innerHTML = `<div class="chart-center-label">${centerLabel}</div><div class="chart-center-value">${centerValue}</div>`;
+    if (chartEl) {
+        chartEl.style.background = `conic-gradient(${gradientStr.slice(0, -2)})`;
+        if (centerText) centerText.innerHTML = `<div class="chart-center-label">${centerLabel}</div><div class="chart-center-value">${centerValue}</div>`;
+    }
 };
 
 /* ==========================================================================
@@ -1244,56 +1248,6 @@ function restructureHomeMaintenance() {
     const existingCard = document.getElementById('home-issue-card');
     if (existingCard && !maintLeftCharts.contains(existingCard)) {
         existingCard.remove();
-    }
-
-    const cards = maintLeftCharts.querySelectorAll('.status-group.card-like');
-    let siteCard = null;
-    let equipCard = null;
-
-    cards.forEach(card => {
-        const titleEl = card.querySelector('.status-group-title');
-        if (!titleEl) return;
-        const title = titleEl.textContent.trim();
-        if (title.includes('사업장 현황')) siteCard = card;
-        if (title.includes('장비 현황')) equipCard = card;
-    });
-
-    [siteCard, equipCard].forEach(card => {
-        if (card) {
-            const donut = card.querySelector('.donut-chart-wrapper');
-            if (donut) donut.style.display = 'none';
-        }
-    });
-
-    if (siteCard && equipCard) {
-        const title = siteCard.querySelector('.status-group-title');
-        if (title) title.textContent = '사업장 및 장비 현황';
-
-        const siteRow = siteCard.querySelector('.chart-row');
-        const equipRow = equipCard.querySelector('.chart-row');
-
-        if (siteRow && equipRow) {
-            siteRow.style.display = 'flex';
-            siteRow.style.flexDirection = 'row';
-            siteRow.style.gap = '15px';
-            siteRow.style.width = '100%';
-
-            const siteListFlex = siteRow.querySelector('.status-list-flex') || siteRow.querySelector('.status-list-container');
-            const equipListFlex = equipRow.querySelector('.status-list-flex') || equipRow.querySelector('.status-list-container');
-
-            if (siteListFlex) {
-                siteListFlex.style.flex = '1';
-                siteListFlex.style.minWidth = '0';
-            }
-            if (equipListFlex) {
-                equipListFlex.style.flex = '1';
-                equipListFlex.style.minWidth = '0';
-                siteRow.appendChild(equipListFlex);
-            }
-        }
-
-        equipCard.style.display = 'none';
-        equipCard.classList.remove('card-like');
     }
 
     const issueCard = document.createElement('div');

@@ -26,7 +26,8 @@ function setupEventDetailModal() {
     if (!modal) return;
 
     const closeModal = async () => {
-        if (currentDetailTarget && hasDetailUnsavedChanges()) {
+        // [수정] 이미 작업 완료된 건은 수정을 유도하지 않고 즉시 닫기 처리함 (사용자 피드백 반영)
+        if (currentDetailTarget && !currentDetailTarget.isCompleted && hasDetailUnsavedChanges()) {
             if (!confirm('저장되지 않은 변경사항이 있습니다. 저장하지 않고 닫으시겠습니까?')) {
                 return;
             }
@@ -646,6 +647,65 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         type: item.type || '정기',
         detailType: displayDetailType || ''
     };
+
+    // [추가] 연관된 추가 작업 건수 비동기 조회 및 버튼 제어
+    const additionalWorksBtn = document.getElementById('btn-show-additional-works');
+    if (additionalWorksBtn) {
+        additionalWorksBtn.style.display = 'none'; // 기본 숨김
+        if (id) {
+            fetch(`/api/maintenance/additional-works?parent_id=${encodeURIComponent(id)}`, {
+                headers: { 'X-CSRFToken': getCookie('csrf_token') }
+            })
+            .then(res => res.json())
+            .then(resData => {
+                if (resData.status === 'success' && resData.data && resData.data.length > 0) {
+                    additionalWorksBtn.style.display = 'inline-block';
+                    additionalWorksBtn.textContent = `추가작업 확인 (${resData.data.length})`;
+                    additionalWorksBtn.onclick = () => {
+                        openAdditionalWorksListModal(resData.data);
+                    };
+                }
+            })
+            .catch(err => console.error('Failed to load additional works:', err));
+        }
+    }
+
+    modal.style.display = 'flex';
+}
+
+// [추가] 연관 추가 작업 리스트 모달 렌더링 및 출력
+function openAdditionalWorksListModal(works) {
+    const modal = document.getElementById('additional-works-modal');
+    const container = document.getElementById('additional-works-list-container');
+    if (!modal || !container) return;
+
+    container.innerHTML = works.map(w => {
+        const badgeColor = w.status === '완료' ? '#2ea44f' : '#f0883e';
+        const rawContent = w.content || '';
+        let displayContent = rawContent;
+        if (typeof rawContent === 'string' && rawContent.startsWith('{')) {
+            try {
+                const parsed = JSON.parse(rawContent);
+                const arr = [];
+                if (parsed.situation) arr.push(`[상황] ${parsed.situation}`);
+                if (parsed.symptom) arr.push(`[증상] ${parsed.symptom}`);
+                if (parsed.cause) arr.push(`[원인] ${parsed.cause}`);
+                displayContent = arr.length > 0 ? arr.join(' / ') : rawContent;
+            } catch(e) {}
+        }
+        return `
+            <div class="additional-work-card" style="border: 1px solid #30363d; background-color: #161b22; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #c9d1d9;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; padding-bottom: 6px; margin-bottom: 4px;">
+                    <span style="font-weight: bold; color: #58a6ff;">${escapeHtml(w.date)}</span>
+                    <span style="background-color: ${badgeColor}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">${escapeHtml(w.status)}</span>
+                </div>
+                <div><strong>구분:</strong> [${escapeHtml(w.type)}] ${escapeHtml(w.detail_type)}</div>
+                <div><strong>내용:</strong> ${escapeHtml(displayContent || '-')}</div>
+                <div><strong>담당자:</strong> ${escapeHtml(w.worker || '-')}</div>
+                ${w.memo ? `<div style="border-top: 1px dashed #30363d; padding-top: 6px; margin-top: 4px; color: #8b949e; font-style: italic;">점검 결과 / 메모: ${escapeHtml(w.memo)}</div>` : ''}
+            </div>
+        `;
+    }).join('');
 
     modal.style.display = 'flex';
 }

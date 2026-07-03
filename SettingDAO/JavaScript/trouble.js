@@ -632,7 +632,13 @@ function bindTroubleContentAndImage(data, excludeMemo = false) {
     }
     
     if (data.source === 'log' || data.source === 'maint') {
-        if (situationEl) situationEl.value = data.memo || '';
+        if (situationEl) {
+            if (parsed && typeof parsed === 'object' && parsed.situation !== undefined) {
+                situationEl.value = parsed.situation || '';
+            } else {
+                situationEl.value = data.memo || '';
+            }
+        }
         if (memoInput && (!parsed || typeof parsed !== 'object' || !parsed.trouble_memo)) {
             memoInput.value = '';
         }

@@ -1,6 +1,18 @@
 /* ==========================================================================
    1. 초기화 (Initialization)
    ========================================================================== */
+// [추가] 프론트엔드 작업 보안 감사 로그 백엔드 전송 함수
+function logActionToServer(action, details, target = "") {
+    fetch('/api/log/action', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrf_token')
+        },
+        body: JSON.stringify({ action: action, details: details, target: target })
+    }).catch(err => console.error('Failed to log action to server:', err));
+}
+
 // [1.1] DOM 로드 시 초기화 및 외부 클릭 감지
 document.addEventListener('DOMContentLoaded', () => {
     if (window.isDataLoaded) {
@@ -2173,6 +2185,9 @@ function renderSortChart(results) {
                     a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
+
+                    // [보안 감사 로그] CSV 내보내기 활동 로그 기록
+                    logActionToServer('EXPORT_CSV', '정렬/통계 차트 데이터 CSV 내보내기 (' + titleName + ')');
                 };
             }
 
@@ -2282,6 +2297,9 @@ function exportSortResultsToCSV(results) {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    // [보안 감사 로그] CSV 내보내기 활동 로그 기록
+    logActionToServer('EXPORT_CSV', '정렬/통계 작업조회결과 CSV 다운로드');
 }
 
 // [6.2] 보안: XSS 공격 방지용 HTML 텍스트 이스케이프 헬퍼

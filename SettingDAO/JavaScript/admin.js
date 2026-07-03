@@ -2,6 +2,18 @@
    1. 전역 변수 및 유틸리티 (Globals & Utilities)
    ========================================================================== */
 let currentAdminSite = null; // 현재 선택된 사업장
+
+// [추가] 프론트엔드 작업 보안 감사 로그 백엔드 전송 함수
+function logActionToServer(action, details, target = "") {
+    fetch('/api/log/action', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrf_token')
+        },
+        body: JSON.stringify({ action: action, details: details, target: target })
+    }).catch(err => console.error('Failed to log action to server:', err));
+}
 let currentBuildingList = []; // 현재 편집 중인 건물 목록
 let currentAdminEquipKey = null; // 장비 관리에서 선택된 장비 키 (Name::Serial)
 let equipmentModels = []; // 장비 모델 목록
@@ -366,6 +378,9 @@ function exportSitesToCsv() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    // [보안 감사 로그] CSV 내보내기 활동 로그 기록
+    logActionToServer('EXPORT_CSV', '사업장 목록 CSV 내보내기');
 }
 
 function renderAdminSiteList() {
@@ -711,6 +726,9 @@ function exportEquipmentModelsToCsv() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    // [보안 감사 로그] CSV 내보내기 활동 로그 기록
+    logActionToServer('EXPORT_CSV', '장비 모델 목록 CSV 내보내기');
 }
 
 function loadEquipmentModels() {
@@ -1205,6 +1223,9 @@ function exportEquipCsv() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    // [보안 감사 로그] CSV 내보내기 활동 로그 기록
+    logActionToServer('EXPORT_CSV', '전체 장비 데이터 CSV 내보내기');
 }
 
 // [추가] CSV 기반 장비 일괄 등록 로직
@@ -2166,6 +2187,9 @@ function exportItemCsv() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    // [보안 감사 로그] CSV 내보내기 활동 로그 기록
+    logActionToServer('EXPORT_CSV', '물품 데이터 CSV 내보내기');
 }
 
 // [추가] 물품 CSV 일괄 등록 (불러오기) 로직
