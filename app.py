@@ -770,6 +770,29 @@ class AIChatSecurityManager:
 
 security_manager = AIChatSecurityManager()
 
+def parse_trouble_content(content_str):
+    """
+    TroubleLog.content의 JSON 데이터를 친근한 자연어로 파싱 및 복원합니다.
+    """
+    if not content_str:
+        return ""
+    content_str = content_str.strip()
+    if content_str.startswith('{') and content_str.endswith('}'):
+        try:
+            parsed = json.loads(content_str)
+            parts = []
+            if parsed.get('situation'): parts.append(f"[상황/현상] {parsed['situation']}")
+            if parsed.get('symptom'): parts.append(f"[증상] {parsed['symptom']}")
+            if parsed.get('cause'): parts.append(f"[원인] {parsed['cause']}")
+            if parsed.get('action'): parts.append(f"[조치사항] {parsed['action']}")
+            if parsed.get('prevention'): parts.append(f"[재발방지대책] {parsed['prevention']}")
+            if parsed.get('trouble_memo'): parts.append(f"[추가메모] {parsed['trouble_memo']}")
+            if parts:
+                return " | ".join(parts)
+        except Exception:
+            pass
+    return content_str
+
 def build_rag_context(user, user_message):
     """
     유저의 세션 권한 및 메시지 키워드를 정밀 분석하여
@@ -836,10 +859,9 @@ def build_rag_context(user, user_message):
             break
 
     # (3) 장비(Equipment) 매칭 (시리얼, 장비명, 고객사 장비명)
-    equip_query = Equipment.query
-    if matched_site:
-        equip_query = equip_query.filter_by(site_name=matched_site)
-    all_equips = equip_query.all()
+    # [개선] 가상 장비인 "기타(ETC)" 장비는 챗봇 매칭 및 통계에서 제외합니다.
+    # [개선] 특정 장비 조회 시 사용자 소속 사업장 필터에 막혀 매칭이 누락되는 현상을 방지하기 위해 전체 장비 목록에서 매칭을 수행합니다.
+    all_equips = Equipment.query.filter(Equipment.name != "기타(ETC)").all()
 
     # N+1 쿼리 최적화를 위해 SetupInfo 사전 일괄 로드
     setup_infos_map = { si.equip_id: si for si in SetupInfo.query.all() }
@@ -872,6 +894,11 @@ def build_rag_context(user, user_message):
         if serial_match or name_match or cust_name_match:
             matched_equips.append(eq)
 
+    # [개선] 만약 장비가 매칭되었다면, 해당 장비가 소속된 사업장명을 기준으로 matched_site를 갱신해 줍니다.
+    # 이를 통해 유저의 기본 소속 사업장 필터링에 가로막혀 쿼리 컨텍스트가 오인되는 문제를 이중으로 정정합니다.
+    if matched_equips:
+        matched_site = matched_equips[0].site_name
+
     # (4) 장비 모델명(Model) 매칭
     matched_model = None
     system_models = []
@@ -901,12 +928,12 @@ def build_rag_context(user, user_message):
                 break
 
     # (5) 정렬 및 개수(Limit) 조건 파싱
-    limit_num = 10  # 기본값
+    limit_num = 3  # 기본값 하향 조정 (토큰 절감)
     limit_match = re.search(r'(?:최근|최신|마지막)\s*(\d+)\s*(?:개|건|명|대|가지|번)', user_message)
     if limit_match:
-        limit_num = min(int(limit_match.group(1)), 30)
+        limit_num = min(int(limit_match.group(1)), 15)  # 상한선 15개로 조절 (기존 30)
     elif "최근" in user_message or "최신" in user_message or "마지막" in user_message:
-        limit_num = 5
+        limit_num = 3  # 최근 검색 기본 건수 하향 (기존 5)
 
     is_recent_requested = any(k in user_message for k in ["최근", "최신", "마지막", "과거", "이력", "최근에"])
 
@@ -1069,41 +1096,40 @@ def build_rag_context(user, user_message):
                 loc = f"{si.building} {si.floor} {si.detail_loc}".strip() if si else "N/A"
                 manager = si.manager if si else "N/A"
                 model = si.model if si else "N/A"
-                contact = si.contact if si else "N/A"
-                email = si.email if si else "N/A"
-                cust_manager = si.cust_manager if si else "N/A"
-                cust_contact = si.cust_contact if si else "N/A"
                 
-                context_lines.append(f"■ 장비 식별 정보:")
-                context_lines.append(f"  - 장비명: {eq.name}, 일련번호 (시리얼): {eq.serial}, 모델: {model}")
-                context_lines.append(f"  - 사업장: {eq.site_name}, 고객 장비명: {cust_name}, 가동 상태: {status}")
-                context_lines.append(f"  - 설치 위치: {loc}")
-                context_lines.append(f"  - 담당 관리자: {manager} (연락처: {contact}, 이메일: {email})")
-                context_lines.append(f"  - 고객사 담당자: {cust_manager} (연락처: {cust_contact})")
+                context_lines.append(f"■ 장비: {eq.name} ({eq.serial}) | 모델: {model} | 사업장: {eq.site_name} | 고객장비명: {cust_name} | 상태: {status} | 위치: {loc} | 담당: {manager}")
                 
-                m_items = MaintItem.query.filter_by(equip_id=eq.id).order_by(MaintItem.scheduled_date).limit(5).all()
+                m_items = MaintItem.query.filter_by(equip_id=eq.id).order_by(MaintItem.scheduled_date).limit(3).all()
                 if m_items:
                     context_lines.append(f"  - 예정된 점검 일정:")
                     for mi in m_items:
-                        context_lines.append(f"    * 예정일: {mi.scheduled_date}, 구분: {mi.type}, 작업내용: {mi.detail_type}, 담당: {mi.worker}")
+                        context_lines.append(f"    * [{mi.scheduled_date}] 구분: {mi.type} | 작업: {mi.detail_type} ({mi.worker})")
                 
-                s_details = SetupDetail.query.filter_by(equip_id=eq.id, completed=False).all()
+                s_details = SetupDetail.query.filter_by(equip_id=eq.id, completed=False).limit(3).all()
                 if s_details:
                     context_lines.append(f"  - 미완료 셋업 과제:")
                     for sd in s_details:
-                        context_lines.append(f"    * 구분: {sd.category}, 내용: {sd.content}, 목표일: {sd.date}")
+                        context_lines.append(f"    * 구분: {sd.category} | 내용: {sd.content} | 목표일: {sd.date}")
                 
-                t_logs = TroubleLog.query.filter_by(equip_id=eq.id)
-                if is_recent_requested:
-                    t_logs = t_logs.order_by(TroubleLog.occur_date.desc())
-                t_logs = t_logs.limit(limit_num).all()
-                
+                # 장애 분석 시에는 항상 최신 발생순으로 정렬하여 수집합니다.
+                t_logs = TroubleLog.query.filter_by(equip_id=eq.id).order_by(TroubleLog.occur_date.desc()).limit(limit_num).all()
                 if t_logs:
                     context_lines.append(f"  - 최근 장애/트러블 및 조치 이력 (최대 {limit_num}건):")
                     for tl in t_logs:
-                        context_lines.append(f"    * 발생일: {tl.occur_date}, 조치일: {tl.action_date or '미조치'}, 상태: {tl.status}, 담당: {tl.worker}")
-                        context_lines.append(f"      현상: {tl.content}")
-                        context_lines.append(f"      조치/메모: {tl.memo if tl.memo else '기록 없음'}")
+                        context_lines.append(f"    * [{tl.occur_date}] 현상: {parse_trouble_content(tl.content)} | 조치: {tl.memo or '진행중'} ({tl.worker})")
+
+                # [추가] 과거 완료된 장비점검/유지보수 작업 실적 일지 (LogItem) 상세 수집
+                completed_logs = LogItem.query.filter_by(equip_id=eq.id).order_by(LogItem.date.desc()).limit(limit_num).all()
+                if completed_logs:
+                    context_lines.append(f"  - 과거 점검 및 조치 완료 이력:")
+                    for cl in completed_logs:
+                        cl_trouble_info = parse_trouble_content(cl.trouble_details) if cl.trouble_details else ""
+                        log_detail = f"{cl.content}"
+                        if cl_trouble_info:
+                            log_detail += f" ({cl_trouble_info})"
+                        if cl.memo:
+                            log_detail += f" / 메모: {cl.memo}"
+                        context_lines.append(f"    * [{cl.date}] {log_detail} ({cl.worker})")
 
         # 2) 매칭된 장비가 5대를 초과하여 다량인 경우: 토큰 폭발 방지를 위해 사전 통계 분석 및 핵심 연관 조치사례(Top-5) 요약 제공
         else:
@@ -1156,7 +1182,7 @@ def build_rag_context(user, user_message):
                 for rt in top_troubles:
                     eq_serial = rt.equip_id.split('::')[-1]
                     context_lines.append(f"  * 발생일: {rt.occur_date} | 조치완료일: {rt.action_date or '미조치'} | 장비: {eq_serial} (담당: {rt.worker})")
-                    context_lines.append(f"    - 고장 현상: {rt.content}")
+                    context_lines.append(f"    - 고장 현상: {parse_trouble_content(rt.content)}")
                     context_lines.append(f"    - 해결 조치 내용: {rt.memo if rt.memo else '기록 없음'}")
             else:
                 context_lines.append(f"\n▶ [과거 유사 장애 해결 및 조치 성공 사례]\n  - 해당 장비 그룹의 조치 완료된 트러블 이력이 없습니다.")
@@ -1168,6 +1194,41 @@ def build_rag_context(user, user_message):
                 for um in upcoming_maint:
                     eq_serial = um.equip_id.split('::')[-1]
                     context_lines.append(f"  - [{um.scheduled_date}] {eq_serial} ({um.type}): {um.detail_type} (담당: {um.worker})")
+
+            # (C-2) 과거 점검 및 조치 완료 이력 요약 (최대 5건)
+            all_log_query = LogItem.query.filter(LogItem.equip_id.in_(eq_ids))
+            related_logs = []
+            if search_keywords:
+                for kw in search_keywords:
+                    # [개선] 과거 완료 이력 중 상황, 증상, 조치, 메모 텍스트까지 검색 범위를 확장하여 매칭률을 극대화합니다.
+                    kw_logs = all_log_query.filter(
+                        LogItem.content.like(f"%{kw}%") |
+                        LogItem.trouble_details.like(f"%{kw}%") |
+                        LogItem.memo.like(f"%{kw}%")
+                    ).all()
+                    related_logs.extend(kw_logs)
+                seen_l = set()
+                related_logs = [l for l in related_logs if not (l._unique_id in seen_l or seen_l.add(l._unique_id))]
+            
+            if len(related_logs) < 5:
+                extra_logs = all_log_query.order_by(LogItem.date.desc()).limit(5 - len(related_logs)).all()
+                for el in extra_logs:
+                    if el._unique_id not in [l._unique_id for l in related_logs]:
+                        related_logs.append(el)
+            
+            top_logs = related_logs[:5]
+            if top_logs:
+                context_lines.append(f"\n▶ [과거 점검 및 조치 완료 이력 요약 (최근 5건)]")
+                for rl in top_logs:
+                    eq_serial = rl.equip_id.split('::')[-1]
+                    rl_trouble_info = parse_trouble_content(rl.trouble_details) if rl.trouble_details else ""
+                    rl_memo_info = rl.memo if rl.memo else ""
+                    log_detail = f"점검내역: {rl.content}"
+                    if rl_trouble_info:
+                        log_detail += f" | 장애상세: {rl_trouble_info}"
+                    if rl_memo_info:
+                        log_detail += f" | 작업메모: {rl_memo_info}"
+                    context_lines.append(f"  - [{rl.date}] {eq_serial} 장비: {log_detail} (담당: {rl.worker})")
 
             # (D) 장비 목록 요약 (최대 10개만 대표 노출)
             context_lines.append(f"\n▶ [대상 장비 목록 요약 (상위 10대)]")
@@ -1183,7 +1244,8 @@ def build_rag_context(user, user_message):
     # 3-4. 장비 매칭은 없지만 모델 매칭이 된 경우
     elif matched_model:
         context_lines.append(f"\n[모델명 '{matched_model}' 관련 장비 목록]")
-        model_equips = Equipment.query.join(SetupInfo, Equipment.id == SetupInfo.equip_id).filter(SetupInfo.model == matched_model)
+        # [개선] 가상 장비인 "기타(ETC)" 장비는 챗봇 매칭 및 통계에서 제외합니다.
+        model_equips = Equipment.query.join(SetupInfo, Equipment.id == SetupInfo.equip_id).filter(SetupInfo.model == matched_model, Equipment.name != "기타(ETC)")
         if matched_site:
             model_equips = model_equips.filter(Equipment.site_name == matched_site)
         m_eqs = model_equips.all()
@@ -1216,7 +1278,7 @@ def build_rag_context(user, user_message):
             context_lines.append(f"  - 장애/트러블 조치 이력 (최대 {limit_num}건):")
             for tl in wt_list:
                 context_lines.append(f"    * 발생일: {tl.occur_date}, 조치일: {tl.action_date or '미조치'}, 상태: {tl.status}, 장비ID: {tl.equip_id}")
-                context_lines.append(f"      현상: {tl.content}")
+                context_lines.append(f"      현상: {parse_trouble_content(tl.content)}")
                 context_lines.append(f"      조치/메모: {tl.memo if tl.memo else '기록 없음'}")
 
     # 3-6. 일반 의도별 다중 쿼리 (장비/작업자 개별 지목이 없는 경우)
@@ -1237,7 +1299,7 @@ def build_rag_context(user, user_message):
                 context_lines.append(f"\n[최근 트러블 및 조치 이력 (최대 {limit_num}건)]")
                 for tl in t_logs:
                     context_lines.append(f"- 장비ID: {tl.equip_id}, 발생일: {tl.occur_date}, 조치일: {tl.action_date or '미조치'}, 상태: {tl.status}, 담당: {tl.worker}")
-                    context_lines.append(f"  현상: {tl.content}")
+                    context_lines.append(f"  현상: {parse_trouble_content(tl.content)}")
                     context_lines.append(f"  조치/경과: {tl.memo if tl.memo else '기록 없음'}")
             else:
                 context_lines.append("\n[최근 트러블 및 조치 이력]\n- 등록된 트러블 내역이 없습니다.")
@@ -1286,7 +1348,7 @@ def build_rag_context(user, user_message):
                 if site_troubles:
                     context_lines.append(f"  * 최근 발생 장애 내역:")
                     for st in site_troubles:
-                        context_lines.append(f"    - [{st.occur_date}] {st.equip_id.split('::')[-1]} (상태: {st.status}, 조치일: {st.action_date or '미조치'}): {st.content}")
+                        context_lines.append(f"    - [{st.occur_date}] {st.equip_id.split('::')[-1]} (상태: {st.status}, 조치일: {st.action_date or '미조치'}): {parse_trouble_content(st.content)}")
                         if st.memo:
                             context_lines.append(f"      조치 세부내역: {st.memo}")
                 else:
@@ -1297,7 +1359,14 @@ def build_rag_context(user, user_message):
                 if site_completed_logs:
                     context_lines.append(f"  * 최근 점검 수행 내역:")
                     for scl in site_completed_logs:
-                        context_lines.append(f"    - [{scl.date}] {scl.equip_id.split('::')[-1]}: {scl.content} (담당: {scl.worker})")
+                        scl_trouble_info = parse_trouble_content(scl.trouble_details) if scl.trouble_details else ""
+                        scl_memo_info = scl.memo if scl.memo else ""
+                        log_detail = f"점검내역: {scl.content}"
+                        if scl_trouble_info:
+                            log_detail += f" | 장애상세: {scl_trouble_info}"
+                        if scl_memo_info:
+                            log_detail += f" | 작업메모: {scl_memo_info}"
+                        context_lines.append(f"    - [{scl.date}] {scl.equip_id.split('::')[-1]}: {log_detail} (담당: {scl.worker})")
 
                 # 3) 소속 장비 다가오는 점검 예정 일정
                 site_upcoming_maint = MaintItem.query.filter(MaintItem.equip_id.like(f"{matched_site}::%")).order_by(MaintItem.scheduled_date).limit(5).all()
@@ -1484,8 +1553,16 @@ def ai_chatbot():
             "마스킹 토큰은 실제 기밀 데이터가 치환된 중요한 보안 키이므로 절대 임의로 복원하거나 변경(예: 이름 추측 등)하지 말고, "
             "대답 문장 내에서 그 형태 그대로(예: '[MASK_SERIAL_1]') 포함하여 문맥에 맞춰 안전하게 답변해야 한다.\n"
             "답변 구성 시 사용자의 '질문 의도'에 맞춰 유연하게 대처해라:\n"
-            "  - [상황 A] 사용자가 고장, 에러, 트러블 분석, 유지보수 대응 방안 등을 물어볼 때:\n"
-            "    제공된 [참고 컨텍스트]를 분석하여 (1) 관련 장애 현황 통계, (2) 과거 유사 조치 이력 분석, (3) 1차 초기 대응 방안(SOP) 및 권장 점검 주기를 개조식 포맷(1., 2., 3.)으로 전문적이게 답해라.\n"
+            "  - [상황 A] 사용자가 고장, 에러, 트러블 분석, 장비 문제 해결 등을 물어볼 때:\n"
+            "    제공된 [참고 컨텍스트]의 데이터를 분석하여 불필요하게 서술형으로 길게 나열하지 말고, 한눈에 핵심을 파악할 수 있도록 깔끔한 리포트 양식으로 개조식 요약하여 답변해라.\n"
+            "    반드시 다음의 3개 주요 섹션 구조를 유지하고 가독성 높은 마크다운 포맷(볼드, 글머리 기호 등)을 사용해라:\n"
+            "      1. **[요약] 과거 장애 이력 분석**:\n"
+            "         - 대상 장비 및 발생일자 명시\n"
+            "         - 현상/증상, 추정 원인, 수행 조치내용, 당시 재발방지대책을 간결한 항목별 글머리(bullet point)로 요약해라.\n"
+            "      2. **현장 엔지니어 권장 조치 가이드**:\n"
+            "         - 증상/원인별로 즉각 실행할 수 있는 물리 점검, 전원, SMPS, 소프트웨어(펌웨어) 등의 필수 조치 절차를 간략하게 요약해라.\n"
+            "      3. **향후 예방을 위한 SOP(점검 매뉴얼) 보완 방안**:\n"
+            "         - 구체적인 SOP 고도화 제안 및 예방 정비 주기(단축 및 점검 추가)에 대한 현실적인 보완책을 한두 문장씩 명료하게 기술해라.\n"
             "  - [상황 B] 사용자가 단순히 수량(몇 대인가, 몇 건인가), 일정 날짜 확인, 단순 인사 등 단발성 정보를 물어볼 때:\n"
             "    불필요한 대응 방안이나 조치 SOP를 억지로 지어내지 말고, 질문한 핵심 정답 수치와 날짜 정보만 명료하고 간결하게(1~2줄 내외) 한두 문장으로 신속하게 대답해라.\n"
             "만약 사용자가 장비, 점검 일정, 장애 이력 등 '사내 데이터'에 관해 질문했는데 제공된 [참고 컨텍스트]에 관련 정보가 전혀 없는 경우라면 억지로 거짓말을 꾸며내지 말고 정중하게 모른다고 대답해라.\n"

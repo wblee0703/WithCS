@@ -1912,6 +1912,7 @@ function setupItemMgmt() {
     loadAdminItems();
 
     const btnAdd = document.getElementById('btn-admin-add-item');
+    const partnoInput = document.getElementById('admin-item-partno-input');
     const codeInput = document.getElementById('admin-item-code-input');
     const partInput = document.getElementById('admin-item-part-input');
     const specInput = document.getElementById('admin-item-spec-input');
@@ -1942,6 +1943,7 @@ function setupItemMgmt() {
 
     if (btnAdd) {
         btnAdd.addEventListener('click', async () => {
+            const partno = partnoInput ? partnoInput.value.trim() : "";
             const code = codeInput ? codeInput.value.trim() : "";
             const part = partInput.value.trim();
             const spec = specInput.value.trim();
@@ -1950,7 +1952,7 @@ function setupItemMgmt() {
             if (!part) return alert('물품명을 입력해주세요.');
 
             const newItemId = Date.now();
-            const success = await syncAdminDB('item', 'CREATE', { id: newItemId, detailType: '', additional: '', partno: '', code: code, part: part, spec: spec, equip: '' });
+            const success = await syncAdminDB('item', 'CREATE', { id: newItemId, detailType: '', additional: '', partno: partno, code: code, part: part, spec: spec, equip: '' });
             if (!success) return alert('DB 등록 중 오류가 발생했습니다.');
 
             const newItem = {
@@ -1958,7 +1960,7 @@ function setupItemMgmt() {
                 type: "",
                 detailType: '',
                 additional: '',
-                partno: '',
+                partno: partno,
                 code: code,
                 part: part,
                 spec: spec,
@@ -1970,6 +1972,7 @@ function setupItemMgmt() {
             await saveAdminItems();
             addSystemLog('ADD_ITEM_ADMIN', part, `Spec: ${spec}`);
 
+            if (partnoInput) partnoInput.value = '';
             if (codeInput) codeInput.value = '';
             partInput.value = '';
             specInput.value = '';

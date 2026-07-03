@@ -5,6 +5,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const chatbotContainer = document.getElementById('ai-chatbot-container');
     const chatbotToggleBtn = document.getElementById('chatbot-toggle-btn');
+    const chatbotExpandBtn = document.getElementById('chatbot-expand-btn');
     const chatbotCloseBtn = document.getElementById('chatbot-close-btn');
     const chatbotWindow = document.getElementById('chatbot-window');
     const chatbotMessages = document.getElementById('chatbot-messages');
@@ -30,10 +31,52 @@ document.addEventListener('DOMContentLoaded', () => {
     checkLoginStatus();
     setInterval(checkLoginStatus, 3000);
 
+    // [추가] 챗봇 세션 대화 기록 복원 로직
+    function restoreChatbotSession() {
+        const historyStr = sessionStorage.getItem('chatbot_history');
+        if (historyStr) {
+            try {
+                const history = JSON.parse(historyStr);
+                history.forEach(msg => {
+                    appendMessage(msg.sender, msg.text, false);
+                });
+            } catch (e) {
+                console.error("Failed to parse chatbot history:", e);
+                sessionStorage.removeItem('chatbot_history');
+                insertDefaultWelcome();
+            }
+        } else {
+            insertDefaultWelcome();
+        }
+
+        // 창 열림 상태 복원
+        const isWindowActive = sessionStorage.getItem('chatbot_window_active') === 'true';
+        if (isWindowActive) {
+            chatbotWindow.classList.add('active');
+            setTimeout(() => {
+                scrollToBottom();
+                chatbotInputField.focus();
+            }, 100);
+        }
+
+        // 창 확대 상태 복원
+        const isWindowExpanded = sessionStorage.getItem('chatbot_window_expanded') === 'true';
+        if (isWindowExpanded) {
+            chatbotWindow.classList.add('expanded');
+            if (chatbotExpandBtn) chatbotExpandBtn.textContent = '⤣';
+        }
+    }
+
+    function insertDefaultWelcome() {
+        const welcome = "안녕하세요! 위드텍 설비 관리 지원 AI 비서입니다. 무엇을 도와드릴까요?";
+        appendMessage('ai', welcome, true);
+    }
+
     // 2. 모바일 브라우저 터치 호환 이벤트 바인딩 (pointerup 사용)
     const toggleEvent = (e) => {
         e.preventDefault();
         chatbotWindow.classList.toggle('active');
+        sessionStorage.setItem('chatbot_window_active', chatbotWindow.classList.contains('active'));
         if (chatbotWindow.classList.contains('active')) {
             chatbotInputField.focus();
             scrollToBottom();
@@ -41,29 +84,85 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     chatbotToggleBtn.addEventListener('pointerup', toggleEvent);
+    
+    if (chatbotExpandBtn) {
+        chatbotExpandBtn.addEventListener('pointerup', (e) => {
+            e.preventDefault();
+            chatbotWindow.classList.toggle('expanded');
+            const isExpanded = chatbotWindow.classList.contains('expanded');
+            sessionStorage.setItem('chatbot_window_expanded', isExpanded);
+            chatbotExpandBtn.textContent = isExpanded ? '⤣' : '⤢';
+            scrollToBottom(); // 크기 변동 시 스크롤 끝단 재갱신
+        });
+    }
+
     chatbotCloseBtn.addEventListener('pointerup', (e) => {
         e.preventDefault();
         chatbotWindow.classList.remove('active');
+        sessionStorage.setItem('chatbot_window_active', 'false');
     });
 
-    // 3. 메시지 추가 함수
-    function appendMessage(sender, text) {
+    // [추가] 챗봇 마크다운 문자열 초경량 HTML 파서
+    function parseMarkdown(text) {
+        let html = escapeHtml(text);
+
+        // 1. 볼드 처리 (**텍스트**)
+        html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+        // 2. 제목 헤더 처리 (###)
+        html = html.replace(/^###\s*(.*$)/gim, '<h3 class="chatbot-h3">$1</h3>');
+        html = html.replace(/^##\s*(.*$)/gim, '<h2 class="chatbot-h2">$1</h2>');
+        html = html.replace(/^#\s*(.*$)/gim, '<h1 class="chatbot-h1">$1</h1>');
+
+        // 3. 구분선 (---)
+        html = html.replace(/^---$/gim, '<hr class="chatbot-hr">');
+
+        // 4. 글머리 기호 리스트 (* 나 - ) -> 가독성용 커스텀 bullet point
+        html = html.replace(/^\*\s+(.*$)/gim, '<div class="chatbot-list-item">• $1</div>');
+        html = html.replace(/^-\s+(.*$)/gim, '<div class="chatbot-list-item">• $1</div>');
+
+        // 5. 줄바꿈 처리 (\n)
+        html = html.replace(/\n/g, '<br>');
+        
+        // 6. 연속된 br 정리
+        html = html.replace(/(<br>){3,}/g, '<br><br>');
+
+        return html;
+    }
+
+    // 3. 메시지 추가 함수 (saveHistory 플래그를 통한 sessionStorage 자동 관리)
+    function appendMessage(sender, text, saveHistory = true) {
         const msgRow = document.createElement('div');
         msgRow.className = `chatbot-msg-row chatbot-msg-${sender}`;
 
         const bubble = document.createElement('div');
         bubble.className = 'chatbot-msg-bubble';
         
-        // HTML 이스케이프 후 마스킹 토큰만 임의 강조 표시하기 위해 안전한 변환 수행
-        const safeText = escapeHtml(text);
+        // HTML 이스케이프 및 마크다운 파싱 수행
+        const rawParsedHtml = parseMarkdown(text);
         
         // [MASK_SITE_1] 등 마스킹 토큰을 굵고 주황색 점선 테두리가 있는 시각 요소로 렌더링
-        const renderedText = safeText.replace(/(\[MASK_[A-Z]+_\d+\])/g, '<span class="chatbot-mask-token">$1</span>');
+        const renderedText = rawParsedHtml.replace(/(\[MASK_[A-Z]+_\d+\])/g, '<span class="chatbot-mask-token">$1</span>');
         bubble.innerHTML = renderedText;
 
         msgRow.appendChild(bubble);
         chatbotMessages.appendChild(msgRow);
         scrollToBottom();
+
+        // 세션 스토리지에 대화 이력 저장
+        if (saveHistory) {
+            let history = [];
+            const historyStr = sessionStorage.getItem('chatbot_history');
+            if (historyStr) {
+                try {
+                    history = JSON.parse(historyStr);
+                } catch (e) {
+                    history = [];
+                }
+            }
+            history.push({ sender, text });
+            sessionStorage.setItem('chatbot_history', JSON.stringify(history));
+        }
     }
 
     // 4. 로딩 인디케이터 표시/제거 함수
@@ -183,4 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
             handleSend();
         }
     });
+
+    // 10. 초기화 시 세션 대화 기록 복원 호출
+    restoreChatbotSession();
 });

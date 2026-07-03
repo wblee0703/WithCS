@@ -95,6 +95,31 @@
     display: inline-block;
 }
 
+.chatbot-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.chatbot-expand-btn {
+    background: none;
+    border: none;
+    color: #8b949e;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.chatbot-expand-btn:hover {
+    color: #58a6ff;
+    transform: scale(1.15);
+}
+
 .chatbot-close-btn {
     background: none;
     border: none;
@@ -284,7 +309,7 @@
 /* ==========================================================================
    7. 모바일 레이아웃 최적화 (Mobile Browser Compatibility)
    ========================================================================== */
-@media screen and (max-width: 480px) {
+@media screen and (max-width: 768px) {
     .chatbot-toggle-btn {
         right: 16px;
         bottom: 16px;
@@ -296,10 +321,9 @@
     .chatbot-window {
         right: 0;
         bottom: 0;
-        width: 100%;
-        height: 100%;
-        /* 모바일 터치 브라우저의 주소창 및 가상 키보드 스케일 대응 */
-        height: 100dvh; 
+        top: 60px; /* 모바일 공통 상단 헤더 메뉴바 영역(60px)만큼 챗봇 창을 아래로 내려 겹침 현상 원천 제거 */
+        width: 100% !important;
+        height: calc(100dvh - 60px) !important; 
         border-radius: 0;
         border: none;
         transform: translateY(100%);
@@ -322,4 +346,53 @@
         padding: 12px 14px 24px 14px; /* 하단 둥근 노치 영역 여백 고려 */
         background: #161b22;
     }
+
+    .chatbot-expand-btn {
+        display: none !important;
+    }
+}
+
+/* 챗봇 크기 확대 토글 스타일 */
+.chatbot-window.expanded {
+    width: 760px;
+    height: 650px;
+    max-width: 90vw;
+    max-height: 85vh;
+}
+
+/* 7. 마크다운 스타일 커스텀 파싱 연동 */
+.chatbot-msg-bubble h3.chatbot-h3 {
+    font-size: 14px;
+    margin: 12px 0 6px 0;
+    color: #58a6ff;
+    font-weight: 700;
+    border-bottom: 1px solid rgba(48, 54, 61, 0.4);
+    padding-bottom: 3px;
+}
+.chatbot-msg-bubble h2.chatbot-h2 {
+    font-size: 15px;
+    margin: 14px 0 8px 0;
+    color: #58a6ff;
+    font-weight: 700;
+}
+.chatbot-msg-bubble h1.chatbot-h1 {
+    font-size: 16px;
+    margin: 16px 0 10px 0;
+    color: #e6edf3;
+    font-weight: 700;
+}
+.chatbot-msg-bubble hr.chatbot-hr {
+    border: 0;
+    height: 1px;
+    background: rgba(48, 54, 61, 0.6);
+    margin: 10px 0;
+}
+.chatbot-msg-bubble .chatbot-list-item {
+    padding-left: 8px;
+    margin: 4px 0;
+    line-height: 1.5;
+}
+.chatbot-msg-bubble strong {
+    color: #ff9e3b;
+    font-weight: 600;
 }
