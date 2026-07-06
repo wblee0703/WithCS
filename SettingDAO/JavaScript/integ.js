@@ -142,7 +142,7 @@ function updateIntegratedDashboard() {
 
                     if (isSetup) {
                         // [수정] '기타(ETC)' 장비는 셋업 현황 집계에서 제외
-                        if (equip !== '기타(ETC)') {
+                        if (!equip.startsWith('기타(ETC)')) {
                             setupCount++;
 
                             // 막대그래프용 데이터 (완료 포함)
@@ -257,7 +257,7 @@ function renderIntegEquipStats(data) {
     Object.keys(data).forEach(site => {
         if (data[site] && Array.isArray(data[site])) {
             // [수정] 기타(ETC)를 제외한 실제 유효 장비들만 필터링
-            const validEquips = data[site].filter(e => e !== '기타(ETC)');
+            const validEquips = data[site].filter(e => !e.startsWith('기타(ETC)'));
             
             if (validEquips.length > 0) {
                 actualSiteCount++;

@@ -58,9 +58,7 @@ function getScheduleForCalendar() {
                     const data = JSON.parse(localStorage.getItem(key));
                     if (!data) return;
 
-                    // [추가] 셋업 장비는 캘린더 및 운영 통계에서 제외
                     const equipStatus = (data.setup && data.setup.equipStatus) ? data.setup.equipStatus : '';
-                    if (equipStatus === '셋업 장비') return;
 
                     if (data.maint) {
                         data.maint.forEach(item => {

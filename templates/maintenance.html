@@ -170,16 +170,20 @@
                                     </div>
                                     <input type="hidden" id="memo-worker" value="">
                                 </div>
-                                <div class="memo-row-time" id="memo-time-inputs-wrapper">
-                                    <div class="memo-time-group">
-                                        <label for="memo-start-time">시작일시</label>
-                                        <input type="datetime-local" id="memo-start-time" class="input-dark memo-time-input" lang="en-GB">
+                                <div class="memo-row-time" id="memo-time-inputs-wrapper" style="display: flex; align-items: center; gap: 8px; width: 100%; flex-wrap: nowrap;">
+                                    <div class="memo-time-group" style="display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0;">
+                                        <label style="min-width: 45px; font-size: 13px; color: #8b949e; white-space: nowrap;">시작일시</label>
+                                        <input type="date" id="memo-start-date" class="input-dark" style="flex: 3; height: 30px; font-size: 13px; min-width: 80px;">
+                                        <select id="memo-start-hour" class="input-dark" style="flex: 2; height: 30px; font-size: 13px; padding: 2px; min-width: 45px;"></select>
+                                        <select id="memo-start-min" class="input-dark" style="flex: 2; height: 30px; font-size: 13px; padding: 2px; min-width: 45px;"></select>
                                     </div>
-                                    <div class="memo-time-group">
-                                        <label for="memo-end-time">종료일시</label>
-                                        <input type="datetime-local" id="memo-end-time" class="input-dark memo-time-input" lang="en-GB">
-                                        <span id="memo-time-duration" class="memo-time-duration"></span>
+                                    <div class="memo-time-group" style="display: flex; align-items: center; gap: 4px; flex: 1; min-width: 0;">
+                                        <label style="min-width: 45px; font-size: 13px; color: #8b949e; white-space: nowrap;">종료일시</label>
+                                        <input type="date" id="memo-end-date" class="input-dark" style="flex: 3; height: 30px; font-size: 13px; min-width: 80px;">
+                                        <select id="memo-end-hour" class="input-dark" style="flex: 2; height: 30px; font-size: 13px; padding: 2px; min-width: 45px;"></select>
+                                        <select id="memo-end-min" class="input-dark" style="flex: 2; height: 30px; font-size: 13px; padding: 2px; min-width: 45px;"></select>
                                     </div>
+                                    <span id="memo-time-duration" class="memo-time-duration" style="font-size: 13px; color: #58a6ff; white-space: nowrap; flex: none;"></span>
                                 </div>
                             </div>
                             <textarea id="device-memo" placeholder="상세 내용을 입력하세요." class="memo-textarea"></textarea>

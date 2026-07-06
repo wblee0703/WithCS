@@ -80,13 +80,14 @@ window.formatEquipDisplayInfo = function formatEquipDisplayInfo(site, equipKey, 
     const parts = equipKey.split('::');
     const name = parts[0];
     const serial = parts.length > 1 ? parts[1] : '';
+    const custEquipNameFromKey = parts.length > 2 ? parts[2] : '';
 
     if (!equipmentModels) equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
     const matchedModel = equipmentModels.find(m => m.name === name);
     const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
 
     const detailData = JSON.parse(localStorage.getItem(`details_${site}_${equipKey}`)) || {};
-    const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+    const custEquipName = custEquipNameFromKey || ((detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '');
 
     let subInfo = '';
     if (custEquipName) {
@@ -425,7 +426,7 @@ function updateMaintenanceDashboard() {
 
     if (data) {
         Object.keys(data).forEach(site => {
-            const list = data[site] ? data[site].filter(e => e !== '기타(ETC)') : [];
+            const list = data[site] ? data[site].filter(e => !e.startsWith('기타(ETC)')) : [];
             const count = list.length;
             if (count > 0) {
                 const groupName = window.getSiteGroupName(site);
@@ -454,7 +455,7 @@ function updateMaintenanceDashboard() {
                 const list = data[site];
                 if (list && Array.isArray(list)) {
                     list.forEach(item => {
-                            if (item === '기타(ETC)') return;
+                            if (item.startsWith('기타(ETC)')) return;
                             totalEquipForChart++;
                         const name = item.split('::')[0];
                         const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
@@ -469,7 +470,7 @@ function updateMaintenanceDashboard() {
             const list = data[site];
             if (list && Array.isArray(list)) {
                 list.forEach(item => {
-                        if (item === '기타(ETC)') return;
+                        if (item.startsWith('기타(ETC)')) return;
                         totalEquipForChart++;
                     const name = item.split('::')[0];
                     const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
@@ -570,7 +571,7 @@ function renderEquipDetailList(data) {
             if (selectedSiteFilter && window.getSiteGroupName(site) !== selectedSiteFilter) return;
             if (data[site]) {
                 data[site].forEach(equip => {
-                    if (equip === '기타(ETC)') return;
+                    if (equip.startsWith('기타(ETC)')) return;
                     const name = equip.split('::')[0];
                     const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
                     const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
@@ -654,7 +655,7 @@ function renderUpcomingList(data) {
 
             if (data[site]) {
                 data[site].forEach(equip => {
-                    if (equip === '기타(ETC)') return;
+                    if (equip.startsWith('기타(ETC)')) return;
                     const equipName = equip.split('::')[0];
                     const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
                     const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
@@ -813,8 +814,8 @@ function updateSetupDashboard() {
         let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장';
             if (data[site] && Array.isArray(data[site])) {
                 data[site].forEach(equip => {
-                if (equip === '기타(ETC)') return;
-                const detailData = setupData[`${site}::${equip}`];
+                    if (equip.startsWith('기타(ETC)')) return;
+                    const detailData = setupData[`${site}::${equip}`];
                 if (detailData && detailData.setupDetails && detailData.setupDetails.length > 0) {
                     const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
                     const isCompleted = completeItem && completeItem.completed;

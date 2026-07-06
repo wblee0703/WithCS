@@ -691,9 +691,26 @@
                 <div class="detail-row"><label class="detail-label">Serial No.</label>
                     <div id="detail-serial-no"></div>
                 </div>
-                <div class="detail-row" id="detail-date-row"><label class="detail-label">작업일</label>
-                    <div class="detail-date-row-inner"><input type="date" id="detail-scheduled-date"
-                            class="input-date-dark"></div>
+                <div class="detail-row" id="detail-date-row">
+                    <label class="detail-label">작업일</label>
+                    <div class="detail-date-row-inner" style="display: flex; gap: 4px; width: 100%;">
+                        <input type="date" id="detail-scheduled-date" class="input-date-dark" style="flex: 1; min-width: 0;">
+                        <button id="btn-toggle-detail-time" type="button" class="btn-shortcut" style="flex: none; width: 100px !important; font-size: 12px; height: 34px; border-radius: 4px; box-sizing: border-box; cursor: pointer; white-space: nowrap; padding: 0 !important; text-align: center;">+ 시간 입력</button>
+                    </div>
+                </div>
+                <div class="detail-row" id="detail-start-time-row"><label class="detail-label">시작일시</label>
+                    <div class="detail-date-row-inner" style="display: flex; gap: 4px; width: 100%;">
+                        <input type="date" id="detail-start-date" class="input-date-dark" style="flex: 2; min-width: 100px;">
+                        <select id="detail-start-hour" class="input-date-dark" style="flex: 1; padding: 2px 4px; min-width: 55px;"></select>
+                        <select id="detail-start-min" class="input-date-dark" style="flex: 1; padding: 2px 4px; min-width: 55px;"></select>
+                    </div>
+                </div>
+                <div class="detail-row" id="detail-end-time-row"><label class="detail-label">종료일시</label>
+                    <div class="detail-date-row-inner" style="display: flex; gap: 4px; width: 100%;">
+                        <input type="date" id="detail-end-date" class="input-date-dark" style="flex: 2; min-width: 100px;">
+                        <select id="detail-end-hour" class="input-date-dark" style="flex: 1; padding: 2px 4px; min-width: 55px;"></select>
+                        <select id="detail-end-min" class="input-date-dark" style="flex: 1; padding: 2px 4px; min-width: 55px;"></select>
+                    </div>
                 </div>
                 <div class="detail-row"><label class="detail-label">구분</label>
                     <div id="detail-type"></div>

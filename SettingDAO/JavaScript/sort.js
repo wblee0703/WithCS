@@ -1031,7 +1031,7 @@ function updateSortModelSelect(sites, buildings, data) {
 
             const parts = equip.split('::');
             const equipName = parts[0];
-            if (equipName !== '기타(ETC)') {
+            if (equipName && !equipName.startsWith('기타(ETC)')) {
                 availableModels.add(equipName);
             }
         });

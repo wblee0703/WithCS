@@ -167,6 +167,122 @@ function setupEventDetailModal() {
             trigger.title = arr.join(', ');
         });
     }
+
+    // [추가] 시작일시/종료일시 토글 버튼 바인딩
+    const toggleTimeBtn = document.getElementById('btn-toggle-detail-time');
+    if (toggleTimeBtn) {
+        toggleTimeBtn.onclick = () => {
+            const startRow = document.getElementById('detail-start-time-row');
+            const endRow = document.getElementById('detail-end-time-row');
+            if (startRow && endRow) {
+                const isHidden = startRow.style.display === 'none';
+                if (isHidden) {
+                    startRow.style.display = 'flex';
+                    endRow.style.display = 'flex';
+                    toggleTimeBtn.textContent = '- 시간 제거';
+                } else {
+                    startRow.style.display = 'none';
+                    endRow.style.display = 'none';
+                    toggleTimeBtn.textContent = '+ 시간 입력';
+                    // 값 리셋
+                    setSplitDateTimeValues('detail-start', '');
+                    setSplitDateTimeValues('detail-end', '');
+                }
+            }
+        };
+    }
+}
+
+// 24시간제 변환 헬퍼 함수
+function setSplitDateTimeValues(prefix, value) {
+    const dateEl = document.getElementById(`${prefix}-date`);
+    const hourEl = document.getElementById(`${prefix}-hour`);
+    const minEl = document.getElementById(`${prefix}-min`);
+
+    if (!dateEl || !hourEl || !minEl) return;
+
+    if (hourEl.children.length === 0) {
+        let hourHtml = '<option value="">시</option>';
+        for (let i = 0; i < 24; i++) {
+            const v = String(i).padStart(2, '0');
+            hourHtml += `<option value="${v}">${v}시</option>`;
+        }
+        hourEl.innerHTML = hourHtml;
+    }
+    if (minEl.children.length === 0) {
+        let minHtml = '<option value="">분</option>';
+        for (let i = 0; i < 60; i++) {
+            const v = String(i).padStart(2, '0');
+            minHtml += `<option value="${v}">${v}분</option>`;
+        }
+        minEl.innerHTML = minHtml;
+    }
+
+    if (!value) {
+        dateEl.value = '';
+        hourEl.value = '';
+        minEl.value = '';
+        return;
+    }
+
+    // 기존의 모든 12시간제/오염된 포맷을 표준 ISO (YYYY-MM-DDTHH:MM) 24시간제로 복원 계산 처리
+    let parsedVal = value.trim();
+    if (parsedVal.includes('오전') || parsedVal.includes('오후') || parsedVal.toLowerCase().includes('am') || parsedVal.toLowerCase().includes('pm')) {
+        const isPm = parsedVal.includes('오후') || parsedVal.toLowerCase().includes('pm');
+        const nums = parsedVal.replace(/[^0-9]/g, ' ').split(/\s+/).filter(Boolean);
+        if (nums.length >= 5) {
+            const y = nums[0];
+            const m = nums[1].padStart(2, '0');
+            const d = nums[2].padStart(2, '0');
+            let hour = parseInt(nums[3]);
+            const min = nums[4].padStart(2, '0');
+
+            if (isPm && hour < 12) hour += 12;
+            if (!isPm && hour === 12) hour = 0;
+            parsedVal = `${y}-${m}-${d}T${String(hour).padStart(2, '0')}:${min}`;
+        }
+    } else if (!parsedVal.includes('T')) {
+        const spaceParts = parsedVal.split(/\s+/);
+        if (spaceParts.length >= 2) {
+            const datePart = spaceParts[0];
+            const timeParts = spaceParts[1].split(':');
+            const h = timeParts[0].padStart(2, '0');
+            const m = (timeParts.length > 1 ? timeParts[1] : '00').padStart(2, '0');
+            parsedVal = `${datePart}T${h}:${m}`;
+        }
+    }
+
+    if (parsedVal.includes('T')) {
+        const parts = parsedVal.split('T');
+        dateEl.value = parts[0];
+        const timeParts = parts[1].split(':');
+        hourEl.value = timeParts[0].substring(0, 2);
+        minEl.value = timeParts.length > 1 ? timeParts[1].substring(0, 2) : '00';
+    } else {
+        dateEl.value = '';
+        hourEl.value = '';
+        minEl.value = '';
+    }
+}
+
+function getSplitDateTimeValue(prefix) {
+    const dateEl = document.getElementById(`${prefix}-date`);
+    const hourEl = document.getElementById(`${prefix}-hour`);
+    const minEl = document.getElementById(`${prefix}-min`);
+
+    if (!dateEl || !dateEl.value) return '';
+    const h = hourEl && hourEl.value ? hourEl.value : '00';
+    const m = minEl && minEl.value ? minEl.value : '00';
+    return `${dateEl.value}T${h}:${m}`;
+}
+
+function setSplitDateTimeDisabled(prefix, disabled) {
+    const dateEl = document.getElementById(`${prefix}-date`);
+    const hourEl = document.getElementById(`${prefix}-hour`);
+    const minEl = document.getElementById(`${prefix}-min`);
+    if (dateEl) dateEl.disabled = disabled;
+    if (hourEl) hourEl.disabled = disabled;
+    if (minEl) minEl.disabled = disabled;
 }
 
 /* --- 1.2 모달 열기 (Open) --- */
@@ -446,6 +562,29 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     dateField.value = isCompleted ? (item.date || '') : (item.scheduledDate || '');
     dateField.disabled = false;
 
+    // 분할형 24시간제 필드값 설정 및 활성화
+    setSplitDateTimeValues('detail-start', item.startTime || '');
+    setSplitDateTimeValues('detail-end', item.endTime || '');
+    setSplitDateTimeDisabled('detail-start', false);
+    setSplitDateTimeDisabled('detail-end', false);
+
+    // [추가] 시작일시/종료일시가 기록되어 있으면 보이게, 없으면 숨김 기본값 설정
+    const startRow = document.getElementById('detail-start-time-row');
+    const endRow = document.getElementById('detail-end-time-row');
+    const toggleTimeBtn = document.getElementById('btn-toggle-detail-time');
+    if (startRow && endRow && toggleTimeBtn) {
+        const hasTimeVal = (item.startTime && item.startTime.trim()) || (item.endTime && item.endTime.trim());
+        if (hasTimeVal) {
+            startRow.style.display = 'flex';
+            endRow.style.display = 'flex';
+            toggleTimeBtn.textContent = '- 시간 제거';
+        } else {
+            startRow.style.display = 'none';
+            endRow.style.display = 'none';
+            toggleTimeBtn.textContent = '+ 시간 입력';
+        }
+    }
+
     if (isCompleted) {
         completeBtn.style.display = 'none';
         if (cancelBtn) {
@@ -465,6 +604,9 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         if (costTypeInput) costTypeInput.disabled = true;
         dateField.disabled = true;
         if (issueShareCb) issueShareCb.disabled = true;
+        // 완료 상태라도 시작일시/종료일시는 상시 수정 가능하도록 disabled=true 비활성화 처리 해제
+        setSplitDateTimeDisabled('detail-start', false);
+        setSplitDateTimeDisabled('detail-end', false);
     } else {
         completeBtn.style.display = 'block';
         completeBtn.textContent = '작업 완료';
@@ -645,7 +787,9 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         content: currentContentStr,
         costType: costTypeInput ? costTypeInput.value : '',
         type: item.type || '정기',
-        detailType: displayDetailType || ''
+        detailType: displayDetailType || '',
+        startTime: item.startTime || '',
+        endTime: item.endTime || ''
     };
 
     // [추가] 연관된 추가 작업 건수 비동기 조회 및 버튼 제어
@@ -1437,6 +1581,8 @@ function hasDetailUnsavedChanges() {
     const currentCostType = document.getElementById('detail-cost-type') ? document.getElementById('detail-cost-type').value : '';
     const issueShareCb = document.getElementById('detail-issue-share-checkbox');
     const currentIssueShared = issueShareCb ? issueShareCb.checked : false;
+    const currentStartTime = getSplitDateTimeValue('detail-start');
+    const currentEndTime = getSplitDateTimeValue('detail-end');
 
     const typeSelect = document.getElementById('detail-type-select');
     const detailTypeSelect = document.getElementById('detail-detail-type-select');
@@ -1509,7 +1655,9 @@ function hasDetailUnsavedChanges() {
         currentIssueShared !== window.initialEventDetail.issueShared ||
         currentCostType !== window.initialEventDetail.costType ||
         currentType !== window.initialEventDetail.type ||
-        currentDetailType !== window.initialEventDetail.detailType;
+        currentDetailType !== window.initialEventDetail.detailType ||
+        currentStartTime !== window.initialEventDetail.startTime ||
+        currentEndTime !== window.initialEventDetail.endTime;
 }
 
 async function saveDetailChanges() {
@@ -1529,8 +1677,17 @@ async function saveDetailChanges() {
     const newMd = document.getElementById('detail-md').value.trim();
     const newMemo = document.getElementById('detail-work-memo').value.trim();
     const newDate = document.getElementById('detail-scheduled-date').value;
+    const newStart = getSplitDateTimeValue('detail-start');
+    const newEnd = getSplitDateTimeValue('detail-end');
     let newType = item.type;
     let newDetailType = item.detailType || '';
+
+    if (newStart && newEnd) {
+        if (new Date(newStart) > new Date(newEnd)) {
+            alert('시작 일시는 종료 일시보다 늦을 수 없습니다.\n입력하신 시간을 다시 확인해주세요.');
+            return false;
+        }
+    }
 
     if (!isCompleted) {
         const typeSelect = document.getElementById('detail-type-select');
@@ -1687,6 +1844,8 @@ async function saveDetailChanges() {
         item.md = newMd;
         item.content = finalContentStr;
         item.costType = newCostType;
+        item.startTime = newStart;
+        item.endTime = newEnd;
 
         const targetParentId = item.originalLogId || item.id;
         const issueShareCb = document.getElementById('detail-issue-share-checkbox');
@@ -1979,10 +2138,18 @@ async function completeScheduleWork() {
     const isIssueShared = issueShareCb ? issueShareCb.checked : false;
     const costTypeInput = document.getElementById('detail-cost-type');
     const costType = costTypeInput ? costTypeInput.value : '';
+    const startTime = getSplitDateTimeValue('detail-start');
+    const endTime = getSplitDateTimeValue('detail-end');
 
     if (!costType) return alert('비용처리를 선택해주세요.');
     if (!worker) return alert('작업자를 입력해주세요.');
     if (!md) return alert('공수(M/D)를 입력해주세요.');
+
+    if (startTime && endTime) {
+        if (new Date(startTime) > new Date(endTime)) {
+            return alert('시작 일시는 종료 일시보다 늦을 수 없습니다.\n입력하신 시간을 다시 확인해주세요.');
+        }
+    }
 
     const sameDayItems = data.maint.filter(i => i.scheduledDate === maintItem.scheduledDate && i.type === maintItem.type && (i.detailType || '') === (maintItem.detailType || '') && i.originalLogId == maintItem.originalLogId);
     const contentArr = sameDayItems.map(i => {
@@ -2046,7 +2213,9 @@ async function completeScheduleWork() {
         md: md,
         worker: worker,
         memo: memo,
-        isIssueShared: isIssueShared
+        isIssueShared: isIssueShared,
+        startTime: startTime,
+        endTime: endTime
     };
 
     if (maintItem.originalLogId) {
@@ -3237,9 +3406,10 @@ function updateRegisterEquipSelect(site) {
         const parts = equip.split('::');
         const name = parts[0] || '';
         const serial = parts.length > 1 ? parts[1] : '';
+        const custNameFromKey = parts.length > 2 ? parts[2] : '';
         const key = `details_${site}_${equip}`;
         const detailData = JSON.parse(localStorage.getItem(key)) || {};
-        const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+        const custName = custNameFromKey || ((detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '');
 
         let displayValue = name;
         if (custName) {
@@ -3262,10 +3432,11 @@ function updateRegisterEquipSelect(site) {
                 const parts = equip.split('::');
                 const name = parts[0] || '';
                 const serial = parts.length > 1 ? parts[1] : '';
+                const custNameFromKey = parts.length > 2 ? parts[2] : '';
 
                 const key = `details_${site}_${equip}`;
                 const detailData = JSON.parse(localStorage.getItem(key)) || {};
-                const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+                const custName = custNameFromKey || ((detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '');
 
                 const text = `${name} ${serial} ${custName}`.toLowerCase();
                 return keywords.every(kw => text.includes(kw));
@@ -4420,7 +4591,7 @@ window.openEquipTransferModal = function() {
     sitesToSearch.forEach(site => {
         const equips = data[site] || [];
         equips.forEach(equip => {
-            if (equip === '기타(ETC)') return;
+            if (equip && equip.startsWith('기타(ETC)')) return;
             
             const detailKey = `details_${site}_${equip}`;
             const detailData = JSON.parse(localStorage.getItem(detailKey)) || {};
@@ -4666,7 +4837,7 @@ window.renderTransferHistoryList = function() {
     sitesToSearch.forEach(site => {
         const equips = data[site] || [];
         equips.forEach(equip => {
-            if (equip === '기타(ETC)') return;
+            if (equip && equip.startsWith('기타(ETC)')) return;
             const detailKey = `details_${site}_${equip}`;
             const detailData = JSON.parse(localStorage.getItem(detailKey)) || {};
             const setupInfo = detailData.setup || {};

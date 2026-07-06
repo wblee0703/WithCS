@@ -1223,12 +1223,12 @@ function setupSidebarEvents() {
                 const success = await window.syncAdminDB('site', 'CREATE', { name: val });
                 if (!success) return alert('서버 등록에 실패했습니다.');
 
-                // [수정] 사업장 생성 시 기타(ETC) 장비 기본 할당
-                storageData[val] = ['기타(ETC)'];
+                // [수정] 사업장 생성 시 기타(ETC) 장비 기본 할당 (신규 4필드 규격)
+                storageData[val] = ['기타(ETC)::::'];
 
                 // [추가] 기타(ETC) 장비 상세 데이터 초기화
                 const initData = { maint: [], logs: [], memo: "", setup: { model: "" } };
-                localStorage.setItem(`details_${val}_기타(ETC)`, JSON.stringify(initData));
+                localStorage.setItem(`details_${val}_기타(ETC)::::`, JSON.stringify(initData));
 
                 saveData();
                 addSystemLog('ADD_SITE', val);

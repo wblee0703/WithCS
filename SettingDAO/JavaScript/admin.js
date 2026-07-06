@@ -287,12 +287,11 @@ function setupSiteMgmt() {
             const success = await window.syncAdminDB('site', 'CREATE', { name: newName, new_name: newName, buildings: [], group: '기타사업장' });
             if (!success) return alert('DB 통신 중 오류가 발생했습니다.');
 
-            // [수정] 사업장 생성 시 기타(ETC) 장비 기본 할당 (사이드바 로직과 일치화)
-            storageData[newName] = ['기타(ETC)'];
+            storageData[newName] = ['기타(ETC)::::'];
 
             // [추가] 초기 데이터 세팅 (에러 방지)
             const initData = { maint: [], logs: [], memo: "", setup: { model: "" } };
-            localStorage.setItem(`details_${newName}_기타(ETC)`, JSON.stringify(initData));
+            localStorage.setItem(`details_${newName}_기타(ETC)::::`, JSON.stringify(initData));
             localStorage.setItem(`site_meta_${newName}`, JSON.stringify({ buildings: [] }));
 
             if (typeof saveData === 'function') saveData();
@@ -1302,11 +1301,11 @@ function handleEquipCsvImport(event) {
                 }
 
                 if (!storageData[site]) {
-                    storageData[site] = ['기타(ETC)'];
+                    storageData[site] = ['기타(ETC)::::'];
 
                     // [추가] 기타(ETC) 장비 상세 데이터 초기화
                     const initEtcData = { maint: [], logs: [], memo: "", setup: { model: "" } };
-                    localStorage.setItem(`details_${site}_기타(ETC)`, JSON.stringify(initEtcData));
+                    localStorage.setItem(`details_${site}_기타(ETC)::::`, JSON.stringify(initEtcData));
                     addSystemLog('ADD_SITE', site, 'CSV 일괄 등록으로 사업장 자동 생성');
                 }
 
@@ -1321,38 +1320,8 @@ function handleEquipCsvImport(event) {
                     }
                 }
 
-                let newKey = serial ? `${name}::${serial}` : name;
-                let isDuplicate = false;
-
-                if (storageData[site].includes(newKey)) {
-                    const detailData = JSON.parse(localStorage.getItem(`details_${site}_${newKey}`)) || {};
-                    const existingCustName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
-
-                    if (existingCustName === custEquipName) {
-                        isDuplicate = true;
-                    } else {
-                        let suffix = 1;
-                        let altKey = serial ? `${name}::${serial}(${suffix})` : `${name}::(${suffix})`;
-                        let altIsDuplicate = false;
-
-                        while (storageData[site].includes(altKey)) {
-                            const altDetail = JSON.parse(localStorage.getItem(`details_${site}_${altKey}`)) || {};
-                            const altCustName = (altDetail.setup && altDetail.setup.custEquipName) ? altDetail.setup.custEquipName : '';
-                            if (altCustName === custEquipName) {
-                                altIsDuplicate = true;
-                                break;
-                            }
-                            suffix++;
-                            altKey = serial ? `${name}::${serial}(${suffix})` : `${name}::(${suffix})`;
-                        }
-
-                        if (altIsDuplicate) {
-                            isDuplicate = true;
-                        } else {
-                            newKey = altKey;
-                        }
-                    }
-                }
+                let newKey = `${name}::${serial}::${custEquipName}`;
+                let isDuplicate = storageData[site].includes(newKey);
 
                 if (!isDuplicate) {
                     storageData[site].push(newKey);
@@ -1517,12 +1486,13 @@ function renderAdminEquipList() {
         const parts = fullKey.split('::');
         const name = parts[0];
         const serial = parts.length > 1 ? parts[1] : '';
+        const custNameFromKey = parts.length > 2 ? parts[2] : '';
         const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
         const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
 
         // [추가] 고객사 장비명 및 장비 구분 가져오기
         const detailData = JSON.parse(localStorage.getItem(`details_${site}_${fullKey}`)) || {};
-        const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
+        const custEquipName = custNameFromKey || ((detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '');
         const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
 
         const li = document.createElement('li');
@@ -1699,8 +1669,7 @@ async function handleEquipSave() {
         alert('장비명은 제안 박스에서 검색하여 선택해야만 등록할 수 있습니다.'); return false;
     }
 
-    const finalName = matchedModel.name;
-    const newKey = serial ? `${finalName}::${serial}` : finalName;
+    const newKey = `${finalName}::${serial}::${custEquipName}`;
 
     // 중복 체크 (수정이면 자기 자신 제외)
     if (currentAdminEquipKey !== newKey && storageData[targetSite].includes(newKey)) {

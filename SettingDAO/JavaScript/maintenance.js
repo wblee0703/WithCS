@@ -25,6 +25,98 @@ if (typeof window.escapeHtml !== 'function') {
     };
 }
 
+// 24시간제 변환 헬퍼 함수
+function setSplitDateTimeValues(prefix, value) {
+    const dateEl = document.getElementById(`${prefix}-date`);
+    const hourEl = document.getElementById(`${prefix}-hour`);
+    const minEl = document.getElementById(`${prefix}-min`);
+
+    if (!dateEl || !hourEl || !minEl) return;
+
+    if (hourEl.children.length === 0) {
+        let hourHtml = '<option value="">시</option>';
+        for (let i = 0; i < 24; i++) {
+            const v = String(i).padStart(2, '0');
+            hourHtml += `<option value="${v}">${v}시</option>`;
+        }
+        hourEl.innerHTML = hourHtml;
+    }
+    if (minEl.children.length === 0) {
+        let minHtml = '<option value="">분</option>';
+        for (let i = 0; i < 60; i++) {
+            const v = String(i).padStart(2, '0');
+            minHtml += `<option value="${v}">${v}분</option>`;
+        }
+        minEl.innerHTML = minHtml;
+    }
+
+    if (!value) {
+        dateEl.value = '';
+        hourEl.value = '';
+        minEl.value = '';
+        return;
+    }
+
+    // 기존의 모든 12시간제/오염된 포맷을 표준 ISO (YYYY-MM-DDTHH:MM) 24시간제로 복원 계산 처리
+    let parsedVal = value.trim();
+    if (parsedVal.includes('오전') || parsedVal.includes('오후') || parsedVal.toLowerCase().includes('am') || parsedVal.toLowerCase().includes('pm')) {
+        const isPm = parsedVal.includes('오후') || parsedVal.toLowerCase().includes('pm');
+        const nums = parsedVal.replace(/[^0-9]/g, ' ').split(/\s+/).filter(Boolean);
+        if (nums.length >= 5) {
+            const y = nums[0];
+            const m = nums[1].padStart(2, '0');
+            const d = nums[2].padStart(2, '0');
+            let hour = parseInt(nums[3]);
+            const min = nums[4].padStart(2, '0');
+
+            if (isPm && hour < 12) hour += 12;
+            if (!isPm && hour === 12) hour = 0;
+            parsedVal = `${y}-${m}-${d}T${String(hour).padStart(2, '0')}:${min}`;
+        }
+    } else if (!parsedVal.includes('T')) {
+        const spaceParts = parsedVal.split(/\s+/);
+        if (spaceParts.length >= 2) {
+            const datePart = spaceParts[0];
+            const timeParts = spaceParts[1].split(':');
+            const h = timeParts[0].padStart(2, '0');
+            const m = (timeParts.length > 1 ? timeParts[1] : '00').padStart(2, '0');
+            parsedVal = `${datePart}T${h}:${m}`;
+        }
+    }
+
+    if (parsedVal.includes('T')) {
+        const parts = parsedVal.split('T');
+        dateEl.value = parts[0];
+        const innerParts = parts[1].split(':');
+        hourEl.value = innerParts[0].substring(0, 2);
+        minEl.value = innerParts.length > 1 ? innerParts[1].substring(0, 2) : '00';
+    } else {
+        dateEl.value = '';
+        hourEl.value = '';
+        minEl.value = '';
+    }
+}
+
+function getSplitDateTimeValue(prefix) {
+    const dateEl = document.getElementById(`${prefix}-date`);
+    const hourEl = document.getElementById(`${prefix}-hour`);
+    const minEl = document.getElementById(`${prefix}-min`);
+
+    if (!dateEl || !dateEl.value) return '';
+    const h = hourEl && hourEl.value ? hourEl.value : '00';
+    const m = minEl && minEl.value ? minEl.value : '00';
+    return `${dateEl.value}T${h}:${m}`;
+}
+
+function setSplitDateTimeDisabled(prefix, disabled) {
+    const dateEl = document.getElementById(`${prefix}-date`);
+    const hourEl = document.getElementById(`${prefix}-hour`);
+    const minEl = document.getElementById(`${prefix}-min`);
+    if (dateEl) dateEl.disabled = disabled;
+    if (hourEl) hourEl.disabled = disabled;
+    if (minEl) minEl.disabled = disabled;
+}
+
 let originalWorker = "";
 let originalIssueShared = false;
 let originalMd = "";
@@ -335,34 +427,13 @@ function setupLogEvents() {
         });
     }
 
-    const memoStartTimeInput = document.getElementById('memo-start-time');
-    const memoEndTimeInput = document.getElementById('memo-end-time');
-
-    // [추가] 시작일시/종료일시 입력창을 오전/오후(AM/PM) 대신 24시간제(00~23) 및 연-월-일 형식으로 강제 표시
-    if (memoStartTimeInput) memoStartTimeInput.lang = 'en-GB';
-    if (memoEndTimeInput) memoEndTimeInput.lang = 'en-GB';
-
     const memoSaveBtn = document.getElementById('btn-save-memo');
-
-    // [추가] 브라우저 기본 포맷(오전/오후)을 덮어쓰고 24시간제로 표시하기 위한 가짜 텍스트 설정
-    const updateDisplayTime = (input) => {
-        if (input && input.value) {
-            input.setAttribute('data-display', input.value.replace('T', ' '));
-            input.classList.add('has-value-display');
-        } else if (input) {
-            input.setAttribute('data-display', '');
-            input.classList.remove('has-value-display');
-        }
-    };
-
+ 
     const handleTimeChange = () => {
         if (!selectedLogId) return;
-        const currentStart = memoStartTimeInput ? memoStartTimeInput.value : "";
-        const currentEnd = memoEndTimeInput ? memoEndTimeInput.value : "";
-
-        updateDisplayTime(memoStartTimeInput);
-        updateDisplayTime(memoEndTimeInput);
-
+        const currentStart = getSplitDateTimeValue('memo-start');
+        const currentEnd = getSplitDateTimeValue('memo-end');
+ 
         if (currentStart !== originalStartTime || currentEnd !== originalEndTime) {
             if (memoSaveBtn) {
                 memoSaveBtn.classList.remove('btn-green-sm');
@@ -374,14 +445,23 @@ function setupLogEvents() {
                 memoSaveBtn.classList.add('btn-green-sm');
             }
         }
-
+ 
         // [추가] 시작/종료일시 변경 시 작업시간 계산 및 표시
         calculateAndDisplayDuration();
     };
-
-    if (memoStartTimeInput) memoStartTimeInput.addEventListener('input', handleTimeChange);
-    if (memoEndTimeInput) memoEndTimeInput.addEventListener('input', handleTimeChange);
-
+ 
+    const addTimeChangeListeners = (prefix) => {
+        const dateEl = document.getElementById(`${prefix}-date`);
+        const hourEl = document.getElementById(`${prefix}-hour`);
+        const minEl = document.getElementById(`${prefix}-min`);
+        if (dateEl) dateEl.addEventListener('input', handleTimeChange);
+        if (hourEl) hourEl.addEventListener('change', handleTimeChange);
+        if (minEl) minEl.addEventListener('change', handleTimeChange);
+    };
+ 
+    addTimeChangeListeners('memo-start');
+    addTimeChangeListeners('memo-end');
+ 
     if (memoSaveBtn) {
         memoSaveBtn.addEventListener('click', saveMemoTimes);
     }
@@ -999,14 +1079,12 @@ function handleMaintReorder() {
 
 // [추가] 작업 시간(Duration) 계산 및 표시 함수
 function calculateAndDisplayDuration() {
-    const startInput = document.getElementById('memo-start-time');
-    const endInput = document.getElementById('memo-end-time');
     const durationDisplay = document.getElementById('memo-time-duration');
-
-    if (!startInput || !endInput || !durationDisplay) return;
-
-    const startVal = startInput.value;
-    const endVal = endInput.value;
+ 
+    if (!durationDisplay) return;
+ 
+    const startVal = getSplitDateTimeValue('memo-start');
+    const endVal = getSplitDateTimeValue('memo-end');
 
     if (startVal && endVal) {
         const startTime = new Date(startVal);
@@ -1035,13 +1113,10 @@ function calculateAndDisplayDuration() {
 
 // [추가] 다른 작업 수행 전, 저장되지 않은 메모 변경사항을 확인하고 처리하는 함수
 function checkMemoUnsavedChanges() {
-    const memoStartTimeInput = document.getElementById('memo-start-time');
-    const memoEndTimeInput = document.getElementById('memo-end-time');
-
-    if (memoStartTimeInput && memoEndTimeInput) {
-        if (memoStartTimeInput.value !== originalStartTime || memoEndTimeInput.value !== originalEndTime) {
-            return confirm('저장되지 않은 시작/종료 일시가 있습니다. 무시하고 이동하시겠습니까?');
-        }
+    const currentStart = getSplitDateTimeValue('memo-start');
+    const currentEnd = getSplitDateTimeValue('memo-end');
+    if (currentStart !== originalStartTime || currentEnd !== originalEndTime) {
+        return confirm('저장되지 않은 시작/종료 일시가 있습니다. 무시하고 이동하시겠습니까?');
     }
     return true;
 }
@@ -1284,23 +1359,8 @@ function selectLog(id, focus = true) {
             return formatted;
         };
 
-        const memoStartTimeInput = document.getElementById('memo-start-time');
-        if (memoStartTimeInput) {
-            memoStartTimeInput.value = formatDatetimeLocal(startTime);
-            if (memoStartTimeInput.value) {
-                memoStartTimeInput.setAttribute('data-display', memoStartTimeInput.value.replace('T', ' '));
-                memoStartTimeInput.classList.add('has-value-display');
-            } else memoStartTimeInput.classList.remove('has-value-display');
-        }
-
-        const memoEndTimeInput = document.getElementById('memo-end-time');
-        if (memoEndTimeInput) {
-            memoEndTimeInput.value = formatDatetimeLocal(endTime);
-            if (memoEndTimeInput.value) {
-                memoEndTimeInput.setAttribute('data-display', memoEndTimeInput.value.replace('T', ' '));
-                memoEndTimeInput.classList.add('has-value-display');
-            } else memoEndTimeInput.classList.remove('has-value-display');
-        }
+        setSplitDateTimeValues('memo-start', startTime ? formatDatetimeLocal(startTime) : '');
+        setSplitDateTimeValues('memo-end', endTime ? formatDatetimeLocal(endTime) : '');
 
         originalMemo = memo; // 원본 저장
         originalWorker = worker; // 원본 저장
@@ -1493,11 +1553,8 @@ function selectLog(id, focus = true) {
 async function saveMemoTimes() {
     if (!selectedLogId) return;
 
-    const memoStartTimeInput = document.getElementById('memo-start-time');
-    const memoEndTimeInput = document.getElementById('memo-end-time');
-
-    const newStart = memoStartTimeInput ? memoStartTimeInput.value : "";
-    const newEnd = memoEndTimeInput ? memoEndTimeInput.value : "";
+    const newStart = getSplitDateTimeValue('memo-start');
+    const newEnd = getSplitDateTimeValue('memo-end');
 
     if (newStart && newEnd) {
         if (new Date(newStart) > new Date(newEnd)) {
@@ -1998,11 +2055,11 @@ function setMemoFieldsDisabled(disabled) {
         memoInput.style.opacity = '1';
         memoInput.style.cursor = disabled ? 'default' : 'text';
     }
-
+ 
     const costType = document.getElementById('memo-cost-type');
     const mdInput = document.getElementById('memo-md');
     const workerTrigger = document.getElementById('memo-worker-trigger');
-
+ 
     if (costType) {
         costType.style.pointerEvents = disabled ? 'none' : 'auto';
         costType.style.opacity = '1';
@@ -2017,6 +2074,9 @@ function setMemoFieldsDisabled(disabled) {
         workerTrigger.style.opacity = '1';
         workerTrigger.style.cursor = disabled ? 'default' : 'pointer';
     }
+ 
+    setSplitDateTimeDisabled('memo-start', false);
+    setSplitDateTimeDisabled('memo-end', false);
 }
 
 // [추가] 리스트에서 직접 이슈 공유 상태를 토글하는 함수

@@ -780,6 +780,12 @@
 #detail-worker,
 #detail-md,
 #detail-cost-type,
+#detail-start-date,
+#detail-start-hour,
+#detail-start-min,
+#detail-end-date,
+#detail-end-hour,
+#detail-end-min,
 #next-schedule-date,
 #next-schedule-md,
 #register-date-display,
@@ -1505,4 +1511,62 @@ input[type="time"]::-webkit-calendar-picker-indicator,
 input[type="datetime-local"]::-webkit-calendar-picker-indicator {
     filter: invert(0.5);
     cursor: pointer;
+}
+
+/* [추가] 작업 상세 모달 시작일시/종료일시 입력창 글씨 크기 및 굵기 날짜와 시간 통일 */
+#detail-start-time-row input[type="date"],
+#detail-start-time-row select,
+#detail-end-time-row input[type="date"],
+#detail-end-time-row select,
+#memo-start-date,
+#memo-start-hour,
+#memo-start-min,
+#memo-end-date,
+#memo-end-hour,
+#memo-end-min {
+    font-size: 13px !important;
+    font-weight: normal !important;
+    height: 30px !important;
+    padding: 4px 6px !important;
+    line-height: 1.2 !important;
+}
+
+/* [추가] 데이트 피커(날짜 선택기) 브라우저 기본 섀도우 돔 내부 글씨 크기 강제 일치화 */
+input[type="date"]::-webkit-datetime-edit,
+input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-minute,
+input[type="date"]::-webkit-datetime-edit-hour,
+input[type="date"]::-webkit-datetime-edit-day,
+input[type="date"]::-webkit-datetime-edit-month,
+input[type="date"]::-webkit-datetime-edit-year {
+    font-size: 13px !important;
+}
+
+/* [추가] 시작일시, 종료일시 select 및 option 태그의 글씨 크기와 패딩, appearance 강제 일치화 */
+#detail-start-time-row select,
+#detail-end-time-row select,
+#memo-time-inputs-wrapper select {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+    background-color: #0d1117 !important;
+    border: 1px solid #30363d !important;
+    color: #e6edf3 !important;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%238b949e'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 4px center !important;
+    padding-right: 18px !important;
+    font-size: 13px !important;
+    font-weight: normal !important;
+    text-align: center !important;
+}
+
+/* 셀렉트 박스 선택 시 옵션 목록의 글씨 크기 고정 */
+#detail-start-time-row select option,
+#detail-end-time-row select option,
+#memo-time-inputs-wrapper select option {
+    font-size: 13px !important;
+    background-color: #161b22 !important;
+    color: #e6edf3 !important;
 }

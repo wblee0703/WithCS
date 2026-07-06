@@ -1157,3 +1157,13 @@ body[class*="role-"] #maint-table-body .btn-del-sm {
     width: 100%;
     min-width: 500px;
 }
+
+/* [추가] 시작일시/종료일시 입력창 글씨 크기 및 굵기 날짜와 시간 통일(11px) */
+#memo-time-inputs-wrapper input[type="date"],
+#memo-time-inputs-wrapper select {
+    font-size: 11px !important;
+    font-weight: normal !important;
+    height: 28px !important;
+    padding: 2px 4px !important;
+    line-height: 1 !important;
+}

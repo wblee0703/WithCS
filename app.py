@@ -381,13 +381,25 @@ def load_data():
     # 4. 장비 상세 데이터 (details_ 및 setup_data) 매핑
     equips = Equipment.query.all()
     for eq in equips:
+        si = setup_infos.get(eq.id)
+        cust_equip_name = si.cust_equip_name if si else ""
+
         site_prefix = f"{eq.site_name}::"
         eq_name_serial = eq.id[len(site_prefix):] if str(eq.id).startswith(site_prefix) else eq.id
-        
-        if eq.site_name not in device_data: device_data[eq.site_name] = []
-        device_data[eq.site_name].append(eq_name_serial)
+        parts = eq_name_serial.split('::')
+        e_name = parts[0] if len(parts) > 0 else ""
+        e_serial = parts[1] if len(parts) > 1 else ""
 
-        detail_key = f"details_{eq.site_name}_{eq_name_serial}"
+        if e_name == "기타(ETC)":
+            eq_key = "기타(ETC)::::"
+        else:
+            eq_key = f"{e_name}::{e_serial}::{cust_equip_name}"
+
+        if eq.site_name not in device_data: device_data[eq.site_name] = []
+        if eq_key not in device_data[eq.site_name]:
+            device_data[eq.site_name].append(eq_key)
+
+        detail_key = f"details_{eq.site_name}_{eq_key}"
         data[detail_key] = { "specialNote": eq.special_note, "maint": [], "logs": [], "setup": {} }
         
         # 장비 셋업(마스터) 정보
@@ -1892,9 +1904,9 @@ def admin_crud():
                 db.session.flush() # 부모(사업장) 레코드를 먼저 DB에 반영하여 FK 에러 방지
                 
                 # [추가] 사업장 생성 시 '기타(ETC)' 장비 기본 등록
-                etc_id = f"{site_name}::기타(ETC)"
+                etc_id = f"{site_name}::기타(ETC)::::"
                 db.session.add(Equipment(id=etc_id, site_name=site_name, name="기타(ETC)", serial=""))
-                db.session.add(SetupInfo(equip_id=etc_id, model=""))
+                db.session.add(SetupInfo(equip_id=etc_id, cust_equip_name="", model=""))
             elif action == 'UPDATE':
                 old_name = payload['old_name']
                 new_name = payload['new_name']
@@ -1928,16 +1940,25 @@ def admin_crud():
                 if not Site.query.filter_by(name=site_name).first():
                     db.session.add(Site(name=site_name, buildings='[]'))
                     db.session.flush() # 부모 레코드 먼저 반영
-                    etc_id = f"{site_name}::기타(ETC)"
+                    etc_id = f"{site_name}::기타(ETC)::::"
                     db.session.add(Equipment(id=etc_id, site_name=site_name, name="기타(ETC)", serial=""))
-                    db.session.add(SetupInfo(equip_id=etc_id, model=""))
+                    db.session.add(SetupInfo(equip_id=etc_id, cust_equip_name="", model=""))
                     db.session.flush()
-                db_id = f"{site_name}::{new_id}"
-                e_name = new_id.split('::')[0]
-                e_serial = new_id.split('::')[1] if '::' in new_id else ''
+                
+                parts = new_id.split('::')
+                e_name = parts[0] if len(parts) > 0 else ""
+                e_serial = parts[1] if len(parts) > 1 else ""
+                cust_name = payload['setup'].get('custEquipName', '')
+
+                if e_name == "기타(ETC)":
+                    db_id = f"{site_name}::기타(ETC)::::"
+                    e_serial = ""
+                else:
+                    db_id = f"{site_name}::{e_name}::{e_serial}::{cust_name}"
+
                 db.session.add(Equipment(id=db_id, site_name=site_name, name=e_name, serial=e_serial, special_note=payload.get('special_note', '')))
                 db.session.add(SetupInfo(
-                    equip_id=db_id, cust_equip_name=payload['setup'].get('custEquipName', ''), project_no=payload['setup'].get('projectNo', ''), equip_status=payload['setup'].get('equipStatus', ''),
+                    equip_id=db_id, cust_equip_name=cust_name, project_no=payload['setup'].get('projectNo', ''), equip_status=payload['setup'].get('equipStatus', ''),
                     delivery_date=payload['setup'].get('deliveryDate', ''), warranty_start=payload['setup'].get('warrantyStart', ''), warranty_period=str(payload['setup'].get('warrantyPeriod', '')),
                     building=payload['setup'].get('building', ''), floor=payload['setup'].get('floor', ''), detail_loc=payload['setup'].get('detailLoc', ''),
                     manager=payload['setup'].get('manager', ''), contact=payload['setup'].get('contact', ''), email=payload['setup'].get('email', ''),
@@ -1946,11 +1967,34 @@ def admin_crud():
             elif action == 'UPDATE':
                 old_id = payload['old_id']
                 old_site = payload.get('old_site', site_name)
-                db_old_id = f"{old_site}::{old_id}"
-                db_new_id = f"{site_name}::{new_id}"
                 
+                parts = new_id.split('::')
+                e_name = parts[0] if len(parts) > 0 else ""
+                e_serial = parts[1] if len(parts) > 1 else ""
+                cust_name = payload.get('setup', {}).get('custEquipName', '')
+
+                if e_name == "기타(ETC)":
+                    db_new_id = f"{site_name}::기타(ETC)::::"
+                    e_serial = ""
+                else:
+                    db_new_id = f"{site_name}::{e_name}::{e_serial}::{cust_name}"
+                
+                old_parts = old_id.split('::')
+                if len(old_parts) >= 3:
+                    db_old_id = f"{old_site}::{old_id}"
+                else:
+                    # 예전 3필드 ID 규격 호환 처리
+                    old_name = old_parts[0] if len(old_parts) > 0 else ""
+                    old_serial = old_parts[1] if len(old_parts) > 1 else ""
+                    temp_old_id = f"{old_site}::{old_id}"
+                    old_setup = SetupInfo.query.filter_by(equip_id=temp_old_id).first()
+                    old_cust = old_setup.cust_equip_name if old_setup else ""
+                    db_old_id = f"{old_site}::{old_name}::{old_serial}::{old_cust}"
+                    if not Equipment.query.filter_by(id=db_old_id).first():
+                        db_old_id = temp_old_id
+
                 if db_old_id != db_new_id:
-                    db.session.execute(text("UPDATE equipment SET id=:n WHERE id=:o1 OR id=:o2"), {'n':db_new_id, 'o1':db_old_id, 'o2':old_id})
+                    db.session.execute(text("UPDATE equipment SET id=:n WHERE id=:o"), {'n':db_new_id, 'o':db_old_id})
                     
                 equip = Equipment.query.filter_by(id=db_new_id).first()
                 if equip:
@@ -2432,6 +2476,183 @@ def get_additional_works():
 # ------------------------------------------------------------------------------
 # 8. 앱 초기화 및 실행 (Initialization & Main Execution)
 # ------------------------------------------------------------------------------
+def migrate_db_to_four_fields():
+    """
+    기존 3개 필드 식별 장비(Site::Name::Serial) 데이터를 4개 필드 식별 장비(Site::Name::Serial::CustEquipName) 형태로 마이그레이션합니다.
+    또한, 부모 장비가 없는 고아(Orphaned) 이력 데이터를 해당 사업장의 '기타(ETC)' 장비로 재매핑하여 복구합니다.
+    """
+    try:
+        # 1. 기타(ETC) 장비 ID 규격 변경 (Site::기타(ETC) -> Site::기타(ETC)::::)
+        equips = Equipment.query.all()
+        setup_infos = {si.equip_id: si for si in SetupInfo.query.all()}
+        # 외래키 무결성 제약조건으로 인한 에러 방지를 위해 connection 수준에서 임시로 FOREIGN KEY 검사를 끕니다. (MySQL 및 SQLite 호환)
+        try:
+            db.session.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
+            db.session.commit()
+        except:
+            try:
+                db.session.execute(text("PRAGMA foreign_keys = OFF;"))
+                db.session.commit()
+            except:
+                pass
+        
+        # 2. 고아 데이터(Orphaned data)를 찾기 위한 기존 장비 목록 집합
+        existing_equip_ids = {eq.id for eq in equips}
+        
+        # 3. 각 장비 순회하며 ID 마이그레이션 수행
+        for eq in equips:
+            si = setup_infos.get(eq.id)
+            cust_equip_name = si.cust_equip_name if si else ""
+            
+            # 기존 ID 형식 파싱
+            site_prefix = f"{eq.site_name}::"
+            eq_name_serial = eq.id[len(site_prefix):] if str(eq.id).startswith(site_prefix) else eq.id
+            parts = eq_name_serial.split('::')
+            e_name = parts[0] if len(parts) > 0 else ""
+            e_serial = parts[1] if len(parts) > 1 else ""
+            
+            # 이미 4가지 항목이 적용되어 key가 'Name::Serial::CustEquipName' 구조인 경우 (parts 크기가 3) 스킵
+            if len(parts) >= 3:
+                continue
+                
+            # 신규 ID 생성 (Site::Name::Serial::CustEquipName)
+            if e_name == "기타(ETC)":
+                new_eq_id = f"{eq.site_name}::기타(ETC)::::"
+            else:
+                new_eq_id = f"{eq.site_name}::{e_name}::{e_serial}::{cust_equip_name}"
+                
+            old_eq_id = eq.id
+            if old_eq_id != new_eq_id:
+                # 대상 신규 ID(new_eq_id)가 이미 존재하는지 검사
+                exists = db.session.execute(
+                    text("SELECT 1 FROM equipment WHERE id=:new_id"),
+                    {"new_id": new_eq_id}
+                ).fetchone()
+
+                if exists:
+                    # 1. 이미 존재한다면 하위 연관 데이터들의 equip_id만 new_eq_id로 업데이트(병합)
+                    db.session.execute(
+                        text("UPDATE setup_info SET equip_id=:new_id WHERE equip_id=:old_id"),
+                        {"new_id": new_eq_id, "old_id": old_eq_id}
+                    )
+                    db.session.execute(
+                        text("UPDATE maint_item SET equip_id=:new_id WHERE equip_id=:old_id"),
+                        {"new_id": new_eq_id, "old_id": old_eq_id}
+                    )
+                    db.session.execute(
+                        text("UPDATE log_item SET equip_id=:new_id WHERE equip_id=:old_id"),
+                        {"new_id": new_eq_id, "old_id": old_eq_id}
+                    )
+                    db.session.execute(
+                        text("UPDATE setup_detail SET equip_id=:new_id WHERE equip_id=:old_id"),
+                        {"new_id": new_eq_id, "old_id": old_eq_id}
+                    )
+                    db.session.execute(
+                        text("UPDATE setup_log SET equip_id=:new_id WHERE equip_id=:old_id"),
+                        {"new_id": new_eq_id, "old_id": old_eq_id}
+                    )
+                    db.session.execute(
+                        text("UPDATE trouble_log SET equip_id=:new_id WHERE equip_id=:old_id"),
+                        {"new_id": new_eq_id, "old_id": old_eq_id}
+                    )
+                    # 2. 기존 중복된 구버전 부모 레코드 삭제
+                    db.session.execute(
+                        text("DELETE FROM setup_info WHERE equip_id=:old_id"),
+                        {"old_id": old_eq_id}
+                    )
+                    db.session.execute(
+                        text("DELETE FROM equipment WHERE id=:old_id"),
+                        {"old_id": old_eq_id}
+                    )
+                else:
+                    # 존재하지 않는다면 정상적으로 부모 및 하위 레코드 ID 갱신
+                    db.session.execute(
+                        text("UPDATE equipment SET id=:new_id WHERE id=:old_id"),
+                        {"new_id": new_eq_id, "old_id": old_eq_id}
+                    )
+                    db.session.execute(
+                        text("UPDATE setup_info SET equip_id=:new_id WHERE equip_id=:old_id"),
+                        {"new_id": new_eq_id, "old_id": old_eq_id}
+                    )
+                    db.session.execute(
+                        text("UPDATE maint_item SET equip_id=:new_id WHERE equip_id=:old_id"),
+                        {"new_id": new_eq_id, "old_id": old_eq_id}
+                    )
+                    db.session.execute(
+                        text("UPDATE log_item SET equip_id=:new_id WHERE equip_id=:old_id"),
+                        {"new_id": new_eq_id, "old_id": old_eq_id}
+                    )
+                    db.session.execute(
+                        text("UPDATE setup_detail SET equip_id=:new_id WHERE equip_id=:old_id"),
+                        {"new_id": new_eq_id, "old_id": old_eq_id}
+                    )
+                    db.session.execute(
+                        text("UPDATE setup_log SET equip_id=:new_id WHERE equip_id=:old_id"),
+                        {"new_id": new_eq_id, "old_id": old_eq_id}
+                    )
+                    db.session.execute(
+                        text("UPDATE trouble_log SET equip_id=:new_id WHERE equip_id=:old_id"),
+                        {"new_id": new_eq_id, "old_id": old_eq_id}
+                    )
+                db.session.commit()
+                
+        # 4. 고아 데이터 복구 (MaintItem, LogItem, SetupDetail, SetupLog, TroubleLog 등)
+        updated_equips = Equipment.query.all()
+        updated_equip_ids = {eq.id for eq in updated_equips}
+        
+        def recover_orphans(model_class, table_name):
+            orphans = model_class.query.filter(~model_class.equip_id.in_(list(updated_equip_ids))).all()
+            for orphan in orphans:
+                old_id = orphan.equip_id
+                parts = old_id.split('::') if old_id else []
+                site_name = parts[0] if len(parts) > 0 else "기타사업장"
+                fallback_id = f"{site_name}::기타(ETC)::::"
+                
+                if not Equipment.query.filter_by(id=fallback_id).first():
+                    if not Site.query.filter_by(name=site_name).first():
+                        db.session.add(Site(name=site_name, buildings='[]'))
+                        db.session.flush()
+                    db.session.add(Equipment(id=fallback_id, site_name=site_name, name="기타(ETC)", serial=""))
+                    db.session.add(SetupInfo(equip_id=fallback_id, cust_equip_name="", model=""))
+                    db.session.flush()
+                    updated_equip_ids.add(fallback_id)
+                
+                db.session.execute(
+                    text(f"UPDATE {table_name} SET equip_id=:fallback_id WHERE equip_id=:old_id"),
+                    {"fallback_id": fallback_id, "old_id": old_id}
+                )
+            db.session.commit()
+            
+        recover_orphans(MaintItem, "maint_item")
+        recover_orphans(LogItem, "log_item")
+        recover_orphans(SetupDetail, "setup_detail")
+        recover_orphans(SetupLog, "setup_log")
+        recover_orphans(TroubleLog, "trouble_log")
+        
+        try:
+            db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
+            db.session.commit()
+        except:
+            try:
+                db.session.execute(text("PRAGMA foreign_keys = ON;"))
+                db.session.commit()
+            except:
+                pass
+        print("[*] DB Migration to 4-field equipment matching completed successfully.")
+    except Exception as e:
+        db.session.rollback()
+        try:
+            db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
+            db.session.commit()
+        except:
+            try:
+                db.session.execute(text("PRAGMA foreign_keys = ON;"))
+                db.session.commit()
+            except:
+                pass
+        print(f"[x] DB Migration Error: {str(e)}")
+        app.logger.error(f"DB Migration Error: {str(e)}", exc_info=True)
+
 def init_db():
     with app.app_context():
         db.create_all()
@@ -2610,18 +2831,21 @@ def init_db():
                 u.pw = generate_password_hash(fallback_pw, method='pbkdf2:sha256:50000')
                 db.session.commit() # [수정] DB 연결 끊김 방지를 위해 1명 변환될 때마다 즉시 저장
 
-        # [마이그레이션] 기존 사업장에 '기타(ETC)' 장비 자동 추가
+        # [마이그레이션] 기존 사업장에 '기타(ETC)' 장비 자동 추가 (신규 4필드 규격)
         try:
             sites = Site.query.all()
             for site in sites:
-                etc_id = f"{site.name}::기타(ETC)"
+                etc_id = f"{site.name}::기타(ETC)::::"
                 if not Equipment.query.filter_by(id=etc_id).first():
                     db.session.add(Equipment(id=etc_id, site_name=site.name, name="기타(ETC)", serial=""))
-                    db.session.add(SetupInfo(equip_id=etc_id, model=""))
+                    db.session.add(SetupInfo(equip_id=etc_id, cust_equip_name="", model=""))
             db.session.commit()
         except Exception as e:
             db.session.rollback()
             app.logger.error(f"ETC Equipment Migration Error: {str(e)}")
+
+        # [마이그레이션] 4가지 항목 고유키 규격 변경 및 고아 데이터 복구 실행 (1회 완료되어 주석 처리)
+        # migrate_db_to_four_fields()
 
 # WSGI 서버(PythonAnywhere 등) 환경에서도 앱 구동 시 초기화가 실행되도록 __main__ 블록 밖으로 이동
 # [Phase 3] JSON 파일 관련 로직이 제거되었으므로, 폴더 생성만 수행

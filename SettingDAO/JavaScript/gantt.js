@@ -1494,7 +1494,7 @@ function setupGanttSearchModal() {
                 let hasValidEquip = false;
                 const equips = data[site] || [];
                 for (let equip of equips) {
-                    if (equip === '기타(ETC)') continue;
+                    if (equip && equip.startsWith('기타(ETC)')) continue;
                     const equipData = setupData[`${site}::${equip}`];
                     let isCompleted = false;
                     let hasScheduledDate = false;
@@ -1582,7 +1582,7 @@ function openGanttSearchModal() {
             let hasValidEquip = false;
             const equips = data[site] || [];
             for (let equip of equips) {
-                if (equip === '기타(ETC)') continue;
+                if (equip && equip.startsWith('기타(ETC)')) continue;
                 const equipData = setupData[`${site}::${equip}`];
                 let isCompleted = false;
                 let hasScheduledDate = false;
@@ -1641,7 +1641,7 @@ function updateGanttSearchEquipSelect(site) {
     const showIng = cbIng ? cbIng.checked : false;
 
     equips.forEach(equip => {
-        if (equip === '기타(ETC)') return; // 기타(ETC) 장비 제외
+        if (equip && equip.startsWith('기타(ETC)')) return; // 기타(ETC) 장비 제외
 
         // 셋업 진행 중 여부 확인
         const equipData = setupData[`${site}::${equip}`];
