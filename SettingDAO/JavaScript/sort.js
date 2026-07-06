@@ -1709,7 +1709,7 @@ function renderSortListTableOnly() {
 
 
     if (results.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="11" class="list-empty-msg sort-empty-row">검색된 결과가 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="13" class="list-empty-msg sort-empty-row">검색된 결과가 없습니다.</td></tr>';
         return;
     }
 
@@ -1726,11 +1726,73 @@ function renderSortListTableOnly() {
         }
         let equipDisplayHtml = `<div>${escapeHtml(row.equipName)}</div>${subInfo}`;
 
-        let detailHtml = escapeHtml(row.detailType);
+        let detail1 = '';
+        let detail2 = '';
         if (row.detailType && row.detailType.includes(' > ')) {
             const parts = row.detailType.split(' > ');
-            detailHtml = `<div>${escapeHtml(parts[0])}</div><div class="detail-sub-text">${escapeHtml(parts[1])}</div>`;
+            detail1 = parts[0].trim();
+            detail2 = parts[1].trim();
+        } else {
+            detail1 = row.detailType || '';
+            detail2 = '-';
         }
+
+        // [요청] 작업내용과 작업 상세 내용 분리 및 줄바꿈/행위단어 제거 처리
+        const rawContent = row.content || '';
+        const itemsList = rawContent.split(',').map(s => s.trim()).filter(Boolean);
+        const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+        
+        let workContentList = [];
+        let workDetailContentList = [];
+
+        itemsList.forEach(item => {
+            let itemWork = '';
+            let itemDetail = '';
+
+            const cleanItem = item.replace(/^\[[^\]]+\]\s*/g, '').trim();
+            const firstCost = (row.costType || '유상').split(',')[0].trim();
+
+            if (item.includes(' - ')) {
+                const parts = item.split(' - ');
+                // 파트 교체/수리 등의 작업은 [유상] 등의 접두사를 붙이지 않습니다.
+                itemWork = parts[0].replace(/^\[[^\]]+\]\s*/g, '').trim();
+                itemDetail = parts.slice(1).join(' - ').trim();
+
+                // 작업 상세 내용(물품명)에서 라벨처럼 붙는 "파트 이상 교체", "파트 이상 수리" 등 단어 완전히 제거
+                const cleanPattern = /^(?:파트\s*이상\s*\(?교체\)?|파트\s*이상\s*\(?수리\)?|파츠\s*이상\s*\(?교체\)?|파츠\s*이상\s*\(?수리\)?)/gi;
+                itemDetail = itemDetail.replace(cleanPattern, '').trim();
+
+                if (itemDetail.startsWith('-')) {
+                    itemDetail = itemDetail.substring(1).trim();
+                }
+                if (!itemDetail) itemDetail = '-';
+            } else {
+                // 하이픈이 없는 경우: 물품 등록 마스터 데이터에 존재하는 경우에만 [비용처리] 라벨을 부착하고, 그 외의 모든 일반 텍스트는 라벨 제거
+                const isRegisteredPart = adminItems.some(ai => {
+                    const cleanPart = (ai.part || '').trim();
+                    const cleanCode = (ai.code || '').trim();
+                    return cleanPart.toLowerCase() === cleanItem.toLowerCase() || 
+                           cleanCode.toLowerCase() === cleanItem.toLowerCase();
+                });
+
+                if (isRegisteredPart) {
+                    // 마스터에 정식 등록된 추가 물품인 경우 [비용처리] 라벨을 꼭 붙여줍니다.
+                    itemWork = `[${firstCost}] ${cleanItem}`;
+                    itemDetail = '-';
+                } else {
+                    // 통신 이상, 단순조치, 내용 없음 등 마스터에 없는 수동 입력 텍스트/일반 작업은 비용 라벨을 제거합니다.
+                    itemWork = cleanItem;
+                    itemDetail = '-';
+                }
+            }
+
+            workContentList.push(itemWork);
+            workDetailContentList.push(itemDetail);
+        });
+
+        // HTML 태그 렌더링용 (품목 1개당 1줄씩 표시)
+        const workContentDisplayHtml = workContentList.map(w => `<div style="line-height: 1.4; padding: 2px 0;">${escapeHtml(w)}</div>`).join('');
+        const workDetailContentDisplayHtml = workDetailContentList.map(d => `<div style="line-height: 1.4; padding: 2px 0;">${escapeHtml(d)}</div>`).join('');
 
         const badgeClass = row.type ? row.type.replace(/\s/g, '') : 'default';
         const statusClass = row.status === '완료' ? 'status-complete' : 'status-pending';
@@ -1745,8 +1807,10 @@ function renderSortListTableOnly() {
             clone.querySelector('.col-model').textContent = row.modelName;
             clone.querySelector('.col-equip').innerHTML = equipDisplayHtml;
             clone.querySelector('.col-type').innerHTML = `<span class="badge ${badgeClass} sort-badge">${escapeHtml(row.type)}</span>`;
-            clone.querySelector('.col-detail').innerHTML = detailHtml;
-            clone.querySelector('.col-content').textContent = row.content;
+            clone.querySelector('.col-detail1').textContent = detail1;
+            clone.querySelector('.col-detail2').textContent = detail2;
+            clone.querySelector('.col-content').innerHTML = workContentDisplayHtml;
+            clone.querySelector('.col-content-detail').innerHTML = workDetailContentDisplayHtml;
             clone.querySelector('.col-cost').textContent = row.costType;
             const workerTd = clone.querySelector('.col-worker');
             workerTd.title = row.worker;
@@ -1767,8 +1831,10 @@ function renderSortListTableOnly() {
                 <td>${escapeHtml(row.modelName)}</td>
                 <td class="text-left pl-10">${equipDisplayHtml}</td>
                 <td><span class="badge ${badgeClass} sort-badge">${escapeHtml(row.type)}</span></td>
-                <td class="text-left pl-10">${detailHtml}</td>
-                <td class="text-left pl-10">${escapeHtml(row.content)}</td>
+                <td class="text-left pl-10">${escapeHtml(detail1)}</td>
+                <td class="text-left pl-10">${escapeHtml(detail2)}</td>
+                <td class="text-left pl-10">${workContentDisplayHtml}</td>
+                <td class="text-left pl-10">${workDetailContentDisplayHtml}</td>
                 <td>${escapeHtml(row.costType)}</td>
                 <td title="${escapeHtml(row.worker)}">${escapeHtml(row.worker) || '-'}</td>
                 <td>${escapeHtml(row.md)}</td>
@@ -2252,55 +2318,180 @@ function renderSortChart(results) {
 /* ==========================================================================
    6. 데이터 내보내기 및 헬퍼 (Export & Helpers)
    ========================================================================== */
-// [6.1] 검색된 결과를 CSV 파일 양식으로 변환 및 다운로드 추출
+// [6.1] 검색된 결과를 Excel 파일 양식으로 변환 및 다운로드 추출 (진짜 셀 병합 적용)
 function exportSortResultsToCSV(results) {
-    let csvContent = '\uFEFF';
-    csvContent += '날짜,상태,사업장 구분,사업장,건물명,모델명,장비명(약어),Serial No,고객사 장비명,구분,세부구분,물품상세구분,작업내용,비용처리,작업자,공수,상세메모\n';
+    if (typeof XLSX === 'undefined') {
+        alert('엑셀 라이브러리(SheetJS)가 아직 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
+        return;
+    }
+
+    const wb = XLSX.utils.book_new();
+    const ws_data = [];
+
+    // 헤더 정의
+    ws_data.push([
+        '날짜', '상태', '사업장 구분', '사업장', '건물명', '모델명', '장비명(약어)', 
+        'Serial No', '고객사 장비명', '구분', '세부구분 1', '세부구분 2', 
+        '물품상세구분', '작업내용', '작업 상세 내용', '비용처리', '작업자', '공수', '상세메모'
+    ]);
+
+    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+    const merges = [];
+    let startRow = 1; // 헤더가 0번째 행이므로 데이터 시작은 1번째 행
 
     results.forEach(row => {
-        const cols = [
-            row.date,
-            row.status,
-            row.siteGroup,
-            row.site,
-            row.building,
-            row.modelName,
-            row.equipName,
-            row.serial,
-            row.custName,
-            row.type,
-            row.detailType,
-            row.itemDetailType,
-            row.content,
-            row.costType,
-            row.worker,
-            row.md,
-            row.memo
-        ].map(v => {
-            let strVal = String(v || '');
-            // [수정] 엑셀 수식 및 음수 자동 변환 방지: =, -, +, @, ( 로 시작하면 앞에 싱글 쿼테이션(')을 붙여 텍스트로 강제 인식시킴
-            if (/^[=+\-@\(]/.test(strVal.trim())) {
-                strVal = "'" + strVal;
-            }
-            return `"${strVal.replace(/"/g, '""')}"`;
-        }).join(',');
+        let dt1 = '';
+        let dt2 = '';
+        if (row.detailType && row.detailType.includes(' > ')) {
+            const parts = row.detailType.split(' > ');
+            dt1 = parts[0].trim();
+            dt2 = parts[1].trim();
+        } else {
+            dt1 = row.detailType || '';
+            dt2 = '-';
+        }
 
-        csvContent += cols + '\n';
+        const rawContent = row.content || '';
+        const itemsList = rawContent.split(',').map(s => s.trim()).filter(Boolean);
+        const itemCount = itemsList.length > 0 ? itemsList.length : 1;
+
+        for (let i = 0; i < itemCount; i++) {
+            let itemWork = '-';
+            let itemDetail = '-';
+
+            if (itemsList.length > 0) {
+                const item = itemsList[i];
+                const cleanItem = item.replace(/^\[[^\]]+\]\s*/g, '').trim();
+                const firstCost = (row.costType || '유상').split(',')[0].trim();
+
+                if (item.includes(' - ')) {
+                    const parts = item.split(' - ');
+                    // 파트 교체/수리 등의 작업은 [유상] 등의 접두사를 붙이지 않습니다.
+                    itemWork = parts[0].replace(/^\[[^\]]+\]\s*/g, '').trim();
+                    itemDetail = parts.slice(1).join(' - ').trim();
+
+                    // 작업 상세 내용(물품명)에서 라벨처럼 붙는 "파트 이상 교체", "파트 이상 수리" 등 단어 완전히 제거
+                    const cleanPattern = /^(?:파트\s*이상\s*\(?교체\)?|파트\s*이상\s*\(?수리\)?|파츠\s*이상\s*\(?교체\)?|파츠\s*이상\s*\(?수리\)?)/gi;
+                    itemDetail = itemDetail.replace(cleanPattern, '').trim();
+
+                    if (itemDetail.startsWith('-')) {
+                        itemDetail = itemDetail.substring(1).trim();
+                    }
+                    if (!itemDetail) itemDetail = '-';
+                } else {
+                    // 하이픈이 없는 경우: 물품 등록 마스터 데이터에 존재하는 경우에만 [비용처리] 라벨을 부착하고, 그 외의 모든 일반 텍스트는 라벨 제거
+                    const isRegisteredPart = adminItems.some(ai => {
+                        const cleanPart = (ai.part || '').trim();
+                        const cleanCode = (ai.code || '').trim();
+                        return cleanPart.toLowerCase() === cleanItem.toLowerCase() || 
+                               cleanCode.toLowerCase() === cleanItem.toLowerCase();
+                    });
+
+                    if (isRegisteredPart) {
+                        // 마스터에 정식 등록된 추가 물품인 경우 [비용처리] 라벨을 꼭 붙여줍니다.
+                        itemWork = `[${firstCost}] ${cleanItem}`;
+                        itemDetail = '-';
+                    } else {
+                        // 통신 이상, 단순조치, 내용 없음 등 마스터에 없는 수동 입력 텍스트/일반 작업은 비용 라벨을 제거합니다.
+                        itemWork = cleanItem;
+                        itemDetail = '-';
+                    }
+                }
+            }
+
+            // AOA 데이터 빌드 (첫 번째 품목 셀에만 정보 제공하고 병합시킴)
+            ws_data.push([
+                i === 0 ? row.date : '',
+                i === 0 ? row.status : '',
+                i === 0 ? row.siteGroup : '',
+                i === 0 ? row.site : '',
+                i === 0 ? row.building : '',
+                i === 0 ? row.modelName : '',
+                i === 0 ? row.equipName : '',
+                i === 0 ? row.serial : '',
+                i === 0 ? row.custName : '',
+                i === 0 ? row.type : '',
+                i === 0 ? dt1 : '',
+                i === 0 ? dt2 : '',
+                i === 0 ? row.itemDetailType : '',
+                itemWork,
+                itemDetail,
+                i === 0 ? row.costType : '',
+                i === 0 ? row.worker : '',
+                i === 0 ? row.md : '',
+                i === 0 ? row.memo : ''
+            ]);
+        }
+
+        // 품목이 2개 이상일 때 병합 조건 생성
+        if (itemCount > 1) {
+            const endRow = startRow + itemCount - 1;
+            // 0~12열 병합 (날짜부터 물품상세구분까지)
+            for (let c = 0; c <= 12; c++) {
+                merges.push({ s: { r: startRow, c: c }, e: { r: endRow, c: c } });
+            }
+            // 15~18열 병합 (비용처리부터 상세메모까지)
+            for (let c = 15; c <= 18; c++) {
+                merges.push({ s: { r: startRow, c: c }, e: { r: endRow, c: c } });
+            }
+        }
+
+        startRow += itemCount;
     });
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `SORT_작업조회결과_${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const ws = XLSX.utils.aoa_to_sheet(ws_data);
+    ws['!merges'] = merges;
 
-    // [보안 감사 로그] CSV 내보내기 활동 로그 기록
-    logActionToServer('EXPORT_CSV', '정렬/통계 작업조회결과 CSV 다운로드');
+    // [추가] 셀 스타일링: 수직/수평 가운데 맞춤 및 헤더 강조 적용
+    for (let ref in ws) {
+        if (ref[0] === '!') continue;
+        const cell = ws[ref];
+        if (!cell) continue;
+
+        if (!cell.s) cell.s = {};
+        
+        // 수직/수평 가운데 맞춤 및 텍스트 자동 줄바꿈 지정
+        cell.s.alignment = {
+            vertical: 'center',
+            horizontal: 'center',
+            wrapText: true
+        };
+
+        // 헤더 행 스타일링 (폰트 볼드, 연한 회색 배경, 하단 굵은 실선 테두리)
+        const rowNum = parseInt(ref.replace(/[^0-9]/g, ''));
+        if (rowNum === 1) {
+            cell.s.font = { bold: true, name: '맑은 고딕', sz: 10 };
+            cell.s.fill = { fgColor: { rgb: "EAEAEA" } };
+            cell.s.border = {
+                bottom: { style: 'medium', color: { rgb: "000000" } }
+            };
+        } else {
+            cell.s.font = { name: '맑은 고딕', sz: 10 };
+        }
+    }
+
+    // 셀 너비 자동 세팅 (상세메모 S열(index 18)은 565px 고정, 나머지는 자동 맞춤)
+    const colWidths = ws_data[0].map((_, colIdx) => {
+        if (colIdx === 18) {
+            return { wpx: 565 };
+        }
+        let maxLen = 10;
+        ws_data.forEach(row => {
+            const val = String(row[colIdx] || '');
+            const len = val.replace(/[^\x00-\xff]/g, 'xx').length; // 한글 가중치 반영
+            if (len > maxLen) maxLen = len;
+        });
+        return { wch: maxLen + 2 };
+    });
+    ws['!cols'] = colWidths;
+
+    XLSX.utils.book_append_sheet(wb, ws, '작업조회결과');
+    XLSX.writeFile(wb, `SORT_작업조회결과_${new Date().toISOString().slice(0, 10)}.xlsx`);
+
+    // [보안 감사 로그] Excel 내보내기 활동 로그 기록
+    logActionToServer('EXPORT_CSV', '정렬/통계 작업조회결과 Excel 다운로드(셀 병합)');
 }
+
 
 // [6.2] 보안: XSS 공격 방지용 HTML 텍스트 이스케이프 헬퍼
 function escapeHtml(text) {
@@ -2397,7 +2588,7 @@ function openSortHistoryModal(site, equip) {
         const dateA = a.date || '';
         const dateB = b.date || '';
         if (dateB !== dateA) return dateB.localeCompare(dateA);
-        return 0; 
+        return 0;
     });
 
     tbody.innerHTML = '';

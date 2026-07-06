@@ -210,8 +210,10 @@
                                 <th style="width: 100px;">모델명</th>
                                 <th style="width: 150px;">장비명</th>
                                 <th style="width: 80px;">구분</th>
-                                <th style="width: 180px;">세부구분</th>
-                                <th style="width: auto;">작업내용 (물품)</th>
+                                <th style="width: 100px;">세부구분 1</th>
+                                <th style="width: 100px;">세부구분 2</th>
+                                <th style="width: 180px;">작업내용</th>
+                                <th style="width: 180px;">작업 상세 내용</th>
                                 <th style="width: 80px;">비용처리</th>
                                 <th style="width: 200px;">작업자</th>
                                 <th style="width: 50px;">공수</th>
@@ -219,7 +221,7 @@
                             </tr>
                         </thead>
                         <tbody id="sort-result-tbody">
-                            <tr><td colspan="11" class="list-empty-msg" style="text-align: center; padding: 20px;">조건을 설정하고 검색해주세요.</td></tr>
+                            <tr><td colspan="13" class="list-empty-msg" style="text-align: center; padding: 20px;">조건을 설정하고 검색해주세요.</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -309,8 +311,10 @@
                 <td class="col-model"></td>
                 <td class="col-equip text-left pl-10"></td>
                 <td class="col-type"><span class="badge sort-badge"></span></td>
-                <td class="col-detail text-left pl-10"></td>
+                <td class="col-detail1 text-left pl-10"></td>
+                <td class="col-detail2 text-left pl-10"></td>
                 <td class="col-content text-left pl-10"></td>
+                <td class="col-content-detail text-left pl-10"></td>
                 <td class="col-cost"></td>
                 <td class="col-worker"></td>
                 <td class="col-md"></td>
@@ -323,5 +327,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/sort.js') }}"></script>
 {% endblock %}
