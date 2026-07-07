@@ -2061,6 +2061,29 @@ def history_transaction():
     log_upserts = data.get('log_upserts', [])
     log_deletes = data.get('log_deletes', [])
 
+    # [추가] 외래 키 충돌 방지를 위한 equip_id 지능형 보정 장치
+    exists = Equipment.query.filter_by(id=equip_id).first()
+    if not exists and equip_id:
+        parts = equip_id.split('::')
+        if len(parts) >= 3:
+            site = parts[0]
+            name = parts[1]
+            rest = parts[2:]
+            candidates = Equipment.query.filter_by(site_name=site, name=name).all()
+            corrected_id = None
+            for cand in candidates:
+                si = SetupInfo.query.filter_by(equip_id=cand.id).first()
+                cand_cust = si.cust_equip_name if si else ""
+                rest_set = {r.strip().lower() for r in rest if r.strip()}
+                cand_set = {cand.serial.strip().lower() if cand.serial else "", cand_cust.strip().lower() if cand_cust else ""}
+                cand_set = {c for c in cand_set if c}
+                if rest_set == cand_set or (not rest_set and not cand_set):
+                    corrected_id = cand.id
+                    break
+            if corrected_id:
+                app.logger.info(f"[장비 ID 보정 성공] '{equip_id}' -> '{corrected_id}' (외래 키 매핑 교정)")
+                equip_id = corrected_id
+
     try:
         if maint_deletes:
             MaintItem.query.filter(MaintItem.id.in_(maint_deletes)).delete(synchronize_session=False)
