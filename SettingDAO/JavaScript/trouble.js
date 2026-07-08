@@ -257,7 +257,6 @@ function setupTroubleLoadHistoryEvent() {
                             const parsed = JSON.parse(displayContent);
                             const arr = [];
                             let sit = parsed.situation || '';
-                            if (h.source === 'log' || h.source === 'maint') sit = h.memo || '';
                             if (sit) arr.push(`[상황] ${sit}`);
                             if (parsed.symptom) arr.push(`[증상] ${parsed.symptom}`);
                             if (parsed.cause) arr.push(`[원인] ${parsed.cause}`);
@@ -267,10 +266,8 @@ function setupTroubleLoadHistoryEvent() {
                             tooltipContent = arr.join('\n');
                         } catch(e) {}
                     } else {
-                        if (h.source === 'log' || h.source === 'maint') {
-                            displayContent = h.memo || '-';
-                            tooltipContent = h.memo || '';
-                        }
+                        displayContent = '-';
+                        tooltipContent = '';
                     }
                     const dateStr = h.action_date || h.occur_date || '-';
                     return `<li data-id="${h.id}" data-source="${h.source}" style="padding: 12px; border-bottom: 1px solid #30363d; cursor: pointer; display: flex; flex-direction: column; gap: 5px; background: #161b22; border-radius: 4px; margin-bottom: 8px; transition: background 0.2s;">
@@ -636,11 +633,15 @@ function bindTroubleContentAndImage(data, excludeMemo = false) {
             if (parsed && typeof parsed === 'object' && parsed.situation !== undefined) {
                 situationEl.value = parsed.situation || '';
             } else {
-                situationEl.value = data.memo || '';
+                situationEl.value = '';
             }
         }
-        if (memoInput && (!parsed || typeof parsed !== 'object' || !parsed.trouble_memo)) {
-            memoInput.value = '';
+        if (!excludeMemo && memoInput) {
+            if (parsed && typeof parsed === 'object' && parsed.trouble_memo !== undefined) {
+                memoInput.value = parsed.trouble_memo || '';
+            } else {
+                memoInput.value = data.memo || '';
+            }
         }
     } else {
         if (!excludeMemo && memoInput) memoInput.value = data.memo || '';
@@ -712,7 +713,6 @@ function renderTroubleList(dataList = []) {
                     const parsed = JSON.parse(displayContent);
                     const arr = [];
                     let sit = parsed.situation || '';
-                    if (t.source === 'log' || t.source === 'maint') sit = t.memo || '';
                     
                     if (sit) arr.push(`[상황] ${sit}`);
                     if (parsed.symptom) arr.push(`[증상] ${parsed.symptom}`);
@@ -726,10 +726,8 @@ function renderTroubleList(dataList = []) {
                     tooltipContent = arr.join('\n');
                 } catch(e) {}
             } else {
-                if (t.source === 'log' || t.source === 'maint') {
-                    displayContent = t.memo || '-';
-                    tooltipContent = t.memo || '';
-                }
+                displayContent = '-';
+                tooltipContent = '';
             }
             
             // [추가] 기록여부 판단 (발생 일시 유무 기준)

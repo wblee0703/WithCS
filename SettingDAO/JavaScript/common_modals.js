@@ -796,8 +796,9 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     const additionalWorksBtn = document.getElementById('btn-show-additional-works');
     if (additionalWorksBtn) {
         additionalWorksBtn.style.display = 'none'; // 기본 숨김
-        if (id) {
-            fetch(`/api/maintenance/additional-works?parent_id=${encodeURIComponent(id)}`, {
+        const queryId = item.originalLogId || id;
+        if (queryId) {
+            fetch(`/api/maintenance/additional-works?parent_id=${encodeURIComponent(queryId)}`, {
                 headers: { 'X-CSRFToken': getCookie('csrf_token') }
             })
             .then(res => res.json())
@@ -806,7 +807,9 @@ function openEventDetailModal(site, equip, id, isCompleted) {
                     additionalWorksBtn.style.display = 'inline-block';
                     additionalWorksBtn.textContent = `추가작업 확인 (${resData.data.length})`;
                     additionalWorksBtn.onclick = () => {
-                        openAdditionalWorksListModal(resData.data);
+                        if (typeof window.openExtraWorkHistoryModal === 'function') {
+                            window.openExtraWorkHistoryModal(site, equip, queryId);
+                        }
                     };
                 }
             })
@@ -817,42 +820,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     modal.style.display = 'flex';
 }
 
-// [추가] 연관 추가 작업 리스트 모달 렌더링 및 출력
-function openAdditionalWorksListModal(works) {
-    const modal = document.getElementById('additional-works-modal');
-    const container = document.getElementById('additional-works-list-container');
-    if (!modal || !container) return;
 
-    container.innerHTML = works.map(w => {
-        const badgeColor = w.status === '완료' ? '#2ea44f' : '#f0883e';
-        const rawContent = w.content || '';
-        let displayContent = rawContent;
-        if (typeof rawContent === 'string' && rawContent.startsWith('{')) {
-            try {
-                const parsed = JSON.parse(rawContent);
-                const arr = [];
-                if (parsed.situation) arr.push(`[상황] ${parsed.situation}`);
-                if (parsed.symptom) arr.push(`[증상] ${parsed.symptom}`);
-                if (parsed.cause) arr.push(`[원인] ${parsed.cause}`);
-                displayContent = arr.length > 0 ? arr.join(' / ') : rawContent;
-            } catch(e) {}
-        }
-        return `
-            <div class="additional-work-card" style="border: 1px solid #30363d; background-color: #161b22; border-radius: 6px; padding: 12px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; color: #c9d1d9;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; padding-bottom: 6px; margin-bottom: 4px;">
-                    <span style="font-weight: bold; color: #58a6ff;">${escapeHtml(w.date)}</span>
-                    <span style="background-color: ${badgeColor}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold;">${escapeHtml(w.status)}</span>
-                </div>
-                <div><strong>구분:</strong> [${escapeHtml(w.type)}] ${escapeHtml(w.detail_type)}</div>
-                <div><strong>내용:</strong> ${escapeHtml(displayContent || '-')}</div>
-                <div><strong>담당자:</strong> ${escapeHtml(w.worker || '-')}</div>
-                ${w.memo ? `<div style="border-top: 1px dashed #30363d; padding-top: 6px; margin-top: 4px; color: #8b949e; font-style: italic;">점검 결과 / 메모: ${escapeHtml(w.memo)}</div>` : ''}
-            </div>
-        `;
-    }).join('');
-
-    modal.style.display = 'flex';
-}
 
 /* --- 1.3 UI 및 데이터 헬퍼 (UI & Helpers) --- */
 function buildDetailDropdown(item, site, equip) {

@@ -325,7 +325,7 @@
 </div>
 
     <!-- 추가 작업 내역 모달 -->
-    <div id="extra-work-history-modal" class="modal-overlay" style="display: none; z-index: 10005;">
+    <div id="extra-work-history-modal" class="modal-overlay" style="display: none; z-index: 20005;">
         <div class="modal-window">
             <div class="modal-header">
                 <h3>추가 작업 내역</h3>
@@ -1380,23 +1380,7 @@
     </div>
     {% endif %}
     
-    <!-- [추가] 연관 추가 작업 내역 모달 -->
-    <div id="additional-works-modal" class="modal-overlay" style="display: none; z-index: 2000;">
-        <div class="modal-window" style="max-width: 600px; width: 90%; background-color: #0d1117; border: 1px solid #30363d; border-radius: 8px;">
-            <div class="modal-header" style="border-bottom: 1px solid #30363d; padding: 12px 16px;">
-                <h3 style="color: #e6edf3; margin: 0; font-size: 16px;">연관 추가 작업 내역</h3>
-                <button class="btn-del-sm" onclick="document.getElementById('additional-works-modal').style.display='none';" style="background: transparent; border: none; color: #8b949e; cursor: pointer; font-size: 16px;">✕</button>
-            </div>
-            <div class="modal-body" style="padding: 16px; max-height: 450px; overflow-y: auto;">
-                <div id="additional-works-list-container" style="display: flex; flex-direction: column; gap: 10px;">
-                    <!-- 동적 카드 리스트 생성 영역 -->
-                </div>
-            </div>
-            <div class="modal-btn-group" style="border-top: 1px solid #30363d; padding: 12px 16px; display: flex; justify-content: flex-end;">
-                <button class="btn-gray" onclick="document.getElementById('additional-works-modal').style.display='none';" style="padding: 6px 12px; font-size: 13px;">닫기</button>
-            </div>
-        </div>
-    </div>
+
 
 </body>
 

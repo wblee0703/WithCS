@@ -1460,6 +1460,8 @@ def call_external_chat_api(prompt, system_instruction):
         app.logger.error(f"AI API HTTP Error: {e.code} - {error_msg}")
         if e.code == 429:
             return "현재 구글 AI Studio 무료 API Key의 일일/분당 호출 횟수 제한(Quota Exceeded)을 초과했습니다. 잠시 후(약 30초~1분 뒤) 다시 질문해 주시거나, 결제 카드가 등록된 API Key로 업그레이드해 주세요."
+        elif e.code == 503:
+            return "현재 구글 Gemini AI 서버의 일시적인 혼잡 및 트래픽 폭주 상태(503 Service Unavailable)입니다. 구글 API 서버의 부하가 줄어들 때까지 잠시 후(약 10초~30초 뒤) 다시 질문해 주세요."
         return f"AI API 호출 오류가 발생했습니다. (코드: {e.code})"
     except Exception as e:
         app.logger.error(f"AI API Connection Error: {str(e)}")
@@ -2071,15 +2073,50 @@ def history_transaction():
             rest = parts[2:]
             candidates = Equipment.query.filter_by(site_name=site, name=name).all()
             corrected_id = None
+            
+            import re
+            def normalize_key(val):
+                if not val:
+                    return ""
+                return re.sub(r'[^a-zA-Z0-9]', '', val).lower()
+            
+            app.logger.error(f"[장비 ID 보정 디버깅] 요청 equip_id: {equip_id}")
+            app.logger.error(f"[장비 ID 보정 디버깅] 파싱 - site: {site}, name: {name}, parts[2]: {parts[2]}, parts[3]: {parts[3] if len(parts)>=4 else '없음'}")
+            
+            candidates = Equipment.query.filter_by(site_name=site, name=name).all()
+            app.logger.error(f"[장비 ID 보정 디버깅] 1차 조회 candidates 수: {len(candidates)}")
+            for c in candidates:
+                app.logger.error(f"  -> 후보 ID: {c.id}, Serial: {c.serial}")
+            
             for cand in candidates:
+                # 1. 시리얼 번호 비교 (일치해야 함)
+                cand_serial = cand.serial.strip() if cand.serial else ""
+                req_serial = parts[2].strip()
+                
+                # 2. 고객사장비명 비교
                 si = SetupInfo.query.filter_by(equip_id=cand.id).first()
-                cand_cust = si.cust_equip_name if si else ""
-                rest_set = {r.strip().lower() for r in rest if r.strip()}
-                cand_set = {cand.serial.strip().lower() if cand.serial else "", cand_cust.strip().lower() if cand_cust else ""}
-                cand_set = {c for c in cand_set if c}
-                if rest_set == cand_set or (not rest_set and not cand_set):
-                    corrected_id = cand.id
-                    break
+                cand_cust = si.cust_equip_name.strip() if si and si.cust_equip_name else ""
+                
+                req_cust = parts[3].strip() if len(parts) >= 4 else ""
+                app.logger.error(f"  -> 비교 상세: {cand.id} | Serial: '{cand_serial}' vs '{req_serial}' | Cust: '{cand_cust}' vs '{req_cust}'")
+                
+                if normalize_key(cand_serial) != normalize_key(req_serial):
+                    continue
+                
+                # 요청에 고객사장비명(parts[3])이 있는 경우
+                if len(parts) >= 4:
+                    if normalize_key(cand_cust) != normalize_key(req_cust):
+                        continue
+                else:
+                    # 요청에 고객사장비명이 없는데 DB에는 존재하는 경우 불일치로 판단
+                    if cand_cust != "":
+                        continue
+                
+                # 모든 조건이 일치하면 매핑 성공
+                corrected_id = cand.id
+                app.logger.error(f"  -> 매칭 최종 성공! corrected_id: {corrected_id}")
+                break
+                     
             if corrected_id:
                 app.logger.info(f"[장비 ID 보정 성공] '{equip_id}' -> '{corrected_id}' (외래 키 매핑 교정)")
                 equip_id = corrected_id
@@ -2252,7 +2289,8 @@ def get_trouble_list():
             "worker": l.worker,
             "status": "조치완료",
             "image_data": getattr(l, 'image_data', ''),
-            "group_key": group_key
+            "group_key": group_key,
+            "original_log_id": l.original_log_id
         })
         
     grouped = {}
@@ -2261,7 +2299,9 @@ def get_trouble_list():
         if key not in grouped:
             grouped[key] = item
             grouped[key]['_check_items'] = set([x.strip() for x in str(item['check_item']).split(',') if x.strip() and x.strip() != '-'])
+            grouped[key]['_raw_items'] = [item]
         else:
+            grouped[key]['_raw_items'].append(item)
             for x in str(item['check_item']).split(','):
                 x = x.strip()
                 if x and x != '-':
@@ -2289,6 +2329,53 @@ def get_trouble_list():
         
         if not item['content'] or str(item['content']).strip() == "":
             item['content'] = "-"
+            
+        # [추가] memo 병합 처리
+        raw_items = item.get('_raw_items', [])
+        if len(raw_items) > 1:
+            # 부모(original_log_id 가 없는 것)를 최우선, 나머지는 날짜순 정렬
+            def sort_key(x):
+                has_parent = 1 if (x.get('original_log_id') or '') != '' else 0
+                date_val = x.get('action_date') or x.get('occur_date') or ''
+                return (has_parent, date_val)
+            
+            raw_items.sort(key=sort_key)
+            
+            memos = []
+            add_work_idx = 1
+            for idx, r_item in enumerate(raw_items):
+                m_val = str(r_item.get('memo') or '').strip()
+                if m_val and m_val != '-':
+                    # 작업일 추출
+                    date_val = r_item.get('action_date') or r_item.get('occur_date') or ''
+                    if len(date_val) >= 10:
+                        date_val = date_val[:10]
+                    date_suffix = f" ({date_val})" if date_val else ""
+                    
+                    if m_val.startswith('<최초>') or m_val.startswith('<추가'):
+                        memos.append(m_val)
+                    elif idx == 0:
+                        memos.append(f"<최초>{date_suffix}\n{m_val}")
+                    else:
+                        memos.append(f"<추가{add_work_idx}>{date_suffix}\n{m_val}")
+                        add_work_idx += 1
+            
+            if memos:
+                item['memo'] = "\n\n".join(memos)
+            else:
+                item['memo'] = ""
+        else:
+            # 단일 건일 때도 memo가 존재하면 <최초> 포맷 부여
+            m_val = str(item.get('memo') or '').strip()
+            if m_val and m_val != '-' and not m_val.startswith('<최초>') and not m_val.startswith('<추가'):
+                date_val = item.get('action_date') or item.get('occur_date') or ''
+                if len(date_val) >= 10:
+                    date_val = date_val[:10]
+                date_suffix = f" ({date_val})" if date_val else ""
+                item['memo'] = f"<최초>{date_suffix}\n{m_val}"
+                
+        if '_raw_items' in item:
+            del item['_raw_items']
             
         final_result.append(item)
         

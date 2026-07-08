@@ -65,7 +65,14 @@ function getScheduleForCalendar() {
                             let targetDateStr = '';
                             if (item.scheduledDate) {
                                 // [추가] 이미 이력으로 완료 처리된 항목은 캘린더 예정(maint)에서 중복 노출 방지
-                                const isDone = data.logs && data.logs.some(l => l.date === item.scheduledDate && (l.content || '').includes(item.content || ''));
+                                const isDone = data.logs && data.logs.some(l => {
+                                    const itemContent = (item.content || '').trim();
+                                    if (!itemContent) return false;
+                                    if (item.originalLogId) {
+                                        return l.date === item.scheduledDate && l.originalLogId === item.originalLogId && (l.content || '').includes(itemContent);
+                                    }
+                                    return l.date === item.scheduledDate && (l.content || '').includes(itemContent);
+                                });
                                 if (!isDone) {
                                     targetDateStr = item.scheduledDate;
                                 }
