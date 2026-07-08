@@ -4442,7 +4442,36 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             cSel.addEventListener('change', (e) => { e.stopPropagation(); if (cSel.closest('.log-select-item').classList.contains('selected')) updateTriggerText(); });
         });
         list.querySelectorAll('.log-select-item').forEach(div => {
+            let startY = 0;
+            let startX = 0;
+            let isMoving = false;
+
+            div.addEventListener('touchstart', (e) => {
+                window.lastTouchTime = Date.now();
+                startY = e.touches[0].clientY;
+                startX = e.touches[0].clientX;
+                isMoving = false;
+            }, { passive: true });
+
+            div.addEventListener('touchmove', (e) => {
+                const moveY = e.touches[0].clientY;
+                const moveX = e.touches[0].clientX;
+                if (Math.abs(moveY - startY) > 6 || Math.abs(moveX - startX) > 6) {
+                    isMoving = true;
+                }
+            }, { passive: true });
+
+            div.addEventListener('touchend', (e) => {
+                if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
+                if (isMoving) return;
+                e.preventDefault();
+                e.stopPropagation();
+                div.classList.toggle('selected');
+                updateTriggerText();
+            });
+
             div.addEventListener('mousedown', (e) => {
+                if (window.lastTouchTime && Date.now() - window.lastTouchTime < 600) return;
                 if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
                 e.preventDefault(); e.stopPropagation();
                 div.classList.toggle('selected');
