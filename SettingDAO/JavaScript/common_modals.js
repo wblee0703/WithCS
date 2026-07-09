@@ -410,7 +410,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
     const contentEl = document.getElementById('detail-content');
     contentEl.dataset.rawContent = displayContent; // 원본 데이터 저장
-    const itemsArr = displayContent.split(',').map(s => s.trim()).filter(s => s);
+    const itemsArr = window.splitSafetyContent(displayContent);
 
     // [수정] 텍스트 모드로 표시할 때 불필요한 비용 태그 제거
     const cleanItemsArr = itemsArr.map(s => {
@@ -876,7 +876,7 @@ function buildDetailDropdown(item, site, equip) {
     let currentContent = contentDiv.dataset.rawContent || contentDiv.innerText.trim();
     if (currentContent === '내용 없음') currentContent = '';
 
-    const itemsArr = currentContent ? currentContent.split(',').map(s => s.trim()).filter(s => s) : [];
+    const itemsArr = window.splitSafetyContent(currentContent);
     let baseItems = [];
     let partItems = [];
     const partKeywords = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'];
@@ -914,7 +914,7 @@ function buildDetailDropdown(item, site, equip) {
     let baseContent = baseItems.join(', ');
     let partContentStr = partItems.join(', ');
 
-    const currentValues = baseContent ? baseContent.split(',').map(s => s.trim()).filter(s => s && s !== '내용 없음') : [];
+    const currentValues = window.splitSafetyContent(baseContent).filter(s => s !== '내용 없음');
     const selectedMap = {};
     currentValues.forEach(val => {
         const match = val.match(/^\[(.*?)\] (.*)$/);
@@ -1057,7 +1057,7 @@ function buildDetailDropdown(item, site, equip) {
                     }
                     if (!pureContent) return;
 
-                    const partsArray = pureContent.split(',').map(s => s.trim()).filter(Boolean);
+                    const partsArray = window.splitSafetyContent(pureContent);
                     partsArray.forEach(pText => {
                         let actualPart = pText;
                         const innerCostMatch = actualPart.match(/^\[(.*?)\]\s*(.*)$/);
@@ -2555,7 +2555,7 @@ async function cancelScheduleCompletion() {
 
         data.logs.splice(logIndex, 1);
 
-        const contents = logContent.split(',').map(s => s.trim()).filter(Boolean);
+        const contents = window.splitSafetyContent(logContent);
 
         if (!data.maint) data.maint = [];
 
@@ -3301,12 +3301,12 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
                 const partRow = document.getElementById('register-part-row');
                 if (partRow) {
                     const presetContent = presetData.content || '';
-                    const isPartIssue = presetContent.split(',').map(s => s.trim()).some(v => v.match(/(파트|물품) 이상\s*\(?(교체|수리)\)?/) || v.includes('용액 용자 이상') || v.includes('용액 / 용자 이상'));
+                    const isPartIssue = window.splitSafetyContent(presetContent).some(v => v.match(/(파트|물품) 이상\s*\(?(교체|수리)\)?/) || v.includes('용액 용자 이상') || v.includes('용액 / 용자 이상'));
                     partRow.style.display = isPartIssue ? 'flex' : 'none';
                     
                     if (isPartIssue && typeof window.renderLogPartOptions === 'function') {
                         let presetParts = [];
-                        presetContent.split(',').map(s => s.trim()).forEach(v => {
+                        window.splitSafetyContent(presetContent).forEach(v => {
                             const kwMatch = v.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
                             if (kwMatch) {
                                 presetParts.push(kwMatch[2].trim());
@@ -3757,7 +3757,7 @@ window.updateRegisterContentOptions = function () {
                 }
                 if (!pureContent) return;
 
-                const partsArray = pureContent.split(',').map(s => s.trim()).filter(Boolean);
+                const partsArray = window.splitSafetyContent(pureContent);
                 partsArray.forEach(pText => {
                     let actualPart = pText;
                     const innerCostMatch = actualPart.match(/^\[(.*?)\]\s*(.*)$/);
@@ -4233,7 +4233,7 @@ async function confirmRegisterSchedule() {
                 if (!partContent) return alert('교체/수리할 물품을 선택해주세요.');
 
                 if (content) {
-                    const contentArr = content.split(',').map(s => s.trim());
+                    const contentArr = window.splitSafetyContent(content);
                     let newContentArr = [];
                     contentArr.forEach(val => {
                         let baseCost = '유상';
@@ -4242,7 +4242,7 @@ async function confirmRegisterSchedule() {
 
                         const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
                         if (isPartKeyword) {
-                            const partsArray = partContent.split(',').map(s => s.trim()).filter(Boolean);
+                            const partsArray = window.splitSafetyContent(partContent);
                             partsArray.forEach(p => newContentArr.push(`${val} - ${p}`));
                         } else {
                             newContentArr.push(`[${baseCost}] ${val}`);

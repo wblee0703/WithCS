@@ -176,6 +176,50 @@ window.extractSpecFromContent = function (contentStr) {
     return { spec: '', pureContent: contentStr };
 };
 
+// [추가] 물품명에 쉼표(,)가 포함되어 있을 때 다중 물품으로 오인되어 분할되는 현상을 방지하는 지능형 스플릿 유틸리티
+window.splitSafetyContent = function (contentStr, adminItems) {
+    if (!contentStr) return [];
+    if (!adminItems) {
+        adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+    }
+
+    // 콤마가 포함된 실제 물품명(part) 필터링 및 길이 내림차순 정렬
+    const commaParts = adminItems
+        .map(item => item.part)
+        .filter(part => part && part.includes(','))
+        .sort((a, b) => b.length - a.length);
+
+    let tempStr = contentStr;
+    const placeholderMap = new Map();
+
+    // 콤마 포함 물품명을 임시 플레이스홀더로 치환
+    commaParts.forEach((part, index) => {
+        const placeholder = `___COMMA_PLACEHOLDER_${index}___`;
+        // 정규식 escape
+        const escapedPart = part.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const regex = new RegExp(escapedPart, 'g');
+        if (regex.test(tempStr)) {
+            tempStr = tempStr.replace(regex, placeholder);
+            placeholderMap.set(placeholder, part);
+        }
+    });
+
+    // 이제 안전하게 콤마로 스플릿
+    const splitted = tempStr.split(',').map(s => s.trim()).filter(Boolean);
+
+    // 플레이스홀더 복원
+    const restored = splitted.map(item => {
+        let restoredItem = item;
+        placeholderMap.forEach((originalPart, placeholder) => {
+            restoredItem = restoredItem.replace(new RegExp(placeholder, 'g'), originalPart);
+        });
+        return restoredItem;
+    });
+
+    return restored;
+};
+
+
 /* ==========================================================================
    2. DB 동기화 API 통신 (DB Sync APIs)
    ========================================================================== */

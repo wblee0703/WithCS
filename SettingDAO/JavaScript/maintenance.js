@@ -1213,7 +1213,7 @@ function renderLogs() {
             const tooltipItems = [];
             const displayItems = [];
 
-            log.content.split(',').forEach(s => {
+            window.splitSafetyContent(log.content).forEach(s => {
                 let cleanV = s.trim();
                 // [개선] 비용처리 태그(유상, 무상, 무상(보증) 등)를 위치에 관계없이 명시적으로 모두 제거
                 cleanV = cleanV.replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').replace(/\s+/g, ' ').trim();
@@ -1457,7 +1457,7 @@ function selectLog(id, focus = true) {
         if (partsList) {
             const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
             const contentStr = logItem.content || '';
-            const itemsList = contentStr.split(',').map(s => s.trim()).filter(Boolean);
+            const itemsList = window.splitSafetyContent(contentStr);
 
             let replacedParts = [];
 

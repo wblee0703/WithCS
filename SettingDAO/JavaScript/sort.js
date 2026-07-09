@@ -1417,7 +1417,7 @@ function performSortSearch() {
                         if (!isCostTypeAll && costTypeFilters.length === 0) return false;
                         if (!isItemDetailTypeAll && itemDetailTypeFilters.length === 0) return false;
 
-                        const rawItemsList = pureContent.split(',').map(s => s.trim()).filter(Boolean);
+                        const rawItemsList = window.splitSafetyContent(pureContent);
                         let matchedRawItems = [];
                         let matchedItemDetailType = '';
 
@@ -1575,8 +1575,8 @@ function performSortSearch() {
             const existing = groupedResultsMap.get(groupKey);
 
             // 내용(물품) 병합
-            const existingContents = existing.content.split(',').map(s => s.trim()).filter(Boolean);
-            const newContents = item.content.split(',').map(s => s.trim()).filter(Boolean);
+            const existingContents = window.splitSafetyContent(existing.content);
+            const newContents = window.splitSafetyContent(item.content);
             newContents.forEach(c => {
                 if (!existingContents.includes(c)) existingContents.push(c);
             });
@@ -1739,7 +1739,7 @@ function renderSortListTableOnly() {
 
         // [요청] 작업내용과 작업 상세 내용 분리 및 줄바꿈/행위단어 제거 처리
         const rawContent = row.content || '';
-        const itemsList = rawContent.split(',').map(s => s.trim()).filter(Boolean);
+        const itemsList = window.splitSafetyContent(rawContent);
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
         
         let workContentList = [];
@@ -1935,7 +1935,7 @@ function renderSortChart(results) {
         if (row.status !== '완료') return;
 
         if (row.content) {
-            const items = row.content.split(',').map(s => s.trim());
+            const items = window.splitSafetyContent(row.content);
             items.forEach(item => {
                 let pureItem = item.replace(/\[.*?\]\s*/g, '').trim();
                 if (pureItem.includes(' - ')) {
@@ -2001,7 +2001,7 @@ function renderSortChart(results) {
 
         // 비정기 점검 항목(내용) 파싱 및 사업장별 데이터 수집
         if (row.type === '비정기' && row.content) {
-            const items = row.content.split(',').map(s => s.trim());
+            const items = window.splitSafetyContent(row.content);
             const seenItems = new Set();
             items.forEach(item => {
                 let pureItem = item.replace(/\[.*?\]\s*/g, '').trim();
@@ -2352,7 +2352,7 @@ function exportSortResultsToCSV(results) {
         }
 
         const rawContent = row.content || '';
-        const itemsList = rawContent.split(',').map(s => s.trim()).filter(Boolean);
+        const itemsList = window.splitSafetyContent(rawContent);
         const itemCount = itemsList.length > 0 ? itemsList.length : 1;
 
         for (let i = 0; i < itemCount; i++) {
