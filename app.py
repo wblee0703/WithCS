@@ -2083,12 +2083,17 @@ def history_transaction():
             app.logger.debug(f"[장비 ID 보정 디버깅] 요청 equip_id: {equip_id}")
             app.logger.debug(f"[장비 ID 보정 디버깅] 파싱 - site: {site}, name: {name}, parts[2]: {parts[2]}, parts[3]: {parts[3] if len(parts)>=4 else '없음'}")
             
-            candidates = Equipment.query.filter_by(site_name=site, name=name).all()
+            # [개선] 장비 모델명의 미세한 공백/대소문자 차이(예: PROFAST2000 vs proFAST 2000)를 포괄적으로 보정하기 위해 site_name으로만 1차 후보군 조회
+            candidates = Equipment.query.filter_by(site_name=site).all()
             app.logger.debug(f"[장비 ID 보정 디버깅] 1차 조회 candidates 수: {len(candidates)}")
             for c in candidates:
-                app.logger.debug(f"  -> 후보 ID: {c.id}, Serial: {c.serial}")
+                app.logger.debug(f"  -> 후보 ID: {c.id}, Name: {c.name}, Serial: {c.serial}")
             
             for cand in candidates:
+                # 0. 장비 모델명(name) 대조 (공백/특수문자/대소문자 완전 제거 비교)
+                if normalize_key(cand.name) != normalize_key(name):
+                    continue
+
                 # 1. 시리얼 번호 비교 (일치해야 함)
                 cand_serial = cand.serial.strip() if cand.serial else ""
                 req_serial = parts[2].strip()
@@ -2100,22 +2105,40 @@ def history_transaction():
                 req_cust = parts[3].strip() if len(parts) >= 4 else ""
                 app.logger.debug(f"  -> 비교 상세: {cand.id} | Serial: '{cand_serial}' vs '{req_serial}' | Cust: '{cand_cust}' vs '{req_cust}'")
                 
-                if normalize_key(cand_serial) != normalize_key(req_serial):
-                    continue
+                # 유효하지 않은 기본 더미 시리얼 목록 필터링
+                invalid_serials = ['n/a', 'none', '-', '없음', 'null', 'undefined', '']
+                is_cand_serial_valid = cand_serial.lower() not in invalid_serials
+                is_req_serial_valid = req_serial.lower() not in invalid_serials
                 
-                # 요청에 고객사장비명(parts[3])이 있는 경우
-                if len(parts) >= 4:
-                    if normalize_key(cand_cust) != normalize_key(req_cust):
-                        continue
-                else:
-                    # 요청에 고객사장비명이 없는데 DB에는 존재하는 경우 불일치로 판단
-                    if cand_cust != "":
-                        continue
+                serial_match = False
+                if is_cand_serial_valid and is_req_serial_valid:
+                    serial_match = (normalize_key(cand_serial) == normalize_key(req_serial))
                 
-                # 모든 조건이 일치하면 매핑 성공
-                corrected_id = cand.id
-                app.logger.debug(f"  -> 매칭 최종 성공! corrected_id: {corrected_id}")
-                break
+                cust_match = False
+                if cand_cust and req_cust:
+                    cust_match = (normalize_key(cand_cust) == normalize_key(req_cust))
+                
+                # [논리적 매칭 판별 필터]
+                # 1. 양쪽 모두 시리얼과 고객사 장비명이 있다면: 둘 다 완벽히 일치해야 성공 (시리얼은 같은데 고객사 장비명이 다르면 매칭 불통과 조치)
+                if is_cand_serial_valid and is_req_serial_valid and cand_cust and req_cust:
+                    if serial_match and cust_match:
+                        corrected_id = cand.id
+                        app.logger.debug(f"  -> 매칭 최종 성공! (시리얼 & 고객사명 양방향 일치) corrected_id: {corrected_id}")
+                        break
+                # 2. 시리얼 번호만 유효 비교 가능한 경우: 시리얼만 일치하면 성공 (단, 고객사명이 다르게 적혀 있다면 오매핑 차단)
+                elif is_cand_serial_valid and is_req_serial_valid:
+                    if serial_match:
+                        if cand_cust and req_cust and normalize_key(cand_cust) != normalize_key(req_cust):
+                            continue
+                        corrected_id = cand.id
+                        app.logger.debug(f"  -> 매칭 최종 성공! (시리얼 기준 일치) corrected_id: {corrected_id}")
+                        break
+                # 3. 고객사 장비명만 유효 비교 가능한 경우: 고객사 장비명만 일치하면 성공
+                elif cand_cust and req_cust:
+                    if cust_match:
+                        corrected_id = cand.id
+                        app.logger.debug(f"  -> 매칭 최종 성공! (고객사명 기준 일치) corrected_id: {corrected_id}")
+                        break
                      
             if corrected_id:
                 app.logger.info(f"[장비 ID 보정 성공] '{equip_id}' -> '{corrected_id}' (외래 키 매핑 교정)")
@@ -2974,6 +2997,8 @@ def init_db():
 for d in [DATA_DIR, LOG_DIR, BACKUP_DIR, DATA_LOG_DIR]:
     if not os.path.exists(d):
         os.makedirs(d, mode=0o700)
+
+
 
 init_db()
 

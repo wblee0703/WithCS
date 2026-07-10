@@ -3951,6 +3951,205 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     });
 
 
+    // [추가] 추가 작업 메모 실시간 수정 및 미저장 변경사항 감지 상태 변수
+    let hasUnsavedChanges = false;
+    let initialMemo = '';
+    let currentActiveLog = parentLog;
+    let pendingMoveFn = null;
+
+    const saveBtn = document.getElementById('btn-save-extra-work-memo');
+    const confirmModal = document.getElementById('memo-save-confirm-modal');
+    const saveMoveBtn = document.getElementById('btn-memo-save-and-move');
+    const discardMoveBtn = document.getElementById('btn-memo-discard-and-move');
+    const cancelMoveBtn = document.getElementById('btn-memo-save-cancel');
+
+    const resetSaveButton = () => {
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.style.backgroundColor = '#30363d';
+            saveBtn.style.border = '1px solid #8b949e';
+            saveBtn.style.color = '#8b949e';
+            saveBtn.style.cursor = 'not-allowed';
+        }
+    };
+
+    const activateSaveButton = () => {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.style.backgroundColor = '#f0b400';
+            saveBtn.style.border = '1px solid #d29922';
+            saveBtn.style.color = '#000';
+            saveBtn.style.fontWeight = 'bold';
+            saveBtn.style.cursor = 'pointer';
+        }
+    };
+
+    const setMemoState = (log) => {
+        currentActiveLog = log;
+        const memoVal = log.memo || '';
+        initialMemo = memoVal;
+        if (memoEl) {
+            memoEl.value = memoVal;
+            if (!memoVal) {
+                memoEl.placeholder = '작성된 메모가 없습니다.';
+            } else {
+                memoEl.placeholder = '';
+            }
+        }
+        hasUnsavedChanges = false;
+        resetSaveButton();
+    };
+
+    const checkUnsavedChangesAndProceed = (proceedFn) => {
+        if (hasUnsavedChanges) {
+            pendingMoveFn = proceedFn;
+            if (confirmModal) confirmModal.style.display = 'flex';
+        } else {
+            proceedFn();
+        }
+    };
+
+    // 메모 필드 변경 감지 이벤트
+    if (memoEl) {
+        memoEl.oninput = () => {
+            const currentMemo = memoEl.value;
+            if (currentMemo !== initialMemo) {
+                hasUnsavedChanges = true;
+                activateSaveButton();
+            } else {
+                hasUnsavedChanges = false;
+                resetSaveButton();
+            }
+        };
+    }
+
+    // 모달창 상단 ✕ 닫기 버튼 오버라이드
+    const closeBtn = modal.querySelector('.modal-header .btn-del-sm');
+    if (closeBtn) {
+        closeBtn.onclick = (e) => {
+            e.preventDefault();
+            checkUnsavedChangesAndProceed(() => {
+                modal.style.display = 'none';
+            });
+        };
+    }
+
+    // 메모 저장 트랜잭션 함수
+    const saveMemoChanges = async () => {
+        if (!currentActiveLog) return false;
+        const newMemoVal = memoEl.value;
+        const key = `details_${site}_${equip}`;
+        const localData = JSON.parse(localStorage.getItem(key)) || {};
+        
+        let matchedItem = null;
+        let payload = { log_upserts: [], maint_upserts: [] };
+        
+        const isActiveMaint = (currentActiveLog.source === 'maint') || (localData.maint && localData.maint.some(m => String(m.id) === String(currentActiveLog.id)));
+        
+        if (isActiveMaint) {
+            matchedItem = localData.maint.find(m => String(m.id) === String(currentActiveLog.id));
+            if (matchedItem) {
+                matchedItem.memo = newMemoVal;
+                payload.maint_upserts.push(matchedItem);
+            }
+        } else {
+            if (!localData.logs) localData.logs = [];
+            matchedItem = localData.logs.find(l => String(l.id) === String(currentActiveLog.id));
+            
+            if (!matchedItem && String(currentActiveLog.id) === String(parentLog.id)) {
+                matchedItem = { ...parentLog };
+                matchedItem.memo = newMemoVal;
+                localData.logs.push(matchedItem);
+                payload.log_upserts.push(matchedItem);
+            } else if (matchedItem) {
+                matchedItem.memo = newMemoVal;
+                payload.log_upserts.push(matchedItem);
+            }
+        }
+        
+        if (!matchedItem) {
+            alert('저장할 항목을 찾을 수 없습니다.');
+            return false;
+        }
+        
+        const success = await window.syncHistoryTransaction(site, equip, payload);
+        if (!success) {
+            alert('서버 통신 오류로 메모 저장에 실패했습니다.');
+            return false;
+        }
+        
+        localStorage.setItem(key, JSON.stringify(localData));
+        
+        currentActiveLog.memo = newMemoVal;
+        if (String(currentActiveLog.id) === String(parentLog.id)) {
+            parentLog.memo = newMemoVal;
+        } else {
+            const logMatch = childLogs.find(l => String(l.id) === String(currentActiveLog.id));
+            if (logMatch) logMatch.memo = newMemoVal;
+            const maintMatch = childMaints.find(m => String(m.id) === String(currentActiveLog.id));
+            if (maintMatch) maintMatch.memo = newMemoVal;
+        }
+        
+        initialMemo = newMemoVal;
+        hasUnsavedChanges = false;
+        resetSaveButton();
+        
+        alert('메모가 저장되었습니다.');
+        
+        if (typeof window.refreshCalendarPopupAfterCompletion === 'function') {
+            window.refreshCalendarPopupAfterCompletion();
+        } else if (typeof window.renderCalendar === 'function') {
+            window.renderCalendar();
+        }
+        
+        return true;
+    };
+
+    if (saveBtn) saveBtn.onclick = saveMemoChanges;
+
+    // 3버튼 컨펌 모달 제어 이벤트 바인딩
+    if (saveMoveBtn) {
+        saveMoveBtn.onclick = async () => {
+            const saved = await saveMemoChanges();
+            if (saved) {
+                if (confirmModal) confirmModal.style.display = 'none';
+                if (pendingMoveFn) {
+                    const fn = pendingMoveFn;
+                    pendingMoveFn = null;
+                    fn();
+                }
+            }
+        };
+    }
+
+    if (discardMoveBtn) {
+        discardMoveBtn.onclick = () => {
+            hasUnsavedChanges = false;
+            resetSaveButton();
+            if (confirmModal) confirmModal.style.display = 'none';
+            if (pendingMoveFn) {
+                const fn = pendingMoveFn;
+                pendingMoveFn = null;
+                fn();
+            }
+        };
+    }
+
+    if (cancelMoveBtn) {
+        cancelMoveBtn.onclick = () => {
+            pendingMoveFn = null;
+            if (confirmModal) confirmModal.style.display = 'none';
+        };
+    }
+
+    const confirmModalCloseBtn = confirmModal ? confirmModal.querySelector('.modal-header .btn-del-sm') : null;
+    if (confirmModalCloseBtn) {
+        confirmModalCloseBtn.onclick = () => {
+            pendingMoveFn = null;
+            confirmModal.style.display = 'none';
+        };
+    }
+
     // 1. 점검 구분 경로 설정
     let pathText = (parentLog.type && parentLog.type !== '-') ? parentLog.type : '비정기';
     let detailStr = (parentLog.detailType && parentLog.detailType !== '-') ? parentLog.detailType : '';
@@ -3962,20 +4161,18 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     }
     if (pathEl) pathEl.textContent = pathText;
 
-    // 2. 메모 텍스트에어리어 초기화
-    let memoVal = '';
-    if (parentLog && (!parentLog.source || parentLog.source === 'log')) {
-        memoVal = parentLog.memo || '';
-    }
-    if (memoEl) memoEl.value = memoVal || '작성된 메모가 없습니다.';
+    // 2. 메모 및 상태 기본 초기화
+    setMemoState(parentLog);
     if (workerEl) workerEl.textContent = parentLog.worker || '-';
     if (mdEl) mdEl.textContent = parentLog.md || '0';
 
     // 3. 해당 장비 점검 이력으로 이동하는 버튼 이벤트
     if (moveBtn) {
         moveBtn.onclick = () => {
-            let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}&logId=${originalLogId}`;
-            location.href = targetUrl;
+            checkUnsavedChangesAndProceed(() => {
+                let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}&logId=${originalLogId}`;
+                location.href = targetUrl;
+            });
         };
     }
 
@@ -4096,17 +4293,13 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
 
         tr.dataset.logId = log.id;
         tr.onclick = () => {
-            let memoVal = '';
-            if (!log.source || log.source === 'log') {
-                memoVal = log.memo || '';
-            } else if (log.source === 'maint') {
-                memoVal = log.memo || '';
-            }
-            if (memoEl) memoEl.value = memoVal || '작성된 메모가 없습니다.';
-            if (workerEl) workerEl.textContent = log.worker || '-';
-            if (mdEl) mdEl.textContent = log.md || '0';
-            Array.from(tbody.children).forEach(child => child.classList.remove('active-row'));
-            tr.classList.add('active-row');
+            checkUnsavedChangesAndProceed(() => {
+                setMemoState(log);
+                if (workerEl) workerEl.textContent = log.worker || '-';
+                if (mdEl) mdEl.textContent = log.md || '0';
+                Array.from(tbody.children).forEach(child => child.classList.remove('active-row'));
+                tr.classList.add('active-row');
+            });
         };
 
         return tr;

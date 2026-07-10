@@ -466,7 +466,25 @@ function setupLogEvents() {
         memoSaveBtn.addEventListener('click', saveMemoTimes);
     }
 
-    // [추가] 초기에는 메모 영역 전체 비활성화 (톱니바퀴로 활성화)
+    // 메모 및 기타 입력 필드 변경 시 저장 버튼 색상 변경 리스너 부착
+    const deviceMemoInput = document.getElementById('device-memo');
+    const memoWorkerVal = document.getElementById('memo-worker');
+    const memoMdVal = document.getElementById('memo-md');
+    const memoCostTypeVal = document.getElementById('memo-cost-type');
+
+    const triggerOrangeBtn = () => {
+        if (memoSaveBtn) {
+            memoSaveBtn.classList.remove('btn-green-sm');
+            memoSaveBtn.classList.add('btn-orange-sm');
+        }
+    };
+
+    if (deviceMemoInput) deviceMemoInput.addEventListener('input', triggerOrangeBtn);
+    if (memoWorkerVal) memoWorkerVal.addEventListener('input', triggerOrangeBtn);
+    if (memoMdVal) memoMdVal.addEventListener('input', triggerOrangeBtn);
+    if (memoCostTypeVal) memoCostTypeVal.addEventListener('change', triggerOrangeBtn);
+
+    // [추가] 초기에는 메모 영역 전체 비활성화 (이력 선택 시 활성화됨)
     setMemoFieldsDisabled(true);
 }
 
@@ -613,12 +631,21 @@ function renderDetails() {
     const table = maintBody.closest('table');
     const isManagementMode = table ? table.classList.contains('management-active') : false;
 
+    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
     // [수정] 화면에 표시될 항목만 필터링하여 카운트 불일치 문제 해결
     const displayItems = data.maint.filter(item => {
         if (item.originalLogId) return false; // 자식 항목(추가작업) 숨김
         if (item.type === '비정기' && !item.date) return false; // 예정일 없는 비정기 숨김
         if (item.content === '내용 없음' || item.content === '장비 점검') return false; // 더미 항목 숨김
         if (['고객대응', '용액제조', '온라인점검'].includes(item.type)) return false; // 관련 없는 타입 숨김
+
+        // [추가] admin에 정식으로 등록되지 않은 오염된 물품명(쉼표 파싱 잔재 등) 노출 차단
+        if (item.content) {
+            const purePart = item.content.replace(/\[(?:유상|무상[^\]]*|기타)\]\s*/g, '').trim();
+            const isAdminRegistered = adminItems.some(a => a.part === purePart || a.code === purePart || a.part === item.content || a.code === item.content);
+            if (!isAdminRegistered) return false;
+        }
+
         return true;
     });
 
@@ -1379,8 +1406,8 @@ function selectLog(id, focus = true) {
             memoSaveBtn.classList.add('btn-green-sm');
         }
 
-        // 항상 읽기 전용(잠금) 상태 유지
-        setMemoFieldsDisabled(true);
+        // 항상 수정 가능하도록 잠금 해제 상태 유지
+        setMemoFieldsDisabled(false);
 
         // [추가] 교체 물품 카드 구성 및 렌더링
         const memoInput = document.getElementById('device-memo');
@@ -1549,7 +1576,7 @@ function selectLog(id, focus = true) {
     }
 }
 
-// [추가] 시작일시/종료일시 저장 로직
+// [추가] 장비 점검 이력 일괄 수정 및 저장 로직
 async function saveMemoTimes() {
     if (!selectedLogId) return;
 
@@ -1563,6 +1590,11 @@ async function saveMemoTimes() {
         }
     }
 
+    const memoInput = document.getElementById('device-memo');
+    const memoWorkerInput = document.getElementById('memo-worker');
+    const memoMdInput = document.getElementById('memo-md');
+    const memoCostTypeInput = document.getElementById('memo-cost-type');
+
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
 
@@ -1571,6 +1603,11 @@ async function saveMemoTimes() {
         if (logIndex > -1) {
             data.logs[logIndex].startTime = newStart;
             data.logs[logIndex].endTime = newEnd;
+
+            if (memoInput) data.logs[logIndex].memo = memoInput.value.trim();
+            if (memoWorkerInput) data.logs[logIndex].worker = memoWorkerInput.value.trim();
+            if (memoMdInput) data.logs[logIndex].md = memoMdInput.value.trim();
+            if (memoCostTypeInput) data.logs[logIndex].cost_type = memoCostTypeInput.value;
 
             if (typeof window.syncHistoryTransaction === 'function') {
                 const success = await window.syncHistoryTransaction(currentPath.site, currentPath.equip, { log_upserts: [data.logs[logIndex]] });
@@ -1581,6 +1618,10 @@ async function saveMemoTimes() {
 
             originalStartTime = newStart;
             originalEndTime = newEnd;
+            if (memoInput) originalMemo = memoInput.value.trim();
+            if (memoWorkerInput) originalWorker = memoWorkerInput.value.trim();
+            if (memoMdInput) originalMd = memoMdInput.value.trim();
+            if (memoCostTypeInput) originalCostType = memoCostTypeInput.value;
 
             const memoSaveBtn = document.getElementById('btn-save-memo');
             if (memoSaveBtn) {
@@ -1589,10 +1630,13 @@ async function saveMemoTimes() {
             }
 
             if (typeof addSystemLog === 'function') {
-                addSystemLog('UPDATE_LOG_TIME', currentPath.equip, `시작/종료 일시 수정 (LogID: ${selectedLogId})`);
+                addSystemLog('UPDATE_LOG_MEMO', currentPath.equip, `점검 이력 상세 정보 및 메모 수정 (LogID: ${selectedLogId})`);
             }
 
-            alert('시간 정보가 저장되었습니다.');
+            alert('이력 정보가 저장되었습니다.');
+
+            // 점검 이력 리스트 다시 그리기 (메모나 정보 변경사항 반영)
+            if (typeof renderLogs === 'function') renderLogs();
         }
     }
 }

@@ -673,8 +673,13 @@ function openCalendarPopup(dateStr, events) {
         const groupedEvents = {};
         events.forEach(event => {
             const isExtraWork = !!event.originalLogId;
-            // [수정] 세부 구분(detailType)이 다르면 다른 작업으로 분류하고, 같으면 물품 여러 개 등록 시에도 같은 작업으로 묶이도록 key에 detailType을 포함합니다.
-            const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}::${event.detailType || ''}::${isExtraWork}`;
+            // [수정] 세부 구분(detailType)이 다르면 다른 작업으로 분류합니다.
+            // 비정기 및 추가 작업은 고유한 스케줄별로 팝업에 각각 다 노출되어야 하므로 key에 고유 event.id를 포함합니다.
+            let key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}::${event.detailType || ''}::${isExtraWork}`;
+            if (event.type === '비정기' || isExtraWork) {
+                key += `::${event.id}`;
+            }
+
             if (!groupedEvents[key]) {
                 groupedEvents[key] = {
                     site: event.site,
