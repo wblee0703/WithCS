@@ -1669,6 +1669,7 @@ async function handleEquipSave() {
         alert('장비명은 제안 박스에서 검색하여 선택해야만 등록할 수 있습니다.'); return false;
     }
 
+    const finalName = matchedModel.name;
     const newKey = `${finalName}::${serial}::${custEquipName}`;
 
     // 중복 체크 (수정이면 자기 자신 제외)

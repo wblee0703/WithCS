@@ -2080,13 +2080,13 @@ def history_transaction():
                     return ""
                 return re.sub(r'[^a-zA-Z0-9]', '', val).lower()
             
-            app.logger.error(f"[장비 ID 보정 디버깅] 요청 equip_id: {equip_id}")
-            app.logger.error(f"[장비 ID 보정 디버깅] 파싱 - site: {site}, name: {name}, parts[2]: {parts[2]}, parts[3]: {parts[3] if len(parts)>=4 else '없음'}")
+            app.logger.debug(f"[장비 ID 보정 디버깅] 요청 equip_id: {equip_id}")
+            app.logger.debug(f"[장비 ID 보정 디버깅] 파싱 - site: {site}, name: {name}, parts[2]: {parts[2]}, parts[3]: {parts[3] if len(parts)>=4 else '없음'}")
             
             candidates = Equipment.query.filter_by(site_name=site, name=name).all()
-            app.logger.error(f"[장비 ID 보정 디버깅] 1차 조회 candidates 수: {len(candidates)}")
+            app.logger.debug(f"[장비 ID 보정 디버깅] 1차 조회 candidates 수: {len(candidates)}")
             for c in candidates:
-                app.logger.error(f"  -> 후보 ID: {c.id}, Serial: {c.serial}")
+                app.logger.debug(f"  -> 후보 ID: {c.id}, Serial: {c.serial}")
             
             for cand in candidates:
                 # 1. 시리얼 번호 비교 (일치해야 함)
@@ -2098,7 +2098,7 @@ def history_transaction():
                 cand_cust = si.cust_equip_name.strip() if si and si.cust_equip_name else ""
                 
                 req_cust = parts[3].strip() if len(parts) >= 4 else ""
-                app.logger.error(f"  -> 비교 상세: {cand.id} | Serial: '{cand_serial}' vs '{req_serial}' | Cust: '{cand_cust}' vs '{req_cust}'")
+                app.logger.debug(f"  -> 비교 상세: {cand.id} | Serial: '{cand_serial}' vs '{req_serial}' | Cust: '{cand_cust}' vs '{req_cust}'")
                 
                 if normalize_key(cand_serial) != normalize_key(req_serial):
                     continue
@@ -2114,7 +2114,7 @@ def history_transaction():
                 
                 # 모든 조건이 일치하면 매핑 성공
                 corrected_id = cand.id
-                app.logger.error(f"  -> 매칭 최종 성공! corrected_id: {corrected_id}")
+                app.logger.debug(f"  -> 매칭 최종 성공! corrected_id: {corrected_id}")
                 break
                      
             if corrected_id:
@@ -2350,7 +2350,13 @@ def get_trouble_list():
                     date_val = r_item.get('action_date') or r_item.get('occur_date') or ''
                     if len(date_val) >= 10:
                         date_val = date_val[:10]
-                    date_suffix = f" ({date_val})" if date_val else ""
+                    
+                    # 작업자 정보 추출
+                    worker_val = str(r_item.get('worker') or '').strip()
+                    if worker_val and worker_val != '-':
+                        date_suffix = f" ({date_val} / {worker_val})" if date_val else f" ({worker_val})"
+                    else:
+                        date_suffix = f" ({date_val})" if date_val else ""
                     
                     if m_val.startswith('<최초>') or m_val.startswith('<추가'):
                         memos.append(m_val)
@@ -2371,7 +2377,13 @@ def get_trouble_list():
                 date_val = item.get('action_date') or item.get('occur_date') or ''
                 if len(date_val) >= 10:
                     date_val = date_val[:10]
-                date_suffix = f" ({date_val})" if date_val else ""
+                
+                worker_val = str(item.get('worker') or '').strip()
+                if worker_val and worker_val != '-':
+                    date_suffix = f" ({date_val} / {worker_val})" if date_val else f" ({worker_val})"
+                else:
+                    date_suffix = f" ({date_val})" if date_val else ""
+                
                 item['memo'] = f"<최초>{date_suffix}\n{m_val}"
                 
         if '_raw_items' in item:

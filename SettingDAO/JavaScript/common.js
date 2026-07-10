@@ -3912,17 +3912,49 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     const logs = data.logs || [];
     const maints = data.maint || [];
 
-    const parentLog = logs.find(l => l.id == originalLogId);
-    const childLogs = logs.filter(l => l.originalLogId == originalLogId);
-    const childMaints = maints.filter(m => m.originalLogId == originalLogId);
+    let parentLog = logs.find(l => l.id == originalLogId);
+    if (!parentLog && typeof allTroubles !== 'undefined') {
+        parentLog = allTroubles.find(t => String(t.id) === String(originalLogId));
+    }
 
     if (!parentLog) return alert('원본 작업을 찾을 수 없습니다.');
 
+    // [핵심 고도화] 트러블 ID와 최초 작업 로그 ID의 교차 매칭 지원 (양방향 데이터 정합성 일치)
+    let idSet = new Set([String(originalLogId)]);
+    if (parentLog.id) idSet.add(String(parentLog.id));
+    if (parentLog.original_log_id) idSet.add(String(parentLog.original_log_id));
+
+    // 혹시 parentLog가 진짜 로그이고, 이와 관련된 TroubleLog가 있을 경우 그 TroubleLog의 ID도 수집
+    if (parentLog.id && typeof allTroubles !== 'undefined') {
+        const relatedTrouble = allTroubles.find(t => String(t.original_log_id) === String(parentLog.id));
+        if (relatedTrouble) idSet.add(String(relatedTrouble.id));
+    }
+
+    let childLogs = logs.filter(l => l.originalLogId && idSet.has(String(l.originalLogId)));
+    let childMaints = maints.filter(m => m.originalLogId && idSet.has(String(m.originalLogId)));
+
+    // 부모 로그 중복 차단 필터
+    childLogs = childLogs.filter(l => !idSet.has(String(l.id)));
+    childMaints = childMaints.filter(m => !idSet.has(String(m.id)));
+
+    // 추가작업 조치일/예정일 날짜 오름차순 정렬 (최근에 조치한게 제일 아래에 위치하도록)
+    childLogs.sort((a, b) => {
+        const da = a.date || '';
+        const db = b.date || '';
+        return da.localeCompare(db);
+    });
+
+    childMaints.sort((a, b) => {
+        const da = a.scheduledDate || '';
+        const db = b.scheduledDate || '';
+        return da.localeCompare(db);
+    });
+
 
     // 1. 점검 구분 경로 설정
-    let pathText = parentLog.type || '정기';
-    let detailStr = parentLog.detailType || '';
-    if (parentLog.detailType2 && !detailStr.includes(parentLog.detailType2)) {
+    let pathText = (parentLog.type && parentLog.type !== '-') ? parentLog.type : '비정기';
+    let detailStr = (parentLog.detailType && parentLog.detailType !== '-') ? parentLog.detailType : '';
+    if (parentLog.detailType2 && parentLog.detailType2 !== '-' && !detailStr.includes(parentLog.detailType2)) {
         detailStr += ` > ${parentLog.detailType2}`;
     }
     if (detailStr) {
@@ -3931,7 +3963,11 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     if (pathEl) pathEl.textContent = pathText;
 
     // 2. 메모 텍스트에어리어 초기화
-    if (memoEl) memoEl.value = parentLog.memo || '작성된 메모가 없습니다.';
+    let memoVal = '';
+    if (parentLog && (!parentLog.source || parentLog.source === 'log')) {
+        memoVal = parentLog.memo || '';
+    }
+    if (memoEl) memoEl.value = memoVal || '작성된 메모가 없습니다.';
     if (workerEl) workerEl.textContent = parentLog.worker || '-';
     if (mdEl) mdEl.textContent = parentLog.md || '0';
 
@@ -3949,7 +3985,13 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         addBtn.onclick = () => {
             modal.style.display = 'none';
             if (typeof window.openRegisterScheduleModal === 'function') {
-                const presetData = { type: parentLog.type, detailType: parentLog.detailType, detailType2: parentLog.detailType2, content: '', worker: parentLog.worker || '' };
+                const presetData = { 
+                    type: (parentLog.type && parentLog.type !== '-') ? parentLog.type : '비정기', 
+                    detailType: (parentLog.detailType && parentLog.detailType !== '-') ? parentLog.detailType : '', 
+                    detailType2: (parentLog.detailType2 && parentLog.detailType2 !== '-') ? parentLog.detailType2 : '', 
+                    content: '', 
+                    worker: parentLog.worker || '' 
+                };
                 window.currentSearchFilters = { site: site, equip: equip };
                 window.currentAddWorkLogId = originalLogId;
                 const todayStr = new Date().toISOString().substring(0, 10);
@@ -3971,14 +4013,96 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         tr.style.cursor = 'pointer';
         if (isParent) tr.style.backgroundColor = 'rgba(35, 134, 54, 0.1)';
 
+        let displayDate = log.date || log.occur_date || '-';
+        if (displayDate.includes('T')) {
+            displayDate = displayDate.split('T')[0];
+        }
+
+        let displayContent = '-';
+        if (log.source === 'trouble') {
+            displayContent = '비정기 점검 (Trouble)';
+        } else if (log.check_item && log.check_item !== '-') {
+            displayContent = log.check_item;
+        } else if (log.content && !log.content.startsWith('{')) {
+            displayContent = log.content;
+        }
+
+
+
+        let label = '';
+        let items = [];
+        
+        const contentParts = displayContent.split(',').map(s => s.trim()).filter(Boolean);
+        
+        const partKeywords = [
+            '파트 이상 (교체)', '파트 이상 교체',
+            '파트 이상 (수리)', '파트 이상 수리',
+            '용액 / 용자 이상', '용액 용자 이상',
+            '물품 이상 (교체)', '물품 이상 교체',
+            '물품 이상 (수리)', '물품 이상 수리'
+        ];
+
+        contentParts.forEach(part => {
+            // 비용처리 라벨 추출 (예: "[유상]")
+            let costLabel = '';
+            const costMatch = part.match(/^(\[.*?\])\s*/);
+            if (costMatch) {
+                costLabel = costMatch[1].trim() + ' ';
+            }
+
+            let cleanPart = part.replace(/^\[.*?\]\s*/, '').trim();
+            const hyphenIdx = cleanPart.indexOf(' - ');
+            
+            if (hyphenIdx !== -1) {
+                const prefix = cleanPart.substring(0, hyphenIdx).trim();
+                const suffix = cleanPart.substring(hyphenIdx + 3).trim();
+                const isPartKeyword = partKeywords.some(kw => prefix.includes(kw) || kw.includes(prefix));
+                if (isPartKeyword) {
+                    if (!label) label = prefix;
+                    items.push(costLabel + suffix);
+                } else {
+                    items.push(part);
+                }
+            } else {
+                const isPartKeyword = partKeywords.some(kw => cleanPart.includes(kw) || kw.includes(cleanPart));
+                if (isPartKeyword) {
+                    if (!label) label = cleanPart;
+                } else {
+                    items.push(part);
+                }
+            }
+        });
+
+        let tableContent = '';
+        let tableSubContent = '';
+
+        if (label) {
+            tableContent = label;
+            tableSubContent = items.length > 0 ? items.map(item => escapeHtml(item)).join('<br>') : '-';
+        } else {
+            tableContent = displayContent || '비정기 점검';
+            tableSubContent = '-';
+        }
+
+        // 비용처리 라벨([유상], [무상] 등)을 내용 컬럼에서 완벽히 소거
+        tableContent = tableContent.replace(/^\[.*?\]\s*/, '').trim();
+
         tr.innerHTML = `
-<td><span class="badge" style="background:${badgeColor}; display: inline-block; width: 45px; text-align: center; padding: 3px 0; font-size: 11px; border-radius: 4px; color: #fff; font-weight: bold;">${badgeText}</span></td>            <td>${log.date || '-'}</td>
-            <td style="text-align: left; padding-left: 10px;">${escapeHtml(log.content || '-')}</td>
+            <td><span class="badge" style="background:${badgeColor}; display: inline-block; width: 45px; text-align: center; padding: 3px 0; font-size: 11px; border-radius: 4px; color: #fff; font-weight: bold;">${badgeText}</span></td>
+            <td>${displayDate}</td>
+            <td style="text-align: left; padding-left: 10px; font-weight: bold; color: #f0883e;">${escapeHtml(tableContent)}</td>
+            <td style="text-align: left; padding-left: 10px; line-height: 1.4;">${tableSubContent}</td>
         `;
 
         tr.dataset.logId = log.id;
         tr.onclick = () => {
-            if (memoEl) memoEl.value = log.memo || '작성된 메모가 없습니다.';
+            let memoVal = '';
+            if (!log.source || log.source === 'log') {
+                memoVal = log.memo || '';
+            } else if (log.source === 'maint') {
+                memoVal = log.memo || '';
+            }
+            if (memoEl) memoEl.value = memoVal || '작성된 메모가 없습니다.';
             if (workerEl) workerEl.textContent = log.worker || '-';
             if (mdEl) mdEl.textContent = log.md || '0';
             Array.from(tbody.children).forEach(child => child.classList.remove('active-row'));

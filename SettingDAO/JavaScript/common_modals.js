@@ -817,6 +817,20 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         }
     }
 
+    // [추가] 작업 구분이 비정기이고 작업 완료 상태이면 'Trouble 이력 작성' 버튼 노출
+    const troubleHistoryBtn = document.getElementById('btn-create-trouble-history');
+    if (troubleHistoryBtn) {
+        if (isCompleted && item.type === '비정기') {
+            troubleHistoryBtn.style.display = 'inline-block';
+            troubleHistoryBtn.onclick = () => {
+                const targetUrl = `trouble.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
+                location.href = targetUrl;
+            };
+        } else {
+            troubleHistoryBtn.style.display = 'none';
+        }
+    }
+
     modal.style.display = 'flex';
 }
 
@@ -2119,7 +2133,12 @@ async function completeScheduleWork() {
         }
     }
 
-    const sameDayItems = data.maint.filter(i => i.scheduledDate === maintItem.scheduledDate && i.type === maintItem.type && (i.detailType || '') === (maintItem.detailType || '') && i.originalLogId == maintItem.originalLogId);
+    const sameDayItems = data.maint.filter(i => 
+        i.scheduledDate === maintItem.scheduledDate && 
+        i.type === maintItem.type && 
+        (i.detailType || '') === (maintItem.detailType || '') && 
+        (maintItem.originalLogId ? (i.originalLogId == maintItem.originalLogId) : (!i.originalLogId))
+    );
     const contentArr = sameDayItems.map(i => {
         let val = i.content;
         let itemDisplay = i.code ? i.code : '';
@@ -2198,6 +2217,27 @@ async function completeScheduleWork() {
 
     data.logs.push(newLog);
     payload.log_upserts.push(newLog);
+
+    // [추가 고도화] 완료 취소 후 재완료 시, 기존 자식 추가작업들의 originalLogId를 새 완료 로그 ID(newLog.id)로 일괄 연쇄 갱신
+    const targetMaintIdStr = maintItem.id.toString();
+    data.logs.forEach(cLog => {
+        if (cLog.originalLogId && cLog.originalLogId.toString() === targetMaintIdStr) {
+            cLog.originalLogId = newLog.id.toString();
+            if (!payload.log_upserts.some(item => item.id == cLog.id)) {
+                payload.log_upserts.push(cLog);
+            }
+        }
+    });
+    if (data.maint) {
+        data.maint.forEach(cMaint => {
+            if (cMaint.originalLogId && cMaint.originalLogId.toString() === targetMaintIdStr) {
+                cMaint.originalLogId = newLog.id.toString();
+                if (!payload.maint_upserts.some(item => item.id == cMaint.id)) {
+                    payload.maint_upserts.push(cMaint);
+                }
+            }
+        });
+    }
 
     sameDayItems.forEach(i => {
         i.scheduledDate = "";
@@ -2444,37 +2484,53 @@ async function completeScheduleWork() {
         addSystemLog('COMPLETE_SCHEDULE', equip, `작업일: ${completeDate}, 내용: ${combinedContent}`);
     }
 
-    document.getElementById('event-detail-modal').style.display = 'none';
-
-    if (isRegularPM && nextScheduleItems.length > 0 && !maintItem.originalLogId) {
-        if (typeof window.openNextScheduleModal === 'function') {
-            window.openNextScheduleModal({
-                site,
-                equip,
-                items: nextScheduleItems,
-                completeDate: completeDate,
-                md: md,
-                originalMaintMap: originalMaintMap,
-                mergedRegItemIds: mergedRegItemIds,
-                onClose: () => {
-                    if (typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();
-                    if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
-                },
-                onDateChange: (site, oldDate, newDate) => {
-                    const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
-                    const newMonth = newDate.substring(0, 7);
-                    if (oldMonth !== newMonth) {
-                        if (typeof window.incrementConfirmedCount === 'function') {
-                            window.incrementConfirmedCount(site, newDate, 1);
-                        }
-                    }
-                }
-            });
-        }
-    } else {
-        alert('작업이 완료되었습니다.');
+    if (maintItem.type === '비정기') {
+        alert('작업이 완료되었습니다. Trouble 이력 작성을 원하시면 상세창 하단의 버튼을 이용하세요.');
         if (typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();
         if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
+        
+        const newestLog = data.logs
+            .filter(l => l.type === '비정기' && (l.date || '').substring(0, 10) === completeDate)
+            .sort((a, b) => b.id - a.id)[0];
+        
+        if (newestLog) {
+            openEventDetailModal(site, equip, newestLog.id, true);
+        } else {
+            document.getElementById('event-detail-modal').style.display = 'none';
+        }
+    } else {
+        document.getElementById('event-detail-modal').style.display = 'none';
+
+        if (isRegularPM && nextScheduleItems.length > 0 && !maintItem.originalLogId) {
+            if (typeof window.openNextScheduleModal === 'function') {
+                window.openNextScheduleModal({
+                    site,
+                    equip,
+                    items: nextScheduleItems,
+                    completeDate: completeDate,
+                    md: md,
+                    originalMaintMap: originalMaintMap,
+                    mergedRegItemIds: mergedRegItemIds,
+                    onClose: () => {
+                        if (typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();
+                        if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
+                    },
+                    onDateChange: (site, oldDate, newDate) => {
+                        const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
+                        const newMonth = newDate.substring(0, 7);
+                        if (oldMonth !== newMonth) {
+                            if (typeof window.incrementConfirmedCount === 'function') {
+                                window.incrementConfirmedCount(site, newDate, 1);
+                            }
+                        }
+                    }
+                });
+            }
+        } else {
+            alert('작업이 완료되었습니다.');
+            if (typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();
+            if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
+        }
     }
 }
 
@@ -2532,8 +2588,6 @@ window.refreshCalendarPopupAfterCompletion = function () {
 async function cancelScheduleCompletion() {
     if (!currentDetailTarget || !currentDetailTarget.isCompleted) return;
 
-    if (!confirm('작업 완료를 취소하고 예정 상태로 되돌리시겠습니까?')) return;
-
     try {
         const { site, equip, id } = currentDetailTarget;
         const key = `details_${site}_${equip}`;
@@ -2545,6 +2599,19 @@ async function cancelScheduleCompletion() {
         if (logIndex === -1) return;
         
         const logItem = data.logs[logIndex];
+        
+        // [추가 고도화] 자식 추가작업 연동 건수 확인 및 경고창 처리
+        const childLogsCount = data.logs.filter(l => l.originalLogId && l.originalLogId.toString() === id.toString()).length;
+        const childMaintsCount = (data.maint || []).filter(m => m.originalLogId && m.originalLogId.toString() === id.toString()).length;
+        const totalChildren = childLogsCount + childMaintsCount;
+        
+        if (totalChildren > 0) {
+            const confirmMsg = `이 작업에 연동된 추가작업(${totalChildren}건)이 존재합니다.\n작업 완료 취소 후 다시 완료 처리할 때도 추가작업 이력이 안전하게 유지되도록 연동 링크를 보존합니다.\n작업 완료를 취소하시겠습니까?`;
+            if (!confirm(confirmMsg)) return;
+        } else {
+            if (!confirm('작업 완료를 취소하고 예정 상태로 되돌리시겠습니까?')) return;
+        }
+
         const logContent = logItem.content || '';
         const logType = logItem.type;
         const logDate = logItem.date;
@@ -2667,6 +2734,27 @@ async function cancelScheduleCompletion() {
                 if (idx === 0) recoveredMaintId = newId;
             }
         });
+
+        // [추가 고도화] 완료 취소 시, 기존 자식 추가작업들의 originalLogId를 새로 복구된 예정 일정 ID(recoveredMaintId)로 연쇄 갱신
+        if (recoveredMaintId) {
+            const childLogs = data.logs.filter(l => l.originalLogId && l.originalLogId.toString() === id.toString());
+            const childMaints = data.maint.filter(m => m.originalLogId && m.originalLogId.toString() === id.toString());
+            
+            childLogs.forEach(cLog => {
+                cLog.originalLogId = recoveredMaintId.toString();
+                if (!payload.log_upserts) payload.log_upserts = [];
+                if (!payload.log_upserts.some(item => item.id == cLog.id)) {
+                    payload.log_upserts.push(cLog);
+                }
+            });
+            
+            childMaints.forEach(cMaint => {
+                cMaint.originalLogId = recoveredMaintId.toString();
+                if (!payload.maint_upserts.some(item => item.id == cMaint.id)) {
+                    payload.maint_upserts.push(cMaint);
+                }
+            });
+        }
 
         const success = await window.syncHistoryTransaction(site, equip, payload);
         if (!success) {
@@ -4321,60 +4409,106 @@ async function confirmRegisterSchedule() {
         const itemsList = content ? content.split(', ').map(s => s.trim()).filter(s => s) : ['내용 없음'];
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
-        itemsList.forEach((itemText, idx) => {
-            let itemCost = '';
-            const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
-            if (costMatch) {
-                itemCost = costMatch[1];
-                itemText = costMatch[2];
-            }
+        if (window.currentAddWorkLogId) {
+            let combinedContentArray = [];
+            let combinedCodeArray = [];
+            let combinedSpecArray = [];
+            let combinedCostArray = [];
 
-            const innerCostMatch = itemText.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
-            if (innerCostMatch) {
-                if (!itemCost) itemCost = innerCostMatch[2];
-                itemText = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
-            }
+            itemsList.forEach((itemText) => {
+                let itemCost = '';
+                const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
+                if (costMatch) {
+                    itemCost = costMatch[1];
+                    itemText = costMatch[2];
+                }
 
-            let code = '';
-            let pureContent = itemText;
-            let spec = '';
-            const specMatch = itemText.match(/ \[(.*?)\]$/);
-            if (specMatch) {
-                spec = specMatch[1];
-                pureContent = itemText.replace(specMatch[0], '');
-            }
-            let fullContent = pureContent;
-            let period = null;
+                const innerCostMatch = itemText.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
+                if (innerCostMatch) {
+                    if (!itemCost) itemCost = innerCostMatch[2];
+                    itemText = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
+                }
 
-            const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
-            if (match) {
-                code = match.code || '';
-                fullContent = match.part || pureContent;
-                period = match.cycle || null;
-            }
+                let code = '';
+                let pureContent = itemText;
+                let spec = '';
+                const specMatch = itemText.match(/ \[(.*?)\]$/);
+                if (specMatch) {
+                    spec = specMatch[1];
+                    pureContent = itemText.replace(specMatch[0], '');
+                }
+                let fullContent = pureContent;
 
-            if (window.currentAddWorkLogId) {
-                const newId = Date.now() + Math.floor(Math.random() * 10000) + idx;
-                const newMaintItem = {
-                    id: newId,
-                    type: type,
-                    detailType: finalDetailType,
-                    code: code,
-                    content: fullContent,
-                    spec: spec,
-                    date: "",
-                    period: null,
-                    scheduledDate: dateStr,
-                    costType: costType,
-                    worker: worker,
-                    md: md,
-                    itemCost: itemCost,
-                    originalLogId: window.currentAddWorkLogId
-                };
-                if (idx === 0) lastProcessedId = newMaintItem.id;
-                data.maint.push(newMaintItem);
-                payload.maint_upserts.push(newMaintItem);
-            } else {
+                const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
+                if (match) {
+                    code = match.code || '';
+                    fullContent = match.part || pureContent;
+                }
+
+                combinedContentArray.push(fullContent);
+                if (code) combinedCodeArray.push(code);
+                if (spec) combinedSpecArray.push(spec);
+                if (itemCost) combinedCostArray.push(itemCost);
+            });
+
+            const finalContent = combinedContentArray.join(', ');
+            const finalCode = Array.from(new Set(combinedCodeArray)).join(', ');
+            const finalSpec = Array.from(new Set(combinedSpecArray)).join(', ');
+            const finalItemCost = Array.from(new Set(combinedCostArray)).join(', ');
+
+            const newId = Date.now() + Math.floor(Math.random() * 10000);
+            const newMaintItem = {
+                id: newId,
+                type: type,
+                detailType: finalDetailType,
+                code: finalCode,
+                content: finalContent,
+                spec: finalSpec,
+                date: "",
+                period: null,
+                scheduledDate: dateStr,
+                costType: costType,
+                worker: worker,
+                md: md,
+                itemCost: finalItemCost,
+                originalLogId: window.currentAddWorkLogId
+            };
+            lastProcessedId = newMaintItem.id;
+            data.maint.push(newMaintItem);
+            payload.maint_upserts.push(newMaintItem);
+        } else {
+            itemsList.forEach((itemText, idx) => {
+                let itemCost = '';
+                const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
+                if (costMatch) {
+                    itemCost = costMatch[1];
+                    itemText = costMatch[2];
+                }
+
+                const innerCostMatch = itemText.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
+                if (innerCostMatch) {
+                    if (!itemCost) itemCost = innerCostMatch[2];
+                    itemText = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
+                }
+
+                let code = '';
+                let pureContent = itemText;
+                let spec = '';
+                const specMatch = itemText.match(/ \[(.*?)\]$/);
+                if (specMatch) {
+                    spec = specMatch[1];
+                    pureContent = itemText.replace(specMatch[0], '');
+                }
+                let fullContent = pureContent;
+                let period = null;
+
+                const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
+                if (match) {
+                    code = match.code || '';
+                    fullContent = match.part || pureContent;
+                    period = match.cycle || null;
+                }
+
                 let existingItem = data.maint.find(m => m.type === type && (m.content === fullContent || m.content === pureContent) && (m.spec || '') === spec && (!m.scheduledDate || m.scheduledDate === dateStr));
                 if (existingItem) {
                     const oldDate = existingItem.scheduledDate;
@@ -4415,8 +4549,8 @@ async function confirmRegisterSchedule() {
 
                     if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
                 }
-            }
-        });
+            });
+        }
 
         const success = await window.syncHistoryTransaction(site, equip, payload);
         if (!success) return;

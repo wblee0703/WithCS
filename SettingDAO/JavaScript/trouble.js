@@ -23,13 +23,32 @@ function initTroublePage() {
     fetchTroubles();
 }
 
+function checkQueryStringFilters() {
+    const params = new URLSearchParams(window.location.search);
+    const siteParam = params.get('site');
+    const equipParam = params.get('equip');
+
+    if (siteParam && equipParam) {
+        const searchInput = document.getElementById('trouble-search-input');
+        if (searchInput) {
+            const parts = equipParam.split('::');
+            const model = parts[0];
+            const serial = parts.length > 1 ? parts[1] : '';
+            const custName = parts.length > 2 ? parts[2] : '';
+            
+            // 고객사장비명을 최우선으로, 없으면 시리얼 번호, 그것도 없으면 모델명 지정
+            searchInput.value = custName || serial || model;
+        }
+    }
+}
+
 function fetchTroubles() {
-    // [추가] common.js의 fetch/getCookie 등 공통 환경 사용을 가정합니다.
     fetch('/api/trouble/list', { headers: { 'X-CSRFToken': getCookie('csrf_token') } })
         .then(res => res.json())
         .then(data => {
             if (data.status === 'success') {
                 allTroubles = data.data || [];
+                checkQueryStringFilters();
                 applyTroubleFilter();
             }
         })
@@ -150,7 +169,7 @@ function renderTroubleEquips(site, model) {
             displayHtml = `<span>${escapeHtml(displayName)}${escapeHtml(subText)}</span>`;
         }
         
-        const searchText = `${item.site} ${displayName} ${subText}`.toLowerCase();
+        const searchText = `${item.site} ${displayName} ${serial} ${custEquipName}`.toLowerCase();
         
         equipList.insertAdjacentHTML('beforeend', `<li data-equip="${escapeHtml(item.equip)}" data-search="${escapeHtml(searchText)}">
             ${displayHtml}
@@ -182,6 +201,7 @@ function applyTroubleFilter() {
     if (currentTroubleFilter.keyword) {
         filtered = filtered.filter(t => 
             (t.equip && t.equip.toLowerCase().includes(currentTroubleFilter.keyword)) || 
+            (t.equip_id && t.equip_id.toLowerCase().includes(currentTroubleFilter.keyword)) || 
             (t.content && t.content.toLowerCase().includes(currentTroubleFilter.keyword)) || 
             (t.worker && t.worker.toLowerCase().includes(currentTroubleFilter.keyword)) ||
             (t.type && t.type.toLowerCase().includes(currentTroubleFilter.keyword)) ||
@@ -557,6 +577,8 @@ function openTroubleModal(mode, id = null, source = null) {
     if (actionEl) actionEl.value = '';
     if (preventionEl) preventionEl.value = '';
 
+
+
     if (mode === 'edit' && id) {
         const troubleData = allTroubles.find(t => String(t.id) === String(id) && t.source === source);
         if (troubleData) {
@@ -586,6 +608,8 @@ function openTroubleModal(mode, id = null, source = null) {
                 if (source === 'trouble') btnDelete.style.display = 'inline-block';
                 else btnDelete.style.display = 'none';
             }
+
+
             
         }
     } else {

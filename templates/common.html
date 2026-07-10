@@ -352,13 +352,14 @@
                     </div>
                 </div>
                 <div class="data-table-wrapper"
-                    style="margin: 0; flex: 1; border: 1px solid #30363d; border-radius: 4px;">
+                    style="margin: 0; height: 360px; overflow-y: auto; border: 1px solid #30363d; border-radius: 4px;">
                     <table class="data-table" style="margin: 0; width: 100%;">
                         <thead>
                             <tr>
                                 <th style="width: 80px;">구분</th>
                                 <th style="width: 100px;">작업일</th>
-                                <th>내용</th>
+                                <th style="width: 140px;">내용</th>
+                                <th>세부내용</th>
                             </tr>
                         </thead>
                         <tbody id="extra-work-history-body"></tbody>
@@ -738,7 +739,7 @@
                 </div>
                 <div class="detail-row"><label class="detail-label">점검 결과 / 메모</label><textarea id="detail-work-memo"
                         placeholder="작업 내용을 입력하세요" spellcheck="false"></textarea></div>
-                <div class="modal-btn-group"><button class="btn-blue" id="btn-show-additional-works" style="display: none; background-color: #1f6feb; border: 1px solid #388bfd; color: #ffffff; padding: 6px 12px; font-size: 13px; border-radius: 4px; cursor: pointer;">추가작업 확인</button><button class="btn-gray" id="btn-close-detail-footer">닫기</button><button
+                <div class="modal-btn-group"><button class="btn-blue" id="btn-show-additional-works" style="display: none; background-color: #1f6feb; border: 1px solid #388bfd; color: #ffffff; padding: 6px 12px; font-size: 13px; border-radius: 4px; cursor: pointer;">추가작업 확인</button><button class="btn-orange" id="btn-create-trouble-history" style="display: none; background-color: #d17a22; border: 1px solid #e18a32; color: #ffffff; padding: 6px 12px; font-size: 13px; border-radius: 4px; cursor: pointer;">Trouble 이력 작성</button><button class="btn-gray" id="btn-close-detail-footer">닫기</button><button
                         class="btn-del" id="btn-cancel-completion">작업완료 취소</button><button class="btn-green"
                         id="btn-complete-work">작업
                         완료</button></div>
@@ -1341,8 +1342,8 @@
         </div>
     </template>
 
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.0.3"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.0.3"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}"></script>
     {% if session.get('role') == 'superadmin' %}
     <script src="{{ url_for('SettingDAO', filename='JavaScript/chatbot.js') }}"></script>

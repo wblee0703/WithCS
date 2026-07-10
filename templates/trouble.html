@@ -198,7 +198,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/trouble.js') }}"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/trouble.js') }}?v=1.0.3"></script>
 <script>
 // 백엔드에서 원본 데이터를 유지하여 팝업 폼 데이터가 날아가는 현상을 방지하고,
 // 화면에 렌더링된 직후에만 테이블의 텍스트를 '증상'으로 변환해주는 스크립트입니다.

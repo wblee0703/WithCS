@@ -1188,7 +1188,7 @@
 /* --- 추가 작업 내역 모달 --- */
 #extra-work-history-modal .modal-window {
     width: 650px;
-    height: 600px;
+    height: 800px;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
