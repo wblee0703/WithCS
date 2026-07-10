@@ -2342,6 +2342,17 @@ async function completeScheduleWork() {
 
             parts.forEach(p => {
                 let purePart = p.replace(/\[.*?\]\s*/g, '').trim();
+                
+                // [추가] 만약 purePart 내부에 "파트 이상 교체 - " 등의 접두사가 들어있다면 이를 제거
+                const partKeywords = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리', '파트 이상 (교체)', '파츠 이상 교체', '파트 이상', '파츠 이상'];
+                for (const keyword of partKeywords) {
+                    const idx = purePart.indexOf(keyword);
+                    if (idx !== -1) {
+                        purePart = purePart.substring(idx + keyword.length).replace(/^[\s-]+/, '').trim();
+                        break;
+                    }
+                }
+
                 const specMatch = purePart.match(/ \[(.*?)\]$/);
                 let spec = '';
                 if (specMatch) {
@@ -2518,6 +2529,9 @@ async function completeScheduleWork() {
         const isCompletedItem = sameDayItems.some(s => s.id === i.id);
         if (isCompletedItem) {
             if (i.originalLogId) return false;
+
+            // [개선] 비정기(BM) 작업 등 정기가 아닌 일회성 작업은 완료 처리 시 삭제하지 않고 시작일이 갱신되도록 유지
+            if (i.type !== '정기') return true;
 
             const dt = i.detailType || '';
             const isPmBm = dt === 'PM 점검' || dt.startsWith('PM 점검 >');
@@ -4547,6 +4561,95 @@ async function confirmRegisterSchedule() {
             lastProcessedId = newMaintItem.id;
             data.maint.push(newMaintItem);
             payload.maint_upserts.push(newMaintItem);
+        } else if (type !== '정기') {
+            // [개선] 비정기, 고객대응, 용액제조, 온라인점검 등의 경우: 하나로 합쳐서 등록!
+            let combinedContentArray = [];
+            let combinedCodeArray = [];
+            let combinedSpecArray = [];
+            let combinedCostArray = [];
+
+            itemsList.forEach((itemText) => {
+                let itemCost = '';
+                const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
+                if (costMatch) {
+                    itemCost = costMatch[1];
+                    itemText = costMatch[2];
+                }
+
+                const innerCostMatch = itemText.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
+                if (innerCostMatch) {
+                    if (!itemCost) itemCost = innerCostMatch[2];
+                    itemText = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
+                }
+
+                let code = '';
+                let pureContent = itemText;
+                let spec = '';
+                const specMatch = itemText.match(/ \[(.*?)\]$/);
+                if (specMatch) {
+                    spec = specMatch[1];
+                    pureContent = itemText.replace(specMatch[0], '');
+                }
+                let fullContent = pureContent;
+
+                const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
+                if (match) {
+                    code = match.code || '';
+                    fullContent = match.part || pureContent;
+                }
+
+                combinedContentArray.push(fullContent);
+                if (code) combinedCodeArray.push(code);
+                if (spec) combinedSpecArray.push(spec);
+                if (itemCost) combinedCostArray.push(itemCost);
+            });
+
+            const finalContent = combinedContentArray.join(', ');
+            const finalCode = Array.from(new Set(combinedCodeArray)).join(', ');
+            const finalSpec = Array.from(new Set(combinedSpecArray)).join(', ');
+            const finalItemCost = Array.from(new Set(combinedCostArray)).join(', ');
+
+            let existingItem = data.maint.find(m => m.type === type && m.content === finalContent && (m.spec || '') === finalSpec && (!m.scheduledDate || m.scheduledDate === dateStr));
+            if (existingItem) {
+                const oldDate = existingItem.scheduledDate;
+                existingItem.scheduledDate = dateStr;
+                existingItem.detailType = finalDetailType;
+                if (costType) existingItem.costType = costType;
+                existingItem.md = md;
+                existingItem.worker = worker;
+                if (finalItemCost) existingItem.itemCost = finalItemCost;
+                lastProcessedId = existingItem.id;
+                existingItem.content = finalContent;
+
+                const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
+                const newMonth = dateStr.substring(0, 7);
+                if (oldMonth !== newMonth) {
+                    if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
+                }
+                payload.maint_upserts.push(existingItem);
+            } else {
+                const newId = Date.now() + Math.floor(Math.random() * 10000);
+                const newItem = {
+                    id: newId,
+                    type: type,
+                    detailType: finalDetailType,
+                    code: finalCode,
+                    content: finalContent,
+                    spec: finalSpec,
+                    date: "",
+                    period: null,
+                    scheduledDate: dateStr,
+                    costType: costType,
+                    worker: worker,
+                    md: md,
+                    itemCost: finalItemCost
+                };
+                lastProcessedId = newItem.id;
+                data.maint.push(newItem);
+                payload.maint_upserts.push(newItem);
+
+                if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
+            }
         } else {
             itemsList.forEach((itemText, idx) => {
                 let itemCost = '';
