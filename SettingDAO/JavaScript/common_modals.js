@@ -2307,8 +2307,8 @@ async function completeScheduleWork() {
         let isPartReplacement = false;
         let partsString = '';
 
-        // [개선] 타입에 관계없이 PM 점검, BM 점검, Parts 교체 등 물품과 관련된 내용이면 모두 추출 대상으로 삼아 중복 생성을 막고 기존 아이템 갱신 보장
-        const isPmBm = dt.includes('PM 점검') || dt.includes('Parts 교체');
+        // [개선] 타입에 관계없이 PM 점검, BM 점검, Parts 교체, 또는 세부구분에 파트/파츠/물품 이상이 포함된 경우 등 물품과 관련된 내용이면 모두 추출 대상으로 삼음
+        const isPmBm = dt.includes('PM 점검') || dt.includes('Parts 교체') || dt.includes('파트 이상') || dt.includes('파츠 이상') || dt.includes('물품 이상') || dt2.includes('파트 이상') || dt2.includes('파츠 이상');
         if (isPmBm) {
             isPartReplacement = true;
             let tempContent = content;
