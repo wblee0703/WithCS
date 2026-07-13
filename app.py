@@ -2539,6 +2539,7 @@ def db_connection_check():
             "error_detail": str(e)
         }), 500
 
+
 # [추가] 프론트엔드 작업 보안 감사 로그 API (CSV 내보내기 등)
 @app.route('/api/log/action', methods=['POST'])
 @login_required

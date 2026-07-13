@@ -878,7 +878,22 @@ function openCalendarPopup(dateStr, events) {
                     rightContainer.appendChild(delBtn);
                 }
 
-                li.onclick = () => openEventDetailModal(group.site, group.equip, group.items[0].id, group.isCompleted || group.isChanged);
+                li.onclick = () => {
+                    const sampleItem = group.items[0];
+                    if (!sampleItem) {
+                        console.error('[openCalendarPopup] group.items가 비어 있습니다.');
+                        return;
+                    }
+                    const itemId = sampleItem.id || sampleItem.content; // id 누락 시 content를 fallback으로 활용
+                    if (typeof window.openEventDetailModal === 'function') {
+                        window.openEventDetailModal(group.site, group.equip, itemId, group.isCompleted || group.isChanged);
+                    } else if (typeof openEventDetailModal === 'function') {
+                        openEventDetailModal(group.site, group.equip, itemId, group.isCompleted || group.isChanged);
+                    } else {
+                        console.error('[openCalendarPopup] openEventDetailModal 함수가 존재하지 않습니다.');
+                        alert('작업 상세 정보를 열 수 없습니다. 시스템 관리자에게 문의하세요.');
+                    }
+                };
                 list.appendChild(li);
             }
         });

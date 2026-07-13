@@ -1240,6 +1240,8 @@ function renderLogs() {
             const tooltipItems = [];
             const displayItems = [];
 
+            let memoParts = [];
+
             window.splitSafetyContent(log.content).forEach(s => {
                 let cleanV = s.trim();
                 // [개선] 비용처리 태그(유상, 무상, 무상(보증) 등)를 위치에 관계없이 명시적으로 모두 제거
@@ -1257,13 +1259,33 @@ function renderLogs() {
                 displayItems.push(cleanV.replace(/\s*-\s*$/, '').trim());
             });
 
+
+
             tooltipContent = tooltipItems.join('\n');
 
-            // [수정] 물품이 2개 이상일 때 'A 외 N개' 형태로 축약 표시 (리스트에는 수식어 포함)
-            if (displayItems.length > 1) {
-                displayContent = `${displayItems[0]} 외 ${displayItems.length - 1}개`;
+            // [개선] 동일한 접두사를 가진 파트 교체 이력 표시 정제 (예: 파트 이상 교체 - 물품명1 외 N개)
+            let parsedItems = displayItems.map(item => {
+                const kwMatch = item.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|파츠 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+                if (kwMatch) {
+                    return { prefix: kwMatch[1].trim(), suffix: kwMatch[2].trim() };
+                }
+                return { prefix: '', suffix: item };
+            });
+
+            const firstParsed = parsedItems[0];
+            if (firstParsed && firstParsed.prefix) {
+                const otherPartsCount = parsedItems.length - 1;
+                if (otherPartsCount > 0) {
+                    displayContent = `${firstParsed.prefix} - ${firstParsed.suffix} 외 ${otherPartsCount}개`;
+                } else {
+                    displayContent = `${firstParsed.prefix} - ${firstParsed.suffix}`;
+                }
             } else {
-                displayContent = displayItems[0];
+                if (displayItems.length > 1) {
+                    displayContent = `${displayItems[0]} 외 ${displayItems.length - 1}개`;
+                } else {
+                    displayContent = displayItems[0];
+                }
             }
         }
         contentCell.title = escapeHtml(tooltipContent);
@@ -2332,7 +2354,9 @@ window.openMaintHistoryModal = function () {
     let historyItems = [];
     logs.forEach(log => {
         if (log.detailType === '일정변경') return;
+
         let contents = (log.content || '').split(',').map(s => s.trim()).filter(Boolean);
+
         contents.forEach(content => {
             if (content === '내용 없음' || content === '장비 점검') return;
 

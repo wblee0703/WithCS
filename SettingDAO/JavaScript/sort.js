@@ -756,8 +756,6 @@ function addGlobalSelectAllButton() {
             });
             if (typeof updateKeywordTrigger === 'function') updateKeywordTrigger();
         }
-
-        setTimeout(performSortSearch, 50); // 모든 선택 완료 후 즉시 검색 실행
     };
 
     // [수정] 'Sort Menu' 제목을 찾아 우측에 버튼 배치
@@ -819,7 +817,6 @@ function setupSortKeyword() {
                         }
                     });
                     updateKeywordTrigger();
-                    performSortSearch();
                 }
             });
         }
@@ -834,7 +831,6 @@ function setupSortKeyword() {
                         el.classList.remove('selected');
                     });
                     updateKeywordTrigger();
-                    performSortSearch();
                 }
             });
         }
@@ -1567,7 +1563,9 @@ function performSortSearch() {
     // [추가] 장비, 날짜, 상태, 구분, 세부구분이 동일한 작업 물품 항목들을 하나의 행(Row)으로 병합
     const groupedResultsMap = new Map();
     results.forEach(item => {
-        const groupKey = `${item.equipRaw}_${item.date}_${item.status}_${item.type}_${item.detailType}`;
+        const groupKey = (item.type === '비정기')
+            ? `${item.equipRaw}_${item.date}_${item.status}_${item.type}_${item.detailType}_${item.id}`
+            : `${item.equipRaw}_${item.date}_${item.status}_${item.type}_${item.detailType}`;
 
         if (!groupedResultsMap.has(groupKey)) {
             groupedResultsMap.set(groupKey, { ...item });

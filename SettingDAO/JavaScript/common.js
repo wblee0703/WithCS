@@ -3832,6 +3832,30 @@ function openNextScheduleModal(options) {
                     period = match.cycle || null;
                 }
 
+                // [추가] 다음 예정 항목 등록 시, 기존 완료된 items에서 매칭되는 대표 구분명(예: 파트 이상 교체)을 찾아 접두사로 복원
+                let prefix = '';
+                const originalItem = items.find(i => {
+                    if (!i.content) return false;
+                    return i.content.includes(pureContent) || (i.code && code && i.code === code);
+                });
+                if (originalItem && originalItem.content) {
+                    const kwMatch = originalItem.content.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+                    if (kwMatch) {
+                        prefix = kwMatch[1].trim();
+                    }
+                }
+
+                if (!prefix) {
+                    const kwMatch = sItem.content.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+                    if (kwMatch) {
+                        prefix = kwMatch[1].trim();
+                    }
+                }
+
+                if (prefix) {
+                    fullContent = `${prefix} - ${fullContent}`;
+                }
+
                 let existingItem = data.maint.find(m => (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) && (m.spec || '') === (spec || '') && mergedRegItemIds.has(m.id));
                 if (!existingItem) existingItem = data.maint.find(m => (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) && (m.spec || '') === (spec || ''));
 
@@ -4493,7 +4517,7 @@ window.isHoliday = isHoliday;
 window.addBusinessDays = addBusinessDays;
 
 /* ==========================================================================
-   10-1. 통합 공통 유틸리티 (Shared Components)
+   11. 통합 공통 유틸리티 (Shared Components)
    ========================================================================== */
 window.workerNamesCache = [];
 window.fetchWorkerNames = async function (site = null) {
