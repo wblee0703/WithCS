@@ -2090,10 +2090,6 @@ def history_transaction():
                 app.logger.debug(f"  -> 후보 ID: {c.id}, Name: {c.name}, Serial: {c.serial}")
             
             for cand in candidates:
-                # 0. 장비 모델명(name) 대조 (공백/특수문자/대소문자 완전 제거 비교)
-                if normalize_key(cand.name) != normalize_key(name):
-                    continue
-
                 # 1. 시리얼 번호 비교 (일치해야 함)
                 cand_serial = cand.serial.strip() if cand.serial else ""
                 req_serial = parts[2].strip()
@@ -2101,9 +2097,7 @@ def history_transaction():
                 # 2. 고객사장비명 비교
                 si = SetupInfo.query.filter_by(equip_id=cand.id).first()
                 cand_cust = si.cust_equip_name.strip() if si and si.cust_equip_name else ""
-                
                 req_cust = parts[3].strip() if len(parts) >= 4 else ""
-                app.logger.debug(f"  -> 비교 상세: {cand.id} | Serial: '{cand_serial}' vs '{req_serial}' | Cust: '{cand_cust}' vs '{req_cust}'")
                 
                 # 유효하지 않은 기본 더미 시리얼 목록 필터링
                 invalid_serials = ['n/a', 'none', '-', '없음', 'null', 'undefined', '']
@@ -2118,26 +2112,26 @@ def history_transaction():
                 if cand_cust and req_cust:
                     cust_match = (normalize_key(cand_cust) == normalize_key(req_cust))
                 
-                # [논리적 매칭 판별 필터]
-                # 1. 양쪽 모두 시리얼과 고객사 장비명이 있다면: 둘 다 완벽히 일치해야 성공 (시리얼은 같은데 고객사 장비명이 다르면 매칭 불통과 조치)
-                if is_cand_serial_valid and is_req_serial_valid and cand_cust and req_cust:
-                    if serial_match and cust_match:
+                app.logger.debug(f"  -> 비교 상세: {cand.id} | Serial: '{cand_serial}' vs '{req_serial}' | Cust: '{cand_cust}' vs '{req_cust}'")
+                
+                # [논리적 매칭 판별 필터 개선]
+                # 시리얼 번호가 유효하고 완벽히 일치한다면 모델명이 미세하게 달라도 (SOMA-3000E vs SOMA-3000I 등) 장비 매칭 통과!
+                if is_cand_serial_valid and is_req_serial_valid and serial_match:
+                    if cand_cust and req_cust and not cust_match:
+                        continue
+                    corrected_id = cand.id
+                    app.logger.debug(f"  -> 매칭 최종 성공! (시리얼 기준 일치 - 모델명 우회) corrected_id: {corrected_id}")
+                    break
+                
+                # 만약 시리얼 번호가 없거나 매칭되지 않은 경우, 모델명 대조를 기반으로 2차 필터 작동
+                if normalize_key(cand.name) == normalize_key(name):
+                    if cand_cust and req_cust and cust_match:
                         corrected_id = cand.id
-                        app.logger.debug(f"  -> 매칭 최종 성공! (시리얼 & 고객사명 양방향 일치) corrected_id: {corrected_id}")
+                        app.logger.debug(f"  -> 매칭 최종 성공! (모델명 & 고객사명 일치) corrected_id: {corrected_id}")
                         break
-                # 2. 시리얼 번호만 유효 비교 가능한 경우: 시리얼만 일치하면 성공 (단, 고객사명이 다르게 적혀 있다면 오매핑 차단)
-                elif is_cand_serial_valid and is_req_serial_valid:
-                    if serial_match:
-                        if cand_cust and req_cust and normalize_key(cand_cust) != normalize_key(req_cust):
-                            continue
+                    elif not cand_cust and not req_cust:
                         corrected_id = cand.id
-                        app.logger.debug(f"  -> 매칭 최종 성공! (시리얼 기준 일치) corrected_id: {corrected_id}")
-                        break
-                # 3. 고객사 장비명만 유효 비교 가능한 경우: 고객사 장비명만 일치하면 성공
-                elif cand_cust and req_cust:
-                    if cust_match:
-                        corrected_id = cand.id
-                        app.logger.debug(f"  -> 매칭 최종 성공! (고객사명 기준 일치) corrected_id: {corrected_id}")
+                        app.logger.debug(f"  -> 매칭 최종 성공! (모델명 일치 & 고객사명 없음) corrected_id: {corrected_id}")
                         break
                      
             if corrected_id:

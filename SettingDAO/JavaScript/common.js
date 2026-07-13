@@ -4229,6 +4229,13 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         let label = '';
         let items = [];
         
+        // 전체 내용에서 대표 비용처리 라벨 추출
+        let globalCostLabel = '';
+        const globalCostMatch = displayContent.match(/^(\[.*?\])\s*/);
+        if (globalCostMatch) {
+            globalCostLabel = globalCostMatch[1].trim() + ' ';
+        }
+
         const contentParts = displayContent.split(',').map(s => s.trim()).filter(Boolean);
         
         const partKeywords = [
@@ -4245,6 +4252,8 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
             const costMatch = part.match(/^(\[.*?\])\s*/);
             if (costMatch) {
                 costLabel = costMatch[1].trim() + ' ';
+            } else {
+                costLabel = globalCostLabel;
             }
 
             let cleanPart = part.replace(/^\[.*?\]\s*/, '').trim();
@@ -4258,14 +4267,14 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
                     if (!label) label = prefix;
                     items.push(costLabel + suffix);
                 } else {
-                    items.push(part);
+                    items.push(costLabel + cleanPart);
                 }
             } else {
                 const isPartKeyword = partKeywords.some(kw => cleanPart.includes(kw) || kw.includes(cleanPart));
                 if (isPartKeyword) {
                     if (!label) label = cleanPart;
                 } else {
-                    items.push(part);
+                    items.push(costLabel + cleanPart);
                 }
             }
         });
@@ -4545,9 +4554,18 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
     const currentValues = presetValuesStr ? presetValuesStr.split(',').map(s => s.trim()).filter(s => s) : [];
     const selectedMap = {};
     currentValues.forEach(val => {
-        const match = val.match(/^\[(.*?)\] (.*)$/);
-        if (match) selectedMap[match[2]] = match[1];
-        else selectedMap[val] = '유상';
+        let itemCost = '유상';
+        const costMatch = val.match(/^\[(.*?)\] (.*)$/);
+        if (costMatch) {
+            itemCost = costMatch[1];
+            val = costMatch[2];
+        }
+        const innerCostMatch = val.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
+        if (innerCostMatch) {
+            itemCost = innerCostMatch[2];
+            val = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
+        }
+        selectedMap[val] = itemCost;
     });
 
     let siteName = '';
@@ -4634,13 +4652,12 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             // [추가] 잘못된 점검 키워드(과거 데이터 잔재)가 물품 드롭다운에 노출되는 것을 완벽하게 필터링
             if (nonPartKeywords.includes(actualPart) || partKeywords.includes(actualPart) || partKeywords.some(kw => actualPart === kw || actualPart.startsWith(kw + ' - '))) return;
 
-            let code = '';
-            let partno = '';
             const match = adminItems.find(a => a.part === actualPart || a.code === actualPart);
-            if (match) {
-                code = match.code || '';
-                partno = match.partno || '';
-            }
+            if (!match) return; // 물품 관리(adminItems)에 등록되지 않은 항목은 제안박스 제외
+            
+            let code = match.code || '';
+            let partno = match.partno || '';
+            actualPart = match.part || actualPart; // 이름 표준화 보정
 
             const finalBaseName = code || actualPart;
             const specStr = spec ? ` [${spec}]` : '';
@@ -4669,13 +4686,12 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             const extracted = window.extractSpecFromContent(key);
             const pure = extracted.pureContent, spec = extracted.spec;
 
-            let partno = '';
             const globalMatch = adminItems.find(i => i.part === pure || i.code === pure);
             if (globalMatch) {
-                partno = globalMatch.partno || '';
+                const partno = globalMatch.partno || '';
                 matchedItems.unshift({ part: globalMatch.part, code: globalMatch.code, partno: partno, spec: spec, displayValue: key });
-            } else matchedItems.unshift({ part: pure, code: '', partno: partno, spec: spec, displayValue: key });
-            addedSet.add(key);
+                addedSet.add(key);
+            }
         }
     });
 

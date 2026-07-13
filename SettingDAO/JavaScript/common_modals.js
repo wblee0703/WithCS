@@ -396,25 +396,29 @@ function openEventDetailModal(site, equip, id, isCompleted) {
                 !i.originalLogId
             );
         }
-        const contentArr = sameDayItems.map(i => {
-            let val = i.content;
-            let itemDisplay = i.code ? i.code : '';
-
-            // [수정] 파트 이상 교체 등 키워드가 있는 경우, i.code가 적용되더라도 키워드가 날아가지 않도록 보존
-            const kwMatch = (i.content || '').match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
-
-            if (kwMatch) {
-                if (!itemDisplay) itemDisplay = kwMatch[2].trim();
-                if (i.itemCost) itemDisplay = `[${i.itemCost}] ${itemDisplay}`;
-                val = `${kwMatch[1].trim()} - ${itemDisplay}`;
-            } else {
-                if (!itemDisplay) itemDisplay = i.content;
-                if (i.itemCost) itemDisplay = `[${i.itemCost}] ${itemDisplay}`;
-                val = itemDisplay;
-            }
-
-            const specStr = i.spec ? ` [${i.spec}]` : '';
-            return `${val}${specStr}`;
+        const contentArr = [];
+        sameDayItems.forEach(i => {
+            const items = window.splitSafetyContent(i.content);
+            const itemCosts = i.itemCost ? i.itemCost.split(',').map(s => s.trim()) : (i.item_cost ? i.item_cost.split(',').map(s => s.trim()) : []);
+            
+            items.forEach((itemText, idx) => {
+                let itemDisplay = i.code ? i.code : '';
+                const costVal = itemCosts[idx] || itemCosts[0] || '';
+                
+                const kwMatch = itemText.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+                if (kwMatch) {
+                    if (!itemDisplay) itemDisplay = kwMatch[2].trim();
+                    if (costVal) itemDisplay = `[${costVal}] ${itemDisplay}`;
+                    itemText = `${kwMatch[1].trim()} - ${itemDisplay}`;
+                } else {
+                    if (!itemDisplay) itemDisplay = itemText;
+                    if (costVal) itemDisplay = `[${costVal}] ${itemDisplay}`;
+                    itemText = itemDisplay;
+                }
+                
+                const specStr = i.spec ? ` [${i.spec}]` : '';
+                contentArr.push(`${itemText}${specStr}`);
+            });
         });
         displayContent = [...new Set(contentArr)].join(', ');
     }
@@ -949,9 +953,18 @@ function buildDetailDropdown(item, site, equip) {
     const currentValues = window.splitSafetyContent(baseContent).filter(s => s !== '내용 없음');
     const selectedMap = {};
     currentValues.forEach(val => {
-        const match = val.match(/^\[(.*?)\] (.*)$/);
-        if (match) selectedMap[match[2]] = match[1];
-        else selectedMap[val] = '유상';
+        let itemCost = '유상';
+        const costMatch = val.match(/^\[(.*?)\] (.*)$/);
+        if (costMatch) {
+            itemCost = costMatch[1];
+            val = costMatch[2];
+        }
+        const innerCostMatch = val.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
+        if (innerCostMatch) {
+            itemCost = innerCostMatch[2];
+            val = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
+        }
+        selectedMap[val] = itemCost;
     });
 
     const equipKey = equip;
@@ -992,25 +1005,35 @@ function buildDetailDropdown(item, site, equip) {
         let code = '';
         let realContent = content;
         const match = adminItems.find(a => a.part === content || a.code === content);
-        if (match) { code = match.code || ''; realContent = match.part || content; }
-        const displayValue = code ? code : realContent;
-        if (!seenContents.has(displayValue)) {
-            seenContents.add(displayValue);
-            uniqueItems.push({ content: realContent, code: code });
+        if (match) {
+            code = match.code || '';
+            realContent = match.part || content;
+            const displayValue = code ? code : realContent;
+            if (!seenContents.has(displayValue)) {
+                seenContents.add(displayValue);
+                uniqueItems.push({ content: realContent, code: code });
+            }
         }
     });
 
     availableItems.forEach(ai => {
         let code = ai.code;
         let realContent = ai.content;
-        if (!code) {
-            const match = adminItems.find(a => a.part === realContent);
-            if (match && match.code) code = match.code;
-        }
-        const displayValue = code ? code : realContent;
-        if (!seenContents.has(displayValue)) {
-            seenContents.add(displayValue);
-            uniqueItems.push({ content: realContent, code: code });
+        const match = adminItems.find(a => a.part === realContent || a.code === realContent);
+        
+        // defaultList (현장 이슈, PC 이상 등)은 물품 관리에 없을 수 있으므로 예외 허용
+        const isDefaultItem = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상", "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"].includes(realContent);
+        
+        if (match || isDefaultItem) {
+            if (match) {
+                code = match.code || code;
+                realContent = match.part || realContent;
+            }
+            const displayValue = code ? code : realContent;
+            if (!seenContents.has(displayValue)) {
+                seenContents.add(displayValue);
+                uniqueItems.push({ content: realContent, code: code });
+            }
         }
     });
 
@@ -2175,25 +2198,29 @@ async function completeScheduleWork() {
             !i.originalLogId
         );
     }
-    const contentArr = sameDayItems.map(i => {
-        let val = i.content;
-        let itemDisplay = i.code ? i.code : '';
-
-        // [수정] 파트 이상 교체 등 키워드가 있는 경우, i.code가 적용되더라도 키워드가 날아가지 않도록 보존
-        const kwMatch = (i.content || '').match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
-
-        if (kwMatch) {
-            if (!itemDisplay) itemDisplay = kwMatch[2].trim();
-            if (i.itemCost) itemDisplay = `[${i.itemCost}] ${itemDisplay}`;
-            val = `${kwMatch[1].trim()} - ${itemDisplay}`;
-        } else {
-            if (!itemDisplay) itemDisplay = i.content;
-            if (i.itemCost) itemDisplay = `[${i.itemCost}] ${itemDisplay}`;
-            val = itemDisplay;
-        }
-
-        const specStr = i.spec ? ` [${i.spec}]` : '';
-        return `${val}${specStr}`;
+    const contentArr = [];
+    sameDayItems.forEach(i => {
+        const items = window.splitSafetyContent(i.content);
+        const itemCosts = i.itemCost ? i.itemCost.split(',').map(s => s.trim()) : (i.item_cost ? i.item_cost.split(',').map(s => s.trim()) : []);
+        
+        items.forEach((itemText, idx) => {
+            let itemDisplay = i.code ? i.code : '';
+            const costVal = itemCosts[idx] || itemCosts[0] || '';
+            
+            const kwMatch = itemText.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+            if (kwMatch) {
+                if (!itemDisplay) itemDisplay = kwMatch[2].trim();
+                if (costVal) itemDisplay = `[${costVal}] ${itemDisplay}`;
+                itemText = `${kwMatch[1].trim()} - ${itemDisplay}`;
+            } else {
+                if (!itemDisplay) itemDisplay = itemText;
+                if (costVal) itemDisplay = `[${costVal}] ${itemDisplay}`;
+                itemText = itemDisplay;
+            }
+            
+            const specStr = i.spec ? ` [${i.spec}]` : '';
+            contentArr.push(`${itemText}${specStr}`);
+        });
     });
     const combinedContent = [...new Set(contentArr)].join(', ');
 
@@ -2702,8 +2729,8 @@ async function cancelScheduleCompletion() {
         data.logs.splice(logIndex, 1);
 
         let contents = [];
-        if (logItem.originalLogId) {
-            // 추가 작업인 경우: 절대 물품별로 쪼개지 않고 통째로 단 1개의 예정 작업으로 복구
+        if (logType === '비정기' || logItem.originalLogId) {
+            // 비정기 작업이거나 추가 작업인 경우: 절대 물품별로 쪼개지 않고 통째로 단 1개의 예정 작업으로 복구
             contents = [logContent];
         } else {
             contents = window.splitSafetyContent(logContent);
@@ -2818,6 +2845,47 @@ async function cancelScheduleCompletion() {
                 payload.maint_upserts.push(newItem);
                 if (idx === 0) recoveredMaintId = newId;
             }
+        });
+
+        // [추가] 완료 처리 시 새로 생성되었던 완료 부품 레코드(MaintItem)들을 일괄 제거하여 정합성 유지
+        const contentsForDelete = window.splitSafetyContent(logContent);
+        contentsForDelete.forEach(itemText => {
+            let itemCost = '';
+            const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
+            if (costMatch) { itemText = costMatch[2]; }
+            const innerCostMatch = itemText.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
+            if (innerCostMatch) { itemText = `${innerCostMatch[1]} - ${innerCostMatch[3]}`; }
+
+            let keywordPart = '';
+            let pureContent = itemText;
+            const kwMatch = pureContent.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+            if (kwMatch) {
+                keywordPart = kwMatch[1].trim();
+                pureContent = kwMatch[2].trim();
+            }
+
+            let spec = '';
+            const specMatch = pureContent.match(/ \[(.*?)\]$/);
+            if (specMatch) {
+                spec = specMatch[1];
+                pureContent = pureContent.replace(specMatch[0], '');
+            }
+
+            const toDelete = data.maint.filter(m => 
+                m.type === logType && 
+                m.date === logDate && 
+                !m.scheduledDate && 
+                !m.originalLogId &&
+                (m.content === pureContent || (keywordPart && m.content === `${keywordPart} - ${pureContent}`)) &&
+                (!spec || (m.spec || '') === spec)
+            );
+
+            toDelete.forEach(m => {
+                if (recoveredMaintId && m.id == recoveredMaintId) return; // 복구 대상은 삭제 제외
+                if (!payload.maint_deletes) payload.maint_deletes = [];
+                payload.maint_deletes.push(m.id.toString());
+                data.maint = data.maint.filter(item => item.id !== m.id);
+            });
         });
 
         // [추가 고도화] 완료 취소 시, 기존 자식 추가작업들의 originalLogId를 새로 복구된 예정 일정 ID(recoveredMaintId)로 연쇄 갱신
