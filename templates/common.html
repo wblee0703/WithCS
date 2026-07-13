@@ -335,6 +335,7 @@
                         <input type="checkbox" id="extra-work-issue-share" class="modal-checkbox-input"
                             style="margin-right: 5px; transform: scale(1.2);"> 이슈 공유
                     </label>
+                    <button id="btn-create-additional-work-from-extra" class="btn-blue-sm" style="padding: 4px 8px; font-size: 12px; margin-right: 5px; background-color: #238636; border: 1px solid #30863f; color: #ffffff; border-radius: 4px; cursor: pointer;">추가작업 생성</button>
                     <button class="btn-del-sm"
                         onclick="document.getElementById('extra-work-history-modal').style.display='none'">✕</button>
                 </div>
@@ -701,7 +702,10 @@
         <div class="modal-window">
             <div class="modal-header">
                 <h3>작업 상세 정보</h3>
-                <button class="btn-del-sm" id="btn-close-detail-modal">✕</button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button id="btn-create-additional-work" class="btn-blue-sm" style="display: none; padding: 4px 8px; font-size: 12px; background-color: #238636; border: 1px solid #30863f; color: #ffffff; border-radius: 4px; cursor: pointer;">추가작업 생성</button>
+                    <button class="btn-del-sm" id="btn-close-detail-modal" style="margin: 0;">✕</button>
+                </div>
             </div>
             <div class="modal-body">
                 <div class="detail-row">

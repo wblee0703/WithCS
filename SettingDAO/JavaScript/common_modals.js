@@ -901,6 +901,38 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         }
     }
 
+    // [추가] '추가작업 생성' 버튼 노출 및 동작 바인딩
+    const createAddWorkBtn = document.getElementById('btn-create-additional-work');
+    if (createAddWorkBtn) {
+        if (isCompleted) {
+            createAddWorkBtn.style.display = 'inline-block';
+            createAddWorkBtn.onclick = () => {
+                modal.style.display = 'none';
+                const parentId = item.originalLogId || id;
+                const logDate = item.date || item.scheduledDate || new Date().toISOString().split('T')[0];
+                if (typeof window.openRegisterScheduleModal === 'function') {
+                    const presetData = { 
+                        type: item.type || '비정기', 
+                        detailType: item.detailType || '', 
+                        detailType2: item.detailType2 || '', 
+                        content: '', 
+                        worker: item.worker || '' 
+                    };
+                    window.currentSearchFilters = { site: site, equip: equip };
+                    window.currentAddWorkLogId = parentId;
+                    window.openRegisterScheduleModal(logDate, presetData);
+                } else if (typeof window.openAddWorkModal === 'function') {
+                    window.openAddWorkModal(parentId, logDate);
+                } else {
+                    sessionStorage.setItem('openAddWorkForLog', JSON.stringify({ site: site, equip: equip, logId: parentId }));
+                    location.href = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
+                }
+            };
+        } else {
+            createAddWorkBtn.style.display = 'none';
+        }
+    }
+
     modal.style.display = 'flex';
 }
 

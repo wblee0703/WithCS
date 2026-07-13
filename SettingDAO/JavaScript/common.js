@@ -4433,6 +4433,31 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         });
     }
 
+    // [추가] '추가작업 생성' 버튼 동작 바인딩
+    const extraCreateAddBtn = document.getElementById('btn-create-additional-work-from-extra');
+    if (extraCreateAddBtn) {
+        extraCreateAddBtn.onclick = (e) => {
+            e.preventDefault();
+            modal.style.display = 'none';
+            if (typeof window.openRegisterScheduleModal === 'function') {
+                const presetData = { 
+                    type: (parentLog.type && parentLog.type !== '-') ? parentLog.type : '비정기', 
+                    detailType: (parentLog.detailType && parentLog.detailType !== '-') ? parentLog.detailType : '', 
+                    detailType2: (parentLog.detailType2 && parentLog.detailType2 !== '-') ? parentLog.detailType2 : '', 
+                    content: '', 
+                    worker: parentLog.worker || '' 
+                };
+                window.currentSearchFilters = { site: site, equip: equip };
+                window.currentAddWorkLogId = originalLogId;
+                const todayStr = new Date().toISOString().substring(0, 10);
+                window.openRegisterScheduleModal(todayStr, presetData);
+            } else {
+                sessionStorage.setItem('openAddWorkForLog', JSON.stringify({ site, equip, logId: originalLogId }));
+                location.href = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
+            }
+        };
+    }
+
     modal.style.display = 'flex';
 };
 
