@@ -819,9 +819,7 @@ function updateSetupDashboard() {
                 if (detailData && detailData.setupDetails && detailData.setupDetails.length > 0) {
                     const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
                     const isCompleted = completeItem && completeItem.completed;
-                    const hasScheduledDate = detailData.setupDetails.some(d => d.startDate);
-
-                    if (!isCompleted && hasScheduledDate) {
+                    if (!isCompleted) {
                         activeSetupEquips.push({ site, equip, isCompleted: false });
                         siteStats[groupName] = (siteStats[groupName] || 0) + 1;
                         const equipName = equip.split('::')[0];

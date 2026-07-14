@@ -866,6 +866,11 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     const additionalWorksBtn = document.getElementById('btn-show-additional-works');
     if (additionalWorksBtn) {
         additionalWorksBtn.style.display = 'none'; // 기본 숨김
+        // [수정] 모바일 화면 버튼 그룹 정렬을 위해 부모의 has-additional-work 클래스 기본 제거
+        const btnGroup = additionalWorksBtn.parentElement;
+        if (btnGroup) {
+            btnGroup.classList.remove('has-additional-work');
+        }
         const queryId = item.originalLogId || id;
         if (queryId) {
             fetch(`/api/maintenance/additional-works?parent_id=${encodeURIComponent(queryId)}`, {
@@ -876,6 +881,10 @@ function openEventDetailModal(site, equip, id, isCompleted) {
                 if (resData.status === 'success' && resData.data && resData.data.length > 0) {
                     additionalWorksBtn.style.display = 'inline-block';
                     additionalWorksBtn.textContent = `추가작업 확인 (${resData.data.length})`;
+                    // [수정] 추가작업 확인 버튼이 표시되므로 부모에 클래스 부여 (모바일 2행 배치 활성화)
+                    if (btnGroup) {
+                        btnGroup.classList.add('has-additional-work');
+                    }
                     additionalWorksBtn.onclick = () => {
                         if (typeof window.openExtraWorkHistoryModal === 'function') {
                             window.openExtraWorkHistoryModal(site, equip, queryId);
@@ -890,8 +899,17 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     // [추가] 작업 구분이 비정기이고 작업 완료 상태이면 'Trouble 이력 작성' 버튼 노출
     const troubleHistoryBtn = document.getElementById('btn-create-trouble-history');
     if (troubleHistoryBtn) {
+        // [수정] 모바일 화면 버튼 그룹 정렬을 위해 부모의 has-trouble-history 클래스 기본 제거
+        const btnGroup = troubleHistoryBtn.parentElement;
+        if (btnGroup) {
+            btnGroup.classList.remove('has-trouble-history');
+        }
         if (isCompleted && item.type === '비정기') {
             troubleHistoryBtn.style.display = 'inline-block';
+            // [수정] Trouble 이력 작성 버튼이 노출되므로 부모에 클래스 부여
+            if (btnGroup) {
+                btnGroup.classList.add('has-trouble-history');
+            }
             troubleHistoryBtn.onclick = () => {
                 const targetUrl = `trouble.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
                 location.href = targetUrl;

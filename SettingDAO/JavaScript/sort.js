@@ -1226,11 +1226,64 @@ function updateSortDetailType2Select(types, detailTypes) {
 function setupSortEvents() {
     const searchBtn = document.getElementById('btn-sort-search');
     const keywordInput = document.getElementById('sort-keyword');
+    const toggleBtn = document.getElementById('btn-toggle-sort-menu');
+    const formContainer = document.getElementById('sort-menu-form-container');
+    const chartsBody = document.getElementById('sort-charts-body');
+    const resultBody = document.getElementById('sort-result-body');
 
-    if (searchBtn) searchBtn.addEventListener('click', performSortSearch);
+    const expandMobileCards = () => {
+        if (window.innerWidth <= 950) {
+            // 1. 데이터 통계(차트) 영역 자동 펼침
+            if (chartsBody) {
+                chartsBody.style.display = 'flex';
+                const card = chartsBody.closest('.card');
+                if (card) {
+                    const collapseBtn = card.querySelector('.btn-collapse');
+                    if (collapseBtn) collapseBtn.innerHTML = '▲';
+                }
+            }
+            // 2. 검색 결과 테이블 영역 자동 펼침
+            if (resultBody) {
+                resultBody.style.display = 'block';
+                const card = resultBody.closest('.card');
+                if (card) {
+                    const collapseBtn = card.querySelector('.btn-collapse');
+                    if (collapseBtn) collapseBtn.innerHTML = '▲';
+                }
+            }
+        }
+    };
+
+    if (searchBtn) {
+        searchBtn.addEventListener('click', () => {
+            performSortSearch();
+            // 모바일 환경(너비 950px 이하)일 때만 "검색 및 정렬" 클릭 시 폼을 접어줍니다.
+            if (window.innerWidth <= 950 && formContainer) {
+                formContainer.style.display = 'none';
+                if (toggleBtn) toggleBtn.textContent = '펼치기';
+            }
+            expandMobileCards();
+        });
+    }
     if (keywordInput) keywordInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') performSortSearch();
+        if (e.key === 'Enter') {
+            performSortSearch();
+            // 모바일 환경 엔터 검색 시에도 자동으로 폼을 접어줍니다.
+            if (window.innerWidth <= 950 && formContainer) {
+                formContainer.style.display = 'none';
+                if (toggleBtn) toggleBtn.textContent = '펼치기';
+            }
+            expandMobileCards();
+        }
     });
+
+    if (toggleBtn && formContainer) {
+        toggleBtn.addEventListener('click', () => {
+            const isHidden = formContainer.style.display === 'none';
+            formContainer.style.display = isHidden ? 'block' : 'none';
+            toggleBtn.textContent = isHidden ? '접기' : '펼치기';
+        });
+    }
 }
 
 // [4.2] 핵심 검색 로직: 선택된 필터 조건들을 매칭하여 결과 도출
@@ -1658,7 +1711,7 @@ function renderSortList(results) {
     if (exportBtn) {
         const userRole = sessionStorage.getItem('userRole');
         if (results.length > 0 && (userRole === 'admin' || userRole === 'superadmin')) {
-            exportBtn.style.display = 'block';
+            exportBtn.style.display = 'inline-block';
         } else {
             exportBtn.style.display = 'none';
         }
@@ -2293,7 +2346,12 @@ function renderSortChart(results) {
                 labelDiv.title = escapeHtml(category);
                 groupDiv.appendChild(trackDiv);
                 groupDiv.appendChild(labelDiv);
-                if (totalInGroup > 0) targetContainer.appendChild(groupDiv);
+                if (totalInGroup > 0) {
+                    // 항목 내의 사업장(막대) 수에 맞추어 그룹 가로폭을 최소 가로폭으로 가변 동적 계산하여 겹침을 방지합니다.
+                    const computedMinWidth = Math.max(60, totalInGroup * 35);
+                    groupDiv.style.minWidth = computedMinWidth + 'px';
+                    targetContainer.appendChild(groupDiv);
+                }
             });
         };
 

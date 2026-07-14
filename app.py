@@ -2206,6 +2206,62 @@ def sync_setup_equip():
     logs = data.get('logs') # 리스트 형태 (없으면 None)
 
     try:
+        # [디버깅 로깅]
+        app.logger.warning(f"[Sync Setup] Received raw equip_id: {equip_id}")
+        
+        # URL 디코딩 및 한글 유니코드 자모분리 정규화
+        if equip_id:
+            import urllib.parse
+            import unicodedata
+            equip_id = urllib.parse.unquote(equip_id).strip()
+            equip_id = unicodedata.normalize('NFC', equip_id)
+            app.logger.warning(f"[Sync Setup] Unquoted and NFC normalized equip_id: {equip_id}")
+
+        # [수정] DB에 등록되지 않은 장비(Equipment)인 경우 임의 자동 생성을 금지하고 에러 처리
+        if equip_id:
+            equip = Equipment.query.filter_by(id=equip_id).first()
+            if not equip:
+                equip = Equipment.query.filter(Equipment.id.like(f"{equip_id}%")).first()
+            
+            # [디버깅 & 유사도 전파 복구 (자모분리 정규화, 공백 정규화 및 컴포넌트 단위 정밀 대조 적용)]
+            if not equip:
+                all_equips = Equipment.query.all()
+                all_ids = [eq.id for eq in all_equips]
+                app.logger.warning(f"[Sync Setup] Match failed. Available database equipment IDs: {all_ids}")
+                
+                import unicodedata
+                # 수신 ID 컴포넌트 분리 및 정규화
+                norm_equip_id = unicodedata.normalize('NFC', equip_id)
+                parts_equip = [unicodedata.normalize('NFC', p.strip()) for p in norm_equip_id.split('::')]
+                parts_equip_clean = [" ".join(p.split()) for p in parts_equip if p]
+                
+                # 메모리 상의 장비 객체들과 컴포넌트별 매칭 시도
+                for eq in all_equips:
+                    norm_db_id = unicodedata.normalize('NFC', eq.id)
+                    parts_db = [unicodedata.normalize('NFC', p.strip()) for p in norm_db_id.split('::')]
+                    parts_db_clean = [" ".join(p.split()) for p in parts_db if p]
+                    
+                    # 사업장, 모델, 시리얼 등 앞의 컴포넌트 단계들이 정확히 일치하는지 비교 (최소 3단계 대조)
+                    min_len = min(len(parts_equip_clean), len(parts_db_clean))
+                    if min_len >= 3:
+                        match = True
+                        for idx in range(min_len):
+                            # 만약 앞부분 3단계 중 하나라도 틀리면 매칭 실패
+                            if parts_equip_clean[idx] != parts_db_clean[idx]:
+                                match = False
+                                break
+                        if match:
+                            equip = eq
+                            app.logger.warning(f"[Sync Setup] Recovered match via components similarity: {eq.id}")
+                            break
+
+            if not equip:
+                return jsonify({"status": "fail", "message": f"등록되지 않은 장비 정보입니다. ADMIN 메뉴에서 해당 장비를 먼저 등록해주세요. (ID: {equip_id})"}), 400
+            
+            # 실제 DB에 저장된 정식 ID(예: Site::Model::Serial::CustName)로 덮어쓰기
+            equip_id = equip.id
+            app.logger.warning(f"[Sync Setup] Final resolved equip_id: {equip_id}")
+
         if details is not None:
             db.session.query(SetupDetail).filter_by(equip_id=equip_id).delete(synchronize_session=False)
             for sd in details:

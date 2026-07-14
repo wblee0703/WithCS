@@ -1570,3 +1570,49 @@ input[type="date"]::-webkit-datetime-edit-year {
     background-color: #161b22 !important;
     color: #e6edf3 !important;
 }
+
+/* [추가] 모바일 환경(950px 이하)에서 작업 상세 정보 / 추가 작업 상세 정보의 
+   추가작업 확인 버튼이 있을 때의 버튼 그룹(.modal-btn-group) 배치 최적화 */
+@media (max-width: 950px) {
+    #event-detail-modal .modal-btn-group.has-additional-work {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+    }
+    
+    /* 추가작업 확인 버튼: 첫 번째 줄 전체 너비 (Trouble 이력 작성 버튼이 없을 경우 대비) */
+    #event-detail-modal .modal-btn-group.has-additional-work #btn-show-additional-works {
+        grid-row: 1 !important;
+        grid-column: 1 / span 2 !important;
+        width: 100% !important;
+        margin-right: 0 !important;
+    }
+    
+    /* Trouble 이력 작성 버튼이 활성화된 경우: 추가작업 확인 버튼과 Trouble 이력 작성 버튼이 첫 번째 줄을 반씩 나누어 가짐 */
+    #event-detail-modal .modal-btn-group.has-additional-work.has-trouble-history #btn-show-additional-works {
+        grid-column: 1 / span 1 !important;
+    }
+    #event-detail-modal .modal-btn-group.has-additional-work.has-trouble-history #btn-create-trouble-history {
+        grid-row: 1 !important;
+        grid-column: 2 / span 1 !important;
+        width: 100% !important;
+        margin-right: 0 !important;
+    }
+    
+    /* 닫기 버튼: 두 번째 줄 첫 번째 칸 */
+    #event-detail-modal .modal-btn-group.has-additional-work #btn-close-detail-footer {
+        grid-row: 2 !important;
+        grid-column: 1 / span 1 !important;
+        width: 100% !important;
+        margin-right: 0 !important;
+    }
+    
+    /* 작업완료 취소 또는 작업 완료 버튼: 두 번째 줄 두 번째 칸 */
+    #event-detail-modal .modal-btn-group.has-additional-work #btn-cancel-completion,
+    #event-detail-modal .modal-btn-group.has-additional-work #btn-complete-work {
+        grid-row: 2 !important;
+        grid-column: 2 / span 1 !important;
+        width: 100% !important;
+        margin-right: 0 !important;
+    }
+}

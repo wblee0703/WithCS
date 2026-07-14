@@ -255,7 +255,14 @@ window.syncHistoryTransaction = async function (site, equip, payload) {
 // [추가] 100% DB 전환을 위한 SETUP(셋업 상세내역/일지) 전용 동기화 함수
 window.syncSetupDataDB = async function (site, equip, details = null, logs = null) {
     window.activeSyncRequests++;
-    const equip_id = `${site}::${equip}`;
+    
+    // [보강] 송신 전 한글 유니코드(NFC) 및 연속 공백 정규화 적용
+    let cleanSite = typeof site === 'string' ? site.normalize('NFC').trim() : '';
+    let cleanEquip = typeof equip === 'string' ? equip.normalize('NFC').trim() : '';
+    cleanSite = cleanSite.replace(/\s+/g, ' ');
+    cleanEquip = cleanEquip.replace(/\s+/g, ' ');
+    
+    const equip_id = `${cleanSite}::${cleanEquip}`;
     try {
         const res = await fetch('/api/setup/sync_equip', {
             method: 'POST',

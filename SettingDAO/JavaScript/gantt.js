@@ -370,8 +370,6 @@ function renderGanttChart() {
                     if (!showDone && isEquipCompleted) return;
 
                     data.setupDetails.forEach((task, idx) => {
-                        if (!task.startDate) return;
-
                         const parts = equip.split('::');
                         const equipName = parts[0];
                         const displayName = task.content;
@@ -384,7 +382,7 @@ function renderGanttChart() {
                             if (task.content === '셋업 완료' || task.category === '셋업 완료') {
                                 estDays = 1;
                             }
-                            const pStart = new Date(task.startDate);
+                            const pStart = task.startDate ? new Date(task.startDate) : (projectStartDate ? new Date(projectStartDate) : new Date());
                             const daysToAdd = estDays > 0 ? estDays - 1 : 0;
                             const pEnd = addBusinessDays(pStart, daysToAdd);
 
@@ -551,34 +549,23 @@ function renderGanttChart() {
                 }
             });
 
-            // [추가] 장비의 전체 실제 로그 날짜를 수집하여 가상 일차에 매핑
-            const equipLogsSet = new Set();
+            // [개선] 각 태스크의 가상 계획 날짜(t.planStart)와 실제 등록된 작업 로그 날짜를 매핑
+            const equipMap = {};
             tasks.forEach(t => {
-                if (t.logDates) {
-                    t.logDates.forEach(d => equipLogsSet.add(d));
+                if (t.logDates && t.logDates.length > 0) {
+                    const sortedRealDates = [...t.logDates].sort();
+                    const virtStart = new Date(t.planStart);
+                    
+                    sortedRealDates.forEach((rDate, idx) => {
+                        const vDate = new Date(virtStart);
+                        vDate.setDate(vDate.getDate() + idx);
+                        const vDateStr = `${vDate.getFullYear()}-${String(vDate.getMonth() + 1).padStart(2, '0')}-${String(vDate.getDate()).padStart(2, '0')}`;
+                        equipMap[rDate] = vDateStr;
+                    });
                 }
             });
-            const uniqueRealDates = [...equipLogsSet].sort();
-
-            // 장비의 가상 시작일(첫 번째 계획일) 찾기
-            let equipVirtStartStr = null;
-            tasks.forEach(t => {
-                if (!equipVirtStartStr || t.planStart < equipVirtStartStr) {
-                    equipVirtStartStr = t.planStart;
-                }
-            });
-
-            if (equipVirtStartStr && uniqueRealDates.length > 0) {
-                const equipMap = {};
-                let currentVirtDate = new Date(equipVirtStartStr);
-                uniqueRealDates.forEach(rDate => {
-                    const virtDateStr = `${currentVirtDate.getFullYear()}-${String(currentVirtDate.getMonth() + 1).padStart(2, '0')}-${String(currentVirtDate.getDate()).padStart(2, '0')}`;
-                    equipMap[rDate] = virtDateStr;
-                    currentVirtDate.setDate(currentVirtDate.getDate() + 1);
-                });
-                const equipKey = `${tasks[0].site}::${tasks[0].equip}`;
-                equipRealToVirtMap[equipKey] = equipMap;
-            }
+            const equipKey = `${tasks[0].site}::${tasks[0].equip}`;
+            equipRealToVirtMap[equipKey] = equipMap;
 
             sequencedTasks.push(...tasks);
         });
@@ -645,16 +632,15 @@ function renderGanttChart() {
     let colIndex = 0;
 
     while (tempDate <= maxDate) {
-        const day = tempDate.getDay();
-        // [수정] 일수 모드일 때는 주말 여부와 상관없이 모든 날짜를 포함시켜 겹침 방지 공간 확보
-        if (isDayCountMode || (day !== 0 && day !== 6)) {
+        // 일수 모드이든 날짜 모드이든 공통으로 주말 및 공휴일을 배제시킵니다.
+        const isHol = typeof window.isHoliday === 'function' ? window.isHoliday(tempDate) : false;
+        
+        if (!isHol) {
             const dStr = tempDate.toISOString().split('T')[0];
-            const hol = getHolidayName(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
             const d = new Date(tempDate);
             d.setHours(0, 0, 0, 0);
 
             if (isDayCountMode) {
-                // 일수 모드일 때는 달력 개념이 사라지므로 공휴일도 무시하고 모두 칸으로 포함
                 ganttValidDates.push({
                     date: new Date(tempDate),
                     str: dStr,
@@ -662,7 +648,7 @@ function renderGanttChart() {
                 });
                 dateMap.set(dStr, colIndex++);
             } else {
-                // 기본 달력 모드일 때는 휴일 속성 유지
+                const hol = getHolidayName(tempDate.getFullYear(), tempDate.getMonth(), tempDate.getDate());
                 ganttValidDates.push({
                     date: new Date(tempDate),
                     str: dStr,
@@ -918,8 +904,70 @@ function renderGanttChart() {
         }
     }
 
+    // [추가] 일수 모드 날짜 양방향 매핑 처리
+    const nodeFinalDateMap = new Map();
+    if (isDayCountMode) {
+        const dayNodes = [];
+        ganttValidDates.forEach(dObj => {
+            const d = new Date(dObj.date);
+            d.setHours(0, 0, 0, 0);
+            if (projectStartDate && d >= projectStartDate) {
+                let mappedDate = null;
+                if (virtToRealMap.has(dObj.str)) {
+                    const rDateStr = virtToRealMap.get(dObj.str);
+                    const [y, m, day] = rDateStr.split('-').map(Number);
+                    mappedDate = new Date(y, m - 1, day);
+                }
+                dayNodes.push({
+                    str: dObj.str,
+                    mappedDate: mappedDate,
+                    finalDate: mappedDate ? new Date(mappedDate) : null
+                });
+            }
+        });
+
+        // 1. 역방향 전파 (오른쪽에서 왼쪽으로 채우기)
+        for (let i = dayNodes.length - 1; i >= 0; i--) {
+            if (dayNodes[i].finalDate) {
+                let current = new Date(dayNodes[i].finalDate);
+                for (let j = i - 1; j >= 0; j--) {
+                    if (dayNodes[j].mappedDate) break;
+                    current = addBusinessDays(current, -1);
+                    dayNodes[j].finalDate = new Date(current);
+                }
+            }
+        }
+
+        // 2. 순방향 전파 (왼쪽에서 오른쪽으로 채우기)
+        let lastValid = null;
+        for (let i = 0; i < dayNodes.length; i++) {
+            if (dayNodes[i].finalDate) {
+                lastValid = new Date(dayNodes[i].finalDate);
+            } else {
+                if (lastValid) {
+                    lastValid = addBusinessDays(lastValid, 1);
+                    dayNodes[i].finalDate = new Date(lastValid);
+                } else {
+                    const d = new Date(dayNodes[i].str);
+                    let firstDate = new Date(d);
+                    if (typeof window.isHoliday === 'function' && window.isHoliday(firstDate)) {
+                        firstDate = addBusinessDays(firstDate, 1);
+                    }
+                    dayNodes[i].finalDate = firstDate;
+                    lastValid = new Date(firstDate);
+                }
+            }
+        }
+
+        dayNodes.forEach(node => {
+            nodeFinalDateMap.set(node.str, {
+                date: node.finalDate,
+                isMapped: !!node.mappedDate
+            });
+        });
+    }
+
     let relativeDayCount = 1;
-    let lastDisplayDateObj = null;
 
     ganttValidDates.forEach((dObj, i) => {
         let cellClass = 'gantt__date-cell gantt__date-cell--day';
@@ -937,21 +985,13 @@ function renderGanttChart() {
                 let displayDateObj = null;
                 let isMapped = false;
 
-                if (virtToRealMap.has(dObj.str)) {
-                    const rDateStr = virtToRealMap.get(dObj.str);
-                    const [y, m, day] = rDateStr.split('-').map(Number);
-                    displayDateObj = new Date(y, m - 1, day);
-                    isMapped = true;
+                if (nodeFinalDateMap.has(dObj.str)) {
+                    const info = nodeFinalDateMap.get(dObj.str);
+                    displayDateObj = info.date;
+                    isMapped = info.isMapped;
                 } else {
-                    if (lastDisplayDateObj) {
-                        displayDateObj = new Date(lastDisplayDateObj);
-                        displayDateObj.setDate(displayDateObj.getDate() + 1);
-                    } else {
-                        displayDateObj = new Date(d); // 기본 가상 날짜
-                    }
+                    displayDateObj = new Date(d);
                 }
-
-                lastDisplayDateObj = new Date(displayDateObj);
 
                 const shortDate = `${String(displayDateObj.getMonth() + 1).padStart(2, '0')}/${String(displayDateObj.getDate()).padStart(2, '0')}`;
                 const dateColor = isMapped ? 'color: #58a6ff;' : 'color: #8b949e;';
@@ -1497,13 +1537,11 @@ function setupGanttSearchModal() {
                     if (equip && equip.startsWith('기타(ETC)')) continue;
                     const equipData = setupData[`${site}::${equip}`];
                     let isCompleted = false;
-                    let hasScheduledDate = false;
                     if (equipData && equipData.setupDetails) {
                         const completeTask = equipData.setupDetails.find(t => t.content === '셋업 완료' || t.category === '셋업 완료');
                         isCompleted = completeTask && completeTask.completed;
-                        hasScheduledDate = equipData.setupDetails.some(d => d.startDate);
                     }
-                    const isIng = !isCompleted && hasScheduledDate;
+                    const isIng = !isCompleted;
                     if (!showIng || (showIng && isIng)) {
                         hasValidEquip = true;
                         break;
@@ -1585,13 +1623,11 @@ function openGanttSearchModal() {
                 if (equip && equip.startsWith('기타(ETC)')) continue;
                 const equipData = setupData[`${site}::${equip}`];
                 let isCompleted = false;
-                let hasScheduledDate = false;
                 if (equipData && equipData.setupDetails) {
                     const completeTask = equipData.setupDetails.find(t => t.content === '셋업 완료' || t.category === '셋업 완료');
                     isCompleted = completeTask && completeTask.completed;
-                    hasScheduledDate = equipData.setupDetails.some(d => d.startDate);
                 }
-                const isIng = !isCompleted && hasScheduledDate;
+                const isIng = !isCompleted;
                 if (!showIng || (showIng && isIng)) {
                     hasValidEquip = true;
                     break;
@@ -1646,13 +1682,11 @@ function updateGanttSearchEquipSelect(site) {
         // 셋업 진행 중 여부 확인
         const equipData = setupData[`${site}::${equip}`];
         let isCompleted = false;
-        let hasScheduledDate = false;
         if (equipData && equipData.setupDetails) {
             const completeTask = equipData.setupDetails.find(t => t.content === '셋업 완료' || t.category === '셋업 완료');
             isCompleted = completeTask && completeTask.completed;
-            hasScheduledDate = equipData.setupDetails.some(d => d.startDate);
         }
-        const isIng = !isCompleted && hasScheduledDate;
+        const isIng = !isCompleted;
 
         if (!showIng || (showIng && isIng)) {
             const option = document.createElement('option');

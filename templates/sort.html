@@ -10,95 +10,101 @@
     <!-- 좌측 필터 사이드바 -->
     <aside class="dashboard-sidebar" style="width: 380px; display: flex; flex-direction: column;">
         <div class="sidebar-group" style="flex: 1; overflow-y: auto; padding-right: 5px;">
-            <div class="sidebar-header-row">
+            <div class="sidebar-header-row" style="display: flex; justify-content: space-between; align-items: center;">
                 <h3>Sort Menu</h3>
-            </div>
-            <div class="form-group mt-10">
-                <label class="form-label-custom">기간 설정</label>
-                <select id="sort-period-type" class="input-dark full-width" style="margin-bottom: 5px;">
-                    <option value="month">월간</option>
-                    <option value="year">연간</option>
-                    <option value="custom">직접 입력</option>
-                </select>
-                <input type="month" id="sort-month-input" class="input-dark full-width">
-                <select id="sort-year-input" class="input-dark full-width" style="display:none;"></select>
-                <div id="sort-custom-input" style="display: none; gap: 5px; align-items: center;">
-                    <input type="date" id="sort-start-date" class="input-dark flex-1">
-                    <span>~</span>
-                    <input type="date" id="sort-end-date" class="input-dark flex-1">
+                <div style="display: flex; gap: 16px; align-items: center;">
+                    <button id="btn-sort-export" class="btn-green" style="display: none; padding: 4px 8px; font-size: 11px; margin: 0; width: auto; height: auto; min-width: 0;">CSV 다운로드</button>
+                    <button type="button" id="btn-toggle-sort-menu" class="btn-gray" style="display: none; padding: 4px 8px; font-size: 11px; margin: 0; width: auto; height: auto; min-width: 0;">접기</button>
                 </div>
             </div>
-            <div class="form-group mt-10">
-                <label class="form-label-custom">사업장</label>
-                <select id="sort-site-select" class="input-dark full-width"><option value="">전체 사업장</option></select>
-            </div>
-            <div class="form-group mt-10">
-                <label class="form-label-custom">건물명</label>
-                <select id="sort-building-select" class="input-dark full-width" disabled><option value="">전체 건물</option></select>
-            </div>
-            <div class="form-group mt-10">
-                <label class="form-label-custom">장비명</label>
-            <select id="sort-equip-select" class="input-dark full-width" disabled><option value="">전체 장비</option></select>
-        </div>
-        <div class="form-group mt-10">
-            <label class="form-label-custom">모델명</label>
-            <select id="sort-model-select" class="input-dark full-width"><option value="">전체 모델</option></select>
-            </div>
-            <div class="form-group mt-10">
-                <label class="form-label-custom">작업 구분</label>
-                <select id="sort-type-select" class="input-dark full-width">
-                    <option value="">전체 구분</option>
-                    <option value="정기">정기 (PM)</option>
-                    <option value="비정기">비정기 (BM)</option>
-                    <option value="고객대응">고객대응</option>
-                    <option value="용액제조">용액제조</option>
-                    <option value="온라인점검">온라인점검</option>
-                </select>
-            </div>
-            <div class="form-group mt-10">
-                <label class="form-label-custom">세부 구분</label>
-                <select id="sort-detail-type-select" class="input-dark full-width" disabled><option value="">전체 세부 구분</option></select>
-            </div>
-            <div class="form-group mt-10" id="sort-detail-type2-group" style="display: none;">
-                <label class="form-label-custom">세부 구분 2</label>
-                <select id="sort-detail-type2-select" class="input-dark full-width"><option value="">전체 세부 구분 2</option></select>
-            </div>
-            <div class="form-group mt-10">
-                <label class="form-label-custom">항목 / 내용 검색</label>
-                <div class="log-select-wrapper full-width" style="margin:0; position:relative;">
-                    <input type="text" id="sort-keyword" class="input-dark full-width" placeholder="검색어 입력 또는 클릭하여 선택..." autocomplete="off" style="cursor: text;">
-                    <div id="sort-keyword-dropdown" class="log-select-dropdown" style="width:100%; max-height:300px; display:none; position:absolute; top:100%; left:0; z-index:1000; background:#161b22; border:1px solid #30363d; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); margin-top:4px; box-sizing:border-box;">
-                        <div id="sort-keyword-list" class="log-select-list" style="max-height: 180px; overflow-y:auto; padding:8px;"></div>
-                        <div class="log-select-footer" style="padding: 5px; display: flex; gap: 5px;">
-                            <button type="button" id="btn-sort-keyword-select-all" class="btn-gray" style="flex: 1; padding: 4px 0; font-size: 12px;">전체 선택</button>
-                            <button type="button" id="btn-sort-keyword-deselect" class="btn-gray" style="flex: 1; padding: 4px 0; font-size: 12px;">전체 해제</button>
-                            <button type="button" id="btn-sort-keyword-confirm" class="btn-blue-sm" style="flex: 1;">선택 완료</button>
+            
+            <div id="sort-menu-form-container">
+                <div class="form-group mt-10">
+                    <label class="form-label-custom">기간 설정</label>
+                    <select id="sort-period-type" class="input-dark full-width" style="margin-bottom: 5px;">
+                        <option value="month">월간</option>
+                        <option value="year">연간</option>
+                        <option value="custom">직접 입력</option>
+                    </select>
+                    <input type="month" id="sort-month-input" class="input-dark full-width">
+                    <select id="sort-year-input" class="input-dark full-width" style="display:none;"></select>
+                    <div id="sort-custom-input" style="display: none; gap: 5px; align-items: center;">
+                        <input type="date" id="sort-start-date" class="input-dark flex-1">
+                        <span>~</span>
+                        <input type="date" id="sort-end-date" class="input-dark flex-1">
+                    </div>
+                </div>
+                <div class="form-group mt-10">
+                    <label class="form-label-custom">사업장</label>
+                    <select id="sort-site-select" class="input-dark full-width"><option value="">전체 사업장</option></select>
+                </div>
+                <div class="form-group mt-10">
+                    <label class="form-label-custom">건물명</label>
+                    <select id="sort-building-select" class="input-dark full-width" disabled><option value="">전체 건물</option></select>
+                </div>
+                <div class="form-group mt-10">
+                    <label class="form-label-custom">장비명</label>
+                    <select id="sort-equip-select" class="input-dark full-width" disabled><option value="">전체 장비</option></select>
+                </div>
+                <div class="form-group mt-10">
+                    <label class="form-label-custom">모델명</label>
+                    <select id="sort-model-select" class="input-dark full-width"><option value="">전체 모델</option></select>
+                </div>
+                <div class="form-group mt-10">
+                    <label class="form-label-custom">작업 구분</label>
+                    <select id="sort-type-select" class="input-dark full-width">
+                        <option value="">전체 구분</option>
+                        <option value="정기">정기 (PM)</option>
+                        <option value="비정기">비정기 (BM)</option>
+                        <option value="고객대응">고객대응</option>
+                        <option value="용액제조">용액제조</option>
+                        <option value="온라인점검">온라인점검</option>
+                    </select>
+                </div>
+                <div class="form-group mt-10">
+                    <label class="form-label-custom">세부 구분</label>
+                    <select id="sort-detail-type-select" class="input-dark full-width" disabled><option value="">전체 세부 구분</option></select>
+                </div>
+                <div class="form-group mt-10" id="sort-detail-type2-group" style="display: none;">
+                    <label class="form-label-custom">세부 구분 2</label>
+                    <select id="sort-detail-type2-select" class="input-dark full-width"><option value="">전체 세부 구분 2</option></select>
+                </div>
+                <div class="form-group mt-10">
+                    <label class="form-label-custom">항목 / 내용 검색</label>
+                    <div class="log-select-wrapper full-width" style="margin:0; position:relative;">
+                        <input type="text" id="sort-keyword" class="input-dark full-width" placeholder="검색어 입력 또는 클릭하여 선택..." autocomplete="off" style="cursor: text;">
+                        <div id="sort-keyword-dropdown" class="log-select-dropdown" style="width:100%; max-height:300px; display:none; position:absolute; top:100%; left:0; z-index:1000; background:#161b22; border:1px solid #30363d; border-radius:4px; box-shadow:0 4px 12px rgba(0,0,0,0.5); margin-top:4px; box-sizing:border-box;">
+                            <div id="sort-keyword-list" class="log-select-list" style="max-height: 180px; overflow-y:auto; padding:8px;"></div>
+                            <div class="log-select-footer" style="padding: 5px; display: flex; gap: 5px;">
+                                <button type="button" id="btn-sort-keyword-select-all" class="btn-gray" style="flex: 1; padding: 4px 0; font-size: 12px;">전체 선택</button>
+                                <button type="button" id="btn-sort-keyword-deselect" class="btn-gray" style="flex: 1; padding: 4px 0; font-size: 12px;">전체 해제</button>
+                                <button type="button" id="btn-sort-keyword-confirm" class="btn-blue-sm" style="flex: 1;">선택 완료</button>
+                            </div>
                         </div>
                     </div>
                 </div>
+                <div class="form-group mt-10">
+                    <label class="form-label-custom">물품 상세 구분 (분석부/샘플링부 등)</label>
+                    <select id="sort-item-detail-type-select" class="input-dark full-width">
+                        <option value="샘플링부 교체">샘플링부 교체</option>
+                        <option value="분석부 교체">분석부 교체</option>
+                        <option value="용액">용액</option>
+                        <option value="가스">가스</option>
+                        <option value="기타">기타</option>
+                        <option value="미지정">미지정 (분류 없음)</option>
+                    </select>
+                </div>
+                <div class="form-group mt-10">
+                    <label class="form-label-custom">비용 처리</label>
+                    <select id="sort-cost-type-select" class="input-dark full-width">
+                        <option value="유상">유상</option>
+                        <option value="무상(보증)">무상(보증)</option>
+                        <option value="무상(중고)">무상(중고)</option>
+                        <option value="기타">기타</option>
+                    </select>
+                </div>
+                <button id="btn-sort-search" class="btn-blue full-width mt-10" style="padding: 10px; font-size: 14px;">검색 및 정렬</button>
             </div>
-            <div class="form-group mt-10">
-                <label class="form-label-custom">물품 상세 구분 (분석부/샘플링부 등)</label>
-                <select id="sort-item-detail-type-select" class="input-dark full-width">
-                    <option value="샘플링부 교체">샘플링부 교체</option>
-                    <option value="분석부 교체">분석부 교체</option>
-                    <option value="용액">용액</option>
-                    <option value="가스">가스</option>
-                    <option value="기타">기타</option>
-                    <option value="미지정">미지정 (분류 없음)</option>
-                </select>
-            </div>
-            <div class="form-group mt-10">
-                <label class="form-label-custom">비용 처리</label>
-                <select id="sort-cost-type-select" class="input-dark full-width">
-                    <option value="유상">유상</option>
-                    <option value="무상(보증)">무상(보증)</option>
-                    <option value="무상(중고)">무상(중고)</option>
-                    <option value="기타">기타</option>
-                </select>
-            </div>
-            <button id="btn-sort-search" class="btn-blue full-width mt-10" style="padding: 10px; font-size: 14px;">검색 및 정렬</button>
-            <button id="btn-sort-export" class="btn-green full-width mt-10" style="display: none; padding: 10px; font-size: 14px;">CSV 다운로드</button>
         </div>
     </aside>
 
@@ -110,10 +116,10 @@
             <div class="card-header">
                 <h3>데이터 통계</h3>
             </div>
-            <div class="card-body" style="padding: 15px 20px 10px 10px; overflow: visible; display: flex; flex-direction: column;">
+            <div id="sort-charts-body" class="card-body" style="padding: 15px 20px 10px 10px; overflow: visible; display: flex; flex-direction: column;">
                 <div class="sort-full-chart" style="display: flex; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0;">
                     <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3; flex-shrink: 0;">파츠 교체 현황</div>
-                    <div style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
+                    <div class="chart-content-row" style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
                         <!-- Y축 영역 -->
                         <div id="sort-part-legend" class="chart-legend-table"></div>
                         <div id="sort-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
@@ -127,7 +133,7 @@
                     <!-- 용액 교체 현황 -->
                     <div class="sort-half-chart" style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
                         <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">용액 교체 현황</div>
-                        <div style="display: flex; flex-direction: row; flex: 1;">
+                        <div class="chart-content-row" style="display: flex; flex-direction: row; flex: 1;">
                             <div id="sort-solution-legend" class="chart-legend-table"></div>
                             <div id="sort-solution-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
                             <div id="sort-solution-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -141,7 +147,7 @@
                         <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
                             <span>점검구분별 작업현황</span>
                         </div>
-                        <div style="display: flex; flex-direction: row; flex: 1;">
+                        <div class="chart-content-row" style="display: flex; flex-direction: row; flex: 1;">
                             <div id="sort-type-legend" class="chart-legend-table"></div>
                             <div id="sort-type-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
                             <div id="sort-type-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: space-around; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -157,7 +163,7 @@
                         <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
                             <span>세부구분별 작업현황</span>
                         </div>
-                        <div style="display: flex; flex-direction: row; flex: 1;">
+                        <div class="chart-content-row" style="display: flex; flex-direction: row; flex: 1;">
                             <div id="sort-detail-type-legend" class="chart-legend-table"></div>
                             <div id="sort-detail-type-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
                             <div id="sort-detail-type-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: space-around; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -171,7 +177,7 @@
                         <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
                             <span>세부구분 2별 작업현황</span>
                         </div>
-                        <div style="display: flex; flex-direction: row; flex: 1;">
+                        <div class="chart-content-row" style="display: flex; flex-direction: row; flex: 1;">
                             <div id="sort-detail-type2-legend" class="chart-legend-table"></div>
                             <div id="sort-detail-type2-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
                             <div id="sort-detail-type2-chart-container" style="flex: 1; display: flex; align-items: flex-end; justify-content: space-around; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
@@ -185,7 +191,7 @@
                     <div style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
                         <span>비정기 점검 항목 현황</span>
                     </div>
-                    <div style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
+                    <div class="chart-content-row" style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
                         <!-- Y축 영역 -->
                         <div id="sort-irregular-legend" class="chart-legend-table"></div>
                         <div id="sort-irregular-y-axis" style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;"></div>
@@ -200,7 +206,7 @@
             <div class="card-header">
                 <h3 style="font-size: 16px; color: #c9d1d9;">검색 결과 <span id="sort-result-count" class="count-badge">0</span></h3>
             </div>
-            <div class="card-body" style="padding: 0;">
+            <div id="sort-result-body" class="card-body" style="padding: 0;">
                 <div class="data-table-wrapper" style="overflow-y: auto; max-height: 500px;">
                     <table class="data-table" id="sort-result-table">
                         <thead>

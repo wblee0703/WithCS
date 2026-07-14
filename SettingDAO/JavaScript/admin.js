@@ -2061,18 +2061,23 @@ function setupItemMgmt() {
     if (itemListContainer) {
         const listHeader = itemListContainer.querySelector('.list-header > div:first-child');
         if (listHeader) {
-            const btnCsvExport = document.createElement('button');
-            btnCsvExport.className = 'btn-settings item-csv-btn';
-            btnCsvExport.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: 5px;';
-            btnCsvExport.textContent = 'CSV 내보내기';
-            btnCsvExport.title = '등록된 물품 데이터를 CSV 양식으로 내보냅니다.';
-            btnCsvExport.addEventListener('click', exportItemCsv);
-            listHeader.appendChild(btnCsvExport);
-
             const userRole = sessionStorage.getItem('userRole');
+
+            // 1. CSV 내보내기 버튼은 관리자(admin) 및 최종관리자(superadmin) 둘 다에게 노출
             if (userRole === 'superadmin' || userRole === 'admin') {
+                const btnCsvExport = document.createElement('button');
+                btnCsvExport.className = 'btn-settings item-csv-export-btn';
+                btnCsvExport.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: 5px;';
+                btnCsvExport.textContent = 'CSV 내보내기';
+                btnCsvExport.title = '등록된 물품 데이터를 CSV 양식으로 내보냅니다.';
+                btnCsvExport.addEventListener('click', exportItemCsv);
+                listHeader.appendChild(btnCsvExport);
+            }
+
+            // 2. CSV 불러오기 버튼은 최종관리자(superadmin)에게만 노출
+            if (userRole === 'superadmin') {
                 const btnCsvImport = document.createElement('button');
-                btnCsvImport.className = 'btn-settings item-csv-btn';
+                btnCsvImport.className = 'btn-settings item-csv-import-btn';
                 btnCsvImport.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: 5px;';
                 btnCsvImport.textContent = 'CSV 불러오기';
                 btnCsvImport.title = 'CSV 양식: 품번, 코드명, 물품명, 세부규격';

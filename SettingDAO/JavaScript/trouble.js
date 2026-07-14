@@ -35,7 +35,7 @@ function checkQueryStringFilters() {
             const model = parts[0];
             const serial = parts.length > 1 ? parts[1] : '';
             const custName = parts.length > 2 ? parts[2] : '';
-            
+
             // 고객사장비명을 최우선으로, 없으면 시리얼 번호, 그것도 없으면 모델명 지정
             searchInput.value = custName || serial || model;
         }
@@ -61,9 +61,9 @@ function fetchTroubles() {
 function renderTroubleSites() {
     const siteList = document.getElementById('trouble-site-list');
     const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
-    
+
     siteList.innerHTML = `<li data-site="ALL" class="active">전체 사업장</li>`;
-    
+
     const sites = Object.keys(deviceData).filter(s => s !== 'models' && s !== 'details').sort();
     sites.forEach(site => {
         siteList.insertAdjacentHTML('beforeend', `<li data-site="${escapeHtml(site)}">${escapeHtml(site)}</li>`);
@@ -73,16 +73,16 @@ function renderTroubleSites() {
         li.addEventListener('click', () => {
             siteList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
             li.classList.add('active');
-            
+
             currentTroubleFilter.site = li.dataset.site;
             currentTroubleFilter.model = 'ALL';
             currentTroubleFilter.equip = 'ALL';
-            
+
             renderTroubleModels(currentTroubleFilter.site);
             applyTroubleFilter();
         });
     });
-    
+
     renderTroubleModels('ALL');
 }
 
@@ -90,9 +90,9 @@ function renderTroubleModels(site) {
     const modelList = document.getElementById('trouble-model-list');
     const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
-    
+
     modelList.innerHTML = `<li data-model="ALL" class="active">전체 모델</li>`;
-    
+
     let equips = [];
     if (site === 'ALL') {
         Object.keys(deviceData).forEach(s => {
@@ -101,30 +101,30 @@ function renderTroubleModels(site) {
     } else {
         if (deviceData[site]) equips = deviceData[site];
     }
-    
+
     const modelSet = new Set();
     equips.forEach(eq => modelSet.add(eq.split('::')[0]));
-    
+
     const uniqueModels = Array.from(modelSet).sort();
     uniqueModels.forEach(mName => {
         const matched = equipmentModels.find(m => m.name === mName || m.abbr === mName);
         const displayName = matched && matched.abbr ? matched.abbr : mName;
         modelList.insertAdjacentHTML('beforeend', `<li data-model="${escapeHtml(mName)}">${escapeHtml(displayName)}</li>`);
     });
-    
+
     modelList.querySelectorAll('li').forEach(li => {
         li.addEventListener('click', () => {
             modelList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
             li.classList.add('active');
-            
+
             currentTroubleFilter.model = li.dataset.model;
             currentTroubleFilter.equip = 'ALL';
-            
+
             renderTroubleEquips(currentTroubleFilter.site, currentTroubleFilter.model);
             applyTroubleFilter();
         });
     });
-    
+
     renderTroubleEquips(site, 'ALL');
 }
 
@@ -134,9 +134,9 @@ function renderTroubleEquips(site, model) {
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
     const searchInput = document.getElementById('trouble-equip-search-filter');
     if (searchInput) searchInput.value = '';
-    
+
     equipList.innerHTML = `<li data-equip="ALL" class="active">전체 장비</li>`;
-    
+
     let equips = [];
     if (site === 'ALL') {
         Object.keys(deviceData).forEach(s => {
@@ -145,37 +145,37 @@ function renderTroubleEquips(site, model) {
     } else {
         if (deviceData[site]) deviceData[site].forEach(e => equips.push({ site: site, equip: e }));
     }
-    
+
     if (model !== 'ALL') {
         equips = equips.filter(item => item.equip.split('::')[0] === model);
     }
-    
+
     equips.forEach(item => {
         const parts = item.equip.split('::');
         const rawName = parts[0];
         const serial = parts.length > 1 ? parts[1] : '';
         const matched = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
         const displayName = matched && matched.abbr ? matched.abbr : rawName;
-        
+
         const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.equip}`)) || {};
         const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
-        
+
         const subText = custEquipName ? ` [${custEquipName}]` : (serial ? ` [${serial}]` : '');
-        
+
         let displayHtml = '';
         if (site === 'ALL') {
             displayHtml = `<div style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 11px; color: #8b949e;">${escapeHtml(item.site)}</span><span>${escapeHtml(displayName)}${escapeHtml(subText)}</span></div>`;
         } else {
             displayHtml = `<span>${escapeHtml(displayName)}${escapeHtml(subText)}</span>`;
         }
-        
+
         const searchText = `${item.site} ${displayName} ${serial} ${custEquipName}`.toLowerCase();
-        
+
         equipList.insertAdjacentHTML('beforeend', `<li data-equip="${escapeHtml(item.equip)}" data-search="${escapeHtml(searchText)}">
             ${displayHtml}
         </li>`);
     });
-    
+
     equipList.querySelectorAll('li').forEach(li => {
         li.addEventListener('click', () => {
             equipList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
@@ -189,32 +189,32 @@ function renderTroubleEquips(site, model) {
 function applyTroubleFilter() {
     const searchInput = document.getElementById('trouble-search-input');
     currentTroubleFilter.keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
-    
+
     let filtered = allTroubles;
-    
+
     if (currentTroubleFilter.site !== 'ALL') filtered = filtered.filter(t => t.site === currentTroubleFilter.site);
-    
+
     if (currentTroubleFilter.model !== 'ALL') filtered = filtered.filter(t => t.equip_id && t.equip_id.split('::')[1] === currentTroubleFilter.model);
-    
+
     if (currentTroubleFilter.equip !== 'ALL') filtered = filtered.filter(t => t.equip_id && t.equip_id.split('::').slice(1).join('::') === currentTroubleFilter.equip);
-    
+
     if (currentTroubleFilter.keyword) {
-        filtered = filtered.filter(t => 
-            (t.equip && t.equip.toLowerCase().includes(currentTroubleFilter.keyword)) || 
-            (t.equip_id && t.equip_id.toLowerCase().includes(currentTroubleFilter.keyword)) || 
-            (t.content && t.content.toLowerCase().includes(currentTroubleFilter.keyword)) || 
+        filtered = filtered.filter(t =>
+            (t.equip && t.equip.toLowerCase().includes(currentTroubleFilter.keyword)) ||
+            (t.equip_id && t.equip_id.toLowerCase().includes(currentTroubleFilter.keyword)) ||
+            (t.content && t.content.toLowerCase().includes(currentTroubleFilter.keyword)) ||
             (t.worker && t.worker.toLowerCase().includes(currentTroubleFilter.keyword)) ||
             (t.type && t.type.toLowerCase().includes(currentTroubleFilter.keyword)) ||
             (t.detail_type && t.detail_type.toLowerCase().includes(currentTroubleFilter.keyword)) ||
             (t.check_item && t.check_item.toLowerCase().includes(currentTroubleFilter.keyword))
         );
     }
-    
+
     // [수정] 작성완료 필터 적용: 발생 일시가 기록된 항목(기록여부 녹색)만 표시
     if (showCompletedOnly) {
         filtered = filtered.filter(t => t.occur_date && String(t.occur_date).trim() !== '' && t.occur_date !== '-');
     }
-    
+
     renderTroubleList(filtered);
 }
 
@@ -235,7 +235,7 @@ function setupTroubleLoadHistoryEvent() {
             const currentTroubleId = modal.dataset.troubleId;
             const equipHistories = allTroubles.filter(t => {
                 if (t.equip_id !== equipId || String(t.id) === String(currentTroubleId)) return false;
-                
+
                 // [추가] 발생 일시가 작성된 내역만 필터링
                 const isRecorded = t.occur_date && String(t.occur_date).trim() !== '' && t.occur_date !== '-';
                 if (!isRecorded) return false;
@@ -246,17 +246,17 @@ function setupTroubleLoadHistoryEvent() {
                         try {
                             const parsed = JSON.parse(t.content);
                             if (parsed.situation || parsed.symptom || parsed.cause || parsed.action || parsed.prevention) hasContent = true;
-                        } catch(e) {}
+                        } catch (e) { }
                     } else if (String(t.content).trim() !== '' && String(t.content).trim() !== '-') {
                         hasContent = true;
                     }
                 }
                 if (t.memo && String(t.memo).trim() !== '') hasContent = true;
                 if (t.image_data) hasContent = true;
-                
+
                 return hasContent;
             });
-            
+
             equipHistories.sort((a, b) => {
                 const dateA = a.action_date || a.occur_date || '';
                 const dateB = b.action_date || b.occur_date || '';
@@ -281,10 +281,10 @@ function setupTroubleLoadHistoryEvent() {
                             if (parsed.symptom) arr.push(`[증상] ${parsed.symptom}`);
                             if (parsed.cause) arr.push(`[원인] ${parsed.cause}`);
                             if (parsed.trouble_memo) arr.push(`[메모] ${parsed.trouble_memo}`);
-                            
+
                             displayContent = arr.length > 0 ? arr.join(' / ') : '-';
                             tooltipContent = arr.join('\n');
-                        } catch(e) {}
+                        } catch (e) { }
                     } else {
                         displayContent = '-';
                         tooltipContent = '';
@@ -304,11 +304,11 @@ function setupTroubleLoadHistoryEvent() {
                     li.addEventListener('mouseout', () => li.style.background = '#161b22');
                     li.addEventListener('click', () => {
                         if (!confirm('선택한 작업내용과 사진을 현재 창에 불러오시겠습니까?\n(입력되어 있던 내용은 덮어씌워집니다.)')) return;
-                        
+
                         const hId = li.dataset.id;
                         const hSource = li.dataset.source;
                         const targetData = equipHistories.find(t => String(t.id) === String(hId) && t.source === hSource);
-                        
+
                         if (targetData) {
                             bindTroubleContentAndImage(targetData, true); // [수정] 불러오기 시 세부사항(메모)은 제외
                             alert('데이터를 불러왔습니다.');
@@ -344,7 +344,7 @@ function setupTroubleEvents() {
     const previewImg = document.getElementById('trouble-image-preview');
 
     if (imageInput) {
-        imageInput.addEventListener('change', function(e) {
+        imageInput.addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (!file) return;
 
@@ -362,7 +362,7 @@ function setupTroubleEvents() {
             }
 
             const reader = new FileReader();
-            reader.onload = function(evt) {
+            reader.onload = function (evt) {
                 currentTroubleImageBase64 = evt.target.result;
                 if (previewImg) previewImg.src = currentTroubleImageBase64;
                 if (previewContainer) previewContainer.style.display = 'block';
@@ -373,7 +373,7 @@ function setupTroubleEvents() {
     }
 
     if (removeBtn) {
-        removeBtn.addEventListener('click', function() {
+        removeBtn.addEventListener('click', function () {
             currentTroubleImageBase64 = '';
             if (imageInput) imageInput.value = '';
             if (previewImg) previewImg.src = '';
@@ -393,7 +393,7 @@ function setupTroubleEvents() {
             const troubleId = modal.dataset.troubleId || Date.now();
             const equipId = modal.dataset.equipId || '';
             const source = modal.dataset.source || 'trouble';
-            
+
             // [추가] 5개 항목(JSON) 및 진행경과(memo) 분리 수집
             const situationEl = document.getElementById('trouble-modal-situation');
             const symptomEl = document.getElementById('trouble-modal-symptom');
@@ -401,7 +401,7 @@ function setupTroubleEvents() {
             const actionEl = document.getElementById('trouble-modal-action-taken'); // [수정] 올바른 HTML ID 매핑
             const preventionEl = document.getElementById('trouble-modal-preventive'); // [수정] 올바른 HTML ID 매핑
             const memoEl = document.getElementById('trouble-modal-content'); // [수정] 우측 세부내용(메모) 영역
-            
+
             let contentData = {};
             if (situationEl || symptomEl || causeEl || actionEl || preventionEl) {
                 contentData = {
@@ -440,23 +440,23 @@ function setupTroubleEvents() {
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
                 body: JSON.stringify({ action: action, payload: payload })
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert('저장되었습니다.');
-                    closeTroubleModal();
-                    fetchTroubles();
-                } else {
-                    alert('저장 실패: ' + data.message);
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert('통신 중 오류가 발생했습니다.');
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('저장되었습니다.');
+                        closeTroubleModal();
+                        fetchTroubles();
+                    } else {
+                        alert('저장 실패: ' + data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('통신 중 오류가 발생했습니다.');
+                });
         });
     }
-    
+
     // [추가] 모달 내부 삭제 버튼 클릭
     const btnDelete = document.getElementById('btn-delete-trouble');
     if (btnDelete) {
@@ -464,33 +464,33 @@ function setupTroubleEvents() {
             const modal = document.getElementById('trouble-detail-modal');
             const troubleId = modal.dataset.troubleId;
             const source = modal.dataset.source;
-            
+
             if (!confirm('해당 Trouble 이력을 삭제하시겠습니까?\n삭제된 데이터는 복구할 수 없습니다.')) return;
-            
+
             const payload = {
                 id: troubleId,
                 source: source
             };
-            
+
             fetch('/api/trouble/crud', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
                 body: JSON.stringify({ action: 'DELETE', payload: payload })
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    alert('삭제되었습니다.');
-                    closeTroubleModal();
-                    fetchTroubles();
-                } else {
-                    alert('삭제 실패: ' + data.message);
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert('통신 중 오류가 발생했습니다.');
-            });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        alert('삭제되었습니다.');
+                        closeTroubleModal();
+                        fetchTroubles();
+                    } else {
+                        alert('삭제 실패: ' + data.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('통신 중 오류가 발생했습니다.');
+                });
         });
     }
 
@@ -524,6 +524,29 @@ function setupTroubleEvents() {
             });
         });
     }
+
+    // [추가] 모바일 환경 텍스트 영역 높이 동적 조절 이벤트 등록
+    const textareas = [
+        'trouble-modal-situation',
+        'trouble-modal-symptom',
+        'trouble-modal-cause',
+        'trouble-modal-action-taken',
+        'trouble-modal-preventive',
+        'trouble-modal-content'
+    ];
+    textareas.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', function () {
+                adjustTextareaHeight(this);
+            });
+            el.addEventListener('focus', function () {
+                adjustTextareaHeight(this);
+            });
+        }
+    });
+
+    window.addEventListener('resize', adjustAllTextareaHeights);
 }
 
 function openTroubleModal(mode, id = null, source = null) {
@@ -555,7 +578,7 @@ function openTroubleModal(mode, id = null, source = null) {
     const workerInput = document.getElementById('trouble-modal-worker');
     const memoInput = document.getElementById('trouble-modal-content'); // [수정] 세부내용
     const btnDelete = document.getElementById('btn-delete-trouble'); // [추가] 삭제 버튼
-    
+
     // [추가] 세부 항목 입력창
     const situationEl = document.getElementById('trouble-modal-situation');
     const symptomEl = document.getElementById('trouble-modal-symptom');
@@ -586,7 +609,7 @@ function openTroubleModal(mode, id = null, source = null) {
             // 장비 리스트에서 가져온 데이터로 입력창 자동 세팅
             if (siteSelect) siteSelect.value = troubleData.site || '';
             if (equipInput) equipInput.value = troubleData.equip || '';
-            
+
             if (occurDateInput && troubleData.occur_date) {
                 let dStr = troubleData.occur_date;
                 // 날짜(YYYY-MM-DD)만 있는 경우 시간 포맷을 맞춰줌
@@ -596,13 +619,13 @@ function openTroubleModal(mode, id = null, source = null) {
             if (actionDateInput && troubleData.action_date) {
                 actionDateInput.value = troubleData.action_date.substring(0, 10);
             }
-            
+
             if (statusInput) statusInput.value = troubleData.status || '조치중';
             if (workerInput) workerInput.value = troubleData.worker || '';
-            
+
             // [수정] source 제약 없이 모든 트러블 이력 소스에 대해 진행 경과(JSON) 바인딩 수행
             bindTroubleContentAndImage(troubleData);
-            
+
             // [추가] Trouble 테이블 원본 데이터인 경우에만 삭제 버튼 노출
             if (btnDelete) {
                 if (source === 'trouble') btnDelete.style.display = 'inline-block';
@@ -610,14 +633,20 @@ function openTroubleModal(mode, id = null, source = null) {
             }
 
 
-            
+
         }
     } else {
         // 등록(Add) 모드일 때 기본 담당자 이름 채우기
         if (workerInput) workerInput.value = sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '';
     }
 
-    if (modal) modal.style.display = 'flex';
+    if (modal) {
+        modal.style.display = 'flex';
+        // 모달창 렌더링 속도 지연(모바일 등)에 대처하기 위해 3회에 걸쳐 시간차 순차 호출
+        setTimeout(adjustAllTextareaHeights, 50);
+        setTimeout(adjustAllTextareaHeights, 150);
+        setTimeout(adjustAllTextareaHeights, 300);
+    }
 }
 
 function bindTroubleContentAndImage(data, excludeMemo = false) {
@@ -635,9 +664,9 @@ function bindTroubleContentAndImage(data, excludeMemo = false) {
     if (data.content) {
         parsed = data.content;
         if (typeof parsed === 'string' && parsed.startsWith('{')) {
-            try { parsed = JSON.parse(parsed); } catch(e) {}
+            try { parsed = JSON.parse(parsed); } catch (e) { }
         }
-        
+
         if (typeof parsed === 'object' && parsed !== null) {
             if (situationEl) situationEl.value = parsed.situation || '';
             if (symptomEl) symptomEl.value = parsed.symptom || '';
@@ -651,7 +680,7 @@ function bindTroubleContentAndImage(data, excludeMemo = false) {
             if (situationEl) situationEl.value = data.content || '';
         }
     }
-    
+
     if (data.source === 'log' || data.source === 'maint') {
         if (situationEl) {
             if (parsed && typeof parsed === 'object' && parsed.situation !== undefined) {
@@ -677,6 +706,11 @@ function bindTroubleContentAndImage(data, excludeMemo = false) {
         if (previewContainer) previewContainer.style.display = 'block';
         if (removeBtn) removeBtn.style.display = 'inline-block';
     }
+
+    // 불러오기 된 텍스트 데이터의 길이에 맞추어 텍스트 창 높이 자동 갱신 (지연 호출 3회)
+    setTimeout(adjustAllTextareaHeights, 50);
+    setTimeout(adjustAllTextareaHeights, 150);
+    setTimeout(adjustAllTextareaHeights, 300);
 }
 
 function closeTroubleModal() {
@@ -718,7 +752,7 @@ function renderTroubleList(dataList = []) {
 
             let dt1 = t.detail_type || '-';
             let dt2 = t.detail_type2 || '-';
-            
+
             if (dt1.includes(' > ')) {
                 const parts = dt1.split(' > ');
                 dt1 = parts[0].trim();
@@ -728,7 +762,7 @@ function renderTroubleList(dataList = []) {
                 if (dt1 === '-' || dt1 === '') dt1 = parts[0].trim();
                 dt2 = parts[1].trim();
             }
-            
+
             // [추가] JSON 형태의 content를 목록에 예쁘게 표시
             let displayContent = t.content || '-';
             let tooltipContent = t.content || '';
@@ -737,27 +771,27 @@ function renderTroubleList(dataList = []) {
                     const parsed = JSON.parse(displayContent);
                     const arr = [];
                     let sit = parsed.situation || '';
-                    
+
                     if (sit) arr.push(`[상황] ${sit}`);
                     if (parsed.symptom) arr.push(`[증상] ${parsed.symptom}`);
                     if (parsed.cause) arr.push(`[원인] ${parsed.cause}`);
                     if (parsed.action) arr.push(`[조치] ${parsed.action}`);
                     if (parsed.prevention) arr.push(`[대책] ${parsed.prevention}`);
                     if (parsed.trouble_memo) arr.push(`[메모] ${parsed.trouble_memo}`);
-                    
+
                     // [수정] 화면에는 '트러블 상황'에 입력된 내용만 단독으로 표시 (툴팁은 전체 내용 유지)
                     displayContent = sit || '-';
                     tooltipContent = arr.join('\n');
-                } catch(e) {}
+                } catch (e) { }
             } else {
                 displayContent = '-';
                 tooltipContent = '';
             }
-            
+
             // [추가] 기록여부 판단 (발생 일시 유무 기준)
             const isRecorded = t.occur_date && t.occur_date.trim() !== '' && t.occur_date !== '-';
-            const recordIcon = isRecorded 
-                ? '<span style="color: #3fb950; font-size: 16px;" title="발생 일시 기록됨">●</span>' 
+            const recordIcon = isRecorded
+                ? '<span style="color: #3fb950; font-size: 16px;" title="발생 일시 기록됨">●</span>'
                 : '<span style="color: #8b949e; font-size: 16px;" title="발생 일시 미기록">○</span>';
 
             return `<tr data-id="${t.id}" data-source="${t.source || 'trouble'}" style="cursor: pointer;">
@@ -786,4 +820,49 @@ function renderTroubleList(dataList = []) {
             });
         });
     }
+}
+
+/**
+ * 모바일 환경에서 textarea의 높이를 입력된 텍스트 길이에 맞춰 자동으로 조절합니다.
+ * @param {HTMLTextAreaElement} el 
+ */
+function adjustTextareaHeight(el) {
+    if (!el) return;
+
+    // 개별 입력창의 스크롤바 및 크기 조절 손잡이를 완전히 제거
+    el.style.overflowY = 'hidden';
+    el.style.resize = 'none';
+    el.style.height = 'auto';
+
+    // 텍스트가 적을 때도 레이아웃이 찌그러지지 않도록 기본 최소 높이 지정
+    let minHeight = 45;
+    if (el.id === 'trouble-modal-content') {
+        minHeight = 150; // 세부내용 기본 높이
+    } else if (el.id === 'trouble-modal-situation') {
+        minHeight = 100; // 트러블 상황 기본 높이
+    }
+
+    // 텍스트 내용의 높이(scrollHeight)와 최소 높이 중 더 큰 값으로 설정
+    const targetHeight = Math.max(el.scrollHeight, minHeight);
+    el.style.height = targetHeight + 'px';
+}
+
+/**
+ * 모달 내부의 모든 진행 경과 및 세부사항 입력 창의 높이를 조절합니다.
+ */
+function adjustAllTextareaHeights() {
+    const textareas = [
+        'trouble-modal-situation',
+        'trouble-modal-symptom',
+        'trouble-modal-cause',
+        'trouble-modal-action-taken',
+        'trouble-modal-preventive',
+        'trouble-modal-content'
+    ];
+    textareas.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            adjustTextareaHeight(el);
+        }
+    });
 }

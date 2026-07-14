@@ -752,8 +752,8 @@ body.role-admin .tag-remove {
         overflow-x: auto !important;
     }
 
-    /* [요청] 물품 관리 CSV 버튼 모바일 숨김 */
-    .item-csv-btn {
+    /* [요청] 물품 관리 CSV 불러오기 버튼만 모바일 숨김 */
+    .item-csv-import-btn {
         display: none !important;
     }
 }

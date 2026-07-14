@@ -7,26 +7,28 @@
 
 {% block content %}
 <div class="dashboard-wrapper trouble-dashboard-wrapper">
-    
+
     <!-- 사이드바: 사업장, 모델, 장비 3단계 필터 -->
     <div class="dashboard-sidebar trouble-sidebar">
         <div class="sidebar-group trouble-sidebar-group site-group">
             <div class="group-header">
                 <h3>사업장 필터</h3>
                 <div class="equip-search-wrapper">
-                    <input type="text" id="trouble-site-search-filter" class="input-dark" placeholder="사업장 검색..." autocomplete="off">
+                    <input type="text" id="trouble-site-search-filter" class="input-dark" placeholder="사업장 검색..."
+                        autocomplete="off">
                 </div>
             </div>
             <ul class="list-data" id="trouble-site-list">
                 <!-- JS 렌더링 -->
             </ul>
         </div>
-        
+
         <div class="sidebar-group trouble-sidebar-group model-group">
             <div class="group-header">
                 <h3>모델 필터</h3>
                 <div class="equip-search-wrapper">
-                    <input type="text" id="trouble-model-search-filter" class="input-dark" placeholder="모델 검색..." autocomplete="off">
+                    <input type="text" id="trouble-model-search-filter" class="input-dark" placeholder="모델 검색..."
+                        autocomplete="off">
                 </div>
             </div>
             <ul class="list-data" id="trouble-model-list">
@@ -38,7 +40,8 @@
             <div class="group-header">
                 <h3>장비 필터</h3>
                 <div class="equip-search-wrapper">
-                    <input type="text" id="trouble-equip-search-filter" class="input-dark" placeholder="장비 검색..." autocomplete="off">
+                    <input type="text" id="trouble-equip-search-filter" class="input-dark" placeholder="장비 검색..."
+                        autocomplete="off">
                 </div>
             </div>
             <ul class="list-data" id="trouble-equip-list">
@@ -52,14 +55,15 @@
         <div class="content-header" style="margin-bottom: 15px;">
             <h2>Trouble 이력 관리</h2>
         </div>
-        
+
         <div id="trouble-workspace">
             <!-- 리스트 및 본문 영역 -->
             <div class="trouble-container">
                 <!-- Trouble 필터 및 액션 버튼 영역 -->
                 <div class="trouble-header-actions" style="display: flex; justify-content: space-between;">
                     <div class="trouble-filters">
-                        <input type="text" id="trouble-search-input" class="input-dark" placeholder="장비명, Trouble 내용 검색...">
+                        <input type="text" id="trouble-search-input" class="input-dark"
+                            placeholder="장비명, Trouble 내용 검색...">
                         <button id="btn-trouble-search" class="btn-blue-sm">검색</button>
                         <button id="btn-toggle-completed-trouble" class="btn-gray-sm">작성완료</button>
                     </div>
@@ -83,7 +87,9 @@
                             </tr>
                         </thead>
                         <tbody id="trouble-tbody">
-                            <tr><td colspan="10" class="list-empty-msg">데이터를 불러오는 중입니다...</td></tr>
+                            <tr>
+                                <td colspan="10" class="list-empty-msg">데이터를 불러오는 중입니다...</td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -97,29 +103,37 @@
                     <h3 id="trouble-modal-title">Trouble 상세 정보</h3>
                     <button id="btn-close-trouble-modal" class="btn-del-sm">✕</button>
                 </div>
-                <div class="modal-body" style="padding: 20px; display: flex; flex-direction: row; gap: 20px; height: 100%; overflow: hidden;">
-                    
+                <div class="modal-body"
+                    style="padding: 20px; display: flex; flex-direction: row; gap: 20px; height: 100%; overflow: hidden;">
+
                     <!-- 왼쪽 패널: 고객사 정보 및 진행 경과 -->
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; padding-right: 10px;">
+                    <div
+                        style="flex: 1; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; padding-right: 10px;">
                         <!-- 고객사 정보 및 트러블 일시 -->
                         <div>
-                            <h4 style="color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-bottom: 15px; margin-top: 0;">고객사 정보 및 트러블 일시</h4>
+                            <h4
+                                style="color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-bottom: 15px; margin-top: 0;">
+                                고객사 정보 및 트러블 일시</h4>
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                                 <div class="form-row" style="margin-bottom: 0;">
                                     <label class="modal-label" style="width: 100px; flex-shrink: 0;">사업장</label>
-                                    <input type="text" id="trouble-modal-site" class="input-dark" style="flex: 1;" readonly>
+                                    <input type="text" id="trouble-modal-site" class="input-dark" style="flex: 1;"
+                                        readonly>
                                 </div>
                                 <div class="form-row" style="margin-bottom: 0;">
                                     <label class="modal-label" style="width: 100px; flex-shrink: 0;">모델명</label>
-                                    <input type="text" id="trouble-modal-equip" class="input-dark" style="flex: 1;" placeholder="고객사 장비명" readonly>
+                                    <input type="text" id="trouble-modal-equip" class="input-dark" style="flex: 1;"
+                                        placeholder="고객사 장비명" readonly>
                                 </div>
                                 <div class="form-row" style="margin-bottom: 0;">
                                     <label class="modal-label" style="width: 100px; flex-shrink: 0;">발생 일시</label>
-                                    <input type="datetime-local" id="trouble-modal-occur-date" class="input-dark" style="flex: 1;" lang="en-GB">
+                                    <input type="datetime-local" id="trouble-modal-occur-date" class="input-dark"
+                                        style="flex: 1;" lang="en-GB">
                                 </div>
                                 <div class="form-row" style="margin-bottom: 0;">
                                     <label class="modal-label" style="width: 100px; flex-shrink: 0;">조치 일</label>
-                                    <input type="date" id="trouble-modal-action-date" class="input-dark" style="flex: 1;" readonly>
+                                    <input type="date" id="trouble-modal-action-date" class="input-dark"
+                                        style="flex: 1;" readonly>
                                 </div>
                                 <div class="form-row" style="margin-bottom: 0;">
                                     <label class="modal-label" style="width: 100px; flex-shrink: 0;">완료 여부</label>
@@ -130,49 +144,83 @@
                                 </div>
                                 <div class="form-row" style="margin-bottom: 0;">
                                     <label class="modal-label" style="width: 100px; flex-shrink: 0;">조치 담당자</label>
-                                    <input type="text" id="trouble-modal-worker" class="input-dark" style="flex: 1;" placeholder="담당자 입력" readonly>
+                                    <input type="text" id="trouble-modal-worker" class="input-dark" style="flex: 1;"
+                                        placeholder="담당자 입력" readonly>
                                 </div>
                             </div>
                         </div>
 
                         <!-- 진행 경과 -->
                         <div>
-                            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-bottom: 15px; margin-top: 10px;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-bottom: 15px; margin-top: 10px;">
                                 <h4 style="color: #58a6ff; margin: 0;">진행 경과</h4>
-                                <button type="button" id="btn-load-trouble-history" class="btn-blue-sm" style="padding: 4px 10px; font-size: 11px;">작업내용 불러오기</button>
+                                <button type="button" id="btn-load-trouble-history" class="btn-blue-sm"
+                                    style="padding: 4px 10px; font-size: 11px;">작업내용 불러오기</button>
                             </div>
                             <div style="display: flex; flex-direction: column; gap: 10px;">
-                                <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label class="modal-label" style="width: 100px; flex-shrink: 0; padding-top: 5px;">트러블 상황</label><textarea id="trouble-modal-situation" class="input-dark" rows="5" style="flex: 1; resize: vertical;"></textarea></div>
-                                <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label class="modal-label" style="width: 100px; flex-shrink: 0; padding-top: 5px;">증상</label><textarea id="trouble-modal-symptom" class="input-dark" rows="2" style="flex: 1; resize: vertical;"></textarea></div>
-                                <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label class="modal-label" style="width: 100px; flex-shrink: 0; padding-top: 5px;">원인</label><textarea id="trouble-modal-cause" class="input-dark" rows="2" style="flex: 1; resize: vertical;"></textarea></div>
-                                <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label class="modal-label" style="width: 100px; flex-shrink: 0; padding-top: 5px;">조치사항</label><textarea id="trouble-modal-action-taken" class="input-dark" rows="2" style="flex: 1; resize: vertical;"></textarea></div>
-                                <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label class="modal-label" style="width: 100px; flex-shrink: 0; padding-top: 5px;">재발방지 대책</label><textarea id="trouble-modal-preventive" class="input-dark" rows="2" style="flex: 1; resize: vertical;"></textarea></div>
+                                <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label
+                                        class="modal-label" style="width: 100px; flex-shrink: 0; padding-top: 5px;">트러블
+                                        상황</label><textarea id="trouble-modal-situation" class="input-dark" rows="5"
+                                        style="flex: 1; resize: none;"></textarea></div>
+                                <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label
+                                        class="modal-label"
+                                        style="width: 100px; flex-shrink: 0; padding-top: 5px;">증상</label><textarea
+                                        id="trouble-modal-symptom" class="input-dark" rows="2"
+                                        style="flex: 1; resize: none;"></textarea></div>
+                                <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label
+                                        class="modal-label"
+                                        style="width: 100px; flex-shrink: 0; padding-top: 5px;">원인</label><textarea
+                                        id="trouble-modal-cause" class="input-dark" rows="2"
+                                        style="flex: 1; resize: none;"></textarea></div>
+                                <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label
+                                        class="modal-label"
+                                        style="width: 100px; flex-shrink: 0; padding-top: 5px;">조치사항</label><textarea
+                                        id="trouble-modal-action-taken" class="input-dark" rows="2"
+                                        style="flex: 1; resize: none;"></textarea></div>
+                                <div class="form-row" style="margin-bottom: 0; align-items: flex-start;"><label
+                                        class="modal-label" style="width: 100px; flex-shrink: 0; padding-top: 5px;">재발방지
+                                        대책</label><textarea id="trouble-modal-preventive" class="input-dark" rows="2"
+                                        style="flex: 1; resize: none;"></textarea></div>
                             </div>
                         </div>
                     </div>
 
                     <!-- 오른쪽 패널: 세부사항 -->
-                    <div style="flex: 1; display: flex; flex-direction: column; gap: 15px;">
-                        <h4 style="color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-bottom: 0; margin-top: 0;">세부사항</h4>
-                        
+                    <div
+                        style="flex: 1; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; padding-right: 10px;">
+                        <h4
+                            style="color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-bottom: 0; margin-top: 0;">
+                            세부사항</h4>
+
                         <!-- 사진 첨부 영역 -->
                         <div class="trouble-image-upload-wrapper">
                             <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <label for="trouble-modal-image" class="btn-blue-sm" style="cursor: pointer; padding: 4px 10px; margin: 0; font-size: 12px; display: inline-block;">📷 사진 첨부 (.jpg, .png)</label>
+                                <label for="trouble-modal-image" class="btn-blue-sm"
+                                    style="cursor: pointer; padding: 4px 10px; margin: 0; font-size: 12px; display: inline-block;">📷
+                                    사진 첨부 (.jpg, .png)</label>
                                 <span style="font-size: 11px; color: #8b949e;">(최대 500KB)</span>
-                                <input type="file" id="trouble-modal-image" accept=".jpg, .jpeg, .png" style="display: none;">
-                                <button type="button" id="btn-remove-trouble-image" class="btn-del-sm" style="display: none; font-size: 11px; padding: 2px 6px; margin-left: auto;">사진 삭제</button>
+                                <input type="file" id="trouble-modal-image" accept=".jpg, .jpeg, .png"
+                                    style="display: none;">
+                                <button type="button" id="btn-remove-trouble-image" class="btn-del-sm"
+                                    style="display: none; font-size: 11px; padding: 2px 6px; margin-left: auto;">사진
+                                    삭제</button>
                             </div>
                             <div id="trouble-image-preview-container" class="trouble-image-preview-container">
                                 <img id="trouble-image-preview" class="trouble-image-preview" src="">
                             </div>
                         </div>
 
-                        <textarea id="trouble-modal-content" class="input-dark" style="height: 150px; flex-shrink: 0; resize: vertical; width: 100%;" placeholder="세부 내용(메모)을 자유롭게 입력하세요..."></textarea>
-                        
-                        <div style="margin-top: auto; padding-top: 15px; border-top: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center;">
-                            <button id="btn-delete-trouble" class="btn-del" style="padding: 8px 25px; font-size: 14px; display: none;">삭제</button>
-                            <button id="btn-save-trouble" class="btn-blue-sm" style="padding: 8px 25px; font-size: 14px; margin-left: auto;">저장</button>
+                        <textarea id="trouble-modal-content" class="input-dark"
+                            style="min-height: 150px; height: auto; resize: none; width: 100%;"
+                            placeholder="세부 내용(메모)을 자유롭게 입력하세요..."></textarea>
+
+                        <div
+                            style="margin-top: auto; padding-top: 15px; border-top: 1px solid #30363d; display: flex; justify-content: space-between; align-items: center;">
+                            <button id="btn-delete-trouble" class="btn-del"
+                                style="padding: 8px 25px; font-size: 14px; display: none;">삭제</button>
+                            <button id="btn-save-trouble" class="btn-blue-sm"
+                                style="padding: 8px 25px; font-size: 14px; margin-left: auto;">저장</button>
                         </div>
                     </div>
                 </div>
@@ -182,10 +230,12 @@
 
     <!-- 이전 이력 불러오기 모달 -->
     <div id="trouble-load-history-modal" class="modal-overlay" style="display: none; z-index: 12000;">
-        <div class="modal-window" style="width: 500px; max-width: 95%; max-height: 80vh; display: flex; flex-direction: column;">
+        <div class="modal-window"
+            style="width: 500px; max-width: 95%; max-height: 80vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <h3 style="color: #e6edf3; margin: 0; font-size: 16px;">작업내용 불러오기</h3>
-                <button id="btn-close-trouble-load-history" class="btn-del-sm" style="background: none; border: none; color: #f85149; font-size: 16px; cursor: pointer;">✕</button>
+                <button id="btn-close-trouble-load-history" class="btn-del-sm"
+                    style="background: none; border: none; color: #f85149; font-size: 16px; cursor: pointer;">✕</button>
             </div>
             <div class="modal-body" style="overflow-y: auto; padding: 15px; background: #0d1117;">
                 <ul id="trouble-load-history-list" style="list-style: none; margin: 0; padding: 0;">
@@ -198,84 +248,84 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/trouble.js') }}?v=1.0.3"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/trouble.js') }}?v=1.0.7"></script>
 <script>
-// 백엔드에서 원본 데이터를 유지하여 팝업 폼 데이터가 날아가는 현상을 방지하고,
-// 화면에 렌더링된 직후에만 테이블의 텍스트를 '증상'으로 변환해주는 스크립트입니다.
-document.addEventListener('DOMContentLoaded', () => {
-    const tbody = document.getElementById('trouble-tbody');
-    if (!tbody) return;
+    // 백엔드에서 원본 데이터를 유지하여 팝업 폼 데이터가 날아가는 현상을 방지하고,
+    // 화면에 렌더링된 직후에만 테이블의 텍스트를 '증상'으로 변환해주는 스크립트입니다.
+    document.addEventListener('DOMContentLoaded', () => {
+        const tbody = document.getElementById('trouble-tbody');
+        if (!tbody) return;
 
-    const observer = new MutationObserver((mutations) => {
-        let hasNewNodes = false;
-        mutations.forEach(mutation => {
-            if (mutation.addedNodes.length > 0) hasNewNodes = true;
-        });
+        const observer = new MutationObserver((mutations) => {
+            let hasNewNodes = false;
+            mutations.forEach(mutation => {
+                if (mutation.addedNodes.length > 0) hasNewNodes = true;
+            });
 
-        if (hasNewNodes) {
-            tbody.querySelectorAll('tr').forEach(tr => {
-                if (tr.cells.length >= 8) {
-                    const contentCell = tr.cells[7]; // 'Trouble 내용 (증상)' 컬럼
-                    const rawText = contentCell.textContent.trim();
-                    if (rawText.startsWith('{') && rawText.endsWith('}')) {
-                        try {
-                            const parsed = JSON.parse(rawText);
-                            if (parsed && typeof parsed === 'object') {
-                                // 파싱 성공: 화면 표시용 텍스트만 '트러블 상황'으로 교체
-                                let display = parsed.situation || parsed.memo || '-';
-                                contentCell.textContent = display;
-                                
-                                // 긴 텍스트 말줄임표 처리
-                                contentCell.style.whiteSpace = 'nowrap';
-                                contentCell.style.overflow = 'hidden';
-                                contentCell.style.textOverflow = 'ellipsis';
-                                contentCell.style.maxWidth = '250px';
-                                contentCell.title = display; // 전체 내용을 툴팁으로 제공
+            if (hasNewNodes) {
+                tbody.querySelectorAll('tr').forEach(tr => {
+                    if (tr.cells.length >= 8) {
+                        const contentCell = tr.cells[7]; // 'Trouble 내용 (증상)' 컬럼
+                        const rawText = contentCell.textContent.trim();
+                        if (rawText.startsWith('{') && rawText.endsWith('}')) {
+                            try {
+                                const parsed = JSON.parse(rawText);
+                                if (parsed && typeof parsed === 'object') {
+                                    // 파싱 성공: 화면 표시용 텍스트만 '트러블 상황'으로 교체
+                                    let display = parsed.situation || parsed.memo || '-';
+                                    contentCell.textContent = display;
+
+                                    // 긴 텍스트 말줄임표 처리
+                                    contentCell.style.whiteSpace = 'nowrap';
+                                    contentCell.style.overflow = 'hidden';
+                                    contentCell.style.textOverflow = 'ellipsis';
+                                    contentCell.style.maxWidth = '250px';
+                                    contentCell.title = display; // 전체 내용을 툴팁으로 제공
+                                }
+                            } catch (e) {
+                                // JSON이 아니거나 에러 발생 시 원본 텍스트 유지
                             }
-                        } catch (e) {
-                            // JSON이 아니거나 에러 발생 시 원본 텍스트 유지
                         }
                     }
-                }
+                });
+            }
+        });
+
+        observer.observe(tbody, { childList: true, subtree: true });
+
+        // 사업장 검색 필터
+        const siteSearchInput = document.getElementById('trouble-site-search-filter');
+        if (siteSearchInput) {
+            siteSearchInput.addEventListener('input', function () {
+                const keyword = this.value.toLowerCase().trim();
+                const items = document.querySelectorAll('#trouble-site-list li');
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(keyword)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // 모델 검색 필터
+        const modelSearchInput = document.getElementById('trouble-model-search-filter');
+        if (modelSearchInput) {
+            modelSearchInput.addEventListener('input', function () {
+                const keyword = this.value.toLowerCase().trim();
+                const items = document.querySelectorAll('#trouble-model-list li');
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(keyword)) {
+                        item.style.display = '';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
             });
         }
     });
-
-    observer.observe(tbody, { childList: true, subtree: true });
-
-    // 사업장 검색 필터
-    const siteSearchInput = document.getElementById('trouble-site-search-filter');
-    if (siteSearchInput) {
-        siteSearchInput.addEventListener('input', function() {
-            const keyword = this.value.toLowerCase().trim();
-            const items = document.querySelectorAll('#trouble-site-list li');
-            items.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                if (text.includes(keyword)) {
-                    item.style.display = '';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        });
-    }
-
-    // 모델 검색 필터
-    const modelSearchInput = document.getElementById('trouble-model-search-filter');
-    if (modelSearchInput) {
-        modelSearchInput.addEventListener('input', function() {
-            const keyword = this.value.toLowerCase().trim();
-            const items = document.querySelectorAll('#trouble-model-list li');
-            items.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                if (text.includes(keyword)) {
-                    item.style.display = '';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        });
-    }
-});
 </script>
 {% endblock %}
