@@ -4659,8 +4659,10 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
     // 1. 해당 장비 유지관리 물품 우선 등록
     maintItems.forEach(m => {
         if (m.content === '내용 없음' || m.content === '장비 점검') return;
-        // [추가] 고객대응, 용액제조, 온라인점검은 유지관리 물품 제안 목록에 추가되지 않도록 차단
-        if (['고객대응', '용액제조', '온라인점검'].includes(m.type)) return;
+        // [추가] 고객대응, 용액제조, 온라인점검은 유지관리 물품 제안 목록에 추가되지 않도록 차단 (단, 설비 정상화는 제외)
+        if (['고객대응', '용액제조', '온라인점검'].includes(m.type)) {
+            if (!(m.type === '고객대응' && m.detailType === '설비 정상화')) return;
+        }
 
         let pureContent = m.content;
 

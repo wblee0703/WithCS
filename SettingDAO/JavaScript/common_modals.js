@@ -311,9 +311,9 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         item = data.logs ? data.logs.find(l => String(l.id) === String(id)) : null;
         if (!item && id) {
             // [추가] id가 누락된 구식 데이터 복원용 fallback 매칭 (부분 일치 비교 보완)
-            const cleanId = String(id).replace(/\[.*?\]\s*/g, '').trim();
+            const cleanId = window.removeCostLabels(String(id));
             item = data.logs ? data.logs.find(l => {
-                const cleanContent = (l.content || '').replace(/\[.*?\]\s*/g, '').trim();
+                const cleanContent = window.removeCostLabels(l.content || '');
                 return cleanContent.includes(cleanId) || cleanId.includes(cleanContent) || l.memo === id;
             }) : null;
         }
@@ -321,9 +321,9 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         item = data.maint ? data.maint.find(i => String(i.id) === String(id)) : null;
         if (!item && id) {
             // [추가] id가 누락된 구식 데이터 복원용 fallback 매칭 (부분 일치 비교 보완)
-            const cleanId = String(id).replace(/\[.*?\]\s*/g, '').trim();
+            const cleanId = window.removeCostLabels(String(id));
             item = data.maint ? data.maint.find(i => {
-                const cleanContent = (i.content || '').replace(/\[.*?\]\s*/g, '').trim();
+                const cleanContent = window.removeCostLabels(i.content || '');
                 return cleanContent.includes(cleanId) || cleanId.includes(cleanContent) || i.code === id;
             }) : null;
         }
@@ -457,7 +457,16 @@ function openEventDetailModal(site, equip, id, isCompleted) {
                     itemText = `${kwMatch[1].trim()} - ${itemDisplay}`;
                 } else {
                     if (!itemDisplay) itemDisplay = itemText;
-                    if (costVal) itemDisplay = `[${costVal}] ${itemDisplay}`;
+                    // 물품 관리에 등록된 부품일 때만 비용 라벨을 결합
+                    const cleanItem = itemDisplay.trim();
+                    const isRegisteredPart = adminItems.some(ai => {
+                        const p = (ai.part || '').trim();
+                        const c = (ai.code || '').trim();
+                        return (p && p === cleanItem) || (c && c === cleanItem);
+                    });
+                    if (costVal && isRegisteredPart) {
+                        itemDisplay = `[${costVal}] ${itemDisplay}`;
+                    }
                     itemText = itemDisplay;
                 }
                 
@@ -706,7 +715,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             }
             if (detailType2Select) detailType2Select.style.display = 'inline-block';
             
-            const equipKey = `${site}::${equip}`;
+            const equipKey = equip;
             const catData2 = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
             const key2 = `${equipKey}::${selectedType}::${selectedDetailType}`;
             const defaultSubCategories2 = {
@@ -723,13 +732,13 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
         const updateDetailTypes = () => {
             const selectedType = typeSelect.value;
-            const equipKey = `${site}::${equip}`;
+            const equipKey = equip;
             const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
             const key = `${equipKey}::${selectedType}`;
             const defaultSubCategories = {
                 '정기': ['PM 점검'],
                 '비정기': ['Alarm', 'Hunting', 'Data / Para 이상', '기타'],
-                '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
+                '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '파티클 필터 교체', '기타'],
                 '용액제조': ['용액제조'],
                 '온라인점검': ['온라인점검']
             };
@@ -1060,7 +1069,7 @@ function buildDetailDropdown(item, site, equip) {
                 return (p && p === cleanItem) || (c && c === cleanItem);
             });
 
-            if (isPartOnly && type !== '정기' && detailType !== 'PM 점검' && detailType !== 'Parts 교체') {
+            if (isPartOnly && type !== '정기' && detailType !== 'PM 점검' && detailType !== 'Parts 교체' && detailType !== '설비 정상화') {
                 baseItems.push('파트 이상 교체');
                 if (cost) partItems.push(`[${cost}] ${cleanItem}`);
                 else partItems.push(cleanItem);
@@ -1125,7 +1134,7 @@ function buildDetailDropdown(item, site, equip) {
                 "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
             ];
             availableItems = defaultList.map(content => ({ content: content }));
-        } else if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
+        } else if (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화')) {
             isDropdownMode = true;
             const equipName = equipKey.split('::')[0];
             let matchedItems = adminItems.filter(ai => {
@@ -1228,7 +1237,11 @@ function buildDetailDropdown(item, site, equip) {
         if (maintData.maint) {
             const processRegistered = (m) => {
                 if (m.originalLogId || m.content === '내용 없음' || m.content === '장비 점검' || !m.content) return;
-                if (['고객대응', '용액제조', '온라인점검'].includes(m.type)) return;
+                if (['고객대응', '용액제조', '온라인점검'].includes(m.type)) {
+                    if (!(type === '고객대응' && detailType === '설비 정상화' && m.type === '고객대응' && m.detailType === '설비 정상화')) {
+                        return;
+                    }
+                }
 
                 let pureContent = m.content;
 
@@ -1291,7 +1304,7 @@ function buildDetailDropdown(item, site, equip) {
                 });
             };
 
-        if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
+        if (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화')) {
                 maintData.maint.forEach(processRegistered);
             } else {
                 maintData.maint.filter(m => m.type === type && (m.detailType || '') === (detailType || '')).forEach(processRegistered);
@@ -1310,7 +1323,7 @@ function buildDetailDropdown(item, site, equip) {
             }
         });
 
-        if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
+        if (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화')) {
             const allAdminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
             allAdminItems.forEach(a => {
                 if (!a.part) return;
@@ -1340,7 +1353,11 @@ function buildDetailDropdown(item, site, equip) {
         // [추가] 상단 내용 드롭다운에는 물품(부품)이 선택된 항목으로 표시되지 않도록, 마스터 물품에 해당하는 키들은 강제 제외
         const allAdminItemsForClean = JSON.parse(localStorage.getItem('admin_items')) || [];
         Object.keys(currentSelections).forEach(selKey => {
-            const cleanKey = selKey.replace(/^\[.*?\]\s*/, '').trim();
+            let cleanKey = selKey.replace(/^\[.*?\]\s*/, '').trim();
+            const specMatch = cleanKey.match(/\s*\[(.*?)\]$/);
+            if (specMatch) {
+                cleanKey = cleanKey.replace(specMatch[0], '').trim();
+            }
             const isPart = allAdminItemsForClean.some(ai => {
                 const p = (ai.part || '').trim();
                 const c = (ai.code || '').trim();
@@ -1393,7 +1410,7 @@ function buildDetailDropdown(item, site, equip) {
                     const isSelected = currentSelections.hasOwnProperty(val);
                     const itemCost = isSelected ? currentSelections[val] : '유상';
 
-                    const templateId = (detailType === 'PM 점검' || detailType === 'Parts 교체') ? 'log-part-item-template' : 'detail-content-item-template';
+                    const templateId = (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화')) ? 'log-part-item-template' : 'detail-content-item-template';
                     const tpl = getTemplateContent(templateId);
                     if (tpl) {
                         const div = tpl.querySelector('.log-select-item');
@@ -1685,7 +1702,7 @@ function buildDetailDropdown(item, site, equip) {
                 const c = (ai.code || '').trim();
                 return (p && p === val) || (c && c === val);
             });
-            if (type !== '정기' && isRegisteredPart) return;
+            if (type !== '정기' && detailType !== 'PM 점검' && detailType !== 'Parts 교체' && detailType !== '설비 정상화' && isRegisteredPart) return;
 
             const isPartKeyword = type !== '정기' && (val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상'));
             if (isPartKeyword && partValsStr) {
@@ -1713,7 +1730,7 @@ function buildDetailDropdown(item, site, equip) {
         let cleanVals = allVals.map(val => {
             let cleanV = val;
             const m1 = cleanV.match(/^\[.*?\]\s*(.*)$/);
-            if (m1 && type !== '정기') cleanV = m1[1];
+            if (m1 && type !== '정기' && detailType !== 'PM 점검' && detailType !== 'Parts 교체' && detailType !== '설비 정상화') cleanV = m1[1];
             // [수정] '파트 이상 교체 - [비용처리] 물품명'의 형태여야 하므로 뒤쪽 부품의 비용처리를 제거하는 m2 정제 로직을 제외합니다.
             // const m2 = cleanV.match(/^(.*?)\s*-\s*\[.*?\]\s*(.*)$/);
             // if (m2) cleanV = `${m2[1]} - ${m2[2]}`;
@@ -1917,13 +1934,19 @@ async function saveDetailChanges() {
             const bMatch = val.match(/^\[(.*?)\] (.*)$/);
             if (bMatch) { baseCost = bMatch[1]; val = bMatch[2]; }
 
-            // [추가] val 자체가 등록된 물품인 경우, 단독으로 추가되는 것을 차단
+            // [추가] val 자체가 등록된 물품이거나 규격 찌꺼기인 경우, 단독으로 추가되는 것을 차단
+            let cleanVal = window.removeCostLabels(val);
+            const valSpecMatch = cleanVal.match(/\s*\[(.*?)\]$/);
+            if (valSpecMatch) {
+                cleanVal = cleanVal.replace(valSpecMatch[0], '').trim();
+            }
             const isRegisteredPart = adminItems.some(ai => {
                 const p = (ai.part || '').trim();
                 const c = (ai.code || '').trim();
-                return (p && p === val) || (c && c === val);
+                return (p && p === cleanVal) || (c && c === cleanVal);
             });
-            if (newType === '비정기' && isRegisteredPart) return;
+            const isSpecOnly = (!cleanVal && valSpecMatch);
+            if (newType === '비정기' && (isRegisteredPart || isSpecOnly)) return;
 
             const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
             if (isPartKeyword && partContentList.length > 0) {
@@ -2091,7 +2114,7 @@ async function saveDetailChanges() {
                     }
 
                     let spec = '';
-                    const specMatch = pureContent.match(/ \[(.*?)\]$/);
+                    const specMatch = pureContent.match(/\s*\[(.*?)\]$/);
                     if (specMatch) {
                         spec = specMatch[1];
                         pureContent = pureContent.replace(specMatch[0], '');
@@ -2189,7 +2212,7 @@ async function saveDetailChanges() {
                     }
 
                     let spec = '';
-                    const specMatch = pureContent.match(/ \[(.*?)\]$/);
+                    const specMatch = pureContent.match(/\s*\[(.*?)\]$/);
                     if (specMatch) {
                         spec = specMatch[1];
                         pureContent = pureContent.replace(specMatch[0], '');
@@ -2289,7 +2312,7 @@ async function saveDetailChanges() {
 
                 let pureContent = finalContent;
                 let spec = '';
-                const specMatch = pureContent.match(/ \[(.*?)\]$/);
+                const specMatch = pureContent.match(/\s*\[(.*?)\]$/);
                 if (specMatch) {
                     spec = specMatch[1];
                     pureContent = pureContent.replace(specMatch[0], '');
@@ -2497,18 +2520,23 @@ async function completeScheduleWork() {
         const bMatch = val.match(/^\[(.*?)\] (.*)$/);
         if (bMatch) { baseCost = bMatch[1]; val = bMatch[2]; }
 
+        let cleanVal = window.removeCostLabels(val);
+        const valSpecMatch = cleanVal.match(/\s*\[(.*?)\]$/);
+        if (valSpecMatch) {
+            cleanVal = cleanVal.replace(valSpecMatch[0], '').trim();
+        }
         const isRegisteredPart = adminItems.some(ai => {
             const p = (ai.part || '').trim();
             const c = (ai.code || '').trim();
-            return (p && p === val) || (c && c === val);
+            return (p && p === cleanVal) || (c && c === cleanVal);
         });
-        if (taskType !== '정기' && isRegisteredPart) return;
+        const isSpecOnly = (!cleanVal && valSpecMatch);
+        if (taskType !== '정기' && (isRegisteredPart || isSpecOnly)) return;
 
         const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
         if (isPartKeyword && partContentList.length > 0) {
             partContentList.forEach(p => {
-                const specStr = maintItem.spec ? ` [${maintItem.spec}]` : '';
-                contentArr.push(`${val} - ${p}${specStr}`);
+                contentArr.push(`${val} - ${p}`);
             });
         } else if (isPartKeyword) {
             contentArr.push(val);
@@ -2518,8 +2546,11 @@ async function completeScheduleWork() {
     });
 
     if (!dWrapper || baseVals.length === 0) {
-        const inputVal = document.getElementById('detail-content-input').value.trim();
-        if (inputVal) contentArr.push(inputVal);
+        let inputVal = document.getElementById('detail-content-input').value.trim();
+        if (inputVal) {
+            inputVal = window.removeCostLabels(inputVal);
+            contentArr.push(inputVal);
+        }
     }
 
     const combinedContent = [...new Set(contentArr)].join(', ');
@@ -2681,7 +2712,7 @@ async function completeScheduleWork() {
         let partsString = '';
 
         // [개선] 타입에 관계없이 PM 점검, BM 점검, Parts 교체, 또는 세부구분에 파트/파츠/물품 이상이 포함된 경우 등 물품과 관련된 내용이면 모두 추출 대상으로 삼음
-        const isPmBm = dt.includes('PM 점검') || dt.includes('Parts 교체') || dt.includes('파트 이상') || dt.includes('파츠 이상') || dt.includes('물품 이상') || dt2.includes('파트 이상') || dt2.includes('파츠 이상');
+        const isPmBm = dt.includes('PM 점검') || dt.includes('Parts 교체') || dt.includes('설비 정상화') || dt.includes('파트 이상') || dt.includes('파츠 이상') || dt.includes('물품 이상') || dt2.includes('파트 이상') || dt2.includes('파츠 이상');
         if (isPmBm) {
             isPartReplacement = true;
             let tempContent = content;
@@ -2714,7 +2745,7 @@ async function completeScheduleWork() {
             }
 
             parts.forEach(p => {
-                let purePart = p.replace(/\[.*?\]\s*/g, '').trim();
+                let purePart = window.removeCostLabels(p);
                 
                 // [추가] 만약 purePart 내부에 "파트 이상 교체 - " 등의 접두사가 들어있다면 이를 제거
                 const partKeywords = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리', '파트 이상 (교체)', '파츠 이상 교체', '파트 이상', '파츠 이상'];
@@ -2726,12 +2757,14 @@ async function completeScheduleWork() {
                     }
                 }
 
-                const specMatch = purePart.match(/ \[(.*?)\]$/);
                 let spec = '';
-                if (specMatch) {
+                let specMatch = purePart.match(/\s*\[(.*?)\]$/);
+                while (specMatch) {
                     spec = specMatch[1];
-                    purePart = purePart.replace(specMatch[0], '');
-                } else if (parts.length === 1) {
+                    purePart = purePart.replace(specMatch[0], '').trim();
+                    specMatch = purePart.match(/\s*\[(.*?)\]$/);
+                }
+                if (!spec && parts.length === 1) {
                     // [수정] 부품이 하나일 때만 maint 항목의 개별 spec 필드를 사용 (다중 부품 시 spec 오염 방지)
                     spec = i.spec || '';
                 }
@@ -2778,13 +2811,20 @@ async function completeScheduleWork() {
             if (m.originalLogId) return false; // 추가 작업의 임시 데이터는 existing 대상에서 제외하여 원본과 매칭 보장
 
             // 1. 물품 상세(spec) 대조 (공백/대소문자 제거 후 완벽 비교)
-            const mSpec = (m.spec || '').replace(/\s+/g, '').toLowerCase();
-            const epSpec = (ep.spec || '').replace(/\s+/g, '').toLowerCase();
-            if (mSpec !== epSpec) return false;
+            let mContent = m.content || '';
+            let mSpec = m.spec || '';
+            const mContentSpecMatch = mContent.match(/\s*\[(.*?)\]$/);
+            if (mContentSpecMatch) {
+                if (!mSpec) mSpec = mContentSpecMatch[1];
+                mContent = mContent.replace(mContentSpecMatch[0], '').trim();
+            }
+
+            const mSpecClean = mSpec.replace(/\s+/g, '').toLowerCase();
+            const epSpecClean = (ep.spec || '').replace(/\s+/g, '').toLowerCase();
+            if (mSpecClean !== epSpecClean) return false;
 
             // 2. 코드명(code) 및 물품명(content) 대조를 위한 정보 수집
             const mCode = m.code || '';
-            const mContent = m.content || '';
             let mRealName = mContent;
             let mRealCode = mCode;
             if (!mRealCode) {
@@ -2799,10 +2839,10 @@ async function completeScheduleWork() {
             const epCodeClean = (codeName || '').replace(/\s+/g, '').toLowerCase();
 
             // 대괄호 비용표시([유상], [무상] 등) 제거 후 공백 제거 비교
-            const mContentClean = mContent.replace(/\[.*?\]\s*/g, '').replace(/\s+/g, '').toLowerCase();
-            const mRealNameClean = mRealName.replace(/\[.*?\]\s*/g, '').replace(/\s+/g, '').toLowerCase();
-            const epPartClean = ep.part.replace(/\[.*?\]\s*/g, '').replace(/\s+/g, '').toLowerCase();
-            const realPartNameClean = realPartName.replace(/\[.*?\]\s*/g, '').replace(/\s+/g, '').toLowerCase();
+            const mContentClean = window.removeCostLabels(mContent).replace(/\s+/g, '').toLowerCase();
+            const mRealNameClean = window.removeCostLabels(mRealName).replace(/\s+/g, '').toLowerCase();
+            const epPartClean = window.removeCostLabels(ep.part).replace(/\s+/g, '').toLowerCase();
+            const realPartNameClean = window.removeCostLabels(realPartName).replace(/\s+/g, '').toLowerCase();
 
             // 코드명이 양쪽에 있는 경우 둘이 다르면 매칭 실패
             if (mCodeClean && epCodeClean && mCodeClean !== epCodeClean) return false;
@@ -2831,8 +2871,17 @@ async function completeScheduleWork() {
             idsToRemove.add(ep.sourceId);
         } else {
             const sourceItem = data.maint.find(m => m.id === ep.sourceId);
+            let sContent = sourceItem ? (sourceItem.content || '') : '';
+            let sSpec = sourceItem ? (sourceItem.spec || '') : '';
+            if (sourceItem) {
+                const sSpecMatch = sContent.match(/\s*\[(.*?)\]$/);
+                if (sSpecMatch) {
+                    if (!sSpec) sSpec = sSpecMatch[1];
+                    sContent = sContent.replace(sSpecMatch[0], '').trim();
+                }
+            }
             // [수정] sourceItem이 원본 항목(!originalLogId)일 때만 재사용 (임시 항목 재사용 시 필터에서 삭제되어버리는 버그 방지)
-            if (sourceItem && !sourceItem.originalLogId && (sourceItem.content === realPartName || sourceItem.content === ep.part) && (sourceItem.spec || '') === (ep.spec || '')) {
+            if (sourceItem && !sourceItem.originalLogId && (sContent === realPartName || sContent === ep.part) && (sSpec || '') === (ep.spec || '')) {
                 sourceItem.date = ep.date;
                 if (ep.costType) sourceItem.itemCost = ep.costType;
                 mergedRegItemIds.add(sourceItem.id);
@@ -3145,10 +3194,11 @@ async function cancelScheduleCompletion() {
             }
 
             let spec = '';
-            const specMatch = pureContent.match(/ \[(.*?)\]$/);
-            if (specMatch) {
+            let specMatch = pureContent.match(/\s*\[(.*?)\]$/);
+            while (specMatch) {
                 spec = specMatch[1];
-                pureContent = pureContent.replace(specMatch[0], '');
+                pureContent = pureContent.replace(specMatch[0], '').trim();
+                specMatch = pureContent.match(/\s*\[(.*?)\]$/);
             }
 
             let code = ''; 
@@ -3177,10 +3227,30 @@ async function cancelScheduleCompletion() {
                 prevDate = prevLog.date;
             }
 
-            let existingItem = data.maint.find(m => !matchedMaintIds.has(m.id) && m.type === logType && (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) && (!spec || (m.spec || '') === spec) && (m.originalLogId || null) == (logItem.originalLogId || null) && (!m.scheduledDate || m.scheduledDate === logDate || !m.date));
+            let existingItem = data.maint.find(m => {
+                if (matchedMaintIds.has(m.id)) return false;
+                if (m.type !== logType) return false;
+                if ((m.originalLogId || null) != (logItem.originalLogId || null)) return false;
+                if (m.scheduledDate && m.scheduledDate !== logDate && m.date) return false;
+
+                let mContent = m.content || '';
+                let mSpec = m.spec || '';
+                const mContentSpecMatch = mContent.match(/\s*\[(.*?)\]$/);
+                if (mContentSpecMatch) {
+                    if (!mSpec) mSpec = mContentSpecMatch[1];
+                    mContent = mContent.replace(mContentSpecMatch[0], '').trim();
+                }
+
+                const mSpecClean = mSpec.replace(/\s+/g, '').toLowerCase();
+                const epSpecClean = (spec || '').replace(/\s+/g, '').toLowerCase();
+                if (mSpecClean !== epSpecClean) return false;
+
+                return (mContent === fullContent || mContent === pureContent || (m.code && code && m.code === code));
+            });
             if (existingItem) {
                 matchedMaintIds.add(existingItem.id);
                 existingItem.content = fullContent; // [수정] 완료 취소 시 파트 이상 교체/수리 등 접두어 키워드와 함께 내용 복원
+                existingItem.spec = spec; // [추가] 완료 취소 시 규격 상세 정보 복구
                 if (code) existingItem.code = code;
                 existingItem.scheduledDate = logDate;
                 existingItem.date = prevDate; // [수정] 빈 문자열 대신 이전 로그의 날짜(시작일)로 복구
@@ -3239,20 +3309,32 @@ async function cancelScheduleCompletion() {
             }
 
             let spec = '';
-            const specMatch = pureContent.match(/ \[(.*?)\]$/);
-            if (specMatch) {
+            let specMatch = pureContent.match(/\s*\[(.*?)\]$/);
+            while (specMatch) {
                 spec = specMatch[1];
-                pureContent = pureContent.replace(specMatch[0], '');
+                pureContent = pureContent.replace(specMatch[0], '').trim();
+                specMatch = pureContent.match(/\s*\[(.*?)\]$/);
             }
 
-            const toDelete = data.maint.filter(m => 
-                m.type === logType && 
-                m.date === logDate && 
-                !m.scheduledDate && 
-                !m.originalLogId &&
-                (m.content === pureContent || (keywordPart && m.content === `${keywordPart} - ${pureContent}`)) &&
-                (!spec || (m.spec || '') === spec)
-            );
+            const toDelete = data.maint.filter(m => {
+                if (m.type !== logType) return false;
+                if (m.date !== logDate) return false;
+                if (m.scheduledDate || m.originalLogId) return false;
+
+                let mContent = m.content || '';
+                let mSpec = m.spec || '';
+                const mContentSpecMatch = mContent.match(/\s*\[(.*?)\]$/);
+                if (mContentSpecMatch) {
+                    if (!mSpec) mSpec = mContentSpecMatch[1];
+                    mContent = mContent.replace(mContentSpecMatch[0], '').trim();
+                }
+
+                const mSpecClean = mSpec.replace(/\s+/g, '').toLowerCase();
+                const epSpecClean = (spec || '').replace(/\s+/g, '').toLowerCase();
+                if (mSpecClean !== epSpecClean) return false;
+
+                return (mContent === pureContent || (keywordPart && mContent === `${keywordPart} - ${pureContent}`));
+            });
 
             toDelete.forEach(m => {
                 if (recoveredMaintId && m.id == recoveredMaintId) return; // 복구 대상은 삭제 제외
@@ -4129,7 +4211,7 @@ window.updateRegisterDetailTypeOptions = function () {
     const defaultSubCategories = {
         '정기': ['PM 점검'],
         '비정기': ['Alarm', 'Hunting', 'Data / Para 이상', '기타'],
-        '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
+        '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '파티클 필터 교체', '기타'],
         '용액제조': ['용액제조'],
         '온라인점검': ['온라인점검']
     };
@@ -4248,7 +4330,7 @@ window.updateRegisterContentOptions = function () {
                 "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
             ];
             items = defaultList.map(content => ({ content: content }));
-        } else if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
+        } else if (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화')) {
             const equipName = equipKey.split('::')[0];
             const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
             let matchedItems = adminItems.filter(item => {
@@ -4330,7 +4412,11 @@ window.updateRegisterContentOptions = function () {
         const processRegistered = (m) => {
             if (m.originalLogId && m.originalLogId != window.currentAddWorkLogId) return; // [수정] 다른 추가 작업의 자식 항목만 제외하고, 기본 물품은 제안 풀에 포함
             if (m.content === '내용 없음' || m.content === '장비 점검' || !m.content) return;
-            if (['고객대응', '용액제조', '온라인점검'].includes(m.type)) return;
+            if (['고객대응', '용액제조', '온라인점검'].includes(m.type)) {
+                if (!(type === '고객대응' && detailType === '설비 정상화' && m.type === '고객대응' && m.detailType === '설비 정상화')) {
+                    return;
+                }
+            }
 
             let pureContent = m.content;
 
@@ -4344,7 +4430,7 @@ window.updateRegisterContentOptions = function () {
             pureContent = pureContent.replace(/\[(유상|무상|기타)\]/g, '').trim();
             pureContent = pureContent.replace(/\s*-\s*$/, '').trim();
 
-            if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
+            if (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화')) {
                 const partKeywords = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리', '파트 이상 (교체)', '파츠 이상 교체', '파트 이상', '파츠 이상'];
                 if (partKeywords.some(kw => pureContent === kw || pureContent.endsWith(kw))) return;
 
@@ -4436,7 +4522,7 @@ window.updateRegisterContentOptions = function () {
             }
         };
 
-        if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
+        if (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화')) {
             detailData.maint.forEach(processRegistered);
         } else {
             detailData.maint.filter(m => m.type === type && m.detailType === detailType).forEach(processRegistered);
@@ -4456,7 +4542,7 @@ window.updateRegisterContentOptions = function () {
         });
 
         // 3. admin_items 처리 (PM, BM, Parts 교체인 경우)
-        if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
+        if (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화')) {
             const allAdminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
             allAdminItems.forEach(a => {
                 if (!a.part) return;
@@ -4527,7 +4613,7 @@ window.updateRegisterContentOptions = function () {
                     const isSelected = currentSelections.hasOwnProperty(val);
                     const itemCost = isSelected ? currentSelections[val] : '유상';
 
-                    const templateId = (detailType === 'PM 점검' || detailType === 'Parts 교체')
+                    const templateId = (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화'))
                         ? 'log-part-item-template' : 'detail-content-item-template';
 
                     const tpl = getTemplateContent(templateId);
@@ -4650,7 +4736,7 @@ window.updateRegisterContentOptions = function () {
     } else {
         wrapper.style.display = 'none';
         input.style.display = 'block';
-        if (detailType === 'PM 점검' || detailType === 'Parts 교체') {
+        if (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화')) {
             input.placeholder = '항목을 추가해 주세요';
             input.value = '';
             input.disabled = true;
@@ -4701,7 +4787,10 @@ window.updateRegisterContentOptions = function () {
         const rList = document.getElementById('register-content-list');
         if (rList && wrapper.style.display !== 'none') {
             const selected = rList.querySelectorAll('.log-select-item.selected');
-            const baseVals = Array.from(selected).map(el => el.dataset.value);
+            const baseVals = Array.from(selected).map(el => {
+                const cSel = el.querySelector('.item-cost-select');
+                return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
+            });
 
             let partValsStr = '';
             const pRow = document.getElementById('register-part-row');

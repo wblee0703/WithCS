@@ -75,6 +75,57 @@ else:
 def get_utc_now():
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
+def update_content_part(content_str, old_code, new_code, old_part, new_part):
+    import re
+    if not content_str:
+        return content_str
+        
+    items = [s.strip() for s in content_str.split(',') if s.strip()]
+    new_items = []
+    
+    for item in items:
+        # 1. 비용 코드 분리 (예: [유상] Particle Filter)
+        cost_prefix = ''
+        cost_match = re.match(r'^(\[(?:유상|무상|기타)\]-?)\s*(.*)$', item)
+        if cost_match:
+            cost_prefix = cost_match.group(1)
+            item = cost_match.group(2).strip()
+            
+        # 2. 접두사 분리 (파트 이상 교체 - 등)
+        prefix = ''
+        prefix_match = re.match(r'^((?:파트 이상|파츠 이상|물품 이상)\s*\(?(?:교체|수리)\)?\s*-\s*)(.*)$', item)
+        if prefix_match:
+            prefix = prefix_match.group(1)
+            item = prefix_match.group(2).strip()
+            
+        # 만약 접두사 분리 후 한 번 더 비용 코드가 나올 수 있으므로 재분리
+        if not cost_prefix:
+            cost_match = re.match(r'^(\[(?:유상|무상|기타)\]-?)\s*(.*)$', item)
+            if cost_match:
+                cost_prefix = cost_match.group(1)
+                item = cost_match.group(2).strip()
+                
+        # 3. 스펙 분리 (예: Particle Filter [100ml])
+        spec_suffix = ''
+        spec_match = re.search(r'\s*(\[[^\]]+\])$', item)
+        if spec_match:
+            spec_suffix = spec_match.group(1)
+            item = item[:spec_match.start()].strip()
+            
+        # 4. 비교 및 치환
+        if old_code and item == old_code:
+            item = new_code
+        elif old_part and item == old_part:
+            item = new_part
+            
+        # 5. 재조립
+        reconstructed = f"{prefix}{cost_prefix} {item}{spec_suffix}".strip()
+        reconstructed = re.sub(r'\s+', ' ', reconstructed)
+        reconstructed = reconstructed.replace("- [", "- [").replace("] ", "] ")
+        new_items.append(reconstructed)
+        
+    return ', '.join(new_items)
+
 # Security Extensions
 csrf = CSRFProtect(app)
 # [수정] 메모리 저장소 명시적 설정
@@ -2032,8 +2083,38 @@ def admin_crud():
         elif domain == 'item':
             if action == 'CREATE' or action == 'UPDATE':
                 item = AdminItem.query.filter_by(id=str(payload['id'])).first()
-                if not item: db.session.add(AdminItem(id=str(payload['id'])))
+                old_code = item.code if item else None
+                old_part = item.part if item else None
+                
+                new_code = payload.get('code', '')
+                new_part = payload.get('part', '')
+                
+                if not item: 
+                    db.session.add(AdminItem(id=str(payload['id'])))
+                
                 db.session.execute(text("UPDATE admin_item SET detail_type=:dt, additional=:add, partno=:pn, code=:cd, part=:pt, spec=:sp, equip=:eq WHERE id=:i"), {'dt':payload.get('detailType',''), 'add':payload.get('additional',''), 'pn':payload.get('partno',''), 'cd':payload.get('code',''), 'pt':payload.get('part',''), 'sp':payload.get('spec',''), 'eq':payload.get('equip',''), 'i':str(payload['id'])})
+                
+                # UPDATE 시 코드명이나 물품명이 변경된 경우, 기존 등록/완료된 작업의 물품 정보 일괄 동기화
+                if action == 'UPDATE' and item and (old_code != new_code or old_part != new_part):
+                    # 1. MaintItem code 필드 업데이트
+                    if old_code and old_code != new_code:
+                        MaintItem.query.filter_by(code=old_code).update({MaintItem.code: new_code})
+                    
+                    # 2. MaintItem content 필드 업데이트
+                    maint_items = MaintItem.query.all()
+                    for m in maint_items:
+                        if m.content:
+                            updated_content = update_content_part(m.content, old_code, new_code, old_part, new_part)
+                            if updated_content != m.content:
+                                m.content = updated_content
+                                
+                    # 3. LogItem content 필드 업데이트
+                    log_items = LogItem.query.all()
+                    for l in log_items:
+                        if l.content:
+                            updated_content = update_content_part(l.content, old_code, new_code, old_part, new_part)
+                            if updated_content != l.content:
+                                l.content = updated_content
             elif action == 'DELETE':
                 db.session.execute(text("DELETE FROM admin_item WHERE id=:i"), {'i': str(payload['id'])})
                 
@@ -3102,6 +3183,83 @@ def init_db():
         except Exception as maint_ex:
             db.session.rollback()
             app.logger.error(f"[Migration] 유지관리 물품 중복 정제 오류: {str(maint_ex)}")
+
+        # [DB 마이그레이션] 완료 및 예정 이력 중 텍스트 직접 입력 항목의 비용처리 라벨 제거
+        try:
+            admin_parts = AdminItem.query.all()
+            parts_set = set()
+            for ap in admin_parts:
+                if ap.part:
+                    parts_set.add(ap.part.strip().lower())
+                if ap.code:
+                    parts_set.add(ap.code.strip().lower())
+            
+            import re
+            cost_pattern = re.compile(r'^\[(.*?)\]\s*(.*)$')
+            
+            def clean_cost_label_from_text(content_str):
+                if not content_str:
+                    return content_str
+                
+                items = [item.strip() for item in content_str.split(',') if item.strip()]
+                updated_items = []
+                changed = False
+                
+                for item in items:
+                    prefix = ""
+                    val = item
+                    if " - " in item:
+                        parts = item.split(" - ", 1)
+                        prefix = parts[0].strip() + " - "
+                        val = parts[1].strip()
+                    
+                    cost_match = cost_pattern.match(val)
+                    pure_val = val
+                    if cost_match:
+                        pure_val = cost_match.group(2).strip()
+                        
+                    pure_name = re.sub(r'\s*\[.*?\]$', '', pure_val).strip()
+                    
+                    # 규격 찌꺼기 항목 감지 (예: "[유상] [1M]" 또는 " [1M]" 등) -> 리스트에서 제외 (삭제)
+                    if not pure_name:
+                        changed = True
+                        continue
+                    
+                    if cost_match:
+                        if pure_name.lower() not in parts_set:
+                            updated_items.append(f"{prefix}{pure_val}")
+                            changed = True
+                        else:
+                            updated_items.append(item)
+                    else:
+                        updated_items.append(item)
+                
+                if changed:
+                    return ", ".join(updated_items)
+                return None
+
+            log_changed_count = 0
+            all_logs = LogItem.query.all()
+            for log in all_logs:
+                new_content = clean_cost_label_from_text(log.content)
+                if new_content is not None:
+                    log.content = new_content
+                    log_changed_count += 1
+
+            maint_changed_count = 0
+            all_maints = MaintItem.query.all()
+            for maint in all_maints:
+                new_content = clean_cost_label_from_text(maint.content)
+                if new_content is not None:
+                    maint.content = new_content
+                    maint_changed_count += 1
+            
+            if log_changed_count > 0 or maint_changed_count > 0:
+                db.session.commit()
+                app.logger.warning(f"[Migration] 과거 직접 입력 완료/예정 내용 중 텍스트 부분의 비용 라벨 제거 완료! (LogItem: {log_changed_count}개, MaintItem: {maint_changed_count}개)")
+        except Exception as clean_ex:
+            db.session.rollback()
+            app.logger.error(f"[Migration] 직접 입력 텍스트 비용 라벨 제거 마이그레이션 오류: {str(clean_ex)}")
 
         # [DB 마이그레이션] 사용자 데이터
         # Admin 초기 계정 생성
