@@ -1264,12 +1264,14 @@ function renderLogs() {
             tooltipContent = tooltipItems.join('\n');
 
             // [개선] 동일한 접두사를 가진 파트 교체 이력 표시 정제 (예: 파트 이상 교체 - 물품명1 외 N개)
+            // 단, 정기 작업(log.type === '정기')일 경우에는 접두사 라벨을 제거하고 suffix만 노출합니다.
             let parsedItems = displayItems.map(item => {
                 const kwMatch = item.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|파츠 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
-                if (kwMatch) {
+                if (kwMatch && log.type !== '정기') {
                     return { prefix: kwMatch[1].trim(), suffix: kwMatch[2].trim() };
                 }
-                return { prefix: '', suffix: item };
+                const cleanSuffix = kwMatch ? kwMatch[2].trim() : item;
+                return { prefix: '', suffix: cleanSuffix };
             });
 
             const firstParsed = parsedItems[0];

@@ -1924,6 +1924,10 @@ function renderSortChart(results) {
     const irregularYAxis = document.getElementById('sort-irregular-y-axis');
     const irregularLegend = document.getElementById('sort-irregular-legend');
 
+    const custResponseContainer = document.getElementById('sort-cust-response-chart-container');
+    const custResponseYAxis = document.getElementById('sort-cust-response-y-axis');
+    const custResponseLegend = document.getElementById('sort-cust-response-legend');
+
     if (!container) return;
 
     const itemDetailTypeFilters = getMultiValues('sort-item-detail-type-select');
@@ -1947,6 +1951,9 @@ function renderSortChart(results) {
     if (irregularContainer) irregularContainer.innerHTML = '';
     if (irregularYAxis) irregularYAxis.innerHTML = '';
     if (irregularLegend) irregularLegend.innerHTML = '';
+    if (custResponseContainer) custResponseContainer.innerHTML = '';
+    if (custResponseYAxis) custResponseYAxis.innerHTML = '';
+    if (custResponseLegend) custResponseLegend.innerHTML = '';
 
     if (results.length === 0) {
         container.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
@@ -1955,6 +1962,7 @@ function renderSortChart(results) {
         if (detailTypeContainer) detailTypeContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
         if (detailType2Container) detailType2Container.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
         if (irregularContainer) irregularContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
+        if (custResponseContainer) custResponseContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
         return;
     }
 
@@ -1970,7 +1978,9 @@ function renderSortChart(results) {
     const detailTypeSiteCounts = {};
     const detailType2SiteCounts = {};
     const irregularSiteCounts = {};
+    const custResponseSiteCounts = {};
     const allSites = new Set();
+    const allowedCustResponseItems = ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'];
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
     // [추가] 비정기 점검 항목 고정 리스트 (이 항목들만 차트에 표시)
@@ -2068,6 +2078,18 @@ function renderSortChart(results) {
                 if (!irregularSiteCounts[pureItem]) irregularSiteCounts[pureItem] = {};
                 irregularSiteCounts[pureItem][row.site] = (irregularSiteCounts[pureItem][row.site] || 0) + 1;
             });
+        }
+        if (row.type === '고객대응') {
+            let custDetailType = row.detailType || '';
+            if (custDetailType.includes(' > ')) {
+                custDetailType = custDetailType.split(' > ')[0].trim();
+            }
+            const cleanCustDetail = custDetailType.replace(/\s+/g, '').toLowerCase();
+            const matchedItem = allowedCustResponseItems.find(item => item.replace(/\s+/g, '').toLowerCase() === cleanCustDetail);
+            if (matchedItem && row.site) {
+                if (!custResponseSiteCounts[matchedItem]) custResponseSiteCounts[matchedItem] = {};
+                custResponseSiteCounts[matchedItem][row.site] = (custResponseSiteCounts[matchedItem][row.site] || 0) + 1;
+            }
         }
     });
 
@@ -2369,6 +2391,7 @@ function renderSortChart(results) {
     drawGroupedChart(detailTypeSiteCounts, detailTypeContainer, detailTypeYAxis, detailTypeLegend, sitesArray);
     drawGroupedChart(detailType2SiteCounts, detailType2Container, detailType2YAxis, detailType2Legend, sitesArray);
     drawGroupedChart(irregularSiteCounts, irregularContainer, irregularYAxis, irregularLegend, sitesArray);
+    drawGroupedChart(custResponseSiteCounts, custResponseContainer, custResponseYAxis, custResponseLegend, sitesArray);
 }
 
 /* ==========================================================================

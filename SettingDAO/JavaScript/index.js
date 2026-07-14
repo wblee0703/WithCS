@@ -1327,7 +1327,14 @@ function populateEquipmentIssues() {
         // 비용처리 태그 제거 및 외 N개 처리
         if (displayContent && displayContent !== '내용 없음') {
             const items = displayContent.split(',').map(s => {
-                return s.replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').replace(/\s+/g, ' ').replace(/\s*-\s*$/, '').trim();
+                let cleanS = s.replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').replace(/\s+/g, ' ').replace(/\s*-\s*$/, '').trim();
+                if (log.type === '정기') {
+                    const kwMatch = cleanS.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|파츠 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+                    if (kwMatch) {
+                        cleanS = kwMatch[2].trim();
+                    }
+                }
+                return cleanS;
             }).filter(Boolean);
             
             if (items.length > 1) displayContent = `${items[0]} 외 ${items.length - 1}개`;

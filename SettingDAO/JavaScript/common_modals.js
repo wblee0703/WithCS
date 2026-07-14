@@ -476,10 +476,14 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     const cleanItemsArr = itemsArr.map(s => window.removeCostLabels(s));
 
     // [개선] 화면에 표시할 때는 부품 접미사(예: - SOMA-EK23-1102 등)를 제거하고 대표 점검구분 라벨만 노출
+    // 단, 정기 작업일 경우에는 대표 접두사 라벨을 제거하고 순수 물품명만 노출합니다.
     const displayLabelsArr = cleanItemsArr.map(s => {
         let temp = s.trim();
         const prefixMatch = temp.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|파츠 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
         if (prefixMatch) {
+            if (item.type === '정기') {
+                return prefixMatch[2].trim();
+            }
             return prefixMatch[1].trim();
         }
         return temp;
@@ -1056,7 +1060,7 @@ function buildDetailDropdown(item, site, equip) {
                 return (p && p === cleanItem) || (c && c === cleanItem);
             });
 
-            if (isPartOnly) {
+            if (isPartOnly && type !== '정기' && detailType !== 'PM 점검' && detailType !== 'Parts 교체') {
                 baseItems.push('파트 이상 교체');
                 if (cost) partItems.push(`[${cost}] ${cleanItem}`);
                 else partItems.push(cleanItem);
@@ -1342,7 +1346,7 @@ function buildDetailDropdown(item, site, equip) {
                 const c = (ai.code || '').trim();
                 return (p && p === cleanKey) || (c && c === cleanKey);
             });
-            if (isPart) {
+            if (type === '비정기' && isPart) {
                 delete currentSelections[selKey];
             }
         });
@@ -1466,7 +1470,7 @@ function buildDetailDropdown(item, site, equip) {
                             const pWrapper = document.getElementById('detail-edit-part-wrapper');
                             if (pWrapper) {
                                 const selectedItems = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
-                                const isPartIssue = selectedItems.some(v => v.match(/(파트|물품) 이상\s*\(?(교체|수리)\)?/) || v.includes('용액 용자 이상') || v.includes('용액 / 용자 이상'));
+                                const isPartIssue = type !== '정기' && selectedItems.some(v => v.match(/(파트|물품) 이상\s*\(?(교체|수리)\)?/) || v.includes('용액 용자 이상') || v.includes('용액 / 용자 이상'));
                                 const pList = document.getElementById('detail-edit-part-list');
 
                                 pWrapper.style.display = isPartIssue ? 'flex' : 'none';
@@ -1605,7 +1609,7 @@ function buildDetailDropdown(item, site, equip) {
             pAddBtn.addEventListener('click', (e) => e.stopPropagation());
         }
 
-        const hasPartIssue = currentValues.some(val => val.includes('파트 이상 교체') || val.includes('파트 이상 수리') || val.includes('파트 이상 (교체)') || val.includes('파트 이상 (수리)') || val.includes('용액 / 용자 이상') || val.includes('용액 용자 이상'));
+        const hasPartIssue = type !== '정기' && currentValues.some(val => val.includes('파트 이상 교체') || val.includes('파트 이상 수리') || val.includes('파트 이상 (교체)') || val.includes('파트 이상 (수리)') || val.includes('용액 / 용자 이상') || val.includes('용액 용자 이상'));
         pWrapper.style.display = hasPartIssue ? 'flex' : 'none';
         if (hasPartIssue && typeof window.renderLogPartOptions === 'function') {
             window.renderLogPartOptions('detail-edit-part-wrapper', 'detail-edit-part-trigger', 'detail-edit-part-list', 'detail-edit-part-search', partContentStr);
@@ -1681,9 +1685,9 @@ function buildDetailDropdown(item, site, equip) {
                 const c = (ai.code || '').trim();
                 return (p && p === val) || (c && c === val);
             });
-            if (isRegisteredPart) return;
+            if (type !== '정기' && isRegisteredPart) return;
 
-            const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
+            const isPartKeyword = type !== '정기' && (val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상'));
             if (isPartKeyword && partValsStr) {
                 const pArr = partValsStr.split(',').map(s => s.trim()).filter(Boolean);
                 // [수정] 대표 점검구분명(val)과 함께 추가된 부품(p)명 및 비용처리 형식을 세부리스트에 노출되도록 처리 (중복 방지)
@@ -1709,7 +1713,7 @@ function buildDetailDropdown(item, site, equip) {
         let cleanVals = allVals.map(val => {
             let cleanV = val;
             const m1 = cleanV.match(/^\[.*?\]\s*(.*)$/);
-            if (m1) cleanV = m1[1];
+            if (m1 && type !== '정기') cleanV = m1[1];
             // [수정] '파트 이상 교체 - [비용처리] 물품명'의 형태여야 하므로 뒤쪽 부품의 비용처리를 제거하는 m2 정제 로직을 제외합니다.
             // const m2 = cleanV.match(/^(.*?)\s*-\s*\[.*?\]\s*(.*)$/);
             // if (m2) cleanV = `${m2[1]} - ${m2[2]}`;
@@ -1797,7 +1801,7 @@ function hasDetailUnsavedChanges() {
                 const c = (ai.code || '').trim();
                 return (p && p === val) || (c && c === val);
             });
-            if (isRegisteredPart) return;
+            if (currentType === '비정기' && isRegisteredPart) return;
 
             const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
             if (isPartKeyword && partContentList.length > 0) {
@@ -1919,7 +1923,7 @@ async function saveDetailChanges() {
                 const c = (ai.code || '').trim();
                 return (p && p === val) || (c && c === val);
             });
-            if (isRegisteredPart) return;
+            if (newType === '비정기' && isRegisteredPart) return;
 
             const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
             if (isPartKeyword && partContentList.length > 0) {
@@ -2197,7 +2201,7 @@ async function saveDetailChanges() {
                     const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
                     if (match) { code = match.code || ''; fullContent = match.part || pureContent; period = match.cycle || null; }
 
-                    if (keywordPart) {
+                    if (keywordPart && newType !== '정기') {
                         fullContent = `${keywordPart} - ${fullContent}`;
                     }
 
@@ -2498,7 +2502,7 @@ async function completeScheduleWork() {
             const c = (ai.code || '').trim();
             return (p && p === val) || (c && c === val);
         });
-        if (isRegisteredPart) return;
+        if (taskType !== '정기' && isRegisteredPart) return;
 
         const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
         if (isPartKeyword && partContentList.length > 0) {
@@ -2772,9 +2776,13 @@ async function completeScheduleWork() {
             if (mergedRegItemIds.has(m.id)) return false;
             if (m.type !== '정기' && m.type !== '비정기') return false;
             if (m.originalLogId) return false; // 추가 작업의 임시 데이터는 existing 대상에서 제외하여 원본과 매칭 보장
-            if (ep.spec && (m.spec || '') !== ep.spec) return false;
 
-            // [개선] 동일 품목 매칭을 위해 대상 물품명/코드명을 최대한 포괄적으로 비교하여 중복 추가 방지
+            // 1. 물품 상세(spec) 대조 (공백/대소문자 제거 후 완벽 비교)
+            const mSpec = (m.spec || '').replace(/\s+/g, '').toLowerCase();
+            const epSpec = (ep.spec || '').replace(/\s+/g, '').toLowerCase();
+            if (mSpec !== epSpec) return false;
+
+            // 2. 코드명(code) 및 물품명(content) 대조를 위한 정보 수집
             const mCode = m.code || '';
             const mContent = m.content || '';
             let mRealName = mContent;
@@ -2787,21 +2795,34 @@ async function completeScheduleWork() {
                 }
             }
 
-            // 대괄호 비용표시([유상], [무상], [무상(중고)] 등)를 양쪽 모두 완전히 제거하고 순수 물품명 비교
-            let mContentClean = mContent.replace(/\[.*?\]\s*/g, '').trim();
-            let mRealNameClean = mRealName.replace(/\[.*?\]\s*/g, '').trim();
-            let epPartClean = ep.part.replace(/\[.*?\]\s*/g, '').trim();
-            let realPartNameClean = realPartName.replace(/\[.*?\]\s*/g, '').trim();
+            const mCodeClean = (mRealCode || '').replace(/\s+/g, '').toLowerCase();
+            const epCodeClean = (codeName || '').replace(/\s+/g, '').toLowerCase();
 
-            if (codeName && mRealCode && codeName === mRealCode) return true;
-            if (realPartNameClean && mRealNameClean && realPartNameClean === mRealNameClean) return true;
-            if (mContentClean === epPartClean) return true;
+            // 대괄호 비용표시([유상], [무상] 등) 제거 후 공백 제거 비교
+            const mContentClean = mContent.replace(/\[.*?\]\s*/g, '').replace(/\s+/g, '').toLowerCase();
+            const mRealNameClean = mRealName.replace(/\[.*?\]\s*/g, '').replace(/\s+/g, '').toLowerCase();
+            const epPartClean = ep.part.replace(/\[.*?\]\s*/g, '').replace(/\s+/g, '').toLowerCase();
+            const realPartNameClean = realPartName.replace(/\[.*?\]\s*/g, '').replace(/\s+/g, '').toLowerCase();
 
-            return false;
+            // 코드명이 양쪽에 있는 경우 둘이 다르면 매칭 실패
+            if (mCodeClean && epCodeClean && mCodeClean !== epCodeClean) return false;
+
+            // 물품명 일치 여부
+            const isContentEqual = (epPartClean === mContentClean || realPartNameClean === mRealNameClean);
+            if (!isContentEqual) return false;
+
+            return true;
         });
 
         if (existing) {
             existing.date = ep.date;
+            const sourceItem = data.maint.find(m => m.id === ep.sourceId);
+            const sourceType = sourceItem ? sourceItem.type : '비정기';
+            // 비정기에서 정기로 추가(완료)되는 경우, 타입을 정기로 전환하여 중복 생성 방지 및 통합
+            if (sourceType === '정기') {
+                existing.type = '정기';
+                existing.detailType = 'PM 점검';
+            }
             if (ep.costType) existing.itemCost = ep.costType;
             if (!payload.maint_upserts.some(upsertItem => upsertItem.id === existing.id)) {
                 payload.maint_upserts.push(existing);

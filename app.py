@@ -2996,7 +2996,113 @@ def init_db():
             db.session.execute(text('ALTER TABLE maint_item ADD COLUMN trouble_occur_date VARCHAR(50) DEFAULT ""'))
             db.session.commit()
         except: pass
-        
+
+        # [마이그레이션] PM 점검(정기) 작업인데 내용(content)에 '파트 이상 교체' 등의 라벨이 붙어 있는 데이터 정제
+        try:
+            import re
+            clean_pattern = re.compile(r'^(?:파트\s*이상\s*\(?(?:교체|수리)\)?|물품\s*이상\s*\(?(?:교체|수리)\)?|파츠\s*이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자\s*이상)\s*-\s*(.*)$', re.IGNORECASE)
+            
+            # 1. MaintItem 테이블 정제
+            maint_items = MaintItem.query.filter(
+                (MaintItem.type == '정기') | 
+                (MaintItem.detail_type == 'PM 점검') | 
+                (MaintItem.detail_type.like('PM 점검%'))
+            ).all()
+            maint_updated = False
+            for item in maint_items:
+                if item.content:
+                    parts = item.content.split(',')
+                    cleaned_parts = []
+                    for part in parts:
+                        part_str = part.strip()
+                        match = clean_pattern.match(part_str)
+                        if match:
+                            cleaned_parts.append(match.group(1).strip())
+                        else:
+                            cleaned_parts.append(part_str)
+                    new_content = ", ".join(cleaned_parts)
+                    if new_content != item.content:
+                        item.content = new_content
+                        maint_updated = True
+            
+            # 2. LogItem 테이블 정제
+            log_items = LogItem.query.filter(
+                (LogItem.type == '정기') | 
+                (LogItem.detail_type == 'PM 점검') | 
+                (LogItem.detail_type.like('PM 점검%'))
+            ).all()
+            log_updated = False
+            for item in log_items:
+                if item.content:
+                    parts = item.content.split(',')
+                    cleaned_parts = []
+                    for part in parts:
+                        part_str = part.strip()
+                        match = clean_pattern.match(part_str)
+                        if match:
+                            cleaned_parts.append(match.group(1).strip())
+                        else:
+                            cleaned_parts.append(part_str)
+                    new_content = ", ".join(cleaned_parts)
+                    if new_content != item.content:
+                        item.content = new_content
+                        log_updated = True
+            
+            if maint_updated or log_updated:
+                db.session.commit()
+                app.logger.warning("[Migration] PM 점검 정기 데이터 내용에서 '파트 이상 교체' 접두사 라벨 일괄 제거 완료!")
+        except Exception as ex:
+            db.session.rollback()
+            app.logger.error(f"[Migration] PM 점검 정기 데이터 라벨 정제 실패: {str(ex)}")
+
+        # [마이그레이션] 유지관리 물품(MaintItem) 중복 데이터 제거 및 최근 시작일(date) 기준으로 단일화
+        try:
+            import re
+            all_maint = MaintItem.query.all()
+            groups = {}
+            for item in all_maint:
+                eq_id = (item.equip_id or '').strip()
+                content = (item.content or '').strip()
+                # 비용처리 대괄호 제거
+                clean_content = re.sub(r'\[.*?\]\s*', '', content).replace(' ', '').lower()
+                clean_code = (item.code or '').replace(' ', '').lower()
+                clean_spec = (item.spec or '').replace(' ', '').lower()
+                
+                key = (eq_id, clean_content, clean_code, clean_spec)
+                groups.setdefault(key, []).append(item)
+                
+            maint_deleted_count = 0
+            for key, items in groups.items():
+                if len(items) > 1:
+                    # 날짜가 가장 최근인 것 탐색
+                    # date 필드 정렬을 위해 빈 문자열은 가장 이전 날짜로 취급
+                    def get_sort_key(it):
+                        d_val = (it.date or '').strip()
+                        s_val = (it.scheduled_date or '').strip()
+                        return (d_val or '1970-01-01', s_val or '1970-01-01', it._unique_id)
+                    
+                    sorted_items = sorted(items, key=get_sort_key, reverse=True)
+                    keep_item = sorted_items[0]
+                    delete_items = sorted_items[1:]
+                    
+                    # 지워질 항목 중에 '정기' 타입이 있다면 keep_item을 '정기'로 보존
+                    has_regular = any(it.type == '정기' or it.detail_type == 'PM 점검' for it in items)
+                    if has_regular:
+                        keep_item.type = '정기'
+                        if not keep_item.detail_type or 'PM 점검' not in keep_item.detail_type:
+                            keep_item.detail_type = 'PM 점검'
+                    
+                    for dit in delete_items:
+                        db.session.delete(dit)
+                        maint_deleted_count += 1
+            
+            if maint_deleted_count > 0:
+                db.session.commit()
+                app.logger.warning(f"[Migration] 중복된 유지관리 물품 {maint_deleted_count}개 감지 및 최신 교체일 기준으로 통합 완료!")
+        except Exception as maint_ex:
+            db.session.rollback()
+            app.logger.error(f"[Migration] 유지관리 물품 중복 정제 오류: {str(maint_ex)}")
+
         # [DB 마이그레이션] 사용자 데이터
         # Admin 초기 계정 생성
         admin_id = os.environ.get('APP_ADMIN_ID', 'admin')

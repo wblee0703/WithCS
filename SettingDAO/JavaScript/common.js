@@ -4851,13 +4851,20 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             list.appendChild(moreBtn);
         }
         const updateTriggerText = () => {
-            const sels = Array.from(list.querySelectorAll('.selected')).map(el => el.dataset.value);
-            if (sels.length > 1) {
-                trigger.textContent = `${sels[0]} 외 ${sels.length - 1}개`;
+            const selectedItems = Array.from(list.querySelectorAll('.log-select-item.selected'));
+            const selsWithCost = selectedItems.map(el => {
+                const cSel = el.querySelector('.item-cost-select');
+                const cost = cSel ? cSel.value : '유상';
+                return `[${cost}] ${el.dataset.value}`;
+            });
+            const selsRaw = selectedItems.map(el => el.dataset.value);
+
+            if (selsRaw.length > 1) {
+                trigger.textContent = `${selsWithCost[0]} 외 ${selsRaw.length - 1}개`;
                 trigger.classList.remove('multi-line');
                 trigger.style.color = '#fff'; // 선택된 내용 글자 색상 흰색
-            } else if (sels.length === 1) {
-                trigger.textContent = sels[0];
+            } else if (selsRaw.length === 1) {
+                trigger.textContent = selsWithCost[0];
                 trigger.classList.remove('multi-line');
                 trigger.style.color = '#fff'; // 선택된 내용 글자 색상 흰색
             } else {
@@ -4865,7 +4872,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
                 trigger.classList.remove('multi-line');
                 trigger.style.color = '#8b949e'; // 기본 텍스트 회색
             }
-            trigger.title = sels.join('\n');
+            trigger.title = selsWithCost.join('\n');
             trigger.classList.remove('error-border');
 
             if (typeof window.updateDetailDisplayList === 'function') window.updateDetailDisplayList();
