@@ -3304,6 +3304,40 @@ def init_db():
             db.session.rollback()
             app.logger.error(f"ETC Equipment Migration Error: {str(e)}")
 
+        # [마이그레이션] 점검 구분 전장비 고객대응의 'Parts 교체' 와 '파티클 필터 교체' 위치 변경 및 'Parts 교체' 삭제
+        try:
+            setting = SystemSetting.query.filter_by(key='check_type_categories').first()
+            if setting and setting.value:
+                import json
+                cat_data = json.loads(setting.value)
+                updated = False
+                for k, lst in cat_data.items():
+                    if k.endswith('::고객대응') and isinstance(lst, list):
+                        has_parts = 'Parts 교체' in lst
+                        has_particle = '파티클 필터 교체' in lst
+                        
+                        if has_parts and has_particle:
+                            idx_parts = lst.index('Parts 교체')
+                            idx_particle = lst.index('파티클 필터 교체')
+                            lst[idx_parts], lst[idx_particle] = lst[idx_particle], lst[idx_parts]
+                            lst.remove('Parts 교체')
+                            updated = True
+                        elif has_parts:
+                            idx_parts = lst.index('Parts 교체')
+                            lst[idx_parts] = '파티클 필터 교체'
+                            updated = True
+                        elif has_particle and 'Parts 교체' in lst:
+                            lst.remove('Parts 교체')
+                            updated = True
+                
+                if updated:
+                    setting.value = json.dumps(cat_data, ensure_ascii=False)
+                    db.session.commit()
+                    app.logger.warning("[Migration] 점검 구분 관리 고객대응 내 '파티클 필터 교체' 및 'Parts 교체' 일괄 정리 완료!")
+        except Exception as ex:
+            db.session.rollback()
+            app.logger.error(f"[Migration] 점검 구분 관리 마이그레이션 실패: {str(ex)}")
+
         # [마이그레이션] 4가지 항목 고유키 규격 변경 및 고아 데이터 복구 실행 (1회 완료되어 주석 처리)
         # migrate_db_to_four_fields()
 

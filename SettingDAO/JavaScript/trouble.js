@@ -19,8 +19,73 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function initTroublePage() {
     setupTroubleEvents();
+    
+    const cachedFilter = localStorage.getItem('lastTroubleFilter');
+    const cachedCompletedOnly = localStorage.getItem('lastTroubleCompletedOnly');
+    const cachedKeyword = localStorage.getItem('lastTroubleKeyword');
+    const cachedList = sessionStorage.getItem('lastTroubleList');
+    
+    try {
+        if (cachedFilter) currentTroubleFilter = JSON.parse(cachedFilter);
+        if (cachedCompletedOnly) {
+            showCompletedOnly = JSON.parse(cachedCompletedOnly);
+            const btnToggleCompleted = document.getElementById('btn-toggle-completed-trouble');
+            if (btnToggleCompleted) {
+                if (showCompletedOnly) btnToggleCompleted.classList.add('active');
+                else btnToggleCompleted.classList.remove('active');
+            }
+        }
+        const searchInput = document.getElementById('trouble-search-input');
+        if (searchInput && cachedKeyword) searchInput.value = cachedKeyword;
+    } catch (e) {
+        console.error('Trouble filter restore error:', e);
+    }
+
     renderTroubleSites();
-    fetchTroubles();
+    restoreTroubleFilterUI();
+    
+    // [개선] 세션스토리지 캐시 목록이 있으면 fetch API 연동을 생략하고 즉각 필터 렌더링 (재연산/딜레이 제거)
+    if (cachedList) {
+        try {
+            allTroubles = JSON.parse(cachedList);
+            applyTroubleFilter();
+        } catch (e) {
+            console.error('Trouble cache parse error:', e);
+            fetchTroubles();
+        }
+    } else {
+        fetchTroubles();
+    }
+}
+
+function restoreTroubleFilterUI() {
+    try {
+        const siteList = document.getElementById('trouble-site-list');
+        if (siteList) {
+            siteList.querySelectorAll('li').forEach(li => {
+                if (li.dataset.site === currentTroubleFilter.site) li.classList.add('active');
+                else li.classList.remove('active');
+            });
+        }
+        renderTroubleModels(currentTroubleFilter.site);
+        const modelList = document.getElementById('trouble-model-list');
+        if (modelList) {
+            modelList.querySelectorAll('li').forEach(li => {
+                if (li.dataset.model === currentTroubleFilter.model) li.classList.add('active');
+                else li.classList.remove('active');
+            });
+        }
+        renderTroubleEquips(currentTroubleFilter.site, currentTroubleFilter.model);
+        const equipList = document.getElementById('trouble-equip-list');
+        if (equipList) {
+            equipList.querySelectorAll('li').forEach(li => {
+                if (li.dataset.equip === currentTroubleFilter.equip) li.classList.add('active');
+                else li.classList.remove('active');
+            });
+        }
+    } catch (e) {
+        console.error('restoreTroubleFilterUI error:', e);
+    }
 }
 
 function checkQueryStringFilters() {
@@ -48,6 +113,7 @@ function fetchTroubles() {
         .then(data => {
             if (data.status === 'success') {
                 allTroubles = data.data || [];
+                sessionStorage.setItem('lastTroubleList', JSON.stringify(allTroubles));
                 checkQueryStringFilters();
                 applyTroubleFilter();
             }
@@ -189,6 +255,12 @@ function renderTroubleEquips(site, model) {
 function applyTroubleFilter() {
     const searchInput = document.getElementById('trouble-search-input');
     currentTroubleFilter.keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+
+    localStorage.setItem('lastTroubleFilter', JSON.stringify(currentTroubleFilter));
+    localStorage.setItem('lastTroubleCompletedOnly', JSON.stringify(showCompletedOnly));
+    if (searchInput) {
+        localStorage.setItem('lastTroubleKeyword', searchInput.value);
+    }
 
     let filtered = allTroubles;
 

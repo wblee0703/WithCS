@@ -1,9 +1,18 @@
 /* ==========================================================================
    Operation (가동율 분석) 전용 JavaScript
    ========================================================================== */
+window.isOpPageRestoring = false;
+window.isOpRestoringExecution = false;
 let currentOpFilters = { sites: [], equip: 'ALL', selectedEquipSite: 'ALL', year: new Date().getFullYear() };
 
 document.addEventListener('DOMContentLoaded', () => {
+    try {
+        const lastOpFilters = localStorage.getItem('lastOpFilters');
+        if (lastOpFilters) {
+            window.isOpPageRestoring = true;
+        }
+    } catch (e) { }
+
     if (window.isDataLoaded) {
         initOperationPage();
     } else {
@@ -12,10 +21,152 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initOperationPage() {
+    if (window.isOpPageRestoring && !window.isOpRestoringExecution) {
+        if (window.isOpFirstRestoreAttempt === undefined) {
+            window.isOpFirstRestoreAttempt = true;
+        } else {
+            return;
+        }
+    }
+
     initOperationYear();
     setupOperationEvents();
-    renderOperationSites();
-    calculateOperationRate();
+
+    const cachedFilters = localStorage.getItem('lastOpFilters');
+    const cachedStats = sessionStorage.getItem('lastOpStats');
+    const cachedDowntimes = sessionStorage.getItem('lastOpDowntimes');
+
+    if (cachedFilters && cachedStats && cachedDowntimes) {
+        window.isOpRestoringExecution = true;
+        try {
+            currentOpFilters = JSON.parse(cachedFilters);
+            const stats = JSON.parse(cachedStats);
+            const downtimes = JSON.parse(cachedDowntimes);
+
+            const yearSelect = document.getElementById('operation-year-select');
+            if (yearSelect && currentOpFilters.year) {
+                yearSelect.value = currentOpFilters.year;
+            }
+
+            renderOperationSites();
+            restoreOperationSitesUI();
+
+            renderOperationEquips(currentOpFilters.sites);
+            restoreOperationEquipUI();
+
+            window.currentDowntimeList = downtimes;
+            renderEquipMonthlyTable(stats, currentOpFilters.year);
+            renderDowntimeTable(downtimes);
+            
+            window.isOpPageRestoring = false;
+        } catch (e) {
+            console.error('Operation cache restore error:', e);
+            window.isOpPageRestoring = false;
+            renderOperationSites();
+            calculateOperationRate();
+        }
+        window.isOpRestoringExecution = false;
+    } else {
+        renderOperationSites();
+        calculateOperationRate();
+    }
+}
+
+function restoreOperationSitesUI() {
+    try {
+        const list = document.getElementById('operation-site-list');
+        if (!list) return;
+        
+        const selectedSites = currentOpFilters.sites || [];
+        list.querySelectorAll('.log-select-item').forEach(el => {
+            const siteName = el.dataset.value;
+            if (selectedSites.includes(siteName)) {
+                el.classList.add('selected');
+                el.querySelector('.check-icon').style.opacity = '1';
+            } else {
+                el.classList.remove('selected');
+                el.querySelector('.check-icon').style.opacity = '0';
+            }
+        });
+        
+        const trigger = document.getElementById('operation-site-select-trigger');
+        if (trigger) {
+            const total = list.querySelectorAll('.log-select-item').length;
+            if (selectedSites.length === total || selectedSites.length === 0) {
+                trigger.textContent = '전체 사업장';
+            } else if (selectedSites.length === 1) {
+                trigger.textContent = selectedSites[0];
+            } else {
+                trigger.textContent = `${selectedSites[0]} 외 ${selectedSites.length - 1}개`;
+            }
+        }
+        
+        let selectedListContainer = document.getElementById('operation-selected-sites-display') || document.getElementById('operation-selected-sites-list');
+        if (selectedListContainer) {
+            selectedListContainer.innerHTML = '';
+            const selectedElements = Array.from(list.querySelectorAll('.log-select-item.selected'));
+            selectedElements.forEach(el => {
+                const siteName = el.dataset.value;
+                const siteGroup = el.dataset.siteGroup;
+                const tpl = document.getElementById('operation-selected-site-item-template');
+                let li;
+                if (tpl) {
+                    li = tpl.content.cloneNode(true).firstElementChild;
+                    li.querySelector('.site-group-label').textContent = siteGroup;
+                    li.querySelector('.site-name-label').textContent = siteName;
+                    li.querySelector('.btn-remove-site').dataset.site = siteName;
+                } else {
+                    li = document.createElement('li');
+                    li.innerHTML = `
+                        <div class="site-info">
+                            <span class="site-group-label">${escapeHtml(siteGroup)}</span>
+                            <span class="site-name-label">${escapeHtml(siteName)}</span>
+                        </div>
+                        <span class="btn-remove-site" data-site="${escapeHtml(siteName)}">✕</span>
+                    `;
+                }
+                li.querySelector('.btn-remove-site').onclick = (e) => {
+                    e.stopPropagation();
+                    el.classList.remove('selected');
+                    el.querySelector('.check-icon').style.opacity = '0';
+                    
+                    const selected = Array.from(list.querySelectorAll('.log-select-item.selected'));
+                    const total = list.querySelectorAll('.log-select-item').length;
+                    if (trigger) {
+                        if (selected.length === total || selected.length === 0) trigger.textContent = '전체 사업장';
+                        else if (selected.length === 1) trigger.textContent = selected[0].dataset.value;
+                        else trigger.textContent = `${selected[0].dataset.value} 외 ${selected.length - 1}개`;
+                    }
+                    const nextSites = selected.map(item => item.dataset.value);
+                    currentOpFilters.sites = nextSites;
+                    currentOpFilters.equip = 'ALL';
+                    renderOperationEquips(nextSites);
+                    calculateOperationRate();
+                    restoreOperationSitesUI();
+                };
+                selectedListContainer.appendChild(li);
+            });
+        }
+    } catch (e) {
+        console.error('restoreOperationSitesUI error:', e);
+    }
+}
+
+function restoreOperationEquipUI() {
+    try {
+        const equipList = document.getElementById('operation-equip-list');
+        if (!equipList) return;
+        
+        equipList.querySelectorAll('li').forEach(li => {
+            if (li.dataset.equip === currentOpFilters.equip) {
+                li.classList.add('active');
+            } else {
+                li.classList.remove('active');
+            }
+        });
+    } catch (e) {
+        console.error('restoreOperationEquipUI error:', e);
+    }
 }
 
 function initOperationYear() {
@@ -429,6 +580,11 @@ function calculateOperationRate() {
     window.currentDowntimeList = allDowntimeList;
     renderEquipMonthlyTable(equipMonthlyStats, year);
     renderDowntimeTable(allDowntimeList);
+
+    // [추가] 가동율 필터 및 결과 캐싱 (sessionStorage 사용으로 용량 안정화 및 자동 연산 차단)
+    localStorage.setItem('lastOpFilters', JSON.stringify(currentOpFilters));
+    sessionStorage.setItem('lastOpStats', JSON.stringify(equipMonthlyStats));
+    sessionStorage.setItem('lastOpDowntimes', JSON.stringify(allDowntimeList));
 }
 
 function renderEquipMonthlyTable(statsList, year) {

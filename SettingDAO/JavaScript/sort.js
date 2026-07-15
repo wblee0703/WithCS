@@ -1,3 +1,4 @@
+window.isSortPageRestoring = false;
 /* ==========================================================================
    1. 초기화 (Initialization)
    ========================================================================== */
@@ -15,6 +16,14 @@ function logActionToServer(action, details, target = "") {
 
 // [1.1] DOM 로드 시 초기화 및 외부 클릭 감지
 document.addEventListener('DOMContentLoaded', () => {
+    // [추가] 페이지 로드 즉시 필터 캐시 존재 시 복원 락을 미리 활성화하여 타이밍 오염 방지
+    try {
+        const lastSortFilters = localStorage.getItem('lastSortFilters');
+        if (lastSortFilters) {
+            window.isSortPageRestoring = true;
+        }
+    } catch (e) { }
+
     if (window.isDataLoaded) {
         initSortPage();
     } else {
@@ -74,6 +83,7 @@ function initSortPage() {
     try {
         const lastSortFilters = JSON.parse(localStorage.getItem('lastSortFilters'));
         if (lastSortFilters) {
+            window.isSortPageRestoring = true;
             const periodType = document.getElementById('sort-period-type');
             if (periodType && lastSortFilters.periodType) {
                 periodType.value = lastSortFilters.periodType;
@@ -197,8 +207,24 @@ function initSortPage() {
                             updateKeywordTrigger();
                         }
                     }
+
+                    // [개선] 캐시 오염 방지를 위해 대용량 결과 캐시 대신 sessionStorage 캐시 결과를 렌더링하고 끝냄
+                    try {
+                        const cachedResults = sessionStorage.getItem('lastSortResults');
+                        if (cachedResults) {
+                            const parsed = JSON.parse(cachedResults);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                renderSortList(parsed);
+                                renderSortChart(parsed);
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Session cache restore error:', e);
+                    }
+                    window.isSortPageRestoring = false;
                 } catch (e) {
                     console.error('Filter restore error:', e);
+                    window.isSortPageRestoring = false;
                 }
             }, 100);
             return;
@@ -255,6 +281,7 @@ function getMultiValues(selectId) {
     if (sel && sel.value) return [sel.value];
     return [];
 }
+window.getMultiValues = getMultiValues;
 
 // [2.2] 기본 Select 엘리먼트를 커스텀 체크박스 다중 드롭다운 UI로 변환 및 동기화
 function syncCustomMultiSelect(selectId, placeholder = '전체') {
@@ -1128,7 +1155,7 @@ function updateSortDetailTypeSelect(types) {
     const defaultSubCategories = {
         '정기': ['PM 점검'],
         '비정기': ['Alarm', 'Hunting', 'Data / Para 이상', '기타'],
-        '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '파티클 필터 교체', '기타'],
+        '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', '파티클 필터 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
         '용액제조': ['용액제조'],
         '온라인점검': ['온라인점검']
     };
@@ -1670,6 +1697,7 @@ function performSortSearch() {
 
     renderSortList(results);
     renderSortChart(results);
+    sessionStorage.setItem('lastSortResults', JSON.stringify(results));
 
     // CSV 내보내기 버튼 이벤트는 renderSortListTableOnly에서 필터링된 배열로 다시 연결됩니다.
 }
@@ -1980,7 +2008,7 @@ function renderSortChart(results) {
     const irregularSiteCounts = {};
     const custResponseSiteCounts = {};
     const allSites = new Set();
-    const allowedCustResponseItems = ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '파티클 필터 교체', '기타'];
+    const allowedCustResponseItems = ['순회 점검', '프로그램 변경 / 평가', '설비 평가', '파티클 필터 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'];
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
     // [추가] 비정기 점검 항목 고정 리스트 (이 항목들만 차트에 표시)
@@ -2752,9 +2780,13 @@ function openSortDetailModal(equipDisplay, item, cleanContent, costType) {
 // [추가] 정렬(검색) 페이지 외부 실시간 갱신 함수 및 검색 함수 전역 노출
 window.performSortSearch = performSortSearch;
 window.refreshSortPage = function() {
-    const typeSelect = document.getElementById('sort-type-select');
-    if (!typeSelect) return;
-    const types = getMultiValues('sort-type-select');
-    updateSortDetailTypeSelect(types);
-    performSortSearch();
+    try {
+        if (window.isSortPageRestoring) return;
+        const typeSelect = document.getElementById('sort-type-select');
+        if (!typeSelect) return;
+        const types = getMultiValues('sort-type-select');
+        updateSortDetailTypeSelect(types);
+    } catch (refreshErr) {
+        console.error('refreshSortPage error:', refreshErr);
+    }
 };
