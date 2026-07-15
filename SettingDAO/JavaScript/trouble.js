@@ -5,7 +5,17 @@
    ========================================================================== */
 
 let allTroubles = [];
-let currentTroubleFilter = { site: 'ALL', model: 'ALL', equip: 'ALL', keyword: '' };
+let currentTroubleFilter = { 
+    site: 'ALL', 
+    model: 'ALL', 
+    equip: 'ALL', 
+    keyword: '',
+    dateType: '1month', 
+    year: '', 
+    month: '', 
+    startDate: '', 
+    endDate: '' 
+};
 let showCompletedOnly = false; // [추가] 작성완료 필터 상태
 let currentTroubleImageBase64 = ''; // 사진 Base64 저장 변수
 
@@ -26,7 +36,18 @@ function initTroublePage() {
     const cachedList = sessionStorage.getItem('lastTroubleList');
     
     try {
-        if (cachedFilter) currentTroubleFilter = JSON.parse(cachedFilter);
+        if (cachedFilter) {
+            currentTroubleFilter = { ...currentTroubleFilter, ...JSON.parse(cachedFilter) };
+        }
+        // [수정] 진입 시 URL에 date 파라미터가 없을 때에만 캐시 상태와 무관하게 "최근 1달"로 초기화 강제 적용
+        const params = new URLSearchParams(window.location.search);
+        if (!params.get('date')) {
+            currentTroubleFilter.dateType = '1month';
+            currentTroubleFilter.year = '';
+            currentTroubleFilter.month = '';
+            currentTroubleFilter.startDate = '';
+            currentTroubleFilter.endDate = '';
+        }
         if (cachedCompletedOnly) {
             showCompletedOnly = JSON.parse(cachedCompletedOnly);
             const btnToggleCompleted = document.getElementById('btn-toggle-completed-trouble');
@@ -37,11 +58,18 @@ function initTroublePage() {
         }
         const searchInput = document.getElementById('trouble-search-input');
         if (searchInput && cachedKeyword) searchInput.value = cachedKeyword;
+
+        // 날짜 필터 타입 셀렉트 박스 동기화
+        const typeSelect = document.getElementById('trouble-date-filter-type');
+        if (typeSelect && currentTroubleFilter.dateType) {
+            typeSelect.value = currentTroubleFilter.dateType;
+        }
     } catch (e) {
         console.error('Trouble filter restore error:', e);
     }
 
     renderTroubleSites();
+    checkQueryStringFilters(); // [수정] 마지막 상태 유지 기능보다 URL 파라미터를 최상위 우선순위로 적용
     restoreTroubleFilterUI();
     
     // [개선] 세션스토리지 캐시 목록이 있으면 fetch API 연동을 생략하고 즉각 필터 렌더링 (재연산/딜레이 제거)
@@ -92,18 +120,46 @@ function checkQueryStringFilters() {
     const params = new URLSearchParams(window.location.search);
     const siteParam = params.get('site');
     const equipParam = params.get('equip');
+    const dateParam = params.get('date');
 
     if (siteParam && equipParam) {
+        currentTroubleFilter.site = siteParam;
+
+        const parts = equipParam.split('::');
+        const model = parts[0];
+        currentTroubleFilter.model = model;
+        currentTroubleFilter.equip = equipParam;
+
+        // [추가] date 파라미터가 유효하게 넘어오면 날짜 필터를 해당 작업 월(월별)로 자동 전환 선택
+        if (dateParam) {
+            currentTroubleFilter.dateType = 'month';
+            const dateParts = dateParam.split('-');
+            if (dateParts.length >= 2) {
+                currentTroubleFilter.year = dateParts[0];
+                currentTroubleFilter.month = dateParts[1];
+            }
+            
+            const typeSelect = document.getElementById('trouble-date-filter-type');
+            if (typeSelect) {
+                typeSelect.value = 'month';
+            }
+            renderDateFilterInputs();
+        }
+
+        // 텍스트 검색창은 공백 유지
         const searchInput = document.getElementById('trouble-search-input');
         if (searchInput) {
-            const parts = equipParam.split('::');
-            const model = parts[0];
-            const serial = parts.length > 1 ? parts[1] : '';
-            const custName = parts.length > 2 ? parts[2] : '';
-
-            // 고객사장비명을 최우선으로, 없으면 시리얼 번호, 그것도 없으면 모델명 지정
-            searchInput.value = custName || serial || model;
+            searchInput.value = '';
+            currentTroubleFilter.keyword = '';
         }
+
+        // 로컬스토리지 필터 동기화
+        localStorage.setItem('lastTroubleFilter', JSON.stringify(currentTroubleFilter));
+        localStorage.removeItem('lastTroubleKeyword'); // 검색어 캐시 제거
+
+        // UI 새로고침 및 목록 필터 강제 적용
+        restoreTroubleFilterUI();
+        applyTroubleFilter();
     }
 }
 
@@ -271,6 +327,55 @@ function applyTroubleFilter() {
 
     let filtered = allTroubles;
 
+    // 날짜 필터링 대조 적용
+    const dateType = currentTroubleFilter.dateType || '1month';
+    if (dateType === '1month') {
+        const now = new Date();
+        const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        const y = oneMonthAgo.getFullYear();
+        const m = String(oneMonthAgo.getMonth() + 1).padStart(2, '0');
+        const d = String(oneMonthAgo.getDate()).padStart(2, '0');
+        const limitStr = `${y}-${m}-${d}`;
+
+        filtered = filtered.filter(t => {
+            const rawDate = t.action_date || t.occur_date || '';
+            const tDate = rawDate.slice(0, 10);
+            return tDate ? tDate >= limitStr : false;
+        });
+    } else if (dateType === 'year') {
+        const targetYear = currentTroubleFilter.year || String(new Date().getFullYear());
+        filtered = filtered.filter(t => {
+            const rawDate = t.action_date || t.occur_date || '';
+            const tDate = rawDate.slice(0, 10);
+            return tDate ? tDate.startsWith(targetYear) : false;
+        });
+    } else if (dateType === 'month') {
+        const targetYear = currentTroubleFilter.year || String(new Date().getFullYear());
+        const targetMonth = currentTroubleFilter.month || String(new Date().getMonth() + 1).padStart(2, '0');
+        const prefix = `${targetYear}-${targetMonth}`;
+        filtered = filtered.filter(t => {
+            const rawDate = t.action_date || t.occur_date || '';
+            const tDate = rawDate.slice(0, 10);
+            return tDate ? tDate.startsWith(prefix) : false;
+        });
+    } else if (dateType === 'custom') {
+        const start = currentTroubleFilter.startDate || '';
+        const end = currentTroubleFilter.endDate || '';
+        filtered = filtered.filter(t => {
+            const rawDate = t.action_date || t.occur_date || '';
+            const tDate = rawDate.slice(0, 10);
+            if (!tDate) return false;
+
+            let isStartOk = true;
+            if (start) isStartOk = tDate >= start;
+
+            let isEndOk = true;
+            if (end) isEndOk = tDate <= end;
+
+            return isStartOk && isEndOk;
+        });
+    }
+
     if (currentTroubleFilter.site !== 'ALL') filtered = filtered.filter(t => t.site === currentTroubleFilter.site);
 
     if (currentTroubleFilter.model !== 'ALL') {
@@ -325,13 +430,9 @@ function applyTroubleFilter() {
         );
     }
 
-    // [수정] 작성완료 필터 적용: 발생 일시가 기록된 항목(기록여부 녹색) 또는 조치완료/작성완료 상태인 이력 노출
+    // [수정] 작성완료 필터 적용: 발생 일시가 기록된 항목(기록여부 녹색)만 표시
     if (showCompletedOnly) {
-        filtered = filtered.filter(t => {
-            const hasOccurDate = t.occur_date && String(t.occur_date).trim() !== '' && t.occur_date !== '-';
-            const isCompletedStatus = t.status === '조치완료' || t.status === '작성완료';
-            return hasOccurDate || isCompletedStatus;
-        });
+        filtered = filtered.filter(t => t.occur_date && String(t.occur_date).trim() !== '' && t.occur_date !== '-');
     }
 
     renderTroubleList(filtered);
@@ -665,7 +766,112 @@ function setupTroubleEvents() {
         }
     });
 
+    setupTroubleDateFilterEvents();
     window.addEventListener('resize', adjustAllTextareaHeights);
+}
+
+function setupTroubleDateFilterEvents() {
+    const typeSelect = document.getElementById('trouble-date-filter-type');
+    if (!typeSelect) return;
+
+    typeSelect.addEventListener('change', () => {
+        currentTroubleFilter.dateType = typeSelect.value;
+        renderDateFilterInputs();
+        applyTroubleFilter();
+    });
+
+    // 초기 인풋 렌더링
+    renderDateFilterInputs();
+}
+
+function renderDateFilterInputs() {
+    const container = document.getElementById('trouble-date-filter-inputs');
+    if (!container) return;
+
+    container.innerHTML = '';
+    const type = currentTroubleFilter.dateType || '1month';
+
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    if (type === 'year') {
+        let options = '';
+        for (let y = currentYear; y >= currentYear - 5; y--) {
+            const selected = (currentTroubleFilter.year === String(y) || (!currentTroubleFilter.year && y === currentYear)) ? 'selected' : '';
+            options += `<option value="${y}" ${selected}>${y}년</option>`;
+        }
+        container.innerHTML = `<select id="trouble-date-year-select" style="width: 80px; height: 32px; background-color: #0d1117; color: #ffffff; border: 1px solid #30363d; border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; cursor: pointer; font-size: 13px;">${options}</select>`;
+        
+        const yearSelect = document.getElementById('trouble-date-year-select');
+        if (yearSelect) {
+            currentTroubleFilter.year = yearSelect.value;
+            yearSelect.addEventListener('change', () => {
+                currentTroubleFilter.year = yearSelect.value;
+                applyTroubleFilter();
+            });
+        }
+
+    } else if (type === 'month') {
+        let yearOptions = '';
+        for (let y = currentYear; y >= currentYear - 5; y--) {
+            const selected = (currentTroubleFilter.year === String(y) || (!currentTroubleFilter.year && y === currentYear)) ? 'selected' : '';
+            yearOptions += `<option value="${y}" ${selected}>${y}년</option>`;
+        }
+        
+        let monthOptions = '';
+        const curMonth = now.getMonth() + 1;
+        for (let m = 1; m <= 12; m++) {
+            const mStr = String(m).padStart(2, '0');
+            const selected = (currentTroubleFilter.month === mStr || (!currentTroubleFilter.month && m === curMonth)) ? 'selected' : '';
+            monthOptions += `<option value="${mStr}" ${selected}>${m}월</option>`;
+        }
+
+        container.innerHTML = `
+            <select id="trouble-date-year-select" style="width: 80px; height: 32px; background-color: #0d1117; color: #ffffff; border: 1px solid #30363d; border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; cursor: pointer; font-size: 13px;">${yearOptions}</select>
+            <select id="trouble-date-month-select" style="width: 65px; height: 32px; background-color: #0d1117; color: #ffffff; border: 1px solid #30363d; border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; cursor: pointer; font-size: 13px;">${monthOptions}</select>
+        `;
+
+        const yearSelect = document.getElementById('trouble-date-year-select');
+        const monthSelect = document.getElementById('trouble-date-month-select');
+
+        if (yearSelect && monthSelect) {
+            currentTroubleFilter.year = yearSelect.value;
+            currentTroubleFilter.month = monthSelect.value;
+
+            yearSelect.addEventListener('change', () => {
+                currentTroubleFilter.year = yearSelect.value;
+                applyTroubleFilter();
+            });
+            monthSelect.addEventListener('change', () => {
+                currentTroubleFilter.month = monthSelect.value;
+                applyTroubleFilter();
+            });
+        }
+
+    } else if (type === 'custom') {
+        const startVal = currentTroubleFilter.startDate || '';
+        const endVal = currentTroubleFilter.endDate || '';
+
+        container.innerHTML = `
+            <input type="date" id="trouble-date-start" style="width: 120px; height: 32px; background-color: #0d1117; color: #ffffff; border: 1px solid #30363d; border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; font-size: 13px;" value="${startVal}">
+            <span style="color:#8b949e;">~</span>
+            <input type="date" id="trouble-date-end" style="width: 120px; height: 32px; background-color: #0d1117; color: #ffffff; border: 1px solid #30363d; border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; font-size: 13px;" value="${endVal}">
+        `;
+
+        const startInput = document.getElementById('trouble-date-start');
+        const endInput = document.getElementById('trouble-date-end');
+
+        if (startInput && endInput) {
+            startInput.addEventListener('change', () => {
+                currentTroubleFilter.startDate = startInput.value;
+                applyTroubleFilter();
+            });
+            endInput.addEventListener('change', () => {
+                currentTroubleFilter.endDate = endInput.value;
+                applyTroubleFilter();
+            });
+        }
+    }
 }
 
 function openTroubleModal(mode, id = null, source = null) {

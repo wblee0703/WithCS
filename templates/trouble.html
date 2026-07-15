@@ -60,12 +60,25 @@
             <!-- 리스트 및 본문 영역 -->
             <div class="trouble-container">
                 <!-- Trouble 필터 및 액션 버튼 영역 -->
-                <div class="trouble-header-actions" style="display: flex; justify-content: space-between;">
-                    <div class="trouble-filters">
+                <div class="trouble-header-actions" style="display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; margin-bottom: 10px;">
+                    <div class="trouble-filters" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                         <input type="text" id="trouble-search-input" class="input-dark"
-                            placeholder="장비명, Trouble 내용 검색...">
-                        <button id="btn-trouble-search" class="btn-blue-sm">검색</button>
-                        <button id="btn-toggle-completed-trouble" class="btn-gray-sm">작성완료</button>
+                            placeholder="장비명, Trouble 내용 검색..." style="width: 220px; height: 32px; box-sizing: border-box;">
+                        
+                        <button id="btn-trouble-search" class="btn-blue-sm" style="height: 32px; display: flex; align-items: center; justify-content: center;">검색</button>
+                        <button id="btn-toggle-completed-trouble" class="btn-gray-sm" style="height: 32px; display: flex; align-items: center; justify-content: center;">작성완료</button>
+                        
+                        <!-- 날짜 필터 그룹 (작성완료 버튼 오른쪽으로 배치 변경) -->
+                        <div class="date-filter-group" style="display: flex; align-items: center; gap: 5px;">
+                            <span style="font-size: 13px; color: #8b949e; margin-right: 5px;">날짜 필터:</span>
+                            <select id="trouble-date-filter-type" style="width: 110px; height: 32px; background-color: #0d1117; color: #ffffff; border: 1px solid #30363d; border-radius: 4px; padding: 0 8px; box-sizing: border-box; outline: none; cursor: pointer; font-size: 13px;">
+                                <option value="1month" selected>최근 1달</option>
+                                <option value="year">년도별</option>
+                                <option value="month">월별</option>
+                                <option value="custom">직접 입력</option>
+                            </select>
+                            <div id="trouble-date-filter-inputs" style="display: flex; align-items: center; gap: 5px;"></div>
+                        </div>
                     </div>
                 </div>
 

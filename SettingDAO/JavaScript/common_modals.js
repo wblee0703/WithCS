@@ -935,7 +935,10 @@ function openEventDetailModal(site, equip, id, isCompleted) {
                 btnGroup.classList.add('has-trouble-history');
             }
             troubleHistoryBtn.onclick = () => {
-                const targetUrl = `trouble.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
+                let targetUrl = `trouble.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
+                if (item.date) {
+                    targetUrl += `&date=${encodeURIComponent(item.date)}`;
+                }
                 location.href = targetUrl;
             };
         } else {
