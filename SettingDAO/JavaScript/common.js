@@ -4990,9 +4990,22 @@ window.openAddPartSpecModal = function (site, equip, itemObj, onAddCallback) {
     masterInput.value = masterSpec;
     specInput.value = '';
 
+    // [추가] 쉼표(,) 및 슬래시(/) 등 구분 특수문자 실시간 필터링
+    specInput.oninput = () => {
+        specInput.value = specInput.value.replace(/[,/]/g, '');
+    };
+
     confirmBtn.onclick = async () => {
         const newSpec = specInput.value.trim();
         if (!newSpec) { alert('물품 상세를 입력해주세요.'); specInput.focus(); return; }
+
+        // [추가] 쉼표(,) 및 슬래시(/) 등 구분 특수문자 검증
+        if (newSpec.includes(',') || newSpec.includes('/')) {
+            alert('물품 상세에 쉼표(,) 및 슬래시(/) 문자는 사용할 수 없습니다.');
+            specInput.value = newSpec.replace(/[,/]/g, '');
+            specInput.focus();
+            return;
+        }
 
         if (!site || !equip) {
             alert('장비 정보를 찾을 수 없습니다. 다시 시도해주세요.');

@@ -3078,6 +3078,36 @@ def init_db():
             db.session.commit()
         except: pass
 
+        # [마이그레이션] 고객대응 > 파티클 필터 교체 작업의 내용을 '[유상] Particle Filter' 로 치환
+        try:
+            maint_filter_items = MaintItem.query.filter(
+                (MaintItem.type == '고객대응') &
+                ((MaintItem.detail_type == '파티클 필터 교체') | (MaintItem.detail_type.like('파티클 필터 교체%')))
+            ).all()
+            maint_changed = False
+            for item in maint_filter_items:
+                if item.content != '[유상] Particle Filter':
+                    item.content = '[유상] Particle Filter'
+                    item.item_cost = '유상'
+                    maint_changed = True
+
+            log_filter_items = LogItem.query.filter(
+                (LogItem.type == '고객대응') &
+                ((LogItem.detail_type == '파티클 필터 교체') | (LogItem.detail_type.like('파티클 필터 교체%')))
+            ).all()
+            log_changed = False
+            for item in log_filter_items:
+                if item.content != '[유상] Particle Filter':
+                    item.content = '[유상] Particle Filter'
+                    log_changed = True
+
+            if maint_changed or log_changed:
+                db.session.commit()
+                app.logger.warning("[Migration] 고객대응 > 파티클 필터 교체 데이터의 내용을 '[유상] Particle Filter'로 일괄 마이그레이션 완료!")
+        except Exception as ex:
+            db.session.rollback()
+            app.logger.error(f"[Migration] 고객대응 > 파티클 필터 교체 마이그레이션 실패: {str(ex)}")
+
         # [마이그레이션] PM 점검(정기) 작업인데 내용(content)에 '파트 이상 교체' 등의 라벨이 붙어 있는 데이터 정제
         try:
             import re
