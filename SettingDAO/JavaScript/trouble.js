@@ -163,6 +163,15 @@ function checkQueryStringFilters() {
     }
 }
 
+function getSiteGroup(siteName) {
+    if (!siteName) return '기타사업장';
+    const meta = JSON.parse(localStorage.getItem(`site_meta_${siteName}`));
+    if (meta && meta.group) return meta.group;
+    const firstWord = siteName.split(' ')[0];
+    if (firstWord && firstWord.length <= 10) return firstWord;
+    return '기타사업장';
+}
+
 function fetchTroubles() {
     fetch('/api/trouble/list', { headers: { 'X-CSRFToken': getCookie('csrf_token') } })
         .then(res => res.json())
@@ -186,9 +195,17 @@ function renderTroubleSites() {
 
     siteList.innerHTML = `<li data-site="ALL" class="active">전체 사업장</li>`;
 
-    const sites = Object.keys(deviceData).filter(s => s !== 'models' && s !== 'details').sort();
-    sites.forEach(site => {
-        siteList.insertAdjacentHTML('beforeend', `<li data-site="${escapeHtml(site)}">${escapeHtml(site)}</li>`);
+    // 사업장들의 구분을 중복 없이 수집
+    const groups = new Set();
+    Object.keys(deviceData).forEach(site => {
+        if (site !== 'models' && site !== 'details') {
+            groups.add(getSiteGroup(site));
+        }
+    });
+
+    const sortedGroups = Array.from(groups).sort();
+    sortedGroups.forEach(g => {
+        siteList.insertAdjacentHTML('beforeend', `<li data-site="${escapeHtml(g)}">${escapeHtml(g)}</li>`);
     });
 
     siteList.querySelectorAll('li').forEach(li => {
@@ -196,7 +213,7 @@ function renderTroubleSites() {
             siteList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
             li.classList.add('active');
 
-            currentTroubleFilter.site = li.dataset.site;
+            currentTroubleFilter.site = li.dataset.site; // 구분값이 담김 (예: 'SEC')
             currentTroubleFilter.model = 'ALL';
             currentTroubleFilter.equip = 'ALL';
 
@@ -208,7 +225,7 @@ function renderTroubleSites() {
     renderTroubleModels('ALL');
 }
 
-function renderTroubleModels(site) {
+function renderTroubleModels(siteGroup) {
     const modelList = document.getElementById('trouble-model-list');
     const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
@@ -216,13 +233,14 @@ function renderTroubleModels(site) {
     modelList.innerHTML = `<li data-model="ALL" class="active">전체 모델</li>`;
 
     let equips = [];
-    if (site === 'ALL') {
-        Object.keys(deviceData).forEach(s => {
-            if (s !== 'models' && s !== 'details') deviceData[s].forEach(e => equips.push(e));
-        });
-    } else {
-        if (deviceData[site]) equips = deviceData[site];
-    }
+    Object.keys(deviceData).forEach(s => {
+        if (s !== 'models' && s !== 'details') {
+            // 사업장 구분이 siteGroup과 일치하거나 siteGroup이 'ALL' 인 경우의 장비 수집
+            if (siteGroup === 'ALL' || getSiteGroup(s) === siteGroup) {
+                deviceData[s].forEach(e => equips.push(e));
+            }
+        }
+    });
 
     const modelSet = new Set();
     equips.forEach(eq => modelSet.add(eq.split('::')[0]));
@@ -247,10 +265,10 @@ function renderTroubleModels(site) {
         });
     });
 
-    renderTroubleEquips(site, 'ALL');
+    renderTroubleEquips(siteGroup, 'ALL');
 }
 
-function renderTroubleEquips(site, model) {
+function renderTroubleEquips(siteGroup, model) {
     const equipList = document.getElementById('trouble-equip-list');
     const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
@@ -260,13 +278,13 @@ function renderTroubleEquips(site, model) {
     equipList.innerHTML = `<li data-equip="ALL" class="active">전체 장비</li>`;
 
     let equips = [];
-    if (site === 'ALL') {
-        Object.keys(deviceData).forEach(s => {
-            if (s !== 'models' && s !== 'details') deviceData[s].forEach(e => equips.push({ site: s, equip: e }));
-        });
-    } else {
-        if (deviceData[site]) deviceData[site].forEach(e => equips.push({ site: site, equip: e }));
-    }
+    Object.keys(deviceData).forEach(s => {
+        if (s !== 'models' && s !== 'details') {
+            if (siteGroup === 'ALL' || getSiteGroup(s) === siteGroup) {
+                deviceData[s].forEach(e => equips.push({ site: s, equip: e }));
+            }
+        }
+    });
 
     if (model !== 'ALL') {
         equips = equips.filter(item => item.equip.split('::')[0] === model);
@@ -281,19 +299,27 @@ function renderTroubleEquips(site, model) {
 
         const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.equip}`)) || {};
         const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
-
         const subText = custEquipName ? ` [${custEquipName}]` : (serial ? ` [${serial}]` : '');
 
-        let displayHtml = '';
-        if (site === 'ALL') {
-            displayHtml = `<div style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 11px; color: #8b949e;">${escapeHtml(item.site)}</span><span>${escapeHtml(displayName)}${escapeHtml(subText)}</span></div>`;
-        } else {
-            displayHtml = `<span>${escapeHtml(displayName)}${escapeHtml(subText)}</span>`;
-        }
+        // 사업장 구분이 켜진 상태이므로 장비별 실질 소속 사업장명을 아래에 상시 표기
+        const displayHtml = `<div style="display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 11px; color: #8b949e;">${escapeHtml(item.site)}</span><span>${escapeHtml(displayName)}${escapeHtml(subText)}</span></div>`;
 
         const searchText = `${item.site} ${displayName} ${serial} ${custEquipName}`.toLowerCase();
 
         equipList.insertAdjacentHTML('beforeend', `<li data-equip="${escapeHtml(item.equip)}" data-search="${escapeHtml(searchText)}">
+            ${displayHtml}
+        </li>`);
+    });
+
+    equipList.querySelectorAll('li').forEach(li => {
+        li.addEventListener('click', () => {
+            equipList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
+            li.classList.add('active');
+            currentTroubleFilter.equip = li.dataset.equip;
+            applyTroubleFilter();
+        });
+    });
+}AdjacentHTML('beforeend', `<li data-equip="${escapeHtml(item.equip)}" data-search="${escapeHtml(searchText)}">
             ${displayHtml}
         </li>`);
     });
@@ -376,7 +402,9 @@ function applyTroubleFilter() {
         });
     }
 
-    if (currentTroubleFilter.site !== 'ALL') filtered = filtered.filter(t => t.site === currentTroubleFilter.site);
+    if (currentTroubleFilter.site !== 'ALL') {
+        filtered = filtered.filter(t => getSiteGroup(t.site) === currentTroubleFilter.site);
+    }
 
     if (currentTroubleFilter.model !== 'ALL') {
         filtered = filtered.filter(t => {

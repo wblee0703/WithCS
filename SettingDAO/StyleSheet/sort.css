@@ -668,4 +668,34 @@
     #btn-toggle-sort-menu {
         display: inline-block !important;
     }
+
+    /* [수정] 모바일 화면 내 그래프 및 검색결과 리스트의 좌우 여백 최소화(100% 가깝게 꽉 채움) */
+    #section-sort .dashboard-main {
+        padding: 0 5px 0 5px !important;
+    }
+    #section-sort .card {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        border-radius: 4px !important;
+        border-left: none !important;
+        border-right: none !important;
+    }
+    #sort-charts-body {
+        padding: 10px 5px 10px 5px !important;
+    }
+    #sort-result-body {
+        padding: 0 !important;
+    }
+    .sort-half-chart,
+    .sort-full-chart {
+        padding: 10px 5px 10px 5px !important;
+        border-radius: 4px !important;
+        border-left: none !important;
+        border-right: none !important;
+    }
+    .data-table-wrapper {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        border-radius: 0 !important;
+    }
 }
