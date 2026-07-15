@@ -252,6 +252,13 @@ function renderTroubleEquips(site, model) {
     });
 }
 
+function getNormalizedModelName(modelName) {
+    if (!modelName) return '';
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+    const matched = equipmentModels.find(m => m.name.toLowerCase() === modelName.toLowerCase() || m.abbr.toLowerCase() === modelName.toLowerCase());
+    return (matched && matched.abbr) ? matched.abbr.toLowerCase() : modelName.toLowerCase();
+}
+
 function applyTroubleFilter() {
     const searchInput = document.getElementById('trouble-search-input');
     currentTroubleFilter.keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
@@ -266,9 +273,45 @@ function applyTroubleFilter() {
 
     if (currentTroubleFilter.site !== 'ALL') filtered = filtered.filter(t => t.site === currentTroubleFilter.site);
 
-    if (currentTroubleFilter.model !== 'ALL') filtered = filtered.filter(t => t.equip_id && t.equip_id.split('::')[1] === currentTroubleFilter.model);
+    if (currentTroubleFilter.model !== 'ALL') {
+        filtered = filtered.filter(t => {
+            const normalizedFModel = getNormalizedModelName(currentTroubleFilter.model);
+            const searchTarget = `${t.equip_id || ''} ${t.equip || ''}`.toLowerCase();
 
-    if (currentTroubleFilter.equip !== 'ALL') filtered = filtered.filter(t => t.equip_id && t.equip_id.split('::').slice(1).join('::') === currentTroubleFilter.equip);
+            let isModelMatch = searchTarget.includes(normalizedFModel);
+            if (!isModelMatch) {
+                const matchModel = (t.equip_id || '').split('::')[1] || (t.equip || '').split(' ')[0] || '';
+                isModelMatch = getNormalizedModelName(matchModel) === normalizedFModel;
+            }
+            return isModelMatch;
+        });
+    }
+
+    if (currentTroubleFilter.equip !== 'ALL') {
+        filtered = filtered.filter(t => {
+            const fParts = currentTroubleFilter.equip.split('::');
+            const fModel = fParts[0];
+            const fSerial = fParts.length > 1 ? fParts[1] : '';
+
+            const normalizedFModel = getNormalizedModelName(fModel);
+            const searchTarget = `${t.equip_id || ''} ${t.equip || ''}`.toLowerCase();
+
+            // 모델명 매칭 검사
+            let isModelMatch = searchTarget.includes(normalizedFModel);
+            if (!isModelMatch) {
+                const matchModel = (t.equip_id || '').split('::')[1] || (t.equip || '').split(' ')[0] || '';
+                isModelMatch = getNormalizedModelName(matchModel) === normalizedFModel;
+            }
+
+            // 시리얼 번호 매칭 검사
+            let isSerialMatch = true;
+            if (fSerial) {
+                isSerialMatch = searchTarget.includes(fSerial.trim().toLowerCase());
+            }
+
+            return isModelMatch && isSerialMatch;
+        });
+    }
 
     if (currentTroubleFilter.keyword) {
         filtered = filtered.filter(t =>
@@ -282,9 +325,13 @@ function applyTroubleFilter() {
         );
     }
 
-    // [수정] 작성완료 필터 적용: 발생 일시가 기록된 항목(기록여부 녹색)만 표시
+    // [수정] 작성완료 필터 적용: 발생 일시가 기록된 항목(기록여부 녹색) 또는 조치완료/작성완료 상태인 이력 노출
     if (showCompletedOnly) {
-        filtered = filtered.filter(t => t.occur_date && String(t.occur_date).trim() !== '' && t.occur_date !== '-');
+        filtered = filtered.filter(t => {
+            const hasOccurDate = t.occur_date && String(t.occur_date).trim() !== '' && t.occur_date !== '-';
+            const isCompletedStatus = t.status === '조치완료' || t.status === '작성완료';
+            return hasOccurDate || isCompletedStatus;
+        });
     }
 
     renderTroubleList(filtered);
@@ -813,12 +860,31 @@ function renderTroubleList(dataList = []) {
             if (t.equip && t.equip !== '-') {
                 const matchCust = t.equip.match(/^(.*?) \[(.*?)\]$/);
                 const matchSerial = t.equip.match(/^(.*?) \((.*?)\)$/);
+                let modelPart = t.equip;
+                let subVal = '';
+                let isCust = false;
+
                 if (matchCust) {
-                    equipMain = escapeHtml(matchCust[1]);
-                    equipSubHtml = `<div style="color: #58a6ff; font-size: 11px; margin-top: 2px;">[${escapeHtml(matchCust[2])}]</div>`;
+                    modelPart = matchCust[1];
+                    subVal = matchCust[2];
+                    isCust = true;
                 } else if (matchSerial) {
-                    equipMain = escapeHtml(matchSerial[1]);
-                    equipSubHtml = `<div style="color: #8b949e; font-size: 11px; margin-top: 2px;">(${escapeHtml(matchSerial[2])})</div>`;
+                    modelPart = matchSerial[1];
+                    subVal = matchSerial[2];
+                }
+
+                // 모델명 약어 치환용 로컬스토리지 매핑 검색
+                const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+                const matchedModel = equipmentModels.find(m => m.name.toLowerCase() === modelPart.toLowerCase() || m.abbr.toLowerCase() === modelPart.toLowerCase());
+                const modelAbbr = matchedModel ? matchedModel.abbr : modelPart;
+
+                equipMain = escapeHtml(modelAbbr);
+                if (subVal) {
+                    if (isCust) {
+                        equipSubHtml = `<div style="color: #58a6ff; font-size: 11px; margin-top: 2px;">[${escapeHtml(subVal)}]</div>`;
+                    } else {
+                        equipSubHtml = `<div style="color: #8b949e; font-size: 11px; margin-top: 2px;">(${escapeHtml(subVal)})</div>`;
+                    }
                 }
             }
 

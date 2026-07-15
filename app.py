@@ -2371,7 +2371,8 @@ def sync_setup_equip():
 @login_required
 def get_trouble_list():
     troubles = TroubleLog.query.all()
-    log_items = LogItem.query.filter_by(type='비정기').all()
+    # [수정] 작업 구분(type)이 '비정기'인 모든 완료 이력을 공백 제거하여 누락 없이 완벽하게 가져옴
+    log_items = LogItem.query.filter(db.func.trim(LogItem.type) == '비정기').all()
     
     equips = {eq.id: eq for eq in Equipment.query.all()}
     setup_infos = {si.equip_id: si for si in SetupInfo.query.all()}
@@ -2424,7 +2425,7 @@ def get_trouble_list():
         
     for l in log_items:
         site_name, equip_name = get_eq_info(l.equip_id)
-        group_key = f"log_{l.original_log_id if l.original_log_id else l.id}"
+        group_key = f"log_{l.id}"
         safe_content = getattr(l, 'trouble_details', '') or ''
         result.append({
             "id": l.id,

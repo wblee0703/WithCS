@@ -1608,7 +1608,8 @@ function performSortSearch() {
                             costType: finalCostType,
                             itemDetailType: matchedItemDetailType,
                             status: isLog ? '완료' : '예정',
-                            memo: itemObj.memo || ''
+                            memo: itemObj.memo || '',
+                            originalLogId: itemObj.originalLogId || null
                         };
                     } catch (e) {
                         console.error('checkItemMatch Error:', e);
@@ -2022,6 +2023,9 @@ function renderSortChart(results) {
     results.forEach(row => {
         // [수정] 통계 차트에는 작업이 '완료'된 내역만 포함하도록 필터링
         if (row.status !== '완료') return;
+
+        // [추가] 추가 작업으로 등록된 항목(originalLogId 가 존재함)은 따로 카운팅 안되게 제외 (최초 작업으로 1개로만 통계 처리)
+        if (row.originalLogId) return;
 
         if (row.content) {
             const items = window.splitSafetyContent(row.content);
