@@ -1980,7 +1980,7 @@ function renderSortChart(results) {
     const irregularSiteCounts = {};
     const custResponseSiteCounts = {};
     const allSites = new Set();
-    const allowedCustResponseItems = ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'];
+    const allowedCustResponseItems = ['순회 점검', '프로그램 변경 / 평가', '설비 평가', 'Parts 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '파티클 필터 교체', '기타'];
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
     // [추가] 비정기 점검 항목 고정 리스트 (이 항목들만 차트에 표시)
@@ -2748,3 +2748,13 @@ function openSortDetailModal(equipDisplay, item, cleanContent, costType) {
 
     modal.style.display = 'flex';
 }
+
+// [추가] 정렬(검색) 페이지 외부 실시간 갱신 함수 및 검색 함수 전역 노출
+window.performSortSearch = performSortSearch;
+window.refreshSortPage = function() {
+    const typeSelect = document.getElementById('sort-type-select');
+    if (!typeSelect) return;
+    const types = getMultiValues('sort-type-select');
+    updateSortDetailTypeSelect(types);
+    performSortSearch();
+};

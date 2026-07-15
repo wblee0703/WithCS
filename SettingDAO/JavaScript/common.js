@@ -953,6 +953,11 @@ function refreshAppViews() {
         restoreLastState();
     }
 
+    // [추가] 정렬(검색) 페이지 갱신
+    if (typeof window.refreshSortPage === 'function') {
+        window.refreshSortPage();
+    }
+
     // 대기 중인 팝업 모달이 있는지 확인
     checkPendingModals();
 }

@@ -2502,6 +2502,20 @@ async function completeScheduleWork() {
                 return `${costPrefix}${val}`;
             });
         }
+    } else {
+        const isPartMode = maintItem.detailType === 'PM 점검' || maintItem.detailType === 'Parts 교체' || maintItem.detailType === '설비 정상화';
+        if (isPartMode) {
+            const dWrapper = document.getElementById('detail-content-dropdown-wrapper');
+            if (dWrapper) {
+                const selected = dWrapper.querySelectorAll('.log-select-item.selected');
+                partContentList = Array.from(selected).map(el => {
+                    const val = el.dataset.value;
+                    const cSel = el.querySelector('.item-cost-select');
+                    const costPrefix = cSel ? `[${cSel.value}] ` : '';
+                    return `${costPrefix}${val}`;
+                });
+            }
+        }
     }
 
     const contentArr = [];
@@ -2531,7 +2545,7 @@ async function completeScheduleWork() {
             return (p && p === cleanVal) || (c && c === cleanVal);
         });
         const isSpecOnly = (!cleanVal && valSpecMatch);
-        if (taskType !== '정기' && (isRegisteredPart || isSpecOnly)) return;
+        if (taskType !== '정기' && maintItem.detailType !== 'PM 점검' && maintItem.detailType !== 'Parts 교체' && maintItem.detailType !== '설비 정상화' && (isRegisteredPart || isSpecOnly)) return;
 
         const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
         if (isPartKeyword && partContentList.length > 0) {
@@ -2656,7 +2670,7 @@ async function completeScheduleWork() {
         i.memo = "";
         i.costType = "";
         i.md = "";
-        if (i.type === '정기' || i.type === '비정기') {
+        if (i.type === '정기' || i.type === '비정기' || i.type === '고객대응') {
             i.date = completeDate;
         }
         payload.maint_upserts.push(i);
