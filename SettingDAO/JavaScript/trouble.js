@@ -319,19 +319,6 @@ function renderTroubleEquips(siteGroup, model) {
             applyTroubleFilter();
         });
     });
-}AdjacentHTML('beforeend', `<li data-equip="${escapeHtml(item.equip)}" data-search="${escapeHtml(searchText)}">
-            ${displayHtml}
-        </li>`);
-    });
-
-    equipList.querySelectorAll('li').forEach(li => {
-        li.addEventListener('click', () => {
-            equipList.querySelectorAll('li').forEach(el => el.classList.remove('active'));
-            li.classList.add('active');
-            currentTroubleFilter.equip = li.dataset.equip;
-            applyTroubleFilter();
-        });
-    });
 }
 
 function getNormalizedModelName(modelName) {
