@@ -208,19 +208,7 @@ function initSortPage() {
                         }
                     }
 
-                    // [개선] 캐시 오염 방지를 위해 대용량 결과 캐시 대신 sessionStorage 캐시 결과를 렌더링하고 끝냄
-                    try {
-                        const cachedResults = sessionStorage.getItem('lastSortResults');
-                        if (cachedResults) {
-                            const parsed = JSON.parse(cachedResults);
-                            if (Array.isArray(parsed) && parsed.length > 0) {
-                                renderSortList(parsed);
-                                renderSortChart(parsed);
-                            }
-                        }
-                    } catch (e) {
-                        console.error('Session cache restore error:', e);
-                    }
+                    // [요청] 마지막 검색 결과 자동 복원 기능 삭제 (Sort Menu 필터 상태만 유지하고 검색 결과는 대기 상태 유지)
                     window.isSortPageRestoring = false;
                 } catch (e) {
                     console.error('Filter restore error:', e);
@@ -1734,7 +1722,6 @@ function performSortSearch() {
 
     renderSortList(results);
     renderSortChart(results);
-    sessionStorage.setItem('lastSortResults', JSON.stringify(results));
 
     // CSV 내보내기 버튼 이벤트는 renderSortListTableOnly에서 필터링된 배열로 다시 연결됩니다.
 }
@@ -1936,9 +1923,17 @@ function renderSortListTableOnly() {
             statusTd.classList.add(statusClass);
             statusTd.textContent = row.status;
 
-            clone.onclick = () => {
-                openSortHistoryModal(row.site, row.equipRaw);
+            const handleSortRowClick = () => {
+                const targetId = row.id || row.content;
+                const isCompleted = (row.status === '완료');
+                if (typeof window.openEventDetailModal === 'function') {
+                    window.openEventDetailModal(row.site, row.equipRaw, targetId, isCompleted);
+                } else if (typeof openEventDetailModal === 'function') {
+                    openEventDetailModal(row.site, row.equipRaw, targetId, isCompleted);
+                }
             };
+
+            clone.onclick = handleSortRowClick;
             tbody.appendChild(clone);
         } else {
             tr.innerHTML = `
@@ -1956,9 +1951,7 @@ function renderSortListTableOnly() {
                 <td>${escapeHtml(row.md)}</td>
                 <td class="sort-status-text ${statusClass}">${row.status}</td>
             `;
-            tr.onclick = () => {
-                openSortHistoryModal(row.site, row.equipRaw);
-            };
+            tr.onclick = handleSortRowClick;
             tbody.appendChild(tr);
         }
     });

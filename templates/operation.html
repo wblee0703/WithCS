@@ -9,129 +9,176 @@
 
 {% block content %}
 
-    <div class="dashboard-wrapper">
-        <aside class="dashboard-sidebar">
-            <div class="sidebar-group op-year-group">
-                <div class="group-header"><h3>조회 연도</h3></div>
-                <div class="form-group op-year-filter-row">
-                    <select id="operation-year-select" class="input-dark"></select>
-                    <button id="btn-apply-operation-filter" class="btn-blue">조회하기</button>
-                </div>
+<div class="dashboard-wrapper">
+    <aside class="dashboard-sidebar">
+        <div class="sidebar-group op-year-group">
+            <div class="group-header">
+                <h3>조회 연도</h3>
             </div>
+            <div class="form-group op-year-filter-row">
+                <select id="operation-year-select" class="input-dark"></select>
+                <button id="btn-apply-operation-filter" class="btn-blue">조회하기</button>
+            </div>
+        </div>
 
-            <div class="sidebar-group op-site-group">
-                <div class="group-header"><h3>사업장</h3></div>
-                <div id="operation-site-filter-wrapper" class="operation-site-filter-wrapper">
-                    <!-- JS가 여기에 커스텀 드롭다운을 생성합니다 -->
-                </div>
+        <div class="sidebar-group op-site-group">
+            <div class="group-header">
+                <h3>사업장</h3>
             </div>
-            
-            <div class="sidebar-group op-equip-group">
-                <div class="sidebar-header-row">
-                    <h3>장비명</h3>
-                    <input type="text" id="operation-equip-search" class="input-dark" placeholder="장비 검색...">
-                </div>
-                <ul id="operation-equip-list" class="list-data"></ul>
+            <div id="operation-site-filter-wrapper" class="operation-site-filter-wrapper">
+                <!-- JS가 여기에 커스텀 드롭다운을 생성합니다 -->
             </div>
-        </aside>
+        </div>
 
-        <main class="dashboard-main">
-            <div class="operation-main-content">
-                <div class="operation-row-top">
-                    <div class="card operation-monthly-card">
-                        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-                            <h3>운영장비 가동율</h3>
-                            <button id="btn-export-operation-csv" class="btn-settings" style="font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: auto;">CSV 내보내기</button>
-                        </div>
-                        <div class="card-body no-padding op-monthly-body">
-                            <div class="data-table-wrapper">
-                                <table class="data-table" id="operation-monthly-table">
-                                    <thead>
-                                        <tr>
-                                            <th class="th-site">사업장</th>
-                                            <th class="th-equip">장비명</th>
-                                            <th class="th-serial">S/N</th>
-                                            <th class="th-cust-equip">고객사 장비명</th>
-                                            <th class="th-yearly-rate">연 가동율</th>
-                                            <th>1월</th><th>2월</th><th>3월</th><th>4월</th><th>5월</th><th>6월</th>
-                                            <th>7월</th><th>8월</th><th>9월</th><th>10월</th><th>11월</th><th>12월</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="operation-monthly-tbody"></tbody>
-                                </table>
-                            </div>
-                        </div>
+        <div class="sidebar-group op-equip-group">
+            <div class="sidebar-header-row">
+                <h3>장비명</h3>
+                <input type="text" id="operation-equip-search" class="input-dark" placeholder="장비 검색...">
+            </div>
+            <ul id="operation-equip-list" class="list-data"></ul>
+        </div>
+    </aside>
+
+    <main class="dashboard-main">
+        <div class="operation-main-content">
+            <div class="operation-row-top">
+                <div class="card operation-monthly-card">
+                    <div class="card-header"
+                        style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>운영장비 가동율</h3>
+                        <button id="btn-export-operation-csv" class="btn-settings"
+                            style="font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: auto;">CSV
+                            내보내기</button>
                     </div>
-                </div>
-
-                <div class="card operation-detail-card">
-                    <div class="card-header"><h3>다운타임 상세 내역</h3></div>
-                    <div class="card-body no-padding">
+                    <div class="card-body no-padding op-monthly-body">
                         <div class="data-table-wrapper">
-                            <table class="data-table" id="operation-downtime-table">
+                            <table class="data-table" id="operation-monthly-table">
                                 <thead>
-                                    <tr><th>발생/시작일시</th><th>조치/종료일시</th><th>장비명</th><th>작업/점검 구분</th><th>세부 구분1</th><th>세부 구분2</th><th>내용</th><th>다운타임(시간)</th></tr>
+                                    <tr>
+                                        <th class="th-site">사업장</th>
+                                        <th class="th-equip">장비명</th>
+                                        <th class="th-serial">S/N</th>
+                                        <th class="th-cust-equip">고객사 장비명</th>
+                                        <th class="th-yearly-rate">연 가동율</th>
+                                        <th>1월</th>
+                                        <th>2월</th>
+                                        <th>3월</th>
+                                        <th>4월</th>
+                                        <th>5월</th>
+                                        <th>6월</th>
+                                        <th>7월</th>
+                                        <th>8월</th>
+                                        <th>9월</th>
+                                        <th>10월</th>
+                                        <th>11월</th>
+                                        <th>12월</th>
+                                    </tr>
                                 </thead>
-                                <tbody id="operation-downtime-tbody"><tr><td colspan="8" class="empty-msg">데이터가 없습니다.</td></tr></tbody>
+                                <tbody id="operation-monthly-tbody"></tbody>
                             </table>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
 
-    <!-- ==========================================================================
-         HTML 템플릿 (JavaScript에서 복제하여 사용)
-         ========================================================================== -->
-    <template id="operation-site-filter-template">
-        <div id="operation-site-select-wrapper" class="log-select-wrapper full-width">
-            <div id="operation-site-select-trigger" class="log-select-trigger" data-placeholder="전체 사업장">전체 사업장</div>
-            <div id="operation-site-select-dropdown" class="log-select-dropdown">
-                <div id="operation-site-group-toggle-container" class="sort-group-filter-container"></div>
-                <ul id="operation-site-list" class="log-select-list"></ul>
-                <div class="log-select-footer">
-                    <button type="button" class="btn-gray btn-select-all">전체선택</button>
-                    <button type="button" class="btn-gray btn-deselect-all">전체해제</button>
-                    <button type="button" class="btn-blue-sm btn-confirm">확인</button>
+            <div class="card operation-detail-card">
+                <div class="card-header">
+                    <h3>다운타임 상세 내역</h3>
+                </div>
+                <div class="card-body no-padding">
+                    <div class="data-table-wrapper">
+                        <table class="data-table" id="operation-downtime-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort-key="start" class="sortable-th">발생/시작일시 <span
+                                            class="sort-icon"></span></th>
+                                    <th data-sort-key="end" class="sortable-th">조치/종료일시 <span class="sort-icon"></span>
+                                    </th>
+                                    <th data-sort-key="equipName" class="sortable-th">장비명 <span
+                                            class="sort-icon"></span></th>
+                                    <th data-sort-key="type" class="sortable-th">점검 구분 <span class="sort-icon"></span>
+                                    </th>
+                                    <th data-sort-key="dt1" class="sortable-th">세부 구분1 <span class="sort-icon"></span>
+                                    </th>
+                                    <th data-sort-key="dt2" class="sortable-th">세부 구분2 <span class="sort-icon"></span>
+                                    </th>
+                                    <th data-sort-key="content" class="sortable-th">내용 <span class="sort-icon"></span>
+                                    </th>
+                                    <th data-sort-key="hours" class="sortable-th">다운타임(시간) <span
+                                            class="sort-icon"></span></th>
+                                </tr>
+                            </thead>
+                            <tbody id="operation-downtime-tbody">
+                                <tr>
+                                    <td colspan="8" class="empty-msg">데이터가 없습니다.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
-        <ul id="operation-selected-sites-display" class="operation-selected-sites-list"></ul>
-    </template>
+    </main>
+</div>
 
-    <template id="operation-site-item-template">
-        <div class="log-select-item selected">
-            <span class="check-icon">✓</span>
-            <span class="item-text"></span>
+<!-- ==========================================================================
+         HTML 템플릿 (JavaScript에서 복제하여 사용)
+         ========================================================================== -->
+<template id="operation-site-filter-template">
+    <div id="operation-site-select-wrapper" class="log-select-wrapper full-width">
+        <div id="operation-site-select-trigger" class="log-select-trigger" data-placeholder="전체 사업장">전체 사업장</div>
+        <div id="operation-site-select-dropdown" class="log-select-dropdown">
+            <div id="operation-site-group-toggle-container" class="sort-group-filter-container"></div>
+            <ul id="operation-site-list" class="log-select-list"></ul>
+            <div class="log-select-footer">
+                <button type="button" class="btn-gray btn-select-all">전체선택</button>
+                <button type="button" class="btn-gray btn-deselect-all">전체해제</button>
+                <button type="button" class="btn-blue-sm btn-confirm">확인</button>
+            </div>
         </div>
-    </template>
+    </div>
+    <ul id="operation-selected-sites-display" class="operation-selected-sites-list"></ul>
+</template>
 
-    <template id="operation-equip-item-template">
-        <li>
-            <div class="equip-item-container">
-                <span class="equip-item-site"></span>
-                <span class="equip-item-name"></span>
-            </div>
-        </li>
-    </template>
+<template id="operation-site-item-template">
+    <div class="log-select-item selected">
+        <span class="check-icon">✓</span>
+        <span class="item-text"></span>
+    </div>
+</template>
 
-    <template id="operation-downtime-row-template">
-        <tr>
-            <td class="downtime-start"></td><td class="downtime-end"></td><td class="downtime-equip"></td><td class="downtime-type"></td><td class="downtime-dt1"></td><td class="downtime-dt2"></td><td class="downtime-content"></td><td class="downtime-hours"></td>
-        </tr>
-    </template>
+<template id="operation-equip-item-template">
+    <li>
+        <div class="equip-item-container">
+            <span class="equip-item-site"></span>
+            <span class="equip-item-name"></span>
+        </div>
+    </li>
+</template>
 
-    <!-- [추가] 선택된 사업장 리스트 항목 템플릿 -->
-    <template id="operation-selected-site-item-template">
-        <li>
-            <div class="site-info">
-                <span class="site-group-label"></span>
-                <span class="site-name-label"></span>
-            </div>
-            <span class="btn-remove-site">✕</span>
-        </li>
-    </template>
+<template id="operation-downtime-row-template">
+    <tr>
+        <td class="downtime-start"></td>
+        <td class="downtime-end"></td>
+        <td class="downtime-equip"></td>
+        <td class="downtime-type"></td>
+        <td class="downtime-dt1"></td>
+        <td class="downtime-dt2"></td>
+        <td class="downtime-content"></td>
+        <td class="downtime-hours"></td>
+    </tr>
+</template>
+
+<!-- [추가] 선택된 사업장 리스트 항목 템플릿 -->
+<template id="operation-selected-site-item-template">
+    <li>
+        <div class="site-info">
+            <span class="site-group-label"></span>
+            <span class="site-name-label"></span>
+        </div>
+        <span class="btn-remove-site">✕</span>
+    </li>
+</template>
 
 {% endblock %}
 

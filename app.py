@@ -2425,10 +2425,13 @@ def get_trouble_list():
         
     for l in log_items:
         site_name, equip_name = get_eq_info(l.equip_id)
-        group_key = f"log_{l.id}"
+        orig_id = str(getattr(l, 'original_log_id', '') or '').strip()
+        l_id = str(l.id or '').strip()
+        parent_id = orig_id if orig_id else l_id
+        group_key = f"log_{parent_id}"
         safe_content = getattr(l, 'trouble_details', '') or ''
         result.append({
-            "id": l.id,
+            "id": l_id,
             "source": "log",
             "equip_id": l.equip_id,
             "site": site_name,
@@ -2445,10 +2448,17 @@ def get_trouble_list():
             "status": "조치완료",
             "image_data": getattr(l, 'image_data', ''),
             "group_key": group_key,
-            "original_log_id": l.original_log_id
+            "original_log_id": orig_id if orig_id else None
         })
         
     grouped = {}
+    # [수정] 최초작업(original_log_id가 없는 항목)이 대표 항목으로 무조건 우선 등록되도록 정렬
+    def item_priority(x):
+        is_child = 1 if (str(x.get('original_log_id') or '').strip() != '') else 0
+        return is_child
+
+    result.sort(key=item_priority)
+
     for item in result:
         key = item['group_key']
         if key not in grouped:

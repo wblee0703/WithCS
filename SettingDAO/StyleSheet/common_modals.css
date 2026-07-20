@@ -549,6 +549,59 @@
     background-color: #388bfd !important;
 }
 
+/* [추가] 유틸리티 숏컷 버튼 및 시간 조절 (+ 시간 입력 / - 시간 제거) 버튼 공통 스타일 */
+.btn-shortcut {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #62a16a;
+    width: 50px;
+    text-align: center;
+    padding: 2px 0;
+    font-size: 11px;
+    border-radius: 4px;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-shortcut:hover {
+    background: #62a16a;
+    color: #fff;
+    border-color: #62a16a;
+}
+
+#btn-toggle-detail-time {
+    background: #21262d !important;
+    border: 1px solid #30363d !important;
+    color: #62a16a !important;
+    font-weight: bold;
+}
+
+#btn-toggle-detail-time:hover {
+    background: #62a16a !important;
+    color: #ffffff !important;
+    border-color: #62a16a !important;
+}
+
+.detail-date-row-inner {
+    display: flex;
+    gap: 5px;
+}
+
+.input-date-dark {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    color: #fff;
+    padding: 5px;
+    border-radius: 4px;
+    flex: 1;
+}
+
+.input-date-dark::-webkit-calendar-picker-indicator {
+    filter: invert(0.3);
+    cursor: pointer;
+}
+
 #detail-equip-info,
 #detail-serial-no {
     color: #e6edf3;

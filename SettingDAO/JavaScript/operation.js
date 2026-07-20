@@ -4,6 +4,7 @@
 window.isOpPageRestoring = false;
 window.isOpRestoringExecution = false;
 let currentOpFilters = { sites: [], equip: 'ALL', selectedEquipSite: 'ALL', year: new Date().getFullYear() };
+let currentDowntimeSort = { key: 'start', dir: 'desc' };
 
 document.addEventListener('DOMContentLoaded', () => {
     try {
@@ -206,6 +207,25 @@ function setupOperationEvents() {
     const btnExportCsv = document.getElementById('btn-export-operation-csv');
     if (btnExportCsv) {
         btnExportCsv.addEventListener('click', exportOperationCsv);
+    }
+
+    const downtimeTable = document.getElementById('operation-downtime-table');
+    if (downtimeTable) {
+        const headers = downtimeTable.querySelectorAll('thead th.sortable-th');
+        headers.forEach(th => {
+            th.addEventListener('click', () => {
+                const sortKey = th.dataset.sortKey;
+                if (!sortKey) return;
+
+                if (currentDowntimeSort.key === sortKey) {
+                    currentDowntimeSort.dir = currentDowntimeSort.dir === 'asc' ? 'desc' : 'asc';
+                } else {
+                    currentDowntimeSort.key = sortKey;
+                    currentDowntimeSort.dir = (sortKey === 'start' || sortKey === 'end' || sortKey === 'hours') ? 'desc' : 'asc';
+                }
+                renderDowntimeTable(window.currentActiveDowntimeList || [], true);
+            });
+        });
     }
 }
 
@@ -548,6 +568,9 @@ function calculateOperationRate() {
                                 monthlyDownHours[m] += downHours;
                             
                                 const dtInfo = {
+                                    site: eq.site,
+                                    equip: eq.equip,
+                                    logId: logItem.id || logItem.logId || logItem.content,
                                     start: overlapStart,
                                     end: overlapEnd,
                                     equipName: displayName,
@@ -786,18 +809,105 @@ function exportOperationCsv() {
     URL.revokeObjectURL(url);
 }
 
-function renderDowntimeTable(list) {
+function updateDowntimeSortHeader() {
+    const table = document.getElementById('operation-downtime-table');
+    if (!table) return;
+    table.querySelectorAll('thead th.sortable-th').forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        if (th.dataset.sortKey === currentDowntimeSort.key) {
+            th.classList.add(currentDowntimeSort.dir === 'asc' ? 'sort-asc' : 'sort-desc');
+        }
+    });
+}
+
+function renderDowntimeTable(list, isSortChange = false) {
     const tbody = document.getElementById('operation-downtime-tbody');
     if (!tbody) return;
+
+    if (!isSortChange) {
+        window.currentActiveDowntimeList = list || [];
+    }
+    
+    const activeList = window.currentActiveDowntimeList ? [...window.currentActiveDowntimeList] : [];
     
     tbody.innerHTML = '';
-    if (list.length === 0) {
+    if (activeList.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="empty-msg">해당 기간에 기록된 다운타임 내역이 없습니다.</td></tr>';
+        updateDowntimeSortHeader();
         return;
     }
     
-    list.sort((a, b) => b.start - a.start);
-    list.forEach(item => {
+    const key = currentDowntimeSort.key;
+    const dir = currentDowntimeSort.dir === 'asc' ? 1 : -1;
+
+    const getDtParts = (item) => {
+        let dt1 = item.detailType || '-';
+        let dt2 = item.detailType2 || '-';
+        if (dt1.includes(' > ')) {
+            const parts = dt1.split(' > ');
+            dt1 = parts[0].trim(); dt2 = parts[1].trim();
+        } else if (dt2.includes(' > ')) {
+            const parts = dt2.split(' > ');
+            dt1 = parts[0].trim(); dt2 = parts[1].trim();
+        }
+        return { dt1, dt2 };
+    };
+
+    const getTimestamp = (val) => {
+        if (!val) return 0;
+        if (val instanceof Date) return val.getTime();
+        const t = new Date(val).getTime();
+        return isNaN(t) ? 0 : t;
+    };
+
+    activeList.sort((a, b) => {
+        let valA, valB;
+        if (key === 'start') {
+            valA = getTimestamp(a.start);
+            valB = getTimestamp(b.start);
+        } else if (key === 'end') {
+            valA = getTimestamp(a.end);
+            valB = getTimestamp(b.end);
+        } else if (key === 'equipName') {
+            valA = (a.equipName || '') + (a.subText || '');
+            valB = (b.equipName || '') + (b.subText || '');
+        } else if (key === 'type') {
+            valA = a.type || '';
+            valB = b.type || '';
+        } else if (key === 'dt1') {
+            valA = getDtParts(a).dt1;
+            valB = getDtParts(b).dt1;
+        } else if (key === 'dt2') {
+            valA = getDtParts(a).dt2;
+            valB = getDtParts(b).dt2;
+        } else if (key === 'content') {
+            let cA = a.content;
+            if (typeof cA === 'string' && cA.startsWith('{')) {
+                try { const p = JSON.parse(cA); cA = p.situation || p.symptom || '내용'; } catch(e) {}
+            }
+            let cB = b.content;
+            if (typeof cB === 'string' && cB.startsWith('{')) {
+                try { const p = JSON.parse(cB); cB = p.situation || p.symptom || '내용'; } catch(e) {}
+            }
+            valA = typeof cA === 'string' ? cA : '';
+            valB = typeof cB === 'string' ? cB : '';
+        } else if (key === 'hours') {
+            valA = a.hours || 0;
+            valB = b.hours || 0;
+        } else {
+            valA = getTimestamp(a.start);
+            valB = getTimestamp(b.start);
+        }
+
+        if (typeof valA === 'string') {
+            return valA.localeCompare(valB, 'ko-KR') * dir;
+        }
+        return (valA - valB) * dir;
+    });
+
+    updateDowntimeSortHeader();
+
+    activeList.forEach(item => {
         let contentDisplay = item.content;
         if(typeof contentDisplay === 'string' && contentDisplay.startsWith('{')) {
             try { const p = JSON.parse(contentDisplay); contentDisplay = p.situation || p.symptom || '내용'; } catch(e) {}
@@ -833,8 +943,10 @@ function renderDowntimeTable(list) {
         }
         
         const formatDateHtml = (dObj) => {
-            const dateStr = dObj.toLocaleDateString('ko-KR');
-            const timeStr = dObj.toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' });
+            const d = (dObj instanceof Date) ? dObj : new Date(dObj);
+            if (isNaN(d.getTime())) return '<div>-</div>';
+            const dateStr = d.toLocaleDateString('ko-KR');
+            const timeStr = d.toLocaleTimeString('en-GB', { hour12: false, hour: '2-digit', minute: '2-digit' });
             return `<div>${dateStr}</div><div style="font-size: 11px; color: #8b949e; margin-top: 2px;">${timeStr}</div>`;
         };
         
@@ -860,6 +972,20 @@ function renderDowntimeTable(list) {
         const hoursCell = tr.querySelector('.downtime-hours');
         hoursCell.style.color = hourColor;
         hoursCell.textContent = `${item.hours.toFixed(1)} h`;
+
+        // [추가] 행 클릭 시 해당 작업의 상세 정보 팝업 모달 오픈
+        tr.style.cursor = 'pointer';
+        tr.addEventListener('click', () => {
+            if (item.site && item.equip) {
+                const targetLogId = item.logId || item.content;
+                if (typeof window.openEventDetailModal === 'function') {
+                    window.openEventDetailModal(item.site, item.equip, targetLogId, true);
+                } else if (typeof openEventDetailModal === 'function') {
+                    openEventDetailModal(item.site, item.equip, targetLogId, true);
+                }
+            }
+        });
+
         tbody.appendChild(tr);
     });
 }
