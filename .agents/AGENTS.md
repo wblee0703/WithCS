@@ -44,3 +44,7 @@
 ## 9. 모바일 제안박스/드롭다운 스크롤 시 자동 선택 방지 (Prevent Auto-Selection on Mobile Scroll)
 - 모바일 디바이스에서 드롭다운 또는 자동완성 제안박스를 터치 스크롤할 때, 첫 터치 지점의 아이템이 바로 선택(클릭)되어 닫히는 현상을 원천 방지해야 합니다.
 - 스크롤 가능성이 있는 리스트 아이템의 선택 이벤트에 단순 `pointerdown`이나 `touchstart`를 사용하지 말고, `touchstart`, `touchmove`, `touchend` 및 `mousedown` 이벤트를 정교하게 제어하십시오. 사용자가 터치 후 화면을 움직여 스크롤하는 상황(터치 이동 거리 6px 초과)에서는 아이템 선택을 건너뛰고, 제자리 탭(Tap) 또는 마우스 클릭 시에만 선택 동작이 정상 처리되도록 구현해야 합니다. (예: `common.js` 내 `renderLogPartOptions`의 `log-select-item` 터치 무브 감지 기법 참고)
+
+## 10. SORT 페이지 모델명 약어 표기 및 물품 코드 표기 규칙 (Always Use Abbr & Code Name on SORT)
+- SORT(검색 및 정렬) 화면의 모델명 필터 드롭다운 제안박스(`sort-model-select`) 및 결과 목록의 "모델명" 컬럼에는 장비 모델명 대신 항상 장비 약어(Abbreviation)만 단독으로 매칭 및 표출해야 합니다.
+- 또한 결과 목록의 "물품(내용)" 컬럼 등에서 물품을 표시할 때는 물품 한글/영문 이름(Part Name) 대신 마스터 데이터에 등록된 코드명(Code Name)으로 매칭하여 노출하도록 설계해야 합니다.

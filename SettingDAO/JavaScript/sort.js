@@ -1041,6 +1041,7 @@ function updateSortModelSelect(sites, buildings, data) {
     }
 
     const isBuildingAll = isAllSelected('sort-building-select', buildings);
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
     let availableModels = new Set();
 
     sites.forEach(site => {
@@ -1055,15 +1056,17 @@ function updateSortModelSelect(sites, buildings, data) {
             const parts = equip.split('::');
             const equipName = parts[0];
             if (equipName && !equipName.startsWith('기타(ETC)')) {
-                availableModels.add(equipName);
+                const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
+                const modelAbbr = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
+                availableModels.add(modelAbbr);
             }
         });
     });
 
-    Array.from(availableModels).sort().forEach(modelName => {
+    Array.from(availableModels).sort().forEach(modelAbbr => {
         const opt = document.createElement('option');
-        opt.value = modelName;
-        opt.textContent = modelName;
+        opt.value = modelAbbr;
+        opt.textContent = modelAbbr;
         modelSelect.appendChild(opt);
     });
 
@@ -1108,11 +1111,12 @@ function updateSortEquipSelect(sites, buildings, models, data) {
 
             const parts = equip.split('::');
             const equipName = parts[0];
-            if (!isModelAll && models && models.length > 0 && !models.includes(equipName)) return;
+            const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
+            const modelAbbr = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
+            if (!isModelAll && models && models.length > 0 && !models.includes(modelAbbr)) return;
 
             const serialNo = parts.length > 1 ? parts[1] : '';
-            const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
-            const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
+            const displayName = modelAbbr;
 
             const custEquipName = setup.custEquipName || '';
             let displayText = displayName;
@@ -1432,12 +1436,13 @@ function performSortSearch() {
 
                 const parts = equip.split('::');
                 const equipName = parts[0];
-                if (!isModelAll && modelFilters.length === 0) return;
-                if (!isModelAll && !modelFilters.includes(equipName)) return;
-
-                const serialNo = parts.length > 1 ? parts[1] : '';
                 const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
                 const displayEquipName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
+
+                if (!isModelAll && modelFilters.length === 0) return;
+                if (!isModelAll && !modelFilters.includes(displayEquipName)) return;
+
+                const serialNo = parts.length > 1 ? parts[1] : '';
 
                 const key = `details_${site}_${equip}`;
                 const detailData = JSON.parse(localStorage.getItem(key)) || {};
@@ -1496,6 +1501,37 @@ function performSortSearch() {
                         const rawItemsList = window.splitSafetyContent(pureContent);
                         let matchedRawItems = [];
                         let matchedItemDetailType = '';
+
+                        const mapPartToCode = (rawItem) => {
+                            if (!rawItem) return '';
+                            let costPrefix = '';
+                            let rest = rawItem.trim();
+                            const costMatch = rest.match(/^\[(.*?)\]\s*(.*)$/);
+                            if (costMatch) {
+                                costPrefix = `[${costMatch[1]}] `;
+                                rest = costMatch[2].trim();
+                            }
+
+                            let prefix = '';
+                            let purePart = rest;
+                            if (rest.includes(' - ')) {
+                                const parts = rest.split(' - ');
+                                prefix = parts[0].trim() + ' - ';
+                                purePart = parts[1].trim();
+                            }
+
+                            let spec = '';
+                            const specMatch = purePart.match(/ \[(.*?)\]$/) || purePart.match(/\[(.*?)\]$/);
+                            if (specMatch) {
+                                spec = specMatch[0];
+                                purePart = purePart.replace(specMatch[0], '').trim();
+                            }
+
+                            const matchItem = adminItems.find(ai => ai.part === purePart || ai.code === purePart);
+                            const displayPart = (matchItem && matchItem.code) ? matchItem.code : purePart;
+
+                            return `${costPrefix}${prefix}${displayPart}${spec}`;
+                        };
 
                         const rowSearchTargetBase = `${workerText} ${displayEquipName} ${serialNo} ${custEquipName} ${siteGroup} ${site} ${equipBuilding} ${itemType} ${dt1} ${dt2} ${itemObj.memo || ''}`.toLowerCase();
 
@@ -1574,7 +1610,7 @@ function performSortSearch() {
                             }
 
                             if (isItemMatch) {
-                                matchedRawItems.push(rawItem);
+                                matchedRawItems.push(mapPartToCode(rawItem));
                                 if (!matchedItemDetailType) matchedItemDetailType = itemDt;
                             }
                         }
@@ -1597,7 +1633,7 @@ function performSortSearch() {
                             building: equipBuilding,
                             equipRaw: equip,
                             equipName: displayEquipName,
-                            modelName: equipName,
+                            modelName: displayEquipName,
                             serial: serialNo,
                             custName: custEquipName,
                             type: itemType,
