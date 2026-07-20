@@ -1509,7 +1509,26 @@ function buildDetailDropdown(item, site, equip) {
                             }
                         }
 
-                        div.addEventListener('pointerdown', (e) => {
+                        let startY = 0;
+                        let startX = 0;
+                        let isMoving = false;
+
+                        div.addEventListener('touchstart', (e) => {
+                            window.lastTouchTime = Date.now();
+                            startY = e.touches[0].clientY;
+                            startX = e.touches[0].clientX;
+                            isMoving = false;
+                        }, { passive: true });
+
+                        div.addEventListener('touchmove', (e) => {
+                            const moveY = e.touches[0].clientY;
+                            const moveX = e.touches[0].clientX;
+                            if (Math.abs(moveY - startY) > 6 || Math.abs(moveX - startX) > 6) {
+                                isMoving = true;
+                            }
+                        }, { passive: true });
+
+                        const handleSelect = (e) => {
                             if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
                             e.preventDefault();
                             e.stopPropagation();
@@ -1536,6 +1555,16 @@ function buildDetailDropdown(item, site, equip) {
                                     window.renderLogPartOptions('detail-edit-part-wrapper', 'detail-edit-part-trigger', 'detail-edit-part-list', 'detail-edit-part-search', partContentStr);
                                 }
                             }
+                        };
+
+                        div.addEventListener('touchend', (e) => {
+                            if (isMoving) return;
+                            handleSelect(e);
+                        });
+
+                        div.addEventListener('mousedown', (e) => {
+                            if (window.lastTouchTime && Date.now() - window.lastTouchTime < 600) return;
+                            handleSelect(e);
                         });
                         list.appendChild(div);
                     }
@@ -4219,8 +4248,28 @@ function updateRegisterEquipSelect(site) {
                         const contentDiv = li.querySelector('.suggestion-item-content') || li;
                         contentDiv.innerHTML = `<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${displayValueHtml}</span>`;
 
-                        li.addEventListener('pointerdown', (e) => {
+                        let startY = 0;
+                        let startX = 0;
+                        let isMoving = false;
+
+                        li.addEventListener('touchstart', (e) => {
+                            window.lastTouchTime = Date.now();
+                            startY = e.touches[0].clientY;
+                            startX = e.touches[0].clientX;
+                            isMoving = false;
+                        }, { passive: true });
+
+                        li.addEventListener('touchmove', (e) => {
+                            const moveY = e.touches[0].clientY;
+                            const moveX = e.touches[0].clientX;
+                            if (Math.abs(moveY - startY) > 6 || Math.abs(moveX - startX) > 6) {
+                                isMoving = true;
+                            }
+                        }, { passive: true });
+
+                        const handleSelect = (e) => {
                             e.preventDefault();
+                            e.stopPropagation();
                             equipSelect.value = equip;
 
                             let displayValue = name;
@@ -4238,6 +4287,16 @@ function updateRegisterEquipSelect(site) {
                             if (equipDropdown) equipDropdown.classList.remove('show');
                             if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
                             if (typeof window.updateRegisterInputStates === 'function') window.updateRegisterInputStates();
+                        };
+
+                        li.addEventListener('touchend', (e) => {
+                            if (isMoving) return;
+                            handleSelect(e);
+                        });
+
+                        li.addEventListener('mousedown', (e) => {
+                            if (window.lastTouchTime && Date.now() - window.lastTouchTime < 600) return;
+                            handleSelect(e);
                         });
                         equipSuggestionList.appendChild(li);
                     }
@@ -4793,7 +4852,26 @@ window.updateRegisterContentOptions = function () {
                             }
                         }
 
-                        div.addEventListener('pointerdown', (e) => {
+                        let startY = 0;
+                        let startX = 0;
+                        let isMoving = false;
+
+                        div.addEventListener('touchstart', (e) => {
+                            window.lastTouchTime = Date.now();
+                            startY = e.touches[0].clientY;
+                            startX = e.touches[0].clientX;
+                            isMoving = false;
+                        }, { passive: true });
+
+                        div.addEventListener('touchmove', (e) => {
+                            const moveY = e.touches[0].clientY;
+                            const moveX = e.touches[0].clientX;
+                            if (Math.abs(moveY - startY) > 6 || Math.abs(moveX - startX) > 6) {
+                                isMoving = true;
+                            }
+                        }, { passive: true });
+
+                        const handleSelect = (e) => {
                             if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option' || e.target.tagName.toLowerCase() === 'button') return;
                             e.preventDefault();
                             e.stopPropagation();
@@ -4816,6 +4894,16 @@ window.updateRegisterContentOptions = function () {
                                 // [수정] 작업 등록 시에는 하위 세부 내용 물품 선택창을 원천 비활성화 (항상 숨김)
                                 pWrapper.style.display = 'none';
                             }
+                        };
+
+                        div.addEventListener('touchend', (e) => {
+                            if (isMoving) return;
+                            handleSelect(e);
+                        });
+
+                        div.addEventListener('mousedown', (e) => {
+                            if (window.lastTouchTime && Date.now() - window.lastTouchTime < 600) return;
+                            handleSelect(e);
                         });
 
                         list.appendChild(div);

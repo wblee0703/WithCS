@@ -40,3 +40,7 @@
 ## 8. 고객대응 > 파티클 필터 교체 내용 고정 규칙 (코드 수정시 항상고려)
 - 고객대응 대분류 하위의 "파티클 필터 교체" 관련 세부 구분 작업은 완료 및 수정 시 내용 텍스트가 임의 수정되지 않도록 항상 "[유상] Particle Filter" 로 고정 노출되고 수정 불가능(Disabled/ReadOnly)해야 합니다.
 - 또한 이 건에 연관된 모든 데이터베이스(LogItem, MaintItem)의 기존 내용들 역시 "[유상] Particle Filter" 및 비용처리 itemCost = "유상" 으로 보정 정합성이 유지되게 해야 합니다.
+
+## 9. 모바일 제안박스/드롭다운 스크롤 시 자동 선택 방지 (Prevent Auto-Selection on Mobile Scroll)
+- 모바일 디바이스에서 드롭다운 또는 자동완성 제안박스를 터치 스크롤할 때, 첫 터치 지점의 아이템이 바로 선택(클릭)되어 닫히는 현상을 원천 방지해야 합니다.
+- 스크롤 가능성이 있는 리스트 아이템의 선택 이벤트에 단순 `pointerdown`이나 `touchstart`를 사용하지 말고, `touchstart`, `touchmove`, `touchend` 및 `mousedown` 이벤트를 정교하게 제어하십시오. 사용자가 터치 후 화면을 움직여 스크롤하는 상황(터치 이동 거리 6px 초과)에서는 아이템 선택을 건너뛰고, 제자리 탭(Tap) 또는 마우스 클릭 시에만 선택 동작이 정상 처리되도록 구현해야 합니다. (예: `common.js` 내 `renderLogPartOptions`의 `log-select-item` 터치 무브 감지 기법 참고)

@@ -889,7 +889,26 @@ function setupSetupLogRegPartDropdown(modalContext, site, equip, presetParts = '
                 </select>
             `;
 
-            li.addEventListener('pointerdown', (e) => {
+            let startY = 0;
+            let startX = 0;
+            let isMoving = false;
+
+            li.addEventListener('touchstart', (e) => {
+                window.lastTouchTime = Date.now();
+                startY = e.touches[0].clientY;
+                startX = e.touches[0].clientX;
+                isMoving = false;
+            }, { passive: true });
+
+            li.addEventListener('touchmove', (e) => {
+                const moveY = e.touches[0].clientY;
+                const moveX = e.touches[0].clientX;
+                if (Math.abs(moveY - startY) > 6 || Math.abs(moveX - startX) > 6) {
+                    isMoving = true;
+                }
+            }, { passive: true });
+
+            const handleSelect = (e) => {
                 if(e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION') return;
                 e.preventDefault();
                 e.stopPropagation();
@@ -901,6 +920,16 @@ function setupSetupLogRegPartDropdown(modalContext, site, equip, presetParts = '
                 }
                 renderDisplayBox();
                 renderList(search.value);
+            };
+
+            li.addEventListener('touchend', (e) => {
+                if (isMoving) return;
+                handleSelect(e);
+            });
+
+            li.addEventListener('mousedown', (e) => {
+                if (window.lastTouchTime && Date.now() - window.lastTouchTime < 600) return;
+                handleSelect(e);
             });
 
             li.querySelector('select').addEventListener('change', (e) => {
