@@ -1720,6 +1720,7 @@ window.updateLogAddWork = function (logId, newWorkContent) {
 function getSubCategories(type) {
     const equipKey = currentPath.equip;
     const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
+    const commonKey = `COMMON::${type}`;
     const key = `${equipKey}::${type}`;
     const defaultSubCategories = {
         '정기': ['PM 점검'],
@@ -1729,7 +1730,7 @@ function getSubCategories(type) {
         '온라인점검': ['온라인점검']
     };
 
-    let subCategories = catData[key];
+    let subCategories = (catData[commonKey] && catData[commonKey].length > 0) ? catData[commonKey] : catData[key];
     if (!subCategories || subCategories.length === 0) {
         subCategories = defaultSubCategories[type] || [];
     }
@@ -1739,6 +1740,7 @@ function getSubCategories(type) {
 // [추가] 세부구분 2 목록 가져오기 헬퍼 함수 (초기값 연동)
 function getSubCategories2(equipKey, type, detailType) {
     const catData = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
+    const commonKey = `COMMON::${type}::${detailType}`;
     const key = `${equipKey}::${type}::${detailType}`;
     const defaultSubCategories2 = {
         'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
@@ -1747,7 +1749,7 @@ function getSubCategories2(equipKey, type, detailType) {
         '기타': ['배수 펌프 이슈', '구동 이상']
     };
 
-    let subCategories2 = catData[key];
+    let subCategories2 = (catData[commonKey] && catData[commonKey].length > 0) ? catData[commonKey] : catData[key];
     if (!subCategories2 || subCategories2.length === 0) {
         if (type === '비정기' && defaultSubCategories2[detailType]) {
             subCategories2 = [...defaultSubCategories2[detailType]];

@@ -2566,6 +2566,7 @@ async function handleItemDetailDelete() {
    7. 점검 구분 관리 (Check Type Management)
    ========================================================================== */
 function setupCheckTypeMgmt() {
+    currentCheckTypeEquipKey = 'COMMON';
     loadCheckTypeCategories();
     loadCheckTypeCategories2();
     loadCheckTypeItems();
@@ -2614,10 +2615,7 @@ function setupCheckTypeMgmt() {
     const categoryItems = document.querySelectorAll('#check-type-category-list li');
     categoryItems.forEach(li => {
         li.addEventListener('click', () => {
-            if (!currentCheckTypeEquipKey) {
-                alert('대상 장비를 먼저 선택해주세요.');
-                return;
-            }
+            currentCheckTypeEquipKey = 'COMMON';
 
             categoryItems.forEach(item => item.classList.remove('active'));
             li.classList.add('active');
@@ -2668,7 +2666,7 @@ function setupCheckTypeMgmt() {
 
                 document.getElementById('check-type-detail-placeholder').style.display = 'flex';
                 document.getElementById('check-type-detail-container').style.display = 'none';
-                document.getElementById('check-type-detail-desc').textContent = '장비, 점검 구분, 분류를 순서대로 선택해주세요.';
+                document.getElementById('check-type-detail-desc').textContent = '점검 구분과 분류를 순서대로 선택해주세요.';
                 scrollToAdminDetail('check-type-subcategory-list'); // [추가] 모바일 스크롤 이동
 
                 // [개선] 세부구분 상태 자동 복원
@@ -2689,8 +2687,9 @@ function setupCheckTypeMgmt() {
 
     if (btnAddSub && inputSub) {
         btnAddSub.addEventListener('click', async () => {
-            if (!currentCheckTypeEquipKey || !currentCheckTypeCategory) {
-                alert('장비와 점검 구분을 먼저 선택해주세요.');
+            currentCheckTypeEquipKey = 'COMMON';
+            if (!currentCheckTypeCategory) {
+                alert('점검 구분을 먼저 선택해주세요.');
                 return;
             }
             const val = inputSub.value.trim();

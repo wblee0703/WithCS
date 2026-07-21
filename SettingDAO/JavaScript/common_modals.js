@@ -675,8 +675,15 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     if (isCompleted) {
         completeBtn.style.display = 'none';
         if (cancelBtn) {
-            if (item.detailType === '일정변경') cancelBtn.style.display = 'none';
-            else cancelBtn.style.display = 'block';
+            const currentPath = window.location.pathname.toLowerCase();
+            const currentHref = window.location.href.toLowerCase();
+            const isOpOrSortPage = currentPath.includes('operation') || currentPath.includes('sort') || currentHref.includes('/operation') || currentHref.includes('/sort');
+
+            if (isOpOrSortPage || item.detailType === '일정변경') {
+                cancelBtn.style.display = 'none';
+            } else {
+                cancelBtn.style.display = 'block';
+            }
         }
         typeEl.textContent = item.type || '정기';
         detailTypeEl.textContent = displayDetailType;
@@ -721,6 +728,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             
             const equipKey = equip;
             const catData2 = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
+            const commonKey2 = `COMMON::${selectedType}::${selectedDetailType}`;
             const key2 = `${equipKey}::${selectedType}::${selectedDetailType}`;
             const defaultSubCategories2 = {
                 'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
@@ -728,7 +736,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
                 'Data / Para 이상': ['REF_PORT', 'RT_흔들림', 'HPLC 압력변동', '에어 유량 변동', '미지피크_발생', '콤플렉스_피크', '프로그램_오류', '베이스 값 이상', 'Data 변동', 'Data 전송 이슈', '딜리버리펌프_이슈', '클리닝펌프_이슈', '용액 이슈'],
                 '기타': ['배수 펌프 이슈', '구동 이상']
             };
-            let subCategories2 = catData2[key2] || (defaultSubCategories2[selectedDetailType] || []);
+            let subCategories2 = (catData2[commonKey2] && catData2[commonKey2].length > 0) ? catData2[commonKey2] : (catData2[key2] || (defaultSubCategories2[selectedDetailType] || []));
             
             detailType2Select.innerHTML = subCategories2.map(s => `<option value="${s}">${s}</option>`).join('');
             buildDetailDropdown(item, site, equip);
@@ -738,6 +746,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             const selectedType = typeSelect.value;
             const equipKey = equip;
             const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
+            const commonKey = `COMMON::${selectedType}`;
             const key = `${equipKey}::${selectedType}`;
             const defaultSubCategories = {
                 '정기': ['PM 점검'],
@@ -746,7 +755,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
                 '용액제조': ['용액제조'],
                 '온라인점검': ['온라인점검']
             };
-            let subCategories = catData[key] && catData[key].length > 0 ? catData[key] : defaultSubCategories[selectedType] || [];
+            let subCategories = (catData[commonKey] && catData[commonKey].length > 0) ? catData[commonKey] : ((catData[key] && catData[key].length > 0) ? catData[key] : defaultSubCategories[selectedType] || []);
             
             detailTypeSelect.innerHTML = subCategories.map(s => `<option value="${s}">${s}</option>`).join('');
             
@@ -4368,6 +4377,7 @@ window.updateRegisterDetailTypeOptions = function () {
 
     const equipKey = rEquipSelect ? rEquipSelect.value : '';
     const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
+    const commonKey = `COMMON::${type}`;
     const key = `${equipKey}::${type}`;
     const defaultSubCategories = {
         '정기': ['PM 점검'],
@@ -4377,7 +4387,7 @@ window.updateRegisterDetailTypeOptions = function () {
         '온라인점검': ['온라인점검']
     };
 
-    let subCategories = catData[key] && catData[key].length > 0 ? catData[key] : defaultSubCategories[type] || [];
+    let subCategories = (catData[commonKey] && catData[commonKey].length > 0) ? catData[commonKey] : ((catData[key] && catData[key].length > 0) ? catData[key] : defaultSubCategories[type] || []);
 
     if (subCategories.length === 0) {
         rDetailTypeSelect.innerHTML = '<option value="">세부구분 없음 (직접입력)</option>';
@@ -4414,6 +4424,7 @@ window.updateRegisterDetailType2Options = function () {
     const equipKey = rEquipSelect ? rEquipSelect.value : '';
 
     const catData = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
+    const commonKey = `COMMON::${type}::${detailType}`;
     const key = `${equipKey}::${type}::${detailType}`;
     const defaultSubCategories2 = {
         'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
@@ -4422,7 +4433,7 @@ window.updateRegisterDetailType2Options = function () {
         '기타': ['배수 펌프 이슈', '구동 이상']
     };
 
-    let subCategories2 = catData[key] || [];
+    let subCategories2 = (catData[commonKey] && catData[commonKey].length > 0) ? catData[commonKey] : (catData[key] || []);
     if (subCategories2.length === 0 && type === '비정기' && defaultSubCategories2[detailType]) {
         subCategories2 = [...defaultSubCategories2[detailType]];
     }
