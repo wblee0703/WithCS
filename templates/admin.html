@@ -169,12 +169,13 @@
                     <!-- 우측: 장비 상세 정보 -->
                     <div class="admin-col-detail">
                         <div class="detail-header">
-                            <h4>장비 상세 정보</h4>
+                            <h4>장비 상세 정보 <span id="equip-new-label" style="color: #3fb950; font-size: 13px; margin-left: 8px; font-weight: bold; display: none;">[신규 장비 등록]</span></h4>
                             <p class="detail-desc">장비명(모델)과 시리얼 번호를 관리합니다.</p>
                         </div>
                         <div id="admin-equip-form" class="admin-form-container" style="display:none;">
-                            <div class="flex-row-gap-10">
-                                <div class="flex-08">
+                            <!-- 1행 & 2행 통합 (데스크탑에서는 1줄, 모바일에서는 wrap되어 2줄로 분리) -->
+                            <div class="flex-row-gap-10" id="equip-row-desktop-single">
+                                <div class="flex-row-item flex-08" id="equip-col-site">
                                     <label class="form-label-custom">사업장</label>
                                     <div class="autocomplete-wrapper">
                                         <input type="text" id="equip-info-site" class="input-dark full-width"
@@ -182,7 +183,7 @@
                                         <ul id="equip-site-suggestions" class="suggestion-list"></ul>
                                     </div>
                                 </div>
-                                <div class="flex-12">
+                                <div class="flex-row-item flex-12" id="equip-col-name">
                                     <label class="form-label-custom">장비명 (모델)</label>
                                     <div class="autocomplete-wrapper">
                                         <input type="text" id="equip-info-name"
@@ -191,26 +192,27 @@
                                         <ul id="equip-model-suggestions" class="suggestion-list"></ul>
                                     </div>
                                 </div>
-                                <div class="flex-12">
+                                <div class="flex-row-item flex-12" id="equip-col-serial">
                                     <label class="form-label-custom">Serial No.</label>
                                     <input type="text" id="equip-info-serial" class="input-dark full-width"
                                         placeholder="Serial Number">
                                 </div>
-                                <div class="flex-08">
+                                <div class="flex-row-item flex-08" id="equip-col-cust">
                                     <label class="form-label-custom">고객사 장비명</label>
                                     <input type="text" id="equip-info-cust-equip-name" class="input-dark full-width"
                                         placeholder="고객사 장비명">
                                 </div>
                             </div>
 
-                            <div class="flex-row-gap-10" style="margin-top: 10px;">
-                                <div class="flex-10">
+                            <!-- 3행: 프로젝트 번호, 장비 구분, 납품일 -->
+                            <div class="flex-row-gap-10">
+                                <div class="flex-row-item flex-10">
                                     <label class="form-label-custom">프로젝트 번호</label>
                                     <input type="text" id="equip-info-project-no" class="input-dark full-width"
                                         placeholder="프로젝트 번호"
                                         style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                 </div>
-                                <div class="flex-10">
+                                <div class="flex-row-item flex-10">
                                     <label class="form-label-custom">장비 구분</label>
                                     <select id="equip-info-status" class="input-dark full-width"
                                         style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
@@ -221,19 +223,23 @@
                                         <option value="유휴 장비">유휴 장비</option>
                                     </select>
                                 </div>
-                                <div class="flex-10">
+                                <div class="flex-row-item flex-10">
                                     <label class="form-label-custom">납품일</label>
                                     <input type="date" id="equip-info-delivery-date"
                                         class="input-dark full-width custom-date-icon"
                                         style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                 </div>
-                                <div class="flex-10">
+                            </div>
+
+                            <!-- 4행: 워런티 시작일, 워런티 기간(개월) -->
+                            <div class="flex-row-gap-10">
+                                <div class="flex-row-item flex-10">
                                     <label class="form-label-custom">워런티 시작일</label>
                                     <input type="date" id="equip-info-warranty-start"
                                         class="input-dark full-width custom-date-icon"
                                         style="height: 32px; padding: 4px 8px; box-sizing: border-box;">
                                 </div>
-                                <div class="flex-10">
+                                <div class="flex-row-item flex-10">
                                     <label class="form-label-custom">워런티 기간(개월)</label>
                                     <input type="number" id="equip-info-warranty-period" class="input-dark full-width"
                                         min="0" placeholder="개월 수 입력"

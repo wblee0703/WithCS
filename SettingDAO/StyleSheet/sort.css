@@ -9,19 +9,24 @@
 }
 
 .dashboard-sidebar {
-    width: 250px; /* [수정] 사이드바 초기 너비 통일 */
+    width: 250px;
+    /* [수정] 사이드바 초기 너비 통일 */
     display: flex;
     flex-direction: column;
     height: 100%;
-    gap: 15px; /* [추가] 일관된 UI를 위해 common.css 속성 반영 */
-    min-height: 0; /* [추가] 일관된 UI를 위해 common.css 속성 반영 */
-    flex-shrink: 0; /* [추가] 일관된 UI를 위해 common.css 속성 반영 */
+    gap: 15px;
+    /* [추가] 일관된 UI를 위해 common.css 속성 반영 */
+    min-height: 0;
+    /* [추가] 일관된 UI를 위해 common.css 속성 반영 */
+    flex-shrink: 0;
+    /* [추가] 일관된 UI를 위해 common.css 속성 반영 */
 }
 
 .sidebar-group {
     flex: 1;
     overflow-y: auto;
-    overflow-x: visible; /* 제안박스(드롭다운)가 스크롤 영역에 잘리지 않도록 가시성 확보 */
+    overflow-x: visible;
+    /* 제안박스(드롭다운)가 스크롤 영역에 잘리지 않도록 가시성 확보 */
     /* [수정] common.css의 스타일이 누락되어 발생하는 렌더링 문제 해결 */
     background: #161b22;
     border-radius: 8px;
@@ -39,7 +44,7 @@
 .dashboard-sidebar .form-label-custom {
     display: block;
     color: #8b949e;
-    font-size: 12px;
+    font-size: 13px;
     margin-bottom: 5px;
     font-weight: bold;
 }
@@ -82,7 +87,8 @@
 #sort-period-inputs .input-dark,
 #sort-custom-input .input-dark {
     flex: 1;
-    min-width: 0; /* flex item이 줄어들 수 있도록 설정 */
+    min-width: 0;
+    /* flex item이 줄어들 수 있도록 설정 */
 }
 
 /* 검색 결과 리스트 아이템 스타일 */
@@ -106,10 +112,12 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    flex: 1; /* 남은 공간을 균등 분배하여 전체 너비 사용 */
+    flex: 1;
+    /* 남은 공간을 균등 분배하여 전체 너비 사용 */
     min-width: 60px;
     height: 100%;
-    position: relative; /* [추가] 라벨 대각선 배치를 위한 기준점 */
+    position: relative;
+    /* [추가] 라벨 대각선 배치를 위한 기준점 */
 }
 
 .sort-bar-group .bar-value {
@@ -132,13 +140,15 @@
 }
 
 .sort-bar-group .bar {
-    width: 60%; /* 그룹 너비의 비율 사용 */
-    max-width: 50px; /* 너무 뚱뚱해지지 않게 제한 */
+    width: 60%;
+    /* 그룹 너비의 비율 사용 */
+    max-width: 50px;
+    /* 너무 뚱뚱해지지 않게 제한 */
     background-color: #30363d;
     border-radius: 4px 4px 0 0;
     transition: height 0.5s ease;
     min-height: 1px;
-    border-top: 1px solid rgba(255,255,255,0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .sort-bar-group .bar-label {
@@ -185,8 +195,8 @@
     width: 100% !important;
     max-width: none !important;
     border-radius: 2px 2px 0 0 !important;
-    border-left: 1px solid rgba(0,0,0,0.2);
-    border-right: 1px solid rgba(0,0,0,0.2);
+    border-left: 1px solid rgba(0, 0, 0, 0.2);
+    border-right: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 .multi-bar-wrapper .bar-value {
@@ -201,7 +211,7 @@
     padding: 10px 10px 100px 10px;
     overflow-y: auto;
     border-right: 1px solid #30363d;
-    box-sizing: border-box; 
+    box-sizing: border-box;
     height: 100%;
 }
 
@@ -253,6 +263,7 @@
     overflow: visible;
     padding: 0;
 }
+
 /* === [추가] sort.js에서 분리된 스타일 클래스 === */
 
 /* 기간 필터 그룹 및 입력창 */
@@ -321,7 +332,8 @@
 
 .sort-dropdown {
     width: 100%;
-    min-width: 260px; /* 드롭다운 창 최소 너비 확보 */
+    min-width: 260px;
+    /* 드롭다운 창 최소 너비 확보 */
     display: none;
     position: absolute;
     top: 100%;
@@ -331,7 +343,7 @@
     background: #161b22;
     border: 1px solid #30363d;
     border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     box-sizing: border-box;
 }
 
@@ -350,15 +362,18 @@
 }
 
 .sort-check-icon {
-    flex: 0 0 16px; /* 비율 대신 고정 너비 할당 */
+    flex: 0 0 16px;
+    /* 비율 대신 고정 너비 할당 */
     text-align: center;
     font-weight: bold;
     color: #58a6ff;
 }
 
 .sort-item-text {
-    flex: 1; /* 남은 전체 너비 사용 */
-    min-width: 0; /* 말줄임표 처리를 위한 필수 속성 */
+    flex: 1;
+    /* 남은 전체 너비 사용 */
+    min-width: 0;
+    /* 말줄임표 처리를 위한 필수 속성 */
     padding-left: 8px;
     white-space: nowrap;
     overflow: hidden;
@@ -450,29 +465,35 @@
         height: auto;
         overflow: visible;
     }
+
     .dashboard-sidebar {
         width: 100% !important;
         height: auto;
     }
+
     .sidebar-group {
         overflow-y: visible;
     }
+
     #sidebar-resizer {
         display: none;
     }
+
     #section-sort .dashboard-main {
         height: auto;
         overflow: visible;
     }
+
     .sort-half-chart-wrapper {
         flex-direction: column !important;
-        height: auto !important; /* [추가] 모바일 가로 배치 해제 시 높이 자동 조절 */
+        height: auto !important;
+        /* [추가] 모바일 가로 배치 해제 시 높이 자동 조절 */
     }
 
-#sort-history-modal .modal-window,
-#sort-detail-modal .modal-window {
-    width: 95vw !important;
-}
+    #sort-history-modal .modal-window,
+    #sort-detail-modal .modal-window {
+        width: 95vw !important;
+    }
 }
 
 /* 제안박스(드롭다운) 여백 및 리스트 스타일 개선 */
@@ -481,7 +502,8 @@
     border: 1px solid #30363d;
     border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    z-index: 9999 !important; /* 제안박스가 다른 UI(막대그래프 등) 뒤에 깔리지 않도록 최상단 배치 */
+    z-index: 9999 !important;
+    /* 제안박스가 다른 UI(막대그래프 등) 뒤에 깔리지 않도록 최상단 배치 */
 }
 
 #section-sort .log-select-list {
@@ -492,8 +514,10 @@
     padding: 8px 10px !important;
     margin-bottom: 4px !important;
     font-size: 13px !important;
-    cursor: pointer !important; /* 마우스 오버 시 클릭 가능 상태 명확히 표시 */
-    pointer-events: auto !important; /* 클릭 이벤트 강제 활성화 (부모) */
+    cursor: pointer !important;
+    /* 마우스 오버 시 클릭 가능 상태 명확히 표시 */
+    pointer-events: auto !important;
+    /* 클릭 이벤트 강제 활성화 (부모) */
 }
 
 /* [추가] 제안박스 항목 클릭이 되지 않는 문제를 해결하기 위해 자식 요소까지 클릭 이벤트를 허용하도록 강제 */
@@ -523,15 +547,16 @@
     height: 400px !important;
     min-height: 400px !important;
     max-height: 400px !important;
-    flex: none !important; /* Flex 속성에 의해 높이가 찌그러지는 현상 완벽 방지 */
+    flex: none !important;
+    /* Flex 속성에 의해 높이가 찌그러지는 현상 완벽 방지 */
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
 }
 
 /* 데이터 영역(범례+그래프) 내부 스크롤 및 배치 확보 */
-.sort-half-chart > div:last-child,
-.sort-full-chart > div:last-child {
+.sort-half-chart>div:last-child,
+.sort-full-chart>div:last-child {
     display: flex;
     flex: 1;
     min-height: 0;
@@ -563,9 +588,11 @@
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 100px !important; /* Y축과 라벨 높이에 맞춰 X축 위치 조정 */
+    bottom: 100px !important;
+    /* Y축과 라벨 높이에 맞춰 X축 위치 조정 */
     height: 1px;
-    background-color: #30363d; /* Y축과 동일한 색상 */
+    background-color: #30363d;
+    /* Y축과 동일한 색상 */
 }
 
 /* [추가] 라벨 회전(대각선)으로 인한 하단 공간 확보 및 전체 차트 높이 보정 */
@@ -591,7 +618,8 @@
 
 .sort-half-chart-wrapper {
     display: flex;
-    flex-direction: column !important; /* 항상 1열 세로 배치 */
+    flex-direction: column !important;
+    /* 항상 1열 세로 배치 */
     gap: 20px;
     height: auto !important;
 }
@@ -604,6 +632,7 @@
 }
 
 @media (max-width: 950px) {
+
     /* 모바일에서 차트 영역 높이 확장 */
     .sort-half-chart,
     .sort-full-chart {
@@ -649,8 +678,8 @@
     }
 
     /* Y축 영역: 2행 1열 */
-    .chart-content-row > div[id$="-y-axis"],
-    .chart-content-row > div[id="sort-y-axis"] {
+    .chart-content-row>div[id$="-y-axis"],
+    .chart-content-row>div[id="sort-y-axis"] {
         grid-column: 1 !important;
         grid-row: 2 !important;
         margin-bottom: 100px !important;
@@ -658,8 +687,8 @@
     }
 
     /* 그래프 영역: 2행 2열 */
-    .chart-content-row > div[id$="-chart-container"],
-    .chart-content-row > div[id="sort-chart-container"] {
+    .chart-content-row>div[id$="-chart-container"],
+    .chart-content-row>div[id="sort-chart-container"] {
         grid-column: 2 !important;
         grid-row: 2 !important;
         height: 100% !important;
@@ -673,6 +702,7 @@
     #section-sort .dashboard-main {
         padding: 0 5px 0 5px !important;
     }
+
     #section-sort .card {
         margin-left: 0 !important;
         margin-right: 0 !important;
@@ -680,12 +710,15 @@
         border-left: none !important;
         border-right: none !important;
     }
+
     #sort-charts-body {
         padding: 10px 5px 10px 5px !important;
     }
+
     #sort-result-body {
         padding: 0 !important;
     }
+
     .sort-half-chart,
     .sort-full-chart {
         padding: 10px 5px 10px 5px !important;
@@ -693,9 +726,151 @@
         border-left: none !important;
         border-right: none !important;
     }
+
     .data-table-wrapper {
         padding-left: 0 !important;
         padding-right: 0 !important;
         border-radius: 0 !important;
+    }
+}
+
+/* [추가] 라벨과 입력 드롭다운 가로 1줄 배치 및 열맞춤 스타일 */
+.sort-filter-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    margin-bottom: 10px !important;
+    gap: 10px !important;
+    width: 100% !important;
+}
+
+.sort-filter-row .form-label-custom {
+    flex: 0 0 110px !important;
+    /* 모든 라벨의 너비를 110px로 고정하여 정렬선 유지 */
+    margin-bottom: 0 !important;
+    text-align: left !important;
+    white-space: nowrap !important;
+    line-height: 1.2 !important;
+}
+
+.sort-filter-row .input-dark,
+.sort-filter-row select,
+.sort-filter-row .log-select-wrapper,
+.sort-filter-row .log-select-wrapper input {
+    flex: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* 모바일 뷰포트 내 레이아웃 대응 */
+@media (max-width: 768px) {
+    .sort-filter-row {
+        gap: 6px !important;
+    }
+
+    .sort-filter-row .form-label-custom {
+        flex: 0 0 95px !important;
+        /* 모바일에서는 라벨 폭 소폭 조정 */
+        font-size: 13px !important;
+    }
+}
+
+/* [추가] 검색어 제안 박스가 라벨 영역부터 검색창 끝까지 전체 너비를 꽉 채우도록 설정 */
+.sort-filter-row {
+    position: relative !important;
+    /* absolute 기준점을 라벨을 포함한 Row 전체로 상향 조정 */
+}
+
+.sort-filter-row .log-select-wrapper {
+    position: static !important;
+    /* 기존 wrapper의 relative 포지션을 해제하여 상위 Row를 기준으로 삼게 함 */
+}
+
+#sort-keyword-dropdown {
+    width: 100% !important;
+    /* Row 가로 너비의 100%를 전부 다 씀 */
+    left: 0 !important;
+    /* Row의 맨 왼쪽(라벨 시작점)부터 정렬 */
+}
+
+/* [추가] 검색 결과 제목과 검색입력창 + CSV버튼을 동일 가로열에 배치 */
+.card:has(#sort-result-table) .card-header {
+    display: flex !important;
+    justify-content: flex-start !important; /* order와 margin-right: auto 조합을 위해 기본 좌측 정렬 지정 */
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 15px !important;
+}
+
+/* 제목 라벨 */
+.card:has(#sort-result-table) .card-header h3 {
+    order: 1 !important;
+    margin: 0 !important;
+}
+
+/* 검색 입력창 및 CSV 다운로드 버튼 */
+#sort-inner-search-container {
+    order: 2 !important;
+    margin-left: 15px !important; /* 제목 라벨과의 간격 확보 */
+    margin-right: auto !important; /* 접기 버튼을 가장 우측 끝으로 밀어냄 */
+    flex-shrink: 0 !important;
+}
+
+/* 접기/펼치기 버튼 */
+.card:has(#sort-result-table) .card-header .btn-collapse {
+    order: 3 !important;
+    float: none !important; /* 플로팅 해제 */
+    margin-left: 15px !important;
+}
+
+@media (max-width: 950px) {
+    /* 모바일에서도 동일한 가로 1열 배치를 유지하도록 강제 */
+    .card:has(#sort-result-table) .card-header {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
+        gap: 6px !important; /* 모바일이므로 갭을 소폭 좁힘 */
+        padding: 8px 10px !important; /* 패딩을 줄여 공간 확보 */
+    }
+    
+    /* 제목 라벨 */
+    .card:has(#sort-result-table) .card-header h3 {
+        font-size: 13px !important; /* 모바일이므로 텍스트 크기를 콤팩트하게 조절 */
+        white-space: nowrap !important;
+        order: 1 !important;
+    }
+
+    /* 검색창과 CSV 버튼의 가로 정렬 및 크기 콤팩트화 */
+    #sort-inner-search-container {
+        width: auto !important; /* 100% 폭 강제를 해제하여 flex-grow가 작동하게 함 */
+        flex: 1 !important; /* 가용한 여백을 다 채우되 넘치지 않게 함 */
+        min-width: 0 !important;
+        margin-left: 6px !important;
+        margin-right: auto !important; /* 접기 버튼을 우측 끝으로 밀기 위해 유지 */
+        order: 2 !important;
+        gap: 4px !important; /* 인풋창과 버튼 사이 갭 좁힘 */
+    }
+    
+    /* 결과 내 검색 인풋 텍스트 크기 및 패딩 축소 */
+    #sort-inner-search {
+        font-size: 11px !important;
+        padding: 4px 6px !important;
+        height: 26px !important;
+    }
+
+    /* CSV 다운로드 버튼 콤팩트화 */
+    #btn-sort-export-inner {
+        padding: 4px 6px !important;
+        font-size: 10px !important;
+        height: 26px !important;
+    }
+
+    /* 접기 버튼 */
+    .card:has(#sort-result-table) .card-header .btn-collapse {
+        order: 3 !important;
+        align-self: center !important;
+        margin: 0 0 0 6px !important;
+        font-size: 11px !important;
     }
 }

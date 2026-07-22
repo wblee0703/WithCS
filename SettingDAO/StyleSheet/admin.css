@@ -610,8 +610,8 @@ body.role-admin .model-actions-col,
 body.role-admin .subcat-controls,
 body.role-admin .check-item-col-action,
 body.role-admin .btn-edit-sm,
-body.role-admin .btn-del-sm,
-body.role-admin .btn-del,
+body.role-admin .admin-section .btn-del-sm,
+body.role-admin .admin-section .btn-del,
 body.role-admin #btn-admin-del-equip,
 body.role-admin #btn-add-building,
 body.role-admin #btn-add-item-equip,
@@ -620,6 +620,12 @@ body.role-admin #btn-load-check-type,
 body.role-admin #check-type-detail-container .form-section-divider {
     display: none !important;
 }
+
+/* 일반 관리자(admin) 계정에서도 장비 관리의 신규 등록 모드 버튼은 활성화되어 보이도록 예외 처리 */
+body.role-admin #section-equip-mgmt .admin-col-list:not(#admin-model-container) .list-footer {
+    display: flex !important;
+}
+
 
 body.role-admin .admin-form-container:not(#admin-equip-form) input,
 body.role-admin .admin-form-container:not(#admin-equip-form) select,
@@ -756,4 +762,30 @@ body.role-admin .tag-remove {
     .item-csv-import-btn {
         display: none !important;
     }
+
+    /* 모바일에서 장비 상세 정보 입력 필드들이 지정된 가로 배치 상태를 예쁘게 유지하도록 강제 */
+    #admin-equip-form .flex-row-gap-10 {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+    }
+    #admin-equip-form .flex-row-item {
+        flex: 1 !important;
+        width: auto !important;
+        min-width: 0 !important;
+    }
+
+    /* 1행 & 2행 통합 행에 한해 모바일에서 flex-wrap 허용하여 2줄로 분할 (각각 1:1 비율) */
+    #admin-equip-form #equip-row-desktop-single {
+        flex-wrap: wrap !important;
+    }
+    #admin-equip-form #equip-row-desktop-single .flex-row-item {
+        flex: none !important;
+        width: calc(50% - 4px) !important;
+    }
+}
+
+.error-border {
+    border: 1px solid #f85149 !important;
 }

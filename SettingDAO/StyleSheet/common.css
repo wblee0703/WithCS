@@ -1421,3 +1421,22 @@ body.role-admin .btn-list-setting {
     align-items: center;
     width: 100%;
 }
+
+.modal-close-btn {
+    background: none;
+    border: none;
+    color: #f85149;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: transform 0.2s, color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.modal-close-btn:hover {
+    color: #da3633;
+    transform: scale(1.2);
+}

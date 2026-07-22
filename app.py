@@ -1938,11 +1938,11 @@ def admin_crud():
     action = data.get('action')
     payload = data.get('payload')
     
-    # [추가] 일반 관리자(admin)는 마스터 데이터 수정 불가 (장비 신규 등록/수정 및 달력 확정 기능만 예외 허용)
+    # [추가] 일반 관리자(admin)는 마스터 데이터 수정 불가 (장비 관련 등록/수정/삭제 및 달력 확정 기능만 예외 허용)
     if role == 'admin':
-        if domain == 'equip' and action in ['CREATE', 'UPDATE']:
-            pass # 장비 신규 등록 및 수정은 허용
-        elif domain in ['site', 'equip', 'item']:
+        if domain == 'equip':
+            pass # 일반 관리자도 장비에 대한 모든 동작(등록/수정/삭제)은 전면 허용
+        elif domain in ['site', 'item']:
             return jsonify({"status": "fail", "message": "해당 데이터의 추가/삭제/수정은 최종 관리자(superadmin)만 가능합니다."}), 403
         if domain == 'setting' and data.get('payload', {}).get('key') != 'calendar_confirmations':
             return jsonify({"status": "fail", "message": "해당 설정의 변경은 최종 관리자(superadmin)만 가능합니다."}), 403
@@ -2046,26 +2046,69 @@ def admin_crud():
                     if not Equipment.query.filter_by(id=db_old_id).first():
                         db_old_id = temp_old_id
 
-                if db_old_id != db_new_id:
-                    # 외래 키 캐스케이드(ON UPDATE CASCADE) 수동 보강 패치
-                    # 자식 테이블들의 외래 키(equip_id)를 먼저 명시적으로 새 ID로 전이시킵니다.
-                    db.session.execute(text("UPDATE setup_info SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
-                    db.session.execute(text("UPDATE maint_item SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
-                    db.session.execute(text("UPDATE log_item SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
-                    db.session.execute(text("UPDATE setup_detail SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
-                    db.session.execute(text("UPDATE setup_log SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
-                    db.session.execute(text("UPDATE trouble_log SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
+                # [수정] 조회 전 캐시 상태에 의한 불일치 방지
+                db.session.expire_all()
+
+                # 수정 대상이 되는 기존 객체를 db_old_id로 먼저 확보
+                equip = Equipment.query.filter_by(id=db_old_id).first()
+                if not equip:
+                    equip = Equipment.query.filter_by(id=db_new_id).first()
+                if not equip:
+                    # [3차 방어 조회] 사업장명, 장비명, 시리얼 번호가 일치하는 객체 찾기 (포맷 불일치 극복)
+                    equip = Equipment.query.filter_by(site_name=old_site, name=e_name, serial=e_serial).first()
+                if not equip and e_name and e_serial:
+                    # [4차 방어 조회] 모델명과 시리얼번호 매칭
+                    equip = Equipment.query.filter_by(name=e_name, serial=e_serial).first()
                     
-                    # 부모 레코드 ID 수정
-                    db.session.execute(text("UPDATE equipment SET id=:n WHERE id=:o"), {'n':db_new_id, 'o':db_old_id})
-                    
-                equip = Equipment.query.filter_by(id=db_new_id).first()
                 if equip:
+                    # 찾은 장비 객체의 데이터베이스 상 실제 정식 ID를 db_old_id로 정정하여 유실 방지
+                    db_old_id = equip.id
+
+                    # 1. ID가 변경되었을 때의 처리 (CASCADE 및 식별자 갱신)
+                    if db_old_id != db_new_id:
+                        # [보안/외래키 예외 방어] 임시로 외래 키 제약 조건 검사 비활성화 (MySQL & SQLite 모두 대응)
+                        try:
+                            db.session.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
+                        except:
+                            try:
+                                db.session.execute(text("PRAGMA foreign_keys = OFF;"))
+                            except:
+                                pass
+
+                        # 하위 자식 테이블들의 외래 키를 RAW SQL로 새 ID로 전이 (외래키 무결성 제약 보완)
+                        db.session.execute(text("UPDATE maint_item SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
+                        db.session.execute(text("UPDATE log_item SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
+                        db.session.execute(text("UPDATE setup_detail SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
+                        db.session.execute(text("UPDATE setup_log SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
+                        db.session.execute(text("UPDATE trouble_log SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
+                        
+                        # 부모 레코드 ID를 ORM 수준에서 직접 갱신하여 세션 캐시 무결성 유지
+                        equip.id = db_new_id
+                        db.session.flush()
+
+                        # [보안/외래키 복구] 외래 키 제약 조건 검사 다시 활성화
+                        try:
+                            db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
+                        except:
+                            try:
+                                db.session.execute(text("PRAGMA foreign_keys = ON;"))
+                            except:
+                                pass
+
+                    # 2. 상세 스펙 정보 및 셋업 매핑 갱신
                     equip.special_note = payload.get('special_note', '')
+                    
+                    # 셋업 정보 조회 (ID가 바뀐 경우 기존 ID로 먼저 조회 시도)
                     setup = SetupInfo.query.filter_by(equip_id=db_new_id).first()
+                    if not setup and db_old_id != db_new_id:
+                        setup = SetupInfo.query.filter_by(equip_id=db_old_id).first()
+                        if setup:
+                            setup.equip_id = db_new_id
+                            
                     if not setup:
                         setup = SetupInfo(equip_id=db_new_id)
                         db.session.add(setup)
+                        
                     # 매핑
                     s_data = payload.get('setup', {})
                     setup.cust_equip_name = s_data.get('custEquipName', '')

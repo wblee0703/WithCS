@@ -1831,36 +1831,59 @@ function renderSortList(results) {
 
     // [추가] 결과 내 검색창 동적 생성
     if (countBadge) {
-        let headerContainer = countBadge.parentElement;
+        let headerContainer = countBadge.closest('.card-header') || countBadge.parentElement;
         if (headerContainer && !document.getElementById('sort-inner-search-container')) {
             let searchContainer = document.createElement('div');
             searchContainer.id = 'sort-inner-search-container';
             searchContainer.className = 'sort-inner-search-container';
+            searchContainer.style.display = 'flex';
+            searchContainer.style.alignItems = 'center';
+            searchContainer.style.gap = '8px';
 
             let input = document.createElement('input');
             input.type = 'text';
             input.id = 'sort-inner-search';
             input.className = 'input-dark';
             input.placeholder = '결과 내 텍스트 검색...';
+            input.style.flex = '1';
+            input.style.minWidth = '0';
 
             input.addEventListener('input', () => {
                 renderSortListTableOnly();
             });
 
+            // 결과 내 검색용 CSV 다운로드 버튼 동적 생성
+            let innerExportBtn = document.createElement('button');
+            innerExportBtn.type = 'button';
+            innerExportBtn.id = 'btn-sort-export-inner';
+            innerExportBtn.className = 'btn-green';
+            innerExportBtn.textContent = 'CSV 다운로드';
+            innerExportBtn.style.padding = '4px 8px';
+            innerExportBtn.style.fontSize = '11px';
+            innerExportBtn.style.margin = '0';
+            innerExportBtn.style.width = 'auto';
+            innerExportBtn.style.height = 'auto';
+            innerExportBtn.style.minWidth = '0';
+            innerExportBtn.style.whiteSpace = 'nowrap';
+            innerExportBtn.style.flexShrink = '0';
+
             searchContainer.appendChild(input);
+            searchContainer.appendChild(innerExportBtn);
             headerContainer.appendChild(searchContainer);
         }
     }
 
     // [수정] 권한에 따른 CSV 내보내기 버튼 제어 (관리자 이상만)
     const exportBtn = document.getElementById('btn-sort-export');
+    const innerExportBtn = document.getElementById('btn-sort-export-inner');
+    const userRole = sessionStorage.getItem('userRole');
+    const showExport = results.length > 0 && (userRole === 'admin' || userRole === 'superadmin');
+
     if (exportBtn) {
-        const userRole = sessionStorage.getItem('userRole');
-        if (results.length > 0 && (userRole === 'admin' || userRole === 'superadmin')) {
-            exportBtn.style.display = 'inline-block';
-        } else {
-            exportBtn.style.display = 'none';
-        }
+        exportBtn.style.display = showExport ? 'inline-block' : 'none';
+    }
+    if (innerExportBtn) {
+        innerExportBtn.style.display = showExport ? 'inline-block' : 'none';
     }
 
     // [추가] 메인 검색(Search) 시 내부 검색창 초기화
@@ -1899,7 +1922,9 @@ function renderSortListTableOnly() {
 
     // CSV 내보내기 대상 업데이트
     const exportBtn = document.getElementById('btn-sort-export');
+    const innerExportBtn = document.getElementById('btn-sort-export-inner');
     if (exportBtn) exportBtn.onclick = () => exportSortResultsToCSV(results);
+    if (innerExportBtn) innerExportBtn.onclick = () => exportSortResultsToCSV(results);
 
     if (!tbody) return;
     tbody.innerHTML = '';

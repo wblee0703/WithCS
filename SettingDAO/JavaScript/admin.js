@@ -934,6 +934,8 @@ function setupEquipMgmt() {
             resetEquipForm();
             document.getElementById('admin-equip-form').style.display = 'block';
             document.getElementById('admin-equip-placeholder').style.display = 'none';
+            const newLabel = document.getElementById('equip-new-label');
+            if (newLabel) newLabel.style.display = 'inline';
             const siteInput = document.getElementById('equip-info-site');
             siteInput.value = currentAdminEquipSite || '';
             siteInput.disabled = false; // 신규 등록 시에는 사업장 입력 가능
@@ -985,8 +987,13 @@ function setupEquipMgmt() {
                     listHeader.appendChild(controlsDiv);
                 }
 
+                // [수정] 이미 장비 CSV 내보내기/불러오기 버튼이 추가되어 있다면 중복 생성하지 않고 스킵
+                if (controlsDiv.querySelector('.equip-csv-export-btn') || controlsDiv.querySelector('.equip-csv-import-btn')) {
+                    return;
+                }
+
                 const btnCsvExport = document.createElement('button');
-                btnCsvExport.className = 'btn-settings';
+                btnCsvExport.className = 'btn-settings equip-csv-export-btn';
                 btnCsvExport.style.fontSize = '12px';
                 btnCsvExport.style.padding = '2px 6px';
                 btnCsvExport.style.borderRadius = '4px';
@@ -1000,7 +1007,7 @@ function setupEquipMgmt() {
                 const userRole = sessionStorage.getItem('userRole');
 
                 const btnCsvImport = document.createElement('button');
-                btnCsvImport.className = 'btn-settings';
+                btnCsvImport.className = 'btn-settings equip-csv-import-btn';
                 btnCsvImport.style.fontSize = '12px';
                 btnCsvImport.style.padding = '2px 6px';
                 btnCsvImport.style.borderRadius = '4px';
@@ -1020,6 +1027,7 @@ function setupEquipMgmt() {
                 controlsDiv.appendChild(btnCsvExport);
 
                 if (userRole === 'superadmin') {
+                    csvInput.className = 'equip-csv-file-input';
                     csvInput.addEventListener('change', handleEquipCsvImport);
                     btnCsvImport.addEventListener('click', () => csvInput.click());
                     controlsDiv.appendChild(btnCsvImport);
@@ -1543,6 +1551,8 @@ function renderAdminEquipList() {
             // 폼 로드
             document.getElementById('admin-equip-form').style.display = 'block';
             document.getElementById('admin-equip-placeholder').style.display = 'none';
+            const newLabel = document.getElementById('equip-new-label');
+            if (newLabel) newLabel.style.display = 'none';
             document.getElementById('equip-info-site').value = site;
             document.getElementById('equip-info-site').disabled = false; // [수정] 사업장 변경 허용
             document.getElementById('equip-info-name').value = displayName;
@@ -1595,6 +1605,8 @@ function resetEquipForm() {
     currentAdminEquipSiteContext = null;
     document.getElementById('admin-equip-form').style.display = 'none';
     document.getElementById('admin-equip-placeholder').style.display = 'flex';
+    const newLabel = document.getElementById('equip-new-label');
+    if (newLabel) newLabel.style.display = 'none';
     const nameInput = document.getElementById('equip-info-name');
     nameInput.value = '';
     delete nameInput.dataset.fullName;
@@ -1625,6 +1637,57 @@ async function handleEquipSave() {
     // [수정] 현재 필터값이 없어도(전체보기) 폼에 입력된 사업장 기준으로 저장 수행
     const originalSite = currentAdminEquipSiteContext;
     const targetSite = document.getElementById('equip-info-site').value.trim();
+
+    // [추가] 신규 등록 시 필수값 검증 (사업장, 장비명, 시리얼넘버, 프로젝트 번호, 장비 구분, 납품일, 건물명, 층)
+    const isNewEquip = !currentAdminEquipKey;
+    if (isNewEquip) {
+        const requiredFields = [
+            { id: 'equip-info-site', name: '사업장' },
+            { id: 'equip-info-name', name: '장비명' },
+            { id: 'equip-info-serial', name: '시리얼넘버' },
+            { id: 'equip-info-project-no', name: '프로젝트 번호' },
+            { id: 'equip-info-status', name: '장비 구분' },
+            { id: 'equip-info-delivery-date', name: '납품일' },
+            { id: 'equip-info-building', name: '건물명' },
+            { id: 'equip-info-floor', name: '층' }
+        ];
+
+        let hasError = false;
+        let firstErrorEl = null;
+
+        requiredFields.forEach(field => {
+            const el = document.getElementById(field.id);
+            if (el) {
+                const val = el.value.trim();
+                if (!val) {
+                    el.classList.add('error-border');
+                    hasError = true;
+                    if (!firstErrorEl) firstErrorEl = el;
+                    
+                    // 값 입력 시 빨간 테두리 즉시 해제
+                    if (!el.dataset.hasErrorListener) {
+                        el.dataset.hasErrorListener = 'true';
+                        const removeError = () => {
+                            if (el.value.trim()) {
+                                el.classList.remove('error-border');
+                            }
+                        };
+                        el.addEventListener('input', removeError);
+                        el.addEventListener('change', removeError);
+                    }
+                } else {
+                    el.classList.remove('error-border');
+                }
+            }
+        });
+
+        if (hasError) {
+            alert('신규 장비 등록 시 필수 항목들을 모두 입력해주세요.');
+            if (firstErrorEl) firstErrorEl.focus();
+            return false;
+        }
+    }
+
     if (!targetSite) { alert('사업장을 선택하거나 목록에서 장비를 선택해주세요.'); return false; }
     if (!storageData[targetSite]) { alert('존재하지 않는 사업장입니다. 사업장 관리에서 먼저 등록해주세요.'); return false; }
 
@@ -1843,10 +1906,13 @@ async function handleEquipSave() {
         await fetchServerData();
     }
     alert('저장되었습니다.');
+    
+    // [수정] 저장 완료 후 상세 정보 폼을 닫고 초기 미선택 상태로 화면 전환
+    localStorage.removeItem('lastAdminEquipKey');
+    resetEquipForm();
+    
     setAdminFormDirty(false, 'equip'); // [추가] 저장 완료 후 상태 리셋
     initialAdminFormData.equip = getEquipFormState(); // [추가] 스냅샷 갱신
-    currentAdminEquipKey = newKey; // 키 갱신
-    currentAdminEquipSiteContext = targetSite; // [추가] 사업장 컨텍스트 갱신
     renderAdminEquipList();
     return true;
 }
@@ -2067,6 +2133,11 @@ function setupItemMgmt() {
         const listHeader = itemListContainer.querySelector('.list-header > div:first-child');
         if (listHeader) {
             const userRole = sessionStorage.getItem('userRole');
+
+            // [수정] 이미 물품 CSV 내보내기/불러오기 버튼이 추가되어 있다면 중복 생성하지 않고 스킵
+            if (listHeader.querySelector('.item-csv-export-btn') || listHeader.querySelector('.item-csv-import-btn')) {
+                return;
+            }
 
             // 1. CSV 내보내기 버튼은 관리자(admin) 및 최종관리자(superadmin) 둘 다에게 노출
             if (userRole === 'superadmin' || userRole === 'admin') {
