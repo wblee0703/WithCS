@@ -1857,7 +1857,7 @@ function renderSortList(results) {
             innerExportBtn.type = 'button';
             innerExportBtn.id = 'btn-sort-export-inner';
             innerExportBtn.className = 'btn-green';
-            innerExportBtn.textContent = 'CSV 다운로드';
+            innerExportBtn.textContent = '작업이력 다운로드';
             innerExportBtn.style.padding = '4px 8px';
             innerExportBtn.style.fontSize = '11px';
             innerExportBtn.style.margin = '0';
@@ -2040,12 +2040,20 @@ function renderSortListTableOnly() {
             }
         };
 
+        // 작업자 포맷 헬퍼 함수
+        const getFormattedWorker = (workerStr) => {
+            if (!workerStr) return '-';
+            const workers = workerStr.split(/[,\s]+/).map(w => w.trim()).filter(Boolean);
+            if (workers.length === 0) return '-';
+            if (workers.length === 1) return workers[0];
+            return `${workers[0]}외 ${workers.length - 1}명`;
+        };
+
         const rowTpl = typeof getTemplateContent === 'function' ? getTemplateContent('sort-table-row-template') : null;
         if (rowTpl) {
             const clone = rowTpl.firstElementChild.cloneNode(true);
             clone.querySelector('.col-date').textContent = row.date;
             clone.querySelector('.col-site').innerHTML = siteDisplayHtml;
-            clone.querySelector('.col-model').textContent = row.modelName;
             clone.querySelector('.col-equip').innerHTML = equipDisplayHtml;
             clone.querySelector('.col-type').innerHTML = `<span class="badge ${badgeClass} sort-badge">${escapeHtml(row.type)}</span>`;
             clone.querySelector('.col-detail1').textContent = detail1;
@@ -2055,11 +2063,8 @@ function renderSortListTableOnly() {
             clone.querySelector('.col-cost').textContent = row.costType;
             const workerTd = clone.querySelector('.col-worker');
             workerTd.title = row.worker;
-            workerTd.textContent = row.worker || '-';
+            workerTd.textContent = getFormattedWorker(row.worker);
             clone.querySelector('.col-md').textContent = row.md;
-            const statusTd = clone.querySelector('.col-status');
-            statusTd.classList.add(statusClass);
-            statusTd.textContent = row.status;
 
             clone.onclick = handleSortRowClick;
             tbody.appendChild(clone);
@@ -2067,7 +2072,6 @@ function renderSortListTableOnly() {
             tr.innerHTML = `
                 <td>${row.date}</td>
                 <td>${siteDisplayHtml}</td>
-                <td>${escapeHtml(row.modelName)}</td>
                 <td class="text-left pl-10">${equipDisplayHtml}</td>
                 <td><span class="badge ${badgeClass} sort-badge">${escapeHtml(row.type)}</span></td>
                 <td class="text-left pl-10">${escapeHtml(detail1)}</td>
@@ -2075,9 +2079,8 @@ function renderSortListTableOnly() {
                 <td class="text-left pl-10">${escapeHtml(detail3)}</td>
                 <td class="text-left pl-10">${workContentDisplayHtml}</td>
                 <td>${escapeHtml(row.costType)}</td>
-                <td title="${escapeHtml(row.worker)}">${escapeHtml(row.worker) || '-'}</td>
+                <td title="${escapeHtml(row.worker)}">${escapeHtml(getFormattedWorker(row.worker))}</td>
                 <td>${escapeHtml(row.md)}</td>
-                <td class="sort-status-text ${statusClass}">${row.status}</td>
             `;
             tr.onclick = handleSortRowClick;
             tbody.appendChild(tr);
@@ -2609,7 +2612,7 @@ function exportSortResultsToCSV(results) {
 
     // 헤더 정의
     ws_data.push([
-        '날짜', '상태', '사업장 구분', '사업장', '건물명', '모델명', '장비명(약어)', 
+        '날짜', '사업장 구분', '사업장', '건물명', '모델명', 
         'Serial No', '고객사 장비명', '구분', '세부구분 1', '세부구분 2', '세부구분 3',
         '물품상세구분', '작업내용', '비용처리', '작업자', '공수', '상세메모'
     ]);
@@ -2690,12 +2693,10 @@ function exportSortResultsToCSV(results) {
             // AOA 데이터 빌드 (첫 번째 품목 셀에만 정보 제공하고 병합시킴)
             ws_data.push([
                 i === 0 ? row.date : '',
-                i === 0 ? row.status : '',
                 i === 0 ? row.siteGroup : '',
                 i === 0 ? row.site : '',
                 i === 0 ? row.building : '',
                 i === 0 ? row.modelName : '',
-                i === 0 ? row.equipName : '',
                 i === 0 ? row.serial : '',
                 i === 0 ? row.custName : '',
                 i === 0 ? row.type : '',
@@ -2714,12 +2715,12 @@ function exportSortResultsToCSV(results) {
         // 품목이 2개 이상일 때 병합 조건 생성
         if (itemCount > 1) {
             const endRow = startRow + itemCount - 1;
-            // 0~13열 병합 (날짜부터 물품상세구분까지)
-            for (let c = 0; c <= 13; c++) {
+            // 0~11열 병합 (날짜부터 물품상세구분까지)
+            for (let c = 0; c <= 11; c++) {
                 merges.push({ s: { r: startRow, c: c }, e: { r: endRow, c: c } });
             }
-            // 15~18열 병합 (비용처리부터 상세메모까지)
-            for (let c = 15; c <= 18; c++) {
+            // 13~16열 병합 (비용처리부터 상세메모까지)
+            for (let c = 13; c <= 16; c++) {
                 merges.push({ s: { r: startRow, c: c }, e: { r: endRow, c: c } });
             }
         }
@@ -2758,9 +2759,15 @@ function exportSortResultsToCSV(results) {
         }
     }
 
-    // 셀 너비 자동 세팅 (상세메모 S열(index 18)은 565px 고정, 나머지는 자동 맞춤)
+    // 셀 너비 자동 세팅 (작업내용 index 12는 285px, 작업자 index 14는 150px, 상세메모 index 16은 565px 고정, 나머지는 자동 맞춤)
     const colWidths = ws_data[0].map((_, colIdx) => {
-        if (colIdx === 18) {
+        if (colIdx === 12) {
+            return { wpx: 285 };
+        }
+        if (colIdx === 14) {
+            return { wpx: 150 };
+        }
+        if (colIdx === 16) {
             return { wpx: 565 };
         }
         let maxLen = 10;
@@ -2773,8 +2780,28 @@ function exportSortResultsToCSV(results) {
     });
     ws['!cols'] = colWidths;
 
-    XLSX.utils.book_append_sheet(wb, ws, '작업조회결과');
-    XLSX.writeFile(wb, `SORT_작업조회결과_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    // 첫 줄(헤더 행)에 자동 필터 지정 (A1부터 Q열 끝까지)
+    ws['!autofilter'] = { ref: `A1:Q${ws_data.length}` };
+
+    // 다운로드 형식 선택 분기 (확인: XLSX, 취소: CSV)
+    const isXlsx = confirm("다운로드받을 파일 형식을 선택하세요.\n\n[확인] : 엑셀 파일 (.xlsx)\n[취소] : 순수 텍스트 파일 (.csv)");
+
+    if (isXlsx) {
+        XLSX.utils.book_append_sheet(wb, ws, '작업조회결과');
+        XLSX.writeFile(wb, `SORT_작업조회결과_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } else {
+        // UTF-8 BOM(\ufeff)을 더해 엑셀 및 일반 텍스트 편집기에서 한글 깨짐을 방지하는 CSV 문자열 생성
+        const csvContent = XLSX.utils.sheet_to_csv(ws);
+        const blob = new Blob(["\ufeff" + csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `SORT_작업조회결과_${new Date().toISOString().slice(0, 10)}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 
     // [보안 감사 로그] Excel 내보내기 활동 로그 기록
     logActionToServer('EXPORT_CSV', '정렬/통계 작업조회결과 Excel 다운로드(셀 병합)');

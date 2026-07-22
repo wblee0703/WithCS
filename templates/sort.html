@@ -14,8 +14,7 @@
                 <h3>Sort Menu</h3>
                 <div style="display: flex; gap: 16px; align-items: center;">
                     <button id="btn-sort-export" class="btn-green"
-                        style="display: none; padding: 4px 8px; font-size: 11px; margin: 0; width: auto; height: auto; min-width: 0;">CSV
-                        다운로드</button>
+                        style="display: none; padding: 4px 8px; font-size: 11px; margin: 0; width: auto; height: auto; min-width: 0;">작업이력 다운로드</button>
                     <button type="button" id="btn-toggle-sort-menu" class="btn-gray"
                         style="display: none; padding: 4px 8px; font-size: 11px; margin: 0; width: auto; height: auto; min-width: 0;">접기</button>
                 </div>
@@ -308,23 +307,21 @@
                         <thead>
                             <tr>
                                 <th style="width: 90px;">날짜</th>
-                                <th style="width: 90px;">사업장</th>
-                                <th style="width: 100px;">모델명</th>
+                                <th style="width: 150px;">사업장</th>
                                 <th style="width: 150px;">장비명</th>
-                                <th style="width: 80px;">구분</th>
-                                <th style="width: 100px;">세부구분 1</th>
-                                <th style="width: 100px;">세부구분 2</th>
-                                <th style="width: 100px;">세부구분 3</th>
-                                <th style="width: 180px;">작업내용</th>
+                                <th style="width: 100px;">구분</th>
+                                <th style="width: 130px;">세부구분 1</th>
+                                <th style="width: 130px;">세부구분 2</th>
+                                <th style="width: 130px;">세부구분 3</th>
+                                <th style="width: auto;">작업내용</th>
                                 <th style="width: 80px;">비용처리</th>
-                                <th style="width: 200px;">작업자</th>
+                                <th style="width: 130px;">작업자</th>
                                 <th style="width: 50px;">공수</th>
-                                <th style="width: 50px;">상태</th>
                             </tr>
                         </thead>
                         <tbody id="sort-result-tbody">
                             <tr>
-                                <td colspan="13" class="list-empty-msg" style="text-align: center; padding: 20px;">조건을
+                                <td colspan="11" class="list-empty-msg" style="text-align: center; padding: 20px;">조건을
                                     설정하고 검색해주세요.</td>
                             </tr>
                         </tbody>
@@ -442,7 +439,6 @@
             <tr class="sort-result-row">
                 <td class="col-date"></td>
                 <td class="col-site"></td>
-                <td class="col-model"></td>
                 <td class="col-equip text-left pl-10"></td>
                 <td class="col-type"><span class="badge sort-badge"></span></td>
                 <td class="col-detail1 text-left pl-10"></td>
@@ -452,7 +448,6 @@
                 <td class="col-cost"></td>
                 <td class="col-worker"></td>
                 <td class="col-md"></td>
-                <td class="col-status sort-status-text"></td>
             </tr>
         </template>
 
