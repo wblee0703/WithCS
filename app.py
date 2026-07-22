@@ -1938,12 +1938,12 @@ def admin_crud():
     action = data.get('action')
     payload = data.get('payload')
     
-    # [추가] 일반 관리자(admin)는 마스터 데이터 수정 불가 (장비 상세 정보 수정 및 달력 확정 기능만 예외 허용)
+    # [추가] 일반 관리자(admin)는 마스터 데이터 수정 불가 (장비 신규 등록/수정 및 달력 확정 기능만 예외 허용)
     if role == 'admin':
-        if domain == 'equip' and action == 'UPDATE':
-            pass # 장비 상세 정보 수정은 허용
+        if domain == 'equip' and action in ['CREATE', 'UPDATE']:
+            pass # 장비 신규 등록 및 수정은 허용
         elif domain in ['site', 'equip', 'item']:
-            return jsonify({"status": "fail", "message": "해당 데이터의 추가/삭제는 최종 관리자(superadmin)만 가능합니다."}), 403
+            return jsonify({"status": "fail", "message": "해당 데이터의 추가/삭제/수정은 최종 관리자(superadmin)만 가능합니다."}), 403
         if domain == 'setting' and data.get('payload', {}).get('key') != 'calendar_confirmations':
             return jsonify({"status": "fail", "message": "해당 설정의 변경은 최종 관리자(superadmin)만 가능합니다."}), 403
             
@@ -2047,6 +2047,16 @@ def admin_crud():
                         db_old_id = temp_old_id
 
                 if db_old_id != db_new_id:
+                    # 외래 키 캐스케이드(ON UPDATE CASCADE) 수동 보강 패치
+                    # 자식 테이블들의 외래 키(equip_id)를 먼저 명시적으로 새 ID로 전이시킵니다.
+                    db.session.execute(text("UPDATE setup_info SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
+                    db.session.execute(text("UPDATE maint_item SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
+                    db.session.execute(text("UPDATE log_item SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
+                    db.session.execute(text("UPDATE setup_detail SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
+                    db.session.execute(text("UPDATE setup_log SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
+                    db.session.execute(text("UPDATE trouble_log SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
+                    
+                    # 부모 레코드 ID 수정
                     db.session.execute(text("UPDATE equipment SET id=:n WHERE id=:o"), {'n':db_new_id, 'o':db_old_id})
                     
                 equip = Equipment.query.filter_by(id=db_new_id).first()

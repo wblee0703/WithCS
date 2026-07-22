@@ -190,6 +190,10 @@ function initSortPage() {
 
                     updateSortDetailType2Select(types, detailTypes);
                     applyCustomMultiSelect('sort-detail-type2-select', lastSortFilters.detailType2Filters);
+                    const detailType2s = getMultiValues('sort-detail-type2-select');
+
+                    updateSortDetailType3Select(types, detailTypes, detailType2s);
+                    applyCustomMultiSelect('sort-detail-type3-select', lastSortFilters.detailType3Filters);
 
                     applyCustomMultiSelect('sort-cost-type-select', lastSortFilters.costTypeFilters);
                     applyCustomMultiSelect('sort-item-detail-type-select', lastSortFilters.itemDetailTypeFilters);
@@ -237,6 +241,7 @@ function initSortPage() {
     const types = ['정기', '비정기', '고객대응', '용액제조', '온라인점검'];
     updateSortDetailTypeSelect(types);
     updateSortDetailType2Select(types, []);
+    updateSortDetailType3Select(types, [], []);
 }
 
 // [1.4] 사이드바 너비 조절(Resizer) 이벤트 설정
@@ -619,6 +624,18 @@ function setupSortFilters() {
             const types = getMultiValues('sort-type-select');
             const detailTypes = getMultiValues('sort-detail-type-select');
             updateSortDetailType2Select(types, detailTypes);
+            const detailType2s = getMultiValues('sort-detail-type2-select');
+            updateSortDetailType3Select(types, detailTypes, detailType2s);
+        });
+    }
+
+    const detailType2Select = document.getElementById('sort-detail-type2-select');
+    if (detailType2Select) {
+        detailType2Select.addEventListener('change', () => {
+            const types = getMultiValues('sort-type-select');
+            const detailTypes = getMultiValues('sort-detail-type-select');
+            const detailType2s = getMultiValues('sort-detail-type2-select');
+            updateSortDetailType3Select(types, detailTypes, detailType2s);
         });
     }
 
@@ -702,6 +719,7 @@ function setupSortFilters() {
     syncCustomMultiSelect('sort-type-select', '전체 구분');
     syncCustomMultiSelect('sort-detail-type-select', '전체 세부 구분');
     syncCustomMultiSelect('sort-detail-type2-select', '전체 세부 구분 2');
+    syncCustomMultiSelect('sort-detail-type3-select', '전체 세부 구분 3');
     syncCustomMultiSelect('sort-item-detail-type-select', '전체 물품 상세');
     syncCustomMultiSelect('sort-cost-type-select', '전체 비용 처리');
 
@@ -758,6 +776,7 @@ function addGlobalSelectAllButton() {
         await selectAllFor('sort-type-select');
         await selectAllFor('sort-detail-type-select');
         await selectAllFor('sort-detail-type2-select');
+        await selectAllFor('sort-detail-type3-select');
         await selectAllFor('sort-item-detail-type-select');
         await selectAllFor('sort-cost-type-select');
 
@@ -1236,6 +1255,65 @@ function updateSortDetailType2Select(types, detailTypes) {
         detailType2Select.appendChild(opt);
     });
     syncCustomMultiSelect('sort-detail-type2-select', '전체 세부 구분 2');
+    const detailType2s = getMultiValues('sort-detail-type2-select');
+    updateSortDetailType3Select(types, detailTypes, detailType2s);
+}
+
+// [3.9] '비정기' 세부 구분 3 필터 항목 동적 업데이트 및 표시
+function updateSortDetailType3Select(types, detailTypes, detailType2s) {
+    const detailType3Group = document.getElementById('sort-detail-type3-group');
+    const detailType3Select = document.getElementById('sort-detail-type3-select');
+
+    if (!detailType3Select) return;
+    detailType3Select.innerHTML = '<option value="">전체 세부 구분 3</option>';
+
+    const isTypeAll = isAllSelected('sort-type-select', types);
+    const includesIrregular = isTypeAll || (types && types.includes('비정기'));
+
+    if (!types || types.length === 0 || !includesIrregular) {
+        if (detailType3Group) detailType3Group.style.display = 'none';
+        detailType3Select.disabled = true;
+        syncCustomMultiSelect('sort-detail-type3-select', '전체 세부 구분 3');
+        return;
+    }
+    if (detailType3Group) detailType3Group.style.display = 'block';
+
+    detailType3Select.disabled = false;
+
+    const catData3 = JSON.parse(localStorage.getItem('check_type_categories3')) || {};
+    let subCategories3 = new Set();
+
+    // 비정기 세부구분3 기본값
+    const defaultSubCategories3 = [
+        "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
+        "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
+    ];
+
+    const isDetailType2All = isAllSelected('sort-detail-type2-select', detailType2s);
+
+    if (isDetailType2All || !detailType2s || detailType2s.length === 0) {
+        defaultSubCategories3.forEach(cat => subCategories3.add(cat));
+        Object.keys(catData3).forEach(key => {
+            if (key.includes('::비정기::')) catData3[key].forEach(cat => subCategories3.add(cat));
+        });
+    } else {
+        detailType2s.forEach(dt2 => {
+            defaultSubCategories3.forEach(cat => subCategories3.add(cat));
+            Object.keys(catData3).forEach(key => {
+                if (key.includes(`::비정기::`) && key.includes(dt2)) {
+                    catData3[key].forEach(cat => subCategories3.add(cat));
+                }
+            });
+        });
+    }
+
+    Array.from(subCategories3).sort().forEach(sub => {
+        const opt = document.createElement('option');
+        opt.value = sub;
+        opt.textContent = sub;
+        detailType3Select.appendChild(opt);
+    });
+    syncCustomMultiSelect('sort-detail-type3-select', '전체 세부 구분 3');
 }
 
 /* ==========================================================================
@@ -1314,6 +1392,7 @@ function performSortSearch() {
     const typeFilters = getMultiValues('sort-type-select');
     const detailTypeFilters = getMultiValues('sort-detail-type-select');
     const detailType2Filters = getMultiValues('sort-detail-type2-select');
+    const detailType3Filters = getMultiValues('sort-detail-type3-select');
     const itemDetailTypeFilters = getMultiValues('sort-item-detail-type-select');
     const costTypeFilters = getMultiValues('sort-cost-type-select');
     window.chartSelectedSiteFilter = null; // [추가] 새 검색 시 차트 범례 필터 초기화
@@ -1342,6 +1421,7 @@ function performSortSearch() {
     const isTypeAll = isAllSelected('sort-type-select', typeFilters);
     const isDetailTypeAll = isAllSelected('sort-detail-type-select', detailTypeFilters);
     const isDetailType2All = isAllSelected('sort-detail-type2-select', detailType2Filters);
+    const isDetailType3All = isAllSelected('sort-detail-type3-select', detailType3Filters);
     const isItemDetailTypeAll = isAllSelected('sort-item-detail-type-select', itemDetailTypeFilters);
     const isCostTypeAll = isAllSelected('sort-cost-type-select', costTypeFilters);
 
@@ -1387,6 +1467,7 @@ function performSortSearch() {
         typeFilters: typeFilters,
         detailTypeFilters: detailTypeFilters,
         detailType2Filters: detailType2Filters,
+        detailType3Filters: detailType3Filters,
         itemDetailTypeFilters: itemDetailTypeFilters,
         costTypeFilters: costTypeFilters,
         keywordSelected: keywordSelected
@@ -1458,20 +1539,32 @@ function performSortSearch() {
 
                         let dt1 = itemObj.detailType || (itemType === '정기' ? 'PM 점검' : 'BM 점검');
                         let dt2 = itemObj.detailType2 || '';
+                        let dt3 = '';
 
+                        let allParts = [];
                         if (dt1.includes(' > ')) {
-                            const ps = dt1.split(' > '); dt1 = ps[0].trim(); dt2 = ps[1].trim();
+                            allParts = dt1.split(' > ').map(p => p.trim());
                         } else if (dt2.includes(' > ')) {
-                            const ps = dt2.split(' > '); dt1 = ps[0].trim(); dt2 = ps[1].trim();
+                            allParts = dt2.split(' > ').map(p => p.trim());
+                        } else {
+                            allParts = [dt1.trim()];
+                            if (dt2) allParts.push(dt2.trim());
                         }
 
+                        dt1 = allParts[0] || '';
+                        dt2 = allParts[1] || '';
+                        dt3 = allParts[2] || '';
+
                         if (!dt2) dt2 = '미지정';
+                        if (!dt3) dt3 = '미지정';
 
                         if (!isDetailTypeAll && detailTypeFilters.length === 0) return false;
                         if (!isDetailTypeAll && !detailTypeFilters.includes(dt1)) return false;
                         if (itemType === '비정기') {
                             if (!isDetailType2All && detailType2Filters.length === 0) return false;
                             if (!isDetailType2All && !detailType2Filters.includes(dt2)) return false;
+                            if (!isDetailType3All && detailType3Filters.length === 0) return false;
+                            if (!isDetailType3All && !detailType3Filters.includes(dt3)) return false;
                         }
 
                         const pureContent = itemObj.content || itemObj.code || '';
@@ -1625,7 +1718,8 @@ function performSortSearch() {
                             serial: serialNo,
                             custName: custEquipName,
                             type: itemType,
-                            detailType: dt2 ? `${dt1} > ${dt2}` : dt1,
+                            detailType: dt3 && dt3 !== '미지정' ? `${dt1} > ${dt2} > ${dt3}` : (dt2 && dt2 !== '미지정' ? `${dt1} > ${dt2}` : dt1),
+                            detailType3: dt3,
                             content: finalContent,
                             worker: workerText,
                             md: itemObj.md || '0',
@@ -2130,24 +2224,35 @@ function renderSortChart(results) {
             detailType2SiteCounts[dt2][row.site] = (detailType2SiteCounts[dt2][row.site] || 0) + 1;
         }
 
-        // 비정기 점검 항목(내용) 파싱 및 사업장별 데이터 수집
-        if (row.type === '비정기' && row.content) {
-            const items = window.splitSafetyContent(row.content);
-            const seenItems = new Set();
-            items.forEach(item => {
-                let pureItem = item.replace(/\[.*?\]\s*/g, '').trim();
-                if (pureItem.includes(' - ')) {
-                    pureItem = pureItem.split(' - ')[0].trim();
+        // 비정기 점검 항목(세부구분 3) 파싱 및 사업장별 데이터 수집
+        if (row.type === '비정기') {
+            let targetIrregular = '';
+            
+            if (row.detailType3 && row.detailType3 !== '미지정') {
+                targetIrregular = row.detailType3;
+            } else {
+                const parts = (row.detailType || '').split(' > ').map(p => p.trim());
+                if (parts.length >= 3 && parts[2] !== '미지정') {
+                    targetIrregular = parts[2];
+                } else if (row.content) {
+                    const items = window.splitSafetyContent(row.content);
+                    for (const item of items) {
+                        let pureItem = item.replace(/\[.*?\]\s*/g, '').trim();
+                        if (pureItem.includes(' - ')) {
+                            pureItem = pureItem.split(' - ')[0].trim();
+                        }
+                        if (pureItem && allowedIrregularItems.includes(pureItem)) {
+                            targetIrregular = pureItem;
+                            break;
+                        }
+                    }
                 }
-                // [수정] 지정된 10가지 비정기 항목만 필터링하여 차트에 집계
-                if (pureItem && row.site && allowedIrregularItems.includes(pureItem)) {
-                    seenItems.add(pureItem);
-                }
-            });
-            seenItems.forEach(pureItem => {
-                if (!irregularSiteCounts[pureItem]) irregularSiteCounts[pureItem] = {};
-                irregularSiteCounts[pureItem][row.site] = (irregularSiteCounts[pureItem][row.site] || 0) + 1;
-            });
+            }
+
+            if (targetIrregular && allowedIrregularItems.includes(targetIrregular) && row.site) {
+                if (!irregularSiteCounts[targetIrregular]) irregularSiteCounts[targetIrregular] = {};
+                irregularSiteCounts[targetIrregular][row.site] = (irregularSiteCounts[targetIrregular][row.site] || 0) + 1;
+            }
         }
         if (row.type === '고객대응') {
             let custDetailType = row.detailType || '';

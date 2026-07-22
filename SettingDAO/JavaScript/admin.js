@@ -1839,6 +1839,9 @@ async function handleEquipSave() {
     }
 
     if (typeof saveData === 'function') saveData();
+    if (typeof fetchServerData === 'function') {
+        await fetchServerData();
+    }
     alert('저장되었습니다.');
     setAdminFormDirty(false, 'equip'); // [추가] 저장 완료 후 상태 리셋
     initialAdminFormData.equip = getEquipFormState(); // [추가] 스냅샷 갱신
