@@ -1900,11 +1900,25 @@ def add_log():
     user_id = session.get('user_id')
     user = User.query.filter_by(id=user_id).first()
     worker_name = user.name if user and user.name else user_id
-    
+
+    action_type = data.get('action')
+    target_val = data.get('target')
+    details_val = data.get('details', '')
+
+    # [중복 방지 가드] 워런티 기간 만료 자동 전환 로그는 장비당 최초 1회만 기록되도록 제한
+    if action_type == 'UPDATE_EQUIP_STATUS' and details_val == '워런티 기간 만료에 따른 가동 장비 자동 전환':
+        exists = SystemLog.query.filter_by(
+            action='UPDATE_EQUIP_STATUS',
+            target=target_val,
+            details='워런티 기간 만료에 따른 가동 장비 자동 전환'
+        ).first()
+        if exists:
+            return jsonify({"status": "success", "message": "already logged"})
+
     new_log = SystemLog(
-        action=data.get('action'),
-        target=data.get('target'),
-        details=data.get('details', ''),
+        action=action_type,
+        target=target_val,
+        details=details_val,
         worker=worker_name
     )
     db.session.add(new_log)

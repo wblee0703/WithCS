@@ -766,6 +766,7 @@ function updateWarrantyStatusAutomatically() {
                                     const equipName = parts.slice(2).join('_');
 
                                     // [추가] 서버(DB)에도 자동 전환 상태를 동기화 반영
+                                    // [추가] 서버(DB)에도 자동 전환 상태를 동기화 반영 및 최초 1회 로그 전송 (관리자 이상만 가능)
                                     const userRole = sessionStorage.getItem('userRole');
                                     if (typeof window.syncAdminDB === 'function' && (userRole === 'admin' || userRole === 'superadmin')) {
                                         window.syncAdminDB('equip', 'UPDATE', {
@@ -773,10 +774,9 @@ function updateWarrantyStatusAutomatically() {
                                             site: site, old_site: site, new_site: site,
                                             setup: detailData.setup, special_note: detailData.specialNote || ''
                                         });
-                                    }
-
-                                    if (typeof addSystemLog === 'function') {
-                                        addSystemLog('UPDATE_EQUIP_STATUS', equipName, '워런티 기간 만료에 따른 가동 장비 자동 전환');
+                                        if (typeof addSystemLog === 'function') {
+                                            addSystemLog('UPDATE_EQUIP_STATUS', equipName, '워런티 기간 만료에 따른 가동 장비 자동 전환');
+                                        }
                                     }
                                 }
                             }
