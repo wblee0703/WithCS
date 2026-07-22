@@ -359,8 +359,8 @@
                             <tr>
                                 <th style="width: 80px;">구분</th>
                                 <th style="width: 100px;">작업일</th>
-                                <th style="width: 140px;">내용</th>
-                                <th>세부내용</th>
+                                <th style="width: 130px;">세부구분 3</th>
+                                <th>내용</th>
                             </tr>
                         </thead>
                         <tbody id="extra-work-history-body"></tbody>
@@ -842,10 +842,13 @@
                         class="modal-select" disabled></select></div>
                 <div class="form-row"><label class="form-label">구분</label><select id="register-type-select"
                         class="modal-select"></select></div>
-                <div class="form-row"><label class="form-label">세부구분</label><select id="register-detail-type-select"
-                        class="modal-select" disabled></select></div>
-                <div class="form-row" id="register-detail-type2-row"><label class="form-label">세부구분 2</label><select
-                        id="register-detail-type2-select" class="modal-select" disabled></select></div>
+                <div class="form-row" id="register-detail-type-row" style="display: flex !important; flex-direction: row !important; align-items: center !important; gap: 10px !important; width: 100% !important; flex-wrap: nowrap !important;"><label class="form-label" style="flex: 0 0 auto !important; width: 80px !important; margin-bottom: 0 !important; white-space: nowrap !important;">세부구분</label>
+                    <div style="display: flex !important; flex-direction: row !important; gap: 5px !important; flex: 1 1 0px !important; min-width: 0 !important; width: 100% !important; flex-wrap: nowrap !important;">
+                        <select id="register-detail-type-select" class="modal-select" style="flex: 1 1 0px !important; min-width: 0 !important; width: 100% !important; box-sizing: border-box !important;" disabled></select>
+                        <select id="register-detail-type2-select" class="modal-select" style="flex: 1 1 0px !important; min-width: 0 !important; width: 100% !important; box-sizing: border-box !important; display: none;" disabled></select>
+                        <select id="register-detail-type3-select" class="modal-select" style="flex: 1 1 0px !important; min-width: 0 !important; width: 100% !important; box-sizing: border-box !important; display: none;" disabled></select>
+                    </div>
+                </div>
                 <div class="form-row"><label class="form-label">내용</label><input type="text" id="register-content-input"
                         class="input-dark" placeholder="내용을 입력하세요">
                     <div id="register-content-wrapper" class="log-select-wrapper">

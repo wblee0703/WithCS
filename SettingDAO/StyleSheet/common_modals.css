@@ -1115,12 +1115,31 @@
     background-color: var(--cal-bg-element) !important;
 }
 
+#register-detail-type-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 5px !important;
+    width: 100% !important;
+    flex-wrap: nowrap !important;
+}
+
+#register-detail-type-row > div {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 5px !important;
+    flex: 1 1 0px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    flex-wrap: nowrap !important;
+}
+
 #register-detail-type2-row {
     display: none;
 }
 
-#register-detail-type2-select {
-    display: none;
+#register-detail-type2-select,
+#register-detail-type3-select {
     margin-top: 0;
 }
 

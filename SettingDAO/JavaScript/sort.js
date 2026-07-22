@@ -1831,76 +1831,95 @@ function renderSortListTableOnly() {
 
         let detail1 = '';
         let detail2 = '';
+        let detail3 = '';
         if (row.detailType && row.detailType.includes(' > ')) {
             const parts = row.detailType.split(' > ');
             detail1 = parts[0].trim();
-            detail2 = parts[1].trim();
+            detail2 = parts[1] ? parts[1].trim() : '-';
+            detail3 = parts[2] ? parts[2].trim() : '-';
         } else {
             detail1 = row.detailType || '';
             detail2 = '-';
+            detail3 = '-';
         }
+        if (row.detailType3) detail3 = row.detailType3;
 
-        // [요청] 작업내용과 작업 상세 내용 분리 및 줄바꿈/행위단어 제거 처리
+        // [요청] 작업내용과 작업 상세 내용 통합 및 비정기 세부구분 3 분리 처리
         const rawContent = row.content || '';
         const itemsList = window.splitSafetyContent(rawContent);
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
         
         let workContentList = [];
-        let workDetailContentList = [];
 
         itemsList.forEach(item => {
-            let itemWork = '';
-            let itemDetail = '';
+            let cleanItem = item.replace(/^\[[^\]]+\]\s*/g, '').trim();
+            let costTag = '';
+            const costMatch = item.match(/^\[([^\]]+)\]/);
+            if (costMatch) costTag = `[${costMatch[1]}] `;
 
-            const cleanItem = item.replace(/^\[[^\]]+\]\s*/g, '').trim();
-            const firstCost = (row.costType || '유상').split(',')[0].trim();
+            let kwLabel = '';
+            let purePart = cleanItem;
 
-            if (item.includes(' - ')) {
-                const parts = item.split(' - ');
-                // 파트 교체/수리 등의 작업은 [유상] 등의 접두사를 붙이지 않습니다.
-                itemWork = parts[0].replace(/^\[[^\]]+\]\s*/g, '').trim();
-                itemDetail = parts.slice(1).join(' - ').trim();
-
-                // 작업 상세 내용(물품명)에서 라벨처럼 붙는 "파트 이상 교체", "파트 이상 수리" 등 단어 완전히 제거
-                const cleanPattern = /^(?:파트\s*이상\s*\(?교체\)?|파트\s*이상\s*\(?수리\)?|파츠\s*이상\s*\(?교체\)?|파츠\s*이상\s*\(?수리\)?)/gi;
-                itemDetail = itemDetail.replace(cleanPattern, '').trim();
-
-                if (itemDetail.startsWith('-')) {
-                    itemDetail = itemDetail.substring(1).trim();
-                }
-                if (!itemDetail) itemDetail = '-';
+            if (cleanItem.includes(' - ')) {
+                const parts = cleanItem.split(' - ');
+                kwLabel = parts[0].trim();
+                purePart = parts.slice(1).join(' - ').trim();
             } else {
-                // 하이픈이 없는 경우: 물품 등록 마스터 데이터에 존재하는 경우에만 [비용처리] 라벨을 부착하고, 그 외의 모든 일반 텍스트는 라벨 제거
-                const isRegisteredPart = adminItems.some(ai => {
-                    const cleanPart = (ai.part || '').trim();
-                    const cleanCode = (ai.code || '').trim();
-                    return cleanPart.toLowerCase() === cleanItem.toLowerCase() || 
-                           cleanCode.toLowerCase() === cleanItem.toLowerCase();
-                });
-
-                if (isRegisteredPart) {
-                    // 마스터에 정식 등록된 추가 물품인 경우 [비용처리] 라벨을 꼭 붙여줍니다.
-                    itemWork = `[${firstCost}] ${cleanItem}`;
-                    itemDetail = '-';
-                } else {
-                    // 통신 이상, 단순조치, 내용 없음 등 마스터에 없는 수동 입력 텍스트/일반 작업은 비용 라벨을 제거합니다.
-                    itemWork = cleanItem;
-                    itemDetail = '-';
+                const defaultKeywords = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상", "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"];
+                if (defaultKeywords.includes(cleanItem)) {
+                    kwLabel = cleanItem;
+                    purePart = '';
                 }
             }
 
-            workContentList.push(itemWork);
-            workDetailContentList.push(itemDetail);
+            if (row.type === '비정기' && kwLabel && (detail3 === '-' || !detail3)) {
+                detail3 = kwLabel;
+            }
+
+            let displayPart = purePart;
+            if (purePart) {
+                let specStr = '';
+                const specMatch = purePart.match(/\s*\[(.*?)\]$/);
+                if (specMatch) {
+                    specStr = specMatch[0];
+                    purePart = purePart.replace(specMatch[0], '').trim();
+                }
+
+                const matchItem = adminItems.find(ai => (ai.part || '').trim().toLowerCase() === purePart.toLowerCase() || (ai.code || '').trim().toLowerCase() === purePart.toLowerCase());
+                if (matchItem && matchItem.code) {
+                    displayPart = `${matchItem.code}${specStr}`;
+                } else {
+                    displayPart = `${purePart}${specStr}`;
+                }
+            }
+
+            let finalWorkItem = displayPart ? `${costTag}${displayPart}`.trim() : (kwLabel && row.type !== '비정기' ? `${costTag}${kwLabel}` : '');
+            if (finalWorkItem && finalWorkItem !== '-') {
+                workContentList.push(finalWorkItem);
+            }
         });
+
+        if (workContentList.length === 0) {
+            workContentList.push('-');
+        }
 
         // HTML 태그 렌더링용 (품목 1개당 1줄씩 표시)
         const workContentDisplayHtml = workContentList.map(w => `<div style="line-height: 1.4; padding: 2px 0;">${escapeHtml(w)}</div>`).join('');
-        const workDetailContentDisplayHtml = workDetailContentList.map(d => `<div style="line-height: 1.4; padding: 2px 0;">${escapeHtml(d)}</div>`).join('');
 
         const badgeClass = row.type ? row.type.replace(/\s/g, '') : 'default';
         const statusClass = row.status === '완료' ? 'status-complete' : 'status-pending';
 
         let siteDisplayHtml = `<div class="site-group-text">${escapeHtml(row.siteGroup)}</div><div class="site-name">${escapeHtml(row.site)}</div>`;
+
+        const handleSortRowClick = () => {
+            const targetId = row.id || row.content;
+            const isCompleted = (row.status === '완료');
+            if (typeof window.openEventDetailModal === 'function') {
+                window.openEventDetailModal(row.site, row.equipRaw, targetId, isCompleted);
+            } else if (typeof openEventDetailModal === 'function') {
+                openEventDetailModal(row.site, row.equipRaw, targetId, isCompleted);
+            }
+        };
 
         const rowTpl = typeof getTemplateContent === 'function' ? getTemplateContent('sort-table-row-template') : null;
         if (rowTpl) {
@@ -1912,8 +1931,8 @@ function renderSortListTableOnly() {
             clone.querySelector('.col-type').innerHTML = `<span class="badge ${badgeClass} sort-badge">${escapeHtml(row.type)}</span>`;
             clone.querySelector('.col-detail1').textContent = detail1;
             clone.querySelector('.col-detail2').textContent = detail2;
+            if (clone.querySelector('.col-detail3')) clone.querySelector('.col-detail3').textContent = detail3;
             clone.querySelector('.col-content').innerHTML = workContentDisplayHtml;
-            clone.querySelector('.col-content-detail').innerHTML = workDetailContentDisplayHtml;
             clone.querySelector('.col-cost').textContent = row.costType;
             const workerTd = clone.querySelector('.col-worker');
             workerTd.title = row.worker;
@@ -1922,16 +1941,6 @@ function renderSortListTableOnly() {
             const statusTd = clone.querySelector('.col-status');
             statusTd.classList.add(statusClass);
             statusTd.textContent = row.status;
-
-            const handleSortRowClick = () => {
-                const targetId = row.id || row.content;
-                const isCompleted = (row.status === '완료');
-                if (typeof window.openEventDetailModal === 'function') {
-                    window.openEventDetailModal(row.site, row.equipRaw, targetId, isCompleted);
-                } else if (typeof openEventDetailModal === 'function') {
-                    openEventDetailModal(row.site, row.equipRaw, targetId, isCompleted);
-                }
-            };
 
             clone.onclick = handleSortRowClick;
             tbody.appendChild(clone);
@@ -1944,8 +1953,8 @@ function renderSortListTableOnly() {
                 <td><span class="badge ${badgeClass} sort-badge">${escapeHtml(row.type)}</span></td>
                 <td class="text-left pl-10">${escapeHtml(detail1)}</td>
                 <td class="text-left pl-10">${escapeHtml(detail2)}</td>
+                <td class="text-left pl-10">${escapeHtml(detail3)}</td>
                 <td class="text-left pl-10">${workContentDisplayHtml}</td>
-                <td class="text-left pl-10">${workDetailContentDisplayHtml}</td>
                 <td>${escapeHtml(row.costType)}</td>
                 <td title="${escapeHtml(row.worker)}">${escapeHtml(row.worker) || '-'}</td>
                 <td>${escapeHtml(row.md)}</td>
@@ -2471,8 +2480,8 @@ function exportSortResultsToCSV(results) {
     // 헤더 정의
     ws_data.push([
         '날짜', '상태', '사업장 구분', '사업장', '건물명', '모델명', '장비명(약어)', 
-        'Serial No', '고객사 장비명', '구분', '세부구분 1', '세부구분 2', 
-        '물품상세구분', '작업내용', '작업 상세 내용', '비용처리', '작업자', '공수', '상세메모'
+        'Serial No', '고객사 장비명', '구분', '세부구분 1', '세부구분 2', '세부구분 3',
+        '물품상세구분', '작업내용', '비용처리', '작업자', '공수', '상세메모'
     ]);
 
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
@@ -2482,14 +2491,18 @@ function exportSortResultsToCSV(results) {
     results.forEach(row => {
         let dt1 = '';
         let dt2 = '';
+        let dt3 = '';
         if (row.detailType && row.detailType.includes(' > ')) {
             const parts = row.detailType.split(' > ');
             dt1 = parts[0].trim();
-            dt2 = parts[1].trim();
+            dt2 = parts[1] ? parts[1].trim() : '-';
+            dt3 = parts[2] ? parts[2].trim() : '-';
         } else {
             dt1 = row.detailType || '';
             dt2 = '-';
+            dt3 = '-';
         }
+        if (row.detailType3) dt3 = row.detailType3;
 
         const rawContent = row.content || '';
         const itemsList = window.splitSafetyContent(rawContent);
@@ -2497,46 +2510,51 @@ function exportSortResultsToCSV(results) {
 
         for (let i = 0; i < itemCount; i++) {
             let itemWork = '-';
-            let itemDetail = '-';
 
             if (itemsList.length > 0) {
                 const item = itemsList[i];
-                const cleanItem = item.replace(/^\[[^\]]+\]\s*/g, '').trim();
-                const firstCost = (row.costType || '유상').split(',')[0].trim();
+                let cleanItem = item.replace(/^\[[^\]]+\]\s*/g, '').trim();
+                let costTag = '';
+                const costMatch = item.match(/^\[([^\]]+)\]/);
+                if (costMatch) costTag = `[${costMatch[1]}] `;
 
-                if (item.includes(' - ')) {
-                    const parts = item.split(' - ');
-                    // 파트 교체/수리 등의 작업은 [유상] 등의 접두사를 붙이지 않습니다.
-                    itemWork = parts[0].replace(/^\[[^\]]+\]\s*/g, '').trim();
-                    itemDetail = parts.slice(1).join(' - ').trim();
+                let kwLabel = '';
+                let purePart = cleanItem;
 
-                    // 작업 상세 내용(물품명)에서 라벨처럼 붙는 "파트 이상 교체", "파트 이상 수리" 등 단어 완전히 제거
-                    const cleanPattern = /^(?:파트\s*이상\s*\(?교체\)?|파트\s*이상\s*\(?수리\)?|파츠\s*이상\s*\(?교체\)?|파츠\s*이상\s*\(?수리\)?)/gi;
-                    itemDetail = itemDetail.replace(cleanPattern, '').trim();
-
-                    if (itemDetail.startsWith('-')) {
-                        itemDetail = itemDetail.substring(1).trim();
-                    }
-                    if (!itemDetail) itemDetail = '-';
+                if (cleanItem.includes(' - ')) {
+                    const parts = cleanItem.split(' - ');
+                    kwLabel = parts[0].trim();
+                    purePart = parts.slice(1).join(' - ').trim();
                 } else {
-                    // 하이픈이 없는 경우: 물품 등록 마스터 데이터에 존재하는 경우에만 [비용처리] 라벨을 부착하고, 그 외의 모든 일반 텍스트는 라벨 제거
-                    const isRegisteredPart = adminItems.some(ai => {
-                        const cleanPart = (ai.part || '').trim();
-                        const cleanCode = (ai.code || '').trim();
-                        return cleanPart.toLowerCase() === cleanItem.toLowerCase() || 
-                               cleanCode.toLowerCase() === cleanItem.toLowerCase();
-                    });
-
-                    if (isRegisteredPart) {
-                        // 마스터에 정식 등록된 추가 물품인 경우 [비용처리] 라벨을 꼭 붙여줍니다.
-                        itemWork = `[${firstCost}] ${cleanItem}`;
-                        itemDetail = '-';
-                    } else {
-                        // 통신 이상, 단순조치, 내용 없음 등 마스터에 없는 수동 입력 텍스트/일반 작업은 비용 라벨을 제거합니다.
-                        itemWork = cleanItem;
-                        itemDetail = '-';
+                    const defaultKeywords = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상", "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"];
+                    if (defaultKeywords.includes(cleanItem)) {
+                        kwLabel = cleanItem;
+                        purePart = '';
                     }
                 }
+
+                if (row.type === '비정기' && kwLabel && (dt3 === '-' || !dt3)) {
+                    dt3 = kwLabel;
+                }
+
+                let displayPart = purePart;
+                if (purePart) {
+                    let specStr = '';
+                    const specMatch = purePart.match(/\s*\[(.*?)\]$/);
+                    if (specMatch) {
+                        specStr = specMatch[0];
+                        purePart = purePart.replace(specMatch[0], '').trim();
+                    }
+
+                    const matchItem = adminItems.find(ai => (ai.part || '').trim().toLowerCase() === purePart.toLowerCase() || (ai.code || '').trim().toLowerCase() === purePart.toLowerCase());
+                    if (matchItem && matchItem.code) {
+                        displayPart = `${matchItem.code}${specStr}`;
+                    } else {
+                        displayPart = `${purePart}${specStr}`;
+                    }
+                }
+
+                itemWork = displayPart ? `${costTag}${displayPart}`.trim() : (kwLabel && row.type !== '비정기' ? `${costTag}${kwLabel}` : '-');
             }
 
             // AOA 데이터 빌드 (첫 번째 품목 셀에만 정보 제공하고 병합시킴)
@@ -2553,9 +2571,9 @@ function exportSortResultsToCSV(results) {
                 i === 0 ? row.type : '',
                 i === 0 ? dt1 : '',
                 i === 0 ? dt2 : '',
+                i === 0 ? dt3 : '',
                 i === 0 ? row.itemDetailType : '',
                 itemWork,
-                itemDetail,
                 i === 0 ? row.costType : '',
                 i === 0 ? row.worker : '',
                 i === 0 ? row.md : '',
@@ -2566,8 +2584,8 @@ function exportSortResultsToCSV(results) {
         // 품목이 2개 이상일 때 병합 조건 생성
         if (itemCount > 1) {
             const endRow = startRow + itemCount - 1;
-            // 0~12열 병합 (날짜부터 물품상세구분까지)
-            for (let c = 0; c <= 12; c++) {
+            // 0~13열 병합 (날짜부터 물품상세구분까지)
+            for (let c = 0; c <= 13; c++) {
                 merges.push({ s: { r: startRow, c: c }, e: { r: endRow, c: c } });
             }
             // 15~18열 병합 (비용처리부터 상세메모까지)

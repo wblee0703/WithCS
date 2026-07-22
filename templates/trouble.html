@@ -94,6 +94,7 @@
                                 <th>작업 구분</th>
                                 <th>세부 구분1</th>
                                 <th>세부 구분2</th>
+                                <th>세부 구분3</th>
                                 <th>점검 항목</th>
                                 <th>Trouble 내용 (상황)</th>
                                 <th>조치자</th>
@@ -101,7 +102,7 @@
                         </thead>
                         <tbody id="trouble-tbody">
                             <tr>
-                                <td colspan="10" class="list-empty-msg">데이터를 불러오는 중입니다...</td>
+                                <td colspan="11" class="list-empty-msg">데이터를 불러오는 중입니다...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -277,8 +278,8 @@
 
             if (hasNewNodes) {
                 tbody.querySelectorAll('tr').forEach(tr => {
-                    if (tr.cells.length >= 8) {
-                        const contentCell = tr.cells[7]; // 'Trouble 내용 (증상)' 컬럼
+                    if (tr.cells.length >= 10) {
+                        const contentCell = tr.cells[9]; // 'Trouble 내용 (상황)' 컬럼
                         const rawText = contentCell.textContent.trim();
                         if (rawText.startsWith('{') && rawText.endsWith('}')) {
                             try {

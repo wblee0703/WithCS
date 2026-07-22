@@ -11,7 +11,7 @@
         try {
             originalSetItem.call(this, key, value);
         } catch (e) {
-            console.warn('로컬 스토리지 setItem 실패 (인메모리 백업 저장):', e);
+            // [개선] 브라우저 용량 초과 시 콘솔 경고 메시지 없이 투명하게 인메모리 백업 저장소로 저장
             window.storageFallback[key] = String(value);
         }
     };
@@ -21,9 +21,7 @@
         try {
             const val = originalGetItem.call(this, key);
             if (val !== null) return val;
-        } catch (e) {
-            console.warn('로컬 스토리지 getItem 실패 (인메모리 백업 조회):', e);
-        }
+        } catch (e) {}
         return window.storageFallback.hasOwnProperty(key) ? window.storageFallback[key] : null;
     };
 
@@ -31,9 +29,7 @@
     Storage.prototype.removeItem = function(key) {
         try {
             originalRemoveItem.call(this, key);
-        } catch (e) {
-            console.warn('로컬 스토리지 removeItem 실패:', e);
-        }
+        } catch (e) {}
         if (window.storageFallback.hasOwnProperty(key)) {
             delete window.storageFallback[key];
         }
@@ -43,9 +39,7 @@
     Storage.prototype.clear = function() {
         try {
             originalClear.call(this);
-        } catch (e) {
-            console.warn('로컬 스토리지 clear 실패:', e);
-        }
+        } catch (e) {}
         window.storageFallback = {};
     };
 })();
@@ -548,6 +542,21 @@ async function migrateDataFormat() {
                                 if (item.content) {
                                     const original = item.content;
                                     item.content = migrateString(item.content);
+
+                                    if (item.type === '비정기') {
+                                        const prefixPattern = /^(파트 이상 교체|파트 이상 수리|용액 용자 이상|현장 이슈|PC 이상|작업자 실수|통신 이상|프로그램 이상|단순조치|기타)\s*[-:]\s*/;
+                                        const mPref = item.content.match(prefixPattern);
+                                        if (mPref) {
+                                            const sub3 = mPref[1];
+                                            item.content = item.content.replace(prefixPattern, '').trim();
+                                            const dtParts = (item.detailType || '').split(' > ').map(s => s.trim()).filter(Boolean);
+                                            if (dtParts.length === 2) {
+                                                dtParts.push(sub3);
+                                                item.detailType = dtParts.join(' > ');
+                                            }
+                                            isModified = true;
+                                        }
+                                    }
 
                                     // [수정] 과거 누락된 비용처리 라벨([유상], [무상]) 일괄 복구 및 잘못 삽입된 라벨 제거
                                     const generalCost = item.costType || item.itemCost || '';
@@ -4189,6 +4198,12 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     // 1. 점검 구분 경로 설정
     let pathText = (parentLog.type && parentLog.type !== '-') ? parentLog.type : '비정기';
     let detailStr = (parentLog.detailType && parentLog.detailType !== '-') ? parentLog.detailType : '';
+    if (parentLog.type === '비정기' && detailStr.includes(' > ')) {
+        const parts = detailStr.split(' > ').map(s => s.trim()).filter(Boolean);
+        if (parts.length >= 2) {
+            detailStr = `${parts[0]} > ${parts[1]}`;
+        }
+    }
     if (parentLog.detailType2 && parentLog.detailType2 !== '-' && !detailStr.includes(parentLog.detailType2)) {
         detailStr += ` > ${parentLog.detailType2}`;
     }
@@ -4282,6 +4297,17 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
             '물품 이상 (수리)', '물품 이상 수리'
         ];
 
+        const adminItemsForExtract = JSON.parse(localStorage.getItem('admin_items')) || [];
+        const convertToCode = (partName) => {
+            let clean = window.removeCostLabels(partName).trim();
+            const specMatch = clean.match(/\s*\[(.*?)\]$/);
+            if (specMatch) {
+                clean = clean.replace(specMatch[0], '').trim();
+            }
+            const match = adminItemsForExtract.find(a => (a.part || '').trim() === clean || (a.code || '').trim() === clean);
+            return match && match.code ? match.code : clean;
+        };
+
         contentParts.forEach(part => {
             // 비용처리 라벨 추출 (예: "[유상]")
             let costLabel = '';
@@ -4301,39 +4327,35 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
                 const isPartKeyword = partKeywords.some(kw => prefix.includes(kw) || kw.includes(prefix));
                 if (isPartKeyword) {
                     if (!label) label = prefix;
-                    items.push(costLabel + suffix);
+                    items.push(costLabel + convertToCode(suffix));
                 } else {
-                    items.push(costLabel + cleanPart);
+                    items.push(costLabel + convertToCode(cleanPart));
                 }
             } else {
                 const isPartKeyword = partKeywords.some(kw => cleanPart.includes(kw) || kw.includes(cleanPart));
                 if (isPartKeyword) {
                     if (!label) label = cleanPart;
                 } else {
-                    items.push(costLabel + cleanPart);
+                    items.push(costLabel + convertToCode(cleanPart));
                 }
             }
         });
 
         let tableContent = '';
-        let tableSubContent = '';
-
-        if (label) {
-            tableContent = label;
-            tableSubContent = items.length > 0 ? items.map(item => escapeHtml(item)).join('<br>') : '-';
+        if (items && items.length > 0) {
+            tableContent = items.map(item => escapeHtml(item)).join('<br>');
         } else {
             tableContent = displayContent || '비정기 점검';
-            tableSubContent = '-';
         }
 
-        // 비용처리 라벨([유상], [무상] 등)을 내용 컬럼에서 완벽히 소거
-        tableContent = tableContent.replace(/^\[.*?\]\s*/, '').trim();
+        const dtParts = (log.detailType || '').split(' > ').map(s => s.trim()).filter(Boolean);
+        let sub3Text = dtParts.length >= 3 ? dtParts[2] : (label || '-');
 
         tr.innerHTML = `
             <td><span class="badge" style="background:${badgeColor}; display: inline-block; width: 45px; text-align: center; padding: 3px 0; font-size: 11px; border-radius: 4px; color: #fff; font-weight: bold;">${badgeText}</span></td>
             <td>${displayDate}</td>
-            <td style="text-align: left; padding-left: 10px; font-weight: bold; color: #f0883e;">${escapeHtml(tableContent)}</td>
-            <td style="text-align: left; padding-left: 10px; line-height: 1.4;">${tableSubContent}</td>
+            <td style="text-align: left; padding-left: 10px; font-weight: bold; color: #58a6ff;">${escapeHtml(sub3Text)}</td>
+            <td style="text-align: left; padding-left: 10px; line-height: 1.4;">${tableContent}</td>
         `;
 
         tr.dataset.logId = log.id;

@@ -1062,17 +1062,59 @@ function renderTroubleList(dataList = []) {
     const tbody = document.getElementById('trouble-tbody');
     if (tbody) {
         if (dataList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="10" class="list-empty-msg" style="padding:30px;">조건에 맞는 Trouble 이력이 없습니다.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="11" class="list-empty-msg" style="padding:30px;">조건에 맞는 Trouble 이력이 없습니다.</td></tr>';
             return;
         }
         tbody.innerHTML = dataList.map(t => {
-            let displayCheckItem = t.check_item || '-';
-            if (displayCheckItem !== '-') {
-                let items = displayCheckItem.split(',').map(s => s.replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').trim()).filter(Boolean);
-                if (items.length > 1) {
-                    displayCheckItem = `${items[0]} 외 ${items.length - 1}개`;
-                } else if (items.length === 1) {
-                    displayCheckItem = items[0];
+            let dt1 = t.detail_type || '-';
+            let dt2 = t.detail_type2 || '-';
+            let dt3 = t.detail_type3 || '-';
+
+            if (dt1.includes(' > ')) {
+                const parts = dt1.split(' > ');
+                dt1 = parts[0].trim();
+                if (parts[1]) dt2 = parts[1].trim();
+                if (parts[2]) dt3 = parts[2].trim();
+            } else if (dt2.includes(' > ')) {
+                const parts = dt2.split(' > ');
+                if (dt1 === '-' || dt1 === '') dt1 = parts[0].trim();
+                dt2 = parts[1] ? parts[1].trim() : dt2;
+                if (parts[2]) dt3 = parts[2].trim();
+            }
+
+            let rawCheckItem = t.check_item || '-';
+            let displayCheckItem = rawCheckItem;
+
+            if (rawCheckItem !== '-') {
+                let items = rawCheckItem.split(',').map(s => s.trim()).filter(Boolean);
+                let cleanedItems = [];
+
+                items.forEach(item => {
+                    let pure = item.replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').trim();
+                    const kwMatch = pure.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+                    if (kwMatch) {
+                        if (dt3 === '-' || !dt3) {
+                            dt3 = kwMatch[1].trim();
+                        }
+                        pure = kwMatch[2].trim();
+                    } else {
+                        const defaultKeywords = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상", "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"];
+                        if (defaultKeywords.includes(pure)) {
+                            if (dt3 === '-' || !dt3) {
+                                dt3 = pure;
+                            }
+                            pure = '';
+                        }
+                    }
+                    if (pure) cleanedItems.push(pure);
+                });
+
+                if (cleanedItems.length > 1) {
+                    displayCheckItem = `${cleanedItems[0]} 외 ${cleanedItems.length - 1}개`;
+                } else if (cleanedItems.length === 1) {
+                    displayCheckItem = cleanedItems[0];
+                } else {
+                    displayCheckItem = '-';
                 }
             }
 
@@ -1107,19 +1149,6 @@ function renderTroubleList(dataList = []) {
                         equipSubHtml = `<div style="color: #8b949e; font-size: 11px; margin-top: 2px;">(${escapeHtml(subVal)})</div>`;
                     }
                 }
-            }
-
-            let dt1 = t.detail_type || '-';
-            let dt2 = t.detail_type2 || '-';
-
-            if (dt1.includes(' > ')) {
-                const parts = dt1.split(' > ');
-                dt1 = parts[0].trim();
-                if (dt2 === '-' || dt2 === '') dt2 = parts[1].trim();
-            } else if (dt2.includes(' > ')) {
-                const parts = dt2.split(' > ');
-                if (dt1 === '-' || dt1 === '') dt1 = parts[0].trim();
-                dt2 = parts[1].trim();
             }
 
             // [추가] JSON 형태의 content를 목록에 예쁘게 표시
@@ -1164,6 +1193,7 @@ function renderTroubleList(dataList = []) {
                 <td style="text-align: center;">${escapeHtml(t.type || '-')}</td>
                 <td style="text-align: center;">${escapeHtml(dt1)}</td>
                 <td style="text-align: center;">${escapeHtml(dt2)}</td>
+                <td style="text-align: center;">${escapeHtml(dt3)}</td>
                 <td style="text-align: left; padding-left: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(t.check_item || '')}">${escapeHtml(displayCheckItem)}</td>
                 <td style="text-align: left; padding-left: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(tooltipContent)}">${escapeHtml(displayContent)}</td>
                 <td style="text-align: center;">${escapeHtml(t.worker || '-')}</td>

@@ -32,6 +32,8 @@ let checkTypeCategoriesData = {}; // [추가] 분류 저장소
 let checkTypeItemsData = {}; // [추가] 세부 항목 저장소
 let currentCheckTypeSubCategory2 = null; // [추가] 선택된 세부구분 2
 let checkTypeCategories2Data = {}; // [추가] 세부구분 2 저장소
+let currentCheckTypeSubCategory3 = null; // [추가] 선택된 세부구분 3
+let checkTypeCategories3Data = {}; // [추가] 세부구분 3 저장소
 let currentSetupTemplateModel = 'default'; // [추가] 셋업 템플릿 선택 모델
 
 // [추가] 저장 여부 확인 및 폼 수정 감지용 변수 및 함수
@@ -2569,6 +2571,7 @@ function setupCheckTypeMgmt() {
     currentCheckTypeEquipKey = 'COMMON';
     loadCheckTypeCategories();
     loadCheckTypeCategories2();
+    loadCheckTypeCategories3();
     loadCheckTypeItems();
     migrateCheckTypeItemsForIrregularOthers();
 
@@ -2642,14 +2645,20 @@ function setupCheckTypeMgmt() {
 
             if (currentCheckTypeCategory === '비정기') {
                 const p2 = ensureSubCategory2Panel();
+                const p3 = ensureSubCategory3Panel();
                 if (p2) {
                     p2.style.display = 'flex';
                     p2.style.opacity = '0.5';
                     p2.style.pointerEvents = 'none';
                 }
+                if (p3) {
+                    p3.style.display = 'flex';
+                    p3.style.opacity = '0.5';
+                    p3.style.pointerEvents = 'none';
+                }
                 document.getElementById('check-type-detail-placeholder').style.display = 'flex';
                 document.getElementById('check-type-detail-container').style.display = 'none';
-                document.getElementById('check-type-detail-desc').textContent = '세부구분 2를 선택해주세요.';
+                document.getElementById('check-type-detail-desc').textContent = '세부 구분(분류)을 먼저 선택해주세요.';
                 scrollToAdminDetail('check-type-subcategory-list');
 
                 // [개선] 세부구분 상태 자동 복원
@@ -2950,6 +2959,124 @@ function ensureSubCategory2Panel() {
     return panel2;
 }
 
+// ==========================================================================
+// 세부구분 3 (비정기 전용) 패널 및 데이터 함수
+// ==========================================================================
+function ensureSubCategory3Panel() {
+    let panel3 = document.getElementById('check-type-subcategory3-container');
+    if (!panel3) return null;
+
+    if (!panel3.dataset.initialized) {
+        panel3.dataset.initialized = 'true';
+        
+        const btnAdd = panel3.querySelector('#btn-add-check-type-subcategory3');
+        const input = panel3.querySelector('#check-type-subcategory3-input');
+        const btnSubCategory3Settings = panel3.querySelector('#btn-subcategory3-settings');
+        const subCategory3Footer = panel3.querySelector('#check-type-subcategory3-footer');
+
+        if (btnSubCategory3Settings) {
+            btnSubCategory3Settings.addEventListener('click', () => {
+                panel3.classList.toggle('management-active');
+                if (panel3.classList.contains('management-active')) {
+                    btnSubCategory3Settings.classList.add('active');
+                    if (currentCheckTypeSubCategory2) subCategory3Footer.style.display = 'block';
+                } else {
+                    btnSubCategory3Settings.classList.remove('active');
+                    subCategory3Footer.style.display = 'none';
+                }
+                renderCheckTypeSubCategory3List();
+            });
+        }
+
+        if (btnAdd && input) {
+            btnAdd.addEventListener('click', () => {
+                if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory || !currentCheckTypeSubCategory2) return;
+                const val = input.value.trim();
+                if (!val) return alert('분류명을 입력해주세요.');
+
+                const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}::${currentCheckTypeSubCategory2}`;
+                if (!checkTypeCategories3Data[key]) checkTypeCategories3Data[key] = [];
+
+                if (checkTypeCategories3Data[key].includes(val)) return alert('이미 존재하는 분류입니다.');
+
+                checkTypeCategories3Data[key].push(val);
+                saveCheckTypeCategories3();
+                addSystemLog('ADD_CHECK_CATEGORY', currentCheckTypeEquipKey, `세부구분3 추가: ${currentCheckTypeCategory} > ${currentCheckTypeSubCategory} > ${currentCheckTypeSubCategory2} > ${val}`);
+                renderCheckTypeSubCategory3List();
+                input.value = '';
+                input.focus();
+            });
+
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') btnAdd.click();
+            });
+        }
+    }
+    return panel3;
+}
+
+function renderCheckTypeSubCategory3List() {
+    const list = document.getElementById('check-type-subcategory3-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory || !currentCheckTypeSubCategory2) return;
+
+    const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}::${currentCheckTypeSubCategory2}`;
+    const defaultSubCategories3 = [
+        "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
+        "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
+    ];
+
+    if (!checkTypeCategories3Data[key] || checkTypeCategories3Data[key].length === 0) {
+        checkTypeCategories3Data[key] = [...defaultSubCategories3];
+        saveCheckTypeCategories3();
+    }
+
+    const categories3 = checkTypeCategories3Data[key] || [];
+    const container = list.closest('.admin-col-list');
+    const isMgmtActive = container ? container.classList.contains('management-active') : false;
+
+    categories3.forEach((cat3, index) => {
+        const li = document.createElement('li');
+        li.dataset.sub3 = cat3;
+        li.innerHTML = `
+            <div class="flex-between-center">
+                <span class="subcategory-text flex-1-grab">${cat3}</span>
+                <div class="flex-gap-5 subcat-controls" style="display: ${isMgmtActive ? 'flex' : 'none'};">
+                    <button class="btn-del-sm" onclick="event.stopPropagation(); deleteCheckTypeSubCategory3('${key}', ${index})" title="삭제">✕</button>
+                </div>
+            </div>
+        `;
+
+        if (currentCheckTypeSubCategory3 === cat3) li.classList.add('active');
+
+        li.addEventListener('click', () => {
+            currentCheckTypeSubCategory3 = cat3;
+            localStorage.setItem('lastCheckTypeSubCategory3', cat3);
+            list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
+            li.classList.add('active');
+
+            const descText = `'${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' > '${currentCheckTypeSubCategory2}' > '${currentCheckTypeSubCategory3}' 세부 항목을 관리합니다.`;
+            document.getElementById('check-type-detail-desc').textContent = descText;
+            renderCheckTypeItemList();
+        });
+
+        list.appendChild(li);
+    });
+}
+
+function deleteCheckTypeSubCategory3(key, index) {
+    if (!checkTypeCategories3Data[key]) return;
+    const catName = checkTypeCategories3Data[key][index];
+    if (!confirm(`'${catName}' 세부구분3을 삭제하시겠습니까?`)) return;
+
+    checkTypeCategories3Data[key].splice(index, 1);
+    saveCheckTypeCategories3();
+    if (currentCheckTypeSubCategory3 === catName) currentCheckTypeSubCategory3 = null;
+    renderCheckTypeSubCategory3List();
+}
+
 function loadCheckTypeCategories2() {
     try {
         const data = localStorage.getItem('check_type_categories2');
@@ -2960,6 +3087,19 @@ function loadCheckTypeCategories2() {
 async function saveCheckTypeCategories2() {
     localStorage.setItem('check_type_categories2', JSON.stringify(checkTypeCategories2Data));
     await syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories2', value: checkTypeCategories2Data });
+    if (typeof saveData === 'function') saveData();
+}
+
+function loadCheckTypeCategories3() {
+    try {
+        const data = localStorage.getItem('check_type_categories3');
+        checkTypeCategories3Data = data ? JSON.parse(data) : {};
+    } catch (e) { checkTypeCategories3Data = {}; }
+}
+
+async function saveCheckTypeCategories3() {
+    localStorage.setItem('check_type_categories3', JSON.stringify(checkTypeCategories3Data));
+    await syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories3', value: checkTypeCategories3Data });
     if (typeof saveData === 'function') saveData();
 }
 
@@ -3243,7 +3383,9 @@ function renderCheckTypeSubCategoryList() {
 
             if (currentCheckTypeCategory === '비정기') {
                 currentCheckTypeSubCategory2 = null;
+                currentCheckTypeSubCategory3 = null;
                 const p2 = ensureSubCategory2Panel();
+                const p3 = document.getElementById('check-type-subcategory3-container');
                 if (p2) {
                     p2.style.opacity = '1';
                     p2.style.pointerEvents = 'auto';
@@ -3253,6 +3395,12 @@ function renderCheckTypeSubCategoryList() {
                     } else {
                         sub2Footer.style.display = 'none';
                     }
+                }
+                if (p3) {
+                    p3.style.opacity = '0.5';
+                    p3.style.pointerEvents = 'none';
+                    const sub3Footer = p3.querySelector('#check-type-subcategory3-footer');
+                    if (sub3Footer) sub3Footer.style.display = 'none';
                 }
                 renderCheckTypeSubCategory2List();
 
@@ -3436,13 +3584,28 @@ function renderCheckTypeSubCategory2List() {
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
 
-            document.getElementById('check-type-detail-placeholder').style.display = 'none';
-            document.getElementById('check-type-detail-container').style.display = 'block';
-            document.getElementById('check-type-detail-desc').textContent = `'${currentCheckTypeEquipKey}' 장비의 '${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' > '${currentCheckTypeSubCategory2}' 세부 항목을 관리합니다.`;
+            if (currentCheckTypeCategory === '비정기') {
+                currentCheckTypeSubCategory3 = null;
+                const p3 = ensureSubCategory3Panel();
+                if (p3) {
+                    p3.style.display = 'flex';
+                    p3.style.opacity = '1';
+                    p3.style.pointerEvents = 'auto';
+                }
+                renderCheckTypeSubCategory3List();
+                document.getElementById('check-type-detail-placeholder').style.display = 'flex';
+                document.getElementById('check-type-detail-container').style.display = 'none';
+                document.getElementById('check-type-detail-desc').textContent = '세부구분 3을 선택해주세요.';
+                scrollToAdminDetail('check-type-subcategory3-list');
+            } else {
+                document.getElementById('check-type-detail-placeholder').style.display = 'none';
+                document.getElementById('check-type-detail-container').style.display = 'block';
+                document.getElementById('check-type-detail-desc').textContent = `'${currentCheckTypeCategory}' > '${currentCheckTypeSubCategory}' > '${currentCheckTypeSubCategory2}' 세부 항목을 관리합니다.`;
 
-            updateCheckTypeSubCategoryDropdown();
-            renderCheckTypeItemList();
-            scrollToAdminDetail('check-type-detail-container');
+                updateCheckTypeSubCategoryDropdown();
+                renderCheckTypeItemList();
+                scrollToAdminDetail('check-type-detail-container');
+            }
         });
 
         const editBtn = li.querySelector('.btn-edit-subcat2');

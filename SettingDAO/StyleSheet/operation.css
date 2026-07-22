@@ -150,8 +150,9 @@
 #operation-downtime-table th:nth-child(4) { width: 100px; } /* 작업/점검 구분 */
 #operation-downtime-table th:nth-child(5) { width: 130px; } /* 세부 구분1 */
 #operation-downtime-table th:nth-child(6) { width: 130px; } /* 세부 구분2 */
-#operation-downtime-table th:nth-child(7) { width: auto; }  /* 내용 (남은 공간 모두 차지) */
-#operation-downtime-table th:nth-child(8) { width: 120px; } /* 다운타임(시간) */
+#operation-downtime-table th:nth-child(7) { width: 130px; } /* 세부 구분3 */
+#operation-downtime-table th:nth-child(8) { width: auto; }  /* 내용 (남은 공간 모두 차지) */
+#operation-downtime-table th:nth-child(9) { width: 130px; } /* 다운타임(시간) */
 
 #operation-downtime-table td {
     padding-top: 12px;

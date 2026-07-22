@@ -832,25 +832,33 @@ function renderDowntimeTable(list, isSortChange = false) {
     
     tbody.innerHTML = '';
     if (activeList.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" class="empty-msg">해당 기간에 기록된 다운타임 내역이 없습니다.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-msg">해당 기간에 기록된 다운타임 내역이 없습니다.</td></tr>';
         updateDowntimeSortHeader();
         return;
     }
     
     const key = currentDowntimeSort.key;
     const dir = currentDowntimeSort.dir === 'asc' ? 1 : -1;
+    const sub3List = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상", "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"];
+    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
     const getDtParts = (item) => {
-        let dt1 = item.detailType || '-';
-        let dt2 = item.detailType2 || '-';
-        if (dt1.includes(' > ')) {
-            const parts = dt1.split(' > ');
-            dt1 = parts[0].trim(); dt2 = parts[1].trim();
-        } else if (dt2.includes(' > ')) {
-            const parts = dt2.split(' > ');
-            dt1 = parts[0].trim(); dt2 = parts[1].trim();
+        let dt1 = '';
+        let dt2 = '';
+        let dt3 = '';
+        let fullDt = item.detailType || item.detailType2 || '';
+        if (fullDt.includes(' > ')) {
+            const parts = fullDt.split(' > ');
+            dt1 = parts[0] ? parts[0].trim() : '-';
+            dt2 = parts[1] ? parts[1].trim() : '-';
+            dt3 = parts[2] ? parts[2].trim() : '-';
+        } else {
+            dt1 = fullDt || '-';
+            dt2 = '-';
+            dt3 = '-';
         }
-        return { dt1, dt2 };
+        if (item.detailType3) dt3 = item.detailType3;
+        return { dt1, dt2, dt3 };
     };
 
     const getTimestamp = (val) => {
@@ -880,6 +888,9 @@ function renderDowntimeTable(list, isSortChange = false) {
         } else if (key === 'dt2') {
             valA = getDtParts(a).dt2;
             valB = getDtParts(b).dt2;
+        } else if (key === 'dt3') {
+            valA = getDtParts(a).dt3;
+            valB = getDtParts(b).dt3;
         } else if (key === 'content') {
             let cA = a.content;
             if (typeof cA === 'string' && cA.startsWith('{')) {
@@ -908,31 +919,72 @@ function renderDowntimeTable(list, isSortChange = false) {
     updateDowntimeSortHeader();
 
     activeList.forEach(item => {
-        let contentDisplay = item.content;
-        if(typeof contentDisplay === 'string' && contentDisplay.startsWith('{')) {
-            try { const p = JSON.parse(contentDisplay); contentDisplay = p.situation || p.symptom || '내용'; } catch(e) {}
+        let dtParts = getDtParts(item);
+        let dt1 = dtParts.dt1;
+        let dt2 = dtParts.dt2;
+        let dt3 = dtParts.dt3;
+
+        let rawContent = item.content || '';
+        if (typeof rawContent === 'string' && rawContent.startsWith('{')) {
+            try { const p = JSON.parse(rawContent); rawContent = p.situation || p.symptom || '내용'; } catch(e) {}
         }
-        
-        let tooltipContent = contentDisplay;
-        if (typeof contentDisplay === 'string') {
-            const itemsArr = contentDisplay.split(',').map(s => s.trim()).filter(Boolean);
-            if (itemsArr.length > 1) {
-                contentDisplay = `${itemsArr[0]} 외 ${itemsArr.length - 1}개`;
+
+        const itemsList = window.splitSafetyContent ? window.splitSafetyContent(rawContent) : [rawContent];
+        let workContentList = [];
+
+        itemsList.forEach(rawItem => {
+            let cleanItem = rawItem.replace(/^\[[^\]]+\]\s*/g, '').trim();
+            let costTag = '';
+            const costMatch = rawItem.match(/^\[([^\]]+)\]/);
+            if (costMatch) costTag = `[${costMatch[1]}] `;
+
+            let kwLabel = '';
+            let purePart = cleanItem;
+
+            if (cleanItem.includes(' - ')) {
+                const parts = cleanItem.split(' - ');
+                kwLabel = parts[0].trim();
+                purePart = parts.slice(1).join(' - ').trim();
+            } else {
+                if (sub3List.includes(cleanItem)) {
+                    kwLabel = cleanItem;
+                    purePart = '';
+                }
             }
+
+            if (item.type === '비정기' && kwLabel && (dt3 === '-' || !dt3)) {
+                dt3 = kwLabel;
+            }
+
+            let displayPart = purePart;
+            if (purePart) {
+                let specStr = '';
+                const specMatch = purePart.match(/\s*\[(.*?)\]$/);
+                if (specMatch) {
+                    specStr = specMatch[0];
+                    purePart = purePart.replace(specMatch[0], '').trim();
+                }
+
+                const matchItem = adminItems.find(ai => (ai.part || '').trim().toLowerCase() === purePart.toLowerCase() || (ai.code || '').trim().toLowerCase() === purePart.toLowerCase());
+                if (matchItem && matchItem.code) {
+                    displayPart = `${matchItem.code}${specStr}`;
+                } else {
+                    displayPart = `${purePart}${specStr}`;
+                }
+            }
+
+            let finalWorkItem = displayPart ? `${costTag}${displayPart}`.trim() : (kwLabel && item.type !== '비정기' ? `${costTag}${kwLabel}` : '');
+            if (finalWorkItem && finalWorkItem !== '-') {
+                workContentList.push(finalWorkItem);
+            }
+        });
+
+        if (workContentList.length === 0) {
+            workContentList.push('-');
         }
-        
-        let dt1 = item.detailType || '-';
-        let dt2 = item.detailType2 || '-';
-        
-        if (dt1.includes(' > ')) {
-            const parts = dt1.split(' > ');
-            dt1 = parts[0].trim();
-            dt2 = parts[1].trim();
-        } else if (dt2.includes(' > ')) {
-            const parts = dt2.split(' > ');
-            dt1 = parts[0].trim();
-            dt2 = parts[1].trim();
-        }
+
+        let contentDisplay = workContentList.join(', ');
+        let tooltipContent = contentDisplay;
         
         const hours = item.hours;
         let hourColor = '#3fb950'; // 녹색 (12시간 이하)
@@ -955,7 +1007,6 @@ function renderDowntimeTable(list, isSortChange = false) {
             equipHtml = `<div>${escapeHtml(item.equipName)}</div><div style="font-size: 11px; color: #3fb950; margin-top: 2px; font-weight: bold;">${escapeHtml(item.subText)}</div>`;
         }
         
-        // [수정] HTML 구조를 템플릿에서 복제하여 사용
         const tpl = document.getElementById('operation-downtime-row-template');
         if (!tpl) return;
         const tr = tpl.content.cloneNode(true).firstElementChild;
@@ -966,6 +1017,7 @@ function renderDowntimeTable(list, isSortChange = false) {
         tr.querySelector('.downtime-type').textContent = escapeHtml(item.type || '-');
         tr.querySelector('.downtime-dt1').textContent = escapeHtml(dt1);
         tr.querySelector('.downtime-dt2').textContent = escapeHtml(dt2);
+        tr.querySelector('.downtime-dt3').textContent = escapeHtml(dt3);
         const contentCell = tr.querySelector('.downtime-content');
         contentCell.title = escapeHtml(tooltipContent);
         contentCell.textContent = escapeHtml(contentDisplay);
@@ -973,7 +1025,6 @@ function renderDowntimeTable(list, isSortChange = false) {
         hoursCell.style.color = hourColor;
         hoursCell.textContent = `${item.hours.toFixed(1)} h`;
 
-        // [추가] 행 클릭 시 해당 작업의 상세 정보 팝업 모달 오픈
         tr.style.cursor = 'pointer';
         tr.addEventListener('click', () => {
             if (item.site && item.equip) {

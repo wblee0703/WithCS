@@ -3302,6 +3302,84 @@ def init_db():
             db.session.rollback()
             app.logger.error(f"[Migration] 직접 입력 텍스트 비용 라벨 제거 마이그레이션 오류: {str(clean_ex)}")
 
+        # [마이그레이션] 비정기 세부구분 3 분리 및 작업 세부내용(memo) 파트 추가 정보 content 복원 마이그레이션
+        try:
+            import re
+            sub3_list = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상", "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"]
+            log_migrated = 0
+            maint_migrated = 0
+
+            def process_irregular_item(item):
+                changed = False
+
+                dt = (item.detail_type or '').strip()
+                cnt = (item.content or '').strip()
+                memo = (item.memo or '').strip()
+                dt_parts = [p.strip() for p in dt.split(' > ') if p.strip()]
+
+                found_sub3 = None
+                prefix_pattern = re.compile(r'^(파트 이상 교체|파트 이상 수리|용액 용자 이상|현장 이슈|PC 이상|작업자 실수|통신 이상|프로그램 이상|단순조치|기타)\s*[-:]\s*')
+                m = prefix_pattern.match(cnt)
+                if m:
+                    found_sub3 = m.group(1)
+                    cnt = prefix_pattern.sub('', cnt).strip()
+                    changed = True
+
+                # memo에서 추가 파트 정보 추출
+                memo_parts_str = ''
+                if '[추가 파트]' in memo:
+                    memo_parts_str = memo.split('[추가 파트]')[1].strip()
+
+                # content가 비어버렸거나 단순 키워드만 있었던 경우 memo의 파트 정보 채우기
+                if not cnt or cnt in sub3_list or cnt == '내용 없음':
+                    if memo_parts_str:
+                        cnt = memo_parts_str
+                        changed = True
+                    elif memo:
+                        m_lines = [l.strip() for l in memo.split('\n') if l.strip()]
+                        p_lines = [l for l in m_lines if re.search(r'\[(유상|무상|기타)\]', l) or any(c in l.lower() for c in ['valve', 'pump', 'filter', 'sensor', 'column', 'module', 'kit', '펌프', '필터', '밸브', '센서', '컬럼', '모듈', '키트', '파츠', '파트'])]
+                        if p_lines:
+                            cnt = ", ".join(p_lines)
+                            changed = True
+
+                if item.type == '비정기':
+                    if len(dt_parts) == 2:
+                        if not found_sub3:
+                            for s3 in sub3_list:
+                                if s3 in (item.content or ''):
+                                    found_sub3 = s3
+                                    break
+                        if not found_sub3:
+                            found_sub3 = '파트 이상 교체' if memo_parts_str else '기타'
+                        dt_parts.append(found_sub3)
+                        item.detail_type = ' > '.join(dt_parts)
+                        changed = True
+                    elif len(dt_parts) >= 3 and found_sub3:
+                        dt_parts[2] = found_sub3
+                        item.detail_type = ' > '.join(dt_parts)
+                        changed = True
+
+                if item.content != cnt and cnt:
+                    item.content = cnt
+                    changed = True
+
+                return changed
+
+            for log in LogItem.query.all():
+                if process_irregular_item(log):
+                    log_migrated += 1
+
+            for maint in MaintItem.query.all():
+                if process_irregular_item(maint):
+                    maint_migrated += 1
+
+            if log_migrated > 0 or maint_migrated > 0:
+                db.session.commit()
+                app.logger.warning(f"[Migration] 작업 완료/예정 세부내용 파트 content 복원 마이그레이션 완료! (LogItem: {log_migrated}개, MaintItem: {maint_migrated}개)")
+        except Exception as ex_mig:
+            db.session.rollback()
+            app.logger.error(f"[Migration] 비정기 세부내용 마이그레이션 오류: {str(ex_mig)}")
+
         # [DB 마이그레이션] 사용자 데이터
         # Admin 초기 계정 생성
         admin_id = os.environ.get('APP_ADMIN_ID', 'admin')

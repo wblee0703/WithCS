@@ -177,37 +177,40 @@
     width: 140px;
 }
 
-/* 장비명 */
-#trouble-table th:nth-child(5) {
-    width: 80px;
-}
-
 /* 작업 구분 */
-#trouble-table th:nth-child(6) {
-    width: 120px;
+#trouble-table th:nth-child(5) {
+    width: 85px;
 }
 
 /* 세부 구분1 */
-#trouble-table th:nth-child(7) {
-    width: 140px;
+#trouble-table th:nth-child(6) {
+    width: 130px;
 }
 
 /* 세부 구분2 */
+#trouble-table th:nth-child(7) {
+    width: 130px;
+}
+
+/* 세부 구분3 */
 #trouble-table th:nth-child(8) {
-    width: 320px;
+    width: 130px;
 }
 
 /* 점검 항목 */
 #trouble-table th:nth-child(9) {
+    width: 250px;
+}
+
+/* Trouble 내용 (상황) - 남은 영역 모두 차지 */
+#trouble-table th:nth-child(10) {
     width: auto;
 }
 
-/* Trouble 내용 (증상) - 남은 영역 모두 차지 */
-#trouble-table th:nth-child(10) {
+/* 조치자 */
+#trouble-table th:nth-child(11) {
     width: 100px;
 }
-
-/* 조치자 */
 
 #trouble-table td {
     padding: 8px 10px;
