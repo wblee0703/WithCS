@@ -1952,14 +1952,10 @@ def admin_crud():
     action = data.get('action')
     payload = data.get('payload')
     
-    # [추가] 일반 관리자(admin)는 마스터 데이터 수정 불가 (장비 관련 등록/수정/삭제 및 달력 확정 기능만 예외 허용)
+    # [수정] 일반 관리자(admin)는 사업장(site) 마스터 관리만 superadmin으로 제한하고, 장비/물품/점검구분/셋업/설정 변경은 모두 허용
     if role == 'admin':
-        if domain == 'equip':
-            pass # 일반 관리자도 장비에 대한 모든 동작(등록/수정/삭제)은 전면 허용
-        elif domain in ['site', 'item']:
-            return jsonify({"status": "fail", "message": "해당 데이터의 추가/삭제/수정은 최종 관리자(superadmin)만 가능합니다."}), 403
-        if domain == 'setting' and data.get('payload', {}).get('key') != 'calendar_confirmations':
-            return jsonify({"status": "fail", "message": "해당 설정의 변경은 최종 관리자(superadmin)만 가능합니다."}), 403
+        if domain == 'site':
+            return jsonify({"status": "fail", "message": "사업장 데이터의 추가/삭제/수정은 최종 관리자(superadmin)만 가능합니다."}), 403
             
     
     try:

@@ -1742,6 +1742,51 @@ async function handleEquipSave() {
         alert('해당 사업장에 이미 동일한 장비가 존재합니다.'); return false;
     }
 
+    let equipChangeDetails = [];
+    if (currentAdminEquipKey) {
+        const oldDataKey = `details_${originalSite}_${currentAdminEquipKey}`;
+        const oldDataStr = localStorage.getItem(oldDataKey);
+        const oldData = oldDataStr ? JSON.parse(oldDataStr) : {};
+        const oldSetup = oldData.setup || {};
+
+        const oldKeyParts = currentAdminEquipKey.split('::');
+        const oldModelName = oldKeyParts[0] || '';
+        const oldSerial = oldKeyParts.length > 1 ? oldKeyParts[1] : '';
+        const oldCustEquipName = oldKeyParts.length > 2 ? oldKeyParts[2] : (oldSetup.custEquipName || '');
+
+        const fieldMap = [
+            { label: '사업장', oldVal: originalSite || '', newVal: targetSite || '' },
+            { label: '장비명', oldVal: oldModelName || '', newVal: finalName || '' },
+            { label: '시리얼넘버', oldVal: oldSerial || '', newVal: serial || '' },
+            { label: '고객사 장비명', oldVal: oldSetup.custEquipName || oldCustEquipName || '', newVal: custEquipName || '' },
+            { label: '프로젝트 번호', oldVal: oldSetup.projectNo || '', newVal: projectNo || '' },
+            { label: '장비 구분', oldVal: oldSetup.equipStatus || '', newVal: equipStatus || '' },
+            { label: '납품일', oldVal: oldSetup.deliveryDate || '', newVal: deliveryDate || '' },
+            { label: '워런티 시작일', oldVal: oldSetup.warrantyStart || '', newVal: warrantyStart || '' },
+            { label: '워런티 기간', oldVal: oldSetup.warrantyPeriod || '', newVal: warrantyPeriod || '' },
+            { label: '건물명', oldVal: oldSetup.building || '', newVal: building || '' },
+            { label: '층', oldVal: oldSetup.floor || '', newVal: floor || '' },
+            { label: '세부위치', oldVal: oldSetup.detailLoc || '', newVal: location || '' },
+            { label: '담당 엔지니어', oldVal: oldSetup.manager || '', newVal: manager || '' },
+            { label: '연락처', oldVal: oldSetup.contact || '', newVal: contact || '' },
+            { label: '이메일', oldVal: oldSetup.email || '', newVal: email || '' },
+            { label: '고객사 담당자', oldVal: oldSetup.custManager || '', newVal: custManager || '' },
+            { label: '고객사 연락처', oldVal: oldSetup.custContact || '', newVal: custContact || '' },
+            { label: '고객사 이메일', oldVal: oldSetup.custEmail || '', newVal: custEmail || '' },
+            { label: '특이사항', oldVal: oldData.specialNote || '', newVal: specialNote || '' }
+        ];
+
+        fieldMap.forEach(f => {
+            const o = (f.oldVal || '').trim();
+            const n = (f.newVal || '').trim();
+            if (o !== n) {
+                const displayOld = o ? o : '없음';
+                const displayNew = n ? n : '없음';
+                equipChangeDetails.push(`${f.label} : ${displayOld} -> ${displayNew}`);
+            }
+        });
+    }
+
     const setupPayload = {
         custEquipName: custEquipName, projectNo: projectNo, equipStatus: equipStatus, deliveryDate: deliveryDate,
         warrantyStart: warrantyStart, warrantyPeriod: warrantyPeriod, building: building,
@@ -1757,7 +1802,7 @@ async function handleEquipSave() {
         if (!success) { alert('서버 장비 신규 등록에 실패했습니다.'); return false; }
     }
 
-    // 수정 (Rename) 처리
+    // 수정 (Rename / 이동) 처리
     if (currentAdminEquipKey && (currentAdminEquipKey !== newKey || originalSite !== targetSite)) {
         if (!confirm('장비 정보를 변경하시겠습니까?\n기존 데이터가 새 정보로 이동됩니다.')) return false;
 
@@ -1809,7 +1854,8 @@ async function handleEquipSave() {
             localStorage.setItem('setup_data', JSON.stringify(setupData));
         }
 
-        addSystemLog('UPDATE_EQUIP', newKey, `From: ${currentAdminEquipKey}`);
+        const logDetailsStr = equipChangeDetails.length > 0 ? equipChangeDetails.join(', ') : `From: ${currentAdminEquipKey}`;
+        addSystemLog('UPDATE_EQUIP', newKey, logDetailsStr);
     }
     // 기존 정보 단순 업데이트
     else if (currentAdminEquipKey && currentAdminEquipKey === newKey) {
@@ -1835,6 +1881,10 @@ async function handleEquipSave() {
         };
         parsedData.specialNote = specialNote;
         localStorage.setItem(dataKey, JSON.stringify(parsedData));
+
+        if (equipChangeDetails.length > 0) {
+            addSystemLog('UPDATE_EQUIP', newKey, equipChangeDetails.join(', '));
+        }
     }
     // 신규 등록
     else if (!currentAdminEquipKey) {
@@ -1887,7 +1937,8 @@ async function handleEquipSave() {
         localStorage.setItem('setup_data', JSON.stringify(setupData));
         window.syncSetupDataDB(targetSite, newKey, initialSetupDetails, []); // DB 동기화
 
-        addSystemLog('ADD_EQUIP', newKey, `Site: ${targetSite}`);
+        const addLogDetails = `사업장 : ${targetSite}, 장비 구분 : ${equipStatus || '없음'}, 납품일 : ${deliveryDate || '없음'}`;
+        addSystemLog('ADD_EQUIP', newKey, addLogDetails);
     }
 
     // [추가] 폼에서 저장된 건물명이 해당 사업장의 건물 목록에 없으면 자동 추가

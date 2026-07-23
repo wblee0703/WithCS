@@ -612,6 +612,16 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     }
 
     // 내용 란(contentEl)에는 "[비용처리] 첫번째 선택한 물품 외 몇 개" 형식의 기본 방식으로 표출
+    const dtParts = (item.detailType || '').split(' > ').map(v => v.trim()).filter(Boolean);
+    const subCategoryKeywords = [
+        'PM 점검', 'BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상',
+        '순회 점검', '프로그램 변경 / 평가', '설비 평가', '파티클 필터 교체',
+        '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정',
+        '용액제조', '온라인점검', '현장 이슈', 'PC 이상', '작업자 실수',
+        '통신 이상', '용액 용자 이상', '파트 이상 교체', '파트 이상 수리',
+        '프로그램 이상', '기타', '장비 점검', '추가 작업'
+    ];
+
     const displayLabelsArr = itemsArr.map(s => {
         let temp = s.trim();
         if (!temp || temp === '내용 없음') return '';
@@ -632,6 +642,11 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         if (specMatch) {
             temp = temp.replace(specMatch[0], '').trim();
         }
+
+        if (dtParts.includes(temp) || subCategoryKeywords.includes(temp) || temp === item.detailType) {
+            return '';
+        }
+
         const matchItem = adminItems.find(ai => (ai.part || '').trim().toLowerCase() === temp.toLowerCase() || (ai.code || '').trim().toLowerCase() === temp.toLowerCase());
         if (matchItem && matchItem.code) {
             temp = matchItem.code;
@@ -667,6 +682,9 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
     const contentDiv = document.getElementById('detail-content');
     const detailContentInputEl = document.getElementById('detail-content-input');
+    if (detailContentInputEl) {
+        detailContentInputEl.value = (displayContent && displayContent !== '내용 없음') ? displayContent : '';
+    }
     const cancelBtn = document.getElementById('btn-cancel-completion');
 
     // [수정] 1. 이동 버튼을 장비 정보 옆으로 위치 이동
@@ -1219,6 +1237,7 @@ function buildDetailDropdown(item, site, equip) {
             contentDiv.style.display = 'none';
             contentInput.style.display = 'block';
             contentInput.disabled = false;
+            contentInput.value = (item && item.content && item.content !== '내용 없음') ? item.content : '';
 
             const pWrapper = document.getElementById('detail-edit-part-wrapper');
             if (pWrapper) pWrapper.style.display = 'none';
@@ -2898,8 +2917,7 @@ async function completeScheduleWork() {
 
     let finalCleanContent = cleanContentArr.length > 0 ? [...new Set(cleanContentArr)].join(', ') : '';
     if (!finalCleanContent) {
-        // 모든 수집 내용이 부품명이어서 걸러진 경우, 세부구분(detailType)을 기본 키워드로 사용
-        finalCleanContent = currentDetailType || maintItem.detailType || '장비 점검';
+        finalCleanContent = '내용 없음';
     }
     if (taskType === '고객대응' && (maintItem.detailType === '파티클 필터 교체' || maintItem.detailType.startsWith('파티클 필터 교체'))) {
         finalCleanContent = '[유상] Particle Filter';
@@ -2909,7 +2927,7 @@ async function completeScheduleWork() {
     if (taskType !== '정기') {
         if (!memo) return alert('점검 결과 / 메모를 입력해주세요.');
         if (finalCleanContent === '장비 점검' || !finalCleanContent) {
-            return alert('내용을 입력해주세요.');
+            finalCleanContent = '내용 없음';
         }
     }
 
@@ -2993,6 +3011,9 @@ async function completeScheduleWork() {
         i.md = "";
         if (i.type === '정기' || i.type === '비정기' || i.type === '고객대응') {
             i.date = completeDate;
+        }
+        if (finalCleanContent) {
+            i.content = finalCleanContent;
         }
         payload.maint_upserts.push(i);
     });
@@ -3351,7 +3372,7 @@ async function completeScheduleWork() {
     localStorage.setItem(key, JSON.stringify(data));
 
     if (typeof addSystemLog === 'function') {
-        addSystemLog('COMPLETE_SCHEDULE', equip, `작업일: ${completeDate}, 내용: ${combinedContent}`);
+        addSystemLog('COMPLETE_SCHEDULE', equip, `작업일: ${completeDate}, 구분: ${taskType}\n세부구분: ${currentDetailType}`);
     }
 
     if (maintItem.type === '비정기') {
@@ -3752,7 +3773,7 @@ async function cancelScheduleCompletion() {
         localStorage.setItem(key, JSON.stringify(data));
 
         if (typeof addSystemLog === 'function') {
-            addSystemLog('CANCEL_COMPLETION', equip, `예정일: ${logDate}, 내용: ${logContent}`);
+            addSystemLog('CANCEL_COMPLETION', equip, `작업일: ${logDate}, 구분: ${logType}\n세부구분: ${logItem.detailType || ''}`);
         }
 
         alert('작업 완료가 취소되었습니다.');
@@ -5796,7 +5817,7 @@ async function confirmRegisterSchedule() {
 
         if (window.currentAddWorkLogId) {
             if (typeof addSystemLog === 'function') {
-                addSystemLog('ADD_SCHEDULE_EXTRA', equip, `예정일: ${dateStr}, 내용: ${content} (추가 작업 등록)`);
+                addSystemLog('ADD_SCHEDULE_EXTRA', equip, `예정일: ${dateStr}, 구분: ${type}\n세부구분: ${finalDetailType} (추가 작업 등록)`);
             }
             document.getElementById('register-schedule-modal').style.display = 'none';
             setTimeout(() => {
@@ -5809,7 +5830,7 @@ async function confirmRegisterSchedule() {
             return;
         } else {
             if (typeof addSystemLog === 'function') {
-                addSystemLog('ADD_SCHEDULE', equip, `예정일: ${dateStr}, 구분: ${type}, 내용: ${content}`);
+                addSystemLog('ADD_SCHEDULE', equip, `예정일: ${dateStr}, 구분: ${type}\n세부구분: ${finalDetailType}`);
             }
         }
 

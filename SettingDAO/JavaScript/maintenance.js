@@ -933,10 +933,15 @@ async function deleteDetailItem(id) {
 
         // 4. 변경된 데이터 저장
         localStorage.setItem(key, JSON.stringify(data));
+        const delDate = targetItem ? (targetItem.scheduledDate || '') : '';
+        const delType = targetItem ? (targetItem.type || '') : '';
+        const delDetail = targetItem ? (targetItem.detailType || '') : '';
+        const delLogStr = `예정일: ${delDate}, 구분: ${delType}\n세부구분: ${delDetail}`;
+
         if (typeof window.addSystemLog === 'function') {
-            window.addSystemLog('DELETE_MAINTENANCE', currentPath.equip, `삭제: ${deletedContent} (ID: ${id})`);
+            window.addSystemLog('DELETE_MAINTENANCE', currentPath.equip, delLogStr);
         } else if (typeof addSystemLog === 'function') {
-            addSystemLog('DELETE_MAINTENANCE', currentPath.equip, `삭제: ${deletedContent} (ID: ${id})`);
+            addSystemLog('DELETE_MAINTENANCE', currentPath.equip, delLogStr);
         }
 
         // 5. 화면 즉시 갱신

@@ -501,8 +501,8 @@ async function migrateDataFormat() {
         isModified = true;
     }
 
-    // [개선] 유지관리 물품(maint) 등에 잘못 삽입된 비용처리 라벨 일괄 제거 마이그레이션
-    const migrationVersion = 'v1.9'; // 마이그레이션 버전 업데이트 (비용 라벨 무상(보증) 포함 클렌징)
+    // [개선] 유지관리 물품(maint) 및 작업 이력(logs) 마이그레이션 (세부구분 내용 보정 포함)
+    const migrationVersion = 'v2.0'; // 마이그레이션 버전 업데이트 (세부구분 내용 '내용 없음' 자동 보정)
     const lastMigration = localStorage.getItem('keywordMigrationVersion');
 
     if (lastMigration !== migrationVersion) {
@@ -515,6 +515,15 @@ async function migrateDataFormat() {
             '물품 이상 (교체)': '파트 이상 교체', '물품 이상 (수리)': '파트 이상 수리',
             '물품 이상 교체': '파트 이상 교체', '물품 이상 수리': '파트 이상 수리'
         };
+
+        const subCategoryKeywords = [
+            'PM 점검', 'BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상',
+            '순회 점검', '프로그램 변경 / 평가', '설비 평가', '파티클 필터 교체',
+            '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정',
+            '용액제조', '온라인점검', '현장 이슈', 'PC 이상', '작업자 실수',
+            '통신 이상', '용액 용자 이상', '파트 이상 교체', '파트 이상 수리',
+            '프로그램 이상', '기타', '장비 점검', '추가 작업'
+        ];
 
         const migrateString = (str) => {
             if (typeof str !== 'string') return str;
@@ -543,7 +552,17 @@ async function migrateDataFormat() {
                                     const original = item.content;
                                     item.content = migrateString(item.content);
 
-                                    if (item.type === '비정기') {
+                                    // [추가] 세부구분 명칭으로만 채워진 기존 내용을 '내용 없음'으로 보정
+                                    if (item.content && item.content !== '[유상] Particle Filter') {
+                                        let cleanContent = typeof window.removeCostLabels === 'function' ? window.removeCostLabels(item.content).trim() : item.content.replace(/^\[.*?\]\s*/, '').trim();
+                                        const dtParts = (item.detailType || '').split(' > ').map(s => s.trim()).filter(Boolean);
+                                        const isSubcategoryContent = dtParts.includes(cleanContent) || subCategoryKeywords.includes(cleanContent) || cleanContent === item.detailType;
+                                        if (isSubcategoryContent) {
+                                            item.content = '내용 없음';
+                                        }
+                                    }
+
+                                    if (item.type === '비정기' && item.content !== '내용 없음') {
                                         const prefixPattern = /^(파트 이상 교체|파트 이상 수리|용액 용자 이상|현장 이슈|PC 이상|작업자 실수|통신 이상|프로그램 이상|단순조치|기타)\s*[-:]\s*/;
                                         const mPref = item.content.match(prefixPattern);
                                         if (mPref) {
@@ -3568,7 +3587,7 @@ async function renderSystemLogs() {
                 <td style="text-align: center;">${escapeHtml(log.worker)}</td>
                 <td><span class="badge pm" style="background: #30363d;">${log.action}</span></td>
                 <td>${displayTarget}</td>
-                <td style="text-align: left;">${log.details}</td>
+                <td style="text-align: left; white-space: pre-line;">${log.details}</td>
             </tr>`;
         }).join('');
     } catch (err) {
@@ -3921,7 +3940,7 @@ function openNextScheduleModal(options) {
                 isUpdated = true;
 
                 if (typeof addSystemLog === 'function') {
-                    addSystemLog('ADD_SCHEDULE', equip, `Date: ${newDate}, Content: ${fullContent}, Next Schedule`);
+                    addSystemLog('ADD_SCHEDULE', equip, `예정일: ${newDate}, 구분: 정기\n세부구분: PM 점검 (다음 예정일)`);
                 }
             });
 
