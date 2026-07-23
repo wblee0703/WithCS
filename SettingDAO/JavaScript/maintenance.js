@@ -551,8 +551,8 @@ async function addDetailItem() {
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
     const match = adminItems.find(a => a.code === contentFromInput || a.part === contentFromInput);
 
-    const content = match ? match.part : contentFromInput;
     const code = match ? (match.code || '') : '';
+    const content = match ? (match.code || match.part) : contentFromInput;
 
     const dateEl = document.getElementById('maint-date');
     const periodEl = document.getElementById('maint-period');
@@ -673,18 +673,20 @@ function renderDetails() {
             badge.textContent = item.type || '정기';
         }
 
-        tr.querySelector('.edit-code').textContent = escapeHtml(item.code || '-');
+        tr.querySelector('.edit-code').textContent = escapeHtml(item.code || item.content || '-');
 
         const contentCell = tr.querySelector('.edit-content');
-        let safeContent = item.content || '';
+        if (contentCell) {
+            let safeContent = item.content || '';
 
-        // [강력 조치] 유지관리 리스트 화면에 비용 라벨이 절대 노출되지 않도록 렌더링 시점에서도 강제 정제
-        safeContent = safeContent.replace(/\[(?:유상|무상[^\]]*|기타)\]\s*/g, '').trim();
-        safeContent = safeContent.replace(/\s*-\s*(?=,|$)/g, '').trim();
+            // [강력 조치] 유지관리 리스트 화면에 비용 라벨이 절대 노출되지 않도록 렌더링 시점에서도 강제 정제
+            safeContent = safeContent.replace(/\[(?:유상|무상[^\]]*|기타)\]\s*/g, '').trim();
+            safeContent = safeContent.replace(/\s*-\s*(?=,|$)/g, '').trim();
 
-        contentCell.textContent = safeContent;
-        contentCell.dataset.rawContent = safeContent;
-        contentCell.dataset.rawSpec = item.spec || '';
+            contentCell.textContent = safeContent;
+            contentCell.dataset.rawContent = safeContent;
+            contentCell.dataset.rawSpec = item.spec || '';
+        }
 
         const specCell = tr.querySelector('.edit-spec');
         if (specCell) {
@@ -973,7 +975,7 @@ async function toggleEditRow(id) {
         // [추가] 타입(구분) 수정 가능하게 select 로 변경
         const currentType = badgeEl ? badgeEl.textContent.trim() : '정기';
         badgeContainer.innerHTML = `
-            <select id="input-type-${id}" class="input-dark" style="width: 100%; box-sizing: border-box; padding: 2px;">
+            <select id="input-type-${id}" class="input-dark" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 1px 2px; font-size: 11px;">
                 <option value="정기" ${currentType === '정기' ? 'selected' : ''}>정기</option>
                 <option value="비정기" ${currentType === '비정기' ? 'selected' : ''}>비정기</option>
             </select>
@@ -982,15 +984,15 @@ async function toggleEditRow(id) {
         // [수정] 주기(Period) 입력창을 number 타입으로 변경하고, 비정기일 때는 비활성화
         let currentPeriod = periodCell.textContent.replace('일', '').trim();
         if (currentPeriod === '-') currentPeriod = '';
-        periodCell.innerHTML = `<input type="number" id="input-period-${id}" value="${escapeHtml(currentPeriod)}" class="edit-period-input" min="0" oninput="if(this.value < 0) this.value = Math.abs(this.value)" ${currentType !== '정기' ? 'disabled style="opacity:0.5;"' : ''}>`;
+        periodCell.innerHTML = `<input type="number" id="input-period-${id}" value="${escapeHtml(currentPeriod)}" class="edit-period-input input-dark" min="0" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 1px 2px; font-size: 11px;" oninput="if(this.value < 0) this.value = Math.abs(this.value)" ${currentType !== '정기' ? 'disabled style="opacity:0.5;"' : ''}>`;
 
         if (specCell) {
             const currentSpec = specCell.textContent.trim() === '-' ? '' : specCell.textContent.trim();
-            specCell.innerHTML = `<input type="text" id="input-spec-${id}" value="${escapeHtml(currentSpec)}" class="edit-spec-input input-dark" style="width: 100%; box-sizing: border-box; padding: 4px;">`;
+            specCell.innerHTML = `<input type="text" id="input-spec-${id}" value="${escapeHtml(currentSpec)}" class="edit-spec-input input-dark" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 1px 2px; font-size: 11px;">`;
         }
 
         const currentDate = dateCell.textContent.trim();
-        dateCell.innerHTML = `<input type="date" id="input-date-${id}" value="${escapeHtml(currentDate)}" class="edit-date-input" style="width: 100%; box-sizing: border-box;">`;
+        dateCell.innerHTML = `<input type="date" id="input-date-${id}" value="${escapeHtml(currentDate)}" class="edit-date-input input-dark" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 1px 2px; font-size: 11px;">`;
         const dateInput = document.getElementById(`input-date-${id}`);
         if (dateInput) dateInput.focus();
 
@@ -1011,11 +1013,15 @@ async function toggleEditRow(id) {
         }
     } else {
         // [데이터 저장]
+        const key = `details_${currentPath.site}_${currentPath.equip}`;
+        const data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
+
         const typeSelect = document.getElementById(`input-type-${id}`);
         const newType = typeSelect ? typeSelect.value : (badgeEl ? badgeEl.textContent.trim() : '정기');
 
-        const newCode = codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim();
-        const newContent = contentCell.dataset.rawContent || contentCell.textContent.trim(); // [수정] HTML 공백 무시 방지
+        const newCode = codeCell ? (codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim()) : '';
+        const existingItem = data.maint ? data.maint.find(m => String(m.id) === String(id)) : null;
+        const newContent = (contentCell && contentCell.dataset.rawContent) ? contentCell.dataset.rawContent : (existingItem ? existingItem.content : '');
         const specInput = document.getElementById(`input-spec-${id}`);
         const newSpec = specInput ? specInput.value.trim() : '';
         const dateInput = document.getElementById(`input-date-${id}`);
@@ -1032,9 +1038,6 @@ async function toggleEditRow(id) {
         if (!newDate) return alert('날짜를 선택해주세요.');
 
         // [추가] 중복 등록 검사 로직 (수정 시점)
-        const key = `details_${currentPath.site}_${currentPath.equip}`;
-        const data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
-
         // [수정] 코드, 물품명, 물품상세가 모두 동일한 경우에만 중복으로 처리
         const isDuplicate = data.maint.some(m => {
             if (String(m.id) === String(id)) return false; // 자기 자신 제외
@@ -1084,25 +1087,37 @@ async function updateRowData(id, code, content, spec, date, period, type) {
 
         data.maint[idx] = tempItem;
         localStorage.setItem(key, JSON.stringify(data));
-        addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `수정: [${code || '-'}] ${content} (구분: ${tempItem.type}, 날짜: ${date}, 주기: ${period || '-'})`);
+        addSystemLog('UPDATE_MAINTENANCE', currentPath.equip, `수정: [${code || '-'}] ${content}\n(구분: ${tempItem.type}, 날짜: ${date}, 주기: ${period || '-'})`);
 
         return true;
     }
     return false;
 }
 
-function handleMaintReorder() {
+async function handleMaintReorder() {
+    if (!currentPath.site || !currentPath.equip) return;
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     let data = JSON.parse(localStorage.getItem(key));
     if (!data || !data.maint) return;
 
     const rows = document.querySelectorAll('#maint-table-body tr');
-    const newOrderIds = Array.from(rows).map(row => parseInt(row.dataset.id));
+    const newOrderIds = Array.from(rows).map(row => String(row.dataset.id));
+    if (newOrderIds.length === 0) return;
 
-    const maintMap = new Map(data.maint.map(item => [item.id, item]));
-    data.maint = newOrderIds.map(id => maintMap.get(id)).filter(item => item);
+    const currentMaint = data.maint;
+    const displayIdSet = new Set(newOrderIds);
 
+    const maintMap = new Map(currentMaint.map(item => [String(item.id), item]));
+    const reorderedDisplayItems = newOrderIds.map(id => maintMap.get(id)).filter(Boolean);
+    const otherItems = currentMaint.filter(item => !displayIdSet.has(String(item.id)));
+
+    data.maint = [...reorderedDisplayItems, ...otherItems];
     localStorage.setItem(key, JSON.stringify(data));
+
+    // [핵심] 드래그로 순서 변경 시 DB에 영구 저장
+    if (typeof window.syncHistoryTransaction === 'function') {
+        await window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_upserts: data.maint });
+    }
 }
 
 /* ==========================================================================

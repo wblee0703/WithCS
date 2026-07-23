@@ -1470,6 +1470,12 @@ function renderAdminEquipList() {
         });
     }
 
+    // [수정] 기타(ETC) 장비는 관리자 등록 장비 목록 및 대수 카운트에서 제외 (작업 등록/상세 모달에서는 정상 노출)
+    items = items.filter(item => {
+        const name = (item.key || '').split('::')[0] || '';
+        return name !== '기타(ETC)';
+    });
+
     if (keyword) {
         const keywords = keyword.split(/\s+/);
         items = items.filter(item => {
@@ -2178,31 +2184,42 @@ function setupItemMgmt() {
         });
     }
 
-    // [추가] 물품 관리 CSV 불러오기/내보내기 버튼 동적 생성
+    // [추가] 물품 관리 CSV 내보내기 버튼 이벤트 연결 및 위임
+    const staticBtnExport = document.getElementById('btn-export-item-csv');
+    if (staticBtnExport) {
+        staticBtnExport.onclick = exportItemCsv;
+    }
+
+    if (!window.hasItemCsvExportListener) {
+        window.hasItemCsvExportListener = true;
+        document.addEventListener('click', (e) => {
+            const targetBtn = e.target.closest('#btn-export-item-csv, .item-csv-export-btn');
+            if (targetBtn) {
+                e.preventDefault();
+                exportItemCsv();
+            }
+        });
+    }
+
     const itemListContainer = document.querySelector('.admin-item-list-container');
     if (itemListContainer) {
         const listHeader = itemListContainer.querySelector('.list-header > div:first-child');
         if (listHeader) {
-            const userRole = sessionStorage.getItem('userRole');
-
-            // [수정] 이미 물품 CSV 내보내기/불러오기 버튼이 추가되어 있다면 중복 생성하지 않고 스킵
-            if (listHeader.querySelector('.item-csv-export-btn') || listHeader.querySelector('.item-csv-import-btn')) {
-                return;
-            }
-
-            // 1. CSV 내보내기 버튼은 관리자(admin) 및 최종관리자(superadmin) 둘 다에게 노출
-            if (userRole === 'superadmin' || userRole === 'admin') {
+            // 1. CSV 내보내기 버튼 (동적 생성 보완)
+            if (!listHeader.querySelector('.item-csv-export-btn') && !document.getElementById('btn-export-item-csv')) {
                 const btnCsvExport = document.createElement('button');
+                btnCsvExport.id = 'btn-export-item-csv';
                 btnCsvExport.className = 'btn-settings item-csv-export-btn';
                 btnCsvExport.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: 5px;';
-                btnCsvExport.textContent = 'CSV 내보내기';
+                btnCsvExport.textContent = '내보내기';
                 btnCsvExport.title = '등록된 물품 데이터를 CSV 양식으로 내보냅니다.';
                 btnCsvExport.addEventListener('click', exportItemCsv);
                 listHeader.appendChild(btnCsvExport);
             }
 
-            // 2. CSV 불러오기 버튼은 최종관리자(superadmin)에게만 노출
-            if (userRole === 'superadmin') {
+            // 2. CSV 불러오기 버튼은 최종관리자(superadmin)에게 노출
+            const userRole = sessionStorage.getItem('userRole') || localStorage.getItem('userRole');
+            if (userRole === 'superadmin' && !listHeader.querySelector('.item-csv-import-btn')) {
                 const btnCsvImport = document.createElement('button');
                 btnCsvImport.className = 'btn-settings item-csv-import-btn';
                 btnCsvImport.style.cssText = 'font-size: 12px; padding: 2px 6px; border-radius: 4px; cursor: pointer; border: 1px solid #30363d; background: #21262d; color: #e6edf3; margin-left: 5px;';

@@ -5,7 +5,8 @@
     display: flex;
     align-items: center;
     margin-bottom: 8px;
-    flex-wrap: wrap; /* 모바일 줄바꿈 지원 */
+    flex-wrap: wrap;
+    /* 모바일 줄바꿈 지원 */
 }
 
 .content-body {
@@ -35,7 +36,8 @@
 #maint-window {
     flex: 1;
     min-height: 0;
-    overflow: visible; /* [수정] 제안 박스가 카드 밖으로 표시되도록 overflow 속성 변경 */
+    overflow: visible;
+    /* [수정] 제안 박스가 카드 밖으로 표시되도록 overflow 속성 변경 */
 }
 
 #log-window {
@@ -144,8 +146,90 @@ tr.editing {
     background-color: rgba(56, 139, 253, 0.1);
 }
 
+#maint-window .data-table-wrapper {
+    overflow-x: hidden !important;
+    /* 가로 스크롤 생성 완전 방지 */
+}
+
+#maint-window .data-table {
+    table-layout: fixed !important;
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+#maint-window .data-table th,
+#maint-window .data-table td {
+    padding: 8px 4px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 각 컬럼별 고정 너비 비율 설정 */
+#maint-window .data-table th:nth-child(1),
+#maint-window .data-table td:nth-child(1) {
+    width: 10%;
+}
+
+/* 분류 */
+
+#maint-window .data-table th:nth-child(2),
+#maint-window .data-table td:nth-child(2) {
+    width: 27%;
+}
+
+/* 코드명 */
+
+#maint-window .data-table th:nth-child(3),
+#maint-window .data-table td:nth-child(3) {
+    width: 18%;
+}
+
+/* 물품 상세 (2/3 수준으로 축소) */
+
+#maint-window .data-table th:nth-child(4),
+#maint-window .data-table td:nth-child(4) {
+    width: 15%;
+}
+
+/* 시작일 */
+
+#maint-window .data-table th:nth-child(5),
+#maint-window .data-table td:nth-child(5) {
+    width: 10%;
+}
+
+/* 주기 */
+
+#maint-window .data-table th:nth-child(6),
+#maint-window .data-table td:nth-child(6) {
+    width: 10%;
+}
+
+/* 상태 */
+
+#maint-window .data-table th:nth-child(7),
+#maint-window .data-table td:nth-child(7) {
+    width: 10%;
+}
+
+/* 관리 */
+
+/* 행 수정 모드(tr.editing) 전용 입력창 셀 내부 밀착 고정 */
 tr.editing td {
-    overflow: visible;
+    padding: 4px 2px !important;
+    overflow: hidden !important;
+}
+
+tr.editing input,
+tr.editing select {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    height: 26px !important;
+    font-size: 11px !important;
+    padding: 1px 2px !important;
+    margin: 0 !important;
 }
 
 tr.editing td[contenteditable="true"] {
@@ -227,7 +311,8 @@ tr.dragging {
 #log-list-wrapper .data-table td:nth-child(4) {
     text-align: left;
     padding-left: 15px;
-    box-sizing: border-box; /* 패딩이 너비에 포함되도록 설정 */
+    box-sizing: border-box;
+    /* 패딩이 너비에 포함되도록 설정 */
 }
 
 /* 추가작업 (신규) */
@@ -243,9 +328,12 @@ tr.dragging {
 
 /* [요청] 추가작업 버튼 표시를 위해 5번째 컬럼 스타일 조정 */
 #log-list-wrapper .data-table td:nth-child(5) {
-    white-space: normal; /* 버튼이 잘리지 않도록 */
-    overflow: visible;   /* 버튼이 잘리지 않도록 */
-    text-overflow: clip; /* 말줄임표 제거 */
+    white-space: normal;
+    /* 버튼이 잘리지 않도록 */
+    overflow: visible;
+    /* 버튼이 잘리지 않도록 */
+    text-overflow: clip;
+    /* 말줄임표 제거 */
 }
 
 /* [요청] 장비 점검 이력 톱니바퀴 및 관리 기능 컬럼 숨김 처리 */
@@ -255,7 +343,8 @@ tr.dragging {
 }
 
 .log-list-container {
-    flex: 1; /* [수정] 하단 고정 영역을 제외한 남은 공간을 모두 리스트가 차지하도록 변경 */
+    flex: 1;
+    /* [수정] 하단 고정 영역을 제외한 남은 공간을 모두 리스트가 차지하도록 변경 */
     min-height: 0;
     border-bottom: 1px solid #30363d;
     padding-bottom: 10px;
@@ -405,8 +494,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     height: 30px;
     box-sizing: border-box;
     font-size: 13px;
-    display: flex; /* [추가] 텍스트 수직 중앙 정렬 */
-    align-items: center; /* [추가] 텍스트 수직 중앙 정렬 */
+    display: flex;
+    /* [추가] 텍스트 수직 중앙 정렬 */
+    align-items: center;
+    /* [추가] 텍스트 수직 중앙 정렬 */
 }
 
 .log-select-dropdown {
@@ -429,6 +520,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 #log-content-dropdown {
     width: 100%;
 }
+
 #log-worker-dropdown,
 #memo-worker-dropdown {
     width: 150%;
@@ -527,11 +619,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
    5. 메모 섹션 (Memo)
    ========================================================================== */
 .memo-section {
-    flex: 1.5; /* [수정] 이력 리스트와 작업 내용의 비율을 1:1.3으로 조정 */
+    flex: 1.5;
+    /* [수정] 이력 리스트와 작업 내용의 비율을 1:1.3으로 조정 */
     display: flex;
     flex-direction: column;
     padding-top: 10px;
-    min-height: 0; /* [추가] 내부 콘텐츠가 길어져도 카드 전체 높이를 뚫고 무한정 늘어나는 현상 완벽 방지 */
+    min-height: 0;
+    /* [추가] 내부 콘텐츠가 길어져도 카드 전체 높이를 뚫고 무한정 늘어나는 현상 완벽 방지 */
 }
 
 .memo-header {
@@ -713,15 +807,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .memo-row-time {
     display: flex;
     align-items: center;
-    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    flex-wrap: wrap;
+    /* Allow wrapping on smaller screens */
     margin-top: 0;
-    gap: 15px; /* Space between time groups and duration */
+    gap: 15px;
+    /* Space between time groups and duration */
 }
 
 .memo-time-group {
     display: flex;
     align-items: center;
-    gap: 5px; /* Space between label and input */
+    gap: 5px;
+    /* Space between label and input */
 }
 
 .memo-row-time label {
@@ -796,15 +893,16 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         padding: 0 8px !important;
         gap: 4px !important;
     }
-    
+
     #maint-count {
-        margin-left: auto !important; /* 항목 건수를 우측 버튼들과 나란히 붙도록 밀어냄 */
+        margin-left: auto !important;
+        /* 항목 건수를 우측 버튼들과 나란히 붙도록 밀어냄 */
         margin-right: 4px;
         flex-shrink: 0;
     }
 
-    #log-window .card-header > div,
-    #maint-window .card-header > div {
+    #log-window .card-header>div,
+    #maint-window .card-header>div {
         flex: 0 0 auto;
         display: flex !important;
         align-items: center;
@@ -838,6 +936,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         font-size: 14px !important;
         font-weight: bold;
     }
+
     .btn-header-setting {
         margin-left: auto !important;
     }
@@ -871,7 +970,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         flex-wrap: wrap !important;
         gap: 5px !important;
     }
-    
+
     .memo-row-top,
     .memo-row-bottom {
         width: auto !important;
@@ -888,7 +987,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
 
     .issue-share-wrapper {
-        margin-left: 5px !important; /* 모바일에서 간격 축소 */
+        margin-left: 5px !important;
+        /* 모바일에서 간격 축소 */
     }
 
     .memo-worker-select {
@@ -905,7 +1005,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #memo-md {
         width: 40px !important;
         margin-right: 10px !important;
-        padding: 0  !important;
+        padding: 0 !important;
         padding: 0 4px !important;
     }
 
@@ -919,23 +1019,28 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         white-space: nowrap !important;
         overflow: hidden !important;
         text-overflow: ellipsis !important;
-        display: flex !important; /* [추가] 텍스트 수직 중앙 정렬 */
-        align-items: center !important; /* [추가] 텍스트 수직 중앙 정렬 */
+        display: flex !important;
+        /* [추가] 텍스트 수직 중앙 정렬 */
+        align-items: center !important;
+        /* [추가] 텍스트 수직 중앙 정렬 */
     }
-    
-     /* [요청] 모바일에서 드롭다운 너비 확장 */
+
+    /* [요청] 모바일에서 드롭다운 너비 확장 */
     .log-select-dropdown {
         width: 100% !important;
         min-width: 100% !important;
         max-width: none !important;
     }
+
     .log-select-item {
         display: flex !important;
         align-items: center !important;
     }
+
     .log-select-item span {
         flex: 1;
-        min-width: 0; /* 항목명이 넘칠 경우 말줄임표 처리되도록 설정 */
+        min-width: 0;
+        /* 항목명이 넘칠 경우 말줄임표 처리되도록 설정 */
     }
 
     #log-add-btn,
@@ -956,7 +1061,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #device-memo,
     #setup-log-detail-memo,
     textarea.delay-reason-textarea {
-        height: 250px !important; /* [수정] 모바일에서 메모창(작업내용) 높이를 더 크게 확대 */
+        height: 250px !important;
+        /* [수정] 모바일에서 메모창(작업내용) 높이를 더 크게 확대 */
         min-height: 250px !important;
         max-height: 800px !important;
         overflow-y: auto !important;
@@ -965,7 +1071,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     /* [요청] 모바일에서 카드 접기 버튼 표시 */
     .btn-collapse {
         display: block !important;
-        flex-shrink: 0; /* 텍스트 공간이 부족해도 아이콘은 찌그러지지 않도록 보호 */
+        flex-shrink: 0;
+        /* 텍스트 공간이 부족해도 아이콘은 찌그러지지 않도록 보호 */
     }
 
     /* [요청] 모바일에서 장비 점검 이력(#log-window)을 최상단으로 배치 */
@@ -982,17 +1089,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
     /* 1번째 줄 (토글 + 자동완성 입력창) */
     #maint-type-toggle {
-        flex: 0 0 100px !important; /* 토글 너비 고정 */
+        flex: 0 0 100px !important;
+        /* 토글 너비 고정 */
         width: 100px !important;
     }
-    
+
     #maint-type-toggle button {
         padding: 0 10px !important;
     }
 
     #maint-window .autocomplete-wrapper,
-    #maint-window > .form-row > #maint-content {
-        flex: 0 0 calc(100% - 105px) !important; /* 남은 너비 모두 차지하여 다음 줄로 밀어냄 */
+    #maint-window>.form-row>#maint-content {
+        flex: 0 0 calc(100% - 105px) !important;
+        /* 남은 너비 모두 차지하여 다음 줄로 밀어냄 */
         width: calc(100% - 105px) !important;
     }
 
@@ -1001,12 +1110,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         width: auto !important;
         min-width: 0 !important;
     }
-    
+
     /* 유지관리 물품 이력 팝업 모바일 최적화 */
     #maint-history-modal .modal-window {
         width: 95vw !important;
         height: 80vh !important;
     }
+
     #maint-history-modal .table-wrapper {
         overflow-x: auto !important;
     }
@@ -1019,7 +1129,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
 
     #maint-period {
-        flex: 0.8 !important; /* [요청] 주기 입력 박스 비율 축소 (모바일) */
+        flex: 0.8 !important;
+        /* [요청] 주기 입력 박스 비율 축소 (모바일) */
         width: auto !important;
         min-width: 0 !important;
     }
@@ -1031,7 +1142,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         padding: 0 !important;
         justify-content: center;
     }
-/* [수정] 모바일 환경에서 유지관리 물품 제안박스 입력창 너비에 완벽히 맞춤 */
+
+    /* [수정] 모바일 환경에서 유지관리 물품 제안박스 입력창 너비에 완벽히 맞춤 */
     #maint-window .suggestion-list {
         left: 0 !important;
         right: auto !important;
@@ -1044,24 +1156,30 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     #maint-content-suggestions .suggestion-item .abbr {
         display: none !important;
     }
+
     /* [요청] 모바일에서 장비 점검 이력 리스트 좌우 스크롤 및 전체 표시 */
     #log-list-wrapper {
         overflow-x: auto !important;
     }
 
     #log-list-wrapper .data-table {
-        min-width: 600px !important; /* 모든 컬럼이 찌그러지지 않도록 최소 너비 지정 (가로 스크롤 활성화) */
+        min-width: 600px !important;
+        /* 모든 컬럼이 찌그러지지 않도록 최소 너비 지정 (가로 스크롤 활성화) */
     }
 
     #log-list-wrapper .data-table th,
     #log-list-wrapper .data-table td {
-        font-size: 11px !important; /* 글자 크기 축소 */
-        padding: 6px 4px !important; /* 여백 축소로 더 많은 내용 표시 */
+        font-size: 11px !important;
+        /* 글자 크기 축소 */
+        padding: 6px 4px !important;
+        /* 여백 축소로 더 많은 내용 표시 */
     }
-     /* [요청] 모바일 환경에서 제안 박스 너비 및 위치 조정 */
+
+    /* [요청] 모바일 환경에서 제안 박스 너비 및 위치 조정 */
     #log-content-dropdown {
         width: 100%;
     }
+
     #log-worker-dropdown,
     #memo-worker-dropdown {
         width: 150%;
@@ -1070,12 +1188,36 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
 
     /* 모든 컬럼 표시 및 너비 재조정 */
-    #log-list-wrapper .data-table th:nth-child(1) { width: 80px !important; } /* 점검일 */
-    #log-list-wrapper .data-table th:nth-child(2) { width: 60px !important; } /* 구분 */
-    #log-list-wrapper .data-table th:nth-child(3) { width: 120px !important; } /* 세부구분 */
-    #log-list-wrapper .data-table th:nth-child(4) { width: 160px !important; } /* 내용 */
-    #log-list-wrapper .data-table th:nth-child(5) { width: 90px !important; } /* 추가작업 */
-    #log-list-wrapper .data-table th:nth-child(6) { width: 60px !important; } /* 이슈공유 */
+    #log-list-wrapper .data-table th:nth-child(1) {
+        width: 80px !important;
+    }
+
+    /* 점검일 */
+    #log-list-wrapper .data-table th:nth-child(2) {
+        width: 60px !important;
+    }
+
+    /* 구분 */
+    #log-list-wrapper .data-table th:nth-child(3) {
+        width: 120px !important;
+    }
+
+    /* 세부구분 */
+    #log-list-wrapper .data-table th:nth-child(4) {
+        width: 160px !important;
+    }
+
+    /* 내용 */
+    #log-list-wrapper .data-table th:nth-child(5) {
+        width: 90px !important;
+    }
+
+    /* 추가작업 */
+    #log-list-wrapper .data-table th:nth-child(6) {
+        width: 60px !important;
+    }
+
+    /* 이슈공유 */
 
     /* [요청] 모바일에서 '내용' 컬럼 좌측 정렬 및 여백 조정 */
     #log-list-wrapper .data-table td:nth-child(4) {
@@ -1085,14 +1227,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     /* [추가] 모바일에서 교체 물품 리스트와 메모장을 위아래로 확실히 분리 배치 */
     #memo-flex-wrapper {
         flex-direction: column !important;
-        height: auto !important; /* 모바일에서는 고정 높이 해제 */
+        height: auto !important;
+        /* 모바일에서는 고정 높이 해제 */
         min-height: 0 !important;
     }
-    
+
     #replaced-parts-container {
-        flex: 0 1 auto !important; /* 고정 너비(280px) 무시 */
-        width: 100% !important;    /* 가로 꽉 차게 변경 */
-        max-height: 200px !important; /* 스크롤 가능하도록 최대 높이 지정 */
+        flex: 0 1 auto !important;
+        /* 고정 너비(280px) 무시 */
+        width: 100% !important;
+        /* 가로 꽉 차게 변경 */
+        max-height: 200px !important;
+        /* 스크롤 가능하도록 최대 높이 지정 */
     }
 
     /* [추가] 모바일에서 시작/종료일시 입력창 세로 배치 및 여백 조정 */
@@ -1103,7 +1249,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     }
 
     .memo-time-group {
-        gap: 10px; /* 모바일에서 라벨과 입력창 사이 여백 증가 */
+        gap: 10px;
+        /* 모바일에서 라벨과 입력창 사이 여백 증가 */
         flex-wrap: wrap;
         width: 100%;
     }
@@ -1137,6 +1284,7 @@ body[class*="role-"] #maint-table-body .btn-del-sm {
 #maint-history-modal {
     z-index: 12000;
 }
+
 #maint-history-modal .modal-window {
     width: 700px;
     max-width: 95%;
@@ -1145,6 +1293,7 @@ body[class*="role-"] #maint-table-body .btn-del-sm {
     display: flex;
     flex-direction: column;
 }
+
 #maint-history-modal .modal-body {
     padding: 15px;
     flex: 1;
@@ -1153,6 +1302,7 @@ body[class*="role-"] #maint-table-body .btn-del-sm {
     flex-direction: column;
     overflow: hidden;
 }
+
 #maint-history-modal .maint-history-table {
     width: 100%;
     min-width: 500px;

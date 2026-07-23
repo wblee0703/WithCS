@@ -1100,15 +1100,30 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         }
         const queryId = item.originalLogId || id;
         if (queryId) {
+            const localChildLogs = (data.logs || []).filter(l => l.originalLogId && (String(l.originalLogId) === String(queryId) || String(l.originalLogId) === String(id)));
+            const localChildMaints = (data.maint || []).filter(m => m.originalLogId && (String(m.originalLogId) === String(queryId) || String(m.originalLogId) === String(id)));
+            const localCount = localChildLogs.length + localChildMaints.length;
+
+            if (localCount > 0) {
+                additionalWorksBtn.style.display = 'inline-block';
+                additionalWorksBtn.textContent = `추가작업 확인 (${localCount})`;
+                if (btnGroup) btnGroup.classList.add('has-additional-work');
+                additionalWorksBtn.onclick = () => {
+                    if (typeof window.openExtraWorkHistoryModal === 'function') {
+                        window.openExtraWorkHistoryModal(site, equip, queryId);
+                    }
+                };
+            }
+
             fetch(`/api/maintenance/additional-works?parent_id=${encodeURIComponent(queryId)}`, {
                 headers: { 'X-CSRFToken': getCookie('csrf_token') }
             })
                 .then(res => res.json())
                 .then(resData => {
                     if (resData.status === 'success' && resData.data && resData.data.length > 0) {
+                        const totalCount = Math.max(resData.data.length, localCount);
                         additionalWorksBtn.style.display = 'inline-block';
-                        additionalWorksBtn.textContent = `추가작업 확인 (${resData.data.length})`;
-                        // [수정] 추가작업 확인 버튼이 표시되므로 부모에 클래스 부여 (모바일 2행 배치 활성화)
+                        additionalWorksBtn.textContent = `추가작업 확인 (${totalCount})`;
                         if (btnGroup) {
                             btnGroup.classList.add('has-additional-work');
                         }
@@ -1398,7 +1413,7 @@ function buildDetailDropdown(item, site, equip) {
         const match = adminItems.find(a => a.part === content || a.code === content);
         if (match) {
             code = match.code || '';
-            realContent = match.part || content;
+            realContent = match.code || match.part || content;
             const displayValue = code ? code : realContent;
             if (!seenContents.has(displayValue)) {
                 seenContents.add(displayValue);
@@ -1418,7 +1433,7 @@ function buildDetailDropdown(item, site, equip) {
         if (match || isDefaultItem) {
             if (match) {
                 code = match.code || code;
-                realContent = match.part || realContent;
+                realContent = match.code || match.part || realContent;
             }
             const displayValue = code ? code : realContent;
             if (!seenContents.has(displayValue)) {
@@ -2428,7 +2443,7 @@ async function saveDetailChanges() {
                     let code = '';
                     let fullContent = pureContent;
                     const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
-                    if (match) { code = match.code || ''; fullContent = match.part || pureContent; }
+                    if (match) { code = match.code || ''; fullContent = match.code || match.part || pureContent; }
 
                     if (keywordPart) {
                         fullContent = `${keywordPart} - ${fullContent}`;
@@ -2527,7 +2542,7 @@ async function saveDetailChanges() {
                     let fullContent = pureContent;
                     let period = null;
                     const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
-                    if (match) { code = match.code || ''; fullContent = match.part || pureContent; period = match.cycle || null; }
+                    if (match) { code = match.code || ''; fullContent = match.code || match.part || pureContent; period = match.cycle || null; }
 
                     if (keywordPart && newType !== '정기') {
                         fullContent = `${keywordPart} - ${fullContent}`;
@@ -5611,7 +5626,7 @@ async function confirmRegisterSchedule() {
                 const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
                 if (match) {
                     code = match.code || '';
-                    fullContent = match.part || pureContent;
+                    fullContent = match.code || match.part || pureContent;
                 }
 
                 combinedContentArray.push(fullContent);
@@ -5679,7 +5694,7 @@ async function confirmRegisterSchedule() {
                 const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
                 if (match) {
                     code = match.code || '';
-                    fullContent = match.part || pureContent;
+                    fullContent = match.code || match.part || pureContent;
                 }
 
                 combinedContentArray.push(fullContent);
@@ -5763,7 +5778,7 @@ async function confirmRegisterSchedule() {
                 const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
                 if (match) {
                     code = match.code || '';
-                    fullContent = match.part || pureContent;
+                    fullContent = match.code || match.part || pureContent;
                     period = match.cycle || null;
                 }
 
@@ -5778,6 +5793,9 @@ async function confirmRegisterSchedule() {
                     if (itemCost) existingItem.itemCost = itemCost;
                     if (idx === 0) lastProcessedId = existingItem.id;
                     existingItem.content = fullContent;
+                    if (window.currentAddWorkLogId) {
+                        existingItem.originalLogId = window.currentAddWorkLogId.toString();
+                    }
 
                     const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
                     const newMonth = dateStr.substring(0, 7);
@@ -5799,7 +5817,8 @@ async function confirmRegisterSchedule() {
                         costType: costType,
                         worker: worker,
                         md: md,
-                        itemCost: itemCost
+                        itemCost: itemCost,
+                        originalLogId: window.currentAddWorkLogId ? window.currentAddWorkLogId.toString() : null
                     };
                     if (idx === 0) lastProcessedId = newItem.id;
                     data.maint.push(newItem);

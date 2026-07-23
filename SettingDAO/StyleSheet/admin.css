@@ -359,6 +359,53 @@
     padding-right: 0;
 }
 
+/* [추가] 물품 관리 헤더 및 CSV 내보내기/불러오기 버튼 스타일 보정 */
+.admin-item-list-container .list-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.admin-item-list-container .list-header > div:first-child {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+}
+
+.item-csv-export-btn,
+.item-csv-import-btn {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px !important;
+    padding: 3px 8px !important;
+    height: 24px !important;
+    line-height: 1 !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    border: 1px solid #30363d !important;
+    background: #21262d !important;
+    color: #e6edf3 !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+}
+
+.item-csv-export-btn:hover,
+.item-csv-import-btn:hover {
+    background: #30363d !important;
+    color: #ffffff !important;
+}
+
+#admin-item-search {
+    width: 130px;
+    max-width: 140px;
+    flex-shrink: 1;
+}
+
 /* [추가] 물품 관리 우측 상세 영역 최소 너비 고정 */
 #section-item-mgmt .admin-col-detail {
     flex: 1;

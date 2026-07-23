@@ -263,6 +263,7 @@ class MaintItem(db.Model):
     trouble_occur_date = db.Column(db.String(50), default='') # [추가] 트러블 발생 일시
     original_log_id = db.Column(db.String(50), nullable=True) # [추가] 추가 작업(미완료)과 원본(부모) 로그를 연결하는 외래 식별자
     image_data = db.Column(db.Text(length=2000000), nullable=True) # [추가]
+    sort_order = db.Column(db.Integer, default=0) # [추가] 물품 순서 영구 보존용 정렬 순서
 
 class LogItem(db.Model):
     _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -466,12 +467,15 @@ def load_data():
             }
 
         # 유지관리(maint) 예정 목록
-        for m in maint_items.get(eq.id, []):
+        eq_maint_list = maint_items.get(eq.id, [])
+        eq_maint_list.sort(key=lambda x: (x.sort_order if hasattr(x, 'sort_order') and x.sort_order is not None else 0, x._unique_id))
+        for m in eq_maint_list:
             data[detail_key]["maint"].append({
                 "id": int(m.id) if str(m.id).isdigit() else m.id, "type": m.type, "detailType": m.detail_type,
                 "code": m.code, "content": m.content, "spec": m.spec, "date": m.date, "scheduledDate": m.scheduled_date,
                 "period": int(m.period) if m.period and str(m.period).isdigit() else m.period,
                 "costType": m.cost_type, "worker": m.worker, "md": m.md, "itemCost": m.item_cost, "memo": m.memo,
+                "sortOrder": getattr(m, 'sort_order', 0),
                 "originalLogId": int(m.original_log_id) if m.original_log_id and str(m.original_log_id).isdigit() else m.original_log_id
             })
             
@@ -2286,12 +2290,13 @@ def history_transaction():
         if maint_deletes:
             MaintItem.query.filter(MaintItem.id.in_(maint_deletes)).delete(synchronize_session=False)
         
-        for m in maint_upserts:
+        for idx, m in enumerate(maint_upserts):
             m_id = str(m['id'])
             item = MaintItem.query.filter_by(id=m_id).first()
             if not item:
                 item = MaintItem(id=m_id, equip_id=equip_id)
                 db.session.add(item)
+            item.sort_order = idx
             item.type = m.get('type', item.type)
             item.detail_type = m.get('detailType', item.detail_type)
             item.code = m.get('code', item.code)
@@ -3067,6 +3072,13 @@ def init_db():
             db.session.commit()
         except:
             db.session.rollback()
+
+        # [마이그레이션] maint_item 테이블에 sort_order 컬럼 추가 (드래그 순서 영구 유지용)
+        try:
+            db.session.execute(text('ALTER TABLE maint_item ADD COLUMN sort_order INT DEFAULT 0'))
+            db.session.commit()
+        except:
+            db.session.rollback()
             
         # [마이그레이션] LogItem 테이블에 startTime, endTime 컬럼 추가
         try:
@@ -3160,7 +3172,7 @@ def init_db():
             ).all()
             maint_changed = False
             for item in maint_filter_items:
-                if item.content != '[유상] Particle Filter':
+                if (item.content or '').strip() != '[유상] Particle Filter' or item.item_cost != '유상':
                     item.content = '[유상] Particle Filter'
                     item.item_cost = '유상'
                     maint_changed = True
@@ -3171,7 +3183,7 @@ def init_db():
             ).all()
             log_changed = False
             for item in log_filter_items:
-                if item.content != '[유상] Particle Filter':
+                if (item.content or '').strip() != '[유상] Particle Filter':
                     item.content = '[유상] Particle Filter'
                     log_changed = True
 
@@ -3253,6 +3265,10 @@ def init_db():
                 clean_code = (item.code or '').replace(' ', '').lower()
                 clean_spec = (item.spec or '').replace(' ', '').lower()
                 
+                # 물품(부품)이 지정되지 않은 일반 작업 일지는 중복 제거 대상에서 제외
+                if not clean_code and (not clean_content or clean_content == '내용없음'):
+                    continue
+
                 key = (eq_id, clean_content, clean_code, clean_spec)
                 groups.setdefault(key, []).append(item)
                 
@@ -3287,83 +3303,6 @@ def init_db():
         except Exception as maint_ex:
             db.session.rollback()
             app.logger.error(f"[Migration] 유지관리 물품 중복 정제 오류: {str(maint_ex)}")
-
-        # [DB 마이그레이션] 완료 및 예정 이력 중 텍스트 직접 입력 항목의 비용처리 라벨 제거
-        try:
-            admin_parts = AdminItem.query.all()
-            parts_set = set()
-            for ap in admin_parts:
-                if ap.part:
-                    parts_set.add(ap.part.strip().lower())
-                if ap.code:
-                    parts_set.add(ap.code.strip().lower())
-            
-            import re
-            cost_pattern = re.compile(r'^\[(.*?)\]\s*(.*)$')
-            
-            def clean_cost_label_from_text(content_str):
-                if not content_str:
-                    return content_str
-                
-                items = [item.strip() for item in content_str.split(',') if item.strip()]
-                updated_items = []
-                changed = False
-                
-                for item in items:
-                    prefix = ""
-                    val = item
-                    if " - " in item:
-                        parts = item.split(" - ", 1)
-                        prefix = parts[0].strip() + " - "
-                        val = parts[1].strip()
-                    
-                    cost_match = cost_pattern.match(val)
-                    pure_val = val
-                    if cost_match:
-                        pure_val = cost_match.group(2).strip()
-                        
-                    pure_name = re.sub(r'\s*\[.*?\]$', '', pure_val).strip()
-                    
-                    # 규격 찌꺼기 항목 감지 (예: "[유상] [1M]" 또는 " [1M]" 등) -> 리스트에서 제외 (삭제)
-                    if not pure_name:
-                        changed = True
-                        continue
-                    
-                    if cost_match:
-                        if pure_name.lower() not in parts_set:
-                            updated_items.append(f"{prefix}{pure_val}")
-                            changed = True
-                        else:
-                            updated_items.append(item)
-                    else:
-                        updated_items.append(item)
-                
-                if changed:
-                    return ", ".join(updated_items)
-                return None
-
-            log_changed_count = 0
-            all_logs = LogItem.query.all()
-            for log in all_logs:
-                new_content = clean_cost_label_from_text(log.content)
-                if new_content is not None:
-                    log.content = new_content
-                    log_changed_count += 1
-
-            maint_changed_count = 0
-            all_maints = MaintItem.query.all()
-            for maint in all_maints:
-                new_content = clean_cost_label_from_text(maint.content)
-                if new_content is not None:
-                    maint.content = new_content
-                    maint_changed_count += 1
-            
-            if log_changed_count > 0 or maint_changed_count > 0:
-                db.session.commit()
-                app.logger.warning(f"[Migration] 과거 직접 입력 완료/예정 내용 중 텍스트 부분의 비용 라벨 제거 완료! (LogItem: {log_changed_count}개, MaintItem: {maint_changed_count}개)")
-        except Exception as clean_ex:
-            db.session.rollback()
-            app.logger.error(f"[Migration] 직접 입력 텍스트 비용 라벨 제거 마이그레이션 오류: {str(clean_ex)}")
 
         # [마이그레이션] 비정기 세부구분 3 분리 및 작업 세부내용(memo) 파트 추가 정보 content 복원 마이그레이션
         try:

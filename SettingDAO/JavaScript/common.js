@@ -3868,7 +3868,7 @@ function openNextScheduleModal(options) {
                 const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
                 if (match) {
                     code = match.code || '';
-                    fullContent = match.part || pureContent;
+                    fullContent = match.code || match.part || pureContent;
                     period = match.cycle || null;
                 }
 
@@ -3976,7 +3976,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     const logs = data.logs || [];
     const maints = data.maint || [];
 
-    let parentLog = logs.find(l => l.id == originalLogId);
+    let parentLog = logs.find(l => l.id == originalLogId) || maints.find(m => m.id == originalLogId);
     if (!parentLog && typeof allTroubles !== 'undefined') {
         parentLog = allTroubles.find(t => String(t.id) === String(originalLogId));
     }
@@ -4761,7 +4761,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             
             let code = match.code || '';
             let partno = match.partno || '';
-            actualPart = match.part || actualPart; // 이름 표준화 보정
+            actualPart = match.code || match.part || actualPart; // 코드명 우선 적용 보정
 
             const finalBaseName = code || actualPart;
             const specStr = spec ? ` [${spec}]` : '';
