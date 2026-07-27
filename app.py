@@ -706,8 +706,8 @@ def login():
 
     user = User.query.filter_by(id=user_id).first()
 
-    if not user or user.id != os.getenv('APP_ADMIN_ID', 'admin'):
-        return jsonify({"status": "fail", "message": "로그인시 로그인안되게 해주고 서버 점검중으로 현재 접속 불가능 입니다. 죄송합니다."}), 403
+    # 전체 로그인 차단 (정비 중)
+    return jsonify({"status": "fail", "message": "로그인시 로그인안되게 해주고 서버 점검중으로 현재 접속 불가능 합니다. 죄송합니다."}), 403
 
     # 1. 계정 잠금 확인
     now = datetime.now()
