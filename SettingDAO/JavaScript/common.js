@@ -239,6 +239,13 @@ window.resolveFullEquipKey = function (site, equip) {
         return collapsedEquip;
     }
 
+    const normKey = (str) => (str || '').replace(/[^a-zA-Z0-9가-힣]/g, '').toLowerCase();
+    const cleanNormEquip = normKey(cleanEquip);
+    if (cleanNormEquip) {
+        const directNormMatch = siteEquips.find(eq => normKey(eq) === cleanNormEquip);
+        if (directNormMatch) return directNormMatch;
+    }
+
     const rawParts = cleanEquip.split('::').map(p => p.trim()).filter(Boolean);
     let inModel = '', inSerial = '', inCust = '';
 

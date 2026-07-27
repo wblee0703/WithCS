@@ -2252,6 +2252,14 @@ def resolve_master_equip_id(equip_id):
     if not all_equips:
         return clean_id
 
+    # [추가] 특수문자/공백/콜론 개수 차이 흡수를 위한 정규화 ID 1:1 매칭
+    norm_clean_id = normalize_key(clean_id)
+    if norm_clean_id:
+        for cand in all_equips:
+            if normalize_key(cand.id) == norm_clean_id:
+                app.logger.info(f"[Master Equip Direct Resolve] '{equip_id}' -> '{cand.id}'")
+                return cand.id
+
     # 2. 콜론(::) 파싱 및 비어있지 않은 토큰 추출
     raw_tokens = [p.strip() for p in clean_id.split('::') if p and p.strip()]
     if not raw_tokens:
