@@ -1745,11 +1745,33 @@ async function handleEquipSave() {
     }
 
     const finalName = matchedModel.name;
-    const newKey = `${finalName}::${serial}::${custEquipName}`;
     const normKey = (str) => (str || '').replace(/[^a-zA-Z0-9가-힣]/g, '').toLowerCase();
 
-    // 수정 시 실제 식별자(사업장/모델/시리얼/고객사장비명)가 변경되었는지 정규화 비교
-    const isKeyChanged = currentAdminEquipKey ? (normKey(currentAdminEquipKey) !== normKey(newKey) || originalSite !== targetSite) : false;
+    // 기존 키의 파트 분리
+    const oldParts = currentAdminEquipKey ? currentAdminEquipKey.split('::') : [];
+    const oldModelName = oldParts[0] || '';
+    const oldSerial = oldParts.length > 1 ? oldParts[1] : '';
+    const oldCustEquipNameInKey = oldParts.length > 2 ? oldParts[2] : '';
+
+    // 실제 사용자가 모델명, 시리얼번호, 고객사장비명(기존 키에 고객사장비명이 있었던 경우) 또는 사업장을 변경했는지 확인
+    const isModelChanged = currentAdminEquipKey ? (normKey(oldModelName) !== normKey(finalName)) : false;
+    const isSerialChanged = currentAdminEquipKey ? (normKey(oldSerial) !== normKey(serial)) : false;
+    const isCustChanged = (currentAdminEquipKey && oldCustEquipNameInKey) ? (normKey(oldCustEquipNameInKey) !== normKey(custEquipName)) : false;
+    const isSiteChanged = currentAdminEquipKey ? (originalSite !== targetSite) : false;
+
+    const isKeyChanged = isModelChanged || isSerialChanged || isCustChanged || isSiteChanged;
+
+    // newKey 결정: 핵심 식별자가 변경되거나 신규 등록 시에만 새 키 구성을 생성하고, 제자리 수정이면 기존 currentAdminEquipKey 유지
+    let newKey = currentAdminEquipKey;
+    if (!currentAdminEquipKey || isKeyChanged) {
+        if (custEquipName && custEquipName !== serial) {
+            newKey = `${finalName}::${serial}::${custEquipName}`;
+        } else if (serial) {
+            newKey = `${finalName}::${serial}`;
+        } else {
+            newKey = finalName;
+        }
+    }
 
     // 중복 체크 (수정이면서 식별자가 변경된 경우 또는 신규 등록 시)
     if ((!currentAdminEquipKey || isKeyChanged) && storageData[targetSite]) {
