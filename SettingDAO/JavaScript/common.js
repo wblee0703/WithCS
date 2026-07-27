@@ -221,16 +221,122 @@ window.splitSafetyContent = function (contentStr, adminItems) {
 // [추가] 진행 중인 서버 동기화 요청 개수 (페이지 강제 종료 방지용)
 window.activeSyncRequests = 0;
 
+window.resolveFullEquipKey = function (site, equip) {
+    if (!site || !equip) return equip || '';
+    const cleanSite = site.trim();
+    let cleanEquip = equip.trim();
+    if (!cleanEquip) return '';
+
+    const deviceDataMap = (typeof getDeviceDataMap === 'function') ? getDeviceDataMap() : (JSON.parse(localStorage.getItem('device_data')) || {});
+    const siteEquips = deviceDataMap[cleanSite] || [];
+    if (!siteEquips || siteEquips.length === 0) return cleanEquip;
+
+    if (siteEquips.includes(cleanEquip)) {
+        return cleanEquip;
+    }
+
+    const rawParts = cleanEquip.split('::').map(p => p.trim());
+    let inModel = '', inSerial = '', inCust = '';
+
+    if (rawParts.length >= 4) {
+        inModel = rawParts[1] || rawParts[0];
+        inSerial = rawParts[2];
+        inCust = rawParts[3];
+    } else if (rawParts.length === 3) {
+        inModel = rawParts[0];
+        const val = rawParts[1];
+        const val2 = rawParts[2];
+        const invalidSerials = ['n/a', 'none', '-', '없음', 'null', 'undefined', ''];
+
+        if (val2 && !val) {
+            inSerial = '';
+            inCust = val2;
+        } else if (val && val.toLowerCase() !== 'n/a' && !invalidSerials.includes(val.toLowerCase())) {
+            inSerial = val;
+            inCust = val2;
+        } else {
+            inSerial = '';
+            inCust = val2 || val;
+        }
+    } else if (rawParts.length === 2) {
+        inModel = rawParts[0];
+        inSerial = rawParts[1];
+    } else if (rawParts.length === 1) {
+        inModel = rawParts[0];
+    }
+
+    const invalidSerials = ['n/a', 'none', '-', '없음', 'null', 'undefined', ''];
+    const isSerialValid = inSerial && !invalidSerials.includes(inSerial.toLowerCase());
+
+    const candList = siteEquips.map(eq => {
+        const parts = eq.split('::').map(p => p.trim());
+        return {
+            fullKey: eq,
+            model: parts[0] || '',
+            serial: parts[1] || '',
+            cust: parts[2] || ''
+        };
+    });
+
+    // 1. Model + Serial + CustEquipName 모두 일치
+    if (inModel && isSerialValid && inCust) {
+        const match = candList.find(c => c.model === inModel && c.serial === inSerial && c.cust === inCust);
+        if (match) return match.fullKey;
+    }
+
+    // 2. Model + CustEquipName 일치 (Serial이 비어있거나 불일치해도 고객사 장비명 일치 시 매칭)
+    if (inModel && inCust) {
+        const match = candList.find(c => c.model === inModel && c.cust === inCust);
+        if (match) return match.fullKey;
+    }
+
+    // 3. Model + Serial 일치
+    if (inModel && isSerialValid) {
+        const match = candList.find(c => c.model === inModel && c.serial === inSerial);
+        if (match) return match.fullKey;
+    }
+
+    // 4. CustEquipName 단독 고유 일치
+    if (inCust) {
+        const custMatches = candList.filter(c => c.cust === inCust);
+        if (custMatches.length === 1) return custMatches[0].fullKey;
+    }
+
+    // 5. Serial 단독 고유 일치
+    if (isSerialValid) {
+        const serialMatches = candList.filter(c => c.serial === inSerial);
+        if (serialMatches.length === 1) return serialMatches[0].fullKey;
+    }
+
+    // 6. Model 단독 매칭 (단 1대만 존재할 때)
+    if (inModel) {
+        const modelMatches = candList.filter(c => c.model === inModel);
+        if (modelMatches.length === 1) return modelMatches[0].fullKey;
+    }
+
+    return cleanEquip;
+};
+
 // [추가] 100% DB 전환을 위한 유지관리/이력 전용 트랜잭션 동기화 함수
 window.syncHistoryTransaction = async function (site, equip, payload) {
     window.activeSyncRequests++;
-    const equip_id = `${site}::${equip}`;
+    let resolvedEquip = equip;
+    if (typeof window.resolveFullEquipKey === 'function') {
+        resolvedEquip = window.resolveFullEquipKey(site, equip);
+    }
+    const equip_id = `${site}::${resolvedEquip}`;
     try {
         const res = await fetch('/api/history/transaction', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
             body: JSON.stringify({ equip_id, ...payload })
         });
+        if (!res.ok) {
+            const errorMsg = await res.text();
+            console.error('DB Sync HTTP Error:', res.status, errorMsg);
+            alert(`서버 응답 오류 (HTTP ${res.status}). 요청을 처리할 수 없습니다.`);
+            return false;
+        }
         const data = await res.json();
         if (data.status !== 'success') {
             console.error('DB Sync Error:', data.message);

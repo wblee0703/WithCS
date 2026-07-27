@@ -401,6 +401,31 @@ def load_data():
     if 'check_type_items' not in data: data['check_type_items'] = {}
     if 'setup_templates' not in data: data['setup_templates'] = {}
 
+    # [추가] DB에 등록된 모든 장비의 모델명을 equipment_models 목록에 자동 통합 보정 (dict/str 호환)
+    raw_models = data.get('equipment_models', [])
+    model_strings = []
+    if isinstance(raw_models, list):
+        for item in raw_models:
+            if isinstance(item, str) and item.strip():
+                model_strings.append(item.strip())
+            elif isinstance(item, dict):
+                m_val = item.get('name') or item.get('model') or item.get('code')
+                if m_val and isinstance(m_val, str) and m_val.strip():
+                    model_strings.append(m_val.strip())
+
+    existing_models = set(model_strings)
+    for eq in Equipment.query.all():
+        if eq.name and eq.name.strip() and eq.name.strip() != "기타(ETC)":
+            existing_models.add(eq.name.strip())
+    for si in SetupInfo.query.all():
+        if si.model and si.model.strip() and si.model.strip() != "기타(ETC)":
+            existing_models.add(si.model.strip())
+    
+    if raw_models and isinstance(raw_models, list) and len(raw_models) > 0 and isinstance(raw_models[0], dict):
+        data['equipment_models'] = raw_models
+    else:
+        data['equipment_models'] = sorted(list(existing_models))
+
     # 2. 물품 관리 마스터 데이터
     admin_items = AdminItem.query.all()
     data['admin_items'] = [{
@@ -439,8 +464,8 @@ def load_data():
         site_prefix = f"{eq.site_name}::"
         eq_name_serial = eq.id[len(site_prefix):] if str(eq.id).startswith(site_prefix) else eq.id
         parts = eq_name_serial.split('::')
-        e_name = parts[0] if len(parts) > 0 else ""
-        e_serial = parts[1] if len(parts) > 1 else ""
+        e_name = eq.name if eq.name else (parts[0] if len(parts) > 0 else "")
+        e_serial = eq.serial if eq.serial is not None else (parts[1] if len(parts) > 1 else "")
 
         if e_name == "기타(ETC)":
             eq_key = "기타(ETC)::::"
@@ -2199,6 +2224,96 @@ def admin_crud():
         app.logger.error(f"Admin CRUD Error ({domain} - {action}): {str(e)}", exc_info=True)
         return jsonify({"status": "fail", "message": str(e)}), 500
 
+# [추가] 장비 ID 지능형 3개 이상 다원 일치 보정 헬퍼 함수
+def resolve_master_equip_id(equip_id):
+    if not equip_id or not isinstance(equip_id, str):
+        return equip_id
+    
+    import unicodedata, re
+    clean_id = unicodedata.normalize('NFC', str(equip_id).strip()).rstrip(':').strip()
+
+    def normalize_key(val):
+        if not val:
+            return ""
+        return re.sub(r'[^a-zA-Z0-9가-힣]', '', str(val)).lower()
+
+    # 1. DB에 완벽히 동일한 ID로 있는 경우 즉시 반환
+    exact = Equipment.query.filter_by(id=clean_id).first()
+    if exact:
+        return exact.id
+
+    raw_parts = [p.strip() for p in clean_id.split('::')]
+    if len(raw_parts) < 2:
+        return clean_id
+
+    site = raw_parts[0]
+    name = raw_parts[1]
+    
+    invalid_serials = ['n/a', 'none', '-', '없음', 'null', 'undefined', '']
+
+    req_serial = ""
+    req_cust = ""
+    if len(raw_parts) >= 4:
+        req_serial = raw_parts[2]
+        req_cust = raw_parts[3]
+    elif len(raw_parts) == 3:
+        val = raw_parts[2]
+        if val and val.lower() not in invalid_serials:
+            req_serial = val
+        else:
+            req_cust = val
+
+    candidates = [c for c in Equipment.query.all() if normalize_key(c.site_name) == normalize_key(site)]
+    if not candidates:
+        candidates = Equipment.query.all()
+
+    cand_info_list = []
+    for cand in candidates:
+        c_serial = (cand.serial or "").strip()
+        si = SetupInfo.query.filter_by(equip_id=cand.id).first()
+        c_cust = (si.cust_equip_name or "").strip() if si else ""
+        cand_info_list.append((cand, c_serial, c_cust))
+
+    # Priority 1: Site + Model + Serial + CustEquipName 4개 완벽 일치
+    if req_serial and req_cust:
+        for cand, c_serial, c_cust in cand_info_list:
+            if normalize_key(cand.site_name) == normalize_key(site) and normalize_key(cand.name) == normalize_key(name):
+                if normalize_key(c_serial) == normalize_key(req_serial) and normalize_key(c_cust) == normalize_key(req_cust):
+                    return cand.id
+
+    # Priority 2: 3개 정보 일치 (Site + Model + CustEquipName) -> 시리얼 번호가 없거나 다를 때 고객사 장비명으로 100% 매칭! (SKH 이천::EM201::::CAAB02 대응)
+    if req_cust:
+        for cand, c_serial, c_cust in cand_info_list:
+            if normalize_key(cand.site_name) == normalize_key(site) and normalize_key(cand.name) == normalize_key(name):
+                if c_cust and normalize_key(c_cust) == normalize_key(req_cust):
+                    return cand.id
+
+    # Priority 3: 3개 정보 일치 (Site + Model + Serial) -> 시리얼 번호가 존재하는 경우 100% 매칭!
+    if req_serial and req_serial.lower() not in invalid_serials:
+        for cand, c_serial, c_cust in cand_info_list:
+            if normalize_key(cand.site_name) == normalize_key(site) and normalize_key(cand.name) == normalize_key(name):
+                if c_serial and normalize_key(c_serial) == normalize_key(req_serial):
+                    return cand.id
+
+    # Priority 4: 고객사 장비명 단독 고유 대조 (Site + CustEquipName)
+    if req_cust:
+        cust_matches = [cand for cand, c_serial, c_cust in cand_info_list if normalize_key(cand.site_name) == normalize_key(site) and c_cust and normalize_key(c_cust) == normalize_key(req_cust)]
+        if len(cust_matches) == 1:
+            return cust_matches[0].id
+
+    # Priority 5: 시리얼 번호 단독 고유 대조 (Site + Serial)
+    if req_serial and req_serial.lower() not in invalid_serials:
+        serial_matches = [cand for cand, c_serial, c_cust in cand_info_list if normalize_key(cand.site_name) == normalize_key(site) and c_serial and normalize_key(c_serial) == normalize_key(req_serial)]
+        if len(serial_matches) == 1:
+            return serial_matches[0].id
+
+    # Priority 6: 동일 사업장 내 모델명이 단 1대뿐인 경우
+    model_matches = [cand for cand, c_serial, c_cust in cand_info_list if normalize_key(cand.site_name) == normalize_key(site) and normalize_key(cand.name) == normalize_key(name)]
+    if len(model_matches) == 1:
+        return model_matches[0].id
+
+    return clean_id
+
 # [추가] 유지관리 및 캘린더 장비 이력 100% DB 동기화 전용 트랜잭션 API
 @app.route('/api/history/transaction', methods=['POST'])
 @login_required
@@ -2212,79 +2327,13 @@ def history_transaction():
     log_deletes = data.get('log_deletes', [])
 
     # [추가] 외래 키 충돌 방지를 위한 equip_id 지능형 보정 장치
-    exists = Equipment.query.filter_by(id=equip_id).first()
-    if not exists and equip_id:
-        parts = equip_id.split('::')
-        if len(parts) >= 3:
-            site = parts[0]
-            name = parts[1]
-            rest = parts[2:]
-            candidates = Equipment.query.filter_by(site_name=site, name=name).all()
-            corrected_id = None
-            
-            import re
-            def normalize_key(val):
-                if not val:
-                    return ""
-                return re.sub(r'[^a-zA-Z0-9]', '', val).lower()
-            
-            app.logger.debug(f"[장비 ID 보정 디버깅] 요청 equip_id: {equip_id}")
-            app.logger.debug(f"[장비 ID 보정 디버깅] 파싱 - site: {site}, name: {name}, parts[2]: {parts[2]}, parts[3]: {parts[3] if len(parts)>=4 else '없음'}")
-            
-            # [개선] 장비 모델명의 미세한 공백/대소문자 차이(예: PROFAST2000 vs proFAST 2000)를 포괄적으로 보정하기 위해 site_name으로만 1차 후보군 조회
-            candidates = Equipment.query.filter_by(site_name=site).all()
-            app.logger.debug(f"[장비 ID 보정 디버깅] 1차 조회 candidates 수: {len(candidates)}")
-            for c in candidates:
-                app.logger.debug(f"  -> 후보 ID: {c.id}, Name: {c.name}, Serial: {c.serial}")
-            
-            for cand in candidates:
-                # 1. 시리얼 번호 비교 (일치해야 함)
-                cand_serial = cand.serial.strip() if cand.serial else ""
-                req_serial = parts[2].strip()
-                
-                # 2. 고객사장비명 비교
-                si = SetupInfo.query.filter_by(equip_id=cand.id).first()
-                cand_cust = si.cust_equip_name.strip() if si and si.cust_equip_name else ""
-                req_cust = parts[3].strip() if len(parts) >= 4 else ""
-                
-                # 유효하지 않은 기본 더미 시리얼 목록 필터링
-                invalid_serials = ['n/a', 'none', '-', '없음', 'null', 'undefined', '']
-                is_cand_serial_valid = cand_serial.lower() not in invalid_serials
-                is_req_serial_valid = req_serial.lower() not in invalid_serials
-                
-                serial_match = False
-                if is_cand_serial_valid and is_req_serial_valid:
-                    serial_match = (normalize_key(cand_serial) == normalize_key(req_serial))
-                
-                cust_match = False
-                if cand_cust and req_cust:
-                    cust_match = (normalize_key(cand_cust) == normalize_key(req_cust))
-                
-                app.logger.debug(f"  -> 비교 상세: {cand.id} | Serial: '{cand_serial}' vs '{req_serial}' | Cust: '{cand_cust}' vs '{req_cust}'")
-                
-                # [논리적 매칭 판별 필터 개선]
-                # 시리얼 번호가 유효하고 완벽히 일치한다면 모델명이 미세하게 달라도 (SOMA-3000E vs SOMA-3000I 등) 장비 매칭 통과!
-                if is_cand_serial_valid and is_req_serial_valid and serial_match:
-                    if cand_cust and req_cust and not cust_match:
-                        continue
-                    corrected_id = cand.id
-                    app.logger.debug(f"  -> 매칭 최종 성공! (시리얼 기준 일치 - 모델명 우회) corrected_id: {corrected_id}")
-                    break
-                
-                # 만약 시리얼 번호가 없거나 매칭되지 않은 경우, 모델명 대조를 기반으로 2차 필터 작동
-                if normalize_key(cand.name) == normalize_key(name):
-                    if cand_cust and req_cust and cust_match:
-                        corrected_id = cand.id
-                        app.logger.debug(f"  -> 매칭 최종 성공! (모델명 & 고객사명 일치) corrected_id: {corrected_id}")
-                        break
-                    elif not cand_cust and not req_cust:
-                        corrected_id = cand.id
-                        app.logger.debug(f"  -> 매칭 최종 성공! (모델명 일치 & 고객사명 없음) corrected_id: {corrected_id}")
-                        break
-                     
-            if corrected_id:
-                app.logger.info(f"[장비 ID 보정 성공] '{equip_id}' -> '{corrected_id}' (외래 키 매핑 교정)")
-                equip_id = corrected_id
+    if equip_id:
+        equip_id = resolve_master_equip_id(equip_id)
+
+    # [Rule 3 준수] DB에 등록되지 않은 마스터 장비 데이터 자동 생성 차단
+    if equip_id and not Equipment.query.filter_by(id=equip_id).first():
+        app.logger.warning(f"[Rule 3] 등록되지 않은 마스터 장비 차단: {equip_id}")
+        return jsonify({'status': 'fail', 'message': f'등록되지 않은 마스터 장비 데이터입니다 ({equip_id}). ADMIN에서 장비를 수동으로 등록해주세요.'}), 400
 
     try:
         if maint_deletes:
@@ -2494,9 +2543,24 @@ def get_trouble_list():
     for l in log_items:
         site_name, equip_name = get_eq_info(l.equip_id)
         orig_id = str(getattr(l, 'original_log_id', '') or '').strip()
+        add_work_id = str(getattr(l, 'add_work_log_id', '') or '').strip()
         l_id = str(l.id or '').strip()
-        parent_id = orig_id if orig_id else l_id
-        group_key = f"log_{parent_id}"
+
+        date_str = str(l.date or getattr(l, 'trouble_occur_date', '') or '').strip()[:10]
+        clean_memo = str(l.memo or '').strip()
+        clean_worker = str(l.worker or '').strip()
+        clean_dt = str(l.detail_type or '').strip()
+        clean_type = str(l.type or '비정기').strip()
+
+        if orig_id:
+            group_key = f"log_parent_{orig_id}"
+        elif add_work_id:
+            group_key = f"log_parent_{add_work_id}"
+        elif clean_memo or clean_dt:
+            group_key = f"task_{l.equip_id}_{date_str}_{clean_type}_{clean_dt}_{clean_worker}_{clean_memo}"
+        else:
+            group_key = f"log_{l_id}"
+
         safe_content = getattr(l, 'trouble_details', '') or ''
         result.append({
             "id": l_id,
