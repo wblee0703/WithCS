@@ -1987,22 +1987,49 @@ async function handleEquipDelete() {
     const success = await syncAdminDB('equip', 'DELETE', { id: currentAdminEquipKey, site: targetSite });
     if (!success) return false;
 
-    // 리스트에서 제거
-    storageData[targetSite] = storageData[targetSite].filter(k => k !== currentAdminEquipKey);
+    const normKey = (str) => (str || '').replace(/[^a-zA-Z0-9가-힣]/g, '').toLowerCase();
+    const targetNormKey = normKey(currentAdminEquipKey);
 
-    // details 제거
-    localStorage.removeItem(`details_${targetSite}_${currentAdminEquipKey}`);
+    // 1. storageData (device_data) 내 해당 사업장의 장비 목록에서 정규화 비교로 안전하게 제거
+    if (storageData[targetSite]) {
+        storageData[targetSite] = storageData[targetSite].filter(k => {
+            return k !== currentAdminEquipKey && normKey(k) !== targetNormKey;
+        });
+    }
 
-    // setup_data 제거
+    // 2. localStorage details_ 키 제거 (정규화 대조 포함)
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const lKey = localStorage.key(i);
+        if (lKey && lKey.startsWith(`details_${targetSite}_`)) {
+            const eqPart = lKey.replace(`details_${targetSite}_`, '');
+            if (eqPart === currentAdminEquipKey || normKey(eqPart) === targetNormKey) {
+                keysToRemove.push(lKey);
+            }
+        }
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+
+    // 3. setup_data 제거 (정규화 대조 포함)
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    delete setupData[`${targetSite}::${currentAdminEquipKey}`];
+    Object.keys(setupData).forEach(sKey => {
+        if (sKey.startsWith(`${targetSite}::`)) {
+            const eqPart = sKey.replace(`${targetSite}::`, '');
+            if (eqPart === currentAdminEquipKey || normKey(eqPart) === targetNormKey) {
+                delete setupData[sKey];
+            }
+        }
+    });
     localStorage.setItem('setup_data', JSON.stringify(setupData));
+
+    // 4. device_data 저장소 업데이트
+    localStorage.setItem('device_data', JSON.stringify(storageData));
 
     addSystemLog('DELETE_EQUIP', currentAdminEquipKey, `Site: ${targetSite}`);
 
     if (typeof saveData === 'function') saveData();
     alert('삭제되었습니다.');
-    setAdminFormDirty(false, 'equip'); // [추가]
+    setAdminFormDirty(false, 'equip');
     resetEquipForm();
     renderAdminEquipList();
 }

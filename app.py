@@ -2167,10 +2167,29 @@ def admin_crud():
                     setup.cust_email = s_data.get('custEmail', '')
                     setup.model = s_data.get('model', '')
             elif action == 'DELETE':
-                del_id = payload['id']
-                del_site = payload.get('site', '')
-                db_del_id = f"{del_site}::{del_id}"
-                db.session.execute(text("DELETE FROM equipment WHERE id=:n1 OR id=:n2"), {'n1':db_del_id, 'n2':del_id})
+                del_id = str(payload['id'])
+                del_site = str(payload.get('site', ''))
+                raw_target_id = f"{del_site}::{del_id}"
+                
+                target_equip_id = resolve_master_equip_id(raw_target_id)
+                if not target_equip_id or target_equip_id == raw_target_id:
+                    target_equip_id = resolve_master_equip_id(del_id)
+
+                db.session.execute(text("DELETE FROM equipment WHERE id=:i1 OR id=:i2 OR id=:i3"), {
+                    'i1': target_equip_id,
+                    'i2': raw_target_id,
+                    'i3': del_id
+                })
+                
+                # 정규화 ID 비교 기반 2차 안전 삭제
+                norm_del1 = normalize_key(raw_target_id)
+                norm_del2 = normalize_key(target_equip_id)
+                if norm_del1 or norm_del2:
+                    all_eqs = Equipment.query.all()
+                    for eq in all_eqs:
+                        eq_norm = normalize_key(eq.id)
+                        if (norm_del1 and eq_norm == norm_del1) or (norm_del2 and eq_norm == norm_del2):
+                            db.session.delete(eq)
 
         elif domain == 'item':
             if action == 'CREATE' or action == 'UPDATE':
