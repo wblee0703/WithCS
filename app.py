@@ -2071,41 +2071,34 @@ def admin_crud():
                 else:
                     db_new_id = f"{site_name}::{e_name}::{e_serial}::{cust_name}"
                 
-                old_parts = old_id.split('::')
-                if len(old_parts) >= 3:
-                    db_old_id = f"{old_site}::{old_id}"
-                else:
-                    # 예전 3필드 ID 규격 호환 처리
-                    old_name = old_parts[0] if len(old_parts) > 0 else ""
-                    old_serial = old_parts[1] if len(old_parts) > 1 else ""
-                    temp_old_id = f"{old_site}::{old_id}"
-                    old_setup = SetupInfo.query.filter_by(equip_id=temp_old_id).first()
-                    old_cust = old_setup.cust_equip_name if old_setup else ""
-                    db_old_id = f"{old_site}::{old_name}::{old_serial}::{old_cust}"
-                    if not Equipment.query.filter_by(id=db_old_id).first():
-                        db_old_id = temp_old_id
+                raw_old_id = f"{old_site}::{old_id}"
+                resolved_old = resolve_master_equip_id(raw_old_id)
+                db_old_id = resolved_old if resolved_old else raw_old_id
 
-                # [수정] 조회 전 캐시 상태에 의한 불일치 방지
                 db.session.expire_all()
 
-                # 수정 대상이 되는 기존 객체를 db_old_id로 먼저 확보
+                # 수정 대상이 되는 기존 객체를 우선적으로 찾기
                 equip = Equipment.query.filter_by(id=db_old_id).first()
+                if not equip and db_old_id != raw_old_id:
+                    equip = Equipment.query.filter_by(id=raw_old_id).first()
                 if not equip:
                     equip = Equipment.query.filter_by(id=db_new_id).first()
                 if not equip:
-                    # [3차 방어 조회] 사업장명, 장비명, 시리얼 번호가 일치하는 객체 찾기 (포맷 불일치 극복)
                     equip = Equipment.query.filter_by(site_name=old_site, name=e_name, serial=e_serial).first()
                 if not equip and e_name and e_serial:
-                    # [4차 방어 조회] 모델명과 시리얼번호 매칭
                     equip = Equipment.query.filter_by(name=e_name, serial=e_serial).first()
                     
                 if equip:
-                    # 찾은 장비 객체의 데이터베이스 상 실제 정식 ID를 db_old_id로 정정하여 유실 방지
                     db_old_id = equip.id
 
-                    # 1. ID가 변경되었을 때의 처리 (CASCADE 및 식별자 갱신)
+                    # 1. ID가 변경되었을 때의 처리 (중복 제거 & CASCADE 및 식별자 갱신)
                     if db_old_id != db_new_id:
-                        # [보안/외래키 예외 방어] 임시로 외래 키 제약 조건 검사 비활성화 (MySQL & SQLite 모두 대응)
+                        # 이미 db_new_id를 가리키는 중복 레코드가 DB에 있다면 우선 제거하여 PK 충돌 방지
+                        dup_new = Equipment.query.filter_by(id=db_new_id).first()
+                        if dup_new and dup_new.id != equip.id:
+                            db.session.delete(dup_new)
+                            db.session.flush()
+
                         try:
                             db.session.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
                         except:
@@ -2114,18 +2107,18 @@ def admin_crud():
                             except:
                                 pass
 
-                        # 하위 자식 테이블들의 외래 키를 RAW SQL로 새 ID로 전이 (외래키 무결성 제약 보완)
                         db.session.execute(text("UPDATE maint_item SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
                         db.session.execute(text("UPDATE log_item SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
                         db.session.execute(text("UPDATE setup_detail SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
                         db.session.execute(text("UPDATE setup_log SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
                         db.session.execute(text("UPDATE trouble_log SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
                         
-                        # 부모 레코드 ID를 ORM 수준에서 직접 갱신하여 세션 캐시 무결성 유지
                         equip.id = db_new_id
+                        equip.site_name = site_name
+                        equip.name = e_name
+                        equip.serial = e_serial
                         db.session.flush()
 
-                        # [보안/외래키 복구] 외래 키 제약 조건 검사 다시 활성화
                         try:
                             db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
                         except:
@@ -2133,11 +2126,14 @@ def admin_crud():
                                 db.session.execute(text("PRAGMA foreign_keys = ON;"))
                             except:
                                 pass
+                    else:
+                        equip.site_name = site_name
+                        equip.name = e_name
+                        equip.serial = e_serial
 
                     # 2. 상세 스펙 정보 및 셋업 매핑 갱신
                     equip.special_note = payload.get('special_note', '')
                     
-                    # 셋업 정보 조회 (ID가 바뀐 경우 기존 ID로 먼저 조회 시도)
                     setup = SetupInfo.query.filter_by(equip_id=db_new_id).first()
                     if not setup and db_old_id != db_new_id:
                         setup = SetupInfo.query.filter_by(equip_id=db_old_id).first()
@@ -2148,7 +2144,6 @@ def admin_crud():
                         setup = SetupInfo(equip_id=db_new_id)
                         db.session.add(setup)
                         
-                    # 매핑
                     s_data = payload.get('setup', {})
                     setup.cust_equip_name = s_data.get('custEquipName', '')
                     setup.project_no = s_data.get('projectNo', '')

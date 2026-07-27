@@ -1746,10 +1746,20 @@ async function handleEquipSave() {
 
     const finalName = matchedModel.name;
     const newKey = `${finalName}::${serial}::${custEquipName}`;
+    const normKey = (str) => (str || '').replace(/[^a-zA-Z0-9가-힣]/g, '').toLowerCase();
 
-    // 중복 체크 (수정이면 자기 자신 제외)
-    if (currentAdminEquipKey !== newKey && storageData[targetSite].includes(newKey)) {
-        alert('해당 사업장에 이미 동일한 장비가 존재합니다.'); return false;
+    // 수정 시 실제 식별자(사업장/모델/시리얼/고객사장비명)가 변경되었는지 정규화 비교
+    const isKeyChanged = currentAdminEquipKey ? (normKey(currentAdminEquipKey) !== normKey(newKey) || originalSite !== targetSite) : false;
+
+    // 중복 체크 (수정이면서 식별자가 변경된 경우 또는 신규 등록 시)
+    if ((!currentAdminEquipKey || isKeyChanged) && storageData[targetSite]) {
+        const hasDuplicate = storageData[targetSite].some(k => {
+            if (currentAdminEquipKey && normKey(k) === normKey(currentAdminEquipKey)) return false;
+            return normKey(k) === normKey(newKey);
+        });
+        if (hasDuplicate) {
+            alert('해당 사업장에 이미 동일한 장비가 존재합니다.'); return false;
+        }
     }
 
     let equipChangeDetails = [];
@@ -1804,49 +1814,33 @@ async function handleEquipSave() {
         custManager: custManager, custContact: custContact, custEmail: custEmail, model: serial
     };
 
-    if (currentAdminEquipKey) {
+    // 식별자 변경(Rename / 이동) 수정 처리
+    if (currentAdminEquipKey && isKeyChanged) {
+        if (!confirm('장비 핵심 정보(명칭/시리얼/고객사 장비명)를 변경하시겠습니까?\n기존 데이터가 새 정보로 전이됩니다.')) return false;
+
         const success = await syncAdminDB('equip', 'UPDATE', { old_id: currentAdminEquipKey, new_id: newKey, site: targetSite, old_site: originalSite, new_site: targetSite, special_note: specialNote, setup: setupPayload });
         if (!success) { alert('서버 장비 정보 수정에 실패했습니다.'); return false; }
-    } else {
-        const success = await syncAdminDB('equip', 'CREATE', { new_id: newKey, site: targetSite, special_note: specialNote, setup: setupPayload });
-        if (!success) { alert('서버 장비 신규 등록에 실패했습니다.'); return false; }
-    }
 
-    // 수정 (Rename / 이동) 처리
-    if (currentAdminEquipKey && (currentAdminEquipKey !== newKey || originalSite !== targetSite)) {
-        if (!confirm('장비 정보를 변경하시겠습니까?\n기존 데이터가 새 정보로 이동됩니다.')) return false;
-
-        // 1. 기존 위치에서 장비 키 제거
+        // 1. 기존 위치에서 정규화된 장비 키 제거
         if (originalSite && storageData[originalSite]) {
-            storageData[originalSite] = storageData[originalSite].filter(k => k !== currentAdminEquipKey);
+            storageData[originalSite] = storageData[originalSite].filter(k => normKey(k) !== normKey(currentAdminEquipKey));
         }
 
         // 2. 새 위치에 장비 키 추가
         if (!storageData[targetSite]) storageData[targetSite] = [];
-        if (!storageData[targetSite].includes(newKey)) storageData[targetSite].push(newKey);
+        storageData[targetSite] = storageData[targetSite].filter(k => normKey(k) !== normKey(newKey));
+        storageData[targetSite].push(newKey);
 
-        // details 데이터 이동
+        // details 데이터 이동 및 구버전 삭제
         const oldDataKey = `details_${originalSite}_${currentAdminEquipKey}`;
         const oldData = localStorage.getItem(oldDataKey);
         let parsedData = oldData ? JSON.parse(oldData) : { maint: [], logs: [], memo: "", setup: {} };
 
         parsedData.setup = {
-            custEquipName: custEquipName,
-            projectNo: projectNo,
-            equipStatus: equipStatus,
-            deliveryDate: deliveryDate,
-            warrantyStart: warrantyStart,
-            warrantyPeriod: warrantyPeriod,
-            building: building,
-            floor: floor,
-            detailLoc: location,
-            manager: manager,
-            contact: contact,
-            email: email,
-            custManager: custManager,
-            custContact: custContact,
-            custEmail: custEmail,
-            model: serial
+            custEquipName: custEquipName, projectNo: projectNo, equipStatus: equipStatus, deliveryDate: deliveryDate,
+            warrantyStart: warrantyStart, warrantyPeriod: warrantyPeriod, building: building, floor: floor,
+            detailLoc: location, manager: manager, contact: contact, email: email, custManager: custManager,
+            custContact: custContact, custEmail: custEmail, model: serial
         };
         parsedData.specialNote = specialNote;
 
@@ -1857,8 +1851,8 @@ async function handleEquipSave() {
         // setup_data 이동
         const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
         const oldSetupKey = `${originalSite}::${currentAdminEquipKey}`;
+        const newSetupKey = `${targetSite}::${newKey}`;
         if (setupData[oldSetupKey]) {
-            const newSetupKey = `${targetSite}::${newKey}`;
             setupData[newSetupKey] = setupData[oldSetupKey];
             delete setupData[oldSetupKey];
             localStorage.setItem('setup_data', JSON.stringify(setupData));
@@ -1867,38 +1861,35 @@ async function handleEquipSave() {
         const logDetailsStr = equipChangeDetails.length > 0 ? equipChangeDetails.join(', ') : `From: ${currentAdminEquipKey}`;
         addSystemLog('UPDATE_EQUIP', newKey, logDetailsStr);
     }
-    // 기존 정보 단순 업데이트
-    else if (currentAdminEquipKey && currentAdminEquipKey === newKey) {
-        const dataKey = `details_${originalSite}_${newKey}`;
+    // 기존 정보 제자리 업데이트 (식별자 변동 없음)
+    else if (currentAdminEquipKey && !isKeyChanged) {
+        const success = await syncAdminDB('equip', 'UPDATE', { old_id: currentAdminEquipKey, new_id: currentAdminEquipKey, site: targetSite, old_site: originalSite, new_site: targetSite, special_note: specialNote, setup: setupPayload });
+        if (!success) { alert('서버 장비 정보 수정에 실패했습니다.'); return false; }
+
+        const dataKey = `details_${originalSite}_${currentAdminEquipKey}`;
         let parsedData = JSON.parse(localStorage.getItem(dataKey)) || { maint: [], logs: [], memo: "", setup: {} };
         parsedData.setup = {
-            custEquipName: custEquipName,
-            projectNo: projectNo,
-            equipStatus: equipStatus,
-            deliveryDate: deliveryDate,
-            warrantyStart: warrantyStart,
-            warrantyPeriod: warrantyPeriod,
-            building: building,
-            floor: floor,
-            detailLoc: location,
-            manager: manager,
-            contact: contact,
-            email: email,
-            custManager: custManager,
-            custContact: custContact,
-            custEmail: custEmail,
-            model: serial
+            custEquipName: custEquipName, projectNo: projectNo, equipStatus: equipStatus, deliveryDate: deliveryDate,
+            warrantyStart: warrantyStart, warrantyPeriod: warrantyPeriod, building: building, floor: floor,
+            detailLoc: location, manager: manager, contact: contact, email: email, custManager: custManager,
+            custContact: custContact, custEmail: custEmail, model: serial
         };
         parsedData.specialNote = specialNote;
         localStorage.setItem(dataKey, JSON.stringify(parsedData));
 
         if (equipChangeDetails.length > 0) {
-            addSystemLog('UPDATE_EQUIP', newKey, equipChangeDetails.join(', '));
+            addSystemLog('UPDATE_EQUIP', currentAdminEquipKey, equipChangeDetails.join(', '));
         }
     }
     // 신규 등록
     else if (!currentAdminEquipKey) {
-        storageData[targetSite].push(newKey);
+        const success = await syncAdminDB('equip', 'CREATE', { new_id: newKey, site: targetSite, special_note: specialNote, setup: setupPayload });
+        if (!success) { alert('서버 장비 신규 등록에 실패했습니다.'); return false; }
+
+        if (!storageData[targetSite]) storageData[targetSite] = [];
+        if (!storageData[targetSite].some(k => normKey(k) === normKey(newKey))) {
+            storageData[targetSite].push(newKey);
+        }
         // 초기 데이터 생성
         const initData = {
             maint: [], logs: [], memo: "", specialNote: specialNote, setup: {
