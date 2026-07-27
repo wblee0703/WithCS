@@ -4309,11 +4309,15 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
                     const detailData = JSON.parse(localStorage.getItem(key)) || {};
                     const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
-                    let displayValue = name;
+                    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+                    const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+                    const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+
+                    let displayValue = displayName;
                     if (custName) {
-                        displayValue = `${name} [${custName}]`;
+                        displayValue = `${displayName} [${custName}]`;
                     } else if (serial) {
-                        displayValue = `${name} [${serial}]`;
+                        displayValue = `${displayName} [${serial}]`;
                     }
 
                     equipTrigger.textContent = displayValue;
@@ -4477,11 +4481,15 @@ function updateRegisterEquipSelect(site) {
         const detailData = JSON.parse(localStorage.getItem(key)) || {};
         const custName = custNameFromKey || ((detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '');
 
-        let displayValue = name;
+        const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+        const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+        const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+
+        let displayValue = displayName;
         if (custName) {
-            displayValue = `${name} [${custName}]`;
+            displayValue = `${displayName} [${custName}]`;
         } else if (serial) {
-            displayValue = `${name} [${serial}]`;
+            displayValue = `${displayName} [${serial}]`;
         }
         option.textContent = displayValue;
         equipSelect.appendChild(option);
@@ -4493,18 +4501,21 @@ function updateRegisterEquipSelect(site) {
         window.renderEquipSuggestions = (searchTerm = '') => {
             equipSuggestionList.innerHTML = '';
             const keywords = searchTerm.toLowerCase().split(/\s+/);
+            const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
             let matches = equips.filter(equip => {
                 const parts = equip.split('::');
                 const name = parts[0] || '';
                 const serial = parts.length > 1 ? parts[1] : '';
                 const custNameFromKey = parts.length > 2 ? parts[2] : '';
+                const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+                const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
 
                 const key = `details_${site}_${equip}`;
                 const detailData = JSON.parse(localStorage.getItem(key)) || {};
                 const custName = custNameFromKey || ((detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '');
 
-                const text = `${name} ${serial} ${custName}`.toLowerCase();
+                const text = `${name} ${displayName} ${serial} ${custName}`.toLowerCase();
                 return keywords.every(kw => text.includes(kw));
             });
 
@@ -4513,6 +4524,8 @@ function updateRegisterEquipSelect(site) {
                     const parts = equip.split('::');
                     const name = parts[0] || '';
                     const serial = parts.length > 1 ? parts[1] : '';
+                    const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+                    const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
 
                     const key = `details_${site}_${equip}`;
                     const detailData = JSON.parse(localStorage.getItem(key)) || {};
@@ -4522,7 +4535,7 @@ function updateRegisterEquipSelect(site) {
                     if (tpl) {
                         const li = tpl.querySelector('.log-select-item');
 
-                        let displayValueHtml = escapeHtml(name);
+                        let displayValueHtml = escapeHtml(displayName);
                         if (custName) {
                             displayValueHtml += ` <span style="color:#3fb950;">[${escapeHtml(custName)}]</span>`;
                         } else if (serial) {
@@ -4557,11 +4570,11 @@ function updateRegisterEquipSelect(site) {
                             e.stopPropagation();
                             equipSelect.value = equip;
 
-                            let displayValue = name;
+                            let displayValue = displayName;
                             if (custName) {
-                                displayValue = `${name} [${custName}]`;
+                                displayValue = `${displayName} [${custName}]`;
                             } else if (serial) {
-                                displayValue = `${name} [${serial}]`;
+                                displayValue = `${displayName} [${serial}]`;
                             }
                             equipTrigger.textContent = displayValue;
                             equipTrigger.title = displayValue;
