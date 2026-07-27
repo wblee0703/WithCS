@@ -3920,22 +3920,24 @@ function setupRegisterScheduleModal() {
             const dropdown = document.getElementById('register-equip-dropdown');
             const searchInput = document.getElementById('register-equip-search');
 
-            trigger.onclick = (e) => {
-                e.stopPropagation();
-                if (trigger.classList.contains('disabled')) return;
-                document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== dropdown) d.classList.remove('show'); });
-                dropdown.classList.toggle('show');
-                if (dropdown.classList.contains('show') && window.renderEquipSuggestions) {
-                    window.renderEquipSuggestions(searchInput.value.trim());
-                    searchInput.focus();
-                }
-            };
-            searchInput.onclick = (e) => e.stopPropagation();
-            searchInput.oninput = (e) => {
-                if (window.renderEquipSuggestions) window.renderEquipSuggestions(e.target.value.trim());
-            };
-
-            equipSelect.parentNode.insertBefore(wrapper, equipSelect.nextSibling);
+            if (trigger) {
+                trigger.onclick = (e) => {
+                    e.stopPropagation();
+                    if (trigger.classList.contains('disabled')) return;
+                    document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== dropdown) d.classList.remove('show'); });
+                    if (dropdown) dropdown.classList.toggle('show');
+                    if (dropdown && dropdown.classList.contains('show') && window.renderEquipSuggestions && searchInput) {
+                        window.renderEquipSuggestions(searchInput.value.trim());
+                        searchInput.focus();
+                    }
+                };
+            }
+            if (searchInput) {
+                searchInput.onclick = (e) => e.stopPropagation();
+                searchInput.oninput = (e) => {
+                    if (window.renderEquipSuggestions) window.renderEquipSuggestions(e.target.value.trim());
+                };
+            }
         }
     }
 
