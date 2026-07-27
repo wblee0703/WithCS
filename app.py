@@ -207,9 +207,7 @@ def ensure_equipment_columns():
         except Exception:
             pass  # column may already exist
 
-with app.app_context():
-    ensure_equipment_columns()
-    migrate_setupinfo_to_equipment()
+
 
 
 # [추가] SQLite 외래키(Foreign Key) 및 Cascade(연쇄 삭제/수정) 기능 강제 활성화
@@ -290,6 +288,10 @@ class SetupInfo(db.Model):
     model = db.Column(db.String(100), default='')
 
 # [추가] 셋업(SETUP) 진행 세부사항(체크리스트) 모델
+
+with app.app_context():
+    ensure_equipment_columns()
+    migrate_setupinfo_to_equipment()
 
 # ---------------------------------------------------------------
 # Migration helper: copy cust_equip_name from SetupInfo to Equipment
