@@ -1703,7 +1703,7 @@ async function handleEquipSave() {
 
     const nameInput = document.getElementById('equip-info-name');
     const nameVal = nameInput.value.trim();
-    const serial = document.getElementById('equip-info-serial').value.trim().replace(/\?/g, '-');
+    const serial = document.getElementById('equip-info-serial').value.trim().replace(/\?/g, '-').replace(/"/g, '');
 
     const building = document.getElementById('equip-info-building').value;
     const location = document.getElementById('equip-info-location').value.trim();

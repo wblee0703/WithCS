@@ -2062,7 +2062,7 @@ def admin_crud():
                 
                 parts = new_id.split('::')
                 e_name = parts[0] if len(parts) > 0 else ""
-                e_serial = (parts[1] if len(parts) > 1 else "").replace('?', '-')
+                e_serial = (parts[1] if len(parts) > 1 else "").replace('?', '-').replace('"', '')
                 cust_name = payload['setup'].get('custEquipName', '').replace('?', '-')
 
                 if e_name == "기타(ETC)":
@@ -2085,7 +2085,7 @@ def admin_crud():
                 
                 parts = new_id.split('::')
                 e_name = parts[0] if len(parts) > 0 else ""
-                e_serial = (parts[1] if len(parts) > 1 else "").replace('?', '-')
+                e_serial = (parts[1] if len(parts) > 1 else "").replace('?', '-').replace('"', '')
                 cust_name = payload.get('setup', {}).get('custEquipName', '').replace('?', '-')
 
                 if e_name == "기타(ETC)":
@@ -3622,7 +3622,7 @@ def init_db():
                 old_id = str(row[0] or '')
                 site_val = str(row[1] or '').strip()
                 name_val = str(row[2] or '').strip()
-                serial_val = str(row[3] or '').replace('?', '-').strip()
+                serial_val = str(row[3] or '').replace('?', '-').replace('"', '').strip()
                 cust_val = str(row[4] or '').replace('?', '-').strip()
 
                 parts = old_id.split('::')
