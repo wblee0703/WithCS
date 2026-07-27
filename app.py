@@ -2242,26 +2242,16 @@ def resolve_master_equip_id(equip_id):
     if exact:
         return exact.id
 
-    raw_parts = [p.strip() for p in clean_id.split('::')]
-    if len(raw_parts) < 2:
+    # 2. 콜론(::)으로 파싱하여 비어있지 않은 파트들 추출
+    raw_tokens = [p.strip() for p in clean_id.split('::') if p and p.strip()]
+    if len(raw_tokens) < 2:
         return clean_id
 
-    site = raw_parts[0]
-    name = raw_parts[1]
+    site = raw_tokens[0]
+    model = raw_tokens[1]
     
     invalid_serials = ['n/a', 'none', '-', '없음', 'null', 'undefined', '']
-
-    req_serial = ""
-    req_cust = ""
-    if len(raw_parts) >= 4:
-        req_serial = raw_parts[2]
-        req_cust = raw_parts[3]
-    elif len(raw_parts) == 3:
-        val = raw_parts[2]
-        if val and val.lower() not in invalid_serials:
-            req_serial = val
-        else:
-            req_cust = val
+    remaining = raw_tokens[2:]
 
     candidates = [c for c in Equipment.query.all() if normalize_key(c.site_name) == normalize_key(site)]
     if not candidates:
@@ -2274,43 +2264,38 @@ def resolve_master_equip_id(equip_id):
         c_cust = (si.cust_equip_name or "").strip() if si else ""
         cand_info_list.append((cand, c_serial, c_cust))
 
-    # Priority 1: Site + Model + Serial + CustEquipName 4개 완벽 일치
-    if req_serial and req_cust:
-        for cand, c_serial, c_cust in cand_info_list:
-            if normalize_key(cand.site_name) == normalize_key(site) and normalize_key(cand.name) == normalize_key(name):
-                if normalize_key(c_serial) == normalize_key(req_serial) and normalize_key(c_cust) == normalize_key(req_cust):
+    # 후보군 중 site와 model이 일치하는 장비들 1차 선별
+    model_cands = [(cand, c_s, c_c) for cand, c_s, c_c in cand_info_list if normalize_key(cand.site_name) == normalize_key(site) and normalize_key(cand.name) == normalize_key(model)]
+
+    if remaining:
+        # 남은 토큰들 중 고객사 장비명(cust)이나 시리얼(serial)과 대조
+        for token in remaining:
+            norm_token = normalize_key(token)
+            if not norm_token: continue
+
+            # 1) model_cands 내에서 고객사 장비명 일치하는 장비 검색 (SKH 이천::EM201::::CAAB02 대응)
+            for cand, c_s, c_c in model_cands:
+                if c_c and normalize_key(c_c) == norm_token:
                     return cand.id
 
-    # Priority 2: 3개 정보 일치 (Site + Model + CustEquipName) -> 시리얼 번호가 없거나 다를 때 고객사 장비명으로 100% 매칭! (SKH 이천::EM201::::CAAB02 대응)
-    if req_cust:
-        for cand, c_serial, c_cust in cand_info_list:
-            if normalize_key(cand.site_name) == normalize_key(site) and normalize_key(cand.name) == normalize_key(name):
-                if c_cust and normalize_key(c_cust) == normalize_key(req_cust):
+            # 2) model_cands 내에서 시리얼 일치하는 장비 검색
+            for cand, c_s, c_c in model_cands:
+                if c_s and c_s.lower() not in invalid_serials and normalize_key(c_s) == norm_token:
                     return cand.id
 
-    # Priority 3: 3개 정보 일치 (Site + Model + Serial) -> 시리얼 번호가 존재하는 경우 100% 매칭!
-    if req_serial and req_serial.lower() not in invalid_serials:
-        for cand, c_serial, c_cust in cand_info_list:
-            if normalize_key(cand.site_name) == normalize_key(site) and normalize_key(cand.name) == normalize_key(name):
-                if c_serial and normalize_key(c_serial) == normalize_key(req_serial):
+            # 3) 전체 candidates 내에서 고객사 장비명 일치하는 장비 검색
+            for cand, c_s, c_c in cand_info_list:
+                if normalize_key(cand.site_name) == normalize_key(site) and c_c and normalize_key(c_c) == norm_token:
                     return cand.id
 
-    # Priority 4: 고객사 장비명 단독 고유 대조 (Site + CustEquipName)
-    if req_cust:
-        cust_matches = [cand for cand, c_serial, c_cust in cand_info_list if normalize_key(cand.site_name) == normalize_key(site) and c_cust and normalize_key(c_cust) == normalize_key(req_cust)]
-        if len(cust_matches) == 1:
-            return cust_matches[0].id
+            # 4) 전체 candidates 내에서 시리얼 일치하는 장비 검색
+            for cand, c_s, c_c in cand_info_list:
+                if normalize_key(cand.site_name) == normalize_key(site) and c_s and c_s.lower() not in invalid_serials and normalize_key(c_s) == norm_token:
+                    return cand.id
 
-    # Priority 5: 시리얼 번호 단독 고유 대조 (Site + Serial)
-    if req_serial and req_serial.lower() not in invalid_serials:
-        serial_matches = [cand for cand, c_serial, c_cust in cand_info_list if normalize_key(cand.site_name) == normalize_key(site) and c_serial and normalize_key(c_serial) == normalize_key(req_serial)]
-        if len(serial_matches) == 1:
-            return serial_matches[0].id
-
-    # Priority 6: 동일 사업장 내 모델명이 단 1대뿐인 경우
-    model_matches = [cand for cand, c_serial, c_cust in cand_info_list if normalize_key(cand.site_name) == normalize_key(site) and normalize_key(cand.name) == normalize_key(name)]
-    if len(model_matches) == 1:
-        return model_matches[0].id
+    # 토큰이 없거나 미매칭 시, 동일 사업장 내 모델이 단 1대뿐이면 자동 연결
+    if len(model_cands) == 1:
+        return model_cands[0][0].id
 
     return clean_id
 
