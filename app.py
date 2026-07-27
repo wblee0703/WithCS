@@ -2290,6 +2290,46 @@ def resolve_master_equip_id(equip_id):
     if not raw_tokens:
         return clean_id
 
+    # [추가] 4개 이상 복합 토큰 및 모델명 약어 치환 토큰 조합(Token Subsets) 직접 1:1 DB 탐색
+    if len(raw_tokens) >= 2:
+        site_tok = raw_tokens[0]
+        model_tok = raw_tokens[1]
+        model_alias = model_alias_map.get(normalize_key(model_tok), "")
+
+        models_to_try = [model_tok]
+        if model_alias and model_alias != normalize_key(model_tok):
+            # original raw string representation search
+            setting = SystemSetting.query.filter_by(key='equipment_models').first()
+            if setting and setting.value:
+                try:
+                    import json
+                    m_data = json.loads(setting.value)
+                    for m in m_data:
+                        if isinstance(m, dict):
+                            if normalize_key(m.get('abbr')) == normalize_key(model_tok) and m.get('name'):
+                                models_to_try.append(m.get('name'))
+                            elif normalize_key(m.get('name')) == normalize_key(model_tok) and m.get('abbr'):
+                                models_to_try.append(m.get('abbr'))
+                except Exception:
+                    pass
+
+        # 1) site + model + last_token (시리얼/고객사 장비명 위치) 탐색
+        for m_try in models_to_try:
+            for last_idx in range(len(raw_tokens) - 1, 1, -1):
+                try_id = f"{site_tok}::{m_try}::{raw_tokens[last_idx]}"
+                found = Equipment.query.filter_by(id=try_id).first()
+                if found:
+                    app.logger.info(f"[Master Equip Subset Resolve] '{equip_id}' -> '{found.id}'")
+                    return found.id
+
+        # 2) site + model 단독 ID 탐색
+        for m_try in models_to_try:
+            try_id = f"{site_tok}::{m_try}"
+            found = Equipment.query.filter_by(id=try_id).first()
+            if found:
+                app.logger.info(f"[Master Equip Model-Only Resolve] '{equip_id}' -> '{found.id}'")
+                return found.id
+
     norm_tokens = [normalize_key(t) for t in raw_tokens if normalize_key(t)]
     if not norm_tokens:
         return clean_id

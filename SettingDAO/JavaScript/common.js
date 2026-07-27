@@ -330,6 +330,15 @@ window.resolveFullEquipKey = function (site, equip) {
         if (match) return match.fullKey;
     }
 
+    // [추가] 3.5. Model + (inSerial 혹은 inCust)가 c.serial 혹은 c.cust와 자유 교차 일치
+    if (inModel && (isSerialValid || inCust)) {
+        const match = candList.find(c => c.model === inModel && (
+            (c.serial && (c.serial === inSerial || c.serial === inCust)) ||
+            (c.cust && (c.cust === inSerial || c.cust === inCust))
+        ));
+        if (match) return match.fullKey;
+    }
+
     // 4. CustEquipName 단독 고유 일치
     if (inCust) {
         const custMatches = candList.filter(c => c.cust === inCust);
