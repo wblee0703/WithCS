@@ -3584,7 +3584,7 @@ def init_db():
                 u.pw = generate_password_hash(fallback_pw, method='pbkdf2:sha256:50000')
                 db.session.commit() # [수정] DB 연결 끊김 방지를 위해 1명 변환될 때마다 즉시 저장
 
-        # [마이그레이션] Equipment 테이블 cust_equip_name 컬럼 추가 및 시리얼 번호 '?' -> '-' 자동 정정
+        # [마이그레이션] Equipment 4필드 ID(site::name::serial::cust_name) 및 시리얼 정정 RAW SQL 강제 실행
         try:
             # 1. 컬럼 추가 (없으면 추가)
             try:
@@ -3593,58 +3593,58 @@ def init_db():
             except:
                 db.session.rollback()
 
-            # 2. 시리얼 번호 및 ID 내 '?' -> '-' 정정 및 4필드 ID(site::name::serial::cust_name) 동기화
-            all_eqs = Equipment.query.all()
-            for eq in all_eqs:
-                parts = (eq.id or '').split('::')
-                site_from_id = parts[0] if len(parts) > 0 else (eq.site_name or '')
-                name_from_id = parts[1] if len(parts) > 1 else (eq.name or '')
-                serial_from_id = parts[2] if len(parts) > 2 else (eq.serial or '')
-                cust_from_id = parts[3] if len(parts) >= 4 else ''
+            # 2. RAW SQL 기반 4필드 ID 및 시리얼 번호 정정
+            raw_eqs = db.session.execute(text("SELECT id, site_name, name, serial, cust_equip_name FROM equipment")).fetchall()
+            
+            for row in raw_eqs:
+                old_id = str(row[0] or '')
+                site_val = str(row[1] or '').strip()
+                name_val = str(row[2] or '').strip()
+                serial_val = str(row[3] or '').replace('?', '-').strip()
+                cust_val = str(row[4] or '').replace('?', '-').strip()
 
-                # SetupInfo 검색 (정확한 ID 매칭 ➔ 시리얼 기반 매칭)
-                setup = SetupInfo.query.filter_by(equip_id=eq.id).first()
-                if not setup and serial_from_id:
-                    setup = SetupInfo.query.filter(SetupInfo.equip_id.like(f"%::{serial_from_id}%")).first()
+                parts = old_id.split('::')
+                if len(parts) >= 4 and parts[3]:
+                    if not cust_val:
+                        cust_val = parts[3].replace('?', '-').strip()
 
-                setup_cust = setup.cust_equip_name if (setup and setup.cust_equip_name) else ''
-                cust_name = (setup_cust or cust_from_id or eq.cust_equip_name or '').replace('?', '-').strip()
-                new_serial = (eq.serial or serial_from_id or '').replace('?', '-').strip()
-                new_name = (eq.name or name_from_id or '').strip()
-                clean_site = (eq.site_name or site_from_id or '').strip()
+                # SetupInfo 검색
+                if not cust_val:
+                    s_row = db.session.execute(text("SELECT cust_equip_name FROM setup_info WHERE equip_id=:o OR equip_id LIKE :l"), {'o': old_id, 'l': f"%::{serial_val}%"}).fetchone()
+                    if s_row and s_row[0]:
+                        cust_val = str(s_row[0]).replace('?', '-').strip()
 
-                if new_name == '기타(ETC)':
-                    new_id = f"{clean_site}::기타(ETC)::::"
+                if name_val == '기타(ETC)':
+                    new_id = f"{site_val}::기타(ETC)::::"
                 else:
-                    new_id = f"{clean_site}::{new_name}::{new_serial}::{cust_name}"
+                    new_id = f"{site_val}::{name_val}::{serial_val}::{cust_val}"
 
-                old_id = eq.id
-                if old_id != new_id or eq.serial != new_serial or eq.cust_equip_name != cust_name:
-                    dup = Equipment.query.filter_by(id=new_id).first()
-                    if dup and dup.id != old_id:
-                        db.session.delete(dup)
-                        db.session.flush()
+                try: db.session.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
+                except: pass
 
-                    try: db.session.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
-                    except: pass
+                if old_id != new_id:
+                    # 중복 새 ID 레코드가 있다면 삭제
+                    db.session.execute(text("DELETE FROM equipment WHERE id=:n AND id!=:o"), {'n': new_id, 'o': old_id})
+                    
+                    db.session.execute(text("UPDATE maint_item SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                    db.session.execute(text("UPDATE log_item SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                    db.session.execute(text("UPDATE setup_detail SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                    db.session.execute(text("UPDATE setup_log SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                    db.session.execute(text("UPDATE trouble_log SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                    db.session.execute(text("UPDATE setup_info SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
 
-                    db.session.execute(text("UPDATE maint_item SET equip_id=:n WHERE equip_id=:o"), {'n':new_id, 'o':old_id})
-                    db.session.execute(text("UPDATE log_item SET equip_id=:n WHERE equip_id=:o"), {'n':new_id, 'o':old_id})
-                    db.session.execute(text("UPDATE setup_detail SET equip_id=:n WHERE equip_id=:o"), {'n':new_id, 'o':old_id})
-                    db.session.execute(text("UPDATE setup_log SET equip_id=:n WHERE equip_id=:o"), {'n':new_id, 'o':old_id})
-                    db.session.execute(text("UPDATE trouble_log SET equip_id=:n WHERE equip_id=:o"), {'n':new_id, 'o':old_id})
-                    db.session.execute(text("UPDATE setup_info SET equip_id=:n WHERE equip_id=:o"), {'n':new_id, 'o':old_id})
+                db.session.execute(text("UPDATE equipment SET id=:n, serial=:s, cust_equip_name=:c WHERE id=:o"), {
+                    'n': new_id,
+                    's': serial_val,
+                    'c': cust_val,
+                    'o': old_id
+                })
 
-                    eq.id = new_id
-                    eq.serial = new_serial
-                    eq.cust_equip_name = cust_name
-                    db.session.flush()
-
-                    try: db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
-                    except: pass
+                try: db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
+                except: pass
 
             db.session.commit()
-            app.logger.warning("[Migration] Equipment 4필드 규격(site::name::serial::cust_name) 및 시리얼번호 정정 완료!")
+            app.logger.warning("[Migration] Equipment 4필드 규격(site::name::serial::cust_name) RAW SQL 강제 정정 완료!")
         except Exception as ex_eq:
             db.session.rollback()
             app.logger.error(f"[Migration] Equipment 마이그레이션 오류: {str(ex_eq)}")
