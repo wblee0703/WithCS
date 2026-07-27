@@ -190,10 +190,11 @@ class Site(db.Model):
     buildings = db.Column(db.Text, default='[]') # JSON string
 
 class Equipment(db.Model):
-    id = db.Column(db.String(200), primary_key=True) # Site::Name::Serial
+    id = db.Column(db.String(200), primary_key=True) # Site::Name::Serial::CustEquipName
     site_name = db.Column(db.String(100), db.ForeignKey('site.name', ondelete='CASCADE', onupdate='CASCADE'))
     name = db.Column(db.String(100))
     serial = db.Column(db.String(100))
+    cust_equip_name = db.Column(db.String(100), default='') # [추가] 고객사 장비명
     special_note = db.Column(db.Text, default='')
 
 class SetupInfo(db.Model):
@@ -2039,8 +2040,8 @@ def admin_crud():
                 
                 parts = new_id.split('::')
                 e_name = parts[0] if len(parts) > 0 else ""
-                e_serial = parts[1] if len(parts) > 1 else ""
-                cust_name = payload['setup'].get('custEquipName', '')
+                e_serial = (parts[1] if len(parts) > 1 else "").replace('?', '-')
+                cust_name = payload['setup'].get('custEquipName', '').replace('?', '-')
 
                 if e_name == "기타(ETC)":
                     db_id = f"{site_name}::기타(ETC)::::"
@@ -2048,7 +2049,7 @@ def admin_crud():
                 else:
                     db_id = f"{site_name}::{e_name}::{e_serial}::{cust_name}"
 
-                db.session.add(Equipment(id=db_id, site_name=site_name, name=e_name, serial=e_serial, special_note=payload.get('special_note', '')))
+                db.session.add(Equipment(id=db_id, site_name=site_name, name=e_name, serial=e_serial, cust_equip_name=cust_name, special_note=payload.get('special_note', '')))
                 db.session.add(SetupInfo(
                     equip_id=db_id, cust_equip_name=cust_name, project_no=payload['setup'].get('projectNo', ''), equip_status=payload['setup'].get('equipStatus', ''),
                     delivery_date=payload['setup'].get('deliveryDate', ''), warranty_start=payload['setup'].get('warrantyStart', ''), warranty_period=str(payload['setup'].get('warrantyPeriod', '')),
@@ -2062,8 +2063,8 @@ def admin_crud():
                 
                 parts = new_id.split('::')
                 e_name = parts[0] if len(parts) > 0 else ""
-                e_serial = parts[1] if len(parts) > 1 else ""
-                cust_name = payload.get('setup', {}).get('custEquipName', '')
+                e_serial = (parts[1] if len(parts) > 1 else "").replace('?', '-')
+                cust_name = payload.get('setup', {}).get('custEquipName', '').replace('?', '-')
 
                 if e_name == "기타(ETC)":
                     db_new_id = f"{site_name}::기타(ETC)::::"
@@ -2117,6 +2118,7 @@ def admin_crud():
                         equip.site_name = site_name
                         equip.name = e_name
                         equip.serial = e_serial
+                        equip.cust_equip_name = cust_name
                         db.session.flush()
 
                         try:
@@ -2130,6 +2132,7 @@ def admin_crud():
                         equip.site_name = site_name
                         equip.name = e_name
                         equip.serial = e_serial
+                        equip.cust_equip_name = cust_name
 
                     # 2. 상세 스펙 정보 및 셋업 매핑 갱신
                     equip.special_note = payload.get('special_note', '')
@@ -3581,13 +3584,76 @@ def init_db():
                 u.pw = generate_password_hash(fallback_pw, method='pbkdf2:sha256:50000')
                 db.session.commit() # [수정] DB 연결 끊김 방지를 위해 1명 변환될 때마다 즉시 저장
 
+        # [마이그레이션] Equipment 테이블 cust_equip_name 컬럼 추가 및 시리얼 번호 '?' -> '-' 자동 정정
+        try:
+            # 1. 컬럼 추가 (없으면 추가)
+            try:
+                db.session.execute(text("ALTER TABLE equipment ADD COLUMN cust_equip_name VARCHAR(100) DEFAULT ''"))
+                db.session.commit()
+            except:
+                db.session.rollback()
+
+            # 2. 시리얼 번호 및 ID 내 '?' -> '-' 정정 및 cust_equip_name 동기화
+            all_eqs = Equipment.query.all()
+            for eq in all_eqs:
+                setup = SetupInfo.query.filter_by(equip_id=eq.id).first()
+                cust_name = setup.cust_equip_name if setup else (eq.cust_equip_name or '')
+                
+                new_serial = (eq.serial or '').replace('?', '-')
+                new_name = (eq.name or '')
+                new_cust = (cust_name or '').replace('?', '-')
+                
+                if eq.cust_equip_name != new_cust:
+                    eq.cust_equip_name = new_cust
+
+                clean_site = eq.site_name or ''
+                if new_name == '기타(ETC)':
+                    new_id = f"{clean_site}::기타(ETC)::::"
+                elif new_cust and new_cust != new_serial:
+                    new_id = f"{clean_site}::{new_name}::{new_serial}::{new_cust}"
+                elif new_serial:
+                    new_id = f"{clean_site}::{new_name}::{new_serial}"
+                else:
+                    new_id = f"{clean_site}::{new_name}"
+
+                old_id = eq.id
+                if old_id != new_id or eq.serial != new_serial:
+                    dup = Equipment.query.filter_by(id=new_id).first()
+                    if dup and dup.id != old_id:
+                        db.session.delete(dup)
+                        db.session.flush()
+
+                    try: db.session.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
+                    except: pass
+
+                    db.session.execute(text("UPDATE maint_item SET equip_id=:n WHERE equip_id=:o"), {'n':new_id, 'o':old_id})
+                    db.session.execute(text("UPDATE log_item SET equip_id=:n WHERE equip_id=:o"), {'n':new_id, 'o':old_id})
+                    db.session.execute(text("UPDATE setup_detail SET equip_id=:n WHERE equip_id=:o"), {'n':new_id, 'o':old_id})
+                    db.session.execute(text("UPDATE setup_log SET equip_id=:n WHERE equip_id=:o"), {'n':new_id, 'o':old_id})
+                    db.session.execute(text("UPDATE trouble_log SET equip_id=:n WHERE equip_id=:o"), {'n':new_id, 'o':old_id})
+                    db.session.execute(text("UPDATE setup_info SET equip_id=:n WHERE equip_id=:o"), {'n':new_id, 'o':old_id})
+
+                    eq.id = new_id
+                    eq.serial = new_serial
+                    eq.cust_equip_name = new_cust
+                    db.session.flush()
+
+                    try: db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
+                    except: pass
+
+            db.session.commit()
+            app.logger.warning("[Migration] Equipment cust_equip_name 컬럼 추가 및 시리얼번호 '?' -> '-' 정정 완료!")
+        except Exception as ex_eq:
+            db.session.rollback()
+            app.logger.error(f"[Migration] Equipment 마이그레이션 오류: {str(ex_eq)}")
+
         # [마이그레이션] 기존 사업장에 '기타(ETC)' 장비 자동 추가 (신규 4필드 규격)
         try:
             sites = Site.query.all()
             for site in sites:
                 etc_id = f"{site.name}::기타(ETC)::::"
                 if not Equipment.query.filter_by(id=etc_id).first():
-                    db.session.add(Equipment(id=etc_id, site_name=site.name, name="기타(ETC)", serial=""))
+                    db.session.add(Equipment(id=etc_id, site_name=site.name, name="기타(ETC)", serial="", cust_equip_name=""))
                     db.session.add(SetupInfo(equip_id=etc_id, cust_equip_name="", model=""))
             db.session.commit()
         except Exception as e:

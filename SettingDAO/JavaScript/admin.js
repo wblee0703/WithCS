@@ -1703,9 +1703,8 @@ async function handleEquipSave() {
 
     const nameInput = document.getElementById('equip-info-name');
     const nameVal = nameInput.value.trim();
-    const serial = document.getElementById('equip-info-serial').value.trim();
+    const serial = document.getElementById('equip-info-serial').value.trim().replace(/\?/g, '-');
 
-    // [추가]
     const building = document.getElementById('equip-info-building').value;
     const location = document.getElementById('equip-info-location').value.trim();
     const statusEl = document.getElementById('equip-info-status');
@@ -1716,7 +1715,7 @@ async function handleEquipSave() {
     const warrantyStart = wStartEl ? wStartEl.value : '';
     const wPeriodEl = document.getElementById('equip-info-warranty-period');
     const warrantyPeriod = wPeriodEl ? wPeriodEl.value : '';
-    const custEquipName = document.getElementById('equip-info-cust-equip-name').value.trim();
+    const custEquipName = document.getElementById('equip-info-cust-equip-name').value.trim().replace(/\?/g, '-');
     const projectNoEl = document.getElementById('equip-info-project-no');
     const projectNo = projectNoEl ? projectNoEl.value.trim() : '';
     const floor = document.getElementById('equip-info-floor').value.trim();
