@@ -246,6 +246,29 @@ window.resolveFullEquipKey = function (site, equip) {
         if (directNormMatch) return directNormMatch;
     }
 
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+    const modelAliasMap = {};
+    equipmentModels.forEach(m => {
+        if (m && m.name && m.abbr) {
+            const normN = normKey(m.name);
+            const normA = normKey(m.abbr);
+            if (normN && normA) {
+                modelAliasMap[normN] = normA;
+                modelAliasMap[normA] = normN;
+            }
+        }
+    });
+
+    if (cleanNormEquip && Object.keys(modelAliasMap).length > 0) {
+        for (const [k, v] of Object.entries(modelAliasMap)) {
+            if (cleanNormEquip.includes(k)) {
+                const aliasedNorm = cleanNormEquip.replace(k, v);
+                const aliasMatch = siteEquips.find(eq => normKey(eq) === aliasedNorm);
+                if (aliasMatch) return aliasMatch;
+            }
+        }
+    }
+
     const rawParts = cleanEquip.split('::').map(p => p.trim()).filter(Boolean);
     let inModel = '', inSerial = '', inCust = '';
 

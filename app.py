@@ -2252,13 +2252,38 @@ def resolve_master_equip_id(equip_id):
     if not all_equips:
         return clean_id
 
-    # [추가] 특수문자/공백/콜론 개수 차이 흡수를 위한 정규화 ID 1:1 매칭
+    # [추가] SystemSetting에서 모델명 <-> 약어 매핑 맵 구축
+    model_alias_map = {}
+    try:
+        setting = SystemSetting.query.filter_by(key='equipment_models').first()
+        if setting and setting.value:
+            import json
+            models_data = json.loads(setting.value)
+            if isinstance(models_data, list):
+                for m in models_data:
+                    if isinstance(m, dict):
+                        n = normalize_key(m.get('name'))
+                        a = normalize_key(m.get('abbr'))
+                        if n and a:
+                            model_alias_map[n] = a
+                            model_alias_map[a] = n
+    except Exception as e:
+        app.logger.warning(f"Failed to load equipment_models setting: {e}")
+
+    # [추가] 특수문자/공백/콜론 개수 차이 및 모델명 약어 매칭 흡수를 위한 정규화 ID 1:1 매칭
     norm_clean_id = normalize_key(clean_id)
     if norm_clean_id:
         for cand in all_equips:
-            if normalize_key(cand.id) == norm_clean_id:
+            cand_norm_id = normalize_key(cand.id)
+            if cand_norm_id == norm_clean_id:
                 app.logger.info(f"[Master Equip Direct Resolve] '{equip_id}' -> '{cand.id}'")
                 return cand.id
+            # 모델명 약어 치환 정규화 매칭 시도
+            if model_alias_map:
+                for k, v in model_alias_map.items():
+                    if k in norm_clean_id and cand_norm_id == norm_clean_id.replace(k, v):
+                        app.logger.info(f"[Master Equip Alias Resolve] '{equip_id}' -> '{cand.id}'")
+                        return cand.id
 
     # 2. 콜론(::) 파싱 및 비어있지 않은 토큰 추출
     raw_tokens = [p.strip() for p in clean_id.split('::') if p and p.strip()]
@@ -2279,7 +2304,11 @@ def resolve_master_equip_id(equip_id):
         c_serial = normalize_key(cand.serial)
         si = SetupInfo.query.filter_by(equip_id=cand.id).first()
         c_cust = normalize_key(si.cust_equip_name) if si else ""
+        c_model = normalize_key(si.model) if si else ""
         c_id = normalize_key(cand.id)
+
+        c_name_alias = model_alias_map.get(c_name, "")
+        c_model_alias = model_alias_map.get(c_model, "")
 
         score = 0
         for tok in norm_tokens:
@@ -2287,8 +2316,9 @@ def resolve_master_equip_id(equip_id):
             if tok == c_site: score += 10
             elif (tok in c_site or (c_site and c_site in tok)) and min(len(tok), len(c_site) if c_site else 0) >= 2: score += 5
 
-            if tok == c_name: score += 10
-            elif (tok in c_name or (c_name and c_name in tok)) and min(len(tok), len(c_name) if c_name else 0) >= 2: score += 5
+            # 모델명 / 약어 / SetupInfo.model 다원 매칭
+            if tok == c_name or (c_name_alias and tok == c_name_alias) or tok == c_model or (c_model_alias and tok == c_model_alias): score += 15
+            elif (tok in c_name or (c_name and c_name in tok)) or (c_name_alias and (tok in c_name_alias or c_name_alias in tok)) or (tok in c_model or (c_model and c_model in tok)): score += 8
 
             if tok == c_cust: score += 15
             elif (tok in c_cust or (c_cust and c_cust in tok)) and min(len(tok), len(c_cust) if c_cust else 0) >= 2: score += 8
