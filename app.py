@@ -3609,12 +3609,8 @@ def init_db():
                 clean_site = eq.site_name or ''
                 if new_name == '기타(ETC)':
                     new_id = f"{clean_site}::기타(ETC)::::"
-                elif new_cust and new_cust != new_serial:
-                    new_id = f"{clean_site}::{new_name}::{new_serial}::{new_cust}"
-                elif new_serial:
-                    new_id = f"{clean_site}::{new_name}::{new_serial}"
                 else:
-                    new_id = f"{clean_site}::{new_name}"
+                    new_id = f"{clean_site}::{new_name}::{new_serial}::{new_cust}"
 
                 old_id = eq.id
                 if old_id != new_id or eq.serial != new_serial:
