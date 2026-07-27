@@ -706,7 +706,12 @@ def login():
 
     user = User.query.filter_by(id=user_id).first()
 
-    # NOTE: 로그인 차단 로직 비활성화 (전체 로그인 허용)
+    
+    # 전체 로그인 차단 (정비 중) - 최종관리자는 허용
+    if user and user.role in ['superadmin']:
+        pass  # allow login to proceed
+    else:
+        return jsonify({"status": "fail", "message": "서버 점검 중으로 현재 접속 불가능 합니다. 죄송합니다."}), 403
 
     # 1. 계정 잠금 확인
     now = datetime.now()
