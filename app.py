@@ -2296,9 +2296,18 @@ def resolve_master_equip_id(equip_id):
         model_tok = raw_tokens[1]
         model_alias = model_alias_map.get(normalize_key(model_tok), "")
 
+        # 사업장 변형 리스트 구축 (예: SCS 서안 vs SCS)
+        sites_to_try = [site_tok]
+        norm_s = normalize_key(site_tok)
+        for cand in all_equips:
+            if cand.site_name:
+                cand_s_norm = normalize_key(cand.site_name)
+                if cand_s_norm and (cand_s_norm == norm_s or cand_s_norm in norm_s or norm_s in cand_s_norm):
+                    if cand.site_name not in sites_to_try:
+                        sites_to_try.append(cand.site_name)
+
         models_to_try = [model_tok]
         if model_alias and model_alias != normalize_key(model_tok):
-            # original raw string representation search
             setting = SystemSetting.query.filter_by(key='equipment_models').first()
             if setting and setting.value:
                 try:
@@ -2314,27 +2323,44 @@ def resolve_master_equip_id(equip_id):
                     pass
 
         # 1) site + model + last_token (시리얼/고객사 장비명 위치) 탐색
-        for m_try in models_to_try:
-            for last_idx in range(len(raw_tokens) - 1, 1, -1):
-                try_id = f"{site_tok}::{m_try}::{raw_tokens[last_idx]}"
-                found = Equipment.query.filter_by(id=try_id).first()
-                if found:
-                    app.logger.info(f"[Master Equip Subset Resolve] '{equip_id}' -> '{found.id}'")
-                    return found.id
+        for s_try in sites_to_try:
+            for m_try in models_to_try:
+                for last_idx in range(len(raw_tokens) - 1, 1, -1):
+                    try_id = f"{s_try}::{m_try}::{raw_tokens[last_idx]}"
+                    found = Equipment.query.filter_by(id=try_id).first()
+                    if found:
+                        app.logger.info(f"[Master Equip Subset Resolve] '{equip_id}' -> '{found.id}'")
+                        return found.id
 
         # 2) site + model 단독 ID 탐색
-        for m_try in models_to_try:
-            try_id = f"{site_tok}::{m_try}"
-            found = Equipment.query.filter_by(id=try_id).first()
-            if found:
-                app.logger.info(f"[Master Equip Model-Only Resolve] '{equip_id}' -> '{found.id}'")
-                return found.id
+        for s_try in sites_to_try:
+            for m_try in models_to_try:
+                try_id = f"{s_try}::{m_try}"
+                found = Equipment.query.filter_by(id=try_id).first()
+                if found:
+                    app.logger.info(f"[Master Equip Model-Only Resolve] '{equip_id}' -> '{found.id}'")
+                    return found.id
 
     norm_tokens = [normalize_key(t) for t in raw_tokens if normalize_key(t)]
     if not norm_tokens:
         return clean_id
 
     invalid_serials = ['na', 'none', 'null', 'undefined', '없음', '-']
+
+    # [추가] 컬럼별 직접 일치 보정 (사업장 + 시리얼/고객사 장비명 1:1 일치 장비 구출)
+    site_tok_norm = normalize_key(raw_tokens[0])
+    valid_toks = [t for t in norm_tokens[1:] if t not in invalid_serials and len(t) >= 2]
+    if valid_toks:
+        for cand in all_equips:
+            c_site = normalize_key(cand.site_name)
+            if c_site and (c_site == site_tok_norm or c_site in site_tok_norm or site_tok_norm in c_site):
+                c_serial = normalize_key(cand.serial)
+                si = SetupInfo.query.filter_by(equip_id=cand.id).first()
+                c_cust = normalize_key(si.cust_equip_name) if si else ""
+                for tok in valid_toks:
+                    if (c_serial and tok == c_serial) or (c_cust and tok == c_cust):
+                        app.logger.info(f"[Master Equip Field Match Resolve] '{equip_id}' -> '{cand.id}'")
+                        return cand.id
 
     # 3. DB 전체 장비 대상 점수 기반 다원 유사도 매칭
     cand_scores = []
