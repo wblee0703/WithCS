@@ -196,6 +196,20 @@ class Equipment(db.Model):
     serial = db.Column(db.String(100))
     cust_equip_name = db.Column(db.String(100), default='') # [추가] 고객사 장비명
     special_note = db.Column(db.Text, default='')
+    equip_status = db.Column(db.String(50), default='')
+    delivery_date = db.Column(db.String(50), default='')
+    warranty_start = db.Column(db.String(50), default='')
+    warranty_period = db.Column(db.String(50), default='')
+    building = db.Column(db.String(100), default='')
+    floor = db.Column(db.String(50), default='')
+    detail_loc = db.Column(db.String(200), default='')
+    manager = db.Column(db.String(100), default='')
+    contact = db.Column(db.String(100), default='')
+    email = db.Column(db.String(100), default='')
+    cust_manager = db.Column(db.String(100), default='')
+    cust_contact = db.Column(db.String(100), default='')
+    cust_email = db.Column(db.String(100), default='')
+    project_no = db.Column(db.String(100), default='')
 
 class SetupInfo(db.Model):
     equip_id = db.Column(db.String(200), db.ForeignKey('equipment.id', ondelete='CASCADE', onupdate='CASCADE'), primary_key=True)
