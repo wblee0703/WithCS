@@ -153,6 +153,65 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
+# ---------- Migration ----------
+def migrate_setupinfo_to_equipment():
+    """Copy fields from existing SetupInfo records to related Equipment records.
+    This runs on application start to ensure DB reflects the new schema.
+    """
+    migrated = 0
+    for si in SetupInfo.query.all():
+        equip = Equipment.query.get(si.equip_id)
+        if not equip:
+            continue
+        # copy each moved field if present
+        equip.equip_status = si.equip_status
+        equip.delivery_date = si.delivery_date
+        equip.warranty_start = si.warranty_start
+        equip.warranty_period = si.warranty_period
+        equip.building = si.building
+        equip.floor = si.floor
+        equip.detail_loc = si.detail_loc
+        equip.manager = si.manager
+        equip.contact = si.contact
+        equip.email = si.email
+        equip.cust_manager = si.cust_manager
+        equip.cust_contact = si.cust_contact
+        equip.cust_email = si.cust_email
+        equip.project_no = si.project_no
+        migrated += 1
+    if migrated:
+        db.session.commit()
+        print(f"✅ {migrated} rows migrated from SetupInfo to Equipment")
+
+# Ensure new columns exist (SQLite will ignore if already present)
+def ensure_equipment_columns():
+    columns = [
+        ('equip_status', 'VARCHAR(50)'),
+        ('delivery_date', 'VARCHAR(50)'),
+        ('warranty_start', 'VARCHAR(50)'),
+        ('warranty_period', 'VARCHAR(50)'),
+        ('building', 'VARCHAR(100)'),
+        ('floor', 'VARCHAR(50)'),
+        ('detail_loc', 'VARCHAR(200)'),
+        ('manager', 'VARCHAR(100)'),
+        ('contact', 'VARCHAR(100)'),
+        ('email', 'VARCHAR(100)'),
+        ('cust_manager', 'VARCHAR(100)'),
+        ('cust_contact', 'VARCHAR(100)'),
+        ('cust_email', 'VARCHAR(100)'),
+        ('project_no', 'VARCHAR(100)')
+    ]
+    for col, typ in columns:
+        try:
+            db.session.execute(text(f'ALTER TABLE equipment ADD COLUMN {col} {typ}'))
+        except Exception:
+            pass  # column may already exist
+
+with app.app_context():
+    ensure_equipment_columns()
+    migrate_setupinfo_to_equipment()
+
+
 # [추가] SQLite 외래키(Foreign Key) 및 Cascade(연쇄 삭제/수정) 기능 강제 활성화
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
