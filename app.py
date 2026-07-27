@@ -2277,18 +2277,18 @@ def resolve_master_equip_id(equip_id):
         for tok in norm_tokens:
             if not tok: continue
             if tok == c_site: score += 10
-            elif tok in c_site and len(tok) >= 2: score += 5
+            elif (tok in c_site or (c_site and c_site in tok)) and min(len(tok), len(c_site) if c_site else 0) >= 2: score += 5
 
             if tok == c_name: score += 10
-            elif tok in c_name and len(tok) >= 2: score += 5
+            elif (tok in c_name or (c_name and c_name in tok)) and min(len(tok), len(c_name) if c_name else 0) >= 2: score += 5
 
             if tok == c_cust: score += 15
-            elif tok in c_cust and len(tok) >= 2: score += 8
+            elif (tok in c_cust or (c_cust and c_cust in tok)) and min(len(tok), len(c_cust) if c_cust else 0) >= 2: score += 8
 
             if tok == c_serial and tok not in invalid_serials: score += 15
-            elif tok in c_serial and tok not in invalid_serials and len(tok) >= 3: score += 8
+            elif (tok in c_serial or (c_serial and c_serial in tok)) and tok not in invalid_serials and min(len(tok), len(c_serial) if c_serial else 0) >= 3: score += 8
 
-            if tok in c_id: score += 5
+            if (tok and tok in c_id) or (c_id and c_id in tok): score += 5
 
         if score > 0:
             cand_scores.append((score, cand))
