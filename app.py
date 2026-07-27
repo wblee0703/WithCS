@@ -217,6 +217,24 @@ class SetupInfo(db.Model):
     model = db.Column(db.String(100), default='')
 
 # [추가] 셋업(SETUP) 진행 세부사항(체크리스트) 모델
+
+# ---------------------------------------------------------------
+# Migration helper: copy cust_equip_name from SetupInfo to Equipment
+# ---------------------------------------------------------------
+def migrate_cust_equip_name():
+    """Copy cust_equip_name from SetupInfo records to the related Equipment.
+    This should be run once after the Equipment.cust_equip_name column is added.
+    """
+    from app import db, Equipment, SetupInfo
+    migrated = 0
+    for si in SetupInfo.query.filter(SetupInfo.cust_equip_name != '').all():
+        equip = Equipment.query.get(si.equip_id)
+        if equip and not equip.cust_equip_name:
+            equip.cust_equip_name = si.cust_equip_name
+            migrated += 1
+    if migrated:
+        db.session.commit()
+    print(f"✅ {migrated} Equipment records updated with cust_equip_name from SetupInfo")
 class SetupDetail(db.Model):
     _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     id = db.Column(db.String(50))
