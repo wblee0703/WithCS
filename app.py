@@ -2224,7 +2224,7 @@ def admin_crud():
         app.logger.error(f"Admin CRUD Error ({domain} - {action}): {str(e)}", exc_info=True)
         return jsonify({"status": "fail", "message": str(e)}), 500
 
-# [추가] 장비 ID 지능형 3개 이상 다원 일치 보정 헬퍼 함수
+# [추가] 장비 ID 지능형 점수 기반 다원 일치 보정 헬퍼 함수
 def resolve_master_equip_id(equip_id):
     if not equip_id or not isinstance(equip_id, str):
         return equip_id
@@ -2242,80 +2242,56 @@ def resolve_master_equip_id(equip_id):
     if exact:
         return exact.id
 
-    # 2. 콜론(::)으로 파싱하여 비어있지 않은 파트들 추출
-    raw_tokens = [p.strip() for p in clean_id.split('::') if p and p.strip()]
-    if len(raw_tokens) < 2:
-        return clean_id
-
-    site = raw_tokens[0]
-    model = raw_tokens[1]
-    remaining = raw_tokens[2:]
-    
-    invalid_serials = ['n/a', 'none', '-', '없음', 'null', 'undefined', '']
-
     all_equips = Equipment.query.all()
     if not all_equips:
         return clean_id
 
-    # 사업장 후보군
-    candidates = [c for c in all_equips if normalize_key(c.site_name) == normalize_key(site)]
-    if not candidates:
-        candidates = all_equips
+    # 2. 콜론(::) 파싱 및 비어있지 않은 토큰 추출
+    raw_tokens = [p.strip() for p in clean_id.split('::') if p and p.strip()]
+    if not raw_tokens:
+        return clean_id
 
-    # 각 장비 정보 수집 (cand, c_serial, c_cust, c_id)
-    cand_info_list = []
-    for cand in candidates:
-        c_serial = (cand.serial or "").strip()
+    norm_tokens = [normalize_key(t) for t in raw_tokens if normalize_key(t)]
+    if not norm_tokens:
+        return clean_id
+
+    invalid_serials = ['na', 'none', 'null', 'undefined', '없음', '-']
+
+    # 3. DB 전체 장비 대상 점수 기반 다원 유사도 매칭
+    cand_scores = []
+    for cand in all_equips:
+        c_site = normalize_key(cand.site_name)
+        c_name = normalize_key(cand.name)
+        c_serial = normalize_key(cand.serial)
         si = SetupInfo.query.filter_by(equip_id=cand.id).first()
-        c_cust = (si.cust_equip_name or "").strip() if si else ""
-        cand_info_list.append((cand, c_serial, c_cust, cand.id))
+        c_cust = normalize_key(si.cust_equip_name) if si else ""
+        c_id = normalize_key(cand.id)
 
-    # 사업장 + 모델명 1차 선별
-    model_cands = [(cand, c_s, c_c, c_id) for cand, c_s, c_c, c_id in cand_info_list if normalize_key(cand.site_name) == normalize_key(site) and normalize_key(cand.name) == normalize_key(model)]
+        score = 0
+        for tok in norm_tokens:
+            if not tok: continue
+            if tok == c_site: score += 10
+            elif tok in c_site and len(tok) >= 2: score += 5
 
-    if remaining:
-        for token in remaining:
-            norm_token = normalize_key(token)
-            if not norm_token: continue
+            if tok == c_name: score += 10
+            elif tok in c_name and len(tok) >= 2: score += 5
 
-            # 1) model_cands 내에서 cand.id 자체에 token이 포함되어 있는지 대조 (SKH 이천::EM201::::CAAB02 -> ID 내 CAAB02 매칭!)
-            for cand, c_s, c_c, c_id in model_cands:
-                if norm_token in normalize_key(c_id):
-                    return cand.id
+            if tok == c_cust: score += 15
+            elif tok in c_cust and len(tok) >= 2: score += 8
 
-            # 2) model_cands 내에서 고객사 장비명(cust) 대조
-            for cand, c_s, c_c, c_id in model_cands:
-                if c_c and normalize_key(c_c) == norm_token:
-                    return cand.id
+            if tok == c_serial and tok not in invalid_serials: score += 15
+            elif tok in c_serial and tok not in invalid_serials and len(tok) >= 3: score += 8
 
-            # 3) model_cands 내에서 시리얼(serial) 대조
-            for cand, c_s, c_c, c_id in model_cands:
-                if c_s and c_s.lower() not in invalid_serials and normalize_key(c_s) == norm_token:
-                    return cand.id
+            if tok in c_id: score += 5
 
-            # 4) 전체 candidates 내에서 cand.id에 token 포함 여부 대조
-            for cand, c_s, c_c, c_id in cand_info_list:
-                if normalize_key(cand.site_name) == normalize_key(site) and norm_token in normalize_key(c_id):
-                    return cand.id
+        if score > 0:
+            cand_scores.append((score, cand))
 
-            # 5) 전체 candidates 내에서 고객사 장비명(cust) 대조
-            for cand, c_s, c_c, c_id in cand_info_list:
-                if normalize_key(cand.site_name) == normalize_key(site) and c_c and normalize_key(c_c) == norm_token:
-                    return cand.id
-
-            # 6) 전체 candidates 내에서 시리얼(serial) 대조
-            for cand, c_s, c_c, c_id in cand_info_list:
-                if normalize_key(cand.site_name) == normalize_key(site) and c_s and c_s.lower() not in invalid_serials and normalize_key(c_s) == norm_token:
-                    return cand.id
-
-    # 3. 남은 토큰 대조로도 못 찾았거나 토큰이 없었을 때:
-    # 1) model_cands가 있으면 가장 부합하는 첫번째 장비의 정식 ID로 반환
-    if model_cands:
-        return model_cands[0][0].id
-
-    # 2) site 내 장비가 있으면 반환
-    if candidates:
-        return candidates[0].id
+    if cand_scores:
+        cand_scores.sort(key=lambda x: x[0], reverse=True)
+        best_score, best_cand = cand_scores[0]
+        app.logger.info(f"[Master Equip Resolve] '{equip_id}' -> '{best_cand.id}' (Score: {best_score})")
+        return best_cand.id
 
     return clean_id
 
