@@ -231,17 +231,21 @@ window.resolveFullEquipKey = function (site, equip) {
     const siteEquips = deviceDataMap[cleanSite] || [];
     if (!siteEquips || siteEquips.length === 0) return cleanEquip;
 
+    const collapsedEquip = cleanEquip.replace(/:{2,}/g, '::');
     if (siteEquips.includes(cleanEquip)) {
         return cleanEquip;
     }
+    if (siteEquips.includes(collapsedEquip)) {
+        return collapsedEquip;
+    }
 
-    const rawParts = cleanEquip.split('::').map(p => p.trim());
+    const rawParts = cleanEquip.split('::').map(p => p.trim()).filter(Boolean);
     let inModel = '', inSerial = '', inCust = '';
 
     if (rawParts.length >= 4) {
-        inModel = rawParts[1] || rawParts[0];
-        inSerial = rawParts[2];
-        inCust = rawParts[3];
+        inModel = rawParts[0];
+        inSerial = rawParts[1];
+        inCust = rawParts[2];
     } else if (rawParts.length === 3) {
         inModel = rawParts[0];
         const val = rawParts[1];
@@ -269,7 +273,7 @@ window.resolveFullEquipKey = function (site, equip) {
     const isSerialValid = inSerial && !invalidSerials.includes(inSerial.toLowerCase());
 
     const candList = siteEquips.map(eq => {
-        const parts = eq.split('::').map(p => p.trim());
+        const parts = eq.split('::').map(p => p.trim()).filter(Boolean);
         return {
             fullKey: eq,
             model: parts[0] || '',

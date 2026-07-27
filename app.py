@@ -2242,6 +2242,12 @@ def resolve_master_equip_id(equip_id):
     if exact:
         return exact.id
 
+    # [추가] 연속된 콜론(:::) 축소 ID로 2차 DB 직접 매칭
+    collapsed_id = re.sub(r':{2,}', '::', clean_id)
+    collapsed_exact = Equipment.query.filter_by(id=collapsed_id).first()
+    if collapsed_exact:
+        return collapsed_exact.id
+
     all_equips = Equipment.query.all()
     if not all_equips:
         return clean_id
