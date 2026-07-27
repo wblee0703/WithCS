@@ -360,14 +360,36 @@ window.resolveFullEquipKey = function (site, equip) {
     return cleanEquip;
 };
 
-// [추가] 100% DB 전환을 위한 유지관리/이력 전용 트랜잭션 동기화 함수
-window.syncHistoryTransaction = async function (site, equip, payload) {
-    window.activeSyncRequests++;
+// [추가] UI 장비 키를 DB equipment.id로 직접 매핑
+window.getEquipmentDbId = function (site, equip) {
+    if (!site || !equip) return '';
+
     let resolvedEquip = equip;
     if (typeof window.resolveFullEquipKey === 'function') {
         resolvedEquip = window.resolveFullEquipKey(site, equip);
     }
-    const equip_id = `${site}::${resolvedEquip}`;
+
+    const map = JSON.parse(localStorage.getItem('equip_id_map') || '{}');
+    const candidates = [
+        `${site}::${equip}`,
+        `${site}::${resolvedEquip}`
+    ];
+
+    for (const key of candidates) {
+        if (map[key]) return map[key];
+    }
+
+    const detailKey = `details_${site}_${resolvedEquip}`;
+    const detailData = JSON.parse(localStorage.getItem(detailKey) || '{}');
+    if (detailData.equipmentId) return detailData.equipmentId;
+
+    return `${site}::${resolvedEquip}`;
+};
+
+// [추가] 100% DB 전환을 위한 유지관리/이력 전용 트랜잭션 동기화 함수
+window.syncHistoryTransaction = async function (site, equip, payload) {
+    window.activeSyncRequests++;
+    const equip_id = window.getEquipmentDbId(site, equip);
     try {
         const res = await fetch('/api/history/transaction', {
             method: 'POST',

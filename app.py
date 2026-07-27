@@ -464,6 +464,7 @@ def load_data():
 
     data['device_data'] = device_data
     data['setup_data'] = {}
+    data['equip_id_map'] = {}
 
     # N+1 쿼리 성능 저하 방지를 위한 전체 데이터 사전 로드 (Dictionary 매핑)
     setup_infos = { s.equip_id: s for s in SetupInfo.query.all() }
@@ -496,7 +497,8 @@ def load_data():
             device_data[eq.site_name].append(eq_key)
 
         detail_key = f"details_{eq.site_name}_{eq_key}"
-        data[detail_key] = { "specialNote": eq.special_note, "maint": [], "logs": [], "setup": {} }
+        data[detail_key] = { "equipmentId": eq.id, "specialNote": eq.special_note, "maint": [], "logs": [], "setup": {} }
+        data['equip_id_map'][f"{eq.site_name}::{eq_key}"] = eq.id
         
         # 장비 셋업(마스터) 정보
         si = setup_infos.get(eq.id)
@@ -2062,6 +2064,7 @@ def admin_crud():
                 
                 parts = new_id.split('::')
                 e_name = parts[0] if len(parts) > 0 else ""
+                e_name = normalize_equipment_model_to_abbr(e_name)
                 e_serial = (parts[1] if len(parts) > 1 else "").replace('?', '-').replace('"', '')
                 cust_name = payload['setup'].get('custEquipName', '').replace('?', '-')
 
@@ -2085,6 +2088,7 @@ def admin_crud():
                 
                 parts = new_id.split('::')
                 e_name = parts[0] if len(parts) > 0 else ""
+                e_name = normalize_equipment_model_to_abbr(e_name)
                 e_serial = (parts[1] if len(parts) > 1 else "").replace('?', '-').replace('"', '')
                 cust_name = payload.get('setup', {}).get('custEquipName', '').replace('?', '-')
 
@@ -2262,6 +2266,140 @@ def admin_crud():
         # [추가] 500 에러 발생 시 정확한 원인 파악을 위해 상세 에러 로그 기록
         app.logger.error(f"Admin CRUD Error ({domain} - {action}): {str(e)}", exc_info=True)
         return jsonify({"status": "fail", "message": str(e)}), 500
+
+# [추가] equipment_models 약어 매핑 관련 헬퍼 함수
+def get_equipment_model_alias_maps():
+    """
+    SystemSetting(key='equipment_models')의 (name <-> abbr) 매핑을 로드합니다.
+    Returns:
+      - full_to_abbr: full model name -> abbr
+      - abbr_to_full: abbr -> full model name
+    """
+    import json as _json
+    import re as _re
+
+    def _normalize_key(val):
+        if not val:
+            return ""
+        return _re.sub(r'[^a-zA-Z0-9가-힣]', '', str(val)).lower()
+
+    setting = SystemSetting.query.filter_by(key='equipment_models').first()
+    if not setting or not setting.value:
+        return {}, {}
+
+    try:
+        models_data = _json.loads(setting.value)
+    except Exception:
+        return {}, {}
+
+    full_to_abbr = {}
+    abbr_to_full = {}
+    if isinstance(models_data, list):
+        for m in models_data:
+            if not isinstance(m, dict):
+                continue
+            n = m.get('name')
+            a = m.get('abbr')
+            if n and a:
+                nn = _normalize_key(n)
+                aa = _normalize_key(a)
+                if nn and aa:
+                    full_to_abbr[nn] = a
+                    abbr_to_full[aa] = n
+
+    return full_to_abbr, abbr_to_full
+
+def normalize_equipment_model_to_abbr(model_name):
+    """equipment.name/equipment.id의 모델 토큰을 약어(abbr)로 정규화합니다."""
+    if model_name is None:
+        return model_name
+    model_name = str(model_name).strip()
+    if not model_name or model_name == '기타(ETC)':
+        return model_name
+
+    import re as _re
+    def _normalize_key(val):
+        if not val:
+            return ""
+        return _re.sub(r'[^a-zA-Z0-9가-힣]', '', str(val)).lower()
+
+    full_to_abbr, _ = get_equipment_model_alias_maps()
+    norm = _normalize_key(model_name)
+    return full_to_abbr.get(norm, model_name)
+
+# [추가] equipment.id 직접 조회 헬퍼 함수
+def lookup_equipment_id(equip_id=None, site=None, equip_key=None):
+    """UI 키 또는 조합 ID를 DB의 equipment.id로 직접 매핑합니다."""
+    import unicodedata, re
+
+    def norm(val):
+        if val is None:
+            return ''
+        return unicodedata.normalize('NFC', str(val).strip())
+
+    def collapse(val):
+        return re.sub(r':{2,}', '::', norm(val).rstrip(':'))
+
+    candidates = []
+    if equip_id:
+        clean = collapse(equip_id)
+        candidates.append(clean)
+        candidates.append(norm(equip_id).rstrip(':'))
+
+    if site and equip_key:
+        combined = collapse(f"{norm(site)}::{norm(equip_key)}")
+        candidates.append(combined)
+
+    seen = set()
+    for cid in candidates:
+        if not cid or cid in seen:
+            continue
+        seen.add(cid)
+        found = Equipment.query.filter_by(id=cid).first()
+        if found:
+            return found.id
+
+    search_site = norm(site) if site else ''
+    search_key = norm(equip_key) if equip_key else ''
+
+    if not search_site and equip_id:
+        parts = collapse(equip_id).split('::')
+        if parts:
+            search_site = parts[0]
+            search_key = '::'.join(parts[1:])
+
+    if not search_site:
+        return equip_id
+
+    key_parts = search_key.split('::')
+    e_name = key_parts[0] if len(key_parts) > 0 else ''
+    e_name = normalize_equipment_model_to_abbr(e_name)
+    e_serial = (key_parts[1] if len(key_parts) > 1 else '').replace('?', '-').replace('"', '')
+    e_cust = (key_parts[2] if len(key_parts) > 2 else '').replace('?', '-')
+
+    if e_name == '기타(ETC)':
+        found = Equipment.query.filter_by(site_name=search_site, name='기타(ETC)').first()
+        if found:
+            return found.id
+
+    query = Equipment.query.filter_by(site_name=search_site, name=e_name)
+    if e_serial:
+        query = query.filter_by(serial=e_serial)
+    equips = query.all()
+
+    if e_cust and equips:
+        for eq in equips:
+            cust = eq.cust_equip_name or ''
+            if cust == e_cust:
+                return eq.id
+            si = SetupInfo.query.filter_by(equip_id=eq.id).first()
+            if si and si.cust_equip_name == e_cust:
+                return eq.id
+
+    if len(equips) == 1:
+        return equips[0].id
+
+    return resolve_master_equip_id(equip_id or f"{search_site}::{search_key}")
 
 # [추가] 장비 ID 지능형 점수 기반 다원 일치 보정 헬퍼 함수
 def resolve_master_equip_id(equip_id):
@@ -2456,9 +2594,9 @@ def history_transaction():
     log_upserts = data.get('log_upserts', [])
     log_deletes = data.get('log_deletes', [])
 
-    # [추가] 외래 키 충돌 방지를 위한 equip_id 지능형 보정 장치
+    # equipment.id 직접 매핑
     if equip_id:
-        equip_id = resolve_master_equip_id(equip_id)
+        equip_id = lookup_equipment_id(equip_id=equip_id)
 
     # [Rule 3 준수] DB에 등록되지 않은 마스터 장비 데이터 자동 생성 차단
     if equip_id and not Equipment.query.filter_by(id=equip_id).first():
@@ -2475,6 +2613,7 @@ def history_transaction():
             if not item:
                 item = MaintItem(id=m_id, equip_id=equip_id)
                 db.session.add(item)
+            item.equip_id = equip_id
             item.sort_order = idx
             item.type = m.get('type', item.type)
             item.detail_type = m.get('detailType', item.detail_type)
@@ -2500,6 +2639,7 @@ def history_transaction():
             if not item:
                 item = LogItem(id=l_id, equip_id=equip_id)
                 db.session.add(item)
+            item.equip_id = equip_id
             item.date = l.get('date', item.date)
             item.type = l.get('type', item.type)
             item.detail_type = l.get('detailType', item.detail_type)
@@ -3670,6 +3810,84 @@ def init_db():
         except Exception as ex_eq:
             db.session.rollback()
             app.logger.error(f"[Migration] Equipment 마이그레이션 오류: {str(ex_eq)}")
+
+        # [마이그레이션] Equipment 모델명(장비 토큰)을 약어로 정규화 (equipment.id / equipment.name)
+        try:
+            full_to_abbr, _ = get_equipment_model_alias_maps()
+            if full_to_abbr:
+                raw_eqs = db.session.execute(text("SELECT id, name FROM equipment")).fetchall()
+                migrated = 0
+
+                def _normalize_key(val):
+                    import re as _re
+                    if not val:
+                        return ""
+                    return _re.sub(r'[^a-zA-Z0-9가-힣]', '', str(val)).lower()
+
+                for row in raw_eqs:
+                    old_id = str(row[0] or '')
+                    name_val = str(row[1] or '').strip()
+                    if not old_id or not name_val:
+                        continue
+                    if name_val == '기타(ETC)':
+                        continue
+
+                    parts = old_id.split('::')
+                    if len(parts) < 4:
+                        continue
+
+                    site_val = str(parts[0] or '').strip()
+                    name_tok = str(parts[1] or '').strip()
+                    serial_val = str(parts[2] or '').replace('?', '-').replace('"', '').strip()
+                    cust_val = str(parts[3] or '').replace('?', '-').strip()
+
+                    if name_tok == '기타(ETC)':
+                        continue
+
+                    new_name_tok = full_to_abbr.get(_normalize_key(name_tok))
+                    if not new_name_tok or new_name_tok == name_tok:
+                        continue
+
+                    new_id = f"{site_val}::{new_name_tok}::{serial_val}::{cust_val}"
+
+                    try:
+                        db.session.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
+                    except:
+                        pass
+
+                    # PK 중복 방지
+                    db.session.execute(
+                        text("DELETE FROM equipment WHERE id=:n AND id!=:o"),
+                        {'n': new_id, 'o': old_id}
+                    )
+
+                    # 하위 테이블 FK 동기화
+                    db.session.execute(text("UPDATE maint_item SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                    db.session.execute(text("UPDATE log_item SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                    db.session.execute(text("UPDATE setup_detail SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                    db.session.execute(text("UPDATE setup_log SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                    db.session.execute(text("UPDATE trouble_log SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                    db.session.execute(text("UPDATE setup_info SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+
+                    # 부모 테이블 PK & name 업데이트
+                    db.session.execute(
+                        text("UPDATE equipment SET id=:n, name=:nm WHERE id=:o"),
+                        {'n': new_id, 'nm': new_name_tok, 'o': old_id}
+                    )
+
+                    try:
+                        db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
+                    except:
+                        pass
+
+                    migrated += 1
+
+                if migrated:
+                    db.session.commit()
+                    app.logger.warning(f"[Migration] Equipment 약어 모델 정규화 완료: {migrated}개")
+        except Exception as ex_alias:
+            db.session.rollback()
+            app.logger.error(f"[Migration] Equipment 약어 모델 정규화 오류: {str(ex_alias)}")
 
         # [마이그레이션] 기존 사업장에 '기타(ETC)' 장비 자동 추가 (신규 4필드 규격)
         try:
