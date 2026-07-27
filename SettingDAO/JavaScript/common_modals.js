@@ -1206,6 +1206,7 @@ function buildDetailDropdown(item, site, equip) {
     if (currentDetailTarget && currentDetailTarget.isCompleted) return;
     const contentDiv = document.getElementById('detail-content');
     const contentInput = document.getElementById('detail-content-input');
+    if (!contentDiv || !contentInput) return;
 
     if (contentInput) {
         contentInput.disabled = false; // 다른 항목 전환 시 비활성화 초기화
