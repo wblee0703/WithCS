@@ -3593,27 +3593,33 @@ def init_db():
             except:
                 db.session.rollback()
 
-            # 2. 시리얼 번호 및 ID 내 '?' -> '-' 정정 및 cust_equip_name 동기화
+            # 2. 시리얼 번호 및 ID 내 '?' -> '-' 정정 및 4필드 ID(site::name::serial::cust_name) 동기화
             all_eqs = Equipment.query.all()
             for eq in all_eqs:
-                setup = SetupInfo.query.filter_by(equip_id=eq.id).first()
-                cust_name = setup.cust_equip_name if setup else (eq.cust_equip_name or '')
-                
-                new_serial = (eq.serial or '').replace('?', '-')
-                new_name = (eq.name or '')
-                new_cust = (cust_name or '').replace('?', '-')
-                
-                if eq.cust_equip_name != new_cust:
-                    eq.cust_equip_name = new_cust
+                parts = (eq.id or '').split('::')
+                site_from_id = parts[0] if len(parts) > 0 else (eq.site_name or '')
+                name_from_id = parts[1] if len(parts) > 1 else (eq.name or '')
+                serial_from_id = parts[2] if len(parts) > 2 else (eq.serial or '')
+                cust_from_id = parts[3] if len(parts) >= 4 else ''
 
-                clean_site = eq.site_name or ''
+                # SetupInfo 검색 (정확한 ID 매칭 ➔ 시리얼 기반 매칭)
+                setup = SetupInfo.query.filter_by(equip_id=eq.id).first()
+                if not setup and serial_from_id:
+                    setup = SetupInfo.query.filter(SetupInfo.equip_id.like(f"%::{serial_from_id}%")).first()
+
+                setup_cust = setup.cust_equip_name if (setup and setup.cust_equip_name) else ''
+                cust_name = (setup_cust or cust_from_id or eq.cust_equip_name or '').replace('?', '-').strip()
+                new_serial = (eq.serial or serial_from_id or '').replace('?', '-').strip()
+                new_name = (eq.name or name_from_id or '').strip()
+                clean_site = (eq.site_name or site_from_id or '').strip()
+
                 if new_name == '기타(ETC)':
                     new_id = f"{clean_site}::기타(ETC)::::"
                 else:
-                    new_id = f"{clean_site}::{new_name}::{new_serial}::{new_cust}"
+                    new_id = f"{clean_site}::{new_name}::{new_serial}::{cust_name}"
 
                 old_id = eq.id
-                if old_id != new_id or eq.serial != new_serial:
+                if old_id != new_id or eq.serial != new_serial or eq.cust_equip_name != cust_name:
                     dup = Equipment.query.filter_by(id=new_id).first()
                     if dup and dup.id != old_id:
                         db.session.delete(dup)
@@ -3631,14 +3637,14 @@ def init_db():
 
                     eq.id = new_id
                     eq.serial = new_serial
-                    eq.cust_equip_name = new_cust
+                    eq.cust_equip_name = cust_name
                     db.session.flush()
 
                     try: db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
                     except: pass
 
             db.session.commit()
-            app.logger.warning("[Migration] Equipment cust_equip_name 컬럼 추가 및 시리얼번호 '?' -> '-' 정정 완료!")
+            app.logger.warning("[Migration] Equipment 4필드 규격(site::name::serial::cust_name) 및 시리얼번호 정정 완료!")
         except Exception as ex_eq:
             db.session.rollback()
             app.logger.error(f"[Migration] Equipment 마이그레이션 오류: {str(ex_eq)}")
@@ -3712,10 +3718,10 @@ if __name__ == '__main__':
         from waitress import serve
         print(f" * Serving with Waitress on http://0.0.0.0:{port}")
         serve(app, host='0.0.0.0', port=port, threads=12)
-    except PermissionError:
-        # [추가] 포트 충돌(PermissionError) 발생 시 자동으로 다음 포트 시도
+    except (PermissionError, OSError) as port_err:
+        # [추가] 포트 충돌(PermissionError/OSError) 발생 시 자동으로 다음 포트 시도
         new_port = port + 1
-        print(f"\n ! Port {port} is in use or requires permissions. Trying port {new_port}...")
+        print(f"\n ! Port {port} is in use ({port_err}). Trying port {new_port}...")
         try:
             serve(app, host='0.0.0.0', port=new_port, threads=12)
         except Exception as e:
