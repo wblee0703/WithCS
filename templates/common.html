@@ -20,7 +20,15 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body>
+<body data-user-logged-in="{% if session.get('role') or session.get('user') %}true{% else %}false{% endif %}">
+    <!-- 글로벌 로딩 오버레이 -->
+    <div id="global-loading-overlay" class="global-loading-overlay" style="display: flex;">
+        <div class="global-loading-box">
+            <div class="global-spinner"></div>
+            <div class="global-loading-text" id="global-loading-text">로딩 중입니다...</div>
+        </div>
+    </div>
+
     <!-- 1. 공통 헤더 (Header) -->
     <header class="header">
         <!-- 모바일 세션 타이머 -->
@@ -1372,15 +1380,15 @@
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.0.6"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.0.6"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}"></script>
-    {% if session.get('role') == 'superadmin' %}
+    {% if session.get('role') or session.get('user') %}
     <script src="{{ url_for('SettingDAO', filename='JavaScript/chatbot.js') }}"></script>
     {% endif %}
     <!-- 페이지별 추가 스크립트 -->
     {% block extra_js %}{% endblock %}
 
     <!-- 4. AI 챗봇 플로팅 위젯 -->
-    {% if session.get('role') == 'superadmin' %}
-    <div id="ai-chatbot-container" style="display: none;">
+    {% if session.get('role') or session.get('user') %}
+    <div id="ai-chatbot-container" style="display: block;">
         <!-- 챗봇 열기 버튼 -->
         <button id="chatbot-toggle-btn" class="chatbot-toggle-btn" title="AI 비서와 대화">
             💬
@@ -1394,6 +1402,7 @@
                     <h4>WITHTECH AI 비서</h4>
                 </div>
                 <div class="chatbot-header-actions">
+                    <button id="chatbot-history-btn" class="chatbot-expand-btn" title="대화 기록 보기">📜</button>
                     <button id="chatbot-expand-btn" class="chatbot-expand-btn" title="화면 크기 확대/축소">⤢</button>
                     <button id="chatbot-close-btn" class="chatbot-close-btn">✕</button>
                 </div>
@@ -1407,6 +1416,34 @@
         </div>
     </div>
     {% endif %}
+
+    <!-- 챗봇 대화 기록 모달 -->
+    <div id="chatbot-history-modal" class="modal-overlay" style="display: none; z-index: 100000;">
+        <div class="modal-container" style="max-width: 760px; width: 92%; max-height: 85vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <h3>💬 챗봇 대화 기록</h3>
+                <button class="modal-close-btn" onclick="closeChatbotHistoryModal()">✕</button>
+            </div>
+            <div class="modal-body" style="flex: 1; min-height: 400px; overflow: hidden; display: flex; flex-direction: row; gap: 16px; padding: 16px;">
+                <!-- 왼쪽: 대화 목록 -->
+                <div style="width: 210px; flex-shrink: 0; border-right: 1px solid #30363d; padding-right: 12px; display: flex; flex-direction: column; height: 100%;">
+                    <div style="margin-bottom: 8px;">
+                        <h5 style="margin: 0; color: #8b949e; font-size: 13px; font-weight: 700;">📋 대화 목록</h5>
+                    </div>
+                    <ul id="chatbot-history-date-list" style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; flex: 1; overflow-y: auto;"></ul>
+                    <!-- 대화 목록 제일 아래: 목록 삭제 버튼 -->
+                    <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #30363d;">
+                        <button id="btn-clear-all-chat-history" style="width: 100%; font-size: 12px; padding: 7px 10px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; font-weight: 700; background: #da3633; color: #ffffff; border: 1px solid #f85149;">🗑️ 목록 삭제</button>
+                    </div>
+                </div>
+                <!-- 오른쪽: 대화 내역 -->
+                <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; height: 100%;">
+                    <h5 id="chatbot-history-selected-date" style="margin-top: 0; margin-bottom: 8px; color: #e6edf3; font-size: 13px; font-weight: 700;">선택된 대화 내역</h5>
+                    <div id="chatbot-history-content" style="flex: 1; min-height: 340px; max-height: 460px; overflow-y: auto; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 14px; font-size: 13px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
     
 
 

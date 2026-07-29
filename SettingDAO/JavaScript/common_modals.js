@@ -684,6 +684,20 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     const detailContentInputEl = document.getElementById('detail-content-input');
     if (detailContentInputEl) {
         detailContentInputEl.value = (displayContent && displayContent !== '내용 없음') ? displayContent : '';
+        detailContentInputEl.style.width = '100%';
+        detailContentInputEl.style.boxSizing = 'border-box';
+        detailContentInputEl.style.flex = '1';
+
+        // 내용 입력 시 콤마(,) 특수문자 입력 제한 (물품 쪼개짐 현상 차단)
+        if (!detailContentInputEl.dataset.commaBound) {
+            detailContentInputEl.dataset.commaBound = 'true';
+            detailContentInputEl.addEventListener('input', (e) => {
+                if (e.target.value.includes(',')) {
+                    e.target.value = e.target.value.replace(/,/g, '');
+                    alert('내용 텍스트 입력 시 콤마(,) 특수문자는 사용할 수 없습니다.');
+                }
+            });
+        }
     }
     const cancelBtn = document.getElementById('btn-cancel-completion');
 
@@ -3408,36 +3422,10 @@ async function completeScheduleWork() {
     } else {
         document.getElementById('event-detail-modal').style.display = 'none';
 
-        if (isRegularPM && nextScheduleItems.length > 0 && !maintItem.originalLogId) {
-            if (typeof window.openNextScheduleModal === 'function') {
-                window.openNextScheduleModal({
-                    site,
-                    equip,
-                    items: nextScheduleItems,
-                    completeDate: completeDate,
-                    md: md,
-                    originalMaintMap: originalMaintMap,
-                    mergedRegItemIds: mergedRegItemIds,
-                    onClose: () => {
-                        if (typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();
-                        if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
-                    },
-                    onDateChange: (site, oldDate, newDate) => {
-                        const oldMonth = oldDate ? oldDate.substring(0, 7) : null;
-                        const newMonth = newDate.substring(0, 7);
-                        if (oldMonth !== newMonth) {
-                            if (typeof window.incrementConfirmedCount === 'function') {
-                                window.incrementConfirmedCount(site, newDate, 1);
-                            }
-                        }
-                    }
-                });
-            }
-        } else {
-            alert('작업이 완료되었습니다.');
-            if (typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();
-            if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
-        }
+        // [비활성화] 사용자 요청으로 정기 작업 완료 시 '다음 작업 예정일 등록 팝업창' 노출 안 함 (일단 비활성화)
+        alert('작업이 완료되었습니다.');
+        if (typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();
+        if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
     }
 }
 

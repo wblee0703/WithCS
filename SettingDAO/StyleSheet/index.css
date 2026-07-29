@@ -1036,6 +1036,30 @@ body {
         max-height: none !important;
     }
 
+/* [요청] 점검 리스트 어제오늘건수 요약 폰트 크기 (웹 브라우저 12px) */
+#dash-inspection-summary {
+    font-size: 12px;
+}
+#dash-inspection-summary .upcoming-summary-badge {
+    font-size: 11px;
+}
+
+@media (max-width: 768px) {
+    /* [요청] 모바일 환경에서만 폰트 크기 10px 및 총 건수 텍스트 숨김 */
+    #dash-inspection-summary {
+        font-size: 10px !important;
+    }
+    #dash-inspection-summary .upcoming-summary-badge {
+        font-size: 9.5px !important;
+    }
+    .upcoming-count-text {
+        display: none !important;
+    }
+    /* [요청] 모바일에서 점검 리스트 장비 정보 글자 크기 1px 축소 (13px -> 12px) */
+    .upcoming-item-title {
+        font-size: 12px !important;
+    }
+
     /* [요청] 예정 작업 카드 크기 고정 및 스크롤 */
     .upcoming-container {
         width: 100% !important;
@@ -1114,10 +1138,14 @@ body {
         overflow-y: auto;
     }
 
-    /* [요청] 장비 정보 리스트 글자 크기 축소 */
+    /* [요청] 장비 정보 리스트 글자 크기 축소 (고객사 장비명, 시리얼 넘버 포함) */
     #equip-detail-list .status-list-item,
-    #setup-equip-detail-list .status-list-item {
-        font-size: 12px;
+    #setup-equip-detail-list .status-list-item,
+    #equip-detail-list .customer-equip-name,
+    #equip-detail-list .equip-serial,
+    #setup-equip-detail-list .customer-equip-name,
+    #setup-equip-detail-list .equip-serial {
+        font-size: 12px !important;
     }
 
     .section-title,

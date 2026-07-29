@@ -342,31 +342,29 @@ function showHomeSection(type) {
 function updateHomeDashboard() {
     if (isFirstLoad) {
         const lastSection = localStorage.getItem('lastHomeSection');
-        const userSite = sessionStorage.getItem('userSite'); 
+        const rawUserSite = sessionStorage.getItem('user_site') || sessionStorage.getItem('userSite') || (window.currentUser && window.currentUser.site) || '';
+
+        let userSiteFilter = null;
+        if (rawUserSite && rawUserSite !== '전체' && rawUserSite !== '구분없음' && rawUserSite !== 'None' && rawUserSite !== 'null') {
+            userSiteFilter = window.getSiteGroupName ? window.getSiteGroupName(rawUserSite) : rawUserSite;
+        }
 
         try {
-            const savedSetupFilter = JSON.parse(localStorage.getItem('setupDashboardFilter'));
-            if (savedSetupFilter) {
-                setupDashboardFilter = savedSetupFilter;
-            } else if (userSite) {
-                setupDashboardFilter = { site: '', equip: '' };
-            }
-
-            const savedGanttFilter = JSON.parse(localStorage.getItem('currentGanttFilters'));
-            if (savedGanttFilter) {
-                currentGanttFilters = savedGanttFilter;
-            } else if (userSite) {
-                currentGanttFilters = { site: '', equip: '' };
-            }
-
             const savedMaintFilter = JSON.parse(localStorage.getItem('maintDashboardFilter'));
-            if (savedMaintFilter) {
+            if (savedMaintFilter && savedMaintFilter.site) {
                 selectedSiteFilter = savedMaintFilter.site;
                 selectedEquipFilter = savedMaintFilter.equip;
                 selectedSerialFilter = savedMaintFilter.serial;
                 if (savedMaintFilter.search) currentSearchFilters = savedMaintFilter.search;
-            } else if (userSite) {
-                selectedSiteFilter = '';
+            } else if (userSiteFilter) {
+                selectedSiteFilter = userSiteFilter;
+                selectedEquipFilter = null;
+                selectedSerialFilter = null;
+                currentSearchFilters = { site: userSiteFilter, equip: '' };
+            } else {
+                selectedSiteFilter = null;
+                selectedEquipFilter = null;
+                selectedSerialFilter = null;
                 currentSearchFilters = { site: '', equip: '' };
             }
         } catch (e) { console.error("Failed to restore filters", e); }
@@ -637,17 +635,65 @@ function renderEquipDetailList(data) {
     });
 }
 
+let activeUpcomingTab = 'all';
+
 function renderUpcomingList(data) {
     const upcomingListEl = document.getElementById('dash-upcoming-list');
     const upcomingContainer = document.getElementById('dash-upcoming-container');
+    const summaryEl = document.getElementById('dash-inspection-summary');
+    const tabGroupEl = document.getElementById('upcoming-tab-group');
 
     if (!upcomingListEl || !upcomingContainer) return;
     upcomingListEl.innerHTML = '';
 
-    const upcomingItems = [];
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const formatDateStr = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const todayStr = formatDateStr(today);
+    const yesterdayStr = formatDateStr(yesterday);
+
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+    const inspectionItems = [];
+
+    let yesterdayCount = 0;
+    let todayCount = 0;
+
+    // 작업 유형별 건수 집계 객체
+    const typeCounts = {
+        all: { '정기': 0, '비정기': 0, '고객대응': 0, '용액제조': 0, '온라인점검': 0 },
+        yesterday: { '정기': 0, '비정기': 0, '고객대응': 0, '용액제조': 0, '온라인점검': 0 },
+        today: { '정기': 0, '비정기': 0, '고객대응': 0, '용액제조': 0, '온라인점검': 0 }
+    };
+
+    // 작업 유형별 우선순위 정의 (비정기 > 고객대응 > 용액제조 > 온라인점검 > 정기)
+    const typePriority = {
+        '비정기': 1,
+        '고객대응': 2,
+        '용액제조': 3,
+        '온라인점검': 4,
+        '정기': 5
+    };
+
+    const typeColors = {
+        '정기': '#3fb950',
+        '비정기': '#f85149',
+        '고객대응': '#e3b341',
+        '용액제조': '#a371f7',
+        '온라인점검': '#58a6ff'
+    };
+
+    const inspectionMap = new Map();
+
+    const getBaseDetailType = (item) => {
+        let dt = (item.detailType || '').trim();
+        if (dt) return dt;
+        let c = (item.content || '').trim();
+        c = c.replace(/\s*-\s*\[.*?\].*$/, '').trim();
+        return c || '기타';
+    };
 
     if (data) {
         Object.keys(data).forEach(site => {
@@ -665,133 +711,199 @@ function renderUpcomingList(data) {
                     const key = `details_${site}_${equip}`;
                     const detailData = JSON.parse(localStorage.getItem(key));
 
-                    if (detailData && detailData.maint) {
-                        detailData.maint.forEach(item => {
-                            if (item.type === '정기') {
-                                let targetDiffDays = null;
+                    if (detailData) {
+                        // 1. 완료 이력 (logs) 확인
+                        if (detailData.logs) {
+                            detailData.logs.forEach(log => {
+                                if (log.date === yesterdayStr || log.date === todayStr) {
+                                    const isYest = log.date === yesterdayStr;
+                                    const t = log.type || '기타';
+                                    const dt = getBaseDetailType(log);
+                                    // 통일된 작업 단위 그룹핑 키 (사업장::장비::날짜::작업구분::세부구분)
+                                    const groupKey = `${site}::${equip}::${log.date}::${t}::${dt}`;
 
-                                if (item.scheduledDate) {
-                                    const [y, m, d] = item.scheduledDate.split('-').map(Number);
-                                    const schedDate = new Date(y, m - 1, d);
-                                    targetDiffDays = Math.round((schedDate - today) / (1000 * 60 * 60 * 24));
-                                } else if (item.date && item.period) {
-                                    const [y, m, d] = item.date.split('-').map(Number);
-                                    const cycleDate = new Date(y, m - 1, d);
-                                    cycleDate.setDate(cycleDate.getDate() + parseInt(item.period));
-                                    targetDiffDays = Math.round((cycleDate - today) / (1000 * 60 * 60 * 24));
+                                    if (inspectionMap.has(groupKey)) {
+                                        const existing = inspectionMap.get(groupKey);
+                                        existing.itemCount++;
+                                        existing.isCompleted = true; // 하나라도 완료된 건이면 완료로 표시
+                                        if (log.id) existing.id = log.id;
+                                    } else {
+                                        inspectionMap.set(groupKey, {
+                                            id: log.id,
+                                            site: site,
+                                            equip: equip,
+                                            type: t,
+                                            detailType: dt,
+                                            content: log.content || '내용 없음',
+                                            date: log.date,
+                                            isYesterday: isYest,
+                                            isCompleted: true,
+                                            priority: typePriority[t] || 99,
+                                            itemCount: 1
+                                        });
+                                    }
                                 }
+                            });
+                        }
 
-                                if (targetDiffDays !== null && targetDiffDays <= 30) {
-                                    upcomingItems.push({
-                                        diffDays: targetDiffDays,
-                                        site: site,
-                                        equip: equip,
-                                        item: item
-                                    });
+                        // 2. 예정 작업 이력 (maint/setup) 확인
+                        if (detailData.maint) {
+                            detailData.maint.forEach(item => {
+                                const targetDate = item.scheduledDate || item.date;
+                                if (targetDate === yesterdayStr || targetDate === todayStr) {
+                                    const isYest = targetDate === yesterdayStr;
+                                    const t = item.type || '정기';
+                                    const dt = getBaseDetailType(item);
+                                    const groupKey = `${site}::${equip}::${targetDate}::${t}::${dt}`;
+
+                                    if (inspectionMap.has(groupKey)) {
+                                        const existing = inspectionMap.get(groupKey);
+                                        existing.itemCount++;
+                                    } else {
+                                        inspectionMap.set(groupKey, {
+                                            id: item.id,
+                                            site: site,
+                                            equip: equip,
+                                            type: t,
+                                            detailType: dt,
+                                            content: item.content || '내용 없음',
+                                            date: targetDate,
+                                            isYesterday: isYest,
+                                            isCompleted: false,
+                                            priority: typePriority[t] || 99,
+                                            itemCount: 1
+                                        });
+                                    }
                                 }
-                            }
-                        });
+                            });
+                        }
                     }
                 });
             }
         });
     }
 
-    upcomingItems.sort((a, b) => {
-        const aHasDate = !!a.item.scheduledDate;
-        const bHasDate = !!b.item.scheduledDate;
-        if (aHasDate !== bHasDate) return aHasDate ? 1 : -1;
-        return a.diffDays - b.diffDays;
-    });
+    // 그룹화된 작업 건수를 inspectionItems 목록에 추가 및 통계 집계 (1 작업 = 1 건)
+    inspectionMap.forEach(item => {
+        if (item.isYesterday) yesterdayCount++;
+        else todayCount++;
 
-    const template = document.getElementById('upcoming-item-template');
-
-    upcomingItems.forEach(obj => {
-        const info = formatEquipDisplayInfo(obj.site, obj.equip, equipmentModels);
-
-        const clone = template.content.cloneNode(true);
-        const div = clone.querySelector('.upcoming-item');
-
-        // [수정] 완료된 작업인지 확인하여 다른 모달을 열도록 처리
-        let isCompleted = false;
-        let logId = null;
-        const key = `details_${obj.site}_${obj.equip}`;
-        const detailData = JSON.parse(localStorage.getItem(key));
-
-        // 예정일이 있는 작업에 대해서만 완료 여부 확인
-        if (obj.item.scheduledDate && detailData && detailData.logs) {
-            const logEntry = detailData.logs.find(l =>
-                l.date === obj.item.scheduledDate &&
-                (l.content || '').includes(obj.item.content) &&
-                !l.detailType.includes('일정변경')
-            );
-            if (logEntry) {
-                isCompleted = true;
-                logId = logEntry.id;
-            }
+        const t = item.type;
+        if (typeCounts.all[t] !== undefined) typeCounts.all[t]++;
+        if (item.isYesterday) {
+            if (typeCounts.yesterday[t] !== undefined) typeCounts.yesterday[t]++;
+        } else {
+            if (typeCounts.today[t] !== undefined) typeCounts.today[t]++;
         }
 
-        div.onclick = () => {
-            if (isCompleted) {
-                openEventDetailModal(obj.site, obj.equip, logId, true);
-            } else if (typeof window.openScheduleModal === 'function') {
-                window.openScheduleModal(obj.site, obj.equip, obj.item.id);
-            } else {
-                openEventDetailModal(obj.site, obj.equip, obj.item.id, false);
-            }
+        inspectionItems.push(item);
+    });
+
+    // 우선순위 정렬 (비정기 → 고객대응 → 용액제조 → 온라인점검 → 정기 순)
+    inspectionItems.sort((a, b) => {
+        if (a.priority !== b.priority) return a.priority - b.priority;
+        return a.date.localeCompare(b.date);
+    });
+
+    // 요약 건수 및 작업 구분 건수 표시 (1번째 줄: 오늘, 2번째 줄: 어제)
+    if (summaryEl) {
+        const makeBadgesHtml = (countsObj) => {
+            return Object.keys(typeColors).map(t => {
+                const cnt = countsObj[t] || 0;
+                const col = typeColors[t];
+                return `<span class="upcoming-summary-badge" style="display:inline-flex; align-items:center; gap:2px; font-weight:700; padding:1px 5px; border-radius:10px; background:${col}18; color:${col}; border:1px solid ${col}33;">${t} <strong style="font-weight:800;">${cnt}</strong></span>`;
+            }).join('');
         };
 
-        if (obj.item.scheduledDate) {
-            div.classList.add('scheduled-item');
-            div.title = `작업 예정일: ${obj.item.scheduledDate}`;
-        } else {
-            div.title = "클릭하여 작업 예정일 설정";
-        }
+        const todayBadges = makeBadgesHtml(typeCounts.today);
+        const yesterdayBadges = makeBadgesHtml(typeCounts.yesterday);
 
-        let badgeClass = 'safe';
-        let dDayText = `D-${obj.diffDays}`;
-        if (obj.diffDays < 0) {
-            badgeClass = 'danger';
-            dDayText = `+${Math.abs(obj.diffDays)}`;
-        } else if (obj.diffDays === 0) {
-            badgeClass = 'warning';
-            dDayText = 'D-Day';
-        } else if (obj.diffDays <= 3) {
-            badgeClass = 'warning';
-        }
+        summaryEl.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 3px; padding: 2px 0;">
+                <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+                    <span class="upcoming-summary-label" style="color:#3fb950; font-weight:700; flex-shrink:0;">오늘<span class="upcoming-count-text"> (${todayCount}건)</span>:</span>
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">${todayBadges}</div>
+                </div>
+                <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+                    <span class="upcoming-summary-label" style="color:#58a6ff; font-weight:700; flex-shrink:0;">어제<span class="upcoming-count-text"> (${yesterdayCount}건)</span>:</span>
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px; align-items: center;">${yesterdayBadges}</div>
+                </div>
+            </div>
+        `;
+    }
 
-        const subInfoHtml = info.subInfo ? ` <span class="upcoming-info-sn">${info.subInfo}</span>` : '';
+    // 어제 ~ 오늘 점검 리스트 전체 렌더링
+    upcomingListEl.innerHTML = '';
 
-        const siteInfo = clone.querySelector('.upcoming-info-site');
-        siteInfo.style.cssText = 'display: flex; align-items: center; gap: 5px; min-width: 0;';
-        siteInfo.innerHTML = `<span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${info.fullTitle}">${info.mainInfo}</span>${subInfoHtml}`;
+    if (inspectionItems.length === 0) {
+        upcomingListEl.innerHTML = '<div class="upcoming-empty-msg" style="padding: 16px; text-align: center; color: #8b949e; font-size: 13px;">어제 ~ 오늘 점검 내역이 없습니다.</div>';
+        upcomingContainer.style.display = 'flex';
+        return;
+    }
 
-        const contentText = escapeHtml(obj.item.content);
-        if (obj.item.scheduledDate) {
-            clone.querySelector('.upcoming-info-content').innerHTML = `${contentText} <span class="scheduled-date-text">(예정: ${obj.item.scheduledDate})</span>`;
-        } else {
-            clone.querySelector('.upcoming-info-content').innerHTML = contentText;
-        }
+    inspectionItems.forEach(item => {
+            const parts = item.equip.split('::');
+            const rawName = parts[0];
+            const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+            const abbrName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
 
-        const badge = clone.querySelector('.d-day-badge');
-        badge.className = `d-day-badge ${badgeClass}`;
-        badge.textContent = dDayText;
+            const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.equip}`)) || {};
+            const custName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : (parts.length > 2 ? parts[2] : '');
+            const serialNo = parts.length > 1 ? parts[1] : '';
 
-        const btn = clone.querySelector('.btn-shortcut');
-        if (btn) {
-            btn.onclick = (e) => {
-                e.stopPropagation();
-                location.href = `maintenance.html?site=${encodeURIComponent(obj.site)}&equip=${encodeURIComponent(obj.equip)}`;
+            let equipText = abbrName;
+            if (custName) {
+                equipText += ` (${custName})`;
+            } else if (serialNo) {
+                equipText += ` (${serialNo})`;
+            }
+
+            const color = typeColors[item.type] || '#8b949e';
+            const dayLabel = item.isYesterday 
+                ? '<span style="font-size:11px; font-weight:bold; padding: 1px 5px; border-radius:3px; background:#21262d; color:#8b949e; margin-right:4px;">어제</span>' 
+                : '<span style="font-size:11px; font-weight:bold; padding: 1px 5px; border-radius:3px; background:#238636; color:#ffffff; margin-right:4px;">오늘</span>';
+
+            const div = document.createElement('div');
+            div.className = 'upcoming-item';
+            div.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; margin-bottom: 6px; background: #161b22; border: 1px solid #30363d; border-radius: 6px; cursor: pointer; transition: background 0.2s;';
+
+            div.onmouseenter = () => div.style.background = '#21262d';
+            div.onmouseleave = () => div.style.background = '#161b22';
+
+            div.onclick = () => {
+                if (typeof window.openEventDetailModal === 'function') {
+                    window.openEventDetailModal(item.site, item.equip, item.id, item.isCompleted);
+                } else if (typeof openEventDetailModal === 'function') {
+                    openEventDetailModal(item.site, item.equip, item.id, item.isCompleted);
+                }
             };
-        }
 
-        upcomingListEl.appendChild(clone);
-    });
+            const detailDisplayText = (item.detailType && item.detailType.trim()) 
+                ? item.detailType.trim()
+                : item.content;
+
+            div.innerHTML = `
+                <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1;">
+                    <div class="upcoming-item-title" style="display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: #c9d1d9; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        ${dayLabel}
+                        <span style="color: #8b949e;">[${escapeHtml(item.site)}]</span>
+                        <span style="color: #e6edf3;">${escapeHtml(equipText)}</span>
+                    </div>
+                    <div style="font-size: 12px; color: #8b949e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                        ${escapeHtml(detailDisplayText)}
+                    </div>
+                </div>
+                <div style="margin-left: 8px; flex-shrink: 0;">
+                    <span style="font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px; background: ${color}22; color: ${color}; border: 1px solid ${color}44;">
+                        ${item.type}
+                    </span>
+                </div>
+            `;
+
+            upcomingListEl.appendChild(div);
+        });
 
     upcomingContainer.style.display = 'flex';
-    if (upcomingItems.length === 0) {
-        upcomingListEl.innerHTML = '<div class="upcoming-empty-msg">예정된 점검이 없습니다.</div>';
-    }
 }
 
 /* ==========================================================================

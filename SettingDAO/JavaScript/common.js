@@ -45,6 +45,162 @@
 })();
 
 
+// [추가] 세션 만료 1회만 알림 플래그
+let isSessionExpiredAlertShown = false;
+
+// [추가] 모달 / 팝업 뒤로가기 감지 스택 및 popstate 처리
+window.openModalStack = [];
+
+window.pushModalHistory = function(closeFn) {
+    if (typeof closeFn === 'function') {
+        window.openModalStack.push(closeFn);
+    }
+    try {
+        history.pushState({ modalOpen: true, stackIndex: window.openModalStack.length }, '');
+    } catch (e) {}
+};
+
+window.popModalHistory = function() {
+    if (window.openModalStack && window.openModalStack.length > 0) {
+        window.openModalStack.pop();
+    }
+};
+
+// 최상단 열려있는 모달/팝업 닫기 헬퍼 함수
+window.closeTopmostModal = function() {
+    // 1. openModalStack에 닫기 스택이 있으면 우선 실행
+    if (window.openModalStack && window.openModalStack.length > 0) {
+        const closeFn = window.openModalStack.pop();
+        if (typeof closeFn === 'function') {
+            try { closeFn(); return true; } catch (err) {}
+        }
+    }
+
+    // 2. DOM에서 열려있는 모달 요소 자동 감지하여 닫기
+    const allModals = Array.from(document.querySelectorAll(
+        '.modal-overlay, .modal-window, div[id$="-modal"], #chatbot-window, #event-detail-modal, #log-modal, #schedule-modal, #setup-detail-modal, #next-schedule-modal'
+    ));
+
+    const visibleModals = allModals.filter(m => {
+        if (m.id === 'global-loading-overlay') return false; // 로딩 오버레이는 예외
+        const style = window.getComputedStyle(m);
+        const isFlexOrBlock = style.display === 'flex' || style.display === 'block';
+        const isClassActive = m.classList.contains('active') || m.classList.contains('show');
+        return (isFlexOrBlock || isClassActive) && style.visibility !== 'hidden' && m.offsetWidth > 0 && m.offsetHeight > 0;
+    });
+
+    if (visibleModals.length > 0) {
+        visibleModals.sort((a, b) => {
+            const zA = parseInt(window.getComputedStyle(a).zIndex) || 0;
+            const zB = parseInt(window.getComputedStyle(b).zIndex) || 0;
+            return zB - zA;
+        });
+
+        const topModal = visibleModals[0];
+
+        // 모달 내 닫기 버튼 클릭 유도
+        const closeBtn = topModal.querySelector('.modal-close-btn, .btn-close, .close-btn, button[onclick*="close"], button[id*="close"]');
+        if (closeBtn) {
+            try {
+                closeBtn.click();
+                return true;
+            } catch (e) {}
+        }
+
+        topModal.style.display = 'none';
+        topModal.classList.remove('active', 'show');
+        return true;
+    }
+
+    return false;
+};
+
+// 뒤로가기(popstate) 발생 시 열린 모달이 있으면 모달부터 닫기
+window.addEventListener('popstate', function(e) {
+    const isClosed = window.closeTopmostModal();
+    if (isClosed) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+});
+
+// MutationObserver로 모달 열림 감지 시 history.pushState 자동 등록
+document.addEventListener('DOMContentLoaded', function() {
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach(mutation => {
+            if (mutation.type === 'attributes' && (mutation.attributeName === 'style' || mutation.attributeName === 'class')) {
+                const target = mutation.target;
+                if (target.id === 'global-loading-overlay') return;
+                if (target.matches && target.matches('.modal-overlay, div[id$="-modal"], #chatbot-window')) {
+                    const style = window.getComputedStyle(target);
+                    const isVisible = (style.display === 'flex' || style.display === 'block' || target.classList.contains('active')) && style.visibility !== 'hidden';
+
+                    if (isVisible && !target.dataset.historyPushed) {
+                        target.dataset.historyPushed = 'true';
+                        try {
+                            history.pushState({ modalId: target.id || 'modal' }, '');
+                        } catch (e) {}
+                    } else if (!isVisible && target.dataset.historyPushed) {
+                        delete target.dataset.historyPushed;
+                    }
+                }
+            }
+        });
+    });
+
+    observer.observe(document.body, {
+        attributes: true,
+        subtree: true,
+        attributeFilter: ['style', 'class']
+    });
+});
+
+// [추가] 전역 로딩 오버레이 제어 함수
+let globalLoadingCount = 1; // 초기 로딩 시 1로 시작
+
+window.showLoading = function(message = '로딩 중입니다...') {
+    globalLoadingCount++;
+    const overlay = document.getElementById('global-loading-overlay');
+    const textEl = document.getElementById('global-loading-text');
+    if (textEl) textEl.textContent = message;
+    if (overlay) overlay.style.display = 'flex';
+};
+
+window.hideLoading = function(force = false) {
+    if (force) globalLoadingCount = 0;
+    else globalLoadingCount = Math.max(0, globalLoadingCount - 1);
+
+    if (globalLoadingCount === 0) {
+        const overlay = document.getElementById('global-loading-overlay');
+        if (overlay) overlay.style.display = 'none';
+    }
+};
+
+// 1. 초기 페이지 및 자원 로딩이 완료되면 로딩 오버레이 닫기
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        window.hideLoading(true);
+    }, 150);
+});
+
+// 2. 상단 메뉴 이동 및 링크 클릭 시 즉시 로딩 오버레이 표출 (버튼 클릭 방지)
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('a, .nav-links a, .mobile-nav-links a, .btn-move');
+        if (link) {
+            const href = link.getAttribute('href');
+            const target = link.getAttribute('target');
+            if (href && !href.startsWith('#') && !href.startsWith('javascript:') && target !== '_blank') {
+                window.showLoading('페이지 이동 중입니다...');
+            }
+        }
+    }, true);
+
+    window.addEventListener('beforeunload', function() {
+        window.showLoading('페이지 이동 중입니다...');
+    });
+});
+
 // [추가] 전역 fetch 인터셉터: 모든 API 통신 시 세션 만료(401) 및 CSRF 에러(400) 감지하여 자동 로그아웃 처리
 const originalFetch = window.fetch;
 window.fetch = async function (...args) {
@@ -60,7 +216,8 @@ window.fetch = async function (...args) {
             if (!excludedUrls.some(excluded => url.includes(excluded))) {
                 if (typeof window.handleSessionExpired === 'function') {
                     window.handleSessionExpired();
-                } else {
+                } else if (!isSessionExpiredAlertShown) {
+                    isSessionExpiredAlertShown = true;
                     alert('보안 세션이 만료되었습니다. 다시 로그인해주세요.');
                     sessionStorage.clear();
                     window.location.href = '/';
@@ -75,9 +232,12 @@ window.fetch = async function (...args) {
             try {
                 const data = await clonedResponse.json();
                 if (data.status === 'fail' && data.message && data.message.includes('보안 세션이 만료되었거나')) {
-                    alert(data.message);
-                    sessionStorage.clear();
-                    window.location.href = '/';
+                    if (!isSessionExpiredAlertShown) {
+                        isSessionExpiredAlertShown = true;
+                        alert(data.message);
+                        sessionStorage.clear();
+                        window.location.href = '/';
+                    }
                     return Promise.reject(new Error('CSRF Token expired'));
                 }
             } catch (e) { }
@@ -98,6 +258,8 @@ function getTemplateContent(id) {
 }
 
 window.handleSessionExpired = function () {
+    if (isSessionExpiredAlertShown) return;
+    isSessionExpiredAlertShown = true;
     if (typeof stopSessionTimer === 'function') stopSessionTimer();
     alert('보안을 위해 세션이 만료되었습니다.\n다시 로그인해주세요.');
     fetch('/api/logout', {
@@ -3800,17 +3962,9 @@ function getLogCategory(action) {
  * @param {object} options - 모달 옵션
  */
 function openNextScheduleModal(options) {
-    if (typeof window.checkSessionValid === 'function' && !window.checkSessionValid()) return;
-    const { site, equip, items, completeDate, md, mergedRegItemIds, onClose, onDateChange } = options;
-
-    currentNextScheduleTarget = { site, equip, items, completeDate, mergedRegItemIds, onClose, onDateChange };
-
-    const modal = document.getElementById('next-schedule-modal');
-    if (!modal) {
-        alert('작업이 완료되었습니다.');
-        if (onClose) onClose();
-        return;
-    }
+    // [비활성화] 사용 안 함 처리
+    if (options && typeof options.onClose === 'function') options.onClose();
+    return;
 
     const skipBtn = document.getElementById('btn-skip-next-schedule');
     const saveBtn = document.getElementById('btn-save-next-schedule');

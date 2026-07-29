@@ -191,9 +191,14 @@
                             </div>
                         </div>
 
-                        <!-- 오른쪽: 점검 임박 리스트 -->
+                        <!-- 오른쪽: 어제 ~ 오늘 점검 리스트 -->
                         <div id="dash-upcoming-container" class="upcoming-container">
-                            <h5 class="upcoming-title">⚠️ 점검 임박 (30일 이내)</h5>
+                            <div class="upcoming-header-row" style="display: flex; flex-direction: column; gap: 6px; border-bottom: 1px solid #30363d; padding-bottom: 8px; margin-bottom: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
+                                    <h5 class="upcoming-title" style="margin: 0; font-size: 14px; font-weight: 700; color: #e6edf3; border-bottom: none; padding-bottom: 0;">📋 점검 리스트[어제 ~ 오늘]</h5>
+                                </div>
+                                <div id="dash-inspection-summary" class="inspection-summary-badges" style="font-size: 11px; font-weight: 600; color: #8b949e; display: flex; flex-direction: column; gap: 4px;"></div>
+                            </div>
                             <div id="dash-upcoming-list" class="upcoming-list"></div>
                         </div>
                     </div>

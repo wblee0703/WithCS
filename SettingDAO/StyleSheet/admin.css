@@ -1,9 +1,9 @@
 /* Admin Page Styles */
 
-/* [요청] Admin Menu(사이드바) 너비 절반(150px)으로 축소 */
+/* [요청] Admin Menu(사이드바) 너비 확대 (250px) */
 @media (min-width: 951px) {
     .dashboard-sidebar {
-        width: 200px !important;
+        width: 250px !important;
     }
 }
 

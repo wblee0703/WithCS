@@ -3,6 +3,89 @@
    ========================================================================== */
 let currentAdminSite = null; // 현재 선택된 사업장
 
+// [추가] 서버 점검중 상태 초기화 및 관리자 토글 이벤트
+document.addEventListener('DOMContentLoaded', () => {
+    initServerMaintenanceUI();
+});
+
+function initServerMaintenanceUI() {
+    const itemEl = document.getElementById('superadmin-maint-btn-item');
+    const toggleBtn = document.getElementById('btn-toggle-server-maint');
+
+    const userRole = sessionStorage.getItem('userRole') || (window.currentUser && window.currentUser.role);
+    if (userRole === 'superadmin' && itemEl) {
+        itemEl.style.display = 'block';
+    }
+
+    fetch('/api/server-status')
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const isMaint = data.maintenance;
+                window.isServerMaintenance = isMaint;
+                sessionStorage.setItem('isServerMaintenance', isMaint ? 'true' : 'false');
+                updateMaintBtnUI(isMaint);
+                applyServerMaintenanceLocks();
+            }
+        }).catch(err => console.error('Failed to fetch server status:', err));
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const nextState = !window.isServerMaintenance;
+            fetch('/api/admin/server-maintenance', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrf_token')
+                },
+                body: JSON.stringify({ maintenance: nextState })
+            }).then(res => res.json())
+              .then(data => {
+                  if (data.status === 'success') {
+                      window.isServerMaintenance = data.maintenance;
+                      sessionStorage.setItem('isServerMaintenance', data.maintenance ? 'true' : 'false');
+                      updateMaintBtnUI(data.maintenance);
+                      applyServerMaintenanceLocks();
+                      alert(data.maintenance ? '서버 점검 모드가 활성화되었습니다.' : '서버 점검 모드가 해제되었습니다.');
+                  } else {
+                      alert(data.message || '설정에 실패했습니다.');
+                  }
+              });
+        });
+    }
+}
+
+function updateMaintBtnUI(isMaint) {
+    const toggleBtn = document.getElementById('btn-toggle-server-maint');
+    if (!toggleBtn) return;
+    if (isMaint) {
+        toggleBtn.textContent = 'ON (점검중)';
+        toggleBtn.style.background = '#da3633';
+        toggleBtn.style.color = '#ffffff';
+    } else {
+        toggleBtn.textContent = 'OFF';
+        toggleBtn.style.background = '#21262d';
+        toggleBtn.style.color = '#c9d1d9';
+    }
+}
+
+function applyServerMaintenanceLocks() {
+    const isMaint = window.isServerMaintenance || sessionStorage.getItem('isServerMaintenance') === 'true';
+    const userRole = sessionStorage.getItem('userRole') || (window.currentUser && window.currentUser.role);
+
+    if (isMaint && userRole !== 'superadmin') {
+        const adminSection = document.querySelector('.dashboard-main');
+        if (adminSection) {
+            adminSection.querySelectorAll('button, input, select, textarea').forEach(el => {
+                if (el.id !== 'admin-site-search' && el.id !== 'admin-equip-search' && el.id !== 'admin-item-search' && !el.classList.contains('btn-settings')) {
+                    el.disabled = true;
+                }
+            });
+        }
+    }
+}
+
 // [추가] 프론트엔드 작업 보안 감사 로그 백엔드 전송 함수
 function logActionToServer(action, details, target = "") {
     fetch('/api/log/action', {

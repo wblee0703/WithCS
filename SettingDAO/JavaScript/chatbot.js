@@ -18,9 +18,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 1. 로그인 여부에 따른 챗봇 플로팅 버튼 노출 여부 결정
     function checkLoginStatus() {
-        const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+        const isStorageLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+        const isBodyLoggedIn = document.body.getAttribute('data-user-logged-in') === 'true';
+        const userInfoEl = document.getElementById('user-info');
+        const isUserInfoVisible = userInfoEl && userInfoEl.style.display !== 'none';
+
+        const isLoggedIn = isStorageLoggedIn || isBodyLoggedIn || isUserInfoVisible;
+
         if (isLoggedIn) {
             chatbotContainer.style.display = 'block';
+            if (!isStorageLoggedIn) {
+                sessionStorage.setItem('isLoggedIn', 'true');
+            }
         } else {
             chatbotContainer.style.display = 'none';
             chatbotWindow.classList.remove('active');
@@ -72,19 +81,86 @@ document.addEventListener('DOMContentLoaded', () => {
         appendMessage('ai', welcome, true);
     }
 
-    // 2. 모바일 브라우저 터치 호환 이벤트 바인딩 (pointerup 사용)
-    const toggleEvent = (e) => {
-        e.preventDefault();
-        chatbotWindow.classList.toggle('active');
-        sessionStorage.setItem('chatbot_window_active', chatbotWindow.classList.contains('active'));
-        if (chatbotWindow.classList.contains('active')) {
-            chatbotInputField.focus();
-            scrollToBottom();
-        }
-    };
+    function getTodayKey() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
 
-    chatbotToggleBtn.addEventListener('pointerup', toggleEvent);
-    
+    // 2. 모바일/데스크탑 호환 챗봇 아이콘 자유 드래그 이동 이벤트
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let initialLeft = 0;
+    let initialTop = 0;
+    let isMoved = false;
+
+    // 저장된 위치가 있다면 복원
+    const savedLeft = localStorage.getItem('chatbot_icon_left');
+    const savedTop = localStorage.getItem('chatbot_icon_top');
+    if (savedLeft && savedTop) {
+        chatbotToggleBtn.style.right = 'auto';
+        chatbotToggleBtn.style.bottom = 'auto';
+        chatbotToggleBtn.style.left = savedLeft;
+        chatbotToggleBtn.style.top = savedTop;
+    }
+
+    chatbotToggleBtn.addEventListener('pointerdown', (e) => {
+        isDragging = true;
+        isMoved = false;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+
+        const rect = chatbotToggleBtn.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+
+        try { chatbotToggleBtn.setPointerCapture(e.pointerId); } catch (err) {}
+    });
+
+    chatbotToggleBtn.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        const deltaX = e.clientX - dragStartX;
+        const deltaY = e.clientY - dragStartY;
+
+        if (Math.hypot(deltaX, deltaY) > 5) {
+            isMoved = true;
+            let newLeft = initialLeft + deltaX;
+            let newTop = initialTop + deltaY;
+
+            // 뷰포트 화면 경계선 제한 (화면 밖으로 이탈 방지)
+            const maxLeft = window.innerWidth - chatbotToggleBtn.offsetWidth - 10;
+            const maxTop = window.innerHeight - chatbotToggleBtn.offsetHeight - 10;
+            newLeft = Math.max(10, Math.min(maxLeft, newLeft));
+            newTop = Math.max(10, Math.min(maxTop, newTop));
+
+            chatbotToggleBtn.style.right = 'auto';
+            chatbotToggleBtn.style.bottom = 'auto';
+            chatbotToggleBtn.style.left = `${newLeft}px`;
+            chatbotToggleBtn.style.top = `${newTop}px`;
+        }
+    });
+
+    chatbotToggleBtn.addEventListener('pointerup', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        try { chatbotToggleBtn.releasePointerCapture(e.pointerId); } catch (err) {}
+
+        if (isMoved) {
+            localStorage.setItem('chatbot_icon_left', chatbotToggleBtn.style.left);
+            localStorage.setItem('chatbot_icon_top', chatbotToggleBtn.style.top);
+        } else {
+            chatbotWindow.classList.toggle('active');
+            sessionStorage.setItem('chatbot_window_active', chatbotWindow.classList.contains('active'));
+            if (chatbotWindow.classList.contains('active')) {
+                if (typeof window.pushModalHistory === 'function') {
+                    window.pushModalHistory(() => chatbotWindow.classList.remove('active'));
+                }
+                chatbotInputField.focus();
+                scrollToBottom();
+            }
+        }
+    });
+
     if (chatbotExpandBtn) {
         chatbotExpandBtn.addEventListener('pointerup', (e) => {
             e.preventDefault();
@@ -92,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const isExpanded = chatbotWindow.classList.contains('expanded');
             sessionStorage.setItem('chatbot_window_expanded', isExpanded);
             chatbotExpandBtn.textContent = isExpanded ? '⤣' : '⤢';
-            scrollToBottom(); // 크기 변동 시 스크롤 끝단 재갱신
+            scrollToBottom();
         });
     }
 
@@ -101,6 +177,143 @@ document.addEventListener('DOMContentLoaded', () => {
         chatbotWindow.classList.remove('active');
         sessionStorage.setItem('chatbot_window_active', 'false');
     });
+
+    // 챗봇 대화 기록 모달 제어
+    const chatbotHistoryBtn = document.getElementById('chatbot-history-btn');
+    const chatbotHistoryModal = document.getElementById('chatbot-history-modal');
+    const clearAllBtn = document.getElementById('btn-clear-all-chat-history');
+
+    window.closeChatbotHistoryModal = function() {
+        if (chatbotHistoryModal) chatbotHistoryModal.style.display = 'none';
+    };
+
+    if (clearAllBtn) {
+        clearAllBtn.onclick = () => {
+            if (!confirm('저장된 모든 챗봇 대화 기록을 삭제하시겠습니까?')) return;
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.startsWith('chatbot_saved_history_')) {
+                    keysToRemove.push(key);
+                }
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+            sessionStorage.removeItem('chatbot_history');
+            renderChatbotHistoryModal();
+        };
+    }
+
+    if (chatbotHistoryBtn && chatbotHistoryModal) {
+        chatbotHistoryBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            renderChatbotHistoryModal();
+            chatbotHistoryModal.style.display = 'flex';
+            if (typeof window.pushModalHistory === 'function') {
+                window.pushModalHistory(window.closeChatbotHistoryModal);
+            }
+        });
+    }
+
+    function renderChatbotHistoryModal() {
+        const dateListEl = document.getElementById('chatbot-history-date-list');
+        const contentEl = document.getElementById('chatbot-history-content');
+        const selectedDateEl = document.getElementById('chatbot-history-selected-date');
+        if (!dateListEl || !contentEl) return;
+
+        dateListEl.innerHTML = '';
+        contentEl.innerHTML = '';
+
+        const savedKeys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key.startsWith('chatbot_saved_history_')) {
+                savedKeys.push(key.replace('chatbot_saved_history_', ''));
+            }
+        }
+
+        const todayKey = getTodayKey();
+        if (!savedKeys.includes(todayKey)) {
+            const todayHistory = sessionStorage.getItem('chatbot_history');
+            if (todayHistory) {
+                savedKeys.push(todayKey);
+            }
+        }
+
+        savedKeys.sort((a, b) => b.localeCompare(a));
+
+        if (savedKeys.length === 0) {
+            dateListEl.innerHTML = '<li style="color:#8b949e; font-size:12px; padding:10px; text-align:center;">기록 없음</li>';
+            contentEl.innerHTML = '<div style="color:#8b949e; text-align:center; padding: 40px;">저장된 대화 기록이 없습니다.</div>';
+            if (selectedDateEl) selectedDateEl.textContent = '선택된 날짜 대화';
+            return;
+        }
+
+        savedKeys.forEach(dateStr => {
+            const li = document.createElement('li');
+            li.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 4px; cursor: pointer; color: #c9d1d9; background: #161b22; border: 1px solid #30363d; font-size: 12px; transition: all 0.2s;';
+
+            const titleSpan = document.createElement('span');
+            titleSpan.style.cssText = 'overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; margin-right: 6px;';
+            titleSpan.textContent = dateStr === todayKey ? `${dateStr} (오늘)` : dateStr;
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = '🗑️';
+            deleteBtn.title = '이 날짜 기록 삭제';
+            deleteBtn.style.cssText = 'background: transparent; border: none; cursor: pointer; font-size: 12px; opacity: 0.7; padding: 2px; border-radius: 3px; transition: opacity 0.2s;';
+            deleteBtn.onmouseenter = () => deleteBtn.style.opacity = '1';
+            deleteBtn.onmouseleave = () => deleteBtn.style.opacity = '0.7';
+
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                if (confirm(`${dateStr} 대화 기록을 삭제하시겠습니까?`)) {
+                    localStorage.removeItem(`chatbot_saved_history_${dateStr}`);
+                    if (dateStr === todayKey) {
+                        sessionStorage.removeItem('chatbot_history');
+                    }
+                    renderChatbotHistoryModal();
+                }
+            };
+
+            li.appendChild(titleSpan);
+            li.appendChild(deleteBtn);
+
+            li.onclick = () => {
+                dateListEl.querySelectorAll('li').forEach(el => {
+                    el.style.borderColor = '#30363d';
+                    el.style.background = '#161b22';
+                });
+                li.style.borderColor = '#238636';
+                li.style.background = '#21262d';
+
+                if (selectedDateEl) selectedDateEl.textContent = `${dateStr} 대화 내역`;
+
+                const storedData = localStorage.getItem(`chatbot_saved_history_${dateStr}`) || (dateStr === todayKey ? sessionStorage.getItem('chatbot_history') : null);
+                if (!storedData) {
+                    contentEl.innerHTML = '<div style="color:#8b949e; text-align:center; padding: 30px;">해당 날짜의 대화 내용이 존재하지 않습니다.</div>';
+                    return;
+                }
+
+                try {
+                    const messages = JSON.parse(storedData);
+                    let html = '';
+                    messages.forEach(m => {
+                        const senderName = m.sender === 'user' ? '👤 사용자' : '🤖 AI 비서';
+                        const color = m.sender === 'user' ? '#58a6ff' : '#3fb950';
+                        html += `<div style="margin-bottom: 12px; border-bottom: 1px solid #21262d; padding-bottom: 8px;"><strong style="color:${color};">${senderName}:</strong><div style="margin-top: 4px; color:#c9d1d9; font-size: 13px;">${parseMarkdown(m.text)}</div></div>`;
+                    });
+                    contentEl.innerHTML = html;
+                } catch (e) {
+                    contentEl.innerHTML = '<div style="color:#f85149;">대화 기록을 불러오는 도중 오류가 발생했습니다.</div>';
+                }
+            };
+
+            dateListEl.appendChild(li);
+        });
+
+        if (dateListEl.firstElementChild) {
+            dateListEl.firstElementChild.click();
+        }
+    }
 
     // [추가] 챗봇 마크다운 문자열 초경량 HTML 파서
     function parseMarkdown(text) {
@@ -130,7 +343,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return html;
     }
 
-    // 3. 메시지 추가 함수 (saveHistory 플래그를 통한 sessionStorage 자동 관리)
+    // 3. 메시지 추가 함수 (saveHistory 플래그를 통한 sessionStorage 및 localStorage 자동 관리)
     function appendMessage(sender, text, saveHistory = true) {
         const msgRow = document.createElement('div');
         msgRow.className = `chatbot-msg-row chatbot-msg-${sender}`;
@@ -138,10 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const bubble = document.createElement('div');
         bubble.className = 'chatbot-msg-bubble';
         
-        // HTML 이스케이프 및 마크다운 파싱 수행
         const rawParsedHtml = parseMarkdown(text);
-        
-        // [MASK_SITE_1] 등 마스킹 토큰을 굵고 주황색 점선 테두리가 있는 시각 요소로 렌더링
         const renderedText = rawParsedHtml.replace(/(\[MASK_[A-Z]+_\d+\])/g, '<span class="chatbot-mask-token">$1</span>');
         bubble.innerHTML = renderedText;
 
@@ -149,7 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
         chatbotMessages.appendChild(msgRow);
         scrollToBottom();
 
-        // 세션 스토리지에 대화 이력 저장
         if (saveHistory) {
             let history = [];
             const historyStr = sessionStorage.getItem('chatbot_history');
@@ -162,6 +371,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             history.push({ sender, text });
             sessionStorage.setItem('chatbot_history', JSON.stringify(history));
+
+            // 날짜별 대화 내역 저장
+            const todayKey = getTodayKey();
+            localStorage.setItem(`chatbot_saved_history_${todayKey}`, JSON.stringify(history));
         }
     }
 

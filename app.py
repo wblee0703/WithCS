@@ -55,9 +55,19 @@ app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
 app.config['WTF_CSRF_TIME_LIMIT'] = None  # [추가] CSRF 토큰의 독자적인 타임아웃(기본 3600초)을 해제하여 세션 수명과 100% 동기화
 
 if os.environ.get('APP_ENV') == 'production':
-    app.config['TEMPLATES_AUTO_RELOAD'] = False  # [수정] 운영 환경에서는 파일 감지로 인한 불필요한 서버 재시작 방지
+    app.config['TEMPLATES_AUTO_RELOAD'] = False  # 운영 환경
 else:
-    app.config['TEMPLATES_AUTO_RELOAD'] = True
+    app.config['TEMPLATES_AUTO_RELOAD'] = True   # 개발 환경 (템플릿 즉시 반영)
+    app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0   # 정적 파일(JS, CSS) 캐시 해제
+    app.jinja_env.auto_reload = True
+
+@app.after_request
+def add_no_cache_header(response):
+    if os.environ.get('APP_ENV') != 'production':
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+    return response
 
 # [추가] JSON 데이터 저장 및 응답 시 키(Key)가 알파벳순으로 자동 정렬되는 것을 방지
 app.config['JSON_SORT_KEYS'] = False
@@ -159,29 +169,26 @@ def migrate_setupinfo_to_equipment():
     This runs on application start to ensure DB reflects the new schema.
     """
     migrated = 0
+    fields = [
+        'equip_status', 'delivery_date', 'warranty_start', 'warranty_period',
+        'building', 'floor', 'detail_loc', 'manager', 'contact', 'email',
+        'cust_manager', 'cust_contact', 'cust_email', 'project_no'
+    ]
     for si in SetupInfo.query.all():
-        equip = Equipment.query.get(si.equip_id)
+        equip = db.session.get(Equipment, si.equip_id)
         if not equip:
             continue
-        # copy each moved field if present
-        equip.equip_status = si.equip_status
-        equip.delivery_date = si.delivery_date
-        equip.warranty_start = si.warranty_start
-        equip.warranty_period = si.warranty_period
-        equip.building = si.building
-        equip.floor = si.floor
-        equip.detail_loc = si.detail_loc
-        equip.manager = si.manager
-        equip.contact = si.contact
-        equip.email = si.email
-        equip.cust_manager = si.cust_manager
-        equip.cust_contact = si.cust_contact
-        equip.cust_email = si.cust_email
-        equip.project_no = si.project_no
-        migrated += 1
-    if migrated:
+        changed = False
+        for f in fields:
+            si_val = getattr(si, f, None)
+            if si_val and getattr(equip, f, None) != si_val:
+                setattr(equip, f, si_val)
+                changed = True
+        if changed:
+            migrated += 1
+    if migrated > 0:
         db.session.commit()
-        print(f"✅ {migrated} rows migrated from SetupInfo to Equipment")
+        # print(f"✅ {migrated} rows migrated from SetupInfo to Equipment")
 
 # Ensure new columns exist (SQLite will ignore if already present)
 def ensure_equipment_columns():
@@ -3832,13 +3839,16 @@ def init_db():
 
             # 2. RAW SQL 기반 4필드 ID 및 시리얼 번호 정정
             raw_eqs = db.session.execute(text("SELECT id, site_name, name, serial, cust_equip_name FROM equipment")).fetchall()
+            migrated_count = 0
             
             for row in raw_eqs:
                 old_id = str(row[0] or '')
                 site_val = str(row[1] or '').strip()
                 name_val = str(row[2] or '').strip()
-                serial_val = str(row[3] or '').replace('?', '-').replace('"', '').strip()
-                cust_val = str(row[4] or '').replace('?', '-').strip()
+                old_serial = str(row[3] or '')
+                old_cust = str(row[4] or '')
+                serial_val = old_serial.replace('?', '-').replace('"', '').strip()
+                cust_val = old_cust.replace('?', '-').strip()
 
                 parts = old_id.split('::')
                 if len(parts) >= 4 and parts[3]:
@@ -3856,32 +3866,37 @@ def init_db():
                 else:
                     new_id = f"{site_val}::{name_val}::{serial_val}::{cust_val}"
 
-                try: db.session.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
-                except: pass
+                if old_id != new_id or old_serial != serial_val or old_cust != cust_val:
+                    try: db.session.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
+                    except: pass
 
-                if old_id != new_id:
-                    # 중복 새 ID 레코드가 있다면 삭제
-                    db.session.execute(text("DELETE FROM equipment WHERE id=:n AND id!=:o"), {'n': new_id, 'o': old_id})
-                    
-                    db.session.execute(text("UPDATE maint_item SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-                    db.session.execute(text("UPDATE log_item SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-                    db.session.execute(text("UPDATE setup_detail SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-                    db.session.execute(text("UPDATE setup_log SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-                    db.session.execute(text("UPDATE trouble_log SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-                    db.session.execute(text("UPDATE setup_info SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                    if old_id != new_id:
+                        # 중복 새 ID 레코드가 있다면 삭제
+                        db.session.execute(text("DELETE FROM equipment WHERE id=:n AND id!=:o"), {'n': new_id, 'o': old_id})
+                        db.session.execute(text("DELETE FROM setup_info WHERE equip_id=:n AND equip_id!=:o"), {'n': new_id, 'o': old_id})
+                        
+                        db.session.execute(text("UPDATE maint_item SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                        db.session.execute(text("UPDATE log_item SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                        db.session.execute(text("UPDATE setup_detail SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                        db.session.execute(text("UPDATE setup_log SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                        db.session.execute(text("UPDATE trouble_log SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
+                        db.session.execute(text("UPDATE setup_info SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
 
-                db.session.execute(text("UPDATE equipment SET id=:n, serial=:s, cust_equip_name=:c WHERE id=:o"), {
-                    'n': new_id,
-                    's': serial_val,
-                    'c': cust_val,
-                    'o': old_id
-                })
+                    db.session.execute(text("UPDATE equipment SET id=:n, serial=:s, cust_equip_name=:c WHERE id=:o"), {
+                        'n': new_id,
+                        's': serial_val,
+                        'c': cust_val,
+                        'o': old_id
+                    })
 
-                try: db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
-                except: pass
+                    try: db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
+                    except: pass
 
-            db.session.commit()
-            app.logger.warning("[Migration] Equipment 4필드 규격(site::name::serial::cust_name) RAW SQL 강제 정정 완료!")
+                    migrated_count += 1
+
+            if migrated_count > 0:
+                db.session.commit()
+                # app.logger.warning(f"[Migration] Equipment 4필드 규격(site::name::serial::cust_name) {migrated_count}개 정정 완료!")
         except Exception as ex_eq:
             db.session.rollback()
             app.logger.error(f"[Migration] Equipment 마이그레이션 오류: {str(ex_eq)}")
@@ -3935,6 +3950,10 @@ def init_db():
                         text("DELETE FROM equipment WHERE id=:n AND id!=:o"),
                         {'n': new_id, 'o': old_id}
                     )
+                    db.session.execute(
+                        text("DELETE FROM setup_info WHERE equip_id=:n AND equip_id!=:o"),
+                        {'n': new_id, 'o': old_id}
+                    )
 
                     # 하위 테이블 FK 동기화
                     db.session.execute(text("UPDATE maint_item SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
@@ -3959,7 +3978,7 @@ def init_db():
 
                 if migrated:
                     db.session.commit()
-                    app.logger.warning(f"[Migration] Equipment 약어 모델 정규화 완료: {migrated}개")
+                    # app.logger.warning(f"[Migration] Equipment 약어 모델 정규화 완료: {migrated}개")
         except Exception as ex_alias:
             db.session.rollback()
             app.logger.error(f"[Migration] Equipment 약어 모델 정규화 오류: {str(ex_alias)}")
@@ -3971,6 +3990,7 @@ def init_db():
                 etc_id = f"{site.name}::기타(ETC)::::"
                 if not Equipment.query.filter_by(id=etc_id).first():
                     db.session.add(Equipment(id=etc_id, site_name=site.name, name="기타(ETC)", serial="", cust_equip_name=""))
+                if not SetupInfo.query.filter_by(equip_id=etc_id).first():
                     db.session.add(SetupInfo(equip_id=etc_id, cust_equip_name="", model=""))
             db.session.commit()
         except Exception as e:
@@ -4011,8 +4031,100 @@ def init_db():
             db.session.rollback()
             app.logger.error(f"[Migration] 점검 구분 관리 마이그레이션 실패: {str(ex)}")
 
-        # [마이그레이션] 4가지 항목 고유키 규격 변경 및 고아 데이터 복구 실행 (1회 완료되어 주석 처리)
-        # migrate_db_to_four_fields()
+        # [마이그레이션] 텍스트 직접 입력 건 중 잘못 부착된 파트 이상 교체 및 비용 처리 라벨 일괄 제거 (마스터 물품 건 및 Rule 8 파티클 필터 예외)
+        try:
+            import re
+            master_item_codes = set()
+            master_rows = db.session.execute(text("SELECT code_name, item_name FROM item")).fetchall()
+            for r in master_rows:
+                if r[0]:
+                    code_str = str(r[0]).strip()
+                    if code_str:
+                        master_item_codes.add(code_str)
+                if len(r) > 1 and r[1]:
+                    name_str = str(r[1]).strip()
+                    if name_str:
+                        master_item_codes.add(name_str)
+
+            def _clean_content_labels(content_str):
+                if not content_str:
+                    return content_str
+                c = str(content_str).strip()
+
+                # Rule 8: 고객대응 > 파티클 필터 교체 관련 고정 예외
+                if c == '[유상] Particle Filter' or c.startswith('[유상] Particle Filter'):
+                    return '[유상] Particle Filter'
+
+                match_part = re.match(r'^(?:파트 이상 교체|파트 이상 수리|용액 용자 이상)\s*-\s*\[(.*?)\]\s*(.*)$', c)
+                match_cost = re.match(r'^\[(.*?)\]\s*(.*)$', c)
+
+                rest = None
+                if match_part:
+                    rest = match_part.group(2).strip()
+                elif match_cost:
+                    rest = match_cost.group(2).strip()
+
+                if rest is not None:
+                    tokens = rest.split()
+                    first_word = tokens[0].strip() if tokens else rest
+                    if first_word not in master_item_codes:
+                        return rest
+
+                return c
+
+            cleaned_log_count = 0
+            cleaned_maint_count = 0
+
+            logs = LogItem.query.all()
+            for log in logs:
+                cleaned = _clean_content_labels(log.content)
+                if cleaned != log.content:
+                    log.content = cleaned
+                    cleaned_log_count += 1
+
+            maints = MaintItem.query.all()
+            for maint in maints:
+                cleaned = _clean_content_labels(maint.content)
+                if cleaned != maint.content:
+                    maint.content = cleaned
+                    cleaned_maint_count += 1
+
+            if cleaned_log_count > 0 or cleaned_maint_count > 0:
+                db.session.commit()
+        except Exception as ex_clean:
+            db.session.rollback()
+
+# ------------------------------------------------------------------------------
+# [추가] 서버 점검중 상태 조회 및 관리자 토글 API
+# ------------------------------------------------------------------------------
+@app.route('/api/server-status', methods=['GET'])
+def get_server_status():
+    try:
+        setting = SystemSetting.query.filter_by(key='server_maintenance').first()
+        is_maint = (setting.value == 'true') if setting and setting.value else False
+        return jsonify({'status': 'success', 'maintenance': is_maint})
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/admin/server-maintenance', methods=['POST'])
+def toggle_server_maintenance():
+    if session.get('role') != 'superadmin':
+        return jsonify({'status': 'fail', 'message': '최종관리자 권한이 필요합니다.'}), 403
+    try:
+        data = request.get_json() or {}
+        is_maint = data.get('maintenance', False)
+        val_str = 'true' if is_maint else 'false'
+        setting = SystemSetting.query.filter_by(key='server_maintenance').first()
+        if not setting:
+            setting = SystemSetting(key='server_maintenance', value=val_str)
+            db.session.add(setting)
+        else:
+            setting.value = val_str
+        db.session.commit()
+        return jsonify({'status': 'success', 'maintenance': is_maint})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # WSGI 서버(PythonAnywhere 등) 환경에서도 앱 구동 시 초기화가 실행되도록 __main__ 블록 밖으로 이동
 # [Phase 3] JSON 파일 관련 로직이 제거되었으므로, 폴더 생성만 수행
@@ -4027,24 +4139,26 @@ init_db()
 if __name__ == '__main__':
     # 로컬과 서버 환경을 분리하기 위해 .env 파일에서 APP_PORT 값을 읽어옵니다. (기본값: 8080)
     port = int(os.environ.get('APP_PORT', 8080))
+    env_mode = os.environ.get('APP_ENV', 'development').lower()
 
-    # [수정] Waitress 서버 적용 (개발 서버 경고 제거 및 안정성 향상)
-    try:
-        from waitress import serve
-        print(f" * Serving with Waitress on http://0.0.0.0:{port}")
-        serve(app, host='0.0.0.0', port=port, threads=12)
-    except (PermissionError, OSError) as port_err:
-        # [추가] 포트 충돌(PermissionError/OSError) 발생 시 자동으로 다음 포트 시도
-        new_port = port + 1
-        print(f"\n ! Port {port} is in use ({port_err}). Trying port {new_port}...")
+    if env_mode == 'development':
+        # 로컬 개발 환경: 코드 수정 시 자동 감지(Auto-reload) 및 디버그 모드 적용
+        print(f" * Development Mode: Running Flask server with Auto-Reload on http://0.0.0.0:{port}")
+        app.run(debug=True, host='0.0.0.0', port=port, use_reloader=True)
+    else:
+        # 운영 환경: Waitress 서버 적용
         try:
-            serve(app, host='0.0.0.0', port=new_port, threads=12)
-        except Exception as e:
-            print(f" ! Failed to start server on port {new_port} as well. Please check your firewall or use a different port.")
-            print(f"   Error: {e}")
-    except ImportError:
-        # Waitress가 설치되지 않은 경우 기존 Flask 개발 서버 사용
-        print(" * Waitress not found. Running with basic Flask server.")
-        import sys
-        print(" * To fix the warning, run: pip install waitress")
-        app.run(debug=False, port=port, host='0.0.0.0')
+            from waitress import serve
+            print(f" * Production Mode: Serving with Waitress on http://0.0.0.0:{port}")
+            serve(app, host='0.0.0.0', port=port, threads=12)
+        except (PermissionError, OSError) as port_err:
+            new_port = port + 1
+            print(f"\n ! Port {port} is in use ({port_err}). Trying port {new_port}...")
+            try:
+                serve(app, host='0.0.0.0', port=new_port, threads=12)
+            except Exception as e:
+                print(f" ! Failed to start server on port {new_port} as well. Please check your firewall or use a different port.")
+                print(f"   Error: {e}")
+        except ImportError:
+            print(" * Waitress not found. Running with basic Flask server.")
+            app.run(debug=False, port=port, host='0.0.0.0')

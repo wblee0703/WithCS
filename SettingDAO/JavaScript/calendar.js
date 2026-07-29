@@ -9,7 +9,7 @@ let currentScheduleTarget = null;
 let expandedViewId = null;
 
 // [추가] 필터 사업장 매칭 헬퍼 함수
-window.isSiteMatched = function(eventSite, filterSite) {
+window.isSiteMatched = function (eventSite, filterSite) {
     if (!filterSite) return true;
     const siteGroup = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(eventSite) : null;
     if (Array.isArray(filterSite)) {
@@ -432,10 +432,10 @@ function renderMonthGrid(year, month, titleId, gridId) {
 
                     const kwStr = keyword.replace(/\s/g, '');
                     const matchKeyword = !keyword || (
-                        (event.site && event.site.toLowerCase().includes(keyword)) || 
-                        (event.equip && event.equip.toLowerCase().includes(keyword)) || 
-                        (displayName.toLowerCase().includes(keyword)) || 
-                        (event.content && event.content.toLowerCase().includes(keyword)) || 
+                        (event.site && event.site.toLowerCase().includes(keyword)) ||
+                        (event.equip && event.equip.toLowerCase().includes(keyword)) ||
+                        (displayName.toLowerCase().includes(keyword)) ||
+                        (event.content && event.content.toLowerCase().includes(keyword)) ||
                         (event.worker && event.worker.toLowerCase().includes(keyword)) ||
                         (event.type && event.type.toLowerCase().includes(keyword)) ||
                         (event.detailType && event.detailType.toLowerCase().includes(keyword)) ||
@@ -475,19 +475,19 @@ function renderMonthGrid(year, month, titleId, gridId) {
 
             const groups = Object.values(groupedEvents);
 
-        // [수정] 통계 계산을 세부 항목 단위가 아닌 화면에 보이는 "그룹(블록)" 단위로 변경하여 수치 뻥튀기 현상 방지
-        groups.forEach(group => {
-            if (group.isChanged) return; // 일정 변경 이력은 카운트에서 제외
-            monthTotalTasks++;
-            if (group.isCompleted) monthCompletedTasks++;
-            
-            // [수정] 관리자 지분 차감 공통 로직 적용
-            if (typeof window.calcValidMd === 'function') {
-                monthTotalMd += window.calcValidMd(group.worker, group.md);
-            } else {
-                monthTotalMd += group.md;
-            }
-        });
+            // [수정] 통계 계산을 세부 항목 단위가 아닌 화면에 보이는 "그룹(블록)" 단위로 변경하여 수치 뻥튀기 현상 방지
+            groups.forEach(group => {
+                if (group.isChanged) return; // 일정 변경 이력은 카운트에서 제외
+                monthTotalTasks++;
+                if (group.isCompleted) monthCompletedTasks++;
+
+                // [수정] 관리자 지분 차감 공통 로직 적용
+                if (typeof window.calcValidMd === 'function') {
+                    monthTotalMd += window.calcValidMd(group.worker, group.md);
+                } else {
+                    monthTotalMd += group.md;
+                }
+            });
 
             // [추가] 캘린더 화면에서 미완료(작업 예정) 일정을 완료된 일정보다 항상 위에 표시하도록 정렬
             groups.sort((a, b) => {
@@ -858,10 +858,10 @@ function openCalendarPopup(dateStr, events) {
 
                                 const kwStr = keyword.replace(/\s/g, '');
                                 const matchKeyword = !keyword || (
-                                    (event.site && event.site.toLowerCase().includes(keyword)) || 
-                                    (event.equip && event.equip.toLowerCase().includes(keyword)) || 
-                                    (displayName.toLowerCase().includes(keyword)) || 
-                                    (event.content && event.content.toLowerCase().includes(keyword)) || 
+                                    (event.site && event.site.toLowerCase().includes(keyword)) ||
+                                    (event.equip && event.equip.toLowerCase().includes(keyword)) ||
+                                    (displayName.toLowerCase().includes(keyword)) ||
+                                    (event.content && event.content.toLowerCase().includes(keyword)) ||
                                     (event.worker && event.worker.toLowerCase().includes(keyword)) ||
                                     (event.type && event.type.toLowerCase().includes(keyword)) ||
                                     (event.detailType && event.detailType.toLowerCase().includes(keyword)) ||
@@ -918,31 +918,31 @@ function setupScheduleModal() {
 
     if (!modal) return;
 
-        // [추가] 작업자 및 공수 입력창 동적 생성 (기존 HTML에 누락되어 있을 경우 자동 주입)
-        let dateInputRow = dateInput ? (dateInput.closest('.modal-date-row') || dateInput.closest('.form-row') || dateInput.parentNode) : null;
-        if (dateInputRow && !document.getElementById('schedule-worker-wrapper')) {
-            // [수정] 기존 예정일 입력 행을 작업자/공수 행과 동일한 레이아웃으로 강제 변환하여 너비 일치화
-            dateInputRow.style.display = 'flex';
-            dateInputRow.style.alignItems = 'center';
-            dateInputRow.style.gap = '10px';
-            const dLabel = dateInputRow.querySelector('label');
-            if (dLabel) {
-                dLabel.style.width = '80px';
-                dLabel.style.flexShrink = '0';
-                dLabel.style.marginBottom = '0';
-                dLabel.style.fontWeight = 'bold';
-            }
-            dateInput.style.flex = '1';
-            dateInput.style.minWidth = '0';
+    // [추가] 작업자 및 공수 입력창 동적 생성 (기존 HTML에 누락되어 있을 경우 자동 주입)
+    let dateInputRow = dateInput ? (dateInput.closest('.modal-date-row') || dateInput.closest('.form-row') || dateInput.parentNode) : null;
+    if (dateInputRow && !document.getElementById('schedule-worker-wrapper')) {
+        // [수정] 기존 예정일 입력 행을 작업자/공수 행과 동일한 레이아웃으로 강제 변환하여 너비 일치화
+        dateInputRow.style.display = 'flex';
+        dateInputRow.style.alignItems = 'center';
+        dateInputRow.style.gap = '10px';
+        const dLabel = dateInputRow.querySelector('label');
+        if (dLabel) {
+            dLabel.style.width = '80px';
+            dLabel.style.flexShrink = '0';
+            dLabel.style.marginBottom = '0';
+            dLabel.style.fontWeight = 'bold';
+        }
+        dateInput.style.flex = '1';
+        dateInput.style.minWidth = '0';
 
-            // 1. 작업자 행(Row) 생성
-            const workerRow = document.createElement('div');
-            workerRow.className = 'form-row';
-            workerRow.style.display = 'flex';
-            workerRow.style.alignItems = 'center';
-            workerRow.style.gap = '10px';
-            workerRow.style.marginBottom = '15px';
-            workerRow.innerHTML = `
+        // 1. 작업자 행(Row) 생성
+        const workerRow = document.createElement('div');
+        workerRow.className = 'form-row';
+        workerRow.style.display = 'flex';
+        workerRow.style.alignItems = 'center';
+        workerRow.style.gap = '10px';
+        workerRow.style.marginBottom = '15px';
+        workerRow.innerHTML = `
                 <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px; font-weight: bold;">작업자</label>
                 <div id="schedule-worker-wrapper" class="log-select-wrapper" style="flex: 1; width: 100%; min-width: 0; margin: 0; display: flex; align-items: center;">
                     <input type="hidden" id="schedule-worker-hidden">
@@ -956,25 +956,25 @@ function setupScheduleModal() {
                     </div>
                 </div>
             `;
-            dateInputRow.parentNode.insertBefore(workerRow, dateInputRow.nextSibling);
+        dateInputRow.parentNode.insertBefore(workerRow, dateInputRow.nextSibling);
 
-            // 2. 공수(M/D) 행(Row) 생성
-            if (!document.getElementById('schedule-md-input')) {
-                const mdRow = document.createElement('div');
-                mdRow.className = 'form-row';
-                mdRow.style.display = 'flex';
-                mdRow.style.alignItems = 'center';
-                mdRow.style.gap = '10px';
-                mdRow.style.marginBottom = '20px';
-                mdRow.innerHTML = `
+        // 2. 공수(M/D) 행(Row) 생성
+        if (!document.getElementById('schedule-md-input')) {
+            const mdRow = document.createElement('div');
+            mdRow.className = 'form-row';
+            mdRow.style.display = 'flex';
+            mdRow.style.alignItems = 'center';
+            mdRow.style.gap = '10px';
+            mdRow.style.marginBottom = '20px';
+            mdRow.innerHTML = `
                     <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px; font-weight: bold;">공수(M/D)</label>
                     <input type="number" id="schedule-md-input" class="input-dark" style="flex: 1; min-height: 34px; height: 34px; box-sizing: border-box; padding: 8px 10px;" min="0" step="0.1">
                 `;
-                workerRow.parentNode.insertBefore(mdRow, workerRow.nextSibling);
-            }
-            
-            dateInputRow.style.marginBottom = '15px'; // 간격 통일화
+            workerRow.parentNode.insertBefore(mdRow, workerRow.nextSibling);
         }
+
+        dateInputRow.style.marginBottom = '15px'; // 간격 통일화
+    }
 
     if (closeBtn) closeBtn.onclick = () => modal.style.display = 'none';
 
@@ -983,13 +983,13 @@ function setupScheduleModal() {
             if (currentScheduleTarget) {
                 const date = dateInput.value;
                 if (!date) return alert('날짜를 선택해주세요.');
-                
+
                 // [추가] 작업자 및 공수 값 가져오기
                 const workerHidden = document.getElementById('schedule-worker-hidden');
                 const mdInput = document.getElementById('schedule-md-input');
                 const newWorker = workerHidden ? workerHidden.value.trim() : undefined;
                 const newMd = mdInput ? mdInput.value.trim() : undefined;
-                
+
                 if (newWorker !== undefined && newMd !== undefined) {
                     const workerCount = newWorker ? newWorker.split(',').map(s => s.trim()).filter(Boolean).length : 0;
                     if (newMd && parseFloat(newMd) > workerCount) {
@@ -1098,7 +1098,7 @@ function setupScheduleModal() {
         }
         if (wConfirm) wConfirm.onclick = (e) => { e.stopPropagation(); wDropdown.classList.remove('show'); };
     }
-    
+
     if (mdInput) {
         mdInput.oninput = function () {
             const workerCount = wHidden && wHidden.value ? wHidden.value.split(',').map(s => s.trim()).filter(Boolean).length : 0;
@@ -1155,11 +1155,11 @@ function openScheduleModal(site, equip, id) {
         if (workerVal) {
             workerTrigger.textContent = workerVal;
             workerTrigger.title = workerVal;
-                workerTrigger.style.color = '#fff';
+            workerTrigger.style.color = '#fff';
         } else {
             workerTrigger.textContent = '작업자 선택';
             workerTrigger.title = '';
-                workerTrigger.style.color = '#8b949e';
+            workerTrigger.style.color = '#8b949e';
         }
     }
 
@@ -1201,7 +1201,7 @@ function setupSearchModal() {
             const siteGroups = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
             const btnsHtml = siteGroups.map(g => `<button type="button" class="btn-gray site-group-toggle-btn" data-group="${g}" style="padding: 2px 6px; font-size: 11px; margin-right: 4px; margin-bottom: 4px; cursor: pointer;">${g}</button>`).join('');
             const extraHeader = `<div id="calendar-site-group-toggle-container" style="padding: 8px 8px 4px 8px; border-bottom: 1px solid #30363d; display: flex; flex-wrap: wrap;">${btnsHtml}</div>`;
-            
+
             siteDropdown.insertAdjacentHTML('afterbegin', extraHeader);
 
             const toggleBtns = siteDropdown.querySelectorAll('.site-group-toggle-btn');
@@ -1277,22 +1277,22 @@ function setupSearchModal() {
         resetBtn.textContent = '내 사업장 검색';
         resetBtn.onclick = () => {
             const userSite = sessionStorage.getItem('userSite') || '';
-                currentSearchFilters = { site: userSite ? [userSite] : [], equip: '' };
-                const siteList = document.getElementById('search-site-list');
-                if (siteList) {
-                    siteList.querySelectorAll('.log-select-item').forEach(el => {
-                        if (el.dataset.value === userSite) {
-                            el.classList.add('selected');
-                            const icon = el.querySelector('.check-icon');
-                            if (icon) icon.style.opacity = '1';
-                        } else {
-                            el.classList.remove('selected');
-                            const icon = el.querySelector('.check-icon');
-                            if (icon) icon.style.opacity = '0';
-                        }
-                    });
-                    updateSiteTriggerText();
-                }
+            currentSearchFilters = { site: userSite ? [userSite] : [], equip: '' };
+            const siteList = document.getElementById('search-site-list');
+            if (siteList) {
+                siteList.querySelectorAll('.log-select-item').forEach(el => {
+                    if (el.dataset.value === userSite) {
+                        el.classList.add('selected');
+                        const icon = el.querySelector('.check-icon');
+                        if (icon) icon.style.opacity = '1';
+                    } else {
+                        el.classList.remove('selected');
+                        const icon = el.querySelector('.check-icon');
+                        if (icon) icon.style.opacity = '0';
+                    }
+                });
+                updateSiteTriggerText();
+            }
             updateSearchEquipSelect(currentSearchFilters.site);
             if (equipSelect) equipSelect.value = '';
             modal.style.display = 'none';
@@ -1308,8 +1308,8 @@ function setupSearchModal() {
             if (sites.length === totalSites || sites.length === 0) {
                 sites = []; // 전체 선택 또는 선택 없음 시 빈 배열 할당
             }
-                const eq = equipSelect ? equipSelect.value : '';
-                currentSearchFilters = { site: sites, equip: eq };
+            const eq = equipSelect ? equipSelect.value : '';
+            currentSearchFilters = { site: sites, equip: eq };
             modal.style.display = 'none';
             renderCalendar();
         };
@@ -1347,11 +1347,11 @@ function openSearchModal() {
     const siteList = document.getElementById('search-site-list');
 
     if (!modal || !siteList) return;
-     const data = getDeviceDataMap();
+    const data = getDeviceDataMap();
     const sites = Object.keys(data).filter(k => k !== 'models' && k !== 'details').sort();
 
     siteList.innerHTML = '';
-    
+
     const currentFilterSites = Array.isArray(currentSearchFilters.site) ? currentSearchFilters.site : (currentSearchFilters.site ? [currentSearchFilters.site] : []);
     const isAllSelected = currentFilterSites.length === 0;
 
@@ -1363,7 +1363,7 @@ function openSearchModal() {
         div.dataset.value = site;
         div.dataset.siteGroup = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장'; // [추가]
         div.innerHTML = `<span class="check-icon" style="flex: 1; text-align: center; opacity:${isSelected ? '1' : '0'}; font-weight:bold; color:#58a6ff;">✓</span><span class="item-text" style="flex: 9; padding-left: 8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(site)}</span>`;
-        
+
         div.onclick = (e) => {
             e.stopPropagation();
             div.classList.toggle('selected');
@@ -1420,7 +1420,7 @@ function updateSiteTriggerText() {
     const list = document.getElementById('search-site-list');
     const trigger = document.getElementById('search-site-trigger');
     if (!list || !trigger) return;
-    
+
     const selected = Array.from(list.querySelectorAll('.log-select-item.selected'));
     const total = list.querySelectorAll('.log-select-item').length;
 
