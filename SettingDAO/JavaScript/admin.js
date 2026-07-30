@@ -2905,53 +2905,49 @@ function setupCheckTypeMgmt() {
             }
 
             currentCheckTypeSubCategory = null;
+            currentCheckTypeSubCategory2 = null;
+            currentCheckTypeSubCategory3 = null;
+
+            localStorage.removeItem('lastCheckTypeSubCategory');
+            localStorage.removeItem('lastCheckTypeSubCategory2');
+            localStorage.removeItem('lastCheckTypeSubCategory3');
+
+            const p2 = document.getElementById('check-type-subcategory2-container');
+            const p3 = document.getElementById('check-type-subcategory3-container');
+            const list2 = document.getElementById('check-type-subcategory2-list');
+            const list3 = document.getElementById('check-type-subcategory3-list');
+            if (list2) list2.innerHTML = '';
+            if (list3) list3.innerHTML = '';
+
             const btnImportItems = document.getElementById('btn-import-check-items');
             if (btnImportItems) btnImportItems.style.display = 'none';
             renderCheckTypeSubCategoryList();
 
             if (currentCheckTypeCategory === '비정기') {
-                const p2 = ensureSubCategory2Panel();
-                const p3 = ensureSubCategory3Panel();
-                if (p2) {
-                    p2.style.display = 'flex';
-                    p2.style.opacity = '0.5';
-                    p2.style.pointerEvents = 'none';
+                const panel2 = ensureSubCategory2Panel();
+                const panel3 = ensureSubCategory3Panel();
+                if (panel2) {
+                    panel2.style.display = 'flex';
+                    panel2.style.opacity = '0.5';
+                    panel2.style.pointerEvents = 'none';
                 }
-                if (p3) {
-                    p3.style.display = 'flex';
-                    p3.style.opacity = '0.5';
-                    p3.style.pointerEvents = 'none';
+                if (panel3) {
+                    panel3.style.display = 'flex';
+                    panel3.style.opacity = '0.5';
+                    panel3.style.pointerEvents = 'none';
                 }
                 document.getElementById('check-type-detail-placeholder').style.display = 'flex';
                 document.getElementById('check-type-detail-container').style.display = 'none';
                 document.getElementById('check-type-detail-desc').textContent = '세부 구분(분류)을 먼저 선택해주세요.';
                 scrollToAdminDetail('check-type-subcategory-list');
-
-                // [개선] 세부구분 상태 자동 복원
-                if (!currentCheckTypeSubCategory) {
-                    const savedSub = localStorage.getItem('lastCheckTypeSubCategory');
-                    if (savedSub) {
-                        const targetSub = Array.from(document.querySelectorAll('#check-type-subcategory-list li')).find(el => el.dataset.sub === savedSub);
-                        if (targetSub) setTimeout(() => targetSub.click(), 50);
-                    }
-                }
             } else {
-                const p2 = document.getElementById('check-type-subcategory2-container');
                 if (p2) p2.style.display = 'none';
+                if (p3) p3.style.display = 'none';
 
                 document.getElementById('check-type-detail-placeholder').style.display = 'flex';
                 document.getElementById('check-type-detail-container').style.display = 'none';
                 document.getElementById('check-type-detail-desc').textContent = '점검 구분과 분류를 순서대로 선택해주세요.';
-                scrollToAdminDetail('check-type-subcategory-list'); // [추가] 모바일 스크롤 이동
-
-                // [개선] 세부구분 상태 자동 복원
-                if (!currentCheckTypeSubCategory) {
-                    const savedSub = localStorage.getItem('lastCheckTypeSubCategory');
-                    if (savedSub) {
-                        const targetSub = Array.from(document.querySelectorAll('#check-type-subcategory-list li')).find(el => el.dataset.sub === savedSub);
-                        if (targetSub) setTimeout(() => targetSub.click(), 50);
-                    }
-                }
+                scrollToAdminDetail('check-type-subcategory-list');
             }
         });
     });
@@ -3288,15 +3284,20 @@ function renderCheckTypeSubCategory3List() {
 
     if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory || !currentCheckTypeSubCategory2) return;
 
+    const cleanKey3 = currentCheckTypeSubCategory2;
     const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}::${currentCheckTypeSubCategory2}`;
     const defaultSubCategories3 = [
         "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
         "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
     ];
 
-    if (!checkTypeCategories3Data[key] || checkTypeCategories3Data[key].length === 0) {
-        checkTypeCategories3Data[key] = [...defaultSubCategories3];
-        saveCheckTypeCategories3();
+    if (!checkTypeCategories3Data[key]) {
+        if (checkTypeCategories3Data[cleanKey3] && checkTypeCategories3Data[cleanKey3].length > 0) {
+            checkTypeCategories3Data[key] = [...checkTypeCategories3Data[cleanKey3]];
+        } else {
+            checkTypeCategories3Data[key] = [...defaultSubCategories3];
+            saveCheckTypeCategories3();
+        }
     }
 
     const categories3 = checkTypeCategories3Data[key] || [];
@@ -3352,8 +3353,6 @@ function loadCheckTypeCategories2() {
 
 async function saveCheckTypeCategories2() {
     localStorage.setItem('check_type_categories2', JSON.stringify(checkTypeCategories2Data));
-    await syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories2', value: checkTypeCategories2Data });
-    if (typeof saveData === 'function') saveData();
 }
 
 function loadCheckTypeCategories3() {
@@ -3365,14 +3364,10 @@ function loadCheckTypeCategories3() {
 
 async function saveCheckTypeCategories3() {
     localStorage.setItem('check_type_categories3', JSON.stringify(checkTypeCategories3Data));
-    await syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories3', value: checkTypeCategories3Data });
-    if (typeof saveData === 'function') saveData();
 }
 
 async function saveCheckTypeCategories() {
     localStorage.setItem('check_type_categories', JSON.stringify(checkTypeCategoriesData));
-    await syncAdminDB('setting', 'UPDATE', { key: 'check_type_categories', value: checkTypeCategoriesData });
-    if (typeof saveData === 'function') saveData();
 }
 
 function loadCheckTypeItems() {
@@ -3386,8 +3381,6 @@ function loadCheckTypeItems() {
 
 async function saveCheckTypeItems() {
     localStorage.setItem('check_type_items', JSON.stringify(checkTypeItemsData));
-    await syncAdminDB('setting', 'UPDATE', { key: 'check_type_items', value: checkTypeItemsData });
-    if (typeof saveData === 'function') saveData();
 }
 
 function migrateCheckTypeItemsForIrregularOthers() {
@@ -3602,9 +3595,10 @@ function renderCheckTypeSubCategoryList() {
 
     if (!currentCheckTypeEquipKey || !currentCheckTypeCategory) return;
 
+    const cleanKey = currentCheckTypeCategory;
     const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}`;
 
-    // [추가] 점검 구분별 세부 구분 초기값 설정
+    // [추가] 점검 구분별 세부 구분 초기값 설정 (dbwithtech001.check_type_category 매칭)
     const defaultSubCategories = {
         '정기': ['PM 점검'],
         '비정기': ['Alarm', 'Hunting', 'Data / Para 이상', '기타'],
@@ -3614,7 +3608,9 @@ function renderCheckTypeSubCategoryList() {
     };
 
     if (!checkTypeCategoriesData[key]) {
-        if (defaultSubCategories[currentCheckTypeCategory]) {
+        if (checkTypeCategoriesData[cleanKey] && checkTypeCategoriesData[cleanKey].length > 0) {
+            checkTypeCategoriesData[key] = [...checkTypeCategoriesData[cleanKey]];
+        } else if (defaultSubCategories[currentCheckTypeCategory]) {
             checkTypeCategoriesData[key] = [...defaultSubCategories[currentCheckTypeCategory]];
             saveCheckTypeCategories();
         } else {
@@ -3806,9 +3802,10 @@ function renderCheckTypeSubCategory2List() {
 
     if (!currentCheckTypeEquipKey || !currentCheckTypeCategory || !currentCheckTypeSubCategory) return;
 
+    const cleanKey2 = currentCheckTypeSubCategory;
     const key = `${currentCheckTypeEquipKey}::${currentCheckTypeCategory}::${currentCheckTypeSubCategory}`;
 
-    // [추가] 세부구분 2 초기값 설정
+    // [추가] 세부구분 2 초기값 설정 (dbwithtech001.check_type_category 매칭)
     const defaultSubCategories2 = {
         'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
         'Hunting': ['Air Peak_헌팅', 'HPLC_헌팅', 'Flow_헌팅', 'WD_헌팅', 'BASE_헌팅', 'ETC_헌팅'],
@@ -3817,7 +3814,9 @@ function renderCheckTypeSubCategory2List() {
     };
 
     if (!checkTypeCategories2Data[key]) {
-        if (currentCheckTypeCategory === '비정기' && defaultSubCategories2[currentCheckTypeSubCategory]) {
+        if (checkTypeCategories2Data[cleanKey2] && checkTypeCategories2Data[cleanKey2].length > 0) {
+            checkTypeCategories2Data[key] = [...checkTypeCategories2Data[cleanKey2]];
+        } else if (currentCheckTypeCategory === '비정기' && defaultSubCategories2[currentCheckTypeSubCategory]) {
             checkTypeCategories2Data[key] = [...defaultSubCategories2[currentCheckTypeSubCategory]];
             saveCheckTypeCategories2();
         } else {

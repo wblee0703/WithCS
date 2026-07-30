@@ -281,28 +281,7 @@ class SetupLog(db.Model):
     md = db.Column(db.String(50), default='0')
     parts = db.Column(db.Text, default='')
 
-class MaintItem(db.Model):
-    _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    id = db.Column(db.String(50)) 
-    equip_id = db.Column(db.String(200))
-    type = db.Column(db.String(50), default='')
-    detail_type = db.Column(db.String(100), default='')
-    code = db.Column(db.String(100), default='')
-    content = db.Column(db.String(255), default='')
-    spec = db.Column(db.String(255), default='')
-    date = db.Column(db.String(50), default='')
-    period = db.Column(db.String(50), nullable=True)
-    scheduled_date = db.Column(db.String(50), default='')
-    cost_type = db.Column(db.String(50), default='')
-    worker = db.Column(db.String(100), default='')
-    md = db.Column(db.String(50), default='')
-    item_cost = db.Column(db.String(50), default='')
-    memo = db.Column(db.Text, default='')
-    trouble_details = db.Column(db.Text, nullable=True) # [추가] 트러블 진행 경과 (JSON)
-    trouble_occur_date = db.Column(db.String(50), default='') # [추가] 트러블 발생 일시
-    original_log_id = db.Column(db.String(50), nullable=True) # [추가] 추가 작업(미완료)과 원본(부모) 로그를 연결하는 외래 식별자
-    image_data = db.Column(db.Text(length=2000000), nullable=True) # [추가]
-    sort_order = db.Column(db.Integer, default=0) # [추가] 물품 순서 영구 보존용 정렬 순서
+
 
 class LogItem(db.Model):
     __tablename__ = 'maint_log'
@@ -315,12 +294,10 @@ class LogItem(db.Model):
     type = db.Column(db.String(50), default='')
     detail_type = db.Column(db.String(100), default='')
     detail_type2 = db.Column(db.String(100), default='')
-    code = db.Column(db.String(100), default='') # [통합] 코드명
+    detail_type3 = db.Column(db.String(100), default='')
     content = db.Column(db.String(255), default='')
-    spec = db.Column(db.String(255), default='') # [통합] 규격
     add_work = db.Column(db.String(255), default='')
     cost_type = db.Column(db.String(50), default='')
-    item_cost = db.Column(db.String(50), default='') # [통합] 비용타입
     md = db.Column(db.String(50), default='')
     worker = db.Column(db.String(100), default='')
     memo = db.Column(db.Text, default='')
@@ -345,6 +322,40 @@ class AdminItem(db.Model):
     part = db.Column(db.String(100), default='')
     spec = db.Column(db.String(255), default='')
     equip = db.Column(db.Text, default='')
+
+# [추가] 장비 모델 마스터 데이터 테이블 (EquipmentModel)
+class EquipmentModel(db.Model):
+    __tablename__ = 'equipment_model'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(100), nullable=False)
+    abbr = db.Column(db.String(100), default='')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'abbr': self.abbr or self.name
+        }
+
+# [추가] 점검 구분 마스터 데이터 통합 테이블 (CheckTypeCategory)
+class CheckTypeCategory(db.Model):
+    __tablename__ = 'check_type_category'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    check_type = db.Column(db.String(100), nullable=False)   # 작업 구분 (정기, 비정기, 고객대응, 용액제조, 온라인점검)
+    type_detail = db.Column(db.String(100), default='')       # 세부 구분 1 (PM 점검, BM 점검, Alarm, Hunting 등)
+    type_detail2 = db.Column(db.String(100), default='')      # 세부 구분 2 (Hardware, Software, Flow/Temp/Pressure 등)
+    type_detail3 = db.Column(db.String(100), default='')      # 세부 구분 3 (파트 이상 교체, 파트 이상 수리, 단순조치 등)
+    sort_order = db.Column(db.Integer, default=0)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'check_type': self.check_type,
+            'type_detail': self.type_detail,
+            'type_detail2': self.type_detail2,
+            'type_detail3': self.type_detail3,
+            'sort_order': self.sort_order
+        }
 
 # [추가] 점검 구분 등 동적 설정 데이터 테이블 (SystemSetting)
 class SystemSetting(db.Model):
@@ -448,27 +459,44 @@ def load_data():
     if 'check_type_items' not in data: data['check_type_items'] = {}
     if 'setup_templates' not in data: data['setup_templates'] = {}
 
-    # [추가] DB에 등록된 모든 장비의 모델명을 equipment_models 목록에 자동 통합 보정 (dict/str 호환)
-    raw_models = data.get('equipment_models', [])
-    model_strings = []
-    if isinstance(raw_models, list):
-        for item in raw_models:
-            if isinstance(item, str) and item.strip():
-                model_strings.append(item.strip())
-            elif isinstance(item, dict):
-                m_val = item.get('name') or item.get('model') or item.get('code')
-                if m_val and isinstance(m_val, str) and m_val.strip():
-                    model_strings.append(m_val.strip())
+    # 1-1. 장비 모델 마스터 데이터 (EquipmentModel 테이블 연동)
+    try:
+        models = EquipmentModel.query.order_by(EquipmentModel.id).all()
+        if models:
+            data['equipment_models'] = [m.to_dict() for m in models]
+        else:
+            data['equipment_models'] = []
+    except Exception as e:
+        app.logger.error(f"Error fetching equipment_models: {e}")
+        data['equipment_models'] = []
 
-    existing_models = set(model_strings)
-    for eq in Equipment.query.all():
-        if eq.name and eq.name.strip() and eq.name.strip() != "기타(ETC)":
-            existing_models.add(eq.name.strip())
-    
-    if raw_models and isinstance(raw_models, list) and len(raw_models) > 0 and isinstance(raw_models[0], dict):
-        data['equipment_models'] = raw_models
-    else:
-        data['equipment_models'] = sorted(list(existing_models))
+    # 1-2. 세부구분 1, 2, 3 마스터 데이터 (CheckTypeCategory 테이블 연동)
+    try:
+        all_cats = CheckTypeCategory.query.order_by(CheckTypeCategory.sort_order, CheckTypeCategory.id).all()
+        if all_cats:
+            cat_dict1 = {}
+            cat_dict2 = {}
+            cat_dict3 = {}
+
+            for row in all_cats:
+                if row.check_type and row.type_detail:
+                    if row.type_detail not in cat_dict1.setdefault(row.check_type, []):
+                        cat_dict1[row.check_type].append(row.type_detail)
+
+                if row.type_detail and row.type_detail2:
+                    if row.type_detail2 not in cat_dict2.setdefault(row.type_detail, []):
+                        cat_dict2[row.type_detail].append(row.type_detail2)
+
+                if row.type_detail2 and row.type_detail3:
+                    if row.type_detail3 not in cat_dict3.setdefault(row.type_detail2, []):
+                        cat_dict3[row.type_detail2].append(row.type_detail3)
+
+            data['check_type_categories'] = cat_dict1
+            data['check_type_categories2'] = cat_dict2
+            data['check_type_categories3'] = cat_dict3
+            data['check_type_category_list'] = [r.to_dict() for r in all_cats]
+    except Exception as e:
+        app.logger.error(f"Error fetching check_type_categories: {e}")
 
     # 2. 물품 관리 마스터 데이터
     admin_items = AdminItem.query.all()
@@ -494,7 +522,6 @@ def load_data():
     # N+1 쿼리 성능 저하 방지를 위한 전체 데이터 사전 로드 (Dictionary 매핑)
     maint_items = {}; log_items = {}; setup_details = {}; setup_logs = {}
     
-    for m in MaintItem.query.all(): maint_items.setdefault(m.equip_id, []).append(m)
     for l in LogItem.query.all(): log_items.setdefault(l.equip_id, []).append(l)
     for sd in SetupDetail.query.all(): setup_details.setdefault(sd.equip_id, []).append(sd)
     for sl in SetupLog.query.all(): setup_logs.setdefault(sl.equip_id, []).append(sl)
@@ -541,6 +568,7 @@ def load_data():
         for m in maint_list:
             data[detail_key]["maint"].append({
                 "id": int(m.id) if str(m.id).isdigit() else m.id, "type": m.type, "detailType": m.detail_type,
+                "detailType2": getattr(m, 'detail_type2', ''), "detailType3": getattr(m, 'detail_type3', ''),
                 "code": getattr(m, 'code', ''), "content": m.content, "spec": getattr(m, 'spec', ''), "date": m.date, "scheduledDate": getattr(m, 'scheduled_date', m.date),
                 "period": int(m.period) if getattr(m, 'period', None) and str(m.period).isdigit() else getattr(m, 'period', ''),
                 "costType": m.cost_type, "worker": m.worker, "md": m.md, "itemCost": getattr(m, 'item_cost', ''), "memo": m.memo,
@@ -552,7 +580,7 @@ def load_data():
         for l in logs_list:
             data[detail_key]["logs"].append({
                 "id": int(l.id) if str(l.id).isdigit() else l.id, "date": l.date, "type": l.type,
-                "detailType": l.detail_type, "detailType2": l.detail_type2, "content": l.content, "startTime": getattr(l, 'start_time', ''),
+                "detailType": l.detail_type, "detailType2": l.detail_type2, "detailType3": getattr(l, 'detail_type3', ''), "content": l.content, "startTime": getattr(l, 'start_time', ''),
                 "endTime": getattr(l, 'end_time', ''),
                 "addWork": l.add_work, "costType": l.cost_type, "md": l.md, "worker": l.worker, "memo": l.memo,
                 "isIssueShared": l.is_issue_shared,
@@ -1036,20 +1064,14 @@ def build_rag_context(user, user_message):
     # (4) 장비 모델명(Model) 매칭
     matched_model = None
     system_models = []
-    model_setting = SystemSetting.query.filter_by(key='equipment_models').first()
-    if model_setting:
-        try:
-            models_data = json.loads(model_setting.value)
-            for m in models_data:
-                if isinstance(m, dict):
-                    if m.get('name'):
-                        system_models.append(m['name'])
-                    if m.get('abbr'):
-                        system_models.append(m['abbr'])
-                elif isinstance(m, str):
-                    system_models.append(m)
-        except Exception as e:
-            app.logger.error(f"Error parsing equipment_models setting: {str(e)}")
+    try:
+        for m in EquipmentModel.query.all():
+            if m.name:
+                system_models.append(m.name)
+            if m.abbr:
+                system_models.append(m.abbr)
+    except Exception as e:
+        app.logger.error(f"Error reading EquipmentModel: {str(e)}")
     
     db_models = [eq.name for eq in Equipment.query.with_entities(Equipment.name).distinct() if eq.name]
     all_models = list(set(system_models + db_models))
@@ -1102,12 +1124,12 @@ def build_rag_context(user, user_message):
     # 3. 데이터베이스 쿼리 및 컨텍스트 작성
     
     # 3-1. 메타 요약 정보 (기본 통계 제공)
-    maint_count_query = MaintItem.query
+    maint_count_query = LogItem.query.filter_by(status='작업예정')
     trouble_count_query = TroubleLog.query
     log_count_query = LogItem.query
     
     if matched_site:
-        maint_count_query = maint_count_query.filter(MaintItem.equip_id.like(f"{matched_site}::%"))
+        maint_count_query = maint_count_query.filter(LogItem.equip_id.like(f"{matched_site}::%"))
         trouble_count_query = trouble_count_query.filter(TroubleLog.equip_id.like(f"{matched_site}::%"))
         log_count_query = log_count_query.filter(LogItem.equip_id.like(f"{matched_site}::%"))
         
@@ -1123,7 +1145,7 @@ def build_rag_context(user, user_message):
         context_lines.append(f"- 소속/권한 범위: {matched_site}")
         context_lines.append(f"- [{matched_site}] 등록 장비 총 수량: {len(all_equips)}대")
         if target_period:
-            period_maint = MaintItem.query.filter(MaintItem.equip_id.like(f"{matched_site}::%"), MaintItem.scheduled_date.like(f"{target_period}%")).count()
+            period_maint = LogItem.query.filter(LogItem.equip_id.like(f"{matched_site}::%"), LogItem.status == '작업예정', LogItem.scheduled_date.like(f"{target_period}%")).count()
             period_trouble = TroubleLog.query.filter(TroubleLog.equip_id.like(f"{matched_site}::%"), TroubleLog.occur_date.like(f"{target_period}%")).count()
             context_lines.append(f"- [{matched_site}] {period_label} 점검 예정 일정 건수: {period_maint}건")
             context_lines.append(f"- [{matched_site}] {period_label} 장애 발생 건수: {period_trouble}건")
@@ -1134,7 +1156,7 @@ def build_rag_context(user, user_message):
         context_lines.append(f"- 소속/권한 범위: 전체 사업장")
         context_lines.append(f"- 전체 등록 장비 총 수량: {len(all_equips)}대")
         if target_period:
-            period_maint = MaintItem.query.filter(MaintItem.scheduled_date.like(f"{target_period}%")).count()
+            period_maint = LogItem.query.filter(LogItem.status == '작업예정', LogItem.scheduled_date.like(f"{target_period}%")).count()
             period_trouble = TroubleLog.query.filter(TroubleLog.occur_date.like(f"{target_period}%")).count()
             context_lines.append(f"- 전체 {period_label} 점검 예정 일정 건수: {period_maint}건")
             context_lines.append(f"- 전체 {period_label} 장애 발생 건수: {period_trouble}건")
@@ -1231,7 +1253,7 @@ def build_rag_context(user, user_message):
                 
                 context_lines.append(f"■ 장비: {eq.name} ({eq.serial}) | 모델: {model} | 사업장: {eq.site_name} | 고객장비명: {cust_name} | 상태: {status} | 위치: {loc} | 담당: {manager}")
                 
-                m_items = MaintItem.query.filter_by(equip_id=eq.id).order_by(MaintItem.scheduled_date).limit(3).all()
+                m_items = LogItem.query.filter_by(equip_id=eq.id, status='작업예정').order_by(LogItem.scheduled_date).limit(3).all()
                 if m_items:
                     context_lines.append(f"  - 예정된 점검 일정:")
                     for mi in m_items:
@@ -1319,7 +1341,7 @@ def build_rag_context(user, user_message):
                 context_lines.append(f"\n▶ [과거 유사 장애 해결 및 조치 성공 사례]\n  - 해당 장비 그룹의 조치 완료된 트러블 이력이 없습니다.")
 
             # (C) 임박한 점검 예정 일정 요약 (최대 5건)
-            upcoming_maint = MaintItem.query.filter(MaintItem.equip_id.in_(eq_ids)).order_by(MaintItem.scheduled_date).limit(5).all()
+            upcoming_maint = LogItem.query.filter(LogItem.equip_id.in_(eq_ids), LogItem.status == '작업예정').order_by(LogItem.scheduled_date).limit(5).all()
             if upcoming_maint:
                 context_lines.append(f"\n▶ [다가오는 주요 점검 예정 일정 (임박 5건)]")
                 for um in upcoming_maint:
@@ -1390,10 +1412,10 @@ def build_rag_context(user, user_message):
     if matched_worker:
         context_lines.append(f"\n[작업자 '{matched_worker}' 관련 배정 내역]")
         
-        worker_maint = MaintItem.query.filter(MaintItem.worker.like(f"%{matched_worker}%"))
+        worker_maint = LogItem.query.filter(LogItem.worker.like(f"%{matched_worker}%"), LogItem.status == '작업예정')
         if matched_site:
-            worker_maint = worker_maint.filter(MaintItem.equip_id.like(f"{matched_site}::%"))
-        wm_list = worker_maint.order_by(MaintItem.scheduled_date).limit(limit_num).all()
+            worker_maint = worker_maint.filter(LogItem.equip_id.like(f"{matched_site}::%"))
+        wm_list = worker_maint.order_by(LogItem.scheduled_date).limit(limit_num).all()
         if wm_list:
             context_lines.append(f"  - 점검 및 유지보수 일정 (최대 {limit_num}건):")
             for mi in wm_list:
@@ -1439,11 +1461,6 @@ def build_rag_context(user, user_message):
             if matched_site:
                 query = query.filter(LogItem.equip_id.like(f"{matched_site}::%"))
             maint_items = query.order_by(LogItem.scheduled_date).limit(limit_num).all()
-            if not maint_items:
-                m_q = MaintItem.query
-                if matched_site:
-                    m_q = m_q.filter(MaintItem.equip_id.like(f"{matched_site}::%"))
-                maint_items = m_q.order_by(MaintItem.scheduled_date).limit(limit_num).all()
 
             if maint_items:
                 context_lines.append(f"\n[유지관리 점검 일정 (최대 {limit_num}건)]")
@@ -1505,7 +1522,7 @@ def build_rag_context(user, user_message):
                         context_lines.append(f"    - [{scl.date}] {scl.equip_id.split('::')[-1]}: {log_detail} (담당: {scl.worker})")
 
                 # 3) 소속 장비 다가오는 점검 예정 일정
-                site_upcoming_maint = MaintItem.query.filter(MaintItem.equip_id.like(f"{matched_site}::%")).order_by(MaintItem.scheduled_date).limit(5).all()
+                site_upcoming_maint = LogItem.query.filter(LogItem.equip_id.like(f"{matched_site}::%"), LogItem.status == '작업예정').order_by(LogItem.scheduled_date).limit(5).all()
                 if site_upcoming_maint:
                     context_lines.append(f"  * 예정된 점검 일정:")
                     for sumi in site_upcoming_maint:
@@ -2030,7 +2047,15 @@ def admin_crud():
             
     
     try:
-        if domain == 'site':
+        if domain == 'setting':
+            if action == 'UPDATE':
+                deprecated_keys = ['check_type_categories', 'check_type_categories2', 'check_type_categories3', 'check_type_items', 'equipment_models', 'admin_items']
+                if payload.get('key') not in deprecated_keys:
+                    val_json = json.dumps(payload['value'], ensure_ascii=False)
+                    setting = SystemSetting.query.filter_by(key=payload['key']).first()
+                    if setting: setting.value = val_json
+                    else: db.session.add(SystemSetting(key=payload['key'], value=val_json))
+        elif domain == 'site':
             if action == 'CREATE':
                 site_name = payload['name']
                 site_group = payload.get('group', '기타사업장')
@@ -2238,19 +2263,7 @@ def admin_crud():
                 
                 # UPDATE 시 코드명이나 물품명이 변경된 경우, 기존 등록/완료된 작업의 물품 정보 일괄 동기화
                 if action == 'UPDATE' and item and (old_code != new_code or old_part != new_part):
-                    # 1. MaintItem code 필드 업데이트
-                    if old_code and old_code != new_code:
-                        MaintItem.query.filter_by(code=old_code).update({MaintItem.code: new_code})
-                    
-                    # 2. MaintItem content 필드 업데이트
-                    maint_items = MaintItem.query.all()
-                    for m in maint_items:
-                        if m.content:
-                            updated_content = update_content_part(m.content, old_code, new_code, old_part, new_part)
-                            if updated_content != m.content:
-                                m.content = updated_content
-                                
-                    # 3. LogItem content 필드 업데이트
+                    # LogItem content 필드 업데이트
                     log_items = LogItem.query.all()
                     for l in log_items:
                         if l.content:
@@ -2261,10 +2274,69 @@ def admin_crud():
                 db.session.execute(text("DELETE FROM admin_item WHERE id=:i"), {'i': str(payload['id'])})
                 
         elif domain == 'setting':
-            setting = SystemSetting.query.filter_by(key=payload['key']).first()
-            val_json = json.dumps(payload['value'], ensure_ascii=False)
-            if setting: setting.value = val_json
-            else: db.session.add(SystemSetting(key=payload['key'], value=val_json))
+            deprecated_keys = ['check_type_categories', 'check_type_categories2', 'check_type_categories3', 'check_type_items', 'equipment_models', 'admin_items']
+            if payload.get('key') not in deprecated_keys:
+                val_json = json.dumps(payload['value'], ensure_ascii=False)
+                setting = SystemSetting.query.filter_by(key=payload['key']).first()
+                if setting: setting.value = val_json
+                else: db.session.add(SystemSetting(key=payload['key'], value=val_json))
+
+            if payload.get('key') == 'equipment_models':
+                val = payload.get('value', [])
+                if isinstance(val, list):
+                    try:
+                        EquipmentModel.query.delete()
+                        for idx, m in enumerate(val, 1):
+                            if isinstance(m, dict):
+                                n = (m.get('name') or m.get('model') or '').strip()
+                                a = (m.get('abbr') or n).strip()
+                                if n:
+                                    db.session.add(EquipmentModel(id=m.get('id', idx), name=n, abbr=a))
+                            elif isinstance(m, str) and m.strip():
+                                db.session.add(EquipmentModel(id=idx, name=m.strip(), abbr=m.strip()))
+                    except Exception as ex:
+                        app.logger.error(f"Failed to sync equipment_model table: {ex}")
+
+            if payload.get('key') == 'admin_items':
+                val = payload.get('value', [])
+                if isinstance(val, list):
+                    try:
+                        AdminItem.query.delete()
+                        for idx, item in enumerate(val, 1):
+                            if isinstance(item, dict):
+                                i_id = str(item.get('id', idx))
+                                db.session.add(AdminItem(
+                                    id=i_id,
+                                    detail_type=item.get('detailType', item.get('detail_type', '')),
+                                    additional=item.get('additional', ''),
+                                    partno=item.get('partno', ''),
+                                    code=item.get('code', ''),
+                                    part=item.get('part', ''),
+                                    spec=item.get('spec', ''),
+                                    equip=item.get('equip', '')
+                                ))
+                        # system_setting 행 자동 제거
+                        SystemSetting.query.filter_by(key='admin_items').delete()
+                    except Exception as ex:
+                        app.logger.error(f"Failed to sync AdminItem table: {ex}")
+
+            elif payload.get('key') in ['check_type_categories', 'check_type_categories2', 'check_type_categories3', 'check_type_category_list']:
+                val = payload.get('value', {})
+                if isinstance(val, list):
+                    try:
+                        CheckTypeCategory.query.delete()
+                        for idx, item in enumerate(val, 1):
+                            if isinstance(item, dict):
+                                db.session.add(CheckTypeCategory(
+                                    id=item.get('id', idx),
+                                    check_type=item.get('check_type', item.get('checkType', '')),
+                                    type_detail=item.get('type_detail', item.get('typeDetail', '')),
+                                    type_detail2=item.get('type_detail2', item.get('typeDetail2', '')),
+                                    type_detail3=item.get('type_detail3', item.get('typeDetail3', '')),
+                                    sort_order=item.get('sort_order', idx)
+                                ))
+                    except Exception as ex:
+                        app.logger.error(f"Failed to sync CheckTypeCategory table: {ex}")
                 
         db.session.commit()
         return jsonify({"status": "success"})
@@ -2277,12 +2349,11 @@ def admin_crud():
 # [추가] equipment_models 약어 매핑 관련 헬퍼 함수
 def get_equipment_model_alias_maps():
     """
-    SystemSetting(key='equipment_models')의 (name <-> abbr) 매핑을 로드합니다.
+    EquipmentModel 테이블의 (name <-> abbr) 매핑을 로드합니다.
     Returns:
       - full_to_abbr: full model name -> abbr
       - abbr_to_full: abbr -> full model name
     """
-    import json as _json
     import re as _re
 
     def _normalize_key(val):
@@ -2290,29 +2361,21 @@ def get_equipment_model_alias_maps():
             return ""
         return _re.sub(r'[^a-zA-Z0-9가-힣]', '', str(val)).lower()
 
-    setting = SystemSetting.query.filter_by(key='equipment_models').first()
-    if not setting or not setting.value:
-        return {}, {}
-
-    try:
-        models_data = _json.loads(setting.value)
-    except Exception:
-        return {}, {}
-
     full_to_abbr = {}
     abbr_to_full = {}
-    if isinstance(models_data, list):
-        for m in models_data:
-            if not isinstance(m, dict):
-                continue
-            n = m.get('name')
-            a = m.get('abbr')
+    try:
+        models = EquipmentModel.query.all()
+        for m in models:
+            n = m.name
+            a = m.abbr or m.name
             if n and a:
                 nn = _normalize_key(n)
                 aa = _normalize_key(a)
                 if nn and aa:
                     full_to_abbr[nn] = a
                     abbr_to_full[aa] = n
+    except Exception as e:
+        app.logger.warning(f"Failed to load EquipmentModel: {e}")
 
     return full_to_abbr, abbr_to_full
 
@@ -2433,23 +2496,18 @@ def resolve_master_equip_id(equip_id):
     if not all_equips:
         return clean_id
 
-    # [추가] SystemSetting에서 모델명 <-> 약어 매핑 맵 구축
+    # [추가] EquipmentModel 테이블에서 모델명 <-> 약어 매핑 맵 구축
     model_alias_map = {}
     try:
-        setting = SystemSetting.query.filter_by(key='equipment_models').first()
-        if setting and setting.value:
-            import json
-            models_data = json.loads(setting.value)
-            if isinstance(models_data, list):
-                for m in models_data:
-                    if isinstance(m, dict):
-                        n = normalize_key(m.get('name'))
-                        a = normalize_key(m.get('abbr'))
-                        if n and a:
-                            model_alias_map[n] = a
-                            model_alias_map[a] = n
+        models_data = EquipmentModel.query.all()
+        for m in models_data:
+            n = normalize_key(m.name)
+            a = normalize_key(m.abbr or m.name)
+            if n and a:
+                model_alias_map[n] = a
+                model_alias_map[a] = n
     except Exception as e:
-        app.logger.warning(f"Failed to load equipment_models setting: {e}")
+        app.logger.warning(f"Failed to load EquipmentModel: {e}")
 
     # [추가] 특수문자/공백/콜론 개수 차이 및 모델명 약어 매칭 흡수를 위한 정규화 ID 1:1 매칭
     norm_clean_id = normalize_key(clean_id)
@@ -2640,7 +2698,8 @@ def history_transaction():
             item.date = l.get('date', item.date)
             item.type = l.get('type', item.type)
             item.detail_type = l.get('detailType', item.detail_type)
-            item.detail_type2 = l.get('detailType2', item.detail_type2)
+            item.detail_type2 = l.get('detailType2', getattr(item, 'detail_type2', ''))
+            item.detail_type3 = l.get('detailType3', getattr(item, 'detail_type3', ''))
             item.content = l.get('content', item.content)
             item.add_work = l.get('addWork', getattr(item, 'add_work', ''))
             item.cost_type = l.get('costType', getattr(item, 'cost_type', ''))
@@ -2671,16 +2730,15 @@ def history_transaction():
             item.status = '작업예정'
             item.type = m.get('type', item.type)
             item.detail_type = m.get('detailType', item.detail_type)
-            item.code = m.get('code', item.code)
+            item.detail_type2 = m.get('detailType2', getattr(item, 'detail_type2', ''))
+            item.detail_type3 = m.get('detailType3', getattr(item, 'detail_type3', ''))
             item.content = m.get('content', item.content)
-            item.spec = m.get('spec', item.spec)
             item.date = m.get('date', item.date)
             item.period = str(m.get('period')) if m.get('period') is not None else item.period
             item.scheduled_date = m.get('scheduledDate', item.scheduled_date)
             item.cost_type = m.get('costType', getattr(item, 'cost_type', ''))
             item.worker = m.get('worker', item.worker)
             item.md = str(m.get('md', getattr(item, 'md', '')))
-            item.item_cost = m.get('itemCost', getattr(item, 'item_cost', ''))
             item.memo = m.get('memo', item.memo)
             item.original_log_id = str(m.get('originalLogId')) if m.get('originalLogId') else item.original_log_id
 
@@ -3034,8 +3092,6 @@ def trouble_crud():
                     db.session.add(SystemLog(action='UPDATE_TROUBLE', target=log.equip_id, details="Trouble 수정", worker=worker_name))
             elif source in ('log', 'maint'):
                 log_item = LogItem.query.filter_by(id=str(payload.get('id'))).first()
-                if not log_item and source == 'maint':
-                    log_item = MaintItem.query.filter_by(id=str(payload.get('id'))).first()
                 if log_item:
                     if 'action_date' in payload:
                         log_item.date = payload.get('action_date', log_item.date)
@@ -3136,31 +3192,18 @@ def get_additional_works():
         return jsonify({"status": "fail", "message": "부모 작업 ID(parent_id)가 누락되었습니다."}), 400
         
     try:
-        additional_maint = MaintItem.query.filter_by(original_log_id=str(parent_id)).all()
         additional_logs = LogItem.query.filter_by(original_log_id=str(parent_id)).all()
         
         result = []
-        for m in additional_maint:
-            result.append({
-                "id": m.id,
-                "date": m.scheduled_date or m.date,
-                "type": m.type,
-                "detail_type": m.detail_type,
-                "content": m.content,
-                "worker": m.worker,
-                "status": "예정",
-                "memo": m.memo or ""
-            })
-            
         for l in additional_logs:
             result.append({
                 "id": l.id,
-                "date": l.date,
+                "date": l.scheduled_date or l.date,
                 "type": l.type,
                 "detail_type": l.detail_type,
                 "content": l.content,
                 "worker": l.worker,
-                "status": "완료",
+                "status": getattr(l, 'status', '조치완료'),
                 "memo": l.memo or ""
             })
             
@@ -3174,9 +3217,202 @@ def get_additional_works():
 # 8. 앱 초기화 및 실행 (Initialization & Main Execution)
 # ------------------------------------------------------------------------------
 
+def migrate_equipment_models_to_table():
+    """SystemSetting(key='equipment_models') 데이터 및 DB 장비 모델을 equipment_model 테이블로 자동 이관합니다."""
+    try:
+        count = EquipmentModel.query.count()
+        if count == 0:
+            app.logger.info("[Migration] Migrating equipment_models to equipment_model table...")
+            setting = SystemSetting.query.filter_by(key='equipment_models').first()
+            inserted_names = set()
+            new_objs = []
+
+            if setting and setting.value:
+                try:
+                    data_list = json.loads(setting.value)
+                    if isinstance(data_list, list):
+                        for item in data_list:
+                            if isinstance(item, dict):
+                                n = (item.get('name') or item.get('model') or '').strip()
+                                a = (item.get('abbr') or n).strip()
+                                if n and n not in inserted_names:
+                                    new_objs.append(EquipmentModel(name=n, abbr=a))
+                                    inserted_names.add(n)
+                            elif isinstance(item, str) and item.strip():
+                                n = item.strip()
+                                if n not in inserted_names:
+                                    new_objs.append(EquipmentModel(name=n, abbr=n))
+                                    inserted_names.add(n)
+                except Exception as ex:
+                    app.logger.error(f"[Migration] JSON parse error in SystemSetting: {ex}")
+
+            for eq in Equipment.query.all():
+                if eq.name and eq.name.strip() and eq.name.strip() != "기타(ETC)":
+                    n = eq.name.strip()
+                    if n not in inserted_names:
+                        new_objs.append(EquipmentModel(name=n, abbr=n))
+                        inserted_names.add(n)
+
+            if new_objs:
+                db.session.bulk_save_objects(new_objs)
+                db.session.commit()
+                app.logger.info(f"[Migration] Successfully migrated {len(new_objs)} equipment models to equipment_model table.")
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"[Migration Error] equipment_model migration failed: {e}")
+
+def init_check_type_category_tables():
+    """check_type_category 단일 통합 테이블 초기화 및 점검 구분 마스터 데이터 구성"""
+    try:
+        # [컬럼 보정] 기존 DB에 구 버전 테이블(type_name 컬럼)이 존재할 경우 새 4컬럼 구조(check_type 등)로 재할당
+        try:
+            res = db.session.execute(text("SHOW COLUMNS FROM check_type_category LIKE 'check_type'")).fetchone()
+            if not res:
+                app.logger.info("[DB Schema Update] Dropping old check_type_category table to apply new 4-column schema...")
+                db.session.execute(text("DROP TABLE IF EXISTS check_type_category"))
+                db.session.commit()
+        except Exception as ex:
+            db.session.rollback()
+
+        db.create_all()
+
+        # 작업 등록 팝업의 [작업 구분] 및 [상세 구분]에 맞춰 기존 무효/구 데이터 일괄 정리 후 깔끔하게 재등록
+        try:
+            db.session.execute(text("DELETE FROM check_type_category"))
+            db.session.commit()
+        except Exception as ex:
+            db.session.rollback()
+
+        app.logger.info("[Init] Seeding clean CheckTypeCategory table with exact work registration categories...")
+        rows = []
+        order = 1
+
+        # 1. 정기
+        rows.append(CheckTypeCategory(check_type='정기', type_detail='PM 점검', type_detail2='', type_detail3='', sort_order=order))
+        order += 1
+
+        # 2. 용액제조
+        rows.append(CheckTypeCategory(check_type='용액제조', type_detail='용액제조', type_detail2='', type_detail3='', sort_order=order))
+        order += 1
+
+        # 3. 온라인점검
+        rows.append(CheckTypeCategory(check_type='온라인점검', type_detail='온라인점검', type_detail2='', type_detail3='', sort_order=order))
+        order += 1
+
+        d3_list = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상", "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"]
+
+        # 4. 비정기 - Alarm
+        alarm2_list = ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람']
+        for a2 in alarm2_list:
+            for d3 in d3_list:
+                rows.append(CheckTypeCategory(check_type='비정기', type_detail='Alarm', type_detail2=a2, type_detail3=d3, sort_order=order))
+                order += 1
+
+        # 5. 비정기 - Hunting
+        hunting2_list = ['Air Peak_헌팅', 'HPLC_헌팅', 'Flow_헌팅', 'WD_헌팅', 'BASE_헌팅', 'ETC_헌팅']
+        for h2 in hunting2_list:
+            for d3 in d3_list:
+                rows.append(CheckTypeCategory(check_type='비정기', type_detail='Hunting', type_detail2=h2, type_detail3=d3, sort_order=order))
+                order += 1
+
+        # 6. 비정기 - Data / Para 이상
+        datapara2_list = ['REF_PORT', 'RT_흔들림', 'HPLC 압력변동', '에어 유량 변동', '미지피크_발생', '콤플렉스_피크', '프로그램_오류', '베이스 값 이상', 'Data 변동', 'Data 전송 이슈', '딜리버리펌프_이슈', '클리닝펌프_이슈', '용액 이슈']
+        for dp2 in datapara2_list:
+            for d3 in d3_list:
+                rows.append(CheckTypeCategory(check_type='비정기', type_detail='Data / Para 이상', type_detail2=dp2, type_detail3=d3, sort_order=order))
+                order += 1
+
+        # 7. 비정기 - 기타
+        etc2_list = ['배수 펌프 이슈', '구동 이상']
+        for e2 in etc2_list:
+            for d3 in d3_list:
+                rows.append(CheckTypeCategory(check_type='비정기', type_detail='기타', type_detail2=e2, type_detail3=d3, sort_order=order))
+                order += 1
+
+        # 8. 고객대응
+        cust_details = ['순회 점검', '프로그램 변경 / 평가', '설비 평가', '파티클 필터 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타']
+        for cd in cust_details:
+            rows.append(CheckTypeCategory(check_type='고객대응', type_detail=cd, type_detail2='', type_detail3='', sort_order=order))
+            order += 1
+
+        db.session.bulk_save_objects(rows)
+        db.session.commit()
+        app.logger.info(f"[Init] Successfully inserted {len(rows)} CheckTypeCategory rows into database.")
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"[Init Error] CheckTypeCategory init failed: {e}")
+
+def migrate_maint_log_detail_types():
+    """maint_log 및 maint_item 테이블에서 'A > B > C' 형태로 들어있는 detail_type을 detail_type, detail_type2, detail_type3 컬럼으로 분리 마이그레이션합니다."""
+    try:
+        logs = LogItem.query.filter(LogItem.detail_type.like('%>%')).all()
+        for l in logs:
+            parts = [p.strip() for p in l.detail_type.split('>')]
+            if len(parts) >= 3:
+                l.detail_type = parts[0]
+                l.detail_type2 = parts[1]
+                l.detail_type3 = parts[2]
+            elif len(parts) == 2:
+                l.detail_type = parts[0]
+                l.detail_type2 = parts[1]
+
+        db.session.commit()
+        app.logger.info(f"[Migration] Successfully split combined detail_types in {len(logs)} logs.")
+    except Exception as ex:
+        db.session.rollback()
+        app.logger.error(f"[Migration Error] detail_type split failed: {ex}")
+
 def init_db():
     with app.app_context():
         db.create_all()
+        migrate_equipment_models_to_table()
+        init_check_type_category_tables()
+
+        # [maint_item 구 테이블 완전 삭제]
+        try:
+            db.session.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
+            db.session.execute(text("DROP TABLE IF EXISTS maint_item;"))
+            db.session.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
+            db.session.commit()
+        except: db.session.rollback()
+
+        # [maint_log 컬럼 보정]
+        try:
+            db.session.execute(text("ALTER TABLE maint_log ADD COLUMN detail_type2 VARCHAR(100) DEFAULT ''"))
+        except: db.session.rollback()
+        try:
+            db.session.execute(text("ALTER TABLE maint_log ADD COLUMN detail_type3 VARCHAR(100) DEFAULT ''"))
+        except: db.session.rollback()
+
+        # [maint_log 불필요 컬럼 삭제]
+        try:
+            db.session.execute(text("ALTER TABLE maint_log DROP COLUMN code"))
+            db.session.commit()
+        except: db.session.rollback()
+        try:
+            db.session.execute(text("ALTER TABLE maint_log DROP COLUMN spec"))
+            db.session.commit()
+        except: db.session.rollback()
+        try:
+            db.session.execute(text("ALTER TABLE maint_log DROP COLUMN item_cost"))
+            db.session.commit()
+        except: db.session.rollback()
+
+        # [기존 데이터 마이그레이션 실행]
+        migrate_maint_log_detail_types()
+
+        # [불필요 분리 테이블 및 구 system_setting 레코드 정리]
+        try:
+            db.session.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
+            db.session.execute(text("DROP TABLE IF EXISTS check_type_category2;"))
+            db.session.execute(text("DROP TABLE IF EXISTS check_type_category3;"))
+            db.session.execute(text("DELETE FROM system_setting WHERE `key` IN ('check_type_categories', 'check_type_categories2', 'check_type_categories3', 'equipment_models', 'admin_items', 'check_type_items');"))
+            db.session.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
+            db.session.commit()
+            app.logger.info("[DB Cleanup] Successfully dropped check_type_category2, check_type_category3 and cleaned deprecated system_setting keys.")
+        except Exception as ex:
+            db.session.rollback()
+            app.logger.error(f"[DB Cleanup Error] {ex}")
 
         # [테이블 컬럼 보정]
         try:

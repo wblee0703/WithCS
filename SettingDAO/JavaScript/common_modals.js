@@ -928,16 +928,13 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             }
             detailType3Select.style.display = 'inline-block';
 
-            const equipKey = equip;
             const catData3 = JSON.parse(localStorage.getItem('check_type_categories3')) || {};
-            const commonKey3 = `COMMON::${selectedType}::${selectedDetailType}::${selectedDetailType2}`;
-            const key3 = `${equipKey}::${selectedType}::${selectedDetailType}::${selectedDetailType2}`;
             const defaultSubCategories3 = [
                 "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
                 "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
             ];
 
-            let subCategories3 = (catData3[commonKey3] && catData3[commonKey3].length > 0) ? catData3[commonKey3] : (catData3[key3] || defaultSubCategories3);
+            let subCategories3 = (catData3[selectedDetailType2] && catData3[selectedDetailType2].length > 0) ? catData3[selectedDetailType2] : (catData3['default'] || catData3[`COMMON::${selectedType}::${selectedDetailType}::${selectedDetailType2}`] || defaultSubCategories3);
 
             detailType3Select.innerHTML = subCategories3.map(s => `<option value="${s}">${s}</option>`).join('');
             buildDetailDropdown(item, site, equip);
@@ -954,17 +951,14 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             }
             if (detailType2Select) detailType2Select.style.display = 'inline-block';
 
-            const equipKey = equip;
             const catData2 = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
-            const commonKey2 = `COMMON::${selectedType}::${selectedDetailType}`;
-            const key2 = `${equipKey}::${selectedType}::${selectedDetailType}`;
             const defaultSubCategories2 = {
                 'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
                 'Hunting': ['Air Peak_헌팅', 'HPLC_헌팅', 'Flow_헌팅', 'WD_헌팅', 'BASE_헌팅', 'ETC_헌팅'],
                 'Data / Para 이상': ['REF_PORT', 'RT_흔들림', 'HPLC 압력변동', '에어 유량 변동', '미지피크_발생', '콤플렉스_피크', '프로그램_오류', '베이스 값 이상', 'Data 변동', 'Data 전송 이슈', '딜리버리펌프_이슈', '클리닝펌프_이슈', '용액 이슈'],
                 '기타': ['배수 펌프 이슈', '구동 이상']
             };
-            let subCategories2 = (catData2[commonKey2] && catData2[commonKey2].length > 0) ? catData2[commonKey2] : (catData2[key2] || (defaultSubCategories2[selectedDetailType] || []));
+            let subCategories2 = (catData2[selectedDetailType] && catData2[selectedDetailType].length > 0) ? catData2[selectedDetailType] : (catData2[`COMMON::${selectedType}::${selectedDetailType}`] || defaultSubCategories2[selectedDetailType] || []);
 
             detailType2Select.innerHTML = subCategories2.map(s => `<option value="${s}">${s}</option>`).join('');
             updateDetailType3s();
@@ -976,18 +970,15 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
         const updateDetailTypes = () => {
             const selectedType = typeSelect.value;
-            const equipKey = equip;
             const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
-            const commonKey = `COMMON::${selectedType}`;
-            const key = `${equipKey}::${selectedType}`;
             const defaultSubCategories = {
                 '정기': ['PM 점검'],
-                '비정기': ['Alarm', 'Hunting', 'Data / Para 이상', '기타'],
+                '비정기': ['BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상', '기타'],
                 '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', '파티클 필터 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
                 '용액제조': ['용액제조'],
                 '온라인점검': ['온라인점검']
             };
-            let subCategories = (catData[commonKey] && catData[commonKey].length > 0) ? catData[commonKey] : ((catData[key] && catData[key].length > 0) ? catData[key] : defaultSubCategories[selectedType] || []);
+            let subCategories = (catData[selectedType] && catData[selectedType].length > 0) ? catData[selectedType] : (catData[`COMMON::${selectedType}`] || defaultSubCategories[selectedType] || []);
 
             detailTypeSelect.innerHTML = subCategories.map(s => `<option value="${s}">${s}</option>`).join('');
 
@@ -1463,9 +1454,14 @@ function buildDetailDropdown(item, site, equip) {
             isDropdownMode = false;
         }
     } else {
-        let chkKey = `${equipKey}::${type}::${detailType}`;
-        availableItems = itemData[chkKey] || [];
-        if (availableItems.length > 0) isDropdownMode = true;
+        // [수정] check_type_items 대신 maint_log 이력 및 admin_items 데이터 활용
+        let historyItems = (detailData.maint || []).filter(m => m.type === type && m.detailType === detailType);
+        if (historyItems.length > 0) {
+            isDropdownMode = true;
+            availableItems = historyItems.map(m => ({ content: m.content, code: m.code || '' }));
+        } else {
+            availableItems = adminItems.map(mItem => ({ content: mItem.part, code: mItem.code }));
+        }
 
         if (availableItems.length === 0) {
             isDropdownMode = true;
@@ -2264,6 +2260,8 @@ async function saveDetailChanges() {
     const newEnd = getSplitDateTimeValue('detail-end');
     let newType = item.type;
     let newDetailType = item.detailType || '';
+    let newDetailType2 = item.detailType2 || '';
+    let newDetailType3 = item.detailType3 || '';
 
     if (newStart && newEnd) {
         if (new Date(newStart) > new Date(newEnd)) {
@@ -2283,10 +2281,10 @@ async function saveDetailChanges() {
             newDetailType = detailTypeSelect.value;
             if (newType === '비정기') {
                 if (detailType2Select && detailType2Select.style.display !== 'none' && detailType2Select.value) {
-                    newDetailType += ` > ${detailType2Select.value}`;
+                    newDetailType2 = detailType2Select.value;
                 }
                 if (detailType3Select && detailType3Select.style.display !== 'none' && detailType3Select.value) {
-                    newDetailType += ` > ${detailType3Select.value}`;
+                    newDetailType3 = detailType3Select.value;
                 }
             }
         }
@@ -2416,7 +2414,8 @@ async function saveDetailChanges() {
                 type: changedItem.type || '정기',
                 detailType: '일정변경',
                 detailType2: '',
-                content: `[변경] ${changedItem.code ? changedItem.code : changedItem.content}`,
+                detailType3: '',
+                content: `[변경] ${changedItem.content}`,
                 costType: changedItem.costType || '',
                 md: '0',
                 worker: workerInfo,
@@ -2650,6 +2649,8 @@ async function saveDetailChanges() {
                         const oldDate = existingItem.scheduledDate;
                         existingItem.type = newType;
                         existingItem.detailType = newDetailType;
+                        existingItem.detailType2 = newDetailType2;
+                        existingItem.detailType3 = newDetailType3;
                         existingItem.scheduledDate = targetDate;
                         existingItem.worker = newWorker;
                         existingItem.memo = newMemo;
@@ -2662,7 +2663,7 @@ async function saveDetailChanges() {
                         generateDateChangeLog(existingItem, oldDate, idx);
                     } else {
                         const newId = Date.now() + Math.floor(Math.random() * 10000) + idx;
-                        const newItem = { id: newId, type: newType, detailType: newDetailType, code: code, content: fullContent, spec: spec, date: "", period: (newType === '정기' ? period : null), scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: itemCost, costType: newCostType, originalLogId: item.originalLogId };
+                        const newItem = { id: newId, type: newType, detailType: newDetailType, detailType2: newDetailType2, detailType3: newDetailType3, code: code, content: fullContent, spec: spec, date: "", period: (newType === '정기' ? period : null), scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: itemCost, costType: newCostType, originalLogId: item.originalLogId };
                         data.maint.push(newItem);
                         remainingIds.push(newId);
                         payload.maint_upserts.push(newItem);
@@ -2691,6 +2692,8 @@ async function saveDetailChanges() {
                     existing.scheduledDate = targetDate;
                     existing.type = newType;
                     existing.detailType = newDetailType;
+                    existing.detailType2 = newDetailType2;
+                    existing.detailType3 = newDetailType3;
                     existing.worker = newWorker;
                     existing.memo = newMemo;
                     existing.md = newMd;
@@ -2701,7 +2704,7 @@ async function saveDetailChanges() {
                     generateDateChangeLog(existing, oldDate, 0);
                 } else {
                     const newId = Date.now() + Math.floor(Math.random() * 10000);
-                    const newItem = { id: newId, type: newType, detailType: newDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: '', costType: newCostType, originalLogId: item.originalLogId };
+                    const newItem = { id: newId, type: newType, detailType: newDetailType, detailType2: newDetailType2, detailType3: newDetailType3, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: '', costType: newCostType, originalLogId: item.originalLogId };
                     data.maint.push(newItem);
                     remainingIds.push(newId);
                     payload.maint_upserts.push(newItem);
@@ -2778,7 +2781,8 @@ async function saveDetailChanges() {
                         type: m.type || '정기',
                         detailType: '일정변경',
                         detailType2: '',
-                        content: `[변경] ${m.code ? m.code : m.content}`,
+                        detailType3: '',
+                        content: `[변경] ${m.content}`,
                         costType: m.costType || '',
                         md: '0',
                         worker: workerInfo,
@@ -4055,19 +4059,16 @@ window.updateRegisterDetailTypeOptions = function () {
         }
     }
 
-    const equipKey = rEquipSelect ? rEquipSelect.value : '';
     const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
-    const commonKey = `COMMON::${type}`;
-    const key = `${equipKey}::${type}`;
     const defaultSubCategories = {
         '정기': ['PM 점검'],
-        '비정기': ['Alarm', 'Hunting', 'Data / Para 이상', '기타'],
+        '비정기': ['BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상', '기타'],
         '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', '파티클 필터 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
         '용액제조': ['용액제조'],
         '온라인점검': ['온라인점검']
     };
 
-    let subCategories = (catData[commonKey] && catData[commonKey].length > 0) ? catData[commonKey] : ((catData[key] && catData[key].length > 0) ? catData[key] : defaultSubCategories[type] || []);
+    let subCategories = (catData[type] && catData[type].length > 0) ? catData[type] : (catData[`COMMON::${type}`] || defaultSubCategories[type] || []);
 
     if (subCategories.length === 0) {
         rDetailTypeSelect.innerHTML = '<option value="">세부구분 없음 (직접입력)</option>';
@@ -4105,11 +4106,7 @@ window.updateRegisterDetailType2Options = function () {
         return;
     }
     rDetailType2Select.disabled = false;
-    const equipKey = rEquipSelect ? rEquipSelect.value : '';
-
     const catData = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
-    const commonKey = `COMMON::${type}::${detailType}`;
-    const key = `${equipKey}::${type}::${detailType}`;
     const defaultSubCategories2 = {
         'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
         'Hunting': ['Air Peak_헌팅', 'HPLC_헌팅', 'Flow_헌팅', 'WD_헌팅', 'BASE_헌팅', 'ETC_헌팅'],
@@ -4117,10 +4114,7 @@ window.updateRegisterDetailType2Options = function () {
         '기타': ['배수 펌프 이슈', '구동 이상']
     };
 
-    let subCategories2 = (catData[commonKey] && catData[commonKey].length > 0) ? catData[commonKey] : (catData[key] || []);
-    if (subCategories2.length === 0 && type === '비정기' && defaultSubCategories2[detailType]) {
-        subCategories2 = [...defaultSubCategories2[detailType]];
-    }
+    let subCategories2 = (catData[detailType] && catData[detailType].length > 0) ? catData[detailType] : (catData[`COMMON::${type}::${detailType}`] || defaultSubCategories2[detailType] || []);
 
     if (subCategories2.length === 0) {
         rDetailType2Select.innerHTML = '<option value="" disabled selected hidden>세부 구분 없음</option>';
@@ -4155,17 +4149,13 @@ window.updateRegisterDetailType3Options = function () {
     }
     rDetailType3Select.style.display = 'inline-block';
     rDetailType3Select.disabled = false;
-    const equipKey = rEquipSelect ? rEquipSelect.value : '';
-
     const catData3 = JSON.parse(localStorage.getItem('check_type_categories3')) || {};
-    const commonKey3 = `COMMON::${type}::${detailType}::${detailType2}`;
-    const key3 = `${equipKey}::${type}::${detailType}::${detailType2}`;
     const defaultSubCategories3 = [
         "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
         "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
     ];
 
-    let subCategories3 = (catData3[commonKey3] && catData3[commonKey3].length > 0) ? catData3[commonKey3] : (catData3[key3] || defaultSubCategories3);
+    let subCategories3 = (catData3[detailType2] && catData3[detailType2].length > 0) ? catData3[detailType2] : (catData3['default'] || catData3[`COMMON::${type}::${detailType}::${detailType2}`] || defaultSubCategories3);
 
     if (subCategories3.length === 0) {
         rDetailType3Select.innerHTML = '<option value="" disabled selected hidden>세부 구분 없음</option>';
@@ -4307,9 +4297,9 @@ window.updateRegisterContentOptions = function () {
             items = [...matchedItems, ...otherItems].map(mItem => ({ content: mItem.part, code: mItem.code }));
         }
     } else {
-        const itemData = JSON.parse(localStorage.getItem('check_type_items')) || {};
-        const chkKey = `${equipKey}::${type}::${detailType}`;
-        items = itemData[chkKey] || [];
+        // [수정] check_type_items 대신 admin_items 및 maint_log 이력 데이터 활용
+        const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+        items = adminItems.map(mItem => ({ content: mItem.part, code: mItem.code }));
     }
 
     input.disabled = false;
@@ -4984,13 +4974,6 @@ async function confirmRegisterSchedule() {
         }
 
         let finalDetailType = detailType;
-        if (type === '비정기') {
-            if (detailType2 && detailType3) {
-                finalDetailType = `${detailType} > ${detailType2} > ${detailType3}`;
-            } else if (detailType2) {
-                finalDetailType = `${detailType} > ${detailType2}`;
-            }
-        }
 
         if (!window.currentAddWorkLogId && equip) {
             const targetParts = equip.split('::');
@@ -5098,7 +5081,9 @@ async function confirmRegisterSchedule() {
             const newMaintItem = {
                 id: newId,
                 type: type,
-                detailType: finalDetailType,
+                detailType: detailType,
+                detailType2: detailType2,
+                detailType3: detailType3,
                 code: finalCode,
                 content: finalContent,
                 spec: finalSpec,
@@ -5171,7 +5156,9 @@ async function confirmRegisterSchedule() {
             if (existingItem) {
                 const oldDate = existingItem.scheduledDate;
                 existingItem.scheduledDate = dateStr;
-                existingItem.detailType = finalDetailType;
+                existingItem.detailType = detailType;
+                existingItem.detailType2 = detailType2;
+                existingItem.detailType3 = detailType3;
                 if (costType) existingItem.costType = costType;
                 existingItem.md = md;
                 existingItem.worker = worker;

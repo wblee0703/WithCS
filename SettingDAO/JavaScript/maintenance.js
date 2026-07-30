@@ -1738,30 +1738,22 @@ window.updateLogAddWork = function (logId, newWorkContent) {
 
 // [추가] 세부구분 목록 가져오기 헬퍼 함수 (중복 제거)
 function getSubCategories(type) {
-    const equipKey = currentPath.equip;
     const catData = JSON.parse(localStorage.getItem('check_type_categories')) || {};
-    const commonKey = `COMMON::${type}`;
-    const key = `${equipKey}::${type}`;
     const defaultSubCategories = {
         '정기': ['PM 점검'],
-        '비정기': ['Alarm', 'Hunting', 'Data / Para 이상', '기타'],
+        '비정기': ['BM 점검', 'Alarm', 'Hunting', 'Data / Para 이상', '기타'],
         '고객대응': ['순회 점검', '프로그램 변경 / 평가', '설비 평가', '파티클 필터 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'],
         '용액제조': ['용액제조'],
         '온라인점검': ['온라인점검']
     };
 
-    let subCategories = (catData[commonKey] && catData[commonKey].length > 0) ? catData[commonKey] : catData[key];
-    if (!subCategories || subCategories.length === 0) {
-        subCategories = defaultSubCategories[type] || [];
-    }
+    let subCategories = (catData[type] && catData[type].length > 0) ? catData[type] : (catData[`COMMON::${type}`] || defaultSubCategories[type] || []);
     return subCategories;
 }
 
 // [추가] 세부구분 2 목록 가져오기 헬퍼 함수 (초기값 연동)
 function getSubCategories2(equipKey, type, detailType) {
     const catData = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
-    const commonKey = `COMMON::${type}::${detailType}`;
-    const key = `${equipKey}::${type}::${detailType}`;
     const defaultSubCategories2 = {
         'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
         'Hunting': ['Air Peak_헌팅', 'HPLC_헌팅', 'Flow_헌팅', 'WD_헌팅', 'BASE_헌팅', 'ETC_헌팅'],
@@ -1769,58 +1761,28 @@ function getSubCategories2(equipKey, type, detailType) {
         '기타': ['배수 펌프 이슈', '구동 이상']
     };
 
-    let subCategories2 = (catData[commonKey] && catData[commonKey].length > 0) ? catData[commonKey] : catData[key];
-    if (!subCategories2 || subCategories2.length === 0) {
-        if (type === '비정기' && defaultSubCategories2[detailType]) {
-            subCategories2 = [...defaultSubCategories2[detailType]];
-        } else {
-            subCategories2 = [];
-        }
-    }
+    let subCategories2 = (catData[detailType] && catData[detailType].length > 0) ? catData[detailType] : (catData[`COMMON::${type}::${detailType}`] || defaultSubCategories2[detailType] || []);
     return subCategories2;
 }
 
 // [추가] 점검 항목(내용) 목록 가져오기 헬퍼 함수 (중복 제거 및 호환성 유지)
 function getCheckTypeItems(type, detailType, detailType2 = '') {
     const equipKey = currentPath.equip;
-    const itemData = JSON.parse(localStorage.getItem('check_type_items')) || {};
-    let key;
-    if (type === '비정기') {
-        key = `${equipKey}::${type}::${detailType}::${detailType2}`;
-    } else {
-        key = `${equipKey}::${type}::${detailType}`;
-    }
-
+    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
     let rawItems = [];
-    if (itemData.hasOwnProperty(key)) {
-        rawItems = itemData[key] || [];
-    } else {
-        if (type === '비정기' && ['Alarm', 'Hunting', 'Data / Para 이상', '기타'].includes(detailType)) {
-            const defaultList = [
-                "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
-                "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
-            ];
-            rawItems = defaultList.map((content, index) => ({
-                id: Date.now() + index,
-                content: content
-            }));
-        } else if (detailType === 'PM 점검' ||type === '고객대응') {
-            const equipName = equipKey.split('::')[0];
-            const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-            let matchedItems = adminItems.filter(item => {
-                if (!item.equip) return false;
-                const equips = item.equip.split(',').map(e => e.trim());
-                return equips.includes(equipName);
-            });
-            if (matchedItems.length === 0) {
-                matchedItems = adminItems;
-            }
-            rawItems = matchedItems.map((mItem, index) => ({
-                id: Date.now() + index,
-                content: mItem.part
-            }));
-        }
-    }
+
+    const equipName = (equipKey || '').split('::')[0];
+    let matchedItems = (Array.isArray(adminItems) ? adminItems : []).filter(item => {
+        if (!item.equip) return false;
+        const equips = item.equip.split(',').map(e => e.trim());
+        return equips.includes(equipName);
+    });
+    if (matchedItems.length === 0 && Array.isArray(adminItems)) matchedItems = adminItems;
+
+    rawItems = matchedItems.map((mItem, index) => ({
+        id: Date.now() + index,
+        content: mItem.part
+    }));
 
     // 원본 데이터 오염을 막기 위해 복사본 생성
     const items = [...rawItems].map(item => ({ ...item }));
