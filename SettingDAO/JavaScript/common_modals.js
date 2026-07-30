@@ -1329,6 +1329,28 @@ function buildDetailDropdown(item, site, equip) {
         return;
     }
 
+    // [추가] 고객대응에서 '설비 정상화' 제외 다른 세부구분은 텍스트 직접 입력 모드로 설정 (물품 드롭다운 비노출)
+    if (type === '고객대응' && detailTypeFull !== '설비 정상화' && !detailTypeFull.startsWith('설비 정상화')) {
+        contentDiv.style.display = 'none';
+        contentInput.style.display = 'block';
+        contentInput.disabled = false;
+        if (contentInput.value === '[유상] Particle Filter') {
+            contentInput.value = (item && item.content && item.content !== '내용 없음' && item.content !== '[유상] Particle Filter') ? item.content : '';
+        } else if (!contentInput.value) {
+            contentInput.value = (item && item.content && item.content !== '내용 없음') ? item.content : '';
+        }
+
+        const pWrapper = document.getElementById('detail-edit-part-wrapper');
+        if (pWrapper) pWrapper.style.display = 'none';
+
+        document.querySelectorAll('#detail-content-flex-container').forEach(el => el.remove());
+        document.querySelectorAll('#detail-content-dropdown-wrapper').forEach(el => el.remove());
+        document.querySelectorAll('#detail-display-list-wrapper').forEach(el => el.remove());
+
+        if (typeof window.updateDetailDisplayList === 'function') window.updateDetailDisplayList();
+        return;
+    }
+
     let detailType = detailTypeFull;
     let detailType2 = '';
 
@@ -4170,6 +4192,27 @@ window.updateRegisterContentOptions = function () {
 
     if (!wrapper || !list || !trigger || !input) return;
 
+    const clearDropdownSelections = () => {
+        list.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
+        trigger.textContent = '항목 선택';
+        trigger.classList.remove('has-value');
+
+        const partList = document.getElementById('register-part-list');
+        if (partList) partList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
+        const partTrigger = document.getElementById('register-part-trigger');
+        if (partTrigger) {
+            partTrigger.textContent = '물품 선택';
+            partTrigger.classList.remove('has-value');
+        }
+    };
+
+    const clearTextInput = () => {
+        if (input && !input.disabled) {
+            input.value = '';
+            input.classList.remove('has-value');
+        }
+    };
+
     input.disabled = false; // 다른 세부구분 선택 시 비활성화 해제
 
     const type = rTypeSelect ? rTypeSelect.value : '';
@@ -4177,6 +4220,7 @@ window.updateRegisterContentOptions = function () {
 
     // [추가] 일정 등록 시 고객대응 > 파티클 필터 교체인 경우 내용 고정 및 비활성화
     if (type === '고객대응' && (detailType === '파티클 필터 교체' || detailType.startsWith('파티클 필터 교체'))) {
+        clearDropdownSelections();
         wrapper.style.display = 'none';
         input.style.display = 'block';
         input.value = '[유상] Particle Filter';
@@ -4187,14 +4231,29 @@ window.updateRegisterContentOptions = function () {
         return;
     }
 
+    // [추가] 고객대응 구분에서 '설비 정상화'를 제외한 세부구분은 텍스트 직접 입력 모드로 설정 (물품 선택 및 텍스트 초기화)
+    if (type === '고객대응' && detailType !== '설비 정상화' && !detailType.startsWith('설비 정상화')) {
+        clearDropdownSelections();
+        clearTextInput();
+        wrapper.style.display = 'none';
+        input.style.display = 'block';
+        input.disabled = false;
+        input.placeholder = '내용을 입력하세요';
+
+        const partWrapper = document.getElementById('register-part-wrapper');
+        if (partWrapper) partWrapper.style.display = 'none';
+        return;
+    }
+
     const equipKey = rEquipSelect ? rEquipSelect.value : '';
     const detailType2 = rDetailType2Select && rDetailType2Select.style.display !== 'none' ? rDetailType2Select.value : '';
 
     if (!type || (!detailType && !rDetailTypeSelect.disabled)) {
+        clearDropdownSelections();
+        clearTextInput();
         wrapper.style.display = 'none';
         input.style.display = 'block';
         input.placeholder = type ? '세부구분을 먼저 선택하세요' : '구분을 먼저 선택하세요';
-        input.value = '';
         input.disabled = true;
         return;
     }
@@ -4205,22 +4264,27 @@ window.updateRegisterContentOptions = function () {
     let items = [];
     if (type === '비정기') {
         if (!detailType2 || !detailType3) {
+            clearDropdownSelections();
+            clearTextInput();
             wrapper.style.display = 'none';
             input.style.display = 'block';
             input.placeholder = '세부 구분을 먼저 선택하세요';
-            input.value = '';
             input.disabled = true;
             return;
         }
 
         const isPartDropdownNeeded = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(detailType3);
         if (!isPartDropdownNeeded) {
+            clearDropdownSelections();
+            clearTextInput();
             wrapper.style.display = 'none';
             input.style.display = 'block';
             input.disabled = false;
             input.placeholder = '내용을 입력하세요';
             return;
         } else {
+            clearTextInput();
+            clearDropdownSelections();
             wrapper.style.display = 'block';
             input.style.display = 'none';
 
@@ -4235,8 +4299,9 @@ window.updateRegisterContentOptions = function () {
 
             const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
             let matchedItems = adminItems.filter(item => {
-                if (!item.equip) return false;
+                if (!item.equip || !item.equip.trim()) return true;
                 const equips = item.equip.split(',').map(e => e.trim());
+                if (equips.includes('전장비') || equips.includes('전 장비') || equips.includes('전체')) return true;
                 return targetEquipNames.some(tn => equips.includes(tn));
             });
             let otherItems = adminItems.filter(item => !matchedItems.includes(item));
@@ -4262,8 +4327,9 @@ window.updateRegisterContentOptions = function () {
 
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
         let matchedItems = adminItems.filter(item => {
-            if (!item.equip) return false;
+            if (!item.equip || !item.equip.trim()) return true;
             const equips = item.equip.split(',').map(e => e.trim());
+            if (equips.includes('전장비') || equips.includes('전 장비') || equips.includes('전체')) return true;
             return targetEquipNames.some(tn => equips.includes(tn));
         });
 
@@ -4287,6 +4353,7 @@ window.updateRegisterContentOptions = function () {
     });
 
     if (detailType) {
+        clearTextInput();
         wrapper.style.display = 'block';
         input.style.display = 'none';
         trigger.textContent = '항목 선택';
@@ -4333,6 +4400,8 @@ window.updateRegisterContentOptions = function () {
         let registeredSet = new Set();
         const poolMap = new Map();
 
+        const isPartMode = detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화') || (type === '비정기' && ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(detailType3));
+
         // 1. 유지관리 항목 (maint) 처리 - 가장 우선순위
         const processRegistered = (m) => {
             if (m.originalLogId && m.originalLogId != window.currentAddWorkLogId) return; // [수정] 다른 추가 작업의 자식 항목만 제외하고, 기본 물품은 제안 풀에 포함
@@ -4355,7 +4424,7 @@ window.updateRegisterContentOptions = function () {
             pureContent = pureContent.replace(/\[(유상|무상|기타)\]/g, '').trim();
             pureContent = pureContent.replace(/\s*-\s*$/, '').trim();
 
-            if (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화')) {
+            if (isPartMode) {
                 const partKeywords = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리', '파트 이상 (교체)', '파츠 이상 교체', '파트 이상', '파츠 이상'];
                 if (partKeywords.some(kw => pureContent === kw || pureContent.endsWith(kw))) return;
 
@@ -4447,7 +4516,7 @@ window.updateRegisterContentOptions = function () {
             }
         };
 
-        if (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화')) {
+        if (isPartMode) {
             detailData.maint.forEach(processRegistered);
         } else {
             detailData.maint.filter(m => m.type === type && m.detailType === detailType).forEach(processRegistered);
@@ -4466,14 +4535,15 @@ window.updateRegisterContentOptions = function () {
             }
         });
 
-        // 3. admin_items 처리 (PM, BM, Parts 교체인 경우)
-        if (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화')) {
+        // 3. admin_items 처리 (PM, BM, Parts 교체 또는 비정기 파트 이상 교체/수리인 경우)
+        if (isPartMode) {
             const allAdminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
             allAdminItems.forEach(a => {
-                if (!a.part) return;
+                if (!a.part && !a.code) return;
                 const baseName = a.code || a.part;
+                let partno = a.partno || '';
                 if (!poolMap.has(baseName)) {
-                    poolMap.set(baseName, { content: a.part, code: a.code, partno: a.partno || '', spec: '', displayValue: baseName });
+                    poolMap.set(baseName, { content: a.part || a.code, code: a.code || '', partno: partno, spec: '', displayValue: baseName });
                 }
             });
         }
@@ -4492,7 +4562,7 @@ window.updateRegisterContentOptions = function () {
             }
         });
 
-        let showAll = registeredItems.length === 0;
+        let showAll = registeredItems.length === 0 || isPartMode;
 
         const currentSelections = {};
 
@@ -4512,7 +4582,7 @@ window.updateRegisterContentOptions = function () {
             if (searchTerm) {
                 const kws = searchTerm.toLowerCase().split(/\s+/);
                 displayItems = [...registeredItems, ...otherItems].filter(item => {
-                    const txt = `${item.displayValue || ''} ${item.partno || ''}`.toLowerCase();
+                    const txt = `${item.displayValue || ''} ${item.content || ''} ${item.code || ''} ${item.partno || ''} ${item.spec || ''}`.toLowerCase();
                     return kws.every(kw => txt.includes(kw));
                 });
             }

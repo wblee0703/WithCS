@@ -2558,304 +2558,7 @@ def resolve_master_equip_id(equip_id):
         score = 0
         for tok in norm_tokens:
             if not tok: continue
-            if tok == c_site: score += 10
-            elif (tok in c_site or (c_site and c_site in tok)) and min(len(tok), len(c_site) if c_site else 0) >= 2: score += 5
-
-            # 모델명 / 약어 다원 매칭
-            if tok == c_name or (c_name_alias and tok == c_name_alias) or tok == c_model or (c_model_alias and tok == c_model_alias): score += 15
-            elif (tok in c_name or (c_name and c_name in tok)) or (c_name_alias and (tok in c_name_alias or c_name_alias in tok)) or (tok in c_model or (c_model and c_model in tok)): score += 8
-
-            if tok == c_cust: score += 15
-            elif (tok in c_cust or (c_cust and c_cust in tok)) and min(len(tok), len(c_cust) if c_cust else 0) >= 2: score += 8
-
-            if tok == c_serial and tok not in invalid_serials: score += 15
-            elif (tok in c_serial or (c_serial and c_serial in tok)) and tok not in invalid_serials and min(len(tok), len(c_serial) if c_serial else 0) >= 3: score += 8
-
-            if (tok and tok in c_id) or (c_id and c_id in tok): score += 5
-
-        if score > 0:
-            cand_scores.append((score, cand))
-
-    if cand_scores:
-        cand_scores.sort(key=lambda x: x[0], reverse=True)
-        best_score, best_cand = cand_scores[0]
-        app.logger.info(f"[Master Equip Resolve] '{equip_id}' -> '{best_cand.id}' (Score: {best_score})")
-        return best_cand.id
-
-    return clean_id
-
-# [추가] 유지관리 및 캘린더 장비 이력 100% DB 동기화 전용 트랜잭션 API
-@app.route('/api/history/transaction', methods=['POST'])
-@login_required
-@limiter.exempt
-def history_transaction():
-    data = request.json
-    equip_id = data.get('equip_id')
-    maint_upserts = data.get('maint_upserts', [])
-    maint_deletes = data.get('maint_deletes', [])
-    log_upserts = data.get('log_upserts', [])
-    log_deletes = data.get('log_deletes', [])
-
-    # equipment.id 직접 매핑
-    if equip_id:
-        equip_id = lookup_equipment_id(equip_id=equip_id)
-
-    # [Rule 3 준수] DB에 등록되지 않은 마스터 장비 데이터 자동 생성 차단
-    if equip_id and not Equipment.query.filter_by(id=equip_id).first():
-        app.logger.warning(f"[Rule 3] 등록되지 않은 마스터 장비 차단: {equip_id}")
-        return jsonify({'status': 'fail', 'message': f'등록되지 않은 마스터 장비 데이터입니다 ({equip_id}). ADMIN에서 장비를 수동으로 등록해주세요.'}), 400
-
-    try:
-        # 1. log_upserts (작업 완료 처리): 기존 '작업예정' 항목을 찾아 최종 수정 내용 반영 후 status만 '조치완료'로 변경
-        completed_orig_ids = set()
-        for l in log_upserts:
-            l_id = str(l['id'])
-            orig_id = str(l.get('originalLogId') or '').strip()
-            if orig_id and orig_id != 'None' and orig_id != '-':
-                completed_orig_ids.add(orig_id)
-
-            # 기존 '작업예정' 또는 기존 이력 항목 검색
-            item = None
-            if l_id:
-                item = LogItem.query.filter_by(id=l_id).first()
-            if not item and orig_id and orig_id != 'None' and orig_id != '-':
-                item = LogItem.query.filter_by(id=orig_id).first()
-            if not item and orig_id and orig_id != 'None' and orig_id != '-':
-                item = LogItem.query.filter_by(original_log_id=orig_id).first()
-            if not item:
-                # 예정일과 장비ID로 기존 작업예정 항목 대조
-                l_date = l.get('date', '')
-                if l_date:
-                    item = LogItem.query.filter(
-                        LogItem.equip_id == equip_id,
-                        (LogItem.scheduled_date == l_date) | (LogItem.date == l_date),
-                        LogItem.status == '작업예정'
-                    ).first()
-
-            if not item:
-                item = LogItem(id=l_id, equip_id=equip_id, status='조치완료')
-                db.session.add(item)
-            else:
-                # 기존 ID와 신규 ID 차이 시 이전 중복 항목 정리
-                if orig_id and orig_id != 'None' and orig_id != '-' and orig_id != item.id:
-                    LogItem.query.filter(LogItem.id == orig_id, LogItem._unique_id != item._unique_id).delete(synchronize_session=False)
-
-            item.equip_id = equip_id
-            item.status = '조치완료' # status만 작업예정 -> 조치완료로 전환
-            item.date = l.get('date', item.date)
-            item.type = l.get('type', item.type)
-            item.detail_type = l.get('detailType', item.detail_type)
-            item.detail_type2 = l.get('detailType2', item.detail_type2)
-            item.content = l.get('content', item.content)
-            item.add_work = l.get('addWork', item.add_work)
-            item.cost_type = l.get('costType', item.cost_type)
-            item.md = str(l.get('md', item.md))
-            item.worker = l.get('worker', item.worker)
-            item.memo = l.get('memo', item.memo)
-            item.start_time = l.get('startTime', item.start_time)
-            item.end_time = l.get('endTime', item.end_time)
-            item.is_issue_shared = bool(l.get('isIssueShared', item.is_issue_shared))
-            item.original_log_id = orig_id if orig_id else item.original_log_id
-            item.add_work_log_id = str(l.get('addWorkLogId')) if l.get('addWorkLogId') else item.add_work_log_id
-
-        # 2. maint_deletes 처리: 작업 완료로 승격된 항목은 삭제 대상에서 제외하고 불필요한 고아 예정건만 삭제
-        if maint_deletes:
-            actual_deletes = [d for d in maint_deletes if d not in completed_orig_ids]
-            if actual_deletes:
-                LogItem.query.filter(LogItem.id.in_(actual_deletes)).delete(synchronize_session=False)
-                try: MaintItem.query.filter(MaintItem.id.in_(actual_deletes)).delete(synchronize_session=False)
-                except: pass
-        
-        # 3. maint_upserts (작업 예정 생성/수정): 단일 maint_log 테이블 내 '작업예정' 항목 업서트
-        for idx, m in enumerate(maint_upserts):
-            m_id = str(m['id'])
-            item = LogItem.query.filter_by(id=m_id).first()
-            if not item:
-                item = LogItem(id=m_id, equip_id=equip_id, status='작업예정')
-                db.session.add(item)
-            item.equip_id = equip_id
-            item.sort_order = idx
-            item.status = '작업예정'
-            item.type = m.get('type', item.type)
-            item.detail_type = m.get('detailType', item.detail_type)
-            item.code = m.get('code', item.code)
-            item.content = m.get('content', item.content)
-            item.spec = m.get('spec', item.spec)
-            item.date = m.get('date', item.date)
-            item.period = str(m.get('period')) if m.get('period') is not None else item.period
-            item.scheduled_date = m.get('scheduledDate', item.scheduled_date)
-            item.cost_type = m.get('costType', item.cost_type)
-            item.worker = m.get('worker', item.worker)
-            item.md = str(m.get('md', item.md))
-            item.item_cost = m.get('itemCost', item.item_cost)
-            item.memo = m.get('memo', item.memo)
-            item.original_log_id = str(m.get('originalLogId')) if m.get('originalLogId') else item.original_log_id
-
-        if log_deletes:
-            LogItem.query.filter(LogItem.id.in_(log_deletes)).delete(synchronize_session=False)
-
-        db.session.commit()
-        return jsonify({"status": "success"})
-    except Exception as e:
-        db.session.rollback()
-        app.logger.error(f"History Transaction Error: {str(e)}", exc_info=True)
-        return jsonify({"status": "fail", "message": str(e)}), 500
-
-# [추가] 셋업 화면 데이터 전용 100% DB 동기화 API
-@app.route('/api/setup/sync_equip', methods=['POST'])
-@login_required
-@limiter.exempt
-def sync_setup_equip():
-    data = request.json
-    equip_id = data.get('equip_id')
-    details = data.get('details') # 리스트 형태 (없으면 None)
-    logs = data.get('logs') # 리스트 형태 (없으면 None)
-
-    try:
-        # [디버깅 로깅]
-        app.logger.warning(f"[Sync Setup] Received raw equip_id: {equip_id}")
-        
-        # URL 디코딩 및 한글 유니코드 자모분리 정규화
-        if equip_id:
-            import urllib.parse
-            import unicodedata
-            equip_id = urllib.parse.unquote(equip_id).strip()
-            equip_id = unicodedata.normalize('NFC', equip_id)
-            app.logger.warning(f"[Sync Setup] Unquoted and NFC normalized equip_id: {equip_id}")
-
-        # [수정] DB에 등록되지 않은 장비(Equipment)인 경우 임의 자동 생성을 금지하고 에러 처리
-        if equip_id:
-            equip = Equipment.query.filter_by(id=equip_id).first()
-            if not equip:
-                equip = Equipment.query.filter(Equipment.id.like(f"{equip_id}%")).first()
-            
-            # [디버깅 & 유사도 전파 복구 (자모분리 정규화, 공백 정규화 및 컴포넌트 단위 정밀 대조 적용)]
-            if not equip:
-                all_equips = Equipment.query.all()
-                all_ids = [eq.id for eq in all_equips]
-                app.logger.warning(f"[Sync Setup] Match failed. Available database equipment IDs: {all_ids}")
-                
-                import unicodedata
-                # 수신 ID 컴포넌트 분리 및 정규화
-                norm_equip_id = unicodedata.normalize('NFC', equip_id)
-                parts_equip = [unicodedata.normalize('NFC', p.strip()) for p in norm_equip_id.split('::')]
-                parts_equip_clean = [" ".join(p.split()) for p in parts_equip if p]
-                
-                # 메모리 상의 장비 객체들과 컴포넌트별 매칭 시도
-                for eq in all_equips:
-                    norm_db_id = unicodedata.normalize('NFC', eq.id)
-                    parts_db = [unicodedata.normalize('NFC', p.strip()) for p in norm_db_id.split('::')]
-                    parts_db_clean = [" ".join(p.split()) for p in parts_db if p]
-                    
-                    # 사업장, 모델, 시리얼 등 앞의 컴포넌트 단계들이 정확히 일치하는지 비교 (최소 3단계 대조)
-                    min_len = min(len(parts_equip_clean), len(parts_db_clean))
-                    if min_len >= 3:
-                        match = True
-                        for idx in range(min_len):
-                            # 만약 앞부분 3단계 중 하나라도 틀리면 매칭 실패
-                            if parts_equip_clean[idx] != parts_db_clean[idx]:
-                                match = False
-                                break
-                        if match:
-                            equip = eq
-                            app.logger.warning(f"[Sync Setup] Recovered match via components similarity: {eq.id}")
-                            break
-
-            if not equip:
-                return jsonify({"status": "fail", "message": f"등록되지 않은 장비 정보입니다. ADMIN 메뉴에서 해당 장비를 먼저 등록해주세요. (ID: {equip_id})"}), 400
-            
-            # 실제 DB에 저장된 정식 ID(예: Site::Model::Serial::CustName)로 덮어쓰기
-            equip_id = equip.id
-            app.logger.warning(f"[Sync Setup] Final resolved equip_id: {equip_id}")
-
-        if details is not None:
-            db.session.query(SetupDetail).filter_by(equip_id=equip_id).delete(synchronize_session=False)
-            for sd in details:
-                db.session.add(SetupDetail(
-                    id=str(sd.get('id', '')), equip_id=equip_id, category=sd.get('category', ''), content=sd.get('content', ''),
-                    start_date=sd.get('startDate', ''), date=sd.get('date', ''), est_days=str(sd.get('estDays', '1')),
-                    completed=bool(sd.get('completed', False)), exec_start_date=sd.get('execStartDate', ''), delay_reason=sd.get('delayReason', '')
-                ))
-        if logs is not None:
-            db.session.query(SetupLog).filter_by(equip_id=equip_id).delete(synchronize_session=False)
-            for sl in logs:
-                db.session.add(SetupLog(
-                    id=str(sl.get('id', '')), equip_id=equip_id, date=sl.get('date', ''), worker=sl.get('worker', ''),
-                    content=sl.get('content', ''), company=sl.get('company', ''), memo=sl.get('memo', ''),
-                    md=str(sl.get('md', '0')), parts=sl.get('parts', '')
-                ))
-        db.session.commit()
-        return jsonify({"status": "success"})
-    except Exception as e:
-        db.session.rollback()
-        app.logger.error(f"Setup DB Sync Error: {str(e)}", exc_info=True)
-        return jsonify({"status": "fail", "message": str(e)}), 500
-
-# [추가] Trouble 이력 리스트 조회 API
-@app.route('/api/trouble/list', methods=['GET'])
-@login_required
-def get_trouble_list():
-    troubles = TroubleLog.query.all()
-    # [수정] 작업 구분(type)이 '비정기'인 모든 완료 이력을 공백 제거하여 누락 없이 완벽하게 가져옴
-    log_items = LogItem.query.filter(db.func.trim(LogItem.type) == '비정기').all()
-    
-    equips = {eq.id: eq for eq in Equipment.query.all()}
-    
-    def get_eq_info(equip_id):
-        if equip_id:
-            eq = equips.get(equip_id)
-            cust_name = eq.cust_equip_name if eq and eq.cust_equip_name else ""
-            if eq:
-                equip_name = f"{eq.name}"
-                if cust_name:
-                    equip_name += f" [{cust_name}]"
-                elif eq.serial:
-                    equip_name += f" ({eq.serial})"
-                return eq.site_name, equip_name
-            else:
-                parts = equip_id.split('::')
-                return parts[0], parts[1] if len(parts) > 1 else ""
-        return "", ""
-
-    result = []
-    for t in troubles:
-        site_name, equip_name = get_eq_info(t.equip_id)
-
-        # [복구] 기존에 잘못된 포맷(파이썬 딕셔너리 문자열)으로 저장된 경우 JSON 포맷으로 강제 변환
-        safe_content = t.content
-        if safe_content and safe_content.startswith("{") and "'" in safe_content and '"' not in safe_content:
-            safe_content = safe_content.replace("'", '"')
-        if not safe_content or str(safe_content).strip() in ('', '{}', '-'):
-            if t.memo and str(t.memo).strip() and str(t.memo).strip() != '-':
-                safe_content = json.dumps({'situation': str(t.memo).strip()}, ensure_ascii=False)
-            
-        result.append({
-            "id": t.id,
-            "source": "trouble",
-            "equip_id": t.equip_id,
-            "site": site_name,
-            "equip": equip_name,
-            "occur_date": t.occur_date,
-            "action_date": getattr(t, 'action_date', ''),
-            "type": "-",
-            "detail_type": "-",
-            "detail_type2": "-",
-            "check_item": "-",
-            "content": safe_content,
-            "memo": getattr(t, 'memo', ''), # [추가] 진행 경과 반환
-            "worker": t.worker,
-            "status": t.status,
-            "image_data": t.image_data,
-            "group_key": f"trouble_{t.id}"
-        })
-        
-    for l in log_items:
-        site_name, equip_name = get_eq_info(l.equip_id)
-        orig_id = str(getattr(l, 'original_log_id', '') or '').strip()
-        add_work_id = str(getattr(l, 'add_work_log_id', '') or '').strip()
-        l_id = str(l.id or '').strip()
-
-        date_str = str(l.date or getattr(l, 'trouble_occur_date', '') or '').strip()[:10]
+            if tok == c_site:        date_str = str(l.date or getattr(l, 'trouble_occur_date', '') or '').strip()[:10]
         clean_memo = str(l.memo or '').strip()
         clean_worker = str(l.worker or '').strip()
         clean_dt = str(l.detail_type or '').strip()
@@ -2897,7 +2600,6 @@ def get_trouble_list():
         })
         
     grouped = {}
-    # [수정] 최초작업(original_log_id가 없는 항목)이 대표 항목으로 무조건 우선 등록되도록 정렬
     def item_priority(x):
         is_child = 1 if (str(x.get('original_log_id') or '').strip() != '') else 0
         return is_child
@@ -2923,7 +2625,6 @@ def get_trouble_list():
                 elif item['content'] not in grouped[key]['content']:
                     grouped[key]['content'] += f" | {item['content']}"
             
-            # [추가] 병합 시 이미지 데이터 우선 보존
             if item.get('image_data'):
                 if not grouped[key].get('image_data'):
                     grouped[key]['image_data'] = item['image_data']
@@ -2940,10 +2641,8 @@ def get_trouble_list():
         if not item['content'] or str(item['content']).strip() == "":
             item['content'] = "-"
             
-        # [추가] memo 병합 처리
         raw_items = item.get('_raw_items', [])
         if len(raw_items) > 1:
-            # 부모(original_log_id 가 없는 것)를 최우선, 나머지는 날짜순 정렬
             def sort_key(x):
                 has_parent = 1 if (x.get('original_log_id') or '') != '' else 0
                 date_val = x.get('action_date') or x.get('occur_date') or ''
@@ -2956,12 +2655,10 @@ def get_trouble_list():
             for idx, r_item in enumerate(raw_items):
                 m_val = str(r_item.get('memo') or '').strip()
                 if m_val and m_val != '-':
-                    # 작업일 추출
                     date_val = r_item.get('action_date') or r_item.get('occur_date') or ''
                     if len(date_val) >= 10:
                         date_val = date_val[:10]
                     
-                    # 작업자 정보 추출
                     worker_val = str(r_item.get('worker') or '').strip()
                     if worker_val and worker_val != '-':
                         date_suffix = f" ({date_val} / {worker_val})" if date_val else f" ({worker_val})"
@@ -2981,7 +2678,6 @@ def get_trouble_list():
             else:
                 item['memo'] = ""
         else:
-            # 단일 건일 때도 memo가 존재하면 <최초> 포맷 부여
             m_val = str(item.get('memo') or '').strip()
             if m_val and m_val != '-' and not m_val.startswith('<최초>') and not m_val.startswith('<추가'):
                 date_val = item.get('action_date') or item.get('occur_date') or ''
@@ -3058,7 +2754,7 @@ def trouble_crud():
                             log.content = json.dumps(c_val, ensure_ascii=False)
                         else:
                             log.content = str(c_val) if c_val is not None else ''
-                    if 'memo' in payload: log.memo = payload.get('memo') # 세부 내용 (우측 메모장)
+                    if 'memo' in payload: log.memo = payload.get('memo')
                     if 'worker' in payload: log.worker = payload.get('worker')
                     if 'status' in payload: log.status = payload.get('status')
                     if 'image_data' in payload: log.image_data = payload.get('image_data')
@@ -3205,189 +2901,24 @@ def get_additional_works():
 # ------------------------------------------------------------------------------
 # 8. 앱 초기화 및 실행 (Initialization & Main Execution)
 # ------------------------------------------------------------------------------
-def migrate_db_to_four_fields():
-    """
-    기존 3개 필드 식별 장비(Site::Name::Serial) 데이터를 4개 필드 식별 장비(Site::Name::Serial::CustEquipName) 형태로 마이그레이션합니다.
-    또한, 부모 장비가 없는 고아(Orphaned) 이력 데이터를 해당 사업장의 '기타(ETC)' 장비로 재매핑하여 복구합니다.
-    """
-    try:
-        # 1. 기타(ETC) 장비 ID 규격 변경 (Site::기타(ETC) -> Site::기타(ETC)::::)
-        equips = Equipment.query.all()
-        # 외래키 무결성 제약조건으로 인한 에러 방지를 위해 connection 수준에서 임시로 FOREIGN KEY 검사를 끕니다. (MySQL 및 SQLite 호환)
-        try:
-            db.session.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
-            db.session.commit()
-        except:
-            try:
-                db.session.execute(text("PRAGMA foreign_keys = OFF;"))
-                db.session.commit()
-            except:
-                pass
-        
-        # 2. 고아 데이터(Orphaned data)를 찾기 위한 기존 장비 목록 집합
-        existing_equip_ids = {eq.id for eq in equips}
-        
-        # 3. 각 장비 순회하며 ID 마이그레이션 수행
-        for eq in equips:
-            cust_equip_name = eq.cust_equip_name or ""
-            
-            # 기존 ID 형식 파싱
-            site_prefix = f"{eq.site_name}::"
-            eq_name_serial = eq.id[len(site_prefix):] if str(eq.id).startswith(site_prefix) else eq.id
-            parts = eq_name_serial.split('::')
-            e_name = parts[0] if len(parts) > 0 else ""
-            e_serial = parts[1] if len(parts) > 1 else ""
-            
-            # 이미 4가지 항목이 적용되어 key가 'Name::Serial::CustEquipName' 구조인 경우 (parts 크기가 3) 스킵
-            if len(parts) >= 3:
-                continue
-                
-            # 신규 ID 생성 (Site::Name::Serial::CustEquipName)
-            if e_name == "기타(ETC)":
-                new_eq_id = f"{eq.site_name}::기타(ETC)::::"
-            else:
-                new_eq_id = f"{eq.site_name}::{e_name}::{e_serial}::{cust_equip_name}"
-                
-            old_eq_id = eq.id
-            if old_eq_id != new_eq_id:
-                # 대상 신규 ID(new_eq_id)가 이미 존재하는지 검사
-                exists = db.session.execute(
-                    text("SELECT 1 FROM equipment WHERE id=:new_id"),
-                    {"new_id": new_eq_id}
-                ).fetchone()
-
-                if exists:
-                    # 1. 이미 존재한다면 하위 연관 데이터들의 equip_id만 new_eq_id로 업데이트(병합)
-                    db.session.execute(
-                        text("UPDATE maint_item SET equip_id=:new_id WHERE equip_id=:old_id"),
-                        {"new_id": new_eq_id, "old_id": old_eq_id}
-                    )
-                    db.session.execute(
-                        text("UPDATE maint_log SET equip_id=:new_id WHERE equip_id=:old_id"),
-                        {"new_id": new_eq_id, "old_id": old_eq_id}
-                    )
-                    db.session.execute(
-                        text("UPDATE setup_detail SET equip_id=:new_id WHERE equip_id=:old_id"),
-                        {"new_id": new_eq_id, "old_id": old_eq_id}
-                    )
-                    db.session.execute(
-                        text("UPDATE setup_log SET equip_id=:new_id WHERE equip_id=:old_id"),
-                        {"new_id": new_eq_id, "old_id": old_eq_id}
-                    )
-                    db.session.execute(
-                        text("UPDATE trouble_log SET equip_id=:new_id WHERE equip_id=:old_id"),
-                        {"new_id": new_eq_id, "old_id": old_eq_id}
-                    )
-                    # 2. 기존 중복된 구버전 부모 레코드 삭제
-                    db.session.execute(
-                        text("DELETE FROM equipment WHERE id=:old_id"),
-                        {"old_id": old_eq_id}
-                    )
-                else:
-                    # 존재하지 않는다면 정상적으로 부모 및 하위 레코드 ID 갱신
-                    db.session.execute(
-                        text("UPDATE equipment SET id=:new_id WHERE id=:old_id"),
-                        {"new_id": new_eq_id, "old_id": old_eq_id}
-                    )
-                    db.session.execute(
-                        text("UPDATE maint_item SET equip_id=:new_id WHERE equip_id=:old_id"),
-                        {"new_id": new_eq_id, "old_id": old_eq_id}
-                    )
-                    db.session.execute(
-                        text("UPDATE maint_log SET equip_id=:new_id WHERE equip_id=:old_id"),
-                        {"new_id": new_eq_id, "old_id": old_eq_id}
-                    )
-                    db.session.execute(
-                        text("UPDATE setup_detail SET equip_id=:new_id WHERE equip_id=:old_id"),
-                        {"new_id": new_eq_id, "old_id": old_eq_id}
-                    )
-                    db.session.execute(
-                        text("UPDATE setup_log SET equip_id=:new_id WHERE equip_id=:old_id"),
-                        {"new_id": new_eq_id, "old_id": old_eq_id}
-                    )
-                    db.session.execute(
-                        text("UPDATE trouble_log SET equip_id=:new_id WHERE equip_id=:old_id"),
-                        {"new_id": new_eq_id, "old_id": old_eq_id}
-                    )
-                db.session.commit()
-                
-        # 4. 고아 데이터 복구 (MaintItem, LogItem, SetupDetail, SetupLog, TroubleLog 등)
-        updated_equips = Equipment.query.all()
-        updated_equip_ids = {eq.id for eq in updated_equips}
-        
-        def recover_orphans(model_class, table_name):
-            orphans = model_class.query.filter(~model_class.equip_id.in_(list(updated_equip_ids))).all()
-            for orphan in orphans:
-                old_id = orphan.equip_id
-                parts = old_id.split('::') if old_id else []
-                site_name = parts[0] if len(parts) > 0 else "기타사업장"
-                fallback_id = f"{site_name}::기타(ETC)::::"
-                
-                if not Equipment.query.filter_by(id=fallback_id).first():
-                    if not Site.query.filter_by(name=site_name).first():
-                        db.session.add(Site(name=site_name, buildings='[]'))
-                        db.session.flush()
-                    db.session.add(Equipment(id=fallback_id, site_name=site_name, name="기타(ETC)", serial=""))
-                    db.session.flush()
-                    updated_equip_ids.add(fallback_id)
-                
-                db.session.execute(
-                    text(f"UPDATE {table_name} SET equip_id=:fallback_id WHERE equip_id=:old_id"),
-                    {"fallback_id": fallback_id, "old_id": old_id}
-                )
-            db.session.commit()
-            
-        recover_orphans(MaintItem, "maint_item")
-        recover_orphans(LogItem, "maint_log")
-        recover_orphans(SetupDetail, "setup_detail")
-        recover_orphans(SetupLog, "setup_log")
-        recover_orphans(TroubleLog, "trouble_log")
-        
-        try:
-            db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
-            db.session.commit()
-        except:
-            try:
-                db.session.execute(text("PRAGMA foreign_keys = ON;"))
-                db.session.commit()
-            except:
-                pass
-        print("[*] DB Migration to 4-field equipment matching completed successfully.")
-    except Exception as e:
-        db.session.rollback()
-        try:
-            db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
-            db.session.commit()
-        except:
-            try:
-                db.session.execute(text("PRAGMA foreign_keys = ON;"))
-                db.session.commit()
-            except:
-                pass
-        print(f"[x] DB Migration Error: {str(e)}")
-        app.logger.error(f"DB Migration Error: {str(e)}", exc_info=True)
 
 def init_db():
     with app.app_context():
         db.create_all()
-        
-        # [마이그레이션] 기존 site 테이블에 group 컬럼 추가 (사업장 구분)
+
+        # [테이블 컬럼 보정]
         try:
             db.session.execute(text('ALTER TABLE site ADD COLUMN `group` VARCHAR(50) DEFAULT \'기타사업장\''))
             db.session.commit()
         except:
             db.session.rollback()
 
-        # [마이그레이션] 기존 user 테이블에 site 컬럼 추가 (DB 업데이트)
         try:
-            # [개선] 예약어 충돌 방지를 위해 테이블명을 큰따옴표로 감쌈
             db.session.execute(text('ALTER TABLE `user` ADD COLUMN site VARCHAR(100)'))
             db.session.commit()
         except:
             db.session.rollback()
 
-            
-        # [마이그레이션] 기존 user 테이블에 추가 정보 컬럼 추가
         try:
             db.session.execute(text('ALTER TABLE `user` ADD COLUMN department VARCHAR(100)'))
             db.session.execute(text('ALTER TABLE `user` ADD COLUMN position VARCHAR(100)'))
@@ -3395,8 +2926,7 @@ def init_db():
             db.session.commit()
         except:
             db.session.rollback()
-        
-        # [마이그레이션] 비밀번호 변경일(보안) 컬럼 추가
+
         try:
             db.session.execute(text('ALTER TABLE `user` ADD COLUMN pw_changed_at DATETIME'))
             db.session.commit()
@@ -3404,36 +2934,31 @@ def init_db():
             db.session.commit()
         except:
             db.session.rollback()
-        
-        # [마이그레이션] 시스템 로그 테이블에 작업자(worker) 컬럼 추가
+
         try:
             db.session.execute(text('ALTER TABLE system_log ADD COLUMN worker VARCHAR(100)'))
             db.session.commit()
         except:
             db.session.rollback()
-        
-        # [마이그레이션] maint_item 테이블에 spec 컬럼 추가
+
         try:
             db.session.execute(text('ALTER TABLE maint_item ADD COLUMN spec VARCHAR(255)'))
             db.session.commit()
         except:
             db.session.rollback()
 
-        # [마이그레이션] maint_item 테이블에 original_log_id 컬럼 추가 (추가 작업 DB 연동 누락 수정)
         try:
             db.session.execute(text('ALTER TABLE maint_item ADD COLUMN original_log_id VARCHAR(50)'))
             db.session.commit()
         except:
             db.session.rollback()
 
-        # [마이그레이션] maint_item 테이블에 sort_order 컬럼 추가 (드래그 순서 영구 유지용)
         try:
             db.session.execute(text('ALTER TABLE maint_item ADD COLUMN sort_order INT DEFAULT 0'))
             db.session.commit()
         except:
             db.session.rollback()
-            
-        # [마이그레이션] LogItem 테이블에 startTime, endTime 및 통합 컬럼 추가
+
         maint_log_cols = [
             ('start_time', 'VARCHAR(50) DEFAULT ""'),
             ('end_time', 'VARCHAR(50) DEFAULT ""'),
@@ -3452,475 +2977,54 @@ def init_db():
             except Exception:
                 db.session.rollback()
 
-        # [마이그레이션] 기존 log_item / maint_item 레코드를 maint_log 단일 테이블로 이전 및 보정
-        try:
-            # 0. 기존 maint_log 레코드 중 status가 NULL이거나 비어있는 항목 상태 정정
-            try:
-                db.session.execute(text("""
-                    UPDATE maint_log 
-                    SET status = CASE 
-                        WHEN (trouble_occur_date IS NOT NULL AND trouble_occur_date != '' AND trouble_occur_date != '-') OR memo LIKE '<최초>%' OR memo LIKE '<추가%' OR (start_time IS NOT NULL AND start_time != '') THEN '조치완료'
-                        ELSE '작업예정'
-                    END
-                    WHERE status IS NULL OR status = '' OR status = '-'
-                """))
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
-
-            # 1. 기존 log_item 테이블이 DB에 존재할 경우 maint_log 로 데이터 이동
-            try:
-                log_table_check = db.session.execute(text("SHOW TABLES LIKE 'log_item'")).fetchone()
-                if log_table_check:
-                    db.session.execute(text("""
-                        INSERT IGNORE INTO maint_log (id, equip_id, date, type, detail_type, detail_type2, content, add_work, cost_type, md, worker, memo, start_time, end_time, trouble_details, trouble_occur_date, is_issue_shared, original_log_id, add_work_log_id, image_data, status)
-                        SELECT id, equip_id, date, type, detail_type, detail_type2, content, add_work, cost_type, md, worker, memo, start_time, end_time, trouble_details, trouble_occur_date, is_issue_shared, original_log_id, add_work_log_id, image_data, '조치완료'
-                        FROM log_item
-                    """))
-                    db.session.commit()
-                    app.logger.warning("[Migration] log_item -> maint_log 데이터 이동 완료!")
-            except Exception as ex_log_copy:
-                db.session.rollback()
-                app.logger.error(f"[Migration Error] log_item 이동 예외: {str(ex_log_copy)}")
-
-            # 2. 기존 maint_item 테이블이 DB에 존재할 경우 컬럼 동적 대조 후 데이터 이동 및 상태 보정
-            try:
-                maint_table_check = db.session.execute(text("SHOW TABLES LIKE 'maint_item'")).fetchone()
-                if maint_table_check:
-                    cols_info = db.session.execute(text("SHOW COLUMNS FROM maint_item")).fetchall()
-                    col_names = [c[0].lower() for c in cols_info]
-                    maint_rows = db.session.execute(text("SELECT * FROM maint_item")).fetchall()
-
-                    migrated_count = 0
-                    for r in maint_rows:
-                        row_dict = dict(zip(col_names, r))
-                        m_id = str(row_dict.get('id') or '')
-                        if not m_id: continue
-                        m_date = str(row_dict.get('date') or '').strip()
-                        m_trouble_date = str(row_dict.get('trouble_occur_date') or '').strip()
-                        m_memo = str(row_dict.get('memo') or '').strip()
-                        m_status = str(row_dict.get('status') or '').strip()
-                        eq_id_val = str(row_dict.get('equip_id') or '')
-                        content_val = str(row_dict.get('content') or '')
-                        sched_date_val = str(row_dict.get('scheduled_date') or '')
-
-                        # 판별: explicit status -> trouble_occur_date -> memo의 <최초>/<추가> 태그 순으로 완료여부 판별
-                        if m_status in ('작업예정', '조치완료'):
-                            calc_status = m_status
-                        elif m_trouble_date and m_trouble_date != '-':
-                            calc_status = '조치완료'
-                        elif m_memo.startswith('<최초>') or m_memo.startswith('<추가'):
-                            calc_status = '조치완료'
-                        else:
-                            calc_status = '작업예정'
-
-                        # 1차: ID로 대조
-                        target_id = m_id
-                        exists = LogItem.query.filter_by(id=target_id).first()
-                        
-                        # ID 충돌 시 (log_item 출신 항목과 ID가 겹치고 내용/장비가 다를 때) 신규 고유 ID 부여
-                        if exists and (exists.content != content_val or exists.equip_id != eq_id_val):
-                            target_id = f"maint_{m_id}"
-                            exists = LogItem.query.filter_by(id=target_id).first()
-
-                        if not exists:
-                            new_item = LogItem(
-                                id=target_id,
-                                equip_id=eq_id_val,
-                                type=str(row_dict.get('type') or ''),
-                                detail_type=str(row_dict.get('detail_type') or ''),
-                                code=str(row_dict.get('code') or ''),
-                                content=content_val,
-                                spec=str(row_dict.get('spec') or ''),
-                                date=m_date,
-                                period=str(row_dict.get('period') or ''),
-                                scheduled_date=sched_date_val,
-                                cost_type=str(row_dict.get('cost_type') or ''),
-                                worker=str(row_dict.get('worker') or ''),
-                                md=str(row_dict.get('md') or ''),
-                                item_cost=str(row_dict.get('item_cost') or ''),
-                                memo=m_memo,
-                                trouble_details=row_dict.get('trouble_details'),
-                                trouble_occur_date=m_trouble_date,
-                                original_log_id=str(row_dict.get('original_log_id') or '') if row_dict.get('original_log_id') else None,
-                                image_data=row_dict.get('image_data'),
-                                sort_order=int(row_dict.get('sort_order') or 0),
-                                status=calc_status
-                            )
-                            db.session.add(new_item)
-                            migrated_count += 1
-                        else:
-                            if exists.status != calc_status:
-                                exists.status = calc_status
-                                migrated_count += 1
-
-                    db.session.commit()
-                    app.logger.warning(f"[Migration] maint_item -> maint_log {migrated_count}건 마이그레이션 및 상태 분류 완료!")
-            except Exception as ex_maint_copy:
-                db.session.rollback()
-                app.logger.error(f"[Migration Error] maint_item 이동 예외: {str(ex_maint_copy)}", exc_info=True)
-
-            # 3. 추가 보정: original_log_id가 없거나 트러블/메모 기록 태그가 없는 순수 점검 계획건을 '작업예정'으로 보정
-            try:
-                db.session.execute(text("UPDATE maint_log SET status = '작업예정' WHERE (status IS NULL OR status = '' OR status = '조치완료') AND (start_time IS NULL OR start_time = '') AND (end_time IS NULL OR end_time = '') AND (trouble_occur_date IS NULL OR trouble_occur_date = '' OR trouble_occur_date = '-') AND (memo NOT LIKE '<최초>%' AND memo NOT LIKE '<추가%') AND (scheduled_date IS NOT NULL AND scheduled_date != '') AND (original_log_id IS NULL OR original_log_id = '' OR original_log_id = '-')"))
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
-
-            # 4. [통합 정리] 동일 작업 세션 내 다중 개별 물품 항목들을 log_item 스타일(1줄 쉼표 구분)로 통합 정리
-            try:
-                all_logs = LogItem.query.all()
-                grouped_map = {}
-                for l in all_logs:
-                    orig_id_str = str(l.original_log_id or '').strip()
-                    if orig_id_str and orig_id_str != 'None' and orig_id_str != '-':
-                        group_key = f"orig_{l.equip_id}_{orig_id_str}"
-                    else:
-                        s_date = (l.scheduled_date or '').strip()
-                        d_date = (l.date or '').strip()
-                        group_key = f"grp_{l.equip_id}_{s_date}_{d_date}_{l.type}_{l.detail_type}_{l.worker}_{l.status}"
-                    
-                    grouped_map.setdefault(group_key, []).append(l)
-
-                consolidated_count = 0
-                for group_key, items in grouped_map.items():
-                    if len(items) > 1:
-                        primary = items[0]
-                        contents = []
-                        codes = []
-                        specs = []
-                        memos = []
-
-                        for it in items:
-                            if it.content and it.content.strip():
-                                for sub in [c.strip() for c in it.content.split(',') if c.strip()]:
-                                    if sub not in contents:
-                                        contents.append(sub)
-                            if hasattr(it, 'code') and it.code and it.code.strip():
-                                for sub in [c.strip() for c in it.code.split(',') if c.strip()]:
-                                    if sub not in codes:
-                                        codes.append(sub)
-                            if hasattr(it, 'spec') and it.spec and it.spec.strip():
-                                for sub in [c.strip() for c in it.spec.strip().split(',') if c.strip()]:
-                                    if sub not in specs:
-                                        specs.append(sub)
-                            if it.memo and it.memo.strip() and it.memo.strip() not in memos:
-                                memos.append(it.memo.strip())
-
-                        primary.content = ", ".join(contents)
-                        if codes: primary.code = ", ".join(codes)
-                        if specs: primary.spec = ", ".join(specs)
-                        if memos: primary.memo = "\n".join(memos)
-
-                        for duplicate_item in items[1:]:
-                            db.session.delete(duplicate_item)
-                            consolidated_count += 1
-
-                if consolidated_count > 0:
-                    db.session.commit()
-                    app.logger.warning(f"[Migration] maint_log 개별 물품 {consolidated_count}건을 1줄 쉼표(,) 구분형으로 통합 정리 완료!")
-            except Exception as ex_cons:
-                db.session.rollback()
-                app.logger.error(f"[Migration Error] 다중 물품 1줄 통합 오류: {str(ex_cons)}")
-        except Exception as ex_mig:
-            db.session.rollback()
-            
-        # [마이그레이션] trouble_log 테이블에 사진 컬럼 추가
         try:
             db.session.execute(text('ALTER TABLE trouble_log ADD COLUMN image_data LONGTEXT'))
             db.session.commit()
         except:
             db.session.rollback()
-            try:
-                db.session.execute(text('ALTER TABLE trouble_log ADD COLUMN image_data TEXT'))
-                db.session.commit()
-            except:
-                db.session.rollback()
-            
-        # [마이그레이션] trouble_log 테이블에 memo 컬럼 추가 (진행 경과 저장용)
+
         try:
             db.session.execute(text('ALTER TABLE trouble_log ADD COLUMN memo TEXT DEFAULT ""'))
             db.session.commit()
         except:
             db.session.rollback()
-            
-        # [마이그레이션] LogItem, MaintItem 테이블에 사진 컬럼 추가
+
         try:
             db.session.execute(text('ALTER TABLE maint_log ADD COLUMN image_data LONGTEXT'))
             db.session.commit()
         except:
             db.session.rollback()
-            try:
-                db.session.execute(text('ALTER TABLE maint_log ADD COLUMN image_data TEXT'))
-                db.session.commit()
-            except: pass
-        try:
-            db.session.execute(text('ALTER TABLE maint_item ADD COLUMN image_data LONGTEXT'))
-            db.session.commit()
-        except:
-            db.session.rollback()
-            try:
-                db.session.execute(text('ALTER TABLE maint_item ADD COLUMN image_data TEXT'))
-                db.session.commit()
-            except: pass
-            
-        # [마이그레이션] setup_log 테이블에 md, parts 컬럼 추가 (데이터 유실 방지)
+
         try:
             db.session.execute(text('ALTER TABLE setup_log ADD COLUMN md VARCHAR(50) DEFAULT "0"'))
             db.session.execute(text('ALTER TABLE setup_log ADD COLUMN parts TEXT DEFAULT ""'))
             db.session.commit()
         except:
             db.session.rollback()
-        
-        # [마이그레이션] LogItem, MaintItem 테이블에 trouble_details 컬럼 추가
+
         try:
             db.session.execute(text('ALTER TABLE maint_log ADD COLUMN trouble_details TEXT'))
             db.session.commit()
         except: pass
-        try:
-            db.session.execute(text('ALTER TABLE maint_item ADD COLUMN trouble_details TEXT'))
-            db.session.commit()
-        except: pass
-        
-        # [마이그레이션] trouble_log 테이블에 action_date 컬럼 추가 및 복사
+
         try:
             db.session.execute(text('ALTER TABLE trouble_log ADD COLUMN action_date VARCHAR(50) DEFAULT ""'))
             db.session.commit()
-            db.session.execute(text('UPDATE trouble_log SET action_date = SUBSTR(occur_date, 1, 10) WHERE action_date = "" OR action_date IS NULL'))
-            db.session.commit()
         except:
             db.session.rollback()
-            
-        # [마이그레이션] LogItem, MaintItem 테이블에 trouble_occur_date 컬럼 추가
+
         try:
             db.session.execute(text('ALTER TABLE maint_log ADD COLUMN trouble_occur_date VARCHAR(50) DEFAULT ""'))
             db.session.commit()
         except: pass
+
         try:
-            db.session.execute(text('ALTER TABLE maint_item ADD COLUMN trouble_occur_date VARCHAR(50) DEFAULT ""'))
+            db.session.execute(text("ALTER TABLE equipment ADD COLUMN cust_equip_name VARCHAR(100) DEFAULT ''"))
             db.session.commit()
-        except: pass
-
-        # [마이그레이션] 고객대응 > 파티클 필터 교체 작업의 내용을 '[유상] Particle Filter' 로 치환
-        try:
-            maint_filter_items = MaintItem.query.filter(
-                (MaintItem.type == '고객대응') &
-                ((MaintItem.detail_type == '파티클 필터 교체') | (MaintItem.detail_type.like('파티클 필터 교체%')))
-            ).all()
-            maint_changed = False
-            for item in maint_filter_items:
-                if (item.content or '').strip() != '[유상] Particle Filter' or item.item_cost != '유상':
-                    item.content = '[유상] Particle Filter'
-                    item.item_cost = '유상'
-                    maint_changed = True
-
-            log_filter_items = LogItem.query.filter(
-                (LogItem.type == '고객대응') &
-                ((LogItem.detail_type == '파티클 필터 교체') | (LogItem.detail_type.like('파티클 필터 교체%')))
-            ).all()
-            log_changed = False
-            for item in log_filter_items:
-                if (item.content or '').strip() != '[유상] Particle Filter':
-                    item.content = '[유상] Particle Filter'
-                    log_changed = True
-
-            if maint_changed or log_changed:
-                db.session.commit()
-                app.logger.warning("[Migration] 고객대응 > 파티클 필터 교체 데이터의 내용을 '[유상] Particle Filter'로 일괄 마이그레이션 완료!")
-        except Exception as ex:
+        except:
             db.session.rollback()
-            app.logger.error(f"[Migration] 고객대응 > 파티클 필터 교체 마이그레이션 실패: {str(ex)}")
 
-        # [마이그레이션] PM 점검(정기) 작업인데 내용(content)에 '파트 이상 교체' 등의 라벨이 붙어 있는 데이터 정제
-        try:
-            import re
-            clean_pattern = re.compile(r'^(?:파트\s*이상\s*\(?(?:교체|수리)\)?|물품\s*이상\s*\(?(?:교체|수리)\)?|파츠\s*이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자\s*이상)\s*-\s*(.*)$', re.IGNORECASE)
-            
-            # 1. MaintItem 테이블 정제
-            maint_items = MaintItem.query.filter(
-                (MaintItem.type == '정기') | 
-                (MaintItem.detail_type == 'PM 점검') | 
-                (MaintItem.detail_type.like('PM 점검%'))
-            ).all()
-            maint_updated = False
-            for item in maint_items:
-                if item.content:
-                    parts = item.content.split(',')
-                    cleaned_parts = []
-                    for part in parts:
-                        part_str = part.strip()
-                        match = clean_pattern.match(part_str)
-                        if match:
-                            cleaned_parts.append(match.group(1).strip())
-                        else:
-                            cleaned_parts.append(part_str)
-                    new_content = ", ".join(cleaned_parts)
-                    if new_content != item.content:
-                        item.content = new_content
-                        maint_updated = True
-            
-            # 2. LogItem 테이블 정제
-            log_items = LogItem.query.filter(
-                (LogItem.type == '정기') | 
-                (LogItem.detail_type == 'PM 점검') | 
-                (LogItem.detail_type.like('PM 점검%'))
-            ).all()
-            log_updated = False
-            for item in log_items:
-                if item.content:
-                    parts = item.content.split(',')
-                    cleaned_parts = []
-                    for part in parts:
-                        part_str = part.strip()
-                        match = clean_pattern.match(part_str)
-                        if match:
-                            cleaned_parts.append(match.group(1).strip())
-                        else:
-                            cleaned_parts.append(part_str)
-                    new_content = ", ".join(cleaned_parts)
-                    if new_content != item.content:
-                        item.content = new_content
-                        log_updated = True
-            
-            if maint_updated or log_updated:
-                db.session.commit()
-                app.logger.warning("[Migration] PM 점검 정기 데이터 내용에서 '파트 이상 교체' 접두사 라벨 일괄 제거 완료!")
-        except Exception as ex:
-            db.session.rollback()
-            app.logger.error(f"[Migration] PM 점검 정기 데이터 라벨 정제 실패: {str(ex)}")
-
-        # [마이그레이션] 유지관리 물품(MaintItem) 중복 데이터 제거 및 최근 시작일(date) 기준으로 단일화
-        try:
-            import re
-            all_maint = MaintItem.query.all()
-            groups = {}
-            for item in all_maint:
-                eq_id = (item.equip_id or '').strip()
-                content = (item.content or '').strip()
-                # 비용처리 대괄호 제거
-                clean_content = re.sub(r'\[.*?\]\s*', '', content).replace(' ', '').lower()
-                clean_code = (item.code or '').replace(' ', '').lower()
-                clean_spec = (item.spec or '').replace(' ', '').lower()
-                
-                # 물품(부품)이 지정되지 않은 일반 작업 일지는 중복 제거 대상에서 제외
-                if not clean_code and (not clean_content or clean_content == '내용없음'):
-                    continue
-
-                key = (eq_id, clean_content, clean_code, clean_spec)
-                groups.setdefault(key, []).append(item)
-                
-            maint_deleted_count = 0
-            for key, items in groups.items():
-                if len(items) > 1:
-                    # 날짜가 가장 최근인 것 탐색
-                    # date 필드 정렬을 위해 빈 문자열은 가장 이전 날짜로 취급
-                    def get_sort_key(it):
-                        d_val = (it.date or '').strip()
-                        s_val = (it.scheduled_date or '').strip()
-                        return (d_val or '1970-01-01', s_val or '1970-01-01', it._unique_id)
-                    
-                    sorted_items = sorted(items, key=get_sort_key, reverse=True)
-                    keep_item = sorted_items[0]
-                    delete_items = sorted_items[1:]
-                    
-                    # 지워질 항목 중에 '정기' 타입이 있다면 keep_item을 '정기'로 보존
-                    has_regular = any(it.type == '정기' or it.detail_type == 'PM 점검' for it in items)
-                    if has_regular:
-                        keep_item.type = '정기'
-                        if not keep_item.detail_type or 'PM 점검' not in keep_item.detail_type:
-                            keep_item.detail_type = 'PM 점검'
-                    
-                    for dit in delete_items:
-                        db.session.delete(dit)
-                        maint_deleted_count += 1
-            
-            if maint_deleted_count > 0:
-                db.session.commit()
-                app.logger.warning(f"[Migration] 중복된 유지관리 물품 {maint_deleted_count}개 감지 및 최신 교체일 기준으로 통합 완료!")
-        except Exception as maint_ex:
-            db.session.rollback()
-            app.logger.error(f"[Migration] 유지관리 물품 중복 정제 오류: {str(maint_ex)}")
-
-        # [마이그레이션] 비정기 세부구분 3 분리 및 작업 세부내용(memo) 파트 추가 정보 content 복원 마이그레이션
-        try:
-            import re
-            sub3_list = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상", "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"]
-            log_migrated = 0
-            maint_migrated = 0
-
-            def process_irregular_item(item):
-                changed = False
-
-                dt = (item.detail_type or '').strip()
-                cnt = (item.content or '').strip()
-                memo = (item.memo or '').strip()
-                dt_parts = [p.strip() for p in dt.split(' > ') if p.strip()]
-
-                found_sub3 = None
-                prefix_pattern = re.compile(r'^(파트 이상 교체|파트 이상 수리|용액 용자 이상|현장 이슈|PC 이상|작업자 실수|통신 이상|프로그램 이상|단순조치|기타)\s*[-:]\s*')
-                m = prefix_pattern.match(cnt)
-                if m:
-                    found_sub3 = m.group(1)
-                    cnt = prefix_pattern.sub('', cnt).strip()
-                    changed = True
-
-                # memo에서 추가 파트 정보 추출
-                memo_parts_str = ''
-                if '[추가 파트]' in memo:
-                    memo_parts_str = memo.split('[추가 파트]')[1].strip()
-
-                # content가 비어버렸거나 단순 키워드만 있었던 경우 memo의 파트 정보 채우기
-                if not cnt or cnt in sub3_list or cnt == '내용 없음':
-                    if memo_parts_str:
-                        cnt = memo_parts_str
-                        changed = True
-                    elif memo:
-                        m_lines = [l.strip() for l in memo.split('\n') if l.strip()]
-                        p_lines = [l for l in m_lines if re.search(r'\[(유상|무상|기타)\]', l) or any(c in l.lower() for c in ['valve', 'pump', 'filter', 'sensor', 'column', 'module', 'kit', '펌프', '필터', '밸브', '센서', '컬럼', '모듈', '키트', '파츠', '파트'])]
-                        if p_lines:
-                            cnt = ", ".join(p_lines)
-                            changed = True
-
-                if item.type == '비정기':
-                    if len(dt_parts) == 2:
-                        if not found_sub3:
-                            for s3 in sub3_list:
-                                if s3 in (item.content or ''):
-                                    found_sub3 = s3
-                                    break
-                        if not found_sub3:
-                            found_sub3 = '파트 이상 교체' if memo_parts_str else '기타'
-                        dt_parts.append(found_sub3)
-                        item.detail_type = ' > '.join(dt_parts)
-                        changed = True
-                    elif len(dt_parts) >= 3 and found_sub3:
-                        dt_parts[2] = found_sub3
-                        item.detail_type = ' > '.join(dt_parts)
-                        changed = True
-
-                if item.content != cnt and cnt:
-                    item.content = cnt
-                    changed = True
-
-                return changed
-
-            for log in LogItem.query.all():
-                if process_irregular_item(log):
-                    log_migrated += 1
-
-            for maint in MaintItem.query.all():
-                if process_irregular_item(maint):
-                    maint_migrated += 1
-
-            if log_migrated > 0 or maint_migrated > 0:
-                db.session.commit()
-                app.logger.warning(f"[Migration] 작업 완료/예정 세부내용 파트 content 복원 마이그레이션 완료! (LogItem: {log_migrated}개, MaintItem: {maint_migrated}개)")
-        except Exception as ex_mig:
-            db.session.rollback()
-            app.logger.error(f"[Migration] 비정기 세부내용 마이그레이션 오류: {str(ex_mig)}")
-
-        # [DB 마이그레이션] 사용자 데이터
-        # Admin 초기 계정 생성
+        # Admin 계정 생성 및 권한 부여
         admin_id = os.environ.get('APP_ADMIN_ID', 'admin')
         admin_user = User.query.filter_by(id=admin_id).first()
         if not admin_user:
@@ -3928,176 +3032,11 @@ def init_db():
             admin_user = User(id=admin_id, pw=generate_password_hash(admin_pw, method='pbkdf2:sha256:50000'), role='superadmin', pw_changed_at=get_utc_now())
             db.session.add(admin_user)
             db.session.commit()
-            app.logger.warning(f"Initial Admin PW generated in DB: {admin_pw}")
-            print(f"[*] Super Admin Account Created -> ID: {admin_id} / PW: {admin_pw}")
         elif admin_user.role == 'admin':
             admin_user.role = 'superadmin'
             db.session.commit()
-            print(f"[*] Admin Account '{admin_id}' elevated to 'superadmin'")
-            
 
-        # [수정] 가비아 서버(Python 3.9)에서 지원하지 않는 scrypt 해시를 pbkdf2로 강제 변환 및 평문 비밀번호 해싱
-        all_users = User.query.all()
-        for u in all_users:
-            if u.pw and ('$' not in u.pw or u.pw.startswith('scrypt:') or '1000000' in u.pw):
-                if u.id == os.environ.get('APP_ADMIN_ID', 'admin') or u.id == 'admin':
-                    fallback_pw = os.environ.get('APP_ADMIN_PW', 'admin')
-                elif u.id == os.environ.get('APP_USER_ID', 'user') or u.id == 'user':
-                    fallback_pw = os.environ.get('APP_USER_PW', 'user')
-                else:
-                    fallback_pw = 'withtech123!'
-                u.pw = generate_password_hash(fallback_pw, method='pbkdf2:sha256:50000')
-                db.session.commit() # [수정] DB 연결 끊김 방지를 위해 1명 변환될 때마다 즉시 저장
-
-        # [마이그레이션] Equipment 4필드 ID(site::name::serial::cust_name) 및 시리얼 정정 RAW SQL 강제 실행
-        try:
-            # 1. 컬럼 추가 (없으면 추가)
-            try:
-                db.session.execute(text("ALTER TABLE equipment ADD COLUMN cust_equip_name VARCHAR(100) DEFAULT ''"))
-                db.session.commit()
-            except:
-                db.session.rollback()
-
-            # 2. RAW SQL 기반 4필드 ID 및 시리얼 번호 정정
-            raw_eqs = db.session.execute(text("SELECT id, site_name, name, serial, cust_equip_name FROM equipment")).fetchall()
-            migrated_count = 0
-            
-            for row in raw_eqs:
-                old_id = str(row[0] or '')
-                site_val = str(row[1] or '').strip()
-                name_val = str(row[2] or '').strip()
-                old_serial = str(row[3] or '')
-                old_cust = str(row[4] or '')
-                serial_val = old_serial.replace('?', '-').replace('"', '').strip()
-                cust_val = old_cust.replace('?', '-').strip()
-
-                parts = old_id.split('::')
-                if len(parts) >= 4 and parts[3]:
-                    if not cust_val:
-                        cust_val = parts[3].replace('?', '-').strip()
-
-                # equipment 검색
-                if not cust_val:
-                    s_row = db.session.execute(text("SELECT cust_equip_name FROM equipment WHERE id=:o OR id LIKE :l"), {'o': old_id, 'l': f"%::{serial_val}%"}).fetchone()
-                    if s_row and s_row[0]:
-                        cust_val = str(s_row[0]).replace('?', '-').strip()
-
-                if name_val == '기타(ETC)':
-                    new_id = f"{site_val}::기타(ETC)::::"
-                else:
-                    new_id = f"{site_val}::{name_val}::{serial_val}::{cust_val}"
-
-                if old_id != new_id or old_serial != serial_val or old_cust != cust_val:
-                    try: db.session.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
-                    except: pass
-
-                    if old_id != new_id:
-                        # 중복 새 ID 레코드가 있다면 삭제
-                        db.session.execute(text("DELETE FROM equipment WHERE id=:n AND id!=:o"), {'n': new_id, 'o': old_id})
-                        
-                        db.session.execute(text("UPDATE maint_item SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-                        db.session.execute(text("UPDATE maint_log SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-                        db.session.execute(text("UPDATE setup_detail SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-                        db.session.execute(text("UPDATE setup_log SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-                        db.session.execute(text("UPDATE trouble_log SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-
-                    db.session.execute(text("UPDATE equipment SET id=:n, serial=:s, cust_equip_name=:c WHERE id=:o"), {
-                        'n': new_id,
-                        's': serial_val,
-                        'c': cust_val,
-                        'o': old_id
-                    })
-
-                    try: db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
-                    except: pass
-
-                    migrated_count += 1
-
-            if migrated_count > 0:
-                db.session.commit()
-                # app.logger.warning(f"[Migration] Equipment 4필드 규격(site::name::serial::cust_name) {migrated_count}개 정정 완료!")
-        except Exception as ex_eq:
-            db.session.rollback()
-            app.logger.error(f"[Migration] Equipment 마이그레이션 오류: {str(ex_eq)}")
-
-        # [마이그레이션] Equipment 모델명(장비 토큰)을 약어로 정규화 (equipment.id / equipment.name)
-        try:
-            full_to_abbr, _ = get_equipment_model_alias_maps()
-            if full_to_abbr:
-                raw_eqs = db.session.execute(text("SELECT id, name FROM equipment")).fetchall()
-                migrated = 0
-
-                def _normalize_key(val):
-                    import re as _re
-                    if not val:
-                        return ""
-                    return _re.sub(r'[^a-zA-Z0-9가-힣]', '', str(val)).lower()
-
-                for row in raw_eqs:
-                    old_id = str(row[0] or '')
-                    name_val = str(row[1] or '').strip()
-                    if not old_id or not name_val:
-                        continue
-                    if name_val == '기타(ETC)':
-                        continue
-
-                    parts = old_id.split('::')
-                    if len(parts) < 4:
-                        continue
-
-                    site_val = str(parts[0] or '').strip()
-                    name_tok = str(parts[1] or '').strip()
-                    serial_val = str(parts[2] or '').replace('?', '-').replace('"', '').strip()
-                    cust_val = str(parts[3] or '').replace('?', '-').strip()
-
-                    if name_tok == '기타(ETC)':
-                        continue
-
-                    new_name_tok = full_to_abbr.get(_normalize_key(name_tok))
-                    if not new_name_tok or new_name_tok == name_tok:
-                        continue
-
-                    new_id = f"{site_val}::{new_name_tok}::{serial_val}::{cust_val}"
-
-                    try:
-                        db.session.execute(text("SET FOREIGN_KEY_CHECKS=0;"))
-                    except:
-                        pass
-
-                    # PK 중복 방지
-                    db.session.execute(
-                        text("DELETE FROM equipment WHERE id=:n AND id!=:o"),
-                        {'n': new_id, 'o': old_id}
-                    )
-
-                    # 하위 테이블 FK 동기화
-                    db.session.execute(text("UPDATE maint_item SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-                    db.session.execute(text("UPDATE maint_log SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-                    db.session.execute(text("UPDATE setup_detail SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-                    db.session.execute(text("UPDATE setup_log SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-                    db.session.execute(text("UPDATE trouble_log SET equip_id=:n WHERE equip_id=:o"), {'n': new_id, 'o': old_id})
-
-                    # 부모 테이블 PK & name 업데이트
-                    db.session.execute(
-                        text("UPDATE equipment SET id=:n, name=:nm WHERE id=:o"),
-                        {'n': new_id, 'nm': new_name_tok, 'o': old_id}
-                    )
-
-                    try:
-                        db.session.execute(text("SET FOREIGN_KEY_CHECKS=1;"))
-                    except:
-                        pass
-
-                    migrated += 1
-
-                if migrated:
-                    db.session.commit()
-                    # app.logger.warning(f"[Migration] Equipment 약어 모델 정규화 완료: {migrated}개")
-        except Exception as ex_alias:
-            db.session.rollback()
-            app.logger.error(f"[Migration] Equipment 약어 모델 정규화 오류: {str(ex_alias)}")
-
-        # [마이그레이션] 기존 사업장에 '기타(ETC)' 장비 자동 추가 (신규 4필드 규격)
+        # 사업장별 '기타(ETC)' 장비 자동 추가
         try:
             sites = Site.query.all()
             for site in sites:
@@ -4105,216 +3044,7 @@ def init_db():
                 if not Equipment.query.filter_by(id=etc_id).first():
                     db.session.add(Equipment(id=etc_id, site_name=site.name, name="기타(ETC)", serial="", cust_equip_name=""))
             db.session.commit()
-        except Exception as e:
-            db.session.rollback()
-            app.logger.error(f"ETC Equipment Migration Error: {str(e)}")
-
-        # [마이그레이션] 점검 구분 전장비 고객대응의 'Parts 교체' 와 '파티클 필터 교체' 위치 변경 및 'Parts 교체' 삭제
-        try:
-            setting = SystemSetting.query.filter_by(key='check_type_categories').first()
-            if setting and setting.value:
-                import json
-                cat_data = json.loads(setting.value)
-                updated = False
-                for k, lst in cat_data.items():
-                    if k.endswith('::고객대응') and isinstance(lst, list):
-                        has_parts = 'Parts 교체' in lst
-                        has_particle = '파티클 필터 교체' in lst
-                        
-                        if has_parts and has_particle:
-                            idx_parts = lst.index('Parts 교체')
-                            idx_particle = lst.index('파티클 필터 교체')
-                            lst[idx_parts], lst[idx_particle] = lst[idx_particle], lst[idx_parts]
-                            lst.remove('Parts 교체')
-                            updated = True
-                        elif has_parts:
-                            idx_parts = lst.index('Parts 교체')
-                            lst[idx_parts] = '파티클 필터 교체'
-                            updated = True
-                        elif has_particle and 'Parts 교체' in lst:
-                            lst.remove('Parts 교체')
-                            updated = True
-                
-                if updated:
-                    setting.value = json.dumps(cat_data, ensure_ascii=False)
-                    db.session.commit()
-                    app.logger.warning("[Migration] 점검 구분 관리 고객대응 내 '파티클 필터 교체' 및 'Parts 교체' 일괄 정리 완료!")
-        except Exception as ex:
-            db.session.rollback()
-            app.logger.error(f"[Migration] 점검 구분 관리 마이그레이션 실패: {str(ex)}")
-
-        # [마이그레이션] 텍스트 직접 입력 건 중 잘못 부착된 파트 이상 교체 및 비용 처리 라벨 일괄 제거 (마스터 물품 건 및 Rule 8 파티클 필터 예외)
-        try:
-            import re
-            master_item_codes = set()
-            master_rows = db.session.execute(text("SELECT code_name, item_name FROM item")).fetchall()
-            for r in master_rows:
-                if r[0]:
-                    code_str = str(r[0]).strip()
-                    if code_str:
-                        master_item_codes.add(code_str)
-                if len(r) > 1 and r[1]:
-                    name_str = str(r[1]).strip()
-                    if name_str:
-                        master_item_codes.add(name_str)
-
-            def _clean_content_labels(content_str):
-                if not content_str:
-                    return content_str
-                c = str(content_str).strip()
-
-                # Rule 8: 고객대응 > 파티클 필터 교체 관련 고정 예외
-                if c == '[유상] Particle Filter' or c.startswith('[유상] Particle Filter'):
-                    return '[유상] Particle Filter'
-
-                match_part = re.match(r'^(?:파트 이상 교체|파트 이상 수리|용액 용자 이상)\s*-\s*\[(.*?)\]\s*(.*)$', c)
-                match_cost = re.match(r'^\[(.*?)\]\s*(.*)$', c)
-
-                rest = None
-                if match_part:
-                    rest = match_part.group(2).strip()
-                elif match_cost:
-                    rest = match_cost.group(2).strip()
-
-                if rest is not None:
-                    tokens = rest.split()
-                    first_word = tokens[0].strip() if tokens else rest
-                    if first_word not in master_item_codes:
-                        return rest
-
-                return c
-
-            cleaned_log_count = 0
-            cleaned_maint_count = 0
-
-            logs = LogItem.query.all()
-            for log in logs:
-                cleaned = _clean_content_labels(log.content)
-                if cleaned != log.content:
-                    log.content = cleaned
-                    cleaned_log_count += 1
-
-            maints = MaintItem.query.all()
-            for maint in maints:
-                cleaned = _clean_content_labels(maint.content)
-                if cleaned != maint.content:
-                    maint.content = cleaned
-                    cleaned_maint_count += 1
-
-            if cleaned_log_count > 0 or cleaned_maint_count > 0:
-                db.session.commit()
-        except Exception as ex_clean:
-            db.session.rollback()
-
-        # [마이그레이션] TroubleLog, LogItem, MaintItem 중 기록여부(발생일시)가 존재하는 항목의 DB 내용 보정
-        try:
-            troubles = TroubleLog.query.all()
-            t_updated = 0
-            for t in troubles:
-                c_str = str(t.content or '').strip()
-                is_empty = False
-                if not c_str or c_str == '-' or c_str == '{}':
-                    is_empty = True
-                elif c_str.startswith('{'):
-                    try:
-                        parsed = json.loads(c_str)
-                        if not (parsed.get('situation') or parsed.get('symptom') or parsed.get('cause') or parsed.get('action') or parsed.get('prevention') or parsed.get('trouble_memo')):
-                            is_empty = True
-                    except Exception:
-                        pass
-
-                if is_empty and t.memo and str(t.memo).strip() and str(t.memo).strip() != '-':
-                    memo_str = str(t.memo).strip()
-                    t.content = json.dumps({
-                        'situation': memo_str,
-                        'symptom': '',
-                        'cause': '',
-                        'action': '',
-                        'prevention': ''
-                    }, ensure_ascii=False)
-                    t_updated += 1
-
-            l_updated = 0
-            logs = LogItem.query.all()
-            for l in logs:
-                c_str = str(l.trouble_details or '').strip()
-                is_empty = False
-                if not c_str or c_str == '-' or c_str == '{}':
-                    is_empty = True
-                elif c_str.startswith('{'):
-                    try:
-                        parsed = json.loads(c_str)
-                        if not (parsed.get('situation') or parsed.get('symptom') or parsed.get('cause') or parsed.get('action') or parsed.get('prevention') or parsed.get('trouble_memo')):
-                            is_empty = True
-                    except Exception:
-                        pass
-
-                text_val = str(l.memo or l.content or '').strip()
-                if is_empty and text_val and text_val != '-':
-                    l.trouble_details = json.dumps({
-                        'situation': text_val,
-                        'symptom': '',
-                        'cause': '',
-                        'action': '',
-                        'prevention': ''
-                    }, ensure_ascii=False)
-                    l_updated += 1
-
-            m_updated = 0
-            maints = MaintItem.query.all()
-            for m in maints:
-                c_str = str(m.trouble_details or '').strip()
-                is_empty = False
-                if not c_str or c_str == '-' or c_str == '{}':
-                    is_empty = True
-                elif c_str.startswith('{'):
-                    try:
-                        parsed = json.loads(c_str)
-                        if not (parsed.get('situation') or parsed.get('symptom') or parsed.get('cause') or parsed.get('action') or parsed.get('prevention') or parsed.get('trouble_memo')):
-                            is_empty = True
-                    except Exception:
-                        pass
-
-                text_val = str(m.memo or m.content or '').strip()
-                if is_empty and text_val and text_val != '-':
-                    m.trouble_details = json.dumps({
-                        'situation': text_val,
-                        'symptom': '',
-                        'cause': '',
-                        'action': '',
-                        'prevention': ''
-                    }, ensure_ascii=False)
-                    m_updated += 1
-
-            if t_updated > 0 or l_updated > 0 or m_updated > 0:
-                db.session.commit()
-                app.logger.warning(f"[Migration] Trouble 데이터 DB 기록 보정 완료 (Trouble: {t_updated}건, Log: {l_updated}건, Maint: {m_updated}건)")
-        except Exception as ex_t:
-            db.session.rollback()
-
-        # [마이그레이션] equipment 테이블 내 delivery_date 및 warranty_start의 점(.)을 하이픈(-)으로 일괄 보정
-        try:
-            eq_updated = 0
-            equips = Equipment.query.all()
-            for eq in equips:
-                changed = False
-                if eq.delivery_date and '.' in str(eq.delivery_date):
-                    new_val = str(eq.delivery_date).replace('.', '-').replace(' ', '').rstrip('-')
-                    if new_val != eq.delivery_date:
-                        eq.delivery_date = new_val
-                        changed = True
-                if eq.warranty_start and '.' in str(eq.warranty_start):
-                    new_val = str(eq.warranty_start).replace('.', '-').replace(' ', '').rstrip('-')
-                    if new_val != eq.warranty_start:
-                        eq.warranty_start = new_val
-                        changed = True
-                if changed:
-                    eq_updated += 1
-
-            if eq_updated > 0:
-                db.session.commit()
-                app.logger.warning(f"[Migration] Equipment 날짜 포맷 점(.) -> 하이픈(-) {eq_updated}건 보정 완료!")
-        except Exception as ex_eq_date:
+        except Exception:
             db.session.rollback()
 
 # ------------------------------------------------------------------------------
