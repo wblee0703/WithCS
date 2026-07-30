@@ -2558,12 +2558,284 @@ def resolve_master_equip_id(equip_id):
         score = 0
         for tok in norm_tokens:
             if not tok: continue
-            if tok == c_site:        date_str = str(l.date or getattr(l, 'trouble_occur_date', '') or '').strip()[:10]
+            if tok == c_site: score += 10
+            elif (tok in c_site or (c_site and c_site in tok)) and min(len(tok), len(c_site) if c_site else 0) >= 2: score += 5
+
+            if tok == c_name or (c_name_alias and tok == c_name_alias) or tok == c_model or (c_model_alias and tok == c_model_alias): score += 15
+            elif (tok in c_name or (c_name and c_name in tok)) or (c_name_alias and (tok in c_name_alias or c_name_alias in tok)) or (tok in c_model or (c_model and c_model in tok)): score += 8
+
+            if tok == c_cust: score += 15
+            elif (tok in c_cust or (c_cust and c_cust in tok)) and min(len(tok), len(c_cust) if c_cust else 0) >= 2: score += 8
+
+            if tok == c_serial and tok not in invalid_serials: score += 15
+            elif (tok in c_serial or (c_serial and c_serial in tok)) and tok not in invalid_serials and min(len(tok), len(c_serial) if c_serial else 0) >= 3: score += 8
+
+            if (tok and tok in c_id) or (c_id and c_id in tok): score += 5
+
+        if score > 0:
+            cand_scores.append((score, cand))
+
+    if cand_scores:
+        cand_scores.sort(key=lambda x: x[0], reverse=True)
+        best_score, best_cand = cand_scores[0]
+        app.logger.info(f"[Master Equip Resolve] '{equip_id}' -> '{best_cand.id}' (Score: {best_score})")
+        return best_cand.id
+
+    return clean_id
+
+# [추가] 유지관리 및 캘린더 장비 이력 100% DB 동기화 전용 트랜잭션 API
+@app.route('/api/history/transaction', methods=['POST'])
+@login_required
+@limiter.exempt
+def history_transaction():
+    data = request.json or {}
+    equip_id = data.get('equip_id')
+    maint_upserts = data.get('maint_upserts', [])
+    maint_deletes = data.get('maint_deletes', [])
+    log_upserts = data.get('log_upserts', [])
+    log_deletes = data.get('log_deletes', [])
+
+    if equip_id:
+        equip_id = lookup_equipment_id(equip_id=equip_id)
+
+    # [Rule 3 준수] DB에 등록되지 않은 마스터 장비 데이터 자동 생성 차단
+    if equip_id and not Equipment.query.filter_by(id=equip_id).first():
+        app.logger.warning(f"[Rule 3] 등록되지 않은 마스터 장비 차단: {equip_id}")
+        return jsonify({'status': 'fail', 'message': f'등록되지 않은 마스터 장비 데이터입니다 ({equip_id}). ADMIN에서 장비를 수동으로 등록해주세요.'}), 400
+
+    try:
+        # 1. log_upserts (작업 완료 처리)
+        completed_orig_ids = set()
+        for l in log_upserts:
+            l_id = str(l.get('id', ''))
+            orig_id = str(l.get('originalLogId') or '').strip()
+            if orig_id and orig_id != 'None' and orig_id != '-':
+                completed_orig_ids.add(orig_id)
+
+            item = None
+            if l_id:
+                item = LogItem.query.filter_by(id=l_id).first()
+            if not item and orig_id and orig_id != 'None' and orig_id != '-':
+                item = LogItem.query.filter_by(id=orig_id).first()
+            if not item and orig_id and orig_id != 'None' and orig_id != '-':
+                item = LogItem.query.filter_by(original_log_id=orig_id).first()
+            if not item:
+                l_date = l.get('date', '')
+                if l_date:
+                    item = LogItem.query.filter(
+                        LogItem.equip_id == equip_id,
+                        (LogItem.scheduled_date == l_date) | (LogItem.date == l_date),
+                        LogItem.status == '작업예정'
+                    ).first()
+
+            if not item:
+                item = LogItem(id=l_id, equip_id=equip_id, status='조치완료')
+                db.session.add(item)
+            else:
+                if orig_id and orig_id != 'None' and orig_id != '-' and orig_id != item.id:
+                    LogItem.query.filter(LogItem.id == orig_id, LogItem._unique_id != item._unique_id).delete(synchronize_session=False)
+
+            item.equip_id = equip_id
+            item.status = '조치완료'
+            item.date = l.get('date', item.date)
+            item.type = l.get('type', item.type)
+            item.detail_type = l.get('detailType', item.detail_type)
+            item.detail_type2 = l.get('detailType2', item.detail_type2)
+            item.content = l.get('content', item.content)
+            item.add_work = l.get('addWork', getattr(item, 'add_work', ''))
+            item.cost_type = l.get('costType', getattr(item, 'cost_type', ''))
+            item.md = str(l.get('md', getattr(item, 'md', '')))
+            item.worker = l.get('worker', item.worker)
+            item.memo = l.get('memo', item.memo)
+            item.start_time = l.get('startTime', getattr(item, 'start_time', ''))
+            item.end_time = l.get('endTime', getattr(item, 'end_time', ''))
+            item.is_issue_shared = bool(l.get('isIssueShared', getattr(item, 'is_issue_shared', False)))
+            item.original_log_id = orig_id if orig_id else item.original_log_id
+            item.add_work_log_id = str(l.get('addWorkLogId')) if l.get('addWorkLogId') else getattr(item, 'add_work_log_id', None)
+
+        # 2. maint_deletes 처리
+        if maint_deletes:
+            actual_deletes = [d for d in maint_deletes if d not in completed_orig_ids]
+            if actual_deletes:
+                LogItem.query.filter(LogItem.id.in_(actual_deletes)).delete(synchronize_session=False)
+
+        # 3. maint_upserts (작업 예정 생성/수정)
+        for idx, m in enumerate(maint_upserts):
+            m_id = str(m.get('id', ''))
+            item = LogItem.query.filter_by(id=m_id).first()
+            if not item:
+                item = LogItem(id=m_id, equip_id=equip_id, status='작업예정')
+                db.session.add(item)
+            item.equip_id = equip_id
+            item.sort_order = idx
+            item.status = '작업예정'
+            item.type = m.get('type', item.type)
+            item.detail_type = m.get('detailType', item.detail_type)
+            item.code = m.get('code', item.code)
+            item.content = m.get('content', item.content)
+            item.spec = m.get('spec', item.spec)
+            item.date = m.get('date', item.date)
+            item.period = str(m.get('period')) if m.get('period') is not None else item.period
+            item.scheduled_date = m.get('scheduledDate', item.scheduled_date)
+            item.cost_type = m.get('costType', getattr(item, 'cost_type', ''))
+            item.worker = m.get('worker', item.worker)
+            item.md = str(m.get('md', getattr(item, 'md', '')))
+            item.item_cost = m.get('itemCost', getattr(item, 'item_cost', ''))
+            item.memo = m.get('memo', item.memo)
+            item.original_log_id = str(m.get('originalLogId')) if m.get('originalLogId') else item.original_log_id
+
+        if log_deletes:
+            LogItem.query.filter(LogItem.id.in_(log_deletes)).delete(synchronize_session=False)
+
+        db.session.commit()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"History Transaction Error: {str(e)}", exc_info=True)
+        return jsonify({"status": "fail", "message": str(e)}), 500
+
+# [추가] 셋업 화면 데이터 전용 100% DB 동기화 API
+@app.route('/api/setup/sync_equip', methods=['POST'])
+@login_required
+@limiter.exempt
+def sync_setup_equip():
+    data = request.json or {}
+    equip_id = data.get('equip_id')
+    details = data.get('details')
+    logs = data.get('logs')
+
+    try:
+        app.logger.warning(f"[Sync Setup] Received raw equip_id: {equip_id}")
+
+        if equip_id:
+            import urllib.parse
+            import unicodedata
+            equip_id = urllib.parse.unquote(equip_id).strip()
+            equip_id = unicodedata.normalize('NFC', equip_id)
+
+        if equip_id:
+            equip = Equipment.query.filter_by(id=equip_id).first()
+            if not equip:
+                equip = Equipment.query.filter(Equipment.id.like(f"{equip_id}%")).first()
+
+            if not equip:
+                all_equips = Equipment.query.all()
+                import unicodedata
+                norm_equip_id = unicodedata.normalize('NFC', equip_id)
+                parts_equip = [unicodedata.normalize('NFC', p.strip()) for p in norm_equip_id.split('::')]
+                parts_equip_clean = [" ".join(p.split()) for p in parts_equip if p]
+
+                for eq in all_equips:
+                    norm_db_id = unicodedata.normalize('NFC', eq.id)
+                    parts_db = [unicodedata.normalize('NFC', p.strip()) for p in norm_db_id.split('::')]
+                    parts_db_clean = [" ".join(p.split()) for p in parts_db if p]
+
+                    min_len = min(len(parts_equip_clean), len(parts_db_clean))
+                    if min_len >= 3:
+                        match = True
+                        for idx in range(min_len):
+                            if parts_equip_clean[idx] != parts_db_clean[idx]:
+                                match = False
+                                break
+                        if match:
+                            equip = eq
+                            break
+
+            if not equip:
+                return jsonify({"status": "fail", "message": f"등록되지 않은 장비 정보입니다. ADMIN 메뉴에서 해당 장비를 먼저 등록해주세요. (ID: {equip_id})"}), 400
+
+            equip_id = equip.id
+
+        if details is not None:
+            db.session.query(SetupDetail).filter_by(equip_id=equip_id).delete(synchronize_session=False)
+            for sd in details:
+                db.session.add(SetupDetail(
+                    id=str(sd.get('id', '')), equip_id=equip_id, category=sd.get('category', ''), content=sd.get('content', ''),
+                    start_date=sd.get('startDate', ''), date=sd.get('date', ''), est_days=str(sd.get('estDays', '1')),
+                    completed=bool(sd.get('completed', False)), exec_start_date=sd.get('execStartDate', ''), delay_reason=sd.get('delayReason', '')
+                ))
+        if logs is not None:
+            db.session.query(SetupLog).filter_by(equip_id=equip_id).delete(synchronize_session=False)
+            for sl in logs:
+                db.session.add(SetupLog(
+                    id=str(sl.get('id', '')), equip_id=equip_id, date=sl.get('date', ''), worker=sl.get('worker', ''),
+                    content=sl.get('content', ''), company=sl.get('company', ''), memo=sl.get('memo', ''),
+                    md=str(sl.get('md', '0')), parts=sl.get('parts', '')
+                ))
+        db.session.commit()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Setup DB Sync Error: {str(e)}", exc_info=True)
+        return jsonify({"status": "fail", "message": str(e)}), 500
+
+# [추가] Trouble 이력 리스트 조회 API
+@app.route('/api/trouble/list', methods=['GET'])
+@login_required
+def get_trouble_list():
+    troubles = TroubleLog.query.all()
+    log_items = LogItem.query.filter(db.func.trim(LogItem.type) == '비정기').all()
+
+    equips = {eq.id: eq for eq in Equipment.query.all()}
+
+    def get_eq_info(equip_id):
+        if equip_id:
+            eq = equips.get(equip_id)
+            cust_name = eq.cust_equip_name if eq and eq.cust_equip_name else ""
+            if eq:
+                equip_name = f"{eq.name}"
+                if cust_name:
+                    equip_name += f" [{cust_name}]"
+                elif eq.serial:
+                    equip_name += f" ({eq.serial})"
+                return eq.site_name, equip_name
+            else:
+                parts = equip_id.split('::')
+                return parts[0], parts[1] if len(parts) > 1 else ""
+        return "", ""
+
+    result = []
+    for t in troubles:
+        site_name, equip_name = get_eq_info(t.equip_id)
+
+        safe_content = t.content
+        if safe_content and safe_content.startswith("{") and "'" in safe_content and '"' not in safe_content:
+            safe_content = safe_content.replace("'", '"')
+        if not safe_content or str(safe_content).strip() in ('', '{}', '-'):
+            if t.memo and str(t.memo).strip() and str(t.memo).strip() != '-':
+                safe_content = json.dumps({'situation': str(t.memo).strip()}, ensure_ascii=False)
+
+        result.append({
+            "id": t.id,
+            "source": "trouble",
+            "equip_id": t.equip_id,
+            "site": site_name,
+            "equip": equip_name,
+            "occur_date": t.occur_date,
+            "action_date": getattr(t, 'action_date', ''),
+            "type": "-",
+            "detail_type": "-",
+            "detail_type2": "-",
+            "check_item": "-",
+            "content": safe_content,
+            "memo": getattr(t, 'memo', ''),
+            "worker": t.worker,
+            "status": t.status,
+            "image_data": t.image_data,
+            "group_key": f"trouble_{t.id}"
+        })
+
+    for l in log_items:
+        site_name, equip_name = get_eq_info(l.equip_id)
+        orig_id = str(getattr(l, 'original_log_id', '') or '').strip()
+        add_work_id = str(getattr(l, 'add_work_log_id', '') or '').strip()
+        l_id = str(l.id or '').strip()
+
+        date_str = str(l.date or getattr(l, 'trouble_occur_date', '') or '').strip()[:10]
         clean_memo = str(l.memo or '').strip()
         clean_worker = str(l.worker or '').strip()
         clean_dt = str(l.detail_type or '').strip()
         clean_type = str(l.type or '비정기').strip()
-
         if orig_id:
             group_key = f"log_parent_{orig_id}"
         elif add_work_id:
