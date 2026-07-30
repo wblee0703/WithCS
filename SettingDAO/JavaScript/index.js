@@ -701,12 +701,12 @@ function renderUpcomingList(data) {
 
             if (data[site]) {
                 data[site].forEach(equip => {
-                    if (equip.startsWith('기타(ETC)')) return;
+                    const isEtcEquip = equip.startsWith('기타(ETC)');
                     const equipName = equip.split('::')[0];
                     const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
                     const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
-                    if (selectedEquipFilter && displayName !== selectedEquipFilter) return;
-                    if (selectedSerialFilter && equip !== selectedSerialFilter) return;
+                    if (selectedEquipFilter && !isEtcEquip && displayName !== selectedEquipFilter) return;
+                    if (selectedSerialFilter && !isEtcEquip && equip !== selectedSerialFilter) return;
 
                     const key = `details_${site}_${equip}`;
                     const detailData = JSON.parse(localStorage.getItem(key));

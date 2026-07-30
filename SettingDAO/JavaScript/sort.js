@@ -1505,11 +1505,12 @@ function performSortSearch() {
 
                 const parts = equip.split('::');
                 const equipName = parts[0];
+                const isEtcEquip = equipName.startsWith('기타(ETC)') || equipName === '기타';
                 const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
                 const displayEquipName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
 
-                if (!isModelAll && modelFilters.length === 0) return;
-                if (!isModelAll && !modelFilters.includes(displayEquipName)) return;
+                if (!isModelAll && !isEtcEquip && modelFilters.length === 0) return;
+                if (!isModelAll && !isEtcEquip && !modelFilters.includes(displayEquipName)) return;
 
                 const serialNo = parts.length > 1 ? parts[1] : '';
 
@@ -1522,8 +1523,8 @@ function performSortSearch() {
                 // [추가] 셋업 장비는 데이터 통계 및 검색에서 완전히 제외 (셋업 작업 물품/공수 혼동 방지)
                 if (equipStatus === '셋업 장비') return;
 
-                if (!isBuildingAll && buildingFilters.length === 0) return;
-                if (!isBuildingAll && !buildingFilters.includes(equipBuilding)) return;
+                if (!isBuildingAll && !isEtcEquip && buildingFilters.length === 0) return;
+                if (!isBuildingAll && !isEtcEquip && !buildingFilters.includes(equipBuilding)) return;
 
                 const checkItemMatch = (itemObj, isLog) => {
                     try {
