@@ -455,6 +455,7 @@ function renderOperationEquips(sites) {
         }
     });
     equips.forEach(item => {
+        if (item.equip && item.equip.startsWith('기타(ETC)')) return;
         const parts = item.equip.split('::');
         const rawName = parts[0];
         const serial = parts.length > 1 ? parts[1] : '';
@@ -504,14 +505,14 @@ function calculateOperationRate() {
     } else if (!isAllSites) {
         sites.forEach(site => {
             if (deviceData[site]) {
-                const equips = deviceData[site];
+                const equips = deviceData[site].filter(e => !e.startsWith('기타(ETC)'));
                 equips.forEach(e => targetEquipList.push({ site, equip: e }));
             }
         });
     } else {
         Object.keys(deviceData).forEach(s => {
             if (s !== 'models' && s !== 'details') {
-                const equips = deviceData[s];
+                const equips = deviceData[s].filter(e => !e.startsWith('기타(ETC)'));
                 equips.forEach(e => targetEquipList.push({ site: s, equip: e }));
             }
         });

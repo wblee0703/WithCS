@@ -1554,9 +1554,11 @@ function renderAdminEquipList() {
             }
         });
     }
-
-
-
+    // 기타(ETC) 장비는 관리자 등록 장비 목록 및 대수 카운트에서 제외
+    items = items.filter(item => {
+        const name = (item.key || '').split('::')[0] || '';
+        return name !== '기타(ETC)';
+    });
     if (keyword) {
         const keywords = keyword.split(/\s+/);
         items = items.filter(item => {

@@ -1062,7 +1062,7 @@ function updateSortModelSelect(sites, buildings, data) {
 
             const parts = equip.split('::');
             const equipName = parts[0];
-            if (equipName) {
+            if (equipName && !equipName.startsWith('기타(ETC)')) {
                 const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
                 const modelAbbr = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
                 availableModels.add(modelAbbr);

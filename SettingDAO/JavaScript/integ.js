@@ -141,24 +141,26 @@ function updateIntegratedDashboard() {
                     }
 
                     if (isSetup) {
-                        setupCount++;
+                        if (!equip.startsWith('기타(ETC)')) {
+                            setupCount++;
 
-                        // 막대그래프용 데이터 (완료 포함)
-                        allSiteCounts[groupName] = (allSiteCounts[groupName] || 0) + 1;
-                        totalActiveAll++;
+                            // 막대그래프용 데이터 (완료 포함)
+                            allSiteCounts[groupName] = (allSiteCounts[groupName] || 0) + 1;
+                            totalActiveAll++;
 
-                        if (progress === 100) {
-                            summaryCompletedCount++;
-                        } else {
-                            summaryActiveCount++;
-                        }
-
-                        if (!integSetupSelectedSite || integSetupSelectedSite === groupName) {
                             if (progress === 100) {
-                                const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
-                                completedEquips.push({ site, equip, progress, date: completionDate, equipStatus: equipStatus });
+                                summaryCompletedCount++;
                             } else {
-                                setupEquips.push({ site, equip, progress });
+                                summaryActiveCount++;
+                            }
+
+                            if (!integSetupSelectedSite || integSetupSelectedSite === groupName) {
+                                if (progress === 100) {
+                                    const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
+                                    completedEquips.push({ site, equip, progress, date: completionDate, equipStatus: equipStatus });
+                                } else {
+                                    setupEquips.push({ site, equip, progress });
+                                }
                             }
                         }
                     }
@@ -253,7 +255,7 @@ function renderIntegEquipStats(data) {
     // 데이터 집계
     Object.keys(data).forEach(site => {
         if (data[site] && Array.isArray(data[site])) {
-            const validEquips = data[site];
+            const validEquips = data[site].filter(e => !e.startsWith('기타(ETC)'));
 
             if (validEquips.length > 0) {
                 actualSiteCount++;
