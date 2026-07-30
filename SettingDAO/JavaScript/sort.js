@@ -1062,7 +1062,7 @@ function updateSortModelSelect(sites, buildings, data) {
 
             const parts = equip.split('::');
             const equipName = parts[0];
-            if (equipName && !equipName.startsWith('기타(ETC)')) {
+            if (equipName) {
                 const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
                 const modelAbbr = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
                 availableModels.add(modelAbbr);
@@ -1967,7 +1967,7 @@ function renderSortListTableOnly() {
         const rawContent = row.content || '';
         const itemsList = window.splitSafetyContent(rawContent);
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-        
+
         let workContentList = [];
 
         itemsList.forEach(item => {
@@ -2255,7 +2255,7 @@ function renderSortChart(results) {
         // 비정기 점검 항목(세부구분 3) 파싱 및 사업장별 데이터 수집
         if (row.type === '비정기') {
             let targetIrregular = '';
-            
+
             if (row.detailType3 && row.detailType3 !== '미지정') {
                 targetIrregular = row.detailType3;
             } else {
@@ -2612,7 +2612,7 @@ function exportSortResultsToCSV(results) {
 
     // 헤더 정의
     ws_data.push([
-        '날짜', '사업장 구분', '사업장', '건물명', '모델명', 
+        '날짜', '사업장 구분', '사업장', '건물명', '모델명',
         'Serial No', '고객사 장비명', '구분', '세부구분 1', '세부구분 2', '세부구분 3',
         '물품상세구분', '작업내용', '비용처리', '작업자', '공수', '상세메모'
     ]);
@@ -2738,7 +2738,7 @@ function exportSortResultsToCSV(results) {
         if (!cell) continue;
 
         if (!cell.s) cell.s = {};
-        
+
         // 수직/수평 가운데 맞춤 및 텍스트 자동 줄바꿈 지정
         cell.s.alignment = {
             vertical: 'center',
@@ -2987,7 +2987,7 @@ function openSortDetailModal(equipDisplay, item, cleanContent, costType) {
 
 // [추가] 정렬(검색) 페이지 외부 실시간 갱신 함수 및 검색 함수 전역 노출
 window.performSortSearch = performSortSearch;
-window.refreshSortPage = function() {
+window.refreshSortPage = function () {
     try {
         if (window.isSortPageRestoring) return;
         const typeSelect = document.getElementById('sort-type-select');

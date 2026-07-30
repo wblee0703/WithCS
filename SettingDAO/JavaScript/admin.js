@@ -41,17 +41,17 @@ function initServerMaintenanceUI() {
                 },
                 body: JSON.stringify({ maintenance: nextState })
             }).then(res => res.json())
-              .then(data => {
-                  if (data.status === 'success') {
-                      window.isServerMaintenance = data.maintenance;
-                      sessionStorage.setItem('isServerMaintenance', data.maintenance ? 'true' : 'false');
-                      updateMaintBtnUI(data.maintenance);
-                      applyServerMaintenanceLocks();
-                      alert(data.maintenance ? '서버 점검 모드가 활성화되었습니다.' : '서버 점검 모드가 해제되었습니다.');
-                  } else {
-                      alert(data.message || '설정에 실패했습니다.');
-                  }
-              });
+                .then(data => {
+                    if (data.status === 'success') {
+                        window.isServerMaintenance = data.maintenance;
+                        sessionStorage.setItem('isServerMaintenance', data.maintenance ? 'true' : 'false');
+                        updateMaintBtnUI(data.maintenance);
+                        applyServerMaintenanceLocks();
+                        alert(data.maintenance ? '서버 점검 모드가 활성화되었습니다.' : '서버 점검 모드가 해제되었습니다.');
+                    } else {
+                        alert(data.message || '설정에 실패했습니다.');
+                    }
+                });
         });
     }
 }
@@ -317,7 +317,7 @@ function setupAdminMenu() {
                     renderCheckTypeEquipList();
                 }
                 if (item.dataset.target === 'setup-template-mgmt') {
-                renderSetupTemplateModelSelect();
+                    renderSetupTemplateModelSelect();
                 }
             });
         });
@@ -1445,7 +1445,7 @@ function handleEquipCsvImport(event) {
                     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
                     const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
                     // 실제 모델명 추출 로직 필요 시 추가
-                    let actualModelName = name; 
+                    let actualModelName = name;
                     let templateToUse = templates[actualModelName] || templates['default'] || [
                         { category: "장비 반입 및 정위치", content: "장비 도면 부착", estDays: "1" },
                         { category: "통신 상태 및 유틸리티", content: "Utility 배관 공사 및 연결", estDays: "5" },
@@ -1458,7 +1458,7 @@ function handleEquipCsvImport(event) {
                         startDate: "", date: "", estDays: item.estDays || "1",
                         completed: false, execStartDate: "", delayReason: ""
                     }));
-                    
+
 
                     setupData[`${site}::${newKey}`] = { setupDetails: initialSetupDetails, setupLogs: [] };
                     localStorage.setItem('setup_data', JSON.stringify(setupData));
@@ -1555,11 +1555,7 @@ function renderAdminEquipList() {
         });
     }
 
-    // [수정] 기타(ETC) 장비는 관리자 등록 장비 목록 및 대수 카운트에서 제외 (작업 등록/상세 모달에서는 정상 노출)
-    items = items.filter(item => {
-        const name = (item.key || '').split('::')[0] || '';
-        return name !== '기타(ETC)';
-    });
+
 
     if (keyword) {
         const keywords = keyword.split(/\s+/);
@@ -1570,12 +1566,12 @@ function renderAdminEquipList() {
             const custNameFromKey = parts.length > 2 ? parts[2] : '';
             const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
             const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
-            
+
             // [추가] 고객사 장비명(custEquipName) 및 장비 구분(equipStatus) 정보를 가져와 검색 대상 텍스트에 포함
             const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.key}`)) || {};
             const custEquipName = custNameFromKey || ((detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '');
             const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
-            
+
             const text = `${item.site} ${name} ${displayName} ${serial} ${custEquipName} ${equipStatus}`.toLowerCase();
             return keywords.every(kw => text.includes(kw));
         });
@@ -1614,7 +1610,7 @@ function renderAdminEquipList() {
             if (equipStatus === '가동 장비') statusColor = '#3fb950';
             else if (equipStatus.includes('셋업')) statusColor = '#d29922';
             else if (equipStatus === '워런티') statusColor = '#1f6feb';
-            
+
             subInfo += ` <span style="color:${statusColor}; font-size:11px; margin-left:2px;">[${escapeHtml(equipStatus)}]</span>`;
         }
 
@@ -1756,7 +1752,7 @@ async function handleEquipSave() {
                     el.classList.add('error-border');
                     hasError = true;
                     if (!firstErrorEl) firstErrorEl = el;
-                    
+
                     // 값 입력 시 빨간 테두리 즉시 해제
                     if (!el.dataset.hasErrorListener) {
                         el.dataset.hasErrorListener = 'true';
@@ -2020,12 +2016,12 @@ async function handleEquipSave() {
         // [수정] 셋업(SETUP) 데이터 껍데기 생성 시 모델명 템플릿 적용 및 납품일 기준 자동 계산
         const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
         const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-                    
-                    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
-                    const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
-                    const actualModelName = matchedModel ? matchedModel.name : name;
-                    
-                    let templateToUse = templates[actualModelName] || templates['default'] || [
+
+        const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+        const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+        const actualModelName = matchedModel ? matchedModel.name : name;
+
+        let templateToUse = templates[actualModelName] || templates['default'] || [
             { category: "장비 반입 및 정위치", content: "장비 도면 부착", estDays: "1" },
             { category: "통신 상태 및 유틸리티", content: "Utility 배관 공사 및 연결", estDays: "5" },
             { category: "셋업 평가", content: "분석부 안정화 및 오염제어", estDays: "5" },
@@ -2062,11 +2058,11 @@ async function handleEquipSave() {
         await fetchServerData();
     }
     alert('저장되었습니다.');
-    
+
     // [수정] 저장 완료 후 상세 정보 폼을 닫고 초기 미선택 상태로 화면 전환
     localStorage.removeItem('lastAdminEquipKey');
     resetEquipForm();
-    
+
     setAdminFormDirty(false, 'equip'); // [추가] 저장 완료 후 상태 리셋
     initialAdminFormData.equip = getEquipFormState(); // [추가] 스냅샷 갱신
     renderAdminEquipList();
@@ -3167,7 +3163,7 @@ function ensureSubCategory2Panel() {
     // 이벤트 중복 바인딩 방지
     if (!panel2.dataset.initialized) {
         panel2.dataset.initialized = 'true';
-        
+
         const btnAdd = panel2.querySelector('#btn-add-check-type-subcategory2');
         const input = panel2.querySelector('#check-type-subcategory2-input');
         const btnSubCategory2Settings = panel2.querySelector('#btn-subcategory2-settings');
@@ -3236,7 +3232,7 @@ function ensureSubCategory3Panel() {
 
     if (!panel3.dataset.initialized) {
         panel3.dataset.initialized = 'true';
-        
+
         const btnAdd = panel3.querySelector('#btn-add-check-type-subcategory3');
         const input = panel3.querySelector('#check-type-subcategory3-input');
         const btnSubCategory3Settings = panel3.querySelector('#btn-subcategory3-settings');
@@ -3398,12 +3394,12 @@ function migrateCheckTypeItemsForIrregularOthers() {
         "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
     ];
     let migrated = false;
-    
+
     Object.keys(storageData).forEach(site => {
         const equips = storageData[site] || [];
         equips.forEach(equipKey => {
             const subcategories2 = ['배수 펌프 이슈', '구동 이상'];
-            
+
             // 1. categories에 '기타' 추가
             const catKey = `${equipKey}::비정기`;
             if (!checkTypeCategoriesData[catKey]) {
@@ -3413,7 +3409,7 @@ function migrateCheckTypeItemsForIrregularOthers() {
                 checkTypeCategoriesData[catKey].push('기타');
                 migrated = true;
             }
-            
+
             // 2. categories2에 '배수 펌프 이슈'와 '구동 이상' 추가
             const cat2Key = `${equipKey}::비정기::기타`;
             if (!checkTypeCategories2Data[cat2Key]) {
@@ -3427,7 +3423,7 @@ function migrateCheckTypeItemsForIrregularOthers() {
                     }
                 });
             }
-            
+
             // 3. checkTypeItemsData에 defaultList 항목 추가
             subcategories2.forEach(sub2 => {
                 const itemKey = `${equipKey}::비정기::기타::${sub2}`;
@@ -3441,7 +3437,7 @@ function migrateCheckTypeItemsForIrregularOthers() {
             });
         });
     });
-    
+
     if (migrated) {
         saveCheckTypeCategories();
         saveCheckTypeCategories2();
@@ -4273,7 +4269,7 @@ function openSetupTemplateLoadModal() {
     if (!modal.dataset.initialized) {
         modal.dataset.initialized = 'true';
         document.getElementById('btn-close-template-load').onclick = () => modal.style.display = 'none';
-        
+
         document.getElementById('btn-confirm-template-load').onclick = () => {
             const select = document.getElementById('load-template-model-select');
             const targetModel = select.value;
@@ -4288,7 +4284,7 @@ function openSetupTemplateLoadModal() {
 
             if (template.length === 0) alert('선택한 모델에 저장된 템플릿이 없어 빈 양식이 로드됩니다.');
             else template.forEach(item => addSetupTemplateRow(item.category, item.content, item.estDays));
-            
+
             modal.style.display = 'none';
         };
 
@@ -4296,7 +4292,7 @@ function openSetupTemplateLoadModal() {
             if (!confirm('가장 기본적인 템플릿 양식으로 초기화하시겠습니까?\n작성 중이던 내용은 모두 지워집니다.')) return;
             const tbody = document.getElementById('setup-template-tbody');
             tbody.innerHTML = '';
-            
+
             const defaultTemplate = [
                 { category: "장비 반입 및 정위치", content: "장비 도면 부착", estDays: "1" },
                 { category: "장비 반입 및 정위치", content: "다이크 설치", estDays: "1" },
@@ -4321,7 +4317,7 @@ function openSetupTemplateLoadModal() {
     select.innerHTML = '<option value="">모델 선택</option>';
     const models = JSON.parse(localStorage.getItem('equipment_models')) || [];
     const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-    
+
     if (templates['default'] && currentSetupTemplateModel !== 'default') {
         select.insertAdjacentHTML('beforeend', '<option value="default">기본 템플릿 (공통)</option>');
     }
@@ -4346,7 +4342,7 @@ function renderSetupTemplateModelSelect() {
 
     list.innerHTML = '';
     const models = JSON.parse(localStorage.getItem('equipment_models')) || [];
-    
+
     const allItems = [{ name: 'default', displayName: '기본 템플릿 (공통)' }];
     models.forEach(m => allItems.push({ name: m.name, displayName: m.name }));
 
@@ -4363,17 +4359,17 @@ function renderSetupTemplateModelSelect() {
         const li = document.createElement('li');
         li.textContent = item.displayName;
         if (item.name === currentSetupTemplateModel) li.classList.add('active');
-        
+
         li.onclick = () => {
             if (currentSetupTemplateModel === item.name) return;
             currentSetupTemplateModel = item.name;
-            
+
             list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
-            
+
             const titleEl = document.getElementById('setup-template-current-model-title');
             if (titleEl) titleEl.textContent = item.displayName;
-            
+
             loadSetupTemplate();
         };
         list.appendChild(li);
@@ -4463,7 +4459,7 @@ function addSetupTemplateRow(tbody, category, content = '', estDays = '1') {
         <td><input type="number" class="input-dark template-est" value="${escapeHtml(estDays)}" style="width: 100%; text-align: center;" min="0"></td>
         <td style="text-align: center;"><button class="btn-del-sm">✕</button></td>
     `;
-    
+
     const delBtn = tr.querySelector('.btn-del-sm');
     if (delBtn) {
         delBtn.onclick = () => {
@@ -4493,7 +4489,7 @@ function addSetupTemplateRow(tbody, category, content = '', estDays = '1') {
 
     if (insertAfterNode && insertAfterNode.nextSibling) tbody.insertBefore(tr, insertAfterNode.nextSibling);
     else tbody.appendChild(tr);
-    
+
     if (!tbody.dataset.dragBound) {
         tbody.dataset.dragBound = 'true';
         tbody.addEventListener('dragover', (e) => {

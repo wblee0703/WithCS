@@ -122,7 +122,7 @@ function updateIntegratedDashboard() {
                             let overlaps = false;
                             const firstItem = detailData.setupDetails.find(d => d.startDate);
                             const setupStart = firstItem ? new Date(firstItem.startDate) : new Date(completeItem.startDate);
-                            
+
                             if (completeItem.completed && completeItem.date) {
                                 const setupEnd = new Date(completeItem.date);
                                 if (setupStart <= targetEnd && setupEnd >= targetStart) overlaps = true;
@@ -141,27 +141,24 @@ function updateIntegratedDashboard() {
                     }
 
                     if (isSetup) {
-                        // [수정] '기타(ETC)' 장비는 셋업 현황 집계에서 제외
-                        if (!equip.startsWith('기타(ETC)')) {
-                            setupCount++;
+                        setupCount++;
 
-                            // 막대그래프용 데이터 (완료 포함)
-                            allSiteCounts[groupName] = (allSiteCounts[groupName] || 0) + 1;
-                            totalActiveAll++;
+                        // 막대그래프용 데이터 (완료 포함)
+                        allSiteCounts[groupName] = (allSiteCounts[groupName] || 0) + 1;
+                        totalActiveAll++;
 
+                        if (progress === 100) {
+                            summaryCompletedCount++;
+                        } else {
+                            summaryActiveCount++;
+                        }
+
+                        if (!integSetupSelectedSite || integSetupSelectedSite === groupName) {
                             if (progress === 100) {
-                                summaryCompletedCount++;
+                                const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
+                                completedEquips.push({ site, equip, progress, date: completionDate, equipStatus: equipStatus });
                             } else {
-                                summaryActiveCount++;
-                            }
-
-                            if (!integSetupSelectedSite || integSetupSelectedSite === groupName) {
-                                if (progress === 100) {
-                                    const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
-                                    completedEquips.push({ site, equip, progress, date: completionDate, equipStatus: equipStatus });
-                                } else {
-                                    setupEquips.push({ site, equip, progress });
-                                }
+                                setupEquips.push({ site, equip, progress });
                             }
                         }
                     }
@@ -177,7 +174,7 @@ function updateIntegratedDashboard() {
 
         // [1단계 복구] 장비 통합 현황 렌더링
         renderIntegEquipStats(data);
-        
+
         // [2단계 복구] 셋업 현황 렌더링
         renderIntegSetupBarChart(allSiteCounts, totalActiveAll);
         renderIntegSetupSiteStats();
@@ -234,7 +231,7 @@ function renderIntegEquipStats(data) {
     const siteChartEl = document.getElementById('integ-equip-site-chart');
     const modelChartEl = document.getElementById('integ-equip-model-chart');
     const summaryEl = document.getElementById('integ-equip-summary');
-    
+
     if (!siteChartEl || !modelChartEl) return;
 
     const groupCounts = {
@@ -256,12 +253,11 @@ function renderIntegEquipStats(data) {
     // 데이터 집계
     Object.keys(data).forEach(site => {
         if (data[site] && Array.isArray(data[site])) {
-            // [수정] 기타(ETC)를 제외한 실제 유효 장비들만 필터링
-            const validEquips = data[site].filter(e => !e.startsWith('기타(ETC)'));
-            
+            const validEquips = data[site];
+
             if (validEquips.length > 0) {
                 actualSiteCount++;
-                
+
                 let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장';
                 if (!groupCounts[groupName]) groupCounts[groupName] = { total: 0, setup: 0 };
 
@@ -306,7 +302,7 @@ function renderIntegEquipStats(data) {
         // [수정] 장비 모델 관리에 등록된 전체 모델 수를 표시 (등록된 값이 없으면 실 사용 모델 수로 대체)
         const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
         const modelCount = equipmentModels.length > 0 ? equipmentModels.length : allModels.size;
-        
+
         summaryEl.textContent = `(사업장 : ${actualSiteCount}, 장비 모델 : ${modelCount}, 장비수 : ${totalEquipCount})`;
     }
 
@@ -323,9 +319,9 @@ function renderIntegEquipStats(data) {
         '기타사업장': 'linear-gradient(to top, #8957e5, #a371f7)',
         'SCS 서안': 'linear-gradient(to top, #0096D6, #66c2ff)',
         'SKH 우시': 'linear-gradient(to top, #d29922, #e3b341)',
-        '기타': 'linear-gradient(to top, #1b7c83, #3fb950)'        
+        '기타': 'linear-gradient(to top, #1b7c83, #3fb950)'
     };
-    
+
     renderChartWithAxis(siteChartEl, sortedGroupCounts, groupGradients, (key) => {
         integEquipSelectedGroup = (integEquipSelectedGroup === key) ? null : key;
         renderIntegEquipStats(data);
@@ -362,7 +358,7 @@ function renderIntegSetupBarChart(siteCounts, totalCount) {
     Object.keys(siteCounts).forEach(site => {
         dataItems.push({ name: site, count: siteCounts[site] });
     });
-    
+
     const sortedSites = dataItems.slice(1).sort((a, b) => b.count - a.count);
     const finalData = [dataItems[0], ...sortedSites];
 
@@ -373,7 +369,7 @@ function renderIntegSetupBarChart(siteCounts, totalCount) {
     finalData.forEach((item, index) => {
         const isTotal = item.name === '전체';
         const count = item.count;
-        const maxBarHeight = 180; 
+        const maxBarHeight = 180;
         const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
         const bgStyle = window.getSiteGradient ? window.getSiteGradient(item.name) : '#8957e5';
 
@@ -401,7 +397,7 @@ function renderIntegSetupBarChart(siteCounts, totalCount) {
             integSetupSelectedSite = isTotal ? null : (integSetupSelectedSite === item.name ? null : item.name);
             updateIntegratedDashboard();
         };
-        
+
         barGroup.style.cursor = 'pointer';
         chartEl.appendChild(barGroup);
     });
@@ -456,7 +452,7 @@ function renderIntegSetupSiteStats() {
         if (data && data.setupDetails) {
             let hasActivity = false;
             const completeItem = data.setupDetails.find(d => d.content === '셋업 완료');
-            
+
             if (completeItem && completeItem.startDate) {
                 const firstItem = data.setupDetails.find(d => d.startDate);
                 const setupStart = firstItem ? new Date(firstItem.startDate) : new Date(completeItem.startDate);
@@ -582,16 +578,16 @@ async function renderIntegMaintStats(mainData) {
 
     const progressChartEl = document.getElementById('integ-maint-site-chart');
     const mdChartEl = document.getElementById('integ-maint-type-chart');
-    
+
     const listEl = document.getElementById('integ-maint-item-list-container');
     const itemChartEl = document.getElementById('integ-maint-item-chart-row');
     if (listEl) listEl.style.display = 'none';
-    
+
     if (progressChartEl) {
         const siteTitleEl = progressChartEl.closest('.status-group').querySelector('.status-group-title');
         if (siteTitleEl) siteTitleEl.textContent = '사업장별 작업 진행률';
     }
-    
+
     if (mdChartEl) {
         const typeTitleEl = mdChartEl.closest('.status-group').querySelector('.status-group-title');
         if (typeTitleEl) typeTitleEl.textContent = '사업장별 공수(M/D) 현황';
@@ -611,7 +607,7 @@ async function renderIntegMaintStats(mainData) {
                 wrapper.appendChild(mGroup);
                 wrapper.appendChild(iGroup);
             }
-            
+
             // 1:1:1 비율 할당
             pGroup.style.flex = '1';
             mGroup.style.flex = '1';
@@ -621,7 +617,7 @@ async function renderIntegMaintStats(mainData) {
 
     const periodTypeEl = document.getElementById('integ-period-type');
     const periodType = periodTypeEl ? periodTypeEl.value : 'month';
-    
+
     let dateCheckFn = null;
     let targetStart = null;
     let targetEnd = null;
@@ -635,13 +631,13 @@ async function renderIntegMaintStats(mainData) {
     } else if (periodType === 'custom') {
         const startInput = document.getElementById('integ-maint-start');
         const endInput = document.getElementById('integ-maint-end');
-        
+
         if (startInput && endInput && startInput.value && endInput.value) {
             targetStart = new Date(startInput.value);
             targetEnd = new Date(endInput.value);
             targetEnd.setHours(23, 59, 59, 999);
         }
-        
+
         dateCheckFn = (d) => {
             if (!d || !targetStart || !targetEnd) return false;
             const itemDate = new Date(d);
@@ -660,7 +656,7 @@ async function renderIntegMaintStats(mainData) {
     let workingDays = 0;
     if (targetStart && targetEnd) {
         let tempDate = new Date(targetStart);
-        tempDate.setHours(0,0,0,0);
+        tempDate.setHours(0, 0, 0, 0);
         while (tempDate <= targetEnd) {
             const day = tempDate.getDay();
             if (day !== 0 && day !== 6) workingDays++;
@@ -678,7 +674,7 @@ async function renderIntegMaintStats(mainData) {
                 return; // 총 공수(모수) 계산 인원수에서 관리자 제외
             }
         }
-        
+
         // [수정] 사업장 기준이 아닌 소속(Department) 기준으로 총 공수(인원) 계산 매핑
         const deptToGroupMap = {
             '운영1팀(삼성)': 'SEC',
@@ -736,7 +732,7 @@ async function renderIntegMaintStats(mainData) {
                     detailData.logs.forEach(l => {
                         if (l.detailType !== '일정변경' && dateCheckFn(l.date)) {
                             if (l.content && l.content.startsWith('[변경]')) return;
-                            
+
                             const isExtraWork = !!l.originalLogId;
                             const type = l.type || '정기';
                             const groupKey = `${site}::${equip}::${l.date}::true::${type}::${isExtraWork}`;
@@ -758,7 +754,7 @@ async function renderIntegMaintStats(mainData) {
                         if (dateCheckFn(m.scheduledDate)) {
                             const isDone = detailData.logs && detailData.logs.some(l => l.date === m.scheduledDate && (l.content || '').includes(m.content || ''));
                             if (isDone) return;
-                            
+
                             const isExtraWork = !!m.originalLogId;
                             const type = m.type || '정기';
                             const groupKey = `${site}::${equip}::${m.scheduledDate}::false::${type}::${isExtraWork}`;
@@ -818,10 +814,10 @@ async function renderIntegMaintStats(mainData) {
         sortedProgressGroups.forEach(group => {
             const stats = groupStats[group];
             const rate = stats.total === 0 ? 0 : Math.round((stats.completed / stats.total) * 100);
-            
+
             const barGroup = document.createElement('div');
             barGroup.className = 'bar-group integ-bar-group';
-            
+
             const maxBarHeight = 160; // [수정] 막대 최대 높이 축소
             const barHeight = (rate / yAxisMax) * maxBarHeight;
             const bgStyle = groupColors[group];
@@ -844,7 +840,7 @@ async function renderIntegMaintStats(mainData) {
     if (mdChartEl) {
         mdChartEl.innerHTML = '';
         mdChartEl.classList.add('integ-bar-chart-container');
-        
+
         const yAxisMax = 100;
 
         const sortedMdGroups = [...groups].sort((a, b) => {
@@ -860,10 +856,10 @@ async function renderIntegMaintStats(mainData) {
             const stats = groupStats[group];
             const mdVal = Number.isInteger(stats.md) ? stats.md : stats.md.toFixed(1);
             const mdRate = stats.totalMd === 0 ? 0 : Math.round((stats.md / stats.totalMd) * 100);
-            
+
             const barGroup = document.createElement('div');
             barGroup.className = 'bar-group integ-bar-group';
-            
+
             const maxBarHeight = 160; // [수정] 막대 최대 높이 축소
             const barHeight = Math.min((mdRate / yAxisMax) * maxBarHeight, maxBarHeight);
             const bgStyle = groupColors[group];
@@ -883,7 +879,7 @@ async function renderIntegMaintStats(mainData) {
             }
         });
     }
-    
+
     const maintSummaryEl = document.getElementById('integ-maint-summary');
     if (maintSummaryEl) {
         maintSummaryEl.textContent = '';
@@ -1011,11 +1007,11 @@ function renderChartWithAxis(container, dataCounts, colorMapOrArray, onClickHand
 
         const maxBarHeight = 180;
         const barHeight = yAxisMax > 0 ? (count / yAxisMax) * maxBarHeight : 0;
-        
+
         let bgStyle = '#30363d';
         if (Array.isArray(colorMapOrArray)) bgStyle = colorMapOrArray[index % colorMapOrArray.length];
         else if (colorMapOrArray[key]) bgStyle = colorMapOrArray[key];
-        
+
         const isActive = selectedKey === key;
         const activeClass = isActive ? 'active' : '';
 
@@ -1028,7 +1024,7 @@ function renderChartWithAxis(container, dataCounts, colorMapOrArray, onClickHand
             // 셋업 중인 장비가 있으면 막대 안에 투명도(빗금) 패턴으로 표시해줍니다.
             const setupHeightPct = (setupCount / count) * 100;
             const setupOverlay = `<div style="width: 100%; height: ${setupHeightPct}%; background: repeating-linear-gradient(45deg, rgba(255,255,255,0.3), rgba(255,255,255,0.3) 5px, transparent 5px, transparent 10px); border-bottom: 1px solid rgba(255,255,255,0.5); position: absolute; top: 0; left: 0;" title="셋업중: ${setupCount}대"></div>`;
-            
+
             barContent = `
                 <div class="bar-value">
                     ${count}
@@ -1049,7 +1045,7 @@ function renderChartWithAxis(container, dataCounts, colorMapOrArray, onClickHand
             ${barContent}
             <div class="bar-label" title="${key}">${key}</div>
         `;
-        
+
         if (onClickHandler) {
             barGroup.onclick = () => onClickHandler(key);
             barGroup.style.cursor = 'pointer';
@@ -1065,17 +1061,17 @@ function renderGenericSetupList(listEl, list, isCompletedMode) {
         const parts = item.equip.split('::');
         const name = parts[0];
         const serial = parts.length > 1 ? parts[1] : '';
-        
+
         const matchedModel = equipmentModels.find(m => m.name === name);
         const displayModel = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
         const progressColor = item.progress === 100 ? '#238636' : '#1f6feb';
-        
+
         const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.equip}`)) || {};
         const custEquipName = (detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '';
 
         const li = document.createElement('li');
         li.className = 'status-list-item';
-        
+
         let subInfo = '';
         if (custEquipName) subInfo = `[${escapeHtml(custEquipName)}]`;
         else if (serial) subInfo = `[${escapeHtml(serial)}]`;
@@ -1108,7 +1104,7 @@ function renderGenericSetupList(listEl, list, isCompletedMode) {
             </div>
             ${rightCol}
         `;
-        
+
         li.onclick = () => {
             if (typeof currentGanttFilters !== 'undefined') {
                 currentGanttFilters.site = item.site;

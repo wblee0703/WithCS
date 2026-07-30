@@ -266,7 +266,7 @@ function updateTaskDate(site, equip, id, type, change, mode = 'move') {
 
         setupData[equipKey] = data;
         localStorage.setItem('setup_data', JSON.stringify(setupData));
-        
+
         // [추가] 변경된 예정일 데이터를 서버에 동기화하고 타 화면(리스트)에 즉시 갱신
         if (typeof window.syncSetupDataDB === 'function') window.syncSetupDataDB(site, equip, data.setupDetails, data.setupLogs);
         if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
@@ -506,7 +506,7 @@ function renderGanttChart() {
                     const prevG = dateGroups[i - 1];
                     const rCurr = new Date(g.realStart);
                     const rPrev = new Date(prevG.realStart);
-                    rCurr.setHours(0, 0, 0, 0); 
+                    rCurr.setHours(0, 0, 0, 0);
                     rPrev.setHours(0, 0, 0, 0);
                     const diffDays = Math.round((rCurr - rPrev) / 86400000);
                     currentVirtStart = addContinuousDays(currentVirtStart, diffDays);
@@ -521,7 +521,7 @@ function renderGanttChart() {
                 const nextG = dateGroups[i + 1];
                 const rCurr = new Date(g.realStart);
                 const rNext = new Date(nextG.realStart);
-                rCurr.setHours(0, 0, 0, 0); 
+                rCurr.setHours(0, 0, 0, 0);
                 rNext.setHours(0, 0, 0, 0);
                 const diffDays = Math.round((rNext - rCurr) / 86400000);
                 currentVirtEnd = addContinuousDays(currentVirtEnd, -diffDays);
@@ -555,7 +555,7 @@ function renderGanttChart() {
                 if (t.logDates && t.logDates.length > 0) {
                     const sortedRealDates = [...t.logDates].sort();
                     const virtStart = new Date(t.planStart);
-                    
+
                     sortedRealDates.forEach((rDate, idx) => {
                         const vDate = new Date(virtStart);
                         vDate.setDate(vDate.getDate() + idx);
@@ -634,7 +634,7 @@ function renderGanttChart() {
     while (tempDate <= maxDate) {
         // 일수 모드이든 날짜 모드이든 공통으로 주말 및 공휴일을 배제시킵니다.
         const isHol = typeof window.isHoliday === 'function' ? window.isHoliday(tempDate) : false;
-        
+
         if (!isHol) {
             const dStr = tempDate.toISOString().split('T')[0];
             const d = new Date(tempDate);
@@ -1412,8 +1412,8 @@ document.addEventListener('mouseup', (e) => {
 
             if (ganttValidDates[startIdx] && ganttValidDates[endIdx]) {
                 const newStartDate = ganttValidDates[startIdx].str;
-                               const newEndDate = ganttValidDates[endIdx].str;
-                
+                const newEndDate = ganttValidDates[endIdx].str;
+
                 const deltaStartDays = Math.round((currentLeft - dragBarInitialLeft) / ganttDayWidth);
                 const newEstDays = Math.round(currentWidth / ganttDayWidth);
 
@@ -1422,8 +1422,8 @@ document.addEventListener('mouseup', (e) => {
                     dragBarEl.dataset.equip,
                     dragBarEl.dataset.id,
                     dragBarEl.dataset.type,
-                    { 
-                        newStart: newStartDate, 
+                    {
+                        newStart: newStartDate,
                         newEnd: newEndDate,
                         deltaStartDays: deltaStartDays,
                         newEstDays: newEstDays
@@ -1534,7 +1534,6 @@ function setupGanttSearchModal() {
                 let hasValidEquip = false;
                 const equips = data[site] || [];
                 for (let equip of equips) {
-                    if (equip && equip.startsWith('기타(ETC)')) continue;
                     const equipData = setupData[`${site}::${equip}`];
                     let isCompleted = false;
                     if (equipData && equipData.setupDetails) {
@@ -1620,7 +1619,6 @@ function openGanttSearchModal() {
             let hasValidEquip = false;
             const equips = data[site] || [];
             for (let equip of equips) {
-                if (equip && equip.startsWith('기타(ETC)')) continue;
                 const equipData = setupData[`${site}::${equip}`];
                 let isCompleted = false;
                 if (equipData && equipData.setupDetails) {
@@ -1677,7 +1675,6 @@ function updateGanttSearchEquipSelect(site) {
     const showIng = cbIng ? cbIng.checked : false;
 
     equips.forEach(equip => {
-        if (equip && equip.startsWith('기타(ETC)')) return; // 기타(ETC) 장비 제외
 
         // 셋업 진행 중 여부 확인
         const equipData = setupData[`${site}::${equip}`];
