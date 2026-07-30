@@ -1455,6 +1455,7 @@ function buildDetailDropdown(item, site, equip) {
         }
     } else {
         // [수정] check_type_items 대신 maint_log 이력 및 admin_items 데이터 활용
+        const detailData = (site && equip) ? (JSON.parse(localStorage.getItem(`details_${site}_${equip}`)) || {}) : {};
         let historyItems = (detailData.maint || []).filter(m => m.type === type && m.detailType === detailType);
         if (historyItems.length > 0) {
             isDropdownMode = true;

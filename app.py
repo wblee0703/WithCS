@@ -3217,71 +3217,16 @@ def get_additional_works():
 # 8. 앱 초기화 및 실행 (Initialization & Main Execution)
 # ------------------------------------------------------------------------------
 
-def migrate_equipment_models_to_table():
-    """SystemSetting(key='equipment_models') 데이터 및 DB 장비 모델을 equipment_model 테이블로 자동 이관합니다."""
-    try:
-        count = EquipmentModel.query.count()
-        if count == 0:
-            app.logger.info("[Migration] Migrating equipment_models to equipment_model table...")
-            setting = SystemSetting.query.filter_by(key='equipment_models').first()
-            inserted_names = set()
-            new_objs = []
 
-            if setting and setting.value:
-                try:
-                    data_list = json.loads(setting.value)
-                    if isinstance(data_list, list):
-                        for item in data_list:
-                            if isinstance(item, dict):
-                                n = (item.get('name') or item.get('model') or '').strip()
-                                a = (item.get('abbr') or n).strip()
-                                if n and n not in inserted_names:
-                                    new_objs.append(EquipmentModel(name=n, abbr=a))
-                                    inserted_names.add(n)
-                            elif isinstance(item, str) and item.strip():
-                                n = item.strip()
-                                if n not in inserted_names:
-                                    new_objs.append(EquipmentModel(name=n, abbr=n))
-                                    inserted_names.add(n)
-                except Exception as ex:
-                    app.logger.error(f"[Migration] JSON parse error in SystemSetting: {ex}")
-
-            for eq in Equipment.query.all():
-                if eq.name and eq.name.strip() and eq.name.strip() != "기타(ETC)":
-                    n = eq.name.strip()
-                    if n not in inserted_names:
-                        new_objs.append(EquipmentModel(name=n, abbr=n))
-                        inserted_names.add(n)
-
-            if new_objs:
-                db.session.bulk_save_objects(new_objs)
-                db.session.commit()
-                app.logger.info(f"[Migration] Successfully migrated {len(new_objs)} equipment models to equipment_model table.")
-    except Exception as e:
-        db.session.rollback()
-        app.logger.error(f"[Migration Error] equipment_model migration failed: {e}")
 
 def init_check_type_category_tables():
     """check_type_category 단일 통합 테이블 초기화 및 점검 구분 마스터 데이터 구성"""
     try:
-        # [컬럼 보정] 기존 DB에 구 버전 테이블(type_name 컬럼)이 존재할 경우 새 4컬럼 구조(check_type 등)로 재할당
-        try:
-            res = db.session.execute(text("SHOW COLUMNS FROM check_type_category LIKE 'check_type'")).fetchone()
-            if not res:
-                app.logger.info("[DB Schema Update] Dropping old check_type_category table to apply new 4-column schema...")
-                db.session.execute(text("DROP TABLE IF EXISTS check_type_category"))
-                db.session.commit()
-        except Exception as ex:
-            db.session.rollback()
-
         db.create_all()
 
-        # 작업 등록 팝업의 [작업 구분] 및 [상세 구분]에 맞춰 기존 무효/구 데이터 일괄 정리 후 깔끔하게 재등록
-        try:
-            db.session.execute(text("DELETE FROM check_type_category"))
-            db.session.commit()
-        except Exception as ex:
-            db.session.rollback()
+        # 이미 점검 구분 마스터 데이터가 존재하는 경우 재시딩을 하지 않고 바로 반환
+        if CheckTypeCategory.query.count() > 0:
+            return
 
         app.logger.info("[Init] Seeding clean CheckTypeCategory table with exact work registration categories...")
         rows = []
@@ -3342,77 +3287,14 @@ def init_check_type_category_tables():
         db.session.rollback()
         app.logger.error(f"[Init Error] CheckTypeCategory init failed: {e}")
 
-def migrate_maint_log_detail_types():
-    """maint_log 및 maint_item 테이블에서 'A > B > C' 형태로 들어있는 detail_type을 detail_type, detail_type2, detail_type3 컬럼으로 분리 마이그레이션합니다."""
-    try:
-        logs = LogItem.query.filter(LogItem.detail_type.like('%>%')).all()
-        for l in logs:
-            parts = [p.strip() for p in l.detail_type.split('>')]
-            if len(parts) >= 3:
-                l.detail_type = parts[0]
-                l.detail_type2 = parts[1]
-                l.detail_type3 = parts[2]
-            elif len(parts) == 2:
-                l.detail_type = parts[0]
-                l.detail_type2 = parts[1]
 
-        db.session.commit()
-        app.logger.info(f"[Migration] Successfully split combined detail_types in {len(logs)} logs.")
-    except Exception as ex:
-        db.session.rollback()
-        app.logger.error(f"[Migration Error] detail_type split failed: {ex}")
 
 def init_db():
     with app.app_context():
         db.create_all()
-        migrate_equipment_models_to_table()
         init_check_type_category_tables()
 
-        # [maint_item 구 테이블 완전 삭제]
-        try:
-            db.session.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
-            db.session.execute(text("DROP TABLE IF EXISTS maint_item;"))
-            db.session.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
-            db.session.commit()
-        except: db.session.rollback()
 
-        # [maint_log 컬럼 보정]
-        try:
-            db.session.execute(text("ALTER TABLE maint_log ADD COLUMN detail_type2 VARCHAR(100) DEFAULT ''"))
-        except: db.session.rollback()
-        try:
-            db.session.execute(text("ALTER TABLE maint_log ADD COLUMN detail_type3 VARCHAR(100) DEFAULT ''"))
-        except: db.session.rollback()
-
-        # [maint_log 불필요 컬럼 삭제]
-        try:
-            db.session.execute(text("ALTER TABLE maint_log DROP COLUMN code"))
-            db.session.commit()
-        except: db.session.rollback()
-        try:
-            db.session.execute(text("ALTER TABLE maint_log DROP COLUMN spec"))
-            db.session.commit()
-        except: db.session.rollback()
-        try:
-            db.session.execute(text("ALTER TABLE maint_log DROP COLUMN item_cost"))
-            db.session.commit()
-        except: db.session.rollback()
-
-        # [기존 데이터 마이그레이션 실행]
-        migrate_maint_log_detail_types()
-
-        # [불필요 분리 테이블 및 구 system_setting 레코드 정리]
-        try:
-            db.session.execute(text("SET FOREIGN_KEY_CHECKS = 0;"))
-            db.session.execute(text("DROP TABLE IF EXISTS check_type_category2;"))
-            db.session.execute(text("DROP TABLE IF EXISTS check_type_category3;"))
-            db.session.execute(text("DELETE FROM system_setting WHERE `key` IN ('check_type_categories', 'check_type_categories2', 'check_type_categories3', 'equipment_models', 'admin_items', 'check_type_items');"))
-            db.session.execute(text("SET FOREIGN_KEY_CHECKS = 1;"))
-            db.session.commit()
-            app.logger.info("[DB Cleanup] Successfully dropped check_type_category2, check_type_category3 and cleaned deprecated system_setting keys.")
-        except Exception as ex:
-            db.session.rollback()
-            app.logger.error(f"[DB Cleanup Error] {ex}")
 
         # [테이블 컬럼 보정]
         try:
