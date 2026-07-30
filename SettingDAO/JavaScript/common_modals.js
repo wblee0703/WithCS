@@ -1756,8 +1756,8 @@ function buildDetailDropdown(item, site, equip) {
 
                     const detailType3Select = document.getElementById('detail-detail-type3-select');
                     const detailType3Val = detailType3Select && detailType3Select.style.display !== 'none' ? detailType3Select.value : '';
-                    const isPartMode = (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화') || (type === '비정기' && ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(detailType3Val)));
-                    const templateId = isPartMode ? 'log-part-item-template' : 'detail-content-item-template';
+                    const isPartModeTpl = (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화') || (type === '비정기' && ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(detailType3Val)));
+                    const templateId = isPartModeTpl ? 'log-part-item-template' : 'detail-content-item-template';
                     const tpl = getTemplateContent(templateId);
                     if (tpl) {
                         const div = tpl.querySelector('.log-select-item');
@@ -1921,16 +1921,16 @@ function buildDetailDropdown(item, site, equip) {
 
         const detailType3Select = document.getElementById('detail-detail-type3-select');
         const detailType3Val = detailType3Select && detailType3Select.style.display !== 'none' ? detailType3Select.value : '';
-        const isPartMode = (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화') || (type === '비정기' && ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(detailType3Val)));
+        const isPartModeFooter = (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화') || (type === '비정기' && ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(detailType3Val)));
         const footer = dropdown ? dropdown.querySelector('.log-select-footer') : null;
-        if (footer) footer.style.display = (type === '비정기' && !isPartMode) ? 'none' : 'flex';
+        if (footer) footer.style.display = (type === '비정기' && !isPartModeFooter) ? 'none' : 'flex';
 
         addBtn.addEventListener('pointerdown', (e) => {
             e.preventDefault();
             e.stopPropagation();
             dropdown.classList.remove('show');
         });
-        if (type === '비정기' && !isPartMode) { addBtn.parentElement.style.display = 'none'; }
+        if (type === '비정기' && !isPartModeFooter) { addBtn.parentElement.style.display = 'none'; }
 
         trigger.onclick = (e) => {
             e.stopPropagation();
@@ -4610,8 +4610,8 @@ window.updateRegisterContentOptions = function () {
 
                     const rDetailType3Select = document.getElementById('register-detail-type3-select');
                     const rDetailType3Val = rDetailType3Select && rDetailType3Select.style.display !== 'none' ? rDetailType3Select.value : '';
-                    const isPartMode = (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화') || (type === '비정기' && ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(rDetailType3Val)));
-                    const templateId = isPartMode ? 'log-part-item-template' : 'detail-content-item-template';
+                    const isPartModeTpl = (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화') || (type === '비정기' && ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(rDetailType3Val)));
+                    const templateId = isPartModeTpl ? 'log-part-item-template' : 'detail-content-item-template';
 
                     const tpl = getTemplateContent(templateId);
                     if (tpl) {
@@ -4700,9 +4700,9 @@ window.updateRegisterContentOptions = function () {
 
                             const rDetailType3Select = document.getElementById('register-detail-type3-select');
                             const rDetailType3Val = rDetailType3Select && rDetailType3Select.style.display !== 'none' ? rDetailType3Select.value : '';
-                            const isPartMode = (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화') || (type === '비정기' && ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(rDetailType3Val)));
+                            const isPartModeClick = (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화') || (type === '비정기' && ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(rDetailType3Val)));
 
-                            if (type === '비정기' && !isPartMode) {
+                            if (type === '비정기' && !isPartModeClick) {
                                 list.querySelectorAll('.log-select-item.selected').forEach(el => {
                                     if (el !== div) el.classList.remove('selected');
                                 });
@@ -4710,7 +4710,7 @@ window.updateRegisterContentOptions = function () {
                             div.classList.toggle('selected');
                             updateTriggerText();
 
-                            if (type === '비정기' && !isPartMode && div.classList.contains('selected')) {
+                            if (type === '비정기' && !isPartModeClick && div.classList.contains('selected')) {
                                 dropdown.classList.remove('show');
                             }
 
@@ -4762,10 +4762,10 @@ window.updateRegisterContentOptions = function () {
 
         const rDetailType3Select = document.getElementById('register-detail-type3-select');
         const rDetailType3Val = rDetailType3Select && rDetailType3Select.style.display !== 'none' ? rDetailType3Select.value : '';
-        const isPartMode = (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화') || (type === '비정기' && ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(rDetailType3Val)));
+        const isPartModeFooter = (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화') || (type === '비정기' && ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(rDetailType3Val)));
 
         const footer = dropdown ? dropdown.querySelector('.log-select-footer') : null;
-        if (footer) footer.style.display = (type === '비정기' && !isPartMode) ? 'none' : 'block';
+        if (footer) footer.style.display = (type === '비정기' && !isPartModeFooter) ? 'none' : 'block';
     } else {
         wrapper.style.display = 'none';
         input.style.display = 'block';
