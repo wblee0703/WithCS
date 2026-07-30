@@ -1390,11 +1390,19 @@ function buildDetailDropdown(item, site, equip) {
 
         if (['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(detailType3)) {
             isDropdownMode = true;
-            const equipName = equipKey.split('::')[0];
+            let equipParts = (equipKey || '').split('::').map(s => s.trim()).filter(Boolean);
+            let equipName = equipParts.length > 1 ? equipParts[1] : (equipParts[0] || '');
+            const matchedModel = (typeof equipmentModels !== 'undefined' ? equipmentModels : []).find(m => m.name === equipName || m.abbr === equipName);
+            const targetEquipNames = [equipName];
+            if (matchedModel) {
+                if (matchedModel.name) targetEquipNames.push(matchedModel.name);
+                if (matchedModel.abbr) targetEquipNames.push(matchedModel.abbr);
+            }
+
             let matchedItems = adminItems.filter(ai => {
                 if (!ai.equip) return false;
                 const equips = ai.equip.split(',').map(e => e.trim());
-                return equips.includes(equipName);
+                return targetEquipNames.some(tn => equips.includes(tn));
             });
             let otherItems = adminItems.filter(ai => !matchedItems.includes(ai));
             availableItems = [...matchedItems, ...otherItems].map(mItem => ({ content: mItem.part, code: mItem.code }));
@@ -1406,13 +1414,21 @@ function buildDetailDropdown(item, site, equip) {
         availableItems = itemData[chkKey] || [];
         if (availableItems.length > 0) isDropdownMode = true;
 
-        if (availableItems.length === 0 && (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화'))) {
+        if (availableItems.length === 0) {
             isDropdownMode = true;
-            const equipName = equipKey.split('::')[0];
+            let equipParts = (equipKey || '').split('::').map(s => s.trim()).filter(Boolean);
+            let equipName = equipParts.length > 1 ? equipParts[1] : (equipParts[0] || '');
+            const matchedModel = (typeof equipmentModels !== 'undefined' ? equipmentModels : []).find(m => m.name === equipName || m.abbr === equipName);
+            const targetEquipNames = [equipName];
+            if (matchedModel) {
+                if (matchedModel.name) targetEquipNames.push(matchedModel.name);
+                if (matchedModel.abbr) targetEquipNames.push(matchedModel.abbr);
+            }
+
             let matchedItems = adminItems.filter(ai => {
                 if (!ai.equip) return false;
                 const equips = ai.equip.split(',').map(e => e.trim());
-                return equips.includes(equipName);
+                return targetEquipNames.some(tn => equips.includes(tn));
             });
             let otherItems = adminItems.filter(ai => !matchedItems.includes(ai));
             availableItems = [...matchedItems, ...otherItems].map(mItem => ({ content: mItem.part, code: mItem.code }));
@@ -4853,13 +4869,20 @@ window.updateRegisterContentOptions = function () {
             wrapper.style.display = 'block';
             input.style.display = 'none';
 
-            // [수정] 세부구분3이 파트 이상 교체/수리/용액 용자 이상일 때 오직 ADMIN 물품(adminItems)만 제안 목록에 노출
-            const equipName = equipKey.split('::')[0];
+            let equipParts = (equipKey || '').split('::').map(s => s.trim()).filter(Boolean);
+            let equipName = equipParts.length > 1 ? equipParts[1] : (equipParts[0] || '');
+            const matchedModel = (typeof equipmentModels !== 'undefined' ? equipmentModels : []).find(m => m.name === equipName || m.abbr === equipName);
+            const targetEquipNames = [equipName];
+            if (matchedModel) {
+                if (matchedModel.name) targetEquipNames.push(matchedModel.name);
+                if (matchedModel.abbr) targetEquipNames.push(matchedModel.abbr);
+            }
+
             const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
             let matchedItems = adminItems.filter(item => {
                 if (!item.equip) return false;
                 const equips = item.equip.split(',').map(e => e.trim());
-                return equips.includes(equipName);
+                return targetEquipNames.some(tn => equips.includes(tn));
             });
             let otherItems = adminItems.filter(item => !matchedItems.includes(item));
             items = [...matchedItems, ...otherItems].map(mItem => ({ content: mItem.part, code: mItem.code }));
@@ -4872,19 +4895,25 @@ window.updateRegisterContentOptions = function () {
 
     input.disabled = false;
 
-    if (items.length === 0 && type !== '비정기') {
-        if (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화')) {
-            const equipName = equipKey.split('::')[0];
-            const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-            let matchedItems = adminItems.filter(item => {
-                if (!item.equip) return false;
-                const equips = item.equip.split(',').map(e => e.trim());
-                return equips.includes(equipName);
-            });
-
-            let otherItems = adminItems.filter(item => !matchedItems.includes(item));
-            items = [...matchedItems, ...otherItems].map(mItem => ({ content: mItem.part, code: mItem.code }));
+    if (items.length === 0) {
+        let equipParts = (equipKey || '').split('::').map(s => s.trim()).filter(Boolean);
+        let equipName = equipParts.length > 1 ? equipParts[1] : (equipParts[0] || '');
+        const matchedModel = (typeof equipmentModels !== 'undefined' ? equipmentModels : []).find(m => m.name === equipName || m.abbr === equipName);
+        const targetEquipNames = [equipName];
+        if (matchedModel) {
+            if (matchedModel.name) targetEquipNames.push(matchedModel.name);
+            if (matchedModel.abbr) targetEquipNames.push(matchedModel.abbr);
         }
+
+        const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+        let matchedItems = adminItems.filter(item => {
+            if (!item.equip) return false;
+            const equips = item.equip.split(',').map(e => e.trim());
+            return targetEquipNames.some(tn => equips.includes(tn));
+        });
+
+        let otherItems = adminItems.filter(item => !matchedItems.includes(item));
+        items = [...matchedItems, ...otherItems].map(mItem => ({ content: mItem.part, code: mItem.code }));
     }
 
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];

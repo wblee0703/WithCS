@@ -5013,7 +5013,14 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
         equipKeyFull = currentPath.equip;
         siteName = currentPath.site || '';
     }
-    equipName = equipKeyFull ? equipKeyFull.split('::')[0] : '';
+    let equipParts = (equipKeyFull || '').split('::').map(s => s.trim()).filter(Boolean);
+    equipName = equipParts.length > 1 ? equipParts[1] : (equipParts[0] || '');
+    const matchedModel = (typeof equipmentModels !== 'undefined' ? equipmentModels : []).find(m => m.name === equipName || m.abbr === equipName);
+    const targetEquipNames = [equipName];
+    if (matchedModel) {
+        if (matchedModel.name) targetEquipNames.push(matchedModel.name);
+        if (matchedModel.abbr) targetEquipNames.push(matchedModel.abbr);
+    }
 
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
@@ -5101,11 +5108,14 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
 
     // 2. adminItems 중 장비 모델 매칭 항목 추가
     adminItems.forEach(item => {
-        if (item.equip && item.equip.split(',').map(e => e.trim()).includes(equipName)) {
-            const baseName = item.code || item.part;
-            if (!addedSet.has(baseName)) {
-                addedSet.add(baseName);
-                matchedItems.push({ part: item.part, code: item.code, partno: item.partno || '', spec: '', displayValue: baseName });
+        if (item.equip) {
+            const equips = item.equip.split(',').map(e => e.trim());
+            if (targetEquipNames.some(tn => equips.includes(tn))) {
+                const baseName = item.code || item.part;
+                if (!addedSet.has(baseName)) {
+                    addedSet.add(baseName);
+                    matchedItems.push({ part: item.part, code: item.code, partno: item.partno || '', spec: '', displayValue: baseName });
+                }
             }
         }
     });
@@ -5134,8 +5144,6 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
         }
     });
 
-    let showAll = matchedItems.length === 0;
-
     // [수정] 렌더링 전 기존 선택 상태 및 비용 처리 값 백업을 함수 외부 스코프에서 관리
     const currentSelections = { ...selectedMap };
 
@@ -5149,7 +5157,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
                 delete currentSelections[val];
             }
         });
-        let displayItems = showAll ? [...matchedItems, ...otherItems] : matchedItems;
+        let displayItems = [...matchedItems, ...otherItems];
         if (searchTerm) {
             const kws = searchTerm.toLowerCase().split(/\s+/);
             // [수정] 검색 필터링 시 품번(partno)도 포함

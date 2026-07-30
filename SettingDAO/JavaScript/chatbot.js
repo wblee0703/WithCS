@@ -16,20 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
-    // 1. 로그인 여부에 따른 챗봇 플로팅 버튼 노출 여부 결정
+    // 1. 로그인 여부 및 superadmin 권한에 따른 챗봇 플로팅 버튼 노출 여부 결정
     function checkLoginStatus() {
-        const isStorageLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
-        const isBodyLoggedIn = document.body.getAttribute('data-user-logged-in') === 'true';
-        const userInfoEl = document.getElementById('user-info');
-        const isUserInfoVisible = userInfoEl && userInfoEl.style.display !== 'none';
+        const userRole = sessionStorage.getItem('userRole') || document.body.getAttribute('data-user-role') || '';
+        const isSuperAdmin = userRole === 'superadmin';
 
-        const isLoggedIn = isStorageLoggedIn || isBodyLoggedIn || isUserInfoVisible;
-
-        if (isLoggedIn) {
+        if (isSuperAdmin) {
             chatbotContainer.style.display = 'block';
-            if (!isStorageLoggedIn) {
-                sessionStorage.setItem('isLoggedIn', 'true');
-            }
         } else {
             chatbotContainer.style.display = 'none';
             chatbotWindow.classList.remove('active');
@@ -94,7 +87,29 @@ document.addEventListener('DOMContentLoaded', () => {
     let initialTop = 0;
     let isMoved = false;
 
-    // 저장된 위치가 있다면 복원
+    // 화면 크기 축소/변화 시 챗봇 아이콘 위치 뷰포트 내 자동 조정 헬퍼
+    function clampPosition() {
+        if (chatbotToggleBtn.style.left && chatbotToggleBtn.style.left !== 'auto') {
+            const btnWidth = chatbotToggleBtn.offsetWidth || 56;
+            const btnHeight = chatbotToggleBtn.offsetHeight || 56;
+            const maxLeft = window.innerWidth - btnWidth - 10;
+            const maxTop = window.innerHeight - btnHeight - 10;
+
+            let currentLeft = parseFloat(chatbotToggleBtn.style.left);
+            let currentTop = parseFloat(chatbotToggleBtn.style.top);
+
+            if (isNaN(currentLeft)) currentLeft = window.innerWidth - btnWidth - 25;
+            if (isNaN(currentTop)) currentTop = window.innerHeight - btnHeight - 25;
+
+            const clampedLeft = Math.max(10, Math.min(maxLeft, currentLeft));
+            const clampedTop = Math.max(10, Math.min(maxTop, currentTop));
+
+            chatbotToggleBtn.style.left = `${clampedLeft}px`;
+            chatbotToggleBtn.style.top = `${clampedTop}px`;
+        }
+    }
+
+    // 저장된 위치가 있다면 복원 후 화면 보정
     const savedLeft = localStorage.getItem('chatbot_icon_left');
     const savedTop = localStorage.getItem('chatbot_icon_top');
     if (savedLeft && savedTop) {
@@ -102,7 +117,12 @@ document.addEventListener('DOMContentLoaded', () => {
         chatbotToggleBtn.style.bottom = 'auto';
         chatbotToggleBtn.style.left = savedLeft;
         chatbotToggleBtn.style.top = savedTop;
+        clampPosition();
     }
+
+    // 창 크기 변경 및 화면 회전 시 위치 자동 맞춤
+    window.addEventListener('resize', clampPosition);
+    window.addEventListener('orientationchange', clampPosition);
 
     chatbotToggleBtn.addEventListener('pointerdown', (e) => {
         isDragging = true;
@@ -214,11 +234,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function makeDragScrollable(elem) {
+        if (!elem || elem.dataset.dragScrollBound) return;
+        elem.dataset.dragScrollBound = 'true';
+        let isDown = false;
+        let startY, scrollTop;
+
+        elem.addEventListener('mousedown', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+            isDown = true;
+            elem.style.cursor = 'grabbing';
+            startY = e.pageY - elem.offsetTop;
+            scrollTop = elem.scrollTop;
+        });
+
+        elem.addEventListener('mouseleave', () => {
+            isDown = false;
+            elem.style.cursor = 'grab';
+        });
+
+        elem.addEventListener('mouseup', () => {
+            isDown = false;
+            elem.style.cursor = 'grab';
+        });
+
+        elem.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const y = e.pageY - elem.offsetTop;
+            const walk = (y - startY) * 1.5;
+            elem.scrollTop = scrollTop - walk;
+        });
+    }
+
     function renderChatbotHistoryModal() {
         const dateListEl = document.getElementById('chatbot-history-date-list');
         const contentEl = document.getElementById('chatbot-history-content');
         const selectedDateEl = document.getElementById('chatbot-history-selected-date');
         if (!dateListEl || !contentEl) return;
+
+        makeDragScrollable(dateListEl);
+        makeDragScrollable(contentEl);
 
         dateListEl.innerHTML = '';
         contentEl.innerHTML = '';

@@ -350,6 +350,56 @@
     .chatbot-expand-btn {
         display: none !important;
     }
+
+    .chatbot-history-action-btn {
+        display: inline-flex !important;
+    }
+
+    /* 모바일 환경 챗봇 대화 기록 모달 반응형 레이아웃 */
+    #chatbot-history-modal .modal-container {
+        width: 95% !important;
+        height: 85vh !important;
+        max-height: 85vh !important;
+    }
+
+    #chatbot-history-modal .modal-body {
+        flex-direction: column !important;
+        gap: 10px !important;
+        padding: 10px !important;
+    }
+
+    #chatbot-history-modal .modal-body > div:first-child {
+        width: 100% !important;
+        height: 160px !important;
+        border-right: none !important;
+        border-bottom: 1px solid #30363d !important;
+        padding-right: 0 !important;
+        padding-bottom: 10px !important;
+    }
+
+    /* [요청] 모바일 환경에서는 하단 전체 목록 삭제 버튼 숨김 (개별 🗑️ 삭제 아이콘만 유지) */
+    .chatbot-history-clear-wrapper {
+        display: none !important;
+    }
+}
+
+.chatbot-history-action-btn {
+    background: transparent;
+    border: none;
+    color: #c9d1d9;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.chatbot-history-action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
 }
 
 /* 챗봇 크기 확대 토글 스타일 */

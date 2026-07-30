@@ -1659,10 +1659,9 @@ def call_external_chat_api(prompt, system_instruction):
 @limiter.limit("20 per minute")
 def ai_chatbot():
     try:
-        # 개발 중 임시 조치: 최종 관리자(superadmin)만 챗봇 사용 가능
-        role = session.get('role')
-        if role != 'superadmin':
-            return jsonify({"status": "fail", "message": "챗봇 사용 권한이 없습니다. (현재 개발 중)"}), 403
+        # 오직 최종 관리자(superadmin)만 챗봇 기능 사용 가능
+        if session.get('role') != 'superadmin':
+            return jsonify({"status": "fail", "message": "챗봇 사용 권한이 없습니다. (최종관리자 전용)"}), 403
 
         data = request.json or {}
         user_message = data.get('message', '').strip()
