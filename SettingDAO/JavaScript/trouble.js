@@ -653,16 +653,20 @@ function setupTroubleEvents() {
 
             const memoVal = memoEl ? memoEl.value : '';
             const maintMemoVal = situationEl ? situationEl.value : '';
+            const siteVal = document.getElementById('trouble-modal-site') ? document.getElementById('trouble-modal-site').value : '';
+            const equipVal = document.getElementById('trouble-modal-equip') ? document.getElementById('trouble-modal-equip').value : '';
 
             const payload = {
                 id: troubleId,
                 equip_id: equipId,
-                occur_date: document.getElementById('trouble-modal-occur-date').value,
-                action_date: document.getElementById('trouble-modal-action-date').value,
+                site: siteVal,
+                equip: equipVal,
+                occur_date: document.getElementById('trouble-modal-occur-date') ? document.getElementById('trouble-modal-occur-date').value : '',
+                action_date: document.getElementById('trouble-modal-action-date') ? document.getElementById('trouble-modal-action-date').value : '',
                 content: contentData, // [수정] JSON 객체로 전송
                 memo: memoVal, // [추가] 진행 경과 분리 전송
                 maint_memo: maintMemoVal,
-                worker: document.getElementById('trouble-modal-worker').value,
+                worker: document.getElementById('trouble-modal-worker') ? document.getElementById('trouble-modal-worker').value : '',
                 status: document.getElementById('trouble-modal-status') ? document.getElementById('trouble-modal-status').value : '조치완료',
                 image_data: currentTroubleImageBase64,
                 source: source
@@ -1167,13 +1171,11 @@ function renderTroubleList(dataList = []) {
                     if (parsed.prevention) arr.push(`[대책] ${parsed.prevention}`);
                     if (parsed.trouble_memo) arr.push(`[메모] ${parsed.trouble_memo}`);
 
-                    // [수정] 화면에는 '트러블 상황'에 입력된 내용만 단독으로 표시 (툴팁은 전체 내용 유지)
-                    displayContent = sit || '-';
+                    displayContent = sit || parsed.symptom || parsed.cause || parsed.action || parsed.prevention || parsed.trouble_memo || (t.memo && t.memo !== '-' ? t.memo : '-');
                     tooltipContent = arr.join('\n');
                 } catch (e) { }
-            } else {
-                displayContent = '-';
-                tooltipContent = '';
+            } else if (!displayContent || displayContent === '-') {
+                if (t.memo && t.memo !== '-') displayContent = t.memo;
             }
 
             // [추가] 기록여부 판단 (발생 일시 유무 기준)
