@@ -463,6 +463,50 @@ def get_log_category(action):
     if action in SETUP_ACTIONS: return 'setup'
     return 'maintenance'
 
+def parse_part_item_string(raw_str):
+    if not raw_str:
+        return None
+    s = str(raw_str).strip()
+    if not s or s in ['내용 없음', '장비 점검']:
+        return None
+
+    # 1. '파트 이상 교체 -', '파트 이상 수리 -' 등 접두사 정제
+    for prefix_kw in ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리', '파츠 이상 교체', '파츠 이상 수리']:
+        if s.startswith(prefix_kw + ' -'):
+            s = s[len(prefix_kw) + 2:].strip()
+            break
+        elif s.startswith(prefix_kw + '-'):
+            s = s[len(prefix_kw) + 1:].strip()
+            break
+        elif s.startswith(prefix_kw):
+            s = s[len(prefix_kw):].strip()
+            break
+
+    # 2. 맨 앞 비용 태그('[유상]', '[무상]') 정제
+    cost_tag = '유상'
+    cm = re.match(r'^\[(.*?)\]\s*(.*)$', s)
+    if cm:
+        cost_tag = cm.group(1).strip()
+        s = cm.group(2).strip()
+
+    # 3. 맨 뒤 물품 상세 대괄호('[물품상세]') 추출 및 정제
+    part_detail_tag = ''
+    sm = re.search(r'\s*\[(.*?)\]$', s)
+    if sm:
+        part_detail_tag = sm.group(1).strip()
+        s = s[:sm.start()].strip()
+
+    clean_name = s.strip()
+    if not clean_name or clean_name in ['내용 없음', '장비 점검']:
+        return None
+
+    return {
+        'clean_name': clean_name,
+        'cost_tag': cost_tag,
+        'part_detail': part_detail_tag
+    }
+
+
 # ------------------------------------------------------------------------------
 # 4. 핵심 로직: 데이터 로딩 (Core Logic: Data Loading)
 # ------------------------------------------------------------------------------
@@ -616,15 +660,18 @@ def load_data():
                 "originalLogId": int(m.original_log_id) if m.original_log_id and str(m.original_log_id).isdigit() else m.original_log_id
             })
 
-        # [요청 반영] item_log 테이블에 기록된 해당 장비의 유지관리 물품 리스트 반영
+        # [요청 반영] item_log 테이블에 기록된 해당 장비의 유지관리 물품 리스트 반영 (코드명에는 code, 물품 상세에는 part_detail 매핑)
         eq_item_logs = item_logs.get(eq.id, [])
         for il in eq_item_logs:
             il_id = int(il.id) if str(il.id).isdigit() else il.id
-            il_code = il.code or il.part or ''
-            il_spec = il.part_detail or il.spec or ''
+            il_code = (il.code or il.part or '').strip()
+            il_part_detail = (il.part_detail or '').strip()
             il_cycle = int(il.cycle) if il.cycle and str(il.cycle).isdigit() else (il.cycle or '')
 
-            if str(il_id) not in maint_ids and (il_code.strip(), il_spec.strip()) not in maint_code_specs:
+            if ',' in il_code or ',' in (il.part or ''):
+                continue
+
+            if str(il_id) not in maint_ids and (il_code, il_part_detail) not in maint_code_specs:
                 data[detail_key]["maint"].append({
                     "id": il_id,
                     "type": il.type or '정기',
@@ -633,7 +680,7 @@ def load_data():
                     "detailType3": '',
                     "code": il_code,
                     "content": il_code,
-                    "spec": il_spec,
+                    "spec": il_part_detail,
                     "date": il.date or '',
                     "scheduledDate": il.date or '',
                     "period": il_cycle,
@@ -646,7 +693,7 @@ def load_data():
                     "originalLogId": None
                 })
                 maint_ids.add(str(il_id))
-                maint_code_specs.add((il_code.strip(), il_spec.strip()))
+                maint_code_specs.add((il_code, il_part_detail))
             
         logs_list = [l for l in eq_all_logs if getattr(l, 'status', '조치완료') != '작업예정']
         for l in logs_list:
@@ -2789,66 +2836,68 @@ def history_transaction():
             item.original_log_id = orig_id if orig_id else item.original_log_id
             item.add_work_log_id = str(l.get('addWorkLogId')) if l.get('addWorkLogId') else getattr(item, 'add_work_log_id', None)
 
+            # [요청 반영] item_log DB에서 콤마(,)가 포함된 결합 레코드 자동 정리
+            try:
+                ItemLog.query.filter(ItemLog.equip_id == equip_id, (ItemLog.code.like('%,%')) | (ItemLog.part.like('%,%'))).delete(synchronize_session=False)
+            except Exception:
+                pass
+
             # [요청 반영] 완료된 작업 내용(content)에 물품이 포함되어 있으면 item_log(유지관리 물품)에 자동 추가 등록 및 동기화
             c_text = l.get('content') or item.content or ''
             if c_text and c_text != '내용 없음':
                 sub_parts = [sp.strip() for sp in c_text.split(',') if sp.strip()]
                 for sp in sub_parts:
-                    cost_tag = l.get('costType') or item.cost_type or '유상'
-                    pure_p = sp
-                    cm = re.match(r'^\[(.*?)\]\s*(.*)$', sp)
-                    if cm:
-                        cost_tag = cm.group(1).strip()
-                        pure_p = cm.group(2).strip()
-                    
-                    for prefix_kw in ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리']:
-                        if pure_p.startswith(prefix_kw + ' -'):
-                            pure_p = pure_p[len(prefix_kw) + 2:].strip()
-                            break
+                    parsed = parse_part_item_string(sp)
+                    if not parsed:
+                        continue
 
-                    spec_tag = ''
-                    sm = re.search(r'\s*\[(.*?)\]$', pure_p)
-                    if sm:
-                        spec_tag = sm.group(1).strip()
-                        pure_p = pure_p[:sm.start()].strip()
+                    pure_p = parsed['clean_name']
+                    spec_tag = parsed['part_detail']
 
-                    if pure_p and pure_p != '내용 없음':
-                        match_admin = AdminItem.query.filter((AdminItem.part == pure_p) | (AdminItem.code == pure_p)).first()
-                        code_val = match_admin.code if match_admin and match_admin.code else pure_p
-                        part_name_val = match_admin.part if match_admin and match_admin.part else pure_p
-                        spec_val = match_admin.spec if match_admin and match_admin.spec else ''
-                        cycle_val = getattr(match_admin, 'cycle', None) if match_admin else getattr(item, 'period', None)
+                    # AdminItem 매칭 (코드명, 물품명, trim 일치 여부 정확 검색)
+                    match_admin = AdminItem.query.filter(
+                        (AdminItem.code == pure_p) | (AdminItem.part == pure_p) |
+                        (db.func.trim(AdminItem.code) == pure_p) | (db.func.trim(AdminItem.part) == pure_p)
+                    ).first()
 
-                        # [충돌 해결] 1. 기존 ItemLog DB에서 동일 equip_id 및 물품명(code/part/pure_p) 유연 및 우선 검색하여 충돌 방지
-                        exist_log = ItemLog.query.filter(
-                            ItemLog.equip_id == equip_id,
-                            (ItemLog.part == part_name_val) | (ItemLog.code == code_val) | (ItemLog.part == pure_p) | (ItemLog.code == pure_p)
-                        ).first()
+                    code_val = match_admin.code if match_admin and match_admin.code else pure_p
+                    part_name_val = match_admin.part if match_admin and match_admin.part else pure_p
+                    spec_val = match_admin.spec if match_admin and match_admin.spec else ''
+                    cycle_val = getattr(match_admin, 'cycle', None) if match_admin else getattr(item, 'period', None)
 
-                        if not exist_log:
-                            # 기존 ItemLog가 없는 경우: 유지관리 물품 신규 추가
-                            exist_log = ItemLog(
-                                id=f"item_{int(time.time()*1000)}_{random.randint(100, 999)}",
-                                equip_id=equip_id,
-                                date=l.get('date', item.date or ''),
-                                type=l.get('type', item.type or '비정기'),
-                                code=code_val,
-                                part=part_name_val,
-                                spec=spec_val,
-                                part_detail=spec_tag,
-                                cycle=cycle_val
-                            )
-                            db.session.add(exist_log)
-                        else:
-                            # 이미 있는 유지관리 물품인 경우: 시작일만 갱신 (중복 레코드 복제 방지)
-                            if l.get('date'):
-                                exist_log.date = l.get('date')
-                            if spec_tag and not exist_log.part_detail:
-                                exist_log.part_detail = spec_tag
+                    # 기존 ItemLog DB에서 동일 equip_id, 물품명(code/part/pure_p) 및 물품상세(part_detail) 완벽 독립 세트 매칭 검색
+                    exist_log = ItemLog.query.filter(
+                        ItemLog.equip_id == equip_id,
+                        ((ItemLog.part == part_name_val) | (ItemLog.code == code_val) |
+                         (ItemLog.part == pure_p) | (ItemLog.code == pure_p)),
+                        db.func.coalesce(ItemLog.part_detail, '') == (spec_tag or '')
+                    ).first()
 
-                        final_p_detail = spec_tag or (exist_log.part_detail if exist_log else '')
-                        if final_p_detail:
-                            item.spec = final_p_detail
+                    if not exist_log:
+                        exist_log = ItemLog(
+                            id=f"item_{int(time.time()*1000)}_{random.randint(100, 999)}",
+                            equip_id=equip_id,
+                            date=l.get('date', item.date or ''),
+                            type=l.get('type', item.type or '비정기'),
+                            code=code_val,
+                            part=part_name_val,
+                            spec=spec_val,
+                            part_detail=spec_tag,
+                            cycle=str(cycle_val) if cycle_val is not None else None
+                        )
+                        db.session.add(exist_log)
+                    else:
+                        if l.get('date'):
+                            exist_log.date = l.get('date')
+                        if code_val:
+                            exist_log.code = code_val
+                        if part_name_val:
+                            exist_log.part = part_name_val
+                        if spec_val and not exist_log.spec:
+                            exist_log.spec = spec_val
+                        exist_log.part_detail = spec_tag
+                        if cycle_val is not None:
+                            exist_log.cycle = str(cycle_val)
 
         # 2. maint_deletes 처리
         if maint_deletes:
@@ -2889,39 +2938,59 @@ def history_transaction():
             item.memo = m.get('memo', item.memo)
             item.original_log_id = str(m.get('originalLogId')) if m.get('originalLogId') else item.original_log_id
 
-            # [요청 반영] item_log DB 테이블에도 동기화
-            m_code = m.get('code') or m.get('content') or ''
-            m_part = m.get('part') or m_code
-            m_spec = m.get('spec') or ''
-            m_type = m.get('type') or '정기'
-            m_date = m.get('date') or ''
-            m_cycle = str(m.get('period') or m.get('cycle') or '') if (m.get('period') is not None or m.get('cycle') is not None) else None
+            # [요청 반영] item_log DB 테이블에도 개별 물품 단위 분리 동기화 (결합 레코드 및 스펙 오염 방지)
+            m_raw = m.get('code') or m.get('content') or ''
+            if m_raw and m_raw not in ['내용 없음', '장비 점검']:
+                m_sub_parts = [sp.strip() for sp in m_raw.split(',') if sp.strip()]
+                for m_sp in m_sub_parts:
+                    m_parsed = parse_part_item_string(m_sp)
+                    if not m_parsed:
+                        continue
 
-            if m_code and m_code not in ['내용 없음', '장비 점검']:
-                item_log_rec = ItemLog.query.filter(
-                    ItemLog.equip_id == equip_id,
-                    (ItemLog.id == m_id) | (ItemLog.code == m_code) | (ItemLog.part == m_code)
-                ).first()
-                if not item_log_rec:
-                    item_log_rec = ItemLog(
-                        id=m_id,
-                        equip_id=equip_id,
-                        date=m_date,
-                        type=m_type,
-                        code=m_code,
-                        part=m_part,
-                        spec=m_spec,
-                        part_detail=m_spec,
-                        cycle=m_cycle
-                    )
-                    db.session.add(item_log_rec)
-                else:
-                    item_log_rec.id = m_id
-                    if m_date: item_log_rec.date = m_date
-                    if m_type: item_log_rec.type = m_type
-                    if m_code: item_log_rec.code = m_code; item_log_rec.part = m_part
-                    if m_spec: item_log_rec.part_detail = m_spec; item_log_rec.spec = m_spec
-                    if m_cycle is not None: item_log_rec.cycle = m_cycle
+                    m_pure_p = m_parsed['clean_name']
+                    m_spec_tag = m_parsed['part_detail']
+                    m_type = m.get('type') or '정기'
+                    m_date = m.get('date') or ''
+                    m_cycle = str(m.get('period') or m.get('cycle') or '') if (m.get('period') is not None or m.get('cycle') is not None) else None
+
+                    match_admin = AdminItem.query.filter(
+                        (AdminItem.code == m_pure_p) | (AdminItem.part == m_pure_p) |
+                        (db.func.trim(AdminItem.code) == m_pure_p) | (db.func.trim(AdminItem.part) == m_pure_p)
+                    ).first()
+
+                    m_code_val = match_admin.code if match_admin and match_admin.code else m_pure_p
+                    m_part_val = match_admin.part if match_admin and match_admin.part else m_pure_p
+                    m_spec_val = match_admin.spec if match_admin and match_admin.spec else m_spec_tag
+
+                    item_log_rec = ItemLog.query.filter(
+                        ItemLog.equip_id == equip_id,
+                        ((ItemLog.code == m_code_val) | (ItemLog.part == m_part_val) |
+                         (ItemLog.code == m_pure_p) | (ItemLog.part == m_pure_p)),
+                        db.func.coalesce(ItemLog.part_detail, '') == (m_spec_tag or '')
+                    ).first()
+
+                    if not item_log_rec:
+                        new_item_id = m_id if m_id.startswith('item_') else f"item_{m_id}"
+                        item_log_rec = ItemLog(
+                            id=new_item_id if len(m_sub_parts) == 1 else f"item_{int(time.time()*1000)}_{random.randint(100, 999)}",
+                            equip_id=equip_id,
+                            date=m_date,
+                            type=m_type,
+                            code=m_code_val,
+                            part=m_part_val,
+                            spec=m_spec_val,
+                            part_detail=m_spec_tag,
+                            cycle=m_cycle
+                        )
+                        db.session.add(item_log_rec)
+                    else:
+                        if m_date: item_log_rec.date = m_date
+                        if m_type: item_log_rec.type = m_type
+                        if m_code_val: item_log_rec.code = m_code_val
+                        if m_part_val: item_log_rec.part = m_part_val
+                        if m_spec_val: item_log_rec.spec = m_spec_val
+                        if m_spec_tag: item_log_rec.part_detail = m_spec_tag
+                        if m_cycle is not None: item_log_rec.cycle = m_cycle
 
         if log_deletes:
             LogItem.query.filter(LogItem.id.in_(log_deletes)).delete(synchronize_session=False)
