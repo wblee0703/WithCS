@@ -1065,14 +1065,14 @@ function renderTroubleList(dataList = []) {
             let dt2 = t.detail_type2 || '-';
             let dt3 = t.detail_type3 || '-';
 
-            if (dt1.includes(' > ')) {
+            if (dt1 && dt1.includes(' > ')) {
                 const parts = dt1.split(' > ');
-                dt1 = parts[0].trim();
+                dt1 = parts[0] ? parts[0].trim() : '-';
                 if (parts[1]) dt2 = parts[1].trim();
                 if (parts[2]) dt3 = parts[2].trim();
-            } else if (dt2.includes(' > ')) {
+            } else if (dt2 && dt2.includes(' > ')) {
                 const parts = dt2.split(' > ');
-                if (dt1 === '-' || dt1 === '') dt1 = parts[0].trim();
+                if (dt1 === '-' || !dt1) dt1 = parts[0] ? parts[0].trim() : '-';
                 dt2 = parts[1] ? parts[1].trim() : dt2;
                 if (parts[2]) dt3 = parts[2].trim();
             }

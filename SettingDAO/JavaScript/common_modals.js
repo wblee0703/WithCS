@@ -391,24 +391,25 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     }
     document.getElementById('detail-serial-no').textContent = serialText;
     document.getElementById('detail-type').textContent = item.type || '정기';
-    let displayDetailType = item.detailType;
+    let dt1 = item.detailType || item.detail_type || '';
+    let dt2 = item.detailType2 || item.detail_type2 || '';
+    let dt3 = item.detailType3 || item.detail_type3 || '';
 
-    // [추가] 세부구분 파싱 로직 (초기값 설정용)
-    // HTML 엔티티(&gt;)로 저장된 경우를 대비하여 디코딩 후 파싱합니다.
-    let initialDetailType = '';
-    let initialDetailType2 = '';
-    let initialDetailType3 = '';
-    if (displayDetailType) {
-        const decodedDetailType = displayDetailType.replace(/&gt;/g, '>');
-        if (decodedDetailType.includes(' > ')) {
-            const parts = decodedDetailType.split(' > ');
-            initialDetailType = parts[0] ? parts[0].trim() : '';
-            initialDetailType2 = parts[1] ? parts[1].trim() : '';
-            initialDetailType3 = parts[2] ? parts[2].trim() : '';
-        } else {
-            initialDetailType = decodedDetailType;
-        }
+    if (dt1 && dt1.includes(' > ')) {
+        const parts = dt1.replace(/&gt;/g, '>').split(' > ');
+        dt1 = parts[0] ? parts[0].trim() : '';
+        if (parts[1] && !dt2) dt2 = parts[1].trim();
+        if (parts[2] && !dt3) dt3 = parts[2].trim();
+    } else if (dt1) {
+        dt1 = dt1.replace(/&gt;/g, '>').trim();
     }
+
+    let initialDetailType = dt1;
+    let initialDetailType2 = dt2;
+    let initialDetailType3 = dt3;
+
+    const dtArray = [dt1, dt2, dt3].filter(Boolean);
+    let displayDetailType = dtArray.length > 0 ? dtArray.join(' > ') : ((item.type === '정기') ? 'PM 점검' : '-');
 
     // [추가] 수정 모드용 select 요소들 미리 찾아두기
     const typeEl = document.getElementById('detail-type');
@@ -436,10 +437,9 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         detailType3Select = document.getElementById('detail-detail-type3-select');
     }
 
-    if (!displayDetailType) {
-        displayDetailType = (item.type === '정기') ? 'PM 점검' : '';
+    if (document.getElementById('detail-detail-type')) {
+        document.getElementById('detail-detail-type').textContent = displayDetailType;
     }
-    document.getElementById('detail-detail-type').textContent = displayDetailType;
 
     let displayContent = '';
     if (isCompleted) {
@@ -519,7 +519,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     const itemsArr = window.splitSafetyContent(displayContent);
 
     const partKeywords = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '파트 이상 (교체)', '파트 이상 (수리)', '파츠 이상 교체', '파츠 이상 수리', '물품 이상 교체', '물품 이상 수리', '용액 / 용자 이상'];
-    const isPartType = partKeywords.includes(initialDetailType3) || partKeywords.includes(initialDetailType) || partKeywords.includes(initialDetailType2) || itemsArr.some(s => partKeywords.some(kw => s.includes(kw)));
+    const isPartType = partKeywords.includes(dt3) || partKeywords.includes(dt1) || partKeywords.includes(dt2) || itemsArr.some(s => partKeywords.some(kw => s.includes(kw)));
 
     // 완료된 파트 상태일 때 하단 요약 박스 동적 생성 및 매핑
     document.querySelectorAll('#detail-display-list-wrapper').forEach(el => el.remove());
@@ -715,8 +715,17 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     if (detailContentInputEl) {
         detailContentInputEl.value = (displayContent && displayContent !== '내용 없음') ? displayContent : '';
         detailContentInputEl.style.width = '100%';
+        detailContentInputEl.style.maxWidth = '100%';
         detailContentInputEl.style.boxSizing = 'border-box';
-        detailContentInputEl.style.flex = '1';
+        detailContentInputEl.style.flex = '1 1 100%';
+
+        const contentRow = detailContentInputEl.closest('.form-row') || detailContentInputEl.closest('.detail-row') || detailContentInputEl.parentNode;
+        if (contentRow) {
+            contentRow.style.width = '100%';
+            contentRow.style.boxSizing = 'border-box';
+            const flexContainer = contentRow.querySelector('#detail-content-flex-container');
+            if (flexContainer) flexContainer.style.width = '100%';
+        }
 
         // 내용 입력 시 콤마(,) 특수문자 입력 제한 (물품 쪼개짐 현상 차단)
         if (!detailContentInputEl.dataset.commaBound) {
@@ -728,6 +737,12 @@ function openEventDetailModal(site, equip, id, isCompleted) {
                 }
             });
         }
+    }
+    if (contentDiv) {
+        contentDiv.style.width = '100%';
+        contentDiv.style.maxWidth = '100%';
+        contentDiv.style.boxSizing = 'border-box';
+        contentDiv.style.flex = '1 1 100%';
     }
     const cancelBtn = document.getElementById('btn-cancel-completion');
 
@@ -1012,6 +1027,18 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             }
         }
 
+        // [요청 반영] 추가 작업 상세 정보 모달일 때 구분, 세부구분, 세부구분2 비활성화
+        const isAddWorkDetail = !!(item.originalLogId || item.original_log_id || item.add_work_log_id);
+        if (isAddWorkDetail) {
+            if (typeSelect) typeSelect.disabled = true;
+            if (detailTypeSelect) detailTypeSelect.disabled = true;
+            if (detailType2Select) detailType2Select.disabled = true;
+        } else {
+            if (typeSelect) typeSelect.disabled = false;
+            if (detailTypeSelect) detailTypeSelect.disabled = false;
+            if (detailType2Select) detailType2Select.disabled = false;
+        }
+
         workerInput.disabled = false;
         if (trigger) {
             trigger.classList.remove('disabled');
@@ -1049,7 +1076,19 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             partTrigger.classList.add('disabled');
             partTrigger.style.pointerEvents = 'none';
         }
-        if (detailContentInputEl) detailContentInputEl.disabled = true;
+        if (detailContentInputEl) {
+            detailContentInputEl.disabled = true;
+            detailContentInputEl.style.width = '100%';
+            detailContentInputEl.style.maxWidth = '100%';
+            detailContentInputEl.style.boxSizing = 'border-box';
+            detailContentInputEl.style.flex = '1 1 100%';
+        }
+        if (contentDiv) {
+            contentDiv.style.width = '100%';
+            contentDiv.style.maxWidth = '100%';
+            contentDiv.style.boxSizing = 'border-box';
+            contentDiv.style.flex = '1 1 100%';
+        }
     } else {
         if (detailContentInputEl) {
             const detailTypeSel = document.getElementById('detail-detail-type-select');
@@ -3598,16 +3637,17 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
     }
 
     // [추가] 팝업 진입 경로에 따라 모달 타이틀 동적 변경
+    const isAddWork = !!window.currentAddWorkLogId;
     const modalTitle = modal.querySelector('.modal-header h3');
     if (modalTitle) {
-        if (window.currentAddWorkLogId) {
+        if (isAddWork) {
             modalTitle.textContent = '추가 작업 등록';
         } else {
             modalTitle.textContent = '작업 등록';
         }
     }
 
-    if (dateDisplay) dateDisplay.value = dateStr;
+    if (dateDisplay) dateDisplay.value = isAddWork ? '' : dateStr;
 
     const data = getDeviceDataMap();
     const mdInput = document.getElementById('register-md');
@@ -3721,6 +3761,7 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
         const rTypeSelect = document.getElementById('register-type-select');
         const rDetailTypeSelect = document.getElementById('register-detail-type-select');
         const rDetailType2Select = document.getElementById('register-detail-type2-select');
+        const rDetailType3Select = document.getElementById('register-detail-type3-select');
 
         if (rTypeSelect && presetData.type) {
             rTypeSelect.value = presetData.type; // [수정] presetData.type으로 초기화
@@ -3730,6 +3771,7 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
         setTimeout(() => {
             let targetDetailType = presetData.detailType || '';
             let targetDetailType2 = presetData.detailType2 || '';
+            let targetDetailType3 = presetData.detailType3 || '';
 
             // [추가] 괄호 [ ] 또는 부등호 > 가 포함된 경우 파싱하여 분리
             if (targetDetailType.includes('[')) {
@@ -3778,6 +3820,20 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
                     rDetailType2Select.dispatchEvent(new Event('change'));
                 }
 
+                setTimeout(() => {
+                    if (rDetailType3Select && targetDetailType3) {
+                        let hasOption3 = Array.from(rDetailType3Select.options).some(opt => opt.value === targetDetailType3);
+                        if (!hasOption3) {
+                            const opt = document.createElement('option');
+                            opt.value = targetDetailType3;
+                            opt.textContent = targetDetailType3;
+                            rDetailType3Select.appendChild(opt);
+                        }
+                        rDetailType3Select.value = targetDetailType3;
+                        rDetailType3Select.dispatchEvent(new Event('change'));
+                    }
+                }, 50);
+
                 // [수정] presetData.content로 내용 필드 미리 채우기
                 const contentInput = document.getElementById('register-content-input');
                 const contentWrapper = document.getElementById('register-content-wrapper');
@@ -3805,8 +3861,82 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
                     // [수정] 작업 등록 시에는 하위 세부 내용 물품 선택창을 원천 비활성화 (항상 숨김)
                     partRow.style.display = 'none';
                 }
+
+                // [요청 반영] 추가 작업 등록 시 사업장, 장비, 구분, 세부구분, 세부구분2 비활성화 및 세부구분 3, 내용 초기화
+                if (isAddWork) {
+                    const rTypeSelect = document.getElementById('register-type-select');
+                    const rDetailTypeSelect = document.getElementById('register-detail-type-select');
+                    const rDetailType2Select = document.getElementById('register-detail-type2-select');
+                    const rDetailType3Select = document.getElementById('register-detail-type3-select');
+                    const equipTrigger = document.getElementById('register-equip-trigger');
+
+                    if (siteSelect) siteSelect.disabled = true;
+                    if (equipSelect) equipSelect.disabled = true;
+                    if (equipTrigger) {
+                        equipTrigger.style.pointerEvents = 'none';
+                        equipTrigger.style.opacity = '0.7';
+                    }
+                    if (rTypeSelect) rTypeSelect.disabled = true;
+                    if (rDetailTypeSelect) rDetailTypeSelect.disabled = true;
+                    if (rDetailType2Select) rDetailType2Select.disabled = true;
+
+                    if (rDetailType3Select) {
+                        rDetailType3Select.value = '';
+                        rDetailType3Select.disabled = false;
+                    }
+                    const contentInputLocal = document.getElementById('register-content-input');
+                    const contentTriggerLocal = document.getElementById('register-content-trigger');
+                    const contentListLocal = document.getElementById('register-content-list');
+
+                    if (contentInputLocal) contentInputLocal.value = '';
+                    if (contentTriggerLocal) {
+                        contentTriggerLocal.textContent = '항목 선택';
+                        contentTriggerLocal.title = '';
+                        contentTriggerLocal.classList.remove('has-value');
+                    }
+                    if (contentListLocal) {
+                        contentListLocal.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
+                    }
+                }
             }, 100);
         }, 100);
+    } else {
+        // presetData가 없더라도 추가 작업 등록 모드일 때 비활성화 및 초기화
+        if (isAddWork) {
+            const rTypeSelect = document.getElementById('register-type-select');
+            const rDetailTypeSelect = document.getElementById('register-detail-type-select');
+            const rDetailType2Select = document.getElementById('register-detail-type2-select');
+            const rDetailType3Select = document.getElementById('register-detail-type3-select');
+            const equipTrigger = document.getElementById('register-equip-trigger');
+
+            if (siteSelect) siteSelect.disabled = true;
+            if (equipSelect) equipSelect.disabled = true;
+            if (equipTrigger) {
+                equipTrigger.style.pointerEvents = 'none';
+                equipTrigger.style.opacity = '0.7';
+            }
+            if (rTypeSelect) rTypeSelect.disabled = true;
+            if (rDetailTypeSelect) rDetailTypeSelect.disabled = true;
+            if (rDetailType2Select) rDetailType2Select.disabled = true;
+
+            if (rDetailType3Select) {
+                rDetailType3Select.value = '';
+                rDetailType3Select.disabled = false;
+            }
+            const contentInputLocal = document.getElementById('register-content-input');
+            const contentTriggerLocal = document.getElementById('register-content-trigger');
+            const contentListLocal = document.getElementById('register-content-list');
+
+            if (contentInputLocal) contentInputLocal.value = '';
+            if (contentTriggerLocal) {
+                contentTriggerLocal.textContent = '항목 선택';
+                contentTriggerLocal.title = '';
+                contentTriggerLocal.classList.remove('has-value');
+            }
+            if (contentListLocal) {
+                contentListLocal.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
+            }
+        }
     }
 
     modal.style.display = 'flex';
@@ -5038,7 +5168,7 @@ async function confirmRegisterSchedule() {
             let combinedCostArray = [];
 
             itemsList.forEach((itemText) => {
-                let itemCost = '';
+                let itemCost = costType || '유상';
                 const costMatch = itemText.match(/^\[(.*?)\] (.*)$/);
                 if (costMatch) {
                     itemCost = costMatch[1];
@@ -5067,7 +5197,12 @@ async function confirmRegisterSchedule() {
                     fullContent = match.code || match.part || pureContent;
                 }
 
-                combinedContentArray.push(fullContent);
+                let formattedItemContent = fullContent.startsWith('[') ? fullContent : `[${itemCost}] ${fullContent}`;
+                if (spec && !formattedItemContent.includes(`[${spec}]`)) {
+                    formattedItemContent += ` [${spec}]`;
+                }
+
+                combinedContentArray.push(formattedItemContent);
                 if (code) combinedCodeArray.push(code);
                 if (spec) combinedSpecArray.push(spec);
                 if (itemCost) combinedCostArray.push(itemCost);
@@ -5153,7 +5288,9 @@ async function confirmRegisterSchedule() {
             const finalSpec = Array.from(new Set(combinedSpecArray)).join(', ');
             const finalItemCost = Array.from(new Set(combinedCostArray)).join(', ');
 
-            let existingItem = data.maint.find(m => m.type === type && m.content === finalContent && (m.spec || '') === finalSpec && (!m.scheduledDate || m.scheduledDate === dateStr));
+            let existingItem = (!window.currentAddWorkLogId) 
+                ? data.maint.find(m => !m.originalLogId && m.type === type && m.content === finalContent && (m.spec || '') === finalSpec && (!m.scheduledDate || m.scheduledDate === dateStr))
+                : null;
             if (existingItem) {
                 const oldDate = existingItem.scheduledDate;
                 existingItem.scheduledDate = dateStr;
@@ -5182,6 +5319,8 @@ async function confirmRegisterSchedule() {
                     id: newId,
                     type: type,
                     detailType: finalDetailType,
+                    detailType2: detailType2,
+                    detailType3: detailType3,
                     code: finalCode,
                     content: finalContent,
                     spec: finalSpec,

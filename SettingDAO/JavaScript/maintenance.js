@@ -1772,22 +1772,34 @@ function getCheckTypeItems(type, detailType, detailType2 = '') {
     let rawItems = [];
 
     const equipName = (equipKey || '').split('::')[0];
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+    const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
+    const targetEquipNames = [equipName];
+    if (matchedModel) {
+        if (matchedModel.name) targetEquipNames.push(matchedModel.name);
+        if (matchedModel.abbr) targetEquipNames.push(matchedModel.abbr);
+    }
+
     let matchedItems = (Array.isArray(adminItems) ? adminItems : []).filter(item => {
-        if (!item.equip) return false;
+        if (!item.equip || !item.equip.trim()) return true;
         const equips = item.equip.split(',').map(e => e.trim());
-        return equips.includes(equipName);
+        if (equips.includes('전장비') || equips.includes('전 장비') || equips.includes('전체')) return true;
+        return targetEquipNames.some(tn => equips.includes(tn));
     });
-    if (matchedItems.length === 0 && Array.isArray(adminItems)) matchedItems = adminItems;
+
+    if (matchedItems.length === 0 && Array.isArray(adminItems)) {
+        matchedItems = adminItems;
+    }
 
     rawItems = matchedItems.map((mItem, index) => ({
         id: Date.now() + index,
-        content: mItem.part
+        content: mItem.part || mItem.code,
+        code: mItem.code || '',
+        spec: mItem.spec || ''
     }));
 
     // 원본 데이터 오염을 막기 위해 복사본 생성
     const items = [...rawItems].map(item => ({ ...item }));
-
-    const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
     // [추가] 현재 장비의 유지관리 물품에서 우선순위 항목 가져오기 (PM 점검/BM 점검)
     let priorityItems = [];

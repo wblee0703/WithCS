@@ -312,6 +312,20 @@ class LogItem(db.Model):
     status = db.Column(db.String(50), default='조치완료') # [통합] 상태 (작업예정 / 조치완료 / 연기됨 등)
     sort_order = db.Column(db.Integer, default=0)
 
+# [추가] 장비별 유지관리 물품 관리 테이블 (ItemLog / item_log)
+class ItemLog(db.Model):
+    __tablename__ = 'item_log'
+    _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(db.String(50))
+    equip_id = db.Column(db.String(200))
+    date = db.Column(db.String(50), default='')
+    type = db.Column(db.String(50), default='')
+    code = db.Column(db.String(100), default='')
+    part = db.Column(db.String(100), default='')
+    spec = db.Column(db.String(255), default='')
+    part_detail = db.Column(db.String(255), default='')
+    cycle = db.Column(db.String(50), nullable=True)
+
 # [추가] 관리자 물품 관리 테이블 (AdminItem)
 class AdminItem(db.Model):
     id = db.Column(db.String(50), primary_key=True)
@@ -2690,32 +2704,28 @@ def history_transaction():
             if l_id:
                 item = LogItem.query.filter_by(id=l_id).first()
             if not item and orig_id and orig_id != 'None' and orig_id != '-':
-                item = LogItem.query.filter_by(id=orig_id).first()
-            if not item and orig_id and orig_id != 'None' and orig_id != '-':
-                item = LogItem.query.filter_by(original_log_id=orig_id).first()
-            if not item:
-                l_date = l.get('date', '')
-                if l_date:
-                    item = LogItem.query.filter(
-                        LogItem.equip_id == equip_id,
-                        (LogItem.scheduled_date == l_date) | (LogItem.date == l_date),
-                        LogItem.status == '작업예정'
-                    ).first()
+                # 추가 작업 완료 시 부모 아이템(orig_id)을 덮어씌우는 것 방지: 자식 아이템 검색
+                item = LogItem.query.filter(LogItem.original_log_id == orig_id, LogItem.id == l_id).first()
 
             if not item:
                 item = LogItem(id=l_id, equip_id=equip_id, status='조치완료')
                 db.session.add(item)
-            else:
-                if orig_id and orig_id != 'None' and orig_id != '-' and orig_id != item.id:
-                    LogItem.query.filter(LogItem.id == orig_id, LogItem._unique_id != item._unique_id).delete(synchronize_session=False)
 
             item.equip_id = equip_id
             item.status = '조치완료'
             item.date = l.get('date', item.date)
             item.type = l.get('type', item.type)
-            item.detail_type = l.get('detailType', item.detail_type)
-            item.detail_type2 = l.get('detailType2', getattr(item, 'detail_type2', ''))
-            item.detail_type3 = l.get('detailType3', getattr(item, 'detail_type3', ''))
+            raw_dt1 = str(l.get('detailType') or l.get('detail_type') or item.detail_type or '').strip()
+            raw_dt2 = str(l.get('detailType2') or l.get('detail_type2') or getattr(item, 'detail_type2', '') or '').strip()
+            raw_dt3 = str(l.get('detailType3') or l.get('detail_type3') or getattr(item, 'detail_type3', '') or '').strip()
+            if '>' in raw_dt1:
+                parts = [p.strip() for p in raw_dt1.split('>') if p.strip()]
+                if len(parts) >= 1: raw_dt1 = parts[0]
+                if len(parts) >= 2 and not raw_dt2: raw_dt2 = parts[1]
+                if len(parts) >= 3 and not raw_dt3: raw_dt3 = parts[2]
+            item.detail_type = raw_dt1
+            item.detail_type2 = raw_dt2
+            item.detail_type3 = raw_dt3
             item.content = l.get('content', item.content)
             item.add_work = l.get('addWork', getattr(item, 'add_work', ''))
             item.cost_type = l.get('costType', getattr(item, 'cost_type', ''))
@@ -2727,6 +2737,55 @@ def history_transaction():
             item.is_issue_shared = bool(l.get('isIssueShared', getattr(item, 'is_issue_shared', False)))
             item.original_log_id = orig_id if orig_id else item.original_log_id
             item.add_work_log_id = str(l.get('addWorkLogId')) if l.get('addWorkLogId') else getattr(item, 'add_work_log_id', None)
+
+            # [요청 반영] 완료된 작업 내용(content)에 물품이 포함되어 있으면 item_log(유지관리 물품)에 자동 추가 등록 및 동기화
+            c_text = l.get('content') or item.content or ''
+            if c_text and c_text != '내용 없음':
+                sub_parts = [sp.strip() for sp in c_text.split(',') if sp.strip()]
+                for sp in sub_parts:
+                    cost_tag = l.get('costType') or item.cost_type or '유상'
+                    pure_p = sp
+                    cm = re.match(r'^\[(.*?)\]\s*(.*)$', sp)
+                    if cm:
+                        cost_tag = cm.group(1).strip()
+                        pure_p = cm.group(2).strip()
+                    
+                    for prefix_kw in ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리']:
+                        if pure_p.startswith(prefix_kw + ' -'):
+                            pure_p = pure_p[len(prefix_kw) + 2:].strip()
+                            break
+
+                    spec_tag = ''
+                    sm = re.search(r'\s*\[(.*?)\]$', pure_p)
+                    if sm:
+                        spec_tag = sm.group(1).strip()
+                        pure_p = pure_p[:sm.start()].strip()
+
+                    if pure_p and pure_p != '내용 없음':
+                        match_admin = AdminItem.query.filter((AdminItem.part == pure_p) | (AdminItem.code == pure_p)).first()
+                        code_val = match_admin.code if match_admin and match_admin.code else pure_p
+                        part_name_val = match_admin.part if match_admin and match_admin.part else pure_p
+                        spec_val = match_admin.spec if match_admin and match_admin.spec else ''
+                        cycle_val = getattr(match_admin, 'cycle', None) if match_admin else getattr(item, 'period', None)
+
+                        exist_log = ItemLog.query.filter(
+                            ItemLog.equip_id == equip_id,
+                            (ItemLog.code == code_val) | (ItemLog.part == part_name_val)
+                        ).first()
+
+                        if not exist_log:
+                            new_item_log = ItemLog(
+                                id=f"item_{int(time.time()*1000)}_{random.randint(100, 999)}",
+                                equip_id=equip_id,
+                                date=l.get('date', item.date or ''),
+                                type=l.get('type', item.type or '비정기'),
+                                code=code_val,
+                                part=part_name_val,
+                                spec=spec_val,
+                                part_detail=spec_tag,
+                                cycle=cycle_val
+                            )
+                            db.session.add(new_item_log)
 
         # 2. maint_deletes 처리
         if maint_deletes:
@@ -2745,9 +2804,17 @@ def history_transaction():
             item.sort_order = idx
             item.status = '작업예정'
             item.type = m.get('type', item.type)
-            item.detail_type = m.get('detailType', item.detail_type)
-            item.detail_type2 = m.get('detailType2', getattr(item, 'detail_type2', ''))
-            item.detail_type3 = m.get('detailType3', getattr(item, 'detail_type3', ''))
+            m_dt1 = str(m.get('detailType') or m.get('detail_type') or item.detail_type or '').strip()
+            m_dt2 = str(m.get('detailType2') or m.get('detail_type2') or getattr(item, 'detail_type2', '') or '').strip()
+            m_dt3 = str(m.get('detailType3') or m.get('detail_type3') or getattr(item, 'detail_type3', '') or '').strip()
+            if '>' in m_dt1:
+                parts = [p.strip() for p in m_dt1.split('>') if p.strip()]
+                if len(parts) >= 1: m_dt1 = parts[0]
+                if len(parts) >= 2 and not m_dt2: m_dt2 = parts[1]
+                if len(parts) >= 3 and not m_dt3: m_dt3 = parts[2]
+            item.detail_type = m_dt1
+            item.detail_type2 = m_dt2
+            item.detail_type3 = m_dt3
             item.content = m.get('content', item.content)
             item.date = m.get('date', item.date)
             item.period = str(m.get('period')) if m.get('period') is not None else item.period
@@ -2757,6 +2824,62 @@ def history_transaction():
             item.md = str(m.get('md', getattr(item, 'md', '')))
             item.memo = m.get('memo', item.memo)
             item.original_log_id = str(m.get('originalLogId')) if m.get('originalLogId') else item.original_log_id
+
+            # [요청 반영] 유지관리 물품 등록 시 item_log DB 테이블에도 1:1 완벽하게 동기화 기록
+            m_content = m.get('content') or item.content or ''
+            if m_content and m_content != '내용 없음':
+                m_sub_parts = [sp.strip() for sp in m_content.split(',') if sp.strip()]
+                for sp in m_sub_parts:
+                    pure_p = sp
+                    cm = re.match(r'^\[(.*?)\]\s*(.*)$', sp)
+                    if cm:
+                        pure_p = cm.group(2).strip()
+                    
+                    for prefix_kw in ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리']:
+                        if pure_p.startswith(prefix_kw + ' -'):
+                            pure_p = pure_p[len(prefix_kw) + 2:].strip()
+                            break
+
+                    spec_tag = m.get('partDetail') or m.get('part_detail') or ''
+                    sm = re.search(r'\s*\[(.*?)\]$', pure_p)
+                    if sm:
+                        if not spec_tag:
+                            spec_tag = sm.group(1).strip()
+                        pure_p = pure_p[:sm.start()].strip()
+
+                    if pure_p and pure_p != '내용 없음':
+                        match_admin = AdminItem.query.filter((AdminItem.part == pure_p) | (AdminItem.code == pure_p)).first()
+                        code_val = m.get('code') or (match_admin.code if match_admin and match_admin.code else pure_p)
+                        part_name_val = match_admin.part if match_admin and match_admin.part else pure_p
+                        spec_val = match_admin.spec if match_admin and match_admin.spec else (m.get('spec') or '')
+                        cycle_val = str(m.get('period')) if m.get('period') is not None else (getattr(match_admin, 'cycle', None) or item.period)
+
+                        exist_item_log = ItemLog.query.filter(
+                            ItemLog.equip_id == equip_id,
+                            (ItemLog.code == code_val) | (ItemLog.part == part_name_val)
+                        ).first()
+
+                        if not exist_item_log:
+                            exist_item_log = ItemLog(
+                                id=f"item_{int(time.time()*1000)}_{random.randint(100, 999)}",
+                                equip_id=equip_id,
+                                date=m.get('date', item.date or ''),
+                                type=m.get('type', item.type or '정기'),
+                                code=code_val,
+                                part=part_name_val,
+                                spec=spec_val,
+                                part_detail=spec_tag,
+                                cycle=cycle_val
+                            )
+                            db.session.add(exist_item_log)
+                        else:
+                            exist_item_log.date = m.get('date', exist_item_log.date or '')
+                            exist_item_log.type = m.get('type', exist_item_log.type or '')
+                            exist_item_log.code = code_val
+                            exist_item_log.part = part_name_val
+                            if spec_val: exist_item_log.spec = spec_val
+                            if spec_tag: exist_item_log.part_detail = spec_tag
+                            if cycle_val: exist_item_log.cycle = cycle_val
 
         if log_deletes:
             LogItem.query.filter(LogItem.id.in_(log_deletes)).delete(synchronize_session=False)
@@ -3255,10 +3378,18 @@ def trouble_crud():
                     if 'action_date' in payload: log.action_date = payload.get('action_date')
                     if payload.get('type'): log.type = payload.get('type')
                     
-                    # detail_type, detail_type2, detail_type3 유실 방지 (유효한 값 전송시에만 갱신)
-                    if payload.get('detail_type'): log.detail_type = payload.get('detail_type')
-                    if payload.get('detail_type2'): log.detail_type2 = payload.get('detail_type2')
-                    if payload.get('detail_type3'): log.detail_type3 = payload.get('detail_type3')
+                    dt1_in = str(payload.get('detail_type') or log.detail_type or '').strip()
+                    dt2_in = str(payload.get('detail_type2') or log.detail_type2 or '').strip()
+                    dt3_in = str(payload.get('detail_type3') or log.detail_type3 or '').strip()
+                    if '>' in dt1_in:
+                        parts = [p.strip() for p in dt1_in.split('>') if p.strip()]
+                        if len(parts) >= 1: dt1_in = parts[0]
+                        if len(parts) >= 2 and not dt2_in: dt2_in = parts[1]
+                        if len(parts) >= 3 and not dt3_in: dt3_in = parts[2]
+
+                    log.detail_type = dt1_in
+                    log.detail_type2 = dt2_in
+                    log.detail_type3 = dt3_in
 
                     # 5개 항목 오직 trouble_log의 전용 컬럼에만 독립 저장
                     if 'situation' in payload: log.situation = payload.get('situation') or ''
@@ -3524,6 +3655,49 @@ def init_db():
     with app.app_context():
         db.create_all()
         init_check_type_category_tables()
+
+        # item_log 테이블 자동 생성 및 컬럼 명세 보정 (id, equip_id, date, type, code, part, spec, part_detail, cycle)
+        try:
+            db.session.execute(text('''
+                CREATE TABLE IF NOT EXISTS item_log (
+                    _unique_id INT AUTO_INCREMENT PRIMARY KEY,
+                    id VARCHAR(50),
+                    equip_id VARCHAR(200),
+                    date VARCHAR(50) DEFAULT '',
+                    type VARCHAR(50) DEFAULT '',
+                    code VARCHAR(100) DEFAULT '',
+                    part VARCHAR(100) DEFAULT '',
+                    spec VARCHAR(255) DEFAULT '',
+                    part_detail VARCHAR(255) DEFAULT '',
+                    cycle VARCHAR(50) NULL
+                )
+            '''))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        item_log_cols = [
+            ('date', 'VARCHAR(50) DEFAULT ""'),
+            ('type', 'VARCHAR(50) DEFAULT ""'),
+            ('code', 'VARCHAR(100) DEFAULT ""'),
+            ('part', 'VARCHAR(100) DEFAULT ""'),
+            ('spec', 'VARCHAR(255) DEFAULT ""'),
+            ('part_detail', 'VARCHAR(255) DEFAULT ""'),
+            ('cycle', 'VARCHAR(50) NULL')
+        ]
+        for col, col_type in item_log_cols:
+            try:
+                db.session.execute(text(f'ALTER TABLE item_log ADD COLUMN {col} {col_type}'))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
+        for drop_col in ['detail_type', 'detail_type2', 'detail_type3', 'code_name', 'name', 'detail', 'content', 'period', 'cost_type', 'item_cost', 'sort_order']:
+            try:
+                db.session.execute(text(f'ALTER TABLE item_log DROP COLUMN {drop_col}'))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
 
 
 
