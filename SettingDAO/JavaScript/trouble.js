@@ -637,40 +637,44 @@ function setupTroubleEvents() {
             const preventionEl = document.getElementById('trouble-modal-preventive'); // [수정] 올바른 HTML ID 매핑
             const memoEl = document.getElementById('trouble-modal-content'); // [수정] 우측 세부내용(메모) 영역
 
-            let contentData = {};
-            if (situationEl || symptomEl || causeEl || actionEl || preventionEl) {
-                contentData = {
-                    situation: situationEl ? situationEl.value : '',
-                    symptom: symptomEl ? symptomEl.value : '',
-                    cause: causeEl ? causeEl.value : '',
-                    action: actionEl ? actionEl.value : '',
-                    prevention: preventionEl ? preventionEl.value : ''
-                };
-                if (source === 'log' || source === 'maint') {
-                    contentData.trouble_memo = memoEl ? memoEl.value : '';
-                }
-            }
-
             const memoVal = memoEl ? memoEl.value : '';
-            const maintMemoVal = situationEl ? situationEl.value : '';
             const siteVal = document.getElementById('trouble-modal-site') ? document.getElementById('trouble-modal-site').value : '';
             const equipVal = document.getElementById('trouble-modal-equip') ? document.getElementById('trouble-modal-equip').value : '';
 
+            const typeEl = document.getElementById('trouble-modal-type');
+            const dt1El = document.getElementById('trouble-modal-detail-type');
+            const dt2El = document.getElementById('trouble-modal-detail-type2');
+            const dt3El = document.getElementById('trouble-modal-detail-type3');
+
+            const occurDateVal = document.getElementById('trouble-modal-occur-date') ? document.getElementById('trouble-modal-occur-date').value : '';
+            const statusVal = (occurDateVal && occurDateVal.trim() !== '' && occurDateVal !== '-') ? '기록완료' : '미기록';
+
+            // [독립 저장 및 오염 방지] 5개 항목은 오직 trouble_log의 전용 컬럼으로만 저장
             const payload = {
                 id: troubleId,
                 equip_id: equipId,
                 site: siteVal,
                 equip: equipVal,
-                occur_date: document.getElementById('trouble-modal-occur-date') ? document.getElementById('trouble-modal-occur-date').value : '',
+                type: typeEl && typeEl.value ? typeEl.value : '비정기',
+                situation: situationEl ? situationEl.value : '',
+                symptom: symptomEl ? symptomEl.value : '',
+                cause: causeEl ? causeEl.value : '',
+                measure: actionEl ? actionEl.value : '',
+                prevent: preventionEl ? preventionEl.value : '',
+                occur_date: occurDateVal,
                 action_date: document.getElementById('trouble-modal-action-date') ? document.getElementById('trouble-modal-action-date').value : '',
-                content: contentData, // [수정] JSON 객체로 전송
-                memo: memoVal, // [추가] 진행 경과 분리 전송
-                maint_memo: maintMemoVal,
+                trouble_details: memoVal, // 세부사항 창(trouble-modal-content)의 텍스트만 전달
+                memo: memoVal, // maint_log.memo에도 순수 세부사항만 전달 (situation 전이 완전 차단)
                 worker: document.getElementById('trouble-modal-worker') ? document.getElementById('trouble-modal-worker').value : '',
-                status: document.getElementById('trouble-modal-status') ? document.getElementById('trouble-modal-status').value : '조치완료',
+                status: statusVal,
                 image_data: currentTroubleImageBase64,
                 source: source
             };
+
+            // detail_type 1,2,3는 모달 요소에 유효한 값이 존재할 때만 전송 (기존값 삭제 방지)
+            if (dt1El && dt1El.value) payload.detail_type = dt1El.value;
+            if (dt2El && dt2El.value) payload.detail_type2 = dt2El.value;
+            if (dt3El && dt3El.value) payload.detail_type3 = dt3El.value;
 
             const action = mode === 'add' ? 'CREATE' : 'UPDATE';
 
@@ -1010,38 +1014,25 @@ function bindTroubleContentAndImage(data, excludeMemo = false) {
         if (typeof parsed === 'string' && parsed.startsWith('{')) {
             try { parsed = JSON.parse(parsed); } catch (e) { }
         }
-
-        if (typeof parsed === 'object' && parsed !== null) {
-            if (situationEl) situationEl.value = parsed.situation || '';
-            if (symptomEl) symptomEl.value = parsed.symptom || '';
-            if (causeEl) causeEl.value = parsed.cause || '';
-            if (actionEl) actionEl.value = parsed.action || '';
-            if (preventionEl) preventionEl.value = parsed.prevention || '';
-            if (memoInput && (data.source === 'log' || data.source === 'maint')) {
-                memoInput.value = parsed.trouble_memo || '';
-            }
-        } else {
-            if (situationEl) situationEl.value = data.content || '';
-        }
     }
 
-    if (data.source === 'log' || data.source === 'maint') {
-        if (situationEl) {
-            if (parsed && typeof parsed === 'object' && parsed.situation !== undefined) {
-                situationEl.value = parsed.situation || '';
-            } else {
-                situationEl.value = '';
-            }
+    // [엄격] 트러블 상황에는 오직 trouble_log.situation 컬럼 데이터만 들어감 (maint_log.memo 유입 원천 차단)
+    if (situationEl) situationEl.value = data.situation || '';
+    if (symptomEl) symptomEl.value = data.symptom || '';
+    if (causeEl) causeEl.value = data.cause || '';
+    if (actionEl) actionEl.value = data.measure || '';
+    if (preventionEl) preventionEl.value = data.prevent || '';
+
+    // [전용] trouble_details 멀티라인 포맷 텍스트를 세부사항(memoInput) 입력창에 가독성 높게 바인딩
+    if (!excludeMemo && memoInput) {
+        let memoVal = data.trouble_details || data.memo || '';
+        if (typeof memoVal === 'string' && memoVal.trim().startsWith('{')) {
+            try {
+                const parsedMemo = JSON.parse(memoVal);
+                memoVal = parsedMemo.trouble_memo || parsedMemo.situation || memoVal;
+            } catch (e) { }
         }
-        if (!excludeMemo && memoInput) {
-            if (parsed && typeof parsed === 'object' && parsed.trouble_memo !== undefined) {
-                memoInput.value = parsed.trouble_memo || '';
-            } else {
-                memoInput.value = data.memo || '';
-            }
-        }
-    } else {
-        if (!excludeMemo && memoInput) memoInput.value = data.memo || '';
+        memoInput.value = memoVal || '';
     }
 
     if (data.image_data) {
@@ -1178,11 +1169,11 @@ function renderTroubleList(dataList = []) {
                 if (t.memo && t.memo !== '-') displayContent = t.memo;
             }
 
-            // [추가] 기록여부 판단 (발생 일시 유무 기준)
-            const isRecorded = t.occur_date && t.occur_date.trim() !== '' && t.occur_date !== '-';
+            // [추가] 기록여부 판단 (status 또는 발생 일시 유무 기준)
+            const isRecorded = (t.status === '기록완료') || (t.occur_date && String(t.occur_date).trim() !== '' && t.occur_date !== '-');
             const recordIcon = isRecorded
-                ? '<span style="color: #3fb950; font-size: 16px;" title="발생 일시 기록됨">●</span>'
-                : '<span style="color: #8b949e; font-size: 16px;" title="발생 일시 미기록">○</span>';
+                ? '<span style="color: #3fb950; font-size: 16px;" title="기록완료">●</span>'
+                : '<span style="color: #8b949e; font-size: 16px;" title="미기록">○</span>';
 
             return `<tr data-id="${t.id}" data-source="${t.source || 'trouble'}" style="cursor: pointer;">
                 <td style="text-align: center;">${recordIcon}</td>
