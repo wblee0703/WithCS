@@ -21,6 +21,7 @@ from logging.handlers import TimedRotatingFileHandler
 import secrets
 import uuid
 import urllib.parse
+import unicodedata
 
 app = Flask(__name__)
 
@@ -327,7 +328,6 @@ class ItemLog(db.Model):
     id = db.Column(db.String(50))
     equip_id = db.Column(db.String(200))
     date = db.Column(db.String(50), default='')
-    type = db.Column(db.String(50), default='')
     code = db.Column(db.String(100), default='')
     part = db.Column(db.String(100), default='')
     spec = db.Column(db.String(255), default='')
@@ -595,10 +595,22 @@ def load_data():
     # N+1 쿼리 성능 저하 방지를 위한 전체 데이터 사전 로드 (Dictionary 매핑)
     maint_items = {}; log_items = {}; setup_details = {}; setup_logs = {}; item_logs = {}
     
-    for l in LogItem.query.all(): log_items.setdefault(l.equip_id, []).append(l)
-    for sd in SetupDetail.query.all(): setup_details.setdefault(sd.equip_id, []).append(sd)
-    for sl in SetupLog.query.all(): setup_logs.setdefault(sl.equip_id, []).append(sl)
-    for il in ItemLog.query.all(): item_logs.setdefault(il.equip_id, []).append(il)
+    for l in LogItem.query.all():
+        if l.equip_id:
+            n_eid = unicodedata.normalize('NFC', str(l.equip_id).strip())
+            log_items.setdefault(n_eid, []).append(l)
+    for sd in SetupDetail.query.all():
+        if sd.equip_id:
+            n_eid = unicodedata.normalize('NFC', str(sd.equip_id).strip())
+            setup_details.setdefault(n_eid, []).append(sd)
+    for sl in SetupLog.query.all():
+        if sl.equip_id:
+            n_eid = unicodedata.normalize('NFC', str(sl.equip_id).strip())
+            setup_logs.setdefault(n_eid, []).append(sl)
+    for il in ItemLog.query.all():
+        if il.equip_id:
+            n_eid = unicodedata.normalize('NFC', str(il.equip_id).strip())
+            item_logs.setdefault(n_eid, []).append(il)
 
     # 4. 장비 상세 데이터 (details_ 및 setup_data) 매핑
     equips = Equipment.query.all()
@@ -635,7 +647,8 @@ def load_data():
         }
 
         # 유지관리(maint) 예정 및 이력(logs) 분류 매핑 (maint_log 단일 구조)
-        eq_all_logs = log_items.get(eq.id, [])
+        norm_eq_id = unicodedata.normalize('NFC', str(eq.id).strip())
+        eq_all_logs = log_items.get(norm_eq_id, []) or log_items.get(eq.id, [])
         maint_list = [l for l in eq_all_logs if getattr(l, 'status', '') == '작업예정']
             
         maint_list.sort(key=lambda x: (getattr(x, 'sort_order', 0) if getattr(x, 'sort_order', None) is not None else 0, getattr(x, '_unique_id', 0)))
@@ -660,22 +673,23 @@ def load_data():
                 "originalLogId": int(m.original_log_id) if m.original_log_id and str(m.original_log_id).isdigit() else m.original_log_id
             })
 
-        # [요청 반영] item_log 테이블에 기록된 해당 장비의 유지관리 물품 리스트 반영 (코드명에는 code, 물품 상세에는 part_detail 매핑)
-        eq_item_logs = item_logs.get(eq.id, [])
+        # [요청 반영] item_log 테이블에 기록된 해당 장비의 유지관리 물품 리스트 무조건 equip_id 매칭하여 반영
+        eq_item_logs = item_logs.get(norm_eq_id, []) or item_logs.get(eq.id, [])
         for il in eq_item_logs:
             il_id = int(il.id) if str(il.id).isdigit() else il.id
             il_code = (il.code or il.part or '').strip()
             il_part_detail = (il.part_detail or '').strip()
             il_cycle = int(il.cycle) if il.cycle and str(il.cycle).isdigit() else (il.cycle or '')
 
-            if ',' in il_code or ',' in (il.part or ''):
+            invalid_kws = ['내용 없음', '장비 점검', 'PM 점검', 'BM 점검', '파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '파츠 이상 교체', '파츠 이상 수리', '물품 이상 교체', '물품 이상 수리', '단순 조치', '현장 이슈', 'PC 이상', '작업자 실수', '통신 이상', '프로그램 이상', '기타']
+            if ',' in il_code or ',' in (il.part or '') or il_code in invalid_kws or (il.part and il.part in invalid_kws):
                 continue
 
-            if str(il_id) not in maint_ids and (il_code, il_part_detail) not in maint_code_specs:
+            if str(il_id) not in maint_ids:
                 data[detail_key]["maint"].append({
                     "id": il_id,
-                    "type": il.type or '정기',
-                    "detailType": 'PM 점검' if (il.type or '정기') == '정기' else 'Parts 교체',
+                    "type": '',
+                    "detailType": 'Parts 교체',
                     "detailType2": '',
                     "detailType3": '',
                     "code": il_code,
@@ -693,7 +707,6 @@ def load_data():
                     "originalLogId": None
                 })
                 maint_ids.add(str(il_id))
-                maint_code_specs.add((il_code, il_part_detail))
             
         logs_list = [l for l in eq_all_logs if getattr(l, 'status', '조치완료') != '작업예정']
         for l in logs_list:
@@ -2812,6 +2825,7 @@ def history_transaction():
             item.equip_id = equip_id
             item.status = '조치완료'
             item.date = l.get('date', item.date)
+            item.scheduled_date = l.get('scheduledDate') or l.get('scheduled_date') or item.scheduled_date or l.get('date')
             item.type = l.get('type', item.type)
             raw_dt1 = str(l.get('detailType') or l.get('detail_type') or item.detail_type or '').strip()
             raw_dt2 = str(l.get('detailType2') or l.get('detail_type2') or getattr(item, 'detail_type2', '') or '').strip()
@@ -2836,13 +2850,18 @@ def history_transaction():
             item.original_log_id = orig_id if orig_id else item.original_log_id
             item.add_work_log_id = str(l.get('addWorkLogId')) if l.get('addWorkLogId') else getattr(item, 'add_work_log_id', None)
 
-            # [요청 반영] item_log DB에서 콤마(,)가 포함된 결합 레코드 자동 정리
+            # [요청 반영] item_log DB에서 콤마(,)가 포함된 결합 레코드 및 비물품 키워드 레코드 자동 정리
             try:
-                ItemLog.query.filter(ItemLog.equip_id == equip_id, (ItemLog.code.like('%,%')) | (ItemLog.part.like('%,%'))).delete(synchronize_session=False)
+                invalid_kws = ['내용 없음', '장비 점검', 'PM 점검', 'BM 점검', '파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '파츠 이상 교체', '파츠 이상 수리', '물품 이상 교체', '물품 이상 수리', '단순 조치', '현장 이슈', 'PC 이상', '작업자 실수', '통신 이상', '프로그램 이상', '기타']
+                ItemLog.query.filter(
+                    ItemLog.equip_id == equip_id,
+                    (ItemLog.code.like('%,%')) | (ItemLog.part.like('%,%')) |
+                    (ItemLog.code.in_(invalid_kws)) | (ItemLog.part.in_(invalid_kws))
+                ).delete(synchronize_session=False)
             except Exception:
                 pass
 
-            # [요청 반영] 완료된 작업 내용(content)에 물품이 포함되어 있으면 item_log(유지관리 물품)에 자동 추가 등록 및 동기화
+            # [요청 반영] 완료된 작업 내용(content)에 물품이 포함되어 있으면 item_log(유지관리 물품)에 개별 개별 물품만 자동 추가 등록 및 동기화
             c_text = l.get('content') or item.content or ''
             if c_text and c_text != '내용 없음':
                 sub_parts = [sp.strip() for sp in c_text.split(',') if sp.strip()]
@@ -2854,14 +2873,25 @@ def history_transaction():
                     pure_p = parsed['clean_name']
                     spec_tag = parsed['part_detail']
 
-                    # AdminItem 매칭 (코드명, 물품명, trim 일치 여부 정확 검색)
-                    match_admin = AdminItem.query.filter(
-                        (AdminItem.code == pure_p) | (AdminItem.part == pure_p) |
-                        (db.func.trim(AdminItem.code) == pure_p) | (db.func.trim(AdminItem.part) == pure_p)
-                    ).first()
+                    invalid_kws = ['내용 없음', '장비 점검', 'PM 점검', 'BM 점검', '파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '파츠 이상 교체', '파츠 이상 수리', '물품 이상 교체', '물품 이상 수리', '단순 조치', '현장 이슈', 'PC 이상', '작업자 실수', '통신 이상', '프로그램 이상', '기타']
+                    if not pure_p or pure_p in invalid_kws or ',' in pure_p:
+                        continue
 
-                    code_val = match_admin.code if match_admin and match_admin.code else pure_p
-                    part_name_val = match_admin.part if match_admin and match_admin.part else pure_p
+                    # AdminItem 매칭 (코드명 AdminItem.code 우선 검색 후 물품명 AdminItem.part 검색)
+                    match_admin = AdminItem.query.filter(
+                        (AdminItem.code == pure_p) | (db.func.trim(AdminItem.code) == pure_p)
+                    ).first()
+                    if not match_admin:
+                        match_admin = AdminItem.query.filter(
+                            (AdminItem.part == pure_p) | (db.func.trim(AdminItem.part) == pure_p)
+                        ).first()
+
+                    # [Rule 3 / 사용자 요청] AdminItem 마스터 DB에 등록되지 않은 물품은 item_log에 자동 생성 차단
+                    if not match_admin:
+                        continue
+
+                    code_val = match_admin.code if match_admin.code else pure_p
+                    part_name_val = match_admin.part if match_admin.part else pure_p
                     spec_val = match_admin.spec if match_admin and match_admin.spec else ''
                     cycle_val = getattr(match_admin, 'cycle', None) if match_admin else getattr(item, 'period', None)
 
@@ -2878,7 +2908,6 @@ def history_transaction():
                             id=f"item_{int(time.time()*1000)}_{random.randint(100, 999)}",
                             equip_id=equip_id,
                             date=l.get('date', item.date or ''),
-                            type=l.get('type', item.type or '비정기'),
                             code=code_val,
                             part=part_name_val,
                             spec=spec_val,
@@ -2899,12 +2928,11 @@ def history_transaction():
                         if cycle_val is not None:
                             exist_log.cycle = str(cycle_val)
 
-        # 2. maint_deletes 처리
+        # 2. maint_deletes 처리 (LogItem 작업예정 삭제)
         if maint_deletes:
-            actual_deletes = [d for d in maint_deletes if d not in completed_orig_ids]
+            actual_deletes = [str(d) for d in maint_deletes if str(d) not in completed_orig_ids]
             if actual_deletes:
                 LogItem.query.filter(LogItem.id.in_(actual_deletes)).delete(synchronize_session=False)
-                ItemLog.query.filter(ItemLog.id.in_(actual_deletes)).delete(synchronize_session=False)
 
         # 3. maint_upserts (작업 예정 생성/수정)
         for idx, m in enumerate(maint_upserts):
@@ -3061,7 +3089,6 @@ def get_item_logs_by_equip(equip_id):
             "id": item.id,
             "equip_id": item.equip_id,
             "date": item.date,
-            "type": item.type,
             "code": item.code,
             "part": item.part,
             "spec": item.spec,
@@ -3741,7 +3768,7 @@ def init_db():
         db.create_all()
         init_check_type_category_tables()
 
-        # item_log 테이블 자동 생성 및 컬럼 명세 보정 (id, equip_id, date, type, code, part, spec, part_detail, cycle)
+        # item_log 테이블 자동 생성 및 컬럼 명세 보정 (id, equip_id, date, code, part, spec, part_detail, cycle)
         try:
             db.session.execute(text('''
                 CREATE TABLE IF NOT EXISTS item_log (
@@ -3749,7 +3776,6 @@ def init_db():
                     id VARCHAR(50),
                     equip_id VARCHAR(200),
                     date VARCHAR(50) DEFAULT '',
-                    type VARCHAR(50) DEFAULT '',
                     code VARCHAR(100) DEFAULT '',
                     part VARCHAR(100) DEFAULT '',
                     spec VARCHAR(255) DEFAULT '',
@@ -3763,7 +3789,6 @@ def init_db():
 
         item_log_cols = [
             ('date', 'VARCHAR(50) DEFAULT ""'),
-            ('type', 'VARCHAR(50) DEFAULT ""'),
             ('code', 'VARCHAR(100) DEFAULT ""'),
             ('part', 'VARCHAR(100) DEFAULT ""'),
             ('spec', 'VARCHAR(255) DEFAULT ""'),
@@ -3777,7 +3802,7 @@ def init_db():
             except Exception:
                 db.session.rollback()
 
-        for drop_col in ['detail_type', 'detail_type2', 'detail_type3', 'code_name', 'name', 'detail', 'content', 'period', 'cost_type', 'item_cost', 'sort_order']:
+        for drop_col in ['type', 'detail_type', 'detail_type2', 'detail_type3', 'code_name', 'name', 'detail', 'content', 'period', 'cost_type', 'item_cost', 'sort_order']:
             try:
                 db.session.execute(text(f'ALTER TABLE item_log DROP COLUMN {drop_col}'))
                 db.session.commit()

@@ -165,56 +165,6 @@ tr.editing {
     white-space: nowrap;
 }
 
-/* 각 컬럼별 고정 너비 비율 설정 */
-#maint-window .data-table th:nth-child(1),
-#maint-window .data-table td:nth-child(1) {
-    width: 10%;
-}
-
-/* 분류 */
-
-#maint-window .data-table th:nth-child(2),
-#maint-window .data-table td:nth-child(2) {
-    width: 27%;
-}
-
-/* 코드명 */
-
-#maint-window .data-table th:nth-child(3),
-#maint-window .data-table td:nth-child(3) {
-    width: 18%;
-}
-
-/* 물품 상세 (2/3 수준으로 축소) */
-
-#maint-window .data-table th:nth-child(4),
-#maint-window .data-table td:nth-child(4) {
-    width: 15%;
-}
-
-/* 시작일 */
-
-#maint-window .data-table th:nth-child(5),
-#maint-window .data-table td:nth-child(5) {
-    width: 10%;
-}
-
-/* 주기 */
-
-#maint-window .data-table th:nth-child(6),
-#maint-window .data-table td:nth-child(6) {
-    width: 10%;
-}
-
-/* 상태 */
-
-#maint-window .data-table th:nth-child(7),
-#maint-window .data-table td:nth-child(7) {
-    width: 10%;
-}
-
-/* 관리 */
-
 /* 행 수정 모드(tr.editing) 전용 입력창 셀 내부 밀착 고정 */
 tr.editing td {
     padding: 4px 2px !important;
@@ -262,9 +212,37 @@ tr.dragging {
     display: table-cell;
 }
 
-/* [추가] 유지관리 폼 및 테이블 신규 스타일 분리 */
-.th-spec {
-    width: 15%;
+/* ==========================================================================
+   [유지관리 물품 리스트 테이블 컬럼 너비 일괄 제어 영역]
+   ========================================================================== */
+.maint-list-table .th-code,
+.maint-list-table td.edit-code {
+    width: auto;
+}
+
+.maint-list-table .th-spec,
+.maint-list-table td.edit-spec {
+    width: 200px;
+}
+
+.maint-list-table .th-start-date,
+.maint-list-table td.edit-date {
+    width: 150px;
+}
+
+.maint-list-table .th-period,
+.maint-list-table td.edit-period {
+    width: 150px;
+}
+
+.maint-list-table .th-status,
+.maint-list-table td.status-cell {
+    width: 100px;
+}
+
+.maint-list-table .th-manage,
+.maint-list-table td.manage-col {
+    width: 100px;
 }
 
 .maint-content-wrapper {

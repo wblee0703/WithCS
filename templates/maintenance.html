@@ -79,10 +79,6 @@
                         </div>
                         <div class="card-body">
                             <div class="form-row">
-                                <div class="toggle-group" id="maint-type-toggle">
-                                    <button class="active" data-type="정기">정기</button>
-                                    <button data-type="비정기">비정기</button>
-                                </div>
                                 <div class="autocomplete-wrapper flex-grow maint-content-wrapper">
                                     <input type="text" id="maint-content" placeholder="물품명 입력 (또는 검색)" class="input-dark full-width" autocomplete="off">
                                     <ul id="maint-content-suggestions" class="suggestion-list maint-suggestion-list" style="display: none;"></ul>
@@ -93,16 +89,15 @@
                                 <button class="btn-blue" id="maint-reg-btn">등록</button>
                             </div>
                             <div class="data-table-wrapper">
-                                <table class="data-table">
+                                <table class="data-table maint-list-table">
                                     <thead>
                                         <tr>
-                                            <th>분류</th>
-                                            <th>코드명</th>
+                                            <th class="th-code">코드명</th>
                                             <th class="th-spec">물품 상세</th>
-                                            <th>시작일</th>
-                                            <th>주기</th>
-                                            <th>상태</th>
-                                            <th>관리</th>
+                                            <th class="th-start-date">시작일</th>
+                                            <th class="th-period">주기</th>
+                                            <th class="th-status">상태</th>
+                                            <th class="th-manage">관리</th>
                                         </tr>
                                     </thead>
                                     <tbody id="maint-table-body"></tbody>
@@ -198,7 +193,6 @@
 <!-- 테이블 템플릿 영역 -->
 <template id="maint-table-row-template">
     <tr>
-        <td><span class="badge"></span></td>
         <td class="edit-code"></td>
         <td class="edit-spec">-</td>
         <td class="edit-date"></td>
