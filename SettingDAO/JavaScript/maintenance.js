@@ -622,6 +622,7 @@ async function addDetailItem() {
 }
 
 function renderDetails() {
+
     const key = `details_${currentPath.site}_${currentPath.equip}`;
     const data = JSON.parse(localStorage.getItem(key)) || { maint: [], logs: [], memo: "" };
     const maintBody = document.getElementById('maint-table-body');
@@ -635,17 +636,8 @@ function renderDetails() {
     // [수정] 화면에 표시될 항목만 필터링하여 카운트 불일치 문제 해결
     const displayItems = data.maint.filter(item => {
         if (item.originalLogId) return false; // 자식 항목(추가작업) 숨김
-        if (item.type === '비정기' && !item.date) return false; // 예정일 없는 비정기 숨김
         if (item.content === '내용 없음' || item.content === '장비 점검') return false; // 더미 항목 숨김
         if (['고객대응', '용액제조', '온라인점검'].includes(item.type)) return false; // 관련 없는 타입 숨김
-
-        // [추가] admin에 정식으로 등록되지 않은 오염된 물품명(쉼표 파싱 잔재 등) 노출 차단
-        if (item.content) {
-            const purePart = item.content.replace(/\[(?:유상|무상[^\]]*|기타)\]\s*/g, '').trim();
-            const isAdminRegistered = adminItems.some(a => a.part === purePart || a.code === purePart || a.part === item.content || a.code === item.content);
-            if (!isAdminRegistered) return false;
-        }
-
         return true;
     });
 

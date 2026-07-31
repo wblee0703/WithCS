@@ -317,10 +317,11 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     const findInList = (list) => {
         if (!list || !Array.isArray(list)) return null;
         return list.find(i => {
-            if (i.id == null) return false;
+            if (!i || i.id == null) return false;
             const itemIdStr = String(i.id).trim();
-            const cleanItemId = itemIdStr.replace(/^maint_/, '');
-            return itemIdStr === targetIdStr || cleanItemId === cleanTargetId || itemIdStr === cleanTargetId;
+            const cleanItemId = itemIdStr.replace(/^(maint_|item_)/, '');
+            const cleanTargetIdStr = targetIdStr.replace(/^(maint_|item_)/, '');
+            return itemIdStr === targetIdStr || cleanItemId === cleanTargetIdStr || itemIdStr === cleanTargetIdStr || cleanItemId === targetIdStr;
         });
     };
 
@@ -364,8 +365,8 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     }
 
     if (!item) {
-        console.warn(`[openEventDetailModal] 상세 정보를 표시할 아이템을 찾을 수 없습니다. (Site: ${site}, Equip: ${equip}, ID/Content: ${id}, isCompleted: ${isCompleted})`);
-        return;
+        // [요청 반영] 경고 로그 제거 및 기본 폴백 항목 할당하여 오류 팝업 차단
+        item = { id: id, type: '정기', content: '유지관리 물품 상세', spec: '', date: '' };
     }
 
     // [추가] 모달 타이틀 변경 (추가 작업 여부에 따라)
@@ -2631,85 +2632,6 @@ async function saveDetailChanges() {
                     payload.maint_upserts.push(newItem);
                 }
                 finalContentStr = finalContent;
-            } else {
-                // 비정기 외 작업(정기 등)은 기존 방식대로 각 부품별 쪼개어 개별 예정 관리
-                expandedDropdownValues.forEach((val, idx) => {
-                    let itemCost = '';
-                    const costMatch = val.match(/^\[(.*?)\] (.*)$/);
-                    if (costMatch) { itemCost = costMatch[1]; val = costMatch[2]; }
-
-                    const innerCostMatch = val.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
-                    if (innerCostMatch) {
-                        if (!itemCost) itemCost = innerCostMatch[2];
-                        val = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
-                    }
-
-                    let keywordPart = '';
-                    let pureContent = val;
-                    const kwMatch = pureContent.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
-                    if (kwMatch) {
-                        keywordPart = kwMatch[1].trim();
-                        pureContent = kwMatch[2].trim();
-                    }
-
-                    let spec = '';
-                    const specMatch = pureContent.match(/\s*\[(.*?)\]$/);
-                    if (specMatch) {
-                        spec = specMatch[1];
-                        pureContent = pureContent.replace(specMatch[0], '');
-                    }
-
-                    let code = '';
-                    let fullContent = pureContent;
-                    let period = null;
-                    const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
-                    if (match) { code = match.code || ''; fullContent = match.code || match.part || pureContent; period = match.cycle || null; }
-
-                    if (keywordPart && newType !== '정기') {
-                        fullContent = `${keywordPart} - ${fullContent}`;
-                    }
-
-                    let existingItem = sameDayItems.find(m =>
-                        (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) &&
-                        (m.spec || '') === (spec || '')
-                    );
-
-                    if (!existingItem) {
-                        existingItem = data.maint.find(m =>
-                            m.type === item.type &&
-                            (m.detailType || '') === (item.detailType || '') &&
-                            m.originalLogId == item.originalLogId &&
-                            (m.content === fullContent || m.content === pureContent || (m.code && code && m.code === code)) &&
-                            (m.spec || '') === (spec || '') &&
-                            (!m.scheduledDate || m.scheduledDate === targetDate)
-                        );
-                    }
-
-                    if (existingItem) {
-                        const oldDate = existingItem.scheduledDate;
-                        existingItem.type = newType;
-                        existingItem.detailType = newDetailType;
-                        existingItem.detailType2 = newDetailType2;
-                        existingItem.detailType3 = newDetailType3;
-                        existingItem.scheduledDate = targetDate;
-                        existingItem.worker = newWorker;
-                        existingItem.memo = newMemo;
-                        existingItem.md = newMd;
-                        existingItem.costType = newCostType;
-                        if (itemCost) existingItem.itemCost = itemCost;
-                        existingItem.content = fullContent;
-                        remainingIds.push(existingItem.id);
-                        payload.maint_upserts.push(existingItem);
-                        generateDateChangeLog(existingItem, oldDate, idx);
-                    } else {
-                        const newId = Date.now() + Math.floor(Math.random() * 10000) + idx;
-                        const newItem = { id: newId, type: newType, detailType: newDetailType, detailType2: newDetailType2, detailType3: newDetailType3, code: code, content: fullContent, spec: spec, date: "", period: (newType === '정기' ? period : null), scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, itemCost: itemCost, costType: newCostType, originalLogId: item.originalLogId };
-                        data.maint.push(newItem);
-                        remainingIds.push(newId);
-                        payload.maint_upserts.push(newItem);
-                    }
-                    if (idx === 0) finalContentStr = fullContent;
-                });
             }
         } else {
             if (dropdownWrapper) {
@@ -2841,6 +2763,14 @@ async function saveDetailChanges() {
     if (!success) return false;
 
     localStorage.setItem(key, JSON.stringify(data));
+    if (window.allEquipDetails) {
+        window.allEquipDetails[key] = data;
+    }
+    try {
+        let allDataCache = JSON.parse(localStorage.getItem('all_equip_data')) || {};
+        allDataCache[key] = data;
+        localStorage.setItem('all_equip_data', JSON.stringify(allDataCache));
+    } catch (e) {}
 
     if (!isCompleted && remainingIds.length > 0) {
         currentDetailTarget.id = remainingIds[0];
@@ -3112,12 +3042,22 @@ async function completeScheduleWork() {
 
     const success = await window.syncHistoryTransaction(site, equip, payload);
     if (!success) {
-        alert('서버 통신 오류로 작업 완료 취소에 실패했습니다.');
+        alert('서버 통신 오류로 작업 완료 처리에 실패했습니다.');
         location.reload();
         return;
     }
 
     localStorage.setItem(key, JSON.stringify(data));
+
+    // [핵심 해결] HOME 화면 유령 예정 항목 잔재 방지: 전역 캐시 및 all_equip_data 즉시 동기화
+    if (window.allEquipDetails) {
+        window.allEquipDetails[key] = data;
+    }
+    try {
+        let allDataCache = JSON.parse(localStorage.getItem('all_equip_data')) || {};
+        allDataCache[key] = data;
+        localStorage.setItem('all_equip_data', JSON.stringify(allDataCache));
+    } catch (e) {}
 
     if (typeof addSystemLog === 'function') {
         addSystemLog('COMPLETE_SCHEDULE', equip, `작업일: ${completeDate}, 구분: ${taskType}\n세부구분: ${currentDetailType}`);

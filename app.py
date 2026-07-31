@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request, jsonify, session, has_request_context, send_from_directory, redirect
 import json
 import os
+import time
+import re
+import random
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
@@ -20,6 +23,11 @@ import uuid
 import urllib.parse
 
 app = Flask(__name__)
+
+# [요청 반영] Werkzeug HTTP 접근 콘솔 로그 비활성화 (GET/POST 요청 터미널 로그 숨김)
+w_log = logging.getLogger('werkzeug')
+w_log.setLevel(logging.ERROR)
+w_log.disabled = True
 
 # ------------------------------------------------------------------------------
 # 1. 앱 설정 및 보안 (App Configuration & Security)
@@ -541,11 +549,12 @@ def load_data():
     data['equip_id_map'] = {}
 
     # N+1 쿼리 성능 저하 방지를 위한 전체 데이터 사전 로드 (Dictionary 매핑)
-    maint_items = {}; log_items = {}; setup_details = {}; setup_logs = {}
+    maint_items = {}; log_items = {}; setup_details = {}; setup_logs = {}; item_logs = {}
     
     for l in LogItem.query.all(): log_items.setdefault(l.equip_id, []).append(l)
     for sd in SetupDetail.query.all(): setup_details.setdefault(sd.equip_id, []).append(sd)
     for sl in SetupLog.query.all(): setup_logs.setdefault(sl.equip_id, []).append(sl)
+    for il in ItemLog.query.all(): item_logs.setdefault(il.equip_id, []).append(il)
 
     # 4. 장비 상세 데이터 (details_ 및 setup_data) 매핑
     equips = Equipment.query.all()
@@ -586,16 +595,58 @@ def load_data():
         maint_list = [l for l in eq_all_logs if getattr(l, 'status', '') == '작업예정']
             
         maint_list.sort(key=lambda x: (getattr(x, 'sort_order', 0) if getattr(x, 'sort_order', None) is not None else 0, getattr(x, '_unique_id', 0)))
+
+        maint_ids = set()
+        maint_code_specs = set()
+
         for m in maint_list:
+            m_id = int(m.id) if str(m.id).isdigit() else m.id
+            m_code = getattr(m, 'code', '') or m.content or ''
+            m_spec = getattr(m, 'spec', '') or ''
+            maint_ids.add(str(m_id))
+            maint_code_specs.add((m_code.strip(), m_spec.strip()))
+
             data[detail_key]["maint"].append({
-                "id": int(m.id) if str(m.id).isdigit() else m.id, "type": m.type, "detailType": m.detail_type,
+                "id": m_id, "type": m.type, "detailType": m.detail_type,
                 "detailType2": getattr(m, 'detail_type2', ''), "detailType3": getattr(m, 'detail_type3', ''),
-                "code": getattr(m, 'code', ''), "content": m.content, "spec": getattr(m, 'spec', ''), "date": m.date, "scheduledDate": getattr(m, 'scheduled_date', m.date),
+                "code": m_code, "content": m.content, "spec": m_spec, "date": m.date, "scheduledDate": getattr(m, 'scheduled_date', m.date),
                 "period": int(m.period) if getattr(m, 'period', None) and str(m.period).isdigit() else getattr(m, 'period', ''),
                 "costType": m.cost_type, "worker": m.worker, "md": m.md, "itemCost": getattr(m, 'item_cost', ''), "memo": m.memo,
                 "sortOrder": getattr(m, 'sort_order', 0),
                 "originalLogId": int(m.original_log_id) if m.original_log_id and str(m.original_log_id).isdigit() else m.original_log_id
             })
+
+        # [요청 반영] item_log 테이블에 기록된 해당 장비의 유지관리 물품 리스트 반영
+        eq_item_logs = item_logs.get(eq.id, [])
+        for il in eq_item_logs:
+            il_id = int(il.id) if str(il.id).isdigit() else il.id
+            il_code = il.code or il.part or ''
+            il_spec = il.part_detail or il.spec or ''
+            il_cycle = int(il.cycle) if il.cycle and str(il.cycle).isdigit() else (il.cycle or '')
+
+            if str(il_id) not in maint_ids and (il_code.strip(), il_spec.strip()) not in maint_code_specs:
+                data[detail_key]["maint"].append({
+                    "id": il_id,
+                    "type": il.type or '정기',
+                    "detailType": 'PM 점검' if (il.type or '정기') == '정기' else 'Parts 교체',
+                    "detailType2": '',
+                    "detailType3": '',
+                    "code": il_code,
+                    "content": il_code,
+                    "spec": il_spec,
+                    "date": il.date or '',
+                    "scheduledDate": il.date or '',
+                    "period": il_cycle,
+                    "costType": '유상',
+                    "worker": '',
+                    "md": '0',
+                    "itemCost": '',
+                    "memo": '',
+                    "sortOrder": 999,
+                    "originalLogId": None
+                })
+                maint_ids.add(str(il_id))
+                maint_code_specs.add((il_code.strip(), il_spec.strip()))
             
         logs_list = [l for l in eq_all_logs if getattr(l, 'status', '조치완료') != '작업예정']
         for l in logs_list:
@@ -2768,13 +2819,15 @@ def history_transaction():
                         spec_val = match_admin.spec if match_admin and match_admin.spec else ''
                         cycle_val = getattr(match_admin, 'cycle', None) if match_admin else getattr(item, 'period', None)
 
+                        # [충돌 해결] 1. 기존 ItemLog DB에서 동일 equip_id 및 물품명(code/part/pure_p) 유연 및 우선 검색하여 충돌 방지
                         exist_log = ItemLog.query.filter(
                             ItemLog.equip_id == equip_id,
-                            (ItemLog.code == code_val) | (ItemLog.part == part_name_val)
+                            (ItemLog.part == part_name_val) | (ItemLog.code == code_val) | (ItemLog.part == pure_p) | (ItemLog.code == pure_p)
                         ).first()
 
                         if not exist_log:
-                            new_item_log = ItemLog(
+                            # 기존 ItemLog가 없는 경우: 유지관리 물품 신규 추가
+                            exist_log = ItemLog(
                                 id=f"item_{int(time.time()*1000)}_{random.randint(100, 999)}",
                                 equip_id=equip_id,
                                 date=l.get('date', item.date or ''),
@@ -2785,13 +2838,24 @@ def history_transaction():
                                 part_detail=spec_tag,
                                 cycle=cycle_val
                             )
-                            db.session.add(new_item_log)
+                            db.session.add(exist_log)
+                        else:
+                            # 이미 있는 유지관리 물품인 경우: 시작일만 갱신 (중복 레코드 복제 방지)
+                            if l.get('date'):
+                                exist_log.date = l.get('date')
+                            if spec_tag and not exist_log.part_detail:
+                                exist_log.part_detail = spec_tag
+
+                        final_p_detail = spec_tag or (exist_log.part_detail if exist_log else '')
+                        if final_p_detail:
+                            item.spec = final_p_detail
 
         # 2. maint_deletes 처리
         if maint_deletes:
             actual_deletes = [d for d in maint_deletes if d not in completed_orig_ids]
             if actual_deletes:
                 LogItem.query.filter(LogItem.id.in_(actual_deletes)).delete(synchronize_session=False)
+                ItemLog.query.filter(ItemLog.id.in_(actual_deletes)).delete(synchronize_session=False)
 
         # 3. maint_upserts (작업 예정 생성/수정)
         for idx, m in enumerate(maint_upserts):
@@ -2825,61 +2889,39 @@ def history_transaction():
             item.memo = m.get('memo', item.memo)
             item.original_log_id = str(m.get('originalLogId')) if m.get('originalLogId') else item.original_log_id
 
-            # [요청 반영] 유지관리 물품 등록 시 item_log DB 테이블에도 1:1 완벽하게 동기화 기록
-            m_content = m.get('content') or item.content or ''
-            if m_content and m_content != '내용 없음':
-                m_sub_parts = [sp.strip() for sp in m_content.split(',') if sp.strip()]
-                for sp in m_sub_parts:
-                    pure_p = sp
-                    cm = re.match(r'^\[(.*?)\]\s*(.*)$', sp)
-                    if cm:
-                        pure_p = cm.group(2).strip()
-                    
-                    for prefix_kw in ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리']:
-                        if pure_p.startswith(prefix_kw + ' -'):
-                            pure_p = pure_p[len(prefix_kw) + 2:].strip()
-                            break
+            # [요청 반영] item_log DB 테이블에도 동기화
+            m_code = m.get('code') or m.get('content') or ''
+            m_part = m.get('part') or m_code
+            m_spec = m.get('spec') or ''
+            m_type = m.get('type') or '정기'
+            m_date = m.get('date') or ''
+            m_cycle = str(m.get('period') or m.get('cycle') or '') if (m.get('period') is not None or m.get('cycle') is not None) else None
 
-                    spec_tag = m.get('partDetail') or m.get('part_detail') or ''
-                    sm = re.search(r'\s*\[(.*?)\]$', pure_p)
-                    if sm:
-                        if not spec_tag:
-                            spec_tag = sm.group(1).strip()
-                        pure_p = pure_p[:sm.start()].strip()
-
-                    if pure_p and pure_p != '내용 없음':
-                        match_admin = AdminItem.query.filter((AdminItem.part == pure_p) | (AdminItem.code == pure_p)).first()
-                        code_val = m.get('code') or (match_admin.code if match_admin and match_admin.code else pure_p)
-                        part_name_val = match_admin.part if match_admin and match_admin.part else pure_p
-                        spec_val = match_admin.spec if match_admin and match_admin.spec else (m.get('spec') or '')
-                        cycle_val = str(m.get('period')) if m.get('period') is not None else (getattr(match_admin, 'cycle', None) or item.period)
-
-                        exist_item_log = ItemLog.query.filter(
-                            ItemLog.equip_id == equip_id,
-                            (ItemLog.code == code_val) | (ItemLog.part == part_name_val)
-                        ).first()
-
-                        if not exist_item_log:
-                            exist_item_log = ItemLog(
-                                id=f"item_{int(time.time()*1000)}_{random.randint(100, 999)}",
-                                equip_id=equip_id,
-                                date=m.get('date', item.date or ''),
-                                type=m.get('type', item.type or '정기'),
-                                code=code_val,
-                                part=part_name_val,
-                                spec=spec_val,
-                                part_detail=spec_tag,
-                                cycle=cycle_val
-                            )
-                            db.session.add(exist_item_log)
-                        else:
-                            exist_item_log.date = m.get('date', exist_item_log.date or '')
-                            exist_item_log.type = m.get('type', exist_item_log.type or '')
-                            exist_item_log.code = code_val
-                            exist_item_log.part = part_name_val
-                            if spec_val: exist_item_log.spec = spec_val
-                            if spec_tag: exist_item_log.part_detail = spec_tag
-                            if cycle_val: exist_item_log.cycle = cycle_val
+            if m_code and m_code not in ['내용 없음', '장비 점검']:
+                item_log_rec = ItemLog.query.filter(
+                    ItemLog.equip_id == equip_id,
+                    (ItemLog.id == m_id) | (ItemLog.code == m_code) | (ItemLog.part == m_code)
+                ).first()
+                if not item_log_rec:
+                    item_log_rec = ItemLog(
+                        id=m_id,
+                        equip_id=equip_id,
+                        date=m_date,
+                        type=m_type,
+                        code=m_code,
+                        part=m_part,
+                        spec=m_spec,
+                        part_detail=m_spec,
+                        cycle=m_cycle
+                    )
+                    db.session.add(item_log_rec)
+                else:
+                    item_log_rec.id = m_id
+                    if m_date: item_log_rec.date = m_date
+                    if m_type: item_log_rec.type = m_type
+                    if m_code: item_log_rec.code = m_code; item_log_rec.part = m_part
+                    if m_spec: item_log_rec.part_detail = m_spec; item_log_rec.spec = m_spec
+                    if m_cycle is not None: item_log_rec.cycle = m_cycle
 
         if log_deletes:
             LogItem.query.filter(LogItem.id.in_(log_deletes)).delete(synchronize_session=False)
@@ -2985,6 +3027,32 @@ def history_transaction():
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"History Transaction Error: {str(e)}", exc_info=True)
+        return jsonify({"status": "fail", "message": str(e)}), 500
+
+# [추가] 장비별 item_log 유지관리 물품 리스트 조회 API
+@app.route('/api/item_log/<path:equip_id>', methods=['GET'])
+@login_required
+def get_item_logs_by_equip(equip_id):
+    try:
+        import urllib.parse
+        import unicodedata
+        equip_id = urllib.parse.unquote(equip_id).strip()
+        equip_id = unicodedata.normalize('NFC', equip_id)
+
+        items = ItemLog.query.filter_by(equip_id=equip_id).all()
+        result = [{
+            "id": item.id,
+            "equip_id": item.equip_id,
+            "date": item.date,
+            "type": item.type,
+            "code": item.code,
+            "part": item.part,
+            "spec": item.spec,
+            "part_detail": item.part_detail,
+            "cycle": item.cycle
+        } for item in items]
+        return jsonify({"status": "success", "items": result})
+    except Exception as e:
         return jsonify({"status": "fail", "message": str(e)}), 500
 
 # [추가] 셋업 화면 데이터 전용 100% DB 동기화 API
