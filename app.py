@@ -2938,66 +2938,13 @@ def history_transaction():
             item.memo = m.get('memo', item.memo)
             item.original_log_id = str(m.get('originalLogId')) if m.get('originalLogId') else item.original_log_id
 
-            # [요청 반영] item_log DB 테이블에도 개별 물품 단위 분리 동기화 (결합 레코드 및 스펙 오염 방지)
-            m_raw = m.get('code') or m.get('content') or ''
-            if m_raw and m_raw not in ['내용 없음', '장비 점검']:
-                m_sub_parts = [sp.strip() for sp in m_raw.split(',') if sp.strip()]
-                for m_sp in m_sub_parts:
-                    m_parsed = parse_part_item_string(m_sp)
-                    if not m_parsed:
-                        continue
-
-                    m_pure_p = m_parsed['clean_name']
-                    m_spec_tag = m_parsed['part_detail']
-                    m_type = m.get('type') or '정기'
-                    m_date = m.get('date') or ''
-                    m_cycle = str(m.get('period') or m.get('cycle') or '') if (m.get('period') is not None or m.get('cycle') is not None) else None
-
-                    match_admin = AdminItem.query.filter(
-                        (AdminItem.code == m_pure_p) | (AdminItem.part == m_pure_p) |
-                        (db.func.trim(AdminItem.code) == m_pure_p) | (db.func.trim(AdminItem.part) == m_pure_p)
-                    ).first()
-
-                    m_code_val = match_admin.code if match_admin and match_admin.code else m_pure_p
-                    m_part_val = match_admin.part if match_admin and match_admin.part else m_pure_p
-                    m_spec_val = match_admin.spec if match_admin and match_admin.spec else m_spec_tag
-
-                    item_log_rec = ItemLog.query.filter(
-                        ItemLog.equip_id == equip_id,
-                        ((ItemLog.code == m_code_val) | (ItemLog.part == m_part_val) |
-                         (ItemLog.code == m_pure_p) | (ItemLog.part == m_pure_p)),
-                        db.func.coalesce(ItemLog.part_detail, '') == (m_spec_tag or '')
-                    ).first()
-
-                    if not item_log_rec:
-                        new_item_id = m_id if m_id.startswith('item_') else f"item_{m_id}"
-                        item_log_rec = ItemLog(
-                            id=new_item_id if len(m_sub_parts) == 1 else f"item_{int(time.time()*1000)}_{random.randint(100, 999)}",
-                            equip_id=equip_id,
-                            date=m_date,
-                            type=m_type,
-                            code=m_code_val,
-                            part=m_part_val,
-                            spec=m_spec_val,
-                            part_detail=m_spec_tag,
-                            cycle=m_cycle
-                        )
-                        db.session.add(item_log_rec)
-                    else:
-                        if m_date: item_log_rec.date = m_date
-                        if m_type: item_log_rec.type = m_type
-                        if m_code_val: item_log_rec.code = m_code_val
-                        if m_part_val: item_log_rec.part = m_part_val
-                        if m_spec_val: item_log_rec.spec = m_spec_val
-                        if m_spec_tag: item_log_rec.part_detail = m_spec_tag
-                        if m_cycle is not None: item_log_rec.cycle = m_cycle
-
         if log_deletes:
             LogItem.query.filter(LogItem.id.in_(log_deletes)).delete(synchronize_session=False)
 
-        # 비정기로 구분된 항목들을 최초작업(부모) 단위로 trouble_log에 단일 통합 동기화
-        non_regular_in_session = LogItem.query.filter(db.func.trim(LogItem.type) == '비정기').all()
-        all_log_ids = {str(l.id) for l in LogItem.query.all()}
+        # [성능 최적화] 해당 장비(equip_id)의 비정기 항목만 타겟팅하여 TroubleLog 동기화 (전체 DB 풀스캔 N+1 쿼리 병목 제거)
+        non_regular_in_session = LogItem.query.filter(LogItem.equip_id == equip_id, db.func.trim(LogItem.type) == '비정기').all()
+        all_log_ids = {str(l.id) for l in LogItem.query.filter_by(equip_id=equip_id).all()}
+        trouble_logs_map = {str(t.id): t for t in TroubleLog.query.filter_by(equip_id=equip_id).all()}
         
         parent_logs = {}
         child_logs_map = {}
@@ -3040,7 +2987,7 @@ def history_transaction():
             return val_str
 
         for p_id, p_log in parent_logs.items():
-            t_item = TroubleLog.query.filter_by(id=p_id).first()
+            t_item = trouble_logs_map.get(p_id)
             
             # 최초 및 추가작업 내용을 요청된 양식(<최초> (날짜 / 작업자))으로 통합 구성
             blocks = []
@@ -3080,6 +3027,7 @@ def history_transaction():
                     image_data=getattr(p_log, 'image_data', '')
                 )
                 db.session.add(t_item)
+                trouble_logs_map[p_id] = t_item
             else:
                 t_item.type = '비정기'
                 t_item.detail_type = p_log.detail_type or ''
