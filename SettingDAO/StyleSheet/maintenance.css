@@ -213,36 +213,67 @@ tr.dragging {
 }
 
 /* ==========================================================================
-   [유지관리 물품 리스트 테이블 컬럼 너비 일괄 제어 영역]
+   [유지관리 물품 리스트 테이블 컬럼 너비 비율(%) 일괄 제어 영역]
    ========================================================================== */
+.maint-list-table {
+    width: 100%;
+    table-layout: fixed;
+}
+
 .maint-list-table .th-code,
 .maint-list-table td.edit-code {
-    width: auto;
+    width: 30%;
 }
 
 .maint-list-table .th-spec,
 .maint-list-table td.edit-spec {
-    width: 200px;
+    width: 25%;
 }
 
 .maint-list-table .th-start-date,
 .maint-list-table td.edit-date {
-    width: 150px;
+    width: 18%;
 }
 
 .maint-list-table .th-period,
 .maint-list-table td.edit-period {
-    width: 150px;
+    width: 13%;
 }
 
 .maint-list-table .th-status,
 .maint-list-table td.status-cell {
-    width: 100px;
+    width: 14%;
 }
 
 .maint-list-table .th-manage,
 .maint-list-table td.manage-col {
-    width: 100px;
+    width: 10%;
+}
+
+/* 관리 모드 활성화 시 (관리 컬럼 10% 표출에 맞춰 전체 비율 재조정) */
+.maint-list-table.management-active .th-code,
+.maint-list-table.management-active td.edit-code {
+    width: 26%;
+}
+
+.maint-list-table.management-active .th-spec,
+.maint-list-table.management-active td.edit-spec {
+    width: 21%;
+}
+
+.maint-list-table.management-active .th-start-date,
+.maint-list-table.management-active td.edit-date {
+    width: 16%;
+}
+
+.maint-list-table.management-active .th-period,
+.maint-list-table.management-active td.edit-period {
+    width: 13%;
+}
+
+.maint-list-table.management-active .th-status,
+.maint-list-table.management-active td.status-cell {
+    width: 14%;
 }
 
 .maint-content-wrapper {

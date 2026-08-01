@@ -10,8 +10,8 @@ let currentTroubleFilter = {
     model: 'ALL', 
     equip: 'ALL', 
     keyword: '',
-    dateType: '1month', 
-    year: '', 
+    dateType: 'year', 
+    year: String(new Date().getFullYear()), 
     month: '', 
     startDate: '', 
     endDate: '' 
@@ -39,11 +39,12 @@ function initTroublePage() {
         if (cachedFilter) {
             currentTroubleFilter = { ...currentTroubleFilter, ...JSON.parse(cachedFilter) };
         }
-        // [수정] 진입 시 URL에 date 파라미터가 없을 때에만 캐시 상태와 무관하게 "최근 1달"로 초기화 강제 적용
+        // [수정] 진입 시 URL에 date 파라미터가 없을 때에만 "년도별(현재 연도)"로 초기화 강제 적용
+        const currentYearStr = String(new Date().getFullYear());
         const params = new URLSearchParams(window.location.search);
         if (!params.get('date')) {
-            currentTroubleFilter.dateType = '1month';
-            currentTroubleFilter.year = '';
+            currentTroubleFilter.dateType = 'year';
+            currentTroubleFilter.year = currentYearStr;
             currentTroubleFilter.month = '';
             currentTroubleFilter.startDate = '';
             currentTroubleFilter.endDate = '';
@@ -122,12 +123,10 @@ function checkQueryStringFilters() {
     const equipParam = params.get('equip');
     const dateParam = params.get('date');
 
-    if (siteParam && equipParam) {
-        currentTroubleFilter.site = siteParam;
-
-        const parts = equipParam.split('::');
-        const model = parts[0];
-        currentTroubleFilter.model = model;
+    if (equipParam) {
+        // [수정] 사업장 및 모델 필터는 'ALL'(전체)로 두고, 장비 필터만 해당 장비로 지정
+        currentTroubleFilter.site = 'ALL';
+        currentTroubleFilter.model = 'ALL';
         currentTroubleFilter.equip = equipParam;
 
         // [추가] date 파라미터가 유효하게 넘어오면 날짜 필터를 해당 작업 월(월별)로 자동 전환 선택
@@ -437,6 +436,12 @@ function applyTroubleFilter() {
         filtered = filtered.filter(t =>
             (t.equip && t.equip.toLowerCase().includes(currentTroubleFilter.keyword)) ||
             (t.equip_id && t.equip_id.toLowerCase().includes(currentTroubleFilter.keyword)) ||
+            (t.situation && t.situation.toLowerCase().includes(currentTroubleFilter.keyword)) ||
+            (t.symptom && t.symptom.toLowerCase().includes(currentTroubleFilter.keyword)) ||
+            (t.cause && t.cause.toLowerCase().includes(currentTroubleFilter.keyword)) ||
+            (t.measure && t.measure.toLowerCase().includes(currentTroubleFilter.keyword)) ||
+            (t.prevent && t.prevent.toLowerCase().includes(currentTroubleFilter.keyword)) ||
+            (t.trouble_details && t.trouble_details.toLowerCase().includes(currentTroubleFilter.keyword)) ||
             (t.content && t.content.toLowerCase().includes(currentTroubleFilter.keyword)) ||
             (t.worker && t.worker.toLowerCase().includes(currentTroubleFilter.keyword)) ||
             (t.type && t.type.toLowerCase().includes(currentTroubleFilter.keyword)) ||
@@ -1146,28 +1151,38 @@ function renderTroubleList(dataList = []) {
                 }
             }
 
-            // [추가] JSON 형태의 content를 목록에 예쁘게 표시
-            let displayContent = t.content || '-';
-            let tooltipContent = t.content || '';
-            if (typeof displayContent === 'string' && displayContent.startsWith('{')) {
-                try {
-                    const parsed = JSON.parse(displayContent);
-                    const arr = [];
-                    let sit = parsed.situation || '';
+            // [수정] trouble 내용 (상황) 컬럼에 트러블 상황(situation) 우선 표시
+            let sitText = (t.situation || '').trim();
+            let tooltipContent = '';
 
-                    if (sit) arr.push(`[상황] ${sit}`);
+            if (typeof t.content === 'string' && t.content.startsWith('{')) {
+                try {
+                    const parsed = JSON.parse(t.content);
+                    if (!sitText && parsed.situation) sitText = parsed.situation.trim();
+                    const arr = [];
+                    if (sitText) arr.push(`[상황] ${sitText}`);
                     if (parsed.symptom) arr.push(`[증상] ${parsed.symptom}`);
                     if (parsed.cause) arr.push(`[원인] ${parsed.cause}`);
                     if (parsed.action) arr.push(`[조치] ${parsed.action}`);
                     if (parsed.prevention) arr.push(`[대책] ${parsed.prevention}`);
                     if (parsed.trouble_memo) arr.push(`[메모] ${parsed.trouble_memo}`);
-
-                    displayContent = sit || parsed.symptom || parsed.cause || parsed.action || parsed.prevention || parsed.trouble_memo || (t.memo && t.memo !== '-' ? t.memo : '-');
                     tooltipContent = arr.join('\n');
                 } catch (e) { }
-            } else if (!displayContent || displayContent === '-') {
-                if (t.memo && t.memo !== '-') displayContent = t.memo;
             }
+
+            if (!tooltipContent) {
+                const arr = [];
+                if (sitText) arr.push(`[상황] ${sitText}`);
+                if (t.symptom) arr.push(`[증상] ${t.symptom}`);
+                if (t.cause) arr.push(`[원인] ${t.cause}`);
+                if (t.measure) arr.push(`[조치] ${t.measure}`);
+                if (t.prevent) arr.push(`[대책] ${t.prevent}`);
+                if (t.trouble_details) arr.push(`[메모] ${t.trouble_details}`);
+                tooltipContent = arr.join('\n');
+            }
+
+            let displayContent = sitText || (t.trouble_details && t.trouble_details !== '-' ? t.trouble_details : '') || (t.memo && t.memo !== '-' ? t.memo : '-');
+            if (!displayContent || displayContent === '-') displayContent = '-';
 
             // [추가] 기록여부 판단 (status 또는 발생 일시 유무 기준)
             const isRecorded = (t.status === '기록완료') || (t.occur_date && String(t.occur_date).trim() !== '' && t.occur_date !== '-');

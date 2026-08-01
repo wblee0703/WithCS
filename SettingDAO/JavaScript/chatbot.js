@@ -124,6 +124,13 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', clampPosition);
     window.addEventListener('orientationchange', clampPosition);
 
+    // [모바일 호환] 배경 스크롤 차단 및 터치 드래그 안정화
+    chatbotToggleBtn.style.touchAction = 'none';
+
+    chatbotToggleBtn.addEventListener('touchmove', (e) => {
+        if (e.cancelable) e.preventDefault();
+    }, { passive: false });
+
     chatbotToggleBtn.addEventListener('pointerdown', (e) => {
         isDragging = true;
         isMoved = false;
@@ -143,6 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const deltaY = e.clientY - dragStartY;
 
         if (Math.hypot(deltaX, deltaY) > 5) {
+            if (e.cancelable) e.preventDefault();
             isMoved = true;
             let newLeft = initialLeft + deltaX;
             let newTop = initialTop + deltaY;

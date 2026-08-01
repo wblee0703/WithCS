@@ -176,29 +176,15 @@ window.hideLoading = function(force = false) {
     }
 };
 
-// 1. 초기 페이지 및 자원 로딩이 완료되면 로딩 오버레이 닫기
+// 1. 초기 페이지 및 자원 로딩 처리 (캐시가 구성되었으면 즉시 해제하여 렉 및 깜빡임 방지)
 window.addEventListener('load', function() {
-    setTimeout(function() {
+    if (localStorage.getItem('device_data') || window.isDataLoaded) {
         window.hideLoading(true);
-    }, 150);
-});
-
-// 2. 상단 메뉴 이동 및 링크 클릭 시 즉시 로딩 오버레이 표출 (버튼 클릭 방지)
-document.addEventListener('DOMContentLoaded', function() {
-    document.addEventListener('click', function(e) {
-        const link = e.target.closest('a, .nav-links a, .mobile-nav-links a, .btn-move');
-        if (link) {
-            const href = link.getAttribute('href');
-            const target = link.getAttribute('target');
-            if (href && !href.startsWith('#') && !href.startsWith('javascript:') && target !== '_blank') {
-                window.showLoading('페이지 이동 중입니다...');
-            }
-        }
-    }, true);
-
-    window.addEventListener('beforeunload', function() {
-        window.showLoading('페이지 이동 중입니다...');
-    });
+    } else {
+        setTimeout(function() {
+            window.hideLoading(true);
+        }, 100);
+    }
 });
 
 // [추가] 전역 fetch 인터셉터: 모든 API 통신 시 세션 만료(401) 및 CSRF 에러(400) 감지하여 자동 로그아웃 처리
@@ -709,6 +695,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // [추가] 로그인하지 않은 상태에서는 서버 데이터 요청을 보내지 않음 (401 에러 로그 방지)
     if (sessionStorage.getItem('isLoggedIn') !== 'true') return;
 
+    // [최적화 - 방안 1] 캐시 데이터가 존재하는 경우 0ms(즉시) 로딩 해제 및 화면 렌더링
+    if (localStorage.getItem('device_data')) {
+        window.isDataLoaded = true;
+        storageData = JSON.parse(localStorage.getItem('device_data')) || {};
+        window.dispatchEvent(new Event('DataLoaded'));
+        window.hideLoading(true);
+    }
+
     // 2. 서버 데이터 비동기 로드 (백그라운드 동기화)
     fetchServerData();
 });
@@ -751,19 +745,24 @@ function fetchServerData(callback) {
             // [중요] 데이터 로드 완료 상태로 변경 (이제부터 saveAllToServer 작동 허용)
             window.isDataLoaded = true;
 
-            // [추가] 데이터 로드 후 기존 데이터 마이그레이션 및 JSON 키 순서 정렬
-            await migrateDataFormat();
-
-            // [추가] 워런티 만료 장비 자동 전환
-            updateWarrantyStatusAutomatically();
-
-            // [추가] 관리자 공수 차감 계산을 위한 캐시 로드
-            if (typeof window.initAdminNamesCache === 'function') {
-                await window.initAdminNamesCache();
-            }
-
             // [추가] 데이터 갱신 후 UI 리프레시 (화면 깜빡임 없이 데이터만 최신화)
             refreshAppViews();
+            window.dispatchEvent(new Event('DataLoaded'));
+            window.hideLoading(true);
+            if (callback) callback();
+
+            // [최적화 - 방안 2] 무거운 보정 연산은 메인 UI 표출 후 비동기 지연 실행 (스레드 차단 방지)
+            setTimeout(async () => {
+                try {
+                    await migrateDataFormat();
+                    updateWarrantyStatusAutomatically();
+                    if (typeof window.initAdminNamesCache === 'function') {
+                        await window.initAdminNamesCache();
+                    }
+                } catch (e) {
+                    console.error('Background post-load tasks error:', e);
+                }
+            }, 300);
 
             // [추가] 백그라운드 사용자 정보 갱신 (새로고침 등 상태 유지)
             if (sessionStorage.getItem('isLoggedIn') === 'true') {
@@ -777,15 +776,13 @@ function fetchServerData(callback) {
                         }
                     }).catch(e => console.error(e));
             }
-
-            window.dispatchEvent(new Event('DataLoaded'));
-            if (callback) callback();
         })
         .catch(err => {
             console.error('Failed to load data from server:', err);
             // 실패해도 이미 로컬 데이터로 초기화되었으므로 추가 조치 불필요
             window.isDataLoaded = true;
             window.dispatchEvent(new Event('DataLoaded'));
+            window.hideLoading(true);
             if (callback) callback();
         });
 }
@@ -2313,6 +2310,7 @@ function showForcePwChangeModal() {
 }
 
 function attemptLogin(id, pw, context) {
+    window.showLoading('로그인 처리 중입니다...');
     // [수정] 서버 API를 통한 로그인 검증
     fetch('/api/login', {
         method: 'POST',
@@ -2335,24 +2333,29 @@ function attemptLogin(id, pw, context) {
                 addSystemLog('LOGIN', id, `로그인 성공 (${context})`);
 
                 if (data.require_pw_change) {
+                    window.hideLoading(true);
                     showForcePwChangeModal();
                 } else {
+                    window.showLoading('데이터를 불러오는 중입니다...');
                     const homeLoginContainer = document.getElementById('home-login-container');
                     if (homeLoginContainer) {
                         document.getElementById('home-login-container').style.display = 'none';
                         document.getElementById('home-welcome-container').style.display = 'flex';
                         fetchServerData(() => {
                             checkLoginStatus();
+                            window.hideLoading(true);
                         });
                     } else {
                         location.reload();
                     }
                 }
             } else {
+                window.hideLoading(true);
                 alert(data.message || '로그인 실패');
             }
         })
         .catch(err => {
+            window.hideLoading(true);
             console.error('Login error:', err);
             alert('로그인 중 오류가 발생했습니다.');
         });
