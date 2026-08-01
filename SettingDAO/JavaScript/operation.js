@@ -579,7 +579,7 @@ function calculateOperationRate() {
                                     type: logItem.type || '-',
                                     detailType: logItem.detailType || '',
                                     detailType2: logItem.detailType2 || '',
-                                    content: logItem.content || logItem.memo || '-',
+                                    content: (logItem.content && logItem.content.trim()) ? logItem.content : '내용 없음',
                                     hours: downHours
                                 };
                                 allDowntimeList.push(dtInfo);

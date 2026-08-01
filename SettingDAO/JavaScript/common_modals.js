@@ -1262,7 +1262,7 @@ function buildDetailDropdown(item, site, equip) {
             contentDiv.style.display = 'none';
             contentInput.style.display = 'block';
             contentInput.disabled = false;
-            contentInput.value = (item && item.content && item.content !== '내용 없음') ? item.content : '';
+            contentInput.value = (item && item.content && item.content !== '내용 없음') ? window.removeCostLabels(item.content) : '';
 
             const pWrapper = document.getElementById('detail-edit-part-wrapper');
             if (pWrapper) pWrapper.style.display = 'none';

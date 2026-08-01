@@ -1248,10 +1248,11 @@ def build_rag_context(user, user_message):
     intent_trouble = any(k in msg_no_space for k in ["트러블", "장애", "에러", "고장", "문제", "조치", "수리", "해결", "오류", "이상", "경과", "안됨", "불량", "알람"])
     intent_schedule = any(k in msg_no_space for k in ["점검", "일정", "계획", "언제", "예정", "유지보수", "스케줄", "날짜", "달력", "작업"])
     intent_setup = any(k in msg_no_space for k in ["셋업", "설치", "setup", "진행", "진척"])
-    intent_detail = any(k in msg_no_space for k in ["상세", "정보", "디테일", "연락처", "담당자", "위치", "스펙", "전화번호", "이메일", "어디", "누구"])
+    intent_part = any(k in msg_no_space for k in ["물품", "부품", "파트", "소모품", "필터", "filter", "cone", "gc", "spec", "스펙", "교체물품", "유지관리물품", "부품교체", "물품이력", "물품목록", "부품목록"])
+    intent_detail = any(k in msg_no_space for k in ["상세", "정보", "디테일", "연락처", "담당자", "위치", "전화번호", "이메일", "어디", "누구"])
 
     app.logger.info(f"[AI Chat RAG] 의도 분석 결과 -> Site: {matched_site}, Worker: {matched_worker}, Model: {matched_model}, Equips: {[e.id for e in matched_equips]}")
-    app.logger.info(f"[AI Chat RAG] 의도 분류 -> COUNT:{intent_count}, TROUBLE:{intent_trouble}, SCHEDULE:{intent_schedule}, SETUP:{intent_setup}, DETAIL:{intent_detail}")
+    app.logger.info(f"[AI Chat RAG] 의도 분류 -> COUNT:{intent_count}, TROUBLE:{intent_trouble}, SCHEDULE:{intent_schedule}, SETUP:{intent_setup}, PART:{intent_part}, DETAIL:{intent_detail}")
 
     # 3. 데이터베이스 쿼리 및 컨텍스트 작성
     
@@ -1368,7 +1369,10 @@ def build_rag_context(user, user_message):
             context_lines.append(f"  * 주요 장애 해결 내역 (최근 5건):")
             recent_troubles = trouble_query.order_by(TroubleLog.action_date.desc()).limit(5).all()
             for rt in recent_troubles:
-                context_lines.append(f"    - [{rt.action_date}] {rt.equip_id.split('::')[-1]} 장비: {rt.content} (담당: {rt.worker})")
+                ml = LogItem.query.filter_by(id=str(rt.id)).first()
+                w_str = ml.worker if ml else '-'
+                t_desc = parse_trouble_content(rt.trouble_details) or rt.situation or rt.symptom or rt.measure or '장애 내역'
+                context_lines.append(f"    - [{rt.action_date or rt.occur_date or '미기록'}] {rt.equip_id.split('::')[-1]} 장비: {t_desc} (담당: {w_str})")
 
     # 3-3. 특정 장비가 매칭된 경우 (장비 타겟 정보 제공)
     if matched_equips:
@@ -1418,6 +1422,14 @@ def build_rag_context(user, user_message):
                             log_detail += f" / 메모: {cl.memo}"
                         context_lines.append(f"    * [{cl.date}] {log_detail} ({cl.worker})")
 
+                # [추가] 장비 등록 유지관리 물품 마스터 (ItemLog) 수집
+                item_logs = ItemLog.query.filter_by(equip_id=eq.id).all()
+                if item_logs:
+                    context_lines.append(f"  - 장비 등록 유지관리 물품 목록 ({len(item_logs)}건):")
+                    for il in item_logs:
+                        det = f" [{il.part_detail}]" if il.part_detail else ""
+                        context_lines.append(f"    * [코드: {il.code}] {il.part}{det} (스펙: {il.spec or '-'}, 교체/등록일: {il.date or '-'}, 주기: {il.cycle or '-'})")
+
         # 2) 매칭된 장비가 5대를 초과하여 다량인 경우: 토큰 폭발 방지를 위해 사전 통계 분석 및 핵심 연관 조치사례(Top-5) 요약 제공
         else:
             eq_ids = [eq.id for eq in matched_equips]
@@ -1450,14 +1462,21 @@ def build_rag_context(user, user_message):
             related_troubles = []
             if search_keywords:
                 for kw in search_keywords:
-                    kw_troubles = all_trouble_query.filter(TroubleLog.content.like(f"%{kw}%") | TroubleLog.memo.like(f"%{kw}%")).all()
+                    kw_troubles = all_trouble_query.filter(
+                        TroubleLog.situation.like(f"%{kw}%") |
+                        TroubleLog.symptom.like(f"%{kw}%") |
+                        TroubleLog.cause.like(f"%{kw}%") |
+                        TroubleLog.measure.like(f"%{kw}%") |
+                        TroubleLog.prevent.like(f"%{kw}%") |
+                        TroubleLog.trouble_details.like(f"%{kw}%")
+                    ).all()
                     related_troubles.extend(kw_troubles)
                 seen_t = set()
                 related_troubles = [t for t in related_troubles if not (t._unique_id in seen_t or seen_t.add(t._unique_id))]
             
             # 연관 사례가 부족할 경우 최근 해결 완료된 주요 조치 로그로 보충
             if len(related_troubles) < 5:
-                extra_troubles = all_trouble_query.filter_by(status='조치완료').order_by(TroubleLog.action_date.desc()).limit(5 - len(related_troubles)).all()
+                extra_troubles = all_trouble_query.filter(TroubleLog.status == '기록완료').order_by(TroubleLog.action_date.desc()).limit(5 - len(related_troubles)).all()
                 for et in extra_troubles:
                     if et._unique_id not in [t._unique_id for t in related_troubles]:
                         related_troubles.append(et)
@@ -1587,11 +1606,11 @@ def build_rag_context(user, user_message):
                 for tl in t_logs:
                     ml = LogItem.query.filter_by(id=str(tl.id)).first()
                     worker_str = ml.worker if ml else '-'
-                    content_str = ml.content if ml else '-'
-                    memo_str = ml.memo if ml and ml.memo else '기록 없음'
+                    t_desc = parse_trouble_content(tl.trouble_details) or tl.situation or tl.symptom or tl.measure or '-'
+                    t_memo = tl.measure or tl.prevent or (ml.memo if ml else '기록 없음')
                     context_lines.append(f"- 장비ID: {tl.equip_id}, 발생일: {tl.occur_date or '미기록'}, 조치일: {tl.action_date or '미조치'}, 기록상태: {tl.status}, 담당: {worker_str}")
-                    context_lines.append(f"  작업내용: {content_str}")
-                    context_lines.append(f"  조치/경과: {memo_str}")
+                    context_lines.append(f"  트러블내용: {t_desc}")
+                    context_lines.append(f"  조치/대책: {t_memo}")
             else:
                 context_lines.append("\n[최근 트러블 및 조치 이력]\n- 등록된 트러블 내역이 없습니다.")
 
@@ -1630,8 +1649,33 @@ def build_rag_context(user, user_message):
             else:
                 context_lines.append("\n[셋업 일정]\n- 등록된 셋업 일정이 없습니다.")
 
-        # (4) 기본: 키워드가 없거나 단순 장비 목록 조회인 경우
-        if not intent_trouble and not intent_schedule and not intent_setup:
+        # (4) 물품/부품(INTENT_PART) 조회
+        if intent_part:
+            item_query = ItemLog.query
+            if matched_site:
+                item_query = item_query.filter(ItemLog.equip_id.like(f"{matched_site}::%"))
+            
+            search_kws = [w for w in sanitized_message.split() if len(w) >= 2 and w not in ["물품", "부품", "유지관리", "목록", "알려줘", "조회", "이력", "스펙", "어떤"]]
+            if search_kws:
+                for skw in search_kws:
+                    item_query = item_query.filter(
+                        ItemLog.code.like(f"%{skw}%") |
+                        ItemLog.part.like(f"%{skw}%") |
+                        ItemLog.spec.like(f"%{skw}%") |
+                        ItemLog.part_detail.like(f"%{skw}%")
+                    )
+
+            i_logs = item_query.order_by(ItemLog.date.desc()).limit(limit_num * 2).all()
+            if i_logs:
+                context_lines.append(f"\n[장비 등록 유지관리 물품 내역 (최대 {limit_num * 2}건)]")
+                for il in i_logs:
+                    det = f" [{il.part_detail}]" if il.part_detail else ""
+                    context_lines.append(f"- 장비ID: {il.equip_id} | 코드명: {il.code} | 부품명: {il.part}{det} | 스펙: {il.spec or '-'} | 등록/교체일: {il.date or '-'} | 주기: {il.cycle or '-'}")
+            else:
+                context_lines.append("\n[장비 유지관리 등록 물품 내역]\n- 등록된 유지관리 물품 내역이 없습니다.")
+
+        # (5) 기본: 키워드가 없거나 단순 장비 목록 조회인 경우
+        if not intent_trouble and not intent_schedule and not intent_setup and not intent_part:
             # [개선] 특정 장비 지목 없이 사업장 단위의 분석을 요청한 경우, 사업장의 복합 이력을 추출해 컨텍스트 질을 비약적으로 상승시킵니다.
             if matched_site:
                 context_lines.append(f"\n[{matched_site} 사업장 종합 현황 및 이력 분석 데이터]")
@@ -1641,9 +1685,11 @@ def build_rag_context(user, user_message):
                 if site_troubles:
                     context_lines.append(f"  * 최근 발생 장애 내역:")
                     for st in site_troubles:
-                        context_lines.append(f"    - [{st.occur_date}] {st.equip_id.split('::')[-1]} (상태: {st.status}, 조치일: {st.action_date or '미조치'}): {parse_trouble_content(st.content)}")
-                        if st.memo:
-                            context_lines.append(f"      조치 세부내역: {st.memo}")
+                        st_desc = parse_trouble_content(st.trouble_details) or st.situation or st.symptom or '-'
+                        st_memo = st.measure or st.prevent or ''
+                        context_lines.append(f"    - [{st.occur_date or '미기록'}] {st.equip_id.split('::')[-1]} (상태: {st.status}, 조치일: {st.action_date or '미조치'}): {st_desc}")
+                        if st_memo:
+                            context_lines.append(f"      조치 세부내역: {st_memo}")
                 else:
                     context_lines.append(f"  * 최근 발생한 장애 내역이 없습니다.")
 
@@ -4092,6 +4138,50 @@ def init_db():
                 if not Equipment.query.filter_by(id=etc_id).first():
                     db.session.add(Equipment(id=etc_id, site_name=site.name, name="기타(ETC)", serial="", cust_equip_name=""))
             db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        # [마이그레이션] 기존 DB 내용(content) 중 메모 자동 입력 및 텍스트 모드 비용 라벨 제거 ('내용 없음' 보정)
+        try:
+            admin_items = AdminItem.query.all()
+            admin_parts_set = set()
+            for ai in admin_items:
+                if ai.code: admin_parts_set.add(ai.code.strip())
+                if ai.part: admin_parts_set.add(ai.part.strip())
+
+            logs = LogItem.query.all()
+            updated_count = 0
+            for l in logs:
+                orig_content = (l.content or '').strip()
+                memo_val = (l.memo or '').strip()
+
+                if not orig_content or orig_content in ['내용 없음', '장비 점검']:
+                    continue
+
+                if memo_val and (orig_content == memo_val or orig_content == f"[유상] {memo_val}" or orig_content == f"[무상] {memo_val}"):
+                    l.content = '내용 없음'
+                    updated_count += 1
+                    continue
+
+                cm = re.match(r'^\[(유상|무상[^\]]*|기타)\]\s*(.*)$', orig_content)
+                if cm:
+                    pure_text = cm.group(2).strip()
+                    sub_parts = [sp.strip() for sp in pure_text.split(',') if sp.strip()]
+                    is_all_parts = True
+                    for sp in sub_parts:
+                        parsed = parse_part_item_string(sp)
+                        p_name = parsed['clean_name'] if parsed else sp
+                        if p_name not in admin_parts_set:
+                            is_all_parts = False
+                            break
+
+                    if not is_all_parts:
+                        clean_text = re.sub(r'^\[(유상|무상[^\]]*|기타)\]\s*', '', orig_content).strip()
+                        l.content = clean_text if clean_text else '내용 없음'
+                        updated_count += 1
+
+            if updated_count > 0:
+                db.session.commit()
         except Exception:
             db.session.rollback()
 

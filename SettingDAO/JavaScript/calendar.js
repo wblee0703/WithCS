@@ -91,7 +91,7 @@ function getScheduleForCalendar() {
                                     equip,
                                     type: log.type || '정기',
                                     detailType: log.detailType || '',
-                                    content: log.content || log.memo || '내용 없음',
+                                    content: (log.content && log.content.trim()) ? log.content : '내용 없음',
                                     id: log.id,
                                     isCompleted: !isChanged,
                                     isChanged: isChanged,
