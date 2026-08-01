@@ -2061,13 +2061,18 @@ async function handleEquipSave() {
     }
     alert('저장되었습니다.');
 
-    // [수정] 저장 완료 후 상세 정보 폼을 닫고 초기 미선택 상태로 화면 전환
-    localStorage.removeItem('lastAdminEquipKey');
-    resetEquipForm();
+    // [수정] 저장 완료 후 수정된 장비(newKey)의 선택 상태를 유지하여 수정 사항이 화면에 즉시 노출되도록 개선
+    currentAdminEquipKey = newKey;
+    currentAdminEquipSiteContext = targetSite;
+    localStorage.setItem('lastAdminEquipKey', newKey);
 
     setAdminFormDirty(false, 'equip'); // [추가] 저장 완료 후 상태 리셋
-    initialAdminFormData.equip = getEquipFormState(); // [추가] 스냅샷 갱신
     renderAdminEquipList();
+
+    const targetLi = document.querySelector(`#admin-equip-list li[data-equip-key="${newKey}"]`);
+    if (targetLi) {
+        targetLi.click();
+    }
     return true;
 }
 

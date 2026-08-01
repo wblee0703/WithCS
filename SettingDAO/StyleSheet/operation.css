@@ -63,8 +63,77 @@
 .operation-detail-card .data-table-wrapper { flex: 1; overflow-y: auto; overflow-x: auto; min-height: 0; }
 
 @media (max-width: 950px) {
+    .dashboard-sidebar {
+        width: 100% !important;
+        box-sizing: border-box;
+    }
+
+    .dashboard-sidebar .sidebar-group {
+        padding: 10px 12px;
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 8px;
+        margin-bottom: 10px;
+    }
+
+    .op-equip-group .sidebar-header-row {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 6px;
+    }
+
+    #operation-equip-search {
+        width: 130px !important;
+        height: 28px !important;
+        font-size: 11px !important;
+    }
+
+    /* 모바일 선택된 사업장 카드리스트 크기 최적화 */
+    .operation-selected-sites-list {
+        max-height: 140px;
+        overflow-y: auto;
+        margin-top: 6px;
+    }
+
+    .operation-selected-sites-list li {
+        padding: 6px 10px;
+        font-size: 12px;
+        border-radius: 6px;
+        background: #0d1117;
+        border: 1px solid #30363d;
+        margin-bottom: 4px;
+    }
+
+    /* 모바일 장비명 카드리스트 크기 최적화 */
+    #operation-equip-list {
+        max-height: 180px;
+        overflow-y: auto;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        padding: 5px;
+        background: #0d1117;
+        margin-top: 4px;
+    }
+
+    #operation-equip-list li {
+        padding: 8px 10px;
+        margin-bottom: 4px;
+        border-radius: 6px;
+        background: #161b22;
+        border: 1px solid #21262d;
+        font-size: 12px;
+        box-sizing: border-box;
+    }
+
+    #operation-equip-list li:last-child {
+        margin-bottom: 0;
+    }
+
     .operation-row-top { flex-direction: column; flex: none; height: auto; }
-    .operation-monthly-card { order: 3; height: 350px !important; } /* 모바일에서도 카드 크기 강제 고정 */
+    .operation-monthly-card { order: 3; height: 340px !important; border-radius: 8px; }
+    .operation-detail-card { order: 4; height: 360px !important; border-radius: 8px; }
 }
 
 #operation-monthly-table th, #operation-monthly-table td {

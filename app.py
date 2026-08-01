@@ -2365,7 +2365,7 @@ def admin_crud():
                             except:
                                 pass
 
-                        db.session.execute(text("UPDATE maint_item SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
+                        db.session.execute(text("UPDATE item_log SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
                         db.session.execute(text("UPDATE maint_log SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
                         db.session.execute(text("UPDATE setup_detail SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
                         db.session.execute(text("UPDATE setup_log SET equip_id=:n WHERE equip_id=:o"), {'n':db_new_id, 'o':db_old_id})
@@ -2448,8 +2448,13 @@ def admin_crud():
                 
                 db.session.execute(text("UPDATE admin_item SET detail_type=:dt, additional=:add, partno=:pn, code=:cd, part=:pt, spec=:sp, equip=:eq WHERE id=:i"), {'dt':payload.get('detailType',''), 'add':payload.get('additional',''), 'pn':payload.get('partno',''), 'cd':payload.get('code',''), 'pt':payload.get('part',''), 'sp':payload.get('spec',''), 'eq':payload.get('equip',''), 'i':str(payload['id'])})
                 
-                # UPDATE 시 코드명이나 물품명이 변경된 경우, 기존 등록/완료된 작업의 물품 정보 일괄 동기화
+                # UPDATE 시 코드명이나 물품명이 변경된 경우, 기존 등록/완료된 작업의 물품 정보 및 item_log 테이블 일괄 동기화
                 if action == 'UPDATE' and item and (old_code != new_code or old_part != new_part):
+                    if old_code and new_code and old_code != new_code:
+                        db.session.execute(text("UPDATE item_log SET code=:nc WHERE code=:oc"), {'nc': new_code, 'oc': old_code})
+                    if old_part and new_part and old_part != new_part:
+                        db.session.execute(text("UPDATE item_log SET part=:np WHERE part=:op"), {'np': new_part, 'op': old_part})
+
                     # LogItem content 필드 업데이트
                     log_items = LogItem.query.all()
                     for l in log_items:
@@ -3893,19 +3898,19 @@ def init_db():
             db.session.rollback()
 
         try:
-            db.session.execute(text('ALTER TABLE maint_item ADD COLUMN spec VARCHAR(255)'))
+            db.session.execute(text('ALTER TABLE maint_log ADD COLUMN spec VARCHAR(255)'))
             db.session.commit()
         except:
             db.session.rollback()
 
         try:
-            db.session.execute(text('ALTER TABLE maint_item ADD COLUMN original_log_id VARCHAR(50)'))
+            db.session.execute(text('ALTER TABLE maint_log ADD COLUMN original_log_id VARCHAR(50)'))
             db.session.commit()
         except:
             db.session.rollback()
 
         try:
-            db.session.execute(text('ALTER TABLE maint_item ADD COLUMN sort_order INT DEFAULT 0'))
+            db.session.execute(text('ALTER TABLE maint_log ADD COLUMN sort_order INT DEFAULT 0'))
             db.session.commit()
         except:
             db.session.rollback()
