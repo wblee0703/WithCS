@@ -62,7 +62,7 @@ function getScheduleForCalendar() {
 
                     if (data.maint) {
                         data.maint.forEach(item => {
-                            let targetDateStr = item.scheduledDate || item.date || '';
+                            let targetDateStr = item.scheduledDate || '';
                             if (targetDateStr) {
                                 // [추가] 이미 이력으로 완료 처리된 항목은 캘린더 예정(maint)에서 중복 노출 방지
                                 const isDone = data.logs && data.logs.some(l => {
@@ -119,7 +119,10 @@ async function setScheduleDate(site, equip, id, dateStr, isDelete = false, provi
     let payload = { maint_upserts: [], maint_deletes: [], log_upserts: [] };
 
     if (data.maint) {
-        const index = data.maint.findIndex(i => i.id === id);
+        let index = data.maint.findIndex(i => String(i.id) === String(id));
+        if (index === -1) {
+            index = data.maint.findIndex(i => i.originalLogId && String(i.originalLogId) === String(id));
+        }
         if (index > -1) {
             const item = data.maint[index];
             const oldDate = item.scheduledDate;
@@ -170,17 +173,19 @@ async function setScheduleDate(site, equip, id, dateStr, isDelete = false, provi
             }
 
             if (isDelete) {
-                // [수정] delete 대신 빈 문자열 명시적 할당으로 DB 동기화 시 누락되어 부활하는 현상 방지
+                // [수정] 일정 삭제 시 scheduledDate 및 date를 모두 빈 문자열로 초기화하고 maint 목록과 DB에서 완전 삭제
                 item.scheduledDate = "";
+                item.date = "";
                 item.md = "";
                 item.costType = "";
                 item.worker = "";
                 item.memo = "";
-                if (!item.period) {
-                    data.maint.splice(index, 1);
-                    payload.maint_deletes.push(id.toString());
-                } else {
-                    payload.maint_upserts.push(item);
+                data.maint.splice(index, 1);
+                if (!payload.maint_deletes.includes(String(id))) {
+                    payload.maint_deletes.push(String(id));
+                }
+                if (item.id && String(item.id) !== String(id) && !payload.maint_deletes.includes(String(item.id))) {
+                    payload.maint_deletes.push(String(item.id));
                 }
             } else {
                 item.scheduledDate = dateStr;
@@ -199,6 +204,14 @@ async function setScheduleDate(site, equip, id, dateStr, isDelete = false, provi
             if (!success) return false;
 
             localStorage.setItem(key, JSON.stringify(data));
+            if (window.allEquipDetails) {
+                window.allEquipDetails[key] = data;
+            }
+            try {
+                let allDataCache = JSON.parse(localStorage.getItem('all_equip_data')) || {};
+                allDataCache[key] = data;
+                localStorage.setItem('all_equip_data', JSON.stringify(allDataCache));
+            } catch (e) {}
 
             if (typeof addSystemLog === 'function') {
                 const action = isDelete ? 'DELETE_SCHEDULE' : 'ADD_SCHEDULE';
@@ -793,10 +806,18 @@ function openCalendarPopup(dateStr, events) {
 
                                 group.items.forEach(item => {
                                     if (data.logs) {
-                                        data.logs = data.logs.filter(l => l.id !== item.id);
+                                        data.logs = data.logs.filter(l => String(l.id) !== String(item.id));
                                     }
                                 });
                                 localStorage.setItem(key, JSON.stringify(data));
+                                if (window.allEquipDetails) {
+                                    window.allEquipDetails[key] = data;
+                                }
+                                try {
+                                    let allDataCache = JSON.parse(localStorage.getItem('all_equip_data')) || {};
+                                    allDataCache[key] = data;
+                                    localStorage.setItem('all_equip_data', JSON.stringify(allDataCache));
+                                } catch (e) {}
 
                                 if (typeof addSystemLog === 'function') {
                                     addSystemLog('DELETE_LOG', sampleItem.equip, '일정 변경 이력 삭제');

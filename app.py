@@ -696,7 +696,7 @@ def load_data():
                     "content": il_code,
                     "spec": il_part_detail,
                     "date": il.date or '',
-                    "scheduledDate": il.date or '',
+                    "scheduledDate": '',
                     "period": il_cycle,
                     "costType": '유상',
                     "worker": '',
@@ -2946,12 +2946,11 @@ def history_transaction():
                     spec_val = match_admin.spec if match_admin and match_admin.spec else ''
                     cycle_val = getattr(match_admin, 'cycle', None) if match_admin else getattr(item, 'period', None)
 
-                    # 기존 ItemLog DB에서 동일 equip_id, 물품명(code/part/pure_p) 및 물품상세(part_detail) 완벽 독립 세트 매칭 검색
+                    # 기존 ItemLog DB에서 동일 equip_id 및 물품명(code/part/pure_p) 단일 매칭 검색 (상세 유무 중복 생성 방지)
                     exist_log = ItemLog.query.filter(
                         ItemLog.equip_id == equip_id,
                         ((ItemLog.part == part_name_val) | (ItemLog.code == code_val) |
-                         (ItemLog.part == pure_p) | (ItemLog.code == pure_p)),
-                        db.func.coalesce(ItemLog.part_detail, '') == (spec_tag or '')
+                         (ItemLog.part == pure_p) | (ItemLog.code == pure_p))
                     ).first()
 
                     if not exist_log:
@@ -3017,8 +3016,12 @@ def history_transaction():
             item.memo = m.get('memo', item.memo)
             item.original_log_id = str(m.get('originalLogId')) if m.get('originalLogId') else item.original_log_id
 
+        # 4. log_deletes 처리 (maint_upserts에 포함된 완료 취소 항목은 DB 삭제 대상에서 제외)
         if log_deletes:
-            LogItem.query.filter(LogItem.id.in_(log_deletes)).delete(synchronize_session=False)
+            maint_upsert_ids = {str(m.get('id', '')) for m in maint_upserts}
+            actual_log_deletes = [str(d) for d in log_deletes if str(d) not in maint_upsert_ids]
+            if actual_log_deletes:
+                LogItem.query.filter(LogItem.id.in_(actual_log_deletes)).delete(synchronize_session=False)
 
         # [성능 최적화] 해당 장비(equip_id)의 비정기 항목만 타겟팅하여 TroubleLog 동기화 (전체 DB 풀스캔 N+1 쿼리 병목 제거)
         non_regular_in_session = LogItem.query.filter(LogItem.equip_id == equip_id, db.func.trim(LogItem.type) == '비정기').all()

@@ -1035,6 +1035,7 @@ body {
         height: auto !important;
         max-height: none !important;
     }
+}
 
 /* [요청] 점검 리스트 어제오늘건수 요약 폰트 크기 (웹 브라우저 12px) */
 #dash-inspection-summary {

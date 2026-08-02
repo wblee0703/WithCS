@@ -2660,6 +2660,14 @@ async function saveDetailChanges() {
             if (!remainingIds.includes(m.id)) {
                 const oldDate = m.scheduledDate;
                 m.scheduledDate = "";
+                m.date = ""; // 완료일도 함께 초기화하여 유령 표출 방지
+
+                if (!targetDate) {
+                    // 일정을 완전 삭제(빈 날짜 지정)하는 경우 maint 목록 및 DB에서 완전 제거
+                    data.maint = (data.maint || []).filter(item => item.id != m.id);
+                    if (!payload.maint_deletes) payload.maint_deletes = [];
+                    if (!payload.maint_deletes.includes(m.id)) payload.maint_deletes.push(m.id);
+                }
 
                 if (needsReason && oldDate && oldDate !== targetDate) {
                     const actualReason = (reason && reason.trim()) ? reason.trim() : '사유 미입력';
@@ -2913,7 +2921,8 @@ async function completeScheduleWork() {
 
     if (!data.logs) data.logs = [];
 
-    const completeDate = maintItem.scheduledDate || new Date().toISOString().split('T')[0];
+    const inputDateVal = document.getElementById('detail-scheduled-date') ? document.getElementById('detail-scheduled-date').value : '';
+    const completeDate = inputDateVal || maintItem.scheduledDate || new Date().toISOString().split('T')[0];
 
     let payload = { log_upserts: [], maint_upserts: [], maint_deletes: [] };
 
@@ -2925,7 +2934,7 @@ async function completeScheduleWork() {
         id: logIdToUse,
         originalLogId: maintItem.originalLogId || null,
         date: completeDate,
-        scheduledDate: maintItem.scheduledDate || completeDate,
+        scheduledDate: completeDate,
         type: taskType || maintItem.type || '정기',
         detailType: currentDetailType || maintItem.detailType || '',
         detailType2: '',
@@ -3112,15 +3121,17 @@ window.revertCompletedMaintenanceItem = async function (site, equip, id) {
         if (!confirm('작업 완료를 취소하고 예정 상태로 되돌리시겠습니까?')) return;
     }
 
-    // 날짜, 메모, 내용 등 모든 정보를 100% 그대로 유지하고 status만 '작업예정'으로 전환
+    // [수정] 작업 완료 취소 시 물품 등록된 개수만큼 작업이 추가로 분출 등록되는 현상 차단
+    // 묶음 물품 내역 전체를 단 1개의 작업(1세트)으로 유지하여 예정 상태로 복원
     targetItem.status = '작업예정';
     targetItem.scheduledDate = targetItem.scheduledDate || targetItem.date || '';
+    targetItem.date = '';
 
-    // maint 목록에 중복 없이 추가
-    data.maint = data.maint.filter(m => m.id != targetItem.id);
+    // maint 목록에 중복 없이 단 1개의 묶음 항목으로 유지 및 추가
+    data.maint = (data.maint || []).filter(m => m.id != targetItem.id);
     data.maint.push(targetItem);
 
-    const payload = { maint_upserts: [targetItem] };
+    const payload = { maint_upserts: [targetItem], log_deletes: [targetItem.id] };
 
     const success = await window.syncHistoryTransaction(site, equip, payload);
     if (!success) {
@@ -3130,6 +3141,14 @@ window.revertCompletedMaintenanceItem = async function (site, equip, id) {
     }
 
     localStorage.setItem(key, JSON.stringify(data));
+    if (window.allEquipDetails) {
+        window.allEquipDetails[key] = data;
+    }
+    try {
+        let allDataCache = JSON.parse(localStorage.getItem('all_equip_data')) || {};
+        allDataCache[key] = data;
+        localStorage.setItem('all_equip_data', JSON.stringify(allDataCache));
+    } catch (e) {}
 
     if (typeof addSystemLog === 'function') {
         addSystemLog('CANCEL_COMPLETION', equip, `작업 완료 취소 -> 작업예정으로 전환 (ID: ${id})`);
