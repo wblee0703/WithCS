@@ -315,8 +315,6 @@ class LogItem(db.Model):
     is_issue_shared = db.Column(db.Boolean, default=False)
     original_log_id = db.Column(db.String(50), nullable=True)
     add_work_log_id = db.Column(db.String(50), nullable=True)
-    trouble_details = db.Column(db.Text, nullable=True) # [보존]
-    trouble_occur_date = db.Column(db.String(50), default='') # [보존]
     image_data = db.Column(db.Text(length=2000000), nullable=True) # [추가]
     status = db.Column(db.String(50), default='조치완료') # [통합] 상태 (작업예정 / 조치완료 / 연기됨 등)
     sort_order = db.Column(db.Integer, default=0)
@@ -682,31 +680,35 @@ def load_data():
             il_cycle = int(il.cycle) if il.cycle and str(il.cycle).isdigit() else (il.cycle or '')
 
             invalid_kws = ['내용 없음', '장비 점검', 'PM 점검', 'BM 점검', '파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '파츠 이상 교체', '파츠 이상 수리', '물품 이상 교체', '물품 이상 수리', '단순 조치', '현장 이슈', 'PC 이상', '작업자 실수', '통신 이상', '프로그램 이상', '기타']
-            if ',' in il_code or ',' in (il.part or '') or il_code in invalid_kws or (il.part and il.part in invalid_kws):
+            if not il_code or ',' in il_code or ',' in (il.part or '') or il_code in invalid_kws or (il.part and il.part in invalid_kws):
                 continue
 
-            if str(il_id) not in maint_ids:
-                data[detail_key]["maint"].append({
-                    "id": il_id,
-                    "type": '',
-                    "detailType": 'Parts 교체',
-                    "detailType2": '',
-                    "detailType3": '',
-                    "code": il_code,
-                    "content": il_code,
-                    "spec": il_part_detail,
-                    "date": il.date or '',
-                    "scheduledDate": '',
-                    "period": il_cycle,
-                    "costType": '유상',
-                    "worker": '',
-                    "md": '0',
-                    "itemCost": '',
-                    "memo": '',
-                    "sortOrder": 999,
-                    "originalLogId": None
-                })
-                maint_ids.add(str(il_id))
+            # [유령데이터 방지] 이미 maint_log에 동일 물품의 작업예정 항목이 존재하는 경우 중복 노출 차단
+            if str(il_id) in maint_ids or (il_code, il_part_detail) in maint_code_specs or il_code in [c for c, s in maint_code_specs]:
+                continue
+
+            # item_log 유지관리 물품 항목은 scheduledDate가 빈 값('')인 물품 마스터로 data.maint에 보장 반영
+            data[detail_key]["maint"].append({
+                "id": il_id,
+                "type": '',
+                "detailType": 'Parts 교체',
+                "detailType2": '',
+                "detailType3": '',
+                "code": il_code,
+                "content": il_code,
+                "spec": il_part_detail,
+                "date": il.date or '',
+                "scheduledDate": '',
+                "period": il_cycle,
+                "costType": '유상',
+                "worker": '',
+                "md": '0',
+                "itemCost": '',
+                "memo": '',
+                "sortOrder": 999,
+                "originalLogId": None
+            })
+            maint_ids.add(str(il_id))
             
         logs_list = [l for l in eq_all_logs if getattr(l, 'status', '조치완료') != '작업예정']
         for l in logs_list:
@@ -1413,11 +1415,7 @@ def build_rag_context(user, user_message):
                 if completed_logs:
                     context_lines.append(f"  - 과거 점검 및 조치 완료 이력:")
                     for cl in completed_logs:
-                        td_val = getattr(cl, 'trouble_details', '')
-                        cl_trouble_info = parse_trouble_content(td_val) if td_val else ""
                         log_detail = f"{cl.content}"
-                        if cl_trouble_info:
-                            log_detail += f" ({cl_trouble_info})"
                         if cl.memo:
                             log_detail += f" / 메모: {cl.memo}"
                         context_lines.append(f"    * [{cl.date}] {log_detail} ({cl.worker})")
@@ -1526,12 +1524,8 @@ def build_rag_context(user, user_message):
                 context_lines.append(f"\n▶ [과거 점검 및 조치 완료 이력 요약 (최근 5건)]")
                 for rl in top_logs:
                     eq_serial = rl.equip_id.split('::')[-1]
-                    td_val = getattr(rl, 'trouble_details', '')
-                    rl_trouble_info = parse_trouble_content(td_val) if td_val else ""
                     rl_memo_info = rl.memo if rl.memo else ""
                     log_detail = f"점검내역: {rl.content}"
-                    if rl_trouble_info:
-                        log_detail += f" | 장애상세: {rl_trouble_info}"
                     if rl_memo_info:
                         log_detail += f" | 작업메모: {rl_memo_info}"
                     context_lines.append(f"  - [{rl.date}] {eq_serial} 장비: {log_detail} (담당: {rl.worker})")
@@ -1698,12 +1692,8 @@ def build_rag_context(user, user_message):
                 if site_completed_logs:
                     context_lines.append(f"  * 최근 점검 수행 내역:")
                     for scl in site_completed_logs:
-                        td_val = getattr(scl, 'trouble_details', '')
-                        scl_trouble_info = parse_trouble_content(td_val) if td_val else ""
                         scl_memo_info = scl.memo if scl.memo else ""
                         log_detail = f"점검내역: {scl.content}"
-                        if scl_trouble_info:
-                            log_detail += f" | 장애상세: {scl_trouble_info}"
                         if scl_memo_info:
                             log_detail += f" | 작업메모: {scl_memo_info}"
                         context_lines.append(f"    - [{scl.date}] {scl.equip_id.split('::')[-1]}: {log_detail} (담당: {scl.worker})")
@@ -2865,9 +2855,14 @@ def history_transaction():
             item = None
             if l_id:
                 item = LogItem.query.filter_by(id=l_id).first()
+
+            # l_id로 찾지 못하고 orig_id가 존재하는 경우, 해당 orig_id 작업이 '작업예정' 상태이고 l_id == orig_id 인 경우에만
+            # 기존 작업예정 건을 조치완료 상태로 전환 (추가작업(l_id != orig_id)인 경우 원본 작업을 덮어쓰지 않고 독립 신규 생성)
             if not item and orig_id and orig_id != 'None' and orig_id != '-':
-                # 추가 작업 완료 시 부모 아이템(orig_id)을 덮어씌우는 것 방지: 자식 아이템 검색
-                item = LogItem.query.filter(LogItem.original_log_id == orig_id, LogItem.id == l_id).first()
+                if not l_id or l_id == orig_id:
+                    orig_item = LogItem.query.filter_by(id=orig_id).first()
+                    if orig_item and orig_item.status == '작업예정':
+                        item = orig_item
 
             if not item:
                 item = LogItem(id=l_id, equip_id=equip_id, status='조치완료')
@@ -2912,20 +2907,28 @@ def history_transaction():
             except Exception:
                 pass
 
-            # [요청 반영] 완료된 작업 내용(content)에 물품이 포함되어 있으면 item_log(유지관리 물품)에 개별 개별 물품만 자동 추가 등록 및 동기화
+            # [요청 반영] 완료된 작업 내용(content)에 물품이 포함되어 있으면 item_log(유지관리 물품) 및 maint_log(LogItem)의 물품 규격화 & 유령 데이터 제거
             c_text = l.get('content') or item.content or ''
             if c_text and c_text != '내용 없음':
                 sub_parts = [sp.strip() for sp in c_text.split(',') if sp.strip()]
+                formatted_contents = []
                 for sp in sub_parts:
+                    clean_sp = re.sub(r'^\[(유상|무상|기타)\]\s*', '', sp).strip()
+                    if not clean_sp or clean_sp in ['내용 없음', '장비 점검']:
+                        continue
+
                     parsed = parse_part_item_string(sp)
                     if not parsed:
+                        formatted_contents.append(clean_sp)
                         continue
 
                     pure_p = parsed['clean_name']
-                    spec_tag = parsed['part_detail']
+                    cost_tag = parsed.get('cost_tag') or '유상'
+                    spec_tag = parsed.get('part_detail') or ''
 
                     invalid_kws = ['내용 없음', '장비 점검', 'PM 점검', 'BM 점검', '파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '파츠 이상 교체', '파츠 이상 수리', '물품 이상 교체', '물품 이상 수리', '단순 조치', '현장 이슈', 'PC 이상', '작업자 실수', '통신 이상', '프로그램 이상', '기타']
                     if not pure_p or pure_p in invalid_kws or ',' in pure_p:
+                        formatted_contents.append(clean_sp)
                         continue
 
                     # AdminItem 매칭 (코드명 AdminItem.code 우선 검색 후 물품명 AdminItem.part 검색)
@@ -2937,14 +2940,19 @@ def history_transaction():
                             (AdminItem.part == pure_p) | (db.func.trim(AdminItem.part) == pure_p)
                         ).first()
 
-                    # [Rule 3 / 사용자 요청] AdminItem 마스터 DB에 등록되지 않은 물품은 item_log에 자동 생성 차단
+                    # [Rule 3 / 사용자 요청] AdminItem 마스터 DB에 등록되지 않은 일반 텍스트는 비용처리 라벨 제거 후 저장 (item_log 자동 생성 차단)
                     if not match_admin:
+                        formatted_contents.append(clean_sp)
                         continue
 
                     code_val = match_admin.code if match_admin.code else pure_p
                     part_name_val = match_admin.part if match_admin.part else pure_p
                     spec_val = match_admin.spec if match_admin and match_admin.spec else ''
                     cycle_val = getattr(match_admin, 'cycle', None) if match_admin else getattr(item, 'period', None)
+
+                    # [Rule 11] 표준 물품 표현 방식으로 번들링: [비용처리] 코드명 [물품상세] 또는 [비용처리] 코드명 1세트화
+                    std_part = f"[{cost_tag}] {code_val} [{spec_tag}]" if spec_tag else f"[{cost_tag}] {code_val}"
+                    formatted_contents.append(std_part)
 
                     # 기존 ItemLog DB에서 동일 equip_id 및 물품명(code/part/pure_p) 단일 매칭 검색 (상세 유무 중복 생성 방지)
                     exist_log = ItemLog.query.filter(
@@ -2978,10 +2986,60 @@ def history_transaction():
                         if cycle_val is not None:
                             exist_log.cycle = str(cycle_val)
 
-        # 2. maint_deletes 처리 (LogItem 작업예정 삭제)
+                    # [추가] 동일 장비 내 동일 물품의 기존 중복 레코드(상세 없는 가비지 레코드 등) 강제 정리 및 삭제 (신규 생성 건 보호)
+                    if exist_log and exist_log._unique_id:
+                        try:
+                            ItemLog.query.filter(
+                                ItemLog.equip_id == equip_id,
+                                ((ItemLog.part == part_name_val) | (ItemLog.code == code_val) |
+                                 (ItemLog.part == pure_p) | (ItemLog.code == pure_p)),
+                                ItemLog._unique_id != exist_log._unique_id
+                            ).delete(synchronize_session=False)
+                        except Exception:
+                            pass
+
+                    # [유령데이터 방지] 작업 완료 시 maint_log(LogItem)에서 동일 장비 내 동일 물품의 중복/미정형 잔재 레코드(status='작업예정' 및 id != item.id) 자동 제거
+                    try:
+                        LogItem.query.filter(
+                            LogItem.equip_id == equip_id,
+                            LogItem.id != item.id,
+                            LogItem.status == '작업예정',
+                            ((LogItem.content == pure_p) | (LogItem.content == code_val) |
+                             (LogItem.content.like(f"%{pure_p}%")) | (LogItem.content.like(f"%{code_val}%")))
+                        ).delete(synchronize_session=False)
+                    except Exception:
+                        pass
+
+                if formatted_contents:
+                    item.content = ', '.join(formatted_contents)
+                else:
+                    item.content = '내용 없음'
+
+        # 2. maint_deletes 처리 (LogItem 및 ItemLog 삭제 - maint_upserts 대상 보호)
         if maint_deletes:
-            actual_deletes = [str(d) for d in maint_deletes if str(d) not in completed_orig_ids]
+            maint_upsert_ids = {str(m.get('id', '')) for m in maint_upserts}
+            actual_deletes = [str(d) for d in maint_deletes if str(d) not in completed_orig_ids and str(d) not in maint_upsert_ids]
             if actual_deletes:
+                deleted_log_items = LogItem.query.filter(LogItem.id.in_(actual_deletes)).all()
+                deleted_codes = set()
+                for d_item in deleted_log_items:
+                    if d_item.content:
+                        parsed = parse_part_item_string(d_item.content)
+                        if parsed and parsed.get('clean_name'):
+                            deleted_codes.add(parsed['clean_name'])
+                        clean_c = re.sub(r'\[.*?\]', '', d_item.content).strip()
+                        if clean_c:
+                            deleted_codes.add(clean_c)
+
+                # 1) ItemLog (item_log) DB에서 id 또는 equip_id + code/part로 동시 삭제
+                ItemLog.query.filter(ItemLog.id.in_(actual_deletes)).delete(synchronize_session=False)
+                if equip_id and deleted_codes:
+                    ItemLog.query.filter(
+                        ItemLog.equip_id == equip_id,
+                        (ItemLog.code.in_(deleted_codes) | ItemLog.part.in_(deleted_codes))
+                    ).delete(synchronize_session=False)
+
+                # 2) LogItem (maint_log) DB에서 삭제
                 LogItem.query.filter(LogItem.id.in_(actual_deletes)).delete(synchronize_session=False)
 
         # 3. maint_upserts (작업 예정 생성/수정)
@@ -3016,6 +3074,30 @@ def history_transaction():
             item.memo = m.get('memo', item.memo)
             item.original_log_id = str(m.get('originalLogId')) if m.get('originalLogId') else item.original_log_id
 
+            # [유령데이터 방지] 동일 장비 내 동일 물품의 기존 중복 작업예정 LogItem 및 상세 없는 잔재 레코드(ItemLog 포함) 자동 정리
+            m_content = m.get('content', '') or ''
+            m_spec = m.get('spec', '') or ''
+            if m_content and equip_id:
+                parsed = parse_part_item_string(m_content)
+                clean_p = parsed['clean_name'] if (parsed and parsed.get('clean_name')) else re.sub(r'\[.*?\]', '', m_content).strip()
+                spec_val = parsed['part_detail'] if (parsed and parsed.get('part_detail')) else m_spec
+                if clean_p:
+                    # 1) LogItem(maint_log)에서 동일 장비 내 동일 물품의 중복 잔재 레코드(id != m_id) 제거
+                    LogItem.query.filter(
+                        LogItem.equip_id == equip_id,
+                        LogItem.status == '작업예정',
+                        LogItem.id != m_id,
+                        LogItem.content.like(f"%{clean_p}%")
+                    ).delete(synchronize_session=False)
+
+                    # 2) 물품상세(spec)가 입력된 경우, item_log(ItemLog)에서도 상세 없는 기존 물품 마스터 레코드 완전 제거
+                    if spec_val:
+                        ItemLog.query.filter(
+                            ItemLog.equip_id == equip_id,
+                            ((ItemLog.code == clean_p) | (ItemLog.part == clean_p)),
+                            ((ItemLog.part_detail == '') | (ItemLog.part_detail.is_(None)))
+                        ).delete(synchronize_session=False)
+
         # 4. log_deletes 처리 (maint_upserts에 포함된 완료 취소 항목은 DB 삭제 대상에서 제외)
         if log_deletes:
             maint_upsert_ids = {str(m.get('id', '')) for m in maint_upserts}
@@ -3023,8 +3105,18 @@ def history_transaction():
             if actual_log_deletes:
                 LogItem.query.filter(LogItem.id.in_(actual_log_deletes)).delete(synchronize_session=False)
 
-        # [성능 최적화] 해당 장비(equip_id)의 비정기 항목만 타겟팅하여 TroubleLog 동기화 (전체 DB 풀스캔 N+1 쿼리 병목 제거)
-        non_regular_in_session = LogItem.query.filter(LogItem.equip_id == equip_id, db.func.trim(LogItem.type) == '비정기').all()
+        # [성능 최적화] 해당 장비(equip_id)의 완료된 비정기 항목만 타겟팅하여 TroubleLog 동기화 (작업예정 항목 제외하여 유령데이터 생성 차단)
+        non_regular_in_session = LogItem.query.filter(
+            LogItem.equip_id == equip_id,
+            db.func.trim(LogItem.type) == '비정기',
+            LogItem.status != '작업예정'
+        ).all()
+
+        # 작업예정 상태인 비정기 항목의 TroubleLog 유령 데이터 자동 정리
+        maint_scheduled_ids = [str(l.id) for l in LogItem.query.filter(LogItem.equip_id == equip_id, LogItem.status == '작업예정').all()]
+        if maint_scheduled_ids:
+            TroubleLog.query.filter(TroubleLog.equip_id == equip_id, TroubleLog.id.in_(maint_scheduled_ids)).delete(synchronize_session=False)
+
         all_log_ids = {str(l.id) for l in LogItem.query.filter_by(equip_id=equip_id).all()}
         trouble_logs_map = {str(t.id): t for t in TroubleLog.query.filter_by(equip_id=equip_id).all()}
         
@@ -3034,18 +3126,18 @@ def history_transaction():
         for nl in non_regular_in_session:
             nl_id = str(nl.id)
             orig_id = str(getattr(nl, 'original_log_id', '') or '').strip()
-            add_id = str(getattr(nl, 'add_work_log_id', '') or '').strip()
-            p_id = orig_id or add_id
+            if orig_id in ('None', '-'):
+                orig_id = ''
 
-            # p_id가 있고 부모 레코드가 실제로 존재하며 p_id != nl_id 인 경우에만 추가작업(자식)으로 분류
-            if p_id and p_id in all_log_ids and p_id != nl_id:
-                if p_id not in child_logs_map:
-                    child_logs_map[p_id] = []
-                child_logs_map[p_id].append(nl)
+            # orig_id가 존재하고 부모 레코드가 실제로 존재하며 orig_id != nl_id 인 경우에만 추가작업(자식)으로 분류
+            if orig_id and orig_id in all_log_ids and orig_id != nl_id:
+                if orig_id not in child_logs_map:
+                    child_logs_map[orig_id] = []
+                child_logs_map[orig_id].append(nl)
                 # 추가작업의 TroubleLog 독립 레코드는 제거
                 TroubleLog.query.filter_by(id=nl_id).delete(synchronize_session=False)
             else:
-                # 최초 작업 (TroubleLog에 1:1 필수 기록 대상)
+                # 원본 작업 (TroubleLog에 1:1 필수 기록 대상)
                 parent_logs[nl_id] = nl
 
         def clean_log_text(raw_val):
@@ -3075,7 +3167,7 @@ def history_transaction():
             blocks = []
             p_date = str(p_log.date or '').strip()[:10] or '미기록'
             p_worker = str(p_log.worker or '').strip() or '미지정'
-            p_text = clean_log_text(getattr(p_log, 'trouble_details', '') or p_log.memo or p_log.content)
+            p_text = clean_log_text(p_log.memo or p_log.content)
 
             if p_text:
                 blocks.append(f"<최초> ({p_date} / {p_worker})\n{p_text}")
@@ -3086,7 +3178,7 @@ def history_transaction():
             for idx, c_log in enumerate(children, 1):
                 c_date = str(c_log.date or '').strip()[:10] or '미기록'
                 c_worker = str(c_log.worker or '').strip() or '미지정'
-                c_text = clean_log_text(getattr(c_log, 'trouble_details', '') or c_log.memo or c_log.content)
+                c_text = clean_log_text(c_log.memo or c_log.content)
                 if c_text:
                     blocks.append(f"<추가{idx}> ({c_date} / {c_worker})\n{c_text}")
                 else:
@@ -3587,10 +3679,6 @@ def trouble_crud():
 
                     # Trouble 상세정보 저장 시 maint_log.memo는 자동 변경되지 않음
 
-                    if 'trouble_details' in payload:
-                        td_val = payload.get('trouble_details')
-                        log_item.trouble_details = json.dumps(td_val, ensure_ascii=False) if isinstance(td_val, (dict, list)) else str(td_val or '')
-
                     if 'worker' in payload and payload.get('worker'):
                         log_item.worker = payload.get('worker')
 
@@ -3918,6 +4006,13 @@ def init_db():
         except:
             db.session.rollback()
 
+        for col in ['trouble_details', 'trouble_occur_date']:
+            try:
+                db.session.execute(text(f'ALTER TABLE maint_log DROP COLUMN {col}'))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
         # ==============================================================================
         # [순차적 데이터 완전 무결성 마이그레이션 Workflow]
         # ==============================================================================
@@ -4029,7 +4124,6 @@ if __name__ == '__main__':
 
     if env_mode == 'development':
         # 로컬 개발 환경: 코드 수정 시 자동 감지(Auto-reload) 및 디버그 모드 적용
-        print(f" * Development Mode: Running Flask server with Auto-Reload on http://0.0.0.0:{port}")
         app.run(debug=True, host='0.0.0.0', port=port, use_reloader=True)
     else:
         # 운영 환경: Waitress 서버 적용
