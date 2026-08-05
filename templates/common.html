@@ -675,7 +675,7 @@
             <div class="modal-header">
                 <h3 id="popup-date-title"></h3>
                 <div class="popup-header-controls">
-                    <button class="btn-add-popup" id="btn-open-register-modal" title="작업 예정일 등록">+</button>
+                    <button class="btn-add-popup" id="btn-open-register-modal" title="작업 예정일 등록">작업 등록</button>
                     <button class="btn-del-sm" id="btn-close-calendar-popup">✕</button>
                 </div>
             </div>
@@ -814,22 +814,7 @@
                     <input type="number" id="next-schedule-md" class="input-dark" placeholder="공수(M/D)" min="0"
                         step="0.5" style="flex:1;">
                 </div>
-                <div class="form-row" style="margin-bottom: 20px;">
-                    <label class="form-label">내용</label>
-                    <div id="next-schedule-item-wrapper" class="log-select-wrapper"
-                        style="flex:1; margin:0; min-width:0;">
-                        <div id="next-schedule-item-trigger" class="log-select-trigger">항목 선택</div>
-                        <div id="next-schedule-item-dropdown" class="log-select-dropdown">
-                            <input type="text" id="next-schedule-item-search" class="dropdown-search-input"
-                                placeholder="항목 검색...">
-                            <div id="next-schedule-item-list" class="log-select-list"></div>
-                            <div class="log-select-footer">
-                                <button type="button" id="btn-next-schedule-item-confirm" class="btn-blue-sm"
-                                    style="width:100%;">선택 완료</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
                 <div class="modal-btn-group">
                     <button class="btn-gray" id="btn-skip-next-schedule">건너뛰기</button>
                     <button class="btn-blue" id="btn-save-next-schedule">등록</button>
@@ -858,17 +843,7 @@
                         <select id="register-detail-type3-select" class="modal-select" style="flex: 1 1 0px !important; min-width: 0 !important; width: 100% !important; box-sizing: border-box !important; display: none;" disabled></select>
                     </div>
                 </div>
-                <div class="form-row"><label class="form-label">내용</label><input type="text" id="register-content-input"
-                        class="input-dark" placeholder="내용을 입력하세요">
-                    <div id="register-content-wrapper" class="log-select-wrapper">
-                        <div id="register-content-trigger" class="log-select-trigger">항목 선택</div>
-                        <div id="register-content-dropdown" class="log-select-dropdown">
-                            <div id="register-content-list" class="log-select-list"></div>
-                            <div class="log-select-footer"><button type="button" id="btn-register-content-add"
-                                    class="btn-blue-sm">추가</button></div>
-                        </div>
-                    </div>
-                </div>
+
                 <div class="form-row"><label class="form-label">비용처리</label><select id="register-cost-type"
                         class="modal-select">
                         <option value="" disabled selected hidden>비용처리</option>

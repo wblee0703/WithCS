@@ -463,7 +463,7 @@ function renderMonthGrid(year, month, titleId, gridId) {
             // 그룹화 로직
             const groupedEvents = {};
             dayEvents.forEach(event => {
-                const isExtraWork = !!event.originalLogId;
+                const isExtraWork = !!(event.originalLogId && String(event.originalLogId).trim() !== '' && String(event.originalLogId) !== 'None' && String(event.originalLogId) !== 'null');
                 // [수정] 세부 구분(detailType)이 다르면 다른 작업으로 분류하고, 같으면 물품 여러 개 등록 시에도 같은 작업으로 묶이도록 key에 detailType을 포함합니다.
                 const key = `${event.site}::${event.equip}::${event.isCompleted}::${event.isChanged}::${event.type}::${event.detailType || ''}::${isExtraWork}`;
                 if (!groupedEvents[key]) {
@@ -768,7 +768,7 @@ function openCalendarPopup(dateStr, events) {
                     rightContainer.appendChild(changedSpan);
                 }
 
-                const isExtraWork = group.items.some(i => i.originalLogId);
+                const isExtraWork = group.items.some(i => i.originalLogId && String(i.originalLogId).trim() !== '' && String(i.originalLogId) !== 'None' && String(i.originalLogId) !== 'null');
                 if (isExtraWork) {
                     const extraSpan = document.createElement('span');
                     extraSpan.textContent = '<추가>';
@@ -1024,6 +1024,17 @@ function setupScheduleModal() {
                 renderCalendar();
                 if (typeof renderDetails === 'function') renderDetails();
                 if (typeof renderLogs === 'function') renderLogs();
+
+                // [요청 반영] 작업 예정일 등록 완료 시 바로 해당 작업의 상세 정보 팝업 모달 자동 노출
+                if (currentScheduleTarget && currentScheduleTarget.id && typeof openEventDetailModal === 'function') {
+                    const sSite = currentScheduleTarget.site;
+                    const sEquip = currentScheduleTarget.equip;
+                    const sId = currentScheduleTarget.id;
+                    setTimeout(() => {
+                        window.currentDetailTarget = { site: sSite, equip: sEquip };
+                        openEventDetailModal(sSite, sEquip, sId, false);
+                    }, 100);
+                }
             }
         };
     }

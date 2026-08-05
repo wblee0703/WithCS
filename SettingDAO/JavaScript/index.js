@@ -734,7 +734,7 @@ function renderUpcomingList(data) {
                                             equip: equip,
                                             type: t,
                                             detailType: dt,
-                                            content: log.content || '내용 없음',
+                                            content: log.content || '',
                                             date: log.date,
                                             isYesterday: isYest,
                                             isCompleted: true,
@@ -766,7 +766,7 @@ function renderUpcomingList(data) {
                                             equip: equip,
                                             type: t,
                                             detailType: dt,
-                                            content: item.content || '내용 없음',
+                                            content: item.content || '',
                                             date: targetDate,
                                             isYesterday: isYest,
                                             isCompleted: false,
@@ -1430,7 +1430,7 @@ function populateEquipmentIssues() {
         } else if (log.detailType2) {
             detailStr = `${log.detailType ? log.detailType.trim() + ' > ' : ''}${log.detailType2.trim()}`;
         } else {
-            detailStr = log.detailType ? log.detailType.trim() : '내용 없음';
+            detailStr = log.detailType ? log.detailType.trim() : '';
         }
 
         const dateStr = log.date || '';

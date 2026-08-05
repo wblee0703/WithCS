@@ -1650,6 +1650,7 @@ window.openAddWorkModal = function (logId, dateStr) {
             type: logItem ? logItem.type : '정기',
             detailType: logItem ? logItem.detailType : '',
             detailType2: logItem ? logItem.detailType2 : '',
+            detailType3: logItem ? (logItem.detailType3 || '') : '',
             worker: logItem ? logItem.worker : '',
             content: '' // [요청] 추가 작업 시 내용은 비워둠
         };

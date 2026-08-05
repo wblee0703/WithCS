@@ -391,32 +391,38 @@
 }
 
 #popup-event-list {
-    max-height: 180px;
+    min-height: 240px;
+    max-height: 360px;
     overflow-y: auto;
 }
 
 .btn-add-popup {
-    background: none;
-    color: var(--cal-green);
-    font-size: 20px;
-    padding: 0;
-    font-weight: bold;
+    background: #238636;
+    color: #ffffff;
+    font-size: 13px;
+    padding: 6px 14px;
+    font-weight: 600;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     line-height: 1;
-    margin-top: 2px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    white-space: nowrap;
 }
 
 .btn-add-popup:hover {
-    color: var(--cal-green-hover);
+    background: #2ea043;
+    color: #ffffff;
 }
 
 /* 캘린더 팝업 모달 */
 #calendar-popup .modal-window {
-    width: 500px;
+    width: 540px;
     height: auto;
-    max-height: 500px;
+    max-height: 650px;
 }
 
 .popup-header-controls {

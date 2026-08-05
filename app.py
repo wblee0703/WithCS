@@ -684,7 +684,7 @@ def load_data():
                 continue
 
             # [유령데이터 방지] 이미 maint_log에 동일 물품의 작업예정 항목이 존재하는 경우 중복 노출 차단
-            if str(il_id) in maint_ids or (il_code, il_part_detail) in maint_code_specs or il_code in [c for c, s in maint_code_specs]:
+            if str(il_id) in maint_ids or (il_code, il_part_detail) in maint_code_specs:
                 continue
 
             # item_log 유지관리 물품 항목은 scheduledDate가 빈 값('')인 물품 마스터로 data.maint에 보장 반영
@@ -2823,6 +2823,77 @@ def resolve_master_equip_id(equip_id):
 
     return clean_id
 
+def reassign_child_extra_works(equip_id, deleted_ids):
+    """
+    [요청 반영] 최초 작업(부모 작업) 삭제 시:
+    가장 첫 번째 추가작업(추가작업 1)을 최초 작업(original_log_id = None)으로 격상하고,
+    나머지 추가작업들의 original_log_id를 해당 추가작업 1의 ID로 업데이트.
+    """
+    if not deleted_ids or not equip_id:
+        return
+
+    for d_id in deleted_ids:
+        d_id_str = str(d_id).strip()
+        if not d_id_str:
+            continue
+
+        # 삭제 대상 최초 작업의 기존 TroubleLog 조회
+        old_trouble = TroubleLog.query.filter_by(id=d_id_str).first()
+
+        # 삭제 대상 항목 ID를 original_log_id로 가지고 있는 자식 작업들 조회 (조치일/예정일/ID 순 정렬)
+        children = LogItem.query.filter(
+            LogItem.equip_id == equip_id,
+            LogItem.original_log_id == d_id_str
+        ).order_by(
+            db.func.coalesce(LogItem.date, LogItem.scheduled_date).asc(),
+            LogItem.id.asc()
+        ).all()
+
+        if children:
+            # 1. 가장 첫 번째 추가작업(추가작업 1)이 새로운 최초 작업(부모)이 됨 (original_log_id = None)
+            new_parent = children[0]
+            new_parent_id = str(new_parent.id)
+            new_parent.original_log_id = None
+
+            # 2. 기존 최초 작업의 TroubleLog 작성 데이터가 존재하면 새로운 최초 작업(new_parent_id)의 TroubleLog로 이전
+            if old_trouble:
+                new_trouble = TroubleLog.query.filter_by(id=new_parent_id).first()
+                if not new_trouble:
+                    new_trouble = TroubleLog(
+                        id=new_parent_id,
+                        equip_id=equip_id,
+                        type='비정기',
+                        detail_type=new_parent.detail_type or old_trouble.detail_type or '',
+                        detail_type2=getattr(new_parent, 'detail_type2', '') or old_trouble.detail_type2 or '',
+                        detail_type3=getattr(new_parent, 'detail_type3', '') or old_trouble.detail_type3 or ''
+                    )
+                    db.session.add(new_trouble)
+
+                if old_trouble.occur_date:
+                    new_trouble.occur_date = old_trouble.occur_date
+                if old_trouble.situation:
+                    new_trouble.situation = old_trouble.situation
+                if old_trouble.symptom:
+                    new_trouble.symptom = old_trouble.symptom
+                if old_trouble.cause:
+                    new_trouble.cause = old_trouble.cause
+                if old_trouble.measure:
+                    new_trouble.measure = old_trouble.measure
+                if old_trouble.prevent:
+                    new_trouble.prevent = old_trouble.prevent
+                if old_trouble.image_data:
+                    new_trouble.image_data = old_trouble.image_data
+                if old_trouble.status:
+                    new_trouble.status = old_trouble.status
+
+            # 3. 나머지 추가작업들의 original_log_id를 추가작업 1의 ID로 수정
+            for child in children[1:]:
+                child.original_log_id = new_parent_id
+
+        # 4. 삭제된 기존 최초 작업의 TroubleLog 레코드는 DB에서 완전히 삭제
+        if old_trouble:
+            TroubleLog.query.filter_by(id=d_id_str).delete(synchronize_session=False)
+
 # [추가] 유지관리 및 캘린더 장비 이력 100% DB 동기화 전용 트랜잭션 API
 @app.route('/api/history/transaction', methods=['POST'])
 @login_required
@@ -2954,11 +3025,12 @@ def history_transaction():
                     std_part = f"[{cost_tag}] {code_val} [{spec_tag}]" if spec_tag else f"[{cost_tag}] {code_val}"
                     formatted_contents.append(std_part)
 
-                    # 기존 ItemLog DB에서 동일 equip_id 및 물품명(code/part/pure_p) 단일 매칭 검색 (상세 유무 중복 생성 방지)
+                    # 기존 ItemLog DB에서 동일 equip_id, 물품명(code/part/pure_p) 및 물품상세(part_detail) 매칭 검색 (독립 세트 보장)
                     exist_log = ItemLog.query.filter(
                         ItemLog.equip_id == equip_id,
                         ((ItemLog.part == part_name_val) | (ItemLog.code == code_val) |
-                         (ItemLog.part == pure_p) | (ItemLog.code == pure_p))
+                         (ItemLog.part == pure_p) | (ItemLog.code == pure_p)),
+                        db.func.coalesce(ItemLog.part_detail, '') == (spec_tag or '')
                     ).first()
 
                     if not exist_log:
@@ -2986,13 +3058,14 @@ def history_transaction():
                         if cycle_val is not None:
                             exist_log.cycle = str(cycle_val)
 
-                    # [추가] 동일 장비 내 동일 물품의 기존 중복 레코드(상세 없는 가비지 레코드 등) 강제 정리 및 삭제 (신규 생성 건 보호)
+                    # [추가] 동일 장비 내 동일 물품/동일 물품상세의 중복 레코드만 정리 (다른 물품상세 레코드는 보호)
                     if exist_log and exist_log._unique_id:
                         try:
                             ItemLog.query.filter(
                                 ItemLog.equip_id == equip_id,
                                 ((ItemLog.part == part_name_val) | (ItemLog.code == code_val) |
                                  (ItemLog.part == pure_p) | (ItemLog.code == pure_p)),
+                                db.func.coalesce(ItemLog.part_detail, '') == (spec_tag or ''),
                                 ItemLog._unique_id != exist_log._unique_id
                             ).delete(synchronize_session=False)
                         except Exception:
@@ -3041,6 +3114,7 @@ def history_transaction():
 
                 # 2) LogItem (maint_log) DB에서 삭제
                 LogItem.query.filter(LogItem.id.in_(actual_deletes)).delete(synchronize_session=False)
+                reassign_child_extra_works(equip_id, actual_deletes)
 
         # 3. maint_upserts (작업 예정 생성/수정)
         for idx, m in enumerate(maint_upserts):
@@ -3090,13 +3164,8 @@ def history_transaction():
                         LogItem.content.like(f"%{clean_p}%")
                     ).delete(synchronize_session=False)
 
-                    # 2) 물품상세(spec)가 입력된 경우, item_log(ItemLog)에서도 상세 없는 기존 물품 마스터 레코드 완전 제거
-                    if spec_val:
-                        ItemLog.query.filter(
-                            ItemLog.equip_id == equip_id,
-                            ((ItemLog.code == clean_p) | (ItemLog.part == clean_p)),
-                            ((ItemLog.part_detail == '') | (ItemLog.part_detail.is_(None)))
-                        ).delete(synchronize_session=False)
+                    # (물품상세 유무와 상관없이 개별 세트로 독립 보존)
+                    pass
 
         # 4. log_deletes 처리 (maint_upserts에 포함된 완료 취소 항목은 DB 삭제 대상에서 제외)
         if log_deletes:
@@ -3104,18 +3173,13 @@ def history_transaction():
             actual_log_deletes = [str(d) for d in log_deletes if str(d) not in maint_upsert_ids]
             if actual_log_deletes:
                 LogItem.query.filter(LogItem.id.in_(actual_log_deletes)).delete(synchronize_session=False)
+                reassign_child_extra_works(equip_id, actual_log_deletes)
 
-        # [성능 최적화] 해당 장비(equip_id)의 완료된 비정기 항목만 타겟팅하여 TroubleLog 동기화 (작업예정 항목 제외하여 유령데이터 생성 차단)
+        # 비정기 작업(type == '비정기') 등록/수정 시 status와 관계없이 무조건 TroubleLog 연동
         non_regular_in_session = LogItem.query.filter(
             LogItem.equip_id == equip_id,
-            db.func.trim(LogItem.type) == '비정기',
-            LogItem.status != '작업예정'
+            db.func.trim(LogItem.type) == '비정기'
         ).all()
-
-        # 작업예정 상태인 비정기 항목의 TroubleLog 유령 데이터 자동 정리
-        maint_scheduled_ids = [str(l.id) for l in LogItem.query.filter(LogItem.equip_id == equip_id, LogItem.status == '작업예정').all()]
-        if maint_scheduled_ids:
-            TroubleLog.query.filter(TroubleLog.equip_id == equip_id, TroubleLog.id.in_(maint_scheduled_ids)).delete(synchronize_session=False)
 
         all_log_ids = {str(l.id) for l in LogItem.query.filter_by(equip_id=equip_id).all()}
         trouble_logs_map = {str(t.id): t for t in TroubleLog.query.filter_by(equip_id=equip_id).all()}
@@ -3165,7 +3229,7 @@ def history_transaction():
             
             # 최초 및 추가작업 내용을 요청된 양식(<최초> (날짜 / 작업자))으로 통합 구성
             blocks = []
-            p_date = str(p_log.date or '').strip()[:10] or '미기록'
+            p_date = str(p_log.date or p_log.scheduled_date or '').strip()[:10] or '미기록'
             p_worker = str(p_log.worker or '').strip() or '미지정'
             p_text = clean_log_text(p_log.memo or p_log.content)
 
@@ -3176,7 +3240,7 @@ def history_transaction():
 
             children = child_logs_map.get(p_id, [])
             for idx, c_log in enumerate(children, 1):
-                c_date = str(c_log.date or '').strip()[:10] or '미기록'
+                c_date = str(c_log.date or c_log.scheduled_date or '').strip()[:10] or '미기록'
                 c_worker = str(c_log.worker or '').strip() or '미지정'
                 c_text = clean_log_text(c_log.memo or c_log.content)
                 if c_text:
@@ -3191,7 +3255,7 @@ def history_transaction():
                     id=p_id,
                     equip_id=p_log.equip_id,
                     occur_date='',
-                    action_date=p_log.date or '',
+                    action_date=p_log.date or p_log.scheduled_date or '',
                     type='비정기',
                     detail_type=p_log.detail_type or '',
                     detail_type2=getattr(p_log, 'detail_type2', '') or '',
@@ -3207,11 +3271,16 @@ def history_transaction():
                 t_item.detail_type = p_log.detail_type or ''
                 t_item.detail_type2 = getattr(p_log, 'detail_type2', '') or ''
                 t_item.detail_type3 = getattr(p_log, 'detail_type3', '') or ''
-                t_item.action_date = p_log.date or t_item.action_date
+                t_item.action_date = p_log.date or p_log.scheduled_date or t_item.action_date
                 if combined_details_str:
                     t_item.trouble_details = combined_details_str
                 t_item.status = '기록완료' if (t_item.occur_date and str(t_item.occur_date).strip() not in ('', '-')) else '미기록'
                 t_item.image_data = getattr(p_log, 'image_data', '') or t_item.image_data
+
+        # [유령데이터 방지] parent_logs에 속하지 않는 장비 내 잔재 고아(Orphan) TroubleLog 유령 레코드 완전 제거
+        for t_id in list(trouble_logs_map.keys()):
+            if t_id not in parent_logs:
+                TroubleLog.query.filter_by(id=t_id).delete(synchronize_session=False)
 
         db.session.commit()
         return jsonify({"status": "success"})
@@ -3359,7 +3428,7 @@ def get_trouble_list():
             "site": site_name,
             "equip": equip_name,
             "occur_date": t.occur_date,
-            "action_date": getattr(t, 'action_date', '') or (m_log.date if m_log else ''),
+            "action_date": getattr(t, 'action_date', '') or (m_log.date if m_log and m_log.date else (getattr(m_log, 'scheduled_date', '') if m_log else '')),
             "type": getattr(t, 'type', '') or (m_log.type if m_log else '비정기'),
             "detail_type": getattr(t, 'detail_type', '') or (m_log.detail_type if m_log else '-'),
             "detail_type2": getattr(t, 'detail_type2', '') or (getattr(m_log, 'detail_type2', '') if m_log else '-'),
@@ -3413,7 +3482,7 @@ def get_trouble_list():
             "site": site_name,
             "equip": equip_name,
             "occur_date": "",
-            "action_date": l.date,
+            "action_date": l.date or getattr(l, 'scheduled_date', '') or '',
             "type": l.type,
             "detail_type": l.detail_type,
             "detail_type2": l.detail_type2,
@@ -3905,6 +3974,210 @@ def init_check_type_category_tables():
 
 
 
+def migrate_clean_log_contents():
+    """
+    [마이그레이션] 완료된 작업(LogItem) 중:
+    1. '내용 없음' 앞에 비용처리 라벨([유상], [무상] 등)이 붙은 경우 -> pure '내용 없음'으로 정합성 보정
+    2. 마스터 물품(AdminItem) 코드가 아닌 단순 일반 텍스트 내용 앞에 비용처리 라벨이 붙은 경우 -> 비용처리 라벨 제거
+    3. 고객대응 > 파티클 필터 교체 건 -> '[유상] Particle Filter' 고정 유지
+    """
+    try:
+        admin_items = AdminItem.query.all()
+        known_codes = set()
+        for ai in admin_items:
+            if ai.code:
+                known_codes.add(ai.code.strip().lower())
+            if ai.part:
+                known_codes.add(ai.part.strip().lower())
+
+        part_keywords = [
+            '파트 이상 (교체)', '파트 이상 교체', '파트 이상 (수리)', '파트 이상 수리',
+            '용액 / 용자 이상', '용액 용자 이상', '파츠 이상 교체', '파츠 이상 수리',
+            '물품 이상 교체', '물품 이상 수리', 'particle filter'
+        ]
+
+        logs = LogItem.query.filter(LogItem.status != '작업예정').all()
+        updated_count = 0
+
+        for log in logs:
+            c = (log.content or '').strip()
+            if not c:
+                continue
+
+            # 1. 파티클 필터 교체 예외 처리 (Rule #8 고정)
+            dt1 = (log.detail_type or '').strip()
+            dt3 = (getattr(log, 'detail_type3', '') or '').strip()
+            if log.type == '고객대응' and ('파티클 필터' in dt1 or '파티클 필터' in dt3):
+                if c != '[유상] Particle Filter':
+                    log.content = '[유상] Particle Filter'
+                    updated_count += 1
+                continue
+
+            # 2. '내용 없음' 관련 처리
+            clean_c = re.sub(r'^\[.*?\]\s*-?\s*', '', c).strip()
+            if '내용 없음' in clean_c or clean_c == '내용 없음':
+                if c != '내용 없음':
+                    log.content = '내용 없음'
+                    updated_count += 1
+                continue
+
+            # 3. 콤마 구분의 콤보 텍스트 처리
+            sub_parts = [sp.strip() for sp in c.split(',') if sp.strip()]
+            new_parts = []
+            changed = False
+
+            for sp in sub_parts:
+                cost_match = re.match(r'^(\[.*?\])\s*-?\s*(.*)$', sp)
+                if cost_match:
+                    cost_label = cost_match.group(1).strip()
+                    body_text = cost_match.group(2).strip()
+
+                    # body_text에서 스펙([물품상세]) 분리
+                    spec_match = re.search(r'\s*(\[[^\]]+\])$', body_text)
+                    pure_body = body_text[:spec_match.start()].strip() if spec_match else body_text
+                    clean_pure_body = pure_body.replace('파트 이상 교체 -', '').replace('파트 이상 수리 -', '').strip()
+
+                    is_known_part = (clean_pure_body.lower() in known_codes) or any(kw in pure_body.lower() for kw in part_keywords)
+
+                    if not is_known_part and body_text and body_text != '내용 없음':
+                        # 물품이 아닌 일반 텍스트 내용인 경우 비용처리 라벨 제거
+                        new_parts.append(body_text)
+                        changed = True
+                    elif body_text == '내용 없음':
+                        new_parts.append('내용 없음')
+                        changed = True
+                    else:
+                        new_parts.append(sp)
+                else:
+                    new_parts.append(sp)
+
+            if changed:
+                final_content = ', '.join(new_parts)
+                if final_content != c:
+                    log.content = final_content
+                    updated_count += 1
+
+        if updated_count > 0:
+            db.session.commit()
+            app.logger.info(f"[Migration] Cleaned cost labels from non-part contents in {updated_count} LogItem records.")
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"[Migration Error] migrate_clean_log_contents: {str(e)}")
+
+def sync_all_trouble_logs_migration():
+    """
+    [마이그레이션] 모든 비정기 작업(type == '비정기')이 TroubleLog에 누락 없이 동기화되도록 보정
+    """
+    try:
+        non_regular_logs = LogItem.query.filter(db.func.trim(LogItem.type) == '비정기').all()
+        if not non_regular_logs:
+            return
+
+        all_log_ids = {str(l.id) for l in LogItem.query.all()}
+        trouble_logs_map = {str(t.id): t for t in TroubleLog.query.all()}
+
+        parent_logs = {}
+        child_logs_map = {}
+
+        for nl in non_regular_logs:
+            nl_id = str(nl.id)
+            orig_id = str(getattr(nl, 'original_log_id', '') or '').strip()
+            if orig_id in ('None', '-'):
+                orig_id = ''
+
+            if orig_id and orig_id in all_log_ids and orig_id != nl_id:
+                if orig_id not in child_logs_map:
+                    child_logs_map[orig_id] = []
+                child_logs_map[orig_id].append(nl)
+                TroubleLog.query.filter_by(id=nl_id).delete(synchronize_session=False)
+            else:
+                parent_logs[nl_id] = nl
+
+        def clean_log_text(raw_val):
+            if not raw_val:
+                return ""
+            val_str = str(raw_val).strip()
+            if not val_str or val_str == '-':
+                return ""
+            if val_str.startswith('{') and val_str.endswith('}'):
+                try:
+                    parsed = json.loads(val_str)
+                    parts = []
+                    for key in ['situation', 'symptom', 'cause', 'action', 'measure', 'prevention', 'prevent', 'trouble_memo']:
+                        v = str(parsed.get(key, '') or '').strip()
+                        if v and v != '-':
+                            parts.append(v)
+                    if parts:
+                        return "\n".join(parts)
+                except Exception:
+                    pass
+            return val_str
+
+        created_count = 0
+        for p_id, p_log in parent_logs.items():
+            t_item = trouble_logs_map.get(p_id)
+
+            blocks = []
+            p_date = str(p_log.date or p_log.scheduled_date or '').strip()[:10] or '미기록'
+            p_worker = str(p_log.worker or '').strip() or '미지정'
+            p_text = clean_log_text(p_log.memo or p_log.content)
+
+            if p_text:
+                blocks.append(f"<최초> ({p_date} / {p_worker})\n{p_text}")
+            else:
+                blocks.append(f"<최초> ({p_date} / {p_worker})")
+
+            children = child_logs_map.get(p_id, [])
+            for idx, c_log in enumerate(children, 1):
+                c_date = str(c_log.date or c_log.scheduled_date or '').strip()[:10] or '미기록'
+                c_worker = str(c_log.worker or '').strip() or '미지정'
+                c_text = clean_log_text(c_log.memo or c_log.content)
+                if c_text:
+                    blocks.append(f"<추가{idx}> ({c_date} / {c_worker})\n{c_text}")
+                else:
+                    blocks.append(f"<추가{idx}> ({c_date} / {c_worker})")
+
+            combined_details_str = "\n\n".join(blocks)
+
+            if not t_item:
+                t_item = TroubleLog(
+                    id=p_id,
+                    equip_id=p_log.equip_id,
+                    occur_date='',
+                    action_date=p_log.date or p_log.scheduled_date or '',
+                    type='비정기',
+                    detail_type=p_log.detail_type or '',
+                    detail_type2=getattr(p_log, 'detail_type2', '') or '',
+                    detail_type3=getattr(p_log, 'detail_type3', '') or '',
+                    trouble_details=combined_details_str,
+                    status='미기록',
+                    image_data=getattr(p_log, 'image_data', '')
+                )
+                db.session.add(t_item)
+                created_count += 1
+            else:
+                t_item.type = '비정기'
+                t_item.detail_type = p_log.detail_type or ''
+                t_item.detail_type2 = getattr(p_log, 'detail_type2', '') or ''
+                t_item.detail_type3 = getattr(p_log, 'detail_type3', '') or ''
+                t_item.action_date = p_log.date or p_log.scheduled_date or t_item.action_date
+                if combined_details_str:
+                    t_item.trouble_details = combined_details_str
+                t_item.status = '기록완료' if (t_item.occur_date and str(t_item.occur_date).strip() not in ('', '-')) else '미기록'
+                t_item.image_data = getattr(p_log, 'image_data', '') or t_item.image_data
+
+        # [유령데이터 방지] parent_logs에 속하지 않는 고아(Orphan) TroubleLog 유령 레코드 일괄 정비
+        for t_id in list(trouble_logs_map.keys()):
+            if t_id not in parent_logs:
+                TroubleLog.query.filter_by(id=t_id).delete(synchronize_session=False)
+
+        db.session.commit()
+        if created_count > 0:
+            app.logger.info(f"[Migration] Successfully synced {created_count} non-regular tasks to TroubleLog.")
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"[Migration Error] sync_all_trouble_logs_migration: {str(e)}")
+
 def init_db():
     with app.app_context():
         db.create_all()
@@ -4074,6 +4347,10 @@ def init_db():
             db.session.commit()
         except Exception:
             db.session.rollback()
+
+        # [마이그레이션] 완료된 작업 내용 중 '내용 없음' 및 일반 텍스트 내용의 비용처리 라벨 정비
+        migrate_clean_log_contents()
+        sync_all_trouble_logs_migration()
 
 # ------------------------------------------------------------------------------
 # [추가] 서버 점검중 상태 조회 및 관리자 토글 API

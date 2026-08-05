@@ -27,6 +27,39 @@ window.restoreTaskSearchModal = function () {
     }
 };
 
+function showSaveCloseConfirmModal(onSave, onClose) {
+    let existingModal = document.getElementById('save-close-confirm-modal');
+    if (existingModal) existingModal.remove();
+
+    const confirmModalHtml = `
+        <div id="save-close-confirm-modal" class="modal-overlay" style="display: flex; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.6); z-index: 20000; align-items: center; justify-content: center;">
+            <div class="modal-content" style="background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 24px; max-width: 420px; width: 90%; color: #e6edf3; box-shadow: 0 8px 24px rgba(0,0,0,0.5); text-align: center;">
+                <h3 style="margin-top: 0; margin-bottom: 16px; font-size: 16px; font-weight: 600; color: #f0f6fc;">수정사항 저장 안내</h3>
+                <p style="margin-bottom: 24px; font-size: 14px; color: #8b949e; line-height: 1.5;">수정된 내용이 있습니다.<br>저장 후 닫으시겠습니까, 아니면 저장하지 않고 닫으시겠습니까?</p>
+                <div style="display: flex; gap: 12px; justify-content: center;">
+                    <button id="btn-confirm-save-and-close" class="btn-blue" style="padding: 8px 20px; font-size: 14px; font-weight: bold; border-radius: 6px; cursor: pointer; border: none; background: #238636; color: #ffffff;">저장</button>
+                    <button id="btn-confirm-close-without-save" class="btn-gray" style="padding: 8px 20px; font-size: 14px; border-radius: 6px; cursor: pointer; background: #30363d; color: #c9d1d9; border: 1px solid #8b949e;">닫기</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', confirmModalHtml);
+    const confirmModal = document.getElementById('save-close-confirm-modal');
+    const saveBtn = document.getElementById('btn-confirm-save-and-close');
+    const closeBtn = document.getElementById('btn-confirm-close-without-save');
+
+    saveBtn.onclick = async () => {
+        confirmModal.remove();
+        if (typeof onSave === 'function') await onSave();
+    };
+
+    closeBtn.onclick = () => {
+        confirmModal.remove();
+        if (typeof onClose === 'function') onClose();
+    };
+}
+
 /* --- 1.1 초기화 (Setup) --- */
 function setupEventDetailModal() {
     const modal = document.getElementById('event-detail-modal');
@@ -40,11 +73,21 @@ function setupEventDetailModal() {
     if (!modal) return;
 
     const closeModal = async () => {
-        // [수정] 이미 작업 완료된 건은 수정을 유도하지 않고 즉시 닫기 처리함 (사용자 피드백 반영)
         if (currentDetailTarget && !currentDetailTarget.isCompleted && hasDetailUnsavedChanges()) {
-            if (!confirm('저장되지 않은 변경사항이 있습니다. 저장하지 않고 닫으시겠습니까?')) {
-                return;
-            }
+            showSaveCloseConfirmModal(
+                async () => {
+                    const success = await saveDetailChanges();
+                    if (success) {
+                        modal.style.display = 'none';
+                        if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
+                    }
+                },
+                () => {
+                    modal.style.display = 'none';
+                    if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
+                }
+            );
+            return;
         }
         modal.style.display = 'none';
         if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
@@ -55,11 +98,10 @@ function setupEventDetailModal() {
 
     if (completeBtn) {
         completeBtn.onclick = async () => {
+            if (window.isCompletingWork) return;
             if (hasDetailUnsavedChanges()) {
-                if (confirm('수정된 내용이 저장되지 않았습니다. 변경사항을 저장 후 완료 처리하시겠습니까?')) {
-                    const success = await saveDetailChanges();
-                    if (!success) return; // 저장 실패 시 완료 중단
-                } else return; // 저장 취소 시 완료도 중단
+                const success = await saveDetailChanges();
+                if (!success) return; // 저장 실패 시 완료 중단
             }
             completeScheduleWork();
         };
@@ -626,8 +668,14 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         contentEl.innerText = displayLabelsArr[0];
         contentEl.title = displayLabelsArr[0];
     } else {
-        contentEl.innerText = '내용 없음';
-        contentEl.title = '';
+        // [요청 반영] 작업 완료 상태이고 입력된 내용/물품이 없는 경우 비용처리 라벨 없이 '내용 없음'으로 표기
+        if (isCompleted) {
+            contentEl.innerText = '내용 없음';
+            contentEl.title = '내용 없음';
+        } else {
+            contentEl.innerText = '';
+            contentEl.title = '';
+        }
     }
 
     const workerInput = document.getElementById('detail-worker');
@@ -795,8 +843,37 @@ function openEventDetailModal(site, equip, id, isCompleted) {
 
     dateRow.style.display = 'flex';
     const dateField = document.getElementById('detail-scheduled-date');
+    const startDateField = document.getElementById('detail-start-date');
+    const endDateField = document.getElementById('detail-end-date');
+
     dateField.value = isCompleted ? (item.date || '') : (item.scheduledDate || '');
     dateField.disabled = false;
+
+    // [요청 반영] 추가 작업 상세 모달의 경우 최초 작업일 이전 날짜 비활성화 및 다음 날짜 자동 선택 보정
+    let parentLogDate = '';
+    if (item.originalLogId) {
+        const parentLog = (data.logs || []).find(l => l.id == item.originalLogId) || (data.maint || []).find(m => m.id == item.originalLogId);
+        if (parentLog) {
+            parentLogDate = parentLog.date || parentLog.scheduledDate || '';
+        }
+    }
+
+    if (parentLogDate) {
+        const nextDayStr = window.getNextDayStr ? window.getNextDayStr(parentLogDate) : parentLogDate;
+        const minAllowedDate = nextDayStr || parentLogDate;
+        if (dateField) {
+            dateField.min = minAllowedDate; // [요청 반영] 최초 작업일의 하루 다음날부터만 달력 선택 가능
+            if (!dateField.value || dateField.value <= parentLogDate) {
+                dateField.value = minAllowedDate; // [요청 반영] 최초 작업일 다음날로 기본 선택
+            }
+        }
+        if (startDateField) startDateField.min = minAllowedDate;
+        if (endDateField) endDateField.min = minAllowedDate;
+    } else {
+        if (dateField) dateField.removeAttribute('min');
+        if (startDateField) startDateField.removeAttribute('min');
+        if (endDateField) endDateField.removeAttribute('min');
+    }
 
     // 분할형 24시간제 필드값 설정 및 활성화
     setSplitDateTimeValues('detail-start', item.startTime || '');
@@ -1081,22 +1158,10 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         if (inputVal) initialExpandedDropdownValues.push(inputVal);
         currentContentStr = initialExpandedDropdownValues.join(', ');
     }
-    if (!currentContentStr) currentContentStr = '내용 없음';
+    if (!currentContentStr) currentContentStr = '';
 
     // [추가] 변경 감지를 위해 모달 오픈 시점의 초기 상태 저장
-    window.initialEventDetail = {
-        worker: workerInput ? workerInput.value.trim() : '',
-        md: mdInput ? mdInput.value.trim() : '',
-        memo: memoInput ? memoInput.value.trim() : '',
-        date: dateField.value,
-        issueShared: issueShareCb ? issueShareCb.checked : false,
-        content: currentContentStr,
-        costType: costTypeInput ? costTypeInput.value : '',
-        type: item.type || '정기',
-        detailType: displayDetailType || '',
-        startTime: item.startTime || '',
-        endTime: item.endTime || ''
-    };
+    window.initialEventDetail = getDetailSnapshot();
 
     // [추가] 연관된 추가 작업 건수 비동기 조회 및 버튼 제어
     const additionalWorksBtn = document.getElementById('btn-show-additional-works');
@@ -1187,6 +1252,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
                         type: item.type || '비정기',
                         detailType: item.detailType || '',
                         detailType2: item.detailType2 || '',
+                        detailType3: item.detailType3 || '',
                         content: '',
                         worker: item.worker || ''
                     };
@@ -1592,7 +1658,7 @@ function buildDetailDropdown(item, site, equip) {
                     let spec = extracted.spec || m.spec || '';
                     actualPart = extracted.pureContent;
 
-                    const nonPartKeywords = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "프로그램 이상", "단순조치", "기타"];
+                    const nonPartKeywords = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "프로그램 이상", "단순조치", "기타", "내용 없음"];
                     if (nonPartKeywords.includes(actualPart) || partKeywords.some(kw => actualPart === kw || actualPart.startsWith(kw + ' - '))) return;
 
                     let code = '';
@@ -2111,31 +2177,41 @@ function buildDetailDropdown(item, site, equip) {
     window.updateDetailDisplayList();
 }
 
-function hasDetailUnsavedChanges() {
-    if (!currentDetailTarget || !window.initialEventDetail) return false;
+function getDetailSnapshot() {
+    if (!currentDetailTarget) return null;
 
-    const currentWorker = document.getElementById('detail-worker').value.trim();
-    const currentMd = document.getElementById('detail-md').value.trim();
-    const currentMemo = document.getElementById('detail-work-memo').value.trim();
-    const currentDate = document.getElementById('detail-scheduled-date').value;
-    const currentCostType = document.getElementById('detail-cost-type') ? document.getElementById('detail-cost-type').value : '';
+    const workerInput = document.getElementById('detail-worker');
+    const mdInput = document.getElementById('detail-md');
+    const memoInput = document.getElementById('detail-work-memo');
+    const dateField = document.getElementById('detail-scheduled-date');
+    const costTypeInput = document.getElementById('detail-cost-type');
     const issueShareCb = document.getElementById('detail-issue-share-checkbox');
-    const currentIssueShared = issueShareCb ? issueShareCb.checked : false;
-    const currentStartTime = getSplitDateTimeValue('detail-start');
-    const currentEndTime = getSplitDateTimeValue('detail-end');
+
+    const worker = workerInput ? workerInput.value.trim() : '';
+    const md = mdInput ? mdInput.value.trim() : '';
+    const memo = memoInput ? memoInput.value.trim() : '';
+    const date = dateField ? dateField.value : '';
+    const costType = costTypeInput ? costTypeInput.value : '';
+    const issueShared = issueShareCb ? issueShareCb.checked : false;
+    const startTime = getSplitDateTimeValue('detail-start');
+    const endTime = getSplitDateTimeValue('detail-end');
 
     const typeSelect = document.getElementById('detail-type-select');
     const detailTypeSelect = document.getElementById('detail-detail-type-select');
     const detailType2Select = document.getElementById('detail-detail-type2-select');
+    const detailType3Select = document.getElementById('detail-detail-type3-select');
 
-    let currentType = window.initialEventDetail.type || '정기';
-    if (typeSelect && typeSelect.style.display !== 'none') currentType = typeSelect.value;
+    let type = currentDetailTarget.type || '정기';
+    if (typeSelect && typeSelect.style.display !== 'none') type = typeSelect.value;
 
-    let currentDetailType = window.initialEventDetail.detailType || '';
+    let detailType = currentDetailTarget.detailType || '';
     if (detailTypeSelect && detailTypeSelect.style.display !== 'none') {
-        currentDetailType = detailTypeSelect.value;
-        if (currentType === '비정기' && detailType2Select && detailType2Select.style.display !== 'none' && detailType2Select.value) {
-            currentDetailType += ` > ${detailType2Select.value}`;
+        detailType = detailTypeSelect.value;
+        if (type === '비정기' && detailType2Select && detailType2Select.style.display !== 'none' && detailType2Select.value) {
+            detailType += ` > ${detailType2Select.value}`;
+            if (detailType3Select && detailType3Select.style.display !== 'none' && detailType3Select.value) {
+                detailType += ` > ${detailType3Select.value}`;
+            }
         }
     }
 
@@ -2144,7 +2220,7 @@ function hasDetailUnsavedChanges() {
     const dropdownWrapper = document.getElementById('detail-content-dropdown-wrapper');
     if (dropdownWrapper) {
         const list = dropdownWrapper.querySelector('.log-select-list');
-        const selected = list.querySelectorAll('.log-select-item.selected');
+        const selected = list ? list.querySelectorAll('.log-select-item.selected') : [];
         const baseVals = Array.from(selected).map(el => {
             const cSel = el.querySelector('.item-cost-select');
             return cSel ? `[${cSel.value}] ${el.dataset.value}` : el.dataset.value;
@@ -2164,9 +2240,8 @@ function hasDetailUnsavedChanges() {
         }
 
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
-        const detailType3Select = document.getElementById('detail-detail-type3-select');
         const detailType3Val = detailType3Select && detailType3Select.style.display !== 'none' ? detailType3Select.value : '';
-        const isPartMode = (currentDetailType === 'PM 점검' || currentDetailType === 'Parts 교체' || (currentType === '고객대응' && currentDetailType === '설비 정상화') || (currentType === '비정기' && ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(detailType3Val)));
+        const isPartMode = (detailType === 'PM 점검' || detailType === 'Parts 교체' || (type === '고객대응' && detailType === '설비 정상화') || (type === '비정기' && ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(detailType3Val)));
 
         baseVals.forEach(val => {
             let baseCost = '유상';
@@ -2183,7 +2258,6 @@ function hasDetailUnsavedChanges() {
                 return (p && (p === cleanVal || p === val)) || (c && (c === cleanVal || c === val));
             });
 
-            // [추가] partContentList에 세부 물품이 선택되어 있는 경우, 이미 포함된 물품(cleanVal)이 단독/미상세로 중복 추가되는 것 차단
             if (partContentList.length > 0 && isRegisteredPart) {
                 const isCovered = partContentList.some(p => {
                     let cleanP = window.removeCostLabels(p);
@@ -2194,7 +2268,7 @@ function hasDetailUnsavedChanges() {
                 if (isCovered) return;
             }
 
-            if (currentType === '비정기' && !isPartMode && isRegisteredPart) return;
+            if (type === '비정기' && !isPartMode && isRegisteredPart) return;
 
             const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
             if (isPartKeyword && partContentList.length > 0) {
@@ -2209,23 +2283,44 @@ function hasDetailUnsavedChanges() {
         });
         currentContent = expandedDropdownValues.join(', ');
     } else {
-        const inputVal = document.getElementById('detail-content-input').value.trim();
+        const inputVal = document.getElementById('detail-content-input') ? document.getElementById('detail-content-input').value.trim() : '';
         if (inputVal) expandedDropdownValues.push(inputVal);
         currentContent = expandedDropdownValues.join(', ');
     }
-    if (!currentContent) currentContent = '내용 없음';
+    if (!currentContent) currentContent = '';
 
-    return currentWorker !== window.initialEventDetail.worker ||
-        currentMd !== window.initialEventDetail.md ||
-        currentMemo !== window.initialEventDetail.memo ||
-        currentDate !== window.initialEventDetail.date ||
-        currentContent !== window.initialEventDetail.content ||
-        currentIssueShared !== window.initialEventDetail.issueShared ||
-        currentCostType !== window.initialEventDetail.costType ||
-        currentType !== window.initialEventDetail.type ||
-        currentDetailType !== window.initialEventDetail.detailType ||
-        currentStartTime !== window.initialEventDetail.startTime ||
-        currentEndTime !== window.initialEventDetail.endTime;
+    return {
+        worker,
+        md,
+        memo,
+        date,
+        costType,
+        issueShared,
+        startTime,
+        endTime,
+        type,
+        detailType,
+        content: currentContent
+    };
+}
+
+function hasDetailUnsavedChanges() {
+    if (!currentDetailTarget || !window.initialEventDetail) return false;
+    const current = getDetailSnapshot();
+    if (!current) return false;
+
+    const initial = window.initialEventDetail;
+    return current.worker !== initial.worker ||
+        current.md !== initial.md ||
+        current.memo !== initial.memo ||
+        current.date !== initial.date ||
+        current.content !== initial.content ||
+        current.issueShared !== initial.issueShared ||
+        current.costType !== initial.costType ||
+        current.type !== initial.type ||
+        current.detailType !== initial.detailType ||
+        current.startTime !== initial.startTime ||
+        current.endTime !== initial.endTime;
 }
 
 async function saveDetailChanges() {
@@ -2452,7 +2547,7 @@ async function saveDetailChanges() {
 
     if (isCompleted) {
         // [수정] 완료 상태의 정보를 수정 저장할 때는 기존 등록된 물품(item.content)이 지워지지 않도록 그대로 보존
-        finalContentStr = item.content || '내용 없음';
+        finalContentStr = item.content || '';
 
         if (newType === '고객대응' && (newDetailType === '파티클 필터 교체' || newDetailType.startsWith('파티클 필터 교체'))) {
             finalContentStr = '[유상] Particle Filter';
@@ -2614,7 +2709,7 @@ async function saveDetailChanges() {
             }
         } else {
             if (dropdownWrapper) {
-                let finalContent = '내용 없음';
+                let finalContent = '';
                 finalContentStr = finalContent;
 
                 let existing = sameDayItems.find(m => m.content === finalContent);
@@ -2652,7 +2747,7 @@ async function saveDetailChanges() {
                 }
             } else {
                 let finalContent = document.getElementById('detail-content-input').value.trim();
-                if (!finalContent) finalContent = '내용 없음';
+                if (!finalContent) finalContent = '';
                 finalContent = window.removeCostLabels(finalContent);
                 finalContentStr = finalContent;
 
@@ -2771,7 +2866,7 @@ async function saveDetailChanges() {
     } else {
         savedContentStr = document.getElementById('detail-content-input').value.trim();
     }
-    if (!savedContentStr) savedContentStr = '내용 없음';
+    if (!savedContentStr) savedContentStr = '';
 
     window.initialEventDetail = {
         worker: newWorker,
@@ -2785,28 +2880,47 @@ async function saveDetailChanges() {
         detailType: newDetailType
     };
 
-    if (typeof window.refreshCalendarPopupAfterCompletion === 'function') {
-        window.refreshCalendarPopupAfterCompletion();
-    } else {
-        if (typeof window.renderCalendar === 'function') window.renderCalendar();
-        if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
-        if (typeof renderDetails === 'function') renderDetails();
-        if (typeof renderLogs === 'function') renderLogs();
-    }
+        if (typeof window.refreshCalendarPopupAfterCompletion === 'function') {
+            window.refreshCalendarPopupAfterCompletion();
+        } else {
+            if (typeof window.renderCalendar === 'function') window.renderCalendar();
+            if (typeof updateMaintenanceDashboard === 'function') updateMaintenanceDashboard();
+            if (typeof renderDetails === 'function') renderDetails();
+            if (typeof renderLogs === 'function') renderLogs();
+        }
 
-    return true;
-}
+        return true;
+    }
 
 /* --- 1.4 데이터 처리 및 액션 (Data & Actions) --- */
 async function completeScheduleWork() {
     if (!currentDetailTarget || currentDetailTarget.isCompleted) return;
+    if (window.isCompletingWork) return;
+    window.isCompletingWork = true;
 
-    const { site, equip, id } = currentDetailTarget;
-    const key = `details_${site}_${equip}`;
-    let data = JSON.parse(localStorage.getItem(key)) || {};
+    const completeBtn = document.getElementById('btn-complete-work');
+    if (completeBtn) {
+        completeBtn.disabled = true;
+        completeBtn.style.pointerEvents = 'none';
+        completeBtn.style.opacity = '0.5';
+    }
 
-    const maintItem = data.maint ? data.maint.find(i => i.id == id) : null;
-    if (!maintItem) return;
+    const resetCompleteState = () => {
+        window.isCompletingWork = false;
+        if (completeBtn) {
+            completeBtn.disabled = false;
+            completeBtn.style.pointerEvents = '';
+            completeBtn.style.opacity = '';
+        }
+    };
+
+    try {
+        const { site, equip, id } = currentDetailTarget;
+        const key = `details_${site}_${equip}`;
+        let data = JSON.parse(localStorage.getItem(key)) || {};
+
+        const maintItem = data.maint ? data.maint.find(i => i.id == id) : null;
+        if (!maintItem) return;
 
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
@@ -2986,18 +3100,17 @@ async function completeScheduleWork() {
         });
 
     let finalCleanContent = cleanContentArr.length > 0 ? [...new Set(cleanContentArr)].join(', ') : '';
-    if (!finalCleanContent) {
-        finalCleanContent = '내용 없음';
-    }
-    if (taskType === '고객대응' && (maintItem.detailType === '파티클 필터 교체' || maintItem.detailType.startsWith('파티클 필터 교체'))) {
+
+    // [요청 반영] 고객대응 > 파티클 필터 교체 고정 규칙
+    if (taskType === '고객대응' && (maintItem.detailType === '파티클 필터 교체' || (maintItem.detailType || '').startsWith('파티클 필터 교체'))) {
         finalCleanContent = '[유상] Particle Filter';
+    } else if (!finalCleanContent || finalCleanContent.replace(/^\[.*?\]\s*/, '').trim() === '내용 없음' || finalCleanContent === '장비 점검') {
+        // [요청 반영] 작업 완료 처리 시 입력된 내용이나 물품이 등록되어 있지 않으면 비용처리 라벨 없이 '내용 없음'으로 기록
+        finalCleanContent = '내용 없음';
     }
 
     if (taskType !== '정기') {
         if (!memo) return alert('점검 결과 / 메모를 입력해주세요.');
-        if (finalCleanContent === '장비 점검' || !finalCleanContent) {
-            finalCleanContent = '내용 없음';
-        }
     }
 
     const workerCount = worker.split(',').map(s => s.trim()).filter(Boolean).length;
@@ -3006,8 +3119,6 @@ async function completeScheduleWork() {
         if (mdInput) mdInput.value = workerCount;
         return;
     }
-
-    if (!confirm('해당 작업을 완료 처리하시겠습니까?')) return;
 
     localStorage.setItem('lastWorkerName', worker);
 
@@ -3220,6 +3331,12 @@ async function completeScheduleWork() {
         if (typeof window.refreshCalendarPopupAfterCompletion === 'function') window.refreshCalendarPopupAfterCompletion();
         if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
     }
+} catch (err) {
+    console.error('Work Completion Error:', err);
+    alert('작업 완료 처리 중 오류가 발생했습니다: ' + err.message);
+} finally {
+    resetCompleteState();
+}
 }
 
 window.refreshCalendarPopupAfterCompletion = function () {
@@ -3306,11 +3423,18 @@ window.revertCompletedMaintenanceItem = async function (site, equip, id) {
         if (!confirm('작업 완료를 취소하고 예정 상태로 되돌리시겠습니까?')) return;
     }
 
-    // [수정] 작업 완료 취소 시 물품 등록된 개수만큼 작업이 추가로 분출 등록되는 현상 차단
-    // 묶음 물품 내역 전체를 단 1개의 작업(1세트)으로 유지하여 예정 상태로 복원
     targetItem.status = '작업예정';
     targetItem.scheduledDate = targetItem.scheduledDate || targetItem.date || '';
     targetItem.date = '';
+
+    // [요청 반영] 작업 완료 취소 시 기존에 입력된 내용/물품이 있었으면 그대로 유지하고, '내용 없음'이었던 경우만 빈칸('')으로 초기화 (파티클 필터 교체 건 예외 유지)
+    if (targetItem.type === '고객대응' && (targetItem.detailType === '파티클 필터 교체' || (targetItem.detailType || '').startsWith('파티클 필터 교체'))) {
+        targetItem.content = '[유상] Particle Filter';
+    } else if (targetItem.content === '내용 없음') {
+        targetItem.content = '';
+    } else {
+        targetItem.content = targetItem.content || '';
+    }
 
     // maint 목록에 중복 없이 단 1개의 묶음 항목으로 유지 및 추가
     data.maint = (data.maint || []).filter(m => m.id != targetItem.id);
@@ -3732,7 +3856,35 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
         }
     }
 
-    if (dateDisplay) dateDisplay.value = isAddWork ? '' : dateStr;
+    // [추가] 날짜 기준 다음날 YYYY-MM-DD 반환 헬퍼 함수
+    if (!window.getNextDayStr) {
+        window.getNextDayStr = function (baseDateStr) {
+            if (!baseDateStr) return '';
+            const parts = baseDateStr.split('-');
+            if (parts.length === 3) {
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                const day = parseInt(parts[2], 10);
+                const d = new Date(year, month, day + 1);
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const da = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${da}`;
+            }
+            return baseDateStr;
+        };
+    }
+
+    if (dateDisplay) {
+        if (isAddWork && dateStr) {
+            const nextDayStr = window.getNextDayStr ? window.getNextDayStr(dateStr) : dateStr;
+            dateDisplay.min = nextDayStr || dateStr; // [요청 반영] 최초 작업일의 하루 다음날부터만 달력 선택 가능 (최초 작업일 및 이전 날짜 비활성화)
+            dateDisplay.value = ''; // [요청 반영] 추가 작업 등록 모달 렌더링 시 작업일 빈값(미입력) 표시
+        } else {
+            dateDisplay.removeAttribute('min');
+            dateDisplay.value = dateStr || '';
+        }
+    }
 
     const data = getDeviceDataMap();
     const mdInput = document.getElementById('register-md');
@@ -3858,25 +4010,27 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
             let targetDetailType2 = presetData.detailType2 || '';
             let targetDetailType3 = presetData.detailType3 || '';
 
-            // [추가] 괄호 [ ] 또는 부등호 > 가 포함된 경우 파싱하여 분리
-            if (targetDetailType.includes('[')) {
-                const parts = targetDetailType.split('[');
-                targetDetailType = parts[0].trim();
-                targetDetailType2 = parts[1].replace(']', '').trim();
-            } else if (targetDetailType.includes(' > ')) {
+            // [추가] 괄호 [ ] 또는 부등호 > 가 포함된 경우 파싱하여 3단계 세부구분까지 분리
+            if (targetDetailType.includes(' > ')) {
                 const parts = targetDetailType.split(' > ');
                 targetDetailType = parts[0].trim();
-                targetDetailType2 = parts[1].trim();
+                if (parts.length > 1 && !targetDetailType2) targetDetailType2 = parts[1].trim();
+                if (parts.length > 2 && !targetDetailType3) targetDetailType3 = parts[2].trim();
+            } else if (targetDetailType.includes('[')) {
+                const parts = targetDetailType.split('[');
+                targetDetailType = parts[0].trim();
+                if (!targetDetailType2) targetDetailType2 = parts[1].replace(']', '').trim();
             }
 
-            if (targetDetailType2.includes('[')) {
+            if (targetDetailType2.includes(' > ')) {
+                const parts = targetDetailType2.split(' > ');
+                if (!targetDetailType || targetDetailType === targetDetailType2) targetDetailType = parts[0].trim();
+                targetDetailType2 = parts[0].trim();
+                if (parts.length > 1 && !targetDetailType3) targetDetailType3 = parts[1].trim();
+            } else if (targetDetailType2.includes('[')) {
                 const parts = targetDetailType2.split('[');
                 if (!targetDetailType || targetDetailType === targetDetailType2) targetDetailType = parts[0].trim();
                 targetDetailType2 = parts[1].replace(']', '').trim();
-            } else if (targetDetailType2.includes(' > ')) {
-                const parts = targetDetailType2.split(' > ');
-                if (!targetDetailType || targetDetailType === targetDetailType2) targetDetailType = parts[0].trim();
-                targetDetailType2 = parts[1].trim();
             }
 
             if (rDetailTypeSelect && targetDetailType) {
@@ -3919,35 +4073,13 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
                     }
                 }, 50);
 
-                // [수정] presetData.content로 내용 필드 미리 채우기
-                const contentInput = document.getElementById('register-content-input');
-                const contentWrapper = document.getElementById('register-content-wrapper');
-                const contentTrigger = document.getElementById('register-content-trigger');
-
-                if (contentWrapper && contentWrapper.style.display !== 'none') {
-                    if (contentTrigger) {
-                        if (presetData.content) {
-                            contentTrigger.textContent = presetData.content;
-                            contentTrigger.title = presetData.content;
-                            contentTrigger.classList.add('has-value'); // [추가] 색상 변경 트리거
-                        } else {
-                            contentTrigger.textContent = '항목 선택';
-                            contentTrigger.title = '';
-                            contentTrigger.classList.remove('has-value'); // [추가] 초기 상태로 리셋
-                        }
-                        // 드롭다운 리스트의 실제 항목 선택은 복잡하므로, 여기서는 트리거 텍스트만 설정
-                    }
-                } else if (contentInput) {
-                    contentInput.value = presetData.content || '';
-                }
-
                 const partRow = document.getElementById('register-part-row');
                 if (partRow) {
                     // [수정] 작업 등록 시에는 하위 세부 내용 물품 선택창을 원천 비활성화 (항상 숨김)
                     partRow.style.display = 'none';
                 }
 
-                // [요청 반영] 추가 작업 등록 시 사업장, 장비, 구분, 세부구분, 세부구분2 비활성화 및 세부구분 3, 내용 초기화
+                // [요청 반영] 추가 작업 등록 시 사업장, 장비, 구분, 세부구분, 세부구분2 비활성화 및 세부구분 3 편집 가능 설정
                 if (isAddWork) {
                     const rTypeSelect = document.getElementById('register-type-select');
                     const rDetailTypeSelect = document.getElementById('register-detail-type-select');
@@ -3966,21 +4098,17 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
                     if (rDetailType2Select) rDetailType2Select.disabled = true;
 
                     if (rDetailType3Select) {
-                        rDetailType3Select.value = '';
                         rDetailType3Select.disabled = false;
-                    }
-                    const contentInputLocal = document.getElementById('register-content-input');
-                    const contentTriggerLocal = document.getElementById('register-content-trigger');
-                    const contentListLocal = document.getElementById('register-content-list');
-
-                    if (contentInputLocal) contentInputLocal.value = '';
-                    if (contentTriggerLocal) {
-                        contentTriggerLocal.textContent = '항목 선택';
-                        contentTriggerLocal.title = '';
-                        contentTriggerLocal.classList.remove('has-value');
-                    }
-                    if (contentListLocal) {
-                        contentListLocal.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
+                        if (targetDetailType3) {
+                            let hasOption3 = Array.from(rDetailType3Select.options).some(opt => opt.value === targetDetailType3);
+                            if (!hasOption3) {
+                                const opt = document.createElement('option');
+                                opt.value = targetDetailType3;
+                                opt.textContent = targetDetailType3;
+                                rDetailType3Select.appendChild(opt);
+                            }
+                            rDetailType3Select.value = targetDetailType3;
+                        }
                     }
                 }
             }, 100);
@@ -4005,21 +4133,7 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
             if (rDetailType2Select) rDetailType2Select.disabled = true;
 
             if (rDetailType3Select) {
-                rDetailType3Select.value = '';
                 rDetailType3Select.disabled = false;
-            }
-            const contentInputLocal = document.getElementById('register-content-input');
-            const contentTriggerLocal = document.getElementById('register-content-trigger');
-            const contentListLocal = document.getElementById('register-content-list');
-
-            if (contentInputLocal) contentInputLocal.value = '';
-            if (contentTriggerLocal) {
-                contentTriggerLocal.textContent = '항목 선택';
-                contentTriggerLocal.title = '';
-                contentTriggerLocal.classList.remove('has-value');
-            }
-            if (contentListLocal) {
-                contentListLocal.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
             }
         }
     }
@@ -4654,7 +4768,7 @@ window.updateRegisterContentOptions = function () {
                     let spec = extracted.spec || m.spec || '';
                     actualPart = extracted.pureContent;
 
-                    const nonPartKeywords = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "프로그램 이상", "단순조치", "기타"];
+                    const nonPartKeywords = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "프로그램 이상", "단순조치", "기타", "내용 없음"];
                     if (nonPartKeywords.includes(actualPart) || partKeywords.some(kw => actualPart === kw || actualPart.startsWith(kw + ' - '))) return;
 
                     let code = '';
@@ -5065,6 +5179,25 @@ window.updateRegisterContentOptions = function () {
 
 /* --- 2.4 데이터 처리 및 액션 (Data & Actions) --- */
 async function confirmRegisterSchedule() {
+    if (window.isRegisteringSchedule) return;
+    window.isRegisteringSchedule = true;
+
+    const btnSave = document.getElementById('btn-save-register-schedule');
+    if (btnSave) {
+        btnSave.disabled = true;
+        btnSave.style.pointerEvents = 'none';
+        btnSave.style.opacity = '0.5';
+    }
+
+    const resetRegisterState = () => {
+        window.isRegisteringSchedule = false;
+        if (btnSave) {
+            btnSave.disabled = false;
+            btnSave.style.pointerEvents = '';
+            btnSave.style.opacity = '';
+        }
+    };
+
     try {
         const dateStr = document.getElementById('register-date-display').value;
         const site = document.getElementById('register-site-select').value;
@@ -5129,19 +5262,6 @@ async function confirmRegisterSchedule() {
         }
 
         let content = '';
-        const wrapper = document.getElementById('register-content-wrapper');
-        if (wrapper && wrapper.style.display !== 'none') {
-            const selected = document.querySelectorAll('#register-content-list .log-select-item.selected');
-            content = Array.from(selected).map(el => {
-                const costSelect = el.querySelector('.item-cost-select');
-                return costSelect ? `[${costSelect.value}] ${el.dataset.value}` : el.dataset.value;
-            }).join(', ');
-        } else {
-            const input = document.getElementById('register-content-input');
-            if (input) {
-                content = input.value.trim();
-            }
-        }
         if (type === '고객대응' && (detailType === '파티클 필터 교체' || detailType.startsWith('파티클 필터 교체'))) {
             content = '[유상] Particle Filter';
         }
@@ -5243,7 +5363,7 @@ async function confirmRegisterSchedule() {
         if (!data.maint) data.maint = [];
         let payload = { maint_upserts: [] };
 
-        const itemsList = content ? content.split(', ').map(s => s.trim()).filter(s => s) : ['내용 없음'];
+        const itemsList = content ? content.split(', ').map(s => s.trim()).filter(s => s) : [];
         const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
 
         if (window.currentAddWorkLogId) {
@@ -5507,16 +5627,21 @@ async function confirmRegisterSchedule() {
         const popup = document.getElementById('calendar-popup');
         if (popup) popup.style.display = 'none';
 
-        if ((window.isMobileRegisterFlow || window.openDetailAfterRegister) && lastProcessedId) {
-            window.isMobileRegisterFlow = false;
-            window.openDetailAfterRegister = false;
+        window.isMobileRegisterFlow = false;
+        window.openDetailAfterRegister = false;
+
+        // [요청 반영] 작업 등록 완료 시 바로 작업 상세 정보 팝업 모달 자동 노출
+        if (lastProcessedId && typeof openEventDetailModal === 'function') {
             setTimeout(() => {
+                window.currentDetailTarget = { site: site, equip: equip };
                 openEventDetailModal(site, equip, lastProcessedId, false);
             }, 100);
         }
     } catch (err) {
         console.error('Task Registration Error:', err);
         alert('작업 등록 처리 중 예기치 못한 오류가 발생했습니다.\n상세: ' + err.message);
+    } finally {
+        resetRegisterState();
     }
 }
 

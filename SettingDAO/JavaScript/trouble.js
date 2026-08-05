@@ -73,18 +73,8 @@ function initTroublePage() {
     checkQueryStringFilters(); // [수정] 마지막 상태 유지 기능보다 URL 파라미터를 최상위 우선순위로 적용
     restoreTroubleFilterUI();
     
-    // [개선] 세션스토리지 캐시 목록이 있으면 fetch API 연동을 생략하고 즉각 필터 렌더링 (재연산/딜레이 제거)
-    if (cachedList) {
-        try {
-            allTroubles = JSON.parse(cachedList);
-            applyTroubleFilter();
-        } catch (e) {
-            console.error('Trouble cache parse error:', e);
-            fetchTroubles();
-        }
-    } else {
-        fetchTroubles();
-    }
+    // [수정] 신규 등록된 비정기 항목이 즉시 반영되도록 항상 최신 목록 fetch
+    fetchTroubles();
 }
 
 function restoreTroubleFilterUI() {
@@ -350,33 +340,36 @@ function applyTroubleFilter() {
         const limitStr = `${y}-${m}-${d}`;
 
         filtered = filtered.filter(t => {
-            const rawDate = t.action_date || t.occur_date || '';
+            const rawDate = t.action_date || t.occur_date || t.date || t.scheduledDate || '';
             const tDate = rawDate.slice(0, 10);
-            return tDate ? tDate >= limitStr : false;
+            if (!tDate) return true; // [수정] 날짜 미기록 비정기 작업도 목록에서 누락되지 않도록 포함
+            return tDate >= limitStr;
         });
     } else if (dateType === 'year') {
         const targetYear = currentTroubleFilter.year || String(new Date().getFullYear());
         filtered = filtered.filter(t => {
-            const rawDate = t.action_date || t.occur_date || '';
+            const rawDate = t.action_date || t.occur_date || t.date || t.scheduledDate || '';
             const tDate = rawDate.slice(0, 10);
-            return tDate ? tDate.startsWith(targetYear) : false;
+            if (!tDate) return true;
+            return tDate.startsWith(targetYear);
         });
     } else if (dateType === 'month') {
         const targetYear = currentTroubleFilter.year || String(new Date().getFullYear());
         const targetMonth = currentTroubleFilter.month || String(new Date().getMonth() + 1).padStart(2, '0');
         const prefix = `${targetYear}-${targetMonth}`;
         filtered = filtered.filter(t => {
-            const rawDate = t.action_date || t.occur_date || '';
+            const rawDate = t.action_date || t.occur_date || t.date || t.scheduledDate || '';
             const tDate = rawDate.slice(0, 10);
-            return tDate ? tDate.startsWith(prefix) : false;
+            if (!tDate) return true;
+            return tDate.startsWith(prefix);
         });
     } else if (dateType === 'custom') {
         const start = currentTroubleFilter.startDate || '';
         const end = currentTroubleFilter.endDate || '';
         filtered = filtered.filter(t => {
-            const rawDate = t.action_date || t.occur_date || '';
+            const rawDate = t.action_date || t.occur_date || t.date || t.scheduledDate || '';
             const tDate = rawDate.slice(0, 10);
-            if (!tDate) return false;
+            if (!tDate) return true;
 
             let isStartOk = true;
             if (start) isStartOk = tDate >= start;

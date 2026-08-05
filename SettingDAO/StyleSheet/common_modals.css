@@ -842,7 +842,6 @@
 #next-schedule-date,
 #next-schedule-md,
 #register-date-display,
-#register-content-input,
 #schedule-date-input,
 #schedule-md-input,
 #event-detail-modal .log-select-trigger,
@@ -1103,7 +1102,7 @@
     align-items: center !important;
 }
 
-#register-schedule-modal input:not(.has-value):not(#register-content-search),
+#register-schedule-modal input:not(.has-value),
 #register-schedule-modal select:not(.has-value),
 #register-schedule-modal .log-select-trigger:not(.has-value) {
     background-color: var(--cal-bg-dark) !important;
@@ -1141,32 +1140,6 @@
 #register-detail-type2-select,
 #register-detail-type3-select {
     margin-top: 0;
-}
-
-#register-content-input {
-    display: none;
-}
-
-#register-content-wrapper {
-    flex: 1;
-    margin-right: 0;
-    min-width: 0;
-    width: 100%;
-}
-
-#register-content-trigger {
-    width: 100%;
-    box-sizing: border-box;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    color: #fff;
-    padding: 5px;
-    border-radius: 4px;
-    min-height: 30px;
-}
-
-#btn-register-content-add {
-    width: 100%;
 }
 
 #register-worker-wrapper {

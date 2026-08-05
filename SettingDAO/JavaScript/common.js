@@ -534,10 +534,59 @@ window.getEquipmentDbId = function (site, equip) {
     return `${site}::${resolvedEquip}`;
 };
 
+// [요청 반영] 최초 작업 삭제 시 추가작업 1을 최초 작업으로 격상하고 나머지 추가작업의 originalLogId를 추가작업 1 ID로 재바인딩
+window.reassignChildExtraWorks = function (site, equip, deletedIds) {
+    if (!site || !equip || !deletedIds || deletedIds.length === 0) return;
+    const key = `details_${site}_${equip}`;
+    const data = JSON.parse(localStorage.getItem(key)) || {};
+    let logs = data.logs || [];
+    let maint = data.maint || [];
+    let stateChanged = false;
+
+    deletedIds.forEach(dId => {
+        const dIdStr = String(dId).trim();
+        if (!dIdStr) return;
+
+        const childLogs = logs.filter(l => l.originalLogId && String(l.originalLogId) === dIdStr);
+        const childMaints = maint.filter(m => m.originalLogId && String(m.originalLogId) === dIdStr);
+        const allChildren = [...childLogs, ...childMaints].sort((a, b) => {
+            const da = a.date || a.scheduledDate || '';
+            const db = b.date || b.scheduledDate || '';
+            if (da !== db) return da.localeCompare(db);
+            return String(a.id).localeCompare(String(b.id));
+        });
+
+        if (allChildren.length > 0) {
+            const newParent = allChildren[0];
+            const newParentId = String(newParent.id);
+            delete newParent.originalLogId;
+
+            allChildren.slice(1).forEach(child => {
+                child.originalLogId = newParentId;
+            });
+            stateChanged = true;
+        }
+    });
+
+    if (stateChanged) {
+        data.logs = logs;
+        data.maint = maint;
+        localStorage.setItem(key, JSON.stringify(data));
+        if (window.allEquipDetails) {
+            window.allEquipDetails[key] = data;
+        }
+    }
+};
+
 // [추가] 100% DB 전환을 위한 유지관리/이력 전용 트랜잭션 동기화 함수
 window.syncHistoryTransaction = async function (site, equip, payload) {
     window.activeSyncRequests++;
     const equip_id = window.getEquipmentDbId(site, equip);
+
+    const delIds = [...(payload.maint_deletes || []), ...(payload.log_deletes || [])];
+    if (delIds.length > 0 && typeof window.reassignChildExtraWorks === 'function') {
+        window.reassignChildExtraWorks(site, equip, delIds);
+    }
     try {
         const res = await fetch('/api/history/transaction', {
             method: 'POST',
@@ -4160,7 +4209,7 @@ function openNextScheduleModal(options) {
 
             // [수정] 항목을 명시적으로 선택하지 않아도 기본값('장비 점검')으로 다음 예정일이 무사히 등록되도록 변경
             if (selectedItems.length === 0) {
-                selectedItems.push({ content: '내용 없음', cost: '유상' });
+                selectedItems.push({ content: '', cost: '유상' });
             }
 
             const key = `details_${site}_${equip}`;
@@ -4542,6 +4591,10 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     if (parentLog.detailType2 && parentLog.detailType2 !== '-' && !detailStr.includes(parentLog.detailType2)) {
         detailStr += ` > ${parentLog.detailType2}`;
     }
+    const parentDt3 = parentLog.detailType3 || parentLog.detail_type3 || '';
+    if (parentDt3 && parentDt3 !== '-' && !detailStr.includes(parentDt3)) {
+        detailStr += ` > ${parentDt3}`;
+    }
     if (detailStr) {
         pathText += ` > ${detailStr}`;
     }
@@ -4572,13 +4625,14 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
                     type: (parentLog.type && parentLog.type !== '-') ? parentLog.type : '비정기', 
                     detailType: (parentLog.detailType && parentLog.detailType !== '-') ? parentLog.detailType : '', 
                     detailType2: (parentLog.detailType2 && parentLog.detailType2 !== '-') ? parentLog.detailType2 : '', 
+                    detailType3: (parentLog.detailType3 && parentLog.detailType3 !== '-') ? parentLog.detailType3 : '', 
                     content: '', 
                     worker: parentLog.worker || '' 
                 };
                 window.currentSearchFilters = { site: site, equip: equip };
                 window.currentAddWorkLogId = originalLogId;
-                const todayStr = new Date().toISOString().substring(0, 10);
-                window.openRegisterScheduleModal(todayStr, presetData);
+                const parentDateStr = parentLog.date || parentLog.scheduledDate || new Date().toISOString().substring(0, 10);
+                window.openRegisterScheduleModal(parentDateStr, presetData);
             } else {
                 sessionStorage.setItem('openAddWorkForLog', JSON.stringify({ site, equip, logId: originalLogId }));
                 location.href = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
@@ -4683,8 +4737,18 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
             tableContent = displayContent || '비정기 점검';
         }
 
-        const dtParts = (log.detailType || '').split(' > ').map(s => s.trim()).filter(Boolean);
-        let sub3Text = dtParts.length >= 3 ? dtParts[2] : (label || '-');
+        let sub3Text = log.detailType3 || log.detail_type3 || '';
+        if (!sub3Text && log.detailType && log.detailType.includes(' > ')) {
+            const dtParts = log.detailType.split(' > ').map(s => s.trim()).filter(Boolean);
+            if (dtParts.length >= 3) sub3Text = dtParts[2];
+        }
+        if (!sub3Text && log.detailType2 && log.detailType2.includes(' > ')) {
+            const dt2Parts = log.detailType2.split(' > ').map(s => s.trim()).filter(Boolean);
+            if (dt2Parts.length >= 2) sub3Text = dt2Parts[1];
+        }
+        if (!sub3Text) {
+            sub3Text = label || '-';
+        }
 
         tr.innerHTML = `
             <td><span class="badge" style="background:${badgeColor}; display: inline-block; width: 45px; text-align: center; padding: 3px 0; font-size: 11px; border-radius: 4px; color: #fff; font-weight: bold;">${badgeText}</span></td>
@@ -4818,8 +4882,8 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
                 };
                 window.currentSearchFilters = { site: site, equip: equip };
                 window.currentAddWorkLogId = originalLogId;
-                const todayStr = new Date().toISOString().substring(0, 10);
-                window.openRegisterScheduleModal(todayStr, presetData);
+                const parentDateStr = parentLog.date || parentLog.scheduledDate || new Date().toISOString().substring(0, 10);
+                window.openRegisterScheduleModal(parentDateStr, presetData);
             } else {
                 sessionStorage.setItem('openAddWorkForLog', JSON.stringify({ site, equip, logId: originalLogId }));
                 location.href = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
@@ -5075,7 +5139,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             actualPart = extracted.pureContent;
 
             // 등록된 물품이 아닌 기본 현장 이슈 항목들은 드롭다운에서 제외
-            const nonPartKeywords = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "프로그램 이상", "단순조치", "기타"];
+            const nonPartKeywords = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "프로그램 이상", "단순조치", "기타", "내용 없음"];
             // [추가] 잘못된 점검 키워드(과거 데이터 잔재)가 물품 드롭다운에 노출되는 것을 완벽하게 필터링
             if (nonPartKeywords.includes(actualPart) || partKeywords.includes(actualPart) || partKeywords.some(kw => actualPart === kw || actualPart.startsWith(kw + ' - '))) return;
 
@@ -6013,7 +6077,7 @@ function doTaskSearch() {
             li.querySelector('.task-date').textContent = date;
 
             // [추가] 검색 결과에 노출된 항목이 추가 작업(자식)일 경우 파란색 <추가> 뱃지 표시
-            const isExtraWork = items.some(i => i.originalLogId);
+            const isExtraWork = items.some(i => i.originalLogId && String(i.originalLogId).trim() !== '' && String(i.originalLogId) !== 'None' && String(i.originalLogId) !== 'null');
             if (isExtraWork) {
                 const extraSpan = document.createElement('span');
                 extraSpan.textContent = '<추가>';
@@ -6062,12 +6126,12 @@ function doTaskSearch() {
                     if (searchModal) searchModal.style.display = 'none';
                     cameFromTaskSearch = true;
 
-                    const presetData = { type: logItem.type, detailType: logItem.detailType, detailType2: logItem.detailType2, content: '', worker: logItem.worker || '' };
+                    const presetData = { type: logItem.type, detailType: logItem.detailType, detailType2: logItem.detailType2, detailType3: logItem.detailType3 || '', content: '', worker: logItem.worker || '' };
                     window.currentSearchFilters = { site: site, equip: equip };
                     window.currentAddWorkLogId = targetLogId;
-                    const todayStr = new Date().toISOString().substring(0, 10);
+                    const targetLogDate = logItem.date || logItem.scheduledDate || (typeof date !== 'undefined' ? date : '') || new Date().toISOString().substring(0, 10);
                     if (typeof window.openRegisterScheduleModal === 'function') {
-                        window.openRegisterScheduleModal(todayStr, presetData);
+                        window.openRegisterScheduleModal(targetLogDate, presetData);
                     } else {
                         let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}&action=addExtraWork&logId=${targetLogId}`;
                         window.location.href = targetUrl;
