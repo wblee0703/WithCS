@@ -1462,11 +1462,11 @@ function handleEquipCsvImport(event) {
 
                     setupData[`${site}::${newKey}`] = { setupDetails: initialSetupDetails, setupLogs: [] };
                     localStorage.setItem('setup_data', JSON.stringify(setupData));
-                    await window.syncSetupDataDB(site, newKey, initialSetupDetails, []);
 
-                    // [추가] CSV로 추가된 장비를 서버 DB에 동기화 전송
+                    // [수정] 서버 DB에 장비 마스터(Equipment)를 먼저 생성 후 셋업 데이터(SetupDetail) 동기화 실행
                     const setupPayload = initData.setup;
                     await window.syncAdminDB('equip', 'CREATE', { new_id: newKey, site: site, special_note: "", setup: setupPayload });
+                    await window.syncSetupDataDB(site, newKey, initialSetupDetails, []);
 
                     importedCount++;
                 } else {

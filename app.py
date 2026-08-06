@@ -3339,6 +3339,19 @@ def sync_setup_equip():
                 equip = Equipment.query.filter(Equipment.id.like(f"{equip_id}%")).first()
 
             if not equip:
+                parts_equip = [p.strip() for p in equip_id.split('::') if p.strip()]
+                if len(parts_equip) >= 3:
+                    s_name = parts_equip[0]
+                    m_name = parts_equip[1]
+                    m_abbr = normalize_equipment_model_to_abbr(m_name)
+                    s_num = parts_equip[2]
+                    equip = Equipment.query.filter(
+                        Equipment.site_name == s_name,
+                        (Equipment.name == m_name) | (Equipment.name == m_abbr),
+                        Equipment.serial == s_num
+                    ).first()
+
+            if not equip:
                 all_equips = Equipment.query.all()
                 import unicodedata
                 norm_equip_id = unicodedata.normalize('NFC', equip_id)
@@ -3354,7 +3367,11 @@ def sync_setup_equip():
                     if min_len >= 3:
                         match = True
                         for idx in range(min_len):
-                            if parts_equip_clean[idx] != parts_db_clean[idx]:
+                            v1 = parts_equip_clean[idx]
+                            v2 = parts_db_clean[idx]
+                            n1 = normalize_equipment_model_to_abbr(v1)
+                            n2 = normalize_equipment_model_to_abbr(v2)
+                            if v1 != v2 and n1 != n2 and n1 != v2 and v1 != n2:
                                 match = False
                                 break
                         if match:
