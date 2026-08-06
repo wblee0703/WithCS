@@ -914,6 +914,25 @@
         min-width: 0;
     }
 
+    /* [요청 반영] 모바일 환경 물품 제안박스 녹색 + 버튼 터치 터치영역 및 z-index 보정 */
+    .log-select-item .item-name button,
+    .log-select-item button {
+        position: relative !important;
+        z-index: 9999 !important;
+        pointer-events: auto !important;
+        touch-action: manipulation !important;
+        min-width: 34px !important;
+        min-height: 34px !important;
+        padding: 4px 8px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        margin-left: 6px !important;
+        font-size: 15px !important;
+        font-weight: bold !important;
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+    }
+
     /* [추가] 모바일에서 작업 상세 정보의 '세부 내용' 항목이 세로로 쌓이지 않도록 가로 배치 강제 */
     #detail-edit-part-wrapper {
         flex-direction: row !important;
