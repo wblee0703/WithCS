@@ -1811,12 +1811,16 @@ function buildDetailDropdown(item, site, equip) {
                         if (!item.spec && templateId === 'log-part-item-template') {
                             const addSpecBtn = document.createElement('button');
                             addSpecBtn.innerHTML = '＋';
-                            addSpecBtn.style.cssText = 'margin-left: 5px; background: #0d1117; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 14px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1; position: relative; z-index: 10;';
+                            addSpecBtn.type = 'button';
+                            addSpecBtn.style.cssText = 'margin-left: 5px; background: #0d1117; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1; position: relative; z-index: 20; -webkit-tap-highlight-color: rgba(0,0,0,0);';
                             addSpecBtn.title = '물품 상세 추가';
-                            addSpecBtn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
-                            addSpecBtn.onclick = (e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
+
+                            let lastBtnTouch = 0;
+                            const triggerAddSpec = (e) => {
+                                if (e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                }
                                 if (typeof window.openAddPartSpecModal === 'function') {
                                     window.openAddPartSpecModal(site, equip, item, (newItem) => {
                                         const newDisplayValue = newItem.code ? `${newItem.code} [${newItem.spec}]` : `${newItem.content} [${newItem.spec}]`;
@@ -1836,6 +1840,21 @@ function buildDetailDropdown(item, site, equip) {
                                         updateTriggerText();
                                     });
                                 }
+                            };
+
+                            addSpecBtn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
+                            addSpecBtn.ontouchstart = (e) => { e.stopPropagation(); };
+                            addSpecBtn.ontouchend = (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                lastBtnTouch = Date.now();
+                                triggerAddSpec(e);
+                            };
+                            addSpecBtn.onclick = (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (Date.now() - lastBtnTouch < 600) return;
+                                triggerAddSpec(e);
                             };
                             itemNameEl.appendChild(addSpecBtn);
                         }
@@ -1875,7 +1894,7 @@ function buildDetailDropdown(item, site, equip) {
                         }, { passive: true });
 
                         const handleSelect = (e) => {
-                            if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
+                            if (e.target.closest('button') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
                             e.preventDefault();
                             e.stopPropagation();
 
@@ -4945,12 +4964,16 @@ window.updateRegisterContentOptions = function () {
                         if (!item.spec && templateId === 'log-part-item-template') {
                             const addSpecBtn = document.createElement('button');
                             addSpecBtn.innerHTML = '＋';
-                            addSpecBtn.style.cssText = 'margin-left: 5px; background: #0d1117; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 14px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1; position: relative; z-index: 10;';
+                            addSpecBtn.type = 'button';
+                            addSpecBtn.style.cssText = 'margin-left: 5px; background: #0d1117; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1; position: relative; z-index: 20; -webkit-tap-highlight-color: rgba(0,0,0,0);';
                             addSpecBtn.title = '물품 상세 추가';
-                            addSpecBtn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
-                            addSpecBtn.onclick = (e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
+
+                            let lastBtnTouch = 0;
+                            const triggerAddSpec = (e) => {
+                                if (e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                }
                                 if (typeof window.openAddPartSpecModal === 'function') {
                                     const siteSelect = document.getElementById('register-site-select');
                                     const siteName = siteSelect ? siteSelect.value : '';
@@ -4972,6 +4995,21 @@ window.updateRegisterContentOptions = function () {
                                         updateTriggerText();
                                     });
                                 }
+                            };
+
+                            addSpecBtn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
+                            addSpecBtn.ontouchstart = (e) => { e.stopPropagation(); };
+                            addSpecBtn.ontouchend = (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                lastBtnTouch = Date.now();
+                                triggerAddSpec(e);
+                            };
+                            addSpecBtn.onclick = (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (Date.now() - lastBtnTouch < 600) return;
+                                triggerAddSpec(e);
                             };
                             itemNameEl.appendChild(addSpecBtn);
                         }
@@ -5011,7 +5049,7 @@ window.updateRegisterContentOptions = function () {
                         }, { passive: true });
 
                         const handleSelect = (e) => {
-                            if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option' || e.target.tagName.toLowerCase() === 'button') return;
+                            if (e.target.closest('button') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
                             e.preventDefault();
                             e.stopPropagation();
                             trigger.classList.remove('error-border');
@@ -5508,7 +5546,9 @@ async function confirmRegisterSchedule() {
                     if (m.scheduledDate && m.scheduledDate !== dateStr) return false;
                     const mPure = getPureName(m.code || m.content);
                     const fPure = getPureName(finalCode || finalContent);
-                    return mPure && fPure && mPure === fPure;
+                    const mSpec = (m.spec || '').trim();
+                    const fSpec = (finalSpec || '').trim();
+                    return mPure && fPure && mPure === fPure && mSpec === fSpec;
                 })
                 : null;
             if (existingItem) {

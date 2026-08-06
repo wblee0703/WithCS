@@ -3156,16 +3156,19 @@ def history_transaction():
                 clean_p = parsed['clean_name'] if (parsed and parsed.get('clean_name')) else re.sub(r'\[.*?\]', '', m_content).strip()
                 spec_val = parsed['part_detail'] if (parsed and parsed.get('part_detail')) else m_spec
                 if clean_p:
-                    # 1) LogItem(maint_log)에서 동일 장비 내 동일 물품의 중복 잔재 레코드(id != m_id) 제거
-                    LogItem.query.filter(
+                    # 1) LogItem(maint_log)에서 동일 장비 내 동일 물품/동일 상세(spec)의 중복 잔재 작업예정 레코드(id != m_id)만 정밀 제거 (물품 상세가 다르면 개별 보존)
+                    existing_scheduled = LogItem.query.filter(
                         LogItem.equip_id == equip_id,
                         LogItem.status == '작업예정',
                         LogItem.id != m_id,
                         LogItem.content.like(f"%{clean_p}%")
-                    ).delete(synchronize_session=False)
+                    ).all()
 
-                    # (물품상세 유무와 상관없이 개별 세트로 독립 보존)
-                    pass
+                    for ex in existing_scheduled:
+                        ex_parsed = parse_part_item_string(ex.content)
+                        ex_spec = ex_parsed['part_detail'] if (ex_parsed and ex_parsed.get('part_detail')) else (getattr(ex, 'spec', '') or '')
+                        if (ex_spec or '').strip() == (spec_val or '').strip():
+                            db.session.delete(ex)
 
         # 4. log_deletes 처리 (maint_upserts에 포함된 완료 취소 항목은 DB 삭제 대상에서 제외)
         if log_deletes:

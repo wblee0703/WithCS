@@ -5251,12 +5251,16 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             if (!item.spec) {
                 const addSpecBtn = document.createElement('button');
                 addSpecBtn.innerHTML = '＋';
-                addSpecBtn.style.cssText = 'margin-left: 5px; background: #0d1117; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 14px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1; position: relative; z-index: 10;';
+                addSpecBtn.type = 'button';
+                addSpecBtn.style.cssText = 'margin-left: 5px; background: #0d1117; border: 1px solid #3fb950; color: #3fb950; border-radius: 4px; padding: 0 4px; font-size: 12px; font-weight: bold; cursor: pointer; flex-shrink: 0; line-height: 1; position: relative; z-index: 20; -webkit-tap-highlight-color: rgba(0,0,0,0);';
                 addSpecBtn.title = '물품 상세 추가';
-                addSpecBtn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
-                addSpecBtn.onclick = (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
+
+                let lastBtnTouch = 0;
+                const triggerAddSpec = (e) => {
+                    if (e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
                     if (typeof window.openAddPartSpecModal === 'function') {
                         window.openAddPartSpecModal(siteName, equipKeyFull, item, (newItem) => {
                             const newDisplayValue = newItem.code ? `${newItem.code} [${newItem.spec}]` : `${newItem.content} [${newItem.spec}]`;
@@ -5271,6 +5275,21 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
                             window.renderLogPartOptions(wrapperId, triggerId, listId, searchId, currentSelsArray.join(', '));
                         });
                     }
+                };
+
+                addSpecBtn.onmousedown = (e) => { e.preventDefault(); e.stopPropagation(); };
+                addSpecBtn.ontouchstart = (e) => { e.stopPropagation(); };
+                addSpecBtn.ontouchend = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    lastBtnTouch = Date.now();
+                    triggerAddSpec(e);
+                };
+                addSpecBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (Date.now() - lastBtnTouch < 600) return;
+                    triggerAddSpec(e);
                 };
                 itemNameEl.appendChild(addSpecBtn);
             }
@@ -5338,7 +5357,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
             }, { passive: true });
 
             div.addEventListener('touchend', (e) => {
-                if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
+                if (e.target.closest('button') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
                 if (isMoving) return;
                 e.preventDefault();
                 e.stopPropagation();
@@ -5348,7 +5367,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
 
             div.addEventListener('mousedown', (e) => {
                 if (window.lastTouchTime && Date.now() - window.lastTouchTime < 600) return;
-                if (e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
+                if (e.target.closest('button') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
                 e.preventDefault(); e.stopPropagation();
                 div.classList.toggle('selected');
                 updateTriggerText();

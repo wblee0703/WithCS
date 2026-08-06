@@ -914,22 +914,26 @@
         min-width: 0;
     }
 
-    /* [요청 반영] 모바일 환경 물품 제안박스 녹색 + 버튼 터치 터치영역 및 z-index 보정 */
+    /* [요청 반영] 모바일 환경 물품 제안박스 녹색 + 버튼 크기 컴팩트화 및 터치 반응성 보정 */
     .log-select-item .item-name button,
     .log-select-item button {
         position: relative !important;
         z-index: 9999 !important;
         pointer-events: auto !important;
         touch-action: manipulation !important;
-        min-width: 34px !important;
-        min-height: 34px !important;
-        padding: 4px 8px !important;
+        min-width: 22px !important;
+        height: 20px !important;
+        padding: 1px 4px !important;
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
-        margin-left: 6px !important;
-        font-size: 15px !important;
+        margin-left: 5px !important;
+        font-size: 12px !important;
         font-weight: bold !important;
+        border-radius: 4px !important;
+        border: 1px solid #3fb950 !important;
+        color: #3fb950 !important;
+        background: #0d1117 !important;
         -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
     }
 
