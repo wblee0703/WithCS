@@ -900,8 +900,6 @@ async function toggleEditRow(id) {
     const editBtn = row.querySelector('.btn-edit-sm');
     const isEditing = row.classList.contains('editing');
 
-    const badgeEl = row.querySelector('.badge');
-    const badgeContainer = badgeEl ? badgeEl.parentElement : row.cells[0]; // fallback
     const codeCell = row.querySelector('.edit-code');
     const contentCell = row.querySelector('.edit-content');
     const specCell = row.querySelector('.edit-spec');
@@ -914,60 +912,29 @@ async function toggleEditRow(id) {
         editBtn.textContent = '✅';
         editBtn.style.color = '#238636';
 
-        // [수정] 코드명, 물품명은 수정 불가하도록 contentEditable 속성 적용 제거
+        // [수정] 코드명, 물품상세는 수정 안되게 고정 (단순 텍스트 유지)
 
-        // [추가] 타입(구분) 수정 가능하게 select 로 변경
-        const currentType = badgeEl ? badgeEl.textContent.trim() : '정기';
-        badgeContainer.innerHTML = `
-            <select id="input-type-${id}" class="input-dark" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 1px 2px; font-size: 11px;">
-                <option value="정기" ${currentType === '정기' ? 'selected' : ''}>정기</option>
-                <option value="비정기" ${currentType === '비정기' ? 'selected' : ''}>비정기</option>
-            </select>
-        `;
-
-        // [수정] 주기(Period) 입력창을 number 타입으로 변경하고, 비정기일 때는 비활성화
+        // [수정] 주기(Period) 입력창
         let currentPeriod = periodCell.textContent.replace('일', '').trim();
         if (currentPeriod === '-') currentPeriod = '';
-        periodCell.innerHTML = `<input type="number" id="input-period-${id}" value="${escapeHtml(currentPeriod)}" class="edit-period-input input-dark" min="0" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 1px 2px; font-size: 11px;" oninput="if(this.value < 0) this.value = Math.abs(this.value)" ${currentType !== '정기' ? 'disabled style="opacity:0.5;"' : ''}>`;
-
-        if (specCell) {
-            const currentSpec = specCell.textContent.trim() === '-' ? '' : specCell.textContent.trim();
-            specCell.innerHTML = `<input type="text" id="input-spec-${id}" value="${escapeHtml(currentSpec)}" class="edit-spec-input input-dark" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 1px 2px; font-size: 11px;">`;
-        }
+        periodCell.innerHTML = `<input type="number" id="input-period-${id}" value="${escapeHtml(currentPeriod)}" class="edit-period-input input-dark" min="0" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 1px 2px; font-size: 11px;" oninput="if(this.value < 0) this.value = Math.abs(this.value)">`;
 
         const currentDate = dateCell.textContent.trim();
         dateCell.innerHTML = `<input type="date" id="input-date-${id}" value="${escapeHtml(currentDate)}" class="edit-date-input input-dark" style="width: 100%; max-width: 100%; box-sizing: border-box; padding: 1px 2px; font-size: 11px;">`;
         const dateInput = document.getElementById(`input-date-${id}`);
         if (dateInput) dateInput.focus();
-
-        // [추가] 타입 변경 시 주기 입력창 활성/비활성 처리
-        const typeSelect = document.getElementById(`input-type-${id}`);
-        const periodInput = document.getElementById(`input-period-${id}`);
-        if (typeSelect && periodInput) {
-            typeSelect.addEventListener('change', function () {
-                if (this.value === '정기') {
-                    periodInput.disabled = false;
-                    periodInput.style.opacity = '1';
-                } else {
-                    periodInput.disabled = true;
-                    periodInput.style.opacity = '0.5';
-                    periodInput.value = '';
-                }
-            });
-        }
     } else {
         // [데이터 저장]
         const key = `details_${currentPath.site}_${currentPath.equip}`;
         const data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
 
-        const typeSelect = document.getElementById(`input-type-${id}`);
-        const newType = typeSelect ? typeSelect.value : (badgeEl ? badgeEl.textContent.trim() : '정기');
-
-        const newCode = codeCell ? (codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim()) : '';
         const existingItem = data.maint ? data.maint.find(m => String(m.id) === String(id)) : null;
+        const newType = existingItem ? (existingItem.type || '정기') : '정기';
+
+        const newCode = codeCell ? (codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim()) : (existingItem ? (existingItem.code || '') : '');
         const newContent = (contentCell && contentCell.dataset.rawContent) ? contentCell.dataset.rawContent : (existingItem ? existingItem.content : '');
         const specInput = document.getElementById(`input-spec-${id}`);
-        const newSpec = specInput ? specInput.value.trim() : '';
+        const newSpec = specInput ? specInput.value.trim() : (existingItem ? (existingItem.spec || '') : '');
         const dateInput = document.getElementById(`input-date-${id}`);
         const newDate = dateInput ? dateInput.value : '';
 
@@ -985,7 +952,6 @@ async function toggleEditRow(id) {
         // [수정] 코드, 물품명, 물품상세가 모두 동일한 경우에만 중복으로 처리
         const isDuplicate = data.maint.some(m => {
             if (String(m.id) === String(id)) return false; // 자기 자신 제외
-            if (m.type !== newType) return false;
             const m_code = m.code || '';
             const m_content = m.content || '';
             const m_spec = m.spec || '';
@@ -2152,20 +2118,18 @@ async function toggleMaintenanceMode() {
             const dateInput = document.getElementById(`input-date-${id}`);
             if (dateInput && !dateInput.value) hasError = true;
             // [추가] 중복 검사
-            const badgeEl = row.querySelector('.badge');
             const codeCell = row.querySelector('.edit-code');
             const contentCell = row.querySelector('.edit-content');
-            const typeSelect = document.getElementById(`input-type-${id}`);
-            const newType = typeSelect ? typeSelect.value : (badgeEl ? badgeEl.textContent.trim() : '정기');
-            const newCode = codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim();
-            const newContent = contentCell.dataset.rawContent || contentCell.textContent.trim();
+            const existingItem = tempDataMaint.find(m => String(m.id) === String(id));
+            const newType = existingItem ? (existingItem.type || '정기') : '정기';
+            const newCode = codeCell ? (codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim()) : (existingItem ? (existingItem.code || '') : '');
+            const newContent = (contentCell && contentCell.dataset.rawContent) ? contentCell.dataset.rawContent : (existingItem ? existingItem.content : '');
             const specInput = document.getElementById(`input-spec-${id}`);
-            const newSpec = specInput ? specInput.value.trim() : '';
+            const newSpec = specInput ? specInput.value.trim() : (existingItem ? (existingItem.spec || '') : '');
 
             // [수정] 코드, 물품명, 물품상세가 모두 동일한 경우에만 중복으로 처리
             const isDuplicate = tempDataMaint.some(m => {
                 if (String(m.id) === String(id)) return false; // 자기 자신 제외
-                if (m.type !== newType) return false;
                 const m_code = m.code || '';
                 const m_content = m.content || '';
                 const m_spec = m.spec || '';
@@ -2198,19 +2162,18 @@ async function toggleMaintenanceMode() {
         let hasEdits = false;
         for (const row of Array.from(editingRows)) {
             const id = parseInt(row.dataset.id);
-            const badgeEl = row.querySelector('.badge');
             const codeCell = row.querySelector('.edit-code');
             const contentCell = row.querySelector('.edit-content');
             const periodCell = row.querySelector('.edit-period');
 
-            const typeSelect = document.getElementById(`input-type-${id}`);
-            const newType = typeSelect ? typeSelect.value : (badgeEl ? badgeEl.textContent.trim() : '정기');
+            const existingItem = tempDataMaint.find(m => String(m.id) === String(id));
+            const newType = existingItem ? (existingItem.type || '정기') : '정기';
 
-            const newCode = codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim();
+            const newCode = codeCell ? (codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim()) : (existingItem ? (existingItem.code || '') : '');
             const newContent = contentCell.dataset.rawContent || contentCell.textContent.trim();
 
             const specInput = document.getElementById(`input-spec-${id}`);
-            const newSpec = specInput ? specInput.value.trim() : '';
+            const newSpec = specInput ? specInput.value.trim() : (existingItem ? (existingItem.spec || '') : '');
 
             const dateInput = document.getElementById(`input-date-${id}`);
             const newDate = dateInput ? dateInput.value : '';

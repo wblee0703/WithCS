@@ -654,12 +654,23 @@ def load_data():
         maint_ids = set()
         maint_code_specs = set()
 
+        eq_item_logs = item_logs.get(norm_eq_id, []) or item_logs.get(eq.id, [])
+        item_log_map = {str(il.id): il for il in eq_item_logs}
+        item_log_code_map = {(il.code or il.part or '').strip(): il for il in eq_item_logs if (il.code or il.part)}
+
         for m in maint_list:
             m_id = int(m.id) if str(m.id).isdigit() else m.id
+            m_id_str = str(m_id)
             m_code = getattr(m, 'code', '') or m.content or ''
-            m_spec = getattr(m, 'spec', '') or ''
-            maint_ids.add(str(m_id))
+            clean_c = re.sub(r'\[.*?\]', '', m_code).strip()
+
+            il_match = item_log_map.get(m_id_str) or item_log_code_map.get(clean_c) or item_log_code_map.get(m_code.strip())
+            m_spec = il_match.part_detail if (il_match and il_match.part_detail) else (getattr(m, 'spec', '') or '')
+
+            maint_ids.add(m_id_str)
             maint_code_specs.add((m_code.strip(), m_spec.strip()))
+            if clean_c:
+                maint_code_specs.add((clean_c, m_spec.strip()))
 
             data[detail_key]["maint"].append({
                 "id": m_id, "type": m.type, "detailType": m.detail_type,
@@ -3148,9 +3159,50 @@ def history_transaction():
             item.memo = m.get('memo', item.memo)
             item.original_log_id = str(m.get('originalLogId')) if m.get('originalLogId') else item.original_log_id
 
+            # [수정/추가] maint_log(LogItem) 및 item_log(ItemLog) DB 동시 동기화 (물품상세 spec / part_detail 및 [물품상세] 포맷팅 포함)
+            m_code = m.get('code') or m.get('content') or ''
+            m_spec = m.get('spec', '') if m.get('spec') is not None else ''
+            m_date = m.get('date', '') or ''
+            m_period = str(m.get('period')) if m.get('period') is not None else None
+
+            if m_code and equip_id:
+                invalid_kws = ['내용 없음', '장비 점검', 'PM 점검', 'BM 점검', '파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '파츠 이상 교체', '파츠 이상 수리', '물품 이상 교체', '물품 이상 수리', '단순 조치', '현장 이슈', 'PC 이상', '작업자 실수', '통신 이상', '프로그램 이상', '기타']
+                parsed_c = parse_part_item_string(m.get('content') or item.content or m_code)
+                clean_code = parsed_c['clean_name'] if (parsed_c and parsed_c.get('clean_name')) else re.sub(r'\[.*?\]', '', m_code).strip()
+                cost_tag = parsed_c.get('cost_tag') if parsed_c else (item.cost_type or '유상')
+
+                if clean_code and clean_code not in invalid_kws and ',' not in clean_code:
+                    # LogItem content 안전 포맷팅 (작업예정 항목은 코드명 [물품상세] 또는 코드명 형태로 유지)
+                    item.content = f"{clean_code} [{m_spec}]" if m_spec else clean_code
+
+                    # ItemLog (item_log DB) 동시 동기화
+                    il_rec = ItemLog.query.filter_by(id=m_id).first()
+                    if not il_rec:
+                        il_rec = ItemLog.query.filter(
+                            ItemLog.equip_id == equip_id,
+                            ((ItemLog.code == clean_code) | (ItemLog.part == clean_code))
+                        ).first()
+
+                    if il_rec:
+                        il_rec.code = clean_code
+                        il_rec.part = clean_code
+                        if m_date: il_rec.date = m_date
+                        if m_period is not None: il_rec.cycle = str(m_period)
+                    else:
+                        il_rec = ItemLog(
+                            id=m_id,
+                            equip_id=equip_id,
+                            date=m_date,
+                            code=clean_code,
+                            part=clean_code,
+                            spec='',
+                            part_detail=m_spec,
+                            cycle=str(m_period) if m_period is not None else None
+                        )
+                        db.session.add(il_rec)
+
             # [유령데이터 방지] 동일 장비 내 동일 물품의 기존 중복 작업예정 LogItem 및 상세 없는 잔재 레코드(ItemLog 포함) 자동 정리
             m_content = m.get('content', '') or ''
-            m_spec = m.get('spec', '') or ''
             if m_content and equip_id:
                 parsed = parse_part_item_string(m_content)
                 clean_p = parsed['clean_name'] if (parsed and parsed.get('clean_name')) else re.sub(r'\[.*?\]', '', m_content).strip()

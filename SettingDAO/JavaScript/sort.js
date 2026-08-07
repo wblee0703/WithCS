@@ -2185,8 +2185,7 @@ function renderSortChart(results) {
         // [수정] 통계 차트에는 작업이 '완료'된 내역만 포함하도록 필터링
         if (row.status !== '완료') return;
 
-        // [추가] 추가 작업으로 등록된 항목(originalLogId 가 존재함)은 따로 카운팅 안되게 제외 (최초 작업으로 1개로만 통계 처리)
-        if (row.originalLogId) return;
+        // [요청 반영] 추가작업으로 분류되는 작업(originalLogId 존재)도 통계 데이터에 포함하여 그래프 생성
 
         if (row.content) {
             const items = window.splitSafetyContent(row.content);
@@ -2231,8 +2230,9 @@ function renderSortChart(results) {
 
         // 점검 구분 및 사업장별 데이터 수집
         if (row.type && row.site) {
-            if (!typeSiteCounts[row.type]) typeSiteCounts[row.type] = {};
-            typeSiteCounts[row.type][row.site] = (typeSiteCounts[row.type][row.site] || 0) + 1;
+            const targetType = row.originalLogId ? `${row.type}(추가)` : row.type;
+            if (!typeSiteCounts[targetType]) typeSiteCounts[targetType] = {};
+            typeSiteCounts[targetType][row.site] = (typeSiteCounts[targetType][row.site] || 0) + 1;
             allSites.add(row.site);
         }
 
