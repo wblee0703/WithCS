@@ -1538,23 +1538,50 @@ function performSortSearch() {
                         if (startDate && itemDate < startDate) return false;
                         if (endDate && itemDate > endDate) return false;
 
-                        let dt1 = itemObj.detailType || (itemType === '정기' ? 'PM 점검' : 'BM 점검');
-                        let dt2 = itemObj.detailType2 || '';
+                        let rawDt1 = itemObj.detailType || itemObj.detail_type || (itemType === '정기' ? 'PM 점검' : 'BM 점검');
+                        let rawDt2 = itemObj.detailType2 || itemObj.detail_type2 || '';
+                        let rawDt3 = itemObj.detailType3 || itemObj.detail_type3 || '';
+
+                        let dt1 = '';
+                        let dt2 = '';
                         let dt3 = '';
 
-                        let allParts = [];
-                        if (dt1.includes(' > ')) {
-                            allParts = dt1.split(' > ').map(p => p.trim());
-                        } else if (dt2.includes(' > ')) {
-                            allParts = dt2.split(' > ').map(p => p.trim());
+                        if (rawDt1.includes(' > ')) {
+                            const parts = rawDt1.split(' > ').map(p => p.trim());
+                            dt1 = parts[0] || '';
+                            dt2 = parts[1] || rawDt2 || '';
+                            dt3 = parts[2] || rawDt3 || '';
+                        } else if (rawDt2.includes(' > ')) {
+                            const parts = rawDt2.split(' > ').map(p => p.trim());
+                            dt1 = rawDt1.trim();
+                            dt2 = parts[0] || '';
+                            dt3 = parts[1] || rawDt3 || '';
                         } else {
-                            allParts = [dt1.trim()];
-                            if (dt2) allParts.push(dt2.trim());
+                            dt1 = rawDt1.trim();
+                            dt2 = rawDt2.trim();
+                            dt3 = rawDt3.trim();
                         }
 
-                        dt1 = allParts[0] || '';
-                        dt2 = allParts[1] || '';
-                        dt3 = allParts[2] || '';
+                        if (itemType === '비정기' && (!dt3 || dt3 === '미지정' || dt3 === '-')) {
+                            const pureContent = itemObj.content || itemObj.code || '';
+                            if (pureContent) {
+                                const allowedIrregularItems = [
+                                    "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
+                                    "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
+                                ];
+                                const items = window.splitSafetyContent(pureContent);
+                                for (const item of items) {
+                                    let pureItem = item.replace(/\[.*?\]\s*/g, '').trim();
+                                    if (pureItem.includes(' - ')) {
+                                        pureItem = pureItem.split(' - ')[0].trim();
+                                    }
+                                    if (pureItem && allowedIrregularItems.includes(pureItem)) {
+                                        dt3 = pureItem;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
 
                         if (!dt2) dt2 = '미지정';
                         if (!dt3) dt3 = '미지정';
@@ -1962,7 +1989,11 @@ function renderSortListTableOnly() {
             detail2 = '-';
             detail3 = '-';
         }
-        if (row.detailType3) detail3 = row.detailType3;
+        if (row.detailType3 && row.detailType3 !== '미지정') {
+            detail3 = row.detailType3;
+        } else if (row.detailType3 === '미지정' && (detail3 === '' || detail3 === '-')) {
+            detail3 = '미지정';
+        }
 
         // [요청] 작업내용과 작업 상세 내용 통합 및 비정기 세부구분 3 분리 처리
         const rawContent = row.content || '';
@@ -1992,7 +2023,7 @@ function renderSortListTableOnly() {
                 }
             }
 
-            if (row.type === '비정기' && kwLabel && (detail3 === '-' || !detail3)) {
+            if (row.type === '비정기' && kwLabel && (detail3 === '-' || !detail3 || detail3 === '미지정')) {
                 detail3 = kwLabel;
             }
 
@@ -2636,7 +2667,11 @@ function exportSortResultsToCSV(results) {
             dt2 = '-';
             dt3 = '-';
         }
-        if (row.detailType3) dt3 = row.detailType3;
+        if (row.detailType3 && row.detailType3 !== '미지정') {
+            dt3 = row.detailType3;
+        } else if (row.detailType3 === '미지정' && (dt3 === '' || dt3 === '-')) {
+            dt3 = '미지정';
+        }
 
         const rawContent = row.content || '';
         const itemsList = window.splitSafetyContent(rawContent);
@@ -2667,7 +2702,7 @@ function exportSortResultsToCSV(results) {
                     }
                 }
 
-                if (row.type === '비정기' && kwLabel && (dt3 === '-' || !dt3)) {
+                if (row.type === '비정기' && kwLabel && (dt3 === '-' || !dt3 || dt3 === '미지정')) {
                     dt3 = kwLabel;
                 }
 
