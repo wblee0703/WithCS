@@ -36,14 +36,13 @@ else:
     with open(backup_file, 'r', encoding='utf-8', errors='ignore') as f:
         sql_script = f.read()
 
-print(f"🔗 DB 커넥션 연결 중... [{db_host}:{db_port} / {db_name}]")
+print(f"🔗 DB 커넥션 연결 중... [{db_host}:{db_port}]")
 try:
     conn = pymysql.connect(
         host=db_host,
         port=db_port,
         user=db_user,
         password=db_pw,
-        database=db_name,
         charset='utf8mb4',
         client_flag=pymysql.constants.CLIENT.MULTI_STATEMENTS
     )
@@ -53,7 +52,9 @@ except Exception as err:
 
 try:
     with conn.cursor() as cursor:
-        print("🧹 기존 데이터 복원 및 테이블 갱신 작업 실행 중...")
+        cursor.execute(f"CREATE DATABASE IF NOT EXISTS `{db_name}` DEFAULT CHARACTER SET utf8mb4;")
+        cursor.execute(f"USE `{db_name}`;")
+        print(f"🧹 데이터베이스([{db_name}]) 복원 및 테이블 갱신 작업 실행 중...")
         cursor.execute("SET FOREIGN_KEY_CHECKS = 0;")
         cursor.execute(sql_script)
         cursor.execute("SET FOREIGN_KEY_CHECKS = 1;")
