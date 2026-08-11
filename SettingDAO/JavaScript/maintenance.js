@@ -990,7 +990,7 @@ async function updateRowData(id, code, content, spec, date, period, type) {
         tempItem.content = content;
         tempItem.spec = spec;
         tempItem.date = date;
-        tempItem.period = (tempItem.type === '정기') ? (parseInt(period) || 0) : null;
+        tempItem.period = (period !== undefined && period !== null && period !== '' && period !== '-') ? (period.toString().trim() || null) : null;
 
         const success = await window.syncHistoryTransaction(currentPath.site, currentPath.equip, { maint_upserts: [tempItem] });
         if (!success) return false;
@@ -2114,7 +2114,7 @@ async function toggleMaintenanceMode() {
         let tempDataMaint = JSON.parse(JSON.stringify(data.maint));
 
         editingRows.forEach(row => {
-            const id = parseInt(row.dataset.id);
+            const id = row.dataset.id;
             const dateInput = document.getElementById(`input-date-${id}`);
             if (dateInput && !dateInput.value) hasError = true;
             // [추가] 중복 검사
@@ -2161,7 +2161,7 @@ async function toggleMaintenanceMode() {
 
         let hasEdits = false;
         for (const row of Array.from(editingRows)) {
-            const id = parseInt(row.dataset.id);
+            const id = row.dataset.id;
             const codeCell = row.querySelector('.edit-code');
             const contentCell = row.querySelector('.edit-content');
             const periodCell = row.querySelector('.edit-period');
