@@ -5465,10 +5465,10 @@ window.openAddPartSpecModal = function (site, equip, itemObj, onAddCallback) {
         let data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
         if (!data.maint) data.maint = [];
 
-        const isDuplicate = data.maint.some(m => (m.content === itemName || (m.code && itemObj.code && m.code === itemObj.code)) && (m.spec || '') === newSpec && m.type === '비정기');
+        const isDuplicate = data.maint.some(m => (m.content === itemName || (m.code && itemObj.code && m.code === itemObj.code)) && (m.spec || '') === newSpec);
         if (isDuplicate) return alert('이미 동일한 물품명과 물품 상세를 가진 항목이 존재합니다.');
 
-        const newItem = { id: Date.now(), type: '비정기', detailType: '', code: itemObj.code || '', content: itemName, spec: newSpec, date: '', period: cycle, scheduledDate: null };
+        const newItem = { id: `item_${Date.now()}_${Math.floor(Math.random() * 900 + 100)}`, type: '', detailType: 'Parts 교체', code: itemObj.code || '', content: itemName, spec: newSpec, date: '', period: cycle, scheduledDate: null };
         const success = await window.syncHistoryTransaction(site, equip, { maint_upserts: [newItem] });
         if (!success) return alert('서버 등록에 실패했습니다.');
 

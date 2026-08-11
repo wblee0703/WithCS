@@ -662,10 +662,12 @@ def load_data():
             m_id = int(m.id) if str(m.id).isdigit() else m.id
             m_id_str = str(m_id)
             m_code = getattr(m, 'code', '') or m.content or ''
-            clean_c = re.sub(r'\[.*?\]', '', m_code).strip()
-
-            il_match = item_log_map.get(m_id_str) or item_log_code_map.get(clean_c) or item_log_code_map.get(m_code.strip())
-            m_spec = il_match.part_detail if (il_match and il_match.part_detail) else (getattr(m, 'spec', '') or '')
+            parsed_m = parse_part_item_string(m_code)
+            clean_c = parsed_m['clean_name'] if (parsed_m and parsed_m.get('clean_name')) else re.sub(r'\[.*?\]', '', m_code).replace('파트 이상 교체 -', '').replace('파트 이상 수리 -', '').strip()
+            m_spec = (parsed_m.get('part_detail') if parsed_m else '') or getattr(m, 'spec', '') or ''
+            if not m_spec:
+                il_match = item_log_map.get(m_id_str) or item_log_code_map.get(clean_c) or item_log_code_map.get(m_code.strip())
+                m_spec = il_match.part_detail if (il_match and il_match.part_detail) else ''
 
             maint_ids.add(m_id_str)
             maint_code_specs.add((m_code.strip(), m_spec.strip()))
@@ -694,8 +696,8 @@ def load_data():
             if not il_code or ',' in il_code or ',' in (il.part or '') or il_code in invalid_kws or (il.part and il.part in invalid_kws):
                 continue
 
-            # [유령데이터 방지] 이미 maint_log에 동일 물품의 작업예정 항목이 존재하는 경우 중복 노출 차단
-            if str(il_id) in maint_ids or (il_code, il_part_detail) in maint_code_specs:
+            # [유지관리 물품 100% 보장 반영] 이미 동일 ID로 maint_list에 존재하는 경우만 중복 추가 차단 (item_log 마스터 데이터는 무조건 100% data.maint 반영)
+            if str(il_id) in maint_ids:
                 continue
 
             # item_log 유지관리 물품 항목은 scheduledDate가 빈 값('')인 물품 마스터로 data.maint에 보장 반영
@@ -2786,6 +2788,20 @@ def resolve_master_equip_id(equip_id):
         for cand in all_equips:
             c_site = normalize_key(cand.site_name)
             if c_site and (c_site == site_tok_norm or c_site in site_tok_norm or site_tok_norm in c_site):
+                # [유령데이터 방지] 작업 완료 시 maint_log(LogItem)에서 동일 장비 내 동일 물품의 중복/미정형 잔재 레코드(status='작업예정' 및 id != item.id) 자동 제거
+                try:
+                    clean_kw = re.sub(r'\[.*?\]', '', pure_p).strip()
+                    if equip_id:
+                        LogItem.query.filter(
+                            LogItem.equip_id == equip_id,
+                            LogItem.id != item.id,
+                            LogItem.status == '작업예정',
+                            ((LogItem.content == pure_p) | (LogItem.content == code_val) |
+                             (LogItem.content.like(f"%{pure_p}%")) | (LogItem.content.like(f"%{code_val}%")) |
+                             (LogItem.content.like(f"%{clean_kw}%")))
+                        ).delete(synchronize_session=False)
+                except Exception:
+                    pass
                 c_serial = normalize_key(cand.serial)
                 c_cust = normalize_key(cand.cust_equip_name) if cand.cust_equip_name else ""
                 for tok in valid_toks:
@@ -2950,6 +2966,13 @@ def history_transaction():
                 item = LogItem(id=l_id, equip_id=equip_id, status='조치완료')
                 db.session.add(item)
 
+            # [수정] 원본 작업예정 레코드(orig_id)가 별도 신규 l_id로 조치완료된 경우 원본 작업예정 레코드 삭제 (유령 데이터 방지)
+            if orig_id and orig_id != 'None' and orig_id != '-' and orig_id != l_id:
+                try:
+                    LogItem.query.filter(LogItem.id == orig_id, LogItem.status == '작업예정').delete(synchronize_session=False)
+                except Exception:
+                    pass
+
             item.equip_id = equip_id
             item.status = '조치완료'
             item.date = l.get('date', item.date)
@@ -3029,7 +3052,7 @@ def history_transaction():
 
                     code_val = match_admin.code if match_admin.code else pure_p
                     part_name_val = match_admin.part if match_admin.part else pure_p
-                    spec_val = match_admin.spec if match_admin and match_admin.spec else ''
+                    spec_val = (match_admin.spec if match_admin and match_admin.spec else '') or spec_tag or ''
                     cycle_val = getattr(match_admin, 'cycle', None) if match_admin else getattr(item, 'period', None)
 
                     # [Rule 11] 표준 물품 표현 방식으로 번들링: [비용처리] 코드명 [물품상세] 또는 [비용처리] 코드명 1세트화
@@ -3063,7 +3086,7 @@ def history_transaction():
                             exist_log.code = code_val
                         if part_name_val:
                             exist_log.part = part_name_val
-                        if spec_val and not exist_log.spec:
+                        if spec_val:
                             exist_log.spec = spec_val
                         exist_log.part_detail = spec_tag
                         if cycle_val is not None:
@@ -3102,7 +3125,7 @@ def history_transaction():
         # 2. maint_deletes 처리 (LogItem 및 ItemLog 삭제 - maint_upserts 대상 보호)
         if maint_deletes:
             maint_upsert_ids = {str(m.get('id', '')) for m in maint_upserts}
-            actual_deletes = [str(d) for d in maint_deletes if str(d) not in completed_orig_ids and str(d) not in maint_upsert_ids]
+            actual_deletes = [str(d) for d in maint_deletes if str(d) not in maint_upsert_ids]
             if actual_deletes:
                 deleted_log_items = LogItem.query.filter(LogItem.id.in_(actual_deletes)).all()
                 deleted_codes = set()
@@ -3127,39 +3150,55 @@ def history_transaction():
                 LogItem.query.filter(LogItem.id.in_(actual_deletes)).delete(synchronize_session=False)
                 reassign_child_extra_works(equip_id, actual_deletes)
 
-        # 3. maint_upserts (작업 예정 생성/수정)
+        # 3. maint_upserts (작업 예정 생성/수정 및 유지관리 물품 item_log동기화)
         for idx, m in enumerate(maint_upserts):
-            m_id = str(m.get('id', ''))
-            item = LogItem.query.filter_by(id=m_id).first()
-            if not item:
-                item = LogItem(id=m_id, equip_id=equip_id, status='작업예정')
-                db.session.add(item)
-            item.equip_id = equip_id
-            item.sort_order = idx
-            item.status = '작업예정'
-            item.type = m.get('type', item.type)
-            m_dt1 = str(m.get('detailType') or m.get('detail_type') or item.detail_type or '').strip()
-            m_dt2 = str(m.get('detailType2') or m.get('detail_type2') or getattr(item, 'detail_type2', '') or '').strip()
-            m_dt3 = str(m.get('detailType3') or m.get('detail_type3') or getattr(item, 'detail_type3', '') or '').strip()
-            if '>' in m_dt1:
-                parts = [p.strip() for p in m_dt1.split('>') if p.strip()]
-                if len(parts) >= 1: m_dt1 = parts[0]
-                if len(parts) >= 2 and not m_dt2: m_dt2 = parts[1]
-                if len(parts) >= 3 and not m_dt3: m_dt3 = parts[2]
-            item.detail_type = m_dt1
-            item.detail_type2 = m_dt2
-            item.detail_type3 = m_dt3
-            item.content = m.get('content', item.content)
-            item.date = m.get('date', item.date)
-            item.period = str(m.get('period')) if m.get('period') is not None else item.period
-            item.scheduled_date = m.get('scheduledDate', item.scheduled_date)
-            item.cost_type = m.get('costType', getattr(item, 'cost_type', ''))
-            item.worker = m.get('worker', item.worker)
-            item.md = str(m.get('md', getattr(item, 'md', '')))
-            item.memo = m.get('memo', item.memo)
-            item.original_log_id = str(m.get('originalLogId')) if m.get('originalLogId') else item.original_log_id
+            m_id = str(m.get('id', '')).strip()
+            # [수정] item_log.id 생성 규격 통일 (item_{timestamp}_{random})
+            if m_id and not m_id.startswith('item_'):
+                rand_num = random.randint(100, 999)
+                m_id = f"item_{m_id}_{rand_num}" if m_id.isdigit() else f"item_{int(time.time()*1000)}_{rand_num}"
+                m['id'] = m_id
 
-            # [수정/추가] maint_log(LogItem) 및 item_log(ItemLog) DB 동시 동기화 (물품상세 spec / part_detail 및 [물품상세] 포맷팅 포함)
+            m_sched_date = str(m.get('scheduledDate') or m.get('scheduled_date') or '').strip()
+            m_type = str(m.get('type') or '').strip()
+            # 예정일(scheduledDate)이 명시된 경우에만 LogItem(maint_log) 작업예정 레코드 생성 (유령 데이터 방지)
+            is_scheduled_task = bool(m_sched_date and m_sched_date != '-')
+
+            item = None
+            if is_scheduled_task:
+                item = LogItem.query.filter_by(id=m_id).first()
+                if not item:
+                    item = LogItem(id=m_id, equip_id=equip_id, status='작업예정')
+                    db.session.add(item)
+                item.equip_id = equip_id
+                item.sort_order = idx
+                item.status = '작업예정'
+                item.type = m.get('type', item.type)
+                m_dt1 = str(m.get('detailType') or m.get('detail_type') or item.detail_type or '').strip()
+                m_dt2 = str(m.get('detailType2') or m.get('detail_type2') or getattr(item, 'detail_type2', '') or '').strip()
+                m_dt3 = str(m.get('detailType3') or m.get('detail_type3') or getattr(item, 'detail_type3', '') or '').strip()
+                if '>' in m_dt1:
+                    parts = [p.strip() for p in m_dt1.split('>') if p.strip()]
+                    if len(parts) >= 1: m_dt1 = parts[0]
+                    if len(parts) >= 2 and not m_dt2: m_dt2 = parts[1]
+                    if len(parts) >= 3 and not m_dt3: m_dt3 = parts[2]
+                item.detail_type = m_dt1
+                item.detail_type2 = m_dt2
+                item.detail_type3 = m_dt3
+                item.content = m.get('content', item.content)
+                item.date = m.get('date', item.date)
+                item.period = str(m.get('period')) if m.get('period') is not None else item.period
+                item.scheduled_date = m_sched_date
+                item.cost_type = m.get('costType', getattr(item, 'cost_type', ''))
+                item.worker = m.get('worker', item.worker)
+                item.md = str(m.get('md', getattr(item, 'md', '')))
+                item.memo = m.get('memo', item.memo)
+                item.original_log_id = str(m.get('originalLogId')) if m.get('originalLogId') else item.original_log_id
+            else:
+                # [사용자 요청] 순수 유지관리 물품인 경우 maint_log(LogItem) 잔재 데이터 제거 및 신규 기록 방지
+                LogItem.query.filter_by(id=m_id).delete(synchronize_session=False)
+
+            # [수정/추가] item_log(ItemLog) DB 동기화 (물품상세 spec / part_detail)
             m_code = m.get('code') or m.get('content') or ''
             m_spec = m.get('spec', '') if m.get('spec') is not None else ''
             m_date = m.get('date', '') or ''
@@ -3167,25 +3206,39 @@ def history_transaction():
 
             if m_code and equip_id:
                 invalid_kws = ['내용 없음', '장비 점검', 'PM 점검', 'BM 점검', '파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '파츠 이상 교체', '파츠 이상 수리', '물품 이상 교체', '물품 이상 수리', '단순 조치', '현장 이슈', 'PC 이상', '작업자 실수', '통신 이상', '프로그램 이상', '기타']
-                parsed_c = parse_part_item_string(m.get('content') or item.content or m_code)
+                parsed_c = parse_part_item_string(m.get('content') or (item.content if item else '') or m_code)
                 clean_code = parsed_c['clean_name'] if (parsed_c and parsed_c.get('clean_name')) else re.sub(r'\[.*?\]', '', m_code).strip()
-                cost_tag = parsed_c.get('cost_tag') if parsed_c else (item.cost_type or '유상')
 
                 if clean_code and clean_code not in invalid_kws and ',' not in clean_code:
-                    # LogItem content 안전 포맷팅 (작업예정 항목은 코드명 [물품상세] 또는 코드명 형태로 유지)
-                    item.content = f"{clean_code} [{m_spec}]" if m_spec else clean_code
+                    if item:
+                        item.content = f"{clean_code} [{m_spec}]" if m_spec else clean_code
 
-                    # ItemLog (item_log DB) 동시 동기화
+                    # Master AdminItem 데이터 조회하여 code, part, spec 수집
+                    match_admin = AdminItem.query.filter(
+                        (AdminItem.code == clean_code) | (db.func.trim(AdminItem.code) == clean_code) |
+                        (AdminItem.part == clean_code) | (db.func.trim(AdminItem.part) == clean_code)
+                    ).first()
+
+                    code_val = match_admin.code if (match_admin and match_admin.code) else clean_code
+                    part_name_val = match_admin.part if (match_admin and match_admin.part) else clean_code
+                    spec_val = (match_admin.spec if (match_admin and match_admin.spec) else '') or m_spec
+
+                    # ItemLog (item_log DB) 동시 동기화 (독립 세트 보장)
                     il_rec = ItemLog.query.filter_by(id=m_id).first()
                     if not il_rec:
                         il_rec = ItemLog.query.filter(
                             ItemLog.equip_id == equip_id,
-                            ((ItemLog.code == clean_code) | (ItemLog.part == clean_code))
+                            ((ItemLog.code == code_val) | (ItemLog.part == part_name_val) |
+                             (ItemLog.code == clean_code) | (ItemLog.part == clean_code)),
+                            db.func.coalesce(ItemLog.part_detail, '') == (m_spec or '')
                         ).first()
 
                     if il_rec:
-                        il_rec.code = clean_code
-                        il_rec.part = clean_code
+                        il_rec.id = m_id
+                        il_rec.code = code_val
+                        il_rec.part = part_name_val
+                        if spec_val: il_rec.spec = spec_val
+                        il_rec.part_detail = m_spec
                         if m_date: il_rec.date = m_date
                         if m_period is not None: il_rec.cycle = str(m_period)
                     else:
@@ -3193,34 +3246,25 @@ def history_transaction():
                             id=m_id,
                             equip_id=equip_id,
                             date=m_date,
-                            code=clean_code,
-                            part=clean_code,
-                            spec='',
+                            code=code_val,
+                            part=part_name_val,
+                            spec=spec_val,
                             part_detail=m_spec,
                             cycle=str(m_period) if m_period is not None else None
                         )
                         db.session.add(il_rec)
 
-            # [유령데이터 방지] 동일 장비 내 동일 물품의 기존 중복 작업예정 LogItem 및 상세 없는 잔재 레코드(ItemLog 포함) 자동 정리
-            m_content = m.get('content', '') or ''
-            if m_content and equip_id:
-                parsed = parse_part_item_string(m_content)
-                clean_p = parsed['clean_name'] if (parsed and parsed.get('clean_name')) else re.sub(r'\[.*?\]', '', m_content).strip()
-                spec_val = parsed['part_detail'] if (parsed and parsed.get('part_detail')) else m_spec
-                if clean_p:
-                    # 1) LogItem(maint_log)에서 동일 장비 내 동일 물품/동일 상세(spec)의 중복 잔재 작업예정 레코드(id != m_id)만 정밀 제거 (물품 상세가 다르면 개별 보존)
-                    existing_scheduled = LogItem.query.filter(
+            # [maint_log 유령데이터 정밀 정리] 순수 유지관리 물품(item_log) 등록/수정 시 maint_log의 동일 장비/동일 물품 잔재 작업예정 유령 데이터 정리
+            if not is_scheduled_task:
+                m_content = m.get('content', '') or m.get('code', '') or ''
+                if equip_id:
+                    parsed = parse_part_item_string(m_content)
+                    clean_p = parsed['clean_name'] if (parsed and parsed.get('clean_name')) else re.sub(r'\[.*?\]', '', m_content).replace('파트 이상 교체 -', '').replace('파트 이상 수리 -', '').strip()
+                    LogItem.query.filter(
                         LogItem.equip_id == equip_id,
                         LogItem.status == '작업예정',
-                        LogItem.id != m_id,
-                        LogItem.content.like(f"%{clean_p}%")
-                    ).all()
-
-                    for ex in existing_scheduled:
-                        ex_parsed = parse_part_item_string(ex.content)
-                        ex_spec = ex_parsed['part_detail'] if (ex_parsed and ex_parsed.get('part_detail')) else (getattr(ex, 'spec', '') or '')
-                        if (ex_spec or '').strip() == (spec_val or '').strip():
-                            db.session.delete(ex)
+                        (LogItem.id == m_id) | (LogItem.id.like('item_%')) | ((LogItem.content == clean_p) if clean_p else False) | ((LogItem.content.like(f"%{clean_p}%")) if clean_p else False)
+                    ).delete(synchronize_session=False)
 
         # 4. log_deletes 처리 (maint_upserts에 포함된 완료 취소 항목은 DB 삭제 대상에서 제외)
         if log_deletes:
@@ -4042,10 +4086,6 @@ def init_check_type_category_tables():
         app.logger.info(f"[Init] Successfully inserted {len(rows)} CheckTypeCategory rows into database.")
     except Exception as e:
         db.session.rollback()
-        app.logger.error(f"[Init Error] CheckTypeCategory init failed: {e}")
-
-
-
 def migrate_clean_log_contents():
     """
     [마이그레이션] 완료된 작업(LogItem) 중:
@@ -4054,6 +4094,9 @@ def migrate_clean_log_contents():
     3. 고객대응 > 파티클 필터 교체 건 -> '[유상] Particle Filter' 고정 유지
     """
     try:
+        flag = SystemSetting.query.filter_by(key='migrated_clean_log_contents_v1').first()
+        if flag and flag.value == 'true':
+            return
         admin_items = AdminItem.query.all()
         known_codes = set()
         for ai in admin_items:
@@ -4129,8 +4172,13 @@ def migrate_clean_log_contents():
                     log.content = final_content
                     updated_count += 1
 
+        if not flag:
+            flag = SystemSetting(key='migrated_clean_log_contents_v1', value='true')
+            db.session.add(flag)
+        else:
+            flag.value = 'true'
+        db.session.commit()
         if updated_count > 0:
-            db.session.commit()
             app.logger.info(f"[Migration] Cleaned cost labels from non-part contents in {updated_count} LogItem records.")
     except Exception as e:
         db.session.rollback()
@@ -4141,6 +4189,9 @@ def sync_all_trouble_logs_migration():
     [마이그레이션] 모든 비정기 작업(type == '비정기')이 TroubleLog에 누락 없이 동기화되도록 보정
     """
     try:
+        flag = SystemSetting.query.filter_by(key='migrated_trouble_logs_v1').first()
+        if flag and flag.value == 'true':
+            return
         non_regular_logs = LogItem.query.filter(db.func.trim(LogItem.type) == '비정기').all()
         if not non_regular_logs:
             return
@@ -4243,6 +4294,11 @@ def sync_all_trouble_logs_migration():
             if t_id not in parent_logs:
                 TroubleLog.query.filter_by(id=t_id).delete(synchronize_session=False)
 
+        if not flag:
+            flag = SystemSetting(key='migrated_trouble_logs_v1', value='true')
+            db.session.add(flag)
+        else:
+            flag.value = 'true'
         db.session.commit()
         if created_count > 0:
             app.logger.info(f"[Migration] Successfully synced {created_count} non-regular tasks to TroubleLog.")
@@ -4295,6 +4351,53 @@ def init_db():
                 db.session.commit()
             except Exception:
                 db.session.rollback()
+
+        # [ItemLog 기존 legacy 데이터 id 및 spec 자동 보정]
+        try:
+            items_to_fix = ItemLog.query.filter(
+                (~ItemLog.id.like('item_%')) | (ItemLog.spec == None) | (ItemLog.spec == '')
+            ).all()
+            if items_to_fix:
+                for il in items_to_fix:
+                    if il.id and not str(il.id).startswith('item_'):
+                        rand_num = random.randint(100, 999)
+                        il.id = f"item_{il.id}_{rand_num}" if str(il.id).isdigit() else f"item_{int(time.time()*1000)}_{rand_num}"
+                    if not il.spec:
+                        match_admin = AdminItem.query.filter(
+                            (AdminItem.code == il.code) | (AdminItem.part == il.code) |
+                            (AdminItem.code == il.part) | (AdminItem.part == il.part)
+                        ).first()
+                        spec_val = (match_admin.spec if (match_admin and match_admin.spec) else '') or il.part_detail or ''
+                        if spec_val:
+                            il.spec = spec_val
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        # [유지관리 물품 찌꺼기 레코드 정리] maint_log(LogItem) 중 유령/잔재 작업예정 데이터 및 item_ 관련 ID 정밀 삭제
+        try:
+            LogItem.query.filter(
+                LogItem.status == '작업예정',
+                (LogItem.id.like('item_%')) | (LogItem.scheduled_date == None) | (LogItem.scheduled_date == '') | (LogItem.scheduled_date == '-')
+            ).delete(synchronize_session=False)
+
+            # 2) 이미 조치완료(status='조치완료')된 original_log_id와 동일한 id를 가진 잔재 작업예정(status='작업예정') 레코드 삭제
+            completed_orig_ids_in_db = [
+                str(l.original_log_id) for l in LogItem.query.filter(
+                    LogItem.status == '조치완료',
+                    LogItem.original_log_id != None,
+                    LogItem.original_log_id != ''
+                ).all() if l.original_log_id
+            ]
+            if completed_orig_ids_in_db:
+                LogItem.query.filter(
+                    LogItem.status == '작업예정',
+                    LogItem.id.in_(completed_orig_ids_in_db)
+                ).delete(synchronize_session=False)
+
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
 
 

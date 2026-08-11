@@ -564,7 +564,7 @@ async function addDetailItem() {
     }
 
     const newItem = {
-        id: Date.now(),
+        id: `item_${Date.now()}_${Math.floor(Math.random() * 900 + 100)}`,
         detailType: 'Parts 교체',
         code: code,
         content: content,
@@ -929,7 +929,7 @@ async function toggleEditRow(id) {
         const data = JSON.parse(localStorage.getItem(key)) || { maint: [] };
 
         const existingItem = data.maint ? data.maint.find(m => String(m.id) === String(id)) : null;
-        const newType = existingItem ? (existingItem.type || '정기') : '정기';
+        const newType = existingItem ? (existingItem.type || '') : '';
 
         const newCode = codeCell ? (codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim()) : (existingItem ? (existingItem.code || '') : '');
         const newContent = (contentCell && contentCell.dataset.rawContent) ? contentCell.dataset.rawContent : (existingItem ? existingItem.content : '');
@@ -1919,7 +1919,7 @@ async function loadMaintListFromTarget() {
     const today = new Date().toISOString().split('T')[0];
     const newMaint = sourceMaint.map((item, index) => ({
         ...item,
-        id: Date.now() + index, // 새로운 ID 부여
+        id: `item_${Date.now() + index}_${Math.floor(Math.random() * 900 + 100)}`, // 새로운 ID 부여
         date: today, // 시작일(마지막 점검일)을 오늘로 초기화
         scheduledDate: "" // 예정일 초기화
     }));
@@ -2121,7 +2121,7 @@ async function toggleMaintenanceMode() {
             const codeCell = row.querySelector('.edit-code');
             const contentCell = row.querySelector('.edit-content');
             const existingItem = tempDataMaint.find(m => String(m.id) === String(id));
-            const newType = existingItem ? (existingItem.type || '정기') : '정기';
+            const newType = existingItem ? (existingItem.type || '') : '';
             const newCode = codeCell ? (codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim()) : (existingItem ? (existingItem.code || '') : '');
             const newContent = (contentCell && contentCell.dataset.rawContent) ? contentCell.dataset.rawContent : (existingItem ? existingItem.content : '');
             const specInput = document.getElementById(`input-spec-${id}`);
@@ -2167,7 +2167,7 @@ async function toggleMaintenanceMode() {
             const periodCell = row.querySelector('.edit-period');
 
             const existingItem = tempDataMaint.find(m => String(m.id) === String(id));
-            const newType = existingItem ? (existingItem.type || '정기') : '정기';
+            const newType = existingItem ? (existingItem.type || '') : '';
 
             const newCode = codeCell ? (codeCell.textContent.trim() === '-' ? '' : codeCell.textContent.trim()) : (existingItem ? (existingItem.code || '') : '');
             const newContent = contentCell.dataset.rawContent || contentCell.textContent.trim();

@@ -3275,13 +3275,19 @@ async function completeScheduleWork() {
             const matchAdmin = adminItems.find(ai => (ai.code && ai.code.trim() === pureName) || (ai.part && ai.part.trim() === pureName));
             const codeVal = matchAdmin ? (matchAdmin.code || pureName) : pureName;
 
-            let existingItem = (data.maint || []).find(m => (m.code === codeVal || m.content === codeVal || m.code === pureName || m.content === pureName));
+            let existingItem = (data.maint || []).find(m =>
+                (m.code === codeVal || m.content === codeVal || m.code === pureName || m.content === pureName) &&
+                (m.spec || m.part_detail || '').trim() === (spec || '').trim()
+            );
             if (existingItem) {
                 existingItem.date = completeDate;
-                existingItem.spec = spec || existingItem.spec || '';
+                if (spec) existingItem.spec = spec;
                 existingItem.scheduledDate = '';
+                if (!payload.maint_upserts.some(item => item.id == existingItem.id)) {
+                    payload.maint_upserts.push(existingItem);
+                }
             } else {
-                data.maint.push({
+                const newMaintItem = {
                     id: `item_${Date.now()}_${Math.floor(Math.random()*1000)}`,
                     type: '',
                     detailType: 'Parts 교체',
@@ -3300,7 +3306,11 @@ async function completeScheduleWork() {
                     memo: '',
                     sortOrder: 999,
                     originalLogId: null
-                });
+                };
+                data.maint.push(newMaintItem);
+                if (!payload.maint_upserts.some(item => item.id == newMaintItem.id)) {
+                    payload.maint_upserts.push(newMaintItem);
+                }
             }
         });
     }
@@ -5602,29 +5612,6 @@ async function confirmRegisterSchedule() {
                 if (typeof window.incrementConfirmedCount === 'function') window.incrementConfirmedCount(site, dateStr, 1);
             }
         }
-
-        // [유령데이터 방지] 물품상세(spec)가 포함된 물품 등록 시, 동일 물품명의 상세 없는 기존 잔재 항목 maint_log/data.maint에서 완전 제거
-        if (!payload.maint_deletes) payload.maint_deletes = [];
-        payload.maint_upserts.forEach(upItem => {
-            const specVal = (upItem.spec || '').trim();
-            if (specVal) {
-                const pureCodeName = (upItem.code || upItem.content || '').replace(/^\[.*?\]\s*/, '').replace(/\s*\[.*?\]$/, '').trim();
-                if (pureCodeName) {
-                    (data.maint || []).forEach(m => {
-                        const mCode = (m.code || m.content || '').replace(/^\[.*?\]\s*/, '').replace(/\s*\[.*?\]$/, '').trim();
-                        const mSpec = (m.spec || '').trim();
-                        if (mCode === pureCodeName && !mSpec && String(m.id) !== String(upItem.id)) {
-                            if (!payload.maint_deletes.includes(m.id)) payload.maint_deletes.push(m.id);
-                        }
-                    });
-                    data.maint = data.maint.filter(m => {
-                        const mCode = (m.code || m.content || '').replace(/^\[.*?\]\s*/, '').replace(/\s*\[.*?\]$/, '').trim();
-                        const mSpec = (m.spec || '').trim();
-                        return !(mCode === pureCodeName && !mSpec && String(m.id) !== String(upItem.id));
-                    });
-                }
-            }
-        });
 
         const success = await window.syncHistoryTransaction(site, equip, payload);
         if (!success) return;
