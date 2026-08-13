@@ -2427,61 +2427,73 @@ async function saveDetailChanges() {
             if (partContentList.length === 0) { alert('교체/수리할 물품을 선택해주세요.'); return false; }
         }
 
-        baseDropdownValues.forEach(val => {
-            let baseCost = '유상';
-            const bMatch = val.match(/^\[(.*?)\] (.*)$/);
-            if (bMatch) { baseCost = bMatch[1]; val = bMatch[2]; }
+        if (baseDropdownValues.length === 0 && partContentList.length > 0) {
+            partContentList.forEach(p => expandedDropdownValues.push(p));
+        } else {
+            baseDropdownValues.forEach(val => {
+                let baseCost = '유상';
+                const bMatch = val.match(/^\[(.*?)\] (.*)$/);
+                if (bMatch) { baseCost = bMatch[1]; val = bMatch[2]; }
 
-            // [추가] val 자체가 등록된 물품이거나 규격 찌꺼기인 경우, 단독으로 추가되는 것을 차단
-            let cleanVal = window.removeCostLabels(val);
-            const valSpecMatch = cleanVal.match(/\s*\[(.*?)\]$/);
-            if (valSpecMatch) {
-                cleanVal = cleanVal.replace(valSpecMatch[0], '').trim();
-            }
-            const isRegisteredPart = adminItems.some(ai => {
-                const p = (ai.part || '').trim();
-                const c = (ai.code || '').trim();
-                return (p && p === cleanVal) || (c && c === cleanVal);
-            });
-            const isSpecOnly = (!cleanVal && valSpecMatch);
-
-            // [추가] partContentList에 세부 물품이 선택되어 있는 경우, 이미 포함된 물품(cleanVal)이 단독/미상세로 중복 추가되는 것 차단
-            if (partContentList.length > 0 && isRegisteredPart) {
-                const isCovered = partContentList.some(p => {
-                    let cleanP = window.removeCostLabels(p);
-                    const pSpecMatch = cleanP.match(/\s*\[(.*?)\]$/);
-                    if (pSpecMatch) cleanP = cleanP.replace(pSpecMatch[0], '').trim();
-                    return cleanP === cleanVal || cleanP === val;
+                // [추가] val 자체가 등록된 물품이거나 규격 찌꺼기인 경우, 단독으로 추가되는 것을 차단
+                let cleanVal = window.removeCostLabels(val);
+                const valSpecMatch = cleanVal.match(/\s*\[(.*?)\]$/);
+                if (valSpecMatch) {
+                    cleanVal = cleanVal.replace(valSpecMatch[0], '').trim();
+                }
+                const isRegisteredPart = adminItems.some(ai => {
+                    const p = (ai.part || '').trim();
+                    const c = (ai.code || '').trim();
+                    return (p && p === cleanVal) || (c && c === cleanVal);
                 });
-                if (isCovered) return;
-            }
+                const isSpecOnly = (!cleanVal && valSpecMatch);
 
-            const detailType3Select = document.getElementById('detail-detail-type3-select');
-            const detailType3Val = detailType3Select && detailType3Select.style.display !== 'none' ? detailType3Select.value : '';
-            const isPartMode = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(detailType3Val);
+                // [추가] partContentList에 세부 물품이 선택되어 있는 경우, 이미 포함된 물품(cleanVal)이 단독/미상세로 중복 추가되는 것 차단
+                if (partContentList.length > 0 && isRegisteredPart) {
+                    const isCovered = partContentList.some(p => {
+                        let cleanP = window.removeCostLabels(p);
+                        const pSpecMatch = cleanP.match(/\s*\[(.*?)\]$/);
+                        if (pSpecMatch) cleanP = cleanP.replace(pSpecMatch[0], '').trim();
+                        return cleanP === cleanVal || cleanP === val;
+                    });
+                    if (isCovered) return;
+                }
 
-            if (newType === '비정기' && !isPartMode && (isRegisteredPart || isSpecOnly)) return;
+                const detailType3Select = document.getElementById('detail-detail-type3-select');
+                const detailType3Val = detailType3Select && detailType3Select.style.display !== 'none' ? detailType3Select.value : '';
+                const isPartMode = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상'].includes(detailType3Val);
 
-            const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
-            if (isPartKeyword && partContentList.length > 0) {
+                if (newType === '비정기' && !isPartMode && (isRegisteredPart || isSpecOnly)) return;
+
+                const isPartKeyword = val.match(/파트 이상\s*\(?(교체|수리)\)?/) || val.includes('용액 용자 이상') || val.includes('용액 / 용자 이상');
+                if (isPartKeyword && partContentList.length > 0) {
+                    partContentList.forEach(p => {
+                        if (newType === '비정기') {
+                            expandedDropdownValues.push(p);
+                        } else {
+                            expandedDropdownValues.push(`${val} - ${p}`);
+                        }
+                    });
+                } else if (isPartKeyword) {
+                    expandedDropdownValues.push(val);
+                } else if (isRegisteredPart) {
+                    expandedDropdownValues.push(`[${baseCost}] ${val}`);
+                } else {
+                    const cleanV = window.removeCostLabels(val).trim();
+                    if (cleanV && cleanV !== '내용 없음') {
+                        expandedDropdownValues.push(cleanV);
+                    }
+                }
+            });
+
+            if (partContentList.length > 0) {
                 partContentList.forEach(p => {
-                    if (newType === '비정기') {
+                    if (!expandedDropdownValues.some(ev => ev.includes(p) || p.includes(ev))) {
                         expandedDropdownValues.push(p);
-                    } else {
-                        expandedDropdownValues.push(`${val} - ${p}`);
                     }
                 });
-            } else if (isPartKeyword) {
-                expandedDropdownValues.push(val);
-            } else if (isRegisteredPart) {
-                expandedDropdownValues.push(`[${baseCost}] ${val}`);
-            } else {
-                const cleanV = window.removeCostLabels(val).trim();
-                if (cleanV && cleanV !== '내용 없음') {
-                    expandedDropdownValues.push(cleanV);
-                }
             }
-        });
+        }
     } else {
         const inputVal = document.getElementById('detail-content-input').value.trim();
         if (inputVal && inputVal !== '내용 없음') {
@@ -2622,124 +2634,125 @@ async function saveDetailChanges() {
         }
 
         if (expandedDropdownValues.length > 0) {
-            if (newType === '비정기') {
-                // 비정기 작업일 경우: 개별 물품으로 분리(쪼개기)하지 않고 단 1개의 결합 내용으로 저장하여 쪼개짐 방지
-                let combinedContentArray = [];
-                let combinedCodeArray = [];
-                let combinedSpecArray = [];
-                let combinedCostArray = [];
+            let combinedContentArray = [];
+            let combinedCodeArray = [];
+            let combinedSpecArray = [];
+            let combinedCostArray = [];
 
-                expandedDropdownValues.forEach((val) => {
-                    let itemCost = '';
-                    const costMatch = val.match(/^\[(.*?)\] (.*)$/);
-                    if (costMatch) { itemCost = costMatch[1]; val = costMatch[2]; }
+            expandedDropdownValues.forEach((val) => {
+                let itemCost = '';
+                const costMatch = val.match(/^\[(.*?)\] (.*)$/);
+                if (costMatch) { itemCost = costMatch[1]; val = costMatch[2]; }
 
-                    const innerCostMatch = val.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
-                    if (innerCostMatch) {
-                        if (!itemCost) itemCost = innerCostMatch[2];
-                        val = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
-                    }
-
-                    let keywordPart = '';
-                    let pureContent = val;
-                    const kwMatch = pureContent.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
-                    if (kwMatch) {
-                        keywordPart = kwMatch[1].trim();
-                        pureContent = kwMatch[2].trim();
-                    }
-
-                    let spec = '';
-                    const specMatch = pureContent.match(/\s*\[(.*?)\]$/);
-                    if (specMatch) {
-                        spec = specMatch[1];
-                        pureContent = pureContent.replace(specMatch[0], '');
-                    }
-
-                    let code = '';
-                    let fullContent = val;
-                    const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
-                    if (match) { code = match.code || ''; }
-
-                    if (keywordPart && !fullContent.startsWith(keywordPart)) {
-                        fullContent = `${keywordPart} - ${fullContent}`;
-                    }
-
-                    combinedContentArray.push(fullContent);
-                    if (code) combinedCodeArray.push(code);
-                    if (spec) combinedSpecArray.push(spec);
-                    if (itemCost) combinedCostArray.push(itemCost);
-                });
-
-                const finalContent = combinedContentArray.join(', ');
-                const finalCode = Array.from(new Set(combinedCodeArray)).join(', ');
-                const finalSpec = Array.from(new Set(combinedSpecArray)).join(', ');
-                const finalItemCost = Array.from(new Set(combinedCostArray)).join(', ');
-
-                let existingItem = sameDayItems[0];
-                if (!existingItem) {
-                    existingItem = data.maint.find(m =>
-                        m.type === item.type &&
-                        (m.detailType || '') === (item.detailType || '') &&
-                        m.originalLogId == item.originalLogId &&
-                        (!m.scheduledDate || m.scheduledDate === targetDate)
-                    );
+                const innerCostMatch = val.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
+                if (innerCostMatch) {
+                    if (!itemCost) itemCost = innerCostMatch[2];
+                    val = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
                 }
 
-                if (existingItem) {
-                    const oldDate = existingItem.scheduledDate;
-                    existingItem.type = newType;
-                    existingItem.detailType = newDetailType;
-                    existingItem.scheduledDate = targetDate;
-                    existingItem.worker = newWorker;
-                    existingItem.memo = newMemo;
-                    existingItem.md = newMd;
-                    existingItem.costType = newCostType;
-                    existingItem.itemCost = finalItemCost;
-                    existingItem.content = finalContent;
-                    existingItem.code = finalCode;
-                    existingItem.spec = finalSpec;
-                    remainingIds.push(existingItem.id);
-                    payload.maint_upserts.push(existingItem);
-                    generateDateChangeLog(existingItem, oldDate, 0);
-                } else {
-                    const newId = Date.now() + Math.floor(Math.random() * 10000);
-                    const newItem = {
-                        id: newId,
-                        type: newType,
-                        detailType: newDetailType,
-                        code: finalCode,
-                        content: finalContent,
-                        spec: finalSpec,
-                        date: "",
-                        period: null,
-                        scheduledDate: targetDate,
-                        worker: newWorker,
-                        memo: newMemo,
-                        md: newMd,
-                        itemCost: finalItemCost,
-                        costType: newCostType,
-                        originalLogId: item.originalLogId
-                    };
-                    data.maint.push(newItem);
-                    remainingIds.push(newId);
-                    payload.maint_upserts.push(newItem);
+                let keywordPart = '';
+                let pureContent = val;
+                const kwMatch = pureContent.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+                if (kwMatch) {
+                    keywordPart = kwMatch[1].trim();
+                    pureContent = kwMatch[2].trim();
                 }
-                finalContentStr = finalContent;
+
+                let spec = '';
+                const specMatch = pureContent.match(/\s*\[(.*?)\]$/);
+                if (specMatch) {
+                    spec = specMatch[1];
+                    pureContent = pureContent.replace(specMatch[0], '');
+                }
+
+                let code = '';
+                let fullContent = val;
+                const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
+                if (match) { code = match.code || ''; }
+
+                if (keywordPart && !fullContent.startsWith(keywordPart)) {
+                    fullContent = `${keywordPart} - ${fullContent}`;
+                }
+
+                combinedContentArray.push(fullContent);
+                if (code) combinedCodeArray.push(code);
+                if (spec) combinedSpecArray.push(spec);
+                if (itemCost) combinedCostArray.push(itemCost);
+            });
+
+            const finalContent = combinedContentArray.join(', ');
+            const finalCode = Array.from(new Set(combinedCodeArray)).join(', ');
+            const finalSpec = Array.from(new Set(combinedSpecArray)).join(', ');
+            const finalItemCost = Array.from(new Set(combinedCostArray)).join(', ');
+
+            let existingItem = sameDayItems.find(m => m.id == item.id) || sameDayItems[0];
+            if (!existingItem) {
+                existingItem = data.maint.find(m => m.id == item.id || (
+                    m.type === item.type &&
+                    (m.detailType || '') === (item.detailType || '') &&
+                    m.originalLogId == item.originalLogId &&
+                    (!m.scheduledDate || m.scheduledDate === targetDate)
+                ));
             }
+
+            if (existingItem) {
+                const oldDate = existingItem.scheduledDate;
+                existingItem.type = newType;
+                existingItem.detailType = newDetailType;
+                existingItem.detailType2 = newDetailType2;
+                existingItem.detailType3 = newDetailType3;
+                existingItem.scheduledDate = targetDate;
+                existingItem.worker = newWorker;
+                existingItem.memo = newMemo;
+                existingItem.md = newMd;
+                existingItem.costType = newCostType;
+                existingItem.itemCost = finalItemCost;
+                existingItem.content = finalContent;
+                existingItem.code = finalCode;
+                existingItem.spec = finalSpec;
+                remainingIds.push(existingItem.id);
+                payload.maint_upserts.push(existingItem);
+                generateDateChangeLog(existingItem, oldDate, 0);
+            } else {
+                const newId = Date.now() + Math.floor(Math.random() * 10000);
+                const newItem = {
+                    id: newId,
+                    type: newType,
+                    detailType: newDetailType,
+                    detailType2: newDetailType2,
+                    detailType3: newDetailType3,
+                    code: finalCode,
+                    content: finalContent,
+                    spec: finalSpec,
+                    date: "",
+                    period: null,
+                    scheduledDate: targetDate,
+                    worker: newWorker,
+                    memo: newMemo,
+                    md: newMd,
+                    itemCost: finalItemCost,
+                    costType: newCostType,
+                    originalLogId: item.originalLogId
+                };
+                data.maint.push(newItem);
+                remainingIds.push(newId);
+                payload.maint_upserts.push(newItem);
+            }
+            finalContentStr = finalContent;
         } else {
             if (dropdownWrapper) {
                 let finalContent = '';
                 finalContentStr = finalContent;
 
-                let existing = sameDayItems.find(m => m.content === finalContent);
+                let existing = sameDayItems.find(m => m.id == item.id || m.content === finalContent);
                 if (!existing) {
-                    existing = data.maint.find(m =>
+                    existing = data.maint.find(m => m.id == item.id || (
                         m.type === newType &&
                         (m.detailType || '') === newDetailType &&
                         m.originalLogId == item.originalLogId &&
                         m.content === finalContent &&
                         (!m.scheduledDate || m.scheduledDate === targetDate)
-                    );
+                    ));
                 }
 
                 if (existing) {
@@ -2782,32 +2795,38 @@ async function saveDetailChanges() {
                 const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
                 if (match) { code = match.code || ''; }
 
-                let existing = sameDayItems.find(m => (m.content === finalContent || (m.code && code && m.code === code)) && (m.spec || '') === spec);
+                let existing = sameDayItems.find(m => m.id == item.id || ((m.content === finalContent || (m.code && code && m.code === code)) && (m.spec || '') === spec));
                 if (!existing) {
-                    existing = data.maint.find(m =>
+                    existing = data.maint.find(m => m.id == item.id || (
                         m.type === newType &&
                         (m.detailType || '') === newDetailType &&
                         m.originalLogId == item.originalLogId &&
                         (m.content === finalContent || (m.code && code && m.code === code)) &&
                         (m.spec || '') === spec &&
                         (!m.scheduledDate || m.scheduledDate === targetDate)
-                    );
+                    ));
                 }
 
                 if (existing) {
                     const oldDate = existing.scheduledDate;
                     existing.scheduledDate = targetDate;
+                    existing.type = newType;
+                    existing.detailType = newDetailType;
+                    existing.detailType2 = newDetailType2;
+                    existing.detailType3 = newDetailType3;
                     existing.worker = newWorker;
                     existing.memo = newMemo;
                     existing.md = newMd;
                     existing.costType = newCostType;
                     existing.content = finalContent;
+                    existing.code = code;
+                    existing.spec = spec;
                     remainingIds.push(existing.id);
                     payload.maint_upserts.push(existing);
                     generateDateChangeLog(existing, oldDate, 0);
                 } else {
                     const newId = Date.now() + Math.floor(Math.random() * 10000);
-                    const newItem = { id: newId, type: newType, detailType: newDetailType, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, costType: newCostType, originalLogId: item.originalLogId };
+                    const newItem = { id: newId, type: newType, detailType: newDetailType, detailType2: newDetailType2, detailType3: newDetailType3, code: '', content: finalContent, date: "", scheduledDate: targetDate, worker: newWorker, memo: newMemo, md: newMd, costType: newCostType, originalLogId: item.originalLogId };
                     data.maint.push(newItem);
                     remainingIds.push(newId);
                     payload.maint_upserts.push(newItem);

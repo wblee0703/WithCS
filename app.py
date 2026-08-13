@@ -3153,10 +3153,8 @@ def history_transaction():
         # 3. maint_upserts (작업 예정 생성/수정 및 유지관리 물품 item_log동기화)
         for idx, m in enumerate(maint_upserts):
             m_id = str(m.get('id', '')).strip()
-            # [수정] item_log.id 생성 규격 통일 (item_{timestamp}_{random})
-            if m_id and not m_id.startswith('item_'):
-                rand_num = random.randint(100, 999)
-                m_id = f"item_{m_id}_{rand_num}" if m_id.isdigit() else f"item_{int(time.time()*1000)}_{rand_num}"
+            if not m_id:
+                m_id = str(int(time.time() * 1000))
                 m['id'] = m_id
 
             m_sched_date = str(m.get('scheduledDate') or m.get('scheduled_date') or '').strip()
@@ -3166,10 +3164,48 @@ def history_transaction():
 
             item = None
             if is_scheduled_task:
+                # 1) exact ID matching
                 item = LogItem.query.filter_by(id=m_id).first()
+
+                # 2) legacy ID matching: 이전 버그로 인해 id가 'item_{m_id}_%' 형태로 DB에 저장된 LogItem 보정
+                if not item:
+                    legacy_item = LogItem.query.filter(
+                        LogItem.equip_id == equip_id,
+                        LogItem.id.like(f"item_{m_id}_%")
+                    ).first()
+                    if legacy_item:
+                        item = legacy_item
+                        item.id = m_id  # 정상 task ID로 보정
+
+                # 3) 작업 내용 및 날짜 기준 기존 작업예정 항목 추가 매칭 (중복 레코드 생성 방지)
+                if not item:
+                    m_content = m.get('content', '')
+                    if m_sched_date and m_content:
+                        parsed = parse_part_item_string(m_content)
+                        clean_c = parsed['clean_name'] if (parsed and parsed.get('clean_name')) else re.sub(r'\[.*?\]', '', m_content).strip()
+                        item = LogItem.query.filter(
+                            LogItem.equip_id == equip_id,
+                            LogItem.status == '작업예정',
+                            LogItem.scheduled_date == m_sched_date,
+                            ((LogItem.content == m_content) | (LogItem.content == clean_c) | (LogItem.content.like(f"%{clean_c}%")) if clean_c else False)
+                        ).first()
+                        if item:
+                            item.id = m_id
+
                 if not item:
                     item = LogItem(id=m_id, equip_id=equip_id, status='작업예정')
                     db.session.add(item)
+
+                # 이전 버그로 생성된 동일 장비의 legacy duplicate LogItem 레코드 정밀 삭제
+                try:
+                    LogItem.query.filter(
+                        LogItem.equip_id == equip_id,
+                        LogItem.id.like(f"item_{m_id}_%"),
+                        LogItem.id != item.id
+                    ).delete(synchronize_session=False)
+                except Exception:
+                    pass
+
                 item.equip_id = equip_id
                 item.sort_order = idx
                 item.status = '작업예정'
@@ -3224,7 +3260,7 @@ def history_transaction():
                     spec_val = (match_admin.spec if (match_admin and match_admin.spec) else '') or m_spec
 
                     # ItemLog (item_log DB) 동시 동기화 (독립 세트 보장)
-                    il_rec = ItemLog.query.filter_by(id=m_id).first()
+                    il_rec = ItemLog.query.filter_by(id=m_id).first() if m_id.startswith('item_') else None
                     if not il_rec:
                         il_rec = ItemLog.query.filter(
                             ItemLog.equip_id == equip_id,
@@ -3234,7 +3270,6 @@ def history_transaction():
                         ).first()
 
                     if il_rec:
-                        il_rec.id = m_id
                         il_rec.code = code_val
                         il_rec.part = part_name_val
                         if spec_val: il_rec.spec = spec_val
@@ -3242,8 +3277,9 @@ def history_transaction():
                         if m_date: il_rec.date = m_date
                         if m_period is not None: il_rec.cycle = str(m_period)
                     else:
+                        item_log_id = m_id if m_id.startswith('item_') else f"item_{int(time.time()*1000)}_{random.randint(100, 999)}"
                         il_rec = ItemLog(
-                            id=m_id,
+                            id=item_log_id,
                             equip_id=equip_id,
                             date=m_date,
                             code=code_val,
