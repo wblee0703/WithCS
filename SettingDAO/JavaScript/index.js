@@ -712,7 +712,7 @@ function renderUpcomingList(data) {
                     const detailData = JSON.parse(localStorage.getItem(key));
 
                     if (detailData) {
-                        // 1. 완료 이력 (logs) 확인
+                        // 1. 완료 이력 (logs) 확인 - 작업 완료된 항목만 점검 리스트에 노출
                         if (detailData.logs) {
                             detailData.logs.forEach(log => {
                                 if (log.date === yesterdayStr || log.date === todayStr) {
@@ -725,7 +725,7 @@ function renderUpcomingList(data) {
                                     if (inspectionMap.has(groupKey)) {
                                         const existing = inspectionMap.get(groupKey);
                                         existing.itemCount++;
-                                        existing.isCompleted = true; // 하나라도 완료된 건이면 완료로 표시
+                                        existing.isCompleted = true; // 완료 건
                                         if (log.id) existing.id = log.id;
                                     } else {
                                         inspectionMap.set(groupKey, {
@@ -738,38 +738,6 @@ function renderUpcomingList(data) {
                                             date: log.date,
                                             isYesterday: isYest,
                                             isCompleted: true,
-                                            priority: typePriority[t] || 99,
-                                            itemCount: 1
-                                        });
-                                    }
-                                }
-                            });
-                        }
-
-                        // 2. 예정 작업 이력 (maint/setup) 확인
-                        if (detailData.maint) {
-                            detailData.maint.forEach(item => {
-                                const targetDate = item.scheduledDate || item.date;
-                                if (targetDate === yesterdayStr || targetDate === todayStr) {
-                                    const isYest = targetDate === yesterdayStr;
-                                    const t = item.type || '정기';
-                                    const dt = getBaseDetailType(item);
-                                    const groupKey = `${site}::${equip}::${targetDate}::${t}::${dt}`;
-
-                                    if (inspectionMap.has(groupKey)) {
-                                        const existing = inspectionMap.get(groupKey);
-                                        existing.itemCount++;
-                                    } else {
-                                        inspectionMap.set(groupKey, {
-                                            id: item.id,
-                                            site: site,
-                                            equip: equip,
-                                            type: t,
-                                            detailType: dt,
-                                            content: item.content || '',
-                                            date: targetDate,
-                                            isYesterday: isYest,
-                                            isCompleted: false,
                                             priority: typePriority[t] || 99,
                                             itemCount: 1
                                         });
@@ -872,9 +840,9 @@ function renderUpcomingList(data) {
 
         div.onclick = () => {
             if (typeof window.openEventDetailModal === 'function') {
-                window.openEventDetailModal(item.site, item.equip, item.id, item.isCompleted);
+                window.openEventDetailModal(item.site, item.equip, item.id, item.isCompleted, { hideActionBtns: true });
             } else if (typeof openEventDetailModal === 'function') {
-                openEventDetailModal(item.site, item.equip, item.id, item.isCompleted);
+                openEventDetailModal(item.site, item.equip, item.id, item.isCompleted, { hideActionBtns: true });
             }
         };
 

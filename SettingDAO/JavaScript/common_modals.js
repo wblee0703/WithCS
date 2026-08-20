@@ -342,12 +342,13 @@ function setSplitDateTimeDisabled(prefix, disabled) {
 }
 
 /* --- 1.2 모달 열기 (Open) --- */
-function openEventDetailModal(site, equip, id, isCompleted) {
+function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
     if (typeof window.checkSessionValid === 'function' && !window.checkSessionValid()) return;
     const modal = document.getElementById('event-detail-modal');
     if (!modal) return;
 
-    currentDetailTarget = { site, equip, id, isCompleted };
+    const hideActionBtns = Boolean(options && (options.hideActionBtns || options.onlyCloseBtn || options.readOnlyActionBtns));
+    currentDetailTarget = { site, equip, id, isCompleted, options };
 
     const key = `details_${site}_${equip}`;
     const data = JSON.parse(localStorage.getItem(key)) || {};
@@ -905,7 +906,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             const currentHref = window.location.href.toLowerCase();
             const isOpOrSortPage = currentPath.includes('operation') || currentPath.includes('sort') || currentHref.includes('/operation') || currentHref.includes('/sort');
 
-            if (isOpOrSortPage || item.detailType === '일정변경') {
+            if (hideActionBtns || isOpOrSortPage || item.detailType === '일정변경') {
                 cancelBtn.style.display = 'none';
             } else {
                 cancelBtn.style.display = 'block';
@@ -1173,7 +1174,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             btnGroup.classList.remove('has-additional-work');
         }
         const queryId = item.originalLogId || id;
-        if (queryId) {
+        if (queryId && !hideActionBtns) {
             const localChildLogs = (data.logs || []).filter(l => l.originalLogId && (String(l.originalLogId) === String(queryId) || String(l.originalLogId) === String(id)));
             const localChildMaints = (data.maint || []).filter(m => m.originalLogId && (String(m.originalLogId) === String(queryId) || String(m.originalLogId) === String(id)));
             const localCount = localChildLogs.length + localChildMaints.length;
@@ -1194,6 +1195,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
             })
                 .then(res => res.json())
                 .then(resData => {
+                    if (hideActionBtns) return;
                     if (resData.status === 'success' && resData.data && resData.data.length > 0) {
                         const totalCount = Math.max(resData.data.length, localCount);
                         additionalWorksBtn.style.display = 'inline-block';
@@ -1220,7 +1222,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
         if (btnGroup) {
             btnGroup.classList.remove('has-trouble-history');
         }
-        if (isCompleted && item.type === '비정기') {
+        if (!hideActionBtns && isCompleted && item.type === '비정기') {
             troubleHistoryBtn.style.display = 'inline-block';
             // [수정] Trouble 이력 작성 버튼이 노출되므로 부모에 클래스 부여
             if (btnGroup) {
@@ -1241,7 +1243,7 @@ function openEventDetailModal(site, equip, id, isCompleted) {
     // [추가] '추가작업 생성' 버튼 노출 및 동작 바인딩
     const createAddWorkBtn = document.getElementById('btn-create-additional-work');
     if (createAddWorkBtn) {
-        if (isCompleted) {
+        if (!hideActionBtns && isCompleted) {
             createAddWorkBtn.style.display = 'inline-block';
             createAddWorkBtn.onclick = () => {
                 modal.style.display = 'none';
