@@ -5458,10 +5458,10 @@ async function confirmRegisterSchedule() {
                 let code = '';
                 let pureContent = itemText;
                 let spec = '';
-                const specMatch = itemText.match(/ \[(.*?)\]$/);
+                const specMatch = itemText.match(/\s*\[(.*?)\]$/);
                 if (specMatch) {
-                    spec = specMatch[1];
-                    pureContent = itemText.replace(specMatch[0], '');
+                    spec = specMatch[1].trim();
+                    pureContent = itemText.substring(0, specMatch.index).trim();
                 }
                 let fullContent = pureContent;
 
@@ -5534,10 +5534,10 @@ async function confirmRegisterSchedule() {
                 let code = '';
                 let pureContent = itemText;
                 let spec = '';
-                const specMatch = itemText.match(/ \[(.*?)\]$/);
+                const specMatch = itemText.match(/\s*\[(.*?)\]$/);
                 if (specMatch) {
-                    spec = specMatch[1];
-                    pureContent = itemText.replace(specMatch[0], '');
+                    spec = specMatch[1].trim();
+                    pureContent = itemText.substring(0, specMatch.index).trim();
                 }
                 let fullContent = pureContent;
 

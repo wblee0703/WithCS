@@ -4689,12 +4689,15 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         const adminItemsForExtract = JSON.parse(localStorage.getItem('admin_items')) || [];
         const convertToCode = (partName) => {
             let clean = window.removeCostLabels(partName).trim();
+            let specSuffix = '';
             const specMatch = clean.match(/\s*\[(.*?)\]$/);
             if (specMatch) {
-                clean = clean.replace(specMatch[0], '').trim();
+                specSuffix = ` [${specMatch[1].trim()}]`;
+                clean = clean.substring(0, specMatch.index).trim();
             }
             const match = adminItemsForExtract.find(a => (a.part || '').trim() === clean || (a.code || '').trim() === clean);
-            return match && match.code ? match.code : clean;
+            const codeName = match && match.code ? match.code : clean;
+            return codeName + specSuffix;
         };
 
         contentParts.forEach(part => {

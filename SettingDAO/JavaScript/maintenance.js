@@ -1443,50 +1443,79 @@ function selectLog(id, focus = true) {
             let replacedParts = [];
 
             itemsList.forEach(itemText => {
-                let pureContent = itemText;
-                const costMatch = pureContent.match(/^\[(.*?)\] (.*)$/);
+                let pureContent = (itemText || '').trim();
+                if (!pureContent || pureContent === '내용 없음' || pureContent === '장비 점검') return;
+
                 let itemCost = '';
+
+                // 1. 맨 앞 비용 태그 매칭 (예: [유상] ...)
+                const costMatch = pureContent.match(/^\[(.*?)\]\s*(.*)$/);
                 if (costMatch) {
-                    itemCost = costMatch[1];
-                    pureContent = costMatch[2];
+                    itemCost = costMatch[1].trim();
+                    pureContent = costMatch[2].trim();
                 }
 
-                // [추가] 내부 비용 태그 매칭 (예: 파트 이상 교체 - [유상] 펌프)
+                // 2. 내부 비용 태그 매칭 (예: 파트 이상 교체 - [유상] ...)
                 const innerCostMatch = pureContent.match(/^(.*?)\s*-\s*\[(.*?)\]\s*(.*)$/);
                 if (innerCostMatch) {
-                    if (!itemCost) itemCost = innerCostMatch[2];
-                    pureContent = `${innerCostMatch[1]} - ${innerCostMatch[3]}`;
+                    if (!itemCost) itemCost = innerCostMatch[2].trim();
+                    pureContent = `${innerCostMatch[1]} - ${innerCostMatch[3]}`.trim();
                 }
 
-                // [추가] 마이그레이션 전 과거 데이터 호환성 보장용 폴백
-                if (!itemCost && logItem.costType) {
-                    itemCost = logItem.costType;
-                }
-
-                // 특수 태그 제거 ([지연]만 제거하여 [규격]이 날아가는 현상 방지)
-                pureContent = pureContent.replace(/\[지연\]\s*/g, '').trim();
-
-                // 텍스트 분리 (예: '파트 이상 (교체) - 펌프' -> '펌프')
-                if (pureContent.includes(' - ')) {
+                // 3. 접두사 패턴 제거 (예: 파트 이상 교체, 파트 이상 (교체) 등)
+                const kwMatch = pureContent.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|파츠 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+                if (kwMatch) {
+                    pureContent = kwMatch[2].trim();
+                } else if (pureContent.includes(' - ')) {
                     const parts = pureContent.split(' - ');
                     pureContent = parts.length > 1 ? parts[1].trim() : parts[0].trim();
                 }
 
-                // 규격 분리
-                let spec = '';
-                const specMatch = pureContent.match(/ \[(.*?)\]$/);
-                if (specMatch) {
-                    spec = specMatch[1];
-                    pureContent = pureContent.replace(specMatch[0], '');
+                // 4. 남아있는 앞부분 비용 태그 제거
+                const remCostMatch = pureContent.match(/^\[(.*?)\]\s*(.*)$/);
+                if (remCostMatch) {
+                    if (!itemCost) itemCost = remCostMatch[1].trim();
+                    pureContent = remCostMatch[2].trim();
                 }
 
-                const match = adminItems.find(a => a.part === pureContent || a.code === pureContent);
+                // [지연] 등 특수 태그 제거
+                pureContent = pureContent.replace(/\[지연\]\s*/g, '').trim();
+
+                // 마이그레이션 전 과거 데이터 호환성 보장용 폴백
+                if (!itemCost && logItem.costType) {
+                    itemCost = logItem.costType;
+                }
+
+                // 5. 물품 상세(규격) 분리: 문자열 끝의 [물품상세] 추출
+                let spec = '';
+                const specMatch = pureContent.match(/\s*\[(.*?)\]$/);
+                if (specMatch) {
+                    spec = specMatch[1].trim();
+                    pureContent = pureContent.substring(0, specMatch.index).trim();
+                }
+
+                if (!pureContent || pureContent === '내용 없음' || pureContent === '장비 점검' || pureContent === '-') return;
+
+                const cleanTarget = pureContent.trim().toLowerCase();
+                const match = adminItems.find(a => 
+                    (a.part && a.part.trim().toLowerCase() === cleanTarget) || 
+                    (a.code && a.code.trim().toLowerCase() === cleanTarget)
+                );
+
                 if (match) {
                     replacedParts.push({
-                        name: match.part,
+                        name: match.part || pureContent,
                         code: match.code || '',
                         spec: spec || '-',
                         masterSpec: match.spec || '-',
+                        costType: itemCost
+                    });
+                } else {
+                    replacedParts.push({
+                        name: pureContent,
+                        code: '',
+                        spec: spec || '-',
+                        masterSpec: '-',
                         costType: itemCost
                     });
                 }
