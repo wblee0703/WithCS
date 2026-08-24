@@ -3255,9 +3255,13 @@ def history_transaction():
                         (AdminItem.part == clean_code) | (db.func.trim(AdminItem.part) == clean_code)
                     ).first()
 
-                    code_val = match_admin.code if (match_admin and match_admin.code) else clean_code
-                    part_name_val = match_admin.part if (match_admin and match_admin.part) else clean_code
-                    spec_val = (match_admin.spec if (match_admin and match_admin.spec) else '') or m_spec
+                    # [Rule 3 / 사용자 요청 반영] AdminItem 마스터 DB에 등록되지 않은 일반 텍스트는 ItemLog(유지관리 물품) 자동 생성 차단
+                    if not match_admin:
+                        continue
+
+                    code_val = match_admin.code if match_admin.code else clean_code
+                    part_name_val = match_admin.part if match_admin.part else clean_code
+                    spec_val = (match_admin.spec if match_admin.spec else '') or m_spec
 
                     # ItemLog (item_log DB) 동시 동기화 (독립 세트 보장)
                     il_rec = ItemLog.query.filter_by(id=m_id).first() if m_id.startswith('item_') else None

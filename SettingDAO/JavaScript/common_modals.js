@@ -3294,7 +3294,11 @@ async function completeScheduleWork() {
             if (!pureName || ['내용 없음', '장비 점검'].includes(pureName)) return;
 
             const matchAdmin = adminItems.find(ai => (ai.code && ai.code.trim() === pureName) || (ai.part && ai.part.trim() === pureName));
-            const codeVal = matchAdmin ? (matchAdmin.code || pureName) : pureName;
+            // [요청 반영] 물품 선택 드롭다운에서 선택되었거나 AdminItem 마스터에 등록된 실제 물품만 MAINT 유지관리 물품으로 등록/인식
+            // 텍스트로 직접 입력한 일반 작업 내용(matchAdmin 없음)은 물품이 아니므로 data.maint 신규 등록/생성에서 완전 제외 (작업 기록(로그)으로만 보존)
+            if (!matchAdmin) return;
+
+            const codeVal = matchAdmin.code || pureName;
 
             let existingItem = (data.maint || []).find(m =>
                 (m.code === codeVal || m.content === codeVal || m.code === pureName || m.content === pureName) &&

@@ -1502,20 +1502,13 @@ function selectLog(id, focus = true) {
                     (a.code && a.code.trim().toLowerCase() === cleanTarget)
                 );
 
+                // [요청 반영] 물품 제안박스에서 선택되었거나 AdminItem 마스터에 등록된 실제 물품만 교체 물품 리스트에 추가
                 if (match) {
                     replacedParts.push({
                         name: match.part || pureContent,
                         code: match.code || '',
                         spec: spec || '-',
                         masterSpec: match.spec || '-',
-                        costType: itemCost
-                    });
-                } else {
-                    replacedParts.push({
-                        name: pureContent,
-                        code: '',
-                        spec: spec || '-',
-                        masterSpec: '-',
                         costType: itemCost
                     });
                 }
