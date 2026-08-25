@@ -2445,6 +2445,7 @@ def admin_crud():
                 
                 new_code = payload.get('code', '')
                 new_part = payload.get('part', '')
+                new_spec = payload.get('spec', '')
                 
                 if not item: 
                     db.session.add(AdminItem(id=str(payload['id'])))
@@ -2465,6 +2466,12 @@ def admin_crud():
                             updated_content = update_content_part(l.content, old_code, new_code, old_part, new_part)
                             if updated_content != l.content:
                                 l.content = updated_content
+
+                # [추가] 물품 상세 정보 수정/생성 시 item_log 테이블의 spec도 새 규격(new_spec)으로 즉시 동기화
+                targets = [t for t in [new_code, new_part, old_code, old_part] if t]
+                if targets:
+                    for t in set(targets):
+                        db.session.execute(text("UPDATE item_log SET spec=:sp WHERE code=:t OR part=:t"), {'sp': new_spec, 't': t})
             elif action == 'DELETE':
                 db.session.execute(text("DELETE FROM admin_item WHERE id=:i"), {'i': str(payload['id'])})
                 
@@ -2500,16 +2507,24 @@ def admin_crud():
                         for idx, item in enumerate(val, 1):
                             if isinstance(item, dict):
                                 i_id = str(item.get('id', idx))
+                                cd = item.get('code', '')
+                                pt = item.get('part', '')
+                                sp = item.get('spec', '')
                                 db.session.add(AdminItem(
                                     id=i_id,
                                     detail_type=item.get('detailType', item.get('detail_type', '')),
                                     additional=item.get('additional', ''),
                                     partno=item.get('partno', ''),
-                                    code=item.get('code', ''),
-                                    part=item.get('part', ''),
-                                    spec=item.get('spec', ''),
+                                    code=cd,
+                                    part=pt,
+                                    spec=sp,
                                     equip=item.get('equip', '')
                                 ))
+                                if sp and (cd or pt):
+                                    if cd:
+                                        db.session.execute(text("UPDATE item_log SET spec=:sp WHERE code=:cd OR part=:cd"), {'sp': sp, 'cd': cd})
+                                    if pt:
+                                        db.session.execute(text("UPDATE item_log SET spec=:sp WHERE code=:pt OR part=:pt"), {'sp': sp, 'pt': pt})
                         # system_setting 행 자동 제거
                         SystemSetting.query.filter_by(key='admin_items').delete()
                     except Exception as ex:
@@ -4394,22 +4409,20 @@ def init_db():
 
         # [ItemLog 기존 legacy 데이터 id 및 spec 자동 보정]
         try:
-            items_to_fix = ItemLog.query.filter(
-                (~ItemLog.id.like('item_%')) | (ItemLog.spec == None) | (ItemLog.spec == '')
-            ).all()
+            items_to_fix = ItemLog.query.all()
             if items_to_fix:
                 for il in items_to_fix:
                     if il.id and not str(il.id).startswith('item_'):
                         rand_num = random.randint(100, 999)
                         il.id = f"item_{il.id}_{rand_num}" if str(il.id).isdigit() else f"item_{int(time.time()*1000)}_{rand_num}"
-                    if not il.spec:
-                        match_admin = AdminItem.query.filter(
-                            (AdminItem.code == il.code) | (AdminItem.part == il.code) |
-                            (AdminItem.code == il.part) | (AdminItem.part == il.part)
-                        ).first()
-                        spec_val = (match_admin.spec if (match_admin and match_admin.spec) else '') or il.part_detail or ''
-                        if spec_val:
-                            il.spec = spec_val
+                    match_admin = AdminItem.query.filter(
+                        (AdminItem.code == il.code) | (AdminItem.part == il.code) |
+                        (AdminItem.code == il.part) | (AdminItem.part == il.part)
+                    ).first()
+                    if match_admin and match_admin.spec:
+                        il.spec = match_admin.spec
+                    elif not il.spec and il.part_detail:
+                        il.spec = il.part_detail
                 db.session.commit()
         except Exception:
             db.session.rollback()
