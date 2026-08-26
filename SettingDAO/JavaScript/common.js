@@ -308,28 +308,57 @@ function escapeHtml(text) {
         .replace(/'/g, "&#039;");
 }
 
-// [추가] 텍스트에서 물품명과 물품 상세(Spec)를 분리하는 전역 유틸리티 함수
-window.extractSpecFromContent = function (contentStr) {
+// [추가] 텍스트에서 물품명과 물품 상세(Spec)를 분리하는 전역 유틸리티 함수 (마스터 데이터 보호: 물품명/코드명 자체에 대괄호가 있는 경우 보존)
+window.extractSpecFromContent = function (contentStr, adminItems) {
     if (!contentStr) return { spec: '', pureContent: '' };
+    if (!adminItems) {
+        try {
+            adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+        } catch (e) {
+            adminItems = [];
+        }
+    }
+
+    const testStr = contentStr.trim();
+    // [유상], [무상] 등 비용 태그 임시 분리
+    const costMatch = testStr.match(/^\[(.*?)\]\s*(.*)$/);
+    const pureWithoutCost = costMatch ? costMatch[2].trim() : testStr;
+
+    // 만약 비용 태그를 뗀 문자열 자체가 adminItems의 code 또는 part와 완전히 일치하면 대괄호가 있어도 분리하지 않음
+    if (adminItems && adminItems.length > 0) {
+        const directMatch = adminItems.find(i => (i.code && i.code === pureWithoutCost) || (i.part && i.part === pureWithoutCost));
+        if (directMatch) {
+            return { spec: '', pureContent: contentStr };
+        }
+    }
+
     const match = contentStr.match(/ \[(.*?)\]$/);
     if (match) {
-        return { spec: match[1], pureContent: contentStr.replace(match[0], '') };
+        return { spec: match[1], pureContent: contentStr.replace(match[0], '').trim() };
     }
     return { spec: '', pureContent: contentStr };
 };
 
-// [추가] 물품명에 쉼표(,)가 포함되어 있을 때 다중 물품으로 오인되어 분할되는 현상을 방지하는 지능형 스플릿 유틸리티
+// [추가] 물품명/코드명에 쉼표(,)가 포함되어 있을 때 다중 물품으로 오인되어 분할되는 현상을 방지하는 지능형 스플릿 유틸리티
 window.splitSafetyContent = function (contentStr, adminItems) {
     if (!contentStr) return [];
     if (!adminItems) {
-        adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+        try {
+            adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
+        } catch (e) {
+            adminItems = [];
+        }
     }
 
-    // 콤마가 포함된 실제 물품명(part) 필터링 및 길이 내림차순 정렬
-    const commaParts = adminItems
-        .map(item => item.part)
-        .filter(part => part && part.includes(','))
-        .sort((a, b) => b.length - a.length);
+    // 콤마가 포함된 실제 물품명(part) 및 코드명(code) 필터링 및 길이 내림차순 정렬
+    const commaKeywords = new Set();
+    if (adminItems && adminItems.length > 0) {
+        adminItems.forEach(item => {
+            if (item.part && item.part.includes(',')) commaKeywords.add(item.part.trim());
+            if (item.code && item.code.includes(',')) commaKeywords.add(item.code.trim());
+        });
+    }
+    const commaParts = Array.from(commaKeywords).sort((a, b) => b.length - a.length);
 
     let tempStr = contentStr;
     const placeholderMap = new Map();

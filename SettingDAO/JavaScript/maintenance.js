@@ -606,7 +606,17 @@ function renderDetails() {
         if (item.originalLogId) return false; // 자식 항목(추가작업) 숨김
         if (item.content === '내용 없음' || item.content === '장비 점검') return false; // 더미 항목 숨김
         if (['고객대응', '용액제조', '온라인점검'].includes(item.type)) return false; // 관련 없는 타입 숨김
-        if ((item.scheduledDate && item.type && item.type !== '') || (item.content && item.content.includes(',')) || /^\[(유상|무상[^\]]*|기타)\]/.test(item.content || '')) return false; // 일정 등록된 작업 건 숨김
+        if (item.scheduledDate && item.type && item.type !== '') return false; // 일정 등록된 작업 건 숨김
+        if (/^\[(유상|무상[^\]]*|기타)\]/.test(item.content || '')) return false; // 비용 라벨 붙은 작업 건 숨김
+
+        // 마스터 아이템에 등록되지 않은 다중 콤마 결합 텍스트만 숨김
+        if (item.content && item.content.includes(',')) {
+            const isSingleMasterItem = adminItems.some(a => (a.code && a.code === item.content) || (a.part && a.part === item.content));
+            if (!isSingleMasterItem) {
+                const splitted = typeof window.splitSafetyContent === 'function' ? window.splitSafetyContent(item.content, adminItems) : item.content.split(',').filter(Boolean);
+                if (splitted.length > 1) return false;
+            }
+        }
         return true;
     });
 
@@ -756,8 +766,7 @@ window.renderMaintSuggestions = function (showAll = false, isInput = false) {
         if (!item.part) return false;
 
         const isDuplicate = currentData.maint.some(m =>
-            m.content === item.part &&
-            (m.code || '') === (item.code || '') &&
+            ((m.content === item.part) || (m.content === item.code) || (m.code && m.code === item.code)) &&
             (m.spec || '') === currentSpec
         );
         if (isDuplicate) return false;

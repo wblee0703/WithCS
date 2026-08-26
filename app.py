@@ -461,6 +461,46 @@ def get_log_category(action):
     if action in SETUP_ACTIONS: return 'setup'
     return 'maintenance'
 
+def split_safety_content(content_str):
+    if not content_str:
+        return []
+    s_val = str(content_str).strip()
+    if not s_val:
+        return []
+
+    try:
+        admin_items = AdminItem.query.filter(
+            (AdminItem.part.like('%,%')) | (AdminItem.code.like('%,%'))
+        ).all()
+        comma_keywords = set()
+        for ai in admin_items:
+            if ai.part and ',' in ai.part:
+                comma_keywords.add(ai.part.strip())
+            if ai.code and ',' in ai.code:
+                comma_keywords.add(ai.code.strip())
+        comma_parts = sorted(list(comma_keywords), key=lambda x: len(x), reverse=True)
+    except Exception:
+        comma_parts = []
+
+    placeholder_map = {}
+    temp_str = s_val
+    for idx, part in enumerate(comma_parts):
+        placeholder = f"___COMMA_PLACEHOLDER_{idx}___"
+        if part in temp_str:
+            temp_str = temp_str.replace(part, placeholder)
+            placeholder_map[placeholder] = part
+
+    splitted = [p.strip() for p in temp_str.split(',') if p.strip()]
+    restored = []
+    for item in splitted:
+        r_item = item
+        for ph, orig in placeholder_map.items():
+            r_item = r_item.replace(ph, orig)
+        restored.append(r_item)
+
+    return restored
+
+
 def parse_part_item_string(raw_str):
     if not raw_str:
         return None
@@ -480,19 +520,31 @@ def parse_part_item_string(raw_str):
             s = s[len(prefix_kw):].strip()
             break
 
-    # 2. 맨 앞 비용 태그('[유상]', '[무상]') 정제
+    # 2. 맨 앞 비용 태그('[유상]', '[무상]') 정제 (기존 파싱 유지)
     cost_tag = '유상'
     cm = re.match(r'^\[(.*?)\]\s*(.*)$', s)
     if cm:
         cost_tag = cm.group(1).strip()
         s = cm.group(2).strip()
 
-    # 3. 맨 뒤 물품 상세 대괄호('[물품상세]') 추출 및 정제
+    # 3. 맨 뒤 물품 상세 대괄호('[물품상세]') 추출 및 정제 (마스터 데이터 보호: 물품명/코드명 자체에 대괄호가 있는 경우 분리 방지)
     part_detail_tag = ''
-    sm = re.search(r'\s*\[(.*?)\]$', s)
-    if sm:
-        part_detail_tag = sm.group(1).strip()
-        s = s[:sm.start()].strip()
+    is_direct_admin_item = False
+    try:
+        match_direct = AdminItem.query.filter(
+            (AdminItem.code == s) | (AdminItem.part == s) |
+            (db.func.trim(AdminItem.code) == s) | (db.func.trim(AdminItem.part) == s)
+        ).first()
+        if match_direct:
+            is_direct_admin_item = True
+    except Exception:
+        pass
+
+    if not is_direct_admin_item:
+        sm = re.search(r'\s*\[(.*?)\]$', s)
+        if sm:
+            part_detail_tag = sm.group(1).strip()
+            s = s[:sm.start()].strip()
 
     clean_name = s.strip()
     if not clean_name or clean_name in ['내용 없음', '장비 점검']:
@@ -693,7 +745,7 @@ def load_data():
             il_cycle = int(il.cycle) if il.cycle and str(il.cycle).isdigit() else (il.cycle or '')
 
             invalid_kws = ['내용 없음', '장비 점검', 'PM 점검', 'BM 점검', '파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '파츠 이상 교체', '파츠 이상 수리', '물품 이상 교체', '물품 이상 수리', '단순 조치', '현장 이슈', 'PC 이상', '작업자 실수', '통신 이상', '프로그램 이상', '기타']
-            if not il_code or ',' in il_code or ',' in (il.part or '') or il_code in invalid_kws or (il.part and il.part in invalid_kws):
+            if not il_code or il_code in invalid_kws or (il.part and il.part in invalid_kws):
                 continue
 
             # [유지관리 물품 100% 보장 반영] 이미 동일 ID로 maint_list에 존재하는 경우만 중복 추가 차단 (item_log 마스터 데이터는 무조건 100% data.maint 반영)
@@ -3016,12 +3068,11 @@ def history_transaction():
             item.original_log_id = orig_id if orig_id else item.original_log_id
             item.add_work_log_id = str(l.get('addWorkLogId')) if l.get('addWorkLogId') else getattr(item, 'add_work_log_id', None)
 
-            # [요청 반영] item_log DB에서 콤마(,)가 포함된 결합 레코드 및 비물품 키워드 레코드 자동 정리
+            # [요청 반영] item_log DB에서 비물품 키워드 레코드 자동 정리
             try:
                 invalid_kws = ['내용 없음', '장비 점검', 'PM 점검', 'BM 점검', '파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '파츠 이상 교체', '파츠 이상 수리', '물품 이상 교체', '물품 이상 수리', '단순 조치', '현장 이슈', 'PC 이상', '작업자 실수', '통신 이상', '프로그램 이상', '기타']
                 ItemLog.query.filter(
                     ItemLog.equip_id == equip_id,
-                    (ItemLog.code.like('%,%')) | (ItemLog.part.like('%,%')) |
                     (ItemLog.code.in_(invalid_kws)) | (ItemLog.part.in_(invalid_kws))
                 ).delete(synchronize_session=False)
             except Exception:
@@ -3030,7 +3081,7 @@ def history_transaction():
             # [요청 반영] 완료된 작업 내용(content)에 물품이 포함되어 있으면 item_log(유지관리 물품) 및 maint_log(LogItem)의 물품 규격화 & 유령 데이터 제거
             c_text = l.get('content') or item.content or ''
             if c_text and c_text != '내용 없음':
-                sub_parts = [sp.strip() for sp in c_text.split(',') if sp.strip()]
+                sub_parts = split_safety_content(c_text)
                 formatted_contents = []
                 for sp in sub_parts:
                     clean_sp = re.sub(r'^\[(유상|무상|기타)\]\s*', '', sp).strip()
@@ -3047,7 +3098,7 @@ def history_transaction():
                     spec_tag = parsed.get('part_detail') or ''
 
                     invalid_kws = ['내용 없음', '장비 점검', 'PM 점검', 'BM 점검', '파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '파츠 이상 교체', '파츠 이상 수리', '물품 이상 교체', '물품 이상 수리', '단순 조치', '현장 이슈', 'PC 이상', '작업자 실수', '통신 이상', '프로그램 이상', '기타']
-                    if not pure_p or pure_p in invalid_kws or ',' in pure_p:
+                    if not pure_p or pure_p in invalid_kws:
                         formatted_contents.append(clean_sp)
                         continue
 
@@ -3260,7 +3311,7 @@ def history_transaction():
                 parsed_c = parse_part_item_string(m.get('content') or (item.content if item else '') or m_code)
                 clean_code = parsed_c['clean_name'] if (parsed_c and parsed_c.get('clean_name')) else re.sub(r'\[.*?\]', '', m_code).strip()
 
-                if clean_code and clean_code not in invalid_kws and ',' not in clean_code:
+                if clean_code and clean_code not in invalid_kws:
                     if item:
                         item.content = f"{clean_code} [{m_spec}]" if m_spec else clean_code
 
