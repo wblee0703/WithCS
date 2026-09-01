@@ -550,6 +550,74 @@
         </div>
     </template>
 
+    <!-- [추가] 셋업 작업 예정 등록 모달 (Setup Task Schedule Modal) -->
+    <template id="setup-task-schedule-modal-template">
+        <div id="setup-task-schedule-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-window">
+                <div class="modal-header">
+                    <h3>셋업 작업 등록</h3>
+                    <button id="btn-close-setup-task-schedule-modal" class="btn-del-sm">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-row">
+                        <label class="form-label">예정일</label>
+                        <input type="date" id="setup-sched-date" class="input-dark">
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">사업장</label>
+                        <select id="setup-sched-site" class="modal-select">
+                            <option value="">사업장 선택</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">장비</label>
+                        <div id="setup-sched-equip-wrapper" class="log-select-wrapper" style="flex: 1; width: 100%;">
+                            <input type="hidden" id="setup-sched-equip" value="">
+                            <div id="setup-sched-equip-trigger" class="log-select-trigger disabled">장비 선택</div>
+                            <div id="setup-sched-equip-dropdown" class="log-select-dropdown">
+                                <input type="text" id="setup-sched-equip-search" class="dropdown-search-input" placeholder="장비 검색..." autocomplete="off">
+                                <div id="setup-sched-equip-list" class="log-select-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">구분</label>
+                        <select id="setup-sched-category" class="modal-select">
+                            <option value="">셋업 구분 선택</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">세부구분</label>
+                        <select id="setup-sched-subcategory" class="modal-select" disabled>
+                            <option value="">세부 구분 선택</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">내용</label>
+                        <input type="text" id="setup-sched-content" class="input-dark" placeholder="내용 입력 (선택)" autocomplete="off">
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">작업자</label>
+                        <div id="setup-sched-worker-wrapper" class="log-select-wrapper" style="flex: 1; width: 100%;">
+                            <div id="setup-sched-worker-trigger" class="log-select-trigger">작업자 선택</div>
+                            <div id="setup-sched-worker-dropdown" class="log-select-dropdown">
+                                <input type="text" id="setup-sched-worker-search" class="dropdown-search-input" placeholder="이름 검색..." autocomplete="off">
+                                <div id="setup-sched-worker-list" class="log-select-list"></div>
+                                <div class="log-select-footer">
+                                    <button type="button" id="btn-setup-sched-worker-confirm" class="btn-blue-sm">선택 완료</button>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="setup-sched-worker" value="">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="btn-save-setup-task-schedule" class="btn-blue">등록</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <!-- [4] 작업 검색 모달 (Task Search Modal) -->
     <template id="task-search-modal-template">
         <style>
@@ -950,17 +1018,54 @@
                 <input type="hidden" id="setup-log-reg-id">
                 <input type="hidden" id="setup-log-reg-site">
                 <input type="hidden" id="setup-log-reg-equip">
-                 <div class="form-row setup-log-form-row">
-                    <label class="setup-log-label">예정일</label>
-                    <input type="date" id="setup-log-reg-plan-date" class="input-date-dark setup-log-input">
-                </div>
                 <div class="form-row setup-log-form-row">
                     <label class="setup-log-label">작업일</label>
                     <input type="date" id="setup-log-reg-date" class="input-date-dark setup-log-input">
                 </div>
                 <div class="form-row setup-log-form-row">
-                    <label class="setup-log-label">작업명</label>
-                    <input type="text" id="setup-log-reg-task" class="input-dark setup-log-input" readonly>
+                    <label class="setup-log-label">사업장</label>
+                    <div id="setup-log-reg-site-wrapper" class="log-select-wrapper setup-log-worker-wrapper">
+                        <div id="setup-log-reg-site-trigger" class="log-select-trigger">사업장 선택</div>
+                        <div id="setup-log-reg-site-dropdown" class="log-select-dropdown setup-log-worker-dropdown">
+                            <input type="text" id="setup-log-reg-site-search" class="dropdown-search-input" placeholder="사업장 검색..." autocomplete="off">
+                            <div id="setup-log-reg-site-list" class="log-select-list setup-log-worker-list"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row setup-log-form-row">
+                    <label class="setup-log-label">장비</label>
+                    <div id="setup-log-reg-equip-wrapper" class="log-select-wrapper setup-log-worker-wrapper">
+                        <div id="setup-log-reg-equip-trigger" class="log-select-trigger">장비 선택</div>
+                        <div id="setup-log-reg-equip-dropdown" class="log-select-dropdown setup-log-worker-dropdown">
+                            <input type="text" id="setup-log-reg-equip-search" class="dropdown-search-input" placeholder="장비 검색..." autocomplete="off">
+                            <div id="setup-log-reg-equip-list" class="log-select-list setup-log-worker-list"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row setup-log-form-row">
+                    <label class="setup-log-label">셋업 구분</label>
+                    <div id="setup-log-reg-category-wrapper" class="log-select-wrapper setup-log-worker-wrapper">
+                        <input type="hidden" id="setup-log-reg-category">
+                        <div id="setup-log-reg-category-trigger" class="log-select-trigger">셋업 구분 선택</div>
+                        <div id="setup-log-reg-category-dropdown" class="log-select-dropdown setup-log-worker-dropdown">
+                            <div id="setup-log-reg-category-list" class="log-select-list setup-log-worker-list"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row setup-log-form-row">
+                    <label class="setup-log-label">세부 구분</label>
+                    <div id="setup-log-reg-subcategory-wrapper" class="log-select-wrapper setup-log-worker-wrapper">
+                        <input type="hidden" id="setup-log-reg-subcategory">
+                        <div id="setup-log-reg-subcategory-trigger" class="log-select-trigger">세부 구분 선택</div>
+                        <div id="setup-log-reg-subcategory-dropdown" class="log-select-dropdown setup-log-worker-dropdown">
+                            <div id="setup-log-reg-subcategory-list" class="log-select-list setup-log-worker-list"></div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="setup-log-reg-task">
+                </div>
+                <div class="form-row setup-log-form-row">
+                    <label class="setup-log-label">내용</label>
+                    <input type="text" id="setup-log-reg-content" class="input-dark setup-log-input" placeholder="내용 입력" autocomplete="off">
                 </div>
                 <div class="form-row setup-log-form-row">
                     <label class="setup-log-label">작업자</label>

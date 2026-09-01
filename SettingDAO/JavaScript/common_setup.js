@@ -201,232 +201,475 @@ window.openLogRegisterOrEditModeWithIndex = function(site, equip, taskName, fall
 };
 
 /* ==========================================================================
-   [추가] 셋업 작업 기록 모달 (간트 일수 모드 연동)
+   [추가] 셋업 작업 기록 모달 (셋업구분/세부구분 커스텀 제안박스 연동)
    ========================================================================== */
+function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '', selectedSubcategory = '') {
+    const modal = modalContext || document;
+    const catHidden = modal.querySelector('#setup-log-reg-category');
+    const catTrigger = modal.querySelector('#setup-log-reg-category-trigger');
+    const catDropdown = modal.querySelector('#setup-log-reg-category-dropdown');
+    const catList = modal.querySelector('#setup-log-reg-category-list');
+
+    const subcatHidden = modal.querySelector('#setup-log-reg-subcategory');
+    const subcatTrigger = modal.querySelector('#setup-log-reg-subcategory-trigger');
+    const subcatDropdown = modal.querySelector('#setup-log-reg-subcategory-dropdown');
+    const subcatList = modal.querySelector('#setup-log-reg-subcategory-list');
+
+    if (!catHidden || !subcatHidden || !catTrigger || !subcatTrigger) return;
+
+    // ADMIN 셋업 템플릿 마스터 데이터 불러오기
+    const getTemplatesData = () => {
+        const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
+        const list = templates['default'];
+        if (Array.isArray(list) && list.length > 0) return list;
+        return [
+            { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크", content: "장비 도면 부착", estDays: "1" },
+            { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크", content: "다이크 설치", estDays: "1" },
+            { category: "장비 반입 및 정위치", subcategory: "장비 반입", content: "장비 반입", estDays: "1" },
+            { category: "장비 반입 및 정위치", subcategory: "장비 반입", content: "다이크 공사 및 리크센서 설치", estDays: "2" },
+            { category: "통신 상태 및 유틸리티", subcategory: "Utility 배관", content: "Utility 배관 공사 및 연결", estDays: "5" },
+            { category: "통신 상태 및 유틸리티", subcategory: "Utility 배관", content: "Utility 턴온", estDays: "1" },
+            { category: "통신 상태 및 유틸리티", subcategory: "인터락/통신", content: "인터락 Test 및 통신상태 확인 ", estDays: "2" },
+            { category: "셋업 평가", subcategory: "분석부 안정화", content: "분석부 안정화 및 오염제어", estDays: "5" },
+            { category: "셋업 평가", subcategory: "성능 평가", content: "Calibration 평가", estDays: "2" },
+            { category: "셋업 평가", subcategory: "성능 평가", content: "Sample 측정", estDays: "2" },
+            { category: "셋업 평가", subcategory: "성능 평가", content: "신뢰도 평가", estDays: "5" },
+            { category: "셋업 완료", subcategory: "셋업 완료", content: "셋업 완료", estDays: "0" }
+        ];
+    };
+
+    // 세부 구분 활성화/비활성화 상태 관리
+    const updateSubcategoryState = () => {
+        const hasCategory = !!catHidden.value;
+        if (!hasCategory) {
+            subcatTrigger.classList.add('disabled');
+            subcatTrigger.style.opacity = '0.5';
+            subcatTrigger.style.cursor = 'not-allowed';
+            subcatTrigger.style.pointerEvents = 'none';
+            subcatTrigger.textContent = '셋업 구분을 먼저 선택해주세요';
+            subcatTrigger.title = '';
+            subcatTrigger.classList.remove('has-value');
+            subcatHidden.value = '';
+            subcatDropdown.classList.remove('show');
+        } else {
+            subcatTrigger.classList.remove('disabled');
+            subcatTrigger.style.opacity = '1';
+            subcatTrigger.style.cursor = 'pointer';
+            subcatTrigger.style.pointerEvents = 'auto';
+            if (subcatHidden.value) {
+                subcatTrigger.textContent = subcatHidden.value;
+                subcatTrigger.classList.add('has-value');
+            } else {
+                subcatTrigger.textContent = '세부 구분 선택';
+                subcatTrigger.classList.remove('has-value');
+            }
+        }
+    };
+
+    // 1. 셋업 구분 목록 렌더링
+    const renderCategoryList = (kw = '') => {
+        if (!catList) return;
+        catList.innerHTML = '';
+        const currentTpl = getTemplatesData();
+        const categories = Array.from(new Set(currentTpl.map(t => t.category).filter(Boolean)));
+
+        let filtered = categories;
+        if (kw) filtered = filtered.filter(c => c.toLowerCase().includes(kw.toLowerCase()));
+
+        if (filtered.length === 0) {
+            catList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">검색 결과가 없습니다.</div>';
+            return;
+        }
+
+        filtered.forEach(catName => {
+            const div = document.createElement('div');
+            div.className = 'log-select-item' + (catHidden.value === catName ? ' selected' : '');
+            div.style.cursor = 'pointer';
+            div.innerHTML = `<span>${typeof escapeHtml === 'function' ? escapeHtml(catName) : catName}</span>`;
+
+            div.addEventListener('click', (e) => {
+                e.stopPropagation();
+                catHidden.value = catName;
+                catTrigger.textContent = catName;
+                catTrigger.classList.add('has-value');
+                catDropdown.classList.remove('show');
+
+                // 셋업 구분 선택 후 세부 구분 활성화
+                subcatHidden.value = '';
+                updateSubcategoryState();
+                renderSubcategoryList('');
+            });
+
+            catList.appendChild(div);
+        });
+    };
+
+    // 2. 세부 구분 목록 렌더링
+    const renderSubcategoryList = (kw = '') => {
+        if (!subcatList) return;
+        subcatList.innerHTML = '';
+
+        const currentTpl = getTemplatesData();
+        const currentCat = catHidden.value;
+        if (!currentCat) {
+            subcatList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">셋업 구분을 먼저 선택해주세요.</div>';
+            return;
+        }
+
+        let subItems = currentTpl.filter(t => t.category === currentCat).map(t => t.subcategory || t.content || t.category).filter(Boolean);
+        let uniqueSubs = Array.from(new Set(subItems));
+
+        if (kw) {
+            uniqueSubs = uniqueSubs.filter(s => s.toLowerCase().includes(kw.toLowerCase()));
+        }
+
+        if (uniqueSubs.length === 0) {
+            subcatList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">등록된 세부 구분이 없습니다.</div>';
+            return;
+        }
+
+        uniqueSubs.forEach(subName => {
+            const div = document.createElement('div');
+            div.className = 'log-select-item' + (subcatHidden.value === subName ? ' selected' : '');
+            div.style.cursor = 'pointer';
+            div.innerHTML = `<span>${typeof escapeHtml === 'function' ? escapeHtml(subName) : subName}</span>`;
+
+            div.addEventListener('click', (e) => {
+                e.stopPropagation();
+                subcatHidden.value = subName;
+                subcatTrigger.textContent = subName;
+                subcatTrigger.classList.add('has-value');
+                subcatDropdown.classList.remove('show');
+            });
+
+            subcatList.appendChild(div);
+        });
+    };
+
+    // 초기값 반영
+    const initialTpl = getTemplatesData();
+    if (!selectedCategory && selectedSubcategory) {
+        const matched = initialTpl.find(t => (t.subcategory === selectedSubcategory || t.content === selectedSubcategory));
+        if (matched) selectedCategory = matched.category;
+    }
+
+    if (selectedCategory) {
+        catHidden.value = selectedCategory;
+        catTrigger.textContent = selectedCategory;
+        catTrigger.classList.add('has-value');
+    } else {
+        catHidden.value = '';
+        catTrigger.textContent = '셋업 구분 선택';
+        catTrigger.classList.remove('has-value');
+    }
+
+    if (selectedSubcategory && selectedCategory) {
+        subcatHidden.value = selectedSubcategory;
+    } else {
+        subcatHidden.value = '';
+    }
+
+    // 세부 구분 활성화 상태 반영
+    updateSubcategoryState();
+
+    // 트리거 클릭 이벤트 직접 바인딩 (매 호출 시 항상 최신 상태 반영)
+    catTrigger.onclick = (e) => {
+        e.stopPropagation();
+        const isOpen = catDropdown.classList.contains('show');
+        document.querySelectorAll('.log-select-dropdown.show').forEach(d => d.classList.remove('show'));
+        if (!isOpen) {
+            catDropdown.classList.add('show');
+            renderCategoryList('');
+        }
+    };
+
+    subcatTrigger.onclick = (e) => {
+        e.stopPropagation();
+        if (!catHidden.value) {
+            alert('셋업 구분을 먼저 선택해주세요.');
+            return;
+        }
+        const isOpen = subcatDropdown.classList.contains('show');
+        document.querySelectorAll('.log-select-dropdown.show').forEach(d => d.classList.remove('show'));
+        if (!isOpen) {
+            subcatDropdown.classList.add('show');
+            renderSubcategoryList('');
+        }
+    };
+
+    // 외부 클릭 시 드롭다운 닫기
+    if (!window.hasSetupCatDropdownClickBound) {
+        window.hasSetupCatDropdownClickBound = true;
+        document.addEventListener('click', (e) => {
+            const allDropdowns = document.querySelectorAll('#setup-log-reg-category-dropdown.show, #setup-log-reg-subcategory-dropdown.show');
+            allDropdowns.forEach(dropdown => {
+                const wrapper = dropdown.closest('.log-select-wrapper');
+                if (wrapper && !wrapper.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+        });
+    }
+}
+
+/* ==========================================================================
+   [추가] 셋업 작업 기록 모달 (사업장/장비 커스텀 제안박스 연동)
+   ========================================================================== */
+function setupSetupLogRegSiteAndEquipDropdowns(modalContext, initialSite = '', initialEquip = '') {
+    const modal = modalContext || document;
+    const siteHidden = modal.querySelector('#setup-log-reg-site');
+    const siteTrigger = modal.querySelector('#setup-log-reg-site-trigger');
+    const siteDropdown = modal.querySelector('#setup-log-reg-site-dropdown');
+    const siteSearch = modal.querySelector('#setup-log-reg-site-search');
+    const siteList = modal.querySelector('#setup-log-reg-site-list');
+
+    const equipHidden = modal.querySelector('#setup-log-reg-equip');
+    const equipTrigger = modal.querySelector('#setup-log-reg-equip-trigger');
+    const equipDropdown = modal.querySelector('#setup-log-reg-equip-dropdown');
+    const equipSearch = modal.querySelector('#setup-log-reg-equip-search');
+    const equipList = modal.querySelector('#setup-log-reg-equip-list');
+
+    if (!siteHidden || !equipHidden || !siteTrigger || !equipTrigger) return;
+
+    const getDeviceMap = () => {
+        return (typeof getDeviceDataMap === 'function') ? getDeviceDataMap() : (JSON.parse(localStorage.getItem('device_data_map')) || {});
+    };
+
+    const getEquipFormattedInfo = (site, eq) => {
+        if (!eq) return { text: '', html: '' };
+        const parts = eq.split('::');
+        const modelName = parts[0] || '';
+        const serial = parts.length > 1 ? parts[1] : '';
+        const custNameFromKey = parts.length > 2 ? parts[2] : '';
+        const key = `details_${site}_${eq}`;
+        const detailData = JSON.parse(localStorage.getItem(key)) || {};
+        const custName = custNameFromKey || ((detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '');
+        
+        let subText = '';
+        if (custName) {
+            subText = `[${custName}]`;
+        } else if (serial) {
+            subText = `(${serial})`;
+        }
+        
+        const plainText = subText ? `${modelName}${subText}` : modelName;
+        const subHtml = subText ? `<span style="color: #3fb950; font-weight: 500; display: inline;">${typeof escapeHtml === 'function' ? escapeHtml(subText) : subText}</span>` : '';
+        const html = `<span>${typeof escapeHtml === 'function' ? escapeHtml(modelName) : modelName}${subHtml}</span>`;
+        
+        return { text: plainText, html: html, modelName, subText };
+    };
+
+    // 1. 사업장 리스트 렌더링
+    const renderSiteList = (kw = '') => {
+        if (!siteList) return;
+        siteList.innerHTML = '';
+        const map = getDeviceMap();
+        let sites = Object.keys(map);
+        if (kw) sites = sites.filter(s => s.toLowerCase().includes(kw.toLowerCase()));
+
+        if (sites.length === 0) {
+            siteList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">검색 결과가 없습니다.</div>';
+            return;
+        }
+
+        sites.forEach(siteName => {
+            const div = document.createElement('div');
+            div.className = 'log-select-item' + (siteHidden.value === siteName ? ' selected' : '');
+            div.style.cursor = 'pointer';
+            div.innerHTML = `<span>${typeof escapeHtml === 'function' ? escapeHtml(siteName) : siteName}</span>`;
+
+            div.addEventListener('click', (e) => {
+                e.stopPropagation();
+                siteHidden.value = siteName;
+                siteTrigger.textContent = siteName;
+                siteTrigger.classList.add('has-value');
+                siteDropdown.classList.remove('show');
+
+                // 사업장 변경 시 장비 초기화
+                equipHidden.value = '';
+                equipTrigger.textContent = '장비 선택';
+                equipTrigger.title = '';
+                equipTrigger.classList.remove('has-value');
+                renderEquipList('');
+
+                // 셋업 물품 드롭다운 및 작업자 드롭다운 재초기화
+                if (typeof setupSetupLogRegPartDropdown === 'function') {
+                    setupSetupLogRegPartDropdown(modal, siteName, '', '');
+                }
+                if (typeof setupSetupLogRegWorkerDropdown === 'function') {
+                    setupSetupLogRegWorkerDropdown(modal);
+                }
+            });
+
+            siteList.appendChild(div);
+        });
+    };
+
+    // 2. 장비 리스트 렌더링 (검색 기능 포함)
+    const renderEquipList = (kw = '') => {
+        if (!equipList) return;
+        equipList.innerHTML = '';
+        const map = getDeviceMap();
+        const currentSite = siteHidden.value;
+
+        if (!currentSite) {
+            equipList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">사업장을 먼저 선택해주세요.</div>';
+            return;
+        }
+
+        let rawEquips = map[currentSite] ? [...map[currentSite]] : [];
+        let equips = rawEquips.filter(eq => {
+            if (eq.startsWith('기타(ETC)')) return false;
+            const detailKey = `details_${currentSite}_${eq}`;
+            const detailData = JSON.parse(localStorage.getItem(detailKey)) || {};
+            const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : (detailData.equipStatus || '');
+            return equipStatus === '셋업 장비' || equipStatus.includes('셋업') || (detailData.setup && detailData.setup.isSetupEquip);
+        });
+
+        if (kw) {
+            const lowerKw = kw.toLowerCase();
+            equips = equips.filter(eq => {
+                const info = getEquipFormattedInfo(currentSite, eq);
+                return eq.toLowerCase().includes(lowerKw) || info.text.toLowerCase().includes(lowerKw);
+            });
+        }
+
+        if (equips.length === 0) {
+            equipList.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">해당 사업장에 셋업 장비가 없습니다.</div>';
+            return;
+        }
+
+        equips.forEach(equipKey => {
+            const info = getEquipFormattedInfo(currentSite, equipKey);
+            const div = document.createElement('div');
+            div.className = 'log-select-item' + (equipHidden.value === equipKey ? ' selected' : '');
+            div.style.cursor = 'pointer';
+            div.innerHTML = info.html;
+
+            div.addEventListener('click', (e) => {
+                e.stopPropagation();
+                equipHidden.value = equipKey;
+                equipTrigger.innerHTML = info.html;
+                equipTrigger.title = info.text;
+                equipTrigger.classList.add('has-value');
+                equipDropdown.classList.remove('show');
+
+                // 셋업 물품 드롭다운 재초기화
+                if (typeof setupSetupLogRegPartDropdown === 'function') {
+                    setupSetupLogRegPartDropdown(modal, currentSite, equipKey, modal.querySelector('#setup-log-reg-part-hidden')?.value || '');
+                }
+            });
+
+            equipList.appendChild(div);
+        });
+    };
+
+    // 초기값 세팅
+    if (initialSite) {
+        siteHidden.value = initialSite;
+        siteTrigger.textContent = initialSite;
+        siteTrigger.classList.add('has-value');
+    } else {
+        siteHidden.value = '';
+        siteTrigger.textContent = '사업장 선택';
+        siteTrigger.classList.remove('has-value');
+    }
+
+    if (initialEquip) {
+        equipHidden.value = initialEquip;
+        const info = getEquipFormattedInfo(initialSite, initialEquip);
+        equipTrigger.innerHTML = info.html || initialEquip;
+        equipTrigger.title = info.text || initialEquip;
+        equipTrigger.classList.add('has-value');
+    } else {
+        equipHidden.value = '';
+        equipTrigger.textContent = '장비 선택';
+        equipTrigger.title = '';
+        equipTrigger.classList.remove('has-value');
+    }
+
+    // 트리거 클릭 바인딩
+    siteTrigger.onclick = (e) => {
+        e.stopPropagation();
+        const isOpen = siteDropdown.classList.contains('show');
+        document.querySelectorAll('.log-select-dropdown.show').forEach(d => d.classList.remove('show'));
+        if (!isOpen) {
+            siteDropdown.classList.add('show');
+            if (siteSearch) {
+                siteSearch.value = '';
+                setTimeout(() => siteSearch.focus(), 50);
+            }
+            renderSiteList('');
+        }
+    };
+
+    equipTrigger.onclick = (e) => {
+        e.stopPropagation();
+        const isOpen = equipDropdown.classList.contains('show');
+        document.querySelectorAll('.log-select-dropdown.show').forEach(d => d.classList.remove('show'));
+        if (!isOpen) {
+            equipDropdown.classList.add('show');
+            if (equipSearch) {
+                equipSearch.value = '';
+                setTimeout(() => equipSearch.focus(), 50);
+            }
+            renderEquipList('');
+        }
+    };
+
+    if (siteSearch) {
+        siteSearch.onclick = e => e.stopPropagation();
+        siteSearch.oninput = e => renderSiteList(e.target.value.trim());
+    }
+
+    if (equipSearch) {
+        equipSearch.onclick = e => e.stopPropagation();
+        equipSearch.oninput = e => renderEquipList(e.target.value.trim());
+    }
+
+    // 외부 클릭 시 드롭다운 닫기
+    if (!window.hasSetupSiteEquipDropdownClickBound) {
+        window.hasSetupSiteEquipDropdownClickBound = true;
+        document.addEventListener('click', (e) => {
+            const allDropdowns = document.querySelectorAll('#setup-log-reg-site-dropdown.show, #setup-log-reg-equip-dropdown.show');
+            allDropdowns.forEach(dropdown => {
+                const wrapper = dropdown.closest('.log-select-wrapper');
+                if (wrapper && !wrapper.contains(e.target)) {
+                    dropdown.classList.remove('show');
+                }
+            });
+        });
+    }
+}
+
 window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, forceComplete = false, isDropdownMode = false) {
-    // [핵심 해결] SETUP 페이지 등에 남아있는 하드코딩된 중복 모달 ID로 인해 값이 엉뚱한 곳에 입력되어 공수가 0으로 초기화되는 버그 방지
     const modals = document.querySelectorAll('#setup-log-register-modal');
     if (modals.length === 0) return;
-    const modal = modals[modals.length - 1]; // 항상 가장 최신(활성화된) 모달을 타겟으로 함
+    const modal = modals[modals.length - 1];
     
-    modal.querySelector('#setup-log-reg-site').value = site;
-    modal.querySelector('#setup-log-reg-equip').value = equip;
+    modal.querySelector('#setup-log-reg-site').value = site || '';
+    modal.querySelector('#setup-log-reg-equip').value = equip || '';
     const idInput = modal.querySelector('#setup-log-reg-id');
     if (idInput) idInput.value = ''; // 신규 등록이므로 ID 초기화
-    modal.querySelector('#setup-log-reg-date').value = defaultDate || getLocalYYYYMMDD();
+    const dateInput = modal.querySelector('#setup-log-reg-date');
+    if (dateInput) dateInput.value = defaultDate || getLocalYYYYMMDD();
+    const contentInput = modal.querySelector('#setup-log-reg-content');
+    if (contentInput) contentInput.value = '';
     const memoInput = modal.querySelector('#setup-log-reg-memo');
     if (memoInput) memoInput.value = '';
 
-    // [추가] 작업명 입력 방식을 드롭다운/읽기 전용으로 분기 처리
-    const taskInput = modal.querySelector('#setup-log-reg-task');
-    let taskWrapper = modal.querySelector('#setup-log-reg-task-wrapper');
-    if (!taskWrapper && taskInput) {
-        taskWrapper = document.createElement('div');
-        taskWrapper.id = 'setup-log-reg-task-wrapper';
-        taskWrapper.className = 'log-select-wrapper';
-        taskWrapper.style.flex = '1';
-        taskWrapper.style.minWidth = '0';
-        
-        // [수정] 템플릿에서 복제하여 사용 (템플릿이 없을 경우를 대비한 안전장치 유지)
-        const tpl = document.getElementById('setup-log-reg-task-wrapper-template');
-        if (tpl) {
-            taskWrapper.appendChild(tpl.content.cloneNode(true));
-        } else {
-            taskWrapper.innerHTML = `
-                <div id="setup-log-reg-task-trigger" class="log-select-trigger" style="height:34px; background:#0d1117; border:1px solid #30363d; color:#8b949e; padding:0 10px; border-radius:4px; cursor:pointer; display:flex; align-items:center; justify-content:flex-start; text-align:left; box-sizing:border-box; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">작업명 선택</div>
-                <div id="setup-log-reg-task-dropdown" class="log-select-dropdown" style="z-index: 12000; width:100%; box-sizing:border-box;">
-                    <input type="text" id="setup-log-reg-task-search" class="dropdown-search-input" placeholder="검색..." style="width: calc(100% - 12px); margin: 5px 6px; padding: 6px 10px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 4px; box-sizing: border-box;" autocomplete="off">
-                    <div id="setup-log-reg-task-list" class="log-select-list" style="max-height: 150px; overflow-y: auto;"></div>
-                </div>
-            `;
-        }
-        taskInput.parentNode.insertBefore(taskWrapper, taskInput);
-    }
+    // [삭제] 완료 버튼 제거
+    const completeBtn = modal.querySelector('#btn-setup-log-reg-complete');
+    if (completeBtn) completeBtn.remove();
 
-    if (isDropdownMode) {
-        if (taskWrapper) taskWrapper.style.display = 'block';
-        if (taskInput) {
-            taskInput.type = 'hidden';
-            taskInput.value = '';
-        }
-        
-        const trigger = modal.querySelector('#setup-log-reg-task-trigger');
-        const dropdown = modal.querySelector('#setup-log-reg-task-dropdown');
-        const list = modal.querySelector('#setup-log-reg-task-list');
-        const search = modal.querySelector('#setup-log-reg-task-search');
+    // 사업장 및 장비 드롭다운 초기화
+    setupSetupLogRegSiteAndEquipDropdowns(modal, site || '', equip || '');
 
-        if (trigger) {
-            trigger.textContent = '작업명 선택';
-            trigger.style.color = '#8b949e';
-        }
+    // 셋업 구분 및 세부 구분 드롭다운 초기화
+    setupCategoryAndSubCategoryDropdowns(modal, '', taskName || '');
 
-        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-        const equipKey = `${site}::${equip}`;
-        const data = setupData[equipKey] || {};
-        const details = data.setupDetails || [];
-
-        const renderTasks = (kw = '') => {
-            if (!list) return;
-            list.innerHTML = '';
-            let filtered = details;
-            if (kw) filtered = details.filter(d => d.content.toLowerCase().includes(kw.toLowerCase()));
-            
-            if (filtered.length === 0) {
-                list.innerHTML = '<div class="log-select-empty-msg" style="padding:10px; text-align:center; color:#8b949e;">검색 결과가 없습니다.</div>';
-                return;
-            }
-
-            filtered.forEach(d => {
-                const div = document.createElement('div');
-                div.className = 'log-select-item';
-                div.innerHTML = `<span>${typeof escapeHtml === 'function' ? escapeHtml(d.content) : d.content}</span>`;
-                div.onclick = (e) => {
-                    e.stopPropagation();
-                    if (taskInput) taskInput.value = d.content;
-                    if (trigger) {
-                        trigger.textContent = d.content;
-                        trigger.style.color = '#fff';
-                    }
-                    if (dropdown) dropdown.classList.remove('show');
-                    
-                    // 항목 선택 시, 해당 작업의 기존 완료 상태 불러오기
-                    const completeCb = modal.querySelector('#setup-log-reg-complete');
-                    if (completeCb) completeCb.checked = !!d.completed;
-                    
-                    const planDateInput = modal.querySelector('#setup-log-reg-plan-date');
-                    if (planDateInput) planDateInput.value = d.startDate || '';
-
-                    const compBtn = modal.querySelector('#btn-setup-log-reg-complete');
-                    if (compBtn) {
-                        if (d.completed) {
-                            compBtn.classList.remove('btn-gray');
-                            compBtn.classList.add('btn-green');
-                        } else {
-                            compBtn.classList.remove('btn-green');
-                            compBtn.classList.add('btn-gray');
-                        }
-                    }
-                };
-                list.appendChild(div);
-            });
-        };
-        
-        renderTasks();
-
-        if (trigger) {
-            trigger.onclick = (e) => {
-                e.stopPropagation();
-                document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== dropdown) d.classList.remove('show'); });
-                if (dropdown) dropdown.classList.toggle('show');
-            };
-        }
-        
-        if (search) {
-            search.onclick = e => e.stopPropagation();
-            search.oninput = e => renderTasks(e.target.value);
-        }
-        
-        // 드롭다운 외부 클릭 감지
-        document.addEventListener('click', (e) => {
-            if (dropdown && dropdown.classList.contains('show') && !dropdown.contains(e.target) && e.target !== trigger) {
-                dropdown.classList.remove('show');
-            }
-        });
-
-    } else {
-        if (taskWrapper) taskWrapper.style.display = 'none';
-        if (taskInput) {
-            taskInput.type = 'text';
-            taskInput.value = taskName;
-            taskInput.readOnly = true;
-            taskInput.style.backgroundColor = '#0d1117'; // 읽기 전용 스타일 유지
-            taskInput.style.color = '#fff';
-        }
-    }
-    
-    const dateInput = modal.querySelector('#setup-log-reg-date');
-    let completeBtn = modal.querySelector('#btn-setup-log-reg-complete');
-    
-    if (dateInput && !completeBtn) {
-        const dateRow = dateInput.closest('.form-row') || dateInput.parentNode;
-        if (dateRow) {
-            dateRow.style.display = 'flex';
-            dateRow.style.flexDirection = 'row';
-            dateRow.style.alignItems = 'center';
-            dateRow.style.flexWrap = 'nowrap';
-            const dateLabel = dateRow.querySelector('label');
-            if (dateLabel) {
-                dateLabel.style.width = '80px';
-                dateLabel.style.flexShrink = '0';
-                dateLabel.style.whiteSpace = 'nowrap';
-                dateLabel.style.marginBottom = '0';
-            }
-        }
-        
-        const wrapper = document.createElement('div');
-        wrapper.style.display = 'flex';
-        wrapper.style.gap = '5px';
-        wrapper.style.width = '100%';
-        wrapper.style.minWidth = '0';
-        
-        dateInput.parentNode.insertBefore(wrapper, dateInput);
-        wrapper.appendChild(dateInput);
-        dateInput.style.flex = '1';
-        dateInput.style.minWidth = '0';
-        
-        completeBtn = document.createElement('button');
-        completeBtn.id = 'btn-setup-log-reg-complete';
-        completeBtn.type = 'button';
-        completeBtn.className = 'btn-gray';
-        completeBtn.textContent = '완료';
-        completeBtn.style.padding = '0 15px';
-        completeBtn.style.height = '34px';
-        completeBtn.style.fontSize = '13px';
-        completeBtn.style.whiteSpace = 'nowrap';
-        completeBtn.style.borderRadius = '4px';
-        completeBtn.style.cursor = 'pointer';
-        completeBtn.style.flexShrink = '0';
-        
-        completeBtn.onclick = (e) => {
-            e.stopPropagation();
-            if (completeBtn.classList.contains('btn-green')) {
-                completeBtn.classList.remove('btn-green');
-                completeBtn.classList.add('btn-gray');
-            } else {
-                completeBtn.classList.remove('btn-gray');
-                completeBtn.classList.add('btn-green');
-            }
-        };
-        wrapper.appendChild(completeBtn);
-    }
-
-    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `${site}::${equip}`;
-    const data = setupData[equipKey] || {};
-    let isTaskCompleted = false;
-    let planDate = '';
-    if (data.setupDetails && taskName) {
-        const taskObj = data.setupDetails.find(t => t.content === taskName);
-        if (taskObj) {
-            isTaskCompleted = !!taskObj.completed;
-            planDate = taskObj.startDate || '';
-        }
-    } else if (forceComplete) {
-        isTaskCompleted = true;
-    }
-    
     const planDateInput = modal.querySelector('#setup-log-reg-plan-date');
-    if (planDateInput) planDateInput.value = planDate;
-    
-    if (completeBtn) {
-        if (isTaskCompleted) {
-            completeBtn.classList.remove('btn-gray');
-            completeBtn.classList.add('btn-green');
-        } else {
-            completeBtn.classList.remove('btn-green');
-            completeBtn.classList.add('btn-gray');
-        }
-    }
+    if (planDateInput) planDateInput.value = '';
 
     const delBtn = modal.querySelector('#btn-delete-setup-log-reg');
     const saveBtn = modal.querySelector('#btn-save-setup-log-reg');
@@ -515,103 +758,27 @@ window.openLogForEditing = function(site, equip, logId) {
 
     if (!log) return alert('해당 작업 기록을 찾을 수 없습니다.');
 
-    // 모달 필드 채우기
-    // [추가] 수정 모드일 때는 드롭다운 래퍼를 숨기고 일반 읽기전용 텍스트 인풋으로 복구
-    const taskInput = modal.querySelector('#setup-log-reg-task');
-    const taskWrapper = modal.querySelector('#setup-log-reg-task-wrapper');
-    if (taskWrapper) taskWrapper.style.display = 'none';
-    if (taskInput) {
-        taskInput.type = 'text';
-        taskInput.readOnly = true;
-        taskInput.style.backgroundColor = '#0d1117';
-        taskInput.style.color = '#fff';
-    }
-
     modal.querySelector('#setup-log-reg-site').value = site;
     modal.querySelector('#setup-log-reg-equip').value = equip;
     const idInput = modal.querySelector('#setup-log-reg-id');
     if (idInput) idInput.value = logId;
     modal.querySelector('#setup-log-reg-date').value = log.date;
-    modal.querySelector('#setup-log-reg-task').value = log.content;
-    
-    const dateInput = modal.querySelector('#setup-log-reg-date');
-    let completeBtn = modal.querySelector('#btn-setup-log-reg-complete');
-    
-    if (dateInput && !completeBtn) {
-        const dateRow = dateInput.closest('.form-row') || dateInput.parentNode;
-        if (dateRow) {
-            dateRow.style.display = 'flex';
-            dateRow.style.flexDirection = 'row';
-            dateRow.style.alignItems = 'center';
-            dateRow.style.flexWrap = 'nowrap';
-            const dateLabel = dateRow.querySelector('label');
-            if (dateLabel) {
-                dateLabel.style.width = '80px';
-                dateLabel.style.flexShrink = '0';
-                dateLabel.style.whiteSpace = 'nowrap';
-                dateLabel.style.marginBottom = '0';
-            }
-        }
-        
-        const wrapper = document.createElement('div');
-        wrapper.style.display = 'flex';
-        wrapper.style.gap = '5px';
-        wrapper.style.width = '100%';
-        wrapper.style.minWidth = '0';
-        
-        dateInput.parentNode.insertBefore(wrapper, dateInput);
-        wrapper.appendChild(dateInput);
-        dateInput.style.flex = '1';
-        dateInput.style.minWidth = '0';
-        
-        completeBtn = document.createElement('button');
-        completeBtn.id = 'btn-setup-log-reg-complete';
-        completeBtn.type = 'button';
-        completeBtn.className = 'btn-gray';
-        completeBtn.textContent = '완료';
-        completeBtn.style.padding = '0 15px';
-        completeBtn.style.height = '34px';
-        completeBtn.style.fontSize = '13px';
-        completeBtn.style.whiteSpace = 'nowrap';
-        completeBtn.style.borderRadius = '4px';
-        completeBtn.style.cursor = 'pointer';
-        completeBtn.style.flexShrink = '0';
-        
-        completeBtn.onclick = (e) => {
-            e.stopPropagation();
-            if (completeBtn.classList.contains('btn-green')) {
-                completeBtn.classList.remove('btn-green');
-                completeBtn.classList.add('btn-gray');
-            } else {
-                completeBtn.classList.remove('btn-gray');
-                completeBtn.classList.add('btn-green');
-            }
-        };
-        wrapper.appendChild(completeBtn);
-    }
 
-    let isTaskCompleted = false;
-    let planDate = '';
-    if (setupData[equipKey] && setupData[equipKey].setupDetails) {
-        const taskObj = setupData[equipKey].setupDetails.find(t => t.content === log.content);
-        if (taskObj) {
-            isTaskCompleted = !!taskObj.completed;
-            planDate = taskObj.startDate || '';
-        }
-    }
+    // 사업장 및 장비 드롭다운 초기화
+    setupSetupLogRegSiteAndEquipDropdowns(modal, site || '', equip || '');
+
+    // 셋업 구분 및 세부 구분 드롭다운 초기화
+    setupCategoryAndSubCategoryDropdowns(modal, log.category || '', log.subcategory || '');
+
+    const contentInput = modal.querySelector('#setup-log-reg-content');
+    if (contentInput) contentInput.value = log.content || '';
     
+    // [삭제] 완료 버튼 제거
+    const completeBtn = modal.querySelector('#btn-setup-log-reg-complete');
+    if (completeBtn) completeBtn.remove();
+
     const planDateInput = modal.querySelector('#setup-log-reg-plan-date');
-    if (planDateInput) planDateInput.value = planDate;
-    
-    if (completeBtn) {
-        if (isTaskCompleted) {
-            completeBtn.classList.remove('btn-gray');
-            completeBtn.classList.add('btn-green');
-        } else {
-            completeBtn.classList.remove('btn-green');
-            completeBtn.classList.add('btn-gray');
-        }
-    }
+    if (planDateInput) planDateInput.value = '';
 
     const memoInput = modal.querySelector('#setup-log-reg-memo');
     if (memoInput) memoInput.value = log.memo || '';
@@ -976,11 +1143,44 @@ function setupSetupLogRegPartDropdown(modalContext, site, equip, presetParts = '
 
 // [추가] 셋업 작업 상태(진행률, 시작/완료일) 자동 재계산 유틸리티
 function recalculateSetupTaskStatus(data, taskContent, site = null, equip = null, isManualCompleted = null) {
-    if (!data.setupDetails) return false;
-    const task = data.setupDetails.find(t => t.content === taskContent);
+    if (!data.setupDetails) data.setupDetails = [];
+    let task = data.setupDetails.find(t => t.content === taskContent || t.subcategory === taskContent || (taskContent === '셋업 완료' && (t.category === '셋업 완료' || t.content === '셋업 완료' || t.subcategory === '셋업 완료')));
+    
+    // 만약 setupDetails에 해당 작업이 없다면 동적 생성 추가
+    if (!task && taskContent) {
+        task = {
+            id: Date.now(),
+            category: (taskContent === '셋업 완료' ? '셋업 완료' : ''),
+            subcategory: taskContent,
+            content: taskContent,
+            startDate: "", date: "", estDays: "1",
+            completed: false, execStartDate: "", delayReason: ""
+        };
+        data.setupDetails.push(task);
+    }
     if (!task) return false;
 
-    const taskLogs = (data.setupLogs || []).filter(l => l.content === taskContent);
+    const taskLogs = (data.setupLogs || []).filter(l => {
+        const lSub = l.subcategory || '';
+        const lCont = l.content || '';
+        const lCat = l.category || '';
+        const tSub = task.subcategory || '';
+        const tCont = task.content || '';
+        const tCat = task.category || '';
+
+        if (taskContent === '셋업 완료' || tCat === '셋업 완료' || tSub === '셋업 완료' || tCont === '셋업 완료') {
+            if (lCat === '셋업 완료' || lSub === '셋업 완료' || lCont === '셋업 완료') return true;
+        }
+
+        if (lSub && (lSub === taskContent || lSub === tSub || lSub === tCont)) return true;
+        if (lCont && (lCont === taskContent || lCont === tSub || lCont === tCont)) return true;
+        if (tCat && lCat === tCat) {
+            if (lSub && (lSub === tSub || lSub === tCont)) return true;
+            if (lCont && (lCont === tSub || lCont === tCont)) return true;
+        }
+        return false;
+    });
+
     taskLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
 
     let prevCompleted = task.completed;
@@ -992,14 +1192,25 @@ function recalculateSetupTaskStatus(data, taskContent, site = null, equip = null
         task.delayReason = "";
     } else {
         task.execStartDate = taskLogs[0].date;
+        task.date = taskLogs[taskLogs.length - 1]?.date || taskLogs[0].date;
+        task.completed = true;
 
-        if (isManualCompleted === true) {
-            task.completed = true;
-            task.date = taskLogs[taskLogs.length - 1]?.date || new Date().toISOString().split('T')[0];
-        } else if (isManualCompleted === false) {
+        if (isManualCompleted === false) {
             task.completed = false;
-            task.date = "";
         }
+    }
+
+    // 셋업 완료 작업인 경우 setupDetails의 모든 '셋업 완료' 항목을 동기화 완료 처리
+    if (task.category === '셋업 완료' || task.subcategory === '셋업 완료' || task.content === '셋업 완료') {
+        data.setupDetails.forEach(t => {
+            if (t.category === '셋업 완료' || t.subcategory === '셋업 완료' || t.content === '셋업 완료') {
+                if (taskLogs.length > 0) {
+                    t.completed = true;
+                    t.date = taskLogs[taskLogs.length - 1]?.date || taskLogs[0].date;
+                    t.execStartDate = taskLogs[0].date;
+                }
+            }
+        });
     }
 
     // [추가] 셋업 완료 기록이 삭제되어 미완료 상태로 롤백된 경우, 장비 상태를 셋업 장비로 복구
@@ -1541,9 +1752,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const modal = e.target.closest('.modal-overlay') || document;
             const site = modal.querySelector('#setup-log-reg-site').value;
             const equip = modal.querySelector('#setup-log-reg-equip').value;
-            const planDate = modal.querySelector('#setup-log-reg-plan-date') ? modal.querySelector('#setup-log-reg-plan-date').value : '';
             const date = modal.querySelector('#setup-log-reg-date').value;
-            const task = modal.querySelector('#setup-log-reg-task').value;
+            const category = modal.querySelector('#setup-log-reg-category') ? modal.querySelector('#setup-log-reg-category').value : '';
+            const subcategory = modal.querySelector('#setup-log-reg-subcategory') ? modal.querySelector('#setup-log-reg-subcategory').value : '';
+            const content = modal.querySelector('#setup-log-reg-content') ? modal.querySelector('#setup-log-reg-content').value.trim() : '';
+            const task = subcategory || content; // task 필드 호환
             const worker = modal.querySelector('#setup-log-reg-worker').value;
             const md = modal.querySelector('#setup-log-reg-md').value;
             const memo = modal.querySelector('#setup-log-reg-memo').value;
@@ -1551,10 +1764,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const parts = modal.querySelector('#setup-log-reg-part-hidden') ? modal.querySelector('#setup-log-reg-part-hidden').value : '';
             const logId = modal.querySelector('#setup-log-reg-id') ? modal.querySelector('#setup-log-reg-id').value : ''; // 수정 모드 식별자
             
-            const completeBtn = modal.querySelector('#btn-setup-log-reg-complete');
-            const isManualCompleted = completeBtn ? completeBtn.classList.contains('btn-green') : null;
-            
-            if(!date || !worker || !md || !task) return alert('작업일, 작업명, 작업자, 공수를 모두 입력해주세요.');
+            if(!site || !equip || !date || !category || !subcategory || !worker || !md) {
+                return alert('사업장, 장비, 작업일, 셋업 구분, 세부 구분, 작업자, 공수를 모두 입력해주세요.');
+            }
             
             const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
             const equipKey = `${site}::${equip}`;
@@ -1567,18 +1779,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const existingLog = data.setupLogs.find(l => l.id == logId);
                 if (existingLog) {
                     existingLog.date = date;
+                    existingLog.category = category;
+                    existingLog.subcategory = subcategory;
+                    existingLog.content = content || '';
                     existingLog.worker = worker;
                     existingLog.md = md;
                     existingLog.memo = memo;
                     existingLog.parts = parts; // [추가] 물품 업데이트
                     isUpdating = true;
-                }
-            }
-            
-            if (planDate && data.setupDetails) {
-                const taskObj = data.setupDetails.find(t => t.content === task);
-                if (taskObj) {
-                    taskObj.startDate = planDate;
                 }
             }
 
@@ -1587,8 +1795,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const newLog = {
                     id: Date.now(),
                     date: date,
+                    category: category,
+                    subcategory: subcategory,
+                    content: content || '',
                     worker: worker,
-                    content: task,
                     company: "위드텍",
                     memo: memo,
                     md: md,
@@ -1597,17 +1807,36 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.setupLogs.push(newLog);
             }
 
-            // [개선] 셋업 로그 기록 수에 따라 완료/지연 상태를 자동 재계산
-            const setupDetailsUpdated = recalculateSetupTaskStatus(data, task, site, equip, isManualCompleted);
+            // [개선] 셋업 로그 기록 시 setupDetails의 해당 예정 항목을 즉시 완료 처리
+            let setupDetailsUpdated = false;
+            if (data.setupDetails) {
+                data.setupDetails.forEach(t => {
+                    const isCatMatch = !t.category || !category || t.category === category;
+                    const isSubMatch = (t.subcategory && (t.subcategory === subcategory || t.subcategory === content || t.subcategory === task)) ||
+                                       (t.content && (t.content === content || t.content === subcategory || t.content === task));
+                    const isCompleteSpecial = (category === '셋업 완료' || subcategory === '셋업 완료' || content === '셋업 완료') &&
+                                              (t.category === '셋업 완료' || t.subcategory === '셋업 완료' || t.content === '셋업 완료');
+
+                    if ((isCatMatch && isSubMatch) || isCompleteSpecial) {
+                        t.completed = true;
+                        t.date = date;
+                        t.execStartDate = t.execStartDate || date;
+                        if (worker) t.worker = worker;
+                        setupDetailsUpdated = true;
+                    }
+                });
+            }
+            const statusRecalculated = recalculateSetupTaskStatus(data, task, site, equip, null);
+            if (statusRecalculated) setupDetailsUpdated = true;
 
             setupData[equipKey] = data;
             localStorage.setItem('setup_data', JSON.stringify(setupData));
             
             if (typeof window.syncSetupDataDB === 'function') {
-                await window.syncSetupDataDB(site, equip, data.setupDetails, data.setupLogs);
+                await window.syncSetupDataDB(site, equip, data.setupDetails || [], data.setupLogs);
             }
             
-            if (typeof addSystemLog === 'function') addSystemLog(isUpdating ? 'UPDATE_SETUP_LOG' : 'ADD_SETUP_LOG', equip, `[${task}] ${worker} (${md}MD)`);
+            if (typeof addSystemLog === 'function') addSystemLog(isUpdating ? 'UPDATE_SETUP_LOG' : 'ADD_SETUP_LOG', equip, `[${category} > ${subcategory}] ${worker} (${md}MD)`);
             
             const parentModal = e.target.closest('.modal-overlay');
             if (parentModal) parentModal.style.display = 'none';
@@ -1726,3 +1955,610 @@ window.openAddSetupTaskModal = function(site, equip, defaultCategory) {
     modal.style.display = 'flex';
     setTimeout(() => document.getElementById('add-setup-task-name').focus(), 100);
 };
+
+/* ==========================================================================
+   셋업 작업 예정일 등록 모달 (Setup Task Schedule Register Modal)
+   ========================================================================== */
+function setupSetupTaskScheduleModal() {
+    if (document.getElementById('setup-task-schedule-modal')) return;
+
+    if (typeof getTemplateContent === 'function') {
+        const templateContent = getTemplateContent('setup-task-schedule-modal-template');
+        if (templateContent) {
+            document.body.appendChild(templateContent);
+        }
+    }
+
+    const modal = document.getElementById('setup-task-schedule-modal');
+    if (!modal) return;
+
+    const closeBtn = document.getElementById('btn-close-setup-task-schedule-modal');
+    const saveBtn = document.getElementById('btn-save-setup-task-schedule');
+
+    const closeModal = () => { modal.style.display = 'none'; };
+    if (closeBtn) closeBtn.onclick = closeModal;
+
+    const dateInput = modal.querySelector('#setup-sched-date');
+    const siteSelect = modal.querySelector('#setup-sched-site');
+    const equipHidden = modal.querySelector('#setup-sched-equip');
+    const equipTrigger = modal.querySelector('#setup-sched-equip-trigger');
+    const catSelect = modal.querySelector('#setup-sched-category');
+    const subcatSelect = modal.querySelector('#setup-sched-subcategory');
+    const contentInput = modal.querySelector('#setup-sched-content');
+    const workerHidden = modal.querySelector('#setup-sched-worker');
+    const workerTrigger = modal.querySelector('#setup-sched-worker-trigger');
+
+    // has-value 업데이트 헬퍼
+    const updateHasValue = (el) => {
+        if (!el) return;
+        if (el.value && el.value.trim() !== '') {
+            el.classList.add('has-value');
+        } else {
+            el.classList.remove('has-value');
+        }
+    };
+
+    // 실시간 값 변경 및 빨간 테두리 제거 리스너
+    [dateInput, siteSelect, catSelect, subcatSelect, contentInput].forEach(el => {
+        if (!el) return;
+        const handler = () => {
+            el.style.border = '';
+            el.style.backgroundColor = '';
+            updateHasValue(el);
+        };
+        el.addEventListener('input', handler);
+        el.addEventListener('change', handler);
+    });
+
+    // 사업장 변경 시 장비 목록 갱신
+    if (siteSelect) {
+        siteSelect.addEventListener('change', () => {
+            const selSite = siteSelect.value;
+            populateSetupSchedEquips(modal, selSite);
+            updateHasValue(siteSelect);
+        });
+    }
+
+    // 구분 변경 시 세부 구분 목록 갱신
+    if (catSelect) {
+        catSelect.addEventListener('change', () => {
+            const selCat = catSelect.value;
+            populateSetupSchedSubcategories(modal, selCat);
+            updateHasValue(catSelect);
+            updateHasValue(subcatSelect);
+        });
+    }
+
+    // 세부 구분 변경 시 내용 자동 채우기
+    if (subcatSelect) {
+        subcatSelect.addEventListener('change', () => {
+            if (!contentInput.value || contentInput.dataset.autoFilled === 'true') {
+                contentInput.value = subcatSelect.value || '';
+                contentInput.dataset.autoFilled = 'true';
+                updateHasValue(contentInput);
+            }
+            updateHasValue(subcatSelect);
+        });
+    }
+    if (contentInput) {
+        contentInput.addEventListener('input', () => {
+            contentInput.dataset.autoFilled = 'false';
+            updateHasValue(contentInput);
+        });
+    }
+
+    // 작업자 드롭다운 초기화
+    setupSetupSchedWorkerDropdown(modal);
+
+    // 저장 버튼 클릭 시 유효성 검사 및 저장
+    if (saveBtn) {
+        saveBtn.onclick = async () => {
+            let hasError = false;
+            const checkFields = [
+                { val: dateInput ? dateInput.value.trim() : '', el: dateInput },
+                { val: siteSelect ? siteSelect.value.trim() : '', el: siteSelect },
+                { val: equipHidden ? equipHidden.value.trim() : '', el: equipTrigger },
+                { val: catSelect ? catSelect.value.trim() : '', el: catSelect },
+                { val: subcatSelect ? subcatSelect.value.trim() : '', el: subcatSelect },
+                { val: workerHidden ? workerHidden.value.trim() : '', el: workerTrigger }
+            ];
+
+            checkFields.forEach(f => {
+                if (!f.val) {
+                    if (f.el) {
+                        f.el.style.border = '1.5px solid #f85149';
+                        f.el.style.backgroundColor = 'rgba(248, 81, 73, 0.08)';
+                    }
+                    hasError = true;
+                } else if (f.el) {
+                    f.el.style.border = '';
+                    f.el.style.backgroundColor = '';
+                }
+            });
+
+            if (hasError) {
+                alert('입력되지 않은 필수 항목이 있습니다. 빨간색 표시 항목을 모두 입력해주세요.');
+                return;
+            }
+
+            const site = siteSelect.value;
+            const equip = equipHidden.value;
+            const date = dateInput.value;
+            const category = catSelect.value;
+            const subcategory = subcatSelect.value;
+            const content = contentInput.value.trim() || subcategory;
+            const worker = workerHidden.value;
+            const md = (worker ? worker.split(',').map(w => w.trim()).filter(Boolean).length : 1).toString();
+
+            const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+            const equipKey = `${site}::${equip}`;
+            let data = setupData[equipKey] || {};
+            if (!data.setupDetails) data.setupDetails = [];
+            if (!data.setupLogs) data.setupLogs = [];
+
+            const newDetail = {
+                id: Date.now(),
+                category: category,
+                subcategory: subcategory,
+                content: content,
+                startDate: date,
+                date: date,
+                estDays: md,
+                completed: false,
+                worker: worker,
+                execStartDate: "",
+                delayReason: ""
+            };
+
+            data.setupDetails.push(newDetail);
+            setupData[equipKey] = data;
+            localStorage.setItem('setup_data', JSON.stringify(setupData));
+
+            if (typeof window.syncSetupDataDB === 'function') {
+                await window.syncSetupDataDB(site, equip, data.setupDetails, data.setupLogs);
+            }
+            if (typeof addSystemLog === 'function') {
+                addSystemLog('ADD_SETUP_ITEM', equip, `셋업 작업 예정 등록: [${category} > ${subcategory}] ${date} (${worker}, ${md}MD)`);
+            }
+
+            alert('셋업 작업 예정일이 정상적으로 등록되었습니다.');
+            modal.style.display = 'none';
+
+            if (typeof renderGanttChart === 'function') renderGanttChart();
+            if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+            if (typeof renderSetupDetailList === 'function' && typeof currentPath !== 'undefined' && currentPath.equip === equip) {
+                renderSetupDetailList();
+            }
+        };
+    }
+}
+
+// 셋업 장비 목록 커스텀 드롭다운 populate 함수 (녹색 고객사장비명/시리얼 지원)
+function populateSetupSchedEquips(modal, selectedSite, targetEquip = '') {
+    const equipTrigger = modal.querySelector('#setup-sched-equip-trigger');
+    const equipDropdown = modal.querySelector('#setup-sched-equip-dropdown');
+    const equipSearch = modal.querySelector('#setup-sched-equip-search');
+    const equipList = modal.querySelector('#setup-sched-equip-list');
+    const equipHidden = modal.querySelector('#setup-sched-equip');
+
+    if (!equipTrigger || !equipList || !equipHidden) return;
+
+    const getDeviceMap = () => {
+        return (typeof getDeviceDataMap === 'function') ? getDeviceDataMap() : (JSON.parse(localStorage.getItem('device_data_map')) || JSON.parse(localStorage.getItem('deviceData')) || {});
+    };
+
+    const getEquipFormattedInfo = (site, eq) => {
+        if (!eq) return { text: '', html: '', modelName: '', subText: '' };
+        const parts = eq.split('::');
+        const rawName = parts[0] || '';
+        const serial = parts.length > 1 ? parts[1] : '';
+        const custNameFromKey = parts.length > 2 ? parts[2] : '';
+        const key = `details_${site}_${eq}`;
+        const detailData = JSON.parse(localStorage.getItem(key)) || {};
+        const custName = custNameFromKey || ((detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '');
+        
+        const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+        const matchedModel = equipmentModels.find(m => m.name === rawName || m.abbr === rawName);
+        const modelName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : rawName;
+
+        let subText = '';
+        if (custName) {
+            subText = `[${custName}]`;
+        } else if (serial) {
+            subText = `(${serial})`;
+        }
+        
+        const plainText = subText ? `${modelName} ${subText}` : modelName;
+        const subHtml = subText ? ` <span style="color: #3fb950; font-weight: 500; display: inline;">${typeof escapeHtml === 'function' ? escapeHtml(subText) : subText}</span>` : '';
+        const html = `<span>${typeof escapeHtml === 'function' ? escapeHtml(modelName) : modelName}${subHtml}</span>`;
+        
+        return { text: plainText, html: html, modelName, subText };
+    };
+
+    const renderEquips = (filter = '') => {
+        equipList.innerHTML = '';
+        if (!selectedSite) {
+            equipList.innerHTML = '<div class="log-select-empty" style="padding:10px; text-align:center; color:#8b949e;">사업장을 먼저 선택하세요</div>';
+            return;
+        }
+
+        const map = getDeviceMap();
+        const equips = map[selectedSite] ? [...map[selectedSite]] : [];
+
+        // 셋업 장비로 구분된 장비만 필터링
+        const setupEquips = equips.filter(eq => {
+            if (eq.startsWith('기타(ETC)')) return false;
+            const detailKey = `details_${selectedSite}_${eq}`;
+            const detailData = JSON.parse(localStorage.getItem(detailKey)) || {};
+            const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : (detailData.equipStatus || '');
+            return equipStatus === '셋업 장비' || equipStatus.includes('셋업') || (detailData.setup && detailData.setup.isSetupEquip);
+        });
+
+        if (setupEquips.length === 0) {
+            equipList.innerHTML = '<div class="log-select-empty" style="padding:10px; text-align:center; color:#8b949e;">해당 사업장에 셋업 장비가 없습니다.</div>';
+            return;
+        }
+
+        let filtered = setupEquips;
+        if (filter) {
+            const lowerKw = filter.toLowerCase();
+            filtered = setupEquips.filter(eq => {
+                const info = getEquipFormattedInfo(selectedSite, eq);
+                return eq.toLowerCase().includes(lowerKw) ||
+                       info.text.toLowerCase().includes(lowerKw) ||
+                       info.modelName.toLowerCase().includes(lowerKw) ||
+                       info.subText.toLowerCase().includes(lowerKw);
+            });
+        }
+
+        filtered.forEach(eq => {
+            const info = getEquipFormattedInfo(selectedSite, eq);
+            const item = document.createElement('div');
+            item.className = 'log-select-item' + (eq === equipHidden.value ? ' selected' : '');
+            item.innerHTML = info.html;
+            item.onclick = (e) => {
+                e.stopPropagation();
+                equipHidden.value = eq;
+                equipTrigger.innerHTML = info.html;
+                equipTrigger.title = info.text;
+                equipTrigger.classList.add('has-value');
+                equipTrigger.style.border = '';
+                equipTrigger.style.backgroundColor = '';
+                if (equipDropdown) equipDropdown.classList.remove('show');
+            };
+            equipList.appendChild(item);
+        });
+    };
+
+    if (!selectedSite) {
+        equipHidden.value = '';
+        equipTrigger.textContent = '장비 선택';
+        equipTrigger.title = '';
+        equipTrigger.classList.remove('has-value');
+        equipTrigger.classList.add('disabled');
+        return;
+    }
+
+    equipTrigger.classList.remove('disabled');
+    renderEquips('');
+
+    if (targetEquip) {
+        equipHidden.value = targetEquip;
+        const info = getEquipFormattedInfo(selectedSite, targetEquip);
+        equipTrigger.innerHTML = info.html || targetEquip;
+        equipTrigger.title = info.text || targetEquip;
+        equipTrigger.classList.add('has-value');
+    } else {
+        equipHidden.value = '';
+        equipTrigger.textContent = '장비 선택';
+        equipTrigger.title = '';
+        equipTrigger.classList.remove('has-value');
+    }
+
+    equipTrigger.onclick = (e) => {
+        e.stopPropagation();
+        if (equipTrigger.classList.contains('disabled')) return;
+        const isShown = equipDropdown && equipDropdown.classList.contains('show');
+        document.querySelectorAll('.log-select-dropdown.show').forEach(d => {
+            if (d !== equipDropdown) d.classList.remove('show');
+        });
+        if (isShown) {
+            if (equipDropdown) equipDropdown.classList.remove('show');
+        } else if (equipDropdown) {
+            equipDropdown.classList.add('show');
+            if (equipSearch) {
+                equipSearch.value = '';
+                setTimeout(() => equipSearch.focus(), 50);
+            }
+            renderEquips('');
+        }
+    };
+
+    if (equipSearch) {
+        equipSearch.onclick = (e) => e.stopPropagation();
+        equipSearch.oninput = (e) => renderEquips(e.target.value.trim());
+    }
+}
+
+// 셋업 세부구분 목록 populate 함수
+function populateSetupSchedSubcategories(modal, category, targetSubcat = '') {
+    const subcatSelect = modal.querySelector('#setup-sched-subcategory');
+    if (!subcatSelect) return;
+    subcatSelect.innerHTML = '<option value="">세부 구분 선택</option>';
+
+    if (!category) {
+        subcatSelect.disabled = true;
+        subcatSelect.classList.remove('has-value');
+        return;
+    }
+
+    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
+    const tplList = templates['default'] || [
+        { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크" },
+        { category: "장비 반입 및 정위치", subcategory: "장비 반입" },
+        { category: "유틸리티 연결", subcategory: "배관 연결" },
+        { category: "유틸리티 연결", subcategory: "전원 인가" },
+        { category: "티칭 및 캘리브레이션", subcategory: "로봇 티칭" },
+        { category: "티칭 및 캘리브레이션", subcategory: "광학계 캘리브레이션" },
+        { category: "셋업 평가", subcategory: "반복정밀도 평가" },
+        { category: "셋업 평가", subcategory: "고객사 승인" },
+        { category: "셋업 완료", subcategory: "셋업 완료" }
+    ];
+
+    const matchedSubs = [...new Set(tplList.filter(t => t.category === category).map(t => t.subcategory).filter(Boolean))];
+
+    if (matchedSubs.length === 0) {
+        subcatSelect.disabled = true;
+        subcatSelect.classList.remove('has-value');
+        return;
+    }
+
+    subcatSelect.disabled = false;
+    matchedSubs.forEach(sub => {
+        const opt = document.createElement('option');
+        opt.value = sub;
+        opt.textContent = sub;
+        if (targetSubcat && sub === targetSubcat) opt.selected = true;
+        subcatSelect.appendChild(opt);
+    });
+
+    if (matchedSubs.length > 0 && !targetSubcat) {
+        subcatSelect.value = matchedSubs[0];
+    }
+
+    if (subcatSelect.value) {
+        subcatSelect.classList.add('has-value');
+        const contentInput = modal.querySelector('#setup-sched-content');
+        if (contentInput && (!contentInput.value || contentInput.dataset.autoFilled === 'true')) {
+            contentInput.value = subcatSelect.value;
+            contentInput.dataset.autoFilled = 'true';
+            if (contentInput.value) contentInput.classList.add('has-value');
+        }
+    } else {
+        subcatSelect.classList.remove('has-value');
+    }
+}
+
+// 작업자 선택 드롭다운 로직 (운영관리와 동일한 log-select-dropdown)
+function setupSetupSchedWorkerDropdown(modal) {
+    const trigger = modal.querySelector('#setup-sched-worker-trigger');
+    const dropdown = modal.querySelector('#setup-sched-worker-dropdown');
+    const searchInput = modal.querySelector('#setup-sched-worker-search');
+    const list = modal.querySelector('#setup-sched-worker-list');
+    const confirmBtn = modal.querySelector('#btn-setup-sched-worker-confirm');
+    const hiddenInput = modal.querySelector('#setup-sched-worker');
+
+    if (!trigger || !dropdown || !list || !hiddenInput) return;
+
+    const renderList = async (searchTerm = '') => {
+        list.innerHTML = '';
+        const siteSelect = modal.querySelector('#setup-sched-site');
+        const site = siteSelect ? siteSelect.value : '';
+        const workers = (typeof window.fetchWorkerNames === 'function') ? await window.fetchWorkerNames(site) : [];
+        const currentSelected = hiddenInput.value ? hiddenInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+        const allWorkers = workers.map(w => typeof w === 'string' ? { name: w, department: '', position: '', site: '' } : w);
+        let displayWorkers = [...allWorkers];
+
+        if (searchTerm) {
+            const kw = searchTerm.toLowerCase();
+            displayWorkers = displayWorkers.filter(w =>
+                w.name.toLowerCase().includes(kw) ||
+                (w.department && w.department.toLowerCase().includes(kw)) ||
+                (w.position && w.position.toLowerCase().includes(kw))
+            );
+        }
+
+        const displayedNames = new Set(displayWorkers.map(w => w.name));
+        currentSelected.forEach(selectedName => {
+            if (!displayedNames.has(selectedName)) {
+                const workerToAdd = allWorkers.find(w => w.name === selectedName);
+                if (workerToAdd) displayWorkers.unshift(workerToAdd);
+                else displayWorkers.unshift({ name: selectedName, department: '', position: '' });
+            }
+        });
+
+        if (typeof window.renderWorkerListItems === 'function') {
+            window.renderWorkerListItems(list, displayWorkers, currentSelected, () => {
+                const selected = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value);
+                hiddenInput.value = selected.join(', ');
+                if (selected.length > 0) {
+                    trigger.textContent = selected.join(', ');
+                    trigger.classList.add('has-value');
+                    trigger.style.border = '';
+                    trigger.style.backgroundColor = '';
+                } else {
+                    trigger.textContent = '작업자 선택';
+                    trigger.classList.remove('has-value');
+                }
+                trigger.title = selected.join(', ');
+            });
+        } else {
+            displayWorkers.forEach(w => {
+                const item = document.createElement('div');
+                const isSelected = currentSelected.includes(w.name);
+                item.className = 'log-select-item' + (isSelected ? ' selected' : '');
+                item.dataset.value = w.name;
+                const pos = w.position ? ` <span style="font-size:11px; color:#8b949e;">${w.position}</span>` : '';
+                item.innerHTML = `<span>${w.name}${pos}</span>`;
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    item.classList.toggle('selected');
+                };
+                list.appendChild(item);
+            });
+        }
+    };
+
+    trigger.onclick = (e) => {
+        e.stopPropagation();
+        const isShown = dropdown.classList.contains('show');
+        document.querySelectorAll('.log-select-dropdown.show').forEach(d => {
+            if (d !== dropdown) d.classList.remove('show');
+        });
+        if (isShown) {
+            dropdown.classList.remove('show');
+        } else {
+            dropdown.classList.add('show');
+            if (searchInput) {
+                searchInput.value = '';
+                setTimeout(() => searchInput.focus(), 50);
+            }
+            renderList('');
+        }
+    };
+
+    if (searchInput) {
+        searchInput.onclick = (e) => e.stopPropagation();
+        searchInput.oninput = (e) => renderList(e.target.value.trim());
+    }
+
+    if (confirmBtn) {
+        confirmBtn.onclick = (e) => {
+            e.stopPropagation();
+            const selected = Array.from(list.querySelectorAll('.log-select-item.selected')).map(el => el.dataset.value || el.textContent.trim());
+            const names = selected.join(', ');
+            hiddenInput.value = names;
+            if (names) {
+                trigger.textContent = names;
+                trigger.title = names;
+                trigger.classList.add('has-value');
+                trigger.style.border = '';
+                trigger.style.backgroundColor = '';
+            } else {
+                trigger.textContent = '작업자 선택';
+                trigger.title = '';
+                trigger.classList.remove('has-value');
+            }
+            dropdown.classList.remove('show');
+        };
+    }
+}
+
+window.openSetupScheduleRegisterModal = function(site = '', equip = '', defaultDate = '') {
+    setupSetupTaskScheduleModal();
+    const modal = document.getElementById('setup-task-schedule-modal');
+    if (!modal) return;
+
+    const dateInput = modal.querySelector('#setup-sched-date');
+    const siteSelect = modal.querySelector('#setup-sched-site');
+    const catSelect = modal.querySelector('#setup-sched-category');
+    const subcatSelect = modal.querySelector('#setup-sched-subcategory');
+    const contentInput = modal.querySelector('#setup-sched-content');
+    const workerHidden = modal.querySelector('#setup-sched-worker');
+    const workerTrigger = modal.querySelector('#setup-sched-worker-trigger');
+    const equipTrigger = modal.querySelector('#setup-sched-equip-trigger');
+
+    // 빨간 테두리 초기화
+    [dateInput, siteSelect, equipTrigger, catSelect, subcatSelect, contentInput, workerTrigger].forEach(el => {
+        if (el) { el.style.border = ''; el.style.backgroundColor = ''; }
+    });
+
+    // 예정일 세팅 및 has-value 회색 배경 적용
+    const today = new Date().toISOString().split('T')[0];
+    if (dateInput) {
+        dateInput.value = defaultDate || today;
+        dateInput.classList.add('has-value');
+    }
+
+    // 사업장 목록 populate
+    const deviceData = (typeof getDeviceDataMap === 'function') ? getDeviceDataMap() : (JSON.parse(localStorage.getItem('device_data_map')) || JSON.parse(localStorage.getItem('deviceData')) || {});
+    const sites = Object.keys(deviceData).sort();
+    if (siteSelect) {
+        siteSelect.innerHTML = '<option value="">사업장 선택</option>';
+        sites.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s;
+            opt.textContent = s;
+            if (site && s === site) opt.selected = true;
+            siteSelect.appendChild(opt);
+        });
+        if (siteSelect.value) siteSelect.classList.add('has-value');
+        else siteSelect.classList.remove('has-value');
+    }
+
+    // 장비 목록 populate
+    const currentSite = site || (siteSelect ? siteSelect.value : '');
+    populateSetupSchedEquips(modal, currentSite, equip);
+
+    // 셋업 구분 목록 populate
+    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
+    const tplList = templates['default'] || [
+        { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크" },
+        { category: "장비 반입 및 정위치", subcategory: "장비 반입" },
+        { category: "유틸리티 연결", subcategory: "배관 연결" },
+        { category: "유틸리티 연결", subcategory: "전원 인가" },
+        { category: "티칭 및 캘리브레이션", subcategory: "로봇 티칭" },
+        { category: "티칭 및 캘리브레이션", subcategory: "광학계 캘리브레이션" },
+        { category: "셋업 평가", subcategory: "반복정밀도 평가" },
+        { category: "셋업 평가", subcategory: "고객사 승인" },
+        { category: "셋업 완료", subcategory: "셋업 완료" }
+    ];
+    const categories = [...new Set(tplList.map(t => t.category).filter(Boolean))];
+    if (catSelect) {
+        catSelect.innerHTML = '<option value="">셋업 구분 선택</option>';
+        categories.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat;
+            opt.textContent = cat;
+            catSelect.appendChild(opt);
+        });
+        if (categories.length > 0) {
+            catSelect.value = categories[0];
+            catSelect.classList.add('has-value');
+            populateSetupSchedSubcategories(modal, categories[0]);
+        } else {
+            catSelect.classList.remove('has-value');
+        }
+    }
+
+    // 내용 초기화
+    if (contentInput) {
+        contentInput.value = '';
+        contentInput.dataset.autoFilled = 'true';
+        contentInput.classList.remove('has-value');
+        if (subcatSelect && subcatSelect.value) {
+            contentInput.value = subcatSelect.value;
+            contentInput.classList.add('has-value');
+        }
+    }
+
+    // 작업자 초기화 (로그인 유저)
+    const defaultWorker = sessionStorage.getItem('userName') || sessionStorage.getItem('userId') || '';
+    if (workerHidden) workerHidden.value = defaultWorker;
+    if (workerTrigger) {
+        if (defaultWorker) {
+            workerTrigger.textContent = defaultWorker;
+            workerTrigger.title = defaultWorker;
+            workerTrigger.classList.add('has-value');
+        } else {
+            workerTrigger.textContent = '작업자 선택';
+            workerTrigger.title = '';
+            workerTrigger.classList.remove('has-value');
+        }
+    }
+    setupSetupSchedWorkerDropdown(modal);
+
+    modal.style.display = 'flex';
+};
+
+

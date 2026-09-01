@@ -317,7 +317,7 @@ function setupAdminMenu() {
                     renderCheckTypeEquipList();
                 }
                 if (item.dataset.target === 'setup-template-mgmt') {
-                    renderSetupTemplateModelSelect();
+                    renderSetupTemplateSubCategoryList();
                 }
             });
         });
@@ -4253,322 +4253,350 @@ async function loadCheckTypeDataFromTarget() {
 }
 
 /* ==========================================================================
-   8. 셋업 일정 템플릿 관리 (Setup Template Management)
+   8. 셋업 일정 템플릿 관리 (Setup Template Management - 공통 셋업/세부 구분 구조)
    ========================================================================== */
+let currentSetupCategory = '장비 반입 및 정위치';
+let currentSetupSubCategory = null;
+let setupSubcategorySettingsMode = false;
+
 function setupSetupTemplateMgmt() {
-    const btnLoad = document.getElementById('btn-load-setup-template');
-    const btnSave = document.getElementById('btn-save-setup-template');
-    const searchInput = document.getElementById('setup-template-model-search');
-
-    if (btnLoad) btnLoad.addEventListener('click', openSetupTemplateLoadModal);
-    if (btnSave) btnSave.addEventListener('click', saveSetupTemplate);
-
-    if (searchInput) searchInput.addEventListener('input', renderSetupTemplateModelSelect);
-}
-
-// [추가] 템플릿 불러오기 / 초기화 모달 팝업
-function openSetupTemplateLoadModal() {
-    let modal = document.getElementById('setup-template-load-modal');
-    if (!modal) return;
-
-    // 이벤트 중복 바인딩 방지
-    if (!modal.dataset.initialized) {
-        modal.dataset.initialized = 'true';
-        document.getElementById('btn-close-template-load').onclick = () => modal.style.display = 'none';
-
-        document.getElementById('btn-confirm-template-load').onclick = () => {
-            const select = document.getElementById('load-template-model-select');
-            const targetModel = select.value;
-            if (!targetModel) return alert('불러올 장비 모델을 선택해주세요.');
-            if (!confirm(`'${targetModel}' 모델의 템플릿을 불러오시겠습니까?\n작성 중이던 내용은 모두 지워집니다.`)) return;
-
-            const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-            let template = templates[targetModel] || [];
-
-            const tbody = document.getElementById('setup-template-tbody');
-            tbody.innerHTML = '';
-
-            if (template.length === 0) alert('선택한 모델에 저장된 템플릿이 없어 빈 양식이 로드됩니다.');
-            else template.forEach(item => addSetupTemplateRow(item.category, item.content, item.estDays));
-
-            modal.style.display = 'none';
-        };
-
-        document.getElementById('btn-reset-template-load').onclick = () => {
-            if (!confirm('가장 기본적인 템플릿 양식으로 초기화하시겠습니까?\n작성 중이던 내용은 모두 지워집니다.')) return;
-            const tbody = document.getElementById('setup-template-tbody');
-            tbody.innerHTML = '';
-
-            const defaultTemplate = [
-                { category: "장비 반입 및 정위치", content: "장비 도면 부착", estDays: "1" },
-                { category: "장비 반입 및 정위치", content: "다이크 설치", estDays: "1" },
-                { category: "장비 반입 및 정위치", content: "장비 반입", estDays: "1" },
-                { category: "장비 반입 및 정위치", content: "다이크 공사 및 리크센서 설치", estDays: "2" },
-                { category: "통신 상태 및 유틸리티", content: "Utility 배관 공사 및 연결", estDays: "5" },
-                { category: "통신 상태 및 유틸리티", content: "Utility 턴온", estDays: "1" },
-                { category: "통신 상태 및 유틸리티", content: "인터락 Test 및 통신상태 확인 ", estDays: "2" },
-                { category: "셋업 평가", content: "분석부 안정화 및 오염제어", estDays: "5" },
-                { category: "셋업 평가", content: "Calibration 평가", estDays: "2" },
-                { category: "셋업 평가", content: "Sample 측정", estDays: "2" },
-                { category: "셋업 평가", content: "신뢰도 평가", estDays: "5" },
-                { category: "셋업 완료", content: "셋업 완료", estDays: "0" }
-            ];
-            defaultTemplate.forEach(item => addSetupTemplateRow(item.category, item.content, item.estDays));
-            modal.style.display = 'none';
-        };
-    }
-
-    // 모델 드롭다운 옵션 갱신 (현재 수정 중인 모델 제외)
-    const select = document.getElementById('load-template-model-select');
-    select.innerHTML = '<option value="">모델 선택</option>';
-    const models = JSON.parse(localStorage.getItem('equipment_models')) || [];
-    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-
-    if (templates['default'] && currentSetupTemplateModel !== 'default') {
-        select.insertAdjacentHTML('beforeend', '<option value="default">기본 템플릿 (공통)</option>');
-    }
-    models.forEach(m => {
-        if (m.name !== currentSetupTemplateModel) {
-            const opt = document.createElement('option');
-            opt.value = m.name;
-            opt.textContent = m.name;
-            select.appendChild(opt);
-        }
-    });
-
-    modal.style.display = 'flex';
-}
-
-function renderSetupTemplateModelSelect() {
-    const list = document.getElementById('setup-template-model-list');
-    if (!list) return; // HTML이 업데이트되지 않은 경우 대비
-
-    const searchInput = document.getElementById('setup-template-model-search');
-    const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
-
-    list.innerHTML = '';
-    const models = JSON.parse(localStorage.getItem('equipment_models')) || [];
-
-    const allItems = [{ name: 'default', displayName: '기본 템플릿 (공통)' }];
-    models.forEach(m => allItems.push({ name: m.name, displayName: m.name }));
-
-    if (!allItems.some(i => i.name === currentSetupTemplateModel)) {
-        currentSetupTemplateModel = 'default';
-    }
-
-    let items = allItems;
-    if (keyword) {
-        items = items.filter(item => item.displayName.toLowerCase().includes(keyword));
-    }
-
-    items.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = item.displayName;
-        if (item.name === currentSetupTemplateModel) li.classList.add('active');
-
-        li.onclick = () => {
-            if (currentSetupTemplateModel === item.name) return;
-            currentSetupTemplateModel = item.name;
-
-            list.querySelectorAll('li').forEach(l => l.classList.remove('active'));
-            li.classList.add('active');
-
-            const titleEl = document.getElementById('setup-template-current-model-title');
-            if (titleEl) titleEl.textContent = item.displayName;
-
-            loadSetupTemplate();
-        };
-        list.appendChild(li);
-    });
-
-    const titleEl = document.getElementById('setup-template-current-model-title');
-    if (titleEl) {
-        const activeItem = allItems.find(i => i.name === currentSetupTemplateModel);
-        if (activeItem) titleEl.textContent = activeItem.displayName;
-    }
-
-    loadSetupTemplate();
-}
-
-function loadSetupTemplate() {
-    const model = currentSetupTemplateModel;
-    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-    const tbody = document.getElementById('setup-template-tbody');
-    if (!tbody) return;
-
-    tbody.innerHTML = '';
-
-    let template = templates[model];
-
-    // 템플릿이 없으면 공통(default) 템플릿 참조, 없으면 하드코딩 기본값
-    if (!template || template.length === 0) {
-        if (model !== 'default' && templates['default'] && templates['default'].length > 0) {
-            template = templates['default'];
-        } else {
-            template = [
-                { category: "장비 반입 및 정위치", content: "장비 도면 부착", estDays: "1" },
-                { category: "장비 반입 및 정위치", content: "다이크 설치", estDays: "1" },
-                { category: "장비 반입 및 정위치", content: "장비 반입", estDays: "1" },
-                { category: "장비 반입 및 정위치", content: "다이크 공사 및 리크센서 설치", estDays: "2" },
-                { category: "통신 상태 및 유틸리티", content: "Utility 배관 공사 및 연결", estDays: "5" },
-                { category: "통신 상태 및 유틸리티", content: "Utility 턴온", estDays: "1" },
-                { category: "통신 상태 및 유틸리티", content: "인터락 Test 및 통신상태 확인 ", estDays: "2" },
-                { category: "셋업 평가", content: "분석부 안정화 및 오염제어", estDays: "5" },
-                { category: "셋업 평가", content: "Calibration 평가", estDays: "2" },
-                { category: "셋업 평가", content: "Sample 측정", estDays: "2" },
-                { category: "셋업 평가", content: "신뢰도 평가", estDays: "5" },
-                { category: "셋업 완료", content: "셋업 완료", estDays: "0" }
-            ];
-        }
-    }
-
-    const categories = ["장비 반입 및 정위치", "통신 상태 및 유틸리티", "셋업 평가", "셋업 완료"];
-    categories.forEach(cat => {
-        const headerRow = document.createElement('tr');
-        headerRow.className = 'category-header-row';
-        // '셋업 완료' 카테고리에는 항목 추가 버튼 숨김
-        const addBtnClass = cat === '셋업 완료' ? 'display-none' : '';
-        headerRow.innerHTML = `
-            <td colspan="3" class="category-header">
-                <span class="category-title">${cat}</span>
-                <button class="btn-add-category ${addBtnClass}" data-category="${cat}" title="항목 추가">+</button>
-            </td>
-        `;
-        tbody.appendChild(headerRow);
-
-        const items = template.filter(item => item.category === cat);
-        items.forEach(item => {
-            addSetupTemplateRow(tbody, cat, item.content, item.estDays);
+    const categoryList = document.getElementById('setup-template-category-list');
+    if (categoryList) {
+        categoryList.querySelectorAll('li').forEach(li => {
+            li.onclick = () => {
+                categoryList.querySelectorAll('li').forEach(l => l.classList.remove('active'));
+                li.classList.add('active');
+                currentSetupCategory = li.dataset.category || li.textContent.trim();
+                currentSetupSubCategory = null;
+                renderSetupTemplateSubCategoryList();
+            };
         });
-    });
+    }
 
-    tbody.querySelectorAll('.btn-add-category').forEach(btn => {
-        btn.onclick = () => {
-            const category = btn.dataset.category;
-            addSetupTemplateRow(tbody, category, '새 항목', '1');
+    const btnSubSettings = document.getElementById('btn-setup-subcategory-settings');
+    if (btnSubSettings) {
+        btnSubSettings.onclick = () => {
+            setupSubcategorySettingsMode = !setupSubcategorySettingsMode;
+            btnSubSettings.classList.toggle('active', setupSubcategorySettingsMode);
+            const footer = document.getElementById('setup-template-subcategory-footer');
+            if (footer) footer.style.display = setupSubcategorySettingsMode ? 'block' : 'none';
+            renderSetupTemplateSubCategoryList();
+        };
+    }
+
+    const btnAddSub = document.getElementById('btn-add-setup-template-subcategory');
+    const inputAddSub = document.getElementById('setup-template-subcategory-input');
+    if (btnAddSub && inputAddSub) {
+        const handleAddSub = () => {
+            const subName = inputAddSub.value.trim();
+            if (!subName) return alert('세부 구분명을 입력해주세요.');
+            
+            const template = getCommonSetupTemplate();
+            // 이미 존재하는지 확인
+            const exists = template.some(t => t.category === currentSetupCategory && (t.subcategory || t.category) === subName);
+            if (exists) return alert('이미 존재하는 세부 구분입니다.');
+
+            template.push({
+                category: currentSetupCategory,
+                subcategory: subName,
+                content: `${subName} 세부 작업`,
+                estDays: '1'
+            });
+            saveCommonSetupTemplateLocal(template);
+
+            inputAddSub.value = '';
+            currentSetupSubCategory = subName;
+            renderSetupTemplateSubCategoryList();
+        };
+        btnAddSub.onclick = handleAddSub;
+        inputAddSub.onkeypress = (e) => { if (e.key === 'Enter') handleAddSub(); };
+    }
+
+    const btnAddItem = document.getElementById('btn-add-setup-template-item');
+    const inputContent = document.getElementById('setup-template-item-content');
+    const inputDays = document.getElementById('setup-template-item-days');
+    if (btnAddItem && inputContent && inputDays) {
+        const handleAddItem = () => {
+            const content = inputContent.value.trim();
+            const estDays = inputDays.value.trim() || '1';
+            if (!content) return alert('작업 세부 내용을 입력해주세요.');
+            if (!currentSetupCategory) return alert('셋업 구분을 선택해주세요.');
+
+            const template = getCommonSetupTemplate();
+            const subcategory = currentSetupSubCategory || currentSetupCategory;
+
+            template.push({
+                category: currentSetupCategory,
+                subcategory: subcategory,
+                content: content,
+                estDays: estDays
+            });
+            saveCommonSetupTemplateLocal(template);
+
+            inputContent.value = '';
+            inputDays.value = '1';
+            renderSetupTemplateItemList();
             updateSetupTemplateTotalDays();
         };
+        btnAddItem.onclick = handleAddItem;
+        inputContent.onkeypress = (e) => { if (e.key === 'Enter') handleAddItem(); };
+    }
+
+    const btnReset = document.getElementById('btn-reset-setup-template');
+    if (btnReset) {
+        btnReset.onclick = () => {
+            if (!confirm('가장 기본적인 셋업 템플릿 양식으로 초기화하시겠습니까?\n작성 중이던 내용은 모두 초기화됩니다.')) return;
+            const defaultTemplate = getDefaultSetupTemplateData();
+            saveCommonSetupTemplateLocal(defaultTemplate);
+            renderSetupTemplateSubCategoryList();
+            alert('기본 템플릿으로 초기화되었습니다. [템플릿 저장]을 누르면 서버에 저장됩니다.');
+        };
+    }
+
+    const btnSave = document.getElementById('btn-save-setup-template');
+    if (btnSave) {
+        btnSave.onclick = saveSetupTemplateToServer;
+    }
+
+    // 초기 렌더링
+    renderSetupTemplateSubCategoryList();
+}
+
+function getDefaultSetupTemplateData() {
+    return [
+        { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크", content: "장비 도면 부착", estDays: "1" },
+        { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크", content: "다이크 설치", estDays: "1" },
+        { category: "장비 반입 및 정위치", subcategory: "장비 반입", content: "장비 반입", estDays: "1" },
+        { category: "장비 반입 및 정위치", subcategory: "장비 반입", content: "다이크 공사 및 리크센서 설치", estDays: "2" },
+        { category: "통신 상태 및 유틸리티", subcategory: "Utility 배관", content: "Utility 배관 공사 및 연결", estDays: "5" },
+        { category: "통신 상태 및 유틸리티", subcategory: "Utility 배관", content: "Utility 턴온", estDays: "1" },
+        { category: "통신 상태 및 유틸리티", subcategory: "인터락/통신", content: "인터락 Test 및 통신상태 확인 ", estDays: "2" },
+        { category: "셋업 평가", subcategory: "분석부 안정화", content: "분석부 안정화 및 오염제어", estDays: "5" },
+        { category: "셋업 평가", subcategory: "성능 평가", content: "Calibration 평가", estDays: "2" },
+        { category: "셋업 평가", subcategory: "성능 평가", content: "Sample 측정", estDays: "2" },
+        { category: "셋업 평가", subcategory: "성능 평가", content: "신뢰도 평가", estDays: "5" },
+        { category: "셋업 완료", subcategory: "셋업 완료", content: "셋업 완료", estDays: "0" }
+    ];
+}
+
+function getCommonSetupTemplate() {
+    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
+    let template = templates['default'];
+    if (!template || !Array.isArray(template) || template.length === 0) {
+        template = getDefaultSetupTemplateData();
+        templates['default'] = template;
+        localStorage.setItem('setup_templates', JSON.stringify(templates));
+    }
+    return template;
+}
+
+function saveCommonSetupTemplateLocal(template) {
+    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
+    templates['default'] = template;
+    localStorage.setItem('setup_templates', JSON.stringify(templates));
+}
+
+function renderSetupTemplateSubCategoryList() {
+    const listEl = document.getElementById('setup-template-subcategory-list');
+    if (!listEl) return;
+    listEl.innerHTML = '';
+
+    const template = getCommonSetupTemplate();
+    const currentCatItems = template.filter(item => item.category === currentSetupCategory);
+
+    // 해당 카테고리의 고유 세부 구분 목록 추출
+    const subCategories = [];
+    currentCatItems.forEach(item => {
+        const sub = item.subcategory || item.category;
+        if (!subCategories.includes(sub)) subCategories.push(sub);
+    });
+
+    if (subCategories.length === 0) {
+        // 기본으로 카테고리명과 동일한 세부구분 1개 자동 생성
+        subCategories.push(currentSetupCategory);
+    }
+
+    if (!currentSetupSubCategory || !subCategories.includes(currentSetupSubCategory)) {
+        currentSetupSubCategory = subCategories[0] || null;
+    }
+
+    subCategories.forEach(sub => {
+        const li = document.createElement('li');
+        li.dataset.subcategory = sub;
+        if (sub === currentSetupSubCategory) li.classList.add('active');
+
+        if (setupSubcategorySettingsMode) {
+            li.innerHTML = `
+                <span class="subcat-text" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(sub)}</span>
+                <button class="btn-del-sm" style="flex-shrink: 0;" title="세부 구분 삭제">✕</button>
+            `;
+            const delBtn = li.querySelector('.btn-del-sm');
+            if (delBtn) {
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (!confirm(`'${sub}' 세부 구분과 해당 항목들을 모두 삭제하시겠습니까?`)) return;
+                    const updatedTemplate = template.filter(t => !(t.category === currentSetupCategory && (t.subcategory || t.category) === sub));
+                    saveCommonSetupTemplateLocal(updatedTemplate);
+                    if (currentSetupSubCategory === sub) currentSetupSubCategory = null;
+                    renderSetupTemplateSubCategoryList();
+                };
+            }
+        } else {
+            li.textContent = sub;
+        }
+
+        li.onclick = () => {
+            listEl.querySelectorAll('li').forEach(l => l.classList.remove('active'));
+            li.classList.add('active');
+            currentSetupSubCategory = sub;
+            renderSetupTemplateItemList();
+        };
+
+        listEl.appendChild(li);
+    });
+
+    renderSetupTemplateItemList();
+}
+
+function renderSetupTemplateItemList() {
+    const placeholder = document.getElementById('setup-template-detail-placeholder');
+    const container = document.getElementById('setup-template-detail-container');
+    const listEl = document.getElementById('setup-template-item-list');
+    const titleEl = document.getElementById('setup-template-detail-title');
+
+    if (!container || !listEl) return;
+
+    if (!currentSetupCategory) {
+        if (placeholder) placeholder.style.display = 'flex';
+        container.style.display = 'none';
+        return;
+    }
+
+    if (placeholder) placeholder.style.display = 'none';
+    container.style.display = 'block';
+
+    if (titleEl) {
+        titleEl.textContent = `${currentSetupCategory} > ${currentSetupSubCategory || '전체'} 항목 관리`;
+    }
+
+    listEl.innerHTML = '';
+    const template = getCommonSetupTemplate();
+    const items = template.filter(item => {
+        if (item.category !== currentSetupCategory) return false;
+        if (currentSetupSubCategory && (item.subcategory || item.category) !== currentSetupSubCategory) return false;
+        return true;
+    });
+
+    if (items.length === 0) {
+        listEl.innerHTML = '<li class="list-empty-msg">등록된 세부 작업 항목이 없습니다. 하단에서 추가해주세요.</li>';
+        updateSetupTemplateTotalDays();
+        return;
+    }
+
+    items.forEach((item, index) => {
+        const li = document.createElement('li');
+        li.className = 'check-item-row';
+        li.style.display = 'flex';
+        li.style.alignItems = 'center';
+        li.style.gap = '8px';
+        li.style.padding = '6px 8px';
+
+        const subName = item.subcategory || item.category;
+
+        li.innerHTML = `
+            <div class="model-col" style="flex: 1.2; font-size: 12px; color: #8b949e; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(subName)}">
+                ${escapeHtml(subName)}
+            </div>
+            <div class="model-col" style="flex: 3;">
+                <input type="text" class="input-dark item-content-input" value="${escapeHtml(item.content)}" style="width: 100%; height: 28px; font-size: 13px;">
+            </div>
+            <div class="model-col" style="flex: 1; text-align: center;">
+                <input type="number" class="input-dark item-days-input" value="${escapeHtml(item.estDays || '1')}" min="0" style="width: 60px; height: 28px; text-align: center; font-size: 13px;">
+            </div>
+            <div class="model-col" style="width: 50px; text-align: center;">
+                <button class="btn-del-sm" title="삭제">✕</button>
+            </div>
+        `;
+
+        const contentInput = li.querySelector('.item-content-input');
+        const daysInput = li.querySelector('.item-days-input');
+        const delBtn = li.querySelector('.btn-del-sm');
+
+        if (contentInput) {
+            contentInput.onchange = () => {
+                item.content = contentInput.value.trim();
+                saveCommonSetupTemplateLocal(template);
+            };
+        }
+
+        if (daysInput) {
+            daysInput.oninput = () => {
+                item.estDays = daysInput.value.trim() || '0';
+                saveCommonSetupTemplateLocal(template);
+                updateSetupTemplateTotalDays();
+            };
+        }
+
+        if (delBtn) {
+            delBtn.onclick = () => {
+                if (!confirm(`'${item.content}' 항목을 삭제하시겠습니까?`)) return;
+                const itemIdx = template.indexOf(item);
+                if (itemIdx !== -1) {
+                    template.splice(itemIdx, 1);
+                    saveCommonSetupTemplateLocal(template);
+                    renderSetupTemplateItemList();
+                    updateSetupTemplateTotalDays();
+                }
+            };
+        }
+
+        listEl.appendChild(li);
     });
 
     updateSetupTemplateTotalDays();
 }
 
-function addSetupTemplateRow(tbody, category, content = '', estDays = '1') {
-    if (!tbody) return;
-
-    const tr = document.createElement('tr');
-    tr.className = 'item-row';
-    tr.dataset.category = category;
-
-    tr.innerHTML = `
-        <td><input type="text" class="input-dark template-content" value="${escapeHtml(content)}" style="width: 100%;"></td>
-        <td><input type="number" class="input-dark template-est" value="${escapeHtml(estDays)}" style="width: 100%; text-align: center;" min="0"></td>
-        <td style="text-align: center;"><button class="btn-del-sm">✕</button></td>
-    `;
-
-    const delBtn = tr.querySelector('.btn-del-sm');
-    if (delBtn) {
-        delBtn.onclick = () => {
-            tr.remove();
-            updateSetupTemplateTotalDays();
-        };
-    }
-
-    const estInput = tr.querySelector('.template-est');
-    if (estInput) estInput.addEventListener('input', updateSetupTemplateTotalDays);
-
-    tr.draggable = true;
-    tr.addEventListener('dragstart', () => tr.classList.add('dragging'));
-    tr.addEventListener('dragend', () => tr.classList.remove('dragging'));
-
-    const rows = Array.from(tbody.children);
-    const headerIndex = rows.findIndex(r => r.classList.contains('category-header-row') && r.querySelector('.category-title').textContent === category);
-    let insertAfterNode = null;
-
-    if (headerIndex !== -1) {
-        insertAfterNode = rows[headerIndex];
-        for (let i = headerIndex + 1; i < rows.length; i++) {
-            if (rows[i].classList.contains('category-header-row')) break;
-            insertAfterNode = rows[i];
-        }
-    }
-
-    if (insertAfterNode && insertAfterNode.nextSibling) tbody.insertBefore(tr, insertAfterNode.nextSibling);
-    else tbody.appendChild(tr);
-
-    if (!tbody.dataset.dragBound) {
-        tbody.dataset.dragBound = 'true';
-        tbody.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            const afterElement = window.getDragAfterElement(tbody, e.clientY, 'tr.item-row:not(.dragging)');
-            const draggable = document.querySelector('.dragging');
-            if (draggable && draggable.classList.contains('item-row')) { // 아이템 행만 드래그되도록 제한
-                if (afterElement == null) tbody.appendChild(draggable);
-                else tbody.insertBefore(draggable, afterElement);
-            }
-        });
-    }
-}
-
-async function saveSetupTemplate() {
-    const model = currentSetupTemplateModel;
-    const tbody = document.getElementById('setup-template-tbody');
-    const rows = tbody.querySelectorAll('tr'); // 헤더와 아이템 모두 포함
-
-    const newTemplate = [];
-    let hasError = false;
-    let currentCategory = '';
-
-    rows.forEach(row => {
-        if (row.classList.contains('category-header-row')) {
-            currentCategory = row.querySelector('.category-title').textContent;
-            return; // 아이템 행이 아니므로 다음으로
-        }
-
-        const content = row.querySelector('.template-content').value.trim();
-        const estDays = row.querySelector('.template-est').value.trim() || '1';
-
-        if (!content) {
-            hasError = true;
-            row.querySelector('.template-content').classList.add('error-border');
-        } else {
-            row.querySelector('.template-content').classList.remove('error-border');
-            newTemplate.push({ category: currentCategory, content, estDays });
-        }
-    });
-
-    if (hasError) {
-        alert('작업 내용을 모두 입력해주세요.');
-        return;
-    }
-
-    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-    templates[model] = newTemplate;
-
-    const success = await window.syncAdminDB('setting', 'UPDATE', { key: 'setup_templates', value: templates });
-    if (success) {
-        localStorage.setItem('setup_templates', JSON.stringify(templates));
-        if (typeof addSystemLog === 'function') addSystemLog('UPDATE_SETUP_TEMPLATE', model, '셋업 일정 템플릿 수정');
-        alert(`'${model}' 템플릿이 성공적으로 저장되었습니다.`);
-    }
-}
-
-// [추가] 셋업 템플릿 총 소요일수 계산 및 표시
 function updateSetupTemplateTotalDays() {
-    const tbody = document.getElementById('setup-template-tbody');
-    if (!tbody) return;
-
-    const rows = tbody.querySelectorAll('tr');
+    const template = getCommonSetupTemplate();
     let totalDays = 0;
-    rows.forEach(row => {
-        const estInput = row.querySelector('.template-est');
-        if (estInput) {
-            totalDays += parseInt(estInput.value, 10) || 0;
-        }
+    template.forEach(item => {
+        totalDays += parseInt(item.estDays, 10) || 0;
     });
 
     const totalDaysEl = document.getElementById('setup-template-total-days');
     if (totalDaysEl) {
-        totalDaysEl.textContent = `(총 ${totalDays}일 소요)`;
+        totalDaysEl.textContent = `(전체 셋업 총 ${totalDays}일 소요)`;
+    }
+}
+
+async function saveSetupTemplateToServer() {
+    const template = getCommonSetupTemplate();
+
+    // 빈 항목 검증
+    for (const item of template) {
+        if (!item.content || !item.content.trim()) {
+            return alert('작업 세부 내용이 비어있는 항목이 있습니다. 내용을 입력해주세요.');
+        }
+    }
+
+    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
+    templates['default'] = template;
+
+    // 모든 개별 모델 키도 공통 템플릿으로 통일 동기화
+    const models = JSON.parse(localStorage.getItem('equipment_models')) || [];
+    models.forEach(m => {
+        templates[m.name] = template;
+        if (m.abbr) templates[m.abbr] = template;
+    });
+
+    const success = await window.syncAdminDB('setting', 'UPDATE', { key: 'setup_templates', value: templates });
+    if (success) {
+        localStorage.setItem('setup_templates', JSON.stringify(templates));
+        if (typeof addSystemLog === 'function') {
+            addSystemLog('UPDATE_SETUP_TEMPLATE', '공통 템플릿', '공통 셋업 일정 템플릿 수정 및 동기화');
+        }
+        alert('셋업 일정 공통 템플릿이 성공적으로 저장되었습니다.');
+    } else {
+        alert('서버 저장 중 오류가 발생했습니다.');
     }
 }

@@ -260,15 +260,36 @@ class Equipment(db.Model):
     cust_email = db.Column(db.String(100), default='')
     project_no = db.Column(db.String(100), default='')
 
-# [추가] 셋업(SETUP) 진행 세부사항(체크리스트) 모델
+def ensure_setup_columns():
+    setup_log_cols = [
+        ('category', 'VARCHAR(100)'),
+        ('subcategory', 'VARCHAR(100)')
+    ]
+    for col, typ in setup_log_cols:
+        try:
+            db.session.execute(text(f'ALTER TABLE setup_log ADD COLUMN {col} {typ}'))
+        except Exception:
+            pass
+
+    setup_detail_cols = [
+        ('subcategory', 'VARCHAR(100)')
+    ]
+    for col, typ in setup_detail_cols:
+        try:
+            db.session.execute(text(f'ALTER TABLE setup_detail ADD COLUMN {col} {typ}'))
+        except Exception:
+            pass
 
 with app.app_context():
     ensure_equipment_columns()
+    ensure_setup_columns()
+
 class SetupDetail(db.Model):
     _unique_id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     id = db.Column(db.String(50))
     equip_id = db.Column(db.String(200))
     category = db.Column(db.String(100), default='')
+    subcategory = db.Column(db.String(100), default='')
     content = db.Column(db.String(255), default='')
     start_date = db.Column(db.String(50), default='')
     date = db.Column(db.String(50), default='')
@@ -283,6 +304,8 @@ class SetupLog(db.Model):
     id = db.Column(db.String(50))
     equip_id = db.Column(db.String(200))
     date = db.Column(db.String(50), default='')
+    category = db.Column(db.String(100), default='')
+    subcategory = db.Column(db.String(100), default='')
     worker = db.Column(db.String(100), default='')
     content = db.Column(db.String(255), default='')
     company = db.Column(db.String(100), default='위드텍')
@@ -793,14 +816,28 @@ def load_data():
         if sd_list or sl_list:
             data['setup_data'][eq.id] = {
                 "setupDetails": [{
-                    "id": int(sd.id) if str(sd.id).isdigit() else sd.id, "category": sd.category, "content": sd.content,
-                    "startDate": sd.start_date, "date": sd.date, "estDays": sd.est_days, "completed": sd.completed,
-                    "execStartDate": sd.exec_start_date, "delayReason": sd.delay_reason
+                    "id": int(sd.id) if str(sd.id).isdigit() else sd.id,
+                    "category": sd.category or '',
+                    "subcategory": getattr(sd, 'subcategory', '') or '',
+                    "content": sd.content or '',
+                    "startDate": sd.start_date or '',
+                    "date": sd.date or '',
+                    "estDays": sd.est_days or '1',
+                    "completed": sd.completed,
+                    "execStartDate": sd.exec_start_date or '',
+                    "delayReason": sd.delay_reason or ''
                 } for sd in sd_list],
                 "setupLogs": [{
-                    "id": int(sl.id) if str(sl.id).isdigit() else sl.id, "date": sl.date, "worker": sl.worker,
-                    "content": sl.content, "company": sl.company, "memo": sl.memo,
-                    "md": sl.md, "parts": sl.parts
+                    "id": int(sl.id) if str(sl.id).isdigit() else sl.id,
+                    "date": sl.date or '',
+                    "category": getattr(sl, 'category', '') or '',
+                    "subcategory": getattr(sl, 'subcategory', '') or '',
+                    "worker": sl.worker or '',
+                    "content": sl.content or '',
+                    "company": sl.company or '위드텍',
+                    "memo": sl.memo or '',
+                    "md": sl.md or '0',
+                    "parts": sl.parts or ''
                 } for sl in sl_list]
             }
 
@@ -3592,7 +3629,8 @@ def sync_setup_equip():
             db.session.query(SetupDetail).filter_by(equip_id=equip_id).delete(synchronize_session=False)
             for sd in details:
                 db.session.add(SetupDetail(
-                    id=str(sd.get('id', '')), equip_id=equip_id, category=sd.get('category', ''), content=sd.get('content', ''),
+                    id=str(sd.get('id', '')), equip_id=equip_id,
+                    category=sd.get('category', ''), subcategory=sd.get('subcategory', ''), content=sd.get('content', ''),
                     start_date=sd.get('startDate', ''), date=sd.get('date', ''), est_days=str(sd.get('estDays', '1')),
                     completed=bool(sd.get('completed', False)), exec_start_date=sd.get('execStartDate', ''), delay_reason=sd.get('delayReason', '')
                 ))
@@ -3600,8 +3638,10 @@ def sync_setup_equip():
             db.session.query(SetupLog).filter_by(equip_id=equip_id).delete(synchronize_session=False)
             for sl in logs:
                 db.session.add(SetupLog(
-                    id=str(sl.get('id', '')), equip_id=equip_id, date=sl.get('date', ''), worker=sl.get('worker', ''),
-                    content=sl.get('content', ''), company=sl.get('company', ''), memo=sl.get('memo', ''),
+                    id=str(sl.get('id', '')), equip_id=equip_id, date=sl.get('date', ''),
+                    category=sl.get('category', ''), subcategory=sl.get('subcategory', ''),
+                    worker=sl.get('worker', ''),
+                    content=sl.get('content', ''), company=sl.get('company', '위드텍'), memo=sl.get('memo', ''),
                     md=str(sl.get('md', '0')), parts=sl.get('parts', '')
                 ))
         db.session.commit()

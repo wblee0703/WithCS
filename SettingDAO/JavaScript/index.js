@@ -895,50 +895,52 @@ function updateSetupDashboard() {
         if (data[site] && Array.isArray(data[site])) {
             data[site].forEach(equip => {
                 if (equip.startsWith('기타(ETC)')) return;
+
+                // [추가] ADMIN 장비 구분에서 '셋업 장비'로 구분된 장비만 HOME 셋업관리에 반영
+                const detailKey = `details_${site}_${equip}`;
+                const equipDetailData = JSON.parse(localStorage.getItem(detailKey)) || {};
+                const equipStatus = (equipDetailData.setup && equipDetailData.setup.equipStatus) ? equipDetailData.setup.equipStatus : '';
+                if (equipStatus !== '셋업 장비' && !equipStatus.includes('셋업')) return;
+
                 const detailData = setupData[`${site}::${equip}`];
-                if (detailData && detailData.setupDetails && detailData.setupDetails.length > 0) {
-                    const completeItem = detailData.setupDetails.find(d => d.content === '셋업 완료');
-                    const isCompleted = completeItem && completeItem.completed;
-                    if (!isCompleted) {
-                        activeSetupEquips.push({ site, equip, isCompleted: false });
+                const completeItem = (detailData && detailData.setupDetails) ? detailData.setupDetails.find(d => d.content === '셋업 완료') : null;
+                const isCompleted = completeItem && completeItem.completed;
+
+                if (!isCompleted) {
+                    activeSetupEquips.push({ site, equip, isCompleted: false });
+                    siteStats[groupName] = (siteStats[groupName] || 0) + 1;
+                    const equipName = equip.split('::')[0];
+                    const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
+                    const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
+                    equipCounts[displayName] = (equipCounts[displayName] || 0) + 1;
+                } else if (isCompleted) {
+                    // [추가] 완료일 기준 1달(한 달) 이내인지 확인
+                    let isWithinOneMonth = true;
+                    if (completeItem.date) {
+                        const [y, m, d] = completeItem.date.split('-').map(Number);
+                        const compDate = new Date(y, m - 1, d);
+                        const oneMonthAgo = new Date();
+                        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                        oneMonthAgo.setHours(0, 0, 0, 0);
+
+                        if (compDate < oneMonthAgo) {
+                            isWithinOneMonth = false;
+                        }
+                    }
+
+                    // [수정] 완료 처리(워런티 등)가 안 된 장비이거나, 완료 처리되었더라도 1달이 지나지 않은 장비 표시
+                    if (equipStatus !== '워런티' && equipStatus !== '가동 장비' && equipStatus !== '유휴 장비' || isWithinOneMonth) {
+                        completedSetupEquips.push({ site, equip, date: completeItem.date, rejectReason: completeItem.rejectReason, equipStatus: equipStatus });
+
+                        // [추가] 셋업 완료된 장비도 '장비 정보' 리스트에 계속 표시되도록 활성 리스트에 포함
+                        activeSetupEquips.push({ site, equip, isCompleted: true });
+
+                        // [추가] 승인 대기 중인 장비도 사업장 및 장비 현황 차트에 포함시켜 수치 오차 방지
                         siteStats[groupName] = (siteStats[groupName] || 0) + 1;
                         const equipName = equip.split('::')[0];
                         const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
                         const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
                         equipCounts[displayName] = (equipCounts[displayName] || 0) + 1;
-                    } else if (isCompleted) {
-                        const detailKey = `details_${site}_${equip}`;
-                        const equipDetailData = JSON.parse(localStorage.getItem(detailKey)) || {};
-                        const equipStatus = (equipDetailData.setup && equipDetailData.setup.equipStatus) ? equipDetailData.setup.equipStatus : '';
-
-                        // [추가] 완료일 기준 1달(한 달) 이내인지 확인
-                        let isWithinOneMonth = true;
-                        if (completeItem.date) {
-                            const [y, m, d] = completeItem.date.split('-').map(Number);
-                            const compDate = new Date(y, m - 1, d);
-                            const oneMonthAgo = new Date();
-                            oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-                            oneMonthAgo.setHours(0, 0, 0, 0);
-
-                            if (compDate < oneMonthAgo) {
-                                isWithinOneMonth = false;
-                            }
-                        }
-
-                        // [수정] 완료 처리(워런티 등)가 안 된 장비이거나, 완료 처리되었더라도 1달이 지나지 않은 장비 표시
-                        if (equipStatus !== '워런티' && equipStatus !== '가동 장비' && equipStatus !== '유휴 장비' || isWithinOneMonth) {
-                            completedSetupEquips.push({ site, equip, date: completeItem.date, rejectReason: completeItem.rejectReason, equipStatus: equipStatus });
-
-                            // [추가] 셋업 완료된 장비도 '장비 정보' 리스트에 계속 표시되도록 활성 리스트에 포함
-                            activeSetupEquips.push({ site, equip, isCompleted: true });
-
-                            // [추가] 승인 대기 중인 장비도 사업장 및 장비 현황 차트에 포함시켜 수치 오차 방지
-                            siteStats[groupName] = (siteStats[groupName] || 0) + 1;
-                            const equipName = equip.split('::')[0];
-                            const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
-                            const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
-                            equipCounts[displayName] = (equipCounts[displayName] || 0) + 1;
-                        }
                     }
                 }
             });
@@ -1164,7 +1166,7 @@ function renderSetupEquipDetailList(activeEquips) {
             <div style="flex: 1; display: flex; align-items: center; min-width: 0;">
                 <span class="status-name" title="${info.fullTitle}" style="margin-right: 0;">${info.mainInfo}${info.subInfo ? `<span class="equip-serial">${info.subInfo}</span>` : ''}</span>
             </div>
-            <button class="btn-shortcut" style="margin-left: 10px;">이력</button>
+            <button class="btn-shortcut" style="margin-left: 10px;">이동</button>
         `;
         li.onclick = () => {
             if (currentGanttFilters.site === item.site && currentGanttFilters.equip === item.equip) {
@@ -1188,7 +1190,7 @@ function renderSetupEquipDetailList(activeEquips) {
         if (btn) {
             btn.onclick = (e) => {
                 e.stopPropagation();
-                if (typeof openSetupHistoryModal === 'function') openSetupHistoryModal(item.site, item.equip);
+                location.href = `setup.html?site=${encodeURIComponent(item.site)}&equip=${encodeURIComponent(item.equip)}`;
             };
         }
         listEl.appendChild(li);

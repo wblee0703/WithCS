@@ -227,72 +227,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const filterDateInput = document.getElementById('setup-log-filter-date');
         if (filterDateInput) {
             filterDateInput.addEventListener('input', renderSetupLogList);
-
-            // [수정] 셋업 일지 영역 헤더 레이아웃 버그 수정 및 그룹핑
-            const headerEl = filterDateInput.parentElement;
-            let targetWrapper = headerEl;
-
-            // 이전 수정으로 인해 헤더 자체에 잘못 적용된 인라인 스타일(marginLeft: auto 등) 초기화
-            if (headerEl && headerEl.classList.contains('setup-card-header')) {
-                headerEl.style.marginLeft = '';
-
-                // 헤더 자식 요소들을 좌/우 그룹으로 분리하여 감싸기
-                if (!document.getElementById('setup-log-right-wrapper')) {
-                    const leftWrapper = document.createElement('div');
-                    leftWrapper.style.display = 'flex';
-                    leftWrapper.style.alignItems = 'center';
-                    leftWrapper.style.gap = '10px';
-
-                    const rightWrapper = document.createElement('div');
-                    rightWrapper.id = 'setup-log-right-wrapper';
-                    rightWrapper.style.display = 'flex';
-                    rightWrapper.style.alignItems = 'center';
-                    rightWrapper.style.gap = '5px';
-                    rightWrapper.style.marginLeft = 'auto'; // 오른쪽으로 밀착
-
-                    // 기존 자식 노드 재배치
-                    Array.from(headerEl.children).forEach(child => {
-                        if (child.tagName === 'H3' || child.classList.contains('btn-settings')) {
-                            leftWrapper.appendChild(child);
-                        } else if (child === filterDateInput || child.id === 'btn-open-setup-log-modal') {
-                            rightWrapper.appendChild(child);
-                        }
-                    });
-
-                    headerEl.appendChild(leftWrapper);
-                    headerEl.appendChild(rightWrapper);
-
-                    // 카드 접기 버튼(collapse)이 있다면 맨 끝에 둬서 레이아웃 유지
-                    const collapseBtn = headerEl.querySelector('.btn-collapse');
-                    if (collapseBtn) headerEl.appendChild(collapseBtn);
-
-                    targetWrapper = rightWrapper;
-                } else {
-                    targetWrapper = document.getElementById('setup-log-right-wrapper');
-                }
-            } else if (headerEl) {
-                // 이미 별도의 컨테이너로 분리되어 있는 경우
-                headerEl.style.display = 'flex';
-                headerEl.style.alignItems = 'center';
-                headerEl.style.gap = '5px';
-                headerEl.style.marginLeft = 'auto';
-            }
-
-            if (targetWrapper && !document.getElementById('btn-open-setup-log-modal')) {
-                const btn = document.createElement('button');
-                btn.id = 'btn-open-setup-log-modal';
-                btn.className = 'btn-blue-sm';
-                btn.textContent = '셋업 기록';
-                btn.style.flexShrink = '0'; // 버튼 크기 유지
-                btn.onclick = () => {
-                    if (!currentPath.site || !currentPath.equip) return alert('장비를 선택해주세요.');
-                    if (typeof window.openSetupLogRegisterModal === 'function') {
-                        window.openSetupLogRegisterModal(currentPath.site, currentPath.equip, '', '', false, true);
-                    }
-                };
-                targetWrapper.appendChild(btn);
-            }
         }
+
+        // [삭제] 불필요한 '셋업 기록' 버튼 제거 (작업 등록 버튼만 유지)
+        const legacyLogBtn = document.getElementById('btn-open-setup-log-modal');
+        if (legacyLogBtn) legacyLogBtn.remove();
 
         // 6. 셋업 진행 세부사항 리스트 드래그 앤 드롭
         const detailBody = document.getElementById('setup-detail-body');
@@ -309,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // 7. 기타 초기화
-        setupSetupLogResizer();
+        setupRightResizer();
         if (typeof window.setupSetupExecStartModal === 'function') window.setupSetupExecStartModal();
         setupSetupLoadListModal();
         setupSetupLoadInfoModal();
@@ -326,13 +265,10 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
 
-        // 8. 화면 크기 변경 감지 (모바일/데스크탑 뷰 전환 시 리스트 재렌더링)
+        // 8. 화면 크기 변경 감지 (모바일/데스크탑 뷰 전환 시)
         let lastWidth = window.innerWidth;
         window.addEventListener('resize', () => {
             const currentWidth = window.innerWidth;
-            if ((lastWidth <= 950 && currentWidth > 950) || (lastWidth > 950 && currentWidth <= 950)) {
-                renderSetupDetailList();
-            }
             lastWidth = currentWidth;
         });
     };
@@ -345,17 +281,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 });
 
-function setupSetupLogResizer() {
-    // [추가] 모바일 화면(너비 768px 이하)에서는 리사이저 기능 비활성화
+function setupRightResizer() {
     if (window.innerWidth <= 950) {
-        const resizer = document.getElementById('setup-log-resizer');
-        if (resizer) resizer.style.display = 'none'; // 리사이저 핸들 숨기기
+        const resizer = document.getElementById('setup-right-resizer');
+        if (resizer) resizer.style.display = 'none';
         return;
     }
 
-    const resizer = document.getElementById('setup-log-resizer');
+    const resizer = document.getElementById('setup-right-resizer');
     if (!resizer) return;
-    const listWrapper = document.getElementById('setup-log-list-wrapper');
+    const workPanel = document.getElementById('setup-work-memo-panel');
     const container = resizer.parentElement;
     let isResizing = false;
 
@@ -367,10 +302,10 @@ function setupSetupLogResizer() {
     document.addEventListener('mousemove', (e) => {
         if (!isResizing) return;
         const containerRect = container.getBoundingClientRect();
-        const newHeight = e.clientY - containerRect.top - 40;
-        if (newHeight > 100 && newHeight < containerRect.height - 100) {
-            listWrapper.style.height = `${newHeight}px`;
-            listWrapper.style.flex = 'none';
+        const newHeight = e.clientY - containerRect.top;
+        if (newHeight > 80 && newHeight < containerRect.height - 80) {
+            workPanel.style.height = `${newHeight}px`;
+            workPanel.style.flex = 'none';
         }
     });
 
@@ -389,17 +324,68 @@ function renderDetails() {
     const workspace = document.getElementById('setup-workspace');
     if (!workspace) return;
 
-    // 셋업 진행 세부사항 리스트 로드
-    renderSetupDetailList();
-
     // 셋업 일지 리스트 로드
     renderSetupLogList();
+
+    // 셋업 이슈(특이사항) 로드
+    renderSetupIssue();
 
     const lastSetupLog = localStorage.getItem(`lastSetupLog_${currentPath.site}_${currentPath.equip}`);
     if (lastSetupLog) {
         setTimeout(() => selectSetupLog(Number(lastSetupLog)), 50);
     }
 }
+
+function renderSetupIssue() {
+    const issueArea = document.getElementById('setup-equip-issue-memo');
+    if (!issueArea || !currentPath.site || !currentPath.equip) return;
+
+    const detailKey = `details_${currentPath.site}_${currentPath.equip}`;
+    const detailData = JSON.parse(localStorage.getItem(detailKey)) || {};
+    issueArea.value = detailData.specialNote || '';
+}
+
+async function saveSetupIssue() {
+    if (!currentPath.site || !currentPath.equip) return alert('장비를 먼저 선택해주세요.');
+
+    const issueArea = document.getElementById('setup-equip-issue-memo');
+    if (!issueArea) return;
+
+    const detailKey = `details_${currentPath.site}_${currentPath.equip}`;
+    let detailData = JSON.parse(localStorage.getItem(detailKey)) || {};
+    detailData.specialNote = issueArea.value;
+    localStorage.setItem(detailKey, JSON.stringify(detailData));
+
+    const payload = {
+        old_id: currentPath.equip,
+        new_id: currentPath.equip,
+        site: currentPath.site,
+        setup: detailData.setup,
+        special_note: detailData.specialNote || ''
+    };
+
+    const success = await window.syncAdminDB('equip', 'UPDATE', payload);
+    if (success) {
+        if (typeof addSystemLog === 'function') {
+            addSystemLog('UPDATE_EQUIP_NOTE', currentPath.equip, '셋업 이슈(특이사항) 저장');
+        }
+        alert('셋업 이슈가 저장되었습니다.');
+    } else {
+        alert('저장 중 오류가 발생했습니다.');
+    }
+}
+window.saveSetupIssue = saveSetupIssue;
+
+function openSetupRegisterModal() {
+    if (!currentPath.site || !currentPath.equip) return alert('장비를 먼저 선택해주세요.');
+    const today = new Date().toISOString().split('T')[0];
+    if (typeof window.openSetupScheduleRegisterModal === 'function') {
+        window.openSetupScheduleRegisterModal(currentPath.site, currentPath.equip, today);
+    } else if (typeof window.openSetupLogRegisterModal === 'function') {
+        window.openSetupLogRegisterModal(currentPath.site, currentPath.equip, '', '', false, true);
+    }
+}
+window.openSetupRegisterModal = openSetupRegisterModal;
 
 /* ==========================================================================
    5. 셋업 진행 세부사항 관리 (Setup Detail List Management)
@@ -881,24 +867,6 @@ function renderSetupLogList() {
     const tbody = document.getElementById('setup-log-body');
     if (!tbody || !currentPath.site || !currentPath.equip) return;
 
-    // [추가] 셋업 일지 테이블 헤더에 '공수' 컬럼 동적 추가 (HTML 수정 불필요)
-    const table = tbody.closest('table');
-    if (table) {
-        const theadTr = table.querySelector('thead tr');
-        if (theadTr && !theadTr.dataset.mdAdded && !theadTr.textContent.includes('공수')) {
-            theadTr.dataset.mdAdded = 'true';
-            const thMd = document.createElement('th');
-            thMd.textContent = '공수';
-            thMd.className = 'th-w50';
-            const manageCol = theadTr.querySelector('.manage-col');
-            if (manageCol) {
-                theadTr.insertBefore(thMd, manageCol);
-            } else {
-                theadTr.appendChild(thMd);
-            }
-        }
-    }
-
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const equipKey = `${currentPath.site}::${currentPath.equip}`;
     let data = setupData[equipKey] || {};
@@ -909,6 +877,8 @@ function renderSetupLogList() {
     if (filterText) {
         filteredLogs = logs.filter(l =>
             (l.date && l.date.includes(filterText)) ||
+            (l.category && l.category.toLowerCase().includes(filterText)) ||
+            (l.subcategory && l.subcategory.toLowerCase().includes(filterText)) ||
             (l.content && l.content.toLowerCase().includes(filterText)) ||
             (l.worker && l.worker.toLowerCase().includes(filterText)) ||
             (l.company && l.company.toLowerCase().includes(filterText)) ||
@@ -921,11 +891,15 @@ function renderSetupLogList() {
     filteredLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     tbody.innerHTML = filteredLogs.map(item => {
-        // [수정] [지연] 태그 주황색 표시
-        const contentHtml = (escapeHtml(item.content) || '-').replace(/\[지연\]/g, '<span class="tag-delayed">[지연]</span>');
+        const catText = item.category || '-';
+        const subcatText = item.subcategory || '-';
+        const contentText = item.content || '-';
+        const contentHtml = (escapeHtml(contentText) || '-').replace(/\[지연\]/g, '<span class="tag-delayed">[지연]</span>');
 
         return `<tr data-id="${item.id}" onclick="selectSetupLog(${item.id})" class="${selectedSetupLogId === item.id ? 'active-log' : ''}" style="cursor: pointer;">
             <td class="log-date">${item.date}</td>
+            <td class="log-category" style="text-align:center; vertical-align:middle; color:#8b949e; font-size:12px;">${escapeHtml(catText)}</td>
+            <td class="log-subcategory" style="text-align:center; vertical-align:middle; color:#8b949e; font-size:12px;">${escapeHtml(subcatText)}</td>
             <td class="log-content" style="text-align:left; vertical-align:middle;">${contentHtml}</td>
             <td class="log-worker">${escapeHtml(item.worker)}</td>
             <td class="log-md" style="color:#d29922; font-weight:bold;">${item.md ? item.md : '0'}</td>

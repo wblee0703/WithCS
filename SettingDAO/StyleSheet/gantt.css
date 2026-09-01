@@ -71,16 +71,25 @@
     font-size: 12px;
 }
 
-.gantt__header-cell--fixed { height: 70px; border-bottom: 1px solid var(--gantt-border); }
+.gantt__header-cell--fixed {
+    height: 70px;
+    min-height: 70px;
+    max-height: 70px;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--gantt-border);
+}
 
 .gantt__task-item {
-    height: 40px;
+    height: 36px;
+    min-height: 36px;
+    max-height: 36px;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 10px;
-    border-bottom: 1px solid var(--gantt-bg-element);
-    font-size: 13px;
+    border-bottom: 1px solid #21262d;
+    font-size: 12px;
     color: var(--gantt-text-primary);
     cursor: default;
 }

@@ -51,6 +51,10 @@
             <div class="dashboard-split">
                 <!-- 왼쪽: 셋업 현황 -->
                 <div class="dashboard-col" id="section-setup" style="display: none;">
+                    <div class="mobile-only-btn-group">
+                        <button id="btn-setup-search-task" class="btn-blue-sm">🔍 작업 검색</button>
+                        <button id="btn-setup-register-task" class="btn-green-sm">➕ 작업 등록</button>
+                    </div>
                     <div class="maint-split-view" id="setup-split-view">
                         <!-- 왼쪽: 차트 영역 -->
                         <div class="maint-left-charts">
@@ -67,15 +71,15 @@
                             </div>
                             <div class="status-group card-like" style="flex: 1;">
                                 <h5 class="status-group-title">사업장 및 장비 현황</h5>
-                                <div class="chart-row" style="align-items: stretch; margin: 0; height: 100%;">
-                                    <div class="status-list-container status-list-flex" style="height: 100%;">
+                                <div class="chart-row" style="display: flex; flex-direction: row; gap: 15px; width: 100%;">
+                                    <div class="status-list-container status-list-flex" style="flex: 1; min-width: 0;">
                                         <div class="status-list-header">
                                             <span class="header-name">사업장</span>
                                             <span class="header-count">장비수</span>
                                         </div>
                                         <ul class="site-status-list" id="setup-site-status-list"></ul>
                                     </div>
-                                    <div class="status-list-container status-list-flex" style="height: 100%;">
+                                    <div class="status-list-container status-list-flex" style="flex: 1; min-width: 0;">
                                         <div class="status-list-header">
                                             <span class="header-name">장비명</span>
                                             <span class="header-count">장비수</span>
@@ -103,9 +107,8 @@
                     </div>
                     <div class="setup-card-body gantt" id="gantt-chart-area">
                         <div class="gantt__title-wrapper">
-                            <div class="gantt__left-toolbar">
-                                <button id="btn-gantt-history" class="btn-gray btn-text-sm">📜 셋업 이력</button>
-                                <button id="btn-gantt-view-toggle" class="btn-gray btn-text-sm" style="margin-left: 10px;"></button>
+                            <div class="gantt__left-toolbar" style="display: flex; gap: 6px; align-items: center;">
+                                <button id="btn-gantt-history" class="btn-gray btn-text-sm" style="height: 28px;">📜 셋업 이력</button>
                             </div>
                             <div class="gantt__center-title">
                                 <h5 class="gantt__subtitle">셋업 일정</h5>
@@ -128,8 +131,11 @@
                         </div>
                         <div class="gantt__wrapper" id="gantt-wrapper" style="display: none;">
                             <div class="gantt__sidebar gantt__sidebar--initial" id="gantt-sidebar">
-                                <div class="gantt__header-cell gantt__header-cell--fixed">
-                                    작업명
+                                <div class="gantt__header-cell gantt__header-cell--fixed" style="display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 11px; font-weight: bold; color: #8b949e;">
+                                    <span style="width: 105px; text-align: left; flex-shrink: 0;">셋업 구분</span>
+                                    <span style="width: 175px; text-align: left; flex-shrink: 0;">세부 내용</span>
+                                    <span style="flex: 1; text-align: left; min-width: 180px;">내용</span>
+                                    <span style="width: 45px; text-align: right; flex-shrink: 0;">상태</span>
                                 </div>
 
                                 <div id="gantt-task-list"></div>
@@ -574,6 +580,30 @@
                 }
             });
         }
+
+        // [추가] 셋업 관리 작업 등록 / 검색 버튼 이벤트
+        const handleSetupRegisterClick = () => {
+            const today = new Date().toISOString().split('T')[0];
+            const site = (typeof currentGanttFilters !== 'undefined' && currentGanttFilters && currentGanttFilters.site) ? currentGanttFilters.site : '';
+            const equip = (typeof currentGanttFilters !== 'undefined' && currentGanttFilters && currentGanttFilters.equip) ? currentGanttFilters.equip : '';
+            if (typeof window.openSetupScheduleRegisterModal === 'function') {
+                window.openSetupScheduleRegisterModal(site, equip, today);
+            } else if (typeof window.openSetupLogRegisterModal === 'function') {
+                window.openSetupLogRegisterModal(site, equip, '', today, false, true);
+            }
+        };
+
+        const handleSetupSearchClick = () => {
+            if (typeof window.openTaskSearchModal === 'function') {
+                window.openTaskSearchModal();
+            }
+        };
+
+        const btnSetupRegister = document.getElementById('btn-setup-register-task');
+        if (btnSetupRegister) btnSetupRegister.addEventListener('click', handleSetupRegisterClick);
+
+        const btnSetupSearch = document.getElementById('btn-setup-search-task');
+        if (btnSetupSearch) btnSetupSearch.addEventListener('click', handleSetupSearchClick);
         // [요청] 모바일에서 캘린더 이벤트 드래그 비활성화
         // 화면 너비가 950px 이하일 때, .calendar-event-item에서 발생하는 dragstart 이벤트를 취소합니다.
         if (window.matchMedia("(max-width: 950px)").matches) {

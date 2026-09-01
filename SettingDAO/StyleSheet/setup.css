@@ -110,10 +110,14 @@
 }
 
 .th-center { text-align: center; font-size: 13px; }
-.th-w90 { width: 90px; }
 .th-w50 { width: 50px; }
-.th-w150 { width: 150px; }
+.th-w80 { width: 80px; }
+.th-w90 { width: 90px; }
 .th-w100 { width: 100px; }
+.th-w110 { width: 110px; }
+.th-w120 { width: 120px; }
+.th-w130 { width: 130px; }
+.th-w150 { width: 150px; }
 
 /* 날짜 입력 필드 스타일 */
 .data-table input[type="date"],
@@ -237,46 +241,57 @@
     border-radius: 4px;
 }
 
-.input-w120 { width: 120px; }
-
 .log-list-wrapper {
-    height: 50%;
+    height: 100%;
     overflow-y: auto;
     overflow-x: auto;
-    border-bottom: 1px solid #30363d;
+    border-bottom: none;
 }
 
-/* 메모 영역 */
-.memo-container {
+/* 셋업 우측 패널 (작업 내용 및 셋업 이슈 분할) */
+.setup-section-panel {
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 10px;
+    overflow: hidden;
     min-height: 100px;
 }
 
-.memo-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 5px;
-    align-items: center;
+#setup-work-memo-panel {
+    flex: 1.2;
 }
 
-.memo-label {
-    font-size: 13px;
-    color: #fff;
-    margin-bottom: 5px;
-    font-weight: bold;
+#setup-issue-panel {
+    flex: 0.8;
+}
+
+.resizer-vertical {
+    height: 6px;
+    background: #21262d;
+    cursor: row-resize;
+    border-top: 1px solid #30363d;
+    border-bottom: 1px solid #30363d;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.resizer-vertical:hover {
+    background: #58a6ff;
 }
 
 .textarea-dark {
     flex: 1;
+    width: 100%;
+    height: 100%;
     resize: none;
     background: #0d1117;
     border: 1px solid #30363d;
     color: #fff;
-    padding: 8px;
+    padding: 10px;
     border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 13px;
+    line-height: 1.5;
 }
 
 /* ==========================================================================

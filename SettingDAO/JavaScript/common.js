@@ -4,10 +4,10 @@
 
 // [추가] iOS/Safari 및 개인정보 보호 모드(Private Browsing) 대응을 위한 로컬 스토리지(Storage) 안전망 폴리필
 // iOS Safari의 5MB 용량 초과 에러(QuotaExceededError) 또는 스토리지 접근 차단 시 예외를 방지하고 인메모리(in-memory) 백업으로 안전하게 전환합니다.
-(function() {
+(function () {
     window.storageFallback = {};
     const originalSetItem = Storage.prototype.setItem;
-    Storage.prototype.setItem = function(key, value) {
+    Storage.prototype.setItem = function (key, value) {
         try {
             originalSetItem.call(this, key, value);
         } catch (e) {
@@ -17,29 +17,29 @@
     };
 
     const originalGetItem = Storage.prototype.getItem;
-    Storage.prototype.getItem = function(key) {
+    Storage.prototype.getItem = function (key) {
         try {
             const val = originalGetItem.call(this, key);
             if (val !== null) return val;
-        } catch (e) {}
+        } catch (e) { }
         return window.storageFallback.hasOwnProperty(key) ? window.storageFallback[key] : null;
     };
 
     const originalRemoveItem = Storage.prototype.removeItem;
-    Storage.prototype.removeItem = function(key) {
+    Storage.prototype.removeItem = function (key) {
         try {
             originalRemoveItem.call(this, key);
-        } catch (e) {}
+        } catch (e) { }
         if (window.storageFallback.hasOwnProperty(key)) {
             delete window.storageFallback[key];
         }
     };
 
     const originalClear = Storage.prototype.clear;
-    Storage.prototype.clear = function() {
+    Storage.prototype.clear = function () {
         try {
             originalClear.call(this);
-        } catch (e) {}
+        } catch (e) { }
         window.storageFallback = {};
     };
 })();
@@ -51,28 +51,28 @@ let isSessionExpiredAlertShown = false;
 // [추가] 모달 / 팝업 뒤로가기 감지 스택 및 popstate 처리
 window.openModalStack = [];
 
-window.pushModalHistory = function(closeFn) {
+window.pushModalHistory = function (closeFn) {
     if (typeof closeFn === 'function') {
         window.openModalStack.push(closeFn);
     }
     try {
         history.pushState({ modalOpen: true, stackIndex: window.openModalStack.length }, '');
-    } catch (e) {}
+    } catch (e) { }
 };
 
-window.popModalHistory = function() {
+window.popModalHistory = function () {
     if (window.openModalStack && window.openModalStack.length > 0) {
         window.openModalStack.pop();
     }
 };
 
 // 최상단 열려있는 모달/팝업 닫기 헬퍼 함수
-window.closeTopmostModal = function() {
+window.closeTopmostModal = function () {
     // 1. openModalStack에 닫기 스택이 있으면 우선 실행
     if (window.openModalStack && window.openModalStack.length > 0) {
         const closeFn = window.openModalStack.pop();
         if (typeof closeFn === 'function') {
-            try { closeFn(); return true; } catch (err) {}
+            try { closeFn(); return true; } catch (err) { }
         }
     }
 
@@ -104,7 +104,7 @@ window.closeTopmostModal = function() {
             try {
                 closeBtn.click();
                 return true;
-            } catch (e) {}
+            } catch (e) { }
         }
 
         topModal.style.display = 'none';
@@ -116,7 +116,7 @@ window.closeTopmostModal = function() {
 };
 
 // 뒤로가기(popstate) 발생 시 열린 모달이 있으면 모달부터 닫기
-window.addEventListener('popstate', function(e) {
+window.addEventListener('popstate', function (e) {
     const isClosed = window.closeTopmostModal();
     if (isClosed) {
         e.preventDefault();
@@ -125,7 +125,7 @@ window.addEventListener('popstate', function(e) {
 });
 
 // MutationObserver로 모달 열림 감지 시 history.pushState 자동 등록
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const observer = new MutationObserver((mutations) => {
         mutations.forEach(mutation => {
             if (mutation.type === 'attributes' && (mutation.attributeName === 'style' || mutation.attributeName === 'class')) {
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         target.dataset.historyPushed = 'true';
                         try {
                             history.pushState({ modalId: target.id || 'modal' }, '');
-                        } catch (e) {}
+                        } catch (e) { }
                     } else if (!isVisible && target.dataset.historyPushed) {
                         delete target.dataset.historyPushed;
                     }
@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // [추가] 전역 로딩 오버레이 제어 함수
 let globalLoadingCount = 1; // 초기 로딩 시 1로 시작
 
-window.showLoading = function(message = '로딩 중입니다...') {
+window.showLoading = function (message = '로딩 중입니다...') {
     globalLoadingCount++;
     const overlay = document.getElementById('global-loading-overlay');
     const textEl = document.getElementById('global-loading-text');
@@ -166,7 +166,7 @@ window.showLoading = function(message = '로딩 중입니다...') {
     if (overlay) overlay.style.display = 'flex';
 };
 
-window.hideLoading = function(force = false) {
+window.hideLoading = function (force = false) {
     if (force) globalLoadingCount = 0;
     else globalLoadingCount = Math.max(0, globalLoadingCount - 1);
 
@@ -177,11 +177,11 @@ window.hideLoading = function(force = false) {
 };
 
 // 1. 초기 페이지 및 자원 로딩 처리 (캐시가 구성되었으면 즉시 해제하여 렉 및 깜빡임 방지)
-window.addEventListener('load', function() {
+window.addEventListener('load', function () {
     if (localStorage.getItem('device_data') || window.isDataLoaded) {
         window.hideLoading(true);
     } else {
-        setTimeout(function() {
+        setTimeout(function () {
             window.hideLoading(true);
         }, 100);
     }
@@ -646,13 +646,13 @@ window.syncHistoryTransaction = async function (site, equip, payload) {
 // [추가] 100% DB 전환을 위한 SETUP(셋업 상세내역/일지) 전용 동기화 함수
 window.syncSetupDataDB = async function (site, equip, details = null, logs = null) {
     window.activeSyncRequests++;
-    
+
     // [보강] 송신 전 한글 유니코드(NFC) 및 연속 공백 정규화 적용
     let cleanSite = typeof site === 'string' ? site.normalize('NFC').trim() : '';
     let cleanEquip = typeof equip === 'string' ? equip.normalize('NFC').trim() : '';
     cleanSite = cleanSite.replace(/\s+/g, ' ');
     cleanEquip = cleanEquip.replace(/\s+/g, ' ');
-    
+
     const equip_id = `${cleanSite}::${cleanEquip}`;
     try {
         const res = await fetch('/api/setup/sync_equip', {
@@ -994,13 +994,13 @@ async function migrateDataFormat() {
                                             const itemsArr = item.content.split(',').map(s => s.trim());
                                             const formattedArr = itemsArr.map(partStr => {
                                                 let cleanV = partStr;
-                                                
+
                                                 // 중복 태그 오염 클렌징: [유상] 파트 이상 교체 - [무상(보증)] A 형태일 때 앞의 불필요한 태그 제거
                                                 const doubleTagMatch = cleanV.match(/^\[(?:유상|무상[^\]]*|기타)\]\s*(.*?\s*-\s*\[(?:유상|무상[^\]]*|기타)\].*)$/);
                                                 if (doubleTagMatch) {
                                                     cleanV = doubleTagMatch[1];
                                                 }
-                                                
+
                                                 if (generalCost && !cleanV.match(/\[(유상|무상[^\]]*|기타)\]/)) {
                                                     const kwMatch = cleanV.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
                                                     if (kwMatch) return `${kwMatch[1].trim()} - [${generalCost}] ${kwMatch[2].trim()}`;
@@ -3662,7 +3662,7 @@ function handleReorder(type) {
                             }
                         }
                     });
-                    
+
                     if (itemModified) {
                         const parts = key.split('::');
                         if (parts.length >= 2) {
@@ -4498,12 +4498,12 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         const newMemoVal = memoEl.value;
         const key = `details_${site}_${equip}`;
         const localData = JSON.parse(localStorage.getItem(key)) || {};
-        
+
         let matchedItem = null;
         let payload = { log_upserts: [], maint_upserts: [] };
-        
+
         const isActiveMaint = (currentActiveLog.source === 'maint') || (localData.maint && localData.maint.some(m => String(m.id) === String(currentActiveLog.id)));
-        
+
         if (isActiveMaint) {
             matchedItem = localData.maint.find(m => String(m.id) === String(currentActiveLog.id));
             if (matchedItem) {
@@ -4513,7 +4513,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         } else {
             if (!localData.logs) localData.logs = [];
             matchedItem = localData.logs.find(l => String(l.id) === String(currentActiveLog.id));
-            
+
             if (!matchedItem && String(currentActiveLog.id) === String(parentLog.id)) {
                 matchedItem = { ...parentLog };
                 matchedItem.memo = newMemoVal;
@@ -4524,20 +4524,20 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
                 payload.log_upserts.push(matchedItem);
             }
         }
-        
+
         if (!matchedItem) {
             alert('저장할 항목을 찾을 수 없습니다.');
             return false;
         }
-        
+
         const success = await window.syncHistoryTransaction(site, equip, payload);
         if (!success) {
             alert('서버 통신 오류로 메모 저장에 실패했습니다.');
             return false;
         }
-        
+
         localStorage.setItem(key, JSON.stringify(localData));
-        
+
         currentActiveLog.memo = newMemoVal;
         if (String(currentActiveLog.id) === String(parentLog.id)) {
             parentLog.memo = newMemoVal;
@@ -4547,19 +4547,19 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
             const maintMatch = childMaints.find(m => String(m.id) === String(currentActiveLog.id));
             if (maintMatch) maintMatch.memo = newMemoVal;
         }
-        
+
         initialMemo = newMemoVal;
         hasUnsavedChanges = false;
         resetSaveButton();
-        
+
         alert('메모가 저장되었습니다.');
-        
+
         if (typeof window.refreshCalendarPopupAfterCompletion === 'function') {
             window.refreshCalendarPopupAfterCompletion();
         } else if (typeof window.renderCalendar === 'function') {
             window.renderCalendar();
         }
-        
+
         return true;
     };
 
@@ -4650,13 +4650,13 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         addBtn.onclick = () => {
             modal.style.display = 'none';
             if (typeof window.openRegisterScheduleModal === 'function') {
-                const presetData = { 
-                    type: (parentLog.type && parentLog.type !== '-') ? parentLog.type : '비정기', 
-                    detailType: (parentLog.detailType && parentLog.detailType !== '-') ? parentLog.detailType : '', 
-                    detailType2: (parentLog.detailType2 && parentLog.detailType2 !== '-') ? parentLog.detailType2 : '', 
-                    detailType3: (parentLog.detailType3 && parentLog.detailType3 !== '-') ? parentLog.detailType3 : '', 
-                    content: '', 
-                    worker: parentLog.worker || '' 
+                const presetData = {
+                    type: (parentLog.type && parentLog.type !== '-') ? parentLog.type : '비정기',
+                    detailType: (parentLog.detailType && parentLog.detailType !== '-') ? parentLog.detailType : '',
+                    detailType2: (parentLog.detailType2 && parentLog.detailType2 !== '-') ? parentLog.detailType2 : '',
+                    detailType3: (parentLog.detailType3 && parentLog.detailType3 !== '-') ? parentLog.detailType3 : '',
+                    content: '',
+                    worker: parentLog.worker || ''
                 };
                 window.currentSearchFilters = { site: site, equip: equip };
                 window.currentAddWorkLogId = originalLogId;
@@ -4697,7 +4697,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
 
         let label = '';
         let items = [];
-        
+
         // 전체 내용에서 대표 비용처리 라벨 추출
         let globalCostLabel = '';
         const globalCostMatch = displayContent.match(/^(\[.*?\])\s*/);
@@ -4706,7 +4706,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         }
 
         const contentParts = displayContent.split(',').map(s => s.trim()).filter(Boolean);
-        
+
         const partKeywords = [
             '파트 이상 (교체)', '파트 이상 교체',
             '파트 이상 (수리)', '파트 이상 수리',
@@ -4741,7 +4741,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
 
             let cleanPart = part.replace(/^\[.*?\]\s*/, '').trim();
             const hyphenIdx = cleanPart.indexOf(' - ');
-            
+
             if (hyphenIdx !== -1) {
                 const prefix = cleanPart.substring(0, hyphenIdx).trim();
                 const suffix = cleanPart.substring(hyphenIdx + 3).trim();
@@ -4905,12 +4905,12 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
             e.preventDefault();
             modal.style.display = 'none';
             if (typeof window.openRegisterScheduleModal === 'function') {
-                const presetData = { 
-                    type: (parentLog.type && parentLog.type !== '-') ? parentLog.type : '비정기', 
-                    detailType: (parentLog.detailType && parentLog.detailType !== '-') ? parentLog.detailType : '', 
-                    detailType2: (parentLog.detailType2 && parentLog.detailType2 !== '-') ? parentLog.detailType2 : '', 
-                    content: '', 
-                    worker: parentLog.worker || '' 
+                const presetData = {
+                    type: (parentLog.type && parentLog.type !== '-') ? parentLog.type : '비정기',
+                    detailType: (parentLog.detailType && parentLog.detailType !== '-') ? parentLog.detailType : '',
+                    detailType2: (parentLog.detailType2 && parentLog.detailType2 !== '-') ? parentLog.detailType2 : '',
+                    content: '',
+                    worker: parentLog.worker || ''
                 };
                 window.currentSearchFilters = { site: site, equip: equip };
                 window.currentAddWorkLogId = originalLogId;
@@ -4954,7 +4954,7 @@ window.getHolidayName = function (year, month, day) {
         // 2026
         "2026-02-16": "설날", "2026-02-17": "설날", "2026-02-18": "설날",
         "2026-05-24": "부처님오신날", "2026-05-25": "대체공휴일", "2026-06-03": "지방선거",
-        "2026-09-25": "추석", "2026-09-26": "추석", "2026-09-27": "추석", "2026-09-28": "대체공휴일", "2026-10-05": "대체공휴일",
+        "2026-09-24": "추석", "2026-09-25": "추석", "2026-09-26": "추석", "2026-10-05": "대체공휴일",
         // 2027
         "2027-02-06": "설날", "2027-02-07": "설날", "2027-02-08": "설날", "2027-02-09": "대체공휴일",
         "2027-05-13": "부처님오신날", "2027-08-16": "대체공휴일",
@@ -5137,7 +5137,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
         }
 
         // [추가] 오염된 텍스트 정제
-            pureContent = pureContent.replace(/\[(유상|무상[^\]]*|기타)\]/g, '').trim();
+        pureContent = pureContent.replace(/\[(유상|무상[^\]]*|기타)\]/g, '').trim();
         pureContent = pureContent.replace(/\s*-\s*$/, '').trim();
 
         const partKeywords = ['파트 이상 교체', '파트 이상 수리', '용액 용자 이상', '물품 이상 교체', '물품 이상 수리', '파트 이상 (교체)', '파츠 이상 교체', '파트 이상', '파츠 이상'];
@@ -5177,7 +5177,7 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
 
             const match = adminItems.find(a => a.part === actualPart || a.code === actualPart);
             if (!match) return; // 물품 관리(adminItems)에 등록되지 않은 항목은 제안박스 제외
-            
+
             let code = match.code || '';
             let partno = match.partno || '';
             actualPart = match.code || match.part || actualPart; // 코드명 우선 적용 보정

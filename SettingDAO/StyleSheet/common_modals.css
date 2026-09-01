@@ -462,7 +462,8 @@
     padding: 8px 12px;
 }
 
-#btn-confirm-register-schedule {
+#btn-confirm-register-schedule,
+#btn-save-setup-task-schedule {
     width: 100%;
 }
 
@@ -1071,7 +1072,8 @@
     flex-shrink: 0;
 }
 
-#register-schedule-modal .modal-window {
+#register-schedule-modal .modal-window,
+#setup-task-schedule-modal .modal-window {
     width: 500px;
     height: auto;
     resize: none;
@@ -1079,29 +1081,35 @@
     overflow: visible !important;
 }
 
-#register-schedule-modal .modal-body {
+#register-schedule-modal .modal-body,
+#setup-task-schedule-modal .modal-body {
     overflow: visible !important;
     max-height: none;
 }
 
-#register-schedule-modal .form-row {
+#register-schedule-modal .form-row,
+#setup-task-schedule-modal .form-row {
     display: flex;
     align-items: center;
     margin-bottom: 15px;
     gap: 10px;
 }
 
-#register-schedule-modal .form-label {
+#register-schedule-modal .form-label,
+#setup-task-schedule-modal .form-label {
     width: 80px;
     margin-bottom: 0 !important;
 }
 
 #register-schedule-modal .input-dark,
-#register-schedule-modal .modal-select {
+#register-schedule-modal .modal-select,
+#setup-task-schedule-modal .input-dark,
+#setup-task-schedule-modal .modal-select {
     flex: 1;
 }
 
-#register-schedule-modal .modal-select {
+#register-schedule-modal .modal-select,
+#setup-task-schedule-modal .modal-select {
     background: #0d1117;
     color: #fff;
     border: 1px solid #30363d;
@@ -1111,7 +1119,10 @@
 
 #register-schedule-modal .input-dark,
 #register-schedule-modal .modal-select,
-#register-schedule-modal .log-select-trigger {
+#register-schedule-modal .log-select-trigger,
+#setup-task-schedule-modal .input-dark,
+#setup-task-schedule-modal .modal-select,
+#setup-task-schedule-modal .log-select-trigger {
     height: 30px !important;
     min-height: 30px !important;
     box-sizing: border-box !important;
@@ -1120,20 +1131,54 @@
     line-height: normal;
 }
 
-#register-schedule-modal .log-select-trigger {
+#register-schedule-modal select.modal-select,
+#register-schedule-modal .log-select-trigger,
+#setup-task-schedule-modal select.modal-select,
+#setup-task-schedule-modal #setup-sched-equip-trigger {
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
     display: flex !important;
     align-items: center !important;
+    position: relative !important;
+    padding-right: 28px !important;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='14' height='14' fill='%238b949e'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 8px center !important;
+    cursor: pointer;
+}
+
+#setup-task-schedule-modal #setup-sched-worker-trigger {
+    background-image: none !important;
+    padding-right: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    position: relative !important;
+    cursor: pointer;
+}
+
+#setup-task-schedule-modal #setup-sched-worker-dropdown {
+    top: auto !important;
+    bottom: 100% !important;
+    margin-bottom: 4px !important;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
 #register-schedule-modal input:not(.has-value),
 #register-schedule-modal select:not(.has-value),
-#register-schedule-modal .log-select-trigger:not(.has-value) {
+#register-schedule-modal .log-select-trigger:not(.has-value),
+#setup-task-schedule-modal input:not(.has-value),
+#setup-task-schedule-modal select:not(.has-value),
+#setup-task-schedule-modal .log-select-trigger:not(.has-value) {
     background-color: var(--cal-bg-dark) !important;
 }
 
 #register-schedule-modal input.has-value,
 #register-schedule-modal select.has-value,
-#register-schedule-modal .log-select-trigger.has-value {
+#register-schedule-modal .log-select-trigger.has-value,
+#setup-task-schedule-modal input.has-value,
+#setup-task-schedule-modal select.has-value,
+#setup-task-schedule-modal .log-select-trigger.has-value {
     background-color: var(--cal-bg-element) !important;
 }
 
@@ -1189,7 +1234,8 @@
 
 /* --- 9. 모바일 반응형 (Mobile Responsive) --- */
 @media (max-width: 950px) {
-    #register-schedule-modal .modal-window {
+    #register-schedule-modal .modal-window,
+    #setup-task-schedule-modal .modal-window {
         width: 90% !important;
         height: auto !important;
         max-height: none !important;
@@ -1199,17 +1245,20 @@
         overflow: visible !important;
     }
 
-    #register-schedule-modal .modal-body {
+    #register-schedule-modal .modal-body,
+    #setup-task-schedule-modal .modal-body {
         overflow: visible !important;
     }
 
-    #register-schedule-modal .form-row {
+    #register-schedule-modal .form-row,
+    #setup-task-schedule-modal .form-row {
         flex-direction: row !important;
         align-items: center !important;
         gap: 10px !important;
     }
 
-    #register-schedule-modal .form-label {
+    #register-schedule-modal .form-label,
+    #setup-task-schedule-modal .form-label {
         width: 80px !important;
         margin-bottom: 0 !important;
         flex-shrink: 0 !important;
@@ -1219,7 +1268,8 @@
     }
 
     @media (orientation: landscape) {
-        #register-schedule-modal .modal-window {
+        #register-schedule-modal .modal-window,
+        #setup-task-schedule-modal .modal-window {
             height: 90vh !important;
             max-height: 90vh !important;
         }

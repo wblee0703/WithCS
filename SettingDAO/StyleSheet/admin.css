@@ -413,7 +413,8 @@
 }
 
 #admin-item-list li,
-#check-type-item-list li {
+#check-type-item-list li,
+#setup-template-item-list li {
     padding: 0;
     display: flex;
     align-items: center;
@@ -421,7 +422,8 @@
 }
 
 #admin-item-list li > .model-col,
-#check-type-item-list li > .model-col {
+#check-type-item-list li > .model-col,
+#setup-template-item-list li > .model-col {
     padding: 10px 12px;
 }
 

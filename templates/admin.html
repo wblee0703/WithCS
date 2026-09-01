@@ -627,72 +627,84 @@
             </div>
         </div>
 
-        <!-- 6. 셋업 템플릿 불러오기 / 초기화 모달 -->
-        <div id="setup-template-load-modal" class="modal-overlay" style="display:none; z-index: 11000;">
-            <div class="modal-window" style="width: 400px; height: auto; display: flex; flex-direction: column;">
-                <div class="modal-header">
-                    <h3>템플릿 불러오기 / 초기화</h3>
-                    <button id="btn-close-template-load" style="background: none; border: none; color: #8b949e; cursor: pointer; font-size: 16px;">✕</button>
-                </div>
-                <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; gap: 15px;">
-                    <p style="color: #e6edf3; font-size: 13px; margin: 0; line-height: 1.4;">
-                        다른 장비 모델에 저장된 셋업 일정을 불러오거나,<br>가장 기본적인 템플릿 양식으로 초기화합니다.
-                    </p>
-                    <div class="form-row" style="margin-bottom: 0;">
-                        <select id="load-template-model-select" class="input-dark" style="width: 100%; padding: 6px;">
-                        </select>
-                    </div>
-                    <div style="display: flex; gap: 10px; margin-top: 10px;">
-                        <button id="btn-confirm-template-load" class="btn-blue-sm" style="flex: 1; padding: 8px; font-size: 13px;">선택 모델 불러오기</button>
-                        <button id="btn-reset-template-load" class="btn-orange-sm" style="flex: 1; padding: 8px; font-size: 13px;">기본값으로 초기화</button>
-                    </div>
-                </div>
+        <!-- 5. 셋업 일정 관리 -->
+        <div id="section-setup-template-mgmt" class="card admin-section" style="display: none;">
+            <div class="card-header">
+                <h3>셋업 일정 관리</h3>
             </div>
-        </div>
-
-        <div id="section-setup-template-mgmt" class="admin-section" style="display: none;">
-            <div style="display: flex; gap: 20px; width: 100%; height: 100%;">
-                <!-- 왼쪽 모델 리스트 영역 -->
-                <div class="admin-col-list" style="flex: 0 0 375px; max-width: 375px;">
-                    <div class="list-header" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                        <h3 style="margin: 0;">장비 모델 리스트</h3>
-                        <input type="text" id="setup-template-model-search" class="input-dark compact-select" placeholder="모델명 검색" autocomplete="off" style="width: 150px;">
-                    </div>
-                    <ul id="setup-template-model-list" class="admin-list" style="overflow-y: auto; flex: 1;">
-                        <!-- JS에서 동적 렌더링 -->
-                    </ul>
-                </div>
-
-                <!-- 오른쪽 템플릿 상세 영역 -->
-                <div class="admin-col-list" style="flex: 1;">
-                    <div class="list-header"
-                        style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <h3 id="setup-template-current-model-title" style="margin: 0; color: #58a6ff;">기본 템플릿 (공통)
-                            </h3>
-                            <span style="font-size: 13px; color: #8b949e;">셋업 일정 템플릿</span>
-                            <span id="setup-template-total-days"
-                                style="font-size: 13px; color: #3fb950; font-weight: bold; margin-left: 10px;"></span>
+            <div class="card-body">
+                <div class="admin-split-view">
+                    <!-- 좌측 카테고리 영역: 셋업 구분 (대분류) 및 세부 구분 (소분류) -->
+                    <div class="check-type-categories-wrapper">
+                        <!-- 1. 셋업 구분 선택 -->
+                        <div class="admin-col-list col-list-200">
+                            <div class="list-header">
+                                <span>셋업 구분</span>
+                            </div>
+                            <ul id="setup-template-category-list" class="admin-list">
+                                <li data-category="장비 반입 및 정위치" class="active">장비 반입 및 정위치</li>
+                                <li data-category="통신 상태 및 유틸리티">통신 상태 및 유틸리티</li>
+                                <li data-category="셋업 평가">셋업 평가</li>
+                                <li data-category="셋업 완료">셋업 완료</li>
+                            </ul>
                         </div>
-                        <div style="display: flex; gap: 5px;">
-                            <button id="btn-load-setup-template" class="btn-gray">불러오기 / 초기화</button>
-                            <button id="btn-save-setup-template" class="btn-blue">템플릿 저장</button>
+
+                        <!-- 2. 세부 구분 (소분류) 패널 -->
+                        <div class="admin-col-list" id="setup-template-subcategory-panel" style="flex: 0 0 220px; max-width: 220px;">
+                            <div class="list-header">
+                                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                    <span>세부 구분</span>
+                                    <button id="btn-setup-subcategory-settings" class="btn-settings" title="관리 모드 토글">⚙️</button>
+                                </div>
+                            </div>
+                            <ul id="setup-template-subcategory-list" class="admin-list">
+                                <!-- JS로 렌더링 -->
+                            </ul>
+                            <div class="list-footer" id="setup-template-subcategory-footer" style="display: none;">
+                                <input type="text" id="setup-template-subcategory-input" placeholder="세부 구분 추가" class="input-dark full-width">
+                                <button id="btn-add-setup-template-subcategory" class="btn-green full-width">추가</button>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="data-table-wrapper" style="margin-top: 15px; flex: 1; overflow-y: auto;">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>작업 내용</th>
-                                    <th style="width: 100px;">소요일수(일)</th>
-                                    <th style="width: 50px; text-align: center;">삭제</th>
-                                </tr>
-                            </thead>
-                            <tbody id="setup-template-tbody">
-                                <!-- JS에서 동적 렌더링 -->
-                            </tbody>
-                        </table>
+                    <!-- 우측: 셋업 세부 항목 관리 (작업 세부 내용 및 소요일수) -->
+                    <div class="admin-col-detail" style="flex: 0 1 700px; max-width: 100%;">
+                        <div class="detail-header">
+                            <div class="flex-between-center mb-5">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <h4 class="m-0" id="setup-template-detail-title">셋업 항목 관리 (전체 공통)</h4>
+                                    <span id="setup-template-total-days" style="font-size: 13px; color: #3fb950; font-weight: bold;"></span>
+                                </div>
+                                <div style="display: flex; gap: 5px;">
+                                    <button id="btn-reset-setup-template" class="btn-orange-sm" style="font-size: 12px; padding: 4px 8px;">기본값 초기화</button>
+                                    <button id="btn-save-setup-template" class="btn-blue-sm" style="font-size: 12px; padding: 4px 10px;">템플릿 저장</button>
+                                </div>
+                            </div>
+                            <p class="detail-desc" id="setup-template-detail-desc">셋업 구분을 선택하면 해당 구분의 세부 작업 내용과 소요일수를 공통으로 관리할 수 있습니다.</p>
+                        </div>
+                        <div id="setup-template-detail-container" class="admin-form-container max-w-100" style="display: none;">
+                            <div class="admin-list-header mb-0">
+                                <div class="model-col" style="flex: 1.2; text-align: center;">구분</div>
+                                <div class="model-col" style="flex: 3; text-align: center;">작업 세부 내용</div>
+                                <div class="model-col" style="flex: 1; text-align: center;">소요일수(일)</div>
+                                <div class="model-col" style="width: 50px; text-align: center;">기능</div>
+                            </div>
+                            <ul id="setup-template-item-list" class="admin-list check-type-item-list" style="overflow-y: auto; max-height: 400px;">
+                                <!-- JS 동적 렌더링 -->
+                            </ul>
+
+                            <div class="form-group form-section-divider">
+                                <label style="margin-bottom: 5px;">신규 셋업 작업 항목 추가</label>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <input type="text" id="setup-template-item-content" class="input-dark flex-1" placeholder="작업 세부 내용 입력" autocomplete="off" style="height: 32px;">
+                                    <input type="number" id="setup-template-item-days" class="input-dark" placeholder="일수" min="0" value="1" style="width: 70px; height: 32px; text-align: center;">
+                                    <button id="btn-add-setup-template-item" class="btn-green-sm" style="height: 32px; padding: 0 12px; white-space: nowrap;">추가</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="setup-template-detail-placeholder" class="placeholder-container">
+                            <p>좌측에서 셋업 구분을 선택해주세요.</p>
+                        </div>
                     </div>
                 </div>
             </div>

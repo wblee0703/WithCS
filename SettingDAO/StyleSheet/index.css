@@ -492,9 +492,11 @@ body {
     height: 100%;
 }
 
+
 .status-list-header {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     padding: 8px 12px;
     border-bottom: 1px solid #30363d;
     background-color: #21262d;
@@ -505,7 +507,13 @@ body {
 
 .header-name {
     flex: 1;
-    padding-left: 18px;
+    text-align: left;
+    padding-left: 14px;
+}
+
+.header-count {
+    text-align: right;
+    padding-right: 4px;
 }
 
 .status-list-item {
@@ -637,6 +645,7 @@ body {
     gap: 10px;
     margin-bottom: 15px;
 }
+
 .mobile-only-btn-group button {
     flex: 1;
     padding: 10px;
@@ -797,7 +806,8 @@ body {
 }
 
 .upcoming-info-sn {
-    color: #3fb950; /* 녹색 */
+    color: #3fb950;
+    /* 녹색 */
     font-weight: bold;
 }
 
@@ -1030,7 +1040,7 @@ body {
     #home-issue-card {
         height: 300px !important;
     }
-    
+
     #home-issue-card .status-list-container {
         height: auto !important;
         max-height: none !important;
@@ -1041,21 +1051,26 @@ body {
 #dash-inspection-summary {
     font-size: 12px;
 }
+
 #dash-inspection-summary .upcoming-summary-badge {
     font-size: 11px;
 }
 
 @media (max-width: 768px) {
+
     /* [요청] 모바일 환경에서만 폰트 크기 10px 및 총 건수 텍스트 숨김 */
     #dash-inspection-summary {
         font-size: 10px !important;
     }
+
     #dash-inspection-summary .upcoming-summary-badge {
         font-size: 9.5px !important;
     }
+
     .upcoming-count-text {
         display: none !important;
     }
+
     /* [요청] 모바일에서 점검 리스트 장비 정보 글자 크기 1px 축소 (13px -> 12px) */
     .upcoming-item-title {
         font-size: 12px !important;
