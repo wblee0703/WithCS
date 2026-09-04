@@ -3589,7 +3589,7 @@ function setupRegisterScheduleModal() {
         };
 
         if (!document.getElementById('register-equip-wrapper')) {
-            equipSelect.style.display = 'none';
+            equipSelect.style.setProperty('display', 'none', 'important');
 
             const wrapper = document.createElement('div');
             wrapper.id = 'register-equip-wrapper';

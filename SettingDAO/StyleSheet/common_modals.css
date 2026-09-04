@@ -1148,6 +1148,10 @@
     cursor: pointer;
 }
 
+#register-schedule-modal #register-equip-select {
+    display: none !important;
+}
+
 #setup-task-schedule-modal #setup-sched-worker-trigger {
     background-image: none !important;
     padding-right: 8px !important;
