@@ -2623,6 +2623,37 @@ def admin_crud():
                 if targets:
                     for t in set(targets):
                         db.session.execute(text("UPDATE item_log SET spec=:sp WHERE code=:t OR part=:t"), {'sp': new_spec, 't': t})
+
+                # [추가] 물품 관리에서 물품 정보 변경 시 '물품관리 현황'(ItemStock) 테이블 실시간 동기화
+                item_id_str = str(payload['id'])
+                new_partno = payload.get('partno', '')
+                new_detail_type = payload.get('detailType', '')
+                matched_stock_ids = set()
+
+                # 1) item_id로 매칭되는 ItemStock 레코드 동기화
+                stocks_by_id = ItemStock.query.filter_by(item_id=item_id_str).all()
+                for s in stocks_by_id:
+                    s.code = new_code
+                    s.part = new_part
+                    s.spec = new_spec
+                    s.partno = new_partno
+                    s.detail_type = new_detail_type
+                    matched_stock_ids.add(s.id)
+
+                # 2) 이전 코드/물품명 또는 새 코드/물품명으로 매칭되는 ItemStock 레코드 동기화
+                match_targets = [t for t in [old_code, old_part, new_code, new_part] if t]
+                for target in set(match_targets):
+                    stocks = ItemStock.query.filter((ItemStock.code == target) | (ItemStock.part == target)).all()
+                    for s in stocks:
+                        if s.id not in matched_stock_ids:
+                            s.code = new_code
+                            s.part = new_part
+                            s.spec = new_spec
+                            s.partno = new_partno
+                            s.detail_type = new_detail_type
+                            if not s.item_id:
+                                s.item_id = item_id_str
+                            matched_stock_ids.add(s.id)
             elif action == 'DELETE':
                 db.session.execute(text("DELETE FROM admin_item WHERE id=:i"), {'i': str(payload['id'])})
 

@@ -2806,9 +2806,41 @@ async function handleItemDetailSave() {
             }
         }
 
+        // [추가] 물품관리 현황 (adminItemStocks & localStorage item_stocks) 실시간 동기화
+        try {
+            loadItemStocks();
+            let isStockModified = false;
+            if (Array.isArray(adminItemStocks)) {
+                adminItemStocks.forEach(stock => {
+                    const isIdMatch = stock.item_id && String(stock.item_id) === String(currentAdminItemId);
+                    const isCodeMatch = (oldCode && stock.code === oldCode) || (newCode && stock.code === newCode);
+                    const isPartMatch = (oldPart && stock.part === oldPart) || (newPart && stock.part === newPart);
+
+                    if (isIdMatch || isCodeMatch || isPartMatch) {
+                        stock.item_id = String(currentAdminItemId);
+                        stock.partno = partno;
+                        stock.code = code;
+                        stock.part = part;
+                        stock.spec = spec;
+                        stock.detail_type = detailType;
+                        isStockModified = true;
+                    }
+                });
+
+                if (isStockModified) {
+                    saveItemStocksLocally();
+                    if (typeof renderItemStockTable === 'function') {
+                        renderItemStockTable();
+                    }
+                }
+            }
+        } catch (e) {
+            console.error('Item stocks sync error on item save:', e);
+        }
+
         await saveAdminItems();
         addSystemLog('UPDATE_ITEM_ADMIN_DETAIL', part, `Code: ${code}`);
-        alert('물품 정보가 저장되었습니다. (연결된 점검 이력 및 유지관리 데이터도 함께 업데이트 되었습니다.)');
+        alert('물품 정보가 저장되었습니다. (연결된 점검 이력, 유지관리 및 물품관리 현황도 함께 업데이트 되었습니다.)');
         setAdminFormDirty(false, 'item'); // [추가]
         initialAdminFormData.item = getItemFormState(); // [추가] 스냅샷 갱신
         renderAdminItemList();
