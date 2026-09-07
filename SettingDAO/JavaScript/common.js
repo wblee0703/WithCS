@@ -806,7 +806,7 @@ function fetchServerData(callback) {
                 const key = localStorage.key(i);
                 // 시스템(DB) 동기화 키가 아닌, 프론트엔드 UI 상태를 나타내는 키만 백업
                 if (!key.startsWith('details_') && !key.startsWith('site_meta_') &&
-                    !['device_data', 'setup_data', 'admin_items', 'equipment_models', 'check_type_categories', 'check_type_categories2', 'check_type_items'].includes(key)) {
+                    !['device_data', 'setup_data', 'admin_items', 'equipment_models', 'check_type_categories', 'check_type_categories2', 'check_type_items', 'item_stocks'].includes(key)) {
                     keysToKeep.push({ key: key, value: localStorage.getItem(key) });
                 }
             }
@@ -5371,26 +5371,38 @@ window.renderLogPartOptions = function (wrapperId, triggerId, listId, searchId, 
         list.querySelectorAll('.log-select-item').forEach(div => {
             let startY = 0;
             let startX = 0;
+            let startTime = 0;
             let isMoving = false;
 
             div.addEventListener('touchstart', (e) => {
                 window.lastTouchTime = Date.now();
-                startY = e.touches[0].clientY;
-                startX = e.touches[0].clientX;
+                startTime = Date.now();
+                if (e.touches && e.touches[0]) {
+                    startY = e.touches[0].clientY;
+                    startX = e.touches[0].clientX;
+                }
                 isMoving = false;
             }, { passive: true });
 
             div.addEventListener('touchmove', (e) => {
+                if (!e.touches || !e.touches[0]) return;
                 const moveY = e.touches[0].clientY;
                 const moveX = e.touches[0].clientX;
-                if (Math.abs(moveY - startY) > 6 || Math.abs(moveX - startX) > 6) {
+                const diffX = Math.abs(moveX - startX);
+                const diffY = Math.abs(moveY - startY);
+                if (diffY > 10 || diffX > 10 || (diffX * diffX + diffY * diffY > 100)) {
                     isMoving = true;
                 }
             }, { passive: true });
 
+            div.addEventListener('touchcancel', () => {
+                isMoving = false;
+            }, { passive: true });
+
             div.addEventListener('touchend', (e) => {
                 if (e.target.closest('button') || e.target.tagName.toLowerCase() === 'button' || e.target.tagName.toLowerCase() === 'select' || e.target.tagName.toLowerCase() === 'option') return;
-                if (isMoving) return;
+                const touchDuration = Date.now() - startTime;
+                if (isMoving && touchDuration > 250) return;
                 e.preventDefault();
                 e.stopPropagation();
                 div.classList.toggle('selected');

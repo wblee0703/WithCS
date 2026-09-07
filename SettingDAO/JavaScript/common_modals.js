@@ -1878,21 +1878,32 @@ function buildDetailDropdown(item, site, equip) {
 
                         let startY = 0;
                         let startX = 0;
+                        let startTime = 0;
                         let isMoving = false;
 
                         div.addEventListener('touchstart', (e) => {
                             window.lastTouchTime = Date.now();
-                            startY = e.touches[0].clientY;
-                            startX = e.touches[0].clientX;
+                            startTime = Date.now();
+                            if (e.touches && e.touches[0]) {
+                                startY = e.touches[0].clientY;
+                                startX = e.touches[0].clientX;
+                            }
                             isMoving = false;
                         }, { passive: true });
 
                         div.addEventListener('touchmove', (e) => {
+                            if (!e.touches || !e.touches[0]) return;
                             const moveY = e.touches[0].clientY;
                             const moveX = e.touches[0].clientX;
-                            if (Math.abs(moveY - startY) > 6 || Math.abs(moveX - startX) > 6) {
+                            const diffX = Math.abs(moveX - startX);
+                            const diffY = Math.abs(moveY - startY);
+                            if (diffY > 10 || diffX > 10 || (diffX * diffX + diffY * diffY > 100)) {
                                 isMoving = true;
                             }
+                        }, { passive: true });
+
+                        div.addEventListener('touchcancel', () => {
+                            isMoving = false;
                         }, { passive: true });
 
                         const handleSelect = (e) => {
@@ -1929,7 +1940,8 @@ function buildDetailDropdown(item, site, equip) {
                         };
 
                         div.addEventListener('touchend', (e) => {
-                            if (isMoving) return;
+                            const touchDuration = Date.now() - startTime;
+                            if (isMoving && touchDuration > 250) return;
                             handleSelect(e);
                         });
 
@@ -1988,6 +2000,9 @@ function buildDetailDropdown(item, site, equip) {
             dropdown.classList.remove('show');
         });
         if (type === '비정기' && !isPartModeFooter) { addBtn.parentElement.style.display = 'none'; }
+
+        dropdown.addEventListener('pointerdown', (e) => e.stopPropagation());
+        dropdown.addEventListener('click', (e) => e.stopPropagation());
 
         trigger.onclick = (e) => {
             e.stopPropagation();
@@ -3659,11 +3674,15 @@ function setupRegisterScheduleModal() {
 
     const rTrigger = document.getElementById('register-content-trigger');
     const rDropdown = document.getElementById('register-content-dropdown');
-    if (rTrigger && rDropdown) rTrigger.onclick = (e) => {
-        e.stopPropagation();
-        document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== rDropdown) d.classList.remove('show'); });
-        rDropdown.classList.toggle('show');
-    };
+    if (rTrigger && rDropdown) {
+        rDropdown.addEventListener('pointerdown', (e) => e.stopPropagation());
+        rDropdown.addEventListener('click', (e) => e.stopPropagation());
+        rTrigger.onclick = (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.log-select-dropdown.show').forEach(d => { if (d !== rDropdown) d.classList.remove('show'); });
+            rDropdown.classList.toggle('show');
+        };
+    }
     const btnAdd = document.getElementById('btn-register-content-add');
     if (btnAdd && rDropdown) btnAdd.addEventListener('click', () => rDropdown.classList.remove('show'));
 
@@ -4316,21 +4335,32 @@ function updateRegisterEquipSelect(site) {
 
                         let startY = 0;
                         let startX = 0;
+                        let startTime = 0;
                         let isMoving = false;
 
                         li.addEventListener('touchstart', (e) => {
                             window.lastTouchTime = Date.now();
-                            startY = e.touches[0].clientY;
-                            startX = e.touches[0].clientX;
+                            startTime = Date.now();
+                            if (e.touches && e.touches[0]) {
+                                startY = e.touches[0].clientY;
+                                startX = e.touches[0].clientX;
+                            }
                             isMoving = false;
                         }, { passive: true });
 
                         li.addEventListener('touchmove', (e) => {
+                            if (!e.touches || !e.touches[0]) return;
                             const moveY = e.touches[0].clientY;
                             const moveX = e.touches[0].clientX;
-                            if (Math.abs(moveY - startY) > 6 || Math.abs(moveX - startX) > 6) {
+                            const diffX = Math.abs(moveX - startX);
+                            const diffY = Math.abs(moveY - startY);
+                            if (diffY > 10 || diffX > 10 || (diffX * diffX + diffY * diffY > 100)) {
                                 isMoving = true;
                             }
+                        }, { passive: true });
+
+                        li.addEventListener('touchcancel', () => {
+                            isMoving = false;
                         }, { passive: true });
 
                         const handleSelect = (e) => {
@@ -4356,7 +4386,8 @@ function updateRegisterEquipSelect(site) {
                         };
 
                         li.addEventListener('touchend', (e) => {
-                            if (isMoving) return;
+                            const touchDuration = Date.now() - startTime;
+                            if (isMoving && touchDuration > 250) return;
                             handleSelect(e);
                         });
 
@@ -5066,21 +5097,32 @@ window.updateRegisterContentOptions = function () {
 
                         let startY = 0;
                         let startX = 0;
+                        let startTime = 0;
                         let isMoving = false;
 
                         div.addEventListener('touchstart', (e) => {
                             window.lastTouchTime = Date.now();
-                            startY = e.touches[0].clientY;
-                            startX = e.touches[0].clientX;
+                            startTime = Date.now();
+                            if (e.touches && e.touches[0]) {
+                                startY = e.touches[0].clientY;
+                                startX = e.touches[0].clientX;
+                            }
                             isMoving = false;
                         }, { passive: true });
 
                         div.addEventListener('touchmove', (e) => {
+                            if (!e.touches || !e.touches[0]) return;
                             const moveY = e.touches[0].clientY;
                             const moveX = e.touches[0].clientX;
-                            if (Math.abs(moveY - startY) > 6 || Math.abs(moveX - startX) > 6) {
+                            const diffX = Math.abs(moveX - startX);
+                            const diffY = Math.abs(moveY - startY);
+                            if (diffY > 10 || diffX > 10 || (diffX * diffX + diffY * diffY > 100)) {
                                 isMoving = true;
                             }
+                        }, { passive: true });
+
+                        div.addEventListener('touchcancel', () => {
+                            isMoving = false;
                         }, { passive: true });
 
                         const handleSelect = (e) => {
@@ -5111,7 +5153,8 @@ window.updateRegisterContentOptions = function () {
                         };
 
                         div.addEventListener('touchend', (e) => {
-                            if (isMoving) return;
+                            const touchDuration = Date.now() - startTime;
+                            if (isMoving && touchDuration > 250) return;
                             handleSelect(e);
                         });
 

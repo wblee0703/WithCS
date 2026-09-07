@@ -334,6 +334,11 @@
 .log-select-item {
     display: flex;
     align-items: center !important;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
     /* 자식 요소들을 완벽한 수직 중앙으로 정렬 */
 }
 

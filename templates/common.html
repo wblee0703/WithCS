@@ -9,7 +9,7 @@
 
     <!-- 공통 CSS -->
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common.css') }}">
-    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_modals.css') }}">
+    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_modals.css') }}?v=1.0.7">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_setup.css') }}">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/chatbot.css') }}">
     <link
@@ -1457,8 +1457,8 @@
         </div>
     </template>
 
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.0.6"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.0.6"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.0.7"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.0.7"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}"></script>
     {% if session.get('role') == 'superadmin' %}
     <script src="{{ url_for('SettingDAO', filename='JavaScript/chatbot.js') }}"></script>

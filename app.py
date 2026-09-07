@@ -366,6 +366,40 @@ class AdminItem(db.Model):
     spec = db.Column(db.String(255), default='')
     equip = db.Column(db.Text, default='')
 
+# [추가] 사업장 구분별 물품 관리 현황 (수량 관리) 테이블 (ItemStock)
+class ItemStock(db.Model):
+    __tablename__ = 'item_stock'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    site_group = db.Column(db.String(50), nullable=False, index=True)  # 사업장 구분 (SEC, SKH 이천 등)
+    site_name = db.Column(db.String(100), default='', index=True)      # [추가] 사업장명 (평택, 화성 등)
+    item_id = db.Column(db.String(50), nullable=True)                  # AdminItem.id 연동용 (optional)
+    code = db.Column(db.String(100), default='')                       # 물품 코드명
+    part = db.Column(db.String(100), default='')                       # 물품명
+    spec = db.Column(db.String(255), default='')                       # 세부 규격
+    partno = db.Column(db.String(100), default='')                     # 품번
+    detail_type = db.Column(db.String(100), default='')                # 상세 구분
+    quantity = db.Column(db.Integer, default=0)                        # 보유/현재 수량
+    safety_quantity = db.Column(db.Integer, default=0)                 # [추가] 안전 재고 수량
+    memo = db.Column(db.String(255), default='')                       # 비고
+    updated_at = db.Column(db.DateTime, default=get_utc_now, onupdate=get_utc_now)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'site_group': self.site_group or '',
+            'site_name': self.site_name or '',
+            'item_id': self.item_id or '',
+            'code': self.code or '',
+            'part': self.part or '',
+            'spec': self.spec or '',
+            'partno': self.partno or '',
+            'detail_type': self.detail_type or '',
+            'quantity': self.quantity if self.quantity is not None else 0,
+            'safety_quantity': self.safety_quantity if self.safety_quantity is not None else 0,
+            'memo': self.memo or '',
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else ''
+        }
+
 # [추가] 장비 모델 마스터 데이터 테이블 (EquipmentModel)
 class EquipmentModel(db.Model):
     __tablename__ = 'equipment_model'
@@ -424,6 +458,26 @@ class TroubleLog(db.Model):
     trouble_details = db.Column(db.Text, nullable=True) # [이동] 트러블 진행 경과 (JSON)
     status = db.Column(db.String(50), default='미기록')
     image_data = db.Column(db.Text(length=2000000), nullable=True) # [추가] 사진 Base64 저장 컬럼
+
+def ensure_item_stock_table():
+    try:
+        db.create_all()
+        # [추가] 사업장별 관리 및 안전 재고 수량 컬럼 마이그레이션 (SQLite / MySQL 호환)
+        stock_cols = [
+            ('site_name', 'VARCHAR(100) DEFAULT ""'),
+            ('safety_quantity', 'INTEGER DEFAULT 0')
+        ]
+        for col, typ in stock_cols:
+            try:
+                db.session.execute(text(f'ALTER TABLE item_stock ADD COLUMN {col} {typ}'))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+    except Exception as e:
+        app.logger.error(f"Error creating/ensuring item_stock table: {e}")
+
+with app.app_context():
+    ensure_item_stock_table()
 
 # ------------------------------------------------------------------------------
 # 2. 경로 및 로깅 설정 (Paths & Logging Setup)
@@ -651,6 +705,14 @@ def load_data():
         'detailType': i.detail_type, 'additional': i.additional, 'partno': i.partno,
         'code': i.code, 'part': i.part, 'spec': i.spec, 'equip': i.equip
     } for i in admin_items]
+
+    # 2-1. 사업장별 물품 관리 현황 (ItemStock)
+    try:
+        stocks = ItemStock.query.order_by(ItemStock.site_group, ItemStock.site_name, ItemStock.id).all()
+        data['item_stocks'] = [s.to_dict() for s in stocks]
+    except Exception as e:
+        app.logger.error(f"Error fetching item_stocks: {e}")
+        data['item_stocks'] = []
 
     # 3. 사업장(Site) 및 장비 트리(device_data) 구성
     device_data = {}
@@ -2563,7 +2625,136 @@ def admin_crud():
                         db.session.execute(text("UPDATE item_log SET spec=:sp WHERE code=:t OR part=:t"), {'sp': new_spec, 't': t})
             elif action == 'DELETE':
                 db.session.execute(text("DELETE FROM admin_item WHERE id=:i"), {'i': str(payload['id'])})
-                
+
+        elif domain == 'item_stock':
+            if action == 'CREATE':
+                site_group = str(payload.get('site_group', '')).strip()
+                site_name = str(payload.get('site_name', '')).strip()
+                code = str(payload.get('code', '')).strip()
+                part = str(payload.get('part', '')).strip()
+                spec = str(payload.get('spec', '')).strip()
+                partno = str(payload.get('partno', '')).strip()
+                detail_type = str(payload.get('detail_type', '')).strip()
+                try:
+                    quantity = int(payload.get('quantity', 0))
+                except (ValueError, TypeError):
+                    quantity = 0
+                try:
+                    safety_quantity = int(payload.get('safety_quantity', 0))
+                except (ValueError, TypeError):
+                    safety_quantity = 0
+                memo = str(payload.get('memo', '')).strip()
+                item_id = str(payload.get('item_id', '')).strip()
+
+                if not site_group and not site_name:
+                    return jsonify({"status": "fail", "message": "사업장 또는 사업장 구분이 필요합니다."}), 400
+                if not part and not code:
+                    return jsonify({"status": "fail", "message": "물품명 또는 코드명이 필요합니다."}), 400
+
+                # 동일 사업장(또는 사업장 구분)에 동일한 물품(코드+물품명+규격)이 있는지 확인
+                query = ItemStock.query.filter_by(site_group=site_group, site_name=site_name)
+                existing = None
+                if code:
+                    existing = query.filter_by(code=code, spec=spec).first()
+                    if not existing:
+                        existing = query.filter_by(code=code).first()
+                if not existing and part:
+                    existing = query.filter_by(part=part, spec=spec).first()
+
+                if existing:
+                    # 기존 물품이 있으면 수량 누적 및 안전재고 갱신
+                    existing.quantity = (existing.quantity or 0) + quantity
+                    if 'safety_quantity' in payload:
+                        existing.safety_quantity = safety_quantity
+                    if memo: existing.memo = memo
+                    if partno and not existing.partno: existing.partno = partno
+                    if detail_type and not existing.detail_type: existing.detail_type = detail_type
+                    stock_id = existing.id
+                else:
+                    new_stock = ItemStock(
+                        site_group=site_group,
+                        site_name=site_name,
+                        item_id=item_id,
+                        code=code,
+                        part=part,
+                        spec=spec,
+                        partno=partno,
+                        detail_type=detail_type,
+                        quantity=quantity,
+                        safety_quantity=safety_quantity,
+                        memo=memo
+                    )
+                    db.session.add(new_stock)
+                    db.session.flush()
+                    stock_id = new_stock.id
+
+                db.session.commit()
+                return jsonify({"status": "success", "id": stock_id})
+
+            elif action == 'UPDATE':
+                stock_id = payload.get('id')
+                stock = db.session.get(ItemStock, stock_id) if stock_id else None
+                if not stock:
+                    return jsonify({"status": "fail", "message": "물품 재고 항목을 찾을 수 없습니다."}), 404
+
+                if 'quantity' in payload:
+                    try:
+                        stock.quantity = int(payload['quantity'])
+                    except (ValueError, TypeError):
+                        pass
+                if 'safety_quantity' in payload:
+                    try:
+                        stock.safety_quantity = int(payload['safety_quantity'])
+                    except (ValueError, TypeError):
+                        pass
+                if 'site_name' in payload:
+                    stock.site_name = str(payload['site_name']).strip()
+                if 'site_group' in payload:
+                    stock.site_group = str(payload['site_group']).strip()
+                if 'memo' in payload:
+                    stock.memo = str(payload['memo']).strip()
+                if 'code' in payload:
+                    stock.code = str(payload['code']).strip()
+                if 'part' in payload:
+                    stock.part = str(payload['part']).strip()
+                if 'spec' in payload:
+                    stock.spec = str(payload['spec']).strip()
+                if 'partno' in payload:
+                    stock.partno = str(payload['partno']).strip()
+                if 'detail_type' in payload:
+                    stock.detail_type = str(payload['detail_type']).strip()
+
+                db.session.commit()
+                return jsonify({"status": "success"})
+
+            elif action == 'BATCH_UPDATE':
+                updates = payload.get('updates', [])
+                for u in updates:
+                    s_id = u.get('id')
+                    s = db.session.get(ItemStock, s_id) if s_id else None
+                    if s:
+                        if 'quantity' in u:
+                            try:
+                                s.quantity = int(u['quantity'])
+                            except (ValueError, TypeError):
+                                pass
+                        if 'safety_quantity' in u:
+                            try:
+                                s.safety_quantity = int(u['safety_quantity'])
+                            except (ValueError, TypeError):
+                                pass
+                        if 'memo' in u:
+                            s.memo = str(u['memo']).strip()
+                db.session.commit()
+                return jsonify({"status": "success"})
+
+            elif action == 'DELETE':
+                stock_id = payload.get('id')
+                if stock_id:
+                    ItemStock.query.filter_by(id=stock_id).delete()
+                    db.session.commit()
+                return jsonify({"status": "success"})
+
         elif domain == 'setting':
             deprecated_keys = ['check_type_categories', 'check_type_categories2', 'check_type_categories3', 'check_type_items', 'equipment_models', 'admin_items']
             if payload.get('key') not in deprecated_keys:

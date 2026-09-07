@@ -4,7 +4,7 @@
 {% block title %}WITHTECH - Admin{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=3">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=4">
 {% endblock %}
 
 {% block content %}
@@ -19,6 +19,7 @@
                 <li class="active" data-target="site-mgmt">사업장 관리</li>
                 <li data-target="equip-mgmt">장비 관리</li>
                 <li data-target="item-mgmt">물품 관리</li>
+                <li data-target="item-stock-mgmt">물품 관리 현황</li>
                 <li data-target="check-type-mgmt">점검 구분 관리</li>
                 <li data-target="setup-template-mgmt">셋업 일정 관리</li>
                 <li id="superadmin-maint-btn-item" style="display: none; margin-top: 20px; border-top: 1px solid #30363d; padding-top: 12px; background: transparent; cursor: default;">
@@ -460,6 +461,146 @@
             </div>
         </div>
 
+        <!-- 3-1. 물품 관리 현황 (사업장 구분별 수량 관리) -->
+        <div id="section-item-stock-mgmt" class="card admin-section" style="display: none;">
+            <div class="card-header">
+                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h3 style="margin: 0;">물품 관리 현황</h3>
+                        <span style="font-size: 13px; color: #8b949e;">사업장 구분별 물품 및 수량 관리</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <button type="button" id="btn-export-stock-csv" class="btn-settings" title="CSV 내보내기"
+                            style="font-size: 12px; padding: 4px 10px; border-radius: 4px; border: 1px solid #30363d; background: #21262d; color: #e6edf3; cursor: pointer;">
+                            CSV 내보내기
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 15px; display: flex; flex-direction: column; gap: 12px; height: 100%; min-height: 0;">
+                <!-- 1. 사업장 구분 및 사업장 선택 바 -->
+                <div class="item-stock-group-header" style="display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap; background: #161b22; padding: 10px 14px; border-radius: 6px; border: 1px solid #30363d;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="font-size: 13px; font-weight: bold; color: #58a6ff; white-space: nowrap;">🏢 사업장 구분:</span>
+                            <div id="item-stock-group-tabs" class="item-stock-tabs-container" style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                <!-- JS로 동적 렌더링 -->
+                            </div>
+                            <!-- 모바일용 드롭다운 폴백 -->
+                            <div class="item-stock-group-select-wrap" style="display: none;">
+                                <select id="item-stock-group-select" class="input-dark" style="height: 32px; font-size: 13px; padding: 2px 8px;"></select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. 검색 및 컨트롤 툴바 -->
+                <div class="item-stock-toolbar" style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 250px;">
+                        <input type="text" id="item-stock-search" class="input-dark full-width"
+                            placeholder="물품명, 코드명, 세부규격, 품번, 사업장 검색..." autocomplete="off"
+                            style="height: 34px; font-size: 13px;">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <button type="button" id="btn-open-add-stock-modal" class="btn-green-sm"
+                            style="height: 34px; padding: 0 14px; font-size: 13px; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
+                            <span>+</span> 물품 등록
+                        </button>
+                        <button type="button" id="btn-import-master-items" class="btn-blue-sm"
+                            title="마스터 물품 목록 전체를 현재 선택된 사업장(또는 구분)으로 일괄 불러옵니다."
+                            style="height: 34px; padding: 0 12px; font-size: 12px; white-space: nowrap;">
+                            마스터 물품 불러오기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 3. 물품 수량 관리 테이블 -->
+                <div class="item-stock-table-wrapper" style="flex: 1; min-height: 0; overflow: auto; border: 1px solid #30363d; border-radius: 6px; background: #0d1117;">
+                    <table class="item-stock-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #21262d; color: #8b949e; border-bottom: 1px solid #30363d; position: sticky; top: 0; z-index: 2;">
+                                <th style="padding: 9px 10px; width: 45px; text-align: center;">No.</th>
+                                <th style="padding: 9px 10px; width: 100px;">사업장</th>
+                                <th style="padding: 9px 10px; width: 95px;">상세 구분</th>
+                                <th style="padding: 9px 10px; width: 90px;">품번</th>
+                                <th style="padding: 9px 10px; width: 160px; min-width: 150px;">코드명</th>
+                                <th style="padding: 9px 10px; width: 160px; min-width: 150px;">물품명</th>
+                                <th style="padding: 9px 10px; width: 90px; min-width: 80px;">세부 규격</th>
+                                <th style="padding: 9px 10px; width: 145px; text-align: center;">현재 수량</th>
+                                <th style="padding: 9px 10px; width: 145px; text-align: center;">안전 재고 수량</th>
+                                <th style="padding: 9px 10px; width: 75px; text-align: center;">상태</th>
+                                <th style="padding: 9px 10px; width: 50px; text-align: center;">기능</th>
+                            </tr>
+                        </thead>
+                        <tbody id="item-stock-tbody">
+                            <!-- JS로 동적 렌더링 -->
+                        </tbody>
+                    </table>
+                    <div id="item-stock-empty" style="display: none; padding: 40px 20px; text-align: center; color: #8b949e;">
+                        <p style="font-size: 14px; margin-bottom: 10px;">등록된 물품이 없습니다.</p>
+                        <p style="font-size: 12px; color: #6e7681;">우측 상단의 <strong>[+ 물품 등록]</strong> 또는 <strong>[마스터 물품 불러오기]</strong> 버튼을 통해 물품을 추가해주세요.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3-2. 물품 관리 현황 신규 등록 모달 -->
+        <div id="item-stock-add-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-window" style="max-width: 600px; width: 92%;">
+                <div class="modal-header">
+                    <h4>물품 등록 (<span id="modal-stock-group-label" style="color: #58a6ff;">-</span>)</h4>
+                    <span class="close-btn" id="btn-close-item-stock-modal">&times;</span>
+                </div>
+                <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; gap: 12px;">
+                    <div class="form-group">
+                        <label style="font-size: 12px; color: #8b949e; margin-bottom: 4px; display: block;">등록 대상 사업장</label>
+                        <select id="modal-stock-site-select" class="input-dark full-width" style="height: 34px; font-size: 13px;"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="font-size: 12px; color: #8b949e; margin-bottom: 4px; display: block;">마스터 물품 검색 및 선택</label>
+                        <input type="text" id="modal-stock-item-search" class="input-dark full-width"
+                            placeholder="물품명, 코드명, 규격 검색..." autocomplete="off">
+                        <div id="modal-stock-master-list-wrap" style="max-height: 160px; overflow-y: auto; border: 1px solid #30363d; border-radius: 4px; margin-top: 5px; background: #0d1117;">
+                            <ul id="modal-stock-master-list" class="admin-list" style="border: none; border-radius: 0;"></ul>
+                        </div>
+                    </div>
+
+                    <div style="background: #161b22; padding: 10px; border-radius: 6px; border: 1px solid #30363d;">
+                        <div style="font-size: 12px; color: #8b949e; margin-bottom: 6px; font-weight: bold;">선택된 물품 정보</div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
+                            <div><span style="color: #6e7681;">품번:</span> <span id="modal-selected-partno" style="color: #e6edf3;">-</span></div>
+                            <div><span style="color: #6e7681;">코드명:</span> <strong id="modal-selected-code" style="color: #e6edf3;">-</strong></div>
+                            <div><span style="color: #6e7681;">물품명:</span> <strong id="modal-selected-part" style="color: #e6edf3;">-</strong></div>
+                            <div><span style="color: #6e7681;">상세구분:</span> <span id="modal-selected-detail-type" style="color: #e6edf3;">-</span></div>
+                            <div style="grid-column: span 2;"><span style="color: #6e7681;">세부규격:</span> <span id="modal-selected-spec" style="color: #e6edf3;">-</span></div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px;">
+                        <div class="form-group" style="flex: 1;">
+                            <label style="font-size: 12px; color: #8b949e; margin-bottom: 4px; display: block;">현재 수량 (Quantity)</label>
+                            <input type="number" id="modal-stock-quantity" class="input-dark full-width" min="0" value="0" style="height: 34px;">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label style="font-size: 12px; color: #8b949e; margin-bottom: 4px; display: block;">안전 재고 수량 (Safety)</label>
+                            <input type="number" id="modal-stock-safety-quantity" class="input-dark full-width" min="0" value="0" style="height: 34px;">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label style="font-size: 12px; color: #8b949e; margin-bottom: 4px; display: block;">비고 (메모)</label>
+                        <input type="text" id="modal-stock-memo" class="input-dark full-width" placeholder="비고 입력 (선택)" style="height: 34px;">
+                    </div>
+
+                    <div class="form-actions" style="margin-top: 10px; display: flex; justify-content: flex-end; gap: 8px;">
+                        <button type="button" id="btn-cancel-item-stock-modal" class="btn-gray">취소</button>
+                        <button type="button" id="btn-confirm-item-stock-modal" class="btn-green">등록 추가</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- 4. 점검 구분 관리 -->
         <div id="section-check-type-mgmt" class="card admin-section" style="display: none;">
             <div class="card-header">
@@ -714,5 +855,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=3"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=10"></script>
 {% endblock %}
