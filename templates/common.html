@@ -20,7 +20,7 @@
     {% block extra_css %}{% endblock %}
 </head>
 
-<body data-user-role="{{ session.get('role') or '' }}">
+<body data-user-role="{{ session.get('role') or '' }}" class="role-{{ session.get('role', 'user') }}{% if session.get('role') not in ['admin', 'superadmin'] %} admin-readonly-mode{% endif %}">
     <!-- 글로벌 로딩 오버레이 -->
     <div id="global-loading-overlay" class="global-loading-overlay" style="display: flex;">
         <div class="global-loading-box">
@@ -64,7 +64,7 @@
                     </li>
                     <li><a href="{{ url_for('operation') }}" class="{% if active_page == 'operation' %}active{% endif %}">OPERATION</a>
                     </li>
-                    <li class="nav-admin-item" style="display: none;"><a href="{{ url_for('admin') }}"
+                    <li class="nav-admin-item" style="{% if not session.get('user_id') %}display: none;{% endif %}"><a href="{{ url_for('admin') }}"
                             class="{% if active_page == 'admin' %}active{% endif %}">ADMIN</a></li>
                 </ul>
             </nav>

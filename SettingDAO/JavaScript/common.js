@@ -677,6 +677,11 @@ window.syncSetupDataDB = async function (site, equip, details = null, logs = nul
 
 // [추가] 100% DB 전환을 위한 만능 DB 동기화 비동기 헬퍼 함수 (전역 사용)
 window.syncAdminDB = async function (domain, action, payload) {
+    const userRole = sessionStorage.getItem('userRole');
+    if (userRole !== 'admin' && userRole !== 'superadmin') {
+        alert('일반 계정은 조회 및 검색만 가능하며, 등록/수정/삭제 권한이 없습니다.');
+        return false;
+    }
     window.activeSyncRequests++;
     try {
         const res = await fetch('/api/admin/crud', {
@@ -2220,7 +2225,7 @@ function checkLoginStatus() {
         }
 
         const adminItems = document.querySelectorAll('.nav-admin-item');
-        adminItems.forEach(el => el.style.display = (role === 'admin' || role === 'superadmin') ? 'block' : 'none');
+        adminItems.forEach(el => el.style.display = 'block');
 
         // [추가] 데스크톱 타이머 UI 표시 (common.html 템플릿 사용)
         let desktopTimerContainer = document.getElementById('desktop-session-timer');

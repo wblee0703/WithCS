@@ -877,62 +877,95 @@ body.role-admin .tag-remove {
     box-shadow: 0 0 8px rgba(31, 111, 235, 0.4);
 }
 
-/* 수량 컨트롤 그룹 */
+/* 수량 컨트롤 그룹 (컴팩트 일체형 디자인) */
 .stock-qty-control {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    background: #161b22;
+    background: #0d1117;
     border: 1px solid #30363d;
-    border-radius: 6px;
-    padding: 2px 4px;
+    border-radius: 4px;
+    padding: 0;
+    width: 58px;
+    height: 26px;
+    box-sizing: border-box;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    overflow: hidden;
+}
+
+.stock-qty-control:hover,
+.stock-qty-control:focus-within {
+    border-color: #58a6ff;
+    box-shadow: 0 0 0 1px rgba(88, 166, 255, 0.2);
+}
+
+.stock-qty-control.stock-safety-control:hover,
+.stock-qty-control.stock-safety-control:focus-within {
+    border-color: #d29922;
+    box-shadow: 0 0 0 1px rgba(210, 153, 34, 0.2);
 }
 
 .stock-qty-btn {
-    width: 26px;
-    height: 26px;
-    line-height: 24px;
+    width: 15px;
+    height: 24px;
+    line-height: 22px;
     text-align: center;
-    border-radius: 4px;
-    border: 1px solid #30363d;
-    background: #21262d;
-    color: #c9d1d9;
+    border: none;
+    background: transparent;
+    color: #8b949e;
     font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     user-select: none;
-    transition: background 0.15s;
+    transition: background 0.15s, color 0.15s;
     padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 .stock-qty-btn:hover {
-    background: #30363d;
+    background: #21262d;
     color: #ffffff;
 }
 
 .stock-qty-btn:active {
     background: #1f6feb;
+    color: #ffffff;
 }
 
 .stock-qty-input {
-    width: 55px;
-    height: 26px;
+    width: 28px;
+    height: 24px;
+    line-height: 24px;
     text-align: center;
-    border: 1px solid #30363d;
-    border-radius: 4px;
-    background: #0d1117;
+    border: none;
+    border-left: 1px solid rgba(48, 54, 61, 0.5);
+    border-right: 1px solid rgba(48, 54, 61, 0.5);
+    background: transparent;
     color: #3fb950;
     font-size: 13px;
     font-weight: bold;
-    padding: 0 4px;
+    padding: 0;
+    margin: 0;
     box-sizing: border-box;
+    -moz-appearance: textfield;
+}
+
+.stock-qty-input::-webkit-outer-spin-button,
+.stock-qty-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
 }
 
 .stock-qty-input:focus {
     outline: none;
-    border-color: #58a6ff;
-    box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+    background: #161b22;
+}
+
+.stock-qty-input.stock-safety-input {
+    color: #e3b341;
 }
 
 .stock-memo-input {
@@ -958,13 +991,256 @@ body.role-admin .tag-remove {
     background: #161b22;
 }
 
+.item-stock-table-wrapper {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    background: #0d1117;
+}
+
+.item-stock-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 13px;
+}
+
+.item-stock-table thead tr {
+    background: #21262d;
+    color: #8b949e;
+    border-bottom: 1px solid #30363d;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.item-stock-table th {
+    font-weight: 600;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+
+.item-stock-table th[data-sort] {
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.item-stock-table th[data-sort]:hover {
+    color: #58a6ff;
+    background-color: #1f242c;
+}
+
 .item-stock-table tbody tr {
+    height: 52px; /* 2줄 들어가는 기본 크기 */
     border-bottom: 1px solid #21262d;
     transition: background-color 0.15s ease;
 }
 
 .item-stock-table tbody tr:hover {
     background-color: rgba(56, 139, 253, 0.05);
+}
+
+.item-stock-table tbody td {
+    vertical-align: middle;
+    line-height: 1.35;
+    box-sizing: border-box;
+}
+
+/* 컬럼별 너비 및 정렬 스타일 */
+.item-stock-table .col-no {
+    width: 45px;
+    min-width: 45px;
+    text-align: center;
+    padding: 8px 6px;
+}
+.item-stock-table td.col-no {
+    color: #8b949e;
+}
+
+.item-stock-table .col-site {
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+    padding: 8px 4px;
+    word-break: break-all;
+}
+.item-stock-table td.col-site {
+    font-weight: bold;
+    color: #7ee787;
+}
+
+.item-stock-table .col-detail-type {
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+    padding: 8px 4px;
+    word-break: break-all;
+}
+.item-stock-table td.col-detail-type {
+    color: #8b949e;
+}
+
+.item-stock-table .col-partno {
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+    padding: 8px 4px;
+    word-break: break-all;
+}
+.item-stock-table td.col-partno {
+    color: #8b949e;
+}
+
+.item-stock-table .col-code {
+    width: 120px;
+    min-width: 110px;
+    padding: 8px 8px;
+    word-break: break-word;
+}
+.item-stock-table td.col-code {
+    font-weight: bold;
+    color: #58a6ff;
+}
+
+.item-stock-table .col-part {
+    width: 160px;
+    min-width: 150px;
+    padding: 8px 10px;
+    word-break: break-word;
+}
+.item-stock-table td.col-part {
+    font-weight: 600;
+    color: #e6edf3;
+}
+
+.item-stock-table .col-spec {
+    width: 220px;
+    min-width: 200px;
+    padding: 8px 10px;
+    word-break: break-word;
+}
+.item-stock-table td.col-spec {
+    color: #c9d1d9;
+}
+
+.item-stock-table .col-qty {
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+    text-align: center;
+    padding: 6px 1px;
+}
+
+.item-stock-table .col-safety {
+    width: 60px;
+    min-width: 60px;
+    max-width: 60px;
+    text-align: center;
+    padding: 6px 1px;
+}
+
+.item-stock-table .col-status {
+    width: 48px;
+    min-width: 48px;
+    max-width: 48px;
+    text-align: center;
+    padding: 6px 1px;
+}
+
+.item-stock-table .col-grade {
+    width: 30px;
+    min-width: 30px;
+    max-width: 30px;
+    text-align: center;
+    padding: 6px 1px;
+}
+
+.item-stock-table .col-action {
+    width: 30px;
+    min-width: 30px;
+    max-width: 30px;
+    text-align: center;
+    padding: 6px 1px;
+}
+
+/* 상태 및 등급 텍스트 스타일 (테두리 및 배경 채우기 제거) */
+.item-stock-table .stock-badge {
+    font-size: 12px;
+    padding: 0;
+    background: transparent !important;
+    border: none !important;
+    display: inline-block;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+.item-stock-table .badge-grade-a {
+    color: #3fb950;
+}
+.item-stock-table .badge-grade-b {
+    color: #d29922;
+}
+.item-stock-table .badge-grade-c {
+    color: #a371f7;
+}
+.item-stock-table .badge-danger,
+.item-stock-table .badge-status-zero {
+    color: #f85149;
+}
+.item-stock-table .badge-warning,
+.item-stock-table .badge-status-shortage {
+    color: #d29922;
+}
+.item-stock-table .badge-success,
+.item-stock-table .badge-status-normal {
+    color: #3fb950;
+}
+.item-stock-table .badge-neutral {
+    color: #8b949e;
+}
+.item-stock-table .stock-badge.clickable-grade {
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.1s ease, filter 0.15s ease;
+}
+.item-stock-table .stock-badge.clickable-grade:hover {
+    filter: brightness(1.25);
+    transform: scale(1.1);
+}
+
+/* 목록 삭제 버튼 */
+.item-stock-table .btn-del-stock {
+    background: transparent;
+    border: none;
+    color: #f85149;
+    cursor: pointer;
+    font-size: 13px;
+    padding: 2px 2px;
+    border-radius: 4px;
+    line-height: 1;
+    transition: background-color 0.15s;
+}
+.item-stock-table .btn-del-stock:hover {
+    background-color: rgba(248, 81, 73, 0.15);
+}
+
+/* 빈 목록 안내 */
+.item-stock-empty {
+    display: none;
+    padding: 40px 20px;
+    text-align: center;
+    color: #8b949e;
+}
+.item-stock-empty .empty-title {
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+.item-stock-empty .empty-desc {
+    font-size: 12px;
+    color: #6e7681;
 }
 
 .stock-saved-flash {
@@ -988,5 +1264,165 @@ body.role-admin .tag-remove {
         flex-direction: column;
         align-items: stretch;
     }
+}
+/* 모달 마스터 물품 리스트 행 스타일 */
+#modal-stock-master-list li:hover {
+    background-color: rgba(56, 139, 253, 0.12) !important;
+}
+
+/* 물품 등록 모달 크기 및 스크롤 최적화 (버튼 잘림 방지) */
+#item-stock-add-modal .modal-window {
+    height: auto !important;
+    max-height: 90vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+#item-stock-add-modal .modal-body {
+    overflow-y: auto !important;
+    max-height: calc(90vh - 60px) !important;
+}
+
+/* ==========================================================================
+   일반 계정 전용: Admin 조회 및 검색 전용 모드 (수정/삭제/등록 기능 비활성화)
+   ========================================================================== */
+
+/* 1. 모든 추가 입력창 및 추가 버튼(list-footer, form-section-divider) 숨김 */
+body.admin-readonly-mode .list-footer,
+body.admin-readonly-mode .form-section-divider,
+body.admin-readonly-mode .setup-template-footer,
+body:not(.role-admin):not(.role-superadmin) .list-footer,
+body:not(.role-admin):not(.role-superadmin) .form-section-divider,
+body:not(.role-admin):not(.role-superadmin) .setup-template-footer {
+    display: none !important;
+}
+
+/* 2. 관리 모드(⚙️) 토글 버튼 숨김 (단, CSV 내보내기 버튼은 유지) */
+body.admin-readonly-mode .btn-settings:not(#btn-export-site-csv):not(#btn-export-model-csv):not(#btn-export-equip-csv):not(#btn-export-item-csv):not(#btn-export-stock-csv),
+body:not(.role-admin):not(.role-superadmin) .btn-settings:not(#btn-export-site-csv):not(#btn-export-model-csv):not(#btn-export-equip-csv):not(#btn-export-item-csv):not(#btn-export-stock-csv) {
+    display: none !important;
+}
+
+/* 3. 삭제 버튼, 저장 버튼, 액션 컬럼, 일괄 불러오기/저장/등록 버튼 숨김 */
+body.admin-readonly-mode .form-actions,
+body.admin-readonly-mode #section-site-mgmt .form-actions,
+body.admin-readonly-mode #section-equip-mgmt .form-actions,
+body.admin-readonly-mode #section-item-mgmt .form-actions,
+body.admin-readonly-mode #section-setup-template-mgmt .form-actions,
+body.admin-readonly-mode #btn-admin-del-site,
+body.admin-readonly-mode #btn-admin-save-site,
+body.admin-readonly-mode #btn-admin-del-equip,
+body.admin-readonly-mode #btn-admin-save-equip,
+body.admin-readonly-mode #btn-admin-del-item-detail,
+body.admin-readonly-mode #btn-admin-save-item-detail,
+body.admin-readonly-mode #btn-save-setup-template,
+body.admin-readonly-mode #btn-reset-setup-template,
+body.admin-readonly-mode #btn-add-building,
+body.admin-readonly-mode #site-info-building-input,
+body.admin-readonly-mode #btn-admin-add-site,
+body.admin-readonly-mode #btn-admin-add-model,
+body.admin-readonly-mode #btn-admin-new-equip,
+body.admin-readonly-mode #btn-admin-add-item,
+body.admin-readonly-mode #btn-add-item-equip,
+body.admin-readonly-mode #btn-apply-equip-selection,
+body.admin-readonly-mode #btn-add-setup-template-item,
+body.admin-readonly-mode #btn-add-setup-template-subcategory,
+body.admin-readonly-mode .btn-edit-building,
+body.admin-readonly-mode .building-list .del-btn,
+body.admin-readonly-mode .building-list .btn-edit-building,
+body.admin-readonly-mode #setup-template-item-list .btn-del-sm,
+body.admin-readonly-mode #setup-template-subcategory-list .btn-del-sm,
+body.admin-readonly-mode .btn-del,
+body.admin-readonly-mode .btn-del-sm,
+body.admin-readonly-mode .btn-del-stock,
+body.admin-readonly-mode .btn-del-stage,
+body.admin-readonly-mode .btn-del-item,
+body.admin-readonly-mode .model-actions-col,
+body.admin-readonly-mode .col-action,
+body.admin-readonly-mode th.col-action,
+body.admin-readonly-mode td.col-action,
+body.admin-readonly-mode #btn-open-add-stock-modal,
+body.admin-readonly-mode #btn-import-master-items,
+body.admin-readonly-mode #btn-import-check-items,
+body.admin-readonly-mode #btn-confirm-item-stock-modal,
+body.admin-readonly-mode #superadmin-maint-btn-item,
+body:not(.role-admin):not(.role-superadmin) .form-actions,
+body:not(.role-admin):not(.role-superadmin) #section-site-mgmt .form-actions,
+body:not(.role-admin):not(.role-superadmin) #section-equip-mgmt .form-actions,
+body:not(.role-admin):not(.role-superadmin) #section-item-mgmt .form-actions,
+body:not(.role-admin):not(.role-superadmin) #section-setup-template-mgmt .form-actions,
+body:not(.role-admin):not(.role-superadmin) #btn-admin-del-site,
+body:not(.role-admin):not(.role-superadmin) #btn-admin-save-site,
+body:not(.role-admin):not(.role-superadmin) #btn-admin-del-equip,
+body:not(.role-admin):not(.role-superadmin) #btn-admin-save-equip,
+body:not(.role-admin):not(.role-superadmin) #btn-admin-del-item-detail,
+body:not(.role-admin):not(.role-superadmin) #btn-admin-save-item-detail,
+body:not(.role-admin):not(.role-superadmin) #btn-save-setup-template,
+body:not(.role-admin):not(.role-superadmin) #btn-reset-setup-template,
+body:not(.role-admin):not(.role-superadmin) #btn-add-building,
+body:not(.role-admin):not(.role-superadmin) #site-info-building-input,
+body:not(.role-admin):not(.role-superadmin) #btn-admin-add-site,
+body:not(.role-admin):not(.role-superadmin) #btn-admin-add-model,
+body:not(.role-admin):not(.role-superadmin) #btn-admin-new-equip,
+body:not(.role-admin):not(.role-superadmin) #btn-admin-add-item,
+body:not(.role-admin):not(.role-superadmin) #btn-add-item-equip,
+body:not(.role-admin):not(.role-superadmin) #btn-apply-equip-selection,
+body:not(.role-admin):not(.role-superadmin) #btn-add-setup-template-item,
+body:not(.role-admin):not(.role-superadmin) #btn-add-setup-template-subcategory,
+body:not(.role-admin):not(.role-superadmin) .btn-edit-building,
+body:not(.role-admin):not(.role-superadmin) .building-list .del-btn,
+body:not(.role-admin):not(.role-superadmin) .building-list .btn-edit-building,
+body:not(.role-admin):not(.role-superadmin) #setup-template-item-list .btn-del-sm,
+body:not(.role-admin):not(.role-superadmin) #setup-template-subcategory-list .btn-del-sm,
+body:not(.role-admin):not(.role-superadmin) .btn-del,
+body:not(.role-admin):not(.role-superadmin) .btn-del-sm,
+body:not(.role-admin):not(.role-superadmin) .btn-del-stock,
+body:not(.role-admin):not(.role-superadmin) .btn-del-stage,
+body:not(.role-admin):not(.role-superadmin) .btn-del-item,
+body:not(.role-admin):not(.role-superadmin) .model-actions-col,
+body:not(.role-admin):not(.role-superadmin) .col-action,
+body:not(.role-admin):not(.role-superadmin) th.col-action,
+body:not(.role-admin):not(.role-superadmin) td.col-action,
+body:not(.role-admin):not(.role-superadmin) #btn-open-add-stock-modal,
+body:not(.role-admin):not(.role-superadmin) #btn-import-master-items,
+body:not(.role-admin):not(.role-superadmin) #btn-import-check-items,
+body:not(.role-admin):not(.role-superadmin) #btn-confirm-item-stock-modal,
+body:not(.role-admin):not(.role-superadmin) #superadmin-maint-btn-item {
+    display: none !important;
+}
+
+/* 4. 물품 관리 현황 수량 조절 버튼 숨김 및 인풋 읽기 전용화 */
+body.admin-readonly-mode .stock-qty-btn,
+body:not(.role-admin):not(.role-superadmin) .stock-qty-btn {
+    display: none !important;
+}
+
+body.admin-readonly-mode .stock-qty-input,
+body:not(.role-admin):not(.role-superadmin) .stock-qty-input {
+    pointer-events: none !important;
+    background: transparent !important;
+    border: none !important;
+    cursor: default !important;
+    color: #e6edf3 !important;
+}
+
+body.admin-readonly-mode .stock-badge.clickable-grade,
+body:not(.role-admin):not(.role-superadmin) .stock-badge.clickable-grade {
+    pointer-events: none !important;
+    cursor: default !important;
+}
+
+/* 5. 셋업 템플릿 세부 내용 인풋 및 일수 비활성화 */
+body.admin-readonly-mode .setup-template-item-input,
+body.admin-readonly-mode .setup-template-days-input,
+body.admin-readonly-mode .item-content-input,
+body.admin-readonly-mode .item-days-input,
+body:not(.role-admin):not(.role-superadmin) .setup-template-item-input,
+body:not(.role-admin):not(.role-superadmin) .setup-template-days-input,
+body:not(.role-admin):not(.role-superadmin) .item-content-input,
+body:not(.role-admin):not(.role-superadmin) .item-days-input {
+    pointer-events: none !important;
+    border: none !important;
+    background: transparent !important;
+    cursor: default !important;
 }
 

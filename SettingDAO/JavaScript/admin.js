@@ -3,8 +3,38 @@
    ========================================================================== */
 let currentAdminSite = null; // 현재 선택된 사업장
 
+// [추가] 관리자 권한 확인 헬퍼 (일반 계정 조회 전용 모드 판별)
+function isUserAdminRole() {
+    const role = sessionStorage.getItem('userRole') || document.body.dataset.userRole || (window.currentUser && window.currentUser.role);
+    return role === 'admin' || role === 'superadmin';
+}
+
+function checkAndApplyAdminReadOnlyMode() {
+    if (!isUserAdminRole()) {
+        document.body.classList.add('admin-readonly-mode');
+
+        // 사업장관리, 장비 관리, 물품 관리, 셋업 일정 관리 등의 삭제/저장/등록 버튼 숨김 보장
+        const hideSelectors = [
+            '#btn-admin-del-site', '#btn-admin-save-site', '#btn-add-building', '#site-info-building-input',
+            '#btn-admin-del-equip', '#btn-admin-save-equip', '#btn-admin-new-equip', '#btn-admin-add-model',
+            '#btn-admin-del-item-detail', '#btn-admin-save-item-detail', '#btn-admin-add-item', '#btn-add-item-equip', '#btn-apply-equip-selection',
+            '#btn-save-setup-template', '#btn-reset-setup-template', '#btn-add-setup-template-item', '#btn-add-setup-template-subcategory', '#btn-setup-subcategory-settings',
+            '#btn-open-add-stock-modal', '#btn-import-master-items', '#btn-import-check-items',
+            '#section-site-mgmt .form-actions', '#section-equip-mgmt .form-actions', '#section-item-mgmt .form-actions', '#section-setup-template-mgmt .form-actions',
+            '.admin-readonly-mode .form-actions'
+        ];
+
+        hideSelectors.forEach(sel => {
+            document.querySelectorAll(sel).forEach(el => {
+                el.style.display = 'none';
+            });
+        });
+    }
+}
+
 // [추가] 서버 점검중 상태 초기화 및 관리자 토글 이벤트
 document.addEventListener('DOMContentLoaded', () => {
+    checkAndApplyAdminReadOnlyMode();
     initServerMaintenanceUI();
 });
 
@@ -110,6 +140,8 @@ let currentStockSiteGroup = '전체'; // [추가] 물품 관리 현황 선택된
 let currentStockSiteName = ''; // [추가] 물품 관리 현황 선택된 사업장명
 const DEFAULT_SITE_GROUPS = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
 let selectedMasterItemForStock = null; // [추가] 모달에서 선택된 마스터 물품
+let stockSortColumn = 'code'; // [추가] 물품 관리 현황 정렬 컬럼 (초기값: 코드명 이름순)
+let stockSortAsc = true;   // [추가] 물품 관리 현황 정렬 방향 (true: 오름차순, false: 내림차순)
 
 // [추가] 점검 구분 관리 상태 변수
 let currentCheckTypeEquipKey = null;
@@ -555,11 +587,19 @@ function renderBuildingList() {
     if (!list) return;
     list.innerHTML = '';
 
+    const isAdmin = isUserAdminRole();
+
     currentBuildingList.forEach((building, index) => {
         const li = document.createElement('li');
         li.style.display = 'flex';
         li.style.justifyContent = 'space-between';
         li.style.alignItems = 'center';
+
+        if (!isAdmin) {
+            li.innerHTML = `<span class="item-text flex-1">${building}</span>`;
+            list.appendChild(li);
+            return;
+        }
 
         li.innerHTML = `
             <span class="item-text flex-1">${building}</span>
@@ -4462,7 +4502,7 @@ function renderSetupTemplateSubCategoryList() {
         li.dataset.subcategory = sub;
         if (sub === currentSetupSubCategory) li.classList.add('active');
 
-        if (setupSubcategorySettingsMode) {
+        if (setupSubcategorySettingsMode && isUserAdminRole()) {
             li.innerHTML = `
                 <span class="subcat-text" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(sub)}</span>
                 <button class="btn-del-sm" style="flex-shrink: 0;" title="세부 구분 삭제">✕</button>
@@ -4530,6 +4570,8 @@ function renderSetupTemplateItemList() {
         return;
     }
 
+    const isAdmin = isUserAdminRole();
+
     items.forEach((item, index) => {
         const li = document.createElement('li');
         li.className = 'check-item-row';
@@ -4545,15 +4587,22 @@ function renderSetupTemplateItemList() {
                 ${escapeHtml(subName)}
             </div>
             <div class="model-col" style="flex: 3;">
-                <input type="text" class="input-dark item-content-input" value="${escapeHtml(item.content)}" style="width: 100%; height: 28px; font-size: 13px;">
+                <input type="text" class="input-dark item-content-input" value="${escapeHtml(item.content)}" ${isAdmin ? '' : 'readonly disabled'} style="width: 100%; height: 28px; font-size: 13px; ${isAdmin ? '' : 'border:none; background:transparent; pointer-events:none;'}">
             </div>
             <div class="model-col" style="flex: 1; text-align: center;">
-                <input type="number" class="input-dark item-days-input" value="${escapeHtml(item.estDays || '1')}" min="0" style="width: 60px; height: 28px; text-align: center; font-size: 13px;">
+                <input type="number" class="input-dark item-days-input" value="${escapeHtml(item.estDays || '1')}" min="0" ${isAdmin ? '' : 'readonly disabled'} style="width: 60px; height: 28px; text-align: center; font-size: 13px; ${isAdmin ? '' : 'border:none; background:transparent; pointer-events:none;'}">
             </div>
-            <div class="model-col" style="width: 50px; text-align: center;">
+            ${isAdmin ? `
+            <div class="model-col col-action" style="width: 50px; text-align: center;">
                 <button class="btn-del-sm" title="삭제">✕</button>
             </div>
+            ` : ''}
         `;
+
+        if (!isAdmin) {
+            listEl.appendChild(li);
+            return;
+        }
 
         const contentInput = li.querySelector('.item-content-input');
         const daysInput = li.querySelector('.item-days-input');
@@ -4703,6 +4752,24 @@ function setupItemStockMgmt() {
     const btnExportCsv = document.getElementById('btn-export-stock-csv');
     if (btnExportCsv) {
         btnExportCsv.addEventListener('click', exportStockCsv);
+    }
+
+    // 8. 테이블 컬럼 제목 클릭 시 정렬 이벤트 (사업장부터 등급까지)
+    const stockThead = document.querySelector('.item-stock-table thead');
+    if (stockThead) {
+        stockThead.addEventListener('click', (e) => {
+            const th = e.target.closest('th[data-sort]');
+            if (!th) return;
+            const sortKey = th.dataset.sort;
+            if (!sortKey) return;
+            if (stockSortColumn === sortKey) {
+                stockSortAsc = !stockSortAsc;
+            } else {
+                stockSortColumn = sortKey;
+                stockSortAsc = true;
+            }
+            renderItemStockTable();
+        });
     }
 }
 
@@ -4924,8 +4991,72 @@ function renderItemStockTable() {
             siteGroup.includes(query) || memo.includes(query);
     });
 
+    // 3. 컬럼 정렬 (사업장부터 등급까지 클릭 시 정렬)
+    if (stockSortColumn) {
+        filtered.sort((a, b) => {
+            let diff = 0;
+            switch (stockSortColumn) {
+                case 'site': {
+                    const sA = a.site_group || a.site_name || '';
+                    const sB = b.site_group || b.site_name || '';
+                    diff = sA.localeCompare(sB, 'ko');
+                    break;
+                }
+                case 'detail_type':
+                    diff = (a.detail_type || '').localeCompare(b.detail_type || '', 'ko');
+                    break;
+                case 'partno':
+                    diff = (a.partno || '').localeCompare(b.partno || '', 'ko', { numeric: true });
+                    break;
+                case 'code':
+                    diff = (a.code || '').localeCompare(b.code || '', 'ko', { numeric: true });
+                    break;
+                case 'part':
+                    diff = (a.part || '').localeCompare(b.part || '', 'ko');
+                    break;
+                case 'spec':
+                    diff = (a.spec || '').localeCompare(b.spec || '', 'ko');
+                    break;
+                case 'quantity':
+                    diff = (parseInt(a.quantity) || 0) - (parseInt(b.quantity) || 0);
+                    break;
+                case 'safety_quantity':
+                    diff = (parseInt(a.safety_quantity) || 0) - (parseInt(b.safety_quantity) || 0);
+                    break;
+                case 'status': {
+                    const getStatusRank = (it) => {
+                        const q = parseInt(it.quantity) || 0;
+                        const s = parseInt(it.safety_quantity) || 0;
+                        if (q === 0) return 1; // 미확보
+                        if (q < s) return 2;   // 부족
+                        return 3;              // 정상
+                    };
+                    diff = getStatusRank(a) - getStatusRank(b);
+                    break;
+                }
+                case 'grade': {
+                    const gA = (a.grade || 'A').toUpperCase();
+                    const gB = (b.grade || 'A').toUpperCase();
+                    diff = gA.localeCompare(gB);
+                    break;
+                }
+                default:
+                    diff = 0;
+            }
+            if (diff !== 0) {
+                return stockSortAsc ? diff : -diff;
+            }
+            const gA = (a.grade || 'A').toUpperCase();
+            const gB = (b.grade || 'A').toUpperCase();
+            const gDiff = gA.localeCompare(gB);
+            if (gDiff !== 0) return gDiff;
+            return (a.id || 0) - (b.id || 0);
+        });
+    }
+
     if (filtered.length === 0) {
         if (emptyEl) emptyEl.style.display = 'block';
+        updateStockSummaryCounts();
         return;
     } else {
         if (emptyEl) emptyEl.style.display = 'none';
@@ -4938,50 +5069,37 @@ function renderItemStockTable() {
         const qty = parseInt(item.quantity) || 0;
         const safetyQty = parseInt(item.safety_quantity) || 0;
 
-        // 재고 상태 라벨 계산
-        let statusBadge = '';
-        if (safetyQty > 0) {
-            if (qty < safetyQty) {
-                statusBadge = `<span class="badge" style="background: #490202; color: #ff7b72; border: 1px solid rgba(248, 81, 73, 0.4); font-size: 11px; padding: 2px 6px;">부족</span>`;
-            } else if (qty === safetyQty) {
-                statusBadge = `<span class="badge" style="background: #341a04; color: #d29922; border: 1px solid rgba(210, 153, 34, 0.4); font-size: 11px; padding: 2px 6px;">주의</span>`;
-            } else {
-                statusBadge = `<span class="badge" style="background: #04260f; color: #3fb950; border: 1px solid rgba(46, 160, 67, 0.4); font-size: 11px; padding: 2px 6px;">정상</span>`;
-            }
-        } else {
-            statusBadge = `<span class="badge" style="background: #21262d; color: #8b949e; font-size: 11px; padding: 2px 6px;">-</span>`;
-        }
-
-        const displaySite = item.site_name || currentStockSiteGroup || '-';
+        const grade = (item.grade || 'A').toUpperCase();
+        const gradeBadge = getItemGradeBadgeHtml(grade);
+        const statusBadge = getItemStockStatusBadgeHtml(qty, safetyQty);
+        const displaySite = item.site_group || item.site_name || '-';
 
         tr.innerHTML = `
-            <td style="padding: 8px 10px; text-align: center; color: #8b949e;">${index + 1}</td>
-            <td style="padding: 8px 10px; font-weight: bold; color: #7ee787;">${displaySite}</td>
-            <td style="padding: 8px 10px; color: #8b949e;">${item.detail_type || '-'}</td>
-            <td style="padding: 8px 10px; color: #8b949e;">${item.partno || '-'}</td>
-            <td style="padding: 8px 10px; font-weight: bold; color: #58a6ff; width: 160px; min-width: 150px;">${item.code || '-'}</td>
-            <td style="padding: 8px 10px; font-weight: 600; color: #e6edf3; width: 160px; min-width: 150px;">${item.part || '-'}</td>
-            <td style="padding: 8px 10px; color: #c9d1d9; width: 90px; min-width: 80px;">${item.spec || '-'}</td>
-            <td style="padding: 8px 10px; text-align: center;">
+            <td class="col-no">${index + 1}</td>
+            <td class="col-site">${displaySite}</td>
+            <td class="col-detail-type">${item.detail_type || '-'}</td>
+            <td class="col-partno">${item.partno || '-'}</td>
+            <td class="col-code">${item.code || '-'}</td>
+            <td class="col-part">${item.part || '-'}</td>
+            <td class="col-spec">${item.spec || '-'}</td>
+            <td class="col-qty">
                 <div class="stock-qty-control">
                     <button type="button" class="stock-qty-btn btn-qty-minus" title="현재 수량 1 감소" data-id="${item.id}">-</button>
                     <input type="number" class="stock-qty-input" min="0" value="${qty}" data-id="${item.id}">
                     <button type="button" class="stock-qty-btn btn-qty-plus" title="현재 수량 1 증가" data-id="${item.id}">+</button>
                 </div>
             </td>
-            <td style="padding: 8px 10px; text-align: center;">
-                <div class="stock-qty-control" style="background: #1c2128; border-color: #444c56;">
+            <td class="col-safety">
+                <div class="stock-qty-control stock-safety-control">
                     <button type="button" class="stock-qty-btn btn-safety-minus" title="안전 재고 수량 1 감소" data-id="${item.id}">-</button>
-                    <input type="number" class="stock-qty-input stock-safety-input" min="0" value="${safetyQty}" data-id="${item.id}" style="color: #e3b341;">
+                    <input type="number" class="stock-qty-input stock-safety-input" min="0" value="${safetyQty}" data-id="${item.id}">
                     <button type="button" class="stock-qty-btn btn-safety-plus" title="안전 재고 수량 1 증가" data-id="${item.id}">+</button>
                 </div>
             </td>
-            <td style="padding: 8px 10px; text-align: center;" class="stock-status-cell">${statusBadge}</td>
-            <td style="padding: 8px 10px; text-align: center;">
-                <button type="button" class="btn-del-micro btn-del-stock" title="목록에서 삭제" data-id="${item.id}"
-                    style="background: transparent; border: none; color: #f85149; cursor: pointer; font-size: 15px; padding: 2px 6px;">
-                    ✕
-                </button>
+            <td class="col-status stock-status-cell">${statusBadge}</td>
+            <td class="col-grade stock-grade-cell">${gradeBadge}</td>
+            <td class="col-action">
+                <button type="button" class="btn-del-stock" title="목록에서 삭제" data-id="${item.id}">✕</button>
             </td>
         `;
 
@@ -4989,6 +5107,12 @@ function renderItemStockTable() {
         const btnMinus = tr.querySelector('.btn-qty-minus');
         const inputQty = tr.querySelector('.stock-qty-input:not(.stock-safety-input)');
         const btnPlus = tr.querySelector('.btn-qty-plus');
+
+        if (!isUserAdminRole()) {
+            if (inputQty) inputQty.readOnly = true;
+            const inputSafetyTemp = tr.querySelector('.stock-safety-input');
+            if (inputSafetyTemp) inputSafetyTemp.readOnly = true;
+        }
 
         if (btnMinus && inputQty) {
             btnMinus.addEventListener('click', () => {
@@ -5053,7 +5177,40 @@ function renderItemStockTable() {
             });
         }
 
-        // 3. 삭제
+        // 3. 등급 클릭 시 순환 변경 (A -> B -> C -> A, 단 동일 물품에 이미 등록된 등급은 건너뜀)
+        const gradeCell = tr.querySelector('.stock-grade-cell');
+        if (gradeCell) {
+            gradeCell.addEventListener('click', () => {
+                const currentGrade = (item.grade || 'A').toUpperCase();
+                const allGrades = ['A', 'B', 'C'];
+                // 동일 사업장에 동일한 물품의 다른 행들이 사용 중인 등급 목록
+                const usedGrades = new Set(
+                    (adminItemStocks || [])
+                        .filter(it => String(it.id) !== String(item.id) &&
+                                      (it.site_group || '').trim() === (item.site_group || '').trim() &&
+                                      (((it.code || '').trim() && (it.code || '').trim().toLowerCase() === (item.code || '').trim().toLowerCase()) ||
+                                       ((it.part || '').trim() && (it.part || '').trim().toLowerCase() === (item.part || '').trim().toLowerCase())))
+                        .map(it => (it.grade || 'A').toUpperCase())
+                );
+
+                const curIdx = allGrades.indexOf(currentGrade);
+                let nextGrade = null;
+                for (let i = 1; i <= 3; i++) {
+                    const candidate = allGrades[(curIdx + i) % 3];
+                    if (!usedGrades.has(candidate)) {
+                        nextGrade = candidate;
+                        break;
+                    }
+                }
+                if (!nextGrade || nextGrade === currentGrade) {
+                    alert('다른 등급(A/B/C)이 이미 모두 등록되어 있어 등급을 변경할 수 없습니다.');
+                    return;
+                }
+                updateStockGrade(item.id, nextGrade, tr);
+            });
+        }
+
+        // 4. 삭제
         const btnDel = tr.querySelector('.btn-del-stock');
         if (btnDel) {
             btnDel.addEventListener('click', () => {
@@ -5063,17 +5220,69 @@ function renderItemStockTable() {
 
         tbody.appendChild(tr);
     });
+
+    updateStockSummaryCounts();
+}
+
+// 물품 상태 배지 HTML 생성 헬퍼 (미확보, 부족, 정상)
+function getItemStockStatusBadgeHtml(qty, safetyQty) {
+    const q = parseInt(qty) || 0;
+    const s = parseInt(safetyQty) || 0;
+    if (q === 0) {
+        return `<span class="stock-badge badge-status-zero">미확보</span>`;
+    } else if (q >= s) {
+        return `<span class="stock-badge badge-status-normal">정상</span>`;
+    } else {
+        return `<span class="stock-badge badge-status-shortage">부족</span>`;
+    }
+}
+
+// 툴바 미확보 수, 부족 수 요약 건수 계산 및 갱신
+function updateStockSummaryCounts() {
+    let groupItems = adminItemStocks || [];
+    if (currentStockSiteGroup && currentStockSiteGroup !== '전체' && currentStockSiteGroup !== 'ALL') {
+        groupItems = groupItems.filter(item => (item.site_group || '').trim() === currentStockSiteGroup.trim());
+    }
+
+    let zeroCount = 0;
+    let shortageCount = 0;
+
+    groupItems.forEach(item => {
+        const q = parseInt(item.quantity) || 0;
+        const s = parseInt(item.safety_quantity) || 0;
+        if (q === 0) {
+            zeroCount++;
+        } else if (q < s) {
+            shortageCount++;
+        }
+    });
+
+    const zeroEl = document.getElementById('stock-summary-zero-count');
+    const shortageEl = document.getElementById('stock-summary-shortage-count');
+    if (zeroEl) zeroEl.textContent = zeroCount;
+    if (shortageEl) shortageEl.textContent = shortageCount;
 }
 
 // 현재 수량 업데이트 (DB 통신 및 상태 반영)
 async function updateStockQuantity(stockId, newQty, trEl) {
+    if (!isUserAdminRole()) {
+        alert('일반 계정은 조회만 가능하며, 수량 수정 권한이 없습니다.');
+        return;
+    }
     const item = adminItemStocks.find(it => String(it.id) === String(stockId));
     if (item) {
         item.quantity = newQty;
     }
 
     saveItemStocksLocally();
-    refreshStockBadgesAndRowStatus(item, trEl);
+
+    if (trEl && item) {
+        const statusCell = trEl.querySelector('.stock-status-cell');
+        if (statusCell) {
+            statusCell.innerHTML = getItemStockStatusBadgeHtml(item.quantity, item.safety_quantity);
+        }
+    }
+    updateStockSummaryCounts();
 
     const success = await window.syncAdminDB('item_stock', 'UPDATE', {
         id: stockId,
@@ -5093,13 +5302,24 @@ async function updateStockQuantity(stockId, newQty, trEl) {
 
 // 안전 재고 수량 업데이트 (DB 통신 및 상태 반영)
 async function updateStockSafetyQuantity(stockId, newSafetyQty, trEl) {
+    if (!isUserAdminRole()) {
+        alert('일반 계정은 조회만 가능하며, 안전 재고 수정 권한이 없습니다.');
+        return;
+    }
     const item = adminItemStocks.find(it => String(it.id) === String(stockId));
     if (item) {
         item.safety_quantity = newSafetyQty;
     }
 
     saveItemStocksLocally();
-    refreshStockBadgesAndRowStatus(item, trEl);
+
+    if (trEl && item) {
+        const statusCell = trEl.querySelector('.stock-status-cell');
+        if (statusCell) {
+            statusCell.innerHTML = getItemStockStatusBadgeHtml(item.quantity, item.safety_quantity);
+        }
+    }
+    updateStockSummaryCounts();
 
     const success = await window.syncAdminDB('item_stock', 'UPDATE', {
         id: stockId,
@@ -5117,29 +5337,47 @@ async function updateStockSafetyQuantity(stockId, newSafetyQty, trEl) {
     }
 }
 
-// 행 상태 배지 및 상단 통계 배지 갱신 헬퍼
-function refreshStockBadgesAndRowStatus(item, trEl) {
-    if (trEl && item) {
-        const statusCell = trEl.querySelector('.stock-status-cell');
-        if (statusCell) {
-            const qty = parseInt(item.quantity) || 0;
-            const safetyQty = parseInt(item.safety_quantity) || 0;
-            let statusBadge = '';
-            if (safetyQty > 0) {
-                if (qty < safetyQty) {
-                    statusBadge = `<span class="badge" style="background: #490202; color: #ff7b72; border: 1px solid rgba(248, 81, 73, 0.4); font-size: 11px; padding: 2px 6px;">부족</span>`;
-                } else if (qty === safetyQty) {
-                    statusBadge = `<span class="badge" style="background: #341a04; color: #d29922; border: 1px solid rgba(210, 153, 34, 0.4); font-size: 11px; padding: 2px 6px;">주의</span>`;
-                } else {
-                    statusBadge = `<span class="badge" style="background: #04260f; color: #3fb950; border: 1px solid rgba(46, 160, 67, 0.4); font-size: 11px; padding: 2px 6px;">정상</span>`;
-                }
-            } else {
-                statusBadge = `<span class="badge" style="background: #21262d; color: #8b949e; font-size: 11px; padding: 2px 6px;">-</span>`;
-            }
-            statusCell.innerHTML = statusBadge;
-        }
+// 물품 등급 배지 HTML 생성 헬퍼 (A, B, C)
+function getItemGradeBadgeHtml(grade) {
+    const g = (grade || 'A').toUpperCase();
+    let cls = 'badge-grade-a';
+    if (g === 'B') cls = 'badge-grade-b';
+    else if (g === 'C') cls = 'badge-grade-c';
+    return `<span class="stock-badge ${cls} clickable-grade" title="클릭하여 등급 변경 (A → B → C)">${g}</span>`;
+}
+
+// 물품 등급 업데이트 (DB 통신 및 상태 반영)
+async function updateStockGrade(stockId, newGrade, trEl) {
+    if (!isUserAdminRole()) {
+        alert('일반 계정은 조회만 가능하며, 등급 수정 권한이 없습니다.');
+        return;
+    }
+    const item = adminItemStocks.find(it => String(it.id) === String(stockId));
+    if (item) {
+        item.grade = newGrade;
     }
 
+    saveItemStocksLocally();
+
+    if (trEl) {
+        const cell = trEl.querySelector('.stock-grade-cell');
+        if (cell) cell.innerHTML = getItemGradeBadgeHtml(newGrade);
+    }
+
+    const success = await window.syncAdminDB('item_stock', 'UPDATE', {
+        id: stockId,
+        grade: newGrade
+    });
+
+    if (success) {
+        if (trEl) {
+            trEl.classList.remove('stock-saved-flash');
+            void trEl.offsetWidth;
+            trEl.classList.add('stock-saved-flash');
+        }
+    } else {
+        alert('등급 저장에 실패했습니다.');
+    }
 }
 
 // 메모 업데이트 (DB 통신 및 상태 반영)
@@ -5169,6 +5407,9 @@ async function updateStockMemo(stockId, newMemo, trEl) {
 
 // 물품 삭제
 async function deleteItemStock(stockId, itemName) {
+    if (!isUserAdminRole()) {
+        return alert('일반 계정은 조회만 가능하며, 삭제 권한이 없습니다.');
+    }
     const targetLabel = (currentStockSiteGroup && currentStockSiteGroup !== '전체') ? currentStockSiteGroup : '물품';
     if (!confirm(`[${itemName}] 물품을 물품 현황에서 삭제하시겠습니까?`)) {
         return;
@@ -5186,45 +5427,31 @@ async function deleteItemStock(stockId, itemName) {
 
 // 물품 등록 모달 열기
 function openAddStockModal() {
+    if (!isUserAdminRole()) {
+        return alert('일반 계정은 조회만 가능하며, 물품 등록 권한이 없습니다.');
+    }
+    if (currentStockSiteGroup === '전체' || currentStockSiteGroup === 'ALL' || !currentStockSiteGroup) {
+        return alert('물품을 등록할 특정 사업장 구분을 상단 탭에서 먼저 선택해주세요.');
+    }
+
     const modal = document.getElementById('item-stock-add-modal');
     const groupLabel = document.getElementById('modal-stock-group-label');
-    const siteSelect = document.getElementById('modal-stock-site-select');
     const searchInput = document.getElementById('modal-stock-item-search');
     const qtyInput = document.getElementById('modal-stock-quantity');
     const safetyQtyInput = document.getElementById('modal-stock-safety-quantity');
-    const memoInput = document.getElementById('modal-stock-memo');
 
     if (!modal) return;
 
     selectedMasterItemForStock = null;
-    const targetGroup = (currentStockSiteGroup && currentStockSiteGroup !== '전체' && currentStockSiteGroup !== 'ALL')
-        ? currentStockSiteGroup
-        : (getAvailableSiteGroups()[0] || 'SEC');
+    const targetGroup = currentStockSiteGroup;
 
     if (groupLabel) groupLabel.textContent = targetGroup;
 
-    // 모달 내 사업장 드롭다운 옵션 설정
-    if (siteSelect) {
-        siteSelect.innerHTML = '';
-        const sites = getSitesByGroup(targetGroup);
-
-        const defaultOpt = document.createElement('option');
-        defaultOpt.value = '';
-        defaultOpt.textContent = `[${targetGroup}] 공통 (지정 없음)`;
-        siteSelect.appendChild(defaultOpt);
-
-        sites.forEach(s => {
-            const opt = document.createElement('option');
-            opt.value = s;
-            opt.textContent = s;
-            siteSelect.appendChild(opt);
-        });
-    }
+    updateModalGradeOptions(null);
 
     if (searchInput) searchInput.value = '';
     if (qtyInput) qtyInput.value = 0;
     if (safetyQtyInput) safetyQtyInput.value = 0;
-    if (memoInput) memoInput.value = '';
 
     resetModalSelectedInfo();
     renderModalMasterItemList('');
@@ -5251,14 +5478,75 @@ function resetModalSelectedInfo() {
     setTxt('modal-selected-spec', '-');
     setTxt('modal-selected-partno', '-');
     setTxt('modal-selected-detail-type', '-');
+    updateModalGradeOptions(null);
 }
 
-// 모달 내 마스터 물품 목록 렌더링 (터치 스크롤 방지 규칙 9 적용)
+// 모달 등급 옵션 동적 갱신 (선택된 항목의 이미 등록된 등급은 제외하여 노출)
+function updateModalGradeOptions(item) {
+    const gradeSelect = document.getElementById('modal-stock-grade');
+    if (!gradeSelect) return;
+
+    const allGrades = ['B', 'C', 'A']; // 기본 B, C, A 순서
+
+    if (!item) {
+        gradeSelect.disabled = false;
+        gradeSelect.innerHTML = `
+            <option value="B" selected>B 등급</option>
+            <option value="C">C 등급</option>
+            <option value="A">A 등급</option>
+        `;
+        return;
+    }
+
+    const targetGroup = currentStockSiteGroup || 'SEC';
+
+    // 해당 사업장 구분에 이미 등록된 등급 수집
+    const registeredGrades = new Set();
+    (adminItemStocks || []).forEach(st => {
+        const matchesGroup = (st.site_group || '').trim() === targetGroup.trim();
+        if (matchesGroup) {
+            const isSameCode = (st.code || '').trim().toLowerCase() === (item.code || '').trim().toLowerCase();
+            const isSamePart = (st.part || '').trim().toLowerCase() === (item.part || '').trim().toLowerCase();
+            const isSameSpec = (st.spec || '').trim().toLowerCase() === (item.spec || '').trim().toLowerCase();
+            if (isSameCode && isSamePart && isSameSpec) {
+                registeredGrades.add((st.grade || 'A').toUpperCase());
+            }
+        }
+    });
+
+    // 아직 등록되지 않은 사용 가능한 등급 필터링
+    const availableGrades = allGrades.filter(g => !registeredGrades.has(g));
+
+    gradeSelect.innerHTML = '';
+    if (availableGrades.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = '모든 등급(A/B/C) 등록 완료';
+        opt.disabled = true;
+        opt.selected = true;
+        gradeSelect.appendChild(opt);
+        gradeSelect.disabled = true;
+    } else {
+        gradeSelect.disabled = false;
+        availableGrades.forEach((g, idx) => {
+            const opt = document.createElement('option');
+            opt.value = g;
+            opt.textContent = `${g} 등급`;
+            if (idx === 0) opt.selected = true;
+            gradeSelect.appendChild(opt);
+        });
+    }
+}
+
+// 모달 내 마스터 물품 목록 렌더링 (모든 항목 노출 + 등록된 등급 배지 표기 + 터치 스크롤 방지 규칙 9 적용)
 function renderModalMasterItemList(filterText) {
     const listEl = document.getElementById('modal-stock-master-list');
     if (!listEl) return;
     listEl.innerHTML = '';
 
+    const targetGroup = currentStockSiteGroup || 'SEC';
+
+    // 검색어 필터링 (마스터 물품 목록 전체 항목을 대상으로 검색)
     const query = (filterText || '').toLowerCase();
     const filtered = (adminItems || []).filter(item => {
         if (!query) return true;
@@ -5276,23 +5564,49 @@ function renderModalMasterItemList(filterText) {
 
     filtered.forEach(item => {
         const li = document.createElement('li');
-        li.style.padding = '8px 12px';
+        li.style.padding = '7px 10px';
         li.style.cursor = 'pointer';
         li.style.borderBottom = '1px solid #21262d';
         li.style.display = 'flex';
-        li.style.justifyContent = 'space-between';
         li.style.alignItems = 'center';
         li.style.fontSize = '12px';
+        li.style.minWidth = '770px';
+        li.style.transition = 'background 0.15s ease';
 
-        const codeStr = item.code ? `[${item.code}] ` : '';
-        const specStr = item.spec ? ` (${item.spec})` : '';
+        // 해당 사업장에 이미 등록되어 있는 등급 추출
+        const existingGrades = [];
+        (adminItemStocks || []).forEach(st => {
+            const matchesGroup = (st.site_group || '').trim() === targetGroup.trim();
+            if (matchesGroup) {
+                const isSameCode = (st.code || '').trim().toLowerCase() === (item.code || '').trim().toLowerCase();
+                const isSamePart = (st.part || '').trim().toLowerCase() === (item.part || '').trim().toLowerCase();
+                const isSameSpec = (st.spec || '').trim().toLowerCase() === (item.spec || '').trim().toLowerCase();
+                if (isSameCode && isSamePart && isSameSpec) {
+                    const g = (st.grade || 'A').toUpperCase();
+                    if (!existingGrades.includes(g)) existingGrades.push(g);
+                }
+            }
+        });
+
+        let badgeHtml = '<span style="color: #484f58; font-size: 11px;">미등록</span>';
+        if (existingGrades.length >= 3) {
+            badgeHtml = `<span style="font-size: 11px; color: #8b949e; background: #21262d; padding: 2px 6px; border-radius: 4px;">전체 등록됨</span>`;
+        } else if (existingGrades.length > 0) {
+            existingGrades.sort();
+            badgeHtml = `<span style="font-size: 11px; color: #e3b341; background: #382814; border: 1px solid #bb800955; padding: 1px 6px; border-radius: 4px;">${existingGrades.join(',')} 등록됨</span>`;
+        }
+
+        const codeVal = item.code || '-';
+        const partVal = item.part || '-';
+        const specVal = item.spec || '-';
+        const partnoVal = item.partno || '-';
+
         li.innerHTML = `
-            <div>
-                <span style="color: #58a6ff; font-weight: bold;">${codeStr}</span>
-                <span style="color: #e6edf3;">${item.part || '-'}</span>
-                <span style="color: #8b949e;">${specStr}</span>
-            </div>
-            <span style="font-size: 11px; color: #6e7681;">${item.detailType || item.detail_type || ''}</span>
+            <div style="width: 85px; flex-shrink: 0; text-align: center; color: #8b949e; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${partnoVal}">${partnoVal}</div>
+            <div style="width: 200px; flex-shrink: 0; color: #58a6ff; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${codeVal}">${codeVal}</div>
+            <div style="width: 200px; flex-shrink: 0; color: #e6edf3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${partVal}">${partVal}</div>
+            <div style="flex: 1; min-width: 160px; color: #8b949e; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 6px;" title="${specVal}">${specVal}</div>
+            <div style="width: 95px; flex-shrink: 0; text-align: center;">${badgeHtml}</div>
         `;
 
         // 규칙 9 준수: 모바일 터치 스크롤 시 자동 선택 방지 (터치 이동 거리 6px 초과 시 스킵)
@@ -5353,6 +5667,9 @@ function selectMasterItemInModal(item, liEl) {
     setTxt('modal-selected-partno', item.partno || '-');
     setTxt('modal-selected-detail-type', item.detailType || item.detail_type || '-');
 
+    // 이미 등록된 등급을 제외하여 등급 셀렉트박스 옵션 갱신
+    updateModalGradeOptions(item);
+
     const qtyInput = document.getElementById('modal-stock-quantity');
     if (qtyInput) {
         qtyInput.focus();
@@ -5362,23 +5679,45 @@ function selectMasterItemInModal(item, liEl) {
 
 // 모달 등록 제출
 async function submitAddStock() {
+    if (!isUserAdminRole()) {
+        return alert('일반 계정은 조회만 가능하며, 물품 등록 권한이 없습니다.');
+    }
+    if (currentStockSiteGroup === '전체' || currentStockSiteGroup === 'ALL' || !currentStockSiteGroup) {
+        return alert('물품을 등록할 특정 사업장 구분을 상단 탭에서 먼저 선택해주세요.');
+    }
+
     if (!selectedMasterItemForStock) {
         return alert('등록할 마스터 물품을 목록에서 선택해주세요.');
     }
 
-    const siteSelect = document.getElementById('modal-stock-site-select');
+    const gradeSelect = document.getElementById('modal-stock-grade');
     const qtyInput = document.getElementById('modal-stock-quantity');
     const safetyQtyInput = document.getElementById('modal-stock-safety-quantity');
-    const memoInput = document.getElementById('modal-stock-memo');
 
-    const targetGroup = (currentStockSiteGroup && currentStockSiteGroup !== '전체' && currentStockSiteGroup !== 'ALL')
-        ? currentStockSiteGroup
-        : (getAvailableSiteGroups()[0] || 'SEC');
+    if (gradeSelect && (gradeSelect.disabled || !gradeSelect.value)) {
+        return alert('선택한 물품은 이미 모든 등급(A/B/C)이 등록되어 있어 더 이상 추가할 수 없습니다.');
+    }
 
-    const siteName = siteSelect ? siteSelect.value.trim() : '';
+    const targetGroup = currentStockSiteGroup;
+    const siteName = '';
+    const grade = gradeSelect ? gradeSelect.value.trim() : 'B';
     const quantity = Math.max(0, parseInt(qtyInput ? qtyInput.value : 0) || 0);
     const safetyQuantity = Math.max(0, parseInt(safetyQtyInput ? safetyQtyInput.value : 0) || 0);
-    const memo = memoInput ? memoInput.value.trim() : '';
+    const memo = '';
+
+    // 동일 사업장에 코드명, 물품명, 규격, 등급까지 동일한 경우에만 중복 등록 차단
+    const isDuplicate = (adminItemStocks || []).some(it => {
+        const matchesGroup = (it.site_group || '').trim() === targetGroup.trim();
+        return matchesGroup &&
+            (it.code || '').trim().toLowerCase() === (selectedMasterItemForStock.code || '').trim().toLowerCase() &&
+            (it.part || '').trim().toLowerCase() === (selectedMasterItemForStock.part || '').trim().toLowerCase() &&
+            (it.spec || '').trim().toLowerCase() === (selectedMasterItemForStock.spec || '').trim().toLowerCase() &&
+            (it.grade || 'A').trim().toUpperCase() === grade.toUpperCase();
+    });
+
+    if (isDuplicate) {
+        return alert(`이미 [${targetGroup}]에 동일한 물품의 [${grade}등급]이 등록되어 있습니다.`);
+    }
 
     const payload = {
         site_group: targetGroup,
@@ -5389,6 +5728,7 @@ async function submitAddStock() {
         spec: selectedMasterItemForStock.spec || '',
         partno: selectedMasterItemForStock.partno || '',
         detail_type: selectedMasterItemForStock.detailType || selectedMasterItemForStock.detail_type || '',
+        grade: grade,
         quantity: quantity,
         safety_quantity: safetyQuantity,
         memo: memo
@@ -5410,30 +5750,17 @@ async function submitAddStock() {
     const data = await res.json();
     if (data.status === 'success') {
         const newId = data.id || Date.now();
-        // 기존에 로컬 목록에 있는지 확인
-        const existing = adminItemStocks.find(it => {
-            return (it.site_group || '').trim() === targetGroup.trim() &&
-                (it.site_name || '').trim() === siteName &&
-                ((it.code && it.code === payload.code) || (it.part && it.part === payload.part && it.spec === payload.spec));
+        adminItemStocks.push({
+            id: newId,
+            ...payload
         });
-
-        if (existing) {
-            existing.quantity = (existing.quantity || 0) + quantity;
-            existing.safety_quantity = safetyQuantity;
-            if (memo) existing.memo = memo;
-        } else {
-            adminItemStocks.push({
-                id: newId,
-                ...payload
-            });
-        }
 
         saveItemStocksLocally();
 
         renderItemStockTable();
         closeAddStockModal();
         const siteLabel = siteName ? `[${siteName}]` : `[${targetGroup}]`;
-        alert(`[${payload.part || payload.code}] 물품이 ${siteLabel}에 성공적으로 등록되었습니다.`);
+        alert(`[${payload.part || payload.code}] (${grade}등급) 물품이 ${siteLabel}에 성공적으로 등록되었습니다.`);
     } else {
         alert(data.message || '물품 등록 중 오류가 발생했습니다.');
     }
@@ -5441,6 +5768,9 @@ async function submitAddStock() {
 
 // 마스터 물품 전체를 현재 사업장(또는 구분)으로 일괄 불러오기
 async function importMasterItemsToCurrentGroup() {
+    if (!isUserAdminRole()) {
+        return alert('일반 계정은 조회만 가능하며, 마스터 물품 불러오기 권한이 없습니다.');
+    }
     if (currentStockSiteGroup === '전체' || currentStockSiteGroup === 'ALL' || !currentStockSiteGroup) {
         return alert('마스터 물품을 일괄 등록할 특정 사업장 구분을 상단 탭에서 먼저 선택해주세요.');
     }
@@ -5467,7 +5797,7 @@ async function importMasterItemsToCurrentGroup() {
         return alert(`마스터 물품 목록의 모든 물품이 이미 ${targetLabel}에 등록되어 있습니다.`);
     }
 
-    if (!confirm(`마스터 물품 중 아직 미등록된 ${toAdd.length}건의 물품을 ${targetLabel}에 기본 수량 0으로 일괄 등록하시겠습니까?`)) {
+    if (!confirm(`마스터 물품 중 아직 미등록된 ${toAdd.length}건의 물품을 ${targetLabel}에 A등급, 기본 수량 0으로 일괄 등록하시겠습니까?`)) {
         return;
     }
 
@@ -5482,6 +5812,7 @@ async function importMasterItemsToCurrentGroup() {
             spec: m.spec || '',
             partno: m.partno || '',
             detail_type: m.detailType || m.detail_type || '',
+            grade: 'A', // 마스터 물품 불러오기로 한 항목은 전부 A로 고정
             quantity: 0,
             safety_quantity: 0,
             memo: ''
@@ -5516,7 +5847,7 @@ async function importMasterItemsToCurrentGroup() {
     saveItemStocksLocally();
 
     renderItemStockTable();
-    alert(`총 ${successCount}건의 마스터 물품이 ${targetLabel}에 등록되었습니다.`);
+    alert(`총 ${successCount}건의 마스터 물품이 ${targetLabel}에 A등급으로 등록되었습니다.`);
 }
 
 // 물품 관리 현황 CSV 내보내기 (사업장 및 안전 재고 수량 포함)
@@ -5530,18 +5861,12 @@ function exportStockCsv() {
         return alert(`내보낼 물품 데이터가 없습니다.`);
     }
 
-    const headers = ['No', '사업장구분', '사업장명', '상세구분', '품번', '코드명', '물품명', '세부규격', '현재수량', '안전재고수량', '상태'];
+    const headers = ['No', '사업장구분', '사업장명', '상세구분', '품번', '코드명', '물품명', '세부규격', '현재수량', '안전재고수량', '상태', '등급'];
     const rows = groupItems.map((item, idx) => {
         const qty = parseInt(item.quantity) || 0;
         const safetyQty = parseInt(item.safety_quantity) || 0;
-        let status = '정상';
-        if (safetyQty > 0) {
-            if (qty < safetyQty) status = '부족';
-            else if (qty === safetyQty) status = '주의';
-            else status = '정상';
-        } else {
-            status = '-';
-        }
+        const grade = (item.grade || 'A').toUpperCase();
+        const statusStr = qty === 0 ? '미확보' : (qty >= safetyQty ? '정상' : '부족');
 
         return [
             idx + 1,
@@ -5554,7 +5879,8 @@ function exportStockCsv() {
             `"${(item.spec || '').replace(/"/g, '""')}"`,
             qty,
             safetyQty,
-            `"${status}"`
+            `"${statusStr}"`,
+            `"${grade}"`
         ];
     });
 

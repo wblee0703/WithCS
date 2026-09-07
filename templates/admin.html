@@ -4,7 +4,7 @@
 {% block title %}WITHTECH - Admin{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=4">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=22">
 {% endblock %}
 
 {% block content %}
@@ -60,11 +60,13 @@
                         <ul id="admin-site-list" class="admin-list">
                             <!-- JS로 렌더링 -->
                         </ul>
+                        {% if session.get('role') in ['admin', 'superadmin'] %}
                         <div class="list-footer">
                             <input type="text" id="admin-site-add-input" placeholder="새 사업장 이름"
                                 class="input-dark full-width">
                             <button id="btn-admin-add-site" class="btn-green full-width">신규 등록</button>
                         </div>
+                        {% endif %}
                     </div>
 
                     <!-- 우측: 사업장 정보 상세 -->
@@ -94,16 +96,20 @@
                                 <label>건물 목록</label>
                                 <div class="form-input-group">
                                     <input type="text" id="site-info-building-input" class="input-dark flex-1"
-                                        placeholder="건물명">
+                                        placeholder="건물명"{% if session.get('role') not in ['admin', 'superadmin'] %} disabled style="display: none;"{% endif %}>
+                                    {% if session.get('role') in ['admin', 'superadmin'] %}
                                     <button id="btn-add-building" class="btn-green-sm no-wrap">추가</button>
+                                    {% endif %}
                                 </div>
                                 <ul id="site-info-building-list" class="admin-list building-list"></ul>
                             </div>
 
+                            {% if session.get('role') in ['admin', 'superadmin'] %}
                             <div class="form-actions">
                                 <button id="btn-admin-del-site" class="btn-del-sm">삭제</button>
                                 <button id="btn-admin-save-site" class="btn-blue">저장 (수정)</button>
                             </div>
+                            {% endif %}
                         </div>
                         <div id="admin-site-placeholder" class="placeholder-container">
                             <p>좌측 목록에서 사업장을 선택해주세요.</p>
@@ -144,6 +150,7 @@
                         <ul id="admin-model-list" class="admin-list">
                             <!-- JS 렌더링 -->
                         </ul>
+                        {% if session.get('role') in ['admin', 'superadmin'] %}
                         <div class="list-footer">
                             <div class="admin-flex-row">
                                 <input type="text" id="admin-model-name-input" placeholder="모델명"
@@ -153,6 +160,7 @@
                             </div>
                             <button id="btn-admin-add-model" class="btn-green full-width">모델 추가</button>
                         </div>
+                        {% endif %}
                     </div>
                     <!-- 좌측: 장비 목록 -->
                     <div class="admin-col-list wide-col">
@@ -168,9 +176,11 @@
                                 placeholder="사업장, 장비명, 시리얼 검색 (띄어쓰기 조합)" autocomplete="off">
                         </div>
                         <ul id="admin-equip-list" class="admin-list"></ul>
+                        {% if session.get('role') in ['admin', 'superadmin'] %}
                         <div class="list-footer">
                             <button id="btn-admin-new-equip" class="btn-green full-width">신규 등록 모드</button>
                         </div>
+                        {% endif %}
                     </div>
 
                     <!-- 우측: 장비 상세 정보 -->
@@ -322,9 +332,11 @@
                                         placeholder="장비 관련 특이사항을 입력하세요"></textarea>
                                 </div>
                             </div>
+                            {% if session.get('role') in ['admin', 'superadmin'] %}
                             <div class="form-actions"><button id="btn-admin-del-equip"
                                     class="btn-del-sm">삭제</button><button id="btn-admin-save-equip" class="btn-blue">저장
                                     (추가/수정)</button></div>
+                            {% endif %}
                         </div>
                         <div id="admin-equip-placeholder" class="placeholder-container">
                             <p>사업장을 선택하고 장비를 선택하거나 신규 등록하세요.</p>
@@ -361,6 +373,7 @@
                             </div>
                             <ul id="admin-item-list" class="admin-list"></ul>
                         </div>
+                        {% if session.get('role') in ['admin', 'superadmin'] %}
                         <div class="list-footer">
                             <div class="admin-flex-row list-footer-inputs">
                                 <input type="text" id="admin-item-partno-input" placeholder="품번"
@@ -374,6 +387,7 @@
                             </div>
                             <button id="btn-admin-add-item" class="btn-green full-width mt-10">물품 추가</button>
                         </div>
+                        {% endif %}
                     </div>
 
                     <!-- 우측: 물품 상세 정보 -->
@@ -429,8 +443,10 @@
                             <div class="form-group">
                                 <div class="flex-between-center mb-5">
                                     <label class="m-0">사용 장비 (모델명)</label>
+                                    {% if session.get('role') in ['admin', 'superadmin'] %}
                                     <button id="btn-add-item-equip" class="btn-green-sm btn-green-micro"
                                         type="button">추가</button>
+                                    {% endif %}
                                 </div>
                                 <div class="autocomplete-wrapper tag-input-container">
                                     <div id="item-equip-tags" class="tag-container" style="flex: 1; min-height: 24px;">
@@ -440,18 +456,22 @@
                                         <ul id="item-equip-suggestions-list"
                                             class="suggestion-list static-suggestion-list">
                                         </ul>
+                                        {% if session.get('role') in ['admin', 'superadmin'] %}
                                         <div class="suggestion-box-footer">
                                             <button type="button" id="btn-apply-equip-selection"
                                                 class="btn-blue-sm full-width">선택 항목 추가</button>
                                         </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
 
+                            {% if session.get('role') in ['admin', 'superadmin'] %}
                             <div class="form-actions">
                                 <button id="btn-admin-del-item-detail" class="btn-del-sm">삭제</button>
                                 <button id="btn-admin-save-item-detail" class="btn-blue">저장 (수정)</button>
                             </div>
+                            {% endif %}
                         </div>
                         <div id="admin-item-placeholder" class="placeholder-container">
                             <p>좌측 목록에서 물품을 선택해주세요.</p>
@@ -501,6 +521,18 @@
                             placeholder="물품명, 코드명, 세부규격, 품번, 사업장 검색..." autocomplete="off"
                             style="height: 34px; font-size: 13px;">
                     </div>
+                    <!-- 미확보 수, 부족 수 건수 표시 -->
+                    <div class="item-stock-summary-badges" style="display: flex; align-items: center; gap: 8px;">
+                        <div class="stock-summary-badge badge-summary-zero" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 6px; background: rgba(248, 81, 73, 0.12); border: 1px solid rgba(248, 81, 73, 0.35); font-size: 12px; color: #f85149; white-space: nowrap;">
+                            <span>미확보:</span>
+                            <strong id="stock-summary-zero-count" style="font-size: 13px; font-weight: 700;">0</strong>건
+                        </div>
+                        <div class="stock-summary-badge badge-summary-shortage" style="display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 6px; background: rgba(210, 153, 34, 0.12); border: 1px solid rgba(210, 153, 34, 0.35); font-size: 12px; color: #d29922; white-space: nowrap;">
+                            <span>부족:</span>
+                            <strong id="stock-summary-shortage-count" style="font-size: 13px; font-weight: 700;">0</strong>건
+                        </div>
+                    </div>
+                    {% if session.get('role') in ['admin', 'superadmin'] %}
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <button type="button" id="btn-open-add-stock-modal" class="btn-green-sm"
                             style="height: 34px; padding: 0 14px; font-size: 13px; display: flex; align-items: center; gap: 4px; white-space: nowrap;">
@@ -512,33 +544,35 @@
                             마스터 물품 불러오기
                         </button>
                     </div>
+                    {% endif %}
                 </div>
 
                 <!-- 3. 물품 수량 관리 테이블 -->
-                <div class="item-stock-table-wrapper" style="flex: 1; min-height: 0; overflow: auto; border: 1px solid #30363d; border-radius: 6px; background: #0d1117;">
-                    <table class="item-stock-table" style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px;">
+                <div class="item-stock-table-wrapper">
+                    <table class="item-stock-table">
                         <thead>
-                            <tr style="background: #21262d; color: #8b949e; border-bottom: 1px solid #30363d; position: sticky; top: 0; z-index: 2;">
-                                <th style="padding: 9px 10px; width: 45px; text-align: center;">No.</th>
-                                <th style="padding: 9px 10px; width: 100px;">사업장</th>
-                                <th style="padding: 9px 10px; width: 95px;">상세 구분</th>
-                                <th style="padding: 9px 10px; width: 90px;">품번</th>
-                                <th style="padding: 9px 10px; width: 160px; min-width: 150px;">코드명</th>
-                                <th style="padding: 9px 10px; width: 160px; min-width: 150px;">물품명</th>
-                                <th style="padding: 9px 10px; width: 90px; min-width: 80px;">세부 규격</th>
-                                <th style="padding: 9px 10px; width: 145px; text-align: center;">현재 수량</th>
-                                <th style="padding: 9px 10px; width: 145px; text-align: center;">안전 재고 수량</th>
-                                <th style="padding: 9px 10px; width: 75px; text-align: center;">상태</th>
-                                <th style="padding: 9px 10px; width: 50px; text-align: center;">기능</th>
+                            <tr>
+                                <th class="col-no">No.</th>
+                                <th class="col-site" data-sort="site" title="클릭하여 사업장별 정렬">사업장</th>
+                                <th class="col-detail-type" data-sort="detail_type" title="클릭하여 상세구분별 정렬">상세 구분</th>
+                                <th class="col-partno" data-sort="partno" title="클릭하여 품번별 정렬">품번</th>
+                                <th class="col-code" data-sort="code" title="클릭하여 코드명별 정렬">코드명</th>
+                                <th class="col-part" data-sort="part" title="클릭하여 물품명별 정렬">물품명</th>
+                                <th class="col-spec" data-sort="spec" title="클릭하여 세부규격별 정렬">세부 규격</th>
+                                <th class="col-qty" data-sort="quantity" title="클릭하여 현재수량별 정렬">현재 수량</th>
+                                <th class="col-safety" data-sort="safety_quantity" title="클릭하여 안전재고별 정렬">안전 재고</th>
+                                <th class="col-status" data-sort="status" title="클릭하여 상태별 정렬">상태</th>
+                                <th class="col-grade" data-sort="grade" title="클릭하여 등급별 정렬">등급</th>
+                                <th class="col-action">기능</th>
                             </tr>
                         </thead>
                         <tbody id="item-stock-tbody">
                             <!-- JS로 동적 렌더링 -->
                         </tbody>
                     </table>
-                    <div id="item-stock-empty" style="display: none; padding: 40px 20px; text-align: center; color: #8b949e;">
-                        <p style="font-size: 14px; margin-bottom: 10px;">등록된 물품이 없습니다.</p>
-                        <p style="font-size: 12px; color: #6e7681;">우측 상단의 <strong>[+ 물품 등록]</strong> 또는 <strong>[마스터 물품 불러오기]</strong> 버튼을 통해 물품을 추가해주세요.</p>
+                    <div id="item-stock-empty" class="item-stock-empty">
+                        <p class="empty-title">등록된 물품이 없습니다.</p>
+                        <p class="empty-desc">우측 상단의 <strong>[+ 물품 등록]</strong> 또는 <strong>[마스터 물품 불러오기]</strong> 버튼을 통해 물품을 추가해주세요.</p>
                     </div>
                 </div>
             </div>
@@ -546,23 +580,25 @@
 
         <!-- 3-2. 물품 관리 현황 신규 등록 모달 -->
         <div id="item-stock-add-modal" class="modal-overlay" style="display: none;">
-            <div class="modal-window" style="max-width: 600px; width: 92%;">
+            <div class="modal-window" style="max-width: 880px; width: 95%; height: auto; max-height: 90vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
                     <h4>물품 등록 (<span id="modal-stock-group-label" style="color: #58a6ff;">-</span>)</h4>
                     <span class="close-btn" id="btn-close-item-stock-modal">&times;</span>
                 </div>
-                <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; gap: 12px;">
-                    <div class="form-group">
-                        <label style="font-size: 12px; color: #8b949e; margin-bottom: 4px; display: block;">등록 대상 사업장</label>
-                        <select id="modal-stock-site-select" class="input-dark full-width" style="height: 34px; font-size: 13px;"></select>
-                    </div>
-
+                <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; max-height: calc(90vh - 60px);">
                     <div class="form-group">
                         <label style="font-size: 12px; color: #8b949e; margin-bottom: 4px; display: block;">마스터 물품 검색 및 선택</label>
                         <input type="text" id="modal-stock-item-search" class="input-dark full-width"
                             placeholder="물품명, 코드명, 규격 검색..." autocomplete="off">
-                        <div id="modal-stock-master-list-wrap" style="max-height: 160px; overflow-y: auto; border: 1px solid #30363d; border-radius: 4px; margin-top: 5px; background: #0d1117;">
-                            <ul id="modal-stock-master-list" class="admin-list" style="border: none; border-radius: 0;"></ul>
+                        <div id="modal-stock-master-list-wrap" style="max-height: 200px; overflow-y: auto; overflow-x: auto; border: 1px solid #30363d; border-radius: 4px; margin-top: 5px; background: #0d1117;">
+                            <div class="modal-master-col-header" style="display: flex; min-width: 770px; background: #161b22; border-bottom: 1px solid #30363d; padding: 7px 10px; font-size: 11px; color: #8b949e; font-weight: 600; position: sticky; top: 0; z-index: 1;">
+                                <div style="width: 85px; flex-shrink: 0; text-align: center;">품번</div>
+                                <div style="width: 200px; flex-shrink: 0;">코드명</div>
+                                <div style="width: 200px; flex-shrink: 0;">물품명</div>
+                                <div style="flex: 1; min-width: 160px;">세부 규격</div>
+                                <div style="width: 95px; flex-shrink: 0; text-align: center;">등록 현황</div>
+                            </div>
+                            <ul id="modal-stock-master-list" class="admin-list" style="border: none; border-radius: 0; min-width: 770px; margin: 0; padding: 0;"></ul>
                         </div>
                     </div>
 
@@ -570,14 +606,22 @@
                         <div style="font-size: 12px; color: #8b949e; margin-bottom: 6px; font-weight: bold;">선택된 물품 정보</div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px;">
                             <div><span style="color: #6e7681;">품번:</span> <span id="modal-selected-partno" style="color: #e6edf3;">-</span></div>
-                            <div><span style="color: #6e7681;">코드명:</span> <strong id="modal-selected-code" style="color: #e6edf3;">-</strong></div>
+                            <div><span style="color: #6e7681;">코드명:</span> <strong id="modal-selected-code" style="color: #58a6ff;">-</strong></div>
                             <div><span style="color: #6e7681;">물품명:</span> <strong id="modal-selected-part" style="color: #e6edf3;">-</strong></div>
-                            <div><span style="color: #6e7681;">상세구분:</span> <span id="modal-selected-detail-type" style="color: #e6edf3;">-</span></div>
-                            <div style="grid-column: span 2;"><span style="color: #6e7681;">세부규격:</span> <span id="modal-selected-spec" style="color: #e6edf3;">-</span></div>
+                            <div><span style="color: #6e7681;">세부규격:</span> <span id="modal-selected-spec" style="color: #e6edf3;">-</span></div>
+                            <span id="modal-selected-detail-type" style="display: none;">-</span>
                         </div>
                     </div>
 
                     <div style="display: flex; gap: 10px;">
+                        <div class="form-group" style="width: 105px;">
+                            <label style="font-size: 12px; color: #8b949e; margin-bottom: 4px; display: block;">등급 (Grade)</label>
+                            <select id="modal-stock-grade" class="input-dark full-width" style="height: 34px; font-size: 13px;">
+                                <option value="B" selected>B 등급</option>
+                                <option value="C">C 등급</option>
+                                <option value="A">A 등급</option>
+                            </select>
+                        </div>
                         <div class="form-group" style="flex: 1;">
                             <label style="font-size: 12px; color: #8b949e; margin-bottom: 4px; display: block;">현재 수량 (Quantity)</label>
                             <input type="number" id="modal-stock-quantity" class="input-dark full-width" min="0" value="0" style="height: 34px;">
@@ -588,14 +632,9 @@
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label style="font-size: 12px; color: #8b949e; margin-bottom: 4px; display: block;">비고 (메모)</label>
-                        <input type="text" id="modal-stock-memo" class="input-dark full-width" placeholder="비고 입력 (선택)" style="height: 34px;">
-                    </div>
-
-                    <div class="form-actions" style="margin-top: 10px; display: flex; justify-content: flex-end; gap: 8px;">
-                        <button type="button" id="btn-cancel-item-stock-modal" class="btn-gray">취소</button>
-                        <button type="button" id="btn-confirm-item-stock-modal" class="btn-green">등록 추가</button>
+                    <div class="form-actions" style="margin-top: 10px; display: flex; justify-content: flex-end; gap: 10px; padding-top: 12px; border-top: 1px solid #30363d;">
+                        <button type="button" id="btn-cancel-item-stock-modal" class="btn-gray" style="padding: 8px 18px; font-size: 13px;">취소</button>
+                        <button type="button" id="btn-confirm-item-stock-modal" class="btn-green" style="padding: 8px 24px; font-size: 13px; font-weight: bold; background: #238636; color: #fff; border: 1px solid rgba(240, 246, 252, 0.1); border-radius: 6px; cursor: pointer;">등록</button>
                     </div>
                 </div>
             </div>
@@ -795,16 +834,20 @@
                             <div class="list-header">
                                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                                     <span>세부 구분</span>
+                                    {% if session.get('role') in ['admin', 'superadmin'] %}
                                     <button id="btn-setup-subcategory-settings" class="btn-settings" title="관리 모드 토글">⚙️</button>
+                                    {% endif %}
                                 </div>
                             </div>
                             <ul id="setup-template-subcategory-list" class="admin-list">
                                 <!-- JS로 렌더링 -->
                             </ul>
+                            {% if session.get('role') in ['admin', 'superadmin'] %}
                             <div class="list-footer" id="setup-template-subcategory-footer" style="display: none;">
                                 <input type="text" id="setup-template-subcategory-input" placeholder="세부 구분 추가" class="input-dark full-width">
                                 <button id="btn-add-setup-template-subcategory" class="btn-green full-width">추가</button>
                             </div>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -816,10 +859,12 @@
                                     <h4 class="m-0" id="setup-template-detail-title">셋업 항목 관리 (전체 공통)</h4>
                                     <span id="setup-template-total-days" style="font-size: 13px; color: #3fb950; font-weight: bold;"></span>
                                 </div>
+                                {% if session.get('role') in ['admin', 'superadmin'] %}
                                 <div style="display: flex; gap: 5px;">
                                     <button id="btn-reset-setup-template" class="btn-orange-sm" style="font-size: 12px; padding: 4px 8px;">기본값 초기화</button>
                                     <button id="btn-save-setup-template" class="btn-blue-sm" style="font-size: 12px; padding: 4px 10px;">템플릿 저장</button>
                                 </div>
+                                {% endif %}
                             </div>
                             <p class="detail-desc" id="setup-template-detail-desc">셋업 구분을 선택하면 해당 구분의 세부 작업 내용과 소요일수를 공통으로 관리할 수 있습니다.</p>
                         </div>
@@ -828,12 +873,15 @@
                                 <div class="model-col" style="flex: 1.2; text-align: center;">구분</div>
                                 <div class="model-col" style="flex: 3; text-align: center;">작업 세부 내용</div>
                                 <div class="model-col" style="flex: 1; text-align: center;">소요일수(일)</div>
-                                <div class="model-col" style="width: 50px; text-align: center;">기능</div>
+                                {% if session.get('role') in ['admin', 'superadmin'] %}
+                                <div class="model-col col-action" style="width: 50px; text-align: center;">기능</div>
+                                {% endif %}
                             </div>
                             <ul id="setup-template-item-list" class="admin-list check-type-item-list" style="overflow-y: auto; max-height: 400px;">
                                 <!-- JS 동적 렌더링 -->
                             </ul>
 
+                            {% if session.get('role') in ['admin', 'superadmin'] %}
                             <div class="form-group form-section-divider">
                                 <label style="margin-bottom: 5px;">신규 셋업 작업 항목 추가</label>
                                 <div style="display: flex; gap: 6px; align-items: center;">
@@ -842,6 +890,7 @@
                                     <button id="btn-add-setup-template-item" class="btn-green-sm" style="height: 32px; padding: 0 12px; white-space: nowrap;">추가</button>
                                 </div>
                             </div>
+                            {% endif %}
                         </div>
                         <div id="setup-template-detail-placeholder" class="placeholder-container">
                             <p>좌측에서 셋업 구분을 선택해주세요.</p>
@@ -855,5 +904,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=11"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=31"></script>
 {% endblock %}

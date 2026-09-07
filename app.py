@@ -378,6 +378,7 @@ class ItemStock(db.Model):
     spec = db.Column(db.String(255), default='')                       # 세부 규격
     partno = db.Column(db.String(100), default='')                     # 품번
     detail_type = db.Column(db.String(100), default='')                # 상세 구분
+    grade = db.Column(db.String(20), default='A')                      # [추가] 물품 등급 (A, B, C)
     quantity = db.Column(db.Integer, default=0)                        # 보유/현재 수량
     safety_quantity = db.Column(db.Integer, default=0)                 # [추가] 안전 재고 수량
     memo = db.Column(db.String(255), default='')                       # 비고
@@ -394,6 +395,7 @@ class ItemStock(db.Model):
             'spec': self.spec or '',
             'partno': self.partno or '',
             'detail_type': self.detail_type or '',
+            'grade': self.grade or 'A',
             'quantity': self.quantity if self.quantity is not None else 0,
             'safety_quantity': self.safety_quantity if self.safety_quantity is not None else 0,
             'memo': self.memo or '',
@@ -462,10 +464,11 @@ class TroubleLog(db.Model):
 def ensure_item_stock_table():
     try:
         db.create_all()
-        # [추가] 사업장별 관리 및 안전 재고 수량 컬럼 마이그레이션 (SQLite / MySQL 호환)
+        # [추가] 사업장별 관리, 안전 재고 수량, 등급 컬럼 마이그레이션 (SQLite / MySQL 호환)
         stock_cols = [
             ('site_name', 'VARCHAR(100) DEFAULT ""'),
-            ('safety_quantity', 'INTEGER DEFAULT 0')
+            ('safety_quantity', 'INTEGER DEFAULT 0'),
+            ('grade', 'VARCHAR(20) DEFAULT "A"')
         ]
         for col, typ in stock_cols:
             try:
@@ -473,6 +476,11 @@ def ensure_item_stock_table():
                 db.session.commit()
             except Exception:
                 db.session.rollback()
+        try:
+            db.session.execute(text("UPDATE item_stock SET grade='A' WHERE grade IS NULL OR grade=''"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
     except Exception as e:
         app.logger.error(f"Error creating/ensuring item_stock table: {e}")
 
@@ -708,7 +716,7 @@ def load_data():
 
     # 2-1. 사업장별 물품 관리 현황 (ItemStock)
     try:
-        stocks = ItemStock.query.order_by(ItemStock.site_group, ItemStock.site_name, ItemStock.id).all()
+        stocks = ItemStock.query.order_by(ItemStock.site_group, ItemStock.site_name, ItemStock.code, ItemStock.grade, ItemStock.id).all()
         data['item_stocks'] = [s.to_dict() for s in stocks]
     except Exception as e:
         app.logger.error(f"Error fetching item_stocks: {e}")
@@ -1016,8 +1024,7 @@ def trouble():
 def admin():
     if 'user_id' not in session:
         return redirect('/')
-    if session.get('role') not in ['admin', 'superadmin']:
-        return redirect('/')
+    # 일반 계정도 admin 페이지 접근 허용 (조회 및 검색 전용)
     return render_template('admin.html')
 
 @app.route('/sort')
@@ -2666,6 +2673,7 @@ def admin_crud():
                 spec = str(payload.get('spec', '')).strip()
                 partno = str(payload.get('partno', '')).strip()
                 detail_type = str(payload.get('detail_type', '')).strip()
+                grade = str(payload.get('grade', 'A')).strip() or 'A'
                 try:
                     quantity = int(payload.get('quantity', 0))
                 except (ValueError, TypeError):
@@ -2682,8 +2690,8 @@ def admin_crud():
                 if not part and not code:
                     return jsonify({"status": "fail", "message": "물품명 또는 코드명이 필요합니다."}), 400
 
-                # 동일 사업장(또는 사업장 구분)에 동일한 물품(코드+물품명+규격)이 있는지 확인
-                query = ItemStock.query.filter_by(site_group=site_group, site_name=site_name)
+                # 동일 사업장(또는 사업장 구분)에 동일한 물품(코드+물품명+규격) 및 동일한 등급(grade)이 있는지 확인
+                query = ItemStock.query.filter_by(site_group=site_group, site_name=site_name, grade=grade)
                 existing = None
                 if code:
                     existing = query.filter_by(code=code, spec=spec).first()
@@ -2693,13 +2701,14 @@ def admin_crud():
                     existing = query.filter_by(part=part, spec=spec).first()
 
                 if existing:
-                    # 기존 물품이 있으면 수량 누적 및 안전재고 갱신
+                    # 기존 물품 및 동일 등급이 이미 있으면 수량 누적 및 안전재고 갱신
                     existing.quantity = (existing.quantity or 0) + quantity
                     if 'safety_quantity' in payload:
                         existing.safety_quantity = safety_quantity
                     if memo: existing.memo = memo
                     if partno and not existing.partno: existing.partno = partno
                     if detail_type and not existing.detail_type: existing.detail_type = detail_type
+                    existing.grade = grade
                     stock_id = existing.id
                 else:
                     new_stock = ItemStock(
@@ -2711,6 +2720,7 @@ def admin_crud():
                         spec=spec,
                         partno=partno,
                         detail_type=detail_type,
+                        grade=grade,
                         quantity=quantity,
                         safety_quantity=safety_quantity,
                         memo=memo
@@ -2738,6 +2748,8 @@ def admin_crud():
                         stock.safety_quantity = int(payload['safety_quantity'])
                     except (ValueError, TypeError):
                         pass
+                if 'grade' in payload:
+                    stock.grade = str(payload['grade']).strip() or 'A'
                 if 'site_name' in payload:
                     stock.site_name = str(payload['site_name']).strip()
                 if 'site_group' in payload:
