@@ -3062,7 +3062,9 @@ function renderSortChart(results) {
             titleEl.title = isDrilldownGrouped ? '클릭 시 개별 사업장 보기로 전환' : '클릭 시 사업장 구분별 보기로 전환';
             titleEl.onclick = () => {
                 isDrilldownGrouped = !isDrilldownGrouped;
-                renderDrilldownChart();
+                window.chartSelectedSiteFilter = null; // 뷰 전환 시 전역 필터 해제
+                if (window.chartRenderers) window.chartRenderers.forEach(fn => fn());
+                if (typeof renderSortListTableOnly === 'function') renderSortListTableOnly();
             };
         }
 
@@ -3095,14 +3097,19 @@ function renderSortChart(results) {
             return '기타사업장';
         };
 
-        const isMatchSite = (site) => {
+        const isMatchSite = (siteOrGroup) => {
             const filter = window.chartSelectedSiteFilter;
             if (!filter) return true;
-            if (filter === site) return true;
-            return getSiteGroupName(site) === filter;
+            if (filter === siteOrGroup) return true;
+            if (isDrilldownGrouped) {
+                return getSiteGroupName(filter) === siteOrGroup;
+            } else {
+                return getSiteGroupName(siteOrGroup) === filter;
+            }
         };
 
         // 데이터 필터링 및 집계: rawDataObj[category][site] = count
+        // (범례 표시를 위해 모든 사업장 목록을 수집해야 하므로 results 수집 시점에는 site 필터를 적용하지 않음)
         const rawDataObj = {};
         const activeSites = new Set();
 
@@ -3112,7 +3119,6 @@ function renderSortChart(results) {
             const rType = row.type || '기타';
 
             if (rModel !== model || rType !== workType) return;
-            if (!isMatchSite(row.site)) return;
 
             const parsed = getRowParsedDetails(row);
 
@@ -3161,34 +3167,6 @@ function renderSortChart(results) {
             });
         }
 
-        // Y축 최대값 계산
-        let maxCount = 0;
-        Object.values(currentDataObj).forEach(siteCounts => {
-            let catTotal = 0;
-            Object.values(siteCounts).forEach(cnt => {
-                catTotal += cnt;
-            });
-            if (catTotal > maxCount) maxCount = catTotal;
-        });
-
-        if (maxCount === 0) {
-            container.innerHTML = '<div class="list-empty-msg sort-chart-empty" style="padding: 40px; text-align: center; color: #8b949e;">해당 조건에 해당하는 세부 작업 내역이 없습니다.</div>';
-            if (legend) legend.innerHTML = '';
-            if (yAxis) yAxis.innerHTML = '';
-            return;
-        }
-
-        let yAxisMax = 10;
-        if (maxCount > 10) yAxisMax = Math.ceil(maxCount / 5) * 5;
-
-        yAxis.innerHTML = '';
-        for (let i = 0; i <= 5; i++) {
-            const val = Math.round((yAxisMax / 5) * i);
-            const div = document.createElement('div');
-            div.textContent = val;
-            yAxis.appendChild(div);
-        }
-
         // 사업장 구분(그룹) 및 개별 사업장별 고유 색상 맵핑
         const siteColors = ['#1f6feb', '#3fb950', '#d29922', '#8957e5', '#da3633', '#f0883e', '#0078d4', '#8b949e'];
         const siteColorMap = {};
@@ -3210,15 +3188,60 @@ function renderSortChart(results) {
             });
         }
 
-        // 범례 렌더링
+        // Y축 최대값 계산 및 활성 사업장 집계 (현재 선택된 사업장 필터 반영)
+        let maxCount = 0;
+        const activeSitesInChart = new Set();
+        Object.values(currentDataObj).forEach(siteCounts => {
+            Object.entries(siteCounts).forEach(([site, cnt]) => {
+                if (cnt > 0) activeSitesInChart.add(site);
+            });
+            let catTotal = 0;
+            Object.entries(siteCounts).forEach(([site, cnt]) => {
+                if (!isMatchSite(site)) return;
+                catTotal += cnt;
+            });
+            if (catTotal > maxCount) maxCount = catTotal;
+        });
+
+        // 범례 렌더링 (클릭 시 해당 사업장 필터 토글)
         if (legend) {
             legend.innerHTML = '';
             currentSitesArray.forEach(site => {
+                if (!activeSitesInChart.has(site)) return;
+                const isFaded = !isMatchSite(site);
                 const legDiv = document.createElement('div');
                 legDiv.className = 'legend-item';
+                if (isFaded) legDiv.classList.add('faded');
                 legDiv.innerHTML = `<div class="legend-color-box" style="background:${siteColorMap[site]};"></div><span title="${escapeHtml(site)}">${escapeHtml(site)}</span>`;
+                legDiv.style.cursor = 'pointer';
+                legDiv.onclick = () => {
+                    if (window.chartSelectedSiteFilter === site) {
+                        window.chartSelectedSiteFilter = null; // 토글 해제 (전체 보기)
+                    } else {
+                        window.chartSelectedSiteFilter = site; // 해당 사업장/구분 필터 설정
+                    }
+                    if (window.chartRenderers) window.chartRenderers.forEach(fn => fn());
+                    if (typeof renderSortListTableOnly === 'function') renderSortListTableOnly();
+                };
                 legend.appendChild(legDiv);
             });
+        }
+
+        if (maxCount === 0) {
+            container.innerHTML = '<div class="list-empty-msg sort-chart-empty" style="padding: 40px; text-align: center; color: #8b949e;">해당 조건에 해당하는 세부 작업 내역이 없습니다.</div>';
+            if (yAxis) yAxis.innerHTML = '';
+            return;
+        }
+
+        let yAxisMax = 10;
+        if (maxCount > 10) yAxisMax = Math.ceil(maxCount / 5) * 5;
+
+        yAxis.innerHTML = '';
+        for (let i = 0; i <= 5; i++) {
+            const val = Math.round((yAxisMax / 5) * i);
+            const div = document.createElement('div');
+            div.textContent = val;
+            yAxis.appendChild(div);
         }
 
         // CSV 내보내기 버튼 이벤트
@@ -3227,11 +3250,12 @@ function renderSortChart(results) {
                 e.stopPropagation();
                 let csvContent = '\uFEFF'; // BOM
                 const modeLabel = isDrilldownGrouped ? '사업장구분' : '사업장';
-                csvContent += `세부구분(Level${level}),${currentSitesArray.map(s => '"' + String(s).replace(/"/g, '""') + '"').join(',')},총합계\n`;
+                const sitesForCsv = currentSitesArray.filter(s => isMatchSite(s));
+                csvContent += `세부구분(Level${level}),${sitesForCsv.map(s => '"' + String(s).replace(/"/g, '""') + '"').join(',')},총합계\n`;
 
                 const sortedCategoriesForCsv = Object.keys(currentDataObj).map(cat => {
                     let total = 0;
-                    currentSitesArray.forEach(site => {
+                    sitesForCsv.forEach(site => {
                         total += (currentDataObj[cat][site] || 0);
                     });
                     return { cat, total };
@@ -3240,7 +3264,7 @@ function renderSortChart(results) {
                 sortedCategoriesForCsv.forEach(({ cat, total }) => {
                     if (total === 0) return;
                     let row = [`"${String(cat).replace(/"/g, '""')}"`];
-                    currentSitesArray.forEach(site => {
+                    sitesForCsv.forEach(site => {
                         row.push(currentDataObj[cat][site] || 0);
                     });
                     row.push(total);
@@ -3262,14 +3286,15 @@ function renderSortChart(results) {
             };
         }
 
-        // 카테고리 정렬 (건수 많은 순 내림차순)
+        // 카테고리 정렬 (건수 많은 순 내림차순, 선택된 사업장의 데이터 기준)
         const sortedCategories = Object.keys(currentDataObj).map(cat => {
             let total = 0;
             currentSitesArray.forEach(site => {
+                if (!isMatchSite(site)) return;
                 total += (currentDataObj[cat][site] || 0);
             });
             return { cat, total };
-        }).sort((a, b) => {
+        }).filter(item => item.total > 0).sort((a, b) => {
             if (b.total !== a.total) return b.total - a.total;
             return (a.cat || '').localeCompare(b.cat || '');
         });
@@ -3285,6 +3310,7 @@ function renderSortChart(results) {
             let totalInGroup = 0;
 
             currentSitesArray.forEach(site => {
+                if (!isMatchSite(site)) return;
                 const count = currentDataObj[cat][site] || 0;
                 if (count > 0) {
                     totalInGroup++;
