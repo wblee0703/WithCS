@@ -1384,7 +1384,31 @@ function setupSortEvents() {
 }
 
 // [4.2] 핵심 검색 로직: 선택된 필터 조건들을 매칭하여 결과 도출
+let isSortSearchRunning = false;
+
 function performSortSearch() {
+    if (isSortSearchRunning) return;
+    isSortSearchRunning = true;
+
+    if (typeof window.showLoading === 'function') {
+        window.showLoading('로딩 중입니다...');
+    }
+
+    setTimeout(() => {
+        try {
+            executeSortSearch();
+        } catch (err) {
+            console.error('performSortSearch Error:', err);
+        } finally {
+            isSortSearchRunning = false;
+            if (typeof window.hideLoading === 'function') {
+                window.hideLoading();
+            }
+        }
+    }, 40);
+}
+
+function executeSortSearch() {
     const siteFilters = getMultiValues('sort-site-select');
     const buildingFilters = getMultiValues('sort-building-select');
     const modelFilters = getMultiValues('sort-model-select');
@@ -2149,6 +2173,10 @@ function renderSortChart(results) {
     const custResponseYAxis = document.getElementById('sort-cust-response-y-axis');
     const custResponseLegend = document.getElementById('sort-cust-response-legend');
 
+    const equipModelContainer = document.getElementById('sort-equip-model-chart-container');
+    const equipModelYAxis = document.getElementById('sort-equip-model-y-axis');
+    const equipModelLegend = document.getElementById('sort-equip-model-legend');
+
     if (!container) return;
 
     const itemDetailTypeFilters = getMultiValues('sort-item-detail-type-select');
@@ -2175,6 +2203,9 @@ function renderSortChart(results) {
     if (custResponseContainer) custResponseContainer.innerHTML = '';
     if (custResponseYAxis) custResponseYAxis.innerHTML = '';
     if (custResponseLegend) custResponseLegend.innerHTML = '';
+    if (equipModelContainer) equipModelContainer.innerHTML = '';
+    if (equipModelYAxis) equipModelYAxis.innerHTML = '';
+    if (equipModelLegend) equipModelLegend.innerHTML = '';
 
     if (results.length === 0) {
         container.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
@@ -2184,6 +2215,7 @@ function renderSortChart(results) {
         if (detailType2Container) detailType2Container.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
         if (irregularContainer) irregularContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
         if (custResponseContainer) custResponseContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
+        if (equipModelContainer) equipModelContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
         return;
     }
 
@@ -2200,6 +2232,8 @@ function renderSortChart(results) {
     const detailType2SiteCounts = {};
     const irregularSiteCounts = {};
     const custResponseSiteCounts = {};
+    const equipModelData = {};
+    const allWorkTypes = new Set(['정기', '비정기', '고객대응', '용액제조', '온라인점검']);
     const allSites = new Set();
     const allowedCustResponseItems = ['순회 점검', '프로그램 변경 / 평가', '설비 평가', '파티클 필터 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'];
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
@@ -2325,6 +2359,20 @@ function renderSortChart(results) {
                 if (!custResponseSiteCounts[matchedItem]) custResponseSiteCounts[matchedItem] = {};
                 custResponseSiteCounts[matchedItem][row.site] = (custResponseSiteCounts[matchedItem][row.site] || 0) + 1;
             }
+        }
+
+        // [추가] 장비 모델별 작업구분 및 사업장별 데이터 수집
+        let equipModel = row.modelName || row.equipName || '';
+        if (!equipModel && row.equipRaw) {
+            equipModel = row.equipRaw.split('::')[0];
+        }
+        if (!equipModel) equipModel = '기타';
+        const workType = row.type || '기타';
+        if (equipModel && row.site) {
+            if (!equipModelData[equipModel]) equipModelData[equipModel] = {};
+            if (!equipModelData[equipModel][row.site]) equipModelData[equipModel][row.site] = {};
+            equipModelData[equipModel][row.site][workType] = (equipModelData[equipModel][row.site][workType] || 0) + 1;
+            allWorkTypes.add(workType);
         }
     });
 
@@ -2627,6 +2675,281 @@ function renderSortChart(results) {
     drawGroupedChart(detailType2SiteCounts, detailType2Container, detailType2YAxis, detailType2Legend, sitesArray);
     drawGroupedChart(irregularSiteCounts, irregularContainer, irregularYAxis, irregularLegend, sitesArray);
     drawGroupedChart(custResponseSiteCounts, custResponseContainer, custResponseYAxis, custResponseLegend, sitesArray);
+
+    // [추가] 장비별 작업 현황 차트 렌더링 헬퍼 함수 정의 및 실행
+    const drawEquipModelChart = (targetContainer, targetYAxis, targetLegend) => {
+        if (!targetContainer || !targetYAxis) return;
+
+        const card = targetContainer.closest('.sort-full-chart');
+        let titleEl = null;
+        let exportBtn = null;
+
+        if (card) {
+            titleEl = card.querySelector('h3, .card-title, .status-group-title') || card.firstElementChild;
+            if (titleEl) {
+                const newTitleEl = titleEl.cloneNode(true);
+                titleEl.parentNode.replaceChild(newTitleEl, titleEl);
+                titleEl = newTitleEl;
+
+                titleEl.style.display = 'flex';
+                titleEl.style.justifyContent = 'space-between';
+                titleEl.style.alignItems = 'center';
+
+                exportBtn = titleEl.querySelector('.btn-export-chart-csv');
+                if (!exportBtn) {
+                    exportBtn = document.createElement('button');
+                    exportBtn.className = 'btn-export-chart-csv';
+                    exportBtn.innerHTML = '⬇️ CSV';
+                    exportBtn.title = '차트 데이터 CSV 추출';
+                    exportBtn.style.cssText = 'padding: 2px 6px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid #30363d; background: transparent; color: #8b949e; margin-left: auto;';
+                    titleEl.appendChild(exportBtn);
+                }
+            }
+        }
+
+        const getSiteGroupName = (s) => {
+            try {
+                const meta = JSON.parse(localStorage.getItem(`site_meta_${s}`));
+                if (meta && meta.group) return meta.group;
+            } catch (e) { }
+            return '기타사업장';
+        };
+
+        const isMatchSite = (site) => {
+            const filter = window.chartSelectedSiteFilter;
+            if (!filter) return true;
+            if (filter === site) return true;
+            return getSiteGroupName(site) === filter;
+        };
+
+        let selectedWorkTypeFilter = null; // 범례 클릭 시 작업 구분 필터
+
+        const workTypeOrder = ['정기', '비정기', '고객대응', '용액제조', '온라인점검'];
+        Array.from(allWorkTypes).forEach(wt => {
+            if (!workTypeOrder.includes(wt)) workTypeOrder.push(wt);
+        });
+
+        const workTypeColors = {
+            '정기': '#238636',
+            '비정기': '#eb371f',
+            '고객대응': '#d29922',
+            '용액제조': '#8957e5',
+            '온라인점검': '#0078d4'
+        };
+        const fallbackColors = ['#1f6feb', '#f0883e', '#da3633', '#1b7c83', '#8b949e', '#a371f7', '#56d364'];
+        const getWorkTypeColor = (wt, idx) => {
+            return workTypeColors[wt] || fallbackColors[idx % fallbackColors.length];
+        };
+
+        const renderInner = () => {
+            // [추가] 현재 사이트 필터에 맞는 모델별 장비 대수(고유 장비 식별자) 수집
+            const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
+            const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+            const modelEquipCountSet = {};
+
+            Object.keys(deviceData).forEach(site => {
+                if (!isMatchSite(site)) return;
+                if (!Array.isArray(deviceData[site])) return;
+
+                deviceData[site].forEach(equip => {
+                    if (typeof equip !== 'string' || equip.startsWith('기타(ETC)')) return;
+                    const parts = equip.split('::');
+                    const equipName = parts[0];
+                    const matchedModel = equipmentModels.find(m => m.name === equipName || m.abbr === equipName);
+                    const model = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : equipName;
+
+                    if (!modelEquipCountSet[model]) modelEquipCountSet[model] = new Set();
+                    modelEquipCountSet[model].add(`${site}::${equip}`);
+                });
+            });
+
+            // results에 등장하는 장비도 해당 모델의 고유 장비 Set에 누락 방지 병합
+            results.forEach(row => {
+                if (!isMatchSite(row.site)) return;
+                const model = row.modelName || row.equipName || '기타';
+                if (!modelEquipCountSet[model]) modelEquipCountSet[model] = new Set();
+                const equipId = row.equipRaw ? `${row.site}::${row.equipRaw}` : `${row.site}::${row.custName || row.serial || 'unknown'}`;
+                modelEquipCountSet[model].add(equipId);
+            });
+
+            // 현재 사이트 필터에 맞게 model -> workType count 집계
+            const currentDataObj = {};
+            const activeWorkTypesInChart = new Set();
+
+            Object.keys(equipModelData).forEach(model => {
+                currentDataObj[model] = {};
+                Object.keys(equipModelData[model]).forEach(site => {
+                    if (isMatchSite(site)) {
+                        Object.entries(equipModelData[model][site]).forEach(([wt, count]) => {
+                            currentDataObj[model][wt] = (currentDataObj[model][wt] || 0) + count;
+                            if (count > 0) activeWorkTypesInChart.add(wt);
+                        });
+                    }
+                });
+            });
+
+            // Y축 최대값 계산
+            let maxCount = 0;
+            Object.keys(currentDataObj).forEach(model => {
+                Object.entries(currentDataObj[model]).forEach(([wt, val]) => {
+                    if (selectedWorkTypeFilter && selectedWorkTypeFilter !== wt) return;
+                    if (val > maxCount) maxCount = val;
+                });
+            });
+
+            if (maxCount === 0) {
+                targetContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">표시할 데이터가 없습니다.</div>';
+                if (targetLegend) targetLegend.innerHTML = '';
+                if (targetYAxis) targetYAxis.innerHTML = '';
+                return;
+            }
+
+            let yAxisMax = 10;
+            if (maxCount > 10) yAxisMax = Math.ceil(maxCount / 5) * 5;
+
+            if (targetYAxis) {
+                targetYAxis.innerHTML = '';
+                for (let i = 0; i <= 5; i++) {
+                    const val = Math.round((yAxisMax / 5) * i);
+                    const div = document.createElement('div');
+                    div.textContent = val;
+                    targetYAxis.appendChild(div);
+                }
+            }
+
+            // 범례 렌더링
+            const availableWorkTypes = workTypeOrder.filter(wt => activeWorkTypesInChart.has(wt));
+            if (targetLegend) {
+                targetLegend.innerHTML = '';
+                availableWorkTypes.forEach((wt, idx) => {
+                    const isFaded = selectedWorkTypeFilter && selectedWorkTypeFilter !== wt;
+                    const legDiv = document.createElement('div');
+                    legDiv.className = 'legend-item';
+                    if (isFaded) legDiv.classList.add('faded');
+                    legDiv.innerHTML = `<div class="legend-color-box" style="background:${getWorkTypeColor(wt, idx)};"></div><span title="${escapeHtml(wt)}">${escapeHtml(wt)}</span>`;
+                    legDiv.onclick = () => {
+                        if (selectedWorkTypeFilter === wt) {
+                            selectedWorkTypeFilter = null;
+                        } else {
+                            selectedWorkTypeFilter = wt;
+                        }
+                        renderInner();
+                    };
+                    targetLegend.appendChild(legDiv);
+                });
+            }
+
+            // CSV 추출 이벤트 연결
+            if (exportBtn && titleEl) {
+                exportBtn.onclick = (e) => {
+                    e.stopPropagation();
+
+                    let csvContent = '\uFEFF'; // 한글 깨짐 방지 BOM
+                    const typesForCsv = availableWorkTypes;
+                    csvContent += `장비모델,장비대수,${typesForCsv.map(t => '"' + String(t).replace(/"/g, '""') + '"').join(',')},총합계\n`;
+
+                    // 모델 정렬 (합계 많은 순)
+                    const sortedModelsForCsv = Object.keys(currentDataObj).map(model => {
+                        let total = 0;
+                        typesForCsv.forEach(t => {
+                            total += (currentDataObj[model][t] || 0);
+                        });
+                        return { model, total };
+                    }).sort((a, b) => {
+                        if (b.total !== a.total) return b.total - a.total;
+                        return (a.model || '').localeCompare(b.model || '');
+                    });
+
+                    sortedModelsForCsv.forEach(({ model, total }) => {
+                        if (total === 0) return;
+                        const mCount = modelEquipCountSet[model] ? modelEquipCountSet[model].size : 0;
+                        let row = [`"${String(model).replace(/"/g, '""')}"`, mCount];
+                        typesForCsv.forEach(t => {
+                            row.push(currentDataObj[model][t] || 0);
+                        });
+                        row.push(total);
+                        csvContent += row.join(',') + '\n';
+                    });
+
+                    const rawTitle = titleEl.cloneNode(true);
+                    const btnToRemove = rawTitle.querySelector('.btn-export-chart-csv');
+                    if (btnToRemove) btnToRemove.remove();
+                    const titleName = rawTitle.textContent.trim().replace(/\s+/g, '_');
+
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `SORT_통계_${titleName}_${new Date().toISOString().slice(0, 10)}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    logActionToServer('EXPORT_CSV', '정렬/통계 차트 데이터 CSV 내보내기 (' + titleName + ')');
+                };
+            }
+
+            // 모델별 정렬 (선택 필터 감안한 총 건수 기준 내림차순 정렬)
+            const sortedModels = Object.keys(currentDataObj).map(model => {
+                let currentTotal = 0;
+                availableWorkTypes.forEach(wt => {
+                    if (selectedWorkTypeFilter && selectedWorkTypeFilter !== wt) return;
+                    currentTotal += (currentDataObj[model][wt] || 0);
+                });
+                return { model, total: currentTotal };
+            }).sort((a, b) => {
+                if (b.total !== a.total) return b.total - a.total;
+                return (a.model || '').localeCompare(b.model || '');
+            }).map(item => item.model);
+
+            targetContainer.innerHTML = '';
+            sortedModels.forEach(model => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'sort-bar-group type-group';
+                const trackDiv = document.createElement('div');
+                trackDiv.className = 'bar-track';
+                let totalInGroup = 0;
+
+                availableWorkTypes.forEach((wt, idx) => {
+                    if (selectedWorkTypeFilter && selectedWorkTypeFilter !== wt) return;
+                    const count = currentDataObj[model][wt] || 0;
+                    if (count > 0) {
+                        totalInGroup++;
+                        const heightPct = (count / yAxisMax) * 100;
+                        const bgStyle = getWorkTypeColor(wt, idx);
+                        const barWrapper = document.createElement('div');
+                        barWrapper.className = 'multi-bar-wrapper';
+                        barWrapper.title = `${escapeHtml(model)} - ${escapeHtml(wt)}: ${count}건`;
+                        barWrapper.innerHTML = `<div class="bar-value">${count}</div><div class="bar" style="height: ${heightPct}%; background: ${bgStyle};"></div>`;
+                        trackDiv.appendChild(barWrapper);
+                    }
+                });
+
+                const equipCount = modelEquipCountSet[model] ? modelEquipCountSet[model].size : 0;
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'bar-label';
+                labelDiv.style.textAlign = 'right';
+                labelDiv.innerHTML = `<div style="color: #e6edf3; font-weight: 500;">${escapeHtml(model)}</div><div style="font-size: 10px; color: #8b949e; margin-top: 2px;">(${equipCount})</div>`;
+                labelDiv.title = `${model} (장비 대수: ${equipCount}대)`;
+                groupDiv.appendChild(trackDiv);
+                groupDiv.appendChild(labelDiv);
+
+                if (totalInGroup > 0) {
+                    const computedMinWidth = Math.max(60, totalInGroup * 35);
+                    groupDiv.style.minWidth = computedMinWidth + 'px';
+                    targetContainer.appendChild(groupDiv);
+                }
+            });
+        };
+
+        if (!window.chartRenderers) window.chartRenderers = [];
+        window.chartRenderers.push(renderInner);
+
+        renderInner();
+    };
+
+    drawEquipModelChart(equipModelContainer, equipModelYAxis, equipModelLegend);
 }
 
 /* ==========================================================================
