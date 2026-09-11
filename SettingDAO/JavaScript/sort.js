@@ -3307,46 +3307,127 @@ function renderSortChart(results) {
             yAxis.appendChild(div);
         }
 
-        // CSV 내보내기 버튼 이벤트
+        // 엑셀(다중 시트: 세부구분 1, 2, 3) 내보내기 버튼 이벤트
         if (exportBtn) {
             exportBtn.onclick = (e) => {
                 e.stopPropagation();
-                let csvContent = '\uFEFF'; // BOM
                 const modeLabel = isDrilldownGrouped ? '사업장구분' : '사업장';
-                const sitesForCsv = currentSitesArray.filter(s => isMatchSite(s));
-                csvContent += `세부구분(Level${level}),${sitesForCsv.map(s => '"' + String(s).replace(/"/g, '""') + '"').join(',')},총합계\n`;
+                const sitesForExport = currentSitesArray.filter(s => isMatchSite(s));
 
-                const sortedCategoriesForCsv = Object.keys(currentDataObj).map(cat => {
-                    let total = 0;
-                    sitesForCsv.forEach(site => {
-                        total += (currentDataObj[cat][site] || 0);
+                // 시트별 데이터 빌더 함수
+                const buildSheetData = (dKey, headerTitle) => {
+                    const countsObj = {};
+                    results.forEach(row => {
+                        if (row.status !== '완료') return;
+                        const rModel = row.modelName || row.equipName || (row.equipRaw ? row.equipRaw.split('::')[0] : '기타');
+                        const rType = row.type || '기타';
+                        if (rModel !== model || rType !== workType) return;
+                        if (!isMatchSite(row.site)) return;
+
+                        const parsed = getRowParsedDetails(row);
+                        const cat = parsed[dKey] || '미지정';
+                        if (!countsObj[cat]) countsObj[cat] = {};
+
+                        let siteCol = row.site;
+                        if (isDrilldownGrouped) {
+                            siteCol = getSiteGroupName(row.site);
+                        }
+                        countsObj[cat][siteCol] = (countsObj[cat][siteCol] || 0) + 1;
                     });
-                    return { cat, total };
-                }).sort((a, b) => b.total - a.total);
 
-                sortedCategoriesForCsv.forEach(({ cat, total }) => {
-                    if (total === 0) return;
-                    let row = [`"${String(cat).replace(/"/g, '""')}"`];
-                    sitesForCsv.forEach(site => {
-                        row.push(currentDataObj[cat][site] || 0);
+                    const rows = [];
+                    // 헤더 행
+                    rows.push([headerTitle, ...sitesForExport, '총합계']);
+
+                    // 정렬 (총합계 내림차순)
+                    const sortedCats = Object.keys(countsObj).map(cat => {
+                        let total = 0;
+                        sitesForExport.forEach(site => {
+                            total += (countsObj[cat][site] || 0);
+                        });
+                        return { cat, total };
+                    }).filter(item => item.total > 0).sort((a, b) => {
+                        if (b.total !== a.total) return b.total - a.total;
+                        return (a.cat || '').localeCompare(b.cat || '');
                     });
-                    row.push(total);
-                    csvContent += row.join(',') + '\n';
-                });
 
-                const globalSuffix = isGlobalMode ? '_전체' : '';
-                const fileName = `SORT_드릴다운_${model}_${workType}_Level${level}${globalSuffix}_${modeLabel}_${new Date().toISOString().slice(0, 10)}.csv`;
-                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                    sortedCats.forEach(({ cat, total }) => {
+                        const row = [cat];
+                        sitesForExport.forEach(site => {
+                            row.push(countsObj[cat][site] || 0);
+                        });
+                        row.push(total);
+                        rows.push(row);
+                    });
 
-                logActionToServer('EXPORT_CSV', `정렬/통계 드릴다운 차트 CSV (${fileName})`);
+                    return rows;
+                };
+
+                if (typeof XLSX !== 'undefined') {
+                    const wb = XLSX.utils.book_new();
+
+                    const sheetConfigs = [
+                        { dKey: 'd1', name: '세부구분 1' },
+                        { dKey: 'd2', name: '세부구분 2' },
+                        { dKey: 'd3', name: '세부구분 3' }
+                    ];
+
+                    sheetConfigs.forEach(({ dKey, name }) => {
+                        const sheetData = buildSheetData(dKey, name);
+                        const ws = XLSX.utils.aoa_to_sheet(sheetData);
+
+                        // 열 너비 자동 맞춤
+                        const colWidths = [{ wch: 30 }];
+                        for (let i = 0; i < sitesForExport.length; i++) {
+                            colWidths.push({ wch: 14 });
+                        }
+                        colWidths.push({ wch: 14 }); // 총합계 열
+                        ws['!cols'] = colWidths;
+
+                        // 헤더 셀 스타일 적용 (배경색, 굵게, 중앙 정렬, 테두리)
+                        const range = XLSX.utils.decode_range(ws['!ref'] || 'A1:A1');
+                        for (let C = range.s.c; C <= range.e.c; ++C) {
+                            const cellAddress = XLSX.utils.encode_cell({ r: 0, c: C });
+                            if (ws[cellAddress]) {
+                                ws[cellAddress].s = {
+                                    fill: { fgColor: { rgb: '21262D' } },
+                                    font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+                                    alignment: { horizontal: 'center', vertical: 'center' },
+                                    border: {
+                                        top: { style: 'thin', color: { rgb: '444C56' } },
+                                        bottom: { style: 'thin', color: { rgb: '444C56' } },
+                                        left: { style: 'thin', color: { rgb: '444C56' } },
+                                        right: { style: 'thin', color: { rgb: '444C56' } }
+                                    }
+                                };
+                            }
+                        }
+
+                        XLSX.utils.book_append_sheet(wb, ws, name);
+                    });
+
+                    const fileName = `SORT_드릴다운_${model}_${workType}_세부구분1_2_3_${modeLabel}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+                    XLSX.writeFile(wb, fileName);
+                    logActionToServer('EXPORT_EXCEL', `정렬/통계 드릴다운 다중시트 엑셀 (${fileName})`);
+                } else {
+                    // XLSX 미지원 환경 대비 폴백 CSV
+                    let csvContent = '\uFEFF';
+                    const data1 = buildSheetData('d1', '세부구분 1');
+                    data1.forEach(row => {
+                        csvContent += row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',') + '\n';
+                    });
+                    const fileName = `SORT_드릴다운_${model}_${workType}_Level1_${modeLabel}_${new Date().toISOString().slice(0, 10)}.csv`;
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    logActionToServer('EXPORT_CSV', `정렬/통계 드릴다운 차트 CSV (${fileName})`);
+                }
             };
         }
 
