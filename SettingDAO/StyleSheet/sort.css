@@ -572,7 +572,8 @@
 #sort-detail-type2-chart-container,
 #sort-irregular-chart-container,
 #sort-cust-response-chart-container,
-#sort-equip-model-chart-container {
+#sort-equip-model-chart-container,
+#sort-drilldown-chart-container {
     position: relative;
     flex: 1;
     min-width: 0;
@@ -586,7 +587,8 @@
 #sort-detail-type2-chart-container::after,
 #sort-irregular-chart-container::after,
 #sort-cust-response-chart-container::after,
-#sort-equip-model-chart-container::after {
+#sort-equip-model-chart-container::after,
+#sort-drilldown-chart-container::after {
     content: '';
     position: absolute;
     left: 0;
@@ -606,7 +608,8 @@
 #sort-detail-type2-y-axis,
 #sort-irregular-y-axis,
 #sort-cust-response-y-axis,
-#sort-equip-model-y-axis {
+#sort-equip-model-y-axis,
+#sort-drilldown-y-axis {
     margin-bottom: 100px !important;
 }
 
@@ -617,7 +620,8 @@
 #sort-detail-type2-chart-container,
 #sort-irregular-chart-container,
 #sort-cust-response-chart-container,
-#sort-equip-model-chart-container {
+#sort-equip-model-chart-container,
+#sort-drilldown-chart-container {
     padding-bottom: 100px !important;
 }
 

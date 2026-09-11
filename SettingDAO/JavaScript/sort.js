@@ -2920,8 +2920,13 @@ function renderSortChart(results) {
                         const bgStyle = getWorkTypeColor(wt, idx);
                         const barWrapper = document.createElement('div');
                         barWrapper.className = 'multi-bar-wrapper';
-                        barWrapper.title = `${escapeHtml(model)} - ${escapeHtml(wt)}: ${count}건`;
+                        barWrapper.title = `${escapeHtml(model)} - ${escapeHtml(wt)}: ${count}건\n(클릭 시 세부구분별 분석 보기)`;
+                        barWrapper.style.cursor = 'pointer';
                         barWrapper.innerHTML = `<div class="bar-value">${count}</div><div class="bar" style="height: ${heightPct}%; background: ${bgStyle};"></div>`;
+                        barWrapper.onclick = (e) => {
+                            e.stopPropagation();
+                            openDrilldownChart(model, wt, 1, null, null);
+                        };
                         trackDiv.appendChild(barWrapper);
                     }
                 });
@@ -2950,6 +2955,375 @@ function renderSortChart(results) {
     };
 
     drawEquipModelChart(equipModelContainer, equipModelYAxis, equipModelLegend);
+
+    // [추가] 장비 모델 세부구분(1 -> 2 -> 3) 순차 드릴다운 연동 차트 구현
+    let isDrilldownGrouped = true; // [요청] 초기에는 사업장 구분별로 그룹화 표시
+    let drilldownState = {
+        active: false,
+        model: null,
+        workType: null,
+        level: 1, // 1: 세부구분 1, 2: 세부구분 2, 3: 세부구분 3
+        d1: null,
+        d2: null
+    };
+
+    // 행 단위 세부구분 1, 2, 3 정밀 파싱 헬퍼 함수
+    const getRowParsedDetails = (row) => {
+        let d1 = '';
+        let d2 = '';
+        let d3 = '';
+        if (row.detailType && row.detailType.includes(' > ')) {
+            const parts = row.detailType.split(' > ');
+            d1 = parts[0].trim();
+            d2 = parts[1] ? parts[1].trim() : '-';
+            d3 = parts[2] ? parts[2].trim() : '-';
+        } else {
+            d1 = row.detailType || '-';
+            d2 = '-';
+            d3 = '-';
+        }
+        if (row.detailType3 && row.detailType3 !== '미지정') {
+            d3 = row.detailType3;
+        } else if (row.detailType3 === '미지정' && (d3 === '' || d3 === '-')) {
+            d3 = '미지정';
+        }
+
+        if (row.type === '비정기' && (d3 === '-' || !d3 || d3 === '미지정') && row.content) {
+            const items = window.splitSafetyContent(row.content);
+            for (const item of items) {
+                let cleanItem = item.replace(/^\[[^\]]+\]\s*/g, '').trim();
+                if (cleanItem.includes(' - ')) {
+                    d3 = cleanItem.split(' - ')[0].trim();
+                    break;
+                } else {
+                    const defaultKeywords = ["현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상", "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"];
+                    if (defaultKeywords.includes(cleanItem)) {
+                        d3 = cleanItem;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return {
+            d1: d1 || '미지정',
+            d2: d2 || '미지정',
+            d3: d3 || '미지정'
+        };
+    };
+
+    const openDrilldownChart = (model, workType, level, d1 = null, d2 = null) => {
+        drilldownState = {
+            active: true,
+            model,
+            workType,
+            level,
+            d1,
+            d2
+        };
+        const wrapper = document.getElementById('sort-drilldown-wrapper');
+        if (wrapper) {
+            wrapper.style.display = 'flex';
+            setTimeout(() => {
+                wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 50);
+        }
+        renderDrilldownChart();
+    };
+
+    const renderDrilldownChart = () => {
+        const wrapper = document.getElementById('sort-drilldown-wrapper');
+        const container = document.getElementById('sort-drilldown-chart-container');
+        const yAxis = document.getElementById('sort-drilldown-y-axis');
+        const legend = document.getElementById('sort-drilldown-legend');
+        const titleEl = document.getElementById('drilldown-title');
+        const backBtn = document.getElementById('btn-drilldown-back');
+        const closeBtn = document.getElementById('btn-drilldown-close');
+        const exportBtn = document.getElementById('btn-drilldown-export-csv');
+
+        if (!wrapper || !container || !yAxis) return;
+        if (!drilldownState.active) {
+            wrapper.style.display = 'none';
+            return;
+        }
+
+        const { model, workType, level, d1, d2 } = drilldownState;
+
+        // 닫기 버튼 이벤트
+        if (closeBtn) {
+            closeBtn.onclick = () => {
+                drilldownState.active = false;
+                wrapper.style.display = 'none';
+            };
+        }
+
+        if (titleEl) {
+            titleEl.style.cursor = 'pointer';
+            titleEl.title = isDrilldownGrouped ? '클릭 시 개별 사업장 보기로 전환' : '클릭 시 사업장 구분별 보기로 전환';
+            titleEl.onclick = () => {
+                isDrilldownGrouped = !isDrilldownGrouped;
+                renderDrilldownChart();
+            };
+        }
+
+        // 뒤로가기 버튼 이벤트 및 타이틀 설정
+        if (level === 1) {
+            if (backBtn) backBtn.style.display = 'none';
+            if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} <span style="color: #8b949e; font-weight: normal;">&gt; 세부구분 1별 빈도수</span>`;
+        } else if (level === 2) {
+            if (backBtn) {
+                backBtn.style.display = 'inline-block';
+                backBtn.textContent = '◀ 세부구분 1';
+                backBtn.onclick = () => openDrilldownChart(model, workType, 1, null, null);
+            }
+            if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} &gt; <span style="color: #58a6ff;">${escapeHtml(d1)}</span> <span style="color: #8b949e; font-weight: normal;">&gt; 세부구분 2별 빈도수</span>`;
+        } else if (level === 3) {
+            if (backBtn) {
+                backBtn.style.display = 'inline-block';
+                backBtn.textContent = '◀ 세부구분 2';
+                backBtn.onclick = () => openDrilldownChart(model, workType, 2, d1, null);
+            }
+            if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} &gt; ${escapeHtml(d1)} &gt; <span style="color: #58a6ff;">${escapeHtml(d2)}</span> <span style="color: #8b949e; font-weight: normal;">&gt; 세부구분 3별 빈도수</span>`;
+        }
+
+        // 사업장 그룹 매칭 함수
+        const getSiteGroupName = (s) => {
+            try {
+                const meta = JSON.parse(localStorage.getItem(`site_meta_${s}`));
+                if (meta && meta.group) return meta.group;
+            } catch (e) { }
+            return '기타사업장';
+        };
+
+        const isMatchSite = (site) => {
+            const filter = window.chartSelectedSiteFilter;
+            if (!filter) return true;
+            if (filter === site) return true;
+            return getSiteGroupName(site) === filter;
+        };
+
+        // 데이터 필터링 및 집계: rawDataObj[category][site] = count
+        const rawDataObj = {};
+        const activeSites = new Set();
+
+        results.forEach(row => {
+            if (row.status !== '완료') return;
+            const rModel = row.modelName || row.equipName || (row.equipRaw ? row.equipRaw.split('::')[0] : '기타');
+            const rType = row.type || '기타';
+
+            if (rModel !== model || rType !== workType) return;
+            if (!isMatchSite(row.site)) return;
+
+            const parsed = getRowParsedDetails(row);
+
+            if (level === 1) {
+                const cat = parsed.d1 || '미지정';
+                if (!rawDataObj[cat]) rawDataObj[cat] = {};
+                rawDataObj[cat][row.site] = (rawDataObj[cat][row.site] || 0) + 1;
+                activeSites.add(row.site);
+            } else if (level === 2) {
+                if (parsed.d1 !== d1) return;
+                const cat = parsed.d2 || '미지정';
+                if (!rawDataObj[cat]) rawDataObj[cat] = {};
+                rawDataObj[cat][row.site] = (rawDataObj[cat][row.site] || 0) + 1;
+                activeSites.add(row.site);
+            } else if (level === 3) {
+                if (parsed.d1 !== d1 || parsed.d2 !== d2) return;
+                const cat = parsed.d3 || '미지정';
+                if (!rawDataObj[cat]) rawDataObj[cat] = {};
+                rawDataObj[cat][row.site] = (rawDataObj[cat][row.site] || 0) + 1;
+                activeSites.add(row.site);
+            }
+        });
+
+        // [핵심] 사업장 구분(그룹화) 또는 개별 사업장 단위 데이터 가공
+        let currentDataObj = rawDataObj;
+        let currentSitesArray = Array.from(activeSites).sort();
+
+        if (isDrilldownGrouped) {
+            const groupedDataObj = {};
+            const groupedSitesSet = new Set();
+
+            Object.keys(rawDataObj).forEach(cat => {
+                groupedDataObj[cat] = {};
+                Object.keys(rawDataObj[cat]).forEach(site => {
+                    let groupName = getSiteGroupName(site);
+                    groupedSitesSet.add(groupName);
+                    groupedDataObj[cat][groupName] = (groupedDataObj[cat][groupName] || 0) + rawDataObj[cat][site];
+                });
+            });
+
+            currentDataObj = groupedDataObj;
+            const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
+            currentSitesArray = order.filter(name => groupedSitesSet.has(name));
+            Array.from(groupedSitesSet).forEach(name => {
+                if (!order.includes(name)) currentSitesArray.push(name);
+            });
+        }
+
+        // Y축 최대값 계산
+        let maxCount = 0;
+        Object.values(currentDataObj).forEach(siteCounts => {
+            let catTotal = 0;
+            Object.values(siteCounts).forEach(cnt => {
+                catTotal += cnt;
+            });
+            if (catTotal > maxCount) maxCount = catTotal;
+        });
+
+        if (maxCount === 0) {
+            container.innerHTML = '<div class="list-empty-msg sort-chart-empty" style="padding: 40px; text-align: center; color: #8b949e;">해당 조건에 해당하는 세부 작업 내역이 없습니다.</div>';
+            if (legend) legend.innerHTML = '';
+            if (yAxis) yAxis.innerHTML = '';
+            return;
+        }
+
+        let yAxisMax = 10;
+        if (maxCount > 10) yAxisMax = Math.ceil(maxCount / 5) * 5;
+
+        yAxis.innerHTML = '';
+        for (let i = 0; i <= 5; i++) {
+            const val = Math.round((yAxisMax / 5) * i);
+            const div = document.createElement('div');
+            div.textContent = val;
+            yAxis.appendChild(div);
+        }
+
+        // 사업장 구분(그룹) 및 개별 사업장별 고유 색상 맵핑
+        const siteColors = ['#1f6feb', '#3fb950', '#d29922', '#8957e5', '#da3633', '#f0883e', '#0078d4', '#8b949e'];
+        const siteColorMap = {};
+
+        if (isDrilldownGrouped) {
+            currentSitesArray.forEach(site => {
+                let color = '#8957e5';
+                if (site === 'SEC') color = '#034EA2';
+                else if (site === 'SKH 이천') color = '#eb371f';
+                else if (site === 'SKH 청주') color = '#F37021';
+                else if (site === 'SCS 서안') color = '#0096D6';
+                else if (site === 'SKH 우시') color = '#d29922';
+                else if (site === '기타') color = '#1b7c83';
+                siteColorMap[site] = color;
+            });
+        } else {
+            currentSitesArray.forEach((site, idx) => {
+                siteColorMap[site] = siteColors[idx % siteColors.length];
+            });
+        }
+
+        // 범례 렌더링
+        if (legend) {
+            legend.innerHTML = '';
+            currentSitesArray.forEach(site => {
+                const legDiv = document.createElement('div');
+                legDiv.className = 'legend-item';
+                legDiv.innerHTML = `<div class="legend-color-box" style="background:${siteColorMap[site]};"></div><span title="${escapeHtml(site)}">${escapeHtml(site)}</span>`;
+                legend.appendChild(legDiv);
+            });
+        }
+
+        // CSV 내보내기 버튼 이벤트
+        if (exportBtn) {
+            exportBtn.onclick = (e) => {
+                e.stopPropagation();
+                let csvContent = '\uFEFF'; // BOM
+                const modeLabel = isDrilldownGrouped ? '사업장구분' : '사업장';
+                csvContent += `세부구분(Level${level}),${currentSitesArray.map(s => '"' + String(s).replace(/"/g, '""') + '"').join(',')},총합계\n`;
+
+                const sortedCategoriesForCsv = Object.keys(currentDataObj).map(cat => {
+                    let total = 0;
+                    currentSitesArray.forEach(site => {
+                        total += (currentDataObj[cat][site] || 0);
+                    });
+                    return { cat, total };
+                }).sort((a, b) => b.total - a.total);
+
+                sortedCategoriesForCsv.forEach(({ cat, total }) => {
+                    if (total === 0) return;
+                    let row = [`"${String(cat).replace(/"/g, '""')}"`];
+                    currentSitesArray.forEach(site => {
+                        row.push(currentDataObj[cat][site] || 0);
+                    });
+                    row.push(total);
+                    csvContent += row.join(',') + '\n';
+                });
+
+                const fileName = `SORT_드릴다운_${model}_${workType}_Level${level}_${modeLabel}_${new Date().toISOString().slice(0, 10)}.csv`;
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                logActionToServer('EXPORT_CSV', `정렬/통계 드릴다운 차트 CSV (${fileName})`);
+            };
+        }
+
+        // 카테고리 정렬 (건수 많은 순 내림차순)
+        const sortedCategories = Object.keys(currentDataObj).map(cat => {
+            let total = 0;
+            currentSitesArray.forEach(site => {
+                total += (currentDataObj[cat][site] || 0);
+            });
+            return { cat, total };
+        }).sort((a, b) => {
+            if (b.total !== a.total) return b.total - a.total;
+            return (a.cat || '').localeCompare(b.cat || '');
+        });
+
+        container.innerHTML = '';
+        sortedCategories.forEach(({ cat, total }) => {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'sort-bar-group type-group';
+            groupDiv.style.cursor = level < 3 ? 'pointer' : 'default';
+
+            const trackDiv = document.createElement('div');
+            trackDiv.className = 'bar-track';
+            let totalInGroup = 0;
+
+            currentSitesArray.forEach(site => {
+                const count = currentDataObj[cat][site] || 0;
+                if (count > 0) {
+                    totalInGroup++;
+                    const heightPct = (count / yAxisMax) * 100;
+                    const bgStyle = siteColorMap[site];
+                    const barWrapper = document.createElement('div');
+                    barWrapper.className = 'multi-bar-wrapper';
+                    barWrapper.title = `${escapeHtml(site)}: ${count}건` + (level < 3 ? `\n(클릭 시 세부구분 ${level + 1} 보기)` : '');
+                    barWrapper.innerHTML = `<div class="bar-value">${count}</div><div class="bar" style="height: ${heightPct}%; background: ${bgStyle};"></div>`;
+                    trackDiv.appendChild(barWrapper);
+                }
+            });
+
+            // [수정] X축 라벨 아래 세부2, 세부3 표시 삭제하고 깔끔한 카테고리 명칭만 표출
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'bar-label';
+            labelDiv.style.textAlign = 'right';
+            labelDiv.innerHTML = `<div style="color: #e6edf3; font-weight: 500;">${escapeHtml(cat)}</div>`;
+            labelDiv.title = `${cat} (총 ${total}건)` + (level < 3 ? ` - 클릭 시 세부구분 ${level + 1} 보기` : '');
+            groupDiv.appendChild(trackDiv);
+            groupDiv.appendChild(labelDiv);
+
+            // 다음 단계로 드릴다운 클릭 이벤트 연결
+            if (level === 1) {
+                groupDiv.onclick = () => openDrilldownChart(model, workType, 2, cat, null);
+            } else if (level === 2) {
+                groupDiv.onclick = () => openDrilldownChart(model, workType, 3, d1, cat);
+            }
+
+            if (totalInGroup > 0) {
+                const computedMinWidth = Math.max(60, totalInGroup * 35);
+                groupDiv.style.minWidth = computedMinWidth + 'px';
+                container.appendChild(groupDiv);
+            }
+        });
+    };
+
+    if (!window.chartRenderers) window.chartRenderers = [];
+    window.chartRenderers.push(renderDrilldownChart);
 }
 
 /* ==========================================================================
