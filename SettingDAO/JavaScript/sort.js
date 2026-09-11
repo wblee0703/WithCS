@@ -3012,14 +3012,15 @@ function renderSortChart(results) {
         };
     };
 
-    const openDrilldownChart = (model, workType, level, d1 = null, d2 = null) => {
+    const openDrilldownChart = (model, workType, level, d1 = null, d2 = null, isGlobalMode = false) => {
         drilldownState = {
             active: true,
             model,
             workType,
             level,
             d1,
-            d2
+            d2,
+            isGlobalMode
         };
         const wrapper = document.getElementById('sort-drilldown-wrapper');
         if (wrapper) {
@@ -3040,6 +3041,9 @@ function renderSortChart(results) {
         const backBtn = document.getElementById('btn-drilldown-back');
         const closeBtn = document.getElementById('btn-drilldown-close');
         const exportBtn = document.getElementById('btn-drilldown-export-csv');
+        const btnLevel1 = document.getElementById('btn-drilldown-level1');
+        const btnLevel2 = document.getElementById('btn-drilldown-level2');
+        const btnLevel3 = document.getElementById('btn-drilldown-level3');
 
         if (!wrapper || !container || !yAxis) return;
         if (!drilldownState.active) {
@@ -3047,7 +3051,7 @@ function renderSortChart(results) {
             return;
         }
 
-        const { model, workType, level, d1, d2 } = drilldownState;
+        const { model, workType, level, d1, d2, isGlobalMode } = drilldownState;
 
         // 닫기 버튼 이벤트
         if (closeBtn) {
@@ -3056,6 +3060,41 @@ function renderSortChart(results) {
                 wrapper.style.display = 'none';
             };
         }
+
+        // [추가] 세부구분 모드 직접 전환 버튼 이벤트 (상위필터 무관 전체 빈도수 조회)
+        if (btnLevel1) {
+            btnLevel1.onclick = () => openDrilldownChart(model, workType, 1, null, null, false);
+        }
+        if (btnLevel2) {
+            btnLevel2.onclick = () => openDrilldownChart(model, workType, 2, null, null, true);
+        }
+        if (btnLevel3) {
+            btnLevel3.onclick = () => openDrilldownChart(model, workType, 3, null, null, true);
+        }
+
+        // 모드 버튼 스타일 동기화
+        const updateModeBtnStyles = () => {
+            const list = [
+                { btn: btnLevel1, active: level === 1 },
+                { btn: btnLevel2, active: level === 2 && isGlobalMode },
+                { btn: btnLevel3, active: level === 3 && isGlobalMode }
+            ];
+            list.forEach(({ btn, active }) => {
+                if (!btn) return;
+                if (active) {
+                    btn.style.background = '#1f6feb';
+                    btn.style.borderColor = '#1f6feb';
+                    btn.style.color = '#ffffff';
+                    btn.style.fontWeight = 'bold';
+                } else {
+                    btn.style.background = 'transparent';
+                    btn.style.borderColor = '#30363d';
+                    btn.style.color = '#8b949e';
+                    btn.style.fontWeight = 'normal';
+                }
+            });
+        };
+        updateModeBtnStyles();
 
         if (titleEl) {
             titleEl.style.cursor = 'pointer';
@@ -3073,19 +3112,40 @@ function renderSortChart(results) {
             if (backBtn) backBtn.style.display = 'none';
             if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} <span style="color: #8b949e; font-weight: normal;">&gt; 세부구분 1별 빈도수</span>`;
         } else if (level === 2) {
-            if (backBtn) {
-                backBtn.style.display = 'inline-block';
-                backBtn.textContent = '◀ 세부구분 1';
-                backBtn.onclick = () => openDrilldownChart(model, workType, 1, null, null);
+            if (isGlobalMode) {
+                if (backBtn) backBtn.style.display = 'none';
+                if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} <span style="color: #58a6ff;">&gt; 전체 세부구분 2별 총빈도수</span>`;
+            } else {
+                if (backBtn) {
+                    backBtn.style.display = 'inline-block';
+                    backBtn.textContent = '◀ 세부구분 1';
+                    backBtn.onclick = () => openDrilldownChart(model, workType, 1, null, null, false);
+                }
+                if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} &gt; <span style="color: #58a6ff;">${escapeHtml(d1)}</span> <span style="color: #8b949e; font-weight: normal;">&gt; 세부구분 2별 빈도수</span>`;
             }
-            if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} &gt; <span style="color: #58a6ff;">${escapeHtml(d1)}</span> <span style="color: #8b949e; font-weight: normal;">&gt; 세부구분 2별 빈도수</span>`;
         } else if (level === 3) {
-            if (backBtn) {
-                backBtn.style.display = 'inline-block';
-                backBtn.textContent = '◀ 세부구분 2';
-                backBtn.onclick = () => openDrilldownChart(model, workType, 2, d1, null);
+            if (isGlobalMode) {
+                if (backBtn) backBtn.style.display = 'none';
+                if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} <span style="color: #58a6ff;">&gt; 전체 세부구분 3별 총빈도수</span>`;
+            } else {
+                if (backBtn) {
+                    backBtn.style.display = 'inline-block';
+                    if (d1) {
+                        backBtn.textContent = '◀ 세부구분 2';
+                        backBtn.onclick = () => openDrilldownChart(model, workType, 2, d1, null, false);
+                    } else {
+                        backBtn.textContent = '◀ 전체 세부구분 2';
+                        backBtn.onclick = () => openDrilldownChart(model, workType, 2, null, null, true);
+                    }
+                }
+                if (titleEl) {
+                    if (d1) {
+                        titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} &gt; ${escapeHtml(d1)} &gt; <span style="color: #58a6ff;">${escapeHtml(d2)}</span> <span style="color: #8b949e; font-weight: normal;">&gt; 세부구분 3별 빈도수</span>`;
+                    } else {
+                        titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} &gt; <span style="color: #58a6ff;">${escapeHtml(d2)}</span> <span style="color: #8b949e; font-weight: normal;">&gt; 세부구분 3별 빈도수</span>`;
+                    }
+                }
             }
-            if (titleEl) titleEl.innerHTML = `[${escapeHtml(model)}] ${escapeHtml(workType)} &gt; ${escapeHtml(d1)} &gt; <span style="color: #58a6ff;">${escapeHtml(d2)}</span> <span style="color: #8b949e; font-weight: normal;">&gt; 세부구분 3별 빈도수</span>`;
         }
 
         // 사업장 그룹 매칭 함수
@@ -3128,13 +3188,16 @@ function renderSortChart(results) {
                 rawDataObj[cat][row.site] = (rawDataObj[cat][row.site] || 0) + 1;
                 activeSites.add(row.site);
             } else if (level === 2) {
-                if (parsed.d1 !== d1) return;
+                if (!isGlobalMode && parsed.d1 !== d1) return;
                 const cat = parsed.d2 || '미지정';
                 if (!rawDataObj[cat]) rawDataObj[cat] = {};
                 rawDataObj[cat][row.site] = (rawDataObj[cat][row.site] || 0) + 1;
                 activeSites.add(row.site);
             } else if (level === 3) {
-                if (parsed.d1 !== d1 || parsed.d2 !== d2) return;
+                if (!isGlobalMode) {
+                    if (d1 && parsed.d1 !== d1) return;
+                    if (d2 && parsed.d2 !== d2) return;
+                }
                 const cat = parsed.d3 || '미지정';
                 if (!rawDataObj[cat]) rawDataObj[cat] = {};
                 rawDataObj[cat][row.site] = (rawDataObj[cat][row.site] || 0) + 1;
@@ -3271,7 +3334,8 @@ function renderSortChart(results) {
                     csvContent += row.join(',') + '\n';
                 });
 
-                const fileName = `SORT_드릴다운_${model}_${workType}_Level${level}_${modeLabel}_${new Date().toISOString().slice(0, 10)}.csv`;
+                const globalSuffix = isGlobalMode ? '_전체' : '';
+                const fileName = `SORT_드릴다운_${model}_${workType}_Level${level}${globalSuffix}_${modeLabel}_${new Date().toISOString().slice(0, 10)}.csv`;
                 const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -3335,9 +3399,13 @@ function renderSortChart(results) {
 
             // 다음 단계로 드릴다운 클릭 이벤트 연결
             if (level === 1) {
-                groupDiv.onclick = () => openDrilldownChart(model, workType, 2, cat, null);
+                groupDiv.onclick = () => openDrilldownChart(model, workType, 2, cat, null, false);
             } else if (level === 2) {
-                groupDiv.onclick = () => openDrilldownChart(model, workType, 3, d1, cat);
+                if (isGlobalMode) {
+                    groupDiv.onclick = () => openDrilldownChart(model, workType, 3, null, cat, false);
+                } else {
+                    groupDiv.onclick = () => openDrilldownChart(model, workType, 3, d1, cat, false);
+                }
             }
 
             if (totalInGroup > 0) {

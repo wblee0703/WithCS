@@ -883,3 +883,12 @@
         font-size: 11px !important;
     }
 }
+
+.btn-drilldown-mode {
+    transition: all 0.2s ease;
+}
+
+.btn-drilldown-mode:hover {
+    border-color: #58a6ff !important;
+    color: #e6edf3 !important;
+}
