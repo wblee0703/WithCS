@@ -74,6 +74,7 @@ function renderSiteList() {
     filteredSites.forEach(site => {
         const li = document.createElement('li');
         li.className = 'data-list-item';
+        li.dataset.site = site;
         if (currentSelectedSite === site) li.classList.add('active');
 
         li.innerHTML = `
@@ -97,10 +98,9 @@ function selectSite(site) {
     currentSelectedSite = site;
     currentSelectedEquip = null;
 
-    // UI 활성화 상태 갱신
+    // UI 활성화 상태 갱신 (정확히 일치하는 사업장만 활성화)
     document.querySelectorAll('#data-site-list .data-list-item').forEach(el => {
-        el.classList.remove('active');
-        if (el.textContent.includes(site)) el.classList.add('active');
+        el.classList.toggle('active', el.dataset.site === site);
     });
 
     renderEquipList();
@@ -168,7 +168,10 @@ function renderEquipList() {
         li.dataset.equipKey = item.key;
         if (currentSelectedEquip && currentSelectedEquip.key === item.key) li.classList.add('active');
 
-        const subText = item.custEquip ? `[${escapeHtml(item.custEquip)}]` : '';
+        // 고객사 장비명이 없으면 시리얼 넘버 표시
+        const subText = item.custEquip 
+            ? `[${escapeHtml(item.custEquip)}]` 
+            : (item.serial ? `[${escapeHtml(item.serial)}]` : '');
 
         li.innerHTML = `
             <div class="data-item-main">
@@ -190,6 +193,7 @@ function renderEquipList() {
  */
 function selectEquip(item) {
     currentSelectedEquip = item;
+    currentSort = { key: null, direction: 'asc' };
 
     document.querySelectorAll('#data-equip-list .data-list-item').forEach(el => {
         el.classList.toggle('active', el.dataset.equipKey === item.key);
@@ -337,7 +341,7 @@ function initDefaultSheet() {
 /**
  * 시트 데이터 저장 (LocalStorage + DB 비동기 동기화)
  */
-function saveCurrentSheetData(showIndicator = true) {
+function saveCurrentSheetData(showIndicator = true, resetTable = false) {
     if (!currentSelectedSite || !currentSelectedEquip) return;
 
     const storageKey = `equip_sheet_${currentSelectedSite}_${currentSelectedEquip.key}`;
@@ -348,8 +352,9 @@ function saveCurrentSheetData(showIndicator = true) {
         indicator.innerHTML = '<span class="save-dot saving"></span> DB 저장 중...';
     }
 
-    // 디바운스(400ms)로 빠른 타이핑 중 잦은 쿼리 방지
+    // 디바운스(400ms)로 빠른 타이핑 중 잦은 쿼리 방지 (resetTable인 경우 즉시 전송)
     clearTimeout(dbSaveTimer);
+    const delay = resetTable ? 0 : 400;
     dbSaveTimer = setTimeout(async () => {
         try {
             const res = await fetch('/api/datasheet/save', {
@@ -364,7 +369,8 @@ function saveCurrentSheetData(showIndicator = true) {
                     cust_equip: currentSelectedEquip.custEquip,
                     serial: currentSelectedEquip.serial,
                     columns: currentSheetData.columns || [],
-                    rows: currentSheetData.rows || []
+                    rows: currentSheetData.rows || [],
+                    reset_table: resetTable
                 })
             });
 
@@ -390,8 +396,72 @@ function saveCurrentSheetData(showIndicator = true) {
                 indicator.innerHTML = '<span class="save-dot" style="background:#d29922;"></span> 로컬에 저장됨';
             }
         }
-    }, 400);
+    }, delay);
 }
+
+/**
+/**
+ * 정렬 상태 관리 객체
+ */
+let currentSort = {
+    key: null,        // null, '__no__', '__date__', 또는 컬럼명
+    direction: 'asc'  // 'asc' 또는 'desc'
+};
+
+/**
+ * 컬럼 헤더 클릭 시 정렬 토글
+ */
+window.toggleSheetSort = function(key) {
+    if (!currentSheetData || !Array.isArray(currentSheetData.rows) || currentSheetData.rows.length === 0) return;
+
+    if (currentSort.key === key) {
+        currentSort.direction = (currentSort.direction === 'asc') ? 'desc' : 'asc';
+    } else {
+        currentSort.key = key;
+        currentSort.direction = 'asc';
+    }
+
+    const isAsc = currentSort.direction === 'asc';
+
+    if (key === '__no__') {
+        currentSheetData.rows.reverse();
+    } else {
+        currentSheetData.rows.sort((a, b) => {
+            let valA, valB;
+
+            if (key === '__date__') {
+                valA = a.date || '';
+                valB = b.date || '';
+            } else {
+                valA = (a.values && a.values[key] !== undefined) ? a.values[key] : '';
+                valB = (b.values && b.values[key] !== undefined) ? b.values[key] : '';
+            }
+
+            const aEmpty = (valA === '' || valA === null || valA === undefined);
+            const bEmpty = (valB === '' || valB === null || valB === undefined);
+            if (aEmpty && !bEmpty) return 1;
+            if (!aEmpty && bEmpty) return -1;
+            if (aEmpty && bEmpty) return 0;
+
+            const numA = Number(valA);
+            const numB = Number(valB);
+            const isNumA = !isNaN(numA) && typeof valA !== 'boolean' && String(valA).trim() !== '';
+            const isNumB = !isNaN(numB) && typeof valB !== 'boolean' && String(valB).trim() !== '';
+
+            let cmp = 0;
+            if (isNumA && isNumB) {
+                cmp = numA - numB;
+            } else {
+                cmp = String(valA).localeCompare(String(valB), 'ko-KR', { numeric: true, sensitivity: 'base' });
+            }
+
+            return isAsc ? cmp : -cmp;
+        });
+    }
+
+    saveCurrentSheetData(true);
+    renderSheetTable();
+};
 
 /**
  * 스프레드시트 테이블 렌더링
@@ -406,15 +476,34 @@ function renderSheetTable() {
 
     // 1. 헤더 (Thead) 렌더링
     let headHtml = '<tr>';
-    headHtml += '<th style="width: 44px; text-align: center;">No</th>';
-    headHtml += '<th style="width: 140px; text-align: center;">📅 날짜</th>';
+    
+    // No 컬럼
+    const noSortIcon = currentSort.key === '__no__' 
+        ? `<span class="sheet-sort-icon active">${currentSort.direction === 'asc' ? '▲' : '▼'}</span>`
+        : `<span class="sheet-sort-icon">⇅</span>`;
+    headHtml += `<th style="width: 50px; text-align: center; cursor: pointer;" onclick="toggleSheetSort('__no__')" title="순번 기준 정렬">No ${noSortIcon}</th>`;
 
+    // 날짜 컬럼
+    const dateSortIcon = currentSort.key === '__date__' 
+        ? `<span class="sheet-sort-icon active">${currentSort.direction === 'asc' ? '▲' : '▼'}</span>`
+        : `<span class="sheet-sort-icon">⇅</span>`;
+    headHtml += `<th style="width: 140px; text-align: center; cursor: pointer;" onclick="toggleSheetSort('__date__')" title="날짜 기준 정렬">📅 날짜 ${dateSortIcon}</th>`;
+
+    // 동적 데이터 열들
     columns.forEach((col, colIdx) => {
+        const isCurrentCol = currentSort.key === col;
+        const sortIcon = isCurrentCol
+            ? `<span class="sheet-sort-icon active">${currentSort.direction === 'asc' ? '▲' : '▼'}</span>`
+            : `<span class="sheet-sort-icon">⇅</span>`;
+
         headHtml += `
-            <th style="min-width: 130px;">
+            <th class="sheet-col-th" draggable="true" data-col-idx="${colIdx}" style="min-width: 130px;">
                 <div class="sheet-col-header-inner">
-                    <span class="sheet-col-title" title="${escapeHtml(col)}">${escapeHtml(col)}</span>
-                    <button type="button" class="sheet-col-del-btn" title="열 삭제" onclick="deleteSheetColumn(${colIdx})">&times;</button>
+                    <span class="sheet-col-drag-handle" title="드래그하여 열 순서 변경">⠿</span>
+                    <span class="sheet-col-title clickable-header" title="${escapeHtml(col)} (클릭하여 정렬)" onclick="handleColHeaderClick(event, '${escapeHtml(col)}')">
+                        ${escapeHtml(col)} ${sortIcon}
+                    </span>
+                    <button type="button" class="sheet-col-del-btn" title="열 삭제" onclick="event.stopPropagation(); deleteSheetColumn(${colIdx})">&times;</button>
                 </div>
             </th>
         `;
@@ -431,7 +520,7 @@ function renderSheetTable() {
             <tr>
                 <td colspan="${colSpan}" class="sheet-empty-state">
                     기록된 행이 없습니다.<br>
-                    상단의 <strong>[➕ 행 추가]</strong> 또는 하단의 <strong>[➕ 날짜 행 추가]</strong>를 눌러 시작하세요.
+                    상단의 <strong>[➕ 행 추가]</strong>를 누르거나, 셀 입력 후 <strong>[Enter]</strong>를 눌러 시작하세요.
                 </td>
             </tr>
         `;
@@ -454,12 +543,12 @@ function renderSheetTable() {
         `;
 
         // 사용자 정의 동적 열들 (직접 편집 가능한 인라인 셀)
-        columns.forEach(col => {
+        columns.forEach((col, colIdx) => {
             const val = (row.values && row.values[col] !== undefined) ? row.values[col] : '';
             bodyHtml += `
                 <td>
                     <input type="text" class="sheet-cell-input" value="${escapeHtml(val)}" 
-                           data-row-id="${row.id}" data-col-name="${escapeHtml(col)}" 
+                           data-row-id="${row.id}" data-row-idx="${rowIdx}" data-col-idx="${colIdx}" data-col-name="${escapeHtml(col)}" 
                            placeholder="-" autocomplete="off">
                 </td>
             `;
@@ -479,15 +568,215 @@ function renderSheetTable() {
 
     // 셀 입력 이벤트 바인딩 (실시간 저장 & 키보드 이동)
     bindCellInputEvents();
+
+    // 열 드래그 앤 드롭 이동 이벤트 바인딩
+    bindColumnDragEvents();
 }
 
 /**
- * 셀 입력 필드 이벤트 바인딩 (엔터: 다음 행, 탭: 다음 열, 블러: 자동 저장)
+ * 열 드래그 앤 드롭 이동 관련 상태
+ */
+let draggedColIdx = null;
+let isDraggingColumn = false;
+
+/**
+ * 열 헤더 클릭 핸들러 (드래그 직후 클릭 오동작 방지)
+ */
+window.handleColHeaderClick = function(e, col) {
+    if (isDraggingColumn) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+    }
+    toggleSheetSort(col);
+};
+
+/**
+ * 열 순서 변경 및 DB/로컬 저장
+ */
+function moveColumn(fromIdx, toIdx, insertBefore) {
+    if (!currentSheetData || !Array.isArray(currentSheetData.columns)) return;
+
+    const cols = currentSheetData.columns;
+    if (fromIdx < 0 || fromIdx >= cols.length || toIdx < 0 || toIdx >= cols.length) return;
+
+    const [movedCol] = cols.splice(fromIdx, 1);
+
+    let newTargetIdx = toIdx;
+    if (fromIdx < toIdx) {
+        newTargetIdx = toIdx - 1;
+    }
+
+    let finalIdx = insertBefore ? newTargetIdx : newTargetIdx + 1;
+    if (finalIdx < 0) finalIdx = 0;
+    if (finalIdx > cols.length) finalIdx = cols.length;
+
+    cols.splice(finalIdx, 0, movedCol);
+
+    saveCurrentSheetData(true);
+    renderSheetTable();
+}
+
+/**
+ * 열 드래그 앤 드롭 이벤트 바인딩 (데스크톱 HTML5 DnD + 모바일 터치 드래그 호환)
+ */
+function bindColumnDragEvents() {
+    const colThs = document.querySelectorAll('#data-sheet-thead th.sheet-col-th');
+    if (!colThs.length) return;
+
+    // 1. 데스크톱 HTML5 드래그 앤 드롭
+    colThs.forEach(th => {
+        th.addEventListener('dragstart', (e) => {
+            draggedColIdx = parseInt(th.dataset.colIdx, 10);
+            isDraggingColumn = true;
+            th.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', String(draggedColIdx));
+        });
+
+        th.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const targetIdx = parseInt(th.dataset.colIdx, 10);
+            if (targetIdx !== draggedColIdx) {
+                const rect = th.getBoundingClientRect();
+                const midX = rect.left + rect.width / 2;
+                if (e.clientX < midX) {
+                    th.classList.add('drag-over-left');
+                    th.classList.remove('drag-over-right');
+                } else {
+                    th.classList.add('drag-over-right');
+                    th.classList.remove('drag-over-left');
+                }
+            }
+        });
+
+        th.addEventListener('dragleave', () => {
+            th.classList.remove('drag-over-left', 'drag-over-right');
+        });
+
+        th.addEventListener('drop', (e) => {
+            e.preventDefault();
+            th.classList.remove('drag-over-left', 'drag-over-right');
+
+            if (draggedColIdx === null) return;
+            const targetIdx = parseInt(th.dataset.colIdx, 10);
+            if (draggedColIdx === targetIdx) return;
+
+            const rect = th.getBoundingClientRect();
+            const midX = rect.left + rect.width / 2;
+            const insertBefore = e.clientX < midX;
+
+            moveColumn(draggedColIdx, targetIdx, insertBefore);
+        });
+
+        th.addEventListener('dragend', () => {
+            th.classList.remove('dragging');
+            colThs.forEach(el => el.classList.remove('drag-over-left', 'drag-over-right', 'dragging'));
+            setTimeout(() => {
+                isDraggingColumn = false;
+                draggedColIdx = null;
+            }, 100);
+        });
+
+        // 2. 모바일 터치 드래그 지원 (.sheet-col-drag-handle 대상)
+        const handle = th.querySelector('.sheet-col-drag-handle');
+        if (handle) {
+            let touchMoved = false;
+            let ghostEl = null;
+            let currentTargetTh = null;
+            let insertBefore = false;
+
+            handle.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                touchMoved = false;
+                draggedColIdx = parseInt(th.dataset.colIdx, 10);
+
+                const colName = currentSheetData.columns[draggedColIdx] || '열';
+                ghostEl = document.createElement('div');
+                ghostEl.className = 'sheet-touch-ghost';
+                ghostEl.textContent = `↕ ${colName}`;
+                document.body.appendChild(ghostEl);
+                ghostEl.style.left = `${touch.clientX}px`;
+                ghostEl.style.top = `${touch.clientY - 10}px`;
+            }, { passive: true });
+
+            handle.addEventListener('touchmove', (e) => {
+                const touch = e.touches[0];
+                touchMoved = true;
+                isDraggingColumn = true;
+
+                if (ghostEl) {
+                    ghostEl.style.left = `${touch.clientX}px`;
+                    ghostEl.style.top = `${touch.clientY - 10}px`;
+                }
+
+                colThs.forEach(el => el.classList.remove('drag-over-left', 'drag-over-right'));
+                const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+                const targetTh = elem ? elem.closest('#data-sheet-thead th.sheet-col-th') : null;
+
+                if (targetTh && parseInt(targetTh.dataset.colIdx, 10) !== draggedColIdx) {
+                    currentTargetTh = targetTh;
+                    const rect = targetTh.getBoundingClientRect();
+                    const midX = rect.left + rect.width / 2;
+                    insertBefore = touch.clientX < midX;
+
+                    if (insertBefore) {
+                        targetTh.classList.add('drag-over-left');
+                    } else {
+                        targetTh.classList.add('drag-over-right');
+                    }
+                } else {
+                    currentTargetTh = null;
+                }
+            }, { passive: false });
+
+            const finishTouch = () => {
+                if (ghostEl) {
+                    ghostEl.remove();
+                    ghostEl = null;
+                }
+                colThs.forEach(el => el.classList.remove('drag-over-left', 'drag-over-right', 'dragging'));
+
+                if (touchMoved && currentTargetTh && draggedColIdx !== null) {
+                    const targetIdx = parseInt(currentTargetTh.dataset.colIdx, 10);
+                    if (draggedColIdx !== targetIdx) {
+                        moveColumn(draggedColIdx, targetIdx, insertBefore);
+                    }
+                }
+
+                setTimeout(() => {
+                    isDraggingColumn = false;
+                    draggedColIdx = null;
+                }, 100);
+            };
+
+            handle.addEventListener('touchend', finishTouch);
+            handle.addEventListener('touchcancel', finishTouch);
+        }
+    });
+}
+
+/**
+ * Tab 누르기 시작한 열 인덱스 추적 변수 (Excel 방식 Tab -> Enter 복귀 지원)
+ */
+let tabStartColIndex = null;
+
+/**
+ * 셀 입력 필드 이벤트 바인딩 (Excel 스타일: Tab 누르면 다음 열, Enter 누르면 Tab 시작 열의 다음 행으로 이동)
  */
 function bindCellInputEvents() {
     const inputs = document.querySelectorAll('#data-sheet-tbody .sheet-cell-input');
 
-    inputs.forEach((input, index) => {
+    inputs.forEach(input => {
+        // 셀 마우스/터치 클릭 시 Tab 시작 열 인덱스 갱신 (모바일 호환 pointerdown)
+        input.addEventListener('pointerdown', () => {
+            tabStartColIndex = parseInt(input.dataset.colIdx, 10);
+        });
+        input.addEventListener('mousedown', () => {
+            tabStartColIndex = parseInt(input.dataset.colIdx, 10);
+        });
+
         // 값 변경 시 자동 저장
         input.addEventListener('input', (e) => {
             const rowId = e.target.dataset.rowId;
@@ -502,18 +791,100 @@ function bindCellInputEvents() {
             }
         });
 
-        // 엔터 키 누르면 아래 행의 같은 열로 이동
+        // 키보드 내비게이션 (Tab, Enter, ArrowUp, ArrowDown)
         input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const totalCols = currentSheetData.columns.length;
-                const nextRowInput = inputs[index + totalCols];
-                if (nextRowInput) {
-                    nextRowInput.focus();
-                    nextRowInput.select();
+            const rIdx = parseInt(input.dataset.rowIdx, 10);
+            const cIdx = parseInt(input.dataset.colIdx, 10);
+            const totalCols = currentSheetData.columns.length;
+            const totalRows = currentSheetData.rows.length;
+
+            if (e.key === 'Tab') {
+                // Tab을 누르기 시작한 첫 열을 기억 (아직 설정되지 않았다면 현재 열을 시작 열로)
+                if (tabStartColIndex === null) {
+                    tabStartColIndex = cIdx;
+                }
+
+                if (!e.shiftKey) {
+                    // 오른쪽 열로 이동
+                    if (cIdx + 1 < totalCols) {
+                        e.preventDefault();
+                        const nextCell = document.querySelector(`.sheet-cell-input[data-row-idx="${rIdx}"][data-col-idx="${cIdx + 1}"]`);
+                        if (nextCell) {
+                            nextCell.focus();
+                            nextCell.select();
+                        }
+                    } else {
+                        // 마지막 열에서 Tab 누르면 다음 행의 시작 열로 이동
+                        if (rIdx + 1 < totalRows) {
+                            e.preventDefault();
+                            const targetCol = (tabStartColIndex !== null) ? tabStartColIndex : 0;
+                            const nextRowCell = document.querySelector(`.sheet-cell-input[data-row-idx="${rIdx + 1}"][data-col-idx="${targetCol}"]`);
+                            if (nextRowCell) {
+                                nextRowCell.focus();
+                                nextRowCell.select();
+                            }
+                        }
+                    }
                 } else {
-                    // 마지막 행이면 새 행 자동 추가
-                    addSheetRow(null, false);
+                    // Shift + Tab (왼쪽 열로 이동)
+                    if (cIdx > 0) {
+                        e.preventDefault();
+                        const prevCell = document.querySelector(`.sheet-cell-input[data-row-idx="${rIdx}"][data-col-idx="${cIdx - 1}"]`);
+                        if (prevCell) {
+                            tabStartColIndex = cIdx - 1;
+                            prevCell.focus();
+                            prevCell.select();
+                        }
+                    }
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+
+                // 엔터 시: Tab을 누르기 시작한 열(없으면 현재 열)의 다음 행으로 복귀 이동 (Excel 동작)
+                const targetCol = (tabStartColIndex !== null) ? tabStartColIndex : cIdx;
+                const nextRowIdx = rIdx + 1;
+
+                // 다음 행으로 이동한 후 해당 열이 다음 이동의 기준이 됨
+                tabStartColIndex = targetCol;
+
+                if (nextRowIdx < totalRows) {
+                    const nextInput = document.querySelector(`.sheet-cell-input[data-row-idx="${nextRowIdx}"][data-col-idx="${targetCol}"]`);
+                    if (nextInput) {
+                        nextInput.focus();
+                        nextInput.select();
+                        nextInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                } else {
+                    // 마지막 행이면 아래(맨 끝)에 새 행을 추가하고 해당 시작 열로 이동
+                    addSheetRow(null, false, true);
+                    setTimeout(() => {
+                        const newRowInput = document.querySelector(`.sheet-cell-input[data-row-idx="${nextRowIdx}"][data-col-idx="${targetCol}"]`);
+                        if (newRowInput) {
+                            newRowInput.focus();
+                            newRowInput.select();
+                            newRowInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }
+                    }, 50);
+                }
+            } else if (e.key === 'ArrowDown') {
+                if (rIdx + 1 < totalRows) {
+                    e.preventDefault();
+                    const nextCell = document.querySelector(`.sheet-cell-input[data-row-idx="${rIdx + 1}"][data-col-idx="${cIdx}"]`);
+                    if (nextCell) {
+                        tabStartColIndex = cIdx;
+                        nextCell.focus();
+                        nextCell.select();
+                    }
+                }
+            } else if (e.key === 'ArrowUp') {
+                if (rIdx > 0) {
+                    e.preventDefault();
+                    const prevCell = document.querySelector(`.sheet-cell-input[data-row-idx="${rIdx - 1}"][data-col-idx="${cIdx}"]`);
+                    if (prevCell) {
+                        tabStartColIndex = cIdx;
+                        prevCell.focus();
+                        prevCell.select();
+                    }
                 }
             }
         });
@@ -532,15 +903,15 @@ window.updateRowDate = function(rowId, newDate) {
 };
 
 /**
- * 행 추가 (기본 오늘 날짜 또는 지정 날짜)
+ * 행 추가 (기본 오늘 날짜 또는 지정 날짜, 기본 아래로 추가)
  */
-function addSheetRow(specificDate = null, focusFirst = true) {
+function addSheetRow(specificDate = null, focusFirst = true, appendToBottom = true) {
     if (!currentSelectedSite || !currentSelectedEquip) {
         alert('장비를 먼저 선택해주세요.');
         return;
     }
 
-    const dateStr = specificDate || document.getElementById('data-quick-add-date')?.value || getTodayString();
+    const dateStr = specificDate || getTodayString();
 
     const newRow = {
         id: 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
@@ -552,8 +923,13 @@ function addSheetRow(specificDate = null, focusFirst = true) {
         newRow.values[col] = '';
     });
 
-    // 상단에 추가하여 최신 날짜가 위에 오도록 설정
-    currentSheetData.rows.unshift(newRow);
+    if (appendToBottom) {
+        // 아래로 행 추가 (엑셀 누적 방식)
+        currentSheetData.rows.push(newRow);
+    } else {
+        currentSheetData.rows.unshift(newRow);
+    }
+
     saveCurrentSheetData(true);
     renderSheetTable();
 
@@ -563,6 +939,8 @@ function addSheetRow(specificDate = null, focusFirst = true) {
             const firstInput = document.querySelector(`#data-sheet-tbody tr[data-row-id="${newRow.id}"] .sheet-cell-input`);
             if (firstInput) {
                 firstInput.focus();
+                firstInput.select();
+                firstInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         }, 50);
     }
@@ -763,7 +1141,7 @@ function handleCsvFileSelected(e) {
 }
 
 /**
- * CSV 텍스트 파싱 및 시트 데이터 자동 동기화 (열 및 날짜 행 자동 추가)
+ * CSV 텍스트 파싱 및 시트 데이터 완전 대체 (기존 데이터 삭제 후 CSV 파일 기준으로 작성)
  */
 function processCsvImport(csvText) {
     if (!csvText || !csvText.trim()) {
@@ -801,83 +1179,65 @@ function processCsvImport(csvText) {
         }
     }
 
-    // CSV의 유효 데이터 열 목록 구성 (날짜 및 순번/No 제외)
-    const newColumnsFromCsv = [];
+    // CSV 파일 기준 열 목록 구성 (순번/No 제외, 날짜 제외)
+    const newColumns = [];
     const csvColMap = []; // { csvIdx, colName }
 
     for (let i = 0; i < headerRow.length; i++) {
         if (i === dateColIdx) continue;
-        const colName = headerRow[i].trim();
-        const lower = colName.toLowerCase();
+        const rawName = headerRow[i].trim();
+        const lower = rawName.toLowerCase();
         if (lower === 'no' || lower === '순번' || lower === '번호') continue;
 
-        if (colName) {
-            csvColMap.push({ csvIdx: i, colName });
-            if (!currentSheetData.columns.includes(colName)) {
-                newColumnsFromCsv.push(colName);
+        if (rawName) {
+            let colName = rawName;
+            // 중복된 열 이름이 있을 경우 고유화
+            let counter = 2;
+            while (newColumns.includes(colName)) {
+                colName = `${rawName}_${counter}`;
+                counter++;
             }
+            newColumns.push(colName);
+            csvColMap.push({ csvIdx: i, colName });
         }
     }
 
-    // 1. 시트에 없는 새 열 자동 추가
-    let addedColumnsCount = 0;
-    newColumnsFromCsv.forEach(newCol => {
-        currentSheetData.columns.push(newCol);
-        addedColumnsCount++;
-    });
-
-    // 기존 행에 새 열 필드 기본값 할당
-    currentSheetData.rows.forEach(r => {
-        if (!r.values) r.values = {};
-        newColumnsFromCsv.forEach(newCol => {
-            if (r.values[newCol] === undefined) r.values[newCol] = '';
-        });
-    });
-
-    // 2. 날짜별 행 데이터 매칭 및 자동 추가/갱신
-    let addedRowsCount = 0;
-    let updatedRowsCount = 0;
-
-    dataRows.forEach(rowArr => {
+    // 기존 데이터 완전히 삭제하고 CSV 파일 기준으로 새로 작성
+    const newRows = [];
+    dataRows.forEach((rowArr, rIdx) => {
         if (!rowArr || rowArr.length === 0 || rowArr.every(cell => !cell)) return;
 
         const rawDate = rowArr[dateColIdx];
         const dateStr = normalizeDate(rawDate) || getTodayString();
 
-        // 기존에 동일 날짜 행이 존재하는지 확인
-        let targetRow = currentSheetData.rows.find(r => r.date === dateStr);
+        const vals = {};
+        newColumns.forEach(c => vals[c] = '');
 
-        if (!targetRow) {
-            // 새 날짜 행 생성
-            targetRow = {
-                id: 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                date: dateStr,
-                values: {}
-            };
-            currentSheetData.columns.forEach(c => {
-                targetRow.values[c] = '';
-            });
-            currentSheetData.rows.push(targetRow);
-            addedRowsCount++;
-        } else {
-            updatedRowsCount++;
-        }
-
-        // 해당 행의 각 열에 데이터 값 입력
         csvColMap.forEach(({ csvIdx, colName }) => {
-            const cellVal = rowArr[csvIdx] !== undefined ? rowArr[csvIdx] : '';
-            targetRow.values[colName] = cellVal;
+            vals[colName] = (rowArr[csvIdx] !== undefined) ? rowArr[csvIdx] : '';
+        });
+
+        newRows.push({
+            id: 'row_' + Date.now() + '_' + rIdx + '_' + Math.random().toString(36).substr(2, 4),
+            date: dateStr,
+            values: vals
         });
     });
 
-    // 최신 날짜순 정렬
-    currentSheetData.rows.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    // 기존 데이터 완전 대체
+    currentSheetData = {
+        columns: newColumns,
+        rows: newRows
+    };
 
-    // 저장 및 화면 갱신
-    saveCurrentSheetData(true);
+    // 정렬 상태 초기화
+    currentSort = { key: null, direction: 'asc' };
+
+    // DB 및 로컬 저장 (resetTable: true 로 기존 DB 테이블 컬럼/데이터도 완전 초기화 후 재생성)
+    saveCurrentSheetData(true, true);
     renderSheetTable();
 
-    alert(`CSV 불러오기 완료:\n- 자동으로 추가된 열: ${addedColumnsCount}개\n- 새로 추가된 날짜 행: ${addedRowsCount}개\n- 기존 날짜 갱신된 행: ${updatedRowsCount}개`);
+    alert(`CSV 파일 기준으로 작성이 완료되었습니다.\n- 등록된 열: ${newColumns.length}개\n- 불러온 데이터 행: ${newRows.length}개\n(기존 데이터는 삭제되었습니다.)`);
 }
 
 /**
@@ -968,14 +1328,6 @@ function setupDataEventListeners() {
         btnAddRow.addEventListener('click', () => addSheetRow());
     }
 
-    // 하단 빠른 날짜 행 추가 버튼
-    const btnQuickAddRow = document.getElementById('btn-quick-add-row');
-    if (btnQuickAddRow) {
-        btnQuickAddRow.addEventListener('click', () => {
-            const dateVal = document.getElementById('data-quick-add-date')?.value;
-            addSheetRow(dateVal);
-        });
-    }
 
     // 상단 툴바 열 추가 버튼
     const btnAddCol = document.getElementById('btn-add-sheet-col');

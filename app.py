@@ -1070,11 +1070,9 @@ def data_page():
 
 # ------------------------------------------------------------------------------
 # [DATA 페이지] 장비별 엑셀형 데이터 시트 DB 연동 API
-# 규칙: dbwithtech001 내 장비별 테이블 자동 생성
-# ------------------------------------------------------------------------------
-# [DATA 페이지] 장비별 엑셀형 데이터 시트 DB 연동 API
-# 규칙: dbwithtech001 내 장비별 테이블 자동 생성
-# 테이블명: 장비약어 고객사장비명 또는 (고객사장비명 없을 시) 장비약어 시리얼넘버 (공백 구분)
+# 규칙: 현재 연동된 DB(로컬: dbwithtech001 / 가비아: .env 설정 DB) 내 장비별 테이블 자동 생성
+# 테이블명: zData 장비약어 고객사장비명 또는 (고객사장비명 없을 시) zData 장비약어 시리얼넘버
+# 접두사 zData: DB 툴에서 알파벳 순 정렬 시 최하단으로 정렬되어 시스템 테이블과 깔끔히 분리
 # ------------------------------------------------------------------------------
 def get_equip_data_table_name(abbr, cust_equip, serial):
     def clean_str(val):
@@ -1089,12 +1087,13 @@ def get_equip_data_table_name(abbr, cust_equip, serial):
     cust_part = clean_str(cust_equip)
     serial_part = clean_str(serial)
 
+    # 접두사 zData 적용
     if cust_part:
-        tbl = f"{abbr_part} {cust_part}"
+        tbl = f"zData {abbr_part} {cust_part}"
     elif serial_part:
-        tbl = f"{abbr_part} {serial_part}"
+        tbl = f"zData {abbr_part} {serial_part}"
     else:
-        tbl = f"{abbr_part} DEFAULT"
+        tbl = f"zData {abbr_part} DEFAULT"
 
     # MySQL 식별자 최대 64자 제한 준수 및 끝 공백 제거
     tbl = tbl[:64].rstrip()
@@ -1179,12 +1178,18 @@ def save_datasheet():
     serial = req_data.get('serial', '').strip()
     columns = req_data.get('columns', [])
     rows = req_data.get('rows', [])
+    reset_table = req_data.get('reset_table', False)
 
     table_name, display_name = get_equip_data_table_name(model_abbr, cust_equip, serial)
     if not table_name:
         return jsonify({"status": "fail", "message": "유효하지 않은 장비 정보입니다."}), 400
 
     try:
+        # 테이블 초기화 요청 시 기존 테이블 완전 삭제 후 재생성
+        if reset_table:
+            db.session.execute(text(f"DROP TABLE IF EXISTS `{table_name}`;"))
+            db.session.commit()
+
         # 1. 테이블 생성 (없는 경우)
         if db_type == 'mysql':
             create_tbl_sql = f"""

@@ -384,6 +384,37 @@
     font-size: 12px;
 }
 
+.sheet-col-title.clickable-header {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: background-color 0.15s, color 0.15s;
+    user-select: none;
+}
+
+.sheet-col-title.clickable-header:hover {
+    background: rgba(88, 166, 255, 0.12);
+    color: #58a6ff;
+}
+
+.sheet-sort-icon {
+    font-size: 10px;
+    color: #484f58;
+    margin-left: 2px;
+    display: inline-block;
+    vertical-align: middle;
+    transition: color 0.15s;
+}
+
+.data-sheet-table th:hover .sheet-sort-icon,
+.sheet-col-title.clickable-header:hover .sheet-sort-icon,
+.sheet-sort-icon.active {
+    color: #58a6ff;
+}
+
 .sheet-col-del-btn {
     background: transparent;
     border: none;
@@ -395,6 +426,66 @@
     line-height: 1;
     opacity: 0.6;
     transition: opacity 0.15s, color 0.15s;
+}
+
+/* 열 드래그 앤 드롭 스타일 */
+.sheet-col-th {
+    cursor: grab;
+    position: relative;
+    user-select: none;
+    transition: background-color 0.15s, box-shadow 0.15s;
+}
+
+.sheet-col-th:active {
+    cursor: grabbing;
+}
+
+.sheet-col-th.dragging {
+    opacity: 0.45;
+    background: #21262d !important;
+}
+
+.sheet-col-th.drag-over-left {
+    box-shadow: inset 3px 0 0 0 #58a6ff !important;
+    background: rgba(88, 166, 255, 0.12) !important;
+}
+
+.sheet-col-th.drag-over-right {
+    box-shadow: inset -3px 0 0 0 #58a6ff !important;
+    background: rgba(88, 166, 255, 0.12) !important;
+}
+
+.sheet-col-drag-handle {
+    cursor: grab;
+    color: #6e7681;
+    font-size: 14px;
+    padding: 0 4px 0 0;
+    line-height: 1;
+    touch-action: none;
+    transition: color 0.15s;
+    user-select: none;
+}
+
+.sheet-col-drag-handle:hover,
+.sheet-col-th:hover .sheet-col-drag-handle {
+    color: #58a6ff;
+}
+
+/* 모바일 터치 드래그 고스트 요소 */
+.sheet-touch-ghost {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    background: #1f6feb;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transform: translate(-50%, -100%);
+    opacity: 0.95;
+    white-space: nowrap;
 }
 
 .sheet-col-del-btn:hover {
@@ -477,36 +568,13 @@
 
 /* 3. 하단 바 */
 .data-sheet-footer {
-    padding: 8px 12px;
+    padding: 8px 14px;
     background: #161b22;
     border-top: 1px solid #30363d;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
     gap: 8px;
     flex-shrink: 0;
-}
-
-.data-quick-add-group {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.data-sheet-date-picker {
-    height: 28px;
-    background: #0d1117;
-    border: 1px solid #30363d;
-    border-radius: 5px;
-    color: #e6edf3;
-    padding: 2px 6px;
-    font-size: 12px;
-    outline: none;
-}
-
-.data-sheet-date-picker:focus {
-    border-color: #58a6ff;
 }
 
 .data-sheet-info-text {
