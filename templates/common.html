@@ -64,7 +64,9 @@
                     </li>
                     <li><a href="{{ url_for('operation') }}" class="{% if active_page == 'operation' %}active{% endif %}">OPERATION</a>
                     </li>
-                    <li class="nav-admin-item" style="{% if not session.get('user_id') %}display: none;{% endif %}"><a href="{{ url_for('admin') }}"
+                    <li><a href="{{ url_for('data_page') }}" class="{% if active_page == 'data' %}active{% endif %}">DATA</a>
+                    </li>
+                    <li class="nav-admin-item"{% if not session.get('user_id') %} style="display: none;"{% endif %}><a href="{{ url_for('admin') }}"
                             class="{% if active_page == 'admin' %}active{% endif %}">ADMIN</a></li>
                 </ul>
             </nav>
@@ -1234,7 +1236,8 @@
                         <option value="셋업 장비">셋업 장비</option>
                         <option value="가동 장비">가동 장비</option>
                         <option value="워런티">워런티</option>
-                        <option value="유류장비">유류장비</option>
+                        <option value="유휴 장비">유휴 장비</option>
+                        <option value="폐기 장비">폐기 장비</option>
                     </select><label class="form-label"
                         style="width: 80px; text-align: center; padding-left: 5px;">납품일</label><input type="date"
                         id="setup-modal-deliveryDate" class="input-dark custom-date-icon"

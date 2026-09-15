@@ -138,7 +138,7 @@ let currentAdminItemId = null; // [추가] 선택된 물품 ID
 let adminItemStocks = []; // [추가] 사업장 구분별 물품 관리 현황 목록
 let currentStockSiteGroup = '전체'; // [추가] 물품 관리 현황 선택된 사업장 구분 (기본: 전체)
 let currentStockSiteName = ''; // [추가] 물품 관리 현황 선택된 사업장명
-const DEFAULT_SITE_GROUPS = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
+const DEFAULT_SITE_GROUPS = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '기타'];
 let selectedMasterItemForStock = null; // [추가] 모달에서 선택된 마스터 물품
 let stockSortColumn = 'code'; // [추가] 물품 관리 현황 정렬 컬럼 (초기값: 코드명 이름순)
 let stockSortAsc = true;   // [추가] 물품 관리 현황 정렬 방향 (true: 오름차순, false: 내림차순)
@@ -1432,6 +1432,7 @@ function handleEquipCsvImport(event) {
                 if (equipStatus === '셋업장비') equipStatus = '셋업 장비';
                 if (equipStatus === '가동장비') equipStatus = '가동 장비';
                 if (equipStatus === '유휴장비') equipStatus = '유휴 장비';
+                if (equipStatus === '폐기장비') equipStatus = '폐기 장비';
 
                 if (!site || !name) {
                     skippedCount++;
@@ -1458,7 +1459,9 @@ function handleEquipCsvImport(event) {
                     }
                 }
 
-                let newKey = `${name}::${serial}::${custEquipName}`;
+                const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
+                const targetModelName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
+                let newKey = `${targetModelName}::${serial}::${custEquipName}`;
                 let isDuplicate = storageData[site].includes(newKey);
 
                 if (!isDuplicate) {
@@ -1657,6 +1660,7 @@ function renderAdminEquipList() {
             if (equipStatus === '가동 장비') statusColor = '#3fb950';
             else if (equipStatus.includes('셋업')) statusColor = '#d29922';
             else if (equipStatus === '워런티') statusColor = '#1f6feb';
+            else if (equipStatus === '폐기 장비') statusColor = '#f85149';
 
             subInfo += ` <span style="color:${statusColor}; font-size:11px; margin-left:2px;">[${escapeHtml(equipStatus)}]</span>`;
         }
@@ -1869,7 +1873,9 @@ async function handleEquipSave() {
         alert('장비명은 제안 박스에서 검색하여 선택해야만 등록할 수 있습니다.'); return false;
     }
 
-    const finalName = matchedModel.name;
+    // [수정] 장비 식별자(ID) 및 저장 모델명은 풀네임 대신 항상 약어(abbr)를 우선 적용하여 유지
+    const modelAbbr = (matchedModel.abbr && matchedModel.abbr.trim()) ? matchedModel.abbr.trim() : matchedModel.name;
+    const finalName = modelAbbr;
     const normKey = (str) => (str || '').replace(/[^a-zA-Z0-9가-힣]/g, '').toLowerCase();
 
     // 기존 키의 파트 분리
@@ -1879,7 +1885,9 @@ async function handleEquipSave() {
     const oldCustEquipNameInKey = oldParts.length > 2 ? oldParts[2] : '';
 
     // 실제 사용자가 모델명, 시리얼번호, 고객사장비명(기존 키에 고객사장비명이 있었던 경우) 또는 사업장을 변경했는지 확인
-    const isModelChanged = currentAdminEquipKey ? (normKey(oldModelName) !== normKey(finalName)) : false;
+    // (기존 키의 모델명이 약어이든 풀네임이든 동일 모델이면 모델 변경으로 처리하지 않고 약어로 유지)
+    const isSameModel = (normKey(oldModelName) === normKey(finalName)) || (normKey(oldModelName) === normKey(matchedModel.name));
+    const isModelChanged = currentAdminEquipKey ? !isSameModel : false;
     const isSerialChanged = currentAdminEquipKey ? (normKey(oldSerial) !== normKey(serial)) : false;
     const isCustChanged = (currentAdminEquipKey && oldCustEquipNameInKey) ? (normKey(oldCustEquipNameInKey) !== normKey(custEquipName)) : false;
     const isSiteChanged = currentAdminEquipKey ? (originalSite !== targetSite) : false;
@@ -4830,7 +4838,7 @@ async function syncItemStocksFromServer(andRender = false) {
 function getAvailableSiteGroups() {
     const defaultGroups = (typeof DEFAULT_SITE_GROUPS !== 'undefined' && Array.isArray(DEFAULT_SITE_GROUPS))
         ? DEFAULT_SITE_GROUPS
-        : ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
+        : ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '기타'];
     const groupSet = new Set(defaultGroups);
     if (window.storageData) {
         for (const key in window.storageData) {

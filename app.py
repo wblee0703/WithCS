@@ -508,8 +508,28 @@ class RequestInfoFilter(logging.Filter):
             record.url = ''
         return True
 
+# [추가] Windows 환경 멀티프로세스(Flask 리로더 등) 파일 락(WinError 32) 방어용 로깅 핸들러
+class SafeTimedRotatingFileHandler(TimedRotatingFileHandler):
+    def doRollover(self):
+        if self.stream:
+            self.stream.close()
+            self.stream = None
+        try:
+            super().doRollover()
+        except PermissionError:
+            # 다른 프로세스가 파일을 점유 중일 경우 크래시 없이 현재 파일에 계속 기록
+            if not self.stream:
+                self.stream = self._open()
+
 # 로깅 핸들러 설정 (매일 자정 회전, 30일 보관)
-file_handler = TimedRotatingFileHandler(os.path.join(LOG_DIR, 'server.log'), when='midnight', interval=1, backupCount=30, encoding='utf-8')
+file_handler = SafeTimedRotatingFileHandler(
+    os.path.join(LOG_DIR, 'server.log'),
+    when='midnight',
+    interval=1,
+    backupCount=30,
+    encoding='utf-8',
+    delay=True
+)
 file_handler.addFilter(RequestInfoFilter())
 file_handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s [%(ip)s] %(method)s %(url)s: %(message)s [in %(pathname)s:%(lineno)d]'))
 file_handler.setLevel(logging.INFO) # [수정] INFO 레벨 로그도 기록하도록 변경
@@ -1040,6 +1060,204 @@ def operation():
     if 'user_id' not in session:
         return redirect('/')
     return render_template('operation.html')
+
+@app.route('/data')
+@app.route('/data.html')
+def data_page():
+    if 'user_id' not in session:
+        return redirect('/')
+    return render_template('data.html')
+
+# ------------------------------------------------------------------------------
+# [DATA 페이지] 장비별 엑셀형 데이터 시트 DB 연동 API
+# 규칙: dbwithtech001 내 장비별 테이블 자동 생성
+# ------------------------------------------------------------------------------
+# [DATA 페이지] 장비별 엑셀형 데이터 시트 DB 연동 API
+# 규칙: dbwithtech001 내 장비별 테이블 자동 생성
+# 테이블명: 장비약어 고객사장비명 또는 (고객사장비명 없을 시) 장비약어 시리얼넘버 (공백 구분)
+# ------------------------------------------------------------------------------
+def get_equip_data_table_name(abbr, cust_equip, serial):
+    def clean_str(val):
+        if not val:
+            return ''
+        # MySQL 테이블명에서 금지된 문자(/, \, ., null byte)만 공백/제거하고 다중 공백은 단일 공백으로 정제
+        cleaned = re.sub(r'[/\\.\x00]+', ' ', str(val).strip())
+        cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+        return cleaned
+
+    abbr_part = clean_str(abbr) or 'EQUIP'
+    cust_part = clean_str(cust_equip)
+    serial_part = clean_str(serial)
+
+    if cust_part:
+        tbl = f"{abbr_part} {cust_part}"
+    elif serial_part:
+        tbl = f"{abbr_part} {serial_part}"
+    else:
+        tbl = f"{abbr_part} DEFAULT"
+
+    # MySQL 식별자 최대 64자 제한 준수 및 끝 공백 제거
+    tbl = tbl[:64].rstrip()
+    return tbl, tbl
+
+@app.route('/api/datasheet/load', methods=['POST'])
+@csrf.exempt
+def load_datasheet():
+    if 'user_id' not in session:
+        return jsonify({"status": "fail", "message": "로그인이 필요합니다."}), 401
+
+    req_data = request.json or {}
+    model_abbr = req_data.get('model_abbr', '').strip()
+    cust_equip = req_data.get('cust_equip', '').strip()
+    serial = req_data.get('serial', '').strip()
+
+    table_name, display_name = get_equip_data_table_name(model_abbr, cust_equip, serial)
+    if not table_name:
+        return jsonify({"status": "fail", "message": "유효하지 않은 장비 정보입니다."}), 400
+
+    try:
+        # 테이블 존재 여부 확인
+        if db_type == 'mysql':
+            chk = db.session.execute(text("SHOW TABLES LIKE :tbl;"), {'tbl': table_name}).fetchone()
+        else:
+            chk = db.session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name=:tbl;"), {'tbl': table_name}).fetchone()
+
+        if not chk:
+            return jsonify({
+                "status": "success",
+                "table_name": table_name,
+                "display_name": display_name,
+                "exists": False,
+                "columns": [],
+                "rows": []
+            })
+
+        # 컬럼 목록 조회
+        if db_type == 'mysql':
+            cols_res = db.session.execute(text(f"SHOW COLUMNS FROM `{table_name}`")).fetchall()
+            all_cols = [r[0] for r in cols_res]
+        else:
+            cols_res = db.session.execute(text(f"PRAGMA table_info(`{table_name}`)"))
+            all_cols = [r[1] for r in cols_res]
+
+        data_cols = [c for c in all_cols if c not in ('id', 'record_date', 'created_at', 'updated_at')]
+
+        # 데이터 행 조회
+        rows_res = db.session.execute(text(f"SELECT * FROM `{table_name}` ORDER BY record_date DESC, id DESC;")).fetchall()
+        rows_data = []
+        for idx, r in enumerate(rows_res):
+            row_dict = dict(r._mapping)
+            date_val = row_dict.get('record_date', '')
+            vals = {c: (row_dict.get(c) if row_dict.get(c) is not None else '') for c in data_cols}
+            rows_data.append({
+                "id": f"row_{row_dict.get('id', idx + 1)}",
+                "date": date_val,
+                "values": vals
+            })
+
+        return jsonify({
+            "status": "success",
+            "table_name": table_name,
+            "display_name": display_name,
+            "exists": True,
+            "columns": data_cols,
+            "rows": rows_data
+        })
+    except Exception as e:
+        app.logger.error(f"Error loading datasheet from table `{table_name}`: {e}", exc_info=True)
+        return jsonify({"status": "fail", "message": str(e)}), 500
+
+@app.route('/api/datasheet/save', methods=['POST'])
+@csrf.exempt
+def save_datasheet():
+    if 'user_id' not in session:
+        return jsonify({"status": "fail", "message": "로그인이 필요합니다."}), 401
+
+    req_data = request.json or {}
+    model_abbr = req_data.get('model_abbr', '').strip()
+    cust_equip = req_data.get('cust_equip', '').strip()
+    serial = req_data.get('serial', '').strip()
+    columns = req_data.get('columns', [])
+    rows = req_data.get('rows', [])
+
+    table_name, display_name = get_equip_data_table_name(model_abbr, cust_equip, serial)
+    if not table_name:
+        return jsonify({"status": "fail", "message": "유효하지 않은 장비 정보입니다."}), 400
+
+    try:
+        # 1. 테이블 생성 (없는 경우)
+        if db_type == 'mysql':
+            create_tbl_sql = f"""
+            CREATE TABLE IF NOT EXISTS `{table_name}` (
+                `id` INT AUTO_INCREMENT PRIMARY KEY,
+                `record_date` VARCHAR(30) NOT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            """
+        else:
+            create_tbl_sql = f"""
+            CREATE TABLE IF NOT EXISTS `{table_name}` (
+                `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+                `record_date` VARCHAR(30) NOT NULL,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            """
+        db.session.execute(text(create_tbl_sql))
+        db.session.commit()
+
+        # 2. 기존 컬럼 확인
+        if db_type == 'mysql':
+            cols_res = db.session.execute(text(f"SHOW COLUMNS FROM `{table_name}`")).fetchall()
+            existing_cols = [r[0] for r in cols_res]
+        else:
+            cols_res = db.session.execute(text(f"PRAGMA table_info(`{table_name}`)"))
+            existing_cols = [r[1] for r in cols_res]
+
+        # 3. 새로운 열(Column) 동적 추가
+        for col in columns:
+            col_safe = col.replace('`', '').strip()
+            if col_safe and col_safe not in existing_cols:
+                if db_type == 'mysql':
+                    db.session.execute(text(f"ALTER TABLE `{table_name}` ADD COLUMN `{col_safe}` TEXT NULL;"))
+                else:
+                    db.session.execute(text(f"ALTER TABLE `{table_name}` ADD COLUMN `{col_safe}` TEXT;"))
+                existing_cols.append(col_safe)
+        db.session.commit()
+
+        # 4. 데이터 동기화 (전체 행 재반영)
+        db.session.execute(text(f"DELETE FROM `{table_name}`;"))
+
+        valid_columns = [c for c in columns if c.replace('`', '').strip() in existing_cols]
+        for r in rows:
+            date_val = r.get('date', '')
+            vals = r.get('values', {})
+
+            col_list = ['`record_date`']
+            ph_list = [':rec_date']
+            params = {'rec_date': date_val}
+
+            for idx, c in enumerate(valid_columns):
+                c_safe = c.replace('`', '').strip()
+                col_list.append(f"`{c_safe}`")
+                param_key = f"val_{idx}"
+                ph_list.append(f":{param_key}")
+                params[param_key] = str(vals.get(c, '')) if vals.get(c) is not None else ''
+
+            insert_sql = f"INSERT INTO `{table_name}` ({', '.join(col_list)}) VALUES ({', '.join(ph_list)});"
+            db.session.execute(text(insert_sql), params)
+
+        db.session.commit()
+        return jsonify({
+            "status": "success",
+            "table_name": table_name,
+            "display_name": display_name,
+            "row_count": len(rows),
+            "column_count": len(valid_columns)
+        })
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error saving datasheet to table `{table_name}`: {e}", exc_info=True)
+        return jsonify({"status": "fail", "message": str(e)}), 500
 
 # [추가] SettingDAO 폴더 정적 파일 서빙
 @app.route('/SettingDAO/<path:filename>')

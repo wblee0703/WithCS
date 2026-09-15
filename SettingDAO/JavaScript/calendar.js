@@ -1227,7 +1227,7 @@ function setupSearchModal() {
 
         // [추가] 사업장 그룹 일괄 선택/해제 버튼 (Sort 메뉴 스타일)
         if (!document.getElementById('calendar-site-group-toggle-container')) {
-            const siteGroups = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
+            const siteGroups = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '기타'];
             const btnsHtml = siteGroups.map(g => `<button type="button" class="btn-gray site-group-toggle-btn" data-group="${g}" style="padding: 2px 6px; font-size: 11px; margin-right: 4px; margin-bottom: 4px; cursor: pointer;">${g}</button>`).join('');
             const extraHeader = `<div id="calendar-site-group-toggle-container" style="padding: 8px 8px 4px 8px; border-bottom: 1px solid #30363d; display: flex; flex-wrap: wrap;">${btnsHtml}</div>`;
 

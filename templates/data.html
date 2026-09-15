@@ -1,0 +1,148 @@
+{% extends 'common.html' %}
+{% set active_page = 'data' %}
+
+{% block title %}데이터 관리 - WithTech{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/data.css') }}?v=1.0.5">
+<style>
+    /* 달력 아이콘 반전 */
+    .custom-date-icon::-webkit-calendar-picker-indicator {
+        filter: invert(0.6);
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="data-dashboard-wrapper">
+    <!-- 좌측 사이드바: 사업장 및 장비 선택기 -->
+    <aside class="data-sidebar">
+        <!-- 1. 사업장 컬럼 -->
+        <div class="data-sidebar-col">
+            <div class="data-sidebar-header">
+                <div class="data-sidebar-title-row">
+                    <h3>🏢 사업장 <span id="data-site-count" class="data-count-badge">0</span></h3>
+                </div>
+                <input type="text" id="data-site-search" class="data-search-input" placeholder="사업장 검색..." autocomplete="off">
+            </div>
+            <ul id="data-site-list" class="data-list">
+                <!-- JS 렌더링 -->
+            </ul>
+        </div>
+
+        <!-- 2. 장비 목록 컬럼 -->
+        <div class="data-sidebar-col">
+            <div class="data-sidebar-header">
+                <div class="data-sidebar-title-row">
+                    <h3>🛠️ 장비목록 <span id="data-equip-count" class="data-count-badge">0</span></h3>
+                </div>
+                <input type="text" id="data-equip-search" class="data-search-input" placeholder="장비/시리얼 검색..." autocomplete="off">
+            </div>
+            <ul id="data-equip-list" class="data-list">
+                <!-- JS 렌더링 -->
+            </ul>
+        </div>
+    </aside>
+
+    <!-- 우측 메인 컨텐츠 영역 -->
+    <main class="data-main">
+        <!-- 장비 미선택 시 기본 안내 뷰 -->
+        <div id="data-placeholder-view" class="data-placeholder-view">
+            <div class="data-placeholder-icon">📊</div>
+            <h3 style="margin: 0 0 8px 0; color: #e6edf3;">장비 데이터 관리</h3>
+            <p style="margin: 0; font-size: 13px; line-height: 1.6;">
+                좌측 사이드바에서 <strong>사업장</strong>과 <strong>장비</strong>를 선택하면<br>
+                해당 장비의 측정 데이터 입력 및 관리 화면이 표시됩니다.
+            </p>
+        </div>
+
+        <!-- 장비 선택 시 노출되는 데이터 작업 뷰 (엑셀형 데이터 시트) -->
+        <div id="data-content-view" class="data-content-view" style="display: none;">
+            <!-- 1. 장비 정보 요약 및 시트 툴바 헤더 -->
+            <div class="data-sheet-header-card">
+                <div class="data-equip-info-left">
+                    <h3 id="data-header-equip-title" class="data-equip-title">-</h3>
+                    <span id="data-header-site-tag" class="data-tag data-tag-site">-</span>
+                    <span id="data-header-serial-tag" class="data-tag data-tag-serial">-</span>
+                    <span id="data-header-cust-tag" class="data-tag data-tag-cust" style="display: none;">-</span>
+                    <span id="data-header-table-tag" class="data-tag data-tag-table" style="display: none;">-</span>
+                </div>
+                <div class="data-sheet-toolbar">
+                    <div class="data-sheet-actions">
+                        <button type="button" id="btn-add-sheet-col" class="btn-blue-sm" title="새로운 항목 열 추가">
+                            ➕ 열 추가
+                        </button>
+                        <button type="button" id="btn-add-sheet-row" class="btn-blue-sm" title="오늘 날짜 행 추가">
+                            ➕ 행 추가
+                        </button>
+                        <button type="button" id="btn-import-equip-data-csv" class="btn-blue-sm" title="CSV 파일 가져오기">
+                            📂 CSV 불러오기
+                        </button>
+                        <input type="file" id="data-csv-file-input" accept=".csv, text/csv" style="display: none;">
+                        <button type="button" id="btn-export-equip-data-csv" class="btn-green-sm" title="CSV 다운로드">
+                            📥 CSV 내보내기
+                        </button>
+                        <button type="button" id="btn-clear-equip-data" class="btn-del-sm" title="시트 데이터 초기화">
+                            시트 초기화
+                        </button>
+                    </div>
+                    <div id="data-save-indicator" class="data-save-status">
+                        <span class="save-dot"></span> 자동 저장됨
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. 엑셀형 데이터 시트 카드 -->
+            <div class="data-sheet-card">
+                <div class="data-sheet-wrapper">
+                    <table class="data-sheet-table" id="data-sheet-table">
+                        <thead id="data-sheet-thead">
+                            <!-- 동적 열 헤더 렌더링 -->
+                        </thead>
+                        <tbody id="data-sheet-tbody">
+                            <!-- 동적 날짜별 행 렌더링 -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 3. 하단 빠른 행 추가 및 안내 바 -->
+                <div class="data-sheet-footer">
+                    <div class="data-quick-add-group">
+                        <span style="font-size: 12px; color: #8b949e;">날짜 지정:</span>
+                        <input type="date" id="data-quick-add-date" class="data-sheet-date-picker custom-date-icon">
+                        <button type="button" id="btn-quick-add-row" class="btn-blue-sm">
+                            ➕ 날짜 행 추가
+                        </button>
+                    </div>
+                    <div class="data-sheet-info-text">
+                        <span>💡 셀을 클릭하여 직접 값을 수정하세요. (Tab: 다음 열, Enter: 다음 행)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 열 추가 모달 -->
+        <div id="data-col-modal" class="data-modal-overlay" style="display: none;">
+            <div class="data-modal-box">
+                <div class="data-modal-header">
+                    <h4>➕ 새로운 항목 열 추가</h4>
+                    <button type="button" class="data-modal-close" id="btn-close-col-modal">&times;</button>
+                </div>
+                <div class="data-modal-body">
+                    <label for="data-new-col-name" style="display: block; font-size: 13px; margin-bottom: 8px; color: #c9d1d9;">열 이름 (측정 항목명 및 단위)</label>
+                    <input type="text" id="data-new-col-name" class="data-modal-input" placeholder="예: 온도(℃), 압력(kPa), Laser Power(W) 등" autocomplete="off">
+                </div>
+                <div class="data-modal-footer">
+                    <button type="button" class="btn-gray-sm" id="btn-cancel-col-modal">취소</button>
+                    <button type="button" id="btn-confirm-add-col" class="btn-blue-sm">추가</button>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('SettingDAO', filename='JavaScript/data.js') }}?v=1.0.6"></script>
+{% endblock %}

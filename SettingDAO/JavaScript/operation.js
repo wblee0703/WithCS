@@ -258,8 +258,10 @@ function renderOperationSites() {
         siteToGroupMap[site] = group;
     });
 
-    const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
-    const groups = Object.keys(groupedSites).sort((a, b) => {
+    const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '기타'];
+    const groupSet = new Set(order);
+    Object.keys(groupedSites).forEach(g => groupSet.add(g));
+    const groups = Array.from(groupSet).sort((a, b) => {
         const idxA = order.indexOf(a);
         const idxB = order.indexOf(b);
         if (idxA !== -1 && idxB !== -1) return idxA - idxB;

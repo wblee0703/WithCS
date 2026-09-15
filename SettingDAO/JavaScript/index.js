@@ -32,6 +32,7 @@ window.getSiteColor = function (siteName) {
     if (siteName === 'SKH 청주') return '#F37021';
     if (siteName === 'SCS 서안') return '#0096D6';
     if (siteName === 'SKH 우시') return '#d29922';
+    if (siteName === '기타 해외') return '#00a8a8';
     if (siteName === '기타') return '#1b7c83';
     if (siteName === '기타사업장') return '#8957e5';
 
@@ -61,6 +62,7 @@ window.getSiteGradient = function (siteName) {
     if (siteName === 'SKH 청주') return 'linear-gradient(to top, #F37021, #ff9e66)';
     if (siteName === 'SCS 서안') return 'linear-gradient(to top, #0096D6, #66c2ff)';
     if (siteName === 'SKH 우시') return 'linear-gradient(to top, #d29922, #e3b341)';
+    if (siteName === '기타 해외') return 'linear-gradient(to top, #00a8a8, #33d1d1)';
     if (siteName === '기타') return 'linear-gradient(to top, #1b7c83, #3fb950)';
     if (siteName === '기타사업장') return 'linear-gradient(to top, #8957e5, #a371f7)';
 
@@ -424,7 +426,13 @@ function updateMaintenanceDashboard() {
 
     if (data) {
         Object.keys(data).forEach(site => {
-            const list = data[site] ? data[site].filter(e => !e.startsWith('기타(ETC)')) : [];
+            const list = data[site] ? data[site].filter(e => {
+                if (e.startsWith('기타(ETC)')) return false;
+                const dKey = `details_${site}_${e}`;
+                const dData = JSON.parse(localStorage.getItem(dKey));
+                const eqStatus = (dData && dData.setup && dData.setup.equipStatus) ? dData.setup.equipStatus : '';
+                return eqStatus !== '폐기 장비';
+            }) : [];
             const count = list.length;
             if (count > 0) {
                 const groupName = window.getSiteGroupName(site);
@@ -434,7 +442,7 @@ function updateMaintenanceDashboard() {
         });
 
         // 지정된 우선순위대로 정렬
-        const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타'];
+        const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '기타'];
         order.forEach(name => {
             if (groupCounts[name]) siteStats.push({ name: name, count: groupCounts[name] });
         });
@@ -454,6 +462,11 @@ function updateMaintenanceDashboard() {
                 if (list && Array.isArray(list)) {
                     list.forEach(item => {
                         if (item.startsWith('기타(ETC)')) return;
+                        const dKey = `details_${site}_${item}`;
+                        const dData = JSON.parse(localStorage.getItem(dKey));
+                        const eqStatus = (dData && dData.setup && dData.setup.equipStatus) ? dData.setup.equipStatus : '';
+                        if (eqStatus === '폐기 장비') return;
+
                         totalEquipForChart++;
                         const name = item.split('::')[0];
                         const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
@@ -469,6 +482,11 @@ function updateMaintenanceDashboard() {
             if (list && Array.isArray(list)) {
                 list.forEach(item => {
                     if (item.startsWith('기타(ETC)')) return;
+                    const dKey = `details_${site}_${item}`;
+                    const dData = JSON.parse(localStorage.getItem(dKey));
+                    const eqStatus = (dData && dData.setup && dData.setup.equipStatus) ? dData.setup.equipStatus : '';
+                    if (eqStatus === '폐기 장비') return;
+
                     totalEquipForChart++;
                     const name = item.split('::')[0];
                     const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
@@ -570,6 +588,11 @@ function renderEquipDetailList(data) {
             if (data[site]) {
                 data[site].forEach(equip => {
                     if (equip.startsWith('기타(ETC)')) return;
+                    const dKey = `details_${site}_${equip}`;
+                    const dData = JSON.parse(localStorage.getItem(dKey));
+                    const eqStatus = (dData && dData.setup && dData.setup.equipStatus) ? dData.setup.equipStatus : '';
+                    if (eqStatus === '폐기 장비') return;
+
                     const name = equip.split('::')[0];
                     const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
                     const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
@@ -712,6 +735,9 @@ function renderUpcomingList(data) {
                     const detailData = JSON.parse(localStorage.getItem(key));
 
                     if (detailData) {
+                        const eqStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
+                        if (eqStatus === '폐기 장비') return;
+
                         // 1. 완료 이력 (logs) 확인 - 작업 완료된 항목만 점검 리스트에 노출
                         if (detailData.logs) {
                             detailData.logs.forEach(log => {

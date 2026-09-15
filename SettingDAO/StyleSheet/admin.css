@@ -951,6 +951,7 @@ body.role-admin .tag-remove {
     margin: 0;
     box-sizing: border-box;
     -moz-appearance: textfield;
+    appearance: textfield;
 }
 
 .stock-qty-input::-webkit-outer-spin-button,

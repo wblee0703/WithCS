@@ -184,15 +184,24 @@ function renderTroubleSites() {
 
     siteList.innerHTML = `<li data-site="ALL" class="active">전체 사업장</li>`;
 
-    // 사업장들의 구분을 중복 없이 수집
-    const groups = new Set();
+    // 사업장들의 구분을 중복 없이 수집 (표준 그룹 기본 포함)
+    const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '기타'];
+    const groups = new Set(order);
     Object.keys(deviceData).forEach(site => {
         if (site !== 'models' && site !== 'details') {
             groups.add(getSiteGroup(site));
         }
     });
 
-    const sortedGroups = Array.from(groups).sort();
+    const sortedGroups = Array.from(groups).sort((a, b) => {
+        const idxA = order.indexOf(a);
+        const idxB = order.indexOf(b);
+        if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+        if (idxA !== -1) return -1;
+        if (idxB !== -1) return 1;
+        return a.localeCompare(b);
+    });
+
     sortedGroups.forEach(g => {
         siteList.insertAdjacentHTML('beforeend', `<li data-site="${escapeHtml(g)}">${escapeHtml(g)}</li>`);
     });
