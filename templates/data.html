@@ -4,7 +4,7 @@
 {% block title %}데이터 관리 - WithTech{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/data.css') }}?v=1.0.8">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/data.css') }}?v=1.1.1">
 <style>
     /* 달력 아이콘 반전 */
     .custom-date-icon::-webkit-calendar-picker-indicator {
@@ -22,7 +22,7 @@
         <div class="data-sidebar-col">
             <div class="data-sidebar-header">
                 <div class="data-sidebar-title-row">
-                    <h3>🏢 사업장 <span id="data-site-count" class="data-count-badge">0</span></h3>
+                    <h3>사업장 <span id="data-site-count" class="data-count-badge">0</span></h3>
                 </div>
                 <input type="text" id="data-site-search" class="data-search-input" placeholder="사업장 검색..." autocomplete="off">
             </div>
@@ -35,7 +35,7 @@
         <div class="data-sidebar-col">
             <div class="data-sidebar-header">
                 <div class="data-sidebar-title-row">
-                    <h3>🛠️ 장비목록 <span id="data-equip-count" class="data-count-badge">0</span></h3>
+                    <h3>장비목록 <span id="data-equip-count" class="data-count-badge">0</span></h3>
                 </div>
                 <input type="text" id="data-equip-search" class="data-search-input" placeholder="장비/시리얼 검색..." autocomplete="off">
             </div>
@@ -137,5 +137,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/data.js') }}?v=1.1.3"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/data.js') }}?v=1.1.8"></script>
 {% endblock %}

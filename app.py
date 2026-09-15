@@ -1822,6 +1822,36 @@ def build_rag_context(user, user_message):
                         det = f" [{il.part_detail}]" if il.part_detail else ""
                         context_lines.append(f"    * [코드: {il.code}] {il.part}{det} (스펙: {il.spec or '-'}, 교체/등록일: {il.date or '-'}, 주기: {il.cycle or '-'})")
 
+                # [추가] 장비 데이터 시트 (zData) 측정값 기록 조회
+                try:
+                    tbl_name, _ = get_equip_data_table_name(eq.name, eq.cust_equip_name, eq.serial)
+                    if db_type == 'mysql':
+                        chk = db.session.execute(text("SHOW TABLES LIKE :tbl;"), {'tbl': tbl_name}).fetchone()
+                    else:
+                        chk = db.session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name=:tbl;"), {'tbl': tbl_name}).fetchone()
+
+                    if chk:
+                        if db_type == 'mysql':
+                            cols_res = db.session.execute(text(f"SHOW COLUMNS FROM `{tbl_name}`;")).fetchall()
+                            data_cols = [r[0] for r in cols_res if r[0] not in ('id', 'record_date', 'created_at')]
+                        else:
+                            cols_res = db.session.execute(text(f"PRAGMA table_info(`{tbl_name}`);")).fetchall()
+                            data_cols = [r[1] for r in cols_res if r[1] not in ('id', 'record_date', 'created_at')]
+
+                        s_rows = db.session.execute(text(f"SELECT * FROM `{tbl_name}` ORDER BY record_date DESC, id DESC LIMIT 5;")).fetchall()
+                        if s_rows:
+                            context_lines.append(f"  - 데이터 시트 측정값 [DB 테이블: `{tbl_name}`] (최근 {len(s_rows)}건):")
+                            context_lines.append(f"    * 측정 항목: {', '.join(data_cols)}")
+                            for sr in s_rows:
+                                sr_map = dict(sr._mapping)
+                                rd = sr_map.get('record_date', '')
+                                val_parts = [f"{c}: {sr_map.get(c, '')}" for c in data_cols if sr_map.get(c) is not None]
+                                context_lines.append(f"    * [{rd}] {', '.join(val_parts)}")
+                        else:
+                            context_lines.append(f"  - 데이터 시트 테이블(`{tbl_name}`)이 존재하나 기록된 측정 데이터가 없습니다.")
+                except Exception as de:
+                    app.logger.warning(f"Error reading zData table for {eq.name}: {de}")
+
         # 2) 매칭된 장비가 5대를 초과하여 다량인 경우: 토큰 폭발 방지를 위해 사전 통계 분석 및 핵심 연관 조치사례(Top-5) 요약 제공
         else:
             eq_ids = [eq.id for eq in matched_equips]
@@ -2108,6 +2138,76 @@ def build_rag_context(user, user_message):
             if len(all_equips) > 15:
                 context_lines.append(f"  (외 {len(all_equips) - 15}대의 장비가 더 존재합니다. 특정 장비명이나 시리얼로 정확하게 검색하실 수 있습니다.)")
 
+    # 3-7. 데이터베이스(DB) 전체 저장 내용 상세 체크 및 데이터 시트(zData) 현황
+    intent_db_check = any(k in msg_no_space for k in [
+        "데이터베이스", "database", "db", "내용체크", "체크", "데이터확인", "데이터시트", "datasheet",
+        "측정데이터", "측정값", "테이블", "저장된내용", "등록된내용", "zdata", "데이터"
+    ])
+
+    if intent_db_check or "데이터" in user_message or "db" in raw_msg_lower or "베이스" in user_message or "체크" in user_message:
+        context_lines.append("\n[데이터베이스(DB) 저장 현황 및 측정 데이터 시트 상세 체크]")
+        
+        # 1) 사업장 및 장비 현황
+        all_sites_list = [s.name for s in Site.query.all()]
+        context_lines.append(f"■ 1. 사업장 및 장비 마스터 DB: 등록 사업장 {len(all_sites_list)}곳 ({', '.join(all_sites_list)}), 총 등록 장비 {len(all_equips)}대")
+        
+        # 2) 점검 일지 및 장애 로그 현황
+        recent_logs = LogItem.query.order_by(LogItem.date.desc(), LogItem.id.desc()).limit(5).all()
+        context_lines.append(f"■ 2. 점검/작업 일지 DB: 누적 {total_maint}건 예정 / 최근 기록된 작업 {len(recent_logs)}건")
+        for rl in recent_logs:
+            context_lines.append(f"  - [{rl.date}] {rl.equip_id.split('::')[-1]} | {rl.type} - {rl.detail_type or rl.content} (작업자: {rl.worker or '-'}, 상태: {rl.status})")
+
+        recent_troubles = TroubleLog.query.order_by(TroubleLog.occur_date.desc(), TroubleLog.id.desc()).limit(5).all()
+        context_lines.append(f"■ 3. 트러블/장애 로그 DB: 누적 {total_trouble}건 (현재 조치중: {active_trouble}건)")
+        for rt in recent_troubles:
+            t_content = parse_trouble_content(rt.trouble_details) or rt.situation or rt.symptom or rt.measure or '-'
+            context_lines.append(f"  - [{rt.occur_date or '미기록'}] {rt.equip_id.split('::')[-1]} | 상태: {rt.status} | 내용: {t_content}")
+
+        # 3) 장비별 측정 데이터 시트 (zData Tables)
+        context_lines.append(f"■ 4. 장비별 측정 데이터 시트 (zData) DB 테이블 현황:")
+        try:
+            if db_type == 'mysql':
+                z_tables = db.session.execute(text("SHOW TABLES LIKE 'zData %';")).fetchall()
+                z_table_names = [r[0] for r in z_tables]
+            else:
+                z_tables = db.session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'zData %';")).fetchall()
+                z_table_names = [r[0] for r in z_tables]
+
+            if z_table_names:
+                context_lines.append(f"  - DB에 생성된 장비 데이터 시트 테이블: 총 {len(z_table_names)}개")
+                for tbl in z_table_names[:10]:
+                    try:
+                        row_cnt = db.session.execute(text(f"SELECT COUNT(*) FROM `{tbl}`;")).scalar()
+                        if db_type == 'mysql':
+                            cols_res = db.session.execute(text(f"SHOW COLUMNS FROM `{tbl}`;")).fetchall()
+                            tbl_cols = [r[0] for r in cols_res if r[0] not in ('id', 'record_date', 'created_at')]
+                        else:
+                            cols_res = db.session.execute(text(f"PRAGMA table_info(`{tbl}`);")).fetchall()
+                            tbl_cols = [r[1] for r in cols_res if r[1] not in ('id', 'record_date', 'created_at')]
+                        
+                        cols_display = f"측정항목: {', '.join(tbl_cols)}" if tbl_cols else "측정항목 없음"
+                        
+                        # 최신 데이터 1~2건 샘플링
+                        latest_srs = db.session.execute(text(f"SELECT * FROM `{tbl}` ORDER BY record_date DESC, id DESC LIMIT 2;")).fetchall()
+                        if latest_srs:
+                            samples = []
+                            for sr in latest_srs:
+                                sr_dict = dict(sr._mapping)
+                                r_d = sr_dict.get('record_date', '')
+                                v_s = ", ".join([f"{c}={sr_dict.get(c, '')}" for c in tbl_cols[:4]])
+                                samples.append(f"[{r_d}: {v_s}]")
+                            context_lines.append(f"  * `{tbl}`: 총 {row_cnt}행 데이터 | {cols_display} | 최근 기록: {' / '.join(samples)}")
+                        else:
+                            context_lines.append(f"  * `{tbl}`: {cols_display} (기록된 데이터 행 없음)")
+                    except Exception as te:
+                        context_lines.append(f"  * `{tbl}`: 확인 중 오류 ({te})")
+                if len(z_table_names) > 10:
+                    context_lines.append(f"  (외 {len(z_table_names) - 10}개의 장비 데이터 시트 테이블이 DB에 더 존재합니다.)")
+            else:
+                context_lines.append("  - 현재 생성된 zData 측정 데이터 테이블이 없습니다. (DATA 페이지에서 데이터를 입력하거나 CSV를 가져오면 자동 생성됩니다.)")
+        except Exception as ze:
+            context_lines.append(f"  - zData 테이블 조회 실패: {ze}")
+
     return "\n".join(context_lines)
 
 def call_external_chat_api(prompt, system_instruction):
@@ -2271,7 +2371,7 @@ def ai_chatbot():
 
         # 3. 프롬프트 및 지침 작성 (트러블슈팅 분석 및 통계 가이드 전문 정체성 부여)
         system_instruction = (
-            "너는 위드텍(WITHTECH) 사내 장비 점검/유지보수 데이터 및 장애(Trouble) 로그 분석 전문 수석 엔지니어 AI 비서이다.\n"
+            "너는 위드텍(WITHTECH) 사내 통합 데이터베이스(DB) 점검/유지보수 데이터, 장애(Trouble) 로그, 그리고 장비별 데이터 시트(측정값 데이터, zData) 분석 전문 수석 엔지니어 AI 비서이다.\n"
             "너가 제공받는 컨텍스트 데이터(Context) 및 사용자 질문은 보안 유출 방지를 위해 마스킹 처리되어 전달된다.\n"
             "답변을 작성할 때 [MASK_SITE_*], [MASK_SERIAL_*], [MASK_NAME_*], [MASK_PHONE_*], [MASK_EMAIL_*] 등의 "
             "마스킹 토큰은 실제 기밀 데이터가 치환된 중요한 보안 키이므로 절대 임의로 복원하거나 변경(예: 이름 추측 등)하지 말고, "
@@ -2287,8 +2387,11 @@ def ai_chatbot():
             "         - 증상/원인별로 즉각 실행할 수 있는 물리 점검, 전원, SMPS, 소프트웨어(펌웨어) 등의 필수 조치 절차를 간략하게 요약해라.\n"
             "      3. **향후 예방을 위한 SOP(점검 매뉴얼) 보완 방안**:\n"
             "         - 구체적인 SOP 고도화 제안 및 예방 정비 주기(단축 및 점검 추가)에 대한 현실적인 보완책을 한두 문장씩 명료하게 기술해라.\n"
-            "  - [상황 B] 사용자가 단순히 수량(몇 대인가, 몇 건인가), 일정 날짜 확인, 단순 인사 등 단발성 정보를 물어볼 때:\n"
-            "    불필요한 대응 방안이나 조치 SOP를 억지로 지어내지 말고, 질문한 핵심 정답 수치와 날짜 정보만 명료하고 간결하게(1~2줄 내외) 한두 문장으로 신속하게 대답해라.\n"
+            "  - [상황 B] 사용자가 데이터베이스(DB) 내용 체크, 장비 목록, 측정 데이터 시트(zData), 저장된 현황 등을 물어볼 때:\n"
+            "    제공된 [참고 컨텍스트]의 데이터베이스 실제 조회 내용을 바탕으로, 어떤 데이터(장비 마스터, 사업장, 점검 작업 일지, 장애 로그, 장비별 측정 데이터 시트 테이블 및 최신 측정값 등)가 데이터베이스에 저장되어 있는지 사실에 근거하여 명확하고 체계적인 마크다운 요약 리포트로 친절하게 답변해라.\n"
+            "    실제 기록된 날짜, 측정 항목, 수치, 장비명 등을 충실하게 인용하여 신뢰도 높은 답변을 제공해라.\n"
+            "  - [상황 C] 사용자가 단순히 수량(몇 대인가, 몇 건인가), 일정 날짜 확인, 단순 인사 등 단발성 정보를 물어볼 때:\n"
+            "    불필요한 대응 방안이나 조치 SOP를 억지로 지어내지 말고, 질문한 핵심 정답 수치와 날짜 정보만 명료하고 간결하게(1~2줄 내외) 신속하게 대답해라.\n"
             "만약 사용자가 장비, 점검 일정, 장애 이력 등 '사내 데이터'에 관해 질문했는데 제공된 [참고 컨텍스트]에 관련 정보가 전혀 없는 경우라면 억지로 거짓말을 꾸며내지 말고 정중하게 모른다고 대답해라.\n"
             "단순 인사, 자아정체성(너는 누구니 등), 일반 상식 대화는 [참고 컨텍스트]에 정보가 없더라도 AI가 가진 일반 지식을 바탕으로 자연스럽고 친절하게 응답해주어라.\n"
             "친절하고 정중한 높임말로 답변해라.\n"

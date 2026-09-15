@@ -2265,6 +2265,33 @@ window.moveToCalendarView = function () {
     window.location.href = '/?scrollTo=calendar';
 };
 
+// [추가] DATA 화면 이동 로직
+window.moveToDataView = function () {
+    if (!currentPath.site || !currentPath.equip) {
+        alert('장비를 선택해주세요.');
+        return;
+    }
+
+    // 저장되지 않은 변경사항 확인
+    const currentMemo = document.getElementById('device-memo') ? document.getElementById('device-memo').value : "";
+    const currentWorker = document.getElementById('memo-worker') ? document.getElementById('memo-worker').value : "";
+    if (selectedLogId !== null && (currentMemo !== originalMemo || currentWorker !== originalWorker)) {
+        if (!confirm('작성 중인 작업 내용(메모)이 저장되지 않았습니다. 저장하지 않고 이동하시겠습니까?')) {
+            return;
+        }
+    }
+
+    const site = currentPath.site;
+    const equip = currentPath.equip;
+
+    // 세션 스토리지 및 URL 파라미터 전달
+    sessionStorage.setItem('target_data_site', site);
+    sessionStorage.setItem('target_data_equip', equip);
+
+    // DATA 화면으로 이동
+    window.location.href = `/data?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
+};
+
 // [추가] 유지관리 물품 이력 팝업창 호출 및 렌더링 함수
 window.openMaintHistoryModal = function () {
     if (!currentPath.site || !currentPath.equip) {

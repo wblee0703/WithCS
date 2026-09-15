@@ -13,10 +13,21 @@ let currentSheetData = {
 };
 
 let autoSaveTimer = null;
+let isDataPageInitialized = false;
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. 초기 데이터 로드
-    initDataPage();
+    const runInit = () => {
+        if (isDataPageInitialized) return;
+        isDataPageInitialized = true;
+        initDataPage();
+    };
+
+    if (localStorage.getItem('device_data') || window.isDataLoaded) {
+        runInit();
+    } else {
+        window.addEventListener('DataLoaded', runInit);
+        setTimeout(runInit, 300);
+    }
 
     // 2. 검색 및 필터 이벤트 리스너 설정
     setupDataEventListeners();
@@ -32,6 +43,78 @@ function initDataPage() {
     const quickDate = document.getElementById('data-quick-add-date');
     if (quickDate) {
         quickDate.value = getTodayString();
+    }
+
+    // URL 파라미터(?site=...&equip=...) 또는 세션스토리지 기반 장비 필터 자동 적용
+    checkAndApplyTargetFilter();
+}
+
+/**
+ * URL 파라미터 또는 세션스토리지 기반 사업장/장비 자동 필터 및 선택
+ */
+function checkAndApplyTargetFilter() {
+    const urlParams = new URLSearchParams(window.location.search);
+    let targetSite = urlParams.get('site') || sessionStorage.getItem('target_data_site');
+    let targetEquip = urlParams.get('equip') || sessionStorage.getItem('target_data_equip');
+
+    // 1회성 세션 스토리지 정리
+    sessionStorage.removeItem('target_data_site');
+    sessionStorage.removeItem('target_data_equip');
+
+    if (!targetSite) return;
+
+    // 1. 사업장 선택
+    selectSite(targetSite);
+    const activeSiteLi = document.querySelector(`#data-site-list .data-list-item[data-site="${targetSite}"]`);
+    if (activeSiteLi) {
+        activeSiteLi.scrollIntoView({ block: 'nearest' });
+    }
+
+    if (!targetEquip) return;
+
+    // 2. 장비 목록에서 targetEquip 검색 및 매칭
+    const deviceData = JSON.parse(localStorage.getItem('device_data')) || (window.storageData || {});
+    const rawEquips = deviceData[targetSite] || [];
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+    const validEquips = rawEquips.filter(e => !e.startsWith('기타(ETC)'));
+
+    const items = validEquips.map(equipKey => {
+        const parts = equipKey.split('::');
+        const modelName = parts[0] || '';
+        const serial = parts.length > 1 ? parts[1] : '';
+        const custEquip = parts.length > 2 ? parts[2] : '';
+        const matched = equipmentModels.find(m => m.name === modelName || m.abbr === modelName);
+        const displayName = (matched && matched.abbr) ? matched.abbr : modelName;
+        return { key: equipKey, displayName, serial, custEquip };
+    });
+
+    let matchedItem = items.find(it => it.key === targetEquip);
+    if (!matchedItem) {
+        const parts = targetEquip.split('::');
+        const serialPart = parts.length > 1 ? parts[1] : '';
+        if (serialPart) {
+            matchedItem = items.find(it => it.serial === serialPart || it.key.includes(serialPart));
+        }
+    }
+    if (!matchedItem) {
+        matchedItem = items.find(it => targetEquip.includes(it.key) || it.key.includes(targetEquip));
+    }
+
+    if (matchedItem) {
+        // 장비 검색 입력창에 해당 장비 시리얼(또는 표시명)을 설정하여 필터링
+        const equipSearchInput = document.getElementById('data-equip-search');
+        if (equipSearchInput) {
+            equipSearchInput.value = matchedItem.serial || matchedItem.displayName;
+            renderEquipList();
+        }
+
+        // 장비 선택 및 데이터 시트 로드
+        selectEquip(matchedItem);
+
+        const activeEquipLi = document.querySelector(`#data-equip-list .data-list-item[data-equip-key="${matchedItem.key}"]`);
+        if (activeEquipLi) {
+            activeEquipLi.scrollIntoView({ block: 'nearest' });
+        }
     }
 }
 
@@ -79,7 +162,7 @@ function renderSiteList() {
 
         li.innerHTML = `
             <div class="data-item-main">
-                <span>🏢 ${escapeHtml(site)}</span>
+                <span>${escapeHtml(site)}</span>
             </div>
         `;
 
@@ -175,7 +258,7 @@ function renderEquipList() {
 
         li.innerHTML = `
             <div class="data-item-main">
-                <span style="font-weight:600;">🛠️ ${escapeHtml(item.displayName)}</span>
+                <span style="font-weight:600;">${escapeHtml(item.displayName)}</span>
                 ${subText ? `<span style="color:#58a6ff; font-size:11px;">${subText}</span>` : ''}
             </div>
         `;
@@ -478,38 +561,29 @@ function renderSheetTable() {
     let headHtml = '<tr>';
     
     // No 컬럼
-    const noSortIcon = currentSort.key === '__no__' 
-        ? `<span class="sheet-sort-icon active">${currentSort.direction === 'asc' ? '▲' : '▼'}</span>`
-        : `<span class="sheet-sort-icon">⇅</span>`;
-    headHtml += `<th style="width: 50px; text-align: center; cursor: pointer;" onclick="toggleSheetSort('__no__')" title="순번 기준 정렬">No ${noSortIcon}</th>`;
+    headHtml += `<th class="sheet-th-no" style="width: 50px; min-width: 50px; max-width: 50px; text-align: center; cursor: pointer;" onclick="toggleSheetSort('__no__')" title="순번 기준 정렬 (클릭 시 토글)">No</th>`;
 
     // 날짜 컬럼
-    const dateSortIcon = currentSort.key === '__date__' 
-        ? `<span class="sheet-sort-icon active">${currentSort.direction === 'asc' ? '▲' : '▼'}</span>`
-        : `<span class="sheet-sort-icon">⇅</span>`;
-    headHtml += `<th style="width: 140px; text-align: center; cursor: pointer;" onclick="toggleSheetSort('__date__')" title="날짜 기준 정렬">📅 날짜 ${dateSortIcon}</th>`;
+    headHtml += `<th class="sheet-th-date" style="width: 140px; min-width: 140px; text-align: center; cursor: pointer;" onclick="toggleSheetSort('__date__')" title="날짜 기준 정렬 (클릭 시 토글)">📅 날짜</th>`;
 
-    // 동적 데이터 열들
+    // 동적 데이터 열들 (점 6개 및 정렬 아이콘 제거, 클릭 시 정렬/드래그 시 순서 이동)
     columns.forEach((col, colIdx) => {
-        const isCurrentCol = currentSort.key === col;
-        const sortIcon = isCurrentCol
-            ? `<span class="sheet-sort-icon active">${currentSort.direction === 'asc' ? '▲' : '▼'}</span>`
-            : `<span class="sheet-sort-icon">⇅</span>`;
-
         headHtml += `
-            <th class="sheet-col-th" draggable="true" data-col-idx="${colIdx}" style="min-width: 130px;">
+            <th class="sheet-col-th" draggable="true" data-col-idx="${colIdx}" style="width: 160px; min-width: 150px; cursor: pointer;" onclick="handleColHeaderClick(event, '${escapeHtml(col)}')">
                 <div class="sheet-col-header-inner">
-                    <span class="sheet-col-drag-handle" title="드래그하여 열 순서 변경">⠿</span>
-                    <span class="sheet-col-title clickable-header" title="${escapeHtml(col)} (클릭하여 정렬)" onclick="handleColHeaderClick(event, '${escapeHtml(col)}')">
-                        ${escapeHtml(col)} ${sortIcon}
+                    <span class="sheet-col-title" title="${escapeHtml(col)} (클릭 시 정렬, 드래그 시 이동)">
+                        ${escapeHtml(col)}
                     </span>
-                    <button type="button" class="sheet-col-del-btn" title="열 삭제" onclick="event.stopPropagation(); deleteSheetColumn(${colIdx})">&times;</button>
+                    <div class="sheet-col-actions">
+                        <button type="button" class="sheet-col-edit-btn" title="열 이름 수정" onclick="event.stopPropagation(); editSheetColumn(${colIdx})">✏️</button>
+                        <button type="button" class="sheet-col-del-btn" title="열 삭제" onclick="event.stopPropagation(); deleteSheetColumn(${colIdx})">&times;</button>
+                    </div>
                 </div>
             </th>
         `;
     });
 
-    headHtml += '<th style="width: 44px; text-align: center;">삭제</th>';
+    headHtml += '<th class="sheet-th-action" style="width: 50px; min-width: 50px; max-width: 50px; text-align: center;">삭제</th>';
     headHtml += '</tr>';
     thead.innerHTML = headHtml;
 
@@ -532,11 +606,11 @@ function renderSheetTable() {
         bodyHtml += `<tr data-row-id="${row.id}">`;
         
         // No 컬럼
-        bodyHtml += `<td style="color:#8b949e; text-align:center; user-select:none; font-size:11px;">${rowIdx + 1}</td>`;
+        bodyHtml += `<td class="sheet-td-no" style="width: 50px; min-width: 50px; color:#8b949e; text-align:center; user-select:none; font-size:11px;">${rowIdx + 1}</td>`;
 
         // 날짜 컬럼 (첫 열: 직접 변경 가능한 날짜 피커)
         bodyHtml += `
-            <td style="text-align: center;">
+            <td class="sheet-td-date" style="width: 140px; min-width: 140px; text-align: center;">
                 <input type="date" class="sheet-date-input custom-date-icon" value="${row.date || ''}" 
                        onchange="updateRowDate('${row.id}', this.value)" title="날짜 변경">
             </td>
@@ -546,7 +620,7 @@ function renderSheetTable() {
         columns.forEach((col, colIdx) => {
             const val = (row.values && row.values[col] !== undefined) ? row.values[col] : '';
             bodyHtml += `
-                <td>
+                <td class="sheet-td-data" style="width: 160px; min-width: 150px;">
                     <input type="text" class="sheet-cell-input" value="${escapeHtml(val)}" 
                            data-row-id="${row.id}" data-row-idx="${rowIdx}" data-col-idx="${colIdx}" data-col-name="${escapeHtml(col)}" 
                            placeholder="-" autocomplete="off">
@@ -556,7 +630,7 @@ function renderSheetTable() {
 
         // 행 삭제 버튼 컬럼
         bodyHtml += `
-            <td class="sheet-action-cell">
+            <td class="sheet-action-cell" style="width: 50px; min-width: 50px;">
                 <button type="button" class="sheet-row-del-btn" title="이 행 삭제" onclick="deleteSheetRow('${row.id}')">&times;</button>
             </td>
         `;
@@ -679,33 +753,42 @@ function bindColumnDragEvents() {
             }, 100);
         });
 
-        // 2. 모바일 터치 드래그 지원 (.sheet-col-drag-handle 대상)
-        const handle = th.querySelector('.sheet-col-drag-handle');
-        if (handle) {
-            let touchMoved = false;
-            let ghostEl = null;
-            let currentTargetTh = null;
-            let insertBefore = false;
+        // 2. 모바일 터치 드래그 지원 (th 헤더 영역 대상, 삭제 버튼 제외)
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isTouchDragging = false;
+        let ghostEl = null;
+        let currentTargetTh = null;
+        let insertBefore = false;
 
-            handle.addEventListener('touchstart', (e) => {
-                const touch = e.touches[0];
-                touchMoved = false;
-                draggedColIdx = parseInt(th.dataset.colIdx, 10);
+        th.addEventListener('touchstart', (e) => {
+            if (e.target.closest('.sheet-col-del-btn') || e.target.closest('.sheet-col-edit-btn')) return;
+            const touch = e.touches[0];
+            touchStartX = touch.clientX;
+            touchStartY = touch.clientY;
+            isTouchDragging = false;
+            draggedColIdx = parseInt(th.dataset.colIdx, 10);
+        }, { passive: true });
+
+        th.addEventListener('touchmove', (e) => {
+            if (draggedColIdx === null) return;
+            const touch = e.touches[0];
+            const dx = Math.abs(touch.clientX - touchStartX);
+            const dy = Math.abs(touch.clientY - touchStartY);
+
+            // 가로 이동이 10px 이상이고 세로 이동보다 클 때 열 드래그 모드로 전환
+            if (!isTouchDragging && dx > 10 && dx > dy) {
+                isTouchDragging = true;
+                isDraggingColumn = true;
 
                 const colName = currentSheetData.columns[draggedColIdx] || '열';
                 ghostEl = document.createElement('div');
                 ghostEl.className = 'sheet-touch-ghost';
-                ghostEl.textContent = `↕ ${colName}`;
+                ghostEl.textContent = `↔ ${colName}`;
                 document.body.appendChild(ghostEl);
-                ghostEl.style.left = `${touch.clientX}px`;
-                ghostEl.style.top = `${touch.clientY - 10}px`;
-            }, { passive: true });
+            }
 
-            handle.addEventListener('touchmove', (e) => {
-                const touch = e.touches[0];
-                touchMoved = true;
-                isDraggingColumn = true;
-
+            if (isTouchDragging) {
                 if (ghostEl) {
                     ghostEl.style.left = `${touch.clientX}px`;
                     ghostEl.style.top = `${touch.clientY - 10}px`;
@@ -729,31 +812,32 @@ function bindColumnDragEvents() {
                 } else {
                     currentTargetTh = null;
                 }
-            }, { passive: false });
+            }
+        }, { passive: false });
 
-            const finishTouch = () => {
-                if (ghostEl) {
-                    ghostEl.remove();
-                    ghostEl = null;
+        const finishTouch = () => {
+            if (ghostEl) {
+                ghostEl.remove();
+                ghostEl = null;
+            }
+            colThs.forEach(el => el.classList.remove('drag-over-left', 'drag-over-right', 'dragging'));
+
+            if (isTouchDragging && currentTargetTh && draggedColIdx !== null) {
+                const targetIdx = parseInt(currentTargetTh.dataset.colIdx, 10);
+                if (draggedColIdx !== targetIdx) {
+                    moveColumn(draggedColIdx, targetIdx, insertBefore);
                 }
-                colThs.forEach(el => el.classList.remove('drag-over-left', 'drag-over-right', 'dragging'));
+            }
 
-                if (touchMoved && currentTargetTh && draggedColIdx !== null) {
-                    const targetIdx = parseInt(currentTargetTh.dataset.colIdx, 10);
-                    if (draggedColIdx !== targetIdx) {
-                        moveColumn(draggedColIdx, targetIdx, insertBefore);
-                    }
-                }
+            setTimeout(() => {
+                isDraggingColumn = false;
+                draggedColIdx = null;
+                isTouchDragging = false;
+            }, 100);
+        };
 
-                setTimeout(() => {
-                    isDraggingColumn = false;
-                    draggedColIdx = null;
-                }, 100);
-            };
-
-            handle.addEventListener('touchend', finishTouch);
-            handle.addEventListener('touchcancel', finishTouch);
-        }
+        th.addEventListener('touchend', finishTouch);
+        th.addEventListener('touchcancel', finishTouch);
     });
 }
 
@@ -812,6 +896,7 @@ function bindCellInputEvents() {
                         if (nextCell) {
                             nextCell.focus();
                             nextCell.select();
+                            nextCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                         }
                     } else {
                         // 마지막 열에서 Tab 누르면 다음 행의 시작 열로 이동
@@ -822,6 +907,7 @@ function bindCellInputEvents() {
                             if (nextRowCell) {
                                 nextRowCell.focus();
                                 nextRowCell.select();
+                                nextRowCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                             }
                         }
                     }
@@ -834,6 +920,7 @@ function bindCellInputEvents() {
                             tabStartColIndex = cIdx - 1;
                             prevCell.focus();
                             prevCell.select();
+                            prevCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                         }
                     }
                 }
@@ -852,7 +939,7 @@ function bindCellInputEvents() {
                     if (nextInput) {
                         nextInput.focus();
                         nextInput.select();
-                        nextInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        nextInput.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                     }
                 } else {
                     // 마지막 행이면 아래(맨 끝)에 새 행을 추가하고 해당 시작 열로 이동
@@ -862,7 +949,7 @@ function bindCellInputEvents() {
                         if (newRowInput) {
                             newRowInput.focus();
                             newRowInput.select();
-                            newRowInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                            newRowInput.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                         }
                     }, 50);
                 }
@@ -874,6 +961,7 @@ function bindCellInputEvents() {
                         tabStartColIndex = cIdx;
                         nextCell.focus();
                         nextCell.select();
+                        nextCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                     }
                 }
             } else if (e.key === 'ArrowUp') {
@@ -884,6 +972,7 @@ function bindCellInputEvents() {
                         tabStartColIndex = cIdx;
                         prevCell.focus();
                         prevCell.select();
+                        prevCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                     }
                 }
             }
@@ -1023,6 +1112,53 @@ function handleConfirmAddCol() {
 }
 
 /**
+ * 열 이름 수정
+ */
+window.editSheetColumn = function(colIdx) {
+    if (!currentSheetData || !Array.isArray(currentSheetData.columns)) return;
+    const oldName = currentSheetData.columns[colIdx];
+    if (!oldName) return;
+
+    const newName = prompt(`'${oldName}' 열의 새로운 이름을 입력하세요:`, oldName);
+    if (newName === null) return; // 취소
+
+    const trimmed = newName.trim();
+    if (!trimmed) {
+        alert('열 이름을 비워둘 수 없습니다.');
+        return;
+    }
+
+    if (trimmed === oldName) return; // 변경 없음
+
+    // 중복 확인
+    const duplicate = currentSheetData.columns.some((c, idx) => idx !== colIdx && c === trimmed);
+    if (duplicate) {
+        alert(`'${trimmed}' 열이 이미 존재합니다. 다른 이름을 입력해주세요.`);
+        return;
+    }
+
+    // 1. 컬럼 목록 업데이트
+    currentSheetData.columns[colIdx] = trimmed;
+
+    // 2. 모든 행의 데이터 키 업데이트
+    (currentSheetData.rows || []).forEach(row => {
+        if (row.values && row.values[oldName] !== undefined) {
+            row.values[trimmed] = row.values[oldName];
+            delete row.values[oldName];
+        }
+    });
+
+    // 3. 정렬 상태 키 보정
+    if (currentSort.key === oldName) {
+        currentSort.key = trimmed;
+    }
+
+    // 4. DB 테이블 재생성 및 동기화 (reset_table: true)
+    saveCurrentSheetData(true, true);
+    renderSheetTable();
+};
+
+/**
  * 열 삭제
  */
 window.deleteSheetColumn = function(colIdx) {
@@ -1041,7 +1177,7 @@ window.deleteSheetColumn = function(colIdx) {
         }
     });
 
-    saveCurrentSheetData(true);
+    saveCurrentSheetData(true, true);
     renderSheetTable();
 };
 

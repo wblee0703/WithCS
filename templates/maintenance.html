@@ -2,7 +2,7 @@
 {% set active_page = 'maintenance' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/maintenance.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/maintenance.css') }}?v=1.1.0">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/calendar.css') }}">
 {% endblock %}
 
@@ -59,6 +59,7 @@
                 <header class="breadcrumb breadcrumb-no-margin" id="current-path" style="margin-bottom: 0;">📍 사업장 > 장비명
                     > Serial No.</header>
                 <button class="btn-blue-sm btn-calendar-move" onclick="moveToCalendarView()">📅 캘린더 이동</button>
+                <button class="btn-blue-sm btn-data-move" onclick="moveToDataView()">📊 DATA 이동</button>
                 <button class="btn-gray btn-header-setting" onclick="openMaintEquipModal()">장비 정보</button>
             </div>
 
@@ -256,6 +257,6 @@
 {% endblock %}
 
 {% block extra_js %}    
-<script src="{{ url_for('SettingDAO', filename='JavaScript/maintenance.js') }}"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/maintenance.js') }}?v=1.1.0"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/calendar.js') }}?v=1.0.6"></script>
 {% endblock %}

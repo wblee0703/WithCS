@@ -322,20 +322,75 @@
 
 .data-sheet-wrapper {
     flex: 1;
-    overflow: auto;
+    overflow-x: auto;
+    overflow-y: auto;
     min-height: 0;
     background: #0d1117;
     position: relative;
+    /* 브라우저 스크롤바 커스텀 */
+    scrollbar-width: thin;
+    scrollbar-color: #30363d #0d1117;
+    -webkit-overflow-scrolling: touch;
+}
+
+.data-sheet-wrapper::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.data-sheet-wrapper::-webkit-scrollbar-track {
+    background: #0d1117;
+}
+
+.data-sheet-wrapper::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 4px;
+}
+
+.data-sheet-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #58a6ff;
 }
 
 /* 스프레드시트 테이블 */
 .data-sheet-table {
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     border-collapse: separate;
     border-spacing: 0;
     font-size: 12px;
     color: #c9d1d9;
     table-layout: fixed;
+}
+
+/* 고정 컬럼 및 데이터 컬럼 너비 지정 */
+.sheet-th-no,
+.sheet-td-no {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    text-align: center;
+}
+
+.sheet-th-date,
+.sheet-td-date {
+    width: 140px !important;
+    min-width: 140px !important;
+    max-width: 140px !important;
+    text-align: center;
+}
+
+.sheet-col-th,
+.sheet-td-data {
+    width: 160px;
+    min-width: 150px;
+}
+
+.sheet-th-action,
+.sheet-action-cell {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    text-align: center;
 }
 
 .data-sheet-table th {
@@ -382,50 +437,62 @@
     white-space: nowrap;
     color: #e6edf3;
     font-size: 12px;
-}
-
-.sheet-col-title.clickable-header {
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 4px;
-    border-radius: 4px;
-    transition: background-color 0.15s, color 0.15s;
+    flex: 1;
     user-select: none;
-}
-
-.sheet-col-title.clickable-header:hover {
-    background: rgba(88, 166, 255, 0.12);
-    color: #58a6ff;
-}
-
-.sheet-sort-icon {
-    font-size: 10px;
-    color: #484f58;
-    margin-left: 2px;
-    display: inline-block;
-    vertical-align: middle;
     transition: color 0.15s;
 }
 
-.data-sheet-table th:hover .sheet-sort-icon,
-.sheet-col-title.clickable-header:hover .sheet-sort-icon,
-.sheet-sort-icon.active {
+.data-sheet-table th:hover {
+    background: #1c2128;
+}
+
+.sheet-col-th:hover .sheet-col-title {
     color: #58a6ff;
 }
 
+.sheet-col-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.sheet-col-edit-btn,
 .sheet-col-del-btn {
     background: transparent;
     border: none;
-    color: #8b949e;
     cursor: pointer;
+    line-height: 1;
+    border-radius: 4px;
+    opacity: 0.65;
+    transition: opacity 0.15s, color 0.15s, background-color 0.15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sheet-col-edit-btn {
+    color: #8b949e;
+    font-size: 11px;
+    padding: 2px 4px;
+}
+
+.sheet-col-edit-btn:hover {
+    opacity: 1;
+    color: #58a6ff;
+    background: rgba(88, 166, 255, 0.15);
+}
+
+.sheet-col-del-btn {
+    color: #8b949e;
     font-size: 13px;
     padding: 1px 4px;
-    border-radius: 4px;
-    line-height: 1;
-    opacity: 0.6;
-    transition: opacity 0.15s, color 0.15s;
+}
+
+.sheet-col-del-btn:hover {
+    opacity: 1;
+    color: #f85149;
+    background: rgba(248, 81, 73, 0.15);
 }
 
 /* 열 드래그 앤 드롭 스타일 */
@@ -455,21 +522,7 @@
     background: rgba(88, 166, 255, 0.12) !important;
 }
 
-.sheet-col-drag-handle {
-    cursor: grab;
-    color: #6e7681;
-    font-size: 14px;
-    padding: 0 4px 0 0;
-    line-height: 1;
-    touch-action: none;
-    transition: color 0.15s;
-    user-select: none;
-}
 
-.sheet-col-drag-handle:hover,
-.sheet-col-th:hover .sheet-col-drag-handle {
-    color: #58a6ff;
-}
 
 /* 모바일 터치 드래그 고스트 요소 */
 .sheet-touch-ghost {
@@ -488,15 +541,11 @@
     white-space: nowrap;
 }
 
-.sheet-col-del-btn:hover {
-    opacity: 1;
-    color: #f85149;
-    background: rgba(248, 81, 73, 0.15);
-}
 
 /* 셀 입력 필드 (Excel 스타일) */
 .sheet-cell-input {
     width: 100%;
+    min-width: 140px;
     height: 32px;
     background: transparent;
     border: none;
