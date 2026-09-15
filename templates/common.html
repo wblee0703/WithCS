@@ -8,7 +8,7 @@
     <title>{% block title %}WITHTECH - EQ System{% endblock %}</title>
 
     <!-- 공통 CSS -->
-    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common.css') }}">
+    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common.css') }}?v=1.1.3">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_modals.css') }}?v=1.0.7">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_setup.css') }}">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/chatbot.css') }}">
@@ -52,22 +52,38 @@
         <div class="container">
             <nav>
                 <ul class="nav-links">
-                    <li><a href="{{ url_for('home') }}" class="{% if active_page == 'home' %}active{% endif %}">HOME</a>
+                    <li>
+                        <a href="{{ url_for('home') }}" class="{% if active_page == 'home' %}active{% endif %}">HOME</a>
                     </li>
-                    <li><a href="{{ url_for('setup') }}"
-                            class="{% if active_page == 'setup' %}active{% endif %}">SETUP</a></li>
-                    <li><a href="{{ url_for('maintenance') }}"
-                            class="{% if active_page == 'maintenance' %}active{% endif %}">MAINT</a></li>
-                    <li><a href="{{ url_for('trouble') }}"
-                            class="{% if active_page == 'trouble' %}active{% endif %}">TROUBLE</a></li>
-                    <li><a href="{{ url_for('sort') }}" class="{% if active_page == 'sort' %}active{% endif %}">SORT</a>
+
+                    <!-- 1. 장비 작업 (SETUP, MAINT, TROUBLE) -->
+                    <li class="nav-dropdown {% if active_page in ['setup', 'maintenance', 'trouble'] %}active-group{% endif %}">
+                        <a href="javascript:void(0)" class="nav-dropdown-toggle {% if active_page in ['setup', 'maintenance', 'trouble'] %}active{% endif %}">
+                            OPERATIONS <span class="nav-arrow">▾</span>
+                        </a>
+                        <ul class="nav-dropdown-menu">
+                            <li><a href="{{ url_for('setup') }}" class="{% if active_page == 'setup' %}active{% endif %}">Setup</a></li>
+                            <li><a href="{{ url_for('maintenance') }}" class="{% if active_page == 'maintenance' %}active{% endif %}">Maint</a></li>
+                            <li><a href="{{ url_for('trouble') }}" class="{% if active_page == 'trouble' %}active{% endif %}">Trouble</a></li>
+                        </ul>
                     </li>
-                    <li><a href="{{ url_for('operation') }}" class="{% if active_page == 'operation' %}active{% endif %}">OPERATION</a>
+
+                    <!-- 2. 데이터 분석 (DATA, 가동률, SORT) -->
+                    <li class="nav-dropdown {% if active_page in ['data', 'operation', 'sort'] %}active-group{% endif %}">
+                        <a href="javascript:void(0)" class="nav-dropdown-toggle {% if active_page in ['data', 'operation', 'sort'] %}active{% endif %}">
+                            ANALYTICS <span class="nav-arrow">▾</span>
+                        </a>
+                        <ul class="nav-dropdown-menu">
+                            <li><a href="{{ url_for('data_page') }}" class="{% if active_page == 'data' %}active{% endif %}">Data</a></li>
+                            <li><a href="{{ url_for('operation') }}" class="{% if active_page == 'operation' %}active{% endif %}">가동률</a></li>
+                            <li><a href="{{ url_for('sort') }}" class="{% if active_page == 'sort' %}active{% endif %}">Sort</a></li>
+                        </ul>
                     </li>
-                    <li><a href="{{ url_for('data_page') }}" class="{% if active_page == 'data' %}active{% endif %}">DATA</a>
+
+                    <!-- 3. ADMIN -->
+                    <li class="nav-admin-item"{% if not session.get('user_id') %} style="display: none;"{% endif %}>
+                        <a href="{{ url_for('admin') }}" class="{% if active_page == 'admin' %}active{% endif %}">ADMIN</a>
                     </li>
-                    <li class="nav-admin-item"{% if not session.get('user_id') %} style="display: none;"{% endif %}><a href="{{ url_for('admin') }}"
-                            class="{% if active_page == 'admin' %}active{% endif %}">ADMIN</a></li>
                 </ul>
             </nav>
         </div>
@@ -1461,7 +1477,7 @@
     </template>
 
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.0.7"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.0.7"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.0.9"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}"></script>
     {% if session.get('role') == 'superadmin' %}
     <script src="{{ url_for('SettingDAO', filename='JavaScript/chatbot.js') }}"></script>

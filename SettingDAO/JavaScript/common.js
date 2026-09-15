@@ -1330,12 +1330,22 @@ function initializeApp() {
     if (desktopNav) {
         desktopNav.addEventListener('click', (e) => {
             const link = e.target.closest('a');
-            if (link && link.href) {
+            if (!link) return;
+
+            // 드롭다운 토글 버튼 클릭은 페이지 이동이 아니므로 무시
+            if (link.classList.contains('nav-dropdown-toggle') || link.getAttribute('href') === 'javascript:void(0)' || link.getAttribute('href') === '#') {
+                return;
+            }
+
+            if (link.href) {
                 // 현재 페이지와 같은 링크는 무시
-                if (new URL(link.href).pathname === window.location.pathname) {
-                    e.preventDefault();
-                    return;
-                }
+                try {
+                    if (new URL(link.href).pathname === window.location.pathname) {
+                        e.preventDefault();
+                        return;
+                    }
+                } catch (err) {}
+
                 // 저장되지 않은 변경사항이 있으면 확인창 표시 후 이동 중단
                 if (!checkUnsavedChanges()) {
                     e.preventDefault();
@@ -1543,8 +1553,10 @@ function setupMobileNav() {
     if (!hamburger || !mobileNav || !navOverlay) return;
 
     if (mobilePageTitle) {
-        // 현재 활성화된 메뉴 텍스트 찾기
-        const activeLink = document.querySelector('.header .container .nav-links a.active');
+        // 현재 활성화된 메뉴 텍스트 찾기 (드롭다운 하위 실제 활성 페이지 우선 탐색)
+        const activeSubLink = document.querySelector('.header .container .nav-dropdown-menu a.active');
+        const activeTopLink = document.querySelector('.header .container .nav-links > li > a.active:not(.nav-dropdown-toggle)');
+        const activeLink = activeSubLink || activeTopLink;
         let titleText = 'HOME';
         if (activeLink) {
             titleText = activeLink.textContent.trim();
@@ -1557,6 +1569,25 @@ function setupMobileNav() {
         const mobileNavLinks = mobileNav.querySelector('.mobile-nav-links');
         if (mobileNavLinks) {
             mobileNavLinks.innerHTML = mainNav.innerHTML;
+
+            // 모바일 환경에서 드롭다운 토글 클릭/터치 시 하위 메뉴 펼침/접힘 보장
+            const dropdownToggles = mobileNavLinks.querySelectorAll('.nav-dropdown-toggle');
+            dropdownToggles.forEach(toggleBtn => {
+                toggleBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const parent = this.closest('.nav-dropdown');
+                    if (parent) {
+                        parent.classList.toggle('expanded');
+                    }
+                });
+            });
+
+            // 현재 페이지가 속한 활성 그룹은 모바일 드로어에서 기본으로 펼침 상태로 설정
+            const activeGroup = mobileNavLinks.querySelector('.nav-dropdown.active-group');
+            if (activeGroup) {
+                activeGroup.classList.add('expanded');
+            }
         }
     }
 
@@ -1606,10 +1637,22 @@ function setupMobileNav() {
     hamburger.addEventListener('click', toggleNav);
     navOverlay.addEventListener('click', toggleNav);
 
-    // [추가] 모바일 메뉴의 링크 클릭 시, 메뉴를 닫고 해당 페이지로 이동
+    // [추가] 모바일 메뉴의 링크 클릭 시, 드롭다운 토글 또는 메뉴 닫고 이동
     mobileNav.addEventListener('click', function (e) {
         const link = e.target.closest('a');
-        if (link && link.href) {
+        if (!link) return;
+
+        // 드롭다운 토글 버튼 클릭 시 하위 메뉴 펼침/접힘 토글
+        if (link.classList.contains('nav-dropdown-toggle') || link.getAttribute('href') === 'javascript:void(0)') {
+            e.preventDefault();
+            const parentDropdown = link.closest('.nav-dropdown');
+            if (parentDropdown) {
+                parentDropdown.classList.toggle('expanded');
+            }
+            return;
+        }
+
+        if (link.href) {
             // [개선] 페이지 이동 전, 저장되지 않은 변경사항이 있는지 확인합니다.
             if (!checkUnsavedChanges()) {
                 e.preventDefault();
@@ -1617,11 +1660,13 @@ function setupMobileNav() {
             }
 
             // 현재 페이지와 같은 링크는 메뉴만 닫고 새로고침하지 않습니다.
-            if (new URL(link.href).pathname === window.location.pathname) {
-                e.preventDefault();
-                toggleNav(); // 메뉴만 닫습니다.
-                return;
-            }
+            try {
+                if (new URL(link.href).pathname === window.location.pathname) {
+                    e.preventDefault();
+                    toggleNav(); // 메뉴만 닫습니다.
+                    return;
+                }
+            } catch (err) {}
 
             e.preventDefault();
             const destination = link.href;

@@ -66,7 +66,6 @@
                     <span id="data-header-site-tag" class="data-tag data-tag-site">-</span>
                     <span id="data-header-serial-tag" class="data-tag data-tag-serial">-</span>
                     <span id="data-header-cust-tag" class="data-tag data-tag-cust" style="display: none;">-</span>
-                    <span id="data-header-table-tag" class="data-tag data-tag-table" style="display: none;">-</span>
                 </div>
                 <div class="data-sheet-toolbar">
                     <div class="data-sheet-actions">
@@ -86,9 +85,6 @@
                         <button type="button" id="btn-clear-equip-data" class="btn-del-sm" title="시트 데이터 초기화">
                             시트 초기화
                         </button>
-                    </div>
-                    <div id="data-save-indicator" class="data-save-status">
-                        <span class="save-dot"></span> 자동 저장됨
                     </div>
                 </div>
             </div>
@@ -137,5 +133,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/data.js') }}?v=1.1.8"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/data.js') }}?v=1.1.9"></script>
 {% endblock %}
