@@ -7,6 +7,7 @@
 
 let currentSelectedSite = null;
 let currentSelectedEquip = null;
+let currentDataMode = 'raw'; // 'raw' (Raw Data) 또는 'param' (Parameter)
 let currentSheetData = {
     columns: [],
     rows: []
@@ -17,15 +18,23 @@ let isDataPageInitialized = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     const runInit = () => {
-        if (isDataPageInitialized) return;
+        if (isDataPageInitialized) {
+            // 이미 초기화되었으나 장비가 아직 선택되지 않은 경우 재시도 (초기 데이터 로딩 완료 시점 대응)
+            if (!currentSelectedSite || !currentSelectedEquip) {
+                renderSiteList();
+                checkAndApplyTargetFilter();
+            }
+            return;
+        }
         isDataPageInitialized = true;
         initDataPage();
     };
 
+    window.addEventListener('DataLoaded', runInit);
+
     if (localStorage.getItem('device_data') || window.isDataLoaded) {
         runInit();
     } else {
-        window.addEventListener('DataLoaded', runInit);
         setTimeout(runInit, 300);
     }
 
@@ -45,12 +54,29 @@ function initDataPage() {
         quickDate.value = getTodayString();
     }
 
-    // URL 파라미터(?site=...&equip=...) 또는 세션스토리지 기반 장비 필터 자동 적용
+    // URL 파라미터(?site=...&equip=...) 또는 세션스토리지/로컬스토리지 기반 장비 필터 자동 적용
     checkAndApplyTargetFilter();
 }
 
 /**
- * URL 파라미터 또는 세션스토리지 기반 사업장/장비 자동 필터 및 선택
+ * 마지막 선택 사업장/장비/모드 상태 저장 (다른 메뉴 이동 후 복원용)
+ */
+function saveLastDataState(site, equipKey, mode) {
+    try {
+        const state = {
+            site: site || '',
+            equip: equipKey || '',
+            mode: mode || currentDataMode || 'raw'
+        };
+        localStorage.setItem('lastDataPath', JSON.stringify(state));
+        sessionStorage.setItem('lastDataPath', JSON.stringify(state));
+    } catch (e) {
+        console.error('Failed to save lastDataPath:', e);
+    }
+}
+
+/**
+ * URL 파라미터 또는 세션스토리지/로컬스토리지 기반 사업장/장비 자동 필터 및 선택
  */
 function checkAndApplyTargetFilter() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -60,6 +86,27 @@ function checkAndApplyTargetFilter() {
     // 1회성 세션 스토리지 정리
     sessionStorage.removeItem('target_data_site');
     sessionStorage.removeItem('target_data_equip');
+
+    let isRestoringLast = false;
+    // URL 파라미터나 외부 연동 타겟이 없는 경우, 마지막으로 보고 있던 상태 복원
+    if (!targetSite && !targetEquip) {
+        try {
+            const lastDataStr = localStorage.getItem('lastDataPath') || sessionStorage.getItem('lastDataPath');
+            if (lastDataStr) {
+                const lastData = JSON.parse(lastDataStr);
+                if (lastData && lastData.site) {
+                    targetSite = lastData.site;
+                    targetEquip = lastData.equip || '';
+                    if (lastData.mode && (lastData.mode === 'param' || lastData.mode === 'raw')) {
+                        currentDataMode = lastData.mode;
+                    }
+                    isRestoringLast = true;
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load lastDataPath:', e);
+        }
+    }
 
     if (!targetSite) return;
 
@@ -101,11 +148,13 @@ function checkAndApplyTargetFilter() {
     }
 
     if (matchedItem) {
-        // 장비 검색 입력창에 해당 장비 시리얼(또는 표시명)을 설정하여 필터링
-        const equipSearchInput = document.getElementById('data-equip-search');
-        if (equipSearchInput) {
-            equipSearchInput.value = matchedItem.serial || matchedItem.displayName;
-            renderEquipList();
+        // 외부 링크나 URL 파라미터로 명시적 전달되었을 때만 검색창 필터링 적용
+        if (!isRestoringLast) {
+            const equipSearchInput = document.getElementById('data-equip-search');
+            if (equipSearchInput) {
+                equipSearchInput.value = matchedItem.serial || matchedItem.displayName;
+                renderEquipList();
+            }
         }
 
         // 장비 선택 및 데이터 시트 로드
@@ -180,6 +229,8 @@ function renderSiteList() {
 function selectSite(site) {
     currentSelectedSite = site;
     currentSelectedEquip = null;
+
+    saveLastDataState(site, '', currentDataMode);
 
     // UI 활성화 상태 갱신 (정확히 일치하는 사업장만 활성화)
     document.querySelectorAll('#data-site-list .data-list-item').forEach(el => {
@@ -278,6 +329,8 @@ function selectEquip(item) {
     currentSelectedEquip = item;
     currentSort = { key: null, direction: 'asc' };
 
+    saveLastDataState(currentSelectedSite, item.key, currentDataMode);
+
     document.querySelectorAll('#data-equip-list .data-list-item').forEach(el => {
         el.classList.toggle('active', el.dataset.equipKey === item.key);
     });
@@ -319,6 +372,75 @@ function showContentView() {
             custTag.style.display = 'none';
         }
     }
+
+    // 모드에 따른 뷰 및 툴바 토글
+    const rawView = document.getElementById('data-raw-view');
+    const paramView = document.getElementById('data-param-view');
+    const rawToolbar = document.getElementById('toolbar-raw-actions');
+    const paramToolbar = document.getElementById('toolbar-param-actions');
+    const btnParam = document.getElementById('btn-mode-param');
+    const btnRaw = document.getElementById('btn-mode-raw');
+
+    if (currentDataMode === 'param') {
+        if (rawView) rawView.style.display = 'none';
+        if (paramView) paramView.style.display = 'flex';
+        if (rawToolbar) rawToolbar.style.display = 'none';
+        if (paramToolbar) paramToolbar.style.display = 'flex';
+        if (btnParam) btnParam.classList.add('active');
+        if (btnRaw) btnRaw.classList.remove('active');
+    } else {
+        if (rawView) rawView.style.display = 'flex';
+        if (paramView) paramView.style.display = 'none';
+        if (rawToolbar) rawToolbar.style.display = 'flex';
+        if (paramToolbar) paramToolbar.style.display = 'none';
+        if (btnParam) btnParam.classList.remove('active');
+        if (btnRaw) btnRaw.classList.add('active');
+    }
+}
+
+let currentParamDate = null; // 현재 선택된 Parameter 점검 일자
+
+/**
+ * Parameter / Raw Data 모드 전환
+ */
+function switchDataMode(newMode) {
+    if (!newMode || (newMode !== 'param' && newMode !== 'raw')) return;
+    if (currentDataMode === newMode) return;
+
+    currentDataMode = newMode;
+
+    if (currentSelectedSite) {
+        saveLastDataState(currentSelectedSite, currentSelectedEquip ? currentSelectedEquip.key : '', currentDataMode);
+    }
+
+    // 세그먼트 버튼 활성화 상태 갱신
+    const btnParam = document.getElementById('btn-mode-param');
+    const btnRaw = document.getElementById('btn-mode-raw');
+    if (btnParam) btnParam.classList.toggle('active', newMode === 'param');
+    if (btnRaw) btnRaw.classList.toggle('active', newMode === 'raw');
+
+    // 뷰 및 툴바 가시성 전환
+    const rawView = document.getElementById('data-raw-view');
+    const paramView = document.getElementById('data-param-view');
+    const rawToolbar = document.getElementById('toolbar-raw-actions');
+    const paramToolbar = document.getElementById('toolbar-param-actions');
+
+    if (newMode === 'param') {
+        if (rawView) rawView.style.display = 'none';
+        if (paramView) paramView.style.display = 'flex';
+        if (rawToolbar) rawToolbar.style.display = 'none';
+        if (paramToolbar) paramToolbar.style.display = 'flex';
+    } else {
+        if (rawView) rawView.style.display = 'flex';
+        if (paramView) paramView.style.display = 'none';
+        if (rawToolbar) rawToolbar.style.display = 'flex';
+        if (paramToolbar) paramToolbar.style.display = 'none';
+    }
+
+    // 선택된 장비가 있다면 새 모드의 시트 데이터 로드
+    if (currentSelectedSite && currentSelectedEquip) {
+        loadEquipSheetData();
+    }
 }
 
 /**
@@ -332,7 +454,9 @@ let dbSaveTimer = null;
 async function loadEquipSheetData() {
     if (!currentSelectedSite || !currentSelectedEquip) return;
 
-    const storageKey = `equip_sheet_${currentSelectedSite}_${currentSelectedEquip.key}`;
+    const mode = currentDataMode || 'raw';
+    const storageKey = `equip_sheet_${currentSelectedSite}_${currentSelectedEquip.key}_${mode}`;
+    const legacyStorageKey = `equip_sheet_${currentSelectedSite}_${currentSelectedEquip.key}`;
     const indicator = document.getElementById('data-save-indicator');
     const tableTag = document.getElementById('data-header-table-tag');
 
@@ -350,7 +474,8 @@ async function loadEquipSheetData() {
             body: JSON.stringify({
                 model_abbr: currentSelectedEquip.displayName,
                 cust_equip: currentSelectedEquip.custEquip,
-                serial: currentSelectedEquip.serial
+                serial: currentSelectedEquip.serial,
+                data_type: mode
             })
         });
 
@@ -379,7 +504,12 @@ async function loadEquipSheetData() {
 
     // DB에 데이터가 없거나 조회 실패한 경우 로컬스토리지 확인
     if (!loadedFromDb) {
-        const savedStr = localStorage.getItem(storageKey);
+        let savedStr = localStorage.getItem(storageKey);
+        // raw 모드일 경우 기존 키 데이터 하위 호환
+        if (!savedStr && mode === 'raw') {
+            savedStr = localStorage.getItem(legacyStorageKey);
+        }
+
         if (savedStr) {
             try {
                 currentSheetData = JSON.parse(savedStr);
@@ -400,21 +530,24 @@ async function loadEquipSheetData() {
 }
 
 /**
- * 새 장비용 기본 시트 템플릿 생성
+ * 새 장비용 기본 시트 템플릿 생성 (모드별 차별화)
  */
 function initDefaultSheet() {
+    const isParam = (currentDataMode === 'param');
+    const defaultCols = isParam 
+        ? ['파라미터 항목', '기준값', '측정값', '비고']
+        : ['온도 (℃)', '압력 (kPa)', '전압 (V)', '비고'];
+
+    const initialValues = {};
+    defaultCols.forEach(c => initialValues[c] = '');
+
     currentSheetData = {
-        columns: ['온도 (℃)', '압력 (kPa)', '전압 (V)', '비고'],
+        columns: defaultCols,
         rows: [
             {
                 id: 'row_' + Date.now(),
                 date: getTodayString(),
-                values: {
-                    '온도 (℃)': '',
-                    '압력 (kPa)': '',
-                    '전압 (V)': '',
-                    '비고': ''
-                }
+                values: initialValues
             }
         ]
     };
@@ -427,7 +560,8 @@ function initDefaultSheet() {
 function saveCurrentSheetData(showIndicator = true, resetTable = false) {
     if (!currentSelectedSite || !currentSelectedEquip) return;
 
-    const storageKey = `equip_sheet_${currentSelectedSite}_${currentSelectedEquip.key}`;
+    const mode = currentDataMode || 'raw';
+    const storageKey = `equip_sheet_${currentSelectedSite}_${currentSelectedEquip.key}_${mode}`;
     localStorage.setItem(storageKey, JSON.stringify(currentSheetData));
 
     const indicator = document.getElementById('data-save-indicator');
@@ -453,7 +587,8 @@ function saveCurrentSheetData(showIndicator = true, resetTable = false) {
                     serial: currentSelectedEquip.serial,
                     columns: currentSheetData.columns || [],
                     rows: currentSheetData.rows || [],
-                    reset_table: resetTable
+                    reset_table: resetTable,
+                    data_type: mode
                 })
             });
 
@@ -547,9 +682,1142 @@ window.toggleSheetSort = function(key) {
 };
 
 /**
- * 스프레드시트 테이블 렌더링
+ * 통합 시트 테이블 렌더링 (모드 분기)
  */
 function renderSheetTable() {
+    if (currentDataMode === 'param') {
+        renderParamView();
+    } else {
+        renderRawSheetTable();
+    }
+}
+
+/**
+ * Parameter 마스터-디테일 뷰 렌더링 (좌측 슬림 날짜 리스트 + 우측 파라미터 점검 테이블)
+ */
+function renderParamView() {
+    const rawView = document.getElementById('data-raw-view');
+    const paramView = document.getElementById('data-param-view');
+    const rawToolbar = document.getElementById('toolbar-raw-actions');
+    const paramToolbar = document.getElementById('toolbar-param-actions');
+
+    if (rawView) rawView.style.display = 'none';
+    if (paramView) paramView.style.display = 'flex';
+    if (rawToolbar) rawToolbar.style.display = 'none';
+    if (paramToolbar) paramToolbar.style.display = 'flex';
+
+    // 파라미터 기본 컬럼 보장
+    if (!currentSheetData.columns || currentSheetData.columns.length === 0 || !currentSheetData.columns.includes('단위')) {
+        currentSheetData.columns = ['파라미터 항목', '단위', '기준값', '측정값', '결과', '비고'];
+    }
+
+    // 1. 존재하는 모든 날짜 수집
+    const allRows = currentSheetData.rows || [];
+    let dates = Array.from(new Set(allRows.map(r => r.date).filter(Boolean))).sort().reverse();
+
+    // 등록된 날짜가 하나도 없는 경우 오늘 날짜 기본 세팅
+    if (dates.length === 0) {
+        const today = getTodayString();
+        dates = [today];
+        currentSheetData.rows = [
+            { id: 'row_' + Date.now() + '_1', date: today, values: { '파라미터 항목': 'Laser Power', '단위': 'W', '기준값': '100 ± 5 W', '측정값': '', '결과': '양호', '비고': '' } },
+            { id: 'row_' + Date.now() + '_2', date: today, values: { '파라미터 항목': 'Chamber Temp', '단위': '℃', '기준값': '25 ± 2 ℃', '측정값': '', '결과': '양호', '비고': '' } },
+            { id: 'row_' + Date.now() + '_3', date: today, values: { '파라미터 항목': 'Supply Pressure', '단위': 'kPa', '기준값': '0.5 ± 0.05 kPa', '측정값': '', '결과': '양호', '비고': '' } }
+        ];
+        saveCurrentSheetData(false);
+    }
+
+    // 현재 선택된 날짜 유효성 확인
+    if (!currentParamDate || !dates.includes(currentParamDate)) {
+        currentParamDate = dates[0];
+    }
+
+    // 2. 좌측 날짜 리스트 렌더링 (너비 작게 슬림형)
+    const dateListEl = document.getElementById('data-param-date-list');
+    if (dateListEl) {
+        dateListEl.innerHTML = '';
+        dates.forEach(dateStr => {
+            const li = document.createElement('li');
+            li.className = 'data-param-date-item' + (dateStr === currentParamDate ? ' active' : '');
+            li.innerHTML = `
+                <span>📅 ${dateStr}</span>
+                <button type="button" class="btn-del-param-date" title="이 일자 전체 데이터 삭제" onclick="event.stopPropagation(); deleteParamDate('${dateStr}')">&times;</button>
+            `;
+            li.addEventListener('click', () => {
+                currentParamDate = dateStr;
+                renderParamView();
+            });
+            dateListEl.appendChild(li);
+        });
+    }
+
+    // 3. 우측 타이틀 갱신
+    const titleEl = document.getElementById('data-param-selected-date-title');
+    if (titleEl) {
+        titleEl.textContent = `📅 ${currentParamDate} 점검 파라미터`;
+    }
+
+    // 4. 우측 테이블 본문 렌더링
+    const tbody = document.getElementById('data-param-tbody');
+    if (!tbody) return;
+
+    const currentRows = allRows.filter(r => r.date === currentParamDate);
+
+    if (currentRows.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="8" class="sheet-empty-state" style="padding: 30px; text-align: center; color: #8b949e;">
+                    선택된 일자(${currentParamDate})에 기록된 파라미터 항목이 없습니다.<br>
+                    우측 상단의 <strong>[➕ 항목 추가]</strong> 버튼을 눌러 점검 항목을 추가하세요.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    const PRESET_UNITS = ['%', 'ppm', 'ppb', '℃', 'ml/min', 'LPM', '유무'];
+
+    let tbodyHtml = '';
+    currentRows.forEach((row, idx) => {
+        const vals = row.values || {};
+        const paramName = vals['파라미터 항목'] || vals['항목'] || '';
+        const unitVal = vals['단위'] || '';
+        const standardVal = vals['기준값'] || vals['기준'] || '';
+        const measuredVal = vals['측정값'] || vals['측정'] || '';
+        const resultVal = vals['결과'] || (unitVal === '유무' ? '적합' : '양호');
+        const memoVal = vals['비고'] || '';
+
+        const isCustomUnit = unitVal !== '' && !PRESET_UNITS.includes(unitVal) && unitVal !== '도씨';
+        const parsedSpec = parseParamStandard(standardVal);
+
+        tbodyHtml += `
+            <tr data-row-id="${row.id}">
+                <td style="text-align: center; color: #8b949e; user-select: none; font-size: 11px;">${idx + 1}</td>
+                <td>
+                    <input type="text" class="data-param-input" value="${escapeHtml(paramName)}" 
+                           placeholder="파라미터 항목명" onchange="updateParamCell('${row.id}', '파라미터 항목', this.value)">
+                </td>
+                <td>
+                    <div class="data-param-unit-cell">
+                        <select class="data-param-unit-select" style="${isCustomUnit ? 'display: none;' : ''}" 
+                                onchange="handleParamUnitSelectChange('${row.id}', this)">
+                            <option value="" ${!unitVal ? 'selected' : ''}>-</option>
+                            <option value="%" ${unitVal === '%' ? 'selected' : ''}>%</option>
+                            <option value="ppm" ${unitVal === 'ppm' ? 'selected' : ''}>ppm</option>
+                            <option value="ppb" ${unitVal === 'ppb' ? 'selected' : ''}>ppb</option>
+                            <option value="℃" ${unitVal === '℃' || unitVal === '도씨' ? 'selected' : ''}>℃ (도씨)</option>
+                            <option value="ml/min" ${unitVal === 'ml/min' ? 'selected' : ''}>ml/min</option>
+                            <option value="LPM" ${unitVal === 'LPM' ? 'selected' : ''}>LPM</option>
+                            <option value="유무" ${unitVal === '유무' ? 'selected' : ''}>유무</option>
+                            <option value="__custom__" ${isCustomUnit ? 'selected' : ''}>직접입력</option>
+                        </select>
+                        <div class="data-param-unit-custom-wrap" style="${isCustomUnit ? 'display: flex;' : 'display: none;'}">
+                            <input type="text" class="data-param-input data-param-unit-custom-input" value="${escapeHtml(unitVal)}" 
+                                   placeholder="단위 입력" onchange="applyUnitToRow('${row.id}', this.value)">
+                            <button type="button" class="btn-unit-preset-toggle" title="단위 목록에서 선택" onclick="toggleParamUnitSelect('${row.id}')">▾</button>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="data-param-spec-cell">
+                        <!-- 1. 유무 전용 일반 텍스트 입력창 (unitVal === '유무') -->
+                        <div class="data-param-text-spec-wrap" style="${unitVal === '유무' ? 'display: flex;' : 'display: none;'}">
+                            <input type="text" class="data-param-input data-param-text-spec-val" value="${escapeHtml(standardVal)}" 
+                                   placeholder="기준 텍스트 (예: 무, 정상)" 
+                                   onchange="updateParamCell('${row.id}', '기준값', this.value); autoEvaluateRowResult('${row.id}');">
+                        </div>
+
+                        <!-- 2. 일반 수치/부등호/± 복합 입력창 (unitVal !== '유무') -->
+                        <div class="data-param-numeric-spec-wrap" style="${unitVal === '유무' ? 'display: none;' : 'display: flex;'}">
+                            <select class="data-param-op-select" title="부등호/플러스마이너스 기호 선택" 
+                                    onchange="handleParamSpecOpChange('${row.id}', this.value, this)">
+                                <option value="" ${!parsedSpec.op ? 'selected' : ''}>-</option>
+                                <option value="±" ${parsedSpec.op === '±' ? 'selected' : ''}>±</option>
+                                <option value="≥" ${parsedSpec.op === '≥' ? 'selected' : ''}>≥</option>
+                                <option value="≤" ${parsedSpec.op === '≤' ? 'selected' : ''}>≤</option>
+                                <option value=">" ${parsedSpec.op === '>' ? 'selected' : ''}>&gt;</option>
+                                <option value="<" ${parsedSpec.op === '<' ? 'selected' : ''}>&lt;</option>
+                                <option value="=" ${parsedSpec.op === '=' ? 'selected' : ''}>=</option>
+                            </select>
+                            
+                            <!-- 일반 단일 입력 (op !== '±') -->
+                            <div class="data-param-single-val-wrap" style="${parsedSpec.op === '±' ? 'display: none;' : 'display: flex;'}">
+                                <input type="text" class="data-param-input data-param-spec-val" value="${escapeHtml(parsedSpec.val)}" 
+                                       placeholder="기준값 (예: 100)" 
+                                       onchange="handleParamSpecValChange('${row.id}', this.closest('.data-param-numeric-spec-wrap').querySelector('.data-param-op-select').value, this.value, this.closest('.data-param-numeric-spec-wrap').querySelector('.data-param-op-select'), this)">
+                            </div>
+
+                            <!-- ± 전용 2개 수치 입력 (기준값 ± 오차) -->
+                            <div class="data-param-pm-val-wrap" style="${parsedSpec.op === '±' ? 'display: flex;' : 'display: none;'}">
+                                <input type="text" class="data-param-input data-param-spec-center" value="${escapeHtml(parsedSpec.center || '')}" 
+                                       placeholder="기준(100)" title="기준값 (중심값)"
+                                       onchange="handleParamPmChange('${row.id}', this)">
+                                <span class="data-param-pm-divider">±</span>
+                                <input type="text" class="data-param-input data-param-spec-tol" value="${escapeHtml(parsedSpec.tol || '')}" 
+                                       placeholder="오차(5)" title="오차 허용 범위"
+                                       onchange="handleParamPmChange('${row.id}', this)">
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <input type="text" class="data-param-input data-param-measured-val" value="${escapeHtml(measuredVal)}" 
+                           placeholder="${unitVal === '유무' ? '측정값 (예: 무)' : '측정값 (예: 99.8)'}" 
+                           onchange="handleParamMeasuredChange('${row.id}', this.value)">
+                </td>
+                <td>
+                    <!-- 1. 유무 전용: 적합 / 부적합 선택 드롭다운 -->
+                    <div class="data-param-result-select-wrap" style="${unitVal === '유무' ? 'display: block;' : 'display: none;'}">
+                        <select class="data-param-select ${resultVal === '적합' ? 'result-good' : (resultVal === '부적합' ? 'result-bad' : '')}" 
+                                onchange="updateParamCell('${row.id}', '결과', this.value); this.className='data-param-select ' + (this.value==='적합'?'result-good':(this.value==='부적합'?'result-bad':''));">
+                            <option value="적합" ${resultVal === '적합' ? 'selected' : ''}>적합</option>
+                            <option value="부적합" ${resultVal === '부적합' ? 'selected' : ''}>부적합</option>
+                            <option value="N/A" ${resultVal === 'N/A' ? 'selected' : ''}>N/A</option>
+                        </select>
+                    </div>
+
+                    <!-- 2. 일반 상황: 드롭다운 없이 자동 판정 결과 뱃지 (양호 / 불량) -->
+                    <div class="data-param-result-badge-wrap" style="${unitVal === '유무' ? 'display: none;' : 'display: flex;'}">
+                        <span class="data-param-result-badge ${resultVal === '양호' ? 'result-good' : (resultVal === '불량' ? 'result-bad' : '')}">
+                            ${measuredVal ? (resultVal || '양호') : '-'}
+                        </span>
+                    </div>
+                </td>
+                <td>
+                    <input type="text" class="data-param-input" value="${escapeHtml(memoVal)}" 
+                           placeholder="특이사항 메모" onchange="updateParamCell('${row.id}', '비고', this.value)">
+                </td>
+                <td style="text-align: center;">
+                    <button type="button" class="data-param-row-del-btn" title="이 항목 삭제" onclick="deleteParamRow('${row.id}')">&times;</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = tbodyHtml;
+}
+
+/**
+ * 기존 문자열에서 특정 단위 또는 기본 프리셋 단위 제거
+ */
+function stripUnitFromValue(valStr, unitToRemove) {
+    if (!valStr) return '';
+    let s = String(valStr).trim();
+    if (!s) return '';
+
+    if (unitToRemove) {
+        const uEsc = unitToRemove.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        s = s.replace(new RegExp(`\\s*${uEsc}$`, 'i'), '').trim();
+    }
+    const presets = ['ml/min', 'LPM', 'ppm', 'ppb', '%', '℃', '도씨', 'kPa', 'W'];
+    for (const p of presets) {
+        const pEsc = p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        s = s.replace(new RegExp(`\\s*${pEsc}$`, 'i'), '').trim();
+    }
+    return s;
+}
+
+/**
+ * 값에 단위 자동 부착 (이미 단위가 붙어있으면 중복 부착 방지)
+ */
+function attachUnitToValue(valStr, unit) {
+    if (!valStr) return '';
+    const s = String(valStr).trim();
+    if (!s || !unit || unit === '유무') return s;
+
+    const unitEsc = unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\s*${unitEsc}$`, 'i');
+    if (regex.test(s)) {
+        return s;
+    }
+
+    return `${s} ${unit}`;
+}
+
+/**
+ * 행의 단위를 변경하고 기준값/측정값에 단위를 동기화
+ */
+function applyUnitToRow(rowId, newUnit) {
+    if (!currentSheetData || !currentSheetData.rows) return;
+    const row = currentSheetData.rows.find(r => r.id === rowId);
+    if (!row) return;
+    if (!row.values) row.values = {};
+
+    const oldUnit = row.values['단위'] || '';
+    const unit = (newUnit || '').trim();
+    row.values['단위'] = unit;
+
+    const tr = document.querySelector(`tr[data-row-id="${rowId}"]`);
+
+    if (unit === '유무') {
+        // 유무 모드로 전환
+        let standardVal = row.values['기준값'] || row.values['기준'] || '';
+        const strippedStd = stripUnitFromValue(standardVal, oldUnit);
+        row.values['기준값'] = strippedStd;
+
+        let measuredVal = row.values['측정값'] || row.values['측정'] || '';
+        const strippedMeas = stripUnitFromValue(measuredVal, oldUnit);
+        row.values['측정값'] = strippedMeas;
+
+        let currentResult = row.values['결과'] || '양호';
+        if (currentResult === '양호') currentResult = '적합';
+        else if (currentResult === '불량') currentResult = '부적합';
+        else if (!currentResult || currentResult === '-') currentResult = '적합';
+        row.values['결과'] = currentResult;
+
+        saveCurrentSheetData(false);
+        renderParamView();
+        return;
+    }
+
+    if (oldUnit === '유무' && unit !== '유무') {
+        // 유무 모드에서 일반 수치 모드로 복귀
+        let currentResult = row.values['결과'] || '적합';
+        if (currentResult === '적합') currentResult = '양호';
+        else if (currentResult === '부적합') currentResult = '불량';
+        row.values['결과'] = currentResult;
+
+        let measuredVal = row.values['측정값'] || row.values['측정'] || '';
+        if (measuredVal && unit) {
+            row.values['측정값'] = attachUnitToValue(stripUnitFromValue(measuredVal, oldUnit), unit);
+        }
+        let standardVal = row.values['기준값'] || row.values['기준'] || '';
+        if (standardVal && unit) {
+            row.values['기준값'] = attachUnitToValue(stripUnitFromValue(standardVal, oldUnit), unit);
+        }
+
+        saveCurrentSheetData(false);
+        renderParamView();
+        return;
+    }
+
+    // 일반 단위 간 변경 (예: % -> ppm)
+    let measuredVal = row.values['측정값'] || row.values['측정'] || '';
+    if (measuredVal) {
+        const stripped = stripUnitFromValue(measuredVal, oldUnit);
+        const updated = unit ? attachUnitToValue(stripped, unit) : stripped;
+        row.values['측정값'] = updated;
+        if (tr) {
+            const mInput = tr.querySelector('.data-param-measured-val');
+            if (mInput) mInput.value = updated;
+        }
+    }
+
+    let standardVal = row.values['기준값'] || row.values['기준'] || '';
+    if (standardVal) {
+        const parsed = parseParamStandard(standardVal);
+        let updatedVal = '';
+        if (parsed.op === '±' && (parsed.center || parsed.tol)) {
+            const strippedCenter = stripUnitFromValue(parsed.center, oldUnit);
+            const strippedTol = stripUnitFromValue(parsed.tol, oldUnit);
+            if (strippedCenter && strippedTol) {
+                updatedVal = `${strippedCenter} ± ${strippedTol}`;
+            } else if (strippedCenter) {
+                updatedVal = strippedCenter;
+            } else if (strippedTol) {
+                updatedVal = `± ${strippedTol}`;
+            }
+            if (unit && updatedVal) updatedVal = `${updatedVal} ${unit}`;
+            row.values['기준값'] = updatedVal;
+            if (tr) {
+                const cInput = tr.querySelector('.data-param-spec-center');
+                const tInput = tr.querySelector('.data-param-spec-tol');
+                if (cInput) cInput.value = strippedCenter;
+                if (tInput) tInput.value = strippedTol;
+            }
+        } else {
+            const strippedVal = stripUnitFromValue(parsed.val, oldUnit);
+            updatedVal = unit ? attachUnitToValue(strippedVal, unit) : strippedVal;
+            const combined = parsed.op ? (updatedVal ? `${parsed.op} ${updatedVal}` : parsed.op) : updatedVal;
+            row.values['기준값'] = combined;
+            if (tr) {
+                const sInput = tr.querySelector('.data-param-spec-val');
+                if (sInput) sInput.value = updatedVal;
+            }
+        }
+    }
+
+    autoEvaluateRowResult(rowId);
+    saveCurrentSheetData(false);
+}
+
+/**
+ * 단위 선택 드롭다운 변경 처리
+ */
+function handleParamUnitSelectChange(rowId, selectEl) {
+    if (selectEl.value === '__custom__') {
+        const cell = selectEl.closest('.data-param-unit-cell');
+        if (cell) {
+            selectEl.style.display = 'none';
+            const customWrap = cell.querySelector('.data-param-unit-custom-wrap');
+            if (customWrap) {
+                customWrap.style.display = 'flex';
+                const input = customWrap.querySelector('.data-param-unit-custom-input');
+                if (input) {
+                    input.focus();
+                }
+            }
+        }
+    } else {
+        applyUnitToRow(rowId, selectEl.value);
+    }
+}
+
+/**
+ * 직접입력 모드에서 기본 드롭다운 선택으로 복귀
+ */
+function toggleParamUnitSelect(rowId) {
+    const tr = document.querySelector(`tr[data-row-id="${rowId}"]`);
+    if (!tr) return;
+    const cell = tr.querySelector('.data-param-unit-cell');
+    if (!cell) return;
+    const select = cell.querySelector('.data-param-unit-select');
+    const customWrap = cell.querySelector('.data-param-unit-custom-wrap');
+    if (select && customWrap) {
+        customWrap.style.display = 'none';
+        select.style.display = 'block';
+        select.value = '';
+        applyUnitToRow(rowId, '');
+    }
+}
+
+/**
+ * 기준값 문자열에서 부등호/플러스마이너스 기호와 수치/내용 분리 (± 2개 수치 지원)
+ */
+function parseParamStandard(standardVal) {
+    const s = String(standardVal || '').trim();
+    if (!s) return { op: '', val: '', center: '', tol: '' };
+
+    // 1. "A ± B" 형태 (예: "100 ± 5", "100+-5", "100 ± 5 ppm")
+    const matchPm = s.match(/(?:^|[±≥≤><=]\s*)([+-]?\d+(?:\.\d+)?)\s*(?:±|\+-)\s*([+-]?\d+(?:\.\d+)?)/);
+    if (matchPm) {
+        return {
+            op: '±',
+            center: matchPm[1],
+            tol: matchPm[2],
+            val: `${matchPm[1]} ± ${matchPm[2]}`
+        };
+    }
+
+    // 2. "± B" 단독 형태 (예: "± 5", "± 0.05", "+- 2")
+    const matchOnlyTol = s.match(/^(?:±|\+-)\s*([+-]?\d+(?:\.\d+)?)/);
+    if (matchOnlyTol) {
+        return {
+            op: '±',
+            center: '',
+            tol: matchOnlyTol[1],
+            val: `± ${matchOnlyTol[1]}`
+        };
+    }
+
+    // 3. 선두에 부등호 기호가 오는 경우 (예: ">= 100", "≥ 100", "<= 20", "≤ 20", "> 10", "< 5", "= 50")
+    const match = s.match(/^([±≥≤><=]|>=|<=|\+-)\s*(.*)$/);
+    if (match) {
+        let op = match[1];
+        if (op === '>=') op = '≥';
+        else if (op === '<=') op = '≤';
+        else if (op === '+-') op = '±';
+        return { op, val: match[2].trim(), center: '', tol: '' };
+    }
+
+    return { op: '', val: s, center: '', tol: '' };
+}
+
+/**
+ * 측정값이 기준값 범위/조건에 부합하는지 자동 판정
+ * @param {string} standardStr 기준값 (예: "100 ± 5", "≥ 100", "± 5", "0.5 ± 0.05", "10 ~ 20")
+ * @param {string} measuredStr 측정값 (예: "99.8", "100", "OK")
+ * @returns {boolean|null} true: 합격(양호/적합), false: 불합격(불량/부적합), null: 판정 보류
+ */
+function evaluateParamResult(standardStr, measuredStr) {
+    if (measuredStr === undefined || measuredStr === null) return null;
+    const mStr = String(measuredStr).trim();
+    if (mStr === '') return null; // 측정값 미입력 시 판정 보류
+
+    const sStr = String(standardStr || '').trim();
+    if (!sStr) return null; // 기준값 미입력 시 판정 보류
+
+    const measuredNum = parseFloat(mStr);
+    const isMeasuredNum = !isNaN(measuredNum);
+
+    if (isMeasuredNum) {
+        // 1. "A ± B" 형태 (예: 100 ± 5, 25 ± 2, 0.5 ± 0.05, 100+-5)
+        const matchTol = sStr.match(/(?:^|[±≥≤><=]\s*)([+-]?\d+(?:\.\d+)?)\s*(?:±|\+-)\s*([+-]?\d+(?:\.\d+)?)/);
+        if (matchTol) {
+            const center = parseFloat(matchTol[1]);
+            const tol = Math.abs(parseFloat(matchTol[2]));
+            return (measuredNum >= center - tol - 1e-9) && (measuredNum <= center + tol + 1e-9);
+        }
+
+        // 2. "± B" 단독 형태 (예: ± 5, ± 0.05, +- 2)
+        const matchOnlyTol = sStr.match(/^(?:±|\+-)\s*([+-]?\d+(?:\.\d+)?)/);
+        if (matchOnlyTol) {
+            const tol = Math.abs(parseFloat(matchOnlyTol[1]));
+            return (measuredNum >= -tol - 1e-9) && (measuredNum <= tol + 1e-9);
+        }
+
+        // 3. "A ~ B" 범위 형태 (예: 10 ~ 20, 10 to 20)
+        const matchRange = sStr.match(/^([+-]?\d+(?:\.\d+)?)\s*(?:~|to)\s*([+-]?\d+(?:\.\d+)?)/i);
+        if (matchRange) {
+            const minV = Math.min(parseFloat(matchRange[1]), parseFloat(matchRange[2]));
+            const maxV = Math.max(parseFloat(matchRange[1]), parseFloat(matchRange[2]));
+            return (measuredNum >= minV - 1e-9) && (measuredNum <= maxV + 1e-9);
+        }
+
+        // 4. 부등호 형태
+        const matchGte = sStr.match(/(?:≥|>=)\s*([+-]?\d+(?:\.\d+)?)/);
+        if (matchGte) {
+            return measuredNum >= parseFloat(matchGte[1]) - 1e-9;
+        }
+
+        const matchLte = sStr.match(/(?:≤|<=)\s*([+-]?\d+(?:\.\d+)?)/);
+        if (matchLte) {
+            return measuredNum <= parseFloat(matchLte[1]) + 1e-9;
+        }
+
+        const matchGt = sStr.match(/^>\s*([+-]?\d+(?:\.\d+)?)/);
+        if (matchGt) {
+            return measuredNum > parseFloat(matchGt[1]) + 1e-9;
+        }
+
+        const matchLt = sStr.match(/^<\s*([+-]?\d+(?:\.\d+)?)/);
+        if (matchLt) {
+            return measuredNum < parseFloat(matchLt[1]) - 1e-9;
+        }
+
+        const matchEq = sStr.match(/^={1,2}\s*([+-]?\d+(?:\.\d+)?)/);
+        if (matchEq) {
+            return Math.abs(measuredNum - parseFloat(matchEq[1])) <= 1e-9;
+        }
+
+        // 5. 단일 숫자 (예: 100)
+        const matchNum = sStr.match(/^([+-]?\d+(?:\.\d+)?)/);
+        if (matchNum) {
+            return Math.abs(measuredNum - parseFloat(matchNum[1])) <= 1e-9;
+        }
+    }
+
+    // 6. 텍스트 직접 비교 (유/무/있음/없음 동의어 정규화 지원)
+    const norm = (val) => {
+        let t = String(val || '').trim().toLowerCase();
+        if (t === '없음' || t === '무') return 'none';
+        if (t === '있음' || t === '유') return 'exist';
+        return t;
+    };
+    return norm(sStr) === norm(mStr);
+}
+
+/**
+ * 행의 기준값과 측정값을 비교하여 결과를 자동 판정 및 갱신
+ */
+function autoEvaluateRowResult(rowId) {
+    if (!currentSheetData || !currentSheetData.rows) return;
+    const row = currentSheetData.rows.find(r => r.id === rowId);
+    if (!row || !row.values) return;
+
+    const unit = row.values['단위'] || '';
+    const standardVal = row.values['기준값'] || row.values['기준'] || '';
+    const measuredVal = row.values['측정값'] || row.values['측정'] || '';
+
+    const tr = document.querySelector(`tr[data-row-id="${rowId}"]`);
+
+    if (unit === '유무') {
+        // 유무 모드: 기준값과 측정값 비교하여 드롭다운 자동 동기화 (사용자가 변경도 가능)
+        if (measuredVal && measuredVal.trim()) {
+            const evalResult = evaluateParamResult(standardVal, measuredVal);
+            if (evalResult !== null) {
+                const newResult = evalResult ? '적합' : '부적합';
+                row.values['결과'] = newResult;
+                saveCurrentSheetData(false);
+                if (tr) {
+                    const select = tr.querySelector('.data-param-select');
+                    if (select) {
+                        select.value = newResult;
+                        select.className = 'data-param-select ' + (evalResult ? 'result-good' : 'result-bad');
+                    }
+                }
+            }
+        }
+    } else {
+        // 일반 수치 모드: 드롭다운 없이 결과 뱃지 업데이트 (양호 / 불량)
+        if (!measuredVal || !measuredVal.trim()) {
+            row.values['결과'] = '';
+            saveCurrentSheetData(false);
+            if (tr) {
+                const badge = tr.querySelector('.data-param-result-badge');
+                if (badge) {
+                    badge.textContent = '-';
+                    badge.className = 'data-param-result-badge';
+                }
+            }
+            return;
+        }
+
+        const evalResult = evaluateParamResult(standardVal, measuredVal);
+        const newResult = evalResult === null ? '' : (evalResult ? '양호' : '불량');
+        row.values['결과'] = newResult;
+        saveCurrentSheetData(false);
+
+        if (tr) {
+            const badge = tr.querySelector('.data-param-result-badge');
+            if (badge) {
+                badge.textContent = newResult || '-';
+                badge.className = 'data-param-result-badge ' + (evalResult ? 'result-good' : (evalResult === false ? 'result-bad' : ''));
+            }
+        }
+    }
+}
+
+/**
+ * 기준값 부등호/기호 선택 변경 처리 (± 선택 시 2개 입력창 동적 전환)
+ */
+function handleParamSpecOpChange(rowId, op, selectEl) {
+    if (!currentSheetData || !currentSheetData.rows) return;
+    const row = currentSheetData.rows.find(r => r.id === rowId);
+    if (!row) return;
+
+    const cell = selectEl.closest('.data-param-spec-cell');
+    if (!cell) return;
+
+    const singleWrap = cell.querySelector('.data-param-single-val-wrap');
+    const pmWrap = cell.querySelector('.data-param-pm-val-wrap');
+    const singleInput = cell.querySelector('.data-param-spec-val');
+    const centerInput = cell.querySelector('.data-param-spec-center');
+    const tolInput = cell.querySelector('.data-param-spec-tol');
+    const unit = row.values ? (row.values['단위'] || '') : '';
+
+    let combined = '';
+
+    if (op === '±') {
+        // ± 모드로 전환: 단일 인풋 숨기고 2개 인풋 표시
+        if (singleWrap) singleWrap.style.display = 'none';
+        if (pmWrap) pmWrap.style.display = 'flex';
+
+        // 기존 단일 입력에 숫자가 있었다면 중심값으로 이동
+        if (singleInput && singleInput.value && (!centerInput || !centerInput.value)) {
+            const stripped = stripUnitFromValue(singleInput.value, unit);
+            if (centerInput) centerInput.value = stripped;
+        }
+
+        const center = centerInput ? centerInput.value.trim() : '';
+        const tol = tolInput ? tolInput.value.trim() : '';
+
+        if (center && tol) combined = `${center} ± ${tol}`;
+        else if (center) combined = center;
+        else if (tol) combined = `± ${tol}`;
+        else combined = '±';
+
+        if (tolInput && !tolInput.value) {
+            tolInput.focus();
+        }
+    } else {
+        // 일반 기호 또는 기호 없음 모드: 2개 인풋 숨기고 단일 인풋 표시
+        if (singleWrap) singleWrap.style.display = 'flex';
+        if (pmWrap) pmWrap.style.display = 'none';
+
+        // 기존 ± 모드에서 중심값이 있었다면 단일 입력으로 이동
+        if (centerInput && centerInput.value && (!singleInput || !singleInput.value)) {
+            if (singleInput) singleInput.value = centerInput.value;
+        }
+
+        let val = singleInput ? singleInput.value.trim() : '';
+        if (val && unit) {
+            val = attachUnitToValue(stripUnitFromValue(val, unit), unit);
+            if (singleInput) singleInput.value = val;
+        }
+
+        combined = op ? (val ? `${op} ${val}` : op) : val;
+    }
+
+    if (combined && unit) {
+        combined = attachUnitToValue(stripUnitFromValue(combined, unit), unit);
+    }
+
+    updateParamCell(rowId, '기준값', combined);
+    autoEvaluateRowResult(rowId);
+}
+
+/**
+ * 플러스마이너스(±) 2개 수치 입력(기준값, 오차) 변경 처리
+ */
+function handleParamPmChange(rowId, inputEl) {
+    if (!currentSheetData || !currentSheetData.rows) return;
+    const row = currentSheetData.rows.find(r => r.id === rowId);
+    if (!row) return;
+
+    const pmWrap = inputEl.closest('.data-param-pm-val-wrap');
+    if (!pmWrap) return;
+
+    const centerInput = pmWrap.querySelector('.data-param-spec-center');
+    const tolInput = pmWrap.querySelector('.data-param-spec-tol');
+
+    const center = centerInput ? centerInput.value.trim() : '';
+    const tol = tolInput ? tolInput.value.trim() : '';
+    const unit = row.values ? (row.values['단위'] || '') : '';
+
+    let combined = '';
+    if (center && tol) {
+        combined = `${center} ± ${tol}`;
+    } else if (center) {
+        combined = center;
+    } else if (tol) {
+        combined = `± ${tol}`;
+    }
+
+    if (combined && unit) {
+        combined = attachUnitToValue(stripUnitFromValue(combined, unit), unit);
+    }
+
+    updateParamCell(rowId, '기준값', combined);
+    autoEvaluateRowResult(rowId);
+}
+
+/**
+ * 기준값 수치/내용 입력값 변경 처리 (기호 포함 입력/붙여넣기 시 기호 자동 분리 지원 및 단위 자동 부착)
+ */
+function handleParamSpecValChange(rowId, currentOp, inputVal, selectEl, inputEl) {
+    const parsed = parseParamStandard(inputVal);
+    let finalOp = currentOp;
+    let finalVal = (inputVal || '').trim();
+
+    // 사용자가 입력 필드에 "≥ 100" 이나 "± 5" 처럼 기호를 직접 입력/붙여넣은 경우 자동 분리
+    if (parsed.op) {
+        finalOp = parsed.op;
+        finalVal = parsed.val;
+        if (selectEl) selectEl.value = finalOp;
+    }
+
+    if (!currentSheetData || !currentSheetData.rows) return;
+    const row = currentSheetData.rows.find(r => r.id === rowId);
+    const unit = row && row.values ? (row.values['단위'] || '') : '';
+
+    if (finalVal && unit) {
+        finalVal = attachUnitToValue(stripUnitFromValue(finalVal, unit), unit);
+    }
+    if (inputEl) inputEl.value = finalVal;
+
+    const combined = finalOp ? (finalVal ? `${finalOp} ${finalVal}` : finalOp) : finalVal;
+    updateParamCell(rowId, '기준값', combined);
+    autoEvaluateRowResult(rowId);
+}
+
+/**
+ * 측정값 입력 변경 처리 (단위 자동 부착 및 자동 판정 트리거)
+ */
+function handleParamMeasuredChange(rowId, value) {
+    if (!currentSheetData || !currentSheetData.rows) return;
+    const row = currentSheetData.rows.find(r => r.id === rowId);
+    const unit = row && row.values ? (row.values['단위'] || '') : '';
+
+    let finalVal = (value || '').trim();
+    if (finalVal && unit) {
+        finalVal = attachUnitToValue(stripUnitFromValue(finalVal, unit), unit);
+        const tr = document.querySelector(`tr[data-row-id="${rowId}"]`);
+        if (tr) {
+            const mInput = tr.querySelector('.data-param-measured-val');
+            if (mInput) mInput.value = finalVal;
+        }
+    }
+
+    updateParamCell(rowId, '측정값', finalVal);
+    autoEvaluateRowResult(rowId);
+}
+
+/**
+ * 파라미터 특정 셀 값 갱신
+ */
+function updateParamCell(rowId, field, value) {
+    if (!currentSheetData || !currentSheetData.rows) return;
+    const row = currentSheetData.rows.find(r => r.id === rowId);
+    if (row) {
+        if (!row.values) row.values = {};
+        row.values[field] = value;
+        saveCurrentSheetData(false);
+    }
+}
+
+/**
+ * 파라미터 항목 행 추가
+ */
+function addParamRow() {
+    if (!currentParamDate) currentParamDate = getTodayString();
+    if (!currentSheetData.rows) currentSheetData.rows = [];
+
+    const newRowId = 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+    currentSheetData.rows.push({
+        id: newRowId,
+        date: currentParamDate,
+        values: {
+            '파라미터 항목': '',
+            '단위': '',
+            '기준값': '',
+            '측정값': '',
+            '결과': '양호',
+            '비고': ''
+        }
+    });
+
+    saveCurrentSheetData(true);
+    renderParamView();
+}
+
+/**
+ * 파라미터 항목 행 삭제
+ */
+function deleteParamRow(rowId) {
+    if (!currentSheetData || !currentSheetData.rows) return;
+    currentSheetData.rows = currentSheetData.rows.filter(r => r.id !== rowId);
+    saveCurrentSheetData(true);
+    renderParamView();
+}
+
+/**
+ * 파라미터 특정 날짜 전체 삭제
+ */
+function deleteParamDate(dateStr) {
+    if (!confirm(`[${dateStr}] 일자의 모든 파라미터 데이터를 삭제하시겠습니까?`)) return;
+    if (!currentSheetData || !currentSheetData.rows) return;
+
+    currentSheetData.rows = currentSheetData.rows.filter(r => r.date !== dateStr);
+    if (currentParamDate === dateStr) {
+        currentParamDate = null;
+    }
+    saveCurrentSheetData(true);
+    renderParamView();
+}
+
+/**
+ * 파라미터 새 일자 추가 모달 열기
+ */
+function openParamDateModal() {
+    const modal = document.getElementById('data-param-date-modal');
+    const input = document.getElementById('data-new-param-date');
+    if (input) input.value = getTodayString();
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeParamDateModal() {
+    const modal = document.getElementById('data-param-date-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function handleConfirmAddParamDate() {
+    const input = document.getElementById('data-new-param-date');
+    const dateVal = input ? input.value.trim() : '';
+    if (!dateVal) {
+        alert('추가할 날짜를 선택해주세요.');
+        return;
+    }
+
+    // 이미 존재하는 날짜인지 확인
+    if (!currentSheetData.rows) currentSheetData.rows = [];
+    const exists = currentSheetData.rows.some(r => r.date === dateVal);
+    if (!exists) {
+        // 새 날짜 기본 행 1개 생성
+        currentSheetData.rows.push({
+            id: 'row_' + Date.now(),
+            date: dateVal,
+            values: {
+                '파라미터 항목': '',
+                '단위': '',
+                '기준값': '',
+                '측정값': '',
+                '결과': '양호',
+                '비고': ''
+            }
+        });
+        saveCurrentSheetData(true);
+    }
+
+    currentParamDate = dateVal;
+    closeParamDateModal();
+    renderParamView();
+}
+
+/**
+ * 현재 선택된 날짜의 파라미터 데이터 초기화
+ */
+function handleClearCurrentParamDate() {
+    if (!currentParamDate) return;
+    if (!confirm(`[${currentParamDate}] 일자의 파라미터 데이터를 초기화하시겠습니까?`)) return;
+
+    currentSheetData.rows = currentSheetData.rows.filter(r => r.date !== currentParamDate);
+    currentSheetData.rows.push({
+        id: 'row_' + Date.now(),
+        date: currentParamDate,
+        values: {
+            '파라미터 항목': '',
+            '단위': '',
+            '기준값': '',
+            '측정값': '',
+            '결과': '양호',
+            '비고': ''
+        }
+    });
+
+    saveCurrentSheetData(true);
+    renderParamView();
+}
+
+/**
+ * 파라미터 CSV 다운로드
+ */
+function handleExportParamCsv() {
+    if (!currentSelectedSite || !currentSelectedEquip) return;
+
+    const allRows = currentSheetData.rows || [];
+    if (allRows.length === 0) {
+        alert('내보낼 파라미터 데이터가 없습니다.');
+        return;
+    }
+
+    let csv = '\uFEFF'; // UTF-8 BOM
+    csv += '"날짜","순번","파라미터 항목","기준값","측정값","결과","비고"\n';
+
+    // 날짜별 정렬
+    const sortedRows = [...allRows].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    let lastDate = '';
+    let seq = 1;
+
+    sortedRows.forEach(row => {
+        if (row.date !== lastDate) {
+            lastDate = row.date;
+            seq = 1;
+        }
+        const vals = row.values || {};
+        const line = [
+            `"${(row.date || '').replace(/"/g, '""')}"`,
+            seq++,
+            `"${(vals['파라미터 항목'] || vals['항목'] || '').replace(/"/g, '""')}"`,
+            `"${(vals['기준값'] || vals['기준'] || '').replace(/"/g, '""')}"`,
+            `"${(vals['측정값'] || vals['측정'] || '').replace(/"/g, '""')}"`,
+            `"${(vals['결과'] || '').replace(/"/g, '""')}"`,
+            `"${(vals['비고'] || '').replace(/"/g, '""')}"`
+        ];
+        csv += line.join(',') + '\n';
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const equipTag = currentSelectedEquip.custEquip ? `${currentSelectedEquip.displayName} ${currentSelectedEquip.custEquip}` : `${currentSelectedEquip.displayName} ${currentSelectedEquip.serial || 'DEFAULT'}`;
+    const filename = `${currentSelectedSite}_${equipTag}_Parameter_${getTodayString()}.csv`;
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+/**
+ * ADMIN에 등록된 모델별 기본 Parameter 불러오기
+ */
+async function handleImportModelParams() {
+    if (!currentSelectedSite || !currentSelectedEquip) {
+        alert('장비를 먼저 선택해주세요.');
+        return;
+    }
+
+    if (!currentParamDate) {
+        currentParamDate = getTodayString();
+    }
+
+    // 1. 모델별 파라미터 템플릿 로드 (로컬 + 서버 동기화)
+    let modelParamsMap = {};
+    try {
+        const saved = localStorage.getItem('equip_model_parameters');
+        if (saved) modelParamsMap = JSON.parse(saved) || {};
+    } catch (e) { }
+
+    try {
+        const res = await fetch('/api/setting/equip_model_parameters');
+        const data = await res.json();
+        if (data.status === 'success' && data.value && typeof data.value === 'object') {
+            modelParamsMap = data.value;
+            localStorage.setItem('equip_model_parameters', JSON.stringify(modelParamsMap));
+        }
+    } catch (err) {
+        console.warn('Failed to fetch equip_model_parameters:', err);
+    }
+
+    // 2. 현재 장비의 모델 매칭 (displayName, custEquip, serial, equipment_models 목록 대조)
+    const equipModelName = (currentSelectedEquip.displayName || '').trim();
+    let matchedTemplate = modelParamsMap[equipModelName];
+
+    if (!matchedTemplate || matchedTemplate.length === 0) {
+        // equipment_models 목록에서 abbr <-> name 매핑 역추적
+        try {
+            const modelsData = JSON.parse(localStorage.getItem('equipment_models')) || [];
+            const foundModel = modelsData.find(m => 
+                (m.name && m.name.toLowerCase() === equipModelName.toLowerCase()) || 
+                (m.abbr && m.abbr.toLowerCase() === equipModelName.toLowerCase())
+            );
+            if (foundModel) {
+                if (modelParamsMap[foundModel.name] && modelParamsMap[foundModel.name].length > 0) {
+                    matchedTemplate = modelParamsMap[foundModel.name];
+                } else if (foundModel.abbr && modelParamsMap[foundModel.abbr] && modelParamsMap[foundModel.abbr].length > 0) {
+                    matchedTemplate = modelParamsMap[foundModel.abbr];
+                }
+            }
+        } catch (e) { }
+    }
+
+    if (!matchedTemplate || matchedTemplate.length === 0) {
+        alert(`[${equipModelName}] 장비 모델에 등록된 기본 Parameter가 없습니다.\nADMIN > 장비 Parameter 관리 메뉴에서 기본 Parameter를 먼저 등록해주세요.`);
+        return;
+    }
+
+    if (!confirm(`[${equipModelName}] 모델의 기본 Parameter (${matchedTemplate.length}개 항목)을 현재 점검 일자(${currentParamDate})로 불러오시겠습니까?`)) {
+        return;
+    }
+
+    if (!currentSheetData.rows) currentSheetData.rows = [];
+
+    // 현재 날짜의 기존 행 확인 (빈 행만 1개 있는 경우 교체)
+    const currentDayRows = currentSheetData.rows.filter(r => r.date === currentParamDate);
+    const isOnlySingleEmptyRow = currentDayRows.length === 1 && 
+        !(currentDayRows[0].values && (currentDayRows[0].values['파라미터 항목'] || '').trim());
+
+    if (isOnlySingleEmptyRow) {
+        currentSheetData.rows = currentSheetData.rows.filter(r => r.id !== currentDayRows[0].id);
+    }
+
+    // 새 파라미터 행 생성
+    matchedTemplate.forEach((item, idx) => {
+        const itemName = (item.name || '').trim();
+        const itemUnit = (item.unit || '').trim();
+        const itemStd = (item.standard || '').trim();
+        const itemMemo = (item.memo || '').trim();
+
+        currentSheetData.rows.push({
+            id: 'row_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 4),
+            date: currentParamDate,
+            values: {
+                '파라미터 항목': itemName,
+                '단위': itemUnit,
+                '기준값': itemStd,
+                '측정값': '',
+                '결과': (itemUnit === '유무' ? '적합' : '양호'),
+                '비고': itemMemo
+            }
+        });
+    });
+
+    saveCurrentSheetData(true);
+    renderParamView();
+
+    alert(`[${equipModelName}] 기본 Parameter ${matchedTemplate.length}건을 성공적으로 불러왔습니다.`);
+}
+
+/**
+ * 파라미터 CSV 파일 선택
+ */
+function handleImportParamCsvClick() {
+    if (!currentSelectedSite || !currentSelectedEquip) {
+        alert('장비를 먼저 선택해주세요.');
+        return;
+    }
+    const fileInput = document.getElementById('data-param-csv-file-input');
+    if (fileInput) {
+        fileInput.value = '';
+        fileInput.click();
+    }
+}
+
+/**
+ * 파라미터 CSV 파싱 및 로드
+ */
+function handleParamCsvFileSelected(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        let content = event.target.result;
+        if (content.includes('\uFFFD')) {
+            const retryReader = new FileReader();
+            retryReader.onload = (retryEvent) => {
+                processParamCsvImport(retryEvent.target.result);
+            };
+            retryReader.readAsText(file, 'EUC-KR');
+        } else {
+            processParamCsvImport(content);
+        }
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+
+function processParamCsvImport(csvText) {
+    if (!csvText || !csvText.trim()) {
+        alert('CSV 파일 내용이 비어 있습니다.');
+        return;
+    }
+
+    const rows = parseCsvText(csvText);
+    if (rows.length < 2) {
+        alert('CSV 파일에 헤더와 1개 이상의 데이터 행이 필요합니다.');
+        return;
+    }
+
+    const headerRow = rows[0].map(h => h.trim());
+    const dataRows = rows.slice(1);
+
+    // 컬럼 인덱스 맵핑
+    const getColIdx = (names) => headerRow.findIndex(h => names.some(n => h.toLowerCase().includes(n.toLowerCase())));
+    const dateIdx = getColIdx(['날짜', 'date', '일자']);
+    const nameIdx = getColIdx(['파라미터', '항목', 'item', 'parameter', 'name']);
+    const stdIdx = getColIdx(['기준', 'standard', 'spec']);
+    const measIdx = getColIdx(['측정', 'measured', 'value', 'val']);
+    const resIdx = getColIdx(['결과', 'result', 'status']);
+    const memoIdx = getColIdx(['비고', 'memo', 'note']);
+
+    const newRows = [];
+    dataRows.forEach((rowArr, rIdx) => {
+        if (!rowArr || rowArr.length === 0 || rowArr.every(cell => !cell)) return;
+
+        const dateStr = (dateIdx !== -1 ? normalizeDate(rowArr[dateIdx]) : '') || currentParamDate || getTodayString();
+        const paramName = nameIdx !== -1 ? (rowArr[nameIdx] || '').trim() : (rowArr[0] || '').trim();
+        const standardVal = stdIdx !== -1 ? (rowArr[stdIdx] || '').trim() : '';
+        const measuredVal = measIdx !== -1 ? (rowArr[measIdx] || '').trim() : '';
+        const resultVal = resIdx !== -1 ? (rowArr[resIdx] || '').trim() || '양호' : '양호';
+        const memoVal = memoIdx !== -1 ? (rowArr[memoIdx] || '').trim() : '';
+
+        newRows.push({
+            id: 'row_' + Date.now() + '_' + rIdx + '_' + Math.random().toString(36).substr(2, 4),
+            date: dateStr,
+            values: {
+                '파라미터 항목': paramName,
+                '기준값': standardVal,
+                '측정값': measuredVal,
+                '결과': resultVal,
+                '비고': memoVal
+            }
+        });
+    });
+
+    if (newRows.length === 0) {
+        alert('가져올 수 있는 파라미터 데이터 행이 없습니다.');
+        return;
+    }
+
+    currentSheetData.rows = newRows;
+    saveCurrentSheetData(true, true);
+    renderParamView();
+    alert(`성공적으로 ${newRows.length}개의 파라미터 항목을 가져왔습니다.`);
+}
+
+/**
+ * 기존 원천 데이터(Raw Data) 스프레드시트 테이블 렌더링
+ */
+function renderRawSheetTable() {
+    const rawView = document.getElementById('data-raw-view');
+    const paramView = document.getElementById('data-param-view');
+    const rawToolbar = document.getElementById('toolbar-raw-actions');
+    const paramToolbar = document.getElementById('toolbar-param-actions');
+
+    if (rawView) rawView.style.display = 'flex';
+    if (paramView) paramView.style.display = 'none';
+    if (rawToolbar) rawToolbar.style.display = 'flex';
+    if (paramToolbar) paramToolbar.style.display = 'none';
     const thead = document.getElementById('data-sheet-thead');
     const tbody = document.getElementById('data-sheet-tbody');
     if (!thead || !tbody) return;
@@ -611,7 +1879,7 @@ function renderSheetTable() {
         // 날짜 컬럼 (첫 열: 직접 변경 가능한 날짜 피커)
         bodyHtml += `
             <td class="sheet-td-date" style="width: 140px; min-width: 140px; text-align: center;">
-                <input type="date" class="sheet-date-input custom-date-icon" value="${row.date || ''}" 
+                <input type="date" class="sheet-date-input custom-date-icon" value="${row.date || ''}" max="9999-12-31" 
                        onchange="updateRowDate('${row.id}', this.value)" title="날짜 변경">
             </td>
         `;
@@ -1186,7 +2454,8 @@ window.deleteSheetColumn = function(colIdx) {
  */
 function handleClearSheetData() {
     if (!currentSelectedSite || !currentSelectedEquip) return;
-    if (!confirm(`현재 장비(${currentSelectedEquip.displayName})의 전체 시트 데이터를 초기화하시겠습니까?`)) return;
+    const modeLabel = (currentDataMode === 'param') ? 'Parameter' : 'Raw Data';
+    if (!confirm(`현재 장비(${currentSelectedEquip.displayName})의 [${modeLabel}] 시트 데이터를 초기화하시겠습니까?`)) return;
 
     initDefaultSheet();
     renderSheetTable();
@@ -1227,7 +2496,8 @@ function handleExportCsv() {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const equipTag = currentSelectedEquip.custEquip ? `${currentSelectedEquip.displayName} ${currentSelectedEquip.custEquip}` : `${currentSelectedEquip.displayName} ${currentSelectedEquip.serial || 'DEFAULT'}`;
-    const filename = `${currentSelectedSite}_${equipTag}_데이터시트_${getTodayString()}.csv`;
+    const modeLabel = (currentDataMode === 'param') ? 'Parameter' : 'RawData';
+    const filename = `${currentSelectedSite}_${equipTag}_${modeLabel}_${getTodayString()}.csv`;
     link.href = URL.createObjectURL(blob);
     link.download = filename;
     document.body.appendChild(link);
@@ -1446,6 +2716,16 @@ function normalizeDate(rawDate) {
  * 이벤트 리스너 바인딩
  */
 function setupDataEventListeners() {
+    // Parameter / Raw Data 모드 전환 세그먼트 버튼
+    const btnParam = document.getElementById('btn-mode-param');
+    if (btnParam) {
+        btnParam.addEventListener('click', () => switchDataMode('param'));
+    }
+    const btnRaw = document.getElementById('btn-mode-raw');
+    if (btnRaw) {
+        btnRaw.addEventListener('click', () => switchDataMode('raw'));
+    }
+
     // 사업장 검색
     const siteSearch = document.getElementById('data-site-search');
     if (siteSearch) {
@@ -1518,6 +2798,37 @@ function setupDataEventListeners() {
     if (btnExport) {
         btnExport.addEventListener('click', handleExportCsv);
     }
+
+    // Parameter 전용 이벤트 리스너들
+    const btnAddParamDate = document.getElementById('btn-add-param-date');
+    if (btnAddParamDate) btnAddParamDate.addEventListener('click', openParamDateModal);
+
+    const btnCloseParamDate = document.getElementById('btn-close-param-date-modal');
+    if (btnCloseParamDate) btnCloseParamDate.addEventListener('click', closeParamDateModal);
+
+    const btnCancelParamDate = document.getElementById('btn-cancel-param-date-modal');
+    if (btnCancelParamDate) btnCancelParamDate.addEventListener('click', closeParamDateModal);
+
+    const btnConfirmAddParamDate = document.getElementById('btn-confirm-add-param-date');
+    if (btnConfirmAddParamDate) btnConfirmAddParamDate.addEventListener('click', handleConfirmAddParamDate);
+
+    const btnImportModelParam = document.getElementById('btn-import-model-param');
+    if (btnImportModelParam) btnImportModelParam.addEventListener('click', handleImportModelParams);
+
+    const btnAddParamRow = document.getElementById('btn-add-param-row');
+    if (btnAddParamRow) btnAddParamRow.addEventListener('click', addParamRow);
+
+    const btnClearParam = document.getElementById('btn-clear-param-data');
+    if (btnClearParam) btnClearParam.addEventListener('click', handleClearCurrentParamDate);
+
+    const btnExportParam = document.getElementById('btn-export-param-csv');
+    if (btnExportParam) btnExportParam.addEventListener('click', handleExportParamCsv);
+
+    const btnImportParam = document.getElementById('btn-import-param-csv');
+    if (btnImportParam) btnImportParam.addEventListener('click', handleImportParamCsvClick);
+
+    const paramCsvFileInput = document.getElementById('data-param-csv-file-input');
+    if (paramCsvFileInput) paramCsvFileInput.addEventListener('change', handleParamCsvFileSelected);
 }
 
 /**

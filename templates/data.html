@@ -4,7 +4,7 @@
 {% block title %}데이터 관리 - WithTech{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/data.css') }}?v=1.1.1">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/data.css') }}?v=1.2.1">
 <style>
     /* 달력 아이콘 반전 */
     .custom-date-icon::-webkit-calendar-picker-indicator {
@@ -67,13 +67,22 @@
                     <span id="data-header-serial-tag" class="data-tag data-tag-serial">-</span>
                     <span id="data-header-cust-tag" class="data-tag data-tag-cust" style="display: none;">-</span>
                 </div>
-                <div class="data-sheet-toolbar">
+
+                <!-- Parameter / Raw Data 전환 세그먼트 버튼 -->
+                <div class="data-mode-switcher" id="data-mode-switcher">
+                    <button type="button" class="btn-data-mode" data-mode="param" id="btn-mode-param" title="장비 파라미터 입력 및 관리">
+                        ⚙️ Parameter
+                    </button>
+                    <button type="button" class="btn-data-mode active" data-mode="raw" id="btn-mode-raw" title="측정 원천 데이터 입력 및 관리">
+                        📊 Raw Data
+                    </button>
+                </div>
+
+                <!-- Raw Data 액션 툴바 -->
+                <div class="data-sheet-toolbar" id="toolbar-raw-actions">
                     <div class="data-sheet-actions">
                         <button type="button" id="btn-add-sheet-col" class="btn-blue-sm" title="새로운 항목 열 추가">
                             ➕ 열 추가
-                        </button>
-                        <button type="button" id="btn-add-sheet-row" class="btn-blue-sm" title="오늘 날짜 행 추가">
-                            ➕ 행 추가
                         </button>
                         <button type="button" id="btn-import-equip-data-csv" class="btn-blue-sm" title="CSV 파일 가져오기">
                             📂 CSV 불러오기
@@ -87,10 +96,32 @@
                         </button>
                     </div>
                 </div>
+
+                <!-- Parameter 액션 툴바 (Raw Data와 동일한 위치) -->
+                <div class="data-sheet-toolbar" id="toolbar-param-actions" style="display: none;">
+                    <div class="data-sheet-actions">
+                        <button type="button" id="btn-import-model-param" class="btn-blue-sm" title="ADMIN에 등록된 해당 모델의 기본 Parameter 불러오기">
+                            📋 Parameter 불러오기
+                        </button>
+                        <button type="button" id="btn-add-param-row" class="btn-blue-sm" title="파라미터 항목 행 추가">
+                            ➕ 항목 추가
+                        </button>
+                        <button type="button" id="btn-import-param-csv" class="btn-blue-sm" title="파라미터 CSV 파일 가져오기">
+                            📂 CSV 불러오기
+                        </button>
+                        <input type="file" id="data-param-csv-file-input" accept=".csv, text/csv" style="display: none;">
+                        <button type="button" id="btn-export-param-csv" class="btn-green-sm" title="파라미터 CSV 다운로드">
+                            📥 CSV 내보내기
+                        </button>
+                        <button type="button" id="btn-clear-param-data" class="btn-del-sm" title="현재 날짜 파라미터 초기화">
+                            일자 초기화
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <!-- 2. 엑셀형 데이터 시트 카드 -->
-            <div class="data-sheet-card">
+            <!-- 2. 엑셀형 데이터 시트 카드 (Raw Data 뷰) -->
+            <div id="data-raw-view" class="data-sheet-card">
                 <div class="data-sheet-wrapper">
                     <table class="data-sheet-table" id="data-sheet-table">
                         <thead id="data-sheet-thead">
@@ -107,6 +138,75 @@
                     <div class="data-sheet-info-text">
                         <span>💡 셀을 클릭하여 직접 값을 수정하세요. (Tab: 다음 열, Enter: 다음 행)</span>
                     </div>
+                </div>
+            </div>
+
+            <!-- 3. Parameter 마스터-디테일 뷰 (좌측 슬림 날짜 리스트 + 우측 파라미터 점검 테이블) -->
+            <div id="data-param-view" class="data-param-view" style="display: none;">
+                <!-- 좌측 날짜별 리스트 (너비 작게 슬림형) -->
+                <aside class="data-param-date-sidebar">
+                    <div class="data-param-date-header">
+                        <h4>📅 점검 일자</h4>
+                        <button type="button" id="btn-add-param-date" class="btn-add-param-date" title="새 점검 일자 추가">
+                            ➕ 추가
+                        </button>
+                    </div>
+                    <ul id="data-param-date-list" class="data-param-date-list">
+                        <!-- JS 렌더링 -->
+                    </ul>
+                </aside>
+
+                <!-- 우측 파라미터 항목 입력 및 관리 카드 -->
+                <div class="data-param-content-card">
+                    <div class="data-param-toolbar">
+                        <div class="data-param-current-date-badge">
+                            <span id="data-param-selected-date-title">선택된 일자 없음</span>
+                        </div>
+                    </div>
+
+                    <div class="data-param-table-wrapper">
+                        <table class="data-param-table" id="data-param-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 45px;">No</th>
+                                    <th style="width: 18%;">파라미터 항목</th>
+                                    <th style="width: 10%;">단위</th>
+                                    <th style="width: 16%;">기준값</th>
+                                    <th style="width: 12%;">측정값</th>
+                                    <th style="width: 9%;">결과</th>
+                                    <th>비고</th>
+                                    <th style="width: 45px;">삭제</th>
+                                </tr>
+                            </thead>
+                            <tbody id="data-param-tbody">
+                                <!-- 동적 렌더링 -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="data-sheet-footer">
+                        <div class="data-sheet-info-text">
+                            <span>💡 좌측에서 점검 일자를 선택한 후 파라미터 항목, 기준값, 측정값, 결과를 기록하세요.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parameter 날짜 추가 모달 -->
+        <div id="data-param-date-modal" class="data-modal-overlay" style="display: none;">
+            <div class="data-modal-box" style="max-width: 320px;">
+                <div class="data-modal-header">
+                    <h4>📅 점검 일자 추가</h4>
+                    <button type="button" class="data-modal-close" id="btn-close-param-date-modal">&times;</button>
+                </div>
+                <div class="data-modal-body">
+                    <label for="data-new-param-date" style="display: block; font-size: 13px; margin-bottom: 8px; color: #c9d1d9;">추가할 점검 일자</label>
+                    <input type="date" id="data-new-param-date" class="data-modal-input" max="9999-12-31">
+                </div>
+                <div class="data-modal-footer">
+                    <button type="button" class="btn-gray-sm" id="btn-cancel-param-date-modal">취소</button>
+                    <button type="button" id="btn-confirm-add-param-date" class="btn-blue-sm">추가</button>
                 </div>
             </div>
         </div>
@@ -133,5 +233,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/data.js') }}?v=1.1.9"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/data.js') }}?v=1.3.8"></script>
 {% endblock %}

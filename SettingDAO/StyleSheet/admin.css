@@ -140,20 +140,23 @@
 #admin-model-container .model-actions-col { display: none; }
 #admin-model-container.management-active .model-actions-col { display: flex; }
 
-#admin-model-list {
+#admin-model-list,
+#admin-param-model-list {
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     border-top: none;
 }
 
-#admin-model-list li {
+#admin-model-list li,
+#admin-param-model-list li {
     padding: 0;
     display: flex; /* [수정] Flex 레이아웃 명시 (가로 정렬 보장) */
     align-items: center;
     justify-content: flex-start;
 }
 
-#admin-model-list li > .model-col {
+#admin-model-list li > .model-col,
+#admin-param-model-list li > .model-col {
     padding: 10px 12px;
     justify-content: center;
 }
@@ -1425,5 +1428,378 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
     border: none !important;
     background: transparent !important;
     cursor: default !important;
+}
+
+/* 6. 장비 Parameter 관리 전용 스타일 */
+#admin-equip-param-view .data-param-table,
+#section-equip-param-mgmt .data-param-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    table-layout: fixed;
+    min-width: 780px;
+    background: #161b22;
+}
+
+#admin-equip-param-view .data-param-table th,
+#section-equip-param-mgmt .data-param-table th {
+    position: sticky;
+    top: 0;
+    background: #21262d;
+    color: #e6edf3;
+    font-weight: 700;
+    padding: 8px 10px;
+    text-align: center;
+    border-bottom: 2px solid #30363d;
+    border-right: 1px solid #30363d;
+    z-index: 10;
+    user-select: none;
+}
+
+#admin-equip-param-view .data-param-table th:last-child,
+#section-equip-param-mgmt .data-param-table th:last-child {
+    border-right: none;
+}
+
+#admin-equip-param-view .data-param-table td,
+#section-equip-param-mgmt .data-param-table td {
+    padding: 0;
+    border-bottom: 1px solid #21262d;
+    border-right: 1px solid #21262d;
+    background: #161b22;
+    height: 34px;
+    vertical-align: middle;
+}
+
+#admin-equip-param-view .data-param-table td:last-child,
+#section-equip-param-mgmt .data-param-table td:last-child {
+    border-right: none;
+}
+
+#admin-equip-param-view .data-param-table tr:hover td,
+#section-equip-param-mgmt .data-param-table tr:hover td {
+    background: #1c2128;
+}
+
+#admin-equip-param-view .data-param-input,
+#section-equip-param-mgmt .data-param-input {
+    width: 100%;
+    height: 100%;
+    min-height: 34px;
+    background: transparent;
+    border: none;
+    color: #e6edf3;
+    padding: 6px 10px;
+    box-sizing: border-box;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+}
+
+#admin-equip-param-view .data-param-input:focus,
+#section-equip-param-mgmt .data-param-input:focus {
+    background: #0d1117;
+    box-shadow: inset 0 0 0 1px #58a6ff;
+}
+
+#admin-equip-param-view .data-param-unit-cell,
+#section-equip-param-mgmt .data-param-unit-cell {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    min-height: 34px;
+    position: relative;
+    background: transparent;
+}
+
+#admin-equip-param-view .data-param-unit-select,
+#section-equip-param-mgmt .data-param-unit-select {
+    width: 100%;
+    height: 100%;
+    min-height: 34px;
+    background: transparent;
+    border: none;
+    color: #58a6ff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 6px;
+    outline: none;
+    cursor: pointer;
+    text-align: center;
+    text-align-last: center;
+}
+
+#admin-equip-param-view .data-param-unit-select:focus,
+#section-equip-param-mgmt .data-param-unit-select:focus {
+    background: #0d1117;
+    box-shadow: inset 0 0 0 1px #58a6ff;
+}
+
+#admin-equip-param-view .data-param-unit-select option,
+#section-equip-param-mgmt .data-param-unit-select option {
+    background: #161b22;
+    color: #e6edf3;
+    font-weight: 500;
+    text-align: left;
+}
+
+#admin-equip-param-view .data-param-unit-custom-wrap,
+#section-equip-param-mgmt .data-param-unit-custom-wrap {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    min-height: 34px;
+}
+
+#admin-equip-param-view .data-param-unit-custom-input,
+#section-equip-param-mgmt .data-param-unit-custom-input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    min-height: 34px;
+    font-size: 12px;
+    color: #58a6ff;
+    font-weight: 600;
+    text-align: center;
+    padding: 4px 4px;
+    background: transparent;
+    border: none;
+    outline: none;
+}
+
+#admin-equip-param-view .data-param-unit-custom-input:focus,
+#section-equip-param-mgmt .data-param-unit-custom-input:focus {
+    background: #0d1117;
+    box-shadow: inset 0 0 0 1px #58a6ff;
+}
+
+#admin-equip-param-view .btn-unit-preset-toggle,
+#section-equip-param-mgmt .btn-unit-preset-toggle {
+    width: 22px;
+    min-width: 22px;
+    height: 100%;
+    min-height: 34px;
+    background: #21262d;
+    border: none;
+    border-left: 1px solid #30363d;
+    color: #8b949e;
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s, color 0.15s;
+    padding: 0;
+}
+
+#admin-equip-param-view .btn-unit-preset-toggle:hover,
+#section-equip-param-mgmt .btn-unit-preset-toggle:hover {
+    background: #30363d;
+    color: #58a6ff;
+}
+
+#admin-equip-param-view .data-param-spec-cell,
+#section-equip-param-mgmt .data-param-spec-cell {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    min-height: 34px;
+    background: transparent;
+    position: relative;
+}
+
+#admin-equip-param-view .data-param-text-spec-wrap,
+#admin-equip-param-view .data-param-numeric-spec-wrap,
+#section-equip-param-mgmt .data-param-text-spec-wrap,
+#section-equip-param-mgmt .data-param-numeric-spec-wrap {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+#admin-equip-param-view .data-param-op-select,
+#section-equip-param-mgmt .data-param-op-select {
+    width: 48px;
+    min-width: 48px;
+    height: 100%;
+    min-height: 34px;
+    background: #1c2128;
+    border: none;
+    border-right: 1px solid #30363d;
+    color: #58a6ff;
+    font-weight: 700;
+    font-size: 13px;
+    text-align: center;
+    text-align-last: center;
+    padding: 0 4px;
+    outline: none;
+    cursor: pointer;
+    border-radius: 0;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+#admin-equip-param-view .data-param-op-select:hover,
+#section-equip-param-mgmt .data-param-op-select:hover {
+    background: #262c36;
+    color: #79c0ff;
+}
+
+#admin-equip-param-view .data-param-op-select:focus,
+#section-equip-param-mgmt .data-param-op-select:focus {
+    background: #0d1117;
+    box-shadow: inset 0 0 0 1px #58a6ff;
+}
+
+#admin-equip-param-view .data-param-op-select option,
+#section-equip-param-mgmt .data-param-op-select option {
+    background: #161b22;
+    color: #e6edf3;
+    font-weight: 600;
+    text-align: center;
+}
+
+#admin-equip-param-view .data-param-single-val-wrap,
+#admin-equip-param-view .data-param-pm-val-wrap,
+#section-equip-param-mgmt .data-param-single-val-wrap,
+#section-equip-param-mgmt .data-param-pm-val-wrap {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+}
+
+#admin-equip-param-view .data-param-spec-center,
+#admin-equip-param-view .data-param-spec-tol,
+#section-equip-param-mgmt .data-param-spec-center,
+#section-equip-param-mgmt .data-param-spec-tol {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    min-height: 34px;
+    font-size: 12px;
+    text-align: center;
+    padding: 4px 4px;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #e6edf3;
+}
+
+#admin-equip-param-view .data-param-spec-center:focus,
+#admin-equip-param-view .data-param-spec-tol:focus,
+#section-equip-param-mgmt .data-param-spec-center:focus,
+#section-equip-param-mgmt .data-param-spec-tol:focus {
+    background: #0d1117;
+    box-shadow: inset 0 0 0 1px #58a6ff;
+}
+
+#admin-equip-param-view .data-param-pm-divider,
+#section-equip-param-mgmt .data-param-pm-divider {
+    width: 18px;
+    min-width: 18px;
+    text-align: center;
+    color: #58a6ff;
+    font-weight: 700;
+    font-size: 13px;
+    user-select: none;
+}
+
+/* 장비관리 상단 헤더 서브 탭 버튼 그룹 */
+.admin-equip-header-tabs {
+    display: inline-flex;
+    align-items: center;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 2px;
+    gap: 2px;
+}
+
+.admin-equip-tab-btn {
+    background: transparent;
+    border: none;
+    color: #8b949e;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1;
+}
+
+.admin-equip-tab-btn:hover {
+    color: #c9d1d9;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.admin-equip-tab-btn.active {
+    background: #1f6feb;
+    color: #ffffff;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+#admin-equip-param-view .data-param-row-del-btn,
+#section-equip-param-mgmt .data-param-row-del-btn {
+    background: transparent;
+    border: none;
+    color: #8b949e;
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+#admin-equip-param-view .data-param-row-del-btn:hover,
+#section-equip-param-mgmt .data-param-row-del-btn:hover {
+    color: #f85149;
+    background: rgba(248, 81, 73, 0.1);
+}
+
+.btn-gray-sm {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    padding: 5px 12px;
+    font-size: 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+}
+
+.btn-gray-sm:hover {
+    background: #30363d;
+    color: #58a6ff;
+    border-color: #58a6ff;
+}
+
+body.admin-readonly-mode #btn-import-model-param-csv,
+body.admin-readonly-mode #btn-add-model-param-row,
+body.admin-readonly-mode #btn-save-model-params,
+body.admin-readonly-mode #admin-equip-param-view .data-param-row-del-btn,
+body.admin-readonly-mode #section-equip-param-mgmt .data-param-row-del-btn,
+body:not(.role-admin):not(.role-superadmin) #btn-import-model-param-csv,
+body:not(.role-admin):not(.role-superadmin) #btn-add-model-param-row,
+body:not(.role-admin):not(.role-superadmin) #btn-save-model-params,
+body:not(.role-admin):not(.role-superadmin) #admin-equip-param-view .data-param-row-del-btn,
+body:not(.role-admin):not(.role-superadmin) #section-equip-param-mgmt .data-param-row-del-btn {
+    display: none !important;
 }
 

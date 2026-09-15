@@ -59,7 +59,7 @@
                     <!-- 1. 장비 작업 (SETUP, MAINT, TROUBLE) -->
                     <li class="nav-dropdown {% if active_page in ['setup', 'maintenance', 'trouble'] %}active-group{% endif %}">
                         <a href="javascript:void(0)" class="nav-dropdown-toggle {% if active_page in ['setup', 'maintenance', 'trouble'] %}active{% endif %}">
-                            OPERATIONS <span class="nav-arrow">▾</span>
+                            WORKS <span class="nav-arrow">▾</span>
                         </a>
                         <ul class="nav-dropdown-menu">
                             <li><a href="{{ url_for('setup') }}" class="{% if active_page == 'setup' %}active{% endif %}">Setup</a></li>
@@ -75,7 +75,7 @@
                         </a>
                         <ul class="nav-dropdown-menu">
                             <li><a href="{{ url_for('data_page') }}" class="{% if active_page == 'data' %}active{% endif %}">Data</a></li>
-                            <li><a href="{{ url_for('operation') }}" class="{% if active_page == 'operation' %}active{% endif %}">가동률</a></li>
+                            <li><a href="{{ url_for('operation') }}" class="{% if active_page == 'operation' %}active{% endif %}">Operation</a></li>
                             <li><a href="{{ url_for('sort') }}" class="{% if active_page == 'sort' %}active{% endif %}">Sort</a></li>
                         </ul>
                     </li>
@@ -1477,7 +1477,7 @@
     </template>
 
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.0.7"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.0.9"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.1.0"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}"></script>
     {% if session.get('role') == 'superadmin' %}
     <script src="{{ url_for('SettingDAO', filename='JavaScript/chatbot.js') }}"></script>

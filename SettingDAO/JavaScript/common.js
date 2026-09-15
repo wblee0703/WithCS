@@ -1357,6 +1357,7 @@ function initializeApp() {
     // [이동] HOME 화면에서도 시스템 로그 팝업 이벤트(필터, 닫기)가 동작하도록 페이지 접근 제어 이전에 먼저 실행합니다.
     setupDataManagementEvents();
     setupGlobalModalScrollLock();
+    setupGlobalDateInputs(); // [추가] 날짜 연도 4자리 제한 및 자동 월 전환
     if (typeof window.setupTaskSearchModal === 'function') window.setupTaskSearchModal();
     if (typeof window.setupEventDetailModal === 'function') window.setupEventDetailModal();
     if (typeof window.setupRegisterScheduleModal === 'function') window.setupRegisterScheduleModal();
@@ -1687,6 +1688,55 @@ function setupLogoEvent() {
             if (!checkUnsavedChanges()) return;
             window.location.href = '/';
         });
+    }
+}
+
+/**
+ * [추가] 모든 날짜 입력 필드(input[type="date"])의 연도를 4자리로 제한하여
+ * 브라우저에서 4자리 입력 시 자동으로 월(Month) 세그먼트로 이동하도록 max="9999-12-31"을 일괄 설정
+ */
+function setupGlobalDateInputs() {
+    const applyMax = (container = document) => {
+        if (!container) return;
+        const dateInputs = container.querySelectorAll ? container.querySelectorAll('input[type="date"]') : [];
+        for (let i = 0; i < dateInputs.length; i++) {
+            if (!dateInputs[i].hasAttribute('max')) {
+                dateInputs[i].setAttribute('max', '9999-12-31');
+            }
+        }
+    };
+
+    // 1. 현재 로드된 모든 date input에 적용
+    applyMax();
+
+    // 2. 캡처링 focusin 리스너: 사용자가 포커스하거나 클릭하는 모든 date input에 보장
+    document.addEventListener('focusin', (e) => {
+        if (e.target && e.target.tagName === 'INPUT' && e.target.type === 'date') {
+            if (!e.target.hasAttribute('max')) {
+                e.target.setAttribute('max', '9999-12-31');
+            }
+        }
+    }, true);
+
+    // 3. MutationObserver: 동적 모달, 데이터 시트 행 생성 등 DOM 변화 시 자동 적용
+    if (window.MutationObserver && document.body) {
+        const observer = new MutationObserver((mutations) => {
+            for (let i = 0; i < mutations.length; i++) {
+                const added = mutations[i].addedNodes;
+                if (!added) continue;
+                for (let j = 0; j < added.length; j++) {
+                    const node = added[j];
+                    if (node.nodeType === 1) { // ELEMENT_NODE
+                        if (node.tagName === 'INPUT' && node.type === 'date') {
+                            if (!node.hasAttribute('max')) node.setAttribute('max', '9999-12-31');
+                        } else if (node.querySelectorAll) {
+                            applyMax(node);
+                        }
+                    }
+                }
+            }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
     }
 }
 

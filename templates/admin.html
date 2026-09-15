@@ -4,7 +4,7 @@
 {% block title %}WITHTECH - Admin{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=22">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=26">
 {% endblock %}
 
 {% block content %}
@@ -122,10 +122,17 @@
 
         <!-- 2. 장비관리 -->
         <div id="section-equip-mgmt" class="card admin-section" style="display: none;">
-            <div class="card-header">
-                <h3>장비관리</h3>
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <h3 style="margin: 0;">장비관리</h3>
+                    <div class="admin-equip-header-tabs">
+                        <button type="button" id="btn-tab-equip-info" class="admin-equip-tab-btn active">장비 정보 관리</button>
+                        <button type="button" id="btn-tab-equip-param" class="admin-equip-tab-btn">Parameter 관리</button>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
+            <!-- 2-A. 장비 정보 관리 뷰 -->
+            <div id="admin-equip-info-view" class="card-body">
                 <div class="admin-split-view">
                     <!-- 좌측: 장비 모델 목록 -->
                     <div class="admin-col-list wide-col" id="admin-model-container">
@@ -342,6 +349,72 @@
                         </div>
                         <div id="admin-equip-placeholder" class="placeholder-container">
                             <p>사업장을 선택하고 장비를 선택하거나 신규 등록하세요.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2-B. 장비 Parameter 관리 뷰 -->
+            <div id="admin-equip-param-view" class="card-body" style="display: none;">
+                <div class="admin-split-view">
+                    <!-- 좌측: 장비 모델 목록 -->
+                    <div class="admin-col-list wide-col" id="admin-param-model-container">
+                        <div class="list-header column-header">
+                            <div class="header-title-row mb-5">
+                                <div style="display: flex; align-items: center; gap: 5px;">
+                                    <span>장비 모델</span>
+                                    <span id="admin-param-model-count" class="badge">0</span>
+                                </div>
+                            </div>
+                            <input type="text" id="admin-param-model-search" class="input-dark compact-select full-width"
+                                placeholder="모델명 또는 약어 검색" autocomplete="off">
+                        </div>
+                        <div class="admin-list-header">
+                            <div class="model-col model-name-col">모델명</div>
+                            <div class="model-col model-abbr-col">약어</div>
+                        </div>
+                        <ul id="admin-param-model-list" class="admin-list">
+                            <!-- JS 렌더링 -->
+                        </ul>
+                    </div>
+
+                    <!-- 우측: 선택된 모델의 기본 Parameter 관리 -->
+                    <div class="admin-col-detail" id="admin-param-model-detail" style="display: flex; flex-direction: column;">
+                        <div class="detail-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h4 id="admin-param-model-title">모델 기본 Parameter</h4>
+                                <p class="detail-desc">선택된 모델의 기본 점검 파라미터(항목, 단위, 기준값, 비고)를 관리합니다.</p>
+                            </div>
+                            {% if session.get('role') in ['admin', 'superadmin'] %}
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <input type="file" id="admin-param-csv-file-input" accept=".csv" style="display: none;">
+                                <button type="button" id="btn-import-model-param-csv" class="btn-gray-sm" style="display: none;">📥 CSV 불러오기</button>
+                                <button type="button" id="btn-add-model-param-row" class="btn-green-sm" style="display: none;">➕ 항목 추가</button>
+                                <button type="button" id="btn-save-model-params" class="btn-blue-sm" style="display: none;">💾 설정 저장</button>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div id="admin-param-table-container" style="display: none; margin-top: 10px; flex: 1; overflow-y: auto;">
+                            <table class="data-param-table" id="admin-param-table" style="min-width: 780px;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 45px;">No</th>
+                                        <th style="width: 25%;">파라미터 항목</th>
+                                        <th style="width: 14%;">단위</th>
+                                        <th style="width: 26%;">기준값</th>
+                                        <th>비고</th>
+                                        <th style="width: 45px;">삭제</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-param-tbody">
+                                    <!-- 동적 렌더링 -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div id="admin-param-placeholder" class="placeholder-container">
+                            <p>좌측에서 장비 모델을 선택해주세요.</p>
                         </div>
                     </div>
                 </div>
@@ -906,5 +979,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=31"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=36"></script>
 {% endblock %}

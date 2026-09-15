@@ -416,6 +416,28 @@ class EquipmentModel(db.Model):
             'abbr': self.abbr or self.name
         }
 
+# [추가] 장비 Parameter 관리 마스터 데이터 테이블 (AdminParameter)
+class AdminParameter(db.Model):
+    __tablename__ = 'admin_parameter'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    model_name = db.Column(db.String(100), nullable=False, unique=True)
+    model_abbr = db.Column(db.String(100), default='')
+    parameters = db.Column(db.Text, default='[]')
+    updated_at = db.Column(db.DateTime, default=get_utc_now, onupdate=get_utc_now)
+
+    def to_dict(self):
+        try:
+            params_val = json.loads(self.parameters) if self.parameters else []
+        except Exception:
+            params_val = []
+        return {
+            'id': self.id,
+            'model_name': self.model_name,
+            'model_abbr': self.model_abbr or '',
+            'parameters': params_val,
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else ''
+        }
+
 # [추가] 점검 구분 마스터 데이터 통합 테이블 (CheckTypeCategory)
 class CheckTypeCategory(db.Model):
     __tablename__ = 'check_type_category'
@@ -1074,7 +1096,7 @@ def data_page():
 # 테이블명: zData 장비약어 고객사장비명 또는 (고객사장비명 없을 시) zData 장비약어 시리얼넘버
 # 접두사 zData: DB 툴에서 알파벳 순 정렬 시 최하단으로 정렬되어 시스템 테이블과 깔끔히 분리
 # ------------------------------------------------------------------------------
-def get_equip_data_table_name(abbr, cust_equip, serial):
+def get_equip_data_table_name(abbr, cust_equip, serial, data_type='raw'):
     def clean_str(val):
         if not val:
             return ''
@@ -1087,13 +1109,17 @@ def get_equip_data_table_name(abbr, cust_equip, serial):
     cust_part = clean_str(cust_equip)
     serial_part = clean_str(serial)
 
-    # 접두사 zData 적용
+    # 데이터 타입 구분: 'param' (Parameter) 또는 'raw' (Raw Data)
+    is_param = str(data_type).lower() in ('param', 'parameter')
+    prefix = "zParam" if is_param else "zData"
+
+    # 접두사 zParam / zData 적용
     if cust_part:
-        tbl = f"zData {abbr_part} {cust_part}"
+        tbl = f"{prefix} {abbr_part} {cust_part}"
     elif serial_part:
-        tbl = f"zData {abbr_part} {serial_part}"
+        tbl = f"{prefix} {abbr_part} {serial_part}"
     else:
-        tbl = f"zData {abbr_part} DEFAULT"
+        tbl = f"{prefix} {abbr_part} DEFAULT"
 
     # MySQL 식별자 최대 64자 제한 준수 및 끝 공백 제거
     tbl = tbl[:64].rstrip()
@@ -1109,8 +1135,9 @@ def load_datasheet():
     model_abbr = req_data.get('model_abbr', '').strip()
     cust_equip = req_data.get('cust_equip', '').strip()
     serial = req_data.get('serial', '').strip()
+    data_type = req_data.get('data_type', 'raw').strip().lower()
 
-    table_name, display_name = get_equip_data_table_name(model_abbr, cust_equip, serial)
+    table_name, display_name = get_equip_data_table_name(model_abbr, cust_equip, serial, data_type)
     if not table_name:
         return jsonify({"status": "fail", "message": "유효하지 않은 장비 정보입니다."}), 400
 
@@ -1126,6 +1153,7 @@ def load_datasheet():
                 "status": "success",
                 "table_name": table_name,
                 "display_name": display_name,
+                "data_type": data_type,
                 "exists": False,
                 "columns": [],
                 "rows": []
@@ -1158,6 +1186,7 @@ def load_datasheet():
             "status": "success",
             "table_name": table_name,
             "display_name": display_name,
+            "data_type": data_type,
             "exists": True,
             "columns": data_cols,
             "rows": rows_data
@@ -1176,11 +1205,12 @@ def save_datasheet():
     model_abbr = req_data.get('model_abbr', '').strip()
     cust_equip = req_data.get('cust_equip', '').strip()
     serial = req_data.get('serial', '').strip()
+    data_type = req_data.get('data_type', 'raw').strip().lower()
     columns = req_data.get('columns', [])
     rows = req_data.get('rows', [])
     reset_table = req_data.get('reset_table', False)
 
-    table_name, display_name = get_equip_data_table_name(model_abbr, cust_equip, serial)
+    table_name, display_name = get_equip_data_table_name(model_abbr, cust_equip, serial, data_type)
     if not table_name:
         return jsonify({"status": "fail", "message": "유효하지 않은 장비 정보입니다."}), 400
 
@@ -2701,6 +2731,49 @@ def get_logs():
     } for log in logs]
     return jsonify(result)
 
+# [추가] SystemSetting 조회 API (장비 모델별 파라미터 등 단일 설정 로드용)
+@app.route('/api/setting/<key>', methods=['GET'])
+@login_required
+def get_system_setting(key):
+    if key == 'equip_model_parameters':
+        try:
+            param_rows = AdminParameter.query.all()
+            val = {}
+            for row in param_rows:
+                p_list = []
+                if row.parameters:
+                    try:
+                        p_list = json.loads(row.parameters)
+                    except Exception:
+                        p_list = []
+                if row.model_name:
+                    val[row.model_name] = p_list
+                if row.model_abbr and row.model_abbr != row.model_name:
+                    val[row.model_abbr] = p_list
+            return jsonify({"status": "success", "value": val})
+        except Exception as e:
+            app.logger.error(f"Failed to query AdminParameter: {e}")
+            pass
+
+    setting = SystemSetting.query.filter_by(key=key).first()
+    if setting and setting.value:
+        try:
+            val = json.loads(setting.value)
+        except Exception:
+            val = setting.value
+        return jsonify({"status": "success", "value": val})
+    return jsonify({"status": "success", "value": None})
+
+# [추가] 장비 Parameter 전체 목록 조회 전용 API (admin_parameter 테이블)
+@app.route('/api/admin/parameters', methods=['GET'])
+@login_required
+def get_admin_parameters():
+    try:
+        rows = AdminParameter.query.order_by(AdminParameter.model_name.asc()).all()
+        return jsonify({"status": "success", "data": [r.to_dict() for r in rows]})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 # [추가] 통합 Admin 설정 관리를 위한 만능 DB CRUD API
 @app.route('/api/admin/crud', methods=['POST'])
 @login_required
@@ -3124,6 +3197,53 @@ def admin_crud():
                     db.session.commit()
                 return jsonify({"status": "success"})
 
+        elif domain == 'admin_parameter':
+            if action in ['CREATE', 'UPDATE', 'SAVE']:
+                m_name = str(payload.get('model_name', '')).strip()
+                m_abbr = str(payload.get('model_abbr', '')).strip()
+                raw_params = payload.get('parameters', [])
+                if isinstance(raw_params, (list, dict)):
+                    params_str = json.dumps(raw_params, ensure_ascii=False)
+                else:
+                    params_str = str(raw_params or '[]')
+
+                if not m_name:
+                    return jsonify({"status": "fail", "message": "장비 모델명이 필요합니다."}), 400
+
+                if not m_abbr:
+                    eq_m = EquipmentModel.query.filter((EquipmentModel.name == m_name) | (EquipmentModel.abbr == m_name)).first()
+                    if eq_m and eq_m.abbr:
+                        m_abbr = eq_m.abbr
+
+                param_row = AdminParameter.query.filter_by(model_name=m_name).first()
+                if not param_row and m_abbr:
+                    param_row = AdminParameter.query.filter_by(model_abbr=m_abbr).first()
+
+                if param_row:
+                    param_row.model_name = m_name
+                    if m_abbr:
+                        param_row.model_abbr = m_abbr
+                    param_row.parameters = params_str
+                else:
+                    param_row = AdminParameter(
+                        model_name=m_name,
+                        model_abbr=m_abbr,
+                        parameters=params_str
+                    )
+                    db.session.add(param_row)
+                db.session.commit()
+                return jsonify({"status": "success", "id": param_row.id})
+
+            elif action == 'DELETE':
+                p_id = payload.get('id')
+                m_name = payload.get('model_name')
+                if p_id:
+                    AdminParameter.query.filter_by(id=p_id).delete()
+                elif m_name:
+                    AdminParameter.query.filter_by(model_name=m_name).delete()
+                db.session.commit()
+                return jsonify({"status": "success"})
+
         elif domain == 'setting':
             deprecated_keys = ['check_type_categories', 'check_type_categories2', 'check_type_categories3', 'check_type_items', 'equipment_models', 'admin_items']
             if payload.get('key') not in deprecated_keys:
@@ -3131,6 +3251,31 @@ def admin_crud():
                 setting = SystemSetting.query.filter_by(key=payload['key']).first()
                 if setting: setting.value = val_json
                 else: db.session.add(SystemSetting(key=payload['key'], value=val_json))
+
+            if payload.get('key') == 'equip_model_parameters':
+                val = payload.get('value', {})
+                if isinstance(val, dict):
+                    try:
+                        for m_key, p_list in val.items():
+                            if not m_key or not isinstance(p_list, list): continue
+                            p_str = json.dumps(p_list, ensure_ascii=False)
+                            eq_m = EquipmentModel.query.filter((EquipmentModel.name == m_key) | (EquipmentModel.abbr == m_key)).first()
+                            m_abbr = eq_m.abbr if eq_m else ''
+                            m_name = eq_m.name if eq_m else m_key
+                            row = AdminParameter.query.filter((AdminParameter.model_name == m_name) | (AdminParameter.model_name == m_key)).first()
+                            if row:
+                                row.parameters = p_str
+                                if m_abbr and not row.model_abbr:
+                                    row.model_abbr = m_abbr
+                            else:
+                                db.session.add(AdminParameter(
+                                    model_name=m_name,
+                                    model_abbr=m_abbr,
+                                    parameters=p_str
+                                ))
+                        db.session.commit()
+                    except Exception as ex:
+                        app.logger.error(f"Failed to sync equip_model_parameters to AdminParameter table: {ex}")
 
             if payload.get('key') == 'equipment_models':
                 val = payload.get('value', [])
@@ -5016,6 +5161,55 @@ def init_db():
     with app.app_context():
         db.create_all()
         init_check_type_category_tables()
+
+        # [추가] admin_parameter 테이블 자동 생성 및 컬럼 보정 (id, model_name, model_abbr, parameters, updated_at)
+        try:
+            db.session.execute(text('''
+                CREATE TABLE IF NOT EXISTS admin_parameter (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    model_name VARCHAR(100) NOT NULL UNIQUE,
+                    model_abbr VARCHAR(100) DEFAULT '',
+                    parameters LONGTEXT,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            '''))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        admin_param_cols = [
+            ('model_name', 'VARCHAR(100) NOT NULL'),
+            ('model_abbr', 'VARCHAR(100) DEFAULT ""'),
+            ('parameters', 'LONGTEXT'),
+            ('updated_at', 'DATETIME')
+        ]
+        for col, col_type in admin_param_cols:
+            try:
+                db.session.execute(text(f'ALTER TABLE admin_parameter ADD COLUMN {col} {col_type}'))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
+        # [마이그레이션] SystemSetting의 equip_model_parameters를 admin_parameter 테이블로 이전
+        try:
+            legacy_param_setting = SystemSetting.query.filter_by(key='equip_model_parameters').first()
+            if legacy_param_setting and legacy_param_setting.value:
+                legacy_params = json.loads(legacy_param_setting.value)
+                if isinstance(legacy_params, dict):
+                    for m_name, p_data in legacy_params.items():
+                        if not m_name or not isinstance(p_data, list): continue
+                        exists = AdminParameter.query.filter_by(model_name=m_name).first()
+                        if not exists:
+                            eq_m = EquipmentModel.query.filter((EquipmentModel.name == m_name) | (EquipmentModel.abbr == m_name)).first()
+                            m_abbr = eq_m.abbr if eq_m else ''
+                            db.session.add(AdminParameter(
+                                model_name=m_name,
+                                model_abbr=m_abbr,
+                                parameters=json.dumps(p_data, ensure_ascii=False)
+                            ))
+                    db.session.commit()
+        except Exception as ex:
+            db.session.rollback()
 
         # item_log 테이블 자동 생성 및 컬럼 명세 보정 (id, equip_id, date, code, part, spec, part_detail, cycle)
         try:

@@ -20,6 +20,7 @@ function checkAndApplyAdminReadOnlyMode() {
             '#btn-admin-del-item-detail', '#btn-admin-save-item-detail', '#btn-admin-add-item', '#btn-add-item-equip', '#btn-apply-equip-selection',
             '#btn-save-setup-template', '#btn-reset-setup-template', '#btn-add-setup-template-item', '#btn-add-setup-template-subcategory', '#btn-setup-subcategory-settings',
             '#btn-open-add-stock-modal', '#btn-import-master-items', '#btn-import-check-items',
+            '#btn-import-model-param-csv', '#btn-add-model-param-row', '#btn-save-model-params',
             '#section-site-mgmt .form-actions', '#section-equip-mgmt .form-actions', '#section-item-mgmt .form-actions', '#section-setup-template-mgmt .form-actions',
             '.admin-readonly-mode .form-actions'
         ];
@@ -273,6 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setupSiteMgmt();
         setupEquipModelMgmt();
         setupEquipMgmt();
+        setupEquipParamMgmt();
         setupItemMgmt();
         setupItemStockMgmt();
         setupCheckTypeMgmt();
@@ -344,9 +346,8 @@ function setupAdminMenu() {
             });
 
             if (item.dataset.target === 'equip-mgmt') {
-                updateEquipSiteSelect();
-                renderEquipModelList();
-                renderAdminEquipList();
+                const lastSubTab = localStorage.getItem('lastAdminEquipSubTab') || 'info';
+                switchAdminEquipSubTab(lastSubTab);
             } else if (item.dataset.target === 'item-mgmt') {
                 renderAdminItemList();
             } else if (item.dataset.target === 'item-stock-mgmt') {
@@ -361,9 +362,40 @@ function setupAdminMenu() {
     });
 }
 
+// [추가] 장비관리 서브 탭 전환 (장비 정보 관리 vs Parameter 관리)
+function switchAdminEquipSubTab(tab) {
+    const infoView = document.getElementById('admin-equip-info-view');
+    const paramView = document.getElementById('admin-equip-param-view');
+    const btnInfo = document.getElementById('btn-tab-equip-info');
+    const btnParam = document.getElementById('btn-tab-equip-param');
+
+    if (tab === 'param') {
+        if (infoView) infoView.style.display = 'none';
+        if (paramView) paramView.style.display = 'flex';
+        if (btnInfo) btnInfo.classList.remove('active');
+        if (btnParam) btnParam.classList.add('active');
+        localStorage.setItem('lastAdminEquipSubTab', 'param');
+        renderAdminParamModelList();
+    } else {
+        if (paramView) paramView.style.display = 'none';
+        if (infoView) infoView.style.display = 'flex';
+        if (btnParam) btnParam.classList.remove('active');
+        if (btnInfo) btnInfo.classList.add('active');
+        localStorage.setItem('lastAdminEquipSubTab', 'info');
+        updateEquipSiteSelect();
+        renderEquipModelList();
+        renderAdminEquipList();
+    }
+}
+
 // [추가] 마지막으로 선택했던 어드민 메뉴 탭을 복원하는 함수
 function restoreLastAdminSection() {
-    const lastSection = localStorage.getItem('lastAdminSection');
+    let lastSection = localStorage.getItem('lastAdminSection');
+    if (lastSection === 'equip-param-mgmt') {
+        lastSection = 'equip-mgmt';
+        localStorage.setItem('lastAdminSection', 'equip-mgmt');
+        localStorage.setItem('lastAdminEquipSubTab', 'param');
+    }
     if (lastSection) {
         const menuItems = document.querySelectorAll('#admin-menu-list li');
         const targetItem = Array.from(menuItems).find(li => li.dataset.target === lastSection);
@@ -2183,6 +2215,873 @@ async function handleEquipDelete() {
     setAdminFormDirty(false, 'equip');
     resetEquipForm();
     renderAdminEquipList();
+}
+
+/* ==========================================================================
+   5-1. 장비 Parameter 관리 (Equipment Parameter Management)
+   ========================================================================== */
+let equipModelParameters = {}; // { [modelName]: [ { id, name, unit, standard, memo }, ... ] }
+let currentAdminParamModel = null;
+const ADMIN_PARAM_PRESET_UNITS = ['%', 'ppm', 'ppb', '℃', 'ml/min', 'LPM', '유무'];
+
+/**
+ * 서버 및 로컬스토리지로부터 모델별 파라미터 템플릿 로드
+ */
+async function loadEquipModelParameters() {
+    try {
+        const localData = localStorage.getItem('equip_model_parameters');
+        if (localData) {
+            equipModelParameters = JSON.parse(localData) || {};
+        }
+    } catch (e) {
+        equipModelParameters = {};
+    }
+
+    try {
+        const res = await fetch('/api/setting/equip_model_parameters');
+        const data = await res.json();
+        if (data.status === 'success' && data.value && typeof data.value === 'object') {
+            equipModelParameters = data.value;
+            localStorage.setItem('equip_model_parameters', JSON.stringify(equipModelParameters));
+            if (currentAdminParamModel) {
+                renderAdminParamTable();
+            }
+        }
+    } catch (err) {
+        console.warn('Failed to load equip_model_parameters from server:', err);
+    }
+}
+
+/**
+ * 장비 Parameter 관리 초기 설정
+ */
+function setupEquipParamMgmt() {
+    loadEquipModelParameters();
+
+    const btnTabInfo = document.getElementById('btn-tab-equip-info');
+    if (btnTabInfo) {
+        btnTabInfo.addEventListener('click', () => switchAdminEquipSubTab('info'));
+    }
+
+    const btnTabParam = document.getElementById('btn-tab-equip-param');
+    if (btnTabParam) {
+        btnTabParam.addEventListener('click', () => switchAdminEquipSubTab('param'));
+    }
+
+    const searchInput = document.getElementById('admin-param-model-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', renderAdminParamModelList);
+    }
+
+    const btnAddRow = document.getElementById('btn-add-model-param-row');
+    if (btnAddRow) {
+        btnAddRow.addEventListener('click', addAdminParamRow);
+    }
+
+    const btnSave = document.getElementById('btn-save-model-params');
+    if (btnSave) {
+        btnSave.addEventListener('click', saveAdminParamSettings);
+    }
+
+    const btnImport = document.getElementById('btn-import-model-param-csv');
+    if (btnImport) {
+        btnImport.addEventListener('click', handleAdminParamCsvImportClick);
+    }
+
+    const csvFileInput = document.getElementById('admin-param-csv-file-input');
+    if (csvFileInput) {
+        csvFileInput.addEventListener('change', handleAdminParamCsvFileSelected);
+    }
+}
+
+/**
+ * 좌측 장비 모델 목록 렌더링
+ */
+function renderAdminParamModelList() {
+    const list = document.getElementById('admin-param-model-list');
+    const countEl = document.getElementById('admin-param-model-count');
+    const searchInput = document.getElementById('admin-param-model-search');
+    const keyword = searchInput ? searchInput.value.trim().toLowerCase() : '';
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    let filteredModels = (equipmentModels || []).slice();
+    if (keyword) {
+        const keywords = keyword.split(/\s+/);
+        filteredModels = filteredModels.filter(m => {
+            const text = `${m.name} ${m.abbr}`.toLowerCase();
+            return keywords.every(kw => text.includes(kw));
+        });
+    }
+
+    filteredModels.sort((a, b) => a.name.localeCompare(b.name));
+    if (countEl) countEl.textContent = filteredModels.length;
+
+    filteredModels.forEach(model => {
+        const li = document.createElement('li');
+        li.dataset.modelName = model.name;
+        if (currentAdminParamModel && currentAdminParamModel.name === model.name) {
+            li.classList.add('active');
+        }
+
+        li.innerHTML = `
+            <div class="model-col model-name-col">${escapeHtml(model.name)}</div>
+            <div class="model-col model-abbr-col">${escapeHtml(model.abbr || '')}</div>
+        `;
+
+        li.addEventListener('click', () => {
+            selectAdminParamModel(model);
+        });
+
+        list.appendChild(li);
+    });
+
+    if (!currentAdminParamModel && filteredModels.length > 0) {
+        const savedModelName = localStorage.getItem('lastAdminParamModel');
+        const targetModel = filteredModels.find(m => m.name === savedModelName) || filteredModels[0];
+        if (targetModel) {
+            selectAdminParamModel(targetModel);
+        }
+    }
+}
+
+/**
+ * 장비 모델 선택
+ */
+function selectAdminParamModel(model) {
+    currentAdminParamModel = model;
+    localStorage.setItem('lastAdminParamModel', model.name);
+
+    // 하이라이트
+    const list = document.getElementById('admin-param-model-list');
+    if (list) {
+        list.querySelectorAll('li').forEach(li => {
+            li.classList.toggle('active', li.dataset.modelName === model.name);
+        });
+    }
+
+    // UI 활성화
+    const placeholder = document.getElementById('admin-param-placeholder');
+    const tableContainer = document.getElementById('admin-param-table-container');
+    const btnAdd = document.getElementById('btn-add-model-param-row');
+    const btnSave = document.getElementById('btn-save-model-params');
+    const titleEl = document.getElementById('admin-param-model-title');
+
+    if (placeholder) placeholder.style.display = 'none';
+    if (tableContainer) tableContainer.style.display = 'block';
+    if (btnAdd) btnAdd.style.display = 'inline-block';
+    if (btnSave) btnSave.style.display = 'inline-block';
+    const btnImport = document.getElementById('btn-import-model-param-csv');
+    if (btnImport) btnImport.style.display = 'inline-block';
+
+    if (titleEl) {
+        const abbrText = model.abbr ? `<span style="font-size:13px; color:#8b949e; margin-left: 6px;">(${escapeHtml(model.abbr)})</span>` : '';
+        titleEl.innerHTML = `<span style="color:#58a6ff;">${escapeHtml(model.name)}</span>${abbrText} 기본 Parameter`;
+    }
+
+    renderAdminParamTable();
+}
+
+/**
+ * 모델별 기본 Parameter 테이블 렌더링
+ */
+function renderAdminParamTable() {
+    const tbody = document.getElementById('admin-param-tbody');
+    if (!tbody || !currentAdminParamModel) return;
+
+    let items = equipModelParameters[currentAdminParamModel.name];
+    if (!items || !Array.isArray(items)) {
+        if (currentAdminParamModel.abbr && equipModelParameters[currentAdminParamModel.abbr]) {
+            items = equipModelParameters[currentAdminParamModel.abbr];
+        } else {
+            items = [];
+            equipModelParameters[currentAdminParamModel.name] = items;
+        }
+    }
+
+    if (items.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="padding: 35px; text-align: center; color: #8b949e; line-height: 1.6;">
+                    <strong>[${escapeHtml(currentAdminParamModel.name)}]</strong> 모델에 등록된 기본 Parameter 항목이 없습니다.<br>
+                    우측 상단의 <strong>[➕ 항목 추가]</strong> 버튼을 눌러 점검 항목을 추가하고 <strong>[💾 설정 저장]</strong>을 눌러주세요.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    let tbodyHtml = '';
+    items.forEach((item, idx) => {
+        const itemName = item.name || '';
+        const unitVal = item.unit || '';
+        const standardVal = item.standard || '';
+        const memoVal = item.memo || '';
+
+        const isCustomUnit = unitVal !== '' && !ADMIN_PARAM_PRESET_UNITS.includes(unitVal) && unitVal !== '도씨';
+        const parsedSpec = parseAdminParamStandard(standardVal);
+
+        tbodyHtml += `
+            <tr data-row-idx="${idx}">
+                <td style="text-align: center; color: #8b949e; user-select: none; font-size: 11px;">${idx + 1}</td>
+                <td>
+                    <input type="text" class="data-param-input admin-param-name" value="${escapeHtml(itemName)}" 
+                           placeholder="파라미터 항목명" onchange="updateAdminParamItem(${idx}, 'name', this.value)">
+                </td>
+                <td>
+                    <div class="data-param-unit-cell">
+                        <select class="data-param-unit-select" style="${isCustomUnit ? 'display: none;' : ''}" 
+                                onchange="handleAdminParamUnitSelectChange(${idx}, this)">
+                            <option value="" ${!unitVal ? 'selected' : ''}>-</option>
+                            <option value="%" ${unitVal === '%' ? 'selected' : ''}>%</option>
+                            <option value="ppm" ${unitVal === 'ppm' ? 'selected' : ''}>ppm</option>
+                            <option value="ppb" ${unitVal === 'ppb' ? 'selected' : ''}>ppb</option>
+                            <option value="℃" ${unitVal === '℃' || unitVal === '도씨' ? 'selected' : ''}>℃ (도씨)</option>
+                            <option value="ml/min" ${unitVal === 'ml/min' ? 'selected' : ''}>ml/min</option>
+                            <option value="LPM" ${unitVal === 'LPM' ? 'selected' : ''}>LPM</option>
+                            <option value="유무" ${unitVal === '유무' ? 'selected' : ''}>유무</option>
+                            <option value="__custom__" ${isCustomUnit ? 'selected' : ''}>직접입력</option>
+                        </select>
+                        <div class="data-param-unit-custom-wrap" style="${isCustomUnit ? 'display: flex;' : 'display: none;'}">
+                            <input type="text" class="data-param-input data-param-unit-custom-input" value="${escapeHtml(unitVal)}" 
+                                   placeholder="단위 입력" onchange="applyAdminParamUnit(${idx}, this.value)">
+                            <button type="button" class="btn-unit-preset-toggle" title="단위 목록에서 선택" onclick="toggleAdminParamUnitSelect(${idx})">▾</button>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div class="data-param-spec-cell">
+                        <!-- 1. 유무 전용 일반 텍스트 입력창 (unitVal === '유무') -->
+                        <div class="data-param-text-spec-wrap" style="${unitVal === '유무' ? 'display: flex;' : 'display: none;'}">
+                            <input type="text" class="data-param-input data-param-text-spec-val" value="${escapeHtml(standardVal)}" 
+                                   placeholder="기준 텍스트 (예: 무, 정상)" 
+                                   onchange="updateAdminParamItem(${idx}, 'standard', this.value);">
+                        </div>
+
+                        <!-- 2. 일반 수치/부등호/± 복합 입력창 (unitVal !== '유무') -->
+                        <div class="data-param-numeric-spec-wrap" style="${unitVal === '유무' ? 'display: none;' : 'display: flex;'}">
+                            <select class="data-param-op-select" title="부등호/플러스마이너스 기호 선택" 
+                                    onchange="handleAdminParamSpecOpChange(${idx}, this.value, this)">
+                                <option value="" ${!parsedSpec.op ? 'selected' : ''}>-</option>
+                                <option value="±" ${parsedSpec.op === '±' ? 'selected' : ''}>±</option>
+                                <option value="≥" ${parsedSpec.op === '≥' ? 'selected' : ''}>≥</option>
+                                <option value="≤" ${parsedSpec.op === '≤' ? 'selected' : ''}>≤</option>
+                                <option value=">" ${parsedSpec.op === '>' ? 'selected' : ''}>&gt;</option>
+                                <option value="<" ${parsedSpec.op === '<' ? 'selected' : ''}>&lt;</option>
+                                <option value="=" ${parsedSpec.op === '=' ? 'selected' : ''}>=</option>
+                            </select>
+                            
+                            <!-- 일반 단일 입력 (op !== '±') -->
+                            <div class="data-param-single-val-wrap" style="${parsedSpec.op === '±' ? 'display: none;' : 'display: flex;'}">
+                                <input type="text" class="data-param-input data-param-spec-val" value="${escapeHtml(parsedSpec.val)}" 
+                                       placeholder="기준값 (예: 100)" 
+                                       onchange="handleAdminParamSpecValChange(${idx}, this.closest('.data-param-numeric-spec-wrap').querySelector('.data-param-op-select').value, this.value, this.closest('.data-param-numeric-spec-wrap').querySelector('.data-param-op-select'), this)">
+                            </div>
+
+                            <!-- ± 전용 2개 수치 입력 (기준값 ± 오차) -->
+                            <div class="data-param-pm-val-wrap" style="${parsedSpec.op === '±' ? 'display: flex;' : 'display: none;'}">
+                                <input type="text" class="data-param-input data-param-spec-center" value="${escapeHtml(parsedSpec.center || '')}" 
+                                       placeholder="기준(100)" title="기준값 (중심값)"
+                                       onchange="handleAdminParamPmChange(${idx}, this)">
+                                <span class="data-param-pm-divider">±</span>
+                                <input type="text" class="data-param-input data-param-spec-tol" value="${escapeHtml(parsedSpec.tol || '')}" 
+                                       placeholder="오차(5)" title="오차 허용 범위"
+                                       onchange="handleAdminParamPmChange(${idx}, this)">
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <input type="text" class="data-param-input admin-param-memo" value="${escapeHtml(memoVal)}" 
+                           placeholder="기본 비고 메모" onchange="updateAdminParamItem(${idx}, 'memo', this.value)">
+                </td>
+                <td style="text-align: center;">
+                    <button type="button" class="data-param-row-del-btn" title="이 항목 삭제" onclick="deleteAdminParamRow(${idx})">&times;</button>
+                </td>
+            </tr>
+        `;
+    });
+
+    tbody.innerHTML = tbodyHtml;
+}
+
+/**
+ * 기준값 문자열 파싱 헬퍼
+ */
+function parseAdminParamStandard(standardVal) {
+    const s = String(standardVal || '').trim();
+    if (!s) return { op: '', val: '', center: '', tol: '' };
+
+    const matchPm = s.match(/(?:^|[±≥≤><=]\s*)([+-]?\d+(?:\.\d+)?)\s*(?:±|\+-)\s*([+-]?\d+(?:\.\d+)?)/);
+    if (matchPm) {
+        return {
+            op: '±',
+            center: matchPm[1],
+            tol: matchPm[2],
+            val: `${matchPm[1]} ± ${matchPm[2]}`
+        };
+    }
+
+    const matchOnlyTol = s.match(/^(?:±|\+-)\s*([+-]?\d+(?:\.\d+)?)/);
+    if (matchOnlyTol) {
+        return {
+            op: '±',
+            center: '',
+            tol: matchOnlyTol[1],
+            val: `± ${matchOnlyTol[1]}`
+        };
+    }
+
+    const match = s.match(/^([±≥≤><=]|>=|<=|\+-)\s*(.*)$/);
+    if (match) {
+        let op = match[1];
+        if (op === '>=') op = '≥';
+        else if (op === '<=') op = '≤';
+        else if (op === '+-') op = '±';
+        return { op, val: match[2].trim(), center: '', tol: '' };
+    }
+
+    return { op: '', val: s, center: '', tol: '' };
+}
+
+function stripAdminParamUnit(valStr, unitToRemove) {
+    if (!valStr) return '';
+    let s = String(valStr).trim();
+    if (!s) return '';
+    if (unitToRemove) {
+        const uEsc = unitToRemove.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        s = s.replace(new RegExp(`\\s*${uEsc}$`, 'i'), '').trim();
+    }
+    const presets = ['ml/min', 'LPM', 'ppm', 'ppb', '%', '℃', '도씨', 'kPa', 'W'];
+    for (const p of presets) {
+        const pEsc = p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        s = s.replace(new RegExp(`\\s*${pEsc}$`, 'i'), '').trim();
+    }
+    return s;
+}
+
+function attachAdminParamUnit(valStr, unit) {
+    if (!valStr) return '';
+    const s = String(valStr).trim();
+    if (!s || !unit || unit === '유무') return s;
+    const unitEsc = unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`\\s*${unitEsc}$`, 'i');
+    if (regex.test(s)) return s;
+    return `${s} ${unit}`;
+}
+
+function updateAdminParamItem(idx, field, value) {
+    if (!currentAdminParamModel) return;
+    const items = equipModelParameters[currentAdminParamModel.name];
+    if (items && items[idx]) {
+        items[idx][field] = value;
+    }
+}
+
+function addAdminParamRow() {
+    if (!currentAdminParamModel) {
+        alert('장비 모델을 먼저 선택해주세요.');
+        return;
+    }
+    if (!equipModelParameters[currentAdminParamModel.name]) {
+        equipModelParameters[currentAdminParamModel.name] = [];
+    }
+    equipModelParameters[currentAdminParamModel.name].push({
+        id: 'param_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        name: '',
+        unit: '',
+        standard: '',
+        memo: ''
+    });
+    renderAdminParamTable();
+}
+
+function deleteAdminParamRow(idx) {
+    if (!currentAdminParamModel) return;
+    const items = equipModelParameters[currentAdminParamModel.name];
+    if (items && items[idx] !== undefined) {
+        items.splice(idx, 1);
+        renderAdminParamTable();
+    }
+}
+
+function handleAdminParamUnitSelectChange(idx, selectEl) {
+    if (selectEl.value === '__custom__') {
+        const cell = selectEl.closest('.data-param-unit-cell');
+        if (cell) {
+            selectEl.style.display = 'none';
+            const customWrap = cell.querySelector('.data-param-unit-custom-wrap');
+            if (customWrap) {
+                customWrap.style.display = 'flex';
+                const input = customWrap.querySelector('.data-param-unit-custom-input');
+                if (input) input.focus();
+            }
+        }
+    } else {
+        applyAdminParamUnit(idx, selectEl.value);
+    }
+}
+
+function toggleAdminParamUnitSelect(idx) {
+    const tr = document.querySelector(`tr[data-row-idx="${idx}"]`);
+    if (!tr) return;
+    const cell = tr.querySelector('.data-param-unit-cell');
+    if (!cell) return;
+    const select = cell.querySelector('.data-param-unit-select');
+    const customWrap = cell.querySelector('.data-param-unit-custom-wrap');
+    if (select && customWrap) {
+        customWrap.style.display = 'none';
+        select.style.display = 'block';
+        select.value = '';
+        applyAdminParamUnit(idx, '');
+    }
+}
+
+function applyAdminParamUnit(idx, newUnit) {
+    if (!currentAdminParamModel) return;
+    const items = equipModelParameters[currentAdminParamModel.name];
+    if (!items || !items[idx]) return;
+
+    const oldUnit = items[idx].unit || '';
+    const unit = (newUnit || '').trim();
+    items[idx].unit = unit;
+
+    if (unit === '유무') {
+        items[idx].standard = stripAdminParamUnit(items[idx].standard, oldUnit);
+        renderAdminParamTable();
+        return;
+    }
+
+    if (oldUnit === '유무' && unit !== '유무') {
+        if (items[idx].standard && unit) {
+            items[idx].standard = attachAdminParamUnit(stripAdminParamUnit(items[idx].standard, oldUnit), unit);
+        }
+        renderAdminParamTable();
+        return;
+    }
+
+    if (items[idx].standard) {
+        const parsed = parseAdminParamStandard(items[idx].standard);
+        if (parsed.op === '±' && (parsed.center || parsed.tol)) {
+            const strippedCenter = stripAdminParamUnit(parsed.center, oldUnit);
+            const strippedTol = stripAdminParamUnit(parsed.tol, oldUnit);
+            let updated = '';
+            if (strippedCenter && strippedTol) updated = `${strippedCenter} ± ${strippedTol}`;
+            else if (strippedCenter) updated = strippedCenter;
+            else if (strippedTol) updated = `± ${strippedTol}`;
+            if (unit && updated) updated = `${updated} ${unit}`;
+            items[idx].standard = updated;
+        } else {
+            const strippedVal = stripAdminParamUnit(parsed.val, oldUnit);
+            const updatedVal = unit ? attachAdminParamUnit(strippedVal, unit) : strippedVal;
+            items[idx].standard = parsed.op ? (updatedVal ? `${parsed.op} ${updatedVal}` : parsed.op) : updatedVal;
+        }
+    }
+
+    renderAdminParamTable();
+}
+
+function handleAdminParamSpecOpChange(idx, op, selectEl) {
+    if (!currentAdminParamModel) return;
+    const items = equipModelParameters[currentAdminParamModel.name];
+    if (!items || !items[idx]) return;
+
+    const cell = selectEl.closest('.data-param-spec-cell');
+    if (!cell) return;
+
+    const singleWrap = cell.querySelector('.data-param-single-val-wrap');
+    const pmWrap = cell.querySelector('.data-param-pm-val-wrap');
+    const singleInput = cell.querySelector('.data-param-spec-val');
+    const centerInput = cell.querySelector('.data-param-spec-center');
+    const tolInput = cell.querySelector('.data-param-spec-tol');
+    const unit = items[idx].unit || '';
+
+    let combined = '';
+
+    if (op === '±') {
+        if (singleWrap) singleWrap.style.display = 'none';
+        if (pmWrap) pmWrap.style.display = 'flex';
+
+        if (singleInput && singleInput.value && (!centerInput || !centerInput.value)) {
+            const stripped = stripAdminParamUnit(singleInput.value, unit);
+            if (centerInput) centerInput.value = stripped;
+        }
+
+        const center = centerInput ? centerInput.value.trim() : '';
+        const tol = tolInput ? tolInput.value.trim() : '';
+
+        if (center && tol) combined = `${center} ± ${tol}`;
+        else if (center) combined = center;
+        else if (tol) combined = `± ${tol}`;
+        else combined = '±';
+
+        if (tolInput && !tolInput.value) tolInput.focus();
+    } else {
+        if (singleWrap) singleWrap.style.display = 'flex';
+        if (pmWrap) pmWrap.style.display = 'none';
+
+        if (centerInput && centerInput.value && (!singleInput || !singleInput.value)) {
+            if (singleInput) singleInput.value = centerInput.value;
+        }
+
+        let val = singleInput ? singleInput.value.trim() : '';
+        if (val && unit) {
+            val = attachAdminParamUnit(stripAdminParamUnit(val, unit), unit);
+            if (singleInput) singleInput.value = val;
+        }
+
+        combined = op ? (val ? `${op} ${val}` : op) : val;
+    }
+
+    if (combined && unit) {
+        combined = attachAdminParamUnit(stripAdminParamUnit(combined, unit), unit);
+    }
+
+    items[idx].standard = combined;
+}
+
+function handleAdminParamSpecValChange(idx, currentOp, inputVal, selectEl, inputEl) {
+    if (!currentAdminParamModel) return;
+    const items = equipModelParameters[currentAdminParamModel.name];
+    if (!items || !items[idx]) return;
+
+    const parsed = parseAdminParamStandard(inputVal);
+    let finalOp = currentOp;
+    let finalVal = (inputVal || '').trim();
+
+    if (parsed.op) {
+        finalOp = parsed.op;
+        finalVal = parsed.val;
+        if (selectEl) selectEl.value = finalOp;
+    }
+
+    const unit = items[idx].unit || '';
+    if (finalVal && unit) {
+        finalVal = attachAdminParamUnit(stripAdminParamUnit(finalVal, unit), unit);
+    }
+    if (inputEl) inputEl.value = finalVal;
+
+    const combined = finalOp ? (finalVal ? `${finalOp} ${finalVal}` : finalOp) : finalVal;
+    items[idx].standard = combined;
+}
+
+function handleAdminParamPmChange(idx, inputEl) {
+    if (!currentAdminParamModel) return;
+    const items = equipModelParameters[currentAdminParamModel.name];
+    if (!items || !items[idx]) return;
+
+    const pmWrap = inputEl.closest('.data-param-pm-val-wrap');
+    if (!pmWrap) return;
+
+    const centerInput = pmWrap.querySelector('.data-param-spec-center');
+    const tolInput = pmWrap.querySelector('.data-param-spec-tol');
+
+    const center = centerInput ? centerInput.value.trim() : '';
+    const tol = tolInput ? tolInput.value.trim() : '';
+    const unit = items[idx].unit || '';
+
+    let combined = '';
+    if (center && tol) combined = `${center} ± ${tol}`;
+    else if (center) combined = center;
+    else if (tol) combined = `± ${tol}`;
+
+    if (combined && unit) {
+        combined = attachAdminParamUnit(stripAdminParamUnit(combined, unit), unit);
+    }
+
+    items[idx].standard = combined;
+}
+
+/**
+ * 선택된 모델의 기본 Parameter 설정 저장
+ */
+async function saveAdminParamSettings() {
+    if (!currentAdminParamModel) return;
+    if (!isUserAdminRole()) {
+        alert('관리자 권한이 필요합니다.');
+        return;
+    }
+
+    // DOM에서 직접 최신 입력값 수집하여 안전하게 동기화
+    const tbody = document.getElementById('admin-param-tbody');
+    const trList = tbody ? tbody.querySelectorAll('tr[data-row-idx]') : [];
+    const items = [];
+
+    trList.forEach((tr) => {
+        const nameInput = tr.querySelector('.admin-param-name');
+        const unitSelect = tr.querySelector('.data-param-unit-select');
+        const customUnitInput = tr.querySelector('.data-param-unit-custom-input');
+        const memoInput = tr.querySelector('.admin-param-memo');
+        const textSpecInput = tr.querySelector('.data-param-text-spec-val');
+        const opSelect = tr.querySelector('.data-param-op-select');
+        const singleSpecInput = tr.querySelector('.data-param-spec-val');
+        const centerInput = tr.querySelector('.data-param-spec-center');
+        const tolInput = tr.querySelector('.data-param-spec-tol');
+
+        let unitVal = '';
+        if (customUnitInput && customUnitInput.closest('.data-param-unit-custom-wrap') && customUnitInput.closest('.data-param-unit-custom-wrap').style.display !== 'none') {
+            unitVal = customUnitInput.value.trim();
+        } else if (unitSelect) {
+            unitVal = unitSelect.value.trim();
+            if (unitVal === '__custom__') unitVal = '';
+        }
+
+        let standardVal = '';
+        if (unitVal === '유무') {
+            standardVal = textSpecInput ? textSpecInput.value.trim() : '';
+        } else {
+            const op = opSelect ? opSelect.value.trim() : '';
+            if (op === '±') {
+                const c = centerInput ? centerInput.value.trim() : '';
+                const t = tolInput ? tolInput.value.trim() : '';
+                if (c && t) standardVal = `${c} ± ${t}`;
+                else if (c) standardVal = c;
+                else if (t) standardVal = `± ${t}`;
+                else standardVal = '±';
+            } else {
+                const v = singleSpecInput ? singleSpecInput.value.trim() : '';
+                standardVal = op ? (v ? `${op} ${v}` : op) : v;
+            }
+            if (standardVal && unitVal) {
+                standardVal = attachAdminParamUnit(stripAdminParamUnit(standardVal, unitVal), unitVal);
+            }
+        }
+
+        items.push({
+            id: 'param_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            name: nameInput ? nameInput.value.trim() : '',
+            unit: unitVal,
+            standard: standardVal,
+            memo: memoInput ? memoInput.value.trim() : ''
+        });
+    });
+
+    equipModelParameters[currentAdminParamModel.name] = items;
+    // 모델 약어로도 동일 데이터 매핑 보장
+    if (currentAdminParamModel.abbr) {
+        equipModelParameters[currentAdminParamModel.abbr] = items;
+    }
+
+    // 1. 로컬스토리지 저장
+    localStorage.setItem('equip_model_parameters', JSON.stringify(equipModelParameters));
+
+    // 2. 서버 DB(admin_parameter) 동기화
+    try {
+        const success = await syncAdminDB('admin_parameter', 'UPDATE', {
+            model_name: currentAdminParamModel.name,
+            model_abbr: currentAdminParamModel.abbr || '',
+            parameters: items
+        });
+
+        if (success) {
+            addSystemLog('UPDATE_PARAM_SETTINGS', currentAdminParamModel.name, `총 ${items.length}개 기본 항목 저장`);
+            alert(`[${currentAdminParamModel.name}] 모델의 기본 Parameter 설정이 성공적으로 저장되었습니다.`);
+            renderAdminParamTable();
+        } else {
+            alert('설정 저장 중 오류가 발생했습니다.');
+        }
+    } catch (e) {
+        console.error('Failed to sync admin_parameter:', e);
+        alert('서버 저장 실패: 네트워크 또는 권한을 확인해주세요.');
+    }
+}
+
+/**
+ * Parameter 관리 CSV 불러오기 버튼 클릭 핸들러
+ */
+function handleAdminParamCsvImportClick() {
+    if (!currentAdminParamModel) {
+        alert('장비 모델을 먼저 선택해주세요.');
+        return;
+    }
+    const fileInput = document.getElementById('admin-param-csv-file-input');
+    if (fileInput) {
+        fileInput.value = '';
+        fileInput.click();
+    }
+}
+
+/**
+ * CSV 파일 선택 시 인코딩 감지 및 텍스트 파싱
+ */
+function handleAdminParamCsvFileSelected(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        let content = event.target.result;
+        // UTF-8 디코딩 시 한글 깨짐(\uFFFD) 발생 시 EUC-KR로 재시도
+        if (content.includes('\uFFFD')) {
+            const retryReader = new FileReader();
+            retryReader.onload = (retryEvent) => {
+                processAdminParamCsv(retryEvent.target.result);
+            };
+            retryReader.readAsText(file, 'EUC-KR');
+        } else {
+            processAdminParamCsv(content);
+        }
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+
+/**
+ * CSV 텍스트 파싱 및 Parameter 항목 데이터 반영
+ * 형식: A열 No, B열 파라미터항목, C열 단위, D열 기준값, E열 비고
+ */
+function processAdminParamCsv(csvText) {
+    if (!csvText || !csvText.trim()) {
+        alert('CSV 파일 내용이 비어 있습니다.');
+        return;
+    }
+    if (!currentAdminParamModel) {
+        alert('장비 모델을 먼저 선택해주세요.');
+        return;
+    }
+
+    const rows = parseAdminParamCsvText(csvText);
+    if (!rows || rows.length === 0) {
+        alert('유효한 데이터 행을 찾을 수 없습니다.');
+        return;
+    }
+
+    // 헤더 행 감지
+    let startRowIdx = 0;
+    const firstRow = rows[0];
+    let colIdxName = 1;
+    let colIdxUnit = 2;
+    let colIdxStandard = 3;
+    let colIdxMemo = 4;
+
+    const isHeader = firstRow.some(cell => {
+        const c = String(cell || '').trim().toLowerCase().replace(/\s+/g, '');
+        return ['no', '순번', '번호', '파라미터', '파라미터항목', '항목', '단위', '기준값', '기준', '비고', '메모'].includes(c);
+    });
+
+    if (isHeader) {
+        startRowIdx = 1;
+        // 헤더 컬럼 위치 동적 매핑 (A열 No, B열 항목, C열 단위, D열 기준값, E열 비고 기본)
+        firstRow.forEach((cell, idx) => {
+            const c = String(cell || '').trim().toLowerCase().replace(/\s+/g, '');
+            if (c.includes('파라미터') || c.includes('항목')) colIdxName = idx;
+            else if (c === '단위' || c.includes('unit')) colIdxUnit = idx;
+            else if (c.includes('기준')) colIdxStandard = idx;
+            else if (c.includes('비고') || c.includes('메모') || c.includes('memo')) colIdxMemo = idx;
+        });
+    }
+
+    const newItems = [];
+    for (let i = startRowIdx; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || r.length === 0) continue;
+
+        const nameVal = (r[colIdxName] !== undefined ? String(r[colIdxName]) : '').trim();
+        if (!nameVal && (!r[colIdxStandard] || !String(r[colIdxStandard]).trim())) {
+            // 항목명과 기준값 둘 다 없으면 빈 행으로 간주하여 건너뜀
+            continue;
+        }
+
+        let unitVal = (r[colIdxUnit] !== undefined ? String(r[colIdxUnit]) : '').trim();
+        // 단위 한글 '도씨', '℃' 정규화
+        if (unitVal.toLowerCase() === '도씨' || unitVal.toLowerCase() === 'c') {
+            unitVal = '℃';
+        }
+
+        let standardVal = (r[colIdxStandard] !== undefined ? String(r[colIdxStandard]) : '').trim();
+        // 단위가 있고 '유무'가 아닌 경우 기준값에 단위 자동 부착
+        if (standardVal && unitVal && unitVal !== '유무') {
+            standardVal = attachAdminParamUnit(stripAdminParamUnit(standardVal, unitVal), unitVal);
+        }
+
+        const memoVal = (r[colIdxMemo] !== undefined ? String(r[colIdxMemo]) : '').trim();
+
+        newItems.push({
+            id: 'param_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4) + '_' + i,
+            name: nameVal,
+            unit: unitVal,
+            standard: standardVal,
+            memo: memoVal
+        });
+    }
+
+    if (newItems.length === 0) {
+        alert('CSV 파일에서 불러올 수 있는 Parameter 데이터가 없습니다.');
+        return;
+    }
+
+    let existingItems = equipModelParameters[currentAdminParamModel.name] || [];
+    if (!Array.isArray(existingItems)) existingItems = [];
+
+    let shouldReplace = true;
+    if (existingItems.length > 0) {
+        shouldReplace = confirm(
+            `[${currentAdminParamModel.name}] 모델에 기존 등록된 Parameter 항목이 ${existingItems.length}건 있습니다.\n\n` +
+            `• [확인]: 기존 항목을 삭제하고 CSV(${newItems.length}건)로 새로 대체\n` +
+            `• [취소]: 기존 항목 뒤에 CSV(${newItems.length}건)를 추가`
+        );
+    }
+
+    if (shouldReplace) {
+        equipModelParameters[currentAdminParamModel.name] = newItems;
+    } else {
+        equipModelParameters[currentAdminParamModel.name] = existingItems.concat(newItems);
+    }
+
+    if (currentAdminParamModel.abbr) {
+        equipModelParameters[currentAdminParamModel.abbr] = equipModelParameters[currentAdminParamModel.name];
+    }
+
+    renderAdminParamTable();
+    alert(`CSV 데이터 ${newItems.length}건을 성공적으로 불러왔습니다.\n상단의 [💾 설정 저장] 버튼을 누르면 DB에 영구 저장됩니다.`);
+}
+
+/**
+ * CSV 파서 헬퍼
+ */
+function parseAdminParamCsvText(text) {
+    const rows = [];
+    let currentRow = [];
+    let currentField = '';
+    let insideQuotes = false;
+
+    if (text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1);
+    }
+
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (char === '"') {
+            if (insideQuotes && nextChar === '"') {
+                currentField += '"';
+                i++;
+            } else {
+                insideQuotes = !insideQuotes;
+            }
+        } else if (char === ',' && !insideQuotes) {
+            currentRow.push(currentField.trim());
+            currentField = '';
+        } else if ((char === '\r' || char === '\n') && !insideQuotes) {
+            if (char === '\r' && nextChar === '\n') i++;
+            currentRow.push(currentField.trim());
+            if (currentRow.some(f => f !== '')) {
+                rows.push(currentRow);
+            }
+            currentRow = [];
+            currentField = '';
+        } else {
+            currentField += char;
+        }
+    }
+    if (currentField || currentRow.length > 0) {
+        currentRow.push(currentField.trim());
+        if (currentRow.some(f => f !== '')) {
+            rows.push(currentRow);
+        }
+    }
+    return rows;
 }
 
 /* ==========================================================================
@@ -5903,4 +6802,19 @@ function exportStockCsv() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+/**
+ * XSS 방지 escapeHtml 헬퍼
+ */
+if (typeof escapeHtml !== 'function') {
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
 }
