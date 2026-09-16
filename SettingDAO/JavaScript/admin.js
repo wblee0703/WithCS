@@ -2512,6 +2512,12 @@ async function loadEquipModelParameters() {
         const data = await res.json();
         if (data.status === 'success' && data.value && typeof data.value === 'object') {
             equipModelParameters = data.value;
+            // [추가] 서버에서 수신된 파라미터 리스트의 sort_order 기준 정렬 보장
+            Object.keys(equipModelParameters).forEach(mKey => {
+                if (Array.isArray(equipModelParameters[mKey])) {
+                    equipModelParameters[mKey].sort((a, b) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0));
+                }
+            });
             lastSavedEquipModelParameters = JSON.parse(JSON.stringify(equipModelParameters));
             localStorage.setItem('equip_model_parameters', JSON.stringify(equipModelParameters));
             if (currentAdminParamModel) {
@@ -2701,8 +2707,17 @@ function renderAdminParamTable() {
         const parsedSpec = parseAdminParamStandard(standardVal);
 
         tbodyHtml += `
-            <tr data-row-idx="${idx}" data-param-id="${escapeHtml(item.id || '')}">
-                <td style="text-align: center; color: #8b949e; user-select: none; font-size: 11px;">${idx + 1}</td>
+            <tr class="admin-param-row" data-row-idx="${idx}" data-param-id="${escapeHtml(item.id || '')}">
+                <td style="text-align: center; color: #8b949e; user-select: none; font-size: 11px;">
+                    <div class="admin-param-drag-cell">
+                        <span class="admin-param-drag-handle" title="드래그하여 순서 변경">⠿</span>
+                        <span class="admin-param-row-num">${idx + 1}</span>
+                        <div class="admin-param-order-btns">
+                            <button type="button" class="admin-param-order-btn" title="위로 이동" onclick="moveAdminParamRow(${idx}, -1)">▲</button>
+                            <button type="button" class="admin-param-order-btn" title="아래로 이동" onclick="moveAdminParamRow(${idx}, 1)">▼</button>
+                        </div>
+                    </div>
+                </td>
                 <td>
                     <input type="text" class="data-param-input admin-param-name" value="${escapeHtml(itemName)}" 
                            placeholder="파라미터 항목명" onchange="updateAdminParamItem(${idx}, 'name', this.value)">
@@ -2796,6 +2811,225 @@ function renderAdminParamTable() {
     });
 
     tbody.innerHTML = tbodyHtml;
+    // [추가] 드래그 앤 드롭 이벤트 바인딩
+    initAdminParamDragAndDrop(tbody);
+}
+
+let adminParamDraggedRow = null;
+
+/**
+ * [추가] 장비 Parameter 테이블 드래그 앤 드롭 바인딩 (데스크톱 및 모바일 터치 호환)
+ */
+function initAdminParamDragAndDrop(tbody) {
+    if (!tbody) return;
+    const rows = tbody.querySelectorAll('tr.admin-param-row');
+
+    rows.forEach(row => {
+        const handle = row.querySelector('.admin-param-drag-handle');
+        if (!handle) return;
+
+        // 마우스로 핸들을 누를 때만 행 draggable 활성화 (텍스트 입력 선택 방해 차단)
+        handle.addEventListener('mousedown', () => {
+            row.setAttribute('draggable', 'true');
+        });
+        handle.addEventListener('mouseup', () => {
+            row.removeAttribute('draggable');
+        });
+
+        // 모바일 터치 스크린 드래그 지원 (RULE 1)
+        let touchStartRow = null;
+
+        handle.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1) return;
+            touchStartRow = row;
+            row.classList.add('admin-param-dragging');
+        }, { passive: true });
+
+        handle.addEventListener('touchmove', (e) => {
+            if (!touchStartRow || e.touches.length > 1) return;
+            const touch = e.touches[0];
+            const targetEl = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (!targetEl) return;
+            const overRow = targetEl.closest('tr.admin-param-row');
+            if (overRow && overRow !== touchStartRow && overRow.parentNode === tbody) {
+                const rect = overRow.getBoundingClientRect();
+                const next = (touch.clientY - rect.top) / (rect.bottom - rect.top) > 0.5;
+                tbody.insertBefore(touchStartRow, next ? overRow.nextSibling : overRow);
+            }
+        }, { passive: true });
+
+        const endTouch = () => {
+            if (touchStartRow) {
+                touchStartRow.classList.remove('admin-param-dragging');
+                touchStartRow = null;
+                syncAdminParamDomToData();
+            }
+        };
+        handle.addEventListener('touchend', endTouch);
+        handle.addEventListener('touchcancel', endTouch);
+
+        // 데스크톱 HTML5 드래그 앤 드롭
+        row.addEventListener('dragstart', (e) => {
+            adminParamDraggedRow = row;
+            row.classList.add('admin-param-dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', row.dataset.rowIdx || '0');
+        });
+
+        row.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (!adminParamDraggedRow || adminParamDraggedRow === row) return;
+
+            const rect = row.getBoundingClientRect();
+            const relY = e.clientY - rect.top;
+            const isBottom = relY > rect.height / 2;
+
+            row.classList.remove('admin-param-drag-over-top', 'admin-param-drag-over-bottom');
+            row.classList.add(isBottom ? 'admin-param-drag-over-bottom' : 'admin-param-drag-over-top');
+        });
+
+        row.addEventListener('dragleave', () => {
+            row.classList.remove('admin-param-drag-over-top', 'admin-param-drag-over-bottom');
+        });
+
+        row.addEventListener('drop', (e) => {
+            e.preventDefault();
+            row.classList.remove('admin-param-drag-over-top', 'admin-param-drag-over-bottom');
+            if (!adminParamDraggedRow || adminParamDraggedRow === row) return;
+
+            const rect = row.getBoundingClientRect();
+            const relY = e.clientY - rect.top;
+            const isBottom = relY > rect.height / 2;
+
+            tbody.insertBefore(adminParamDraggedRow, isBottom ? row.nextSibling : row);
+            syncAdminParamDomToData();
+        });
+
+        row.addEventListener('dragend', () => {
+            row.removeAttribute('draggable');
+            row.classList.remove('admin-param-dragging');
+            rows.forEach(r => r.classList.remove('admin-param-drag-over-top', 'admin-param-drag-over-bottom'));
+            adminParamDraggedRow = null;
+            syncAdminParamDomToData();
+        });
+    });
+}
+
+/**
+ * [추가] DOM 순서를 데이터 배열 및 UI 인덱스에 실시간 동기화
+ */
+function syncAdminParamDomToData() {
+    if (!currentAdminParamModel) return;
+    const tbody = document.getElementById('admin-param-tbody');
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.querySelectorAll('tr.admin-param-row'));
+    if (rows.length === 0) return;
+
+    const newItems = [];
+    rows.forEach((tr, newIdx) => {
+        const nameInput = tr.querySelector('.admin-param-name');
+        const unitSelect = tr.querySelector('.data-param-unit-select');
+        const customUnitInput = tr.querySelector('.data-param-unit-custom-input');
+        const memoInput = tr.querySelector('.admin-param-memo');
+        const textSpecInput = tr.querySelector('.data-param-text-spec-val');
+        const opSelect = tr.querySelector('.data-param-op-select');
+        const singleSpecInput = tr.querySelector('.data-param-spec-val');
+        const centerInput = tr.querySelector('.data-param-spec-center');
+        const tolInput = tr.querySelector('.data-param-spec-tol');
+        const minInput = tr.querySelector('.data-param-spec-min');
+        const maxInput = tr.querySelector('.data-param-spec-max');
+
+        let unitVal = '';
+        if (customUnitInput && customUnitInput.closest('.data-param-unit-custom-wrap') && customUnitInput.closest('.data-param-unit-custom-wrap').style.display !== 'none') {
+            unitVal = customUnitInput.value.trim();
+        } else if (unitSelect) {
+            unitVal = unitSelect.value.trim();
+            if (unitVal === '__custom__') unitVal = '';
+        }
+
+        let standardVal = '';
+        if (unitVal === '유무') {
+            standardVal = textSpecInput ? textSpecInput.value.trim() : '';
+        } else {
+            const op = opSelect ? opSelect.value.trim() : '';
+            if (op === '±') {
+                const c = centerInput ? centerInput.value.trim() : '';
+                const t = tolInput ? tolInput.value.trim() : '';
+                if (c && t) standardVal = `${c} ± ${t}`;
+                else if (c) standardVal = c;
+                else if (t) standardVal = `± ${t}`;
+                else standardVal = '±';
+            } else if (op === '~') {
+                const minV = minInput ? minInput.value.trim() : '';
+                const maxV = maxInput ? maxInput.value.trim() : '';
+                if (minV && maxV) standardVal = `${minV} ~ ${maxV}`;
+                else if (minV) standardVal = `${minV} ~`;
+                else if (maxV) standardVal = `~ ${maxV}`;
+                else standardVal = '~';
+            } else {
+                const v = singleSpecInput ? singleSpecInput.value.trim() : '';
+                standardVal = op ? (v ? `${op} ${v}` : op) : v;
+            }
+            if (standardVal && standardVal !== '~' && standardVal !== '±' && unitVal) {
+                standardVal = attachAdminParamUnit(stripAdminParamUnit(standardVal, unitVal), unitVal);
+            }
+        }
+
+        const pId = tr.getAttribute('data-param-id') || ('param_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4));
+
+        newItems.push({
+            id: pId,
+            name: nameInput ? nameInput.value.trim() : '',
+            unit: unitVal,
+            standard: standardVal,
+            memo: memoInput ? memoInput.value.trim() : '',
+            sort_order: newIdx
+        });
+
+        tr.setAttribute('data-row-idx', newIdx);
+        const numEl = tr.querySelector('.admin-param-row-num');
+        if (numEl) numEl.textContent = newIdx + 1;
+
+        const upBtn = tr.querySelector('.admin-param-order-btn[title="위로 이동"]');
+        if (upBtn) upBtn.setAttribute('onclick', `moveAdminParamRow(${newIdx}, -1)`);
+        const downBtn = tr.querySelector('.admin-param-order-btn[title="아래로 이동"]');
+        if (downBtn) downBtn.setAttribute('onclick', `moveAdminParamRow(${newIdx}, 1)`);
+        const delBtn = tr.querySelector('.data-param-row-del-btn');
+        if (delBtn) delBtn.setAttribute('onclick', `deleteAdminParamRow(${newIdx})`);
+
+        if (nameInput) nameInput.setAttribute('onchange', `updateAdminParamItem(${newIdx}, 'name', this.value)`);
+        if (memoInput) memoInput.setAttribute('onchange', `updateAdminParamItem(${newIdx}, 'memo', this.value)`);
+    });
+
+    equipModelParameters[currentAdminParamModel.name] = newItems;
+    if (currentAdminParamModel.abbr) {
+        equipModelParameters[currentAdminParamModel.abbr] = newItems;
+    }
+    localStorage.setItem('equip_model_parameters', JSON.stringify(equipModelParameters));
+}
+
+/**
+ * [추가] 파라미터 행 퀵 이동 버튼 핸들러 (▲ / ▼)
+ */
+function moveAdminParamRow(idx, direction) {
+    if (!currentAdminParamModel) return;
+    const items = equipModelParameters[currentAdminParamModel.name] || [];
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= items.length) return;
+
+    syncAdminParamDomToData();
+    const curItems = equipModelParameters[currentAdminParamModel.name];
+    if (!curItems || !curItems[idx] || !curItems[targetIdx]) return;
+
+    const temp = curItems[idx];
+    curItems[idx] = curItems[targetIdx];
+    curItems[targetIdx] = temp;
+
+    curItems.forEach((it, i) => { it.sort_order = i; });
+    localStorage.setItem('equip_model_parameters', JSON.stringify(equipModelParameters));
+    renderAdminParamTable();
 }
 
 /**
@@ -2927,24 +3161,33 @@ function addAdminParamRow() {
         alert('장비 모델을 먼저 선택해주세요.');
         return;
     }
+    // 현재 입력 상태 먼저 동기화
+    syncAdminParamDomToData();
+
     if (!equipModelParameters[currentAdminParamModel.name]) {
         equipModelParameters[currentAdminParamModel.name] = [];
     }
+    const currentLen = equipModelParameters[currentAdminParamModel.name].length;
     equipModelParameters[currentAdminParamModel.name].push({
         id: 'param_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
         name: '',
         unit: '',
         standard: '',
-        memo: ''
+        memo: '',
+        sort_order: currentLen
     });
+    localStorage.setItem('equip_model_parameters', JSON.stringify(equipModelParameters));
     renderAdminParamTable();
 }
 
 function deleteAdminParamRow(idx) {
     if (!currentAdminParamModel) return;
+    syncAdminParamDomToData();
     const items = equipModelParameters[currentAdminParamModel.name];
     if (items && items[idx] !== undefined) {
         items.splice(idx, 1);
+        items.forEach((it, i) => { it.sort_order = i; });
+        localStorage.setItem('equip_model_parameters', JSON.stringify(equipModelParameters));
         renderAdminParamTable();
     }
 }
@@ -3302,7 +3545,8 @@ async function saveAdminParamSettings() {
             name: nameInput ? nameInput.value.trim() : '',
             unit: unitVal,
             standard: standardVal,
-            memo: memoInput ? memoInput.value.trim() : ''
+            memo: memoInput ? memoInput.value.trim() : '',
+            sort_order: items.length
         });
     });
 

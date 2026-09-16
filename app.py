@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, has_request_context, send_from_directory, redirect
+from flask import Flask, render_template, request, jsonify, session, has_request_context, send_from_directory, redirect, url_for
 from flask.sessions import SecureCookieSessionInterface
 import json
 import os
@@ -23,6 +23,7 @@ import secrets
 import uuid
 import urllib.parse
 import unicodedata
+import socket
 
 app = Flask(__name__)
 
@@ -114,6 +115,18 @@ def add_no_cache_header(response):
         response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
         response.headers['Pragma'] = 'no-cache'
         response.headers['Expires'] = '0'
+    # [추가] CSRF 토큰 쿠키 실시간 동기화 (세션 만료 및 재로그인 시 토큰 불일치 방어)
+    try:
+        token = generate_csrf()
+        response.set_cookie(
+            'csrf_token',
+            token,
+            httponly=False,
+            samesite='Lax',
+            secure=True if os.environ.get('USE_HTTPS') == 'true' else False
+        )
+    except Exception:
+        pass
     return response
 
 # [추가] JSON 데이터 저장 및 응답 시 키(Key)가 알파벳순으로 자동 정렬되는 것을 방지
@@ -455,7 +468,7 @@ class EquipmentModel(db.Model):
         }
 
 # [추가] 장비 Parameter 관리 마스터 데이터 테이블 (AdminParameter)
-# Parameter 1행당 1줄로 기록, id부터 memo까지 컬럼 각각 입력
+# Parameter 1행당 1줄로 기록, id부터 memo까지 컬럼 각각 입력, sort_order로 순서 보존
 class AdminParameter(db.Model):
     __tablename__ = 'admin_parameter'
     id = db.Column(db.String(100), primary_key=True)
@@ -465,6 +478,7 @@ class AdminParameter(db.Model):
     unit = db.Column(db.String(50), default='')
     standard = db.Column(db.String(255), default='')
     memo = db.Column(db.String(255), default='')
+    sort_order = db.Column(db.Integer, default=0, index=True) # [추가] 등록 및 드래그 순서 보존용
     parameters = db.Column(db.Text, nullable=True, default='') # 레거시 호환용
     updated_at = db.Column(db.DateTime, default=get_utc_now, onupdate=get_utc_now)
 
@@ -477,6 +491,7 @@ class AdminParameter(db.Model):
             'unit': self.unit or '',
             'standard': self.standard or '',
             'memo': self.memo or '',
+            'sort_order': self.sort_order if self.sort_order is not None else 0,
             'parameters': self.parameters or '',
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else ''
         }
@@ -526,6 +541,46 @@ class TroubleLog(db.Model):
     status = db.Column(db.String(50), default='미기록')
     image_data = db.Column(db.Text(length=2000000), nullable=True) # [추가] 사진 Base64 저장 컬럼
 
+# [추가] 장비 Working Report 저장 및 관리 모델 (EquipmentReport)
+class EquipmentReport(db.Model):
+    __tablename__ = 'equipment_report'
+    id = db.Column(db.String(100), primary_key=True) # rep_YYYYMMDD_equipId
+    site_name = db.Column(db.String(100), nullable=False, index=True)
+    equip_id = db.Column(db.String(100), nullable=False, index=True)
+    equip_name = db.Column(db.String(100), default='', index=True)
+    model_name = db.Column(db.String(100), default='')
+    report_date = db.Column(db.String(20), nullable=False, index=True) # YYYY-MM-DD
+    title = db.Column(db.String(200), default='Working Report')
+    inspector = db.Column(db.String(150), default='')
+    location = db.Column(db.String(150), default='')
+    serial_no = db.Column(db.String(100), default='')
+    data_json = db.Column(db.Text, nullable=False, default='{}') # 전체 보고서 세부 항목(파라미터, 체크박스, 이력 등) JSON
+    created_at = db.Column(db.DateTime, default=get_utc_now)
+    updated_at = db.Column(db.DateTime, default=get_utc_now, onupdate=get_utc_now)
+
+    def to_dict(self):
+        parsed_data = {}
+        if self.data_json:
+            try:
+                parsed_data = json.loads(self.data_json)
+            except Exception:
+                parsed_data = {}
+        return {
+            'id': self.id,
+            'site_name': self.site_name,
+            'equip_id': self.equip_id,
+            'equip_name': self.equip_name or '',
+            'model_name': self.model_name or '',
+            'report_date': self.report_date,
+            'title': self.title or 'Working Report',
+            'inspector': self.inspector or '',
+            'location': self.location or '',
+            'serial_no': self.serial_no or '',
+            'data': parsed_data,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else '',
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else ''
+        }
+
 def ensure_item_stock_table():
     try:
         db.create_all()
@@ -549,8 +604,28 @@ def ensure_item_stock_table():
     except Exception as e:
         app.logger.error(f"Error creating/ensuring item_stock table: {e}")
 
+def ensure_admin_parameter_table():
+    try:
+        db.create_all()
+        # [추가] Parameter 관리 등록/드래그 순서 보존용 sort_order 컬럼 자동 마이그레이션
+        try:
+            db.session.execute(text('ALTER TABLE admin_parameter ADD COLUMN sort_order INTEGER DEFAULT 0'))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+    except Exception as e:
+        app.logger.error(f"Error ensuring admin_parameter table: {e}")
+
+def ensure_equipment_report_table():
+    try:
+        db.create_all()
+    except Exception as e:
+        app.logger.error(f"Error ensuring equipment_report table: {e}")
+
 with app.app_context():
     ensure_item_stock_table()
+    ensure_admin_parameter_table()
+    ensure_equipment_report_table()
 
 # ------------------------------------------------------------------------------
 # 2. 경로 및 로깅 설정 (Paths & Logging Setup)
@@ -1021,129 +1096,93 @@ def handle_bad_request(e):
     app.logger.warning(f"Bad Request: {e.description} (Path: {request.path})")
     return jsonify({"status": "fail", "message": "잘못된 데이터 형식입니다."}), 400
 
-# [추가] 무차별 대입 방지(Limiter) 429 에러 발생 시 프론트엔드 크래시 방지용 JSON 핸들러
+# [추가] 무차별 대입 방지(Limiter) 429 에러 발생 시 프론트엔드 대응
 @app.errorhandler(429)
-def handle_too_many_requests(e):
-    return jsonify({"status": "fail", "message": "짧은 시간에 너무 많은 요청이 발생했습니다. 잠시 후 다시 시도해주세요."}), 429
+def ratelimit_handler(e):
+    return jsonify({"status": "fail", "message": "요청이 너무 많습니다. 잠시 후 다시 시도해주세요."}), 429
 
-# [추가] 해킹 IP 차단 관리 (메모리 캐시)
-IP_ABUSE_COUNTER = {} # { "ip": { "count": int, "last_attempt": datetime } }
-IP_BLACKLIST = {}     # { "ip": ban_until_datetime }
-
-@app.before_request
-def check_ip_blacklist():
-    """모든 요청 진입 전에 블랙리스트에 의한 강제 IP 차단을 검사합니다."""
-    ip = get_remote_address()
-    if ip in IP_BLACKLIST:
-        ban_until = IP_BLACKLIST[ip]
-        if datetime.now(timezone.utc) < ban_until:
-            app.logger.warning(f"Blocked request from blacklisted IP: {ip} (Path: {request.path})")
-            return jsonify({"status": "fail", "message": "보안 정책 위반으로 인해 해당 IP로부터의 접속이 일시적으로 차단되었습니다."}), 403
-        else:
-            # 차단 만료 시간 경과 시 자동 제거
-            IP_BLACKLIST.pop(ip, None)
-            IP_ABUSE_COUNTER.pop(ip, None)
-
+# [추가] 로그인 인증 데코레이터
 def login_required(f):
-    """로그인 여부를 확인하는 데코레이터"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
-            return jsonify({"status": "fail", "message": "로그인이 필요합니다."}), 401
+            if request.is_json or request.path.startswith('/api/'):
+                return jsonify({"status": "fail", "message": "로그인이 필요합니다."}), 401
+            return redirect('/')
         return f(*args, **kwargs)
     return decorated_function
 
-@app.after_request
-def set_security_headers(response):
-    """모든 응답에 보안 헤더 및 CSRF 토큰 설정"""
-    is_secure = os.environ.get('USE_HTTPS') == 'true'
-    response.set_cookie('csrf_token', generate_csrf(), secure=is_secure, httponly=False, samesite='Lax')
-    
-    # 에러 로그 기록 (정적 파일 경로 제외)
-    if not request.path.startswith(('/static', '/SettingDAO', '/favicon.ico', '/.well-known')):
-        # [수정] 401 Unauthorized는 정상적인 인증 루틴일 수 있으므로 경고 로그에서 제외 (로그인 실패 등)
-        # [개선] 400 에러는 위의 에러 핸들러와 일반 비즈니스 로직(중복 아이디 등)에서 처리/기록하므로 포괄 로그에서 제외 (중복 방지)
-        if response.status_code > 400 and response.status_code != 401:
-            app.logger.warning(f"Response Status: {response.status} (Path: {request.path})")
-    
-    # 보안 헤더
-    response.headers['X-Content-Type-Options'] = 'nosniff'
-    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
-    response.headers['X-XSS-Protection'] = '1; mode=block'
-    if os.environ.get('APP_ENV') == 'production':
-        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
-        
-    return response
+# [추가] 관리자 권한 데코레이터
+def admin_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            if request.is_json or request.path.startswith('/api/'):
+                return jsonify({"status": "fail", "message": "로그인이 필요합니다."}), 401
+            return redirect('/')
+        if session.get('role') not in ['admin', 'superadmin']:
+            if request.is_json or request.path.startswith('/api/'):
+                return jsonify({"status": "fail", "message": "관리자 권한이 필요합니다."}), 403
+            return redirect('/')
+        return f(*args, **kwargs)
+    return decorated_function
 
-# ------------------------------------------------------------------------------
-# 6. 라우트: 화면 (Routes: Views)
-# ------------------------------------------------------------------------------
-@app.route('/') 
-@app.route('/index.html')
-def home():
-    return render_template('index.html')
+# ==============================================================================
+# [설비 Working Report 작성 및 관리 전용 API]
+# ==============================================================================
 
-@app.route('/setup')
-@app.route('/setup.html')
-def setup():
-    if 'user_id' not in session:
-        return redirect('/')
-    return render_template('setup.html')
+# 0-1. 전체 사업장 목록 조회 API (Report 및 공통 사용)
+@app.route('/api/sites', methods=['GET'])
+def api_get_sites_list():
+    try:
+        sites = Site.query.order_by(Site.name.asc()).all()
+        return jsonify([{'name': s.name, 'group': s.group or '기타사업장'} for s in sites if s.name])
+    except Exception as e:
+        app.logger.error(f"Error fetching sites in api_get_sites_list: {e}")
+        return jsonify([]), 500
 
-@app.route('/maintenance')
-@app.route('/maintenance.html')
-def maintenance():
-    if 'user_id' not in session:
-        return redirect('/')
-    return render_template('maintenance.html')
+# 0-2. 전체 장비 목록 조회 API (Report 및 공통 사용)
+@app.route('/api/equipment', methods=['GET'])
+def api_get_equipment_list():
+    try:
+        site_filter = request.args.get('site', '').strip()
+        query = Equipment.query
+        if site_filter:
+            query = query.filter_by(site_name=site_filter)
+        equips = query.order_by(Equipment.site_name.asc(), Equipment.name.asc()).all()
 
-@app.route('/trouble')
-@app.route('/trouble.html')
-def trouble():
-    if 'user_id' not in session:
-        return redirect('/')
-    return render_template('trouble.html')
+        # [요청 반영] 모델명 약어 매핑 (EquipmentModel)
+        try:
+            models = EquipmentModel.query.all()
+            model_abbr_map = {m.name: (m.abbr or m.name) for m in models}
+        except Exception:
+            model_abbr_map = {}
 
-@app.route('/admin')
-@app.route('/admin.html')
-def admin():
-    if 'user_id' not in session:
-        return redirect('/')
-    # 일반 계정도 admin 페이지 접근 허용 (조회 및 검색 전용)
-    return render_template('admin.html')
+        result = []
+        for eq in equips:
+            abbr = model_abbr_map.get(eq.name, eq.name or '')
+            result.append({
+                'id': eq.id,
+                'name': eq.name or '',
+                'site_name': eq.site_name or '',
+                'serial_no': eq.serial or '',
+                'cust_equip_name': eq.cust_equip_name or '',
+                'model_name': eq.name or '',
+                'model_abbr': abbr,
+                'building': eq.building or '',
+                'floor': eq.floor or '',
+                'detail_loc': eq.detail_loc or ''
+            })
+        return jsonify(result)
+    except Exception as e:
+        app.logger.error(f"Error fetching equipment in api_get_equipment_list: {e}")
+        return jsonify([]), 500
 
-@app.route('/sort')
-@app.route('/sort.html')
-def sort():
-    if 'user_id' not in session:
-        return redirect('/')
-    return render_template('sort.html')
-
-@app.route('/operation')
-@app.route('/operation.html')
-def operation():
-    if 'user_id' not in session:
-        return redirect('/')
-    return render_template('operation.html')
-
-@app.route('/data')
-@app.route('/data.html')
-def data_page():
-    if 'user_id' not in session:
-        return redirect('/')
-    return render_template('data.html')
-
-# ------------------------------------------------------------------------------
-# [DATA 페이지] 장비별 엑셀형 데이터 시트 DB 연동 API
-# 규칙: 현재 연동된 DB(로컬: dbwithtech001 / 가비아: .env 설정 DB) 내 장비별 테이블 자동 생성
-# 테이블명: zData 장비약어 고객사장비명 또는 (고객사장비명 없을 시) zData 장비약어 시리얼넘버
-# 접두사 zData: DB 툴에서 알파벳 순 정렬 시 최하단으로 정렬되어 시스템 테이블과 깔끔히 분리
-# ------------------------------------------------------------------------------
+# [DATA/REPORT 공통] 장비별 엑셀형 데이터 시트 테이블명 생성 함수
 def get_equip_data_table_name(abbr, cust_equip, serial, data_type='raw'):
     def clean_str(val):
         if not val:
             return ''
-        # MySQL 테이블명에서 금지된 문자(/, \, ., null byte)만 공백/제거하고 다중 공백은 단일 공백으로 정제
         cleaned = re.sub(r'[/\\.\x00]+', ' ', str(val).strip())
         cleaned = re.sub(r'\s+', ' ', cleaned).strip()
         return cleaned
@@ -1152,11 +1191,9 @@ def get_equip_data_table_name(abbr, cust_equip, serial, data_type='raw'):
     cust_part = clean_str(cust_equip)
     serial_part = clean_str(serial)
 
-    # 데이터 타입 구분: 'param' (Parameter) 또는 'raw' (Raw Data)
     is_param = str(data_type).lower() in ('param', 'parameter')
     prefix = "zParam" if is_param else "zData"
 
-    # 접두사 zParam / zData 적용
     if cust_part:
         tbl = f"{prefix} {abbr_part} {cust_part}"
     elif serial_part:
@@ -1164,9 +1201,662 @@ def get_equip_data_table_name(abbr, cust_equip, serial, data_type='raw'):
     else:
         tbl = f"{prefix} {abbr_part} DEFAULT"
 
-    # MySQL 식별자 최대 64자 제한 준수 및 끝 공백 제거
     tbl = tbl[:64].rstrip()
     return tbl, tbl
+
+# [요청 반영] Data 메뉴의 zParam 테이블명 다중 후보 및 퍼지 매칭 헬퍼
+def resolve_zparam_table(model_name, model_abbr, cust_equip, serial):
+    candidates = []
+    # 1. 모델 약어 + 고객사장비명 / 시리얼
+    if model_abbr:
+        tbl1, _ = get_equip_data_table_name(model_abbr, cust_equip, serial, 'param')
+        candidates.append(tbl1)
+    # 2. 모델 정식명칭 + 고객사장비명 / 시리얼
+    if model_name:
+        tbl2, _ = get_equip_data_table_name(model_name, cust_equip, serial, 'param')
+        candidates.append(tbl2)
+    # 3. serial만 사용
+    if serial:
+        tbl3, _ = get_equip_data_table_name(model_abbr or model_name, '', serial, 'param')
+        candidates.append(tbl3)
+    # 4. cust_equip만 사용
+    if cust_equip:
+        tbl4, _ = get_equip_data_table_name(model_abbr or model_name, cust_equip, '', 'param')
+        candidates.append(tbl4)
+
+    # 존재하는 테이블 즉시 반환
+    for tbl in candidates:
+        if not tbl: continue
+        if db_type == 'mysql':
+            chk = db.session.execute(text("SHOW TABLES LIKE :tbl;"), {'tbl': tbl}).fetchone()
+        else:
+            chk = db.session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name=:tbl;"), {'tbl': tbl}).fetchone()
+        if chk:
+            return tbl
+
+    # 퍼지 검색: zParam 으로 시작하는 모든 테이블 중 cust_equip 또는 serial이 포함된 테이블 탐색
+    try:
+        if db_type == 'mysql':
+            all_tbls = db.session.execute(text("SHOW TABLES LIKE 'zParam%';")).fetchall()
+            tbl_names = [r[0] for r in all_tbls]
+        else:
+            all_tbls = db.session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'zParam%';")).fetchall()
+            tbl_names = [r[0] for r in all_tbls]
+
+        clean_cust = re.sub(r'[/\\.\x00\s]+', '', str(cust_equip or '')).lower()
+        clean_serial = re.sub(r'[/\\.\x00\s]+', '', str(serial or '')).lower()
+
+        for t in tbl_names:
+            t_clean = re.sub(r'[/\\.\x00\s]+', '', t).lower()
+            if clean_cust and clean_cust in t_clean:
+                return t
+            if clean_serial and clean_serial in t_clean:
+                return t
+    except Exception as e:
+        app.logger.warning(f"Error fuzzy resolving zParam table: {e}")
+
+    return candidates[0] if candidates else f"zParam {model_abbr or model_name or 'EQUIP'} DEFAULT"
+
+# [요청 반영] Data 메뉴의 zParam 테이블에서 해당 장비의 파라미터 점검 측정값 조회 헬퍼
+def fetch_equipment_zparam_measurements(model_name, model_abbr, cust_equip, serial, report_date):
+    table_name = resolve_zparam_table(model_name, model_abbr, cust_equip, serial)
+    measured_map = {}
+    extra_items = []
+    has_table = False
+
+    try:
+        if db_type == 'mysql':
+            chk = db.session.execute(text("SHOW TABLES LIKE :tbl;"), {'tbl': table_name}).fetchone()
+            has_table = bool(chk)
+        else:
+            chk = db.session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name=:tbl;"), {'tbl': table_name}).fetchone()
+            has_table = bool(chk)
+
+        if has_table:
+            if db_type == 'mysql':
+                cols_res = db.session.execute(text(f"SHOW COLUMNS FROM `{table_name}`")).fetchall()
+                all_cols = [r[0] for r in cols_res]
+            else:
+                cols_res = db.session.execute(text(f"PRAGMA table_info(`{table_name}`)"))
+                all_cols = [r[1] for r in cols_res]
+
+            dt_clean = str(report_date or '').strip()
+            dt_hyphen = dt_clean.replace('.', '-').replace('/', '-')
+            dt_dot = dt_hyphen.replace('-', '.')
+
+            target_row = db.session.execute(
+                text(f"SELECT * FROM `{table_name}` WHERE record_date = :dt1 OR record_date = :dt2 OR record_date LIKE :dt3 ORDER BY id DESC LIMIT 1;"),
+                {'dt1': dt_hyphen, 'dt2': dt_dot, 'dt3': f"%{dt_hyphen}%"}
+            ).fetchone()
+
+            if not target_row:
+                target_row = db.session.execute(
+                    text(f"SELECT * FROM `{table_name}` ORDER BY record_date DESC, id DESC LIMIT 1;")
+                ).fetchone()
+
+            if target_row:
+                row_dict = dict(target_row._mapping)
+                actual_date = str(row_dict.get('record_date') or dt_hyphen)
+                act_hyphen = actual_date.replace('.', '-').replace('/', '-')
+                act_dot = act_hyphen.replace('-', '.')
+
+                col_lower_map = {c.lower(): c for c in all_cols}
+                item_col = next((c for c in all_cols if '항목' in c or 'param' in c.lower() or 'item' in c.lower()), None)
+                std_col = next((c for c in all_cols if '기준' in c or 'std' in c.lower() or 'normal' in c.lower()), None)
+                val_col = next((c for c in all_cols if '측정' in c or 'value' in c.lower() or 'meas' in c.lower()), None)
+                res_col = next((c for c in all_cols if '결과' in c or 'result' in c.lower() or 'status' in c.lower()), None)
+
+                if item_col:
+                    all_rows = db.session.execute(
+                        text(f"SELECT * FROM `{table_name}` WHERE record_date = :dt1 OR record_date = :dt2 OR record_date LIKE :dt3 ORDER BY id ASC;"),
+                        {'dt1': act_hyphen, 'dt2': act_dot, 'dt3': f"%{act_hyphen}%"}
+                    ).fetchall()
+
+                    if not all_rows:
+                        all_rows = db.session.execute(
+                            text(f"SELECT * FROM `{table_name}` ORDER BY id ASC;")
+                        ).fetchall()
+
+                    for r in all_rows:
+                        rd = dict(r._mapping)
+                        p_name = str(rd.get(item_col) or '').strip()
+                        if not p_name: continue
+                        p_std = str((rd.get(std_col) if std_col else None) or '').strip()
+                        p_val = str((rd.get(val_col) if val_col else None) or '').strip()
+                        res_val = str((rd.get(res_col) if res_col else None) or '').strip()
+
+                        # [요청 반영] 상태 열에는 측정값을 최우선 반영
+                        status_val = p_val if p_val else (res_val if res_val else '')
+
+                        measured_map[p_name.lower()] = p_val or status_val
+                        extra_items.append({
+                            'name': p_name,
+                            'standard': p_std,
+                            'measured_val': p_val,
+                            'status': p_val or status_val or '양호'
+                        })
+                else:
+                    exclude_cols = ('id', 'record_date', 'created_at', 'updated_at', 'site', 'equip', 'date')
+                    param_cols = [c for c in all_cols if c.lower() not in exclude_cols]
+
+                    for col in param_cols:
+                        measured = str(row_dict.get(col) if row_dict.get(col) is not None else '').strip()
+                        measured_map[col.lower()] = measured
+                        extra_items.append({
+                            'name': col,
+                            'standard': '',
+                            'measured_val': measured,
+                            'status': measured if measured else '양호'
+                        })
+    except Exception as e:
+        app.logger.warning(f"Error fetching zParam measurements for {table_name}: {e}")
+
+    return measured_map, extra_items, has_table, table_name
+
+# 1. 장비 마스터 및 해당 일자 DB 작업 데이터 기반 리포트 소스 데이터 생성
+@app.route('/api/report/source_data', methods=['GET'])
+def get_report_source_data():
+    try:
+        equip_id = request.args.get('equip_id', '').strip()
+        report_date = request.args.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
+        site_name = request.args.get('site_name', '').strip()
+
+        if not equip_id:
+            return jsonify({'status': 'error', 'message': '장비를 선택해주세요.'}), 400
+
+        # 1. 장비 마스터 정보 조회
+        equip = Equipment.query.filter_by(id=equip_id).first()
+        if not equip:
+            equip = Equipment.query.filter((Equipment.name == equip_id) | (Equipment.serial == equip_id)).first()
+
+        equip_name = equip.name if equip else equip_id
+        serial_no = equip.serial if equip else ''
+        cust_equip = equip.cust_equip_name if equip else ''
+        site_val = (equip.site_name if equip else site_name) or ''
+
+        # [요청 반영] 설치장소 구성: 사업장명으로 기록
+        location_str = site_val or ''
+
+        # 2. 장비 모델명 추출
+        model_name = equip_name
+        model_abbr = ''
+        eq_m = EquipmentModel.query.filter((EquipmentModel.name == equip_name) | (EquipmentModel.abbr == equip_name)).first()
+        if eq_m:
+            model_name = eq_m.name
+            model_abbr = eq_m.abbr or ''
+
+        # 3. 모델의 기본 Parameter 로드 (AdminParameter 테이블, sort_order 정렬)
+        param_cond = (AdminParameter.model_name == model_name)
+        if model_abbr:
+            param_cond = param_cond | (AdminParameter.model_name == model_abbr) | (AdminParameter.model_abbr == model_abbr)
+        if equip_name != model_name:
+            param_cond = param_cond | (AdminParameter.model_name == equip_name)
+
+        param_rows = AdminParameter.query.filter(param_cond).order_by(
+            AdminParameter.sort_order.asc(), 
+            AdminParameter.id.asc()
+        ).all()
+
+        # [요청 반영] Data 메뉴의 zParam 파라미터 점검 측정값 조회 및 상태(status) 칸에 매핑
+        measured_map, extra_items, has_tbl, tbl_name = fetch_equipment_zparam_measurements(
+            model_name, model_abbr, cust_equip, serial_no, report_date
+        )
+
+        default_params = []
+        existing_names = set()
+        for p in param_rows:
+            if not p.name: continue
+            p_lower = p.name.strip().lower()
+            existing_names.add(p_lower)
+            # [요청 반영] 상태에 Data parameter 측정값 자동 반영
+            measured = measured_map.get(p_lower, '')
+            default_params.append({
+                'id': p.id,
+                'name': p.name,
+                'standard': p.standard or '',
+                'unit': p.unit or '',
+                'measured_val': measured,
+                'status': measured,
+                'memo': p.memo or ''
+            })
+
+        # AdminParameter에 없지만 Data parameter 테이블에만 존재하는 추가 항목이 있다면 보완 반영
+        for ex in extra_items:
+            ex_name = ex.get('name', '').strip()
+            if ex_name and ex_name.lower() not in existing_names:
+                default_params.append({
+                    'id': f"zparam_{len(default_params)}",
+                    'name': ex_name,
+                    'standard': ex.get('standard', ''),
+                    'unit': '',
+                    'measured_val': ex.get('measured_val', ''),
+                    'status': ex.get('status', ex.get('measured_val', '')),
+                    'memo': ''
+                })
+                existing_names.add(ex_name.lower())
+
+        # 4. 해당 날짜(report_date)의 실제 점검/작업 이력 로드 (LogItem)
+        log_query = LogItem.query.filter(LogItem.date == report_date)
+        if equip:
+            log_query = log_query.filter((LogItem.equip_id == equip.id) | (LogItem.equip_id == equip.name) | (LogItem.equip_id == equip_id))
+        else:
+            log_query = log_query.filter(LogItem.equip_id == equip_id)
+        day_logs = log_query.all()
+
+        workers_set = set()
+        history_items = []
+        check_type_found = '정기'
+
+        for log in day_logs:
+            if log.worker and log.worker.strip():
+                workers_set.add(log.worker.strip())
+            if log.type:
+                check_type_found = log.type
+            content_line = log.content or ''
+            if content_line:
+                if not content_line.startswith('-') and not content_line.startswith('·'):
+                    content_line = f"-. {content_line}"
+                history_items.append(content_line)
+            if log.memo and log.memo.strip():
+                memo_line = f"-. {log.memo.strip()}"
+                if memo_line not in history_items:
+                    history_items.append(memo_line)
+
+        inspector_str = ", ".join(sorted(list(workers_set))) if workers_set else (session.get('user_name') or '')
+
+        # 5. 해당 날짜의 부품 교체 이력 로드 (ItemLog)
+        item_query = ItemLog.query.filter(ItemLog.date == report_date)
+        if equip:
+            item_query = item_query.filter((ItemLog.equip_id == equip.id) | (ItemLog.equip_id == equip.name) | (ItemLog.equip_id == equip_id))
+        else:
+            item_query = item_query.filter(ItemLog.equip_id == equip_id)
+        day_items = item_query.all()
+
+        replaced_parts = []
+        for it in day_items:
+            part_name = it.code or it.part or ''
+            if part_name:
+                cost_val = getattr(it, 'cost', '')
+                if not cost_val and (it.code or it.part):
+                    ai = AdminItem.query.filter((AdminItem.code == it.code) | (AdminItem.part == (it.code or it.part))).first()
+                    if ai and ai.additional:
+                        cost_val = ai.additional
+                cost_prefix = f"[{cost_val}] " if cost_val else ""
+                detail_suffix = f" [{it.part_detail}]" if it.part_detail else ""
+                formatted_part = f"{cost_prefix}{part_name}{detail_suffix}"
+                if formatted_part not in replaced_parts:
+                    replaced_parts.append(formatted_part)
+
+        return jsonify({
+            'status': 'success',
+            'data': {
+                'equip_id': equip_id,
+                'equip_name': equip_name,
+                'model_name': model_name,
+                'model_abbr': model_abbr,
+                'site_name': site_val,
+                'building': equip.building if equip else '',
+                'floor': equip.floor if equip else '',
+                'detail_loc': equip.detail_loc if equip else '',
+                'location': location_str,
+                'serial_no': serial_no,
+                'cust_equip_name': cust_equip,
+                'report_date': report_date,
+                'inspector': inspector_str,
+                'check_type': check_type_found,
+                'model_params': default_params,
+                'history_items': history_items,
+                'replaced_parts': replaced_parts,
+                'special_note': equip.special_note if equip else ''
+            }
+        })
+    except Exception as e:
+        app.logger.error(f"Error in get_report_source_data: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+
+# 1-2. Data 메뉴의 장비 파라미터 점검값(zParam) 조회 API (보고서 파라미터 항목 자동 연동)
+@app.route('/api/report/data_parameters', methods=['GET'])
+def get_report_data_parameters():
+    try:
+        equip_id = request.args.get('equip_id', '').strip()
+        report_date = request.args.get('date', '').strip() or datetime.now().strftime('%Y-%m-%d')
+        site_name = request.args.get('site_name', '').strip()
+
+        if not equip_id:
+            return jsonify({'status': 'error', 'message': '장비를 선택해주세요.'}), 400
+
+        # 장비 마스터 조회
+        equip = Equipment.query.filter_by(id=equip_id).first()
+        if not equip:
+            equip = Equipment.query.filter((Equipment.name == equip_id) | (Equipment.serial == equip_id)).first()
+
+        if not equip:
+            return jsonify({'status': 'error', 'message': '일치하는 장비 정보가 없습니다.'}), 404
+
+        cust_equip = equip.cust_equip_name or ''
+        serial = equip.serial or ''
+        model_name = equip.name or ''
+
+        # 모델 약어(Abbr) 조회
+        model_abbr = ''
+        eq_m = EquipmentModel.query.filter((EquipmentModel.name == model_name) | (EquipmentModel.abbr == model_name)).first()
+        if eq_m:
+            model_abbr = eq_m.abbr or eq_m.name
+        else:
+            model_abbr = model_name
+
+        # Data 파라미터 점검 테이블명 생성 및 다중 매칭
+        table_name = resolve_zparam_table(model_name, model_abbr, cust_equip, serial)
+
+        # AdminParameter 마스터 조회 (기준값 매핑용)
+        param_master_query = AdminParameter.query.filter(
+            (AdminParameter.model_name == model_name) | 
+            (AdminParameter.model_name == model_abbr) | 
+            (AdminParameter.model_abbr == model_abbr)
+        ).all()
+        std_map = {}
+        for p in param_master_query:
+            if p.name:
+                std_map[p.name.strip().lower()] = {
+                    'name': p.name.strip(),
+                    'standard': p.standard or '',
+                    'unit': p.unit or ''
+                }
+
+        items = []
+        actual_date = report_date
+
+        # zParam 테이블 존재 여부 확인
+        tbl_exists = False
+        if db_type == 'mysql':
+            chk = db.session.execute(text("SHOW TABLES LIKE :tbl;"), {'tbl': table_name}).fetchone()
+            tbl_exists = bool(chk)
+        else:
+            chk = db.session.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name=:tbl;"), {'tbl': table_name}).fetchone()
+            tbl_exists = bool(chk)
+
+        if tbl_exists:
+            # 컬럼 목록 조회
+            if db_type == 'mysql':
+                cols_res = db.session.execute(text(f"SHOW COLUMNS FROM `{table_name}`")).fetchall()
+                all_cols = [r[0] for r in cols_res]
+            else:
+                cols_res = db.session.execute(text(f"PRAGMA table_info(`{table_name}`)"))
+                all_cols = [r[1] for r in cols_res]
+
+            dt_clean = str(report_date or '').strip()
+            dt_hyphen = dt_clean.replace('.', '-').replace('/', '-')
+            dt_dot = dt_hyphen.replace('-', '.')
+
+            # 1. 일자 일치 행 조회 시도 (하이픈/점 및 부분 일치)
+            target_row = db.session.execute(
+                text(f"SELECT * FROM `{table_name}` WHERE record_date = :dt1 OR record_date = :dt2 OR record_date LIKE :dt3 ORDER BY id DESC LIMIT 1;"),
+                {'dt1': dt_hyphen, 'dt2': dt_dot, 'dt3': f"%{dt_hyphen}%"}
+            ).fetchone()
+
+            # 일치하는 일자 행이 없으면 가장 최근 행 조회
+            if not target_row:
+                target_row = db.session.execute(
+                    text(f"SELECT * FROM `{table_name}` ORDER BY record_date DESC, id DESC LIMIT 1;")
+                ).fetchone()
+
+            if target_row:
+                row_dict = dict(target_row._mapping)
+                actual_date = str(row_dict.get('record_date') or dt_hyphen)
+                act_hyphen = actual_date.replace('.', '-').replace('/', '-')
+                act_dot = act_hyphen.replace('-', '.')
+
+                # 구조 A: 세로형 테이블인 경우 (파라미터 항목, 기준값, 측정값, 결과 컬럼)
+                col_lower_map = {c.lower(): c for c in all_cols}
+                item_col = next((c for c in all_cols if '항목' in c or 'param' in c.lower() or 'item' in c.lower()), None)
+                std_col = next((c for c in all_cols if '기준' in c or 'std' in c.lower() or 'normal' in c.lower()), None)
+                val_col = next((c for c in all_cols if '측정' in c or 'value' in c.lower() or 'meas' in c.lower()), None)
+                res_col = next((c for c in all_cols if '결과' in c or 'result' in c.lower() or 'status' in c.lower()), None)
+
+                if item_col:
+                    # 해당 일자의 모든 행 조회
+                    all_rows = db.session.execute(
+                        text(f"SELECT * FROM `{table_name}` WHERE record_date = :dt1 OR record_date = :dt2 OR record_date LIKE :dt3 ORDER BY id ASC;"),
+                        {'dt1': act_hyphen, 'dt2': act_dot, 'dt3': f"%{act_hyphen}%"}
+                    ).fetchall()
+
+                    if not all_rows:
+                        all_rows = db.session.execute(
+                            text(f"SELECT * FROM `{table_name}` ORDER BY id ASC;")
+                        ).fetchall()
+
+                    for r in all_rows:
+                        rd = dict(r._mapping)
+                        p_name = str(rd.get(item_col) or '').strip()
+                        if not p_name:
+                            continue
+                        
+                        m_info = std_map.get(p_name.lower(), {})
+                        p_std = str((rd.get(std_col) if std_col else None) or m_info.get('standard') or '').strip()
+                        p_val = str((rd.get(val_col) if val_col else None) or '').strip()
+                        res_val = str((rd.get(res_col) if res_col else None) or '').strip()
+
+                        # [요청 반영] 상태 열에는 입력한 측정값(p_val)을 최우선으로 입력
+                        status_val = p_val if p_val else (res_val if res_val else '양호')
+
+                        items.append({
+                            'name': p_name,
+                            'standard': p_std,
+                            'measured_val': p_val,
+                            'status': status_val
+                        })
+
+                # 구조 B: 가로형 컬럼 구조 (각 컬럼이 하나의 파라미터명인 경우)
+                else:
+                    exclude_cols = ('id', 'record_date', 'created_at', 'updated_at', 'site', 'equip', 'date')
+                    param_cols = [c for c in all_cols if c.lower() not in exclude_cols]
+
+                    for col in param_cols:
+                        m_info = std_map.get(col.lower(), {})
+                        measured = str(row_dict.get(col) if row_dict.get(col) is not None else '').strip()
+                        items.append({
+                            'name': col,
+                            'standard': m_info.get('standard', ''),
+                            'measured_val': measured,
+                            'status': measured if measured else '양호'
+                        })
+
+        # DB에 zParam 테이블이나 데이터가 없더라도 AdminParameter 마스터가 있다면 기본 목록 제공
+        if not items and param_master_query:
+            for p in param_master_query:
+                if not p.name: continue
+                items.append({
+                    'name': p.name.strip(),
+                    'standard': p.standard or '',
+                    'measured_val': '',
+                    'status': '' # 측정값 대기
+                })
+
+        return jsonify({
+            'status': 'success',
+            'has_table': tbl_exists,
+            'table_name': table_name,
+            'record_date': actual_date,
+            'count': len(items),
+            'items': items
+        })
+    except Exception as e:
+        app.logger.error(f"Error in get_report_data_parameters: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+# 2. 특정 장비의 저장된 보고서 날짜 목록(히스토리) 조회
+@app.route('/api/report/history', methods=['GET'])
+def get_report_history():
+    try:
+        equip_id = request.args.get('equip_id', '').strip()
+        site_name = request.args.get('site_name', '').strip()
+
+        query = EquipmentReport.query
+        if equip_id:
+            query = query.filter_by(equip_id=equip_id)
+        elif site_name:
+            query = query.filter_by(site_name=site_name)
+
+        reports = query.order_by(EquipmentReport.report_date.desc(), EquipmentReport.updated_at.desc()).all()
+
+        history = [{
+            'id': r.id,
+            'equip_id': r.equip_id,
+            'equip_name': r.equip_name,
+            'site_name': r.site_name,
+            'report_date': r.report_date,
+            'title': r.title,
+            'inspector': r.inspector,
+            'updated_at': r.updated_at.strftime('%Y-%m-%d %H:%M') if r.updated_at else ''
+        } for r in reports]
+
+        return jsonify({'status': 'success', 'history': history})
+    except Exception as e:
+        app.logger.error(f"Error in get_report_history: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+# 3. 저장된 특정 보고서 상세 로드
+@app.route('/api/report/<report_id>', methods=['GET'])
+def get_single_report(report_id):
+    try:
+        report = EquipmentReport.query.filter_by(id=report_id).first()
+        if not report:
+            return jsonify({'status': 'error', 'message': '보고서를 찾을 수 없습니다.'}), 404
+        return jsonify({'status': 'success', 'report': report.to_dict()})
+    except Exception as e:
+        app.logger.error(f"Error in get_single_report: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+# 4. 보고서 저장 (신규 작성 또는 기존 보고서 갱신)
+@app.route('/api/report/save', methods=['POST'])
+@csrf.exempt
+def save_equipment_report():
+    try:
+        payload = request.get_json(silent=True) or {}
+        site_name = payload.get('site_name', '').strip()
+        equip_id = payload.get('equip_id', '').strip()
+        report_date = payload.get('report_date', '').strip()
+
+        if not site_name or not equip_id or not report_date:
+            return jsonify({'status': 'error', 'message': '사업장, 장비, 점검일자는 필수 입력값입니다.'}), 400
+
+        # [요청 반영] 장비당 하루 1개의 보고서만 저장 보장 (해당 점검일자 보고서가 있으면 무조건 해당 레코드에 갱신)
+        report = EquipmentReport.query.filter_by(equip_id=equip_id, report_date=report_date).first()
+        custom_id = payload.get('id')
+        if not report and custom_id:
+            report = EquipmentReport.query.filter_by(id=custom_id).first()
+
+        if not report:
+            safe_equip = equip_id.replace('::', '_').replace(' ', '_')
+            target_id = custom_id or f"rep_{report_date.replace('-', '')}_{safe_equip}"
+            if EquipmentReport.query.filter_by(id=target_id).first():
+                target_id = f"{target_id}_{int(datetime.now().timestamp())}"
+            custom_id = target_id
+
+        data_content = payload.get('data_json') or payload.get('data') or {}
+        if isinstance(data_content, str):
+            data_json_str = data_content
+        else:
+            data_json_str = json.dumps(data_content, ensure_ascii=False)
+
+        if report:
+            report.site_name = site_name
+            report.equip_id = equip_id
+            report.equip_name = payload.get('equip_name', report.equip_name)
+            report.model_name = payload.get('model_name', report.model_name)
+            report.report_date = report_date
+            report.title = payload.get('title', report.title)
+            report.inspector = payload.get('inspector', report.inspector)
+            report.location = payload.get('location', report.location)
+            report.serial_no = payload.get('serial_no', report.serial_no)
+            report.data_json = data_json_str
+            report.updated_at = get_utc_now()
+        else:
+            report = EquipmentReport(
+                id=custom_id,
+                site_name=site_name,
+                equip_id=equip_id,
+                equip_name=payload.get('equip_name', ''),
+                model_name=payload.get('model_name', ''),
+                report_date=report_date,
+                title=payload.get('title', 'Working Report'),
+                inspector=payload.get('inspector', ''),
+                location=payload.get('location', ''),
+                serial_no=payload.get('serial_no', ''),
+                data_json=data_json_str,
+                created_at=get_utc_now(),
+                updated_at=get_utc_now()
+            )
+            db.session.add(report)
+
+        db.session.commit()
+        return jsonify({'status': 'success', 'report_id': report.id, 'report': report.to_dict()})
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error in save_equipment_report: {e}", exc_info=True)
+        return jsonify({'status': 'error', 'message': f"저장 실패: {str(e)}"}), 500
+
+
+# 5. 보고서 삭제
+@app.route('/api/report/<report_id>', methods=['DELETE'])
+@csrf.exempt
+def delete_equipment_report(report_id):
+    try:
+        report = EquipmentReport.query.filter_by(id=report_id).first()
+        if not report:
+            return jsonify({'status': 'error', 'message': '보고서를 찾을 수 없습니다.'}), 404
+        db.session.delete(report)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': '보고서가 삭제되었습니다.'})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error in delete_equipment_report: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+# 6. 특정 모델의 마스터 파라미터 목록 조회 (파라미터 추가 팝업용)
+@app.route('/api/report/model_parameters', methods=['GET'])
+def get_report_model_parameters():
+    try:
+        model_name = request.args.get('model_name', '').strip()
+        if not model_name:
+            return jsonify({'status': 'success', 'parameters': []})
+
+        eq_m = EquipmentModel.query.filter((EquipmentModel.name == model_name) | (EquipmentModel.abbr == model_name)).first()
+        abbr = eq_m.abbr if eq_m else ''
+
+        cond = (AdminParameter.model_name == model_name)
+        if abbr:
+            cond = cond | (AdminParameter.model_name == abbr) | (AdminParameter.model_abbr == abbr)
+
+        rows = AdminParameter.query.filter(cond).order_by(AdminParameter.sort_order.asc(), AdminParameter.id.asc()).all()
+        result = [{
+            'id': r.id,
+            'name': r.name,
+            'standard': r.standard or '',
+            'unit': r.unit or '',
+            'memo': r.memo or ''
+        } for r in rows if r.name]
+
+        return jsonify({'status': 'success', 'parameters': result})
+    except Exception as e:
+        app.logger.error(f"Error in get_report_model_parameters: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+
+# ------------------------------------------------------------------------------
+# [DATA 페이지] 장비별 엑셀형 데이터 시트 DB 연동 API
+# 규칙: 현재 연동된 DB(로컬: dbwithtech001 / 가비아: .env 설정 DB) 내 장비별 테이블 자동 생성
+# 테이블명: zData 장비약어 고객사장비명 또는 (고객사장비명 없을 시) zData 장비약어 시리얼넘버
+# 접두사 zData: DB 툴에서 알파벳 순 정렬 시 최하단으로 정렬되어 시스템 테이블과 깔끔히 분리
+# ------------------------------------------------------------------------------
+# (get_equip_data_table_name 함수는 상단 공통 영역에 선언되어 공유됩니다)
 
 @app.route('/api/datasheet/load', methods=['POST'])
 @csrf.exempt
@@ -1212,8 +1902,8 @@ def load_datasheet():
 
         data_cols = [c for c in all_cols if c not in ('id', 'record_date', 'created_at', 'updated_at')]
 
-        # 데이터 행 조회
-        rows_res = db.session.execute(text(f"SELECT * FROM `{table_name}` ORDER BY record_date DESC, id DESC;")).fetchall()
+        # 데이터 행 조회 (날짜는 최신순, 동일 날짜 내에서는 저장된 순서(id ASC) 그대로 유지)
+        rows_res = db.session.execute(text(f"SELECT * FROM `{table_name}` ORDER BY record_date DESC, id ASC;")).fetchall()
         rows_data = []
         for idx, r in enumerate(rows_res):
             row_dict = dict(r._mapping)
@@ -1358,6 +2048,52 @@ def block_sensitive_data(filename):
     return jsonify({"status": "fail", "message": "비정상적인 접근이 감지되어 시스템에 의해 차단되었습니다."}), 403
 
 # ------------------------------------------------------------------------------
+# 6. 라우트: 뷰 (Routes: Views)
+# ------------------------------------------------------------------------------
+@app.route('/')
+@app.route('/home')
+def home():
+    return render_template('index.html', active_page='home')
+
+@app.route('/index')
+def index():
+    return redirect(url_for('home'))
+
+@app.route('/setup')
+def setup():
+    return render_template('setup.html', active_page='setup')
+
+@app.route('/maintenance')
+def maintenance():
+    return render_template('maintenance.html', active_page='maintenance')
+
+@app.route('/trouble')
+def trouble():
+    return render_template('trouble.html', active_page='trouble')
+
+@app.route('/data')
+@app.route('/data_page')
+def data_page():
+    return render_template('data.html', active_page='data')
+
+@app.route('/operation')
+def operation():
+    return render_template('operation.html', active_page='operation')
+
+@app.route('/sort')
+def sort():
+    return render_template('sort.html', active_page='sort')
+
+@app.route('/report')
+@app.route('/report_page')
+def report_page():
+    return render_template('report.html', active_page='report')
+
+@app.route('/admin')
+def admin():
+    return render_template('admin.html', active_page='admin')
+
+# ------------------------------------------------------------------------------
 # 7. 라우트: API (Routes: API)
 # ------------------------------------------------------------------------------
 @app.route('/api/data', methods=['GET', 'POST'])
@@ -1372,11 +2108,16 @@ def handle_data():
 @limiter.limit("5 per minute")
 @csrf.exempt
 def login():
-    data = request.json
+    data = request.json or {}
     user_id = data.get('id', '').strip()  # [수정] 모바일/복붙 시 발생하는 보이지 않는 끝 공백 제거
     user_pw = data.get('pw', '').strip()
 
+    if not user_id or not user_pw:
+        return jsonify({"status": "fail", "message": "아이디와 비밀번호를 입력해주세요."}), 400
+
     user = User.query.filter_by(id=user_id).first()
+    if not user:
+        return jsonify({"status": "fail", "message": "아이디 또는 비밀번호가 올바르지 않습니다."}), 401
 
     
     # Login block removed for normal operation
@@ -1422,15 +2163,27 @@ def login():
         session['user_id'] = user.id
         session['role'] = user.role
         session['site'] = user.site # [추가]
-        return jsonify({
+        
+        # [추가] 새 세션에 대한 유효한 CSRF 토큰 발급 및 응답 전달
+        new_csrf = generate_csrf()
+        resp = jsonify({
             "status": "success", 
             "role": user.role, 
             "site": user.site,
             "department": user.department or "",
             "position": user.position or "",
             "name": user.name or "",
-            "require_pw_change": require_pw_change
+            "require_pw_change": require_pw_change,
+            "csrf_token": new_csrf
         })
+        resp.set_cookie(
+            'csrf_token',
+            new_csrf,
+            httponly=False,
+            samesite='Lax',
+            secure=True if os.environ.get('USE_HTTPS') == 'true' else False
+        )
+        return resp
 
     # 3. 실패 처리
     user.failed_attempts += 1
@@ -1657,10 +2410,13 @@ def build_rag_context(user, user_message):
         if serial_match or name_match or cust_name_match:
             matched_equips.append(eq)
 
-    # [개선] 만약 장비가 매칭되었다면, 해당 장비가 소속된 사업장명을 기준으로 matched_site를 갱신해 줍니다.
-    # 이를 통해 유저의 기본 소속 사업장 필터링에 가로막혀 쿼리 컨텍스트가 오인되는 문제를 이중으로 정정합니다.
-    if matched_equips:
-        matched_site = matched_equips[0].site_name
+    # [개선] 만약 장비가 매칭되었고 사용자가 사업장을 명시하지 않은 경우:
+    # 매칭된 모든 장비가 단 1개의 사업장에만 속해 있는 경우에만 matched_site를 갱신합니다.
+    # 여러 사업장에 걸친 장비 모델(예: EM201 61대)이 매칭된 경우 특정 사업장으로 왜곡되지 않도록 전체 사업장 범위를 유지합니다.
+    if matched_equips and not matched_site:
+        unique_sites = list(set([eq.site_name for eq in matched_equips if eq.site_name]))
+        if len(unique_sites) == 1:
+            matched_site = unique_sites[0]
 
     # (4) 장비 모델명(Model) 매칭
     matched_model = None
@@ -1714,7 +2470,10 @@ def build_rag_context(user, user_message):
 
     # 2. 질문 의도(Intent) 분석
     intent_count = any(k in msg_no_space for k in ["몇대", "몇개", "수량", "개수", "얼마나", "건수", "몇건", "몇명", "총수", "합계", "통계"])
-    intent_trouble = any(k in msg_no_space for k in ["트러블", "장애", "에러", "고장", "문제", "조치", "수리", "해결", "오류", "이상", "경과", "안됨", "불량", "알람"])
+    intent_trouble = any(k in msg_no_space for k in [
+        "트러블", "장애", "에러", "고장", "문제", "조치", "수리", "해결", "오류", "이상", "경과", "안됨", "불량", "알람",
+        "비정기", "방안", "대책", "원인", "줄일", "줄이", "줄이는", "감소", "절감", "개선"
+    ])
     intent_schedule = any(k in msg_no_space for k in ["점검", "일정", "계획", "언제", "예정", "유지보수", "스케줄", "날짜", "달력", "작업"])
     intent_setup = any(k in msg_no_space for k in ["셋업", "설치", "setup", "진행", "진척"])
     intent_part = any(k in msg_no_space for k in ["물품", "부품", "파트", "소모품", "필터", "filter", "cone", "gc", "spec", "스펙", "교체물품", "유지관리물품", "부품교체", "물품이력", "물품목록", "부품목록"])
@@ -1952,11 +2711,17 @@ def build_rag_context(user, user_message):
             all_trouble_query = TroubleLog.query.filter(TroubleLog.equip_id.in_(eq_ids))
             
             # 질문과 유사한 키워드가 겹치는 트러블 로그 우선 검색
-            search_keywords = [w for w in sanitized_message.split() if len(w) >= 2 and w not in ["pm", "작업", "완료", "건수", "분석", "해줘", "알려줘", "7월", "이번달"]]
+            stop_keywords = {
+                "pm", "작업", "완료", "건수", "건수가", "건수는", "분석", "해줘", "알려줘", "알려주세요",
+                "가장", "많은거", "많은", "많이", "같은데", "같아", "있는", "있어", "줄일수", "줄이는",
+                "줄일", "줄이기", "장비", "관련", "대해", "대해서", "어떻게", "어떤", "무엇", "방법",
+                "에서", "으로", "로써", "진행", "확인", "현황", "목록", "조회", "검색", "이력", "내역"
+            }
+            search_keywords = [w for w in sanitized_message.split() if len(w) >= 2 and w not in stop_keywords]
             
             related_troubles = []
             if search_keywords:
-                for kw in search_keywords:
+                for kw in search_keywords[:3]:
                     kw_troubles = all_trouble_query.filter(
                         TroubleLog.situation.like(f"%{kw}%") |
                         TroubleLog.symptom.like(f"%{kw}%") |
@@ -1964,7 +2729,7 @@ def build_rag_context(user, user_message):
                         TroubleLog.measure.like(f"%{kw}%") |
                         TroubleLog.prevent.like(f"%{kw}%") |
                         TroubleLog.trouble_details.like(f"%{kw}%")
-                    ).all()
+                    ).limit(10).all()
                     related_troubles.extend(kw_troubles)
                 seen_t = set()
                 related_troubles = [t for t in related_troubles if not (t._unique_id in seen_t or seen_t.add(t._unique_id))]
@@ -2000,12 +2765,12 @@ def build_rag_context(user, user_message):
             all_log_query = LogItem.query.filter(LogItem.equip_id.in_(eq_ids))
             related_logs = []
             if search_keywords:
-                for kw in search_keywords:
+                for kw in search_keywords[:3]:
                     # [개선] 과거 완료 이력 중 상황, 증상, 조치, 메모 텍스트까지 검색 범위를 확장하여 매칭률을 극대화합니다.
                     kw_logs = all_log_query.filter(
                         LogItem.content.like(f"%{kw}%") |
                         LogItem.memo.like(f"%{kw}%")
-                    ).all()
+                    ).limit(10).all()
                     related_logs.extend(kw_logs)
                 seen_l = set()
                 related_logs = [l for l in related_logs if not (l._unique_id in seen_l or seen_l.add(l._unique_id))]
@@ -2329,11 +3094,19 @@ def call_external_chat_api(prompt, system_instruction):
             method='POST'
         )
 
-        with urllib.request.urlopen(req, timeout=30) as response:
+        timeout_sec = int(os.environ.get('CHAT_API_TIMEOUT', 90))
+        with urllib.request.urlopen(req, timeout=timeout_sec) as response:
             res_data = json.loads(response.read().decode('utf-8'))
             
             if api_type == 'gemini':
-                reply = res_data['candidates'][0]['content']['parts'][0]['text']
+                candidates = res_data.get('candidates', [])
+                if candidates and 'content' in candidates[0] and 'parts' in candidates[0]['content']:
+                    parts = candidates[0]['content']['parts']
+                    # thinking 모델은 여러 parts 중 마지막 text part를 추출
+                    text_parts = [p.get('text', '') for p in parts if p.get('text')]
+                    reply = text_parts[-1] if text_parts else ''
+                else:
+                    reply = "AI 모델의 응답 형식을 해석할 수 없습니다."
             else:
                 reply = res_data['choices'][0]['message']['content']
                 
@@ -2347,7 +3120,16 @@ def call_external_chat_api(prompt, system_instruction):
         elif e.code == 503:
             return "현재 구글 Gemini AI 서버의 일시적인 혼잡 및 트래픽 폭주 상태(503 Service Unavailable)입니다. 구글 API 서버의 부하가 줄어들 때까지 잠시 후(약 10초~30초 뒤) 다시 질문해 주세요."
         return f"AI API 호출 오류가 발생했습니다. (코드: {e.code})"
+    except urllib.error.URLError as e:
+        if "timed out" in str(e).lower() or isinstance(getattr(e, 'reason', None), socket.timeout):
+            app.logger.error(f"AI API Timeout Error: {str(e)}")
+            return "AI 모델의 심층 분석 답변 생성 시간이 지연되어 시간 초과(Timeout)가 발생했습니다. 잠시 후 다시 질문해 주시거나 질문을 조금 더 구체화해 주세요."
+        app.logger.error(f"AI API Connection Error: {str(e)}")
+        return "AI API 서버 연결에 실패했습니다. 네트워크 상태 또는 환경변수를 확인해주세요."
     except Exception as e:
+        if "timed out" in str(e).lower():
+            app.logger.error(f"AI API Timeout Error: {str(e)}")
+            return "AI 모델의 심층 분석 답변 생성 시간이 지연되어 시간 초과(Timeout)가 발생했습니다. 잠시 후 다시 질문해 주시거나 질문을 조금 더 구체화해 주세요."
         app.logger.error(f"AI API Connection Error: {str(e)}")
         return "AI API 서버 연결에 실패했습니다. 네트워크 상태 또는 환경변수를 확인해주세요."
 
@@ -2731,6 +3513,7 @@ def admin_update_any_user():
 @app.route('/api/log/add', methods=['POST'])
 @login_required
 @limiter.exempt
+@csrf.exempt
 def add_log():
     data = request.json
     user_id = session.get('user_id')
@@ -2781,7 +3564,11 @@ def get_logs():
 def get_system_setting(key):
     if key == 'equip_model_parameters':
         try:
-            param_rows = AdminParameter.query.order_by(AdminParameter.model_name.asc(), AdminParameter.id.asc()).all()
+            param_rows = AdminParameter.query.order_by(
+                AdminParameter.model_name.asc(), 
+                AdminParameter.sort_order.asc(), 
+                AdminParameter.id.asc()
+            ).all()
             val = {}
             for row in param_rows:
                 item_dict = {
@@ -2789,7 +3576,8 @@ def get_system_setting(key):
                     'name': row.name or '',
                     'unit': row.unit or '',
                     'standard': row.standard or '',
-                    'memo': row.memo or ''
+                    'memo': row.memo or '',
+                    'sort_order': row.sort_order if row.sort_order is not None else 0
                 }
                 # 레거시 데이터(parameters JSON 컬럼) 호환 처리
                 if not row.name and row.parameters:
@@ -2828,7 +3616,11 @@ def get_system_setting(key):
 @login_required
 def get_admin_parameters():
     try:
-        rows = AdminParameter.query.order_by(AdminParameter.model_name.asc(), AdminParameter.id.asc()).all()
+        rows = AdminParameter.query.order_by(
+            AdminParameter.model_name.asc(), 
+            AdminParameter.sort_order.asc(), 
+            AdminParameter.id.asc()
+        ).all()
         return jsonify({"status": "success", "data": [r.to_dict() for r in rows]})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -3285,6 +4077,11 @@ def admin_crud():
                         p_unit = str(p.get('unit') or '').strip()
                         p_std = str(p.get('standard') or '').strip()
                         p_memo = str(p.get('memo') or '').strip()
+                        p_sort = p.get('sort_order', idx)
+                        try:
+                            p_sort = int(p_sort)
+                        except Exception:
+                            p_sort = idx
 
                         param_row = AdminParameter(
                             id=p_id,
@@ -3294,6 +4091,7 @@ def admin_crud():
                             unit=p_unit,
                             standard=p_std,
                             memo=p_memo,
+                            sort_order=p_sort,
                             parameters=''
                         )
                         db.session.add(param_row)
@@ -3306,6 +4104,11 @@ def admin_crud():
                 p_unit = str(payload.get('unit') or '').strip()
                 p_std = str(payload.get('standard') or '').strip()
                 p_memo = str(payload.get('memo') or '').strip()
+                p_sort = payload.get('sort_order', 0)
+                try:
+                    p_sort = int(p_sort)
+                except Exception:
+                    p_sort = 0
 
                 param_row = AdminParameter.query.filter_by(id=p_id).first()
                 if param_row:
@@ -3315,6 +4118,8 @@ def admin_crud():
                     param_row.unit = p_unit
                     param_row.standard = p_std
                     param_row.memo = p_memo
+                    if 'sort_order' in payload:
+                        param_row.sort_order = p_sort
                 else:
                     param_row = AdminParameter(
                         id=p_id,
@@ -3324,6 +4129,7 @@ def admin_crud():
                         unit=p_unit,
                         standard=p_std,
                         memo=p_memo,
+                        sort_order=p_sort,
                         parameters=''
                     )
                     db.session.add(param_row)
@@ -3369,6 +4175,11 @@ def admin_crud():
                             for idx, p in enumerate(p_list):
                                 if not isinstance(p, dict): continue
                                 p_id = str(p.get('id') or f"param_{int(time.time() * 1000)}_{idx}_{random.randint(100, 999)}")
+                                p_sort = p.get('sort_order', idx)
+                                try:
+                                    p_sort = int(p_sort)
+                                except Exception:
+                                    p_sort = idx
                                 db.session.add(AdminParameter(
                                     id=p_id,
                                     model_name=m_name,
@@ -3377,6 +4188,7 @@ def admin_crud():
                                     unit=str(p.get('unit') or '').strip(),
                                     standard=str(p.get('standard') or '').strip(),
                                     memo=str(p.get('memo') or '').strip(),
+                                    sort_order=p_sort,
                                     parameters=''
                                 ))
                         db.session.commit()

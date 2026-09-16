@@ -1750,6 +1750,83 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
     text-align: center;
 }
 
+/* [추가] 장비 Parameter 드래그 앤 드롭 및 순서 이동 스타일 */
+.admin-param-drag-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: 100%;
+    padding: 2px 4px;
+    user-select: none;
+}
+
+.admin-param-drag-handle {
+    cursor: grab;
+    color: #58a6ff;
+    opacity: 0.75;
+    font-size: 14px;
+    line-height: 1;
+    padding: 4px 2px;
+    display: inline-flex;
+    align-items: center;
+    transition: opacity 0.15s, transform 0.15s;
+}
+
+.admin-param-drag-handle:hover {
+    opacity: 1;
+    transform: scale(1.15);
+}
+
+.admin-param-drag-handle:active {
+    cursor: grabbing;
+}
+
+.admin-param-row-num {
+    font-size: 11px;
+    color: #8b949e;
+    font-weight: 600;
+    min-width: 16px;
+    text-align: center;
+}
+
+.admin-param-order-btns {
+    display: inline-flex;
+    flex-direction: column;
+    gap: 1px;
+    margin-left: 1px;
+}
+
+.admin-param-order-btn {
+    background: transparent;
+    border: none;
+    color: #484f58;
+    font-size: 8px;
+    line-height: 1;
+    padding: 1px 2px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: color 0.15s, background-color 0.15s;
+}
+
+.admin-param-order-btn:hover {
+    color: #58a6ff;
+    background: #21262d;
+}
+
+.admin-param-row.admin-param-dragging {
+    opacity: 0.4;
+    background: #1f242c !important;
+}
+
+.admin-param-row.admin-param-drag-over-top td {
+    box-shadow: inset 0 3px 0 0 #58a6ff !important;
+}
+
+.admin-param-row.admin-param-drag-over-bottom td {
+    box-shadow: inset 0 -3px 0 0 #58a6ff !important;
+}
+
 /* 장비관리 상단 헤더 서브 탭 버튼 그룹 */
 .admin-equip-header-tabs {
     display: inline-flex;

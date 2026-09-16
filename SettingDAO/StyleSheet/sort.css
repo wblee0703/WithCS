@@ -892,3 +892,212 @@
     border-color: #58a6ff !important;
     color: #e6edf3 !important;
 }
+
+/* ==============================================================================
+   SORT 데이터 기반 Report 모달 스타일
+   ============================================================================== */
+.sort-report-filter-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    background: #161b22;
+    border: 1px solid #30363d;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #8b949e;
+}
+
+.sort-report-filter-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #21262d;
+    color: #c9d1d9;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid #30363d;
+}
+
+.sort-report-filter-tag strong {
+    color: #58a6ff;
+}
+
+.sort-report-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+}
+
+.sort-report-kpi-card {
+    background-color: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 12px 14px;
+    position: relative;
+    overflow: hidden;
+}
+
+.sort-report-kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+}
+
+.sort-report-kpi-card.kpi-blue::before { background-color: #58a6ff; }
+.sort-report-kpi-card.kpi-orange::before { background-color: #f0883e; }
+.sort-report-kpi-card.kpi-purple::before { background-color: #bc8cff; }
+.sort-report-kpi-card.kpi-green::before { background-color: #3fb950; }
+
+.sort-report-kpi-label {
+    font-size: 11px;
+    color: #8b949e;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.sort-report-kpi-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #f0f6fc;
+    margin-bottom: 2px;
+}
+
+.sort-report-kpi-desc {
+    font-size: 11px;
+    color: #8b949e;
+}
+
+.sort-report-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.sort-report-chart-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.sort-report-chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f0f6fc;
+    margin: 0 0 12px 0;
+}
+
+.sort-report-insight-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 18px 20px;
+}
+
+.sort-report-ranking-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.sort-report-rank-box {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+
+.sort-report-rank-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid #21262d;
+    font-size: 12px;
+}
+
+.sort-report-rank-item:last-child {
+    border-bottom: none;
+}
+
+.sort-report-rank-badge {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 11px;
+    background: #30363d;
+    color: #f0f6fc;
+    margin-right: 6px;
+}
+
+.sort-report-rank-badge.rank-1 { background: linear-gradient(135deg, #ffd700, #ffa500); color: #000; }
+.sort-report-rank-badge.rank-2 { background: linear-gradient(135deg, #e0e0e0, #b0b0b0); color: #000; }
+.sort-report-rank-badge.rank-3 { background: linear-gradient(135deg, #cd7f32, #8b4513); color: #fff; }
+
+@media (max-width: 992px) {
+    .sort-report-kpi-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .sort-report-charts-grid, .sort-report-ranking-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* SORT 리포트 전용 인쇄 스타일 */
+@media print {
+    body * {
+        visibility: hidden !important;
+    }
+    #sort-report-modal, #sort-report-modal * {
+        visibility: visible !important;
+    }
+    #sort-report-modal {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        display: block !important;
+        background: #ffffff !important;
+    }
+    #sort-report-modal .modal-window {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        max-height: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: #ffffff !important;
+        color: #000000 !important;
+    }
+    #sort-report-modal .modal-header button {
+        display: none !important;
+    }
+    #sort-report-modal .modal-body {
+        overflow: visible !important;
+        padding: 0 !important;
+    }
+    .sort-report-kpi-card, .sort-report-chart-card, .sort-report-insight-card, .sort-report-rank-box {
+        background: #ffffff !important;
+        border: 1px solid #cccccc !important;
+        color: #000000 !important;
+    }
+    .sort-report-kpi-value, .sort-report-chart-title, .sort-report-insight-card h4, .sort-report-rank-box h4 {
+        color: #000000 !important;
+    }
+    .report-markdown-body {
+        color: #000000 !important;
+    }
+    .report-markdown-body h2 {
+        color: #1f6feb !important;
+    }
+}

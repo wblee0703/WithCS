@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <title>{% block title %}WITHTECH - EQ System{% endblock %}</title>
 
@@ -68,15 +69,16 @@
                         </ul>
                     </li>
 
-                    <!-- 2. 데이터 분석 (DATA, 가동률, SORT) -->
-                    <li class="nav-dropdown {% if active_page in ['data', 'operation', 'sort'] %}active-group{% endif %}">
-                        <a href="javascript:void(0)" class="nav-dropdown-toggle {% if active_page in ['data', 'operation', 'sort'] %}active{% endif %}">
+                    <!-- 2. 데이터 분석 (DATA, 가동률, SORT, REPORT) -->
+                    <li class="nav-dropdown {% if active_page in ['data', 'operation', 'sort', 'report'] %}active-group{% endif %}">
+                        <a href="javascript:void(0)" class="nav-dropdown-toggle {% if active_page in ['data', 'operation', 'sort', 'report'] %}active{% endif %}">
                             ANALYTICS <span class="nav-arrow">▾</span>
                         </a>
                         <ul class="nav-dropdown-menu">
                             <li><a href="{{ url_for('data_page') }}" class="{% if active_page == 'data' %}active{% endif %}">Data</a></li>
                             <li><a href="{{ url_for('operation') }}" class="{% if active_page == 'operation' %}active{% endif %}">Operation</a></li>
                             <li><a href="{{ url_for('sort') }}" class="{% if active_page == 'sort' %}active{% endif %}">Sort</a></li>
+                            <li><a href="{{ url_for('report_page') }}" class="{% if active_page == 'report' %}active{% endif %}">Report</a></li>
                         </ul>
                     </li>
 

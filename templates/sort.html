@@ -131,6 +131,10 @@
                 </div>
                 <button id="btn-sort-search" class="btn-blue full-width mt-10"
                     style="padding: 10px; font-size: 14px;">검색 및 정렬</button>
+                <button type="button" id="btn-sort-report" class="btn-green full-width mt-10"
+                    style="padding: 10px; font-size: 14px; display: none;" disabled>
+                    📊 Report 출력
+                </button>
             </div>
         </div>
     </aside>
@@ -468,6 +472,64 @@
             </div>
         </div>
 
+        <!-- [추가] SORT 결과 기반 리포트 출력 모달 -->
+        <div id="sort-report-modal" class="modal-overlay" style="display: none; z-index: 10002;">
+            <div class="modal-window" style="width: 1150px; max-width: 95vw; height: 90vh; max-height: 90vh; display: flex; flex-direction: column;">
+                <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h3 style="margin: 0;">📊 SORT 데이터 기반 운영 리포트</h3>
+                        <span class="report-free-tag" style="background: rgba(63, 185, 80, 0.15); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.4); font-size: 11px; padding: 2px 8px; border-radius: 10px;">실시간 DB 집계</span>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button type="button" id="btn-sort-report-copy" class="btn-gray" style="padding: 5px 12px; font-size: 12px;">📋 리포트 복사</button>
+                        <button type="button" id="btn-sort-report-print" class="btn-gray" style="padding: 5px 12px; font-size: 12px;">🖨️ 인쇄 / PDF</button>
+                        <button type="button" class="btn-close-transparent" onclick="document.getElementById('sort-report-modal').style.display='none'">✕</button>
+                    </div>
+                </div>
+                <div class="modal-body" id="sort-report-modal-body" style="padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 18px;">
+                    <!-- 1. 필터 조건 요약 바 -->
+                    <div id="sort-report-filter-summary" class="sort-report-filter-summary"></div>
+                    
+                    <!-- 2. 6대 KPI 카드 그리드 -->
+                    <div id="sort-report-kpi-grid" class="sort-report-kpi-grid"></div>
+
+                    <!-- 3. 차트 그리드 (월별 추이, 작업유형 점유율) -->
+                    <div class="sort-report-charts-grid">
+                        <div class="sort-report-chart-card">
+                            <h4 id="sort-report-chart1-title" class="sort-report-chart-title">📈 기간별 발생 추이</h4>
+                            <div style="height: 240px; position: relative;">
+                                <canvas id="sort-report-canvas-1"></canvas>
+                            </div>
+                        </div>
+                        <div class="sort-report-chart-card">
+                            <h4 id="sort-report-chart2-title" class="sort-report-chart-title">🍩 작업 구분별 점유율</h4>
+                            <div style="height: 240px; position: relative;">
+                                <canvas id="sort-report-canvas-2"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. 기술 분석 브리핑 마크다운 -->
+                    <div class="sort-report-insight-card">
+                        <h4 style="color: #58a6ff; margin-bottom: 10px; font-size: 15px;">📑 통계 분석 및 권고 브리핑</h4>
+                        <div id="sort-report-markdown" class="report-markdown-body"></div>
+                    </div>
+
+                    <!-- 5. 상위 랭킹 요약 (세부 구분 Top 5 & 담당자 활동 Top 5) -->
+                    <div class="sort-report-ranking-grid">
+                        <div class="sort-report-rank-box">
+                            <h4 style="color: #c9d1d9; margin-bottom: 8px; font-size: 13px;">⚙️ 최다 발생 세부구분 (Top 5)</h4>
+                            <div id="sort-report-rank-details"></div>
+                        </div>
+                        <div class="sort-report-rank-box">
+                            <h4 style="color: #c9d1d9; margin-bottom: 8px; font-size: 13px;">👷 주요 담당 엔지니어 (Top 5)</h4>
+                            <div id="sort-report-rank-workers"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- === [추가] 자바스크립트 렌더링용 HTML 템플릿 모음 === -->
         <template id="sort-multi-select-template">
             <div class="log-select-wrapper full-width sort-wrapper">
@@ -518,6 +580,8 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Chart.js 라이브러리 (리포트 차트 렌더링용) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/sort.js') }}"></script>
 {% endblock %}

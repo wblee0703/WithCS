@@ -1,0 +1,344 @@
+{% extends 'common.html' %}
+{% set active_page = 'report' %}
+
+{% block title %}설비 Working Report 작성 및 관리 - WithTech{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/report.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="report-app-container">
+    <!-- 좌측 컨트롤 사이드바 (인쇄 시 숨김) -->
+    <aside class="report-sidebar no-print">
+        <div class="report-sidebar-header">
+            <h2 class="report-sidebar-title">📋 Working Report 관리</h2>
+            <p class="report-sidebar-desc">사업장 및 장비를 선택하여 실시간으로 보고서를 작성하고 PDF로 출력할 수 있습니다.</p>
+        </div>
+
+        <!-- 1. 장비 및 날짜 선택 섹션 -->
+        <div class="report-control-group">
+            <label class="report-label" for="report-site-input">사업장 (Site)</label>
+            <div class="report-suggest-wrapper" id="report-site-wrapper">
+                <input type="text" id="report-site-input" class="report-suggest-input" placeholder="사업장을 선택하거나 검색..." autocomplete="off">
+                <span class="report-suggest-arrow">▼</span>
+                <div class="report-suggest-dropdown" id="report-site-dropdown"></div>
+            </div>
+            <select id="report-site-select" class="report-select" style="display: none;">
+                <option value="">사업장 선택...</option>
+            </select>
+        </div>
+
+        <div class="report-control-group">
+            <label class="report-label" for="report-equip-input">장비 / 호기 (Equipment)</label>
+            <div class="report-suggest-wrapper" id="report-equip-wrapper">
+                <input type="text" id="report-equip-input" class="report-suggest-input" placeholder="장비를 먼저 선택해주세요" autocomplete="off" disabled>
+                <span class="report-suggest-arrow">▼</span>
+                <div class="report-suggest-dropdown" id="report-equip-dropdown"></div>
+            </div>
+            <select id="report-equip-select" class="report-select" style="display: none;" disabled>
+                <option value="">장비를 먼저 선택해주세요</option>
+            </select>
+        </div>
+
+        <div class="report-control-group">
+            <label class="report-label" for="report-date-input">점검일자 (Date)</label>
+            <input type="date" id="report-date-input" class="report-input">
+        </div>
+
+        <div class="report-control-group">
+            <label class="report-label" for="report-inspector-input">점검자 (Inspector)</label>
+            <div class="report-suggest-wrapper" id="report-inspector-wrapper">
+                <input type="text" id="report-inspector-input" class="report-suggest-input" placeholder="점검자 선택 또는 입력..." autocomplete="off">
+                <span class="report-suggest-arrow">▼</span>
+                <div class="report-suggest-dropdown" id="report-inspector-dropdown"></div>
+            </div>
+        </div>
+
+        <!-- 2. 생성 시 참고할 이전 보고서 선택 (생성 시 파라미터/작성내역 반영용) -->
+        <div class="report-control-group">
+            <label class="report-label" for="report-history-select">
+                <span>참고 보고서 선택 (생성 시 반영)</span>
+                <span id="report-history-count" class="report-count-badge">0건</span>
+            </label>
+            <select id="report-history-select" class="report-select" disabled>
+                <option value="">-- 참고할 이전 보고서 없음 --</option>
+            </select>
+        </div>
+
+        <!-- 3. 주요 액션 버튼들 -->
+        <div class="report-actions-panel">
+            <button type="button" id="btn-create-report" class="report-btn report-btn-create" title="선택된 사업장, 장비, 점검일자, 점검자 정보로 Working Report를 생성합니다.">
+                <span>📄 보고서 생성</span>
+            </button>
+            <button type="button" id="btn-save-report" class="report-btn report-btn-success" title="현재 보고서 내용을 데이터베이스에 저장합니다.">
+                <span>💾 보고서 저장</span>
+            </button>
+            <button type="button" id="btn-print-pdf" class="report-btn report-btn-warning" title="A4 규격으로 PDF 저장 및 인쇄합니다.">
+                <span>🖨️ PDF / 인쇄 출력</span>
+            </button>
+            <div class="report-btn-subgroup">
+                <button type="button" id="btn-new-report" class="report-btn report-btn-secondary" title="빈 양식으로 새로 작성">
+                    <span>➕ 새 양식</span>
+                </button>
+                <button type="button" id="btn-delete-report" class="report-btn report-btn-danger" title="현재 저장된 보고서 삭제">
+                    <span>🗑️ 삭제</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- [요청 반영] 진짜로 저장된 보고서 이력 (파라미터 도구 위쪽 스크롤 박스) -->
+        <div class="report-saved-history-panel">
+            <div class="saved-history-header">
+                <span class="saved-history-title">📂 저장된 보고서 이력</span>
+                <span id="saved-history-badge" class="report-count-badge">0건</span>
+            </div>
+            <div class="saved-history-scroll-box" id="saved-history-scroll-box">
+                <div class="saved-history-empty">장비를 선택하면 저장된 보고서가 표시됩니다.</div>
+            </div>
+        </div>
+
+        <!-- 4. 파라미터 보조 도구 -->
+        <div class="report-param-tools">
+            <div class="report-tools-title">
+                <span>⚙️ 파라미터 도구</span>
+            </div>
+            <button type="button" id="btn-load-data-params" class="report-btn-tool" title="Data 탭에서 해당 장비의 파라미터 점검 측정값을 불러와 상태에 입력합니다.">
+                <span>➕ 파라미터 항목 추가 (Data 점검값)</span>
+            </button>
+            <button type="button" id="btn-add-custom-param" class="report-btn-tool" title="사용자 직접 입력 파라미터 1줄 추가">
+                <span>➕ 직접 항목 1행 추가</span>
+            </button>
+        </div>
+
+        <!-- 안내 메모 -->
+        <div class="report-guide-box">
+            <div class="guide-title">💡 작성 안내</div>
+            <ul class="guide-list">
+                <li>우측 서식의 모든 글자와 셀은 <strong>직접 클릭하여 수정</strong>할 수 있습니다.</li>
+                <li>체크박스([■]/[□])를 <strong>클릭</strong>하면 즉시 상태가 토글됩니다.</li>
+                <li>작성 후 <strong>[💾 보고서 저장]</strong>을 누르면 날짜별로 영구 보관됩니다.</li>
+                <li><strong>[🖨️ PDF / 인쇄 출력]</strong>을 누르면 A4 1장에 딱 맞게 출력됩니다.</li>
+            </ul>
+        </div>
+    </aside>
+
+    <!-- 우측 메인 작업 영역: A4 라이브 리포트 페이퍼 (WYSIWYG) -->
+    <main class="report-canvas-area" id="report-canvas-area">
+        <!-- 초기 빈 상태 안내 카드 (처음에는 report가 없고 생성 버튼을 눌러야 생성됨) -->
+        <div class="report-empty-placeholder" id="report-empty-placeholder">
+            <div class="placeholder-card">
+                <div class="placeholder-icon">📋</div>
+                <h3 class="placeholder-title">Working Report 생성 대기</h3>
+                <p class="placeholder-desc">
+                    좌측에서 <strong>사업장, 장비, 점검일자, 점검자</strong>를 선택하신 후<br>
+                    <strong>[📄 보고서 생성]</strong> 버튼을 클릭하시면 엑셀 규격의 Working Report가 1차로 작성됩니다.
+                </p>
+                <div class="placeholder-steps">
+                    <div class="step-item"><span class="step-badge">1</span> 사업장 &amp; 장비 선택</div>
+                    <div class="step-item"><span class="step-badge">2</span> 점검일자 &amp; 점검자 확인</div>
+                    <div class="step-item"><span class="step-badge">3</span> [📄 보고서 생성] 클릭</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="report-paper-wrapper">
+            <!-- 실제 A4 1페이지 규격 시트 (첨부 엑셀 이미지 1:1 재현) - 초기에는 표시 안 됨 -->
+            <div class="working-report-sheet" id="working-report-sheet" style="display: none;">
+                
+                <!-- 1. 헤더 타이틀 영역 -->
+                <div class="report-sheet-header">
+                    <div class="report-sheet-logo">
+                        <svg class="withtech-logo-icon" viewBox="0 0 100 100" width="30" height="30">
+                            <polygon points="10,25 35,90 50,45 65,90 90,25 75,25 57,70 50,50 43,70 25,25" fill="#e65100"/>
+                        </svg>
+                        <span class="withtech-logo-text">WITHTECH</span>
+                    </div>
+                    <div class="report-sheet-title" id="sheet-title" contenteditable="true" spellcheck="false">
+                        SOMA-2000 Working Report
+                    </div>
+                </div>
+
+                <!-- 2. 기본 정보 헤더 테이블 -->
+                <table class="report-meta-table">
+                    <tbody>
+                        <tr>
+                            <th style="width: 10%;">점검자</th>
+                            <td style="width: 18%;" id="sheet-inspector" contenteditable="true" spellcheck="false">-</td>
+                            <th style="width: 11%;">설치장소</th>
+                            <td style="width: 25%;" id="sheet-location" contenteditable="true" spellcheck="false">-</td>
+                            <th style="width: 8%;">S/N :</th>
+                            <td style="width: 17%;" id="sheet-serial-no" data-id="sheet-serial" contenteditable="true" spellcheck="false">-</td>
+                            <th style="width: 9%;">점검일</th>
+                            <td style="width: 12%;" id="sheet-inspect-date" data-id="sheet-date" contenteditable="true" spellcheck="false">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- 3. 점검 항목 (파라미터) 2열 분할 테이블 -->
+                <div class="report-params-container">
+                    <table class="report-params-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 24%;">점검 항목</th>
+                                <th style="width: 14%;">정상범위</th>
+                                <th style="width: 12%;">상 태</th>
+                                <th style="width: 24%;">점검 항목</th>
+                                <th style="width: 14%;">정상범위</th>
+                                <th style="width: 12%;">상 태</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-params-tbody">
+                            <!-- JS에서 2열 쌍으로 동적 렌더링 (인라인 수정 가능) -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 4. 상태 체크박스 요약 바 -->
+                <table class="report-status-bar-table">
+                    <tbody>
+                        <tr>
+                            <th style="width: 20%;">Data 특이사항 유무</th>
+                            <td style="width: 30%;">
+                                <span class="report-check-item" data-group="data_special" data-val="유">
+                                    유 <span class="check-box" id="chk-data-special-yes">□</span>
+                                </span>
+                                /
+                                <span class="report-check-item" data-group="data_special" data-val="무">
+                                    무 <span class="check-box" id="chk-data-special-no">■</span>
+                                </span>
+                            </td>
+                            <th style="width: 22%;">ICP-MS Tuning</th>
+                            <td style="width: 28%;">
+                                <span class="report-check-item" data-group="icp_tuning" data-val="진행">
+                                    진행 <span class="check-box" id="chk-tuning-yes">■</span>
+                                </span>
+                                /
+                                <span class="report-check-item" data-group="icp_tuning" data-val="미진행">
+                                    미진행 <span class="check-box" id="chk-tuning-no">□</span>
+                                </span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>점검 내용</th>
+                            <td>
+                                <span class="report-check-item" data-group="check_content" data-val="예방">
+                                    예방 <span class="check-box" id="chk-content-prev">□</span>
+                                </span>
+                                /
+                                <span class="report-check-item" data-group="check_content" data-val="이벤트">
+                                    이벤트 <span class="check-box" id="chk-content-event">□</span>
+                                </span>
+                                /
+                                <span class="report-check-item" data-group="check_content" data-val="정기">
+                                    정기 <span class="check-box" id="chk-content-reg">■</span>
+                                </span>
+                            </td>
+                            <th>점검 및 조치 결과 총평</th>
+                            <td>
+                                <span class="report-check-item" data-group="eval_result" data-val="양호">
+                                    양호 <span class="check-box" id="chk-eval-good">■</span>
+                                </span>
+                                /
+                                <span class="report-check-item" data-group="eval_result" data-val="관리 필요">
+                                    관리 필요 <span class="check-box" id="chk-eval-need">□</span>
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- 5. 본문 1: 관리 이력 (단독 전폭 영역 - 우측 감도 칸 삭제) -->
+                <div class="report-body-section-1">
+                    <div class="report-history-block full-width-history">
+                        <div class="report-section-heading">
+                            <span id="sheet-history-title" contenteditable="true" spellcheck="false">1. 관리 이력</span>
+                        </div>
+                        <div class="report-editable-area" id="sheet-history-content" contenteditable="true" spellcheck="false">
+                            -. 정기 점검 수행 (특이사항 없음)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. 본문 2: 점검 전/후 설비 구동상태 확인 -->
+                <div class="report-body-section-2">
+                    <div class="report-section-heading">
+                        2. 점검 전/후, 설비 구동상태 확인
+                    </div>
+                    <div class="report-editable-area min-h-small" id="sheet-drive-status" contenteditable="true" spellcheck="false">
+                        -. 특이 사항 없음
+                    </div>
+                </div>
+
+                <!-- 7. 하단 3대 업무 블록 (교체 물품, 다음 예정 업무, 담당자 협의사항) -->
+                <div class="report-body-section-3">
+                    <div class="report-grid-half">
+                        <!-- 교체 물품 -->
+                        <div class="report-card-block">
+                            <div class="report-block-title">교체 물품</div>
+                            <div class="report-editable-area block-content" id="sheet-replaced-parts" contenteditable="true" spellcheck="false">
+                                &gt;. STD 용액<br>
+                                &gt;. Sampler&amp;Skimmer Cone, Ion Lens
+                            </div>
+                        </div>
+
+                        <!-- 담당자 협의사항 -->
+                        <div class="report-card-block" style="margin-top: 6px;">
+                            <div class="report-block-title">담당자 협의사항</div>
+                            <div class="report-editable-area block-content" id="sheet-agreed-matters" contenteditable="true" spellcheck="false">
+                                &gt;. HF Sensor 검교정 &amp; Interlock Test 매년 고객사 협의후 진행일 조율
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 우측: 다음 예정 업무 및 주의사항 -->
+                    <div class="report-grid-half">
+                        <div class="report-card-block h-full">
+                            <div class="report-block-title">다음 예정 업무 및 주의사항</div>
+                            <div class="report-editable-area block-content" id="sheet-next-plans" contenteditable="true" spellcheck="false">
+                                &gt;. HF Sensor 검교정 (<span style="color:#d32f2f;">매년 진행</span>)<br>
+                                &gt;. Interlock Test (<span style="color:#d32f2f;">매년 진행</span>)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. 특이 사항 (배수펌프 관련 표 삭제 반영 - 전폭 텍스트 영역) -->
+                <div class="report-body-section-4">
+                    <div class="report-block-title full-width-title">특이 사항</div>
+                    <div class="report-special-body">
+                        <div class="special-text-row full-special-text" id="sheet-special-text" contenteditable="true" spellcheck="false">
+                            &gt;. 특이사항 없음
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- DB 마스터 파라미터 선택 모달 (인쇄 시 숨김) -->
+<div id="modal-db-params" class="report-modal-backdrop no-print" style="display: none;">
+    <div class="report-modal-card">
+        <div class="report-modal-header">
+            <h3>⚙️ DB 모델 Parameter 항목 추가</h3>
+            <button type="button" class="report-modal-close" onclick="closeReportParamModal()">&times;</button>
+        </div>
+        <div class="report-modal-body">
+            <p class="modal-desc">해당 장비 모델의 마스터 Parameter 목록 중 리포트에 추가할 항목을 선택하세요.</p>
+            <div id="modal-param-list" class="modal-param-list">
+                <!-- 동적 체크박스 목록 -->
+            </div>
+        </div>
+        <div class="report-modal-footer">
+            <button type="button" class="report-btn report-btn-secondary" onclick="closeReportParamModal()">취소</button>
+            <button type="button" class="report-btn report-btn-primary" onclick="applySelectedDbParams()">선택 항목 리포트에 추가</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('SettingDAO', filename='JavaScript/report.js') }}"></script>
+{% endblock %}

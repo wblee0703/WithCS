@@ -218,6 +218,10 @@ window.fetch = async function (...args) {
             try {
                 const data = await clonedResponse.json();
                 if (data.status === 'fail' && data.message && data.message.includes('보안 세션이 만료되었거나')) {
+                    // 로그인 시도 중이거나 시스템 로그 기록 중에는 강제 세션 초기화 방지
+                    if (url.includes('/api/login') || url.includes('/api/log/add')) {
+                        return response;
+                    }
                     if (!isSessionExpiredAlertShown) {
                         isSessionExpiredAlertShown = true;
                         alert(data.message);
@@ -719,11 +723,21 @@ function isValidPassword(pw) {
     return regex.test(pw);
 }
 
-// [보안] 쿠키에서 CSRF 토큰 가져오기
+// [보안] 쿠키에서 CSRF 토큰 가져오기 (메타 태그 fallback 포함)
 function getCookie(name) {
     let value = "; " + document.cookie;
     let parts = value.split("; " + name + "=");
-    if (parts.length === 2) return parts.pop().split(";").shift();
+    if (parts.length === 2) {
+        const val = parts.pop().split(";").shift();
+        if (val) return decodeURIComponent(val);
+    }
+    if (name === 'csrf_token') {
+        const metaTag = document.querySelector('meta[name="csrf-token"]');
+        if (metaTag && metaTag.getAttribute('content')) {
+            return metaTag.getAttribute('content');
+        }
+    }
+    return '';
 }
 
 function saveData() {
@@ -2527,6 +2541,14 @@ function attemptLogin(id, pw, context) {
         .then(res => res.json())
         .then(data => {
             if (data.status === 'success') {
+                isSessionExpiredAlertShown = false; // [추가] 로그인 성공 시 세션 만료 플래그 초기화
+                if (data.csrf_token) {
+                    // [추가] 서버에서 발급한 새 CSRF 토큰을 쿠키 및 메타 태그에 즉시 동기화
+                    document.cookie = `csrf_token=${encodeURIComponent(data.csrf_token)}; path=/; samesite=Lax`;
+                    const meta = document.querySelector('meta[name="csrf-token"]');
+                    if (meta) meta.setAttribute('content', data.csrf_token);
+                }
+
                 sessionStorage.setItem('isLoggedIn', 'true');
                 sessionStorage.setItem('userId', id);
                 sessionStorage.setItem('userRole', data.role);
@@ -2536,6 +2558,9 @@ function attemptLogin(id, pw, context) {
                 sessionStorage.setItem('userPosition', data.position || '');
                 sessionStorage.setItem('userName', data.name || '');
                 addSystemLog('LOGIN', id, `로그인 성공 (${context})`);
+
+                const loginModal = document.getElementById('login-modal');
+                if (loginModal) loginModal.style.display = 'none'; // [추가] 모달 숨김
 
                 if (data.require_pw_change) {
                     window.hideLoading(true);

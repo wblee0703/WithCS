@@ -1381,6 +1381,28 @@ function setupSortEvents() {
             toggleBtn.textContent = isHidden ? '접기' : '펼치기';
         });
     }
+
+    // [추가] SORT 결과 기반 Report 출력 버튼 이벤트
+    const reportBtn = document.getElementById('btn-sort-report');
+    if (reportBtn) {
+        reportBtn.addEventListener('click', () => {
+            openSortReportModal();
+        });
+    }
+
+    const reportCopyBtn = document.getElementById('btn-sort-report-copy');
+    if (reportCopyBtn) {
+        reportCopyBtn.addEventListener('click', () => {
+            copySortReportText();
+        });
+    }
+
+    const reportPrintBtn = document.getElementById('btn-sort-report-print');
+    if (reportPrintBtn) {
+        reportPrintBtn.addEventListener('click', () => {
+            window.print();
+        });
+    }
 }
 
 // [4.2] 핵심 검색 로직: 선택된 필터 조건들을 매칭하여 결과 도출
@@ -1878,6 +1900,18 @@ function executeSortSearch() {
 // [5.1] 검색 결과 리스트 렌더링 준비 (결과 내 텍스트 검색창 생성 및 내보내기 버튼 제어)
 function renderSortList(results) {
     window.currentSortResults = results;
+
+    // [추가] SORT 검색 결과 기반 Report 출력 버튼 활성화/비활성화
+    const reportBtn = document.getElementById('btn-sort-report');
+    if (reportBtn) {
+        if (results && results.length > 0) {
+            reportBtn.style.display = 'block';
+            reportBtn.disabled = false;
+        } else {
+            reportBtn.style.display = 'none';
+            reportBtn.disabled = true;
+        }
+    }
 
     const countBadge = document.getElementById('sort-result-count');
 
@@ -3908,3 +3942,345 @@ window.refreshSortPage = function () {
         console.error('refreshSortPage error:', refreshErr);
     }
 };
+
+/* ==============================================================================
+   [추가] SORT 검색 데이터 기반 Report 모달 생성 및 렌더링 로직 (100% 무료 로컬 DB 연산)
+   ============================================================================== */
+let sortReportChart1Instance = null;
+let sortReportChart2Instance = null;
+let currentSortReportMarkdown = '';
+
+function openSortReportModal() {
+    const results = window.currentSortResults || [];
+    if (!results || results.length === 0) {
+        alert('출력할 검색 결과 데이터가 없습니다. 먼저 "검색 및 정렬"을 실행해주세요.');
+        return;
+    }
+
+    const modal = document.getElementById('sort-report-modal');
+    if (!modal) return;
+
+    // 1. 필터 조건 요약 바 렌더링
+    renderSortReportFilterSummary();
+
+    // 2. 통계 집계
+    const totalCount = results.length;
+    const typeCounts = {};
+    const modelCounts = {};
+    const siteCounts = {};
+    const detailCounts = {};
+    const workerCounts = {};
+    const monthlyCounts = {};
+    let totalMd = 0.0;
+    let costPaidCount = 0;
+
+    results.forEach(r => {
+        // 작업 구분
+        const t = r.type || '기타';
+        typeCounts[t] = (typeCounts[t] || 0) + 1;
+
+        // 모델
+        const m = r.model || '기타';
+        modelCounts[m] = (modelCounts[m] || 0) + 1;
+
+        // 사업장
+        const s = r.site || '기타';
+        siteCounts[s] = (siteCounts[s] || 0) + 1;
+
+        // 세부구분
+        const d = r.detail_type || r.detail_type2 || r.detailType || '일반';
+        detailCounts[d] = (detailCounts[d] || 0) + 1;
+
+        // 작업자
+        const w = (r.worker || '').trim();
+        if (w) {
+            w.split(/[,/&+\s]+/).forEach(singleW => {
+                const sw = singleW.trim();
+                if (sw.length >= 2) {
+                    workerCounts[sw] = (workerCounts[sw] || 0) + 1;
+                }
+            });
+        }
+
+        // 공수
+        if (r.md) {
+            const mdVal = parseFloat(r.md);
+            if (!isNaN(mdVal)) totalMd += mdVal;
+        }
+
+        // 비용
+        if (r.costType && r.costType.includes('유상')) {
+            costPaidCount++;
+        }
+
+        // 기간(월) 집계
+        const dStr = (r.date || '').trim();
+        const mMatch = dStr.match(/(\d{4})[-./](\d{1,2})/);
+        if (mMatch) {
+            const ym = `${mMatch[1]}-${String(mMatch[2]).padStart(2, '0')}`;
+            if (!monthlyCounts[ym]) monthlyCounts[ym] = { total: 0, irregular: 0 };
+            monthlyCounts[ym].total++;
+            if (r.type === '비정기') monthlyCounts[ym].irregular++;
+        }
+    });
+
+    const irregularCnt = typeCounts['비정기'] || 0;
+    const regularCnt = typeCounts['정기'] || 0;
+    const irregularRatio = totalCount > 0 ? ((irregularCnt / totalCount) * 100).toFixed(1) + '%' : '0%';
+
+    const topModel = Object.keys(modelCounts).length > 0 ? Object.entries(modelCounts).sort((a,b)=>b[1]-a[1])[0] : ['-', 0];
+    const topDetail = Object.keys(detailCounts).length > 0 ? Object.entries(detailCounts).sort((a,b)=>b[1]-a[1])[0] : ['일반', 0];
+
+    // 3. 6대 KPI 카드 렌더링
+    const kpiGrid = document.getElementById('sort-report-kpi-grid');
+    if (kpiGrid) {
+        kpiGrid.innerHTML = `
+            <div class="sort-report-kpi-card kpi-blue">
+                <div class="sort-report-kpi-label">검색 총 이력</div>
+                <div class="sort-report-kpi-value">${totalCount}건</div>
+                <div class="sort-report-kpi-desc">필터 조건 매칭</div>
+            </div>
+            <div class="sort-report-kpi-card kpi-orange">
+                <div class="sort-report-kpi-label">비정기 / 트러블</div>
+                <div class="sort-report-kpi-value">${irregularRatio}</div>
+                <div class="sort-report-kpi-desc">비정기 ${irregularCnt}건 / 정기 ${regularCnt}건</div>
+            </div>
+            <div class="sort-report-kpi-card kpi-purple">
+                <div class="sort-report-kpi-label">최다 발생 모델</div>
+                <div class="sort-report-kpi-value">${escapeHtml(topModel[0])}</div>
+                <div class="sort-report-kpi-desc">총 ${topModel[1]}건 집중</div>
+            </div>
+            <div class="sort-report-kpi-card kpi-green">
+                <div class="sort-report-kpi-label">투입 엔지니어</div>
+                <div class="sort-report-kpi-value">${Object.keys(workerCounts).length}명</div>
+                <div class="sort-report-kpi-desc">누적 ${totalMd.toFixed(1)} MD 투입</div>
+            </div>
+            <div class="sort-report-kpi-card kpi-blue">
+                <div class="sort-report-kpi-label">최빈 세부 작업</div>
+                <div class="sort-report-kpi-value">${escapeHtml(topDetail[0].slice(0, 10))}</div>
+                <div class="sort-report-kpi-desc">빈도 ${topDetail[1]}건 기록</div>
+            </div>
+            <div class="sort-report-kpi-card kpi-purple">
+                <div class="sort-report-kpi-label">비용 유상 점유</div>
+                <div class="sort-report-kpi-value">${totalCount > 0 ? ((costPaidCount/totalCount)*100).toFixed(1) : 0}%</div>
+                <div class="sort-report-kpi-desc">유상 처리 ${costPaidCount}건</div>
+            </div>
+        `;
+    }
+
+    // 4. Chart.js 차트 렌더링
+    renderSortReportCharts(monthlyCounts, typeCounts);
+
+    // 5. 브리핑 마크다운 생성 & 렌더링
+    const markdown = generateSortReportMarkdown(totalCount, irregularCnt, regularCnt, irregularRatio, topModel, topDetail, workerCounts, totalMd, costPaidCount);
+    currentSortReportMarkdown = markdown;
+    const mdEl = document.getElementById('sort-report-markdown');
+    if (mdEl) {
+        mdEl.innerHTML = parseSortMarkdownToHtml(markdown);
+    }
+
+    // 6. 상위 랭킹 렌더링
+    renderSortReportRankings(detailCounts, workerCounts, totalCount);
+
+    // 모달 표시
+    modal.style.display = 'flex';
+}
+
+function renderSortReportFilterSummary() {
+    const container = document.getElementById('sort-report-filter-summary');
+    if (!container) return;
+
+    const periodType = document.getElementById('sort-period-type') ? document.getElementById('sort-period-type').value : '';
+    let periodText = '전체 기간';
+    if (periodType === 'month') {
+        const mVal = document.getElementById('sort-month-input') ? document.getElementById('sort-month-input').value : '';
+        if (mVal) periodText = `${mVal} (월간)`;
+    } else if (periodType === 'year') {
+        const yVal = document.getElementById('sort-year-input') ? document.getElementById('sort-year-input').value : '';
+        if (yVal) periodText = `${yVal}년 (연간)`;
+    } else if (periodType === 'custom') {
+        const sVal = document.getElementById('sort-start-date') ? document.getElementById('sort-start-date').value : '';
+        const eVal = document.getElementById('sort-end-date') ? document.getElementById('sort-end-date').value : '';
+        if (sVal || eVal) periodText = `${sVal || '~'} ~ ${eVal || '~'}`;
+    }
+
+    const sites = getMultiValues('sort-site-select');
+    const models = getMultiValues('sort-model-select');
+    const kwInput = document.getElementById('sort-keyword');
+    const kw = kwInput ? kwInput.value.trim() : '';
+
+    container.innerHTML = `
+        <span class="sort-report-filter-tag">📅 기간: <strong>${escapeHtml(periodText)}</strong></span>
+        <span class="sort-report-filter-tag">🏢 사업장: <strong>${sites.length > 0 ? escapeHtml(sites.join(', ')) : '전체 사업장'}</strong></span>
+        <span class="sort-report-filter-tag">⚙️ 모델: <strong>${models.length > 0 ? escapeHtml(models.join(', ')) : '전체 모델'}</strong></span>
+        ${kw ? `<span class="sort-report-filter-tag">🔍 검색어: <strong>${escapeHtml(kw)}</strong></span>` : ''}
+        <span class="sort-report-filter-tag" style="margin-left: auto;">총 <strong>${(window.currentSortResults || []).length}건</strong> 추출</span>
+    `;
+}
+
+function renderSortReportCharts(monthlyCounts, typeCounts) {
+    if (typeof Chart === 'undefined') return;
+
+    Chart.defaults.color = '#8b949e';
+    Chart.defaults.borderColor = '#21262d';
+
+    // 1. 기간별 추이 차트
+    const canvas1 = document.getElementById('sort-report-canvas-1');
+    if (canvas1) {
+        if (sortReportChart1Instance) sortReportChart1Instance.destroy();
+
+        const sortedYm = Object.keys(monthlyCounts).sort().slice(-8);
+        const ctx1 = canvas1.getContext('2d');
+        sortReportChart1Instance = new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: sortedYm,
+                datasets: [
+                    {
+                        label: '전체 작업',
+                        data: sortedYm.map(ym => monthlyCounts[ym].total),
+                        backgroundColor: 'rgba(88, 166, 255, 0.75)',
+                        borderColor: '#58a6ff',
+                        borderWidth: 1.5,
+                        borderRadius: 4
+                    },
+                    {
+                        label: '비정기 트러블',
+                        data: sortedYm.map(ym => monthlyCounts[ym].irregular),
+                        backgroundColor: 'rgba(248, 81, 73, 0.85)',
+                        borderColor: '#f85149',
+                        borderWidth: 1.5,
+                        borderRadius: 4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'top', labels: { color: '#c9d1d9', font: { size: 10 }, boxWidth: 10 } }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0, color: '#8b949e' }, grid: { color: 'rgba(48, 54, 61, 0.5)' } },
+                    x: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { display: false } }
+                }
+            }
+        });
+    }
+
+    // 2. 작업 유형별 점유율 도넛 차트
+    const canvas2 = document.getElementById('sort-report-canvas-2');
+    if (canvas2) {
+        if (sortReportChart2Instance) sortReportChart2Instance.destroy();
+
+        const sortedTypes = Object.entries(typeCounts).sort((a,b)=>b[1]-a[1]);
+        const modernColors = ['#58a6ff', '#3fb950', '#bc8cff', '#f0883e', '#f85149', '#d29922'];
+        const ctx2 = canvas2.getContext('2d');
+        sortReportChart2Instance = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: sortedTypes.map(x => x[0]),
+                datasets: [{
+                    data: sortedTypes.map(x => x[1]),
+                    backgroundColor: modernColors.slice(0, sortedTypes.length),
+                    borderColor: '#161b22',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right', labels: { color: '#c9d1d9', font: { size: 10 }, boxWidth: 10, padding: 6 } }
+                },
+                cutout: '60%'
+            }
+        });
+    }
+}
+
+function generateSortReportMarkdown(total, irregular, regular, irregularRatio, topModel, topDetail, workerCounts, totalMd, costPaid) {
+    return `## 📊 1. SORT 검색 데이터 운영 현황 진단
+- **추출 이력 규모**: 현재 설정된 필터 조건에 부합하는 총 **${total}건**의 유지관리/트러블 데이터가 집계되었습니다.
+- **작업 유형 비중**: 비정기 트러블은 **${irregular}건(${irregularRatio})**, 정기 점검은 **${regular}건(${total > 0 ? ((regular/total)*100).toFixed(1) : 0}%)**으로 분석되었습니다.
+- **최다 빈도 설비군**: **${escapeHtml(topModel[0])}** 모델에서 총 **${topModel[1]}건**의 작업이 발생하여 설비군 중 가장 높은 비중을 차지하고 있습니다.
+
+## 🔍 2. 세부 원인 패턴 및 인력 운용 분석
+- **최빈 세부 작업/원인**: **[${escapeHtml(topDetail[0])}]** 관련 항목이 총 **${topDetail[1]}건** 기록되어 주요 점검 관리 대상으로 확인되었습니다.
+- **투입 공수 및 인력**: 총 **${Object.keys(workerCounts).length}명**의 엔지니어가 투입되었으며, 누적 공수는 약 **${totalMd.toFixed(1)} MD**입니다.
+- **비용 처리 구분**: 유상 조치 건수는 총 **${costPaid}건(${total > 0 ? ((costPaid/total)*100).toFixed(1) : 0}%)**으로 집계되었습니다.
+
+## 📋 3. 현장 예방 보전 및 권고사항
+- **주요 설비 집중 점검**: 작업 빈도가 높은 **${escapeHtml(topModel[0])}** 설비의 **[${escapeHtml(topDetail[0])}]** 계통에 대해 정기 PM 시 사전 전수 점검을 수행하십시오.
+- **자재 및 안전재고 관리**: 빈번하게 교체 또는 조치된 세부 계통의 핵심 파트 재고를 사전에 확보하여 설비 다운타임을 최소화하시기 바랍니다.
+`;
+}
+
+function renderSortReportRankings(detailCounts, workerCounts, totalCount) {
+    const detailEl = document.getElementById('sort-report-rank-details');
+    if (detailEl) {
+        const sortedD = Object.entries(detailCounts).sort((a,b)=>b[1]-a[1]).slice(0, 5);
+        if (sortedD.length === 0) {
+            detailEl.innerHTML = '<div style="color:#8b949e; font-size:12px; padding:10px;">데이터 없음</div>';
+        } else {
+            detailEl.innerHTML = sortedD.map(([name, cnt], idx) => `
+                <div class="sort-report-rank-item">
+                    <div>
+                        <span class="sort-report-rank-badge rank-${idx+1}">${idx+1}</span>
+                        <strong>${escapeHtml(name)}</strong>
+                    </div>
+                    <div>
+                        <span style="color: #58a6ff; font-weight:600;">${cnt}건</span>
+                        <span style="color: #8b949e; font-size:11px; margin-left:4px;">(${totalCount > 0 ? ((cnt/totalCount)*100).toFixed(1) : 0}%)</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+
+    const workerEl = document.getElementById('sort-report-rank-workers');
+    if (workerEl) {
+        const sortedW = Object.entries(workerCounts).sort((a,b)=>b[1]-a[1]).slice(0, 5);
+        if (sortedW.length === 0) {
+            workerEl.innerHTML = '<div style="color:#8b949e; font-size:12px; padding:10px;">데이터 없음</div>';
+        } else {
+            workerEl.innerHTML = sortedW.map(([name, cnt], idx) => `
+                <div class="sort-report-rank-item">
+                    <div>
+                        <span class="sort-report-rank-badge rank-${idx+1}">${idx+1}</span>
+                        <strong>${escapeHtml(name)}</strong>
+                    </div>
+                    <div>
+                        <span style="color: #3fb950; font-weight:600;">${cnt}건</span>
+                        <span style="color: #8b949e; font-size:11px; margin-left:4px;">(${totalCount > 0 ? ((cnt/totalCount)*100).toFixed(1) : 0}%)</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+}
+
+function parseSortMarkdownToHtml(md) {
+    if (!md) return '';
+    let out = md;
+    out = out.replace(/^### (.*$)/gim, '<h4 style="color:#f0f6fc; margin:10px 0 6px;">$1</h4>');
+    out = out.replace(/^## (.*$)/gim, '<h3 style="color:#58a6ff; margin:14px 0 8px; font-size:14px; border-bottom:1px solid #30363d; padding-bottom:4px;">$1</h3>');
+    out = out.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    out = out.replace(/^\s*[\-\*]\s+(.*$)/gim, '<li>$1</li>');
+    out = out.replace(/(<li>.*<\/li>)/gms, '<ul style="margin:4px 0 10px; padding-left:20px;">$1</ul>');
+    out = out.replace(/<\/ul>\s*<ul[^>]*>/g, '');
+    return out;
+}
+
+function copySortReportText() {
+    if (!currentSortReportMarkdown) {
+        alert('복사할 리포트 내용이 없습니다.');
+        return;
+    }
+    const textToCopy = `[SORT 데이터 기반 설비 운영 리포트]\n생성시각: ${new Date().toLocaleString()}\n\n` + currentSortReportMarkdown;
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        alert('SORT 리포트 내용이 클립보드에 복사되었습니다.');
+    }).catch(err => {
+        alert('클립보드 복사 실패: ' + err);
+    });
+}

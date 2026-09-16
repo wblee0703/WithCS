@@ -40,6 +40,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. 검색 및 필터 이벤트 리스너 설정
     setupDataEventListeners();
+
+    // 페이지 이탈 시 대기 중인 DB 저장 즉시 플러시
+    window.addEventListener('beforeunload', () => {
+        if (dbSaveTimer) {
+            clearTimeout(dbSaveTimer);
+            saveCurrentSheetData(false, false, true);
+        }
+    });
+    window.addEventListener('pagehide', () => {
+        if (dbSaveTimer) {
+            clearTimeout(dbSaveTimer);
+            saveCurrentSheetData(false, false, true);
+        }
+    });
 });
 
 /**
@@ -557,7 +571,7 @@ function initDefaultSheet() {
 /**
  * 시트 데이터 저장 (LocalStorage + DB 비동기 동기화)
  */
-function saveCurrentSheetData(showIndicator = true, resetTable = false) {
+function saveCurrentSheetData(showIndicator = true, resetTable = false, immediate = false) {
     if (!currentSelectedSite || !currentSelectedEquip) return;
 
     const mode = currentDataMode || 'raw';
@@ -569,9 +583,9 @@ function saveCurrentSheetData(showIndicator = true, resetTable = false) {
         indicator.innerHTML = '<span class="save-dot saving"></span> DB 저장 중...';
     }
 
-    // 디바운스(400ms)로 빠른 타이핑 중 잦은 쿼리 방지 (resetTable인 경우 즉시 전송)
+    // 디바운스로 빠른 타이핑 중 잦은 쿼리 방지 (resetTable 또는 immediate인 경우 즉시 전송)
     clearTimeout(dbSaveTimer);
-    const delay = resetTable ? 0 : 400;
+    const delay = (resetTable || immediate) ? 0 : 350;
     dbSaveTimer = setTimeout(async () => {
         try {
             const res = await fetch('/api/datasheet/save', {
@@ -876,8 +890,10 @@ function renderParamView() {
                 </td>
                 <td>
                     <input type="text" class="data-param-input data-param-measured-val" value="${escapeHtml(measuredVal)}" 
+                           data-row-id="${row.id}"
                            placeholder="${unitVal === '유무' ? '측정값 (예: 무)' : '측정값 (예: 99.8)'}" 
-                           onchange="handleParamMeasuredChange('${row.id}', this.value)">
+                           onchange="handleParamMeasuredChange('${row.id}', this.value)"
+                           onkeydown="handleParamMeasuredKeydown(event, '${row.id}', this)">
                 </td>
                 <td>
                     <!-- 1. 유무 전용: 적합 / 부적합 선택 드롭다운 -->
@@ -1591,9 +1607,52 @@ function handleParamSpecValChange(rowId, currentOp, inputVal, selectEl, inputEl)
 }
 
 /**
+ * [요청 반영] 측정값 입력창에서 Enter 키 입력 시 적용 및 다음 행(아래칸) 측정값으로 포커스 이동
+ */
+function handleParamMeasuredKeydown(e, rowId, input) {
+    if (e.key === 'Enter' || e.key === 'ArrowDown') {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            // 현재 입력값 즉시 적용 및 DB 즉시 저장
+            handleParamMeasuredChange(rowId, input.value, true);
+        }
+
+        // 아래 행(다음 행)의 측정값 입력창 탐색
+        const currentTr = input.closest('tr');
+        if (currentTr) {
+            const nextTr = currentTr.nextElementSibling;
+            if (nextTr) {
+                const nextInput = nextTr.querySelector('.data-param-measured-val');
+                if (nextInput) {
+                    if (e.key === 'ArrowDown') e.preventDefault();
+                    nextInput.focus();
+                    nextInput.select();
+                }
+            } else if (e.key === 'Enter') {
+                input.blur();
+            }
+        }
+    } else if (e.key === 'ArrowUp') {
+        // 위 행(이전 행) 측정값 입력창으로 포커스 이동
+        const currentTr = input.closest('tr');
+        if (currentTr) {
+            const prevTr = currentTr.previousElementSibling;
+            if (prevTr) {
+                const prevInput = prevTr.querySelector('.data-param-measured-val');
+                if (prevInput) {
+                    e.preventDefault();
+                    prevInput.focus();
+                    prevInput.select();
+                }
+            }
+        }
+    }
+}
+
+/**
  * 측정값 입력 변경 처리 (단위 자동 부착 및 자동 판정 트리거)
  */
-function handleParamMeasuredChange(rowId, value) {
+function handleParamMeasuredChange(rowId, value, immediateSave = false) {
     if (!currentSheetData || !currentSheetData.rows) return;
     const row = currentSheetData.rows.find(r => r.id === rowId);
     const unit = row && row.values ? (row.values['단위'] || '') : '';
@@ -1604,24 +1663,24 @@ function handleParamMeasuredChange(rowId, value) {
         const tr = document.querySelector(`tr[data-row-id="${rowId}"]`);
         if (tr) {
             const mInput = tr.querySelector('.data-param-measured-val');
-            if (mInput) mInput.value = finalVal;
+            if (mInput && mInput.value !== finalVal) mInput.value = finalVal;
         }
     }
 
-    updateParamCell(rowId, '측정값', finalVal);
+    updateParamCell(rowId, '측정값', finalVal, immediateSave);
     autoEvaluateRowResult(rowId);
 }
 
 /**
  * 파라미터 특정 셀 값 갱신
  */
-function updateParamCell(rowId, field, value) {
+function updateParamCell(rowId, field, value, immediateSave = false) {
     if (!currentSheetData || !currentSheetData.rows) return;
     const row = currentSheetData.rows.find(r => r.id === rowId);
     if (row) {
         if (!row.values) row.values = {};
         row.values[field] = value;
-        saveCurrentSheetData(false);
+        saveCurrentSheetData(!immediateSave, false, immediateSave);
     }
 }
 
@@ -1822,6 +1881,7 @@ async function handleImportModelParams() {
         const data = await res.json();
         if (data.status === 'success' && data.value && typeof data.value === 'object') {
             modelParamsMap = data.value;
+            // [수정] 서버에서 불러온 순서(등록된 순서) 그대로 보존 (임의 재정렬 방지)
             localStorage.setItem('equip_model_parameters', JSON.stringify(modelParamsMap));
         }
     } catch (err) {

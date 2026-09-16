@@ -1,0 +1,1159 @@
+/* ==============================================================================
+   Equipment Working Report Stylesheet (report.css)
+   첨부 엑셀 이미지 서식 1:1 완벽 재현 & 실시간 WYSIWYG 편집 & A4 인쇄(@media print) 지원
+   ============================================================================== */
+
+:root {
+    --side-bg: #0d1117;
+    --side-card-bg: #161b22;
+    --side-border: #30363d;
+    --side-text: #c9d1d9;
+    --side-muted: #8b949e;
+    --side-accent: #58a6ff;
+    --sheet-border-color: #000000;
+    --sheet-grid-dotted: #666666;
+    --sheet-th-bg: #f2f2f2;
+}
+
+/* 1. 전체 앱 레이아웃 (사이드바 + 캔버스) */
+.report-app-container {
+    display: flex;
+    height: calc(100vh - 100px);
+    height: calc(100dvh - 100px);
+    background-color: #0d1117;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 2. 좌측 컨트롤 사이드바 */
+.report-sidebar {
+    width: 320px;
+    min-width: 300px;
+    background-color: var(--side-card-bg);
+    border-right: 1px solid var(--side-border);
+    padding: 18px 16px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+    color: var(--side-text);
+    z-index: 20;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.35);
+}
+
+.report-sidebar-header {
+    border-bottom: 1px solid var(--side-border);
+    padding-bottom: 12px;
+}
+
+.report-sidebar-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #f0f6fc;
+    margin: 0 0 6px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.report-sidebar-desc {
+    font-size: 0.8rem;
+    color: var(--side-muted);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.report-control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.report-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #e6edf3;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.report-count-badge {
+    font-size: 0.72rem;
+    color: var(--side-accent);
+    background: rgba(56, 139, 253, 0.15);
+    padding: 1px 6px;
+    border-radius: 10px;
+}
+
+.report-select,
+.report-input {
+    width: 100%;
+    background-color: #0d1117;
+    border: 1px solid var(--side-border);
+    color: #f0f6fc;
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+}
+
+.report-select:focus,
+.report-input:focus {
+    border-color: var(--side-accent);
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+}
+
+.report-select:disabled,
+.report-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 2-1. 사이드바 제안박스 (Custom Searchable Suggestion Dropdown) */
+.report-suggest-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.report-suggest-input {
+    width: 100%;
+    background-color: #0d1117;
+    border: 1px solid var(--side-border);
+    color: #f0f6fc;
+    border-radius: 6px;
+    padding: 7px 28px 7px 10px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.report-suggest-input:focus {
+    border-color: var(--side-accent);
+    box-shadow: 0 0 0 3px rgba(88, 166, 255, 0.2);
+    cursor: text;
+}
+
+.report-suggest-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.report-suggest-arrow {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none;
+    color: var(--side-muted);
+    font-size: 10px;
+    transition: transform 0.2s;
+}
+
+.report-suggest-wrapper.open .report-suggest-arrow {
+    transform: translateY(-50%) rotate(180deg);
+    color: var(--side-accent);
+}
+
+.report-suggest-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: 100%;
+    max-height: 260px;
+    overflow-y: auto;
+    background: #161b22;
+    border: 1px solid var(--side-border);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    display: none;
+    padding: 4px 0;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+}
+
+.report-suggest-wrapper.open .report-suggest-dropdown {
+    display: block;
+}
+
+.report-suggest-item {
+    padding: 8px 12px;
+    font-size: 0.82rem;
+    color: #c9d1d9;
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.report-suggest-item:hover,
+.report-suggest-item.highlighted {
+    background-color: #1f6feb;
+    color: #ffffff;
+}
+
+.report-suggest-item.selected {
+    color: #58a6ff;
+    font-weight: 700;
+}
+
+.report-suggest-empty {
+    padding: 12px;
+    font-size: 0.8rem;
+    color: var(--side-muted);
+    text-align: center;
+}
+
+/* 버튼 패널 */
+.report-actions-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--side-border);
+}
+
+.report-btn {
+    width: 100%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.report-btn-create {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: #ffffff;
+    border: 1px solid #3b82f6;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+    font-size: 0.9rem;
+    padding: 10px 14px;
+}
+.report-btn-create:hover {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.5);
+    transform: translateY(-1px);
+}
+.report-btn-create:active {
+    transform: translateY(0);
+}
+
+.report-btn-primary {
+    background-color: #1f6feb;
+    color: #ffffff;
+    border-color: #388bfd;
+}
+.report-btn-primary:hover {
+    background-color: #388bfd;
+}
+
+.report-btn-success {
+    background-color: #238636;
+    color: #ffffff;
+    border-color: #2ea043;
+}
+.report-btn-success:hover {
+    background-color: #2ea043;
+}
+
+.report-btn-warning {
+    background-color: #9e6a03;
+    color: #ffffff;
+    border-color: #d29922;
+}
+.report-btn-warning:hover {
+    background-color: #bb8009;
+}
+
+.report-btn-subgroup {
+    display: flex;
+    gap: 6px;
+}
+
+.report-btn-secondary {
+    background-color: #21262d;
+    color: #c9d1d9;
+    border-color: #30363d;
+    flex: 1;
+}
+.report-btn-secondary:hover {
+    background-color: #30363d;
+    color: #f0f6fc;
+}
+
+.report-btn-danger {
+    background-color: #21262d;
+    color: #f85149;
+    border-color: #30363d;
+    width: 70px;
+}
+.report-btn-danger:hover {
+    background-color: rgba(248, 81, 73, 0.15);
+    border-color: #f85149;
+}
+
+/* [요청 반영] 진짜로 저장된 보고서 이력 스크롤 박스 패널 */
+.report-saved-history-panel {
+    border-top: 1px solid var(--side-border);
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.saved-history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.saved-history-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #e6edf3;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.saved-history-scroll-box {
+    background: #0d1117;
+    border: 1px solid var(--side-border);
+    border-radius: 6px;
+    max-height: 170px;
+    min-height: 70px;
+    overflow-y: auto;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* 커스텀 스크롤바 */
+.saved-history-scroll-box::-webkit-scrollbar {
+    width: 6px;
+}
+.saved-history-scroll-box::-webkit-scrollbar-track {
+    background: #0d1117;
+    border-radius: 4px;
+}
+.saved-history-scroll-box::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 4px;
+}
+.saved-history-scroll-box::-webkit-scrollbar-thumb:hover {
+    background: #58a6ff;
+}
+
+.saved-history-empty {
+    padding: 18px 8px;
+    font-size: 0.76rem;
+    color: var(--side-muted);
+    text-align: center;
+    line-height: 1.4;
+}
+
+.saved-history-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 5px;
+    padding: 7px 10px;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    user-select: none;
+}
+
+.saved-history-card:hover {
+    background: #21262d;
+    border-color: #58a6ff;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+.saved-history-card:active {
+    transform: translateY(0);
+}
+
+.saved-history-card.selected {
+    background: rgba(31, 111, 235, 0.2);
+    border-color: #388bfd;
+    box-shadow: 0 0 0 1px #388bfd;
+}
+
+.saved-history-card .card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.saved-history-card .card-date {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #58a6ff;
+    letter-spacing: -0.2px;
+}
+
+.saved-history-card.selected .card-date {
+    color: #79c0ff;
+}
+
+.saved-history-card .card-inspector {
+    font-size: 0.72rem;
+    color: #8b949e;
+    background: #21262d;
+    padding: 1px 6px;
+    border-radius: 10px;
+    border: 1px solid #30363d;
+}
+
+.saved-history-card .card-title {
+    font-size: 0.76rem;
+    color: #c9d1d9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 파라미터 툴 */
+.report-param-tools {
+    border-top: 1px solid var(--side-border);
+    padding-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.report-tools-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--side-muted);
+    margin-bottom: 2px;
+}
+
+.report-btn-tool {
+    background: #161b22;
+    border: 1px dashed var(--side-border);
+    color: #8b949e;
+    padding: 7px 10px;
+    border-radius: 5px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.report-btn-tool:hover {
+    border-color: var(--side-accent);
+    color: var(--side-accent);
+    background: rgba(88, 166, 255, 0.08);
+}
+
+/* 안내 상자 */
+.report-guide-box {
+    margin-top: auto;
+    background: rgba(22, 27, 34, 0.8);
+    border: 1px solid var(--side-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+}
+
+.guide-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #e6edf3;
+    margin-bottom: 5px;
+}
+
+.guide-list {
+    margin: 0;
+    padding-left: 14px;
+    font-size: 0.74rem;
+    color: var(--side-muted);
+    line-height: 1.5;
+}
+
+/* 3. 우측 메인 작업 캔버스 */
+.report-canvas-area {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 24px 20px 80px;
+    display: flex;
+    justify-content: center;
+    background-color: #0d1117;
+    -webkit-overflow-scrolling: touch;
+}
+
+.report-paper-wrapper {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    min-width: 820px;
+}
+
+/* 초기 빈 상태 안내 카드 (대기 화면) */
+.report-empty-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 720px;
+    margin-top: 60px;
+}
+
+.placeholder-card {
+    background: #161b22;
+    border: 1px dashed #30363d;
+    border-radius: 12px;
+    padding: 48px 36px;
+    text-align: center;
+    width: 100%;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.placeholder-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.placeholder-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #f0f6fc;
+    margin-bottom: 10px;
+}
+
+.placeholder-desc {
+    font-size: 0.92rem;
+    color: #8b949e;
+    line-height: 1.6;
+    margin-bottom: 28px;
+}
+
+.placeholder-desc strong {
+    color: #58a6ff;
+}
+
+.placeholder-steps {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.step-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 20px;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    color: #c9d1d9;
+}
+
+.step-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: #238636;
+    color: #ffffff;
+    font-weight: 700;
+    border-radius: 50%;
+    font-size: 0.75rem;
+}
+
+/* ==============================================================================
+   4. 실제 Working Report A4 시트 (첨부 엑셀 이미지 1:1 서식)
+   ============================================================================== */
+.working-report-sheet {
+    width: 820px;
+    min-height: 1120px;
+    background-color: #ffffff;
+    color: #000000;
+    font-family: 'Malgun Gothic', '맑은 고딕', Arial, Dotum, sans-serif;
+    font-size: 12px;
+    line-height: 1.25;
+    padding: 15px 20px 20px;
+    box-sizing: border-box;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
+    border-radius: 2px;
+    border: 1px solid #d0d7de;
+}
+
+/* 4-1. 타이틀 헤더 */
+.report-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    position: relative;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+}
+
+.report-sheet-logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 160px;
+}
+
+.withtech-logo-text {
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: #0b3c68;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.report-sheet-title {
+    flex: 1;
+    text-align: center;
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    color: #000000;
+    padding: 2px 8px;
+    outline: none;
+    border-radius: 3px;
+}
+
+/* 4-2. 공통 테이블 서식 (외곽 1px 검정 실선) */
+.report-meta-table,
+.report-params-table,
+.report-status-bar-table,
+.report-mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+    border: 1px solid var(--sheet-border-color);
+}
+
+.report-meta-table th,
+.report-meta-table td,
+.report-params-table th,
+.report-params-table td,
+.report-status-bar-table th,
+.report-status-bar-table td,
+.report-mini-table th,
+.report-mini-table td {
+    border: 1px solid var(--sheet-border-color);
+    padding: 3px 4px;
+    vertical-align: middle;
+    box-sizing: border-box;
+}
+
+/* 기본 정보 테이블 */
+.report-meta-table {
+    margin-bottom: 6px;
+}
+
+.report-meta-table th {
+    background-color: var(--sheet-th-bg);
+    font-weight: 700;
+    text-align: center;
+    font-size: 11.5px;
+    height: 24px;
+}
+
+.report-meta-table td {
+    text-align: center;
+    font-size: 11.5px;
+    outline: none;
+}
+
+/* 4-3. 점검 항목 (파라미터) 2열 분할 테이블 */
+.report-params-container {
+    margin-bottom: 6px;
+}
+
+.report-params-table thead th {
+    background-color: var(--sheet-th-bg);
+    font-weight: 700;
+    text-align: center;
+    font-size: 11.5px;
+    height: 24px;
+    border-bottom: 1px solid var(--sheet-border-color);
+}
+
+.report-params-table tbody td {
+    font-size: 11px;
+    height: 21px;
+    outline: none;
+    /* 행 사이 구분선: 엑셀 스타일 점선 */
+    border-bottom: 1px dotted var(--sheet-grid-dotted);
+}
+
+.report-params-table tbody tr:last-child td {
+    border-bottom: 1px solid var(--sheet-border-color);
+}
+
+.report-param-name {
+    text-align: left;
+    padding-left: 6px !important;
+}
+
+.report-param-std {
+    text-align: center;
+}
+
+.report-param-status {
+    text-align: center;
+    font-weight: 600;
+}
+
+/* 4-4. 상태 체크박스 요약 바 */
+.report-status-bar-table {
+    margin-bottom: 6px;
+}
+
+.report-status-bar-table th {
+    background-color: var(--sheet-th-bg);
+    font-weight: 700;
+    text-align: center;
+    font-size: 11px;
+    height: 24px;
+}
+
+.report-status-bar-table td {
+    text-align: center;
+    font-size: 11.5px;
+}
+
+.report-check-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    user-select: none;
+    padding: 1px 3px;
+    border-radius: 3px;
+    transition: background-color 0.15s;
+}
+
+.report-check-item:hover {
+    background-color: #e3f2fd;
+}
+
+.check-box {
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+/* 4-5. 본문 1: 관리 이력 (전폭 단독 구역 - 감도 칸 삭제) */
+.report-body-section-1 {
+    display: block;
+    border: 1px solid var(--sheet-border-color);
+    margin-bottom: 6px;
+}
+
+.report-history-block {
+    width: 100%;
+    padding: 6px 8px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+}
+
+.report-section-heading {
+    font-weight: 800;
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.param-section-sub {
+    font-size: 10px;
+    color: #555;
+    font-weight: normal;
+}
+
+.report-editable-area {
+    font-size: 11px;
+    line-height: 1.5;
+    outline: none;
+    min-height: 70px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* 파라미터 점검 항목 전폭 테이블 (Data 파라미터 점검값 추가 시 표출) */
+.report-param-section {
+    border: 1px solid var(--sheet-border-color);
+    padding: 6px 8px;
+    margin-bottom: 6px;
+}
+
+.full-param-table {
+    margin-top: 4px;
+}
+
+.report-mini-table thead th {
+    background-color: var(--sheet-th-bg);
+    font-weight: 700;
+    font-size: 11px;
+    text-align: center;
+    height: 22px;
+}
+
+.report-mini-table tbody td {
+    font-size: 11px;
+    height: 20px;
+    text-align: center;
+    outline: none;
+    border-bottom: 1px dotted var(--sheet-grid-dotted);
+}
+
+.report-mini-table tbody tr:last-child td {
+    border-bottom: 1px solid var(--sheet-border-color);
+}
+
+.cell-label {
+    text-align: left !important;
+    padding-left: 8px !important;
+    font-weight: 600;
+}
+
+.cell-std {
+    text-align: center !important;
+}
+
+.cell-val {
+    text-align: center !important;
+    font-weight: 600;
+}
+
+/* 4-6. 본문 2: 점검 전/후 설비 구동상태 */
+.report-body-section-2 {
+    border: 1px solid var(--sheet-border-color);
+    padding: 6px 8px;
+    margin-bottom: 6px;
+}
+
+.min-h-small {
+    min-height: 28px;
+}
+
+/* 4-7. 하단 3대 업무 블록 (교체 물품, 다음 예정 업무, 담당자 협의사항) */
+.report-body-section-3 {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.report-grid-half {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.report-card-block {
+    border: 1px solid var(--sheet-border-color);
+    padding: 5px 8px;
+    box-sizing: border-box;
+}
+
+.h-full {
+    height: 100%;
+}
+
+.report-block-title {
+    font-weight: 800;
+    font-size: 11.5px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 2px;
+}
+
+.block-content {
+    font-size: 11px;
+    line-height: 1.45;
+    min-height: 36px;
+}
+
+/* 4-8. 특이 사항 & 배수펌프 미니 테이블 */
+.report-body-section-4 {
+    border: 1px solid var(--sheet-border-color);
+    padding: 6px 8px;
+}
+
+.full-width-title {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+    margin-bottom: 6px;
+    border-bottom: 1px solid var(--sheet-border-color);
+    padding-bottom: 3px;
+}
+
+.report-special-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.special-text-row {
+    font-size: 11px;
+    line-height: 1.5;
+    outline: none;
+    min-height: 45px;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.full-special-text {
+    width: 100%;
+}
+
+/* 인라인 편집 포커스 스타일 */
+[contenteditable="true"]:hover {
+    background-color: rgba(25, 118, 210, 0.04);
+}
+
+[contenteditable="true"]:focus {
+    outline: 1.5px solid #1976d2 !important;
+    background-color: #e3f2fd !important;
+    box-shadow: 0 0 4px rgba(25, 118, 210, 0.3);
+}
+
+/* 모달 스타일 */
+.report-modal-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.report-modal-card {
+    width: 520px;
+    max-width: 90vw;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    color: #e6edf3;
+    display: flex;
+    flex-direction: column;
+    max-height: 85vh;
+}
+
+.report-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #30363d;
+}
+
+.report-modal-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #f0f6fc;
+}
+
+.report-modal-close {
+    background: transparent;
+    border: none;
+    color: #8b949e;
+    font-size: 1.4rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.report-modal-close:hover {
+    color: #f85149;
+}
+
+.report-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-desc {
+    font-size: 0.8rem;
+    color: #8b949e;
+    margin: 0 0 12px 0;
+}
+
+.modal-param-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.modal-param-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    font-size: 0.82rem;
+    cursor: pointer;
+}
+
+.modal-param-item:hover {
+    border-color: #58a6ff;
+    background: #1c2128;
+}
+
+.modal-param-item input[type="checkbox"] {
+    cursor: pointer;
+}
+
+.report-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px;
+    border-top: 1px solid #30363d;
+}
+
+/* ==============================================================================
+   5. A4 인쇄 전용 스타일 (@media print)
+   - 브라우저 인쇄 모달 또는 PDF 저장 시 A4 1페이지 규격에 딱 맞게 정돈되어 출력
+   ============================================================================== */
+@media print {
+    /* 1. 불필요한 브라우저 UI 및 사이드바 전면 숨김 */
+    body, html {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    nav,
+    header,
+    footer,
+    .no-print,
+    .report-sidebar,
+    .report-modal-backdrop {
+        display: none !important;
+    }
+
+    .report-app-container {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+        background: transparent !important;
+    }
+
+    .report-canvas-area {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: visible !important;
+        background: transparent !important;
+        display: block !important;
+    }
+
+    .report-paper-wrapper {
+        width: 100% !important;
+        min-width: 0 !important;
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* 2. 실제 시트 A4 꽉 채우기 */
+    .working-report-sheet {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        page-break-after: avoid;
+        page-break-inside: avoid;
+    }
+
+    /* 3. 테이블 테두리 100% 선명하게 인쇄 */
+    .report-meta-table,
+    .report-params-table,
+    .report-status-bar-table,
+    .report-mini-table,
+    .report-body-section-1,
+    .report-body-section-2,
+    .report-card-block,
+    .report-body-section-4 {
+        border-color: #000000 !important;
+    }
+
+    .report-meta-table th,
+    .report-meta-table td,
+    .report-params-table th,
+    .report-params-table td,
+    .report-status-bar-table th,
+    .report-status-bar-table td,
+    .report-mini-table th,
+    .report-mini-table td {
+        border-color: #000000 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    .report-meta-table th,
+    .report-params-table thead th,
+    .report-status-bar-table th,
+    .report-mini-table thead th {
+        background-color: #f2f2f2 !important;
+    }
+
+    .report-params-table tbody td,
+    .report-mini-table tbody td {
+        border-bottom: 1px dotted #555555 !important;
+    }
+
+    [contenteditable="true"] {
+        outline: none !important;
+        background: transparent !important;
+    }
+
+    @page {
+        size: A4 portrait;
+        margin: 8mm 10mm 8mm 10mm;
+    }
+}
