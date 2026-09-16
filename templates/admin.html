@@ -4,7 +4,7 @@
 {% block title %}WITHTECH - Admin{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=26">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=28">
 {% endblock %}
 
 {% block content %}
@@ -391,6 +391,12 @@
                                 <button type="button" id="btn-import-model-param-csv" class="btn-gray-sm" style="display: none;">📥 CSV 불러오기</button>
                                 <button type="button" id="btn-add-model-param-row" class="btn-green-sm" style="display: none;">➕ 항목 추가</button>
                                 <button type="button" id="btn-save-model-params" class="btn-blue-sm" style="display: none;">💾 설정 저장</button>
+                                <button type="button" id="btn-revert-model-params" class="btn-gray-sm btn-icon-only" title="마지막 저장 상태로 되돌리기" style="display: none;" aria-label="마지막 저장 상태로 되돌리기">
+                                    <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2z"/>
+                                        <path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z"/>
+                                    </svg>
+                                </button>
                             </div>
                             {% endif %}
                         </div>
@@ -979,5 +985,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=36"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=39"></script>
 {% endblock %}

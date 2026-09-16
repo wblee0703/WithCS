@@ -1664,8 +1664,10 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 
 #admin-equip-param-view .data-param-single-val-wrap,
 #admin-equip-param-view .data-param-pm-val-wrap,
+#admin-equip-param-view .data-param-range-val-wrap,
 #section-equip-param-mgmt .data-param-single-val-wrap,
-#section-equip-param-mgmt .data-param-pm-val-wrap {
+#section-equip-param-mgmt .data-param-pm-val-wrap,
+#section-equip-param-mgmt .data-param-range-val-wrap {
     flex: 1;
     min-width: 0;
     height: 100%;
@@ -1675,8 +1677,12 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 
 #admin-equip-param-view .data-param-spec-center,
 #admin-equip-param-view .data-param-spec-tol,
+#admin-equip-param-view .data-param-spec-min,
+#admin-equip-param-view .data-param-spec-max,
 #section-equip-param-mgmt .data-param-spec-center,
-#section-equip-param-mgmt .data-param-spec-tol {
+#section-equip-param-mgmt .data-param-spec-tol,
+#section-equip-param-mgmt .data-param-spec-min,
+#section-equip-param-mgmt .data-param-spec-max {
     flex: 1;
     min-width: 0;
     height: 100%;
@@ -1692,10 +1698,27 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 
 #admin-equip-param-view .data-param-spec-center:focus,
 #admin-equip-param-view .data-param-spec-tol:focus,
+#admin-equip-param-view .data-param-spec-min:focus,
+#admin-equip-param-view .data-param-spec-max:focus,
 #section-equip-param-mgmt .data-param-spec-center:focus,
-#section-equip-param-mgmt .data-param-spec-tol:focus {
+#section-equip-param-mgmt .data-param-spec-tol:focus,
+#section-equip-param-mgmt .data-param-spec-min:focus,
+#section-equip-param-mgmt .data-param-spec-max:focus {
     background: #0d1117;
     box-shadow: inset 0 0 0 1px #58a6ff;
+}
+
+#admin-equip-param-view .data-param-pm-divider,
+#admin-equip-param-view .data-param-range-divider,
+#section-equip-param-mgmt .data-param-pm-divider,
+#section-equip-param-mgmt .data-param-range-divider {
+    width: 18px;
+    min-width: 18px;
+    text-align: center;
+    color: #58a6ff;
+    font-weight: 700;
+    font-size: 14px;
+    user-select: none;
 }
 
 #admin-equip-param-view .data-param-pm-divider,
@@ -1793,13 +1816,43 @@ body:not(.role-admin):not(.role-superadmin) .item-days-input {
 body.admin-readonly-mode #btn-import-model-param-csv,
 body.admin-readonly-mode #btn-add-model-param-row,
 body.admin-readonly-mode #btn-save-model-params,
+body.admin-readonly-mode #btn-revert-model-params,
 body.admin-readonly-mode #admin-equip-param-view .data-param-row-del-btn,
 body.admin-readonly-mode #section-equip-param-mgmt .data-param-row-del-btn,
 body:not(.role-admin):not(.role-superadmin) #btn-import-model-param-csv,
 body:not(.role-admin):not(.role-superadmin) #btn-add-model-param-row,
 body:not(.role-admin):not(.role-superadmin) #btn-save-model-params,
+body:not(.role-admin):not(.role-superadmin) #btn-revert-model-params,
 body:not(.role-admin):not(.role-superadmin) #admin-equip-param-view .data-param-row-del-btn,
 body:not(.role-admin):not(.role-superadmin) #section-equip-param-mgmt .data-param-row-del-btn {
     display: none !important;
+}
+
+/* [추가] 장비 Parameter 마지막 저장상태 되돌리기 아이콘 버튼 */
+#btn-revert-model-params.btn-icon-only {
+    padding: 0;
+    width: 30px;
+    height: 27px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #8b949e;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+}
+
+#btn-revert-model-params.btn-icon-only:hover {
+    background: #30363d;
+    color: #58a6ff;
+    border-color: #58a6ff;
+}
+
+#btn-revert-model-params.btn-icon-only svg {
+    display: block;
+    pointer-events: none;
 }
 

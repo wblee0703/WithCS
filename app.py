@@ -417,24 +417,29 @@ class EquipmentModel(db.Model):
         }
 
 # [추가] 장비 Parameter 관리 마스터 데이터 테이블 (AdminParameter)
+# Parameter 1행당 1줄로 기록, id부터 memo까지 컬럼 각각 입력
 class AdminParameter(db.Model):
     __tablename__ = 'admin_parameter'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    model_name = db.Column(db.String(100), nullable=False, unique=True)
+    id = db.Column(db.String(100), primary_key=True)
+    model_name = db.Column(db.String(100), nullable=False, index=True)
     model_abbr = db.Column(db.String(100), default='')
-    parameters = db.Column(db.Text, default='[]')
+    name = db.Column(db.String(150), default='')
+    unit = db.Column(db.String(50), default='')
+    standard = db.Column(db.String(255), default='')
+    memo = db.Column(db.String(255), default='')
+    parameters = db.Column(db.Text, nullable=True, default='') # 레거시 호환용
     updated_at = db.Column(db.DateTime, default=get_utc_now, onupdate=get_utc_now)
 
     def to_dict(self):
-        try:
-            params_val = json.loads(self.parameters) if self.parameters else []
-        except Exception:
-            params_val = []
         return {
             'id': self.id,
             'model_name': self.model_name,
             'model_abbr': self.model_abbr or '',
-            'parameters': params_val,
+            'name': self.name or '',
+            'unit': self.unit or '',
+            'standard': self.standard or '',
+            'memo': self.memo or '',
+            'parameters': self.parameters or '',
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else ''
         }
 
@@ -2737,19 +2742,34 @@ def get_logs():
 def get_system_setting(key):
     if key == 'equip_model_parameters':
         try:
-            param_rows = AdminParameter.query.all()
+            param_rows = AdminParameter.query.order_by(AdminParameter.model_name.asc(), AdminParameter.id.asc()).all()
             val = {}
             for row in param_rows:
-                p_list = []
-                if row.parameters:
+                item_dict = {
+                    'id': str(row.id or ''),
+                    'name': row.name or '',
+                    'unit': row.unit or '',
+                    'standard': row.standard or '',
+                    'memo': row.memo or ''
+                }
+                # 레거시 데이터(parameters JSON 컬럼) 호환 처리
+                if not row.name and row.parameters:
                     try:
-                        p_list = json.loads(row.parameters)
+                        legacy_items = json.loads(row.parameters)
+                        if isinstance(legacy_items, list):
+                            for leg_item in legacy_items:
+                                if row.model_name:
+                                    val.setdefault(row.model_name, []).append(leg_item)
+                                if row.model_abbr and row.model_abbr != row.model_name:
+                                    val.setdefault(row.model_abbr, []).append(leg_item)
+                            continue
                     except Exception:
-                        p_list = []
+                        pass
+
                 if row.model_name:
-                    val[row.model_name] = p_list
+                    val.setdefault(row.model_name, []).append(item_dict)
                 if row.model_abbr and row.model_abbr != row.model_name:
-                    val[row.model_abbr] = p_list
+                    val.setdefault(row.model_abbr, []).append(item_dict)
             return jsonify({"status": "success", "value": val})
         except Exception as e:
             app.logger.error(f"Failed to query AdminParameter: {e}")
@@ -2769,7 +2789,7 @@ def get_system_setting(key):
 @login_required
 def get_admin_parameters():
     try:
-        rows = AdminParameter.query.order_by(AdminParameter.model_name.asc()).all()
+        rows = AdminParameter.query.order_by(AdminParameter.model_name.asc(), AdminParameter.id.asc()).all()
         return jsonify({"status": "success", "data": [r.to_dict() for r in rows]})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -3201,34 +3221,71 @@ def admin_crud():
             if action in ['CREATE', 'UPDATE', 'SAVE']:
                 m_name = str(payload.get('model_name', '')).strip()
                 m_abbr = str(payload.get('model_abbr', '')).strip()
-                raw_params = payload.get('parameters', [])
-                if isinstance(raw_params, (list, dict)):
-                    params_str = json.dumps(raw_params, ensure_ascii=False)
-                else:
-                    params_str = str(raw_params or '[]')
+                raw_params = payload.get('parameters')
 
-                if not m_name:
+                if not m_name and not payload.get('id'):
                     return jsonify({"status": "fail", "message": "장비 모델명이 필요합니다."}), 400
 
-                if not m_abbr:
+                if not m_abbr and m_name:
                     eq_m = EquipmentModel.query.filter((EquipmentModel.name == m_name) | (EquipmentModel.abbr == m_name)).first()
                     if eq_m and eq_m.abbr:
                         m_abbr = eq_m.abbr
 
-                param_row = AdminParameter.query.filter_by(model_name=m_name).first()
-                if not param_row and m_abbr:
-                    param_row = AdminParameter.query.filter_by(model_abbr=m_abbr).first()
-
-                if param_row:
-                    param_row.model_name = m_name
+                # Case 1: parameters 리스트가 전달된 경우 (Admin 화면에서 모델 전체 파라미터 행 일괄 저장)
+                if isinstance(raw_params, list):
+                    cond = (AdminParameter.model_name == m_name) | (AdminParameter.model_abbr == m_name)
                     if m_abbr:
-                        param_row.model_abbr = m_abbr
-                    param_row.parameters = params_str
+                        cond = cond | (AdminParameter.model_name == m_abbr) | (AdminParameter.model_abbr == m_abbr)
+                    AdminParameter.query.filter(cond).delete(synchronize_session=False)
+
+                    for idx, p in enumerate(raw_params):
+                        if not isinstance(p, dict):
+                            continue
+                        p_id = str(p.get('id') or f"param_{int(time.time() * 1000)}_{idx}_{random.randint(100, 999)}")
+                        p_name = str(p.get('name') or '').strip()
+                        p_unit = str(p.get('unit') or '').strip()
+                        p_std = str(p.get('standard') or '').strip()
+                        p_memo = str(p.get('memo') or '').strip()
+
+                        param_row = AdminParameter(
+                            id=p_id,
+                            model_name=m_name,
+                            model_abbr=m_abbr,
+                            name=p_name,
+                            unit=p_unit,
+                            standard=p_std,
+                            memo=p_memo,
+                            parameters=''
+                        )
+                        db.session.add(param_row)
+                    db.session.commit()
+                    return jsonify({"status": "success"})
+
+                # Case 2: 단일 파라미터 행 저장 (id 기준 수정 또는 신규 추가)
+                p_id = str(payload.get('id') or f"param_{int(time.time() * 1000)}_{random.randint(100, 999)}")
+                p_name = str(payload.get('name') or '').strip()
+                p_unit = str(payload.get('unit') or '').strip()
+                p_std = str(payload.get('standard') or '').strip()
+                p_memo = str(payload.get('memo') or '').strip()
+
+                param_row = AdminParameter.query.filter_by(id=p_id).first()
+                if param_row:
+                    if m_name: param_row.model_name = m_name
+                    if m_abbr: param_row.model_abbr = m_abbr
+                    param_row.name = p_name
+                    param_row.unit = p_unit
+                    param_row.standard = p_std
+                    param_row.memo = p_memo
                 else:
                     param_row = AdminParameter(
+                        id=p_id,
                         model_name=m_name,
                         model_abbr=m_abbr,
-                        parameters=params_str
+                        name=p_name,
+                        unit=p_unit,
+                        standard=p_std,
+                        memo=p_memo,
+                        parameters=''
                     )
                     db.session.add(param_row)
                 db.session.commit()
@@ -3238,9 +3295,12 @@ def admin_crud():
                 p_id = payload.get('id')
                 m_name = payload.get('model_name')
                 if p_id:
-                    AdminParameter.query.filter_by(id=p_id).delete()
+                    AdminParameter.query.filter_by(id=str(p_id)).delete()
                 elif m_name:
-                    AdminParameter.query.filter_by(model_name=m_name).delete()
+                    AdminParameter.query.filter(
+                        (AdminParameter.model_name == m_name) | 
+                        (AdminParameter.model_abbr == m_name)
+                    ).delete(synchronize_session=False)
                 db.session.commit()
                 return jsonify({"status": "success"})
 
@@ -3258,20 +3318,27 @@ def admin_crud():
                     try:
                         for m_key, p_list in val.items():
                             if not m_key or not isinstance(p_list, list): continue
-                            p_str = json.dumps(p_list, ensure_ascii=False)
                             eq_m = EquipmentModel.query.filter((EquipmentModel.name == m_key) | (EquipmentModel.abbr == m_key)).first()
                             m_abbr = eq_m.abbr if eq_m else ''
                             m_name = eq_m.name if eq_m else m_key
-                            row = AdminParameter.query.filter((AdminParameter.model_name == m_name) | (AdminParameter.model_name == m_key)).first()
-                            if row:
-                                row.parameters = p_str
-                                if m_abbr and not row.model_abbr:
-                                    row.model_abbr = m_abbr
-                            else:
+
+                            cond = (AdminParameter.model_name == m_name) | (AdminParameter.model_abbr == m_name)
+                            if m_abbr:
+                                cond = cond | (AdminParameter.model_name == m_abbr) | (AdminParameter.model_abbr == m_abbr)
+                            AdminParameter.query.filter(cond).delete(synchronize_session=False)
+
+                            for idx, p in enumerate(p_list):
+                                if not isinstance(p, dict): continue
+                                p_id = str(p.get('id') or f"param_{int(time.time() * 1000)}_{idx}_{random.randint(100, 999)}")
                                 db.session.add(AdminParameter(
+                                    id=p_id,
                                     model_name=m_name,
                                     model_abbr=m_abbr,
-                                    parameters=p_str
+                                    name=str(p.get('name') or '').strip(),
+                                    unit=str(p.get('unit') or '').strip(),
+                                    standard=str(p.get('standard') or '').strip(),
+                                    memo=str(p.get('memo') or '').strip(),
+                                    parameters=''
                                 ))
                         db.session.commit()
                     except Exception as ex:
@@ -5162,17 +5229,35 @@ def init_db():
         db.create_all()
         init_check_type_category_tables()
 
-        # [추가] admin_parameter 테이블 자동 생성 및 컬럼 보정 (id, model_name, model_abbr, parameters, updated_at)
+        # [추가] admin_parameter 테이블 자동 생성 및 컬럼 보정 (id, model_name, model_abbr, name, unit, standard, memo, parameters, updated_at)
         try:
             db.session.execute(text('''
                 CREATE TABLE IF NOT EXISTS admin_parameter (
-                    id INT AUTO_INCREMENT PRIMARY KEY,
-                    model_name VARCHAR(100) NOT NULL UNIQUE,
+                    id VARCHAR(100) PRIMARY KEY,
+                    model_name VARCHAR(100) NOT NULL,
                     model_abbr VARCHAR(100) DEFAULT '',
+                    name VARCHAR(150) DEFAULT '',
+                    unit VARCHAR(50) DEFAULT '',
+                    standard VARCHAR(255) DEFAULT '',
+                    memo VARCHAR(255) DEFAULT '',
                     parameters LONGTEXT,
-                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    INDEX idx_admin_param_model (model_name)
                 )
             '''))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        # 기존 테이블 스키마 보정 (model_name UNIQUE 인덱스 해제 및 컬럼 타입/추가)
+        try:
+            db.session.execute(text('ALTER TABLE admin_parameter DROP INDEX model_name'))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
+        try:
+            db.session.execute(text('ALTER TABLE admin_parameter MODIFY id VARCHAR(100) NOT NULL'))
             db.session.commit()
         except Exception:
             db.session.rollback()
@@ -5180,6 +5265,10 @@ def init_db():
         admin_param_cols = [
             ('model_name', 'VARCHAR(100) NOT NULL'),
             ('model_abbr', 'VARCHAR(100) DEFAULT ""'),
+            ('name', 'VARCHAR(150) DEFAULT ""'),
+            ('unit', 'VARCHAR(50) DEFAULT ""'),
+            ('standard', 'VARCHAR(255) DEFAULT ""'),
+            ('memo', 'VARCHAR(255) DEFAULT ""'),
             ('parameters', 'LONGTEXT'),
             ('updated_at', 'DATETIME')
         ]
@@ -5190,7 +5279,39 @@ def init_db():
             except Exception:
                 db.session.rollback()
 
-        # [마이그레이션] SystemSetting의 equip_model_parameters를 admin_parameter 테이블로 이전
+        # [마이그레이션 1] 기존 admin_parameter 테이블에 1줄(JSON parameters)로 저장되어 있던 행들을 1행당 1개 파라미터로 개별 행 풀어서 이전
+        try:
+            legacy_rows = db.session.execute(text("SELECT id, model_name, model_abbr, parameters FROM admin_parameter WHERE parameters IS NOT NULL AND parameters != '' AND (name IS NULL OR name = '')")).fetchall()
+            if legacy_rows:
+                for r in legacy_rows:
+                    r_id, m_name, m_abbr, p_str = r[0], r[1], r[2], r[3]
+                    try:
+                        items = json.loads(p_str) if p_str else []
+                        if isinstance(items, list) and len(items) > 0:
+                            for idx, item in enumerate(items):
+                                if not isinstance(item, dict): continue
+                                item_id = str(item.get('id') or f"param_{int(time.time() * 1000)}_{idx}_{random.randint(100, 999)}")
+                                db.session.execute(text("""
+                                    INSERT INTO admin_parameter (id, model_name, model_abbr, name, unit, standard, memo, parameters, updated_at)
+                                    VALUES (:id, :model_name, :model_abbr, :name, :unit, :standard, :memo, '', NOW())
+                                    ON DUPLICATE KEY UPDATE name = :name, unit = :unit, standard = :standard, memo = :memo
+                                """), {
+                                    'id': item_id,
+                                    'model_name': m_name or '',
+                                    'model_abbr': m_abbr or '',
+                                    'name': str(item.get('name') or ''),
+                                    'unit': str(item.get('unit') or ''),
+                                    'standard': str(item.get('standard') or ''),
+                                    'memo': str(item.get('memo') or '')
+                                })
+                            db.session.execute(text("DELETE FROM admin_parameter WHERE id = :old_id"), {'old_id': str(r_id)})
+                    except Exception as parse_err:
+                        app.logger.error(f"Failed to unpack legacy admin_parameter row {r_id}: {parse_err}")
+                db.session.commit()
+        except Exception as ex:
+            db.session.rollback()
+
+        # [마이그레이션 2] SystemSetting의 equip_model_parameters를 admin_parameter 테이블로 이전 (개별 행 단위)
         try:
             legacy_param_setting = SystemSetting.query.filter_by(key='equip_model_parameters').first()
             if legacy_param_setting and legacy_param_setting.value:
@@ -5198,15 +5319,23 @@ def init_db():
                 if isinstance(legacy_params, dict):
                     for m_name, p_data in legacy_params.items():
                         if not m_name or not isinstance(p_data, list): continue
-                        exists = AdminParameter.query.filter_by(model_name=m_name).first()
-                        if not exists:
-                            eq_m = EquipmentModel.query.filter((EquipmentModel.name == m_name) | (EquipmentModel.abbr == m_name)).first()
-                            m_abbr = eq_m.abbr if eq_m else ''
-                            db.session.add(AdminParameter(
-                                model_name=m_name,
-                                model_abbr=m_abbr,
-                                parameters=json.dumps(p_data, ensure_ascii=False)
-                            ))
+                        eq_m = EquipmentModel.query.filter((EquipmentModel.name == m_name) | (EquipmentModel.abbr == m_name)).first()
+                        m_abbr = eq_m.abbr if eq_m else ''
+                        for idx, item in enumerate(p_data):
+                            if not isinstance(item, dict): continue
+                            item_id = str(item.get('id') or f"param_{int(time.time() * 1000)}_{idx}_{random.randint(100, 999)}")
+                            exists = AdminParameter.query.filter_by(id=item_id).first()
+                            if not exists:
+                                db.session.add(AdminParameter(
+                                    id=item_id,
+                                    model_name=m_name,
+                                    model_abbr=m_abbr,
+                                    name=str(item.get('name') or ''),
+                                    unit=str(item.get('unit') or ''),
+                                    standard=str(item.get('standard') or ''),
+                                    memo=str(item.get('memo') or ''),
+                                    parameters=''
+                                ))
                     db.session.commit()
         except Exception as ex:
             db.session.rollback()

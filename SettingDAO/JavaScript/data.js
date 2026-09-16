@@ -827,12 +827,13 @@ function renderParamView() {
                                    onchange="updateParamCell('${row.id}', '기준값', this.value); autoEvaluateRowResult('${row.id}');">
                         </div>
 
-                        <!-- 2. 일반 수치/부등호/± 복합 입력창 (unitVal !== '유무') -->
+                        <!-- 2. 일반 수치/부등호/±/~ 복합 입력창 (unitVal !== '유무') -->
                         <div class="data-param-numeric-spec-wrap" style="${unitVal === '유무' ? 'display: none;' : 'display: flex;'}">
-                            <select class="data-param-op-select" title="부등호/플러스마이너스 기호 선택" 
+                            <select class="data-param-op-select" title="부등호/플러스마이너스/범위 기호 선택" 
                                     onchange="handleParamSpecOpChange('${row.id}', this.value, this)">
                                 <option value="" ${!parsedSpec.op ? 'selected' : ''}>-</option>
                                 <option value="±" ${parsedSpec.op === '±' ? 'selected' : ''}>±</option>
+                                <option value="~" ${parsedSpec.op === '~' ? 'selected' : ''}>~</option>
                                 <option value="≥" ${parsedSpec.op === '≥' ? 'selected' : ''}>≥</option>
                                 <option value="≤" ${parsedSpec.op === '≤' ? 'selected' : ''}>≤</option>
                                 <option value=">" ${parsedSpec.op === '>' ? 'selected' : ''}>&gt;</option>
@@ -840,8 +841,8 @@ function renderParamView() {
                                 <option value="=" ${parsedSpec.op === '=' ? 'selected' : ''}>=</option>
                             </select>
                             
-                            <!-- 일반 단일 입력 (op !== '±') -->
-                            <div class="data-param-single-val-wrap" style="${parsedSpec.op === '±' ? 'display: none;' : 'display: flex;'}">
+                            <!-- 일반 단일 입력 (op !== '±' && op !== '~') -->
+                            <div class="data-param-single-val-wrap" style="${(parsedSpec.op === '±' || parsedSpec.op === '~') ? 'display: none;' : 'display: flex;'}">
                                 <input type="text" class="data-param-input data-param-spec-val" value="${escapeHtml(parsedSpec.val)}" 
                                        placeholder="기준값 (예: 100)" 
                                        onchange="handleParamSpecValChange('${row.id}', this.closest('.data-param-numeric-spec-wrap').querySelector('.data-param-op-select').value, this.value, this.closest('.data-param-numeric-spec-wrap').querySelector('.data-param-op-select'), this)">
@@ -856,6 +857,17 @@ function renderParamView() {
                                 <input type="text" class="data-param-input data-param-spec-tol" value="${escapeHtml(parsedSpec.tol || '')}" 
                                        placeholder="오차(5)" title="오차 허용 범위"
                                        onchange="handleParamPmChange('${row.id}', this)">
+                            </div>
+
+                            <!-- ~ 전용 2개 수치 입력 (최소 ~ 최대 범위) -->
+                            <div class="data-param-range-val-wrap" style="${parsedSpec.op === '~' ? 'display: flex;' : 'display: none;'}">
+                                <input type="text" class="data-param-input data-param-spec-min" value="${escapeHtml(parsedSpec.min || '')}" 
+                                       placeholder="최소(10)" title="최솟값 (시작)"
+                                       onchange="handleParamRangeChange('${row.id}', this)">
+                                <span class="data-param-range-divider">~</span>
+                                <input type="text" class="data-param-input data-param-spec-max" value="${escapeHtml(parsedSpec.max || '')}" 
+                                       placeholder="최대(20)" title="최댓값 (끝)"
+                                       onchange="handleParamRangeChange('${row.id}', this)">
                             </div>
                         </div>
                     </div>
@@ -1025,6 +1037,24 @@ function applyUnitToRow(rowId, newUnit) {
                 if (cInput) cInput.value = strippedCenter;
                 if (tInput) tInput.value = strippedTol;
             }
+        } else if (parsed.op === '~' && (parsed.min || parsed.max)) {
+            const strippedMin = stripUnitFromValue(parsed.min, oldUnit);
+            const strippedMax = stripUnitFromValue(parsed.max, oldUnit);
+            if (strippedMin && strippedMax) {
+                updatedVal = `${strippedMin} ~ ${strippedMax}`;
+            } else if (strippedMin) {
+                updatedVal = `${strippedMin} ~`;
+            } else if (strippedMax) {
+                updatedVal = `~ ${strippedMax}`;
+            }
+            if (unit && updatedVal) updatedVal = `${updatedVal} ${unit}`;
+            row.values['기준값'] = updatedVal;
+            if (tr) {
+                const minInput = tr.querySelector('.data-param-spec-min');
+                const maxInput = tr.querySelector('.data-param-spec-max');
+                if (minInput) minInput.value = strippedMin;
+                if (maxInput) maxInput.value = strippedMax;
+            }
         } else {
             const strippedVal = stripUnitFromValue(parsed.val, oldUnit);
             updatedVal = unit ? attachUnitToValue(strippedVal, unit) : strippedVal;
@@ -1086,7 +1116,7 @@ function toggleParamUnitSelect(rowId) {
  */
 function parseParamStandard(standardVal) {
     const s = String(standardVal || '').trim();
-    if (!s) return { op: '', val: '', center: '', tol: '' };
+    if (!s) return { op: '', val: '', center: '', tol: '', min: '', max: '' };
 
     // 1. "A ± B" 형태 (예: "100 ± 5", "100+-5", "100 ± 5 ppm")
     const matchPm = s.match(/(?:^|[±≥≤><=]\s*)([+-]?\d+(?:\.\d+)?)\s*(?:±|\+-)\s*([+-]?\d+(?:\.\d+)?)/);
@@ -1095,7 +1125,9 @@ function parseParamStandard(standardVal) {
             op: '±',
             center: matchPm[1],
             tol: matchPm[2],
-            val: `${matchPm[1]} ± ${matchPm[2]}`
+            val: `${matchPm[1]} ± ${matchPm[2]}`,
+            min: '',
+            max: ''
         };
     }
 
@@ -1106,21 +1138,67 @@ function parseParamStandard(standardVal) {
             op: '±',
             center: '',
             tol: matchOnlyTol[1],
-            val: `± ${matchOnlyTol[1]}`
+            val: `± ${matchOnlyTol[1]}`,
+            min: '',
+            max: ''
         };
     }
 
-    // 3. 선두에 부등호 기호가 오는 경우 (예: ">= 100", "≥ 100", "<= 20", "≤ 20", "> 10", "< 5", "= 50")
-    const match = s.match(/^([±≥≤><=]|>=|<=|\+-)\s*(.*)$/);
+    // 3. "A ~ B" 범위 형태 (예: "10 ~ 20", "10~20", "-5 ~ 15")
+    const matchRange = s.match(/(?:^|[~]\s*)([+-]?\d+(?:\.\d+)?)\s*(?:~|to)\s*([+-]?\d+(?:\.\d+)?)/i);
+    if (matchRange) {
+        return {
+            op: '~',
+            min: matchRange[1],
+            max: matchRange[2],
+            val: `${matchRange[1]} ~ ${matchRange[2]}`,
+            center: '',
+            tol: ''
+        };
+    }
+
+    // 4. "~ B" 단독 상한 범위 형태 (예: "~ 20", "~20")
+    const matchOnlyMax = s.match(/^~\s*([+-]?\d+(?:\.\d+)?)/);
+    if (matchOnlyMax) {
+        return {
+            op: '~',
+            min: '',
+            max: matchOnlyMax[1],
+            val: `~ ${matchOnlyMax[1]}`,
+            center: '',
+            tol: ''
+        };
+    }
+
+    // 5. "A ~" 단독 하한 범위 형태 (예: "10 ~", "10~")
+    const matchOnlyMin = s.match(/^([+-]?\d+(?:\.\d+)?)\s*~/);
+    if (matchOnlyMin) {
+        return {
+            op: '~',
+            min: matchOnlyMin[1],
+            max: '',
+            val: `${matchOnlyMin[1]} ~`,
+            center: '',
+            tol: ''
+        };
+    }
+
+    // 6. 단독 "~"
+    if (s === '~') {
+        return { op: '~', val: '~', min: '', max: '', center: '', tol: '' };
+    }
+
+    // 7. 선두에 부등호 기호가 오는 경우 (예: ">= 100", "≥ 100", "<= 20", "≤ 20", "> 10", "< 5", "= 50")
+    const match = s.match(/^([±≥≤><=~]|>=|<=|\+-)\s*(.*)$/);
     if (match) {
         let op = match[1];
         if (op === '>=') op = '≥';
         else if (op === '<=') op = '≤';
         else if (op === '+-') op = '±';
-        return { op, val: match[2].trim(), center: '', tol: '' };
+        return { op, val: match[2].trim(), center: '', tol: '', min: '', max: '' };
     }
 
-    return { op: '', val: s, center: '', tol: '' };
+    return { op: '', val: s, center: '', tol: '', min: '', max: '' };
 }
 
 /**
@@ -1156,12 +1234,24 @@ function evaluateParamResult(standardStr, measuredStr) {
             return (measuredNum >= -tol - 1e-9) && (measuredNum <= tol + 1e-9);
         }
 
-        // 3. "A ~ B" 범위 형태 (예: 10 ~ 20, 10 to 20)
-        const matchRange = sStr.match(/^([+-]?\d+(?:\.\d+)?)\s*(?:~|to)\s*([+-]?\d+(?:\.\d+)?)/i);
+        // 3. "A ~ B" 범위 형태 (예: 10 ~ 20, 10 to 20, 10~20)
+        const matchRange = sStr.match(/([+-]?\d+(?:\.\d+)?)\s*(?:~|to)\s*([+-]?\d+(?:\.\d+)?)/i);
         if (matchRange) {
             const minV = Math.min(parseFloat(matchRange[1]), parseFloat(matchRange[2]));
             const maxV = Math.max(parseFloat(matchRange[1]), parseFloat(matchRange[2]));
             return (measuredNum >= minV - 1e-9) && (measuredNum <= maxV + 1e-9);
+        }
+
+        // 3-1. "~ B" 단독 상한 범위 형태 (예: ~ 20)
+        const matchOnlyMax = sStr.match(/^~\s*([+-]?\d+(?:\.\d+)?)/);
+        if (matchOnlyMax) {
+            return measuredNum <= parseFloat(matchOnlyMax[1]) + 1e-9;
+        }
+
+        // 3-2. "A ~" 단독 하한 범위 형태 (예: 10 ~)
+        const matchOnlyMin = sStr.match(/^([+-]?\d+(?:\.\d+)?)\s*~/);
+        if (matchOnlyMin) {
+            return measuredNum >= parseFloat(matchOnlyMin[1]) - 1e-9;
         }
 
         // 4. 부등호 형태
@@ -1269,7 +1359,7 @@ function autoEvaluateRowResult(rowId) {
 }
 
 /**
- * 기준값 부등호/기호 선택 변경 처리 (± 선택 시 2개 입력창 동적 전환)
+ * 기준값 부등호/기호 선택 변경 처리 (± 또는 ~ 선택 시 2개 입력창 동적 전환)
  */
 function handleParamSpecOpChange(rowId, op, selectEl) {
     if (!currentSheetData || !currentSheetData.rows) return;
@@ -1281,21 +1371,26 @@ function handleParamSpecOpChange(rowId, op, selectEl) {
 
     const singleWrap = cell.querySelector('.data-param-single-val-wrap');
     const pmWrap = cell.querySelector('.data-param-pm-val-wrap');
+    const rangeWrap = cell.querySelector('.data-param-range-val-wrap');
     const singleInput = cell.querySelector('.data-param-spec-val');
     const centerInput = cell.querySelector('.data-param-spec-center');
     const tolInput = cell.querySelector('.data-param-spec-tol');
+    const minInput = cell.querySelector('.data-param-spec-min');
+    const maxInput = cell.querySelector('.data-param-spec-max');
     const unit = row.values ? (row.values['단위'] || '') : '';
 
     let combined = '';
 
     if (op === '±') {
-        // ± 모드로 전환: 단일 인풋 숨기고 2개 인풋 표시
+        // ± 모드로 전환: 단일/범위 인풋 숨기고 2개 인풋 표시
         if (singleWrap) singleWrap.style.display = 'none';
+        if (rangeWrap) rangeWrap.style.display = 'none';
         if (pmWrap) pmWrap.style.display = 'flex';
 
-        // 기존 단일 입력에 숫자가 있었다면 중심값으로 이동
-        if (singleInput && singleInput.value && (!centerInput || !centerInput.value)) {
-            const stripped = stripUnitFromValue(singleInput.value, unit);
+        // 기존 단일/범위 입력에 숫자가 있었다면 중심값으로 이동
+        const prevVal = (singleInput && singleInput.value) || (minInput && minInput.value) || '';
+        if (prevVal && (!centerInput || !centerInput.value)) {
+            const stripped = stripUnitFromValue(prevVal, unit);
             if (centerInput) centerInput.value = stripped;
         }
 
@@ -1310,14 +1405,40 @@ function handleParamSpecOpChange(rowId, op, selectEl) {
         if (tolInput && !tolInput.value) {
             tolInput.focus();
         }
-    } else {
-        // 일반 기호 또는 기호 없음 모드: 2개 인풋 숨기고 단일 인풋 표시
-        if (singleWrap) singleWrap.style.display = 'flex';
+    } else if (op === '~') {
+        // ~ 범위 모드로 전환: 단일/± 인풋 숨기고 2개 범위 인풋 표시
+        if (singleWrap) singleWrap.style.display = 'none';
         if (pmWrap) pmWrap.style.display = 'none';
+        if (rangeWrap) rangeWrap.style.display = 'flex';
 
-        // 기존 ± 모드에서 중심값이 있었다면 단일 입력으로 이동
-        if (centerInput && centerInput.value && (!singleInput || !singleInput.value)) {
-            if (singleInput) singleInput.value = centerInput.value;
+        // 기존 단일/± 입력에 숫자가 있었다면 최소값으로 이동
+        const prevVal = (singleInput && singleInput.value) || (centerInput && centerInput.value) || '';
+        if (prevVal && (!minInput || !minInput.value)) {
+            const stripped = stripUnitFromValue(prevVal, unit);
+            if (minInput) minInput.value = stripped;
+        }
+
+        const minVal = minInput ? minInput.value.trim() : '';
+        const maxVal = maxInput ? maxInput.value.trim() : '';
+
+        if (minVal && maxVal) combined = `${minVal} ~ ${maxVal}`;
+        else if (minVal) combined = `${minVal} ~`;
+        else if (maxVal) combined = `~ ${maxVal}`;
+        else combined = '~';
+
+        if (maxInput && !maxInput.value) {
+            maxInput.focus();
+        }
+    } else {
+        // 일반 기호 또는 기호 없음 모드: ±/범위 인풋 숨기고 단일 인풋 표시
+        if (pmWrap) pmWrap.style.display = 'none';
+        if (rangeWrap) rangeWrap.style.display = 'none';
+        if (singleWrap) singleWrap.style.display = 'flex';
+
+        // 기존 ± 또는 ~ 모드에서 값이 있었다면 단일 입력으로 이동
+        const prevVal = (centerInput && centerInput.value) || (minInput && minInput.value) || '';
+        if (prevVal && (!singleInput || !singleInput.value)) {
+            if (singleInput) singleInput.value = prevVal;
         }
 
         let val = singleInput ? singleInput.value.trim() : '';
@@ -1362,6 +1483,45 @@ function handleParamPmChange(rowId, inputEl) {
         combined = center;
     } else if (tol) {
         combined = `± ${tol}`;
+    } else {
+        combined = '±';
+    }
+
+    if (combined && unit) {
+        combined = attachUnitToValue(stripUnitFromValue(combined, unit), unit);
+    }
+
+    updateParamCell(rowId, '기준값', combined);
+    autoEvaluateRowResult(rowId);
+}
+
+/**
+ * 물결(~) 범위 2개 수치 입력(최소값, 최대값) 변경 처리
+ */
+function handleParamRangeChange(rowId, inputEl) {
+    if (!currentSheetData || !currentSheetData.rows) return;
+    const row = currentSheetData.rows.find(r => r.id === rowId);
+    if (!row) return;
+
+    const rangeWrap = inputEl.closest('.data-param-range-val-wrap');
+    if (!rangeWrap) return;
+
+    const minInput = rangeWrap.querySelector('.data-param-spec-min');
+    const maxInput = rangeWrap.querySelector('.data-param-spec-max');
+
+    const minVal = minInput ? minInput.value.trim() : '';
+    const maxVal = maxInput ? maxInput.value.trim() : '';
+    const unit = row.values ? (row.values['단위'] || '') : '';
+
+    let combined = '';
+    if (minVal && maxVal) {
+        combined = `${minVal} ~ ${maxVal}`;
+    } else if (minVal) {
+        combined = `${minVal} ~`;
+    } else if (maxVal) {
+        combined = `~ ${maxVal}`;
+    } else {
+        combined = '~';
     }
 
     if (combined && unit) {
@@ -1380,11 +1540,29 @@ function handleParamSpecValChange(rowId, currentOp, inputVal, selectEl, inputEl)
     let finalOp = currentOp;
     let finalVal = (inputVal || '').trim();
 
-    // 사용자가 입력 필드에 "≥ 100" 이나 "± 5" 처럼 기호를 직접 입력/붙여넣은 경우 자동 분리
+    // 사용자가 입력 필드에 "≥ 100", "± 5", "10 ~ 20" 처럼 기호를 직접 입력/붙여넣은 경우 자동 분리
     if (parsed.op) {
         finalOp = parsed.op;
         finalVal = parsed.val;
-        if (selectEl) selectEl.value = finalOp;
+        if (selectEl) {
+            selectEl.value = finalOp;
+            handleParamSpecOpChange(rowId, finalOp, selectEl);
+            const cell = selectEl.closest('.data-param-spec-cell');
+            if (cell) {
+                if (finalOp === '±') {
+                    const cInput = cell.querySelector('.data-param-spec-center');
+                    const tInput = cell.querySelector('.data-param-spec-tol');
+                    if (cInput) cInput.value = parsed.center || '';
+                    if (tInput) tInput.value = parsed.tol || '';
+                } else if (finalOp === '~') {
+                    const minInput = cell.querySelector('.data-param-spec-min');
+                    const maxInput = cell.querySelector('.data-param-spec-max');
+                    if (minInput) minInput.value = parsed.min || '';
+                    if (maxInput) maxInput.value = parsed.max || '';
+                }
+            }
+            return;
+        }
     }
 
     if (!currentSheetData || !currentSheetData.rows) return;

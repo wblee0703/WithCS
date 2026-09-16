@@ -20,7 +20,7 @@ function checkAndApplyAdminReadOnlyMode() {
             '#btn-admin-del-item-detail', '#btn-admin-save-item-detail', '#btn-admin-add-item', '#btn-add-item-equip', '#btn-apply-equip-selection',
             '#btn-save-setup-template', '#btn-reset-setup-template', '#btn-add-setup-template-item', '#btn-add-setup-template-subcategory', '#btn-setup-subcategory-settings',
             '#btn-open-add-stock-modal', '#btn-import-master-items', '#btn-import-check-items',
-            '#btn-import-model-param-csv', '#btn-add-model-param-row', '#btn-save-model-params',
+            '#btn-import-model-param-csv', '#btn-add-model-param-row', '#btn-save-model-params', '#btn-revert-model-params',
             '#section-site-mgmt .form-actions', '#section-equip-mgmt .form-actions', '#section-item-mgmt .form-actions', '#section-setup-template-mgmt .form-actions',
             '.admin-readonly-mode .form-actions'
         ];
@@ -2221,6 +2221,7 @@ async function handleEquipDelete() {
    5-1. 장비 Parameter 관리 (Equipment Parameter Management)
    ========================================================================== */
 let equipModelParameters = {}; // { [modelName]: [ { id, name, unit, standard, memo }, ... ] }
+let lastSavedEquipModelParameters = {}; // [추가] 마지막 저장 상태 스냅샷
 let currentAdminParamModel = null;
 const ADMIN_PARAM_PRESET_UNITS = ['%', 'ppm', 'ppb', '℃', 'ml/min', 'LPM', '유무'];
 
@@ -2232,9 +2233,11 @@ async function loadEquipModelParameters() {
         const localData = localStorage.getItem('equip_model_parameters');
         if (localData) {
             equipModelParameters = JSON.parse(localData) || {};
+            lastSavedEquipModelParameters = JSON.parse(JSON.stringify(equipModelParameters));
         }
     } catch (e) {
         equipModelParameters = {};
+        lastSavedEquipModelParameters = {};
     }
 
     try {
@@ -2242,6 +2245,7 @@ async function loadEquipModelParameters() {
         const data = await res.json();
         if (data.status === 'success' && data.value && typeof data.value === 'object') {
             equipModelParameters = data.value;
+            lastSavedEquipModelParameters = JSON.parse(JSON.stringify(equipModelParameters));
             localStorage.setItem('equip_model_parameters', JSON.stringify(equipModelParameters));
             if (currentAdminParamModel) {
                 renderAdminParamTable();
@@ -2281,6 +2285,11 @@ function setupEquipParamMgmt() {
     const btnSave = document.getElementById('btn-save-model-params');
     if (btnSave) {
         btnSave.addEventListener('click', saveAdminParamSettings);
+    }
+
+    const btnRevert = document.getElementById('btn-revert-model-params');
+    if (btnRevert) {
+        btnRevert.addEventListener('click', revertAdminParamSettings);
     }
 
     const btnImport = document.getElementById('btn-import-model-param-csv');
@@ -2366,12 +2375,14 @@ function selectAdminParamModel(model) {
     const tableContainer = document.getElementById('admin-param-table-container');
     const btnAdd = document.getElementById('btn-add-model-param-row');
     const btnSave = document.getElementById('btn-save-model-params');
+    const btnRevert = document.getElementById('btn-revert-model-params');
     const titleEl = document.getElementById('admin-param-model-title');
 
     if (placeholder) placeholder.style.display = 'none';
     if (tableContainer) tableContainer.style.display = 'block';
     if (btnAdd) btnAdd.style.display = 'inline-block';
     if (btnSave) btnSave.style.display = 'inline-block';
+    if (btnRevert) btnRevert.style.display = 'inline-flex';
     const btnImport = document.getElementById('btn-import-model-param-csv');
     if (btnImport) btnImport.style.display = 'inline-block';
 
@@ -2423,7 +2434,7 @@ function renderAdminParamTable() {
         const parsedSpec = parseAdminParamStandard(standardVal);
 
         tbodyHtml += `
-            <tr data-row-idx="${idx}">
+            <tr data-row-idx="${idx}" data-param-id="${escapeHtml(item.id || '')}">
                 <td style="text-align: center; color: #8b949e; user-select: none; font-size: 11px;">${idx + 1}</td>
                 <td>
                     <input type="text" class="data-param-input admin-param-name" value="${escapeHtml(itemName)}" 
@@ -2459,12 +2470,13 @@ function renderAdminParamTable() {
                                    onchange="updateAdminParamItem(${idx}, 'standard', this.value);">
                         </div>
 
-                        <!-- 2. 일반 수치/부등호/± 복합 입력창 (unitVal !== '유무') -->
+                        <!-- 2. 일반 수치/부등호/±/~ 복합 입력창 (unitVal !== '유무') -->
                         <div class="data-param-numeric-spec-wrap" style="${unitVal === '유무' ? 'display: none;' : 'display: flex;'}">
-                            <select class="data-param-op-select" title="부등호/플러스마이너스 기호 선택" 
+                            <select class="data-param-op-select" title="부등호/플러스마이너스/범위 기호 선택" 
                                     onchange="handleAdminParamSpecOpChange(${idx}, this.value, this)">
                                 <option value="" ${!parsedSpec.op ? 'selected' : ''}>-</option>
                                 <option value="±" ${parsedSpec.op === '±' ? 'selected' : ''}>±</option>
+                                <option value="~" ${parsedSpec.op === '~' ? 'selected' : ''}>~</option>
                                 <option value="≥" ${parsedSpec.op === '≥' ? 'selected' : ''}>≥</option>
                                 <option value="≤" ${parsedSpec.op === '≤' ? 'selected' : ''}>≤</option>
                                 <option value=">" ${parsedSpec.op === '>' ? 'selected' : ''}>&gt;</option>
@@ -2472,8 +2484,8 @@ function renderAdminParamTable() {
                                 <option value="=" ${parsedSpec.op === '=' ? 'selected' : ''}>=</option>
                             </select>
                             
-                            <!-- 일반 단일 입력 (op !== '±') -->
-                            <div class="data-param-single-val-wrap" style="${parsedSpec.op === '±' ? 'display: none;' : 'display: flex;'}">
+                            <!-- 일반 단일 입력 (op !== '±' && op !== '~') -->
+                            <div class="data-param-single-val-wrap" style="${(parsedSpec.op === '±' || parsedSpec.op === '~') ? 'display: none;' : 'display: flex;'}">
                                 <input type="text" class="data-param-input data-param-spec-val" value="${escapeHtml(parsedSpec.val)}" 
                                        placeholder="기준값 (예: 100)" 
                                        onchange="handleAdminParamSpecValChange(${idx}, this.closest('.data-param-numeric-spec-wrap').querySelector('.data-param-op-select').value, this.value, this.closest('.data-param-numeric-spec-wrap').querySelector('.data-param-op-select'), this)">
@@ -2488,6 +2500,17 @@ function renderAdminParamTable() {
                                 <input type="text" class="data-param-input data-param-spec-tol" value="${escapeHtml(parsedSpec.tol || '')}" 
                                        placeholder="오차(5)" title="오차 허용 범위"
                                        onchange="handleAdminParamPmChange(${idx}, this)">
+                            </div>
+
+                            <!-- ~ 전용 2개 수치 입력 (최소 ~ 최대 범위) -->
+                            <div class="data-param-range-val-wrap" style="${parsedSpec.op === '~' ? 'display: flex;' : 'display: none;'}">
+                                <input type="text" class="data-param-input data-param-spec-min" value="${escapeHtml(parsedSpec.min || '')}" 
+                                       placeholder="최소(10)" title="최솟값 (시작)"
+                                       onchange="handleAdminParamRangeChange(${idx}, this)">
+                                <span class="data-param-range-divider">~</span>
+                                <input type="text" class="data-param-input data-param-spec-max" value="${escapeHtml(parsedSpec.max || '')}" 
+                                       placeholder="최대(20)" title="최댓값 (끝)"
+                                       onchange="handleAdminParamRangeChange(${idx}, this)">
                             </div>
                         </div>
                     </div>
@@ -2511,38 +2534,89 @@ function renderAdminParamTable() {
  */
 function parseAdminParamStandard(standardVal) {
     const s = String(standardVal || '').trim();
-    if (!s) return { op: '', val: '', center: '', tol: '' };
+    if (!s) return { op: '', val: '', center: '', tol: '', min: '', max: '' };
 
+    // 1. "A ± B" 형태 (예: "100 ± 5", "100+-5", "100 ± 5 ppm")
     const matchPm = s.match(/(?:^|[±≥≤><=]\s*)([+-]?\d+(?:\.\d+)?)\s*(?:±|\+-)\s*([+-]?\d+(?:\.\d+)?)/);
     if (matchPm) {
         return {
             op: '±',
             center: matchPm[1],
             tol: matchPm[2],
-            val: `${matchPm[1]} ± ${matchPm[2]}`
+            val: `${matchPm[1]} ± ${matchPm[2]}`,
+            min: '',
+            max: ''
         };
     }
 
+    // 2. "± B" 단독 형태 (예: "± 5", "± 0.05", "+- 2")
     const matchOnlyTol = s.match(/^(?:±|\+-)\s*([+-]?\d+(?:\.\d+)?)/);
     if (matchOnlyTol) {
         return {
             op: '±',
             center: '',
             tol: matchOnlyTol[1],
-            val: `± ${matchOnlyTol[1]}`
+            val: `± ${matchOnlyTol[1]}`,
+            min: '',
+            max: ''
         };
     }
 
-    const match = s.match(/^([±≥≤><=]|>=|<=|\+-)\s*(.*)$/);
+    // 3. "A ~ B" 범위 형태 (예: "10 ~ 20", "10~20", "-5 ~ 15")
+    const matchRange = s.match(/(?:^|[~]\s*)([+-]?\d+(?:\.\d+)?)\s*(?:~|to)\s*([+-]?\d+(?:\.\d+)?)/i);
+    if (matchRange) {
+        return {
+            op: '~',
+            min: matchRange[1],
+            max: matchRange[2],
+            val: `${matchRange[1]} ~ ${matchRange[2]}`,
+            center: '',
+            tol: ''
+        };
+    }
+
+    // 4. "~ B" 단독 상한 범위 형태 (예: "~ 20", "~20")
+    const matchOnlyMax = s.match(/^~\s*([+-]?\d+(?:\.\d+)?)/);
+    if (matchOnlyMax) {
+        return {
+            op: '~',
+            min: '',
+            max: matchOnlyMax[1],
+            val: `~ ${matchOnlyMax[1]}`,
+            center: '',
+            tol: ''
+        };
+    }
+
+    // 5. "A ~" 단독 하한 범위 형태 (예: "10 ~", "10~")
+    const matchOnlyMin = s.match(/^([+-]?\d+(?:\.\d+)?)\s*~/);
+    if (matchOnlyMin) {
+        return {
+            op: '~',
+            min: matchOnlyMin[1],
+            max: '',
+            val: `${matchOnlyMin[1]} ~`,
+            center: '',
+            tol: ''
+        };
+    }
+
+    // 6. 단독 "~"
+    if (s === '~') {
+        return { op: '~', val: '~', min: '', max: '', center: '', tol: '' };
+    }
+
+    // 7. 선두에 부등호 기호가 오는 경우 (예: ">= 100", "≥ 100", "<= 20", "≤ 20", "> 10", "< 5", "= 50")
+    const match = s.match(/^([±≥≤><=~]|>=|<=|\+-)\s*(.*)$/);
     if (match) {
         let op = match[1];
         if (op === '>=') op = '≥';
         else if (op === '<=') op = '≤';
         else if (op === '+-') op = '±';
-        return { op, val: match[2].trim(), center: '', tol: '' };
+        return { op, val: match[2].trim(), center: '', tol: '', min: '', max: '' };
     }
 
-    return { op: '', val: s, center: '', tol: '' };
+    return { op: '', val: s, center: '', tol: '', min: '', max: '' };
 }
 
 function stripAdminParamUnit(valStr, unitToRemove) {
@@ -2672,6 +2746,15 @@ function applyAdminParamUnit(idx, newUnit) {
             else if (strippedTol) updated = `± ${strippedTol}`;
             if (unit && updated) updated = `${updated} ${unit}`;
             items[idx].standard = updated;
+        } else if (parsed.op === '~' && (parsed.min || parsed.max)) {
+            const strippedMin = stripAdminParamUnit(parsed.min, oldUnit);
+            const strippedMax = stripAdminParamUnit(parsed.max, oldUnit);
+            let updated = '';
+            if (strippedMin && strippedMax) updated = `${strippedMin} ~ ${strippedMax}`;
+            else if (strippedMin) updated = `${strippedMin} ~`;
+            else if (strippedMax) updated = `~ ${strippedMax}`;
+            if (unit && updated) updated = `${updated} ${unit}`;
+            items[idx].standard = updated;
         } else {
             const strippedVal = stripAdminParamUnit(parsed.val, oldUnit);
             const updatedVal = unit ? attachAdminParamUnit(strippedVal, unit) : strippedVal;
@@ -2692,19 +2775,24 @@ function handleAdminParamSpecOpChange(idx, op, selectEl) {
 
     const singleWrap = cell.querySelector('.data-param-single-val-wrap');
     const pmWrap = cell.querySelector('.data-param-pm-val-wrap');
+    const rangeWrap = cell.querySelector('.data-param-range-val-wrap');
     const singleInput = cell.querySelector('.data-param-spec-val');
     const centerInput = cell.querySelector('.data-param-spec-center');
     const tolInput = cell.querySelector('.data-param-spec-tol');
+    const minInput = cell.querySelector('.data-param-spec-min');
+    const maxInput = cell.querySelector('.data-param-spec-max');
     const unit = items[idx].unit || '';
 
     let combined = '';
 
     if (op === '±') {
         if (singleWrap) singleWrap.style.display = 'none';
+        if (rangeWrap) rangeWrap.style.display = 'none';
         if (pmWrap) pmWrap.style.display = 'flex';
 
-        if (singleInput && singleInput.value && (!centerInput || !centerInput.value)) {
-            const stripped = stripAdminParamUnit(singleInput.value, unit);
+        const prevVal = (singleInput && singleInput.value) || (minInput && minInput.value) || '';
+        if (prevVal && (!centerInput || !centerInput.value)) {
+            const stripped = stripAdminParamUnit(prevVal, unit);
             if (centerInput) centerInput.value = stripped;
         }
 
@@ -2717,12 +2805,34 @@ function handleAdminParamSpecOpChange(idx, op, selectEl) {
         else combined = '±';
 
         if (tolInput && !tolInput.value) tolInput.focus();
-    } else {
-        if (singleWrap) singleWrap.style.display = 'flex';
+    } else if (op === '~') {
+        if (singleWrap) singleWrap.style.display = 'none';
         if (pmWrap) pmWrap.style.display = 'none';
+        if (rangeWrap) rangeWrap.style.display = 'flex';
 
-        if (centerInput && centerInput.value && (!singleInput || !singleInput.value)) {
-            if (singleInput) singleInput.value = centerInput.value;
+        const prevVal = (singleInput && singleInput.value) || (centerInput && centerInput.value) || '';
+        if (prevVal && (!minInput || !minInput.value)) {
+            const stripped = stripAdminParamUnit(prevVal, unit);
+            if (minInput) minInput.value = stripped;
+        }
+
+        const minVal = minInput ? minInput.value.trim() : '';
+        const maxVal = maxInput ? maxInput.value.trim() : '';
+
+        if (minVal && maxVal) combined = `${minVal} ~ ${maxVal}`;
+        else if (minVal) combined = `${minVal} ~`;
+        else if (maxVal) combined = `~ ${maxVal}`;
+        else combined = '~';
+
+        if (maxInput && !maxInput.value) maxInput.focus();
+    } else {
+        if (pmWrap) pmWrap.style.display = 'none';
+        if (rangeWrap) rangeWrap.style.display = 'none';
+        if (singleWrap) singleWrap.style.display = 'flex';
+
+        const prevVal = (centerInput && centerInput.value) || (minInput && minInput.value) || '';
+        if (prevVal && (!singleInput || !singleInput.value)) {
+            if (singleInput) singleInput.value = prevVal;
         }
 
         let val = singleInput ? singleInput.value.trim() : '';
@@ -2733,6 +2843,34 @@ function handleAdminParamSpecOpChange(idx, op, selectEl) {
 
         combined = op ? (val ? `${op} ${val}` : op) : val;
     }
+
+    if (combined && unit) {
+        combined = attachAdminParamUnit(stripAdminParamUnit(combined, unit), unit);
+    }
+
+    items[idx].standard = combined;
+}
+
+function handleAdminParamRangeChange(idx, inputEl) {
+    if (!currentAdminParamModel) return;
+    const items = equipModelParameters[currentAdminParamModel.name];
+    if (!items || !items[idx]) return;
+
+    const rangeWrap = inputEl.closest('.data-param-range-val-wrap');
+    if (!rangeWrap) return;
+
+    const minInput = rangeWrap.querySelector('.data-param-spec-min');
+    const maxInput = rangeWrap.querySelector('.data-param-spec-max');
+
+    const minVal = minInput ? minInput.value.trim() : '';
+    const maxVal = maxInput ? maxInput.value.trim() : '';
+    const unit = items[idx].unit || '';
+
+    let combined = '';
+    if (minVal && maxVal) combined = `${minVal} ~ ${maxVal}`;
+    else if (minVal) combined = `${minVal} ~`;
+    else if (maxVal) combined = `~ ${maxVal}`;
+    else combined = '~';
 
     if (combined && unit) {
         combined = attachAdminParamUnit(stripAdminParamUnit(combined, unit), unit);
@@ -2753,7 +2891,25 @@ function handleAdminParamSpecValChange(idx, currentOp, inputVal, selectEl, input
     if (parsed.op) {
         finalOp = parsed.op;
         finalVal = parsed.val;
-        if (selectEl) selectEl.value = finalOp;
+        if (selectEl) {
+            selectEl.value = finalOp;
+            handleAdminParamSpecOpChange(idx, finalOp, selectEl);
+            const cell = selectEl.closest('.data-param-spec-cell');
+            if (cell) {
+                if (finalOp === '±') {
+                    const cInput = cell.querySelector('.data-param-spec-center');
+                    const tInput = cell.querySelector('.data-param-spec-tol');
+                    if (cInput) cInput.value = parsed.center || '';
+                    if (tInput) tInput.value = parsed.tol || '';
+                } else if (finalOp === '~') {
+                    const minInput = cell.querySelector('.data-param-spec-min');
+                    const maxInput = cell.querySelector('.data-param-spec-max');
+                    if (minInput) minInput.value = parsed.min || '';
+                    if (maxInput) maxInput.value = parsed.max || '';
+                }
+            }
+            return;
+        }
     }
 
     const unit = items[idx].unit || '';
@@ -2785,6 +2941,7 @@ function handleAdminParamPmChange(idx, inputEl) {
     if (center && tol) combined = `${center} ± ${tol}`;
     else if (center) combined = center;
     else if (tol) combined = `± ${tol}`;
+    else combined = '±';
 
     if (combined && unit) {
         combined = attachAdminParamUnit(stripAdminParamUnit(combined, unit), unit);
@@ -2848,8 +3005,14 @@ async function saveAdminParamSettings() {
             }
         }
 
+        const existingParamId = tr.getAttribute('data-param-id');
+        const rowIdx = parseInt(tr.getAttribute('data-row-idx'), 10);
+        const currentItems = equipModelParameters[currentAdminParamModel.name] || [];
+        const existingItem = !isNaN(rowIdx) && currentItems[rowIdx] ? currentItems[rowIdx] : null;
+        const finalId = existingParamId || (existingItem && existingItem.id) || ('param_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4));
+
         items.push({
-            id: 'param_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            id: finalId,
             name: nameInput ? nameInput.value.trim() : '',
             unit: unitVal,
             standard: standardVal,
@@ -2875,6 +3038,7 @@ async function saveAdminParamSettings() {
         });
 
         if (success) {
+            lastSavedEquipModelParameters = JSON.parse(JSON.stringify(equipModelParameters));
             addSystemLog('UPDATE_PARAM_SETTINGS', currentAdminParamModel.name, `총 ${items.length}개 기본 항목 저장`);
             alert(`[${currentAdminParamModel.name}] 모델의 기본 Parameter 설정이 성공적으로 저장되었습니다.`);
             renderAdminParamTable();
@@ -2885,6 +3049,73 @@ async function saveAdminParamSettings() {
         console.error('Failed to sync admin_parameter:', e);
         alert('서버 저장 실패: 네트워크 또는 권한을 확인해주세요.');
     }
+}
+
+/**
+ * 선택된 모델의 Parameter 설정을 마지막 저장 상태로 되돌리기 (아이콘 버튼 클릭 핸들러)
+ */
+async function revertAdminParamSettings() {
+    if (!currentAdminParamModel) return;
+    if (!isUserAdminRole()) {
+        alert('관리자 권한이 필요합니다.');
+        return;
+    }
+
+    const modelName = currentAdminParamModel.name;
+    const modelAbbr = currentAdminParamModel.abbr || '';
+
+    const confirmMsg = `[${modelName}] 모델의 Parameter 수정을 취소하고 마지막 저장 상태로 되돌리시겠습니까?\n\n(저장하지 않은 모든 변경사항이 취소됩니다.)`;
+    if (!confirm(confirmMsg)) {
+        return;
+    }
+
+    let savedItems = null;
+
+    // 1. 메모리에 보관된 마지막 저장 상태 우선 확인
+    if (lastSavedEquipModelParameters && Array.isArray(lastSavedEquipModelParameters[modelName])) {
+        savedItems = JSON.parse(JSON.stringify(lastSavedEquipModelParameters[modelName]));
+    } else if (modelAbbr && lastSavedEquipModelParameters && Array.isArray(lastSavedEquipModelParameters[modelAbbr])) {
+        savedItems = JSON.parse(JSON.stringify(lastSavedEquipModelParameters[modelAbbr]));
+    }
+
+    // 2. 메모리에 없으면 localStorage 확인
+    if (!savedItems) {
+        try {
+            const localData = JSON.parse(localStorage.getItem('equip_model_parameters') || '{}');
+            if (localData && Array.isArray(localData[modelName])) {
+                savedItems = JSON.parse(JSON.stringify(localData[modelName]));
+            } else if (modelAbbr && localData && Array.isArray(localData[modelAbbr])) {
+                savedItems = JSON.parse(JSON.stringify(localData[modelAbbr]));
+            }
+        } catch (e) {}
+    }
+
+    // 3. 만약 로컬에도 없으면 서버에서 직접 재조회
+    if (!savedItems) {
+        try {
+            const res = await fetch('/api/setting/equip_model_parameters');
+            const data = await res.json();
+            if (data.status === 'success' && data.value) {
+                lastSavedEquipModelParameters = JSON.parse(JSON.stringify(data.value));
+                if (Array.isArray(data.value[modelName])) {
+                    savedItems = JSON.parse(JSON.stringify(data.value[modelName]));
+                } else if (modelAbbr && Array.isArray(data.value[modelAbbr])) {
+                    savedItems = JSON.parse(JSON.stringify(data.value[modelAbbr]));
+                }
+            }
+        } catch (err) {
+            console.warn('Failed to fetch from server during revert:', err);
+        }
+    }
+
+    const finalItems = Array.isArray(savedItems) ? savedItems : [];
+    equipModelParameters[modelName] = JSON.parse(JSON.stringify(finalItems));
+    if (modelAbbr) {
+        equipModelParameters[modelAbbr] = JSON.parse(JSON.stringify(finalItems));
+    }
+
+    renderAdminParamTable();
+    alert(`[${modelName}] 마지막 저장 상태로 되돌렸습니다.`);
 }
 
 /**
