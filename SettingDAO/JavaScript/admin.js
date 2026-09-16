@@ -133,6 +133,7 @@ let currentAdminEquipKey = null; // 장비 관리에서 선택된 장비 키 (Na
 let equipmentModels = []; // 장비 모델 목록
 let currentAdminModel = null; // 선택된 장비 모델
 let currentAdminEquipSite = null; // 장비 관리에서 선택된 사업장
+let currentAdminEquipSites = null; // [추가] 장비 관리에서 선택된 사업장 목록 (다중 선택 필터)
 let currentAdminEquipSiteContext = null; // [추가] 선택된 장비의 실제 사업장 (전체 보기 시 식별용)
 let adminItems = []; // [추가] 물품 목록
 let currentAdminItemId = null; // [추가] 선택된 물품 ID
@@ -1066,15 +1067,8 @@ function renderEquipModelList() {
    5. 장비 관리 (Equipment Management)
    ========================================================================== */
 function setupEquipMgmt() {
-    // 사업장 선택 필터
-    const siteSelect = document.getElementById('admin-equip-site-filter');
-    if (siteSelect) {
-        siteSelect.addEventListener('change', (e) => {
-            currentAdminEquipSite = e.target.value;
-            localStorage.setItem('lastAdminEquipSite', currentAdminEquipSite);
-            renderAdminEquipList();
-        });
-    }
+    // 사업장 선택 필터 (Sort 스타일 커스텀 다중 선택 드롭다운 설정)
+    setupAdminEquipSiteMultiSelect();
 
     // 장비 검색 필터
     const equipSearchInput = document.getElementById('admin-equip-search');
@@ -1097,12 +1091,12 @@ function setupEquipMgmt() {
             const newLabel = document.getElementById('equip-new-label');
             if (newLabel) newLabel.style.display = 'inline';
             const siteInput = document.getElementById('equip-info-site');
-            siteInput.value = currentAdminEquipSite || '';
+            siteInput.value = (currentAdminEquipSites && currentAdminEquipSites.length === 1) ? currentAdminEquipSites[0] : (currentAdminEquipSite || '');
             siteInput.disabled = false; // 신규 등록 시에는 사업장 입력 가능
 
-            // [추가] 선택된 사업장이 있으면 건물 목록도 업데이트
-            if (currentAdminEquipSite) {
-                updateEquipBuildingDropdown(currentAdminEquipSite);
+            // [추가] 선택된 단일 사업장이 있으면 건물 목록도 업데이트
+            if (siteInput.value) {
+                updateEquipBuildingDropdown(siteInput.value);
             }
 
             const nameInput = document.getElementById('equip-info-name');
@@ -1591,26 +1585,289 @@ function updateEquipBuildingDropdown(siteName, selectedValue = '') {
     })
 }
 
-function updateEquipSiteSelect() {
-    const select = document.getElementById('admin-equip-site-filter');
-    if (!select) return;
+// [추가] 장비 관리 사업장 선택 드롭다운 (Sort 스타일 커스텀 다중 선택 UI) 초기화
+function setupAdminEquipSiteMultiSelect() {
+    const trigger = document.getElementById('admin-equip-site-filter-trigger');
+    const dropdown = document.getElementById('admin-equip-site-filter-dropdown');
+    const wrapper = document.getElementById('admin-equip-site-filter-wrapper');
+    if (!trigger || !dropdown || !wrapper) return;
 
-    const currentVal = select.value;
-    select.innerHTML = '<option value="">전체 사업장 보기</option>';
+    if (wrapper.dataset.initialized === 'true') return;
+    wrapper.dataset.initialized = 'true';
 
-    Object.keys(storageData).sort().forEach(site => {
-        const opt = document.createElement('option');
-        opt.value = site;
-        opt.textContent = site;
-        select.appendChild(opt);
+    // 1. 트리거 클릭 시 드롭다운 토글
+    trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropdown.classList.toggle('show');
     });
 
-    const savedSite = localStorage.getItem('lastAdminEquipSite');
-    if (currentVal && storageData[currentVal]) select.value = currentVal;
-    else if (savedSite && storageData[savedSite]) {
-        select.value = savedSite;
-        currentAdminEquipSite = savedSite;
+    // 2. 푸터 버튼 이벤트
+    const btnSelectAll = dropdown.querySelector('.btn-select-all');
+    if (btnSelectAll) {
+        btnSelectAll.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const list = document.getElementById('admin-equip-site-filter-list');
+            if (list) {
+                list.querySelectorAll('.log-select-item').forEach(el => el.classList.add('selected'));
+                syncAdminSiteFilterState();
+            }
+        });
     }
+
+    const btnDeselectAll = dropdown.querySelector('.btn-deselect-all');
+    if (btnDeselectAll) {
+        btnDeselectAll.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const list = document.getElementById('admin-equip-site-filter-list');
+            if (list) {
+                list.querySelectorAll('.log-select-item').forEach(el => el.classList.remove('selected'));
+                syncAdminSiteFilterState();
+            }
+        });
+    }
+
+    const btnConfirm = dropdown.querySelector('.btn-confirm');
+    if (btnConfirm) {
+        btnConfirm.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropdown.classList.remove('show');
+        });
+    }
+
+    // 3. 드롭다운 외부 클릭 시 닫기
+    if (!window.adminSiteDropdownOutsideHandlerBound) {
+        document.addEventListener('pointerdown', (e) => {
+            const wrap = document.getElementById('admin-equip-site-filter-wrapper');
+            if (wrap && !wrap.contains(e.target)) {
+                const dd = document.getElementById('admin-equip-site-filter-dropdown');
+                if (dd) dd.classList.remove('show');
+            }
+        });
+        window.adminSiteDropdownOutsideHandlerBound = true;
+    }
+}
+
+// [추가] 사업장 구분 토글 버튼 활성/비활성 스타일 갱신
+function updateAdminSiteGroupBtnStates() {
+    const groupContainer = document.getElementById('admin-site-group-toggle-container');
+    const list = document.getElementById('admin-equip-site-filter-list');
+    if (!groupContainer || !list) return;
+
+    groupContainer.querySelectorAll('.site-group-toggle-btn').forEach(btn => {
+        const targetGroup = btn.dataset.group;
+        const groupItems = Array.from(list.querySelectorAll(`.log-select-item[data-site-group="${targetGroup}"]`));
+        if (groupItems.length > 0 && groupItems.every(item => item.classList.contains('selected'))) {
+            btn.classList.remove('btn-gray');
+            btn.classList.add('btn-blue-sm');
+        } else {
+            btn.classList.remove('btn-blue-sm');
+            btn.classList.add('btn-gray');
+        }
+    });
+}
+
+// [추가] 사업장 선택 상태 동기화 및 트리거 텍스트 갱신
+function syncAdminSiteFilterState(skipRender = false) {
+    const list = document.getElementById('admin-equip-site-filter-list');
+    const trigger = document.getElementById('admin-equip-site-filter-trigger');
+    const nativeSelect = document.getElementById('admin-equip-site-filter');
+    if (!list || !trigger) return;
+
+    const selectedItems = Array.from(list.querySelectorAll('.log-select-item.selected'));
+    const totalItems = list.querySelectorAll('.log-select-item').length;
+
+    currentAdminEquipSites = selectedItems.map(el => el.dataset.value);
+    currentAdminEquipSite = (currentAdminEquipSites.length === 1) ? currentAdminEquipSites[0] : null;
+
+    const triggerTextSpan = trigger.querySelector('.trigger-text') || trigger;
+
+    if (totalItems > 0 && selectedItems.length === totalItems) {
+        triggerTextSpan.textContent = '전체 사업장';
+        trigger.title = '전체 사업장';
+        trigger.style.color = '#e6edf3';
+    } else if (selectedItems.length === 0) {
+        triggerTextSpan.textContent = '선택 없음';
+        trigger.title = '선택 없음';
+        trigger.style.color = '#8b949e';
+    } else if (selectedItems.length === 1) {
+        const itemText = selectedItems[0].querySelector('.sort-item-text') ? selectedItems[0].querySelector('.sort-item-text').textContent : selectedItems[0].dataset.value;
+        triggerTextSpan.textContent = itemText;
+        trigger.title = itemText;
+        trigger.style.color = '#e6edf3';
+    } else {
+        const firstText = selectedItems[0].querySelector('.sort-item-text') ? selectedItems[0].querySelector('.sort-item-text').textContent : selectedItems[0].dataset.value;
+        triggerTextSpan.textContent = `${firstText} 외 ${selectedItems.length - 1}개`;
+        trigger.title = selectedItems.map(el => (el.querySelector('.sort-item-text') ? el.querySelector('.sort-item-text').textContent : el.dataset.value)).join('\n');
+        trigger.style.color = '#e6edf3';
+    }
+
+    if (nativeSelect) {
+        nativeSelect.value = currentAdminEquipSite || '';
+    }
+
+    localStorage.setItem('lastAdminEquipSites', JSON.stringify(currentAdminEquipSites));
+    localStorage.setItem('lastAdminEquipSite', currentAdminEquipSite || '');
+
+    updateAdminSiteGroupBtnStates();
+
+    if (!skipRender) {
+        renderAdminEquipList();
+    }
+}
+
+// [수정] 장비 관리 사업장 선택 드롭다운 목록 생성 및 복원
+function updateEquipSiteSelect() {
+    setupAdminEquipSiteMultiSelect();
+
+    const select = document.getElementById('admin-equip-site-filter');
+    const groupContainer = document.getElementById('admin-site-group-toggle-container');
+    const list = document.getElementById('admin-equip-site-filter-list');
+    if (!list) return;
+
+    const allSites = Object.keys(storageData).sort();
+
+    // 1. 기존 네이티브 select 옵션 갱신 (호환성 유지)
+    if (select) {
+        const currentVal = select.value;
+        select.innerHTML = '<option value="">전체 사업장 보기</option>';
+        allSites.forEach(site => {
+            const opt = document.createElement('option');
+            opt.value = site;
+            opt.textContent = site;
+            select.appendChild(opt);
+        });
+        if (currentVal && storageData[currentVal]) select.value = currentVal;
+    }
+
+    // 2. 사업장 구분 토글 버튼 렌더링
+    if (groupContainer) {
+        groupContainer.innerHTML = DEFAULT_SITE_GROUPS.map(g => 
+            `<button type="button" class="btn-gray site-group-toggle-btn sort-filter-btn" data-group="${g}">${g}</button>`
+        ).join('');
+
+        groupContainer.querySelectorAll('.site-group-toggle-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const targetGroup = btn.dataset.group;
+                const groupItems = Array.from(list.querySelectorAll(`.log-select-item[data-site-group="${targetGroup}"]`));
+                if (groupItems.length === 0) return;
+
+                const allSelected = groupItems.every(item => item.classList.contains('selected'));
+                groupItems.forEach(el => {
+                    if (allSelected) {
+                        el.classList.remove('selected');
+                    } else {
+                        el.classList.add('selected');
+                    }
+                });
+
+                syncAdminSiteFilterState();
+            });
+        });
+    }
+
+    // 3. 이전에 선택했던 사업장 목록 복원
+    if (currentAdminEquipSites === null) {
+        try {
+            const saved = JSON.parse(localStorage.getItem('lastAdminEquipSites'));
+            if (Array.isArray(saved)) {
+                currentAdminEquipSites = saved.filter(s => storageData[s]);
+            }
+        } catch (e) { }
+
+        if (!currentAdminEquipSites) {
+            const oldSaved = localStorage.getItem('lastAdminEquipSite');
+            if (oldSaved && storageData[oldSaved]) {
+                currentAdminEquipSites = [oldSaved];
+            } else {
+                currentAdminEquipSites = allSites.slice(); // 기본값: 전체 선택
+            }
+        }
+    } else {
+        // 기존에 선택되어 있던 사업장 중 삭제된 사업장 필터링
+        currentAdminEquipSites = currentAdminEquipSites.filter(s => storageData[s]);
+    }
+
+    // 4. 리스트 아이템 렌더링
+    list.innerHTML = '';
+    if (allSites.length === 0) {
+        list.innerHTML = '<div style="padding: 10px; color: #8b949e; text-align: center; font-size: 12px;">등록된 사업장이 없습니다.</div>';
+    } else {
+        allSites.forEach(site => {
+            let siteGroup = '기타사업장';
+            try {
+                const metaData = JSON.parse(localStorage.getItem(`site_meta_${site}`));
+                if (metaData && metaData.group) siteGroup = metaData.group;
+            } catch (e) { }
+
+            const div = document.createElement('div');
+            div.className = 'log-select-item';
+            div.dataset.value = site;
+            div.dataset.siteGroup = siteGroup;
+
+            const isSelected = currentAdminEquipSites.includes(site);
+            if (isSelected) div.classList.add('selected');
+
+            div.innerHTML = `
+                <span class="sort-check-icon">✓</span>
+                <span class="sort-item-text">[${escapeHtml(siteGroup)}] ${escapeHtml(site)}</span>
+            `;
+
+            // 모바일 터치 스크롤 시 자동 선택 방지 (규칙 9)
+            let startY = 0, startX = 0, startTime = 0, isMoving = false;
+
+            div.addEventListener('touchstart', (e) => {
+                window.lastTouchTime = Date.now();
+                startTime = Date.now();
+                if (e.touches && e.touches[0]) {
+                    startY = e.touches[0].clientY;
+                    startX = e.touches[0].clientX;
+                }
+                isMoving = false;
+            }, { passive: true });
+
+            div.addEventListener('touchmove', (e) => {
+                if (!e.touches || !e.touches[0]) return;
+                const moveY = e.touches[0].clientY;
+                const moveX = e.touches[0].clientX;
+                const diffX = Math.abs(moveX - startX);
+                const diffY = Math.abs(moveY - startY);
+                if (diffY > 6 || diffX > 6) {
+                    isMoving = true;
+                }
+            }, { passive: true });
+
+            div.addEventListener('touchcancel', () => {
+                isMoving = false;
+            }, { passive: true });
+
+            div.addEventListener('touchend', (e) => {
+                if (isMoving) return;
+                e.preventDefault();
+                e.stopPropagation();
+                div.classList.toggle('selected');
+                syncAdminSiteFilterState();
+            });
+
+            div.addEventListener('mousedown', (e) => {
+                if (window.lastTouchTime && Date.now() - window.lastTouchTime < 600) return;
+                e.preventDefault();
+                e.stopPropagation();
+                div.classList.toggle('selected');
+                syncAdminSiteFilterState();
+            });
+
+            list.appendChild(div);
+        });
+    }
+
+    // 5. 트리거 텍스트 및 버튼 상태 동기화 (렌더링은 호출 측에서 수행하도록 skipRender: true)
+    syncAdminSiteFilterState(true);
 }
 
 function renderAdminEquipList() {
@@ -1625,10 +1882,20 @@ function renderAdminEquipList() {
     if (countEl) countEl.textContent = '0';
 
     let items = [];
-    if (currentAdminEquipSite && storageData[currentAdminEquipSite]) {
-        storageData[currentAdminEquipSite].forEach(k => items.push({ site: currentAdminEquipSite, key: k }));
+    const allSites = Object.keys(storageData).sort();
+    const isAllSelected = !currentAdminEquipSites || (currentAdminEquipSites.length === allSites.length);
+    const isNoneSelected = currentAdminEquipSites && currentAdminEquipSites.length === 0;
+
+    if (isNoneSelected) {
+        items = [];
+    } else if (!isAllSelected && currentAdminEquipSites && currentAdminEquipSites.length > 0) {
+        currentAdminEquipSites.forEach(s => {
+            if (storageData[s]) {
+                storageData[s].forEach(k => items.push({ site: s, key: k }));
+            }
+        });
     } else {
-        Object.keys(storageData).sort().forEach(site => {
+        allSites.forEach(site => {
             if (storageData[site]) {
                 storageData[site].forEach(k => items.push({ site: site, key: k }));
             }
@@ -1698,7 +1965,7 @@ function renderAdminEquipList() {
         }
 
         let content = `<span>${displayName}</span>${subInfo}`;
-        if (!currentAdminEquipSite) {
+        if (!currentAdminEquipSites || currentAdminEquipSites.length !== 1) {
             content = `<div style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:11px; color:#8b949e;">${site}</span><div>${content}</div></div>`;
         } else {
             content = `<div>${content}</div>`;
@@ -2465,7 +2732,7 @@ function renderAdminParamTable() {
                     <div class="data-param-spec-cell">
                         <!-- 1. 유무 전용 일반 텍스트 입력창 (unitVal === '유무') -->
                         <div class="data-param-text-spec-wrap" style="${unitVal === '유무' ? 'display: flex;' : 'display: none;'}">
-                            <input type="text" class="data-param-input data-param-text-spec-val" value="${escapeHtml(standardVal)}" 
+                            <input type="text" class="data-param-input data-param-text-spec-val" style="text-align: center;" value="${escapeHtml(standardVal)}" 
                                    placeholder="기준 텍스트 (예: 무, 정상)" 
                                    onchange="updateAdminParamItem(${idx}, 'standard', this.value);">
                         </div>
@@ -2486,30 +2753,32 @@ function renderAdminParamTable() {
                             
                             <!-- 일반 단일 입력 (op !== '±' && op !== '~') -->
                             <div class="data-param-single-val-wrap" style="${(parsedSpec.op === '±' || parsedSpec.op === '~') ? 'display: none;' : 'display: flex;'}">
-                                <input type="text" class="data-param-input data-param-spec-val" value="${escapeHtml(parsedSpec.val)}" 
+                                <input type="text" class="data-param-input data-param-spec-val" style="text-align: center;" value="${escapeHtml(parsedSpec.val)}" 
                                        placeholder="기준값 (예: 100)" 
                                        onchange="handleAdminParamSpecValChange(${idx}, this.closest('.data-param-numeric-spec-wrap').querySelector('.data-param-op-select').value, this.value, this.closest('.data-param-numeric-spec-wrap').querySelector('.data-param-op-select'), this)">
                             </div>
 
                             <!-- ± 전용 2개 수치 입력 (기준값 ± 오차) -->
                             <div class="data-param-pm-val-wrap" style="${parsedSpec.op === '±' ? 'display: flex;' : 'display: none;'}">
-                                <input type="text" class="data-param-input data-param-spec-center" value="${escapeHtml(parsedSpec.center || '')}" 
+                                <input type="text" class="data-param-input data-param-spec-center" style="text-align: center;" value="${escapeHtml(parsedSpec.center || '')}" 
                                        placeholder="기준(100)" title="기준값 (중심값)"
                                        onchange="handleAdminParamPmChange(${idx}, this)">
                                 <span class="data-param-pm-divider">±</span>
-                                <input type="text" class="data-param-input data-param-spec-tol" value="${escapeHtml(parsedSpec.tol || '')}" 
+                                <input type="text" class="data-param-input data-param-spec-tol" style="text-align: center;" value="${escapeHtml(parsedSpec.tol || '')}" 
                                        placeholder="오차(5)" title="오차 허용 범위"
                                        onchange="handleAdminParamPmChange(${idx}, this)">
                             </div>
 
                             <!-- ~ 전용 2개 수치 입력 (최소 ~ 최대 범위) -->
                             <div class="data-param-range-val-wrap" style="${parsedSpec.op === '~' ? 'display: flex;' : 'display: none;'}">
-                                <input type="text" class="data-param-input data-param-spec-min" value="${escapeHtml(parsedSpec.min || '')}" 
+                                <input type="text" class="data-param-input data-param-spec-min" style="text-align: center;" value="${escapeHtml(parsedSpec.min || '')}" 
                                        placeholder="최소(10)" title="최솟값 (시작)"
+                                       oninput="handleAdminParamRangeChange(${idx}, this)"
                                        onchange="handleAdminParamRangeChange(${idx}, this)">
                                 <span class="data-param-range-divider">~</span>
-                                <input type="text" class="data-param-input data-param-spec-max" value="${escapeHtml(parsedSpec.max || '')}" 
+                                <input type="text" class="data-param-input data-param-spec-max" style="text-align: center;" value="${escapeHtml(parsedSpec.max || '')}" 
                                        placeholder="최대(20)" title="최댓값 (끝)"
+                                       oninput="handleAdminParamRangeChange(${idx}, this)"
                                        onchange="handleAdminParamRangeChange(${idx}, this)">
                             </div>
                         </div>
@@ -2601,9 +2870,9 @@ function parseAdminParamStandard(standardVal) {
         };
     }
 
-    // 6. 단독 "~"
-    if (s === '~') {
-        return { op: '~', val: '~', min: '', max: '', center: '', tol: '' };
+    // 6. 단독 "~" 또는 숫자 없는 "~ [단위]" 형태
+    if (s === '~' || (s.startsWith('~') && !s.match(/^~\s*[+-]?\d/))) {
+        return { op: '~', val: '', min: '', max: '', center: '', tol: '' };
     }
 
     // 7. 선두에 부등호 기호가 오는 경우 (예: ">= 100", "≥ 100", "<= 20", "≤ 20", "> 10", "< 5", "= 50")
@@ -2811,9 +3080,15 @@ function handleAdminParamSpecOpChange(idx, op, selectEl) {
         if (rangeWrap) rangeWrap.style.display = 'flex';
 
         const prevVal = (singleInput && singleInput.value) || (centerInput && centerInput.value) || '';
-        if (prevVal && (!minInput || !minInput.value)) {
-            const stripped = stripAdminParamUnit(prevVal, unit);
-            if (minInput) minInput.value = stripped;
+        if (prevVal) {
+            const parsedPrev = parseAdminParamStandard(prevVal);
+            if (parsedPrev.min || parsedPrev.max) {
+                if (minInput && !minInput.value) minInput.value = parsedPrev.min || '';
+                if (maxInput && !maxInput.value) maxInput.value = parsedPrev.max || '';
+            } else if (!minInput || !minInput.value) {
+                const stripped = stripAdminParamUnit(prevVal, unit);
+                if (minInput) minInput.value = stripped;
+            }
         }
 
         const minVal = minInput ? minInput.value.trim() : '';
@@ -2824,7 +3099,8 @@ function handleAdminParamSpecOpChange(idx, op, selectEl) {
         else if (maxVal) combined = `~ ${maxVal}`;
         else combined = '~';
 
-        if (maxInput && !maxInput.value) maxInput.focus();
+        if (minInput && !minInput.value) minInput.focus();
+        else if (maxInput && !maxInput.value) maxInput.focus();
     } else {
         if (pmWrap) pmWrap.style.display = 'none';
         if (rangeWrap) rangeWrap.style.display = 'none';
@@ -2872,7 +3148,7 @@ function handleAdminParamRangeChange(idx, inputEl) {
     else if (maxVal) combined = `~ ${maxVal}`;
     else combined = '~';
 
-    if (combined && unit) {
+    if (combined && combined !== '~' && combined !== '±' && unit) {
         combined = attachAdminParamUnit(stripAdminParamUnit(combined, unit), unit);
     }
 
@@ -2906,6 +3182,7 @@ function handleAdminParamSpecValChange(idx, currentOp, inputVal, selectEl, input
                     const maxInput = cell.querySelector('.data-param-spec-max');
                     if (minInput) minInput.value = parsed.min || '';
                     if (maxInput) maxInput.value = parsed.max || '';
+                    handleAdminParamRangeChange(idx, minInput || maxInput);
                 }
             }
             return;
@@ -2975,6 +3252,8 @@ async function saveAdminParamSettings() {
         const singleSpecInput = tr.querySelector('.data-param-spec-val');
         const centerInput = tr.querySelector('.data-param-spec-center');
         const tolInput = tr.querySelector('.data-param-spec-tol');
+        const minInput = tr.querySelector('.data-param-spec-min');
+        const maxInput = tr.querySelector('.data-param-spec-max');
 
         let unitVal = '';
         if (customUnitInput && customUnitInput.closest('.data-param-unit-custom-wrap') && customUnitInput.closest('.data-param-unit-custom-wrap').style.display !== 'none') {
@@ -2996,11 +3275,18 @@ async function saveAdminParamSettings() {
                 else if (c) standardVal = c;
                 else if (t) standardVal = `± ${t}`;
                 else standardVal = '±';
+            } else if (op === '~') {
+                const minV = minInput ? minInput.value.trim() : '';
+                const maxV = maxInput ? maxInput.value.trim() : '';
+                if (minV && maxV) standardVal = `${minV} ~ ${maxV}`;
+                else if (minV) standardVal = `${minV} ~`;
+                else if (maxV) standardVal = `~ ${maxV}`;
+                else standardVal = '~';
             } else {
                 const v = singleSpecInput ? singleSpecInput.value.trim() : '';
                 standardVal = op ? (v ? `${op} ${v}` : op) : v;
             }
-            if (standardVal && unitVal) {
+            if (standardVal && standardVal !== '~' && standardVal !== '±' && unitVal) {
                 standardVal = attachAdminParamUnit(stripAdminParamUnit(standardVal, unitVal), unitVal);
             }
         }

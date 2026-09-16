@@ -1264,6 +1264,20 @@
     min-width: 0;
     height: 100%;
     border-left: none;
+    text-align: center !important;
+}
+
+.data-param-text-spec-val {
+    text-align: center !important;
+}
+
+.data-param-spec-val::placeholder,
+.data-param-text-spec-val::placeholder,
+.data-param-spec-center::placeholder,
+.data-param-spec-tol::placeholder,
+.data-param-spec-min::placeholder,
+.data-param-spec-max::placeholder {
+    text-align: center;
 }
 
 .data-param-single-val-wrap {

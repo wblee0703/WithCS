@@ -17,6 +17,7 @@
 .session-time-display {
     color: #e3b341;
     font-size: 14px;
+    font-variant-numeric: tabular-nums;
 }
 
 .btn-extend-session {

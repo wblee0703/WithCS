@@ -822,7 +822,7 @@ function renderParamView() {
                     <div class="data-param-spec-cell">
                         <!-- 1. 유무 전용 일반 텍스트 입력창 (unitVal === '유무') -->
                         <div class="data-param-text-spec-wrap" style="${unitVal === '유무' ? 'display: flex;' : 'display: none;'}">
-                            <input type="text" class="data-param-input data-param-text-spec-val" value="${escapeHtml(standardVal)}" 
+                            <input type="text" class="data-param-input data-param-text-spec-val" style="text-align: center;" value="${escapeHtml(standardVal)}" 
                                    placeholder="기준 텍스트 (예: 무, 정상)" 
                                    onchange="updateParamCell('${row.id}', '기준값', this.value); autoEvaluateRowResult('${row.id}');">
                         </div>
@@ -843,30 +843,32 @@ function renderParamView() {
                             
                             <!-- 일반 단일 입력 (op !== '±' && op !== '~') -->
                             <div class="data-param-single-val-wrap" style="${(parsedSpec.op === '±' || parsedSpec.op === '~') ? 'display: none;' : 'display: flex;'}">
-                                <input type="text" class="data-param-input data-param-spec-val" value="${escapeHtml(parsedSpec.val)}" 
+                                <input type="text" class="data-param-input data-param-spec-val" style="text-align: center;" value="${escapeHtml(parsedSpec.val)}" 
                                        placeholder="기준값 (예: 100)" 
                                        onchange="handleParamSpecValChange('${row.id}', this.closest('.data-param-numeric-spec-wrap').querySelector('.data-param-op-select').value, this.value, this.closest('.data-param-numeric-spec-wrap').querySelector('.data-param-op-select'), this)">
                             </div>
 
                             <!-- ± 전용 2개 수치 입력 (기준값 ± 오차) -->
                             <div class="data-param-pm-val-wrap" style="${parsedSpec.op === '±' ? 'display: flex;' : 'display: none;'}">
-                                <input type="text" class="data-param-input data-param-spec-center" value="${escapeHtml(parsedSpec.center || '')}" 
+                                <input type="text" class="data-param-input data-param-spec-center" style="text-align: center;" value="${escapeHtml(parsedSpec.center || '')}" 
                                        placeholder="기준(100)" title="기준값 (중심값)"
                                        onchange="handleParamPmChange('${row.id}', this)">
                                 <span class="data-param-pm-divider">±</span>
-                                <input type="text" class="data-param-input data-param-spec-tol" value="${escapeHtml(parsedSpec.tol || '')}" 
+                                <input type="text" class="data-param-input data-param-spec-tol" style="text-align: center;" value="${escapeHtml(parsedSpec.tol || '')}" 
                                        placeholder="오차(5)" title="오차 허용 범위"
                                        onchange="handleParamPmChange('${row.id}', this)">
                             </div>
 
                             <!-- ~ 전용 2개 수치 입력 (최소 ~ 최대 범위) -->
                             <div class="data-param-range-val-wrap" style="${parsedSpec.op === '~' ? 'display: flex;' : 'display: none;'}">
-                                <input type="text" class="data-param-input data-param-spec-min" value="${escapeHtml(parsedSpec.min || '')}" 
+                                <input type="text" class="data-param-input data-param-spec-min" style="text-align: center;" value="${escapeHtml(parsedSpec.min || '')}" 
                                        placeholder="최소(10)" title="최솟값 (시작)"
+                                       oninput="handleParamRangeChange('${row.id}', this)"
                                        onchange="handleParamRangeChange('${row.id}', this)">
                                 <span class="data-param-range-divider">~</span>
-                                <input type="text" class="data-param-input data-param-spec-max" value="${escapeHtml(parsedSpec.max || '')}" 
+                                <input type="text" class="data-param-input data-param-spec-max" style="text-align: center;" value="${escapeHtml(parsedSpec.max || '')}" 
                                        placeholder="최대(20)" title="최댓값 (끝)"
+                                       oninput="handleParamRangeChange('${row.id}', this)"
                                        onchange="handleParamRangeChange('${row.id}', this)">
                             </div>
                         </div>
@@ -1183,9 +1185,9 @@ function parseParamStandard(standardVal) {
         };
     }
 
-    // 6. 단독 "~"
-    if (s === '~') {
-        return { op: '~', val: '~', min: '', max: '', center: '', tol: '' };
+    // 6. 단독 "~" 또는 숫자 없는 "~ [단위]" 형태
+    if (s === '~' || (s.startsWith('~') && !s.match(/^~\s*[+-]?\d/))) {
+        return { op: '~', val: '', min: '', max: '', center: '', tol: '' };
     }
 
     // 7. 선두에 부등호 기호가 오는 경우 (예: ">= 100", "≥ 100", "<= 20", "≤ 20", "> 10", "< 5", "= 50")
@@ -1413,9 +1415,15 @@ function handleParamSpecOpChange(rowId, op, selectEl) {
 
         // 기존 단일/± 입력에 숫자가 있었다면 최소값으로 이동
         const prevVal = (singleInput && singleInput.value) || (centerInput && centerInput.value) || '';
-        if (prevVal && (!minInput || !minInput.value)) {
-            const stripped = stripUnitFromValue(prevVal, unit);
-            if (minInput) minInput.value = stripped;
+        if (prevVal) {
+            const parsedPrev = parseParamStandard(prevVal);
+            if (parsedPrev.min || parsedPrev.max) {
+                if (minInput && !minInput.value) minInput.value = parsedPrev.min || '';
+                if (maxInput && !maxInput.value) maxInput.value = parsedPrev.max || '';
+            } else if (!minInput || !minInput.value) {
+                const stripped = stripUnitFromValue(prevVal, unit);
+                if (minInput) minInput.value = stripped;
+            }
         }
 
         const minVal = minInput ? minInput.value.trim() : '';
@@ -1426,7 +1434,9 @@ function handleParamSpecOpChange(rowId, op, selectEl) {
         else if (maxVal) combined = `~ ${maxVal}`;
         else combined = '~';
 
-        if (maxInput && !maxInput.value) {
+        if (minInput && !minInput.value) {
+            minInput.focus();
+        } else if (maxInput && !maxInput.value) {
             maxInput.focus();
         }
     } else {
@@ -1450,7 +1460,7 @@ function handleParamSpecOpChange(rowId, op, selectEl) {
         combined = op ? (val ? `${op} ${val}` : op) : val;
     }
 
-    if (combined && unit) {
+    if (combined && combined !== '~' && combined !== '±' && unit) {
         combined = attachUnitToValue(stripUnitFromValue(combined, unit), unit);
     }
 
@@ -1524,7 +1534,7 @@ function handleParamRangeChange(rowId, inputEl) {
         combined = '~';
     }
 
-    if (combined && unit) {
+    if (combined && combined !== '~' && combined !== '±' && unit) {
         combined = attachUnitToValue(stripUnitFromValue(combined, unit), unit);
     }
 
@@ -1559,6 +1569,7 @@ function handleParamSpecValChange(rowId, currentOp, inputVal, selectEl, inputEl)
                     const maxInput = cell.querySelector('.data-param-spec-max');
                     if (minInput) minInput.value = parsed.min || '';
                     if (maxInput) maxInput.value = parsed.max || '';
+                    handleParamRangeChange(rowId, minInput || maxInput);
                 }
             }
             return;

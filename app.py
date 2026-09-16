@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, jsonify, session, has_request_context, send_from_directory, redirect
+from flask.sessions import SecureCookieSessionInterface
 import json
 import os
 import time
@@ -60,8 +61,45 @@ load_dotenv(env_path)
 app.secret_key = os.environ.get('SECRET_KEY', 'CHANGE_THIS_TO_A_COMPLEX_RANDOM_KEY')
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=60)
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=4)
 app.config['WTF_CSRF_TIME_LIMIT'] = None  # [추가] CSRF 토큰의 독자적인 타임아웃(기본 3600초)을 해제하여 세션 수명과 100% 동기화
+
+# [추가] 권한별 세션 수명 차등 적용 인터페이스 (관리자 권한: 4시간, 일반 권한: 1시간)
+class RoleBasedSessionInterface(SecureCookieSessionInterface):
+    def get_expiration_time(self, app, session):
+        if not session.permanent:
+            return None
+        role = session.get('role')
+        if role in ['admin', 'superadmin']:
+            return datetime.now(timezone.utc) + timedelta(hours=4)
+        return datetime.now(timezone.utc) + timedelta(hours=1)
+
+    def open_session(self, app, request):
+        s = self.get_signing_serializer(app)
+        if s is None:
+            return None
+        val = request.cookies.get(self.get_cookie_name(app))
+        if not val:
+            return self.session_class()
+
+        # 1. 관리자 최대 수명인 4시간 기준으로 서명 검증 및 복호화 시도
+        max_age = int(timedelta(hours=4).total_seconds())
+        try:
+            data = s.loads(val, max_age=max_age)
+        except Exception:
+            return self.session_class()
+
+        # 2. 일반 계정인 경우 1시간(3600초) 유효 시간 엄격 적용
+        role = data.get('role')
+        if role not in ['admin', 'superadmin']:
+            try:
+                data = s.loads(val, max_age=int(timedelta(hours=1).total_seconds()))
+            except Exception:
+                return self.session_class()
+
+        return self.session_class(data)
+
+app.session_interface = RoleBasedSessionInterface()
 
 if os.environ.get('APP_ENV') == 'production':
     app.config['TEMPLATES_AUTO_RELOAD'] = False  # 운영 환경
@@ -2528,6 +2566,7 @@ def get_user_names():
 @app.route('/api/session/extend', methods=['POST'])
 @login_required
 def extend_session():
+    session.permanent = True
     session.modified = True
     return jsonify({"status": "success", "message": "세션이 연장되었습니다."})
 

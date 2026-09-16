@@ -2182,12 +2182,35 @@ function restoreLastState() {
     }
 }
 
+// [추가] 권한별 세션 유지 시간 반환 (관리자: 4시간, 일반: 1시간)
+function getSessionDurationSeconds() {
+    const role = sessionStorage.getItem('userRole');
+    if (role === 'admin' || role === 'superadmin') {
+        return 4 * 3600; // 관리자 권한 4시간 (14,400초)
+    }
+    return 1 * 3600; // 일반 계정 1시간 (3,600초)
+}
+
 // [추가] 세션 타이머 관련 함수
-function startSessionTimer() {
+function startSessionTimer(isReset = false) {
     stopSessionTimer(); // 기존 타이머 중지
-    const expiryTime = Date.now() + 3600 * 1000;
-    sessionStorage.setItem('sessionExpiryTime', expiryTime.toString());
-    sessionTimeLeft = 3600; // 60분 리셋 (3600초)
+    const totalSeconds = getSessionDurationSeconds();
+    let expiryTime = parseInt(sessionStorage.getItem('sessionExpiryTime'), 10);
+    const now = Date.now();
+
+    if (isReset || !expiryTime || expiryTime <= now) {
+        expiryTime = now + totalSeconds * 1000;
+        sessionStorage.setItem('sessionExpiryTime', expiryTime.toString());
+    }
+
+    sessionTimeLeft = Math.floor((expiryTime - now) / 1000);
+    // 권한 변경 등으로 현재 최대 시간보다 길게 설정되어 있다면 보정
+    if (sessionTimeLeft > totalSeconds) {
+        sessionTimeLeft = totalSeconds;
+        expiryTime = now + totalSeconds * 1000;
+        sessionStorage.setItem('sessionExpiryTime', expiryTime.toString());
+    }
+
     lastActivityTimestamp = Date.now(); // [추가] 타이머 시작 시 활동 시간도 초기화
     updateTimerUI();
 
@@ -2206,9 +2229,9 @@ function startSessionTimer() {
 
         // [추가] 세션 만료 5분 전, 최근 5분 내 활동이 있었으면 자동 연장
         if (sessionTimeLeft === 300) { // 5분 남았을 때
-            const now = Date.now();
+            const curNow = Date.now();
             // 최근 5분(300,000ms) 이내에 활동이 있었는지 확인
-            if (now - lastActivityTimestamp < 300000) {
+            if (curNow - lastActivityTimestamp < 300000) {
                 window.extendSession();
             }
         }
@@ -2224,9 +2247,12 @@ function stopSessionTimer() {
 
 function updateTimerUI() {
     let displayTime = sessionTimeLeft > 0 ? sessionTimeLeft : 0;
-    const minutes = Math.floor(displayTime / 60);
+    const hours = Math.floor(displayTime / 3600);
+    const minutes = Math.floor((displayTime % 3600) / 60);
     const seconds = displayTime % 60;
-    const displayStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    const displayStr = hours > 0
+        ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+        : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
     document.querySelectorAll('.session-time-display').forEach(el => {
         el.textContent = displayStr;
@@ -2247,7 +2273,7 @@ window.extendSession = function () {
         .then(res => res.json())
         .then(data => {
             if (data.status === 'success') {
-                startSessionTimer(); // 타이머 리셋
+                startSessionTimer(true); // 타이머 리셋
             }
         })
         .catch(err => console.error('Session extend failed', err));
@@ -2504,6 +2530,7 @@ function attemptLogin(id, pw, context) {
                 sessionStorage.setItem('isLoggedIn', 'true');
                 sessionStorage.setItem('userId', id);
                 sessionStorage.setItem('userRole', data.role);
+                sessionStorage.removeItem('sessionExpiryTime'); // [추가] 신규 로그인 시 새 권한(관리자 4h/일반 1h)에 맞는 타이머 시작
                 sessionStorage.setItem('userSite', data.site || ''); // [추가]
                 sessionStorage.setItem('userDepartment', data.department || '');
                 sessionStorage.setItem('userPosition', data.position || '');

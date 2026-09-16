@@ -33,7 +33,7 @@
     <header class="header">
         <!-- 모바일 세션 타이머 -->
         <div id="mobile-session-timer" class="session-timer-container mobile-header-timer" style="display: none;">
-            <span class="session-time-display">30:00</span>
+            <span class="session-time-display">--:--</span>
             <button class="btn-blue btn-extend-session" onclick="extendSession()">연장</button>
         </div>
 
@@ -106,7 +106,7 @@
         <div class="user-controls">
             <!-- 데스크톱 세션 타이머 -->
             <div id="desktop-session-timer" class="session-timer-container" style="display: none;">
-                <span class="session-time-display">30:00</span>
+                <span class="session-time-display">--:--</span>
                 <button class="btn-gray btn-extend-session" onclick="extendSession()">연장</button>
             </div>
             <span id="user-info" class="user-info" style="display: none;"></span>
@@ -1477,7 +1477,7 @@
     </template>
 
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.0.7"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.1.0"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.1.1"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}"></script>
     {% if session.get('role') == 'superadmin' %}
     <script src="{{ url_for('SettingDAO', filename='JavaScript/chatbot.js') }}"></script>

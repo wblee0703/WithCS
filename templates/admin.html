@@ -4,7 +4,7 @@
 {% block title %}WITHTECH - Admin{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=28">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=30">
 {% endblock %}
 
 {% block content %}
@@ -177,9 +177,23 @@
                                 <span>등록된 장비</span>
                                 <span id="admin-equip-count" class="badge">0</span>
                             </div>
-                            <select id="admin-equip-site-filter" class="modal-select full-width compact-select mb-5">
+                            <select id="admin-equip-site-filter" class="modal-select full-width compact-select mb-5" style="display: none;">
                                 <option value="">전체 사업장 보기</option>
                             </select>
+                            <div id="admin-equip-site-filter-wrapper" class="log-select-wrapper full-width admin-site-filter-wrapper mb-5">
+                                <div class="log-select-trigger admin-site-filter-trigger" id="admin-equip-site-filter-trigger" title="전체 사업장">
+                                    <span class="trigger-text" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">전체 사업장</span>
+                                </div>
+                                <div class="log-select-dropdown admin-site-filter-dropdown" id="admin-equip-site-filter-dropdown">
+                                    <div id="admin-site-group-toggle-container" class="sort-group-filter-container"></div>
+                                    <div class="log-select-list sort-list" id="admin-equip-site-filter-list"></div>
+                                    <div class="log-select-footer sort-footer">
+                                        <button type="button" class="btn-gray btn-select-all flex-1">전체 선택</button>
+                                        <button type="button" class="btn-gray btn-deselect-all flex-1">전체 해제</button>
+                                        <button type="button" class="btn-blue-sm btn-confirm flex-1">선택 완료</button>
+                                    </div>
+                                </div>
+                            </div>
                             <input type="text" id="admin-equip-search" class="input-dark full-width compact-select"
                                 placeholder="사업장, 장비명, 시리얼 검색 (띄어쓰기 조합)" autocomplete="off">
                         </div>
@@ -985,5 +999,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=39"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=42"></script>
 {% endblock %}
