@@ -114,7 +114,7 @@ function setupEventDetailModal() {
     if (moveToEquipBtn) {
         moveToEquipBtn.onclick = () => {
             if (currentDetailTarget) {
-                let targetUrl = `maintenance.html?site=${encodeURIComponent(currentDetailTarget.site)}&equip=${encodeURIComponent(currentDetailTarget.equip)}`;
+                let targetUrl = `/maintenance?site=${encodeURIComponent(currentDetailTarget.site)}&equip=${encodeURIComponent(currentDetailTarget.equip)}`;
                 if (currentDetailTarget.isCompleted && currentDetailTarget.id) {
                     targetUrl += `&logId=${currentDetailTarget.id}`;
                 }
@@ -1229,7 +1229,7 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
                 btnGroup.classList.add('has-trouble-history');
             }
             troubleHistoryBtn.onclick = () => {
-                let targetUrl = `trouble.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
+                let targetUrl = `/trouble?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
                 if (item.date) {
                     targetUrl += `&date=${encodeURIComponent(item.date)}`;
                 }
@@ -1265,7 +1265,7 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
                     window.openAddWorkModal(parentId, logDate);
                 } else {
                     sessionStorage.setItem('openAddWorkForLog', JSON.stringify({ site: site, equip: equip, logId: parentId }));
-                    location.href = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
+                    location.href = `/maintenance?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
                 }
             };
         } else {

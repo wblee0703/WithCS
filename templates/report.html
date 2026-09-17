@@ -20,7 +20,8 @@
         <div class="report-control-group">
             <label class="report-label" for="report-site-input">사업장 (Site)</label>
             <div class="report-suggest-wrapper" id="report-site-wrapper">
-                <input type="text" id="report-site-input" class="report-suggest-input" placeholder="사업장을 선택하거나 검색..." autocomplete="off">
+                <input type="text" id="report-site-input" class="report-suggest-input" placeholder="사업장을 선택하거나 검색..."
+                    autocomplete="off">
                 <span class="report-suggest-arrow">▼</span>
                 <div class="report-suggest-dropdown" id="report-site-dropdown"></div>
             </div>
@@ -32,7 +33,8 @@
         <div class="report-control-group">
             <label class="report-label" for="report-equip-input">장비 / 호기 (Equipment)</label>
             <div class="report-suggest-wrapper" id="report-equip-wrapper">
-                <input type="text" id="report-equip-input" class="report-suggest-input" placeholder="장비를 먼저 선택해주세요" autocomplete="off" disabled>
+                <input type="text" id="report-equip-input" class="report-suggest-input" placeholder="장비를 먼저 선택해주세요"
+                    autocomplete="off" disabled>
                 <span class="report-suggest-arrow">▼</span>
                 <div class="report-suggest-dropdown" id="report-equip-dropdown"></div>
             </div>
@@ -49,7 +51,8 @@
         <div class="report-control-group">
             <label class="report-label" for="report-inspector-input">점검자 (Inspector)</label>
             <div class="report-suggest-wrapper" id="report-inspector-wrapper">
-                <input type="text" id="report-inspector-input" class="report-suggest-input" placeholder="점검자 선택 또는 입력..." autocomplete="off">
+                <input type="text" id="report-inspector-input" class="report-suggest-input"
+                    placeholder="점검자 선택 또는 입력..." autocomplete="off">
                 <span class="report-suggest-arrow">▼</span>
                 <div class="report-suggest-dropdown" id="report-inspector-dropdown"></div>
             </div>
@@ -68,15 +71,24 @@
 
         <!-- 3. 주요 액션 버튼들 -->
         <div class="report-actions-panel">
-            <button type="button" id="btn-create-report" class="report-btn report-btn-create" title="선택된 사업장, 장비, 점검일자, 점검자 정보로 Working Report를 생성합니다.">
-                <span>📄 보고서 생성</span>
-            </button>
-            <button type="button" id="btn-save-report" class="report-btn report-btn-success" title="현재 보고서 내용을 데이터베이스에 저장합니다.">
-                <span>💾 보고서 저장</span>
-            </button>
-            <button type="button" id="btn-print-pdf" class="report-btn report-btn-warning" title="A4 규격으로 PDF 저장 및 인쇄합니다.">
-                <span>🖨️ PDF / 인쇄 출력</span>
-            </button>
+            <div class="report-btn-grid">
+                <button type="button" id="btn-create-report" class="report-btn report-btn-create"
+                    title="선택된 사업장, 장비, 점검일자, 점검자 정보로 Working Report를 생성합니다.">
+                    <span>📄 보고서 생성</span>
+                </button>
+                <button type="button" id="btn-save-report" class="report-btn report-btn-success"
+                    title="현재 보고서 내용을 데이터베이스에 저장합니다.">
+                    <span>💾 보고서 저장</span>
+                </button>
+                <button type="button" id="btn-print-pdf" class="report-btn report-btn-warning"
+                    title="A4 규격으로 PDF 저장 및 인쇄합니다.">
+                    <span>🖨️ PDF / 인쇄 출력</span>
+                </button>
+                <button type="button" id="btn-copy-image" class="report-btn report-btn-copy"
+                    title="현재 보고서를 이미지로 캡처하여 클립보드에 복사합니다.">
+                    <span>📋 이미지 복사</span>
+                </button>
+            </div>
             <div class="report-btn-subgroup">
                 <button type="button" id="btn-new-report" class="report-btn report-btn-secondary" title="빈 양식으로 새로 작성">
                     <span>➕ 새 양식</span>
@@ -96,19 +108,6 @@
             <div class="saved-history-scroll-box" id="saved-history-scroll-box">
                 <div class="saved-history-empty">장비를 선택하면 저장된 보고서가 표시됩니다.</div>
             </div>
-        </div>
-
-        <!-- 4. 파라미터 보조 도구 -->
-        <div class="report-param-tools">
-            <div class="report-tools-title">
-                <span>⚙️ 파라미터 도구</span>
-            </div>
-            <button type="button" id="btn-load-data-params" class="report-btn-tool" title="Data 탭에서 해당 장비의 파라미터 점검 측정값을 불러와 상태에 입력합니다.">
-                <span>➕ 파라미터 항목 추가 (Data 점검값)</span>
-            </button>
-            <button type="button" id="btn-add-custom-param" class="report-btn-tool" title="사용자 직접 입력 파라미터 1줄 추가">
-                <span>➕ 직접 항목 1행 추가</span>
-            </button>
         </div>
 
         <!-- 안내 메모 -->
@@ -145,14 +144,12 @@
         <div class="report-paper-wrapper">
             <!-- 실제 A4 1페이지 규격 시트 (첨부 엑셀 이미지 1:1 재현) - 초기에는 표시 안 됨 -->
             <div class="working-report-sheet" id="working-report-sheet" style="display: none;">
-                
+
                 <!-- 1. 헤더 타이틀 영역 -->
                 <div class="report-sheet-header">
                     <div class="report-sheet-logo">
-                        <svg class="withtech-logo-icon" viewBox="0 0 100 100" width="30" height="30">
-                            <polygon points="10,25 35,90 50,45 65,90 90,25 75,25 57,70 50,50 43,70 25,25" fill="#e65100"/>
-                        </svg>
-                        <span class="withtech-logo-text">WITHTECH</span>
+                        <img src="{{ url_for('SettingDAO', filename='LOGO+WITHTECH.png') }}" alt="WITHTECH Logo"
+                            class="report-logo-img">
                     </div>
                     <div class="report-sheet-title" id="sheet-title" contenteditable="true" spellcheck="false">
                         SOMA-2000 Working Report
@@ -164,13 +161,16 @@
                     <tbody>
                         <tr>
                             <th style="width: 10%;">점검자</th>
-                            <td style="width: 18%;" id="sheet-inspector" contenteditable="true" spellcheck="false">-</td>
+                            <td style="width: 18%;" id="sheet-inspector" contenteditable="true" spellcheck="false">-
+                            </td>
                             <th style="width: 11%;">설치장소</th>
                             <td style="width: 25%;" id="sheet-location" contenteditable="true" spellcheck="false">-</td>
                             <th style="width: 8%;">S/N :</th>
-                            <td style="width: 17%;" id="sheet-serial-no" data-id="sheet-serial" contenteditable="true" spellcheck="false">-</td>
+                            <td style="width: 17%;" id="sheet-serial-no" data-id="sheet-serial" contenteditable="true"
+                                spellcheck="false">-</td>
                             <th style="width: 9%;">점검일</th>
-                            <td style="width: 12%;" id="sheet-inspect-date" data-id="sheet-date" contenteditable="true" spellcheck="false">-</td>
+                            <td style="width: 12%;" id="sheet-inspect-date" data-id="sheet-date" contenteditable="true"
+                                spellcheck="false">-</td>
                         </tr>
                     </tbody>
                 </table>
@@ -194,59 +194,145 @@
                     </table>
                 </div>
 
-                <!-- 4. 상태 체크박스 요약 바 -->
-                <table class="report-status-bar-table">
-                    <tbody>
-                        <tr>
-                            <th style="width: 20%;">Data 특이사항 유무</th>
-                            <td style="width: 30%;">
-                                <span class="report-check-item" data-group="data_special" data-val="유">
-                                    유 <span class="check-box" id="chk-data-special-yes">□</span>
-                                </span>
-                                /
-                                <span class="report-check-item" data-group="data_special" data-val="무">
-                                    무 <span class="check-box" id="chk-data-special-no">■</span>
-                                </span>
-                            </td>
-                            <th style="width: 22%;">ICP-MS Tuning</th>
-                            <td style="width: 28%;">
-                                <span class="report-check-item" data-group="icp_tuning" data-val="진행">
-                                    진행 <span class="check-box" id="chk-tuning-yes">■</span>
-                                </span>
-                                /
-                                <span class="report-check-item" data-group="icp_tuning" data-val="미진행">
-                                    미진행 <span class="check-box" id="chk-tuning-no">□</span>
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>점검 내용</th>
-                            <td>
-                                <span class="report-check-item" data-group="check_content" data-val="예방">
-                                    예방 <span class="check-box" id="chk-content-prev">□</span>
-                                </span>
-                                /
-                                <span class="report-check-item" data-group="check_content" data-val="이벤트">
-                                    이벤트 <span class="check-box" id="chk-content-event">□</span>
-                                </span>
-                                /
-                                <span class="report-check-item" data-group="check_content" data-val="정기">
-                                    정기 <span class="check-box" id="chk-content-reg">■</span>
-                                </span>
-                            </td>
-                            <th>점검 및 조치 결과 총평</th>
-                            <td>
-                                <span class="report-check-item" data-group="eval_result" data-val="양호">
-                                    양호 <span class="check-box" id="chk-eval-good">■</span>
-                                </span>
-                                /
-                                <span class="report-check-item" data-group="eval_result" data-val="관리 필요">
-                                    관리 필요 <span class="check-box" id="chk-eval-need">□</span>
-                                </span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <!-- 4. 상태 체크박스 요약 바 (텍스트 수정, 0/1/2/3개 옵션 전환, 줄 추가/삭제 지원) -->
+                <div class="report-status-bar-wrapper" id="report-status-bar-wrapper">
+                    <div class="status-bar-header-toolbar no-print">
+                        <span class="status-bar-guide-text">💡 [⚙️ 체크박스 설정]버튼을 클릭하여 셀별 옵션 개수(0, 1, 2, 3)를 변경할 수
+                            있습니다.</span>
+                        <div class="status-toolbar-actions">
+                            <button type="button" class="btn-status-config" id="btn-toggle-status-config"
+                                title="체크박스 옵션 개수(0, 1, 2, 3) 변경 버튼 표시/숨김">⚙️ 체크박스 설정</button>
+                            <button type="button" class="btn-status-add-row" id="btn-add-status-row">➕ 줄 추가</button>
+                        </div>
+                    </div>
+                    <table class="report-status-bar-table" id="report-status-bar-table">
+                        <tbody id="report-status-tbody">
+                            <tr data-row-idx="0">
+                                <th class="status-label-th" style="width: 20%;" contenteditable="true"
+                                    spellcheck="false">Data 특이사항 유무</th>
+                                <td class="status-check-td" style="width: 30%;" data-group="status_row_0_left">
+                                    <div class="status-cell-controls no-print">
+                                        <button type="button" class="btn-toggle-opts" data-count="0"
+                                            title="체크박스 없음 (텍스트만)">0</button>
+                                        <button type="button" class="btn-toggle-opts" data-count="1"
+                                            title="1개 체크박스로 변경">1</button>
+                                        <button type="button" class="btn-toggle-opts" data-count="2"
+                                            title="2개 체크박스로 변경">2</button>
+                                        <button type="button" class="btn-toggle-opts" data-count="3"
+                                            title="3개 체크박스로 변경">3</button>
+                                    </div>
+                                    <div class="status-check-group">
+                                        <span class="report-check-item" data-group="status_row_0_left" data-val="유">
+                                            <span class="report-check-label" contenteditable="true"
+                                                spellcheck="false">유</span>
+                                            <span class="check-box" id="chk-data-special-yes">□</span>
+                                        </span>
+                                        <span class="opt-sep">/</span>
+                                        <span class="report-check-item checked" data-group="status_row_0_left"
+                                            data-val="무">
+                                            <span class="report-check-label" contenteditable="true"
+                                                spellcheck="false">무</span>
+                                            <span class="check-box" id="chk-data-special-no">■</span>
+                                        </span>
+                                    </div>
+                                </td>
+                                <th class="status-label-th" style="width: 20%;" contenteditable="true"
+                                    spellcheck="false">ICP-MS Tuning</th>
+                                <td class="status-check-td" style="width: 30%;" data-group="status_row_0_right">
+                                    <div class="status-cell-controls no-print">
+                                        <button type="button" class="btn-toggle-opts" data-count="0"
+                                            title="체크박스 없음 (텍스트만)">0</button>
+                                        <button type="button" class="btn-toggle-opts" data-count="1"
+                                            title="1개 체크박스로 변경">1</button>
+                                        <button type="button" class="btn-toggle-opts" data-count="2"
+                                            title="2개 체크박스로 변경">2</button>
+                                        <button type="button" class="btn-toggle-opts" data-count="3"
+                                            title="3개 체크박스로 변경">3</button>
+                                        <button type="button" class="btn-del-status-row" title="이 줄 삭제">&times;</button>
+                                    </div>
+                                    <div class="status-check-group">
+                                        <span class="report-check-item checked" data-group="status_row_0_right"
+                                            data-val="진행">
+                                            <span class="report-check-label" contenteditable="true"
+                                                spellcheck="false">진행</span>
+                                            <span class="check-box" id="chk-tuning-yes">■</span>
+                                        </span>
+                                        <span class="opt-sep">/</span>
+                                        <span class="report-check-item" data-group="status_row_0_right" data-val="미진행">
+                                            <span class="report-check-label" contenteditable="true"
+                                                spellcheck="false">미진행</span>
+                                            <span class="check-box" id="chk-tuning-no">□</span>
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr data-row-idx="1">
+                                <th class="status-label-th" contenteditable="true" spellcheck="false">점검 내용</th>
+                                <td class="status-check-td" data-group="status_row_1_left">
+                                    <div class="status-cell-controls no-print">
+                                        <button type="button" class="btn-toggle-opts" data-count="0"
+                                            title="체크박스 없음 (텍스트만)">0</button>
+                                        <button type="button" class="btn-toggle-opts" data-count="1"
+                                            title="1개 체크박스로 변경">1</button>
+                                        <button type="button" class="btn-toggle-opts" data-count="2"
+                                            title="2개 체크박스로 변경">2</button>
+                                        <button type="button" class="btn-toggle-opts" data-count="3"
+                                            title="3개 체크박스로 변경">3</button>
+                                    </div>
+                                    <div class="status-check-group">
+                                        <span class="report-check-item" data-group="status_row_1_left" data-val="예방">
+                                            <span class="report-check-label" contenteditable="true"
+                                                spellcheck="false">예방</span>
+                                            <span class="check-box" id="chk-content-prev">□</span>
+                                        </span>
+                                        <span class="opt-sep">/</span>
+                                        <span class="report-check-item" data-group="status_row_1_left" data-val="이벤트">
+                                            <span class="report-check-label" contenteditable="true"
+                                                spellcheck="false">이벤트</span>
+                                            <span class="check-box" id="chk-content-event">□</span>
+                                        </span>
+                                        <span class="opt-sep">/</span>
+                                        <span class="report-check-item checked" data-group="status_row_1_left"
+                                            data-val="정기">
+                                            <span class="report-check-label" contenteditable="true"
+                                                spellcheck="false">정기</span>
+                                            <span class="check-box" id="chk-content-reg">■</span>
+                                        </span>
+                                    </div>
+                                </td>
+                                <th class="status-label-th" contenteditable="true" spellcheck="false">점검 및 조치 결과 총평</th>
+                                <td class="status-check-td" data-group="status_row_1_right">
+                                    <div class="status-cell-controls no-print">
+                                        <button type="button" class="btn-toggle-opts" data-count="0"
+                                            title="체크박스 없음 (텍스트만)">0</button>
+                                        <button type="button" class="btn-toggle-opts" data-count="1"
+                                            title="1개 체크박스로 변경">1</button>
+                                        <button type="button" class="btn-toggle-opts" data-count="2"
+                                            title="2개 체크박스로 변경">2</button>
+                                        <button type="button" class="btn-toggle-opts" data-count="3"
+                                            title="3개 체크박스로 변경">3</button>
+                                        <button type="button" class="btn-del-status-row" title="이 줄 삭제">&times;</button>
+                                    </div>
+                                    <div class="status-check-group">
+                                        <span class="report-check-item checked" data-group="status_row_1_right"
+                                            data-val="양호">
+                                            <span class="report-check-label" contenteditable="true"
+                                                spellcheck="false">양호</span>
+                                            <span class="check-box" id="chk-eval-good">■</span>
+                                        </span>
+                                        <span class="opt-sep">/</span>
+                                        <span class="report-check-item" data-group="status_row_1_right"
+                                            data-val="관리 필요">
+                                            <span class="report-check-label" contenteditable="true"
+                                                spellcheck="false">관리 필요</span>
+                                            <span class="check-box" id="chk-eval-need">□</span>
+                                        </span>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
                 <!-- 5. 본문 1: 관리 이력 (단독 전폭 영역 - 우측 감도 칸 삭제) -->
                 <div class="report-body-section-1">
@@ -254,7 +340,8 @@
                         <div class="report-section-heading">
                             <span id="sheet-history-title" contenteditable="true" spellcheck="false">1. 관리 이력</span>
                         </div>
-                        <div class="report-editable-area" id="sheet-history-content" contenteditable="true" spellcheck="false">
+                        <div class="report-editable-area" id="sheet-history-content" contenteditable="true"
+                            spellcheck="false">
                             -. 정기 점검 수행 (특이사항 없음)
                         </div>
                     </div>
@@ -262,12 +349,11 @@
 
                 <!-- 6. 본문 2: 점검 전/후 설비 구동상태 확인 -->
                 <div class="report-body-section-2">
-                    <div class="report-section-heading">
+                    <div class="report-section-heading" id="sheet-drive-status-title" contenteditable="true"
+                        spellcheck="false">
                         2. 점검 전/후, 설비 구동상태 확인
                     </div>
-                    <div class="report-editable-area min-h-small" id="sheet-drive-status" contenteditable="true" spellcheck="false">
-                        -. 특이 사항 없음
-                    </div>
+                    <div class="report-editable-area min-h-small" id="sheet-drive-status" contenteditable="true" spellcheck="false">-. 특이 사항 없음</div>
                 </div>
 
                 <!-- 7. 하단 3대 업무 블록 (교체 물품, 다음 예정 업무, 담당자 협의사항) -->
@@ -275,58 +361,128 @@
                     <div class="report-grid-half">
                         <!-- 교체 물품 -->
                         <div class="report-card-block">
-                            <div class="report-block-title">교체 물품</div>
-                            <div class="report-editable-area block-content" id="sheet-replaced-parts" contenteditable="true" spellcheck="false">
-                                &gt;. STD 용액<br>
-                                &gt;. Sampler&amp;Skimmer Cone, Ion Lens
-                            </div>
+                            <div class="report-block-title" id="sheet-replaced-parts-title" contenteditable="true"
+                                spellcheck="false">교체 물품</div>
+                            <div class="report-editable-area block-content" id="sheet-replaced-parts"
+                                contenteditable="true" spellcheck="false">해당사항 없음</div>
                         </div>
 
                         <!-- 담당자 협의사항 -->
                         <div class="report-card-block" style="margin-top: 6px;">
-                            <div class="report-block-title">담당자 협의사항</div>
-                            <div class="report-editable-area block-content" id="sheet-agreed-matters" contenteditable="true" spellcheck="false">
-                                &gt;. HF Sensor 검교정 &amp; Interlock Test 매년 고객사 협의후 진행일 조율
-                            </div>
+                            <div class="report-block-title" id="sheet-agreed-matters-title" contenteditable="true"
+                                spellcheck="false">담당자 협의사항</div>
+                            <div class="report-editable-area block-content" id="sheet-agreed-matters" contenteditable="true" spellcheck="false">&gt;. 내용 없음</div>
                         </div>
                     </div>
 
                     <!-- 우측: 다음 예정 업무 및 주의사항 -->
                     <div class="report-grid-half">
                         <div class="report-card-block h-full">
-                            <div class="report-block-title">다음 예정 업무 및 주의사항</div>
-                            <div class="report-editable-area block-content" id="sheet-next-plans" contenteditable="true" spellcheck="false">
-                                &gt;. HF Sensor 검교정 (<span style="color:#d32f2f;">매년 진행</span>)<br>
-                                &gt;. Interlock Test (<span style="color:#d32f2f;">매년 진행</span>)
-                            </div>
+                            <div class="report-block-title" id="sheet-next-plans-title" contenteditable="true"
+                                spellcheck="false">다음 예정 업무 및 주의사항</div>
+                            <div class="report-editable-area block-content" id="sheet-next-plans" contenteditable="true" spellcheck="false">&gt;. 내용없음</div>
                         </div>
                     </div>
                 </div>
 
                 <!-- 8. 특이 사항 (배수펌프 관련 표 삭제 반영 - 전폭 텍스트 영역) -->
                 <div class="report-body-section-4">
-                    <div class="report-block-title full-width-title">특이 사항</div>
+                    <div class="report-block-title full-width-title" id="sheet-special-notes-title"
+                        contenteditable="true" spellcheck="false">특이 사항</div>
                     <div class="report-special-body">
-                        <div class="special-text-row full-special-text" id="sheet-special-text" contenteditable="true" spellcheck="false">
-                            &gt;. 특이사항 없음
-                        </div>
+                        <div class="special-text-row full-special-text" id="sheet-special-text" contenteditable="true" spellcheck="false">&gt;. 특이사항 없음</div>
                     </div>
                 </div>
 
             </div>
         </div>
     </main>
+
+    <!-- 우측 도구 사이드바: 파라미터 도구 + 카드 레이아웃 & 표 도구 (인쇄 시 숨김) -->
+    <aside class="report-right-sidebar no-print" id="report-right-sidebar">
+        <div class="right-sidebar-header">
+            <h3 class="right-sidebar-title">⚙️ 리포트 편집 도구</h3>
+            <p class="right-sidebar-desc">파라미터 및 카드 레이아웃을 편집합니다.</p>
+        </div>
+
+        <!-- 1. 파라미터 도구 (우측 배치) -->
+        <div class="report-tool-section">
+            <div class="report-tools-title">
+                <span>⚙️ 파라미터 도구</span>
+            </div>
+            <button type="button" id="btn-load-data-params" class="report-btn-tool"
+                title="Data 탭에서 해당 장비의 파라미터 점검 측정값을 불러와 상태에 입력합니다.">
+                <span>➕ 파라미터 항목 추가 (Data 점검값)</span>
+            </button>
+            <div class="param-tool-action-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <button type="button" id="btn-add-custom-param" class="report-btn-tool" title="사용자 직접 입력 파라미터 1줄 추가">
+                    <span>➕ 1행 추가</span>
+                </button>
+                <button type="button" id="btn-del-custom-param" class="report-btn-tool btn-danger-tool" title="파라미터 마지막 1줄 삭제">
+                    <span>➖ 줄삭제</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2. 카드 레이아웃 및 표 도구 -->
+        <div class="report-tool-section">
+            <div class="report-tools-title">
+                <span>📐 카드 레이아웃 도구</span>
+            </div>
+            <div class="card-tool-group">
+                <label class="card-tool-label" for="card-target-select">편집 대상 카드 선택:</label>
+                <select id="card-target-select" class="report-select card-select-input">
+                    <option value="history">1. 관리 이력</option>
+                    <option value="drive">2. 설비 구동상태 확인</option>
+                    <option value="replaced">교체 물품</option>
+                    <option value="agreed">담당자 협의사항</option>
+                    <option value="next">다음 예정 업무 및 주의사항</option>
+                    <option value="special">특이 사항</option>
+                </select>
+            </div>
+            <div class="card-tool-btn-grid">
+                <button type="button" id="btn-split-col" class="report-btn-tool" title="선택한 카드를 좌/우 2칸으로 분리합니다 (1회만 가능)">
+                    <span>◫ 열분리 (좌/우 2칸)</span>
+                </button>
+                <button type="button" id="btn-split-row" class="report-btn-tool" title="선택한 카드를 상/하 2칸으로 분리합니다 (1회만 가능)">
+                    <span>⊟ 행분리 (상/하 2칸)</span>
+                </button>
+                <button type="button" id="btn-reset-split" class="report-btn-tool" title="분리된 2칸을 단일 칸으로 되돌립니다">
+                    <span>🔄 단일 칸으로 복원</span>
+                </button>
+            </div>
+
+            <div class="report-tools-title" style="margin-top: 10px;">
+                <span>▦ 표 생성 (Table)</span>
+            </div>
+            <div class="table-tool-inputs">
+                <div class="table-dim-row">
+                    <label>행: <input type="number" id="custom-table-rows" value="3" min="1" max="10" class="table-num-input"></label>
+                    <label>열: <input type="number" id="custom-table-cols" value="3" min="1" max="6" class="table-num-input"></label>
+                </div>
+                <button type="button" id="btn-create-table" class="report-btn-tool btn-primary-tool" title="선택한 카드에 표를 생성하여 삽입합니다">
+                    <span>➕ 표 생성하여 삽입</span>
+                </button>
+            </div>
+        </div>
+    </aside>
 </div>
 
-<!-- DB 마스터 파라미터 선택 모달 (인쇄 시 숨김) -->
+<!-- Data Parameter 항목 선택 모달 (인쇄 시 숨김) -->
 <div id="modal-db-params" class="report-modal-backdrop no-print" style="display: none;">
     <div class="report-modal-card">
         <div class="report-modal-header">
-            <h3>⚙️ DB 모델 Parameter 항목 추가</h3>
+            <h3 id="modal-param-title">⚙️ Data Parameter 항목 추가</h3>
             <button type="button" class="report-modal-close" onclick="closeReportParamModal()">&times;</button>
         </div>
         <div class="report-modal-body">
-            <p class="modal-desc">해당 장비 모델의 마스터 Parameter 목록 중 리포트에 추가할 항목을 선택하세요.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <p class="modal-desc" id="modal-param-desc" style="margin: 0;">Data 점검값 및 Parameter 목록 중 리포트에 추가할 항목을 선택하세요.</p>
+                <div style="display: flex; gap: 4px;">
+                    <button type="button" id="btn-param-modal-select-all" class="report-btn-tool" style="padding: 2px 8px; font-size: 11px;">전체 선택</button>
+                    <button type="button" id="btn-param-modal-clear-all" class="report-btn-tool" style="padding: 2px 8px; font-size: 11px;">해제</button>
+                </div>
+            </div>
             <div id="modal-param-list" class="modal-param-list">
                 <!-- 동적 체크박스 목록 -->
             </div>
@@ -340,5 +496,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/report.js') }}"></script>
 {% endblock %}

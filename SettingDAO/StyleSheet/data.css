@@ -419,6 +419,22 @@
     text-align: center;
 }
 
+.sheet-th-division,
+.sheet-td-division {
+    width: 125px !important;
+    min-width: 125px !important;
+    max-width: 125px !important;
+    text-align: center;
+}
+
+.sheet-th-conc,
+.sheet-td-conc {
+    width: 125px !important;
+    min-width: 125px !important;
+    max-width: 125px !important;
+    text-align: center;
+}
+
 .sheet-col-th,
 .sheet-td-data {
     width: 160px;
@@ -431,6 +447,139 @@
     min-width: 50px !important;
     max-width: 50px !important;
     text-align: center;
+}
+
+/* 좌우 스크롤 시 고정 (Sticky Freeze Columns) */
+.sheet-sticky-col {
+    position: sticky !important;
+}
+
+.data-sheet-table th.sheet-sticky-col {
+    z-index: 25 !important;
+    background: #161b22 !important;
+}
+
+.data-sheet-table td.sheet-sticky-col {
+    z-index: 15 !important;
+    background: #0d1117 !important;
+}
+
+.data-sheet-table tr:hover td.sheet-sticky-col {
+    background: #161b22 !important;
+}
+
+.sheet-sticky-no {
+    left: 0 !important;
+}
+
+.sheet-sticky-date {
+    left: 50px !important;
+}
+
+.sheet-sticky-division {
+    left: 190px !important;
+}
+
+.sheet-sticky-conc {
+    left: 315px !important;
+    border-right: 2px solid #30363d !important;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.45);
+}
+
+/* 구분 드롭다운 */
+.sheet-select-division {
+    width: 100%;
+    height: 32px;
+    background: transparent;
+    color: #e6edf3;
+    border: none;
+    padding: 4px 6px;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    cursor: pointer;
+    border-radius: 4px;
+    box-sizing: border-box;
+    transition: background 0.15s, box-shadow 0.15s;
+}
+
+.sheet-select-division:focus {
+    background: rgba(31, 111, 235, 0.15);
+    box-shadow: inset 0 0 0 2px #58a6ff;
+}
+
+.sheet-select-division option {
+    background: #161b22;
+    color: #e6edf3;
+}
+
+/* 농도 헤더 */
+.sheet-conc-header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    width: 100%;
+    overflow: hidden;
+}
+
+.sheet-conc-title {
+    font-weight: 600;
+    color: #e6edf3;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.sheet-conc-title:hover {
+    color: #58a6ff;
+}
+
+.sheet-conc-unit-select {
+    background: #21262d;
+    color: #58a6ff;
+    border: 1px solid rgba(56, 139, 253, 0.4);
+    border-radius: 4px;
+    padding: 2px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+    max-width: 78px;
+    transition: all 0.15s;
+}
+
+.sheet-conc-unit-select:hover,
+.sheet-conc-unit-select:focus {
+    border-color: #58a6ff;
+    background: rgba(31, 111, 235, 0.2);
+}
+
+.sheet-conc-unit-select option {
+    background: #161b22;
+    color: #e6edf3;
+}
+
+/* 농도 셀 인풋 */
+.sheet-conc-cell-input {
+    width: 100%;
+    height: 32px;
+    background: transparent;
+    border: none;
+    color: #e6edf3;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    box-sizing: border-box;
+    text-align: right;
+    transition: background 0.1s, box-shadow 0.1s;
+}
+
+.sheet-conc-cell-input:focus {
+    background: rgba(31, 111, 235, 0.12);
+    box-shadow: inset 0 0 0 2px #58a6ff;
+    color: #fff;
 }
 
 .data-sheet-table th {

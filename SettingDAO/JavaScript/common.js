@@ -4790,7 +4790,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     if (moveBtn) {
         moveBtn.onclick = () => {
             checkUnsavedChangesAndProceed(() => {
-                let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}&logId=${originalLogId}`;
+                let targetUrl = `/maintenance?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}&logId=${originalLogId}`;
                 location.href = targetUrl;
             });
         };
@@ -4816,7 +4816,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
                 window.openRegisterScheduleModal(parentDateStr, presetData);
             } else {
                 sessionStorage.setItem('openAddWorkForLog', JSON.stringify({ site, equip, logId: originalLogId }));
-                location.href = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
+                location.href = `/maintenance?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
             }
         };
     }
@@ -5070,7 +5070,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
                 window.openRegisterScheduleModal(parentDateStr, presetData);
             } else {
                 sessionStorage.setItem('openAddWorkForLog', JSON.stringify({ site, equip, logId: originalLogId }));
-                location.href = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
+                location.href = `/maintenance?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
             }
         };
     }
@@ -6348,7 +6348,7 @@ function doTaskSearch() {
                     if (typeof window.openRegisterScheduleModal === 'function') {
                         window.openRegisterScheduleModal(targetLogDate, presetData);
                     } else {
-                        let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}&action=addExtraWork&logId=${targetLogId}`;
+                        let targetUrl = `/maintenance?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}&action=addExtraWork&logId=${targetLogId}`;
                         window.location.href = targetUrl;
                     }
 
@@ -6406,7 +6406,7 @@ function openTaskFromSearch(site, equip, id, isCompleted) {
     if (typeof window.openEventDetailModal === 'function') {
         window.openEventDetailModal(site, equip, id, isCompleted);
     } else {
-        let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
+        let targetUrl = `/maintenance?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equip)}`;
         if (isCompleted && id) targetUrl += `&logId=${id}`;
         window.location.href = targetUrl;
     }

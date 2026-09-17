@@ -279,14 +279,14 @@ function goToSetupPage() {
     let targetSite = currentGanttFilters.site || setupDashboardFilter.site;
     let targetSerial = currentGanttFilters.equip;
     let targetEquipName = targetSerial ? '' : setupDashboardFilter.equip;
-    navigateWithFilters('setup.html', 'lastSetupPath', targetSite, targetEquipName, targetSerial);
+    navigateWithFilters('/setup', 'lastSetupPath', targetSite, targetEquipName, targetSerial);
 }
 
 function goToMaintenancePage() {
     let targetSite = currentSearchFilters.site || selectedSiteFilter;
     let targetEquipName = selectedEquipFilter;
     let targetSerial = currentSearchFilters.equip || selectedSerialFilter;
-    navigateWithFilters('maintenance.html', 'lastMaintPath', targetSite, targetEquipName, targetSerial);
+    navigateWithFilters('/maintenance', 'lastMaintPath', targetSite, targetEquipName, targetSerial);
 }
 
 function showHomeSection(type) {
@@ -651,7 +651,7 @@ function renderEquipDetailList(data) {
         if (btn) {
             btn.onclick = (e) => {
                 e.stopPropagation();
-                location.href = `maintenance.html?site=${encodeURIComponent(item.site)}&equip=${encodeURIComponent(item.equip)}`;
+                location.href = `/maintenance?site=${encodeURIComponent(item.site)}&equip=${encodeURIComponent(item.equip)}`;
             };
         }
         listEl.appendChild(li);
@@ -1216,7 +1216,7 @@ function renderSetupEquipDetailList(activeEquips) {
         if (btn) {
             btn.onclick = (e) => {
                 e.stopPropagation();
-                location.href = `setup.html?site=${encodeURIComponent(item.site)}&equip=${encodeURIComponent(item.equip)}`;
+                location.href = `/setup?site=${encodeURIComponent(item.site)}&equip=${encodeURIComponent(item.equip)}`;
             };
         }
         listEl.appendChild(li);
@@ -1302,7 +1302,7 @@ function renderSetupUpcomingList(activeEquips) {
                 const todayStr = new Date().toISOString().substring(0, 10);
                 window.openSetupLogRegisterModal(item.site, item.equip, item.task.content, todayStr);
             } else {
-                location.href = `setup.html?site=${encodeURIComponent(item.site)}&equip=${encodeURIComponent(item.equip)}`;
+                location.href = `/setup?site=${encodeURIComponent(item.site)}&equip=${encodeURIComponent(item.equip)}`;
             }
         };
 
@@ -1466,7 +1466,7 @@ function populateEquipmentIssues() {
             if (typeof window.openExtraWorkHistoryModal === 'function') {
                 window.openExtraWorkHistoryModal(site, equipKey, log.id);
             } else {
-                let targetUrl = `maintenance.html?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equipKey)}&logId=${log.id}`;
+                let targetUrl = `/maintenance?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equipKey)}&logId=${log.id}`;
                 window.location.href = targetUrl;
             }
         };

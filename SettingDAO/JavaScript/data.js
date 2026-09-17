@@ -10,7 +10,8 @@ let currentSelectedEquip = null;
 let currentDataMode = 'raw'; // 'raw' (Raw Data) 또는 'param' (Parameter)
 let currentSheetData = {
     columns: [],
-    rows: []
+    rows: [],
+    concUnit: 'ppm'
 };
 
 let autoSaveTimer = null;
@@ -505,7 +506,14 @@ async function loadEquipSheetData() {
             if (data.exists && (data.columns.length > 0 || data.rows.length > 0)) {
                 currentSheetData = {
                     columns: data.columns || [],
-                    rows: data.rows || []
+                    rows: (data.rows || []).map(r => ({
+                        id: r.id,
+                        date: r.date,
+                        division: r.division || (r.values && r.values['구분']) || '',
+                        concentration: (r.concentration !== undefined && r.concentration !== null) ? r.concentration : ((r.values && r.values['농도']) || ''),
+                        values: r.values || {}
+                    })),
+                    concUnit: data.conc_unit || 'ppm'
                 };
                 localStorage.setItem(storageKey, JSON.stringify(currentSheetData));
                 loadedFromDb = true;
@@ -529,6 +537,12 @@ async function loadEquipSheetData() {
                 currentSheetData = JSON.parse(savedStr);
                 if (!Array.isArray(currentSheetData.columns)) currentSheetData.columns = [];
                 if (!Array.isArray(currentSheetData.rows)) currentSheetData.rows = [];
+                if (!currentSheetData.concUnit) currentSheetData.concUnit = 'ppm';
+                // 행별 division / concentration 기본값 보정
+                currentSheetData.rows.forEach(r => {
+                    if (r.division === undefined) r.division = (r.values && r.values['구분']) || '';
+                    if (r.concentration === undefined) r.concentration = (r.values && r.values['농도']) || '';
+                });
                 // 로컬 데이터를 DB에 반영하여 테이블 생성
                 saveCurrentSheetData(false);
             } catch (e) {
@@ -557,10 +571,13 @@ function initDefaultSheet() {
 
     currentSheetData = {
         columns: defaultCols,
+        concUnit: 'ppm',
         rows: [
             {
                 id: 'row_' + Date.now(),
                 date: getTodayString(),
+                division: '',
+                concentration: '',
                 values: initialValues
             }
         ]
@@ -600,7 +617,14 @@ function saveCurrentSheetData(showIndicator = true, resetTable = false, immediat
                     cust_equip: currentSelectedEquip.custEquip,
                     serial: currentSelectedEquip.serial,
                     columns: currentSheetData.columns || [],
-                    rows: currentSheetData.rows || [],
+                    rows: (currentSheetData.rows || []).map(r => ({
+                        id: r.id,
+                        date: r.date,
+                        division: r.division || '',
+                        concentration: r.concentration || '',
+                        values: r.values || {}
+                    })),
+                    conc_unit: currentSheetData.concUnit || 'ppm',
                     reset_table: resetTable,
                     data_type: mode
                 })
@@ -664,6 +688,12 @@ window.toggleSheetSort = function(key) {
             if (key === '__date__') {
                 valA = a.date || '';
                 valB = b.date || '';
+            } else if (key === '__division__') {
+                valA = a.division || (a.values && a.values['구분']) || '';
+                valB = b.division || (b.values && b.values['구분']) || '';
+            } else if (key === '__concentration__') {
+                valA = (a.concentration !== undefined && a.concentration !== null) ? a.concentration : ((a.values && a.values['농도']) || '');
+                valB = (b.concentration !== undefined && b.concentration !== null) ? b.concentration : ((b.values && b.values['농도']) || '');
             } else {
                 valA = (a.values && a.values[key] !== undefined) ? a.values[key] : '';
                 valB = (b.values && b.values[key] !== undefined) ? b.values[key] : '';
@@ -2077,11 +2107,30 @@ function renderRawSheetTable() {
     // 1. 헤더 (Thead) 렌더링
     let headHtml = '<tr>';
     
-    // No 컬럼
-    headHtml += `<th class="sheet-th-no" style="width: 50px; min-width: 50px; max-width: 50px; text-align: center; cursor: pointer;" onclick="toggleSheetSort('__no__')" title="순번 기준 정렬 (클릭 시 토글)">No</th>`;
+    // No 컬럼 (좌우 스크롤 고정)
+    headHtml += `<th class="sheet-th-no sheet-sticky-col sheet-sticky-no" onclick="toggleSheetSort('__no__')" title="순번 기준 정렬 (클릭 시 토글)">No</th>`;
 
-    // 날짜 컬럼
-    headHtml += `<th class="sheet-th-date" style="width: 140px; min-width: 140px; text-align: center; cursor: pointer;" onclick="toggleSheetSort('__date__')" title="날짜 기준 정렬 (클릭 시 토글)">📅 날짜</th>`;
+    // 날짜 컬럼 (좌우 스크롤 고정)
+    headHtml += `<th class="sheet-th-date sheet-sticky-col sheet-sticky-date" onclick="toggleSheetSort('__date__')" title="날짜 기준 정렬 (클릭 시 토글)">📅 날짜</th>`;
+
+    // 구분 컬럼 (좌우 스크롤 고정)
+    headHtml += `<th class="sheet-th-division sheet-sticky-col sheet-sticky-division" onclick="toggleSheetSort('__division__')" title="구분 기준 정렬 (클릭 시 토글)">구분</th>`;
+
+    // 농도 컬럼 (좌우 스크롤 고정 + 헤더 단위 선택 드롭다운)
+    const curConcUnit = currentSheetData.concUnit || 'ppm';
+    headHtml += `
+        <th class="sheet-th-conc sheet-sticky-col sheet-sticky-conc" title="농도 (헤더에서 단위 선택 가능)">
+            <div class="sheet-conc-header-inner">
+                <span class="sheet-conc-title" onclick="toggleSheetSort('__concentration__')" title="농도 기준 정렬">농도</span>
+                <select class="sheet-conc-unit-select" id="sheet-conc-unit-select" onchange="updateSheetConcUnit(this.value)" title="농도 단위 선택 (ppm, ppb, ppt, intensity)">
+                    <option value="ppm" ${curConcUnit === 'ppm' ? 'selected' : ''}>ppm</option>
+                    <option value="ppb" ${curConcUnit === 'ppb' ? 'selected' : ''}>ppb</option>
+                    <option value="ppt" ${curConcUnit === 'ppt' ? 'selected' : ''}>ppt</option>
+                    <option value="intensity" ${curConcUnit === 'intensity' ? 'selected' : ''}>intensity</option>
+                </select>
+            </div>
+        </th>
+    `;
 
     // 동적 데이터 열들 (점 6개 및 정렬 아이콘 제거, 클릭 시 정렬/드래그 시 순서 이동)
     columns.forEach((col, colIdx) => {
@@ -2106,7 +2155,7 @@ function renderRawSheetTable() {
 
     // 2. 본문 (Tbody) 렌더링
     if (rows.length === 0) {
-        const colSpan = columns.length + 3;
+        const colSpan = columns.length + 5;
         tbody.innerHTML = `
             <tr>
                 <td colspan="${colSpan}" class="sheet-empty-state">
@@ -2122,14 +2171,42 @@ function renderRawSheetTable() {
     rows.forEach((row, rowIdx) => {
         bodyHtml += `<tr data-row-id="${row.id}">`;
         
-        // No 컬럼
-        bodyHtml += `<td class="sheet-td-no" style="width: 50px; min-width: 50px; color:#8b949e; text-align:center; user-select:none; font-size:11px;">${rowIdx + 1}</td>`;
+        // No 컬럼 (좌우 스크롤 고정)
+        bodyHtml += `<td class="sheet-td-no sheet-sticky-col sheet-sticky-no" style="color:#8b949e; text-align:center; user-select:none; font-size:11px;">${rowIdx + 1}</td>`;
 
-        // 날짜 컬럼 (첫 열: 직접 변경 가능한 날짜 피커)
+        // 날짜 컬럼 (좌우 스크롤 고정)
         bodyHtml += `
-            <td class="sheet-td-date" style="width: 140px; min-width: 140px; text-align: center;">
+            <td class="sheet-td-date sheet-sticky-col sheet-sticky-date" style="text-align: center;">
                 <input type="date" class="sheet-date-input custom-date-icon" value="${row.date || ''}" max="9999-12-31" 
                        onchange="updateRowDate('${row.id}', this.value)" title="날짜 변경">
+            </td>
+        `;
+
+        // 구분 컬럼 (좌우 스크롤 고정 + 드롭다운: STD1(Blank), STD2~5, Sample)
+        const curDiv = row.division || (row.values && row.values['구분']) || '';
+        bodyHtml += `
+            <td class="sheet-td-division sheet-sticky-col sheet-sticky-division">
+                <select class="sheet-select-division" data-row-id="${row.id}" onchange="updateRowDivision('${row.id}', this.value)" title="구분 선택">
+                    <option value="" ${!curDiv ? 'selected' : ''}>-</option>
+                    <option value="STD1(Blank)" ${curDiv === 'STD1(Blank)' ? 'selected' : ''}>STD1(Blank)</option>
+                    <option value="STD2" ${curDiv === 'STD2' ? 'selected' : ''}>STD2</option>
+                    <option value="STD3" ${curDiv === 'STD3' ? 'selected' : ''}>STD3</option>
+                    <option value="STD4" ${curDiv === 'STD4' ? 'selected' : ''}>STD4</option>
+                    <option value="STD5" ${curDiv === 'STD5' ? 'selected' : ''}>STD5</option>
+                    <option value="Sample" ${curDiv === 'Sample' ? 'selected' : ''}>Sample</option>
+                </select>
+            </td>
+        `;
+
+        // 농도 컬럼 (좌우 스크롤 고정 + 셀 입력창)
+        const curConc = (row.concentration !== undefined && row.concentration !== null && row.concentration !== '') 
+            ? row.concentration 
+            : ((row.values && row.values['농도'] !== undefined) ? row.values['농도'] : '');
+        bodyHtml += `
+            <td class="sheet-td-conc sheet-sticky-col sheet-sticky-conc">
+                <input type="text" class="sheet-cell-input sheet-conc-cell-input" value="${escapeHtml(curConc)}" 
+                       data-row-id="${row.id}" data-row-idx="${rowIdx}" data-col-idx="-1" data-field="concentration" 
+                       placeholder="-" autocomplete="off" onchange="updateRowConcentration('${row.id}', this.value)">
             </td>
         `;
 
@@ -2382,12 +2459,17 @@ function bindCellInputEvents() {
         input.addEventListener('input', (e) => {
             const rowId = e.target.dataset.rowId;
             const colName = e.target.dataset.colName;
+            const field = e.target.dataset.field;
             const value = e.target.value;
 
             const row = currentSheetData.rows.find(r => r.id === rowId);
             if (row) {
-                if (!row.values) row.values = {};
-                row.values[colName] = value;
+                if (field === 'concentration') {
+                    row.concentration = value;
+                } else if (colName) {
+                    if (!row.values) row.values = {};
+                    row.values[colName] = value;
+                }
                 saveCurrentSheetData(true);
             }
         });
@@ -2419,7 +2501,7 @@ function bindCellInputEvents() {
                         // 마지막 열에서 Tab 누르면 다음 행의 시작 열로 이동
                         if (rIdx + 1 < totalRows) {
                             e.preventDefault();
-                            const targetCol = (tabStartColIndex !== null) ? tabStartColIndex : 0;
+                            const targetCol = (tabStartColIndex !== null) ? tabStartColIndex : (totalCols > 0 ? 0 : -1);
                             const nextRowCell = document.querySelector(`.sheet-cell-input[data-row-idx="${rIdx + 1}"][data-col-idx="${targetCol}"]`);
                             if (nextRowCell) {
                                 nextRowCell.focus();
@@ -2430,7 +2512,7 @@ function bindCellInputEvents() {
                     }
                 } else {
                     // Shift + Tab (왼쪽 열로 이동)
-                    if (cIdx > 0) {
+                    if (cIdx > -1) {
                         e.preventDefault();
                         const prevCell = document.querySelector(`.sheet-cell-input[data-row-idx="${rIdx}"][data-col-idx="${cIdx - 1}"]`);
                         if (prevCell) {
@@ -2498,6 +2580,39 @@ function bindCellInputEvents() {
 }
 
 /**
+ * 구분 변경 핸들러
+ */
+window.updateRowDivision = function(rowId, val) {
+    if (!currentSheetData || !currentSheetData.rows) return;
+    const row = currentSheetData.rows.find(r => r.id === rowId);
+    if (row) {
+        row.division = val;
+        saveCurrentSheetData(false);
+    }
+};
+
+/**
+ * 농도 변경 핸들러
+ */
+window.updateRowConcentration = function(rowId, val) {
+    if (!currentSheetData || !currentSheetData.rows) return;
+    const row = currentSheetData.rows.find(r => r.id === rowId);
+    if (row) {
+        row.concentration = val;
+        saveCurrentSheetData(false);
+    }
+};
+
+/**
+ * 농도 단위 변경 핸들러 (헤더 드롭다운)
+ */
+window.updateSheetConcUnit = function(newUnit) {
+    if (!currentSheetData) return;
+    currentSheetData.concUnit = newUnit;
+    saveCurrentSheetData(true);
+};
+
+/**
  * 날짜 변경 핸들러
  */
 window.updateRowDate = function(rowId, newDate) {
@@ -2522,6 +2637,8 @@ function addSheetRow(specificDate = null, focusFirst = true, appendToBottom = tr
     const newRow = {
         id: 'row_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
         date: dateStr,
+        division: '',
+        concentration: '',
         values: {}
     };
 
@@ -2726,14 +2843,22 @@ function handleExportCsv() {
 
     let csv = '\uFEFF'; // UTF-8 BOM
 
-    // 1. 헤더
-    const headers = ['날짜', ...columns];
+    // 1. 헤더 (날짜, 구분, 농도(단위), ...동적 열들)
+    const concUnit = currentSheetData.concUnit || 'ppm';
+    const concHeader = `농도(${concUnit})`;
+    const headers = ['날짜', '구분', concHeader, ...columns];
     csv += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + '\n';
 
     // 2. 행 데이터
     rows.forEach(row => {
+        const divVal = row.division || (row.values && row.values['구분']) || '';
+        const concVal = (row.concentration !== undefined && row.concentration !== null && row.concentration !== '') 
+            ? row.concentration 
+            : ((row.values && row.values['농도']) || '');
         const line = [
             `"${(row.date || '').replace(/"/g, '""')}"`,
+            `"${String(divVal).replace(/"/g, '""')}"`,
+            `"${String(concVal).replace(/"/g, '""')}"`,
             ...columns.map(col => {
                 const val = (row.values && row.values[col] !== undefined) ? String(row.values[col]) : '';
                 return `"${val.replace(/"/g, '""')}"`;
@@ -2813,13 +2938,25 @@ function processCsvImport(csvText) {
     const headerRow = rows[0];
     const dataRows = rows.slice(1);
 
-    // 날짜 컬럼 인덱스 식별
+    // 날짜, 구분, 농도 컬럼 인덱스 식별
     let dateColIdx = -1;
+    let divColIdx = -1;
+    let concColIdx = -1;
+
     for (let i = 0; i < headerRow.length; i++) {
-        const colTitle = headerRow[i].toLowerCase().replace(/[\s_]/g, '');
+        const colTitle = headerRow[i].toLowerCase().replace(/[\s_()（）]/g, '');
         if (['날짜', 'date', '일자', '기록일자', '측정일자', '측정일', '일시'].includes(colTitle)) {
             dateColIdx = i;
-            break;
+        } else if (['구분', 'division', 'type', 'category'].includes(colTitle)) {
+            divColIdx = i;
+        } else if (colTitle.startsWith('농도') || colTitle.startsWith('conc') || ['ppm', 'ppb', 'ppt', 'intensity'].includes(colTitle)) {
+            concColIdx = i;
+            // 농도 단위 자동 감지
+            const rawHeader = headerRow[i].toLowerCase();
+            if (rawHeader.includes('ppb')) currentSheetData.concUnit = 'ppb';
+            else if (rawHeader.includes('ppt')) currentSheetData.concUnit = 'ppt';
+            else if (rawHeader.includes('intensity')) currentSheetData.concUnit = 'intensity';
+            else if (rawHeader.includes('ppm')) currentSheetData.concUnit = 'ppm';
         }
     }
 
@@ -2834,12 +2971,12 @@ function processCsvImport(csvText) {
         }
     }
 
-    // CSV 파일 기준 열 목록 구성 (순번/No 제외, 날짜 제외)
+    // CSV 파일 기준 열 목록 구성 (순번/No 제외, 날짜, 구분, 농도 제외)
     const newColumns = [];
     const csvColMap = []; // { csvIdx, colName }
 
     for (let i = 0; i < headerRow.length; i++) {
-        if (i === dateColIdx) continue;
+        if (i === dateColIdx || i === divColIdx || i === concColIdx) continue;
         const rawName = headerRow[i].trim();
         const lower = rawName.toLowerCase();
         if (lower === 'no' || lower === '순번' || lower === '번호') continue;
@@ -2864,6 +3001,8 @@ function processCsvImport(csvText) {
 
         const rawDate = rowArr[dateColIdx];
         const dateStr = normalizeDate(rawDate) || getTodayString();
+        const divStr = (divColIdx !== -1 && rowArr[divColIdx] !== undefined) ? String(rowArr[divColIdx]).trim() : '';
+        const concStr = (concColIdx !== -1 && rowArr[concColIdx] !== undefined) ? String(rowArr[concColIdx]).trim() : '';
 
         const vals = {};
         newColumns.forEach(c => vals[c] = '');
@@ -2875,15 +3014,15 @@ function processCsvImport(csvText) {
         newRows.push({
             id: 'row_' + Date.now() + '_' + rIdx + '_' + Math.random().toString(36).substr(2, 4),
             date: dateStr,
+            division: divStr,
+            concentration: concStr,
             values: vals
         });
     });
 
     // 기존 데이터 완전 대체
-    currentSheetData = {
-        columns: newColumns,
-        rows: newRows
-    };
+    currentSheetData.columns = newColumns;
+    currentSheetData.rows = newRows;
 
     // 정렬 상태 초기화
     currentSort = { key: null, direction: 'asc' };

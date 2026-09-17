@@ -577,6 +577,7 @@ class EquipmentReport(db.Model):
             'location': self.location or '',
             'serial_no': self.serial_no or '',
             'data': parsed_data,
+            'data_json': self.data_json or json.dumps(parsed_data, ensure_ascii=False),
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else '',
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else ''
         }
@@ -1745,15 +1746,19 @@ def save_equipment_report():
         if not site_name or not equip_id or not report_date:
             return jsonify({'status': 'error', 'message': '사업장, 장비, 점검일자는 필수 입력값입니다.'}), 400
 
-        # [요청 반영] 장비당 하루 1개의 보고서만 저장 보장 (해당 점검일자 보고서가 있으면 무조건 해당 레코드에 갱신)
-        report = EquipmentReport.query.filter_by(equip_id=equip_id, report_date=report_date).first()
+        # [각 보고서 독립 관리] custom_id가 전달된 경우 해당 보고서 레코드를 최우선 조회하여 수정
         custom_id = payload.get('id')
-        if not report and custom_id:
+        report = None
+        if custom_id:
             report = EquipmentReport.query.filter_by(id=custom_id).first()
+
+        # custom_id가 없거나 해당 ID가 없는 신규 건인 경우에만 해당 날짜 보고서 확인
+        if not report and not custom_id:
+            report = EquipmentReport.query.filter_by(equip_id=equip_id, report_date=report_date).first()
 
         if not report:
             safe_equip = equip_id.replace('::', '_').replace(' ', '_')
-            target_id = custom_id or f"rep_{report_date.replace('-', '')}_{safe_equip}"
+            target_id = custom_id or f"rep_{report_date.replace('-', '')}_{safe_equip}_{int(datetime.now().timestamp())}"
             if EquipmentReport.query.filter_by(id=target_id).first():
                 target_id = f"{target_id}_{int(datetime.now().timestamp())}"
             custom_id = target_id
@@ -1900,18 +1905,25 @@ def load_datasheet():
             cols_res = db.session.execute(text(f"PRAGMA table_info(`{table_name}`)"))
             all_cols = [r[1] for r in cols_res]
 
-        data_cols = [c for c in all_cols if c not in ('id', 'record_date', 'created_at', 'updated_at')]
+        data_cols = [c for c in all_cols if c not in ('id', 'record_date', 'created_at', 'updated_at', 'division', 'concentration', 'conc_unit')]
 
         # 데이터 행 조회 (날짜는 최신순, 동일 날짜 내에서는 저장된 순서(id ASC) 그대로 유지)
         rows_res = db.session.execute(text(f"SELECT * FROM `{table_name}` ORDER BY record_date DESC, id ASC;")).fetchall()
         rows_data = []
+        conc_unit_val = 'ppm'
         for idx, r in enumerate(rows_res):
             row_dict = dict(r._mapping)
             date_val = row_dict.get('record_date', '')
+            div_val = row_dict.get('division') or ''
+            conc_val = row_dict.get('concentration') or ''
+            if row_dict.get('conc_unit'):
+                conc_unit_val = row_dict.get('conc_unit')
             vals = {c: (row_dict.get(c) if row_dict.get(c) is not None else '') for c in data_cols}
             rows_data.append({
                 "id": f"row_{row_dict.get('id', idx + 1)}",
                 "date": date_val,
+                "division": div_val,
+                "concentration": conc_val,
                 "values": vals
             })
 
@@ -1921,6 +1933,7 @@ def load_datasheet():
             "display_name": display_name,
             "data_type": data_type,
             "exists": True,
+            "conc_unit": conc_unit_val,
             "columns": data_cols,
             "rows": rows_data
         })
@@ -1942,6 +1955,7 @@ def save_datasheet():
     columns = req_data.get('columns', [])
     rows = req_data.get('rows', [])
     reset_table = req_data.get('reset_table', False)
+    conc_unit = req_data.get('conc_unit', 'ppm').strip() or 'ppm'
 
     table_name, display_name = get_equip_data_table_name(model_abbr, cust_equip, serial, data_type)
     if not table_name:
@@ -1959,6 +1973,9 @@ def save_datasheet():
             CREATE TABLE IF NOT EXISTS `{table_name}` (
                 `id` INT AUTO_INCREMENT PRIMARY KEY,
                 `record_date` VARCHAR(30) NOT NULL,
+                `division` VARCHAR(50) DEFAULT '',
+                `concentration` VARCHAR(50) DEFAULT '',
+                `conc_unit` VARCHAR(20) DEFAULT 'ppm',
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             """
@@ -1967,6 +1984,9 @@ def save_datasheet():
             CREATE TABLE IF NOT EXISTS `{table_name}` (
                 `id` INTEGER PRIMARY KEY AUTOINCREMENT,
                 `record_date` VARCHAR(30) NOT NULL,
+                `division` VARCHAR(50) DEFAULT '',
+                `concentration` VARCHAR(50) DEFAULT '',
+                `conc_unit` VARCHAR(20) DEFAULT 'ppm',
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
             """
@@ -1981,10 +2001,23 @@ def save_datasheet():
             cols_res = db.session.execute(text(f"PRAGMA table_info(`{table_name}`)"))
             existing_cols = [r[1] for r in cols_res]
 
+        # 2-1. raw 모드일 때 division, concentration, conc_unit 컬럼 누락 방지 (기존 테이블 마이그레이션)
+        if data_type == 'raw':
+            for fix_col, col_def in [('division', 'VARCHAR(50) DEFAULT \'\''), 
+                                    ('concentration', 'VARCHAR(50) DEFAULT \'\''), 
+                                    ('conc_unit', 'VARCHAR(20) DEFAULT \'ppm\'')]:
+                if fix_col not in existing_cols:
+                    if db_type == 'mysql':
+                        db.session.execute(text(f"ALTER TABLE `{table_name}` ADD COLUMN `{fix_col}` {col_def};"))
+                    else:
+                        db.session.execute(text(f"ALTER TABLE `{table_name}` ADD COLUMN `{fix_col}` TEXT DEFAULT '';"))
+                    existing_cols.append(fix_col)
+            db.session.commit()
+
         # 3. 새로운 열(Column) 동적 추가
         for col in columns:
             col_safe = col.replace('`', '').strip()
-            if col_safe and col_safe not in existing_cols:
+            if col_safe and col_safe not in existing_cols and col_safe not in ('id', 'record_date', 'created_at', 'updated_at', 'division', 'concentration', 'conc_unit'):
                 if db_type == 'mysql':
                     db.session.execute(text(f"ALTER TABLE `{table_name}` ADD COLUMN `{col_safe}` TEXT NULL;"))
                 else:
@@ -1995,14 +2028,23 @@ def save_datasheet():
         # 4. 데이터 동기화 (전체 행 재반영)
         db.session.execute(text(f"DELETE FROM `{table_name}`;"))
 
-        valid_columns = [c for c in columns if c.replace('`', '').strip() in existing_cols]
+        valid_columns = [c for c in columns if c.replace('`', '').strip() in existing_cols and c.replace('`', '').strip() not in ('id', 'record_date', 'created_at', 'updated_at', 'division', 'concentration', 'conc_unit')]
         for r in rows:
             date_val = r.get('date', '')
+            div_val = r.get('division', '')
+            conc_val = r.get('concentration', '')
             vals = r.get('values', {})
 
             col_list = ['`record_date`']
             ph_list = [':rec_date']
             params = {'rec_date': date_val}
+
+            if data_type == 'raw':
+                col_list.extend(['`division`', '`concentration`', '`conc_unit`'])
+                ph_list.extend([':division', ':concentration', ':conc_unit'])
+                params['division'] = str(div_val) if div_val is not None else ''
+                params['concentration'] = str(conc_val) if conc_val is not None else ''
+                params['conc_unit'] = str(conc_unit)
 
             for idx, c in enumerate(valid_columns):
                 c_safe = c.replace('`', '').strip()
@@ -2020,7 +2062,8 @@ def save_datasheet():
             "table_name": table_name,
             "display_name": display_name,
             "row_count": len(rows),
-            "column_count": len(valid_columns)
+            "column_count": len(valid_columns),
+            "conc_unit": conc_unit
         })
     except Exception as e:
         db.session.rollback()
@@ -2052,6 +2095,7 @@ def block_sensitive_data(filename):
 # ------------------------------------------------------------------------------
 @app.route('/')
 @app.route('/home')
+@app.route('/index.html')
 def home():
     return render_template('index.html', active_page='home')
 
@@ -2060,36 +2104,44 @@ def index():
     return redirect(url_for('home'))
 
 @app.route('/setup')
+@app.route('/setup.html')
 def setup():
     return render_template('setup.html', active_page='setup')
 
 @app.route('/maintenance')
+@app.route('/maintenance.html')
 def maintenance():
     return render_template('maintenance.html', active_page='maintenance')
 
 @app.route('/trouble')
+@app.route('/trouble.html')
 def trouble():
     return render_template('trouble.html', active_page='trouble')
 
 @app.route('/data')
 @app.route('/data_page')
+@app.route('/data.html')
 def data_page():
     return render_template('data.html', active_page='data')
 
 @app.route('/operation')
+@app.route('/operation.html')
 def operation():
     return render_template('operation.html', active_page='operation')
 
 @app.route('/sort')
+@app.route('/sort.html')
 def sort():
     return render_template('sort.html', active_page='sort')
 
 @app.route('/report')
 @app.route('/report_page')
+@app.route('/report.html')
 def report_page():
     return render_template('report.html', active_page='report')
 
 @app.route('/admin')
+@app.route('/admin.html')
 def admin():
     return render_template('admin.html', active_page='admin')
 

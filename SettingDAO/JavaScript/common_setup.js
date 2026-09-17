@@ -706,7 +706,7 @@ window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, 
                 const currentSite = modal.querySelector('#setup-log-reg-site').value;
                 const currentEquip = modal.querySelector('#setup-log-reg-equip').value;
                 if (currentSite && currentEquip) {
-                    window.location.href = `setup.html?site=${encodeURIComponent(currentSite)}&equip=${encodeURIComponent(currentEquip)}`;
+                    window.location.href = `/setup?site=${encodeURIComponent(currentSite)}&equip=${encodeURIComponent(currentEquip)}`;
                 }
             };
             buttonContainer.insertBefore(gotoBtn, closeBtn);
@@ -818,7 +818,7 @@ window.openLogForEditing = function(site, equip, logId) {
                 const currentSite = modal.querySelector('#setup-log-reg-site').value;
                 const currentEquip = modal.querySelector('#setup-log-reg-equip').value;
                 if (currentSite && currentEquip) {
-                    window.location.href = `setup.html?site=${encodeURIComponent(currentSite)}&equip=${encodeURIComponent(currentEquip)}`;
+                    window.location.href = `/setup?site=${encodeURIComponent(currentSite)}&equip=${encodeURIComponent(currentEquip)}`;
                 }
             };
             buttonContainer.insertBefore(gotoBtn, closeBtn);
