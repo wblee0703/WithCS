@@ -582,6 +582,26 @@ class EquipmentReport(db.Model):
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else ''
         }
 
+# [추가] AI 챗봇 대화 기록 모델 (ChatHistory)
+class ChatHistory(db.Model):
+    __tablename__ = 'chat_history'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    user_id = db.Column(db.String(50), nullable=False, index=True)
+    sender = db.Column(db.String(10), nullable=False) # 'user' or 'ai'
+    message = db.Column(db.Text, nullable=False)
+    date_str = db.Column(db.String(20), nullable=False, index=True) # YYYY-MM-DD
+    created_at = db.Column(db.DateTime, default=get_utc_now, index=True)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'sender': self.sender,
+            'text': self.message,
+            'date': self.date_str,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else ''
+        }
+
 def ensure_item_stock_table():
     try:
         db.create_all()
@@ -623,10 +643,17 @@ def ensure_equipment_report_table():
     except Exception as e:
         app.logger.error(f"Error ensuring equipment_report table: {e}")
 
+def ensure_chat_history_table():
+    try:
+        db.create_all()
+    except Exception as e:
+        app.logger.error(f"Error ensuring chat_history table: {e}")
+
 with app.app_context():
     ensure_item_stock_table()
     ensure_admin_parameter_table()
     ensure_equipment_report_table()
+    ensure_chat_history_table()
 
 # ------------------------------------------------------------------------------
 # 2. 경로 및 로깅 설정 (Paths & Logging Setup)
@@ -1905,6 +1932,19 @@ def load_datasheet():
             cols_res = db.session.execute(text(f"PRAGMA table_info(`{table_name}`)"))
             all_cols = [r[1] for r in cols_res]
 
+        # raw 모드일 때 division, concentration, conc_unit 컬럼 누락 방지 (기존 테이블 마이그레이션)
+        if data_type == 'raw':
+            for fix_col, col_def in [('division', 'VARCHAR(50) DEFAULT \'\''), 
+                                    ('concentration', 'VARCHAR(50) DEFAULT \'\''), 
+                                    ('conc_unit', 'VARCHAR(20) DEFAULT \'ppm\'')]:
+                if fix_col not in all_cols:
+                    if db_type == 'mysql':
+                        db.session.execute(text(f"ALTER TABLE `{table_name}` ADD COLUMN `{fix_col}` {col_def};"))
+                    else:
+                        db.session.execute(text(f"ALTER TABLE `{table_name}` ADD COLUMN `{fix_col}` TEXT DEFAULT '';"))
+                    all_cols.append(fix_col)
+            db.session.commit()
+
         data_cols = [c for c in all_cols if c not in ('id', 'record_date', 'created_at', 'updated_at', 'division', 'concentration', 'conc_unit')]
 
         # 데이터 행 조회 (날짜는 최신순, 동일 날짜 내에서는 저장된 순서(id ASC) 그대로 유지)
@@ -1914,16 +1954,23 @@ def load_datasheet():
         for idx, r in enumerate(rows_res):
             row_dict = dict(r._mapping)
             date_val = row_dict.get('record_date', '')
-            div_val = row_dict.get('division') or ''
-            conc_val = row_dict.get('concentration') or ''
+            div_val = row_dict.get('division')
+            if div_val is None:
+                div_val = ''
+            conc_val = row_dict.get('concentration')
+            if conc_val is None:
+                conc_val = ''
             if row_dict.get('conc_unit'):
                 conc_unit_val = row_dict.get('conc_unit')
             vals = {c: (row_dict.get(c) if row_dict.get(c) is not None else '') for c in data_cols}
+            row_id_num = row_dict.get('id', idx + 1)
             rows_data.append({
-                "id": f"row_{row_dict.get('id', idx + 1)}",
+                "id": f"row_{row_id_num}",
+                "db_id": row_id_num,
+                "db_order": idx,
                 "date": date_val,
-                "division": div_val,
-                "concentration": conc_val,
+                "division": str(div_val),
+                "concentration": str(conc_val),
                 "values": vals
             })
 
@@ -2031,19 +2078,24 @@ def save_datasheet():
         valid_columns = [c for c in columns if c.replace('`', '').strip() in existing_cols and c.replace('`', '').strip() not in ('id', 'record_date', 'created_at', 'updated_at', 'division', 'concentration', 'conc_unit')]
         for r in rows:
             date_val = r.get('date', '')
-            div_val = r.get('division', '')
-            conc_val = r.get('concentration', '')
             vals = r.get('values', {})
+            div_val = r.get('division') if r.get('division') is not None and str(r.get('division')).strip() != '' else vals.get('구분', '')
+            conc_val = r.get('concentration') if r.get('concentration') is not None and str(r.get('concentration')).strip() != '' else vals.get('농도', '')
 
             col_list = ['`record_date`']
             ph_list = [':rec_date']
             params = {'rec_date': date_val}
 
-            if data_type == 'raw':
-                col_list.extend(['`division`', '`concentration`', '`conc_unit`'])
-                ph_list.extend([':division', ':concentration', ':conc_unit'])
+            # raw 모드이거나 테이블에 division/concentration 컬럼이 존재하는 경우 항상 저장
+            if 'division' in existing_cols and 'concentration' in existing_cols:
+                col_list.extend(['`division`', '`concentration`'])
+                ph_list.extend([':division', ':concentration'])
                 params['division'] = str(div_val) if div_val is not None else ''
                 params['concentration'] = str(conc_val) if conc_val is not None else ''
+
+            if 'conc_unit' in existing_cols:
+                col_list.append('`conc_unit`')
+                ph_list.append(':conc_unit')
                 params['conc_unit'] = str(conc_unit)
 
             for idx, c in enumerate(valid_columns):
@@ -3316,6 +3368,28 @@ def ai_chatbot():
         # 5. 역마스킹 복원
         demasked_reply = security_manager.demask_data(api_reply, mapping_table)
 
+        # 6. DB에 챗봇 대화 기록 영구 저장 (사용자 질문 + AI 응답)
+        try:
+            today_str = datetime.now().strftime('%Y-%m-%d')
+            user_chat = ChatHistory(
+                user_id=user.id,
+                sender='user',
+                message=user_message,
+                date_str=today_str
+            )
+            ai_chat = ChatHistory(
+                user_id=user.id,
+                sender='ai',
+                message=demasked_reply,
+                date_str=today_str
+            )
+            db.session.add(user_chat)
+            db.session.add(ai_chat)
+            db.session.commit()
+        except Exception as db_err:
+            db.session.rollback()
+            app.logger.error(f"Failed to save chat history into DB: {str(db_err)}")
+
         return jsonify({
             "status": "success",
             "reply": demasked_reply
@@ -3325,6 +3399,70 @@ def ai_chatbot():
         # 보안 보완 5: 내부 시스템 예외 노출 전면 차단
         app.logger.error(f"Unexpected error in ai_chatbot endpoint: {str(e)}")
         return jsonify({"status": "fail", "message": "요청을 처리하는 중 서버 오류가 발생했습니다. 관리자에게 문의하세요."}), 500
+
+# [추가] 챗봇 대화 기록 조회 API (DB 기반 복원 및 날짜별 조회)
+@app.route('/api/chat/history', methods=['GET'])
+@login_required
+def get_chat_history():
+    if session.get('role') != 'superadmin':
+        return jsonify({"status": "fail", "message": "권한이 없습니다."}), 403
+
+    user_id = session.get('user_id')
+    date_str = request.args.get('date', '').strip() # 특정 날짜 지정 (없으면 전체 날짜 목록 및 오늘 대화 반환)
+
+    try:
+        if date_str:
+            records = ChatHistory.query.filter_by(user_id=user_id, date_str=date_str).order_by(ChatHistory.id.asc()).all()
+            return jsonify({
+                "status": "success",
+                "date": date_str,
+                "messages": [r.to_dict() for r in records]
+            })
+
+        # 날짜별 그룹 및 최근 대화 목록 반환
+        dates = db.session.query(ChatHistory.date_str).filter_by(user_id=user_id).distinct().order_by(ChatHistory.date_str.desc()).all()
+        date_list = [d[0] for d in dates if d[0]]
+
+        # 오늘 날짜의 최신 대화 목록 (새로고침 시 세션 복원용)
+        today_str = datetime.now().strftime('%Y-%m-%d')
+        today_records = ChatHistory.query.filter_by(user_id=user_id, date_str=today_str).order_by(ChatHistory.id.asc()).all()
+
+        return jsonify({
+            "status": "success",
+            "dates": date_list,
+            "today_messages": [r.to_dict() for r in today_records]
+        })
+    except Exception as e:
+        app.logger.error(f"Error fetching chat history: {e}")
+        return jsonify({"status": "fail", "message": "대화 기록을 불러오지 못했습니다."}), 500
+
+# [추가] 챗봇 대화 기록 삭제 API (특정 날짜 또는 전체 삭제)
+@app.route('/api/chat/history/delete', methods=['POST'])
+@login_required
+def delete_chat_history():
+    if session.get('role') != 'superadmin':
+        return jsonify({"status": "fail", "message": "권한이 없습니다."}), 403
+
+    user_id = session.get('user_id')
+    data = request.json or {}
+    date_str = data.get('date', '').strip()
+    clear_all = data.get('all', False)
+
+    try:
+        if clear_all:
+            ChatHistory.query.filter_by(user_id=user_id).delete()
+            db.session.commit()
+            return jsonify({"status": "success", "message": "모든 대화 기록이 삭제되었습니다."})
+        elif date_str:
+            ChatHistory.query.filter_by(user_id=user_id, date_str=date_str).delete()
+            db.session.commit()
+            return jsonify({"status": "success", "message": f"{date_str} 대화 기록이 삭제되었습니다."})
+        else:
+            return jsonify({"status": "fail", "message": "삭제할 날짜가 지정되지 않았습니다."}), 400
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error deleting chat history: {e}")
+        return jsonify({"status": "fail", "message": "대화 기록 삭제에 실패했습니다."}), 500
 
 # [추가] 비밀번호 확인 API (수정 전 인증용)
 @app.route('/api/user/verify', methods=['POST'])

@@ -318,8 +318,8 @@ function renderEquipList() {
         if (currentSelectedEquip && currentSelectedEquip.key === item.key) li.classList.add('active');
 
         // 고객사 장비명이 없으면 시리얼 넘버 표시
-        const subText = item.custEquip 
-            ? `[${escapeHtml(item.custEquip)}]` 
+        const subText = item.custEquip
+            ? `[${escapeHtml(item.custEquip)}]`
             : (item.serial ? `[${escapeHtml(item.serial)}]` : '');
 
         li.innerHTML = `
@@ -378,7 +378,7 @@ function showContentView() {
         document.getElementById('data-header-equip-title').textContent = currentSelectedEquip.displayName;
         document.getElementById('data-header-site-tag').textContent = currentSelectedSite;
         document.getElementById('data-header-serial-tag').textContent = currentSelectedEquip.serial ? `S/N: ${currentSelectedEquip.serial}` : '시리얼 없음';
-        
+
         const custTag = document.getElementById('data-header-cust-tag');
         if (currentSelectedEquip.custEquip) {
             custTag.style.display = 'inline-flex';
@@ -419,7 +419,7 @@ let currentParamDate = null; // 현재 선택된 Parameter 점검 일자
  * Parameter / Raw Data 모드 전환
  */
 function switchDataMode(newMode) {
-    if (!newMode || (newMode !== 'param' && newMode !== 'raw')) return;
+    if (!newMode || (newMode !== 'param' && newMode !== 'raw' && newMode !== 'analysis')) return;
     if (currentDataMode === newMode) return;
 
     currentDataMode = newMode;
@@ -431,25 +431,40 @@ function switchDataMode(newMode) {
     // 세그먼트 버튼 활성화 상태 갱신
     const btnParam = document.getElementById('btn-mode-param');
     const btnRaw = document.getElementById('btn-mode-raw');
+    const btnAnalysis = document.getElementById('btn-mode-analysis');
     if (btnParam) btnParam.classList.toggle('active', newMode === 'param');
     if (btnRaw) btnRaw.classList.toggle('active', newMode === 'raw');
+    if (btnAnalysis) btnAnalysis.classList.toggle('active', newMode === 'analysis');
 
     // 뷰 및 툴바 가시성 전환
     const rawView = document.getElementById('data-raw-view');
     const paramView = document.getElementById('data-param-view');
+    const analysisView = document.getElementById('data-analysis-view');
     const rawToolbar = document.getElementById('toolbar-raw-actions');
     const paramToolbar = document.getElementById('toolbar-param-actions');
+    const analysisToolbar = document.getElementById('toolbar-analysis-actions');
 
     if (newMode === 'param') {
         if (rawView) rawView.style.display = 'none';
         if (paramView) paramView.style.display = 'flex';
+        if (analysisView) analysisView.style.display = 'none';
         if (rawToolbar) rawToolbar.style.display = 'none';
         if (paramToolbar) paramToolbar.style.display = 'flex';
+        if (analysisToolbar) analysisToolbar.style.display = 'none';
+    } else if (newMode === 'analysis') {
+        if (rawView) rawView.style.display = 'none';
+        if (paramView) paramView.style.display = 'none';
+        if (analysisView) analysisView.style.display = 'flex';
+        if (rawToolbar) rawToolbar.style.display = 'none';
+        if (paramToolbar) paramToolbar.style.display = 'none';
+        if (analysisToolbar) analysisToolbar.style.display = 'flex';
     } else {
         if (rawView) rawView.style.display = 'flex';
         if (paramView) paramView.style.display = 'none';
+        if (analysisView) analysisView.style.display = 'none';
         if (rawToolbar) rawToolbar.style.display = 'flex';
         if (paramToolbar) paramToolbar.style.display = 'none';
+        if (analysisToolbar) analysisToolbar.style.display = 'none';
     }
 
     // 선택된 장비가 있다면 새 모드의 시트 데이터 로드
@@ -469,7 +484,7 @@ let dbSaveTimer = null;
 async function loadEquipSheetData() {
     if (!currentSelectedSite || !currentSelectedEquip) return;
 
-    const mode = currentDataMode || 'raw';
+    const mode = (currentDataMode === 'analysis') ? 'raw' : (currentDataMode || 'raw');
     const storageKey = `equip_sheet_${currentSelectedSite}_${currentSelectedEquip.key}_${mode}`;
     const legacyStorageKey = `equip_sheet_${currentSelectedSite}_${currentSelectedEquip.key}`;
     const indicator = document.getElementById('data-save-indicator');
@@ -504,16 +519,42 @@ async function loadEquipSheetData() {
             }
 
             if (data.exists && (data.columns.length > 0 || data.rows.length > 0)) {
+                let loadedUnit = data.conc_unit || 'ppm';
+                if (!['ppm', 'ppb', 'ppt'].includes(loadedUnit)) loadedUnit = 'ppm';
+
                 currentSheetData = {
                     columns: data.columns || [],
-                    rows: (data.rows || []).map(r => ({
-                        id: r.id,
-                        date: r.date,
-                        division: r.division || (r.values && r.values['구분']) || '',
-                        concentration: (r.concentration !== undefined && r.concentration !== null) ? r.concentration : ((r.values && r.values['농도']) || ''),
-                        values: r.values || {}
-                    })),
-                    concUnit: data.conc_unit || 'ppm'
+                    rows: (data.rows || []).map(r => {
+                        let divVal = (r.division !== undefined && r.division !== null && String(r.division).trim() !== '')
+                            ? String(r.division).trim()
+                            : ((r.values && r.values['구분']) || '');
+                        const cDiv = String(divVal).replace(/[\s_\-]/g, '').toUpperCase();
+                        if (cDiv === 'STD1' || cDiv === 'STD1(BLANK)' || cDiv.startsWith('STD1')) divVal = 'STD1(Blank)';
+                        else if (cDiv === 'STD2' || cDiv.startsWith('STD2')) divVal = 'STD2';
+                        else if (cDiv === 'STD3' || cDiv.startsWith('STD3')) divVal = 'STD3';
+                        else if (cDiv === 'STD4' || cDiv.startsWith('STD4')) divVal = 'STD4';
+                        else if (cDiv === 'STD5' || cDiv.startsWith('STD5')) divVal = 'STD5';
+                        else if (cDiv === 'SAMPLE') divVal = '';
+
+                        let concVal = (r.concentration !== undefined && r.concentration !== null && String(r.concentration).trim() !== '')
+                            ? String(r.concentration).trim()
+                            : ((r.values && r.values['농도'] !== undefined && r.values['농도'] !== null) ? String(r.values['농도']).trim() : '');
+
+                        const vals = r.values || {};
+                        vals['구분'] = divVal;
+                        vals['농도'] = concVal;
+
+                        return {
+                            id: r.id,
+                            db_id: r.db_id,
+                            db_order: r.db_order,
+                            date: r.date || getTodayString(),
+                            division: divVal,
+                            concentration: concVal,
+                            values: vals
+                        };
+                    }),
+                    concUnit: loadedUnit
                 };
                 localStorage.setItem(storageKey, JSON.stringify(currentSheetData));
                 loadedFromDb = true;
@@ -537,11 +578,31 @@ async function loadEquipSheetData() {
                 currentSheetData = JSON.parse(savedStr);
                 if (!Array.isArray(currentSheetData.columns)) currentSheetData.columns = [];
                 if (!Array.isArray(currentSheetData.rows)) currentSheetData.rows = [];
-                if (!currentSheetData.concUnit) currentSheetData.concUnit = 'ppm';
-                // 행별 division / concentration 기본값 보정
+                if (!currentSheetData.concUnit || !['ppm', 'ppb', 'ppt'].includes(currentSheetData.concUnit)) {
+                    currentSheetData.concUnit = 'ppm';
+                }
+                // 행별 division / concentration 기본값 보정 및 values 동기화
                 currentSheetData.rows.forEach(r => {
-                    if (r.division === undefined) r.division = (r.values && r.values['구분']) || '';
-                    if (r.concentration === undefined) r.concentration = (r.values && r.values['농도']) || '';
+                    let divVal = (r.division !== undefined && r.division !== null && String(r.division).trim() !== '')
+                        ? String(r.division).trim()
+                        : ((r.values && r.values['구분']) || '');
+                    const cDiv = String(divVal).replace(/[\s_\-]/g, '').toUpperCase();
+                    if (cDiv === 'STD1' || cDiv === 'STD1(BLANK)' || cDiv.startsWith('STD1')) divVal = 'STD1(Blank)';
+                    else if (cDiv === 'STD2' || cDiv.startsWith('STD2')) divVal = 'STD2';
+                    else if (cDiv === 'STD3' || cDiv.startsWith('STD3')) divVal = 'STD3';
+                    else if (cDiv === 'STD4' || cDiv.startsWith('STD4')) divVal = 'STD4';
+                    else if (cDiv === 'STD5' || cDiv.startsWith('STD5')) divVal = 'STD5';
+                    else if (cDiv === 'SAMPLE') divVal = '';
+                    r.division = divVal;
+
+                    let concVal = (r.concentration !== undefined && r.concentration !== null && String(r.concentration).trim() !== '')
+                        ? String(r.concentration).trim()
+                        : ((r.values && r.values['농도'] !== undefined && r.values['농도'] !== null) ? String(r.values['농도']).trim() : '');
+                    r.concentration = concVal;
+
+                    if (!r.values) r.values = {};
+                    r.values['구분'] = divVal;
+                    r.values['농도'] = concVal;
                 });
                 // 로컬 데이터를 DB에 반영하여 테이블 생성
                 saveCurrentSheetData(false);
@@ -562,7 +623,7 @@ async function loadEquipSheetData() {
  */
 function initDefaultSheet() {
     const isParam = (currentDataMode === 'param');
-    const defaultCols = isParam 
+    const defaultCols = isParam
         ? ['파라미터 항목', '기준값', '측정값', '비고']
         : ['온도 (℃)', '압력 (kPa)', '전압 (V)', '비고'];
 
@@ -591,7 +652,24 @@ function initDefaultSheet() {
 function saveCurrentSheetData(showIndicator = true, resetTable = false, immediate = false) {
     if (!currentSelectedSite || !currentSelectedEquip) return;
 
-    const mode = currentDataMode || 'raw';
+    const mode = (currentDataMode === 'analysis') ? 'raw' : (currentDataMode || 'raw');
+
+    // 저장 전 division 및 concentration 양방향 동기화 보장
+    if (currentSheetData && currentSheetData.rows) {
+        currentSheetData.rows.forEach(r => {
+            if (!r.values) r.values = {};
+            const finalDiv = r.division || r.values['구분'] || '';
+            r.division = finalDiv;
+            r.values['구분'] = finalDiv;
+
+            const finalConc = (r.concentration !== undefined && r.concentration !== null && r.concentration !== '')
+                ? String(r.concentration)
+                : (r.values['농도'] !== undefined && r.values['농도'] !== null ? String(r.values['농도']) : '');
+            r.concentration = finalConc;
+            r.values['농도'] = finalConc;
+        });
+    }
+
     const storageKey = `equip_sheet_${currentSelectedSite}_${currentSelectedEquip.key}_${mode}`;
     localStorage.setItem(storageKey, JSON.stringify(currentSheetData));
 
@@ -620,8 +698,10 @@ function saveCurrentSheetData(showIndicator = true, resetTable = false, immediat
                     rows: (currentSheetData.rows || []).map(r => ({
                         id: r.id,
                         date: r.date,
-                        division: r.division || '',
-                        concentration: r.concentration || '',
+                        division: r.division || (r.values && r.values['구분']) || '',
+                        concentration: (r.concentration !== undefined && r.concentration !== null && r.concentration !== '')
+                            ? String(r.concentration)
+                            : ((r.values && r.values['농도'] !== undefined) ? String(r.values['농도']) : ''),
                         values: r.values || {}
                     })),
                     conc_unit: currentSheetData.concUnit || 'ppm',
@@ -667,7 +747,7 @@ let currentSort = {
 /**
  * 컬럼 헤더 클릭 시 정렬 토글
  */
-window.toggleSheetSort = function(key) {
+window.toggleSheetSort = function (key) {
     if (!currentSheetData || !Array.isArray(currentSheetData.rows) || currentSheetData.rows.length === 0) return;
 
     if (currentSort.key === key) {
@@ -680,7 +760,26 @@ window.toggleSheetSort = function(key) {
     const isAsc = currentSort.direction === 'asc';
 
     if (key === '__no__') {
-        currentSheetData.rows.reverse();
+        // [요청 반영] No 클릭 시 데이터베이스 기준 순서(record_date DESC, db_id ASC)로 정렬 토글
+        currentSheetData.rows.sort((a, b) => {
+            const dateA = a.date || '';
+            const dateB = b.date || '';
+            let cmp = 0;
+
+            if (dateA !== dateB) {
+                // 날짜 최신순 (DESC)
+                cmp = dateB.localeCompare(dateA);
+            } else {
+                // 동일 날짜 내에서는 DB 등록 ID / 등록 순서 기준 (ASC)
+                let idA = a.db_id !== undefined && a.db_id !== null ? Number(a.db_id) : (a.db_order !== undefined ? a.db_order : 0);
+                let idB = b.db_id !== undefined && b.db_id !== null ? Number(b.db_id) : (b.db_order !== undefined ? b.db_order : 0);
+                if (isNaN(idA)) idA = 0;
+                if (isNaN(idB)) idB = 0;
+                cmp = idA - idB;
+            }
+
+            return isAsc ? cmp : -cmp;
+        });
     } else {
         currentSheetData.rows.sort((a, b) => {
             let valA, valB;
@@ -731,6 +830,8 @@ window.toggleSheetSort = function(key) {
 function renderSheetTable() {
     if (currentDataMode === 'param') {
         renderParamView();
+    } else if (currentDataMode === 'analysis') {
+        renderAnalysisView();
     } else {
         renderRawSheetTable();
     }
@@ -1926,8 +2027,8 @@ async function handleImportModelParams() {
         // equipment_models 목록에서 abbr <-> name 매핑 역추적
         try {
             const modelsData = JSON.parse(localStorage.getItem('equipment_models')) || [];
-            const foundModel = modelsData.find(m => 
-                (m.name && m.name.toLowerCase() === equipModelName.toLowerCase()) || 
+            const foundModel = modelsData.find(m =>
+                (m.name && m.name.toLowerCase() === equipModelName.toLowerCase()) ||
                 (m.abbr && m.abbr.toLowerCase() === equipModelName.toLowerCase())
             );
             if (foundModel) {
@@ -1953,7 +2054,7 @@ async function handleImportModelParams() {
 
     // 현재 날짜의 기존 행 확인 (빈 행만 1개 있는 경우 교체)
     const currentDayRows = currentSheetData.rows.filter(r => r.date === currentParamDate);
-    const isOnlySingleEmptyRow = currentDayRows.length === 1 && 
+    const isOnlySingleEmptyRow = currentDayRows.length === 1 &&
         !(currentDayRows[0].values && (currentDayRows[0].values['파라미터 항목'] || '').trim());
 
     if (isOnlySingleEmptyRow) {
@@ -2106,7 +2207,7 @@ function renderRawSheetTable() {
 
     // 1. 헤더 (Thead) 렌더링
     let headHtml = '<tr>';
-    
+
     // No 컬럼 (좌우 스크롤 고정)
     headHtml += `<th class="sheet-th-no sheet-sticky-col sheet-sticky-no" onclick="toggleSheetSort('__no__')" title="순번 기준 정렬 (클릭 시 토글)">No</th>`;
 
@@ -2117,16 +2218,19 @@ function renderRawSheetTable() {
     headHtml += `<th class="sheet-th-division sheet-sticky-col sheet-sticky-division" onclick="toggleSheetSort('__division__')" title="구분 기준 정렬 (클릭 시 토글)">구분</th>`;
 
     // 농도 컬럼 (좌우 스크롤 고정 + 헤더 단위 선택 드롭다운)
-    const curConcUnit = currentSheetData.concUnit || 'ppm';
+    let curConcUnit = currentSheetData.concUnit || 'ppm';
+    if (!['ppm', 'ppb', 'ppt'].includes(curConcUnit)) {
+        curConcUnit = 'ppm';
+        currentSheetData.concUnit = 'ppm';
+    }
     headHtml += `
         <th class="sheet-th-conc sheet-sticky-col sheet-sticky-conc" title="농도 (헤더에서 단위 선택 가능)">
             <div class="sheet-conc-header-inner">
                 <span class="sheet-conc-title" onclick="toggleSheetSort('__concentration__')" title="농도 기준 정렬">농도</span>
-                <select class="sheet-conc-unit-select" id="sheet-conc-unit-select" onchange="updateSheetConcUnit(this.value)" title="농도 단위 선택 (ppm, ppb, ppt, intensity)">
+                <select class="sheet-conc-unit-select" id="sheet-conc-unit-select" onchange="updateSheetConcUnit(this.value)" title="농도 단위 선택 (ppm, ppb, ppt)">
                     <option value="ppm" ${curConcUnit === 'ppm' ? 'selected' : ''}>ppm</option>
                     <option value="ppb" ${curConcUnit === 'ppb' ? 'selected' : ''}>ppb</option>
                     <option value="ppt" ${curConcUnit === 'ppt' ? 'selected' : ''}>ppt</option>
-                    <option value="intensity" ${curConcUnit === 'intensity' ? 'selected' : ''}>intensity</option>
                 </select>
             </div>
         </th>
@@ -2170,54 +2274,78 @@ function renderRawSheetTable() {
     let bodyHtml = '';
     rows.forEach((row, rowIdx) => {
         bodyHtml += `<tr data-row-id="${row.id}">`;
-        
-        // No 컬럼 (좌우 스크롤 고정)
-        bodyHtml += `<td class="sheet-td-no sheet-sticky-col sheet-sticky-no" style="color:#8b949e; text-align:center; user-select:none; font-size:11px;">${rowIdx + 1}</td>`;
 
-        // 날짜 컬럼 (좌우 스크롤 고정)
+        // No 컬럼 (좌우 스크롤 고정, 클릭 시 행 전체 선택)
+        bodyHtml += `<td class="sheet-td-no sheet-sticky-col sheet-sticky-no" data-row-idx="${rowIdx}" data-is-no="true" title="행 전체 선택 (클릭 후 Del 키로 행 삭제)" style="color:#8b949e; text-align:center; user-select:none; font-size:11px; cursor:pointer;">${rowIdx + 1}</td>`;
+
+        // 날짜 컬럼 (좌우 스크롤 고정, colIdx = 0)
         bodyHtml += `
-            <td class="sheet-td-date sheet-sticky-col sheet-sticky-date" style="text-align: center;">
-                <input type="date" class="sheet-date-input custom-date-icon" value="${row.date || ''}" max="9999-12-31" 
+            <td class="sheet-td-date sheet-sticky-col sheet-sticky-date" data-row-idx="${rowIdx}" data-col-idx="0" style="text-align: center;">
+                <input type="date" class="sheet-cell-input sheet-date-input custom-date-icon" value="${row.date || ''}" max="9999-12-31" 
+                       data-row-id="${row.id}" data-row-idx="${rowIdx}" data-col-idx="0" data-field="date"
                        onchange="updateRowDate('${row.id}', this.value)" title="날짜 변경">
             </td>
         `;
 
-        // 구분 컬럼 (좌우 스크롤 고정 + 드롭다운: STD1(Blank), STD2~5, Sample)
-        const curDiv = row.division || (row.values && row.values['구분']) || '';
+        // 구분 컬럼 (좌우 스크롤 고정, colIdx = 1, 셀 텍스트는 드래그/선택 가능하고 우측 화살표 클릭 시에만 드롭다운 노출)
+        let curDiv = row.division || (row.values && row.values['구분']) || '';
+        const cleanCurDiv = String(curDiv).replace(/[\s_\-]/g, '').toUpperCase();
+        if (cleanCurDiv === 'STD1' || cleanCurDiv === 'STD1(BLANK)' || cleanCurDiv.startsWith('STD1')) {
+            curDiv = 'STD1(Blank)';
+        } else if (cleanCurDiv === 'STD2' || cleanCurDiv.startsWith('STD2')) {
+            curDiv = 'STD2';
+        } else if (cleanCurDiv === 'STD3' || cleanCurDiv.startsWith('STD3')) {
+            curDiv = 'STD3';
+        } else if (cleanCurDiv === 'STD4' || cleanCurDiv.startsWith('STD4')) {
+            curDiv = 'STD4';
+        } else if (cleanCurDiv === 'STD5' || cleanCurDiv.startsWith('STD5')) {
+            curDiv = 'STD5';
+        } else if (cleanCurDiv === '기타' || cleanCurDiv === 'ETC') {
+            curDiv = '기타';
+        } else if (cleanCurDiv === 'SAMPLE') {
+            curDiv = '';
+        }
         bodyHtml += `
-            <td class="sheet-td-division sheet-sticky-col sheet-sticky-division">
-                <select class="sheet-select-division" data-row-id="${row.id}" onchange="updateRowDivision('${row.id}', this.value)" title="구분 선택">
-                    <option value="" ${!curDiv ? 'selected' : ''}>-</option>
-                    <option value="STD1(Blank)" ${curDiv === 'STD1(Blank)' ? 'selected' : ''}>STD1(Blank)</option>
-                    <option value="STD2" ${curDiv === 'STD2' ? 'selected' : ''}>STD2</option>
-                    <option value="STD3" ${curDiv === 'STD3' ? 'selected' : ''}>STD3</option>
-                    <option value="STD4" ${curDiv === 'STD4' ? 'selected' : ''}>STD4</option>
-                    <option value="STD5" ${curDiv === 'STD5' ? 'selected' : ''}>STD5</option>
-                    <option value="Sample" ${curDiv === 'Sample' ? 'selected' : ''}>Sample</option>
-                </select>
+            <td class="sheet-td-division sheet-sticky-col sheet-sticky-division" data-row-idx="${rowIdx}" data-col-idx="1">
+                <div class="sheet-division-cell-wrap">
+                    <span class="sheet-division-text" data-row-idx="${rowIdx}" data-col-idx="1" title="${escapeHtml(curDiv || '-')}">${escapeHtml(curDiv || '-')}</span>
+                    <div class="sheet-division-arrow-wrap" title="구분 선택">
+                        <span class="sheet-division-arrow-icon">▾</span>
+                        <select class="sheet-select-division-arrow" data-row-id="${row.id}" onchange="updateRowDivision('${row.id}', this.value)">
+                            <option value="" ${!curDiv ? 'selected' : ''}>-</option>
+                            <option value="STD1(Blank)" ${curDiv === 'STD1(Blank)' ? 'selected' : ''}>STD1(Blank)</option>
+                            <option value="STD2" ${curDiv === 'STD2' ? 'selected' : ''}>STD2</option>
+                            <option value="STD3" ${curDiv === 'STD3' ? 'selected' : ''}>STD3</option>
+                            <option value="STD4" ${curDiv === 'STD4' ? 'selected' : ''}>STD4</option>
+                            <option value="STD5" ${curDiv === 'STD5' ? 'selected' : ''}>STD5</option>
+                            <option value="기타" ${curDiv === '기타' ? 'selected' : ''}>기타</option>
+                        </select>
+                    </div>
+                </div>
             </td>
         `;
 
-        // 농도 컬럼 (좌우 스크롤 고정 + 셀 입력창)
-        const curConc = (row.concentration !== undefined && row.concentration !== null && row.concentration !== '') 
-            ? row.concentration 
+        // 농도 컬럼 (좌우 스크롤 고정 + 셀 입력창, colIdx = 2)
+        const curConc = (row.concentration !== undefined && row.concentration !== null && row.concentration !== '')
+            ? row.concentration
             : ((row.values && row.values['농도'] !== undefined) ? row.values['농도'] : '');
         bodyHtml += `
-            <td class="sheet-td-conc sheet-sticky-col sheet-sticky-conc">
+            <td class="sheet-td-conc sheet-sticky-col sheet-sticky-conc" data-row-idx="${rowIdx}" data-col-idx="2">
                 <input type="text" class="sheet-cell-input sheet-conc-cell-input" value="${escapeHtml(curConc)}" 
-                       data-row-id="${row.id}" data-row-idx="${rowIdx}" data-col-idx="-1" data-field="concentration" 
+                       data-row-id="${row.id}" data-row-idx="${rowIdx}" data-col-idx="2" data-field="concentration" 
                        placeholder="-" autocomplete="off" onchange="updateRowConcentration('${row.id}', this.value)">
             </td>
         `;
 
-        // 사용자 정의 동적 열들 (직접 편집 가능한 인라인 셀)
+        // 사용자 정의 동적 열들 (측정 데이터 열은 숫자 및 소수점만 입력 허용, colIdx = 3, 4, 5...)
         columns.forEach((col, colIdx) => {
             const val = (row.values && row.values[col] !== undefined) ? row.values[col] : '';
+            const actualColIdx = 3 + colIdx;
             bodyHtml += `
-                <td class="sheet-td-data" style="width: 160px; min-width: 150px;">
-                    <input type="text" class="sheet-cell-input" value="${escapeHtml(val)}" 
-                           data-row-id="${row.id}" data-row-idx="${rowIdx}" data-col-idx="${colIdx}" data-col-name="${escapeHtml(col)}" 
-                           placeholder="-" autocomplete="off">
+                <td class="sheet-td-data" data-row-idx="${rowIdx}" data-col-idx="${actualColIdx}" style="width: 160px; min-width: 150px;">
+                    <input type="text" class="sheet-cell-input sheet-number-cell-input" value="${escapeHtml(val)}" 
+                           data-row-id="${row.id}" data-row-idx="${rowIdx}" data-col-idx="${actualColIdx}" data-col-name="${escapeHtml(col)}" 
+                           placeholder="-" autocomplete="off" inputmode="decimal">
                 </td>
             `;
         });
@@ -2239,6 +2367,9 @@ function renderRawSheetTable() {
 
     // 열 드래그 앤 드롭 이동 이벤트 바인딩
     bindColumnDragEvents();
+
+    // 다중 셀 마우스/터치 드래그 범위 선택 이벤트 바인딩
+    bindRangeSelectionEvents();
 }
 
 /**
@@ -2250,7 +2381,7 @@ let isDraggingColumn = false;
 /**
  * 열 헤더 클릭 핸들러 (드래그 직후 클릭 오동작 방지)
  */
-window.handleColHeaderClick = function(e, col) {
+window.handleColHeaderClick = function (e, col) {
     if (isDraggingColumn) {
         e.preventDefault();
         e.stopPropagation();
@@ -2267,6 +2398,8 @@ function moveColumn(fromIdx, toIdx, insertBefore) {
 
     const cols = currentSheetData.columns;
     if (fromIdx < 0 || fromIdx >= cols.length || toIdx < 0 || toIdx >= cols.length) return;
+
+    pushSheetUndoSnapshot();
 
     const [movedCol] = cols.splice(fromIdx, 1);
 
@@ -2441,6 +2574,20 @@ function bindColumnDragEvents() {
 let tabStartColIndex = null;
 
 /**
+ * 다음 입력 가능한 input 탐색 헬퍼 (구분 컬럼 등 건너뜀)
+ */
+function findNextSheetInput(rIdx, cIdx, forward = true) {
+    const totalCols = 3 + ((currentSheetData && currentSheetData.columns) ? currentSheetData.columns.length : 0);
+    let cur = cIdx + (forward ? 1 : -1);
+    while (cur >= 0 && cur < totalCols) {
+        const el = document.querySelector(`.sheet-cell-input[data-row-idx="${rIdx}"][data-col-idx="${cur}"]`);
+        if (el) return { input: el, col: cur };
+        cur += (forward ? 1 : -1);
+    }
+    return null;
+}
+
+/**
  * 셀 입력 필드 이벤트 바인딩 (Excel 스타일: Tab 누르면 다음 열, Enter 누르면 Tab 시작 열의 다음 행으로 이동)
  */
 function bindCellInputEvents() {
@@ -2455,17 +2602,57 @@ function bindCellInputEvents() {
             tabStartColIndex = parseInt(input.dataset.colIdx, 10);
         });
 
-        // 값 변경 시 자동 저장
+        let hasPushedSnapshotForThisFocus = false;
+        input.addEventListener('focus', () => {
+            hasPushedSnapshotForThisFocus = false;
+        });
+
+        // 컬럼(측정 데이터 열)의 경우 숫자(소수점, 음수부호 포함)만 입력 허용
+        input.addEventListener('beforeinput', (e) => {
+            if (input.dataset.colName && e.data) {
+                if (/[^0-9.-]/.test(e.data)) {
+                    e.preventDefault();
+                }
+            }
+        });
+
+        // 값 변경 시 자동 저장 및 숫자 정제
         input.addEventListener('input', (e) => {
+            if (!hasPushedSnapshotForThisFocus) {
+                pushSheetUndoSnapshot();
+                hasPushedSnapshotForThisFocus = true;
+            }
+
             const rowId = e.target.dataset.rowId;
             const colName = e.target.dataset.colName;
             const field = e.target.dataset.field;
-            const value = e.target.value;
+            let value = e.target.value;
+
+            // 컬럼에 추가되는 데이터는 숫자만 입력되게 처리 (마이너스 부호, 소수점은 적절히 보존)
+            if (colName) {
+                let filtered = value.replace(/[^0-9.-]/g, '');
+                if (filtered.indexOf('-') > 0 || (filtered.match(/-/g) || []).length > 1) {
+                    const isNeg = filtered.startsWith('-');
+                    filtered = (isNeg ? '-' : '') + filtered.replace(/-/g, '');
+                }
+                const parts = filtered.split('.');
+                if (parts.length > 2) {
+                    filtered = parts[0] + '.' + parts.slice(1).join('');
+                }
+                if (e.target.value !== filtered) {
+                    e.target.value = filtered;
+                }
+                value = filtered;
+            }
 
             const row = currentSheetData.rows.find(r => r.id === rowId);
             if (row) {
                 if (field === 'concentration') {
                     row.concentration = value;
+                    if (!row.values) row.values = {};
+                    row.values['농도'] = value;
+                } else if (field === 'date') {
+                    row.date = value;
                 } else if (colName) {
                     if (!row.values) row.values = {};
                     row.values[colName] = value;
@@ -2478,49 +2665,44 @@ function bindCellInputEvents() {
         input.addEventListener('keydown', (e) => {
             const rIdx = parseInt(input.dataset.rowIdx, 10);
             const cIdx = parseInt(input.dataset.colIdx, 10);
-            const totalCols = currentSheetData.columns.length;
             const totalRows = currentSheetData.rows.length;
 
             if (e.key === 'Tab') {
-                // Tab을 누르기 시작한 첫 열을 기억 (아직 설정되지 않았다면 현재 열을 시작 열로)
                 if (tabStartColIndex === null) {
                     tabStartColIndex = cIdx;
                 }
 
                 if (!e.shiftKey) {
                     // 오른쪽 열로 이동
-                    if (cIdx + 1 < totalCols) {
+                    const next = findNextSheetInput(rIdx, cIdx, true);
+                    if (next) {
                         e.preventDefault();
-                        const nextCell = document.querySelector(`.sheet-cell-input[data-row-idx="${rIdx}"][data-col-idx="${cIdx + 1}"]`);
-                        if (nextCell) {
-                            nextCell.focus();
-                            nextCell.select();
-                            nextCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-                        }
+                        next.input.focus();
+                        if (typeof next.input.select === 'function') next.input.select();
+                        next.input.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                     } else {
                         // 마지막 열에서 Tab 누르면 다음 행의 시작 열로 이동
                         if (rIdx + 1 < totalRows) {
                             e.preventDefault();
-                            const targetCol = (tabStartColIndex !== null) ? tabStartColIndex : (totalCols > 0 ? 0 : -1);
-                            const nextRowCell = document.querySelector(`.sheet-cell-input[data-row-idx="${rIdx + 1}"][data-col-idx="${targetCol}"]`);
-                            if (nextRowCell) {
-                                nextRowCell.focus();
-                                nextRowCell.select();
-                                nextRowCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                            const targetCol = (tabStartColIndex !== null) ? tabStartColIndex : 0;
+                            const nextRowInput = document.querySelector(`.sheet-cell-input[data-row-idx="${rIdx + 1}"][data-col-idx="${targetCol}"]`) ||
+                                document.querySelector(`.sheet-cell-input[data-row-idx="${rIdx + 1}"]`);
+                            if (nextRowInput) {
+                                nextRowInput.focus();
+                                if (typeof nextRowInput.select === 'function') nextRowInput.select();
+                                nextRowInput.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                             }
                         }
                     }
                 } else {
                     // Shift + Tab (왼쪽 열로 이동)
-                    if (cIdx > -1) {
+                    const prev = findNextSheetInput(rIdx, cIdx, false);
+                    if (prev) {
                         e.preventDefault();
-                        const prevCell = document.querySelector(`.sheet-cell-input[data-row-idx="${rIdx}"][data-col-idx="${cIdx - 1}"]`);
-                        if (prevCell) {
-                            tabStartColIndex = cIdx - 1;
-                            prevCell.focus();
-                            prevCell.select();
-                            prevCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-                        }
+                        tabStartColIndex = prev.col;
+                        prev.input.focus();
+                        if (typeof prev.input.select === 'function') prev.input.select();
+                        prev.input.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                     }
                 }
             } else if (e.key === 'Enter') {
@@ -2529,25 +2711,25 @@ function bindCellInputEvents() {
                 // 엔터 시: Tab을 누르기 시작한 열(없으면 현재 열)의 다음 행으로 복귀 이동 (Excel 동작)
                 const targetCol = (tabStartColIndex !== null) ? tabStartColIndex : cIdx;
                 const nextRowIdx = rIdx + 1;
-
-                // 다음 행으로 이동한 후 해당 열이 다음 이동의 기준이 됨
                 tabStartColIndex = targetCol;
 
                 if (nextRowIdx < totalRows) {
-                    const nextInput = document.querySelector(`.sheet-cell-input[data-row-idx="${nextRowIdx}"][data-col-idx="${targetCol}"]`);
+                    const nextInput = document.querySelector(`.sheet-cell-input[data-row-idx="${nextRowIdx}"][data-col-idx="${targetCol}"]`) ||
+                        document.querySelector(`.sheet-cell-input[data-row-idx="${nextRowIdx}"]`);
                     if (nextInput) {
                         nextInput.focus();
-                        nextInput.select();
+                        if (typeof nextInput.select === 'function') nextInput.select();
                         nextInput.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                     }
                 } else {
                     // 마지막 행이면 아래(맨 끝)에 새 행을 추가하고 해당 시작 열로 이동
                     addSheetRow(null, false, true);
                     setTimeout(() => {
-                        const newRowInput = document.querySelector(`.sheet-cell-input[data-row-idx="${nextRowIdx}"][data-col-idx="${targetCol}"]`);
+                        const newRowInput = document.querySelector(`.sheet-cell-input[data-row-idx="${nextRowIdx}"][data-col-idx="${targetCol}"]`) ||
+                            document.querySelector(`.sheet-cell-input[data-row-idx="${nextRowIdx}"]`);
                         if (newRowInput) {
                             newRowInput.focus();
-                            newRowInput.select();
+                            if (typeof newRowInput.select === 'function') newRowInput.select();
                             newRowInput.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                         }
                     }, 50);
@@ -2559,7 +2741,7 @@ function bindCellInputEvents() {
                     if (nextCell) {
                         tabStartColIndex = cIdx;
                         nextCell.focus();
-                        nextCell.select();
+                        if (typeof nextCell.select === 'function') nextCell.select();
                         nextCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                     }
                 }
@@ -2570,7 +2752,7 @@ function bindCellInputEvents() {
                     if (prevCell) {
                         tabStartColIndex = cIdx;
                         prevCell.focus();
-                        prevCell.select();
+                        if (typeof prevCell.select === 'function') prevCell.select();
                         prevCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
                     }
                 }
@@ -2580,34 +2762,607 @@ function bindCellInputEvents() {
 }
 
 /**
- * 구분 변경 핸들러
+ * 다중 셀 선택 범위 상태 관리
  */
-window.updateRowDivision = function(rowId, val) {
+let sheetRange = {
+    isSelecting: false,
+    isRowSelection: false, // No 번호 클릭으로 행 전체가 선택된 상태
+    start: null, // { row: number, col: number }
+    end: null    // { row: number, col: number }
+};
+
+/**
+ * 셀 선택 영역 UI 초기화
+ */
+function clearSheetRangeSelection() {
+    sheetRange.isSelecting = false;
+    sheetRange.isRowSelection = false;
+    sheetRange.start = null;
+    sheetRange.end = null;
+    document.querySelectorAll('#data-sheet-tbody td.sheet-cell-selected, #data-sheet-tbody td.sheet-cell-selected-anchor')
+        .forEach(td => td.classList.remove('sheet-cell-selected', 'sheet-cell-selected-anchor'));
+}
+
+/**
+ * 선택된 범위 하이라이트 UI 반영
+ */
+function updateSheetRangeUI() {
+    if (!sheetRange.start || !sheetRange.end) return;
+
+    const minR = Math.min(sheetRange.start.row, sheetRange.end.row);
+    const maxR = Math.max(sheetRange.start.row, sheetRange.end.row);
+    const minC = Math.min(sheetRange.start.col, sheetRange.end.col);
+    const maxC = Math.max(sheetRange.start.col, sheetRange.end.col);
+
+    const allTds = document.querySelectorAll('#data-sheet-tbody td[data-row-idx]');
+    allTds.forEach(td => {
+        const r = parseInt(td.dataset.rowIdx, 10);
+        const c = parseInt(td.dataset.colIdx, 10);
+        const isNoCell = td.classList.contains('sheet-td-no') || td.dataset.isNo === 'true';
+
+        if (isNaN(r)) return;
+
+        // No 셀인 경우 행 전체 선택일 때 선택 하이라이트
+        if (isNoCell) {
+            if (sheetRange.isRowSelection && r >= minR && r <= maxR) {
+                td.classList.add('sheet-cell-selected');
+            } else {
+                td.classList.remove('sheet-cell-selected');
+            }
+            return;
+        }
+
+        if (isNaN(c)) return;
+
+        const isInside = (r >= minR && r <= maxR && c >= minC && c <= maxC);
+        const isAnchor = (!sheetRange.isRowSelection && r === sheetRange.start.row && c === sheetRange.start.col);
+
+        if (isInside) {
+            td.classList.add('sheet-cell-selected');
+        } else {
+            td.classList.remove('sheet-cell-selected');
+        }
+
+        if (isAnchor) {
+            td.classList.add('sheet-cell-selected-anchor');
+        } else {
+            td.classList.remove('sheet-cell-selected-anchor');
+        }
+    });
+}
+
+/**
+ * 다중 셀 드래그 범위 선택 이벤트 바인딩 (마우스 및 모바일 터치 완벽 호환, No 클릭 시 행 전체 선택 지원)
+ */
+function bindRangeSelectionEvents() {
+    const tbody = document.getElementById('data-sheet-tbody');
+    if (!tbody) return;
+
+    // 포인터 다운: 드래그 선택 시작
+    tbody.onpointerdown = (e) => {
+        // 행 삭제 버튼 또는 화살표 드롭다운 클릭 시에는 범위 선택 제외
+        if (e.target.closest('.sheet-row-del-btn') || e.target.closest('.sheet-division-arrow-wrap')) {
+            return;
+        }
+
+        const td = e.target.closest('td[data-row-idx]');
+        if (!td) {
+            clearSheetRangeSelection();
+            return;
+        }
+
+        const r = parseInt(td.dataset.rowIdx, 10);
+        if (isNaN(r)) return;
+
+        const isNoCol = td.classList.contains('sheet-td-no') || td.dataset.isNo === 'true';
+        const totalCols = 3 + ((currentSheetData && currentSheetData.columns) ? currentSheetData.columns.length : 0);
+
+        if (isNoCol) {
+            // No 숫자 클릭: 해당 행 전체 선택
+            sheetRange.isSelecting = true;
+            sheetRange.isRowSelection = true;
+            sheetRange.start = { row: r, col: 0 };
+            sheetRange.end = { row: r, col: totalCols - 1 };
+            updateSheetRangeUI();
+            return;
+        }
+
+        const c = parseInt(td.dataset.colIdx, 10);
+        if (isNaN(c)) return;
+
+        // 일반 셀 클릭
+        sheetRange.isSelecting = true;
+        sheetRange.isRowSelection = false;
+        sheetRange.start = { row: r, col: c };
+        sheetRange.end = { row: r, col: c };
+        updateSheetRangeUI();
+    };
+
+    // 포인터 이동: 드래그 중 다른 셀로 이동 시 범위 확장
+    tbody.onpointermove = (e) => {
+        if (!sheetRange.isSelecting || !sheetRange.start) return;
+
+        const elem = document.elementFromPoint(e.clientX, e.clientY);
+        if (!elem) return;
+
+        const td = elem.closest('#data-sheet-tbody td[data-row-idx]');
+        if (!td) return;
+
+        const r = parseInt(td.dataset.rowIdx, 10);
+        if (isNaN(r)) return;
+
+        const totalCols = 3 + ((currentSheetData && currentSheetData.columns) ? currentSheetData.columns.length : 0);
+
+        if (sheetRange.isRowSelection) {
+            // 행 단위 드래그 확장
+            if (sheetRange.end.row !== r) {
+                sheetRange.end = { row: r, col: totalCols - 1 };
+                updateSheetRangeUI();
+            }
+            return;
+        }
+
+        const c = parseInt(td.dataset.colIdx, 10);
+        if (isNaN(c)) return;
+
+        if (sheetRange.end.row !== r || sheetRange.end.col !== c) {
+            sheetRange.end = { row: r, col: c };
+            updateSheetRangeUI();
+        }
+    };
+}
+
+// 전역 포인터 업: 드래그 종료
+window.addEventListener('pointerup', () => {
+    if (sheetRange.isSelecting) {
+        sheetRange.isSelecting = false;
+    }
+});
+
+// 외부 클릭 시 범위 선택 해제 (단, Raw Data 뷰 내부 클릭은 유지)
+document.addEventListener('pointerdown', (e) => {
+    if (!e.target.closest('#data-raw-view')) {
+        clearSheetRangeSelection();
+    }
+});
+
+/**
+ * 셀 값 조회 헬퍼 (2D 그리드 좌표 기반)
+ */
+function getRawSheetCellValue(rowIdx, colIdx) {
+    if (!currentSheetData || !currentSheetData.rows || !currentSheetData.rows[rowIdx]) return '';
+    const row = currentSheetData.rows[rowIdx];
+    if (colIdx === 0) return row.date || '';
+    if (colIdx === 1) return row.division || (row.values && row.values['구분']) || '';
+    if (colIdx === 2) return (row.concentration !== undefined && row.concentration !== null) ? String(row.concentration) : ((row.values && row.values['농도']) || '');
+    if (colIdx >= 3) {
+        const cName = currentSheetData.columns[colIdx - 3];
+        return (row.values && cName && row.values[cName] !== undefined) ? String(row.values[cName]) : '';
+    }
+    return '';
+}
+
+/**
+ * 셀 값 수정 헬퍼 (2D 그리드 좌표 기반, 자동 확장 및 정규화)
+ */
+function setRawSheetCellValue(rowIdx, colIdx, val) {
+    if (!currentSheetData || !currentSheetData.rows) return;
+    while (currentSheetData.rows.length <= rowIdx) {
+        addSheetRow(null, false, true);
+    }
+    const row = currentSheetData.rows[rowIdx];
+    if (!row) return;
+
+    const trimmed = String(val !== undefined && val !== null ? val : '').trim();
+
+    if (colIdx === 0) {
+        row.date = normalizeDate(trimmed) || trimmed;
+    } else if (colIdx === 1) {
+        let cleanDiv = trimmed.replace(/[\s_\-]/g, '').toUpperCase();
+        if (cleanDiv === 'STD1' || cleanDiv === 'STD1(BLANK)' || cleanDiv.startsWith('STD1')) {
+            row.division = 'STD1(Blank)';
+        } else if (cleanDiv === 'STD2' || cleanDiv.startsWith('STD2')) {
+            row.division = 'STD2';
+        } else if (cleanDiv === 'STD3' || cleanDiv.startsWith('STD3')) {
+            row.division = 'STD3';
+        } else if (cleanDiv === 'STD4' || cleanDiv.startsWith('STD4')) {
+            row.division = 'STD4';
+        } else if (cleanDiv === 'STD5' || cleanDiv.startsWith('STD5')) {
+            row.division = 'STD5';
+        } else if (cleanDiv === '기타' || cleanDiv === 'ETC') {
+            row.division = '기타';
+            row.concentration = '-';
+            if (!row.values) row.values = {};
+            row.values['농도'] = '-';
+        } else if (cleanDiv === 'SAMPLE') {
+            row.division = '';
+        } else {
+            row.division = trimmed;
+        }
+        if (!row.values) row.values = {};
+        row.values['구분'] = row.division;
+    } else if (colIdx === 2) {
+        row.concentration = trimmed;
+        if (!row.values) row.values = {};
+        row.values['농도'] = trimmed;
+    } else if (colIdx >= 3) {
+        const cName = currentSheetData.columns[colIdx - 3];
+        if (cName) {
+            if (!row.values) row.values = {};
+            // 컬럼 데이터는 숫자만 허용
+            let numTrimmed = trimmed.replace(/[^0-9.-]/g, '');
+            if (numTrimmed.indexOf('-') > 0 || (numTrimmed.match(/-/g) || []).length > 1) {
+                const isNeg = numTrimmed.startsWith('-');
+                numTrimmed = (isNeg ? '-' : '') + numTrimmed.replace(/-/g, '');
+            }
+            const parts = numTrimmed.split('.');
+            if (parts.length > 2) {
+                numTrimmed = parts[0] + '.' + parts.slice(1).join('');
+            }
+            row.values[cName] = numTrimmed;
+        }
+    }
+}
+
+/**
+ * Undo(실행 취소) 히스토리 스택 관리
+ */
+const MAX_SHEET_UNDO_STACK = 30;
+let sheetUndoStack = [];
+
+function pushSheetUndoSnapshot() {
+    if (!currentSheetData || currentDataMode !== 'raw') return;
+    try {
+        const snapshot = JSON.parse(JSON.stringify(currentSheetData));
+        sheetUndoStack.push(snapshot);
+        if (sheetUndoStack.length > MAX_SHEET_UNDO_STACK) {
+            sheetUndoStack.shift();
+        }
+    } catch (e) {
+        console.warn('pushSheetUndoSnapshot error:', e);
+    }
+}
+
+function undoSheetAction() {
+    if (currentDataMode !== 'raw') return;
+    if (!sheetUndoStack || sheetUndoStack.length === 0) {
+        showSheetToast('이전 작업 상태가 없습니다.');
+        return;
+    }
+
+    const prevState = sheetUndoStack.pop();
+    if (!prevState) return;
+
+    currentSheetData = prevState;
+    saveCurrentSheetData(true);
+    renderSheetTable();
+    clearSheetRangeSelection();
+    showSheetToast('실행 취소(Ctrl+Z) 완료');
+}
+
+/**
+ * 복사 완료/붙여넣기 완료/삭제/실행취소 토스트 알림 (2초 후 자동 사라짐)
+ */
+function showSheetToast(msg) {
+    let toast = document.getElementById('sheet-copy-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'sheet-copy-toast';
+        toast.className = 'sheet-copy-toast';
+        document.body.appendChild(toast);
+    }
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+        toast.classList.remove('show');
+    }, 2000);
+}
+
+/**
+ * 단축키 복사 (Ctrl+C / Cmd+C) 처리
+ */
+function handleCopySheetCells(e) {
+    if (currentDataMode !== 'raw') return;
+    if (!sheetRange.start || !sheetRange.end) return;
+
+    // 만약 현재 어떤 input 내부에서 텍스트 일부만 선택한 상태라면 브라우저 기본 복사에 맡김
+    const activeEl = document.activeElement;
+    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+        if (activeEl.selectionStart !== activeEl.selectionEnd) {
+            return;
+        }
+    }
+
+    const minR = Math.min(sheetRange.start.row, sheetRange.end.row);
+    const maxR = Math.max(sheetRange.start.row, sheetRange.end.row);
+    const minC = Math.min(sheetRange.start.col, sheetRange.end.col);
+    const maxC = Math.max(sheetRange.start.col, sheetRange.end.col);
+
+    const lines = [];
+    for (let r = minR; r <= maxR; r++) {
+        const rowVals = [];
+        for (let c = minC; c <= maxC; c++) {
+            rowVals.push(getRawSheetCellValue(r, c));
+        }
+        lines.push(rowVals.join('\t'));
+    }
+
+    const tsv = lines.join('\r\n');
+    if (!tsv) return;
+
+    e.preventDefault();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(tsv).then(() => {
+            const cellCount = (maxR - minR + 1) * (maxC - minC + 1);
+            showSheetToast(`${cellCount}개 셀이 복사되었습니다.`);
+        }).catch(() => {
+            fallbackCopyText(tsv);
+        });
+    } else {
+        fallbackCopyText(tsv);
+    }
+}
+
+function fallbackCopyText(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+        document.execCommand('copy');
+        showSheetToast('셀이 복사되었습니다.');
+    } catch (err) {
+        console.warn('Copy failed:', err);
+    }
+    document.body.removeChild(ta);
+}
+
+/**
+ * 선택된 셀/행 내용 일괄 삭제 (Delete 키) 처리
+ */
+function handleDeleteSheetCells(e) {
+    if (currentDataMode !== 'raw') return;
+    if (!sheetRange.start || !sheetRange.end) return;
+
+    const activeEl = document.activeElement;
+    const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+    const isSingleCell = (sheetRange.start.row === sheetRange.end.row && sheetRange.start.col === sheetRange.end.col);
+
+    // 단일 셀의 텍스트 필드 내부에서 캐럿 또는 부분 텍스트를 선택한 상태라면 브라우저 본래의 글자 삭제 동작에 맡김
+    if (isInput && isSingleCell && !sheetRange.isRowSelection && activeEl.selectionStart !== activeEl.selectionEnd) {
+        return;
+    }
+
+    e.preventDefault();
+    pushSheetUndoSnapshot();
+
+    const minR = Math.min(sheetRange.start.row, sheetRange.end.row);
+    const maxR = Math.max(sheetRange.start.row, sheetRange.end.row);
+
+    // 1. No를 눌러 행 전체가 선택된 상태인 경우: 해당 행(들) 자체를 삭제
+    if (sheetRange.isRowSelection) {
+        const delRowCount = maxR - minR + 1;
+        currentSheetData.rows.splice(minR, delRowCount);
+
+        // 만약 모든 행이 다 삭제되었으면 빈 행 1개 자동 생성
+        if (currentSheetData.rows.length === 0) {
+            const initialValues = {};
+            (currentSheetData.columns || []).forEach(c => initialValues[c] = '');
+            currentSheetData.rows.push({
+                id: 'row_' + Date.now(),
+                date: getTodayString(),
+                division: '',
+                concentration: '',
+                values: initialValues
+            });
+        }
+
+        saveCurrentSheetData(true);
+        renderSheetTable();
+        clearSheetRangeSelection();
+        showSheetToast(`${delRowCount}개 행이 삭제되었습니다.`);
+        return;
+    }
+
+    // 2. 일반 셀 범위가 선택된 상태인 경우: 해당 셀들의 내용만 빈값으로 삭제
+    const minC = Math.min(sheetRange.start.col, sheetRange.end.col);
+    const maxC = Math.max(sheetRange.start.col, sheetRange.end.col);
+
+    let delCount = 0;
+    for (let r = minR; r <= maxR; r++) {
+        for (let c = minC; c <= maxC; c++) {
+            setRawSheetCellValue(r, c, '');
+            delCount++;
+        }
+    }
+
+    saveCurrentSheetData(true);
+    renderSheetTable();
+    updateSheetRangeUI();
+    showSheetToast(`${delCount}개 셀 내용이 삭제되었습니다.`);
+}
+
+/**
+ * 단축키 붙여넣기 (Ctrl+V / Paste 이벤트) 처리
+ */
+function handlePasteSheetCells(e) {
+    if (currentDataMode !== 'raw') return;
+
+    // 붙여넣기 시작 셀 위치 찾기
+    let startR = 0;
+    let startC = 0;
+    let hasTarget = false;
+
+    if (sheetRange.start) {
+        startR = Math.min(sheetRange.start.row, sheetRange.end.row);
+        startC = Math.min(sheetRange.start.col, sheetRange.end.col);
+        hasTarget = true;
+    } else {
+        const activeTd = document.activeElement ? document.activeElement.closest('#data-sheet-tbody td[data-row-idx]') : null;
+        if (activeTd) {
+            startR = parseInt(activeTd.dataset.rowIdx, 10);
+            startC = parseInt(activeTd.dataset.colIdx, 10);
+            hasTarget = true;
+        }
+    }
+
+    if (!hasTarget) return;
+
+    const clipboardData = e.clipboardData || window.clipboardData;
+    if (!clipboardData) return;
+
+    const text = clipboardData.getData('text');
+    if (!text) return;
+
+    // 줄바꿈으로 행 분리
+    const lines = text.split(/\r\n|\r|\n/);
+    if (lines.length > 0 && lines[lines.length - 1] === '') {
+        lines.pop();
+    }
+    if (lines.length === 0) return;
+
+    const grid = lines.map(line => line.split('\t'));
+
+    e.preventDefault();
+    pushSheetUndoSnapshot();
+
+    // 행 수 부족 시 자동 확장
+    const neededRows = startR + grid.length;
+    while (currentSheetData.rows.length < neededRows) {
+        addSheetRow(null, false, true);
+    }
+
+    const totalCols = 3 + (currentSheetData.columns ? currentSheetData.columns.length : 0);
+    let updatedCount = 0;
+
+    for (let rOffset = 0; rOffset < grid.length; rOffset++) {
+        const rowVals = grid[rOffset];
+        const targetR = startR + rOffset;
+        for (let cOffset = 0; cOffset < rowVals.length; cOffset++) {
+            const targetC = startC + cOffset;
+            if (targetC < totalCols) {
+                setRawSheetCellValue(targetR, targetC, rowVals[cOffset]);
+                updatedCount++;
+            }
+        }
+    }
+
+    saveCurrentSheetData(true);
+    renderSheetTable();
+
+    // 붙여넣은 영역을 선택 상태로 표시
+    const endR = startR + grid.length - 1;
+    const maxColsInPaste = Math.max(...grid.map(g => g.length));
+    const endC = Math.min(startC + maxColsInPaste - 1, totalCols - 1);
+    sheetRange.start = { row: startR, col: startC };
+    sheetRange.end = { row: endR, col: endC };
+    updateSheetRangeUI();
+
+    showSheetToast(`${updatedCount}개 셀에 붙여넣기 완료`);
+}
+
+/**
+ * 복사 & 붙여넣기 & 삭제 & 실행취소 전역 이벤트 리스너 바인딩
+ */
+function bindCopyPasteEvents() {
+    window.addEventListener('keydown', (e) => {
+        if (currentDataMode !== 'raw') return;
+
+        // 1. 복사 (Ctrl+C / Cmd+C)
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'C')) {
+            handleCopySheetCells(e);
+            return;
+        }
+
+        // 2. 실행 취소 (Ctrl+Z / Cmd+Z, Shift 미포함)
+        if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
+            e.preventDefault();
+            undoSheetAction();
+            return;
+        }
+
+        // 3. 셀 내용 삭제 (Delete / Del)
+        if (e.key === 'Delete' || e.key === 'Del') {
+            handleDeleteSheetCells(e);
+            return;
+        }
+    });
+
+    window.addEventListener('paste', (e) => {
+        handlePasteSheetCells(e);
+    });
+}
+
+/**
+ * 구분 변경 핸들러 (선택 즉시 라벨 동기화 및 즉시 저장, 전체 테이블 재렌더 방지)
+ */
+window.updateRowDivision = function (rowId, val) {
     if (!currentSheetData || !currentSheetData.rows) return;
     const row = currentSheetData.rows.find(r => r.id === rowId);
-    if (row) {
+    if (row && row.division !== val) {
+        pushSheetUndoSnapshot();
         row.division = val;
-        saveCurrentSheetData(false);
+        if (!row.values) row.values = {};
+        row.values['구분'] = val;
+
+        // 전체 renderSheetTable() 대신 해당 행의 DOM 라벨만 부분 업데이트하여 다른 셀 입력 상태 보존
+        const tr = document.querySelector(`tr[data-row-id="${rowId}"]`);
+        if (tr) {
+            const labelSpan = tr.querySelector('.sheet-division-text');
+            if (labelSpan) {
+                labelSpan.textContent = val || '-';
+                labelSpan.title = val || '-';
+            }
+            const selectEl = tr.querySelector('.sheet-select-division-arrow');
+            if (selectEl && selectEl.value !== val) {
+                selectEl.value = val;
+            }
+        }
+
+        // '기타' 선택 시 농도를 '-' 로 자동 표기
+        if (val === '기타') {
+            row.concentration = '-';
+            if (!row.values) row.values = {};
+            row.values['농도'] = '-';
+            if (tr) {
+                const concInput = tr.querySelector('.sheet-conc-cell-input');
+                if (concInput) {
+                    concInput.value = '-';
+                }
+            }
+        }
+
+        // 즉시 동기화 저장
+        saveCurrentSheetData(true, false, true);
     }
 };
 
 /**
- * 농도 변경 핸들러
+ * 농도 변경 핸들러 (즉시 저장 및 row.values 동기화)
  */
-window.updateRowConcentration = function(rowId, val) {
+window.updateRowConcentration = function (rowId, val) {
     if (!currentSheetData || !currentSheetData.rows) return;
     const row = currentSheetData.rows.find(r => r.id === rowId);
-    if (row) {
+    if (row && row.concentration !== val) {
+        pushSheetUndoSnapshot();
         row.concentration = val;
-        saveCurrentSheetData(false);
+        if (!row.values) row.values = {};
+        row.values['농도'] = val;
+        // 즉시 동기화 저장
+        saveCurrentSheetData(true, false, true);
     }
 };
 
 /**
  * 농도 단위 변경 핸들러 (헤더 드롭다운)
  */
-window.updateSheetConcUnit = function(newUnit) {
+window.updateSheetConcUnit = function (newUnit) {
     if (!currentSheetData) return;
+    pushSheetUndoSnapshot();
     currentSheetData.concUnit = newUnit;
     saveCurrentSheetData(true);
 };
@@ -2615,9 +3370,10 @@ window.updateSheetConcUnit = function(newUnit) {
 /**
  * 날짜 변경 핸들러
  */
-window.updateRowDate = function(rowId, newDate) {
+window.updateRowDate = function (rowId, newDate) {
     const row = currentSheetData.rows.find(r => r.id === rowId);
-    if (row) {
+    if (row && row.date !== newDate) {
+        pushSheetUndoSnapshot();
         row.date = newDate;
         saveCurrentSheetData(true);
     }
@@ -2631,6 +3387,8 @@ function addSheetRow(specificDate = null, focusFirst = true, appendToBottom = tr
         alert('장비를 먼저 선택해주세요.');
         return;
     }
+
+    pushSheetUndoSnapshot();
 
     const dateStr = specificDate || getTodayString();
 
@@ -2672,11 +3430,12 @@ function addSheetRow(specificDate = null, focusFirst = true, appendToBottom = tr
 /**
  * 행 삭제
  */
-window.deleteSheetRow = function(rowId) {
+window.deleteSheetRow = function (rowId) {
     const row = currentSheetData.rows.find(r => r.id === rowId);
     const dateLabel = row ? `(${row.date})` : '';
     if (!confirm(`해당 날짜${dateLabel} 행을 삭제하시겠습니까?`)) return;
 
+    pushSheetUndoSnapshot();
     currentSheetData.rows = currentSheetData.rows.filter(r => r.id !== rowId);
     saveCurrentSheetData(true);
     renderSheetTable();
@@ -2748,7 +3507,7 @@ function handleConfirmAddCol() {
 /**
  * 열 이름 수정
  */
-window.editSheetColumn = function(colIdx) {
+window.editSheetColumn = function (colIdx) {
     if (!currentSheetData || !Array.isArray(currentSheetData.columns)) return;
     const oldName = currentSheetData.columns[colIdx];
     if (!oldName) return;
@@ -2795,7 +3554,7 @@ window.editSheetColumn = function(colIdx) {
 /**
  * 열 삭제
  */
-window.deleteSheetColumn = function(colIdx) {
+window.deleteSheetColumn = function (colIdx) {
     const colName = currentSheetData.columns[colIdx];
     if (!colName) return;
 
@@ -2852,8 +3611,8 @@ function handleExportCsv() {
     // 2. 행 데이터
     rows.forEach(row => {
         const divVal = row.division || (row.values && row.values['구분']) || '';
-        const concVal = (row.concentration !== undefined && row.concentration !== null && row.concentration !== '') 
-            ? row.concentration 
+        const concVal = (row.concentration !== undefined && row.concentration !== null && row.concentration !== '')
+            ? row.concentration
             : ((row.values && row.values['농도']) || '');
         const line = [
             `"${(row.date || '').replace(/"/g, '""')}"`,
@@ -2949,13 +3708,12 @@ function processCsvImport(csvText) {
             dateColIdx = i;
         } else if (['구분', 'division', 'type', 'category'].includes(colTitle)) {
             divColIdx = i;
-        } else if (colTitle.startsWith('농도') || colTitle.startsWith('conc') || ['ppm', 'ppb', 'ppt', 'intensity'].includes(colTitle)) {
+        } else if (colTitle.startsWith('농도') || colTitle.startsWith('conc') || ['ppm', 'ppb', 'ppt'].includes(colTitle)) {
             concColIdx = i;
             // 농도 단위 자동 감지
             const rawHeader = headerRow[i].toLowerCase();
             if (rawHeader.includes('ppb')) currentSheetData.concUnit = 'ppb';
             else if (rawHeader.includes('ppt')) currentSheetData.concUnit = 'ppt';
-            else if (rawHeader.includes('intensity')) currentSheetData.concUnit = 'intensity';
             else if (rawHeader.includes('ppm')) currentSheetData.concUnit = 'ppm';
         }
     }
@@ -3001,7 +3759,23 @@ function processCsvImport(csvText) {
 
         const rawDate = rowArr[dateColIdx];
         const dateStr = normalizeDate(rawDate) || getTodayString();
-        const divStr = (divColIdx !== -1 && rowArr[divColIdx] !== undefined) ? String(rowArr[divColIdx]).trim() : '';
+
+        let divStr = (divColIdx !== -1 && rowArr[divColIdx] !== undefined) ? String(rowArr[divColIdx]).trim() : '';
+        const cleanDiv = divStr.replace(/[\s_\-]/g, '').toUpperCase();
+        if (cleanDiv === 'STD1' || cleanDiv === 'STD1(BLANK)' || cleanDiv.startsWith('STD1')) {
+            divStr = 'STD1(Blank)';
+        } else if (cleanDiv === 'STD2' || cleanDiv.startsWith('STD2')) {
+            divStr = 'STD2';
+        } else if (cleanDiv === 'STD3' || cleanDiv.startsWith('STD3')) {
+            divStr = 'STD3';
+        } else if (cleanDiv === 'STD4' || cleanDiv.startsWith('STD4')) {
+            divStr = 'STD4';
+        } else if (cleanDiv === 'STD5' || cleanDiv.startsWith('STD5')) {
+            divStr = 'STD5';
+        } else if (cleanDiv === 'SAMPLE') {
+            divStr = '';
+        }
+
         const concStr = (concColIdx !== -1 && rowArr[concColIdx] !== undefined) ? String(rowArr[concColIdx]).trim() : '';
 
         const vals = {};
@@ -3217,6 +3991,994 @@ function setupDataEventListeners() {
 
     const paramCsvFileInput = document.getElementById('data-param-csv-file-input');
     if (paramCsvFileInput) paramCsvFileInput.addEventListener('change', handleParamCsvFileSelected);
+
+    // Analysis 세그먼트 버튼
+    const btnAnalysis = document.getElementById('btn-mode-analysis');
+    if (btnAnalysis) {
+        btnAnalysis.addEventListener('click', () => switchDataMode('analysis'));
+    }
+
+    // Analysis 툴바 버튼들
+    const btnCopyChart = document.getElementById('btn-copy-analysis-chart');
+    if (btnCopyChart) btnCopyChart.addEventListener('click', handleCopyAnalysisChart);
+
+    const btnDownChart = document.getElementById('btn-download-analysis-chart');
+    if (btnDownChart) btnDownChart.addEventListener('click', handleDownloadAnalysisChart);
+
+    const btnRefreshChart = document.getElementById('btn-refresh-analysis');
+    if (btnRefreshChart) btnRefreshChart.addEventListener('click', renderAnalysisView);
+
+    // Analysis 필터 컨트롤러
+    const divFilter = document.getElementById('analysis-division-filter');
+    if (divFilter) {
+        divFilter.addEventListener('change', (e) => {
+            analysisDivisionFilter = e.target.value;
+            updateAnalysisChart();
+        });
+    }
+
+    const dateStart = document.getElementById('analysis-date-start');
+    if (dateStart) {
+        dateStart.addEventListener('change', (e) => {
+            analysisStartDate = e.target.value;
+            updateAnalysisChart();
+        });
+    }
+
+    const dateEnd = document.getElementById('analysis-date-end');
+    if (dateEnd) {
+        dateEnd.addEventListener('change', (e) => {
+            analysisEndDate = e.target.value;
+            updateAnalysisChart();
+        });
+    }
+
+    const btnResetDate = document.getElementById('btn-reset-analysis-date');
+    if (btnResetDate) {
+        btnResetDate.addEventListener('click', () => {
+            analysisStartDate = '';
+            analysisEndDate = '';
+            if (dateStart) dateStart.value = '';
+            if (dateEnd) dateEnd.value = '';
+            updateAnalysisChart();
+        });
+    }
+
+    const chartTypeSel = document.getElementById('analysis-chart-type');
+    if (chartTypeSel) {
+        chartTypeSel.addEventListener('change', (e) => {
+            analysisChartType = e.target.value;
+            updateAnalysisChart();
+        });
+    }
+
+    // 작업 이력 연동 체크박스 토글
+    const toggleWorkLogs = document.getElementById('analysis-toggle-work-logs');
+    if (toggleWorkLogs) {
+        toggleWorkLogs.addEventListener('change', (e) => {
+            analysisShowWorkLogs = e.target.checked;
+            updateAnalysisChart();
+        });
+    }
+
+    const btnSelectAllCols = document.getElementById('btn-select-all-analysis-cols');
+    if (btnSelectAllCols) {
+        btnSelectAllCols.addEventListener('click', () => {
+            const allCols = [...((currentSheetData && currentSheetData.columns) || [])];
+            allCols.forEach(c => analysisSelectedCols.add(c));
+            populateAnalysisColumnChips();
+            updateAnalysisChart();
+        });
+    }
+
+    const btnClearAllCols = document.getElementById('btn-clear-all-analysis-cols');
+    if (btnClearAllCols) {
+        btnClearAllCols.addEventListener('click', () => {
+            analysisSelectedCols.clear();
+            const allCols = [...((currentSheetData && currentSheetData.columns) || [])];
+            if (allCols.length > 0) {
+                analysisSelectedCols.add(allCols[0]); // 최소 1개는 유지
+            }
+            populateAnalysisColumnChips();
+            updateAnalysisChart();
+        });
+    }
+
+    // Raw Data 셀 복사 및 붙여넣기 이벤트 바인딩
+    bindCopyPasteEvents();
+}
+
+/* ==========================================================================
+   Analysis (Raw Data Trend 분석) 관련 로직
+   ========================================================================== */
+
+let analysisChartInstance = null;
+let analysisSelectedCols = new Set();
+let analysisDivisionFilter = 'ALL';
+let analysisStartDate = '';
+let analysisEndDate = '';
+let analysisChartType = 'line';
+let analysisShowWorkLogs = true; // 작업 이력 연동 플래그
+let currentEquipWorkLogs = []; // 현재 장비의 작업 로그 캐시
+
+const ANALYSIS_COLOR_PALETTE = [
+    { stroke: '#388bfd', fill: 'rgba(56, 139, 253, 0.15)' },
+    { stroke: '#3fb950', fill: 'rgba(63, 185, 80, 0.15)' },
+    { stroke: '#f0883e', fill: 'rgba(240, 136, 62, 0.15)' },
+    { stroke: '#a371f7', fill: 'rgba(163, 113, 247, 0.15)' },
+    { stroke: '#39c5bb', fill: 'rgba(57, 197, 187, 0.15)' },
+    { stroke: '#f85149', fill: 'rgba(248, 81, 73, 0.15)' },
+    { stroke: '#e3b341', fill: 'rgba(227, 179, 65, 0.15)' },
+    { stroke: '#79c0ff', fill: 'rgba(121, 192, 255, 0.15)' },
+    { stroke: '#d2a8ff', fill: 'rgba(210, 168, 255, 0.15)' },
+    { stroke: '#56d364', fill: 'rgba(86, 211, 100, 0.15)' }
+];
+
+/**
+ * Analysis 뷰 렌더링 진입점
+ */
+function renderAnalysisView() {
+    const rawView = document.getElementById('data-raw-view');
+    const paramView = document.getElementById('data-param-view');
+    const analysisView = document.getElementById('data-analysis-view');
+    const rawToolbar = document.getElementById('toolbar-raw-actions');
+    const paramToolbar = document.getElementById('toolbar-param-actions');
+    const analysisToolbar = document.getElementById('toolbar-analysis-actions');
+
+    if (rawView) rawView.style.display = 'none';
+    if (paramView) paramView.style.display = 'none';
+    if (analysisView) analysisView.style.display = 'flex';
+    if (rawToolbar) rawToolbar.style.display = 'none';
+    if (paramToolbar) paramToolbar.style.display = 'none';
+    if (analysisToolbar) analysisToolbar.style.display = 'flex';
+
+    // 타이틀 갱신
+    const chartTitle = document.getElementById('analysis-chart-title');
+    if (chartTitle && currentSelectedEquip) {
+        chartTitle.textContent = `📈 [${currentSelectedEquip.displayName}] Raw Data Trend 분석`;
+    }
+
+    populateAnalysisFilters();
+    populateAnalysisColumnChips();
+    updateAnalysisChart();
+}
+
+/**
+ * 구분 및 농도 필터 옵션 채우기 (표준 구분 상시 제안 및 농도 데이터 자동 연동)
+ */
+function populateAnalysisFilters() {
+    const select = document.getElementById('analysis-division-filter');
+    if (!select) return;
+
+    const rows = (currentSheetData && currentSheetData.rows) || [];
+    const unit = (currentSheetData && currentSheetData.concUnit) || 'ppm';
+
+    // 1. 행 데이터에서 구분 및 농도 수집 & 정규화
+    const divCounts = {
+        'STD1(Blank)': 0,
+        'STD2': 0,
+        'STD3': 0,
+        'STD4': 0,
+        'STD5': 0
+    };
+    const extraDivs = new Map(); // 사용자 정의 기타 구분 { name => count }
+    const concCounts = new Map(); // 농도 { concStr => count }
+
+    rows.forEach(r => {
+        // 구분 추출 및 정규화
+        let rawDiv = (r.division !== undefined && r.division !== null ? r.division : ((r.values && r.values['구분']) || '')).trim();
+        if (rawDiv) {
+            const clean = String(rawDiv).replace(/[\s_\-]/g, '').toUpperCase();
+            let normDiv = rawDiv;
+            if (clean === 'STD1' || clean === 'STD1(BLANK)' || clean.startsWith('STD1')) normDiv = 'STD1(Blank)';
+            else if (clean === 'STD2' || clean.startsWith('STD2')) normDiv = 'STD2';
+            else if (clean === 'STD3' || clean.startsWith('STD3')) normDiv = 'STD3';
+            else if (clean === 'STD4' || clean.startsWith('STD4')) normDiv = 'STD4';
+            else if (clean === 'STD5' || clean.startsWith('STD5')) normDiv = 'STD5';
+
+            if (divCounts.hasOwnProperty(normDiv)) {
+                divCounts[normDiv]++;
+            } else if (clean !== 'SAMPLE') {
+                extraDivs.set(normDiv, (extraDivs.get(normDiv) || 0) + 1);
+            }
+        }
+
+        // 농도 추출
+        const rawConc = String(r.concentration !== undefined && r.concentration !== null && r.concentration !== ''
+            ? r.concentration
+            : ((r.values && r.values['농도'] !== undefined) ? r.values['농도'] : '')).trim();
+        if (rawConc) {
+            concCounts.set(rawConc, (concCounts.get(rawConc) || 0) + 1);
+        }
+    });
+
+    let html = `<option value="ALL" ${analysisDivisionFilter === 'ALL' ? 'selected' : ''}>전체 데이터 (ALL) [${rows.length}건]</option>`;
+
+    // 2. 구분(Division) 옵션 그룹 (STD1(Blank) ~ STD5는 항상 기본 제안)
+    html += '<optgroup label="── 구분(Division)별 ──">';
+    ['STD1(Blank)', 'STD2', 'STD3', 'STD4', 'STD5'].forEach(std => {
+        const count = divCounts[std] || 0;
+        const countText = count > 0 ? ` (${count}건)` : '';
+        html += `<option value="div:${std}" ${analysisDivisionFilter === 'div:' + std ? 'selected' : ''}>${std}${countText}</option>`;
+    });
+
+    // 추가 사용자 정의 구분이 있다면 표출
+    extraDivs.forEach((count, d) => {
+        html += `<option value="div:${d}" ${analysisDivisionFilter === 'div:' + d ? 'selected' : ''}>${d} (${count}건)</option>`;
+    });
+    html += '</optgroup>';
+
+    // 3. 농도(Concentration) 옵션 그룹
+    if (concCounts.size > 0) {
+        html += `<optgroup label="── 농도(Concentration, ${unit})별 ──">`;
+        const sortedConcs = Array.from(concCounts.keys()).sort((a, b) => {
+            const numA = parseFloat(a);
+            const numB = parseFloat(b);
+            if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+            return a.localeCompare(b);
+        });
+
+        sortedConcs.forEach(c => {
+            const count = concCounts.get(c);
+            html += `<option value="conc:${c}" ${analysisDivisionFilter === 'conc:' + c ? 'selected' : ''}>${c} ${unit} (${count}건)</option>`;
+        });
+        html += '</optgroup>';
+    }
+
+    select.innerHTML = html;
+}
+
+/**
+ * 분석 가능한 컬럼 선택 칩(Chip) 렌더링
+ */
+function populateAnalysisColumnChips() {
+    const container = document.getElementById('analysis-columns-chips');
+    if (!container) return;
+
+    // 농도 제외: 순수 데이터 컬럼들만 분석 대상 컬럼으로 표출
+    const allCols = [...((currentSheetData && currentSheetData.columns) || [])];
+
+    // 유효하지 않은 컬럼 제거 ('농도'가 저장되어 있던 경우에도 자동 배제)
+    const validColSet = new Set(allCols);
+    Array.from(analysisSelectedCols).forEach(c => {
+        if (!validColSet.has(c)) {
+            analysisSelectedCols.delete(c);
+        }
+    });
+
+    // 기본 선택: 비어있다면 첫 번째 데이터 열 자동 선택
+    if (analysisSelectedCols.size === 0 && allCols.length > 0) {
+        analysisSelectedCols.add(allCols[0]);
+        if (allCols.length > 1) {
+            analysisSelectedCols.add(allCols[1]);
+        }
+    }
+
+    container.innerHTML = '';
+
+    if (allCols.length === 0) {
+        container.innerHTML = '<span style="color: #8b949e; font-size: 12px; padding: 4px 0;">선택 가능한 데이터 컬럼이 없습니다.</span>';
+        return;
+    }
+
+    allCols.forEach((col, idx) => {
+        const isChecked = analysisSelectedCols.has(col);
+        const color = ANALYSIS_COLOR_PALETTE[idx % ANALYSIS_COLOR_PALETTE.length].stroke;
+
+        const chip = document.createElement('div');
+        chip.className = `analysis-col-chip ${isChecked ? 'active' : ''}`;
+        chip.setAttribute('role', 'button');
+        chip.setAttribute('tabindex', '0');
+        chip.setAttribute('title', isChecked ? `${col} (클릭 시 분석 제외)` : `${col} (클릭 시 분석 포함)`);
+
+        const dot = document.createElement('span');
+        dot.className = 'analysis-col-dot';
+        dot.style.backgroundColor = color;
+
+        const label = document.createElement('span');
+        label.textContent = col;
+
+        chip.appendChild(dot);
+        chip.appendChild(label);
+
+        // 클릭 및 키보드 이벤트 안전 바인딩 (인라인 onclick 제거하여 특수문자/따옴표 완벽 지원)
+        chip.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleAnalysisColumn(col);
+        });
+
+        chip.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleAnalysisColumn(col);
+            }
+        });
+
+        container.appendChild(chip);
+    });
+}
+
+/**
+ * 분석 컬럼 토글
+ */
+window.toggleAnalysisColumn = function (col) {
+    if (!col) return;
+    if (analysisSelectedCols.has(col)) {
+        if (analysisSelectedCols.size > 1) {
+            analysisSelectedCols.delete(col);
+        } else {
+            showSheetToast('최소 1개 이상의 컬럼을 선택해야 합니다.');
+            return;
+        }
+    } else {
+        analysisSelectedCols.add(col);
+    }
+    populateAnalysisColumnChips();
+    updateAnalysisChart();
+};
+
+/**
+ * 현재 선택된 장비의 작업 로그(유지보수/트러블 이력) 수집 및 정렬
+ */
+function getEquipWorkLogs() {
+    if (!currentSelectedSite || !currentSelectedEquip) return [];
+
+    let rawLogs = [];
+    const site = currentSelectedSite;
+    const keyExact = `details_${site}_${currentSelectedEquip.key}`;
+    let actualEquipKey = currentSelectedEquip.key;
+
+    try {
+        let stored = localStorage.getItem(keyExact);
+        if (!stored) {
+            // 다른 키 패턴 검색 (시리얼 또는 모델명 기준 fallback)
+            for (let i = 0; i < localStorage.length; i++) {
+                const k = localStorage.key(i);
+                if (k && k.startsWith(`details_${site}_`)) {
+                    if (currentSelectedEquip.serial && k.includes(currentSelectedEquip.serial)) {
+                        stored = localStorage.getItem(k);
+                        actualEquipKey = k.replace(`details_${site}_`, '');
+                        break;
+                    } else if (currentSelectedEquip.displayName && k.includes(currentSelectedEquip.displayName)) {
+                        stored = localStorage.getItem(k);
+                        actualEquipKey = k.replace(`details_${site}_`, '');
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed.logs)) {
+                rawLogs = parsed.logs.map(l => ({ ...l, _equipKey: actualEquipKey }));
+            }
+        }
+    } catch (e) {
+        console.warn('Failed to parse equip work logs:', e);
+    }
+
+    // 날짜 유효성 및 필터링
+    let validLogs = rawLogs.filter(l => l && l.date);
+
+    if (analysisStartDate) {
+        validLogs = validLogs.filter(l => l.date >= analysisStartDate);
+    }
+    if (analysisEndDate) {
+        validLogs = validLogs.filter(l => l.date <= analysisEndDate);
+    }
+
+    // 날짜 오름차순 정렬
+    validLogs.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+    return validLogs;
+}
+
+/**
+ * 분석 차트 렌더링 및 통계 계산 (작업 이력 연계)
+ */
+function updateAnalysisChart() {
+    const canvas = document.getElementById('data-analysis-chart');
+    if (!canvas) return;
+
+    if (typeof Chart === 'undefined') {
+        const wrap = canvas.parentElement;
+        if (wrap) {
+            wrap.innerHTML = `
+                <div class="analysis-empty-chart">
+                    <span style="font-size: 28px;">⚠️</span>
+                    <span>차트 라이브러리(Chart.js)를 로드하는 중입니다. 잠시 후 다시 시도해주세요.</span>
+                </div>
+            `;
+        }
+        return;
+    }
+
+    const allRows = (currentSheetData && currentSheetData.rows) || [];
+
+    // 1. 조건에 맞는 행 필터링
+    let filtered = allRows.filter(r => {
+        if (!r.date) return false;
+        if (analysisStartDate && r.date < analysisStartDate) return false;
+        if (analysisEndDate && r.date > analysisEndDate) return false;
+
+        if (analysisDivisionFilter && analysisDivisionFilter !== 'ALL') {
+            if (analysisDivisionFilter.startsWith('div:')) {
+                const targetDiv = analysisDivisionFilter.replace('div:', '');
+                let rawDiv = (r.division !== undefined && r.division !== null ? r.division : ((r.values && r.values['구분']) || '')).trim();
+                const clean = String(rawDiv).replace(/[\s_\-]/g, '').toUpperCase();
+                let normDiv = rawDiv;
+                if (clean === 'STD1' || clean === 'STD1(BLANK)' || clean.startsWith('STD1')) normDiv = 'STD1(Blank)';
+                else if (clean === 'STD2' || clean.startsWith('STD2')) normDiv = 'STD2';
+                else if (clean === 'STD3' || clean.startsWith('STD3')) normDiv = 'STD3';
+                else if (clean === 'STD4' || clean.startsWith('STD4')) normDiv = 'STD4';
+                else if (clean === 'STD5' || clean.startsWith('STD5')) normDiv = 'STD5';
+
+                if (normDiv !== targetDiv) return false;
+            } else if (analysisDivisionFilter.startsWith('conc:')) {
+                const targetConc = analysisDivisionFilter.replace('conc:', '');
+                const curConc = String(r.concentration !== undefined && r.concentration !== null && r.concentration !== ''
+                    ? r.concentration
+                    : ((r.values && r.values['농도'] !== undefined) ? r.values['농도'] : '')).trim();
+                if (curConc !== targetConc) return false;
+            }
+        }
+        return true;
+    });
+
+    // 2. 날짜 기준 오름차순 정렬 (시계열 트렌드)
+    filtered.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+    // 3. 작업 이력 데이터 수집
+    const workLogs = analysisShowWorkLogs ? getEquipWorkLogs() : [];
+    currentEquipWorkLogs = workLogs;
+
+    // 각 측정 데이터 행의 날짜에 당일 작업이 있는지 여부
+    const hasWorkOnRow = filtered.map(r => {
+        return workLogs.some(w => w.date === r.date);
+    });
+
+    // 4. X축 레이블 구성 (날짜 단독 표기, 요청에 따라 구분은 X축 레이블에서 제외)
+    const labels = filtered.map((r, idx) => {
+        const workMarker = (analysisShowWorkLogs && hasWorkOnRow[idx]) ? ' 🛠️' : '';
+        return `${r.date}${workMarker}`;
+    });
+
+    // 5. 선택된 컬럼별 데이터셋 및 통계 계산
+    const allCols = [...((currentSheetData && currentSheetData.columns) || [])];
+    const datasets = [];
+    const statsList = [];
+
+    Array.from(analysisSelectedCols).forEach(col => {
+        const colIdx = allCols.indexOf(col);
+        const colorObj = ANALYSIS_COLOR_PALETTE[(colIdx >= 0 ? colIdx : 0) % ANALYSIS_COLOR_PALETTE.length];
+
+        const values = [];
+        const numList = [];
+
+        filtered.forEach(r => {
+            let rawVal = '';
+            if (col === '농도') {
+                rawVal = (r.concentration !== undefined && r.concentration !== null && r.concentration !== '')
+                    ? r.concentration
+                    : ((r.values && r.values['농도'] !== undefined) ? r.values['농도'] : '');
+            } else {
+                rawVal = (r.values && r.values[col] !== undefined) ? r.values[col] : '';
+            }
+
+            const parsed = parseFloat(String(rawVal).replace(/[^0-9.-]/g, ''));
+            if (!isNaN(parsed)) {
+                values.push(parsed);
+                numList.push(parsed);
+            } else {
+                values.push(null);
+            }
+        });
+
+        // 통계 지표 산출
+        if (numList.length > 0) {
+            const n = numList.length;
+            const max = Math.max(...numList);
+            const min = Math.min(...numList);
+            const sum = numList.reduce((acc, v) => acc + v, 0);
+            const avg = sum / n;
+            const variance = numList.reduce((acc, v) => acc + Math.pow(v - avg, 2), 0) / (n > 1 ? n - 1 : 1);
+            const stdDev = Math.sqrt(variance);
+            const cv = (avg !== 0) ? (stdDev / Math.abs(avg) * 100) : 0;
+
+            statsList.push({
+                col,
+                color: colorObj.stroke,
+                n,
+                max: max.toFixed(3).replace(/\.?0+$/, ''),
+                min: min.toFixed(3).replace(/\.?0+$/, ''),
+                avg: avg.toFixed(3).replace(/\.?0+$/, ''),
+                stdDev: stdDev.toFixed(3).replace(/\.?0+$/, ''),
+                cv: cv.toFixed(2) + '%'
+            });
+        } else {
+            statsList.push({
+                col,
+                color: colorObj.stroke,
+                n: 0,
+                max: '-',
+                min: '-',
+                avg: '-',
+                stdDev: '-',
+                cv: '-'
+            });
+        }
+
+        // 작업이 있는 측정 포인트는 마름모(rectRot) 및 크기 7px로 시각적 강조
+        const pointRadii = filtered.map((r, idx) => (analysisShowWorkLogs && hasWorkOnRow[idx]) ? 7 : 4);
+        const pointHoverRadii = filtered.map((r, idx) => (analysisShowWorkLogs && hasWorkOnRow[idx]) ? 10 : 7);
+        const pointStyles = filtered.map((r, idx) => (analysisShowWorkLogs && hasWorkOnRow[idx]) ? 'rectRot' : 'circle');
+        const pointBgColors = filtered.map((r, idx) => (analysisShowWorkLogs && hasWorkOnRow[idx]) ? '#f85149' : colorObj.stroke);
+
+        datasets.push({
+            label: col,
+            data: values,
+            borderColor: colorObj.stroke,
+            backgroundColor: colorObj.fill,
+            borderWidth: 2,
+            pointRadius: pointRadii,
+            pointHoverRadius: pointHoverRadii,
+            pointStyle: pointStyles,
+            pointBackgroundColor: pointBgColors,
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 1.5,
+            tension: 0.25,
+            fill: (analysisChartType === 'line' ? false : true)
+        });
+    });
+
+    // 뱃지 업데이트
+    const countBadge = document.getElementById('analysis-data-count-badge');
+    if (countBadge) {
+        countBadge.textContent = `${filtered.length}개 데이터 포인트`;
+    }
+
+    // 6. 차트 인스턴스 갱신
+    if (analysisChartInstance) {
+        analysisChartInstance.destroy();
+        analysisChartInstance = null;
+    }
+
+    const ctx = canvas.getContext('2d');
+    analysisChartInstance = new Chart(ctx, {
+        type: analysisChartType,
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#e6edf3',
+                        font: { size: 12, weight: '600' },
+                        usePointStyle: true,
+                        boxWidth: 10,
+                        padding: 16
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(22, 27, 34, 0.95)',
+                    titleColor: '#58a6ff',
+                    titleFont: { size: 13, weight: '700' },
+                    bodyColor: '#e6edf3',
+                    bodyFont: { size: 12 },
+                    borderColor: '#388bfd',
+                    borderWidth: 1,
+                    padding: 12,
+                    boxPadding: 4,
+                    usePointStyle: true,
+                    callbacks: {
+                        title: function (contexts) {
+                            if (!contexts || contexts.length === 0) return '';
+                            const dataIdx = contexts[0].dataIndex;
+                            const row = filtered[dataIdx];
+                            if (!row) return '';
+                            const divPart = row.division ? ` [${row.division}]` : '';
+                            const concPart = (row.concentration !== undefined && row.concentration !== null && row.concentration !== '')
+                                ? ` (${row.concentration}${currentSheetData.concUnit || 'ppm'})`
+                                : '';
+                            return `${row.date}${divPart}${concPart}`;
+                        },
+                        label: function (context) {
+                            let label = context.dataset.label || '';
+                            if (label) label += ': ';
+                            if (context.parsed.y !== null && context.parsed.y !== undefined) {
+                                label += context.parsed.y;
+                            } else {
+                                label += '-';
+                            }
+                            return label;
+                        },
+                        // 당일 작업 또는 직전 최근 작업 이력 툴팁 자동 표출
+                        afterBody: function (contexts) {
+                            if (!analysisShowWorkLogs || !contexts || contexts.length === 0) return [];
+                            const dataIdx = contexts[0].dataIndex;
+                            const row = filtered[dataIdx];
+                            if (!row || !row.date) return [];
+
+                            const lines = [];
+                            const sameDayWorks = workLogs.filter(w => w.date === row.date);
+
+                            if (sameDayWorks.length > 0) {
+                                lines.push('');
+                                lines.push('── 🛠️ 당일 작업 이력 ──');
+                                sameDayWorks.forEach((w, wIdx) => {
+                                    if (wIdx > 0) lines.push(''); // 여러 건의 작업이 있으면 작업 간 구분 빈 줄
+                                    const typeTxt = w.type ? `[${w.type}]` : '[작업]';
+                                    lines.push(`📌 ${typeTxt}`);
+
+                                    // 비용처리 라벨 제거 및 쉼표/줄바꿈 기준 분할하여 1줄에 1개씩 표기
+                                    let rawContent = (w.content || w.detailType || '작업').replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').replace(/\s+/g, ' ').replace(/\s*-\s*$/, '').trim();
+                                    const items = rawContent.split(/[\r\n,]+/)
+                                        .map(s => s.replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').replace(/\s+/g, ' ').replace(/\s*-\s*$/, '').trim())
+                                        .filter(s => s.length > 0);
+
+                                    if (items.length > 0) {
+                                        items.forEach(item => {
+                                            lines.push(`  • ${item}`);
+                                        });
+                                    } else {
+                                        lines.push(`  • ${rawContent || '내용 없음'}`);
+                                    }
+
+                                    // 작업자는 줄바꿔서 표기
+                                    const workerTxt = (w.worker || '').trim();
+                                    if (workerTxt) {
+                                        lines.push(`  👤 작업자: ${workerTxt}`);
+                                    }
+                                });
+                            } else {
+                                // 당일 작업이 없으면 직전 최근 작업 표시
+                                const priorWorks = workLogs.filter(w => w.date < row.date);
+                                if (priorWorks.length > 0) {
+                                    const lastWork = priorWorks[priorWorks.length - 1];
+                                    const typeTxt = lastWork.type ? `[${lastWork.type}]` : '[작업]';
+                                    lines.push('');
+                                    lines.push(`💡 직전 최근 작업 (${lastWork.date}) ${typeTxt}`);
+
+                                    let rawContent = (lastWork.content || lastWork.detailType || '작업').replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').replace(/\s+/g, ' ').replace(/\s*-\s*$/, '').trim();
+                                    const items = rawContent.split(/[\r\n,]+/)
+                                        .map(s => s.replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').replace(/\s+/g, ' ').replace(/\s*-\s*$/, '').trim())
+                                        .filter(s => s.length > 0);
+
+                                    if (items.length > 0) {
+                                        items.forEach(item => {
+                                            lines.push(`  • ${item}`);
+                                        });
+                                    } else {
+                                        lines.push(`  • ${rawContent || '내용 없음'}`);
+                                    }
+
+                                    // 작업자는 줄바꿔서 표기
+                                    const workerTxt = (lastWork.worker || '').trim();
+                                    if (workerTxt) {
+                                        lines.push(`  👤 작업자: ${workerTxt}`);
+                                    }
+                                }
+                            }
+                            return lines;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255, 255, 255, 0.06)' },
+                    ticks: {
+                        color: '#8b949e',
+                        maxRotation: 45,
+                        minRotation: 0,
+                        font: { size: 11 }
+                    }
+                },
+                y: {
+                    grid: { color: 'rgba(255, 255, 255, 0.06)' },
+                    ticks: {
+                        color: '#8b949e',
+                        font: { size: 11 }
+                    }
+                }
+            }
+        }
+    });
+
+    // 7. 하단 작업 이력 타임라인 렌더링
+    renderAnalysisWorkTimeline(workLogs, filtered);
+
+    // 8. 통계 카드 렌더링
+    renderAnalysisStatsCards(statsList);
+}
+
+/**
+ * 하단 작업 이력 타임라인 카드 렌더링 및 차트 인터랙션 연동
+ */
+function renderAnalysisWorkTimeline(workLogs, filteredRows) {
+    const section = document.getElementById('analysis-work-section');
+    const container = document.getElementById('analysis-work-timeline');
+    const badge = document.getElementById('analysis-work-count-badge');
+    if (!section || !container) return;
+
+    if (!analysisShowWorkLogs) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'flex';
+
+    if (badge) {
+        badge.textContent = `${workLogs.length}건의 작업`;
+    }
+
+    if (!workLogs || workLogs.length === 0) {
+        container.innerHTML = '<div style="color: #8b949e; font-size: 12px; padding: 10px 4px;">해당 기간 내 등록된 장비 작업 이력이 없습니다.</div>';
+        return;
+    }
+
+    let html = '';
+    workLogs.forEach((w, idx) => {
+        const typeStr = (w.type || '기타').trim();
+        let tagClass = 'other';
+        if (typeStr === '정기' || typeStr.toLowerCase() === 'pm') tagClass = 'pm';
+        else if (typeStr === '트러블' || typeStr.toLowerCase() === 'trouble') tagClass = 'trouble';
+
+        // 세부구분 조합 (dt1, dt2, dt3 또는 detailType)
+        let dt1 = w.detailType || w.detail_type || '';
+        let dt2 = w.detailType2 || w.detail_type2 || '';
+        let dt3 = w.detailType3 || w.detail_type3 || '';
+        if (dt1 && dt1.includes(' > ')) {
+            const parts = dt1.replace(/&gt;/g, '>').split(' > ');
+            dt1 = parts[0] ? parts[0].trim() : '';
+            if (parts[1] && !dt2) dt2 = parts[1].trim();
+            if (parts[2] && !dt3) dt3 = parts[2].trim();
+        }
+        const dtArray = [dt1, dt2, dt3].filter(Boolean);
+        const detailTypeStr = dtArray.length > 0 ? dtArray.join(' > ') : '';
+        const badgeText = detailTypeStr ? `${typeStr} (${detailTypeStr})` : typeStr;
+
+        // [수정] 비용처리 태그([유상], [무상], [무상(보증)], [기타] 등) 제거
+        let rawContent = (w.content || detailTypeStr || '세부 작업 내용 없음').trim();
+        rawContent = rawContent.replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').replace(/\s+/g, ' ').replace(/\s*-\s*$/, '').trim();
+        const contentStr = rawContent || '세부 작업 내용 없음';
+        const workerStr = (w.worker || '작업자 미지정').trim();
+
+        // 쉼표(,) 또는 줄바꿈으로 나뉜 물품/내용 목록을 정제
+        const rawItems = contentStr.split(/[\r\n,]+/)
+            .map(s => s.replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').replace(/\s+/g, ' ').replace(/\s*-\s*$/, '').trim())
+            .filter(s => s.length > 0);
+
+        // 각 물품 항목 전체가 중간에 쪼개지지 않고 통째로 다음 줄로 넘어가도록 inline-block 태그로 감싸기
+        let contentHtml = '';
+        if (rawItems.length > 0) {
+            contentHtml = rawItems.map((item, i) => {
+                const comma = (i < rawItems.length - 1) ? ',' : '';
+                return `<span class="analysis-work-item-chunk">${escapeHtml(item)}${comma}</span>`;
+            }).join(' ');
+        } else {
+            contentHtml = escapeHtml(contentStr);
+        }
+
+        // 차트의 가장 가까운 측정 데이터 행 탐색
+        let closestDateStr = '';
+        let targetChartIdx = -1;
+        if (filteredRows && filteredRows.length > 0) {
+            let minDiff = Infinity;
+            filteredRows.forEach((r, rIdx) => {
+                if (!r.date) return;
+                const diff = Math.abs(new Date(r.date) - new Date(w.date));
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    targetChartIdx = rIdx;
+                }
+            });
+            if (targetChartIdx >= 0) {
+                closestDateStr = filteredRows[targetChartIdx].date;
+            }
+        }
+
+        const isExactMatch = closestDateStr === w.date;
+        const closestBadge = closestDateStr
+            ? (isExactMatch ? '📍 당일 측정 데이터' : `📈 측정 연계: ${closestDateStr}`)
+            : '';
+
+        html += `
+            <div class="analysis-work-card" data-work-idx="${idx}" data-target-chart-idx="${targetChartIdx}" title="클릭 시 차트의 해당 시점으로 포커스합니다.">
+                <div class="analysis-work-card-top">
+                    <span class="analysis-work-date">📅 ${escapeHtml(w.date)}</span>
+                    <span class="analysis-work-tag ${tagClass}">${escapeHtml(typeStr)}</span>
+                </div>
+                ${detailTypeStr ? `<div class="analysis-work-detail-type" title="${escapeHtml(detailTypeStr)}"> ${escapeHtml(detailTypeStr)}</div>` : ''}
+                <div class="analysis-work-content" title="${escapeHtml(contentStr)}">
+                    ${contentHtml}
+                </div>
+                <div class="analysis-work-footer">
+                    <span class="analysis-work-worker" title="작업자: ${escapeHtml(workerStr)}">👤 ${escapeHtml(workerStr)}</span>
+                    <span class="analysis-work-closest">${closestBadge}</span>
+                </div>
+                <div class="analysis-work-actions">
+                    <button type="button" class="btn-analysis-work-detail" data-work-idx="${idx}" title="작업 상세 정보 보기">
+                        📋 작업 상세 정보
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+
+    // [요청 반영] 초기 상태일 때 타임라인 가로 스크롤을 가장 오른쪽(최신 작업)으로 자동 이동
+    requestAnimationFrame(() => {
+        container.scrollLeft = container.scrollWidth;
+    });
+
+    // 작업 상세 정보 버튼 클릭 이벤트 바인딩 (모달 팝업 호출)
+    const detailBtns = container.querySelectorAll('.btn-analysis-work-detail');
+    detailBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // 카드 클릭(차트 하이라이트) 이벤트 전파 방지
+
+            const workIdx = parseInt(btn.dataset.workIdx, 10);
+            const w = workLogs[workIdx];
+            if (!w) return;
+
+            const site = currentSelectedSite;
+            const equipKey = w._equipKey || (currentSelectedEquip && currentSelectedEquip.key) || '';
+            const targetId = w.id || w.content;
+            const isCompleted = (w.status === '완료' || w.isCompleted === true || w.isCompleted === undefined);
+
+            if (typeof window.openEventDetailModal === 'function') {
+                window.openEventDetailModal(site, equipKey, targetId, isCompleted);
+            } else if (typeof openEventDetailModal === 'function') {
+                openEventDetailModal(site, equipKey, targetId, isCompleted);
+            } else {
+                alert('작업 상세 정보 모달을 열 수 없습니다. 시스템 관리자에게 문의하세요.');
+            }
+        });
+    });
+
+    // 작업 카드 클릭 시 차트 하이라이트 이벤트 바인딩
+    const cards = container.querySelectorAll('.analysis-work-card');
+    cards.forEach(card => {
+        card.addEventListener('click', () => {
+            cards.forEach(c => c.classList.remove('active'));
+            card.classList.add('active');
+
+            const targetIdx = parseInt(card.dataset.targetChartIdx, 10);
+            if (!isNaN(targetIdx) && targetIdx >= 0 && analysisChartInstance) {
+                try {
+                    analysisChartInstance.setActiveElements([
+                        { datasetIndex: 0, index: targetIdx }
+                    ]);
+                    analysisChartInstance.tooltip.setActiveElements([
+                        { datasetIndex: 0, index: targetIdx }
+                    ], { x: 0, y: 0 });
+                    analysisChartInstance.update();
+
+                    const rowDate = filteredRows[targetIdx] ? filteredRows[targetIdx].date : '';
+                    showSheetToast(`차트에서 ${rowDate} 측정 데이터로 포커스되었습니다.`);
+                } catch (e) {
+                    console.warn('Chart highlight failed:', e);
+                }
+            }
+        });
+    });
+}
+
+/**
+ * 하단 통계 지표 요약 카드 그리드 렌더링
+ */
+function renderAnalysisStatsCards(statsList) {
+    const container = document.getElementById('analysis-stats-grid');
+    if (!container) return;
+
+    if (!statsList || statsList.length === 0) {
+        container.innerHTML = '<div style="color: #8b949e; font-size: 13px; grid-column: 1 / -1;">선택된 분석 항목이 없습니다.</div>';
+        return;
+    }
+
+    let html = '';
+    statsList.forEach(stat => {
+        html += `
+            <div class="analysis-stat-card">
+                <div class="analysis-stat-card-title">
+                    <span class="analysis-col-dot" style="background-color: ${stat.color};"></span>
+                    <span title="${escapeHtml(stat.col)}">${escapeHtml(stat.col)}</span>
+                </div>
+                <div class="analysis-stat-metrics">
+                    <div class="analysis-stat-item">
+                        <span class="analysis-stat-label">데이터 수 (N)</span>
+                        <span class="analysis-stat-val">${stat.n}건</span>
+                    </div>
+                    <div class="analysis-stat-item">
+                        <span class="analysis-stat-label">평균값 (Mean)</span>
+                        <span class="analysis-stat-val">${stat.avg}</span>
+                    </div>
+                    <div class="analysis-stat-item">
+                        <span class="analysis-stat-label">최댓값 (Max)</span>
+                        <span class="analysis-stat-val" style="color: #3fb950;">${stat.max}</span>
+                    </div>
+                    <div class="analysis-stat-item">
+                        <span class="analysis-stat-label">최솟값 (Min)</span>
+                        <span class="analysis-stat-val" style="color: #f85149;">${stat.min}</span>
+                    </div>
+                    <div class="analysis-stat-item">
+                        <span class="analysis-stat-label">표준편차 (Std Dev)</span>
+                        <span class="analysis-stat-val">${stat.stdDev}</span>
+                    </div>
+                    <div class="analysis-stat-item">
+                        <span class="analysis-stat-label">변동계수 (CV)</span>
+                        <span class="analysis-stat-val" style="color: #e3b341;">${stat.cv}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+/**
+ * 차트 이미지 클립보드 복사
+ */
+async function handleCopyAnalysisChart() {
+    const canvas = document.getElementById('data-analysis-chart');
+    if (!canvas) return;
+
+    try {
+        canvas.toBlob(async (blob) => {
+            if (!blob) {
+                showSheetToast('차트 이미지를 생성하지 못했습니다.');
+                return;
+            }
+            if (navigator.clipboard && navigator.clipboard.write) {
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob })
+                ]);
+                showSheetToast('📈 차트 이미지가 클립보드에 복사되었습니다.');
+            } else {
+                showSheetToast('현재 브라우저 환경에서 이미지 복사를 지원하지 않습니다.');
+            }
+        });
+    } catch (err) {
+        console.error('차트 복사 실패:', err);
+        showSheetToast('차트 복사 중 오류가 발생했습니다.');
+    }
+}
+
+/**
+ * 차트 이미지 PNG 다운로드
+ */
+function handleDownloadAnalysisChart() {
+    const canvas = document.getElementById('data-analysis-chart');
+    if (!canvas) return;
+
+    try {
+        const url = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        const equipName = currentSelectedEquip ? (currentSelectedEquip.custEquip ? `${currentSelectedEquip.displayName}_${currentSelectedEquip.custEquip}` : currentSelectedEquip.displayName) : 'Equip';
+        link.download = `${equipName}_Trend_Analysis_${getTodayString()}.png`;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showSheetToast('📥 차트 이미지가 저장되었습니다.');
+    } catch (err) {
+        console.error('차트 다운로드 실패:', err);
+        showSheetToast('차트 다운로드 중 오류가 발생했습니다.');
+    }
 }
 
 /**

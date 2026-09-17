@@ -4,7 +4,7 @@
 {% block title %}데이터 관리 - WithTech{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/data.css') }}?v=1.3.0">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/data.css') }}?v=1.5.1">
 <style>
     /* 달력 아이콘 반전 */
     .custom-date-icon::-webkit-calendar-picker-indicator {
@@ -68,13 +68,16 @@
                     <span id="data-header-cust-tag" class="data-tag data-tag-cust" style="display: none;">-</span>
                 </div>
 
-                <!-- Parameter / Raw Data 전환 세그먼트 버튼 -->
+                <!-- Parameter / Raw Data / Analysis 전환 세그먼트 버튼 -->
                 <div class="data-mode-switcher" id="data-mode-switcher">
                     <button type="button" class="btn-data-mode" data-mode="param" id="btn-mode-param" title="장비 파라미터 입력 및 관리">
                         ⚙️ Parameter
                     </button>
                     <button type="button" class="btn-data-mode active" data-mode="raw" id="btn-mode-raw" title="측정 원천 데이터 입력 및 관리">
                         📊 Raw Data
+                    </button>
+                    <button type="button" class="btn-data-mode" data-mode="analysis" id="btn-mode-analysis" title="Raw Data 트렌드 및 통계 분석">
+                        📈 Analysis
                     </button>
                 </div>
 
@@ -115,6 +118,21 @@
                         </button>
                         <button type="button" id="btn-clear-param-data" class="btn-del-sm" title="현재 날짜 파라미터 초기화">
                             일자 초기화
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Analysis 액션 툴바 -->
+                <div class="data-sheet-toolbar" id="toolbar-analysis-actions" style="display: none;">
+                    <div class="data-sheet-actions">
+                        <button type="button" id="btn-copy-analysis-chart" class="btn-blue-sm" title="차트 이미지를 클립보드에 복사">
+                            📋 차트 복사
+                        </button>
+                        <button type="button" id="btn-download-analysis-chart" class="btn-green-sm" title="차트 이미지(PNG) 다운로드">
+                            📥 차트 저장
+                        </button>
+                        <button type="button" id="btn-refresh-analysis" class="btn-gray-sm" title="분석 데이터 및 차트 새로고침">
+                            🔄 새로고침
                         </button>
                     </div>
                 </div>
@@ -191,6 +209,100 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 4. Analysis 트렌드 분석 뷰 (Raw Data 기반) -->
+            <div id="data-analysis-view" class="data-analysis-view" style="display: none;">
+                <!-- 상단 필터 및 컬럼 선택 제어 카드 -->
+                <div class="analysis-control-card">
+                    <div class="analysis-control-row">
+                        <!-- 농도 및 구분 필터 -->
+                        <div class="analysis-filter-group">
+                            <span class="analysis-filter-label">🏷️ 구분 / 농도 필터:</span>
+                            <select id="analysis-division-filter" class="analysis-select" title="구분 또는 농도별 데이터 필터링">
+                                <option value="ALL">전체 데이터</option>
+                            </select>
+                        </div>
+
+                        <!-- 날짜 범위 필터 -->
+                        <div class="analysis-filter-group">
+                            <span class="analysis-filter-label">📅 기간:</span>
+                            <input type="date" id="analysis-date-start" class="analysis-date-input custom-date-icon" title="시작일">
+                            <span style="color: #8b949e;">~</span>
+                            <input type="date" id="analysis-date-end" class="analysis-date-input custom-date-icon" title="종료일">
+                            <button type="button" id="btn-reset-analysis-date" class="btn-analysis-filter-sm">전체 기간</button>
+                        </div>
+
+                        <!-- 차트 종류 -->
+                        <div class="analysis-filter-group">
+                            <span class="analysis-filter-label">📊 차트 형태:</span>
+                            <select id="analysis-chart-type" class="analysis-select">
+                                <option value="line">라인 차트 (Trend)</option>
+                                <option value="bar">바 차트 (막대)</option>
+                            </select>
+                        </div>
+
+                        <!-- 작업 이력 연동 토글 -->
+                        <div class="analysis-filter-group" style="margin-left: auto;">
+                            <label class="analysis-checkbox-label" title="해당 장비의 작업 이력(정기/트러블/파트교체)을 차트 툴팁 및 타임라인에 연동합니다.">
+                                <input type="checkbox" id="analysis-toggle-work-logs" checked>
+                                <span>🛠️ 작업 이력 연동</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 컬럼(항목) 다중 선택 칩 영역 -->
+                    <div class="analysis-columns-select-row">
+                        <div class="analysis-columns-header">
+                            <span class="analysis-filter-label">📌 분석 컬럼 선택 (다중 선택):</span>
+                            <div class="analysis-col-quick-btns">
+                                <button type="button" id="btn-select-all-analysis-cols" class="btn-analysis-filter-sm">전체 선택</button>
+                                <button type="button" id="btn-clear-all-analysis-cols" class="btn-analysis-filter-sm">전체 해제</button>
+                            </div>
+                        </div>
+                        <div id="analysis-columns-chips" class="analysis-columns-chips">
+                            <!-- JS에서 동적 컬럼 칩 렌더링 -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 메인 트렌드 그래프 카드 -->
+                <div class="analysis-chart-card">
+                    <div class="analysis-chart-header">
+                        <div class="analysis-chart-title-wrap">
+                            <h4 id="analysis-chart-title">📈 Raw Data Trend 분석 그래프</h4>
+                            <span id="analysis-data-count-badge" class="analysis-badge">0개 데이터 포인트</span>
+                        </div>
+                        <div class="analysis-chart-legend-hint">
+                            <span>💡 범례 항목을 클릭하면 해당 선을 숨기거나 표시할 수 있습니다.</span>
+                        </div>
+                    </div>
+                    <div class="analysis-chart-canvas-wrap">
+                        <canvas id="data-analysis-chart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 작업 이력 타임라인 카드 섹션 (차트 연계) -->
+                <div id="analysis-work-section" class="analysis-work-section">
+                    <div class="analysis-work-header">
+                        <div class="analysis-work-title-wrap">
+                            <h4 class="analysis-section-title">🛠️ 해당 장비 작업 이력 타임라인</h4>
+                            <span id="analysis-work-count-badge" class="analysis-badge">0건의 작업</span>
+                        </div>
+                        <span class="analysis-work-hint">💡 작업 카드를 클릭하면 차트의 해당 시점으로 포커스됩니다.</span>
+                    </div>
+                    <div id="analysis-work-timeline" class="analysis-work-timeline">
+                        <!-- JS에서 동적 작업 카드 렌더링 -->
+                    </div>
+                </div>
+
+                <!-- 하단 통계 분석 요약 카드 섹션 -->
+                <div class="analysis-stats-section">
+                    <h4 class="analysis-section-title">📊 항목별 통계 지표 요약</h4>
+                    <div id="analysis-stats-grid" class="analysis-stats-grid">
+                        <!-- JS에서 동적 통계 카드 렌더링 -->
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Parameter 날짜 추가 모달 -->
@@ -233,5 +345,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/data.js') }}?v=1.5.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/data.js') }}?v=1.8.8"></script>
 {% endblock %}

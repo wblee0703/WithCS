@@ -429,10 +429,12 @@
 
 .sheet-th-conc,
 .sheet-td-conc {
-    width: 125px !important;
-    min-width: 125px !important;
-    max-width: 125px !important;
+    width: 130px !important;
+    min-width: 130px !important;
+    max-width: 130px !important;
     text-align: center;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .sheet-col-th,
@@ -486,31 +488,134 @@
     box-shadow: 2px 0 6px rgba(0, 0, 0, 0.45);
 }
 
-/* 구분 드롭다운 */
-.sheet-select-division {
+/* 구분 셀 (화살표 버튼 분리형) */
+.sheet-division-cell-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     width: 100%;
     height: 32px;
-    background: transparent;
-    color: #e6edf3;
-    border: none;
-    padding: 4px 6px;
-    font-size: 12px;
-    font-family: inherit;
-    outline: none;
-    cursor: pointer;
-    border-radius: 4px;
+    padding: 0 4px 0 8px;
     box-sizing: border-box;
-    transition: background 0.15s, box-shadow 0.15s;
+    user-select: none;
+    cursor: cell;
 }
 
-.sheet-select-division:focus {
-    background: rgba(31, 111, 235, 0.15);
-    box-shadow: inset 0 0 0 2px #58a6ff;
+.sheet-division-text {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    color: #e6edf3;
+    text-align: center;
+    pointer-events: none;
 }
 
-.sheet-select-division option {
+.sheet-division-arrow-wrap {
+    position: relative;
+    width: 22px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    color: #8b949e;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+
+.sheet-division-arrow-wrap:hover {
+    background: rgba(88, 166, 255, 0.15);
+    color: #58a6ff;
+}
+
+.sheet-division-arrow-icon {
+    font-size: 10px;
+    pointer-events: none;
+}
+
+.sheet-select-division-arrow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+}
+
+.sheet-select-division-arrow option {
     background: #161b22;
     color: #e6edf3;
+}
+
+/* 다중 셀 선택 (Excel Range Selection) 스타일 */
+.data-sheet-table td.sheet-td-no {
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.data-sheet-table td.sheet-td-no:hover {
+    background: #21262d !important;
+    color: #58a6ff !important;
+}
+
+.data-sheet-table td.sheet-td-no.sheet-cell-selected {
+    background: #1f6feb !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+.data-sheet-table td.sheet-cell-selected {
+    background: rgba(56, 139, 253, 0.28) !important;
+    box-shadow: inset 0 0 0 1px #58a6ff !important;
+}
+
+.data-sheet-table td.sheet-cell-selected .sheet-cell-input,
+.data-sheet-table td.sheet-cell-selected .sheet-date-input,
+.data-sheet-table td.sheet-cell-selected .sheet-division-text {
+    color: #ffffff !important;
+}
+
+.data-sheet-table td.sheet-cell-selected-anchor {
+    box-shadow: inset 0 0 0 2px #58a6ff !important;
+}
+
+/* 복사/붙여넣기/실행취소 안내 토스트 */
+.sheet-copy-toast {
+    position: fixed;
+    bottom: 35px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: rgba(22, 27, 34, 0.95);
+    border: 1px solid #388bfd;
+    color: #58a6ff;
+    padding: 7px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    z-index: 99999;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+}
+
+.sheet-copy-toast.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
 }
 
 /* 농도 헤더 */
@@ -562,7 +667,9 @@
 
 /* 농도 셀 인풋 */
 .sheet-conc-cell-input {
-    width: 100%;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
     height: 32px;
     background: transparent;
     border: none;
@@ -571,7 +678,7 @@
     font-size: 12px;
     font-family: inherit;
     outline: none;
-    box-sizing: border-box;
+    box-sizing: border-box !important;
     text-align: right;
     transition: background 0.1s, box-shadow 0.1s;
 }
@@ -1499,6 +1606,545 @@
 .data-param-row-del-btn:hover {
     color: #f85149;
     background: rgba(248, 81, 73, 0.1);
+}
+
+/* --------------------------------------------------------------------------
+   Analysis (Raw Data Trend 분석) 뷰 스타일
+   -------------------------------------------------------------------------- */
+.data-analysis-view {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+    overflow-y: auto;
+    padding-bottom: 24px;
+}
+
+.analysis-control-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.analysis-control-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 20px;
+}
+
+.analysis-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.analysis-filter-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #c9d1d9;
+    white-space: nowrap;
+}
+
+.analysis-select {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+.analysis-select:hover,
+.analysis-select:focus {
+    border-color: #58a6ff;
+    background: #282e37;
+}
+
+.analysis-date-input {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #e6edf3;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    outline: none;
+}
+
+.analysis-date-input:focus {
+    border-color: #58a6ff;
+}
+
+.btn-analysis-filter-sm {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #58a6ff;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+}
+
+.btn-analysis-filter-sm:hover {
+    background: rgba(56, 139, 253, 0.15);
+    border-color: #58a6ff;
+}
+
+.analysis-columns-select-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.analysis-columns-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.analysis-col-quick-btns {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.analysis-columns-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-height: 120px;
+    overflow-y: auto;
+    padding: 2px;
+}
+
+.analysis-col-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #21262d;
+    border: 1px solid #30363d;
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12px;
+    color: #8b949e;
+    cursor: pointer;
+    user-select: none;
+    touch-action: manipulation;
+    transition: all 0.15s ease;
+}
+
+.analysis-col-chip * {
+    pointer-events: none;
+}
+
+.analysis-col-chip:hover {
+    border-color: #58a6ff;
+    color: #e6edf3;
+}
+
+.analysis-col-chip.active {
+    background: rgba(56, 139, 253, 0.18);
+    border-color: #388bfd;
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.analysis-col-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.analysis-chart-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.analysis-chart-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.analysis-chart-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.analysis-chart-title-wrap h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #e6edf3;
+}
+
+.analysis-badge {
+    background: rgba(56, 139, 253, 0.15);
+    border: 1px solid rgba(56, 139, 253, 0.4);
+    color: #58a6ff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+}
+
+.analysis-chart-legend-hint {
+    font-size: 12px;
+    color: #8b949e;
+}
+
+.analysis-chart-canvas-wrap {
+    position: relative;
+    width: 100%;
+    height: 420px;
+    min-height: 350px;
+}
+
+.analysis-stats-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.analysis-section-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #e6edf3;
+}
+
+.analysis-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 12px;
+}
+
+.analysis-stat-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: transform 0.15s, border-color 0.15s;
+}
+
+.analysis-stat-card:hover {
+    border-color: #58a6ff;
+    transform: translateY(-2px);
+}
+
+.analysis-stat-card-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #e6edf3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.analysis-stat-metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 12px;
+    font-size: 12px;
+}
+
+.analysis-stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.analysis-stat-label {
+    font-size: 11px;
+    color: #8b949e;
+}
+
+.analysis-stat-val {
+    font-size: 13px;
+    font-weight: 600;
+    color: #58a6ff;
+    font-family: Consolas, monospace;
+}
+
+.analysis-empty-chart {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #8b949e;
+    font-size: 14px;
+    gap: 8px;
+}
+
+/* 작업 이력 연동 체크박스 */
+.analysis-checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #e6edf3;
+    cursor: pointer;
+    user-select: none;
+    background: #21262d;
+    border: 1px solid #30363d;
+    padding: 5px 12px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}
+
+.analysis-checkbox-label:hover {
+    border-color: #58a6ff;
+    background: #282e37;
+}
+
+.analysis-checkbox-label input[type="checkbox"] {
+    accent-color: #388bfd;
+    cursor: pointer;
+}
+
+/* 작업 이력 타임라인 섹션 */
+.analysis-work-section {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.analysis-work-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.analysis-work-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.analysis-work-hint {
+    font-size: 11px;
+    color: #8b949e;
+}
+
+.analysis-work-timeline {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: #30363d transparent;
+}
+
+.analysis-work-timeline::-webkit-scrollbar {
+    height: 6px;
+}
+
+.analysis-work-timeline::-webkit-scrollbar-thumb {
+    background: #30363d;
+    border-radius: 4px;
+}
+
+.analysis-work-card {
+    flex: 0 0 260px;
+    width: 260px;
+    min-width: 260px;
+    max-width: 260px;
+    box-sizing: border-box;
+    background: #21262d;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 8px;
+    user-select: none;
+}
+
+.analysis-work-card:hover {
+    border-color: #58a6ff;
+    background: #282e37;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.analysis-work-card.active {
+    border-color: #388bfd;
+    background: rgba(56, 139, 253, 0.15);
+    box-shadow: 0 0 0 1px #388bfd;
+}
+
+.analysis-work-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.analysis-work-date {
+    font-size: 11px;
+    font-weight: 600;
+    color: #58a6ff;
+    font-family: Consolas, monospace;
+    white-space: nowrap;
+}
+
+.analysis-work-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 140px;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.analysis-work-tag.pm {
+    background: rgba(63, 185, 80, 0.2);
+    color: #3fb950;
+    border: 1px solid rgba(63, 185, 80, 0.4);
+}
+
+.analysis-work-tag.trouble {
+    background: rgba(248, 81, 73, 0.2);
+    color: #f85149;
+    border: 1px solid rgba(248, 81, 73, 0.4);
+}
+
+.analysis-work-tag.other {
+    background: rgba(163, 113, 247, 0.2);
+    color: #a371f7;
+    border: 1px solid rgba(163, 113, 247, 0.4);
+}
+
+.analysis-work-detail-type {
+    font-size: 11px;
+    font-weight: 600;
+    color: #79c0ff;
+    background: rgba(56, 139, 253, 0.1);
+    padding: 3px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(56, 139, 253, 0.25);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.3;
+}
+
+.analysis-work-content {
+    font-size: 12px;
+    color: #e6edf3;
+    font-weight: 500;
+    line-height: 1.55;
+    white-space: normal;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+}
+
+.analysis-work-item-chunk {
+    display: inline-block;
+    white-space: nowrap;
+}
+
+.analysis-work-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #8b949e;
+    margin-top: auto;
+    padding-top: 4px;
+    border-top: 1px dashed rgba(48, 54, 61, 0.6);
+}
+
+.analysis-work-worker {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+.analysis-work-closest {
+    font-size: 10px;
+    color: #79c0ff;
+    white-space: nowrap;
+}
+
+.analysis-work-actions {
+    margin-top: 6px;
+    display: flex;
+    width: 100%;
+}
+
+.btn-analysis-work-detail {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #58a6ff;
+    background: rgba(56, 139, 253, 0.1);
+    border: 1px solid rgba(56, 139, 253, 0.35);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.btn-analysis-work-detail:hover {
+    background: #1f6feb;
+    color: #ffffff;
+    border-color: #388bfd;
+    box-shadow: 0 2px 6px rgba(56, 139, 253, 0.3);
+}
+
+.btn-analysis-work-detail:active {
+    transform: scale(0.98);
 }
 
 /* --------------------------------------------------------------------------

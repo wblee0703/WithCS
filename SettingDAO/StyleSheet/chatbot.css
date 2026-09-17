@@ -225,6 +225,62 @@
     font-family: monospace;
 }
 
+/* 답변 리포트 복사 버튼 스타일 */
+.chatbot-msg-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(48, 54, 61, 0.6);
+}
+
+.chatbot-copy-btn {
+    background: rgba(56, 139, 253, 0.1);
+    color: #58a6ff;
+    border: 1px solid rgba(56, 139, 253, 0.3);
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.chatbot-copy-btn:hover {
+    background: rgba(56, 139, 253, 0.25);
+    border-color: #58a6ff;
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+.chatbot-copy-btn.copied {
+    background: rgba(46, 160, 67, 0.2);
+    border-color: #3fb950;
+    color: #3fb950;
+}
+
+.chatbot-history-copy-btn {
+    background: rgba(56, 139, 253, 0.1);
+    color: #58a6ff;
+    border: 1px solid rgba(56, 139, 253, 0.3);
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.chatbot-history-copy-btn:hover {
+    background: rgba(56, 139, 253, 0.25);
+    border-color: #58a6ff;
+    color: #ffffff;
+}
+
 /* 5. 입력 폼 영역 */
 .chatbot-input-area {
     padding: 12px 16px;
