@@ -693,9 +693,9 @@ function saveCurrentSheetData(showIndicator = true, resetTable = false, immediat
                     site: currentSelectedSite,
                     model_abbr: currentSelectedEquip.displayName,
                     cust_equip: currentSelectedEquip.custEquip,
-                    serial: currentSelectedEquip.serial,
                     columns: currentSheetData.columns || [],
-                    rows: (currentSheetData.rows || []).map(r => ({
+                    // [요청 반영] 웹 브라우저 정렬 상태와 무관하게 DB에는 항상 DB 기본 정렬(record_date DESC, db_id ASC) 순서로 동기화
+                    rows: getDbOrderedRows(currentSheetData.rows || []).map(r => ({
                         id: r.id,
                         date: r.date,
                         division: r.division || (r.values && r.values['구분']) || '',
@@ -736,6 +736,40 @@ function saveCurrentSheetData(showIndicator = true, resetTable = false, immediat
 }
 
 /**
+ * DB 저장용 기본 순서 정렬 (날짜 최신순 DESC, 동일 날짜 내에서는 DB 등록 순서 ASC)
+ * 웹브라우저에서 정렬 기준이 바뀌더라도 DB의 순서는 항상 이 기준을 엄격히 유지합니다.
+ */
+function getDbOrderedRows(rows) {
+    if (!rows || !Array.isArray(rows)) return [];
+    return [...rows].sort((a, b) => {
+        const dateA = a.date || '';
+        const dateB = b.date || '';
+        // 1. 날짜 최신순 (DESC)
+        if (dateA !== dateB) {
+            return dateB.localeCompare(dateA);
+        }
+        // 2. 동일 날짜 내에서는 DB 등록 ID / 등록 순서 기준 (ASC)
+        const hasDbIdA = (a.db_id !== undefined && a.db_id !== null && !isNaN(Number(a.db_id)));
+        const hasDbIdB = (b.db_id !== undefined && b.db_id !== null && !isNaN(Number(b.db_id)));
+
+        if (hasDbIdA && hasDbIdB) {
+            return Number(a.db_id) - Number(b.db_id);
+        }
+        if (hasDbIdA && !hasDbIdB) {
+            return -1; // 기존 DB 행 우선
+        }
+        if (!hasDbIdA && hasDbIdB) {
+            return 1; // 신규 추가 행 뒤로
+        }
+
+        let orderA = a.db_order !== undefined ? Number(a.db_order) : 0;
+        let orderB = b.db_order !== undefined ? Number(b.db_order) : 0;
+        if (orderA !== orderB) return orderA - orderB;
+
+        return String(a.id || '').localeCompare(String(b.id || ''));
+    });
+}
+
 /**
  * 정렬 상태 관리 객체
  */
@@ -820,7 +854,8 @@ window.toggleSheetSort = function (key) {
         });
     }
 
-    saveCurrentSheetData(true);
+    // [요청 반영] 정렬 기준 변경은 웹브라우저에서 보여지는 화면 전용이므로 DB 저장을 트리거하지 않음
+    clearSheetRangeSelection();
     renderSheetTable();
 };
 
