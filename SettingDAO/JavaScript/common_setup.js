@@ -1786,6 +1786,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     existingLog.md = md;
                     existingLog.memo = memo;
                     existingLog.parts = parts; // [추가] 물품 업데이트
+                    existingLog.specialNote = existingLog.specialNote || existingLog.special_note || '';
+                    existingLog.special_note = existingLog.specialNote;
                     isUpdating = true;
                 }
             }
@@ -1801,6 +1803,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     worker: worker,
                     company: "위드텍",
                     memo: memo,
+                    specialNote: '',
+                    special_note: '',
                     md: md,
                     parts: parts // [추가] 물품 등록
                 };

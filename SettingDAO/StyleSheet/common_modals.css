@@ -1123,6 +1123,43 @@
     border-radius: 4px;
 }
 
+#register-schedule-modal .modal-select option,
+#register-schedule-modal select option,
+#setup-task-schedule-modal .modal-select option,
+#setup-task-schedule-modal select option,
+#setup-log-register-modal select option,
+.modal-select option {
+    background-color: #161b22 !important;
+    background: #161b22 !important;
+    color: #e6edf3 !important;
+}
+
+#setup-task-schedule-modal .log-select-dropdown,
+#setup-log-register-modal .log-select-dropdown,
+#setup-task-schedule-modal .log-select-list,
+#setup-log-register-modal .log-select-list {
+    background-color: #161b22 !important;
+    background: #161b22 !important;
+    border: 1px solid #30363d !important;
+}
+
+#setup-task-schedule-modal .log-select-item,
+#setup-log-register-modal .log-select-item {
+    color: #e6edf3 !important;
+}
+
+#setup-task-schedule-modal .log-select-item:hover,
+#setup-log-register-modal .log-select-item:hover {
+    background-color: #21262d !important;
+    color: #ffffff !important;
+}
+
+#setup-task-schedule-modal .log-select-item.selected,
+#setup-log-register-modal .log-select-item.selected {
+    background-color: #1f6feb !important;
+    color: #ffffff !important;
+}
+
 #register-schedule-modal .input-dark,
 #register-schedule-modal .modal-select,
 #register-schedule-modal .log-select-trigger,

@@ -268,6 +268,7 @@ function setupLogEvents() {
                 return alert('장비를 먼저 선택해주세요.');
             }
             if (typeof openRegisterScheduleModal === 'function') {
+                window.currentAddWorkLogId = null;
                 window.currentSearchFilters = { site: currentPath.site, equip: currentPath.equip };
                 const todayStr = new Date().toISOString().substring(0, 10);
                 window.openDetailAfterRegister = true;

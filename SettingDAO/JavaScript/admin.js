@@ -2570,6 +2570,11 @@ function setupEquipParamMgmt() {
         btnImport.addEventListener('click', handleAdminParamCsvImportClick);
     }
 
+    const btnExport = document.getElementById('btn-export-model-param-csv');
+    if (btnExport) {
+        btnExport.addEventListener('click', handleAdminParamCsvExportClick);
+    }
+
     const csvFileInput = document.getElementById('admin-param-csv-file-input');
     if (csvFileInput) {
         csvFileInput.addEventListener('change', handleAdminParamCsvFileSelected);
@@ -2658,6 +2663,8 @@ function selectAdminParamModel(model) {
     if (btnRevert) btnRevert.style.display = 'inline-flex';
     const btnImport = document.getElementById('btn-import-model-param-csv');
     if (btnImport) btnImport.style.display = 'inline-block';
+    const btnExport = document.getElementById('btn-export-model-param-csv');
+    if (btnExport) btnExport.style.display = 'inline-block';
 
     if (titleEl) {
         const abbrText = model.abbr ? `<span style="font-size:13px; color:#8b949e; margin-left: 6px;">(${escapeHtml(model.abbr)})</span>` : '';
@@ -3649,6 +3656,67 @@ async function revertAdminParamSettings() {
 }
 
 /**
+ * Parameter 관리 CSV 내보내기 버튼 클릭 핸들러
+ * 컬럼 순서: 순서, 파라미터항목, 단위, 기준값, 비고
+ */
+function handleAdminParamCsvExportClick() {
+    if (!currentAdminParamModel) {
+        alert('장비 모델을 먼저 선택해주세요.');
+        return;
+    }
+
+    // 현재 화면의 입력값을 메모리 데이터에 동기화
+    syncAdminParamDomToData();
+
+    let items = equipModelParameters[currentAdminParamModel.name];
+    if (!items || !Array.isArray(items)) {
+        if (currentAdminParamModel.abbr && equipModelParameters[currentAdminParamModel.abbr]) {
+            items = equipModelParameters[currentAdminParamModel.abbr];
+        } else {
+            items = [];
+        }
+    }
+
+    if (items.length === 0) {
+        alert(`[${currentAdminParamModel.name}] 모델에 등록된 Parameter 데이터가 없습니다.`);
+        return;
+    }
+
+    // 컬럼 순서: 순서, 파라미터항목, 단위, 기준값, 비고
+    const headers = ['순서', '파라미터항목', '단위', '기준값', '비고'];
+    const csvRows = [];
+    csvRows.push(headers.map(h => `"${h.replace(/"/g, '""')}"`).join(','));
+
+    items.forEach((item, idx) => {
+        const orderVal = String(idx + 1);
+        const nameVal = String(item.name || '').replace(/"/g, '""');
+        const unitVal = String(item.unit || '').replace(/"/g, '""');
+        const standardVal = String(item.standard || '').replace(/"/g, '""');
+        const memoVal = String(item.memo || '').replace(/"/g, '""');
+
+        csvRows.push(`"${orderVal}","${nameVal}","${unitVal}","${standardVal}","${memoVal}"`);
+    });
+
+    // 엑셀에서 한글 깨짐 방지를 위한 UTF-8 BOM(\uFEFF) 추가
+    const csvString = '\uFEFF' + csvRows.join('\r\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const safeModelName = (currentAdminParamModel.name || 'Model').replace(/[/\\?%*:|"<>]/g, '_');
+    const now = new Date();
+    const dateStr = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+    const filename = `${safeModelName}_Parameter_${dateStr}.csv`;
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+/**
  * Parameter 관리 CSV 불러오기 버튼 클릭 핸들러
  */
 function handleAdminParamCsvImportClick() {
@@ -3689,7 +3757,7 @@ function handleAdminParamCsvFileSelected(e) {
 
 /**
  * CSV 텍스트 파싱 및 Parameter 항목 데이터 반영
- * 형식: A열 No, B열 파라미터항목, C열 단위, D열 기준값, E열 비고
+ * 컬럼 순서: 순서, 파라미터항목, 단위, 기준값, 비고
  */
 function processAdminParamCsv(csvText) {
     if (!csvText || !csvText.trim()) {
@@ -3707,7 +3775,7 @@ function processAdminParamCsv(csvText) {
         return;
     }
 
-    // 헤더 행 감지
+    // 헤더 행 감지 (기본 순서: 0: 순서, 1: 파라미터항목, 2: 단위, 3: 기준값, 4: 비고)
     let startRowIdx = 0;
     const firstRow = rows[0];
     let colIdxName = 1;
@@ -3717,18 +3785,18 @@ function processAdminParamCsv(csvText) {
 
     const isHeader = firstRow.some(cell => {
         const c = String(cell || '').trim().toLowerCase().replace(/\s+/g, '');
-        return ['no', '순번', '번호', '파라미터', '파라미터항목', '항목', '단위', '기준값', '기준', '비고', '메모'].includes(c);
+        return ['no', '순번', '순서', '번호', '파라미터', '파라미터항목', '항목', '단위', '기준값', '기준', '비고', '메모'].includes(c);
     });
 
     if (isHeader) {
         startRowIdx = 1;
-        // 헤더 컬럼 위치 동적 매핑 (A열 No, B열 항목, C열 단위, D열 기준값, E열 비고 기본)
+        // 헤더 컬럼 위치 동적 매핑 (순서, 파라미터항목, 단위, 기준값, 비고)
         firstRow.forEach((cell, idx) => {
             const c = String(cell || '').trim().toLowerCase().replace(/\s+/g, '');
-            if (c.includes('파라미터') || c.includes('항목')) colIdxName = idx;
+            if (c.includes('파라미터') || c.includes('항목') || c.includes('param')) colIdxName = idx;
             else if (c === '단위' || c.includes('unit')) colIdxUnit = idx;
-            else if (c.includes('기준')) colIdxStandard = idx;
-            else if (c.includes('비고') || c.includes('메모') || c.includes('memo')) colIdxMemo = idx;
+            else if (c.includes('기준') || c.includes('spec') || c.includes('standard')) colIdxStandard = idx;
+            else if (c.includes('비고') || c.includes('메모') || c.includes('memo') || c.includes('note')) colIdxMemo = idx;
         });
     }
 

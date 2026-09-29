@@ -443,7 +443,8 @@
     }
 }
 
-.chatbot-history-action-btn {
+.chatbot-history-action-btn,
+.chatbot-new-btn {
     background: transparent;
     border: none;
     color: #c9d1d9;
@@ -454,12 +455,31 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s ease, color 0.2s ease;
+    transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
 .chatbot-history-action-btn:hover {
     background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
+    color: #58a6ff;
+    transform: scale(1.1);
+}
+
+.chatbot-new-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #3fb950;
+    transform: scale(1.1);
+}
+
+.chatbot-history-session-item {
+    transition: all 0.2s ease;
+}
+.chatbot-history-session-item:hover {
+    background: #21262d !important;
+    border-color: #58a6ff !important;
+}
+.chatbot-history-session-item.selected {
+    background: #1c2430 !important;
+    border-color: #238636 !important;
 }
 
 /* 챗봇 크기 확대 토글 스타일 */

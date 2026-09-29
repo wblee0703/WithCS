@@ -875,6 +875,7 @@ button {
 .btn-green { background: #238636; color: #fff; padding: 6px 20px; }
 .btn-orange { background: #d29922; color: #fff; padding: 6px 20px; }
 .btn-gray { background: #21262d; border: 1px solid #30363d; color: #fff; padding: 5px 15px; font-size: 12px; }
+.btn-gray-sm { background: #21262d; border: 1px solid #30363d; color: #fff; padding: 5px 15px; font-size: 12px; }
 
 .btn-blue-sm { background: #1f6feb; color: #fff; padding: 5px 15px; font-size: 12px; }
 .btn-green-sm { background: #238636; color: #fff; padding: 5px 15px; font-size: 12px; }

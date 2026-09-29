@@ -60,6 +60,8 @@
             <div class="detail-header-row">
                 <header class="breadcrumb breadcrumb-no-margin" id="current-path">📍 사업장 > 장비명</header>
                 <button class="btn-blue-sm btn-gantt-move" onclick="moveToGanttView()">📅 간트뷰 이동</button>
+                <input type="file" id="setup-csv-file-input" accept=".csv" style="display: none;" onchange="handleSetupCsvFile(this)">
+                <button type="button" class="btn-setup-csv-import" id="btn-import-setup-log-csv" onclick="triggerSetupCsvImport()" title="셋업 일지 CSV 불러오기">📥 CSV 불러오기</button>
                 <button class="btn-gray btn-header-setting" onclick="openSetupEquipModal()">장비 정보</button>
             </div>
 
@@ -122,7 +124,7 @@
                         </div>
                         <div class="setup-card-body" style="padding: 10px; display: flex; flex-direction: column;">
                             <textarea id="setup-equip-issue-memo" class="textarea-dark"
-                                placeholder="해당 장비의 셋업 관련 이슈 및 특이사항을 작성하세요."></textarea>
+                                placeholder="좌측 셋업 일지 항목을 선택하여 특이사항을 확인하거나 작성하세요."></textarea>
                         </div>
                     </div>
                 </div>

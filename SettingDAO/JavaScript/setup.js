@@ -3,6 +3,8 @@
    ========================================================================== */
 let selectedSetupLogId = null;
 let originalSetupLogMemo = "";
+let originalSetupLogIssue = "";
+let isSetupLogEditMode = false;
 
 /* ==========================================================================
    2. 유틸리티 및 헬퍼 함수 (Utilities & Helpers)
@@ -214,10 +216,36 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        // 셋업 이슈 (특이사항) 변경 감지 및 페이지 이탈 방지
+        const issueArea = document.getElementById('setup-equip-issue-memo');
+        const issueSaveBtn = document.getElementById('btn-save-setup-issue');
+
+        if (issueArea && issueSaveBtn) {
+            issueArea.addEventListener('input', () => {
+                if (issueArea.value !== originalSetupLogIssue) {
+                    issueSaveBtn.classList.remove('btn-green-sm');
+                    issueSaveBtn.classList.add('btn-orange-sm');
+                } else {
+                    issueSaveBtn.classList.remove('btn-orange-sm');
+                    issueSaveBtn.classList.add('btn-green-sm');
+                }
+            });
+
+            issueArea.addEventListener('click', () => {
+                if (selectedSetupLogId === null) {
+                    alert('리스트를 먼저 선택해주세요.');
+                    issueArea.blur(); // 포커스 해제하여 입력 방지
+                }
+            });
+        }
+
         window.addEventListener('beforeunload', (e) => {
-            // 셋업 일지 메모 변경 확인
+            // 셋업 일지 메모 및 특이사항 변경 확인
             const memoArea = document.getElementById('setup-log-detail-memo');
-            if (selectedSetupLogId !== null && memoArea && memoArea.value !== originalSetupLogMemo) {
+            const issueArea = document.getElementById('setup-equip-issue-memo');
+            const memoChanged = selectedSetupLogId !== null && memoArea && memoArea.value !== originalSetupLogMemo;
+            const issueChanged = selectedSetupLogId !== null && issueArea && issueArea.value !== originalSetupLogIssue;
+            if (memoChanged || issueChanged) {
                 e.preventDefault();
                 e.returnValue = '';
             }
@@ -252,6 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof window.setupSetupExecStartModal === 'function') window.setupSetupExecStartModal();
         setupSetupLoadListModal();
         setupSetupLoadInfoModal();
+        checkSetupCsvImportAuth();
 
         // [추가] 셋업 이력 버튼 이벤트 연결 (HTML 정적 버튼 사용)
         const ganttHistoryBtn = document.getElementById('btn-gantt-history');
@@ -324,6 +353,23 @@ function renderDetails() {
     const workspace = document.getElementById('setup-workspace');
     if (!workspace) return;
 
+    isSetupLogEditMode = false;
+    const card = document.getElementById('setup-log-card');
+    if (card) card.classList.remove('edit-mode');
+    const settingBtn = document.querySelector('#setup-log-card .btn-list-setting');
+    if (settingBtn) {
+        settingBtn.classList.remove('active');
+        settingBtn.title = "목록 편집";
+    }
+
+    selectedSetupLogId = null;
+    originalSetupLogMemo = "";
+    originalSetupLogIssue = "";
+    const memoArea = document.getElementById('setup-log-detail-memo');
+    if (memoArea) memoArea.value = "";
+    const issueArea = document.getElementById('setup-equip-issue-memo');
+    if (issueArea) issueArea.value = "";
+
     // 셋업 일지 리스트 로드
     renderSetupLogList();
 
@@ -333,45 +379,77 @@ function renderDetails() {
     const lastSetupLog = localStorage.getItem(`lastSetupLog_${currentPath.site}_${currentPath.equip}`);
     if (lastSetupLog) {
         setTimeout(() => selectSetupLog(Number(lastSetupLog)), 50);
+    } else {
+        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+        const equipKey = `${currentPath.site}::${currentPath.equip}`;
+        const data = setupData[equipKey] || {};
+        const logs = data.setupLogs || [];
+        if (logs.length > 0) {
+            setTimeout(() => selectSetupLog(logs[0].id), 50);
+        }
     }
 }
 
 function renderSetupIssue() {
     const issueArea = document.getElementById('setup-equip-issue-memo');
-    if (!issueArea || !currentPath.site || !currentPath.equip) return;
+    if (!issueArea) return;
 
-    const detailKey = `details_${currentPath.site}_${currentPath.equip}`;
-    const detailData = JSON.parse(localStorage.getItem(detailKey)) || {};
-    issueArea.value = detailData.specialNote || '';
+    if (selectedSetupLogId !== null && currentPath.site && currentPath.equip) {
+        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+        const equipKey = `${currentPath.site}::${currentPath.equip}`;
+        const data = setupData[equipKey] || {};
+        const logs = data.setupLogs || [];
+        const log = logs.find(l => l.id == selectedSetupLogId);
+        const val = log ? (log.specialNote || log.special_note || '') : '';
+        issueArea.value = val;
+        originalSetupLogIssue = val;
+    } else {
+        issueArea.value = '';
+        originalSetupLogIssue = '';
+    }
+
+    const issueSaveBtn = document.getElementById('btn-save-setup-issue');
+    if (issueSaveBtn) {
+        issueSaveBtn.classList.remove('btn-orange-sm');
+        issueSaveBtn.classList.add('btn-green-sm');
+    }
 }
 
 async function saveSetupIssue() {
     if (!currentPath.site || !currentPath.equip) return alert('장비를 먼저 선택해주세요.');
+    if (!selectedSetupLogId) return alert('좌측 셋업 일지 리스트에서 항목을 먼저 선택해주세요.');
 
     const issueArea = document.getElementById('setup-equip-issue-memo');
-    if (!issueArea) return;
+    const issueContent = issueArea ? issueArea.value : '';
 
-    const detailKey = `details_${currentPath.site}_${currentPath.equip}`;
-    let detailData = JSON.parse(localStorage.getItem(detailKey)) || {};
-    detailData.specialNote = issueArea.value;
-    localStorage.setItem(detailKey, JSON.stringify(detailData));
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${currentPath.site}::${currentPath.equip}`;
+    let data = setupData[equipKey] || {};
 
-    const payload = {
-        old_id: currentPath.equip,
-        new_id: currentPath.equip,
-        site: currentPath.site,
-        setup: detailData.setup,
-        special_note: detailData.specialNote || ''
-    };
+    const logIndex = data.setupLogs ? data.setupLogs.findIndex(l => l.id == selectedSetupLogId) : -1;
+    if (logIndex > -1) {
+        data.setupLogs[logIndex].specialNote = issueContent;
+        data.setupLogs[logIndex].special_note = issueContent;
+        setupData[equipKey] = data;
+        localStorage.setItem('setup_data', JSON.stringify(setupData));
 
-    const success = await window.syncAdminDB('equip', 'UPDATE', payload);
-    if (success) {
-        if (typeof addSystemLog === 'function') {
-            addSystemLog('UPDATE_EQUIP_NOTE', currentPath.equip, '셋업 이슈(특이사항) 저장');
+        const success = await window.syncSetupDataDB(currentPath.site, currentPath.equip, null, data.setupLogs); // [DB 동기화]
+        if (success) {
+            originalSetupLogIssue = issueContent;
+            const saveBtn = document.getElementById('btn-save-setup-issue');
+            if (saveBtn) {
+                saveBtn.classList.remove('btn-orange-sm');
+                saveBtn.classList.add('btn-green-sm');
+            }
+            if (typeof addSystemLog === 'function') {
+                addSystemLog('UPDATE_SETUP_LOG_NOTE', currentPath.equip, `셋업 일지 특이사항 저장 (ID: ${selectedSetupLogId})`);
+            }
+            alert('셋업 이슈(특이사항)가 저장되었습니다.');
+        } else {
+            alert('저장 중 오류가 발생했습니다.');
         }
-        alert('셋업 이슈가 저장되었습니다.');
     } else {
-        alert('저장 중 오류가 발생했습니다.');
+        alert('선택된 일지 항목을 찾을 수 없습니다.');
     }
 }
 window.saveSetupIssue = saveSetupIssue;
@@ -863,6 +941,97 @@ function updateExecutionRate(completed, total) {
     }
 }
 
+function getSetupCategoryOptions() {
+    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
+    let list = templates['default'];
+    if (!Array.isArray(list) || list.length === 0) {
+        list = [
+            { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크", content: "장비 도면 부착" },
+            { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크", content: "다이크 설치" },
+            { category: "장비 반입 및 정위치", subcategory: "장비 반입", content: "장비 반입" },
+            { category: "장비 반입 및 정위치", subcategory: "장비 반입", content: "다이크 공사 및 리크센서 설치" },
+            { category: "통신 상태 및 유틸리티", subcategory: "Utility 배관", content: "Utility 배관 공사 및 연결" },
+            { category: "통신 상태 및 유틸리티", subcategory: "Utility 배관", content: "Utility 턴온" },
+            { category: "통신 상태 및 유틸리티", subcategory: "인터락/통신", content: "인터락 Test 및 통신상태 확인 " },
+            { category: "셋업 평가", subcategory: "분석부 안정화", content: "분석부 안정화 및 오염제어" },
+            { category: "셋업 평가", subcategory: "성능 평가", content: "Calibration 평가" },
+            { category: "셋업 평가", subcategory: "성능 평가", content: "Sample 측정" },
+            { category: "셋업 평가", subcategory: "성능 평가", content: "신뢰도 평가" },
+            { category: "셋업 완료", subcategory: "셋업 완료", content: "셋업 완료" }
+        ];
+    }
+    const combined = [...list];
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    if (typeof currentPath !== 'undefined' && currentPath.site && currentPath.equip) {
+        const equipKey = `${currentPath.site}::${currentPath.equip}`;
+        const data = setupData[equipKey] || {};
+        if (Array.isArray(data.setupDetails)) {
+            data.setupDetails.forEach(d => {
+                if (d.category) {
+                    combined.push({ category: d.category, subcategory: d.subcategory || d.content || d.category });
+                }
+            });
+        }
+    }
+    return combined;
+}
+
+function buildCategoryOptionsHtml(selectedCat = '') {
+    const tplList = getSetupCategoryOptions();
+    const categories = Array.from(new Set(tplList.map(t => t.category).filter(Boolean)));
+    let html = '<option value="">선택</option>';
+    let matched = false;
+    categories.forEach(cat => {
+        const isSel = (cat === selectedCat);
+        if (isSel) matched = true;
+        html += `<option value="${escapeHtml(cat)}"${isSel ? ' selected' : ''}>${escapeHtml(cat)}</option>`;
+    });
+    if (selectedCat && !matched) {
+        html += `<option value="${escapeHtml(selectedCat)}" selected>${escapeHtml(selectedCat)}</option>`;
+    }
+    return html;
+}
+
+function buildSubcategoryOptionsHtml(category = '', selectedSubcat = '') {
+    const tplList = getSetupCategoryOptions();
+    let subItems = [];
+    if (category) {
+        subItems = tplList.filter(t => t.category === category).map(t => t.subcategory || t.content || t.category).filter(Boolean);
+    }
+    const uniqueSubs = Array.from(new Set(subItems));
+    let html = '<option value="">선택</option>';
+    let matched = false;
+    uniqueSubs.forEach(sub => {
+        const isSel = (sub === selectedSubcat);
+        if (isSel) matched = true;
+        html += `<option value="${escapeHtml(sub)}"${isSel ? ' selected' : ''}>${escapeHtml(sub)}</option>`;
+    });
+    if (selectedSubcat && !matched) {
+        html += `<option value="${escapeHtml(selectedSubcat)}" selected>${escapeHtml(selectedSubcat)}</option>`;
+    }
+    return html;
+}
+
+function handleSetupLogCategoryChange(catSelect, id) {
+    const row = catSelect.closest('tr');
+    if (!row) return;
+    const subcatSelect = row.querySelector('.edit-cell-subcategory');
+    if (!subcatSelect) return;
+    const newCat = catSelect.value;
+    subcatSelect.innerHTML = buildSubcategoryOptionsHtml(newCat, '');
+}
+window.handleSetupLogCategoryChange = handleSetupLogCategoryChange;
+
+function handleSetupLogSubcategoryChange(subcatSelect, id) {
+    const row = subcatSelect.closest('tr');
+    if (!row) return;
+    const contentInput = row.querySelector('.edit-cell-content');
+    if (contentInput && !contentInput.value.trim() && subcatSelect.value) {
+        contentInput.value = subcatSelect.value;
+    }
+}
+window.handleSetupLogSubcategoryChange = handleSetupLogSubcategoryChange;
+
 function renderSetupLogList() {
     const tbody = document.getElementById('setup-log-body');
     if (!tbody || !currentPath.site || !currentPath.equip) return;
@@ -883,6 +1052,8 @@ function renderSetupLogList() {
             (l.worker && l.worker.toLowerCase().includes(filterText)) ||
             (l.company && l.company.toLowerCase().includes(filterText)) ||
             (l.memo && l.memo.toLowerCase().includes(filterText)) ||
+            (l.specialNote && l.specialNote.toLowerCase().includes(filterText)) ||
+            (l.special_note && l.special_note.toLowerCase().includes(filterText)) ||
             (l.parts && l.parts.toLowerCase().includes(filterText))
         );
     }
@@ -896,6 +1067,24 @@ function renderSetupLogList() {
         const contentText = item.content || '-';
         const contentHtml = (escapeHtml(contentText) || '-').replace(/\[지연\]/g, '<span class="tag-delayed">[지연]</span>');
 
+        if (isSetupLogEditMode) {
+            const catSelectHtml = `<select class="edit-cell-select edit-cell-category" onchange="handleSetupLogCategoryChange(this, ${item.id})" onclick="event.stopPropagation()">${buildCategoryOptionsHtml(item.category)}</select>`;
+            const subcatSelectHtml = `<select class="edit-cell-select edit-cell-subcategory" onchange="handleSetupLogSubcategoryChange(this, ${item.id})" onclick="event.stopPropagation()">${buildSubcategoryOptionsHtml(item.category, item.subcategory)}</select>`;
+            const contentInputHtml = `<input type="text" class="edit-cell-input edit-cell-content" value="${escapeHtml(item.content || '')}" placeholder="내용 입력" onclick="event.stopPropagation()">`;
+
+            return `<tr data-id="${item.id}" onclick="selectSetupLog(${item.id})" class="${selectedSetupLogId === item.id ? 'active-log' : ''}" style="cursor: pointer;">
+                <td class="log-date">${item.date}</td>
+                <td class="log-category" style="padding: 2px 4px; vertical-align: middle;">${catSelectHtml}</td>
+                <td class="log-subcategory" style="padding: 2px 4px; vertical-align: middle;">${subcatSelectHtml}</td>
+                <td class="log-content" style="padding: 2px 4px; vertical-align: middle;">${contentInputHtml}</td>
+                <td class="log-worker">${escapeHtml(item.worker)}</td>
+                <td class="log-md" style="color:#d29922; font-weight:bold;">${item.md ? item.md : '0'}</td>
+                <td class="manage-col" style="text-align: center; vertical-align:middle;">
+                    <button class="btn-del-sm" onclick="event.stopPropagation(); deleteSetupLogItem(${item.id})">✕</button>
+                </td>
+            </tr>`;
+        }
+
         return `<tr data-id="${item.id}" onclick="selectSetupLog(${item.id})" class="${selectedSetupLogId === item.id ? 'active-log' : ''}" style="cursor: pointer;">
             <td class="log-date">${item.date}</td>
             <td class="log-category" style="text-align:center; vertical-align:middle; color:#8b949e; font-size:12px;">${escapeHtml(catText)}</td>
@@ -907,14 +1096,18 @@ function renderSetupLogList() {
                 <button class="btn-edit" onclick="event.stopPropagation(); if(typeof window.openLogForEditing === 'function'){ window.openLogForEditing('${currentPath.site}', '${currentPath.equip}', ${item.id}); } else { toggleSetupLogEdit(${item.id}); }">✏️</button>
                 <button class="btn-del-sm" onclick="event.stopPropagation(); deleteSetupLogItem(${item.id})">✕</button>
             </td>
-        </tr>
-    `}).join('');
+        </tr>`;
+    }).join('');
 }
 
 function selectSetupLog(id) {
     // 저장되지 않은 변경사항 확인
     const memoArea = document.getElementById('setup-log-detail-memo');
-    if (selectedSetupLogId !== null && memoArea && memoArea.value !== originalSetupLogMemo) {
+    const issueArea = document.getElementById('setup-equip-issue-memo');
+    const memoChanged = selectedSetupLogId !== null && memoArea && memoArea.value !== originalSetupLogMemo;
+    const issueChanged = selectedSetupLogId !== null && issueArea && issueArea.value !== originalSetupLogIssue;
+
+    if (memoChanged || issueChanged) {
         if (!confirm("저장되지 않은 변경사항이 있습니다. 저장하지 않고 다른 항목을 선택하시겠습니까?")) {
             return;
         }
@@ -926,11 +1119,15 @@ function selectSetupLog(id) {
     // UI 업데이트 (행 강조)
     const rows = document.querySelectorAll('#setup-log-body tr');
     rows.forEach(row => row.classList.remove('active-log'));
+    const targetRow = document.querySelector(`#setup-log-body tr[data-id="${id}"]`);
+    if (targetRow) targetRow.classList.add('active-log');
 
-    // 다시 렌더링하여 클래스 적용 (간단한 방법)
-    renderSetupLogList();
+    // [중요] 편집 모드가 아닐 때만 전체 목록 재렌더링
+    if (!isSetupLogEditMode) {
+        renderSetupLogList();
+    }
 
-    // 메모 로드
+    // 데이터 로드
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const equipKey = `${currentPath.site}::${currentPath.equip}`;
     const data = setupData[equipKey] || {};
@@ -948,6 +1145,19 @@ function selectSetupLog(id) {
         if (saveBtn) {
             saveBtn.classList.remove('btn-orange-sm');
             saveBtn.classList.add('btn-green-sm');
+        }
+    }
+
+    if (issueArea) {
+        const issueVal = log ? (log.specialNote || log.special_note || "") : "";
+        issueArea.value = issueVal;
+        originalSetupLogIssue = issueVal; // 원본 상태 업데이트
+
+        // 버튼 색상 초기화
+        const issueSaveBtn = document.getElementById('btn-save-setup-issue');
+        if (issueSaveBtn) {
+            issueSaveBtn.classList.remove('btn-orange-sm');
+            issueSaveBtn.classList.add('btn-green-sm');
         }
     }
 
@@ -1068,13 +1278,13 @@ function saveSetupLogMemo() {
     if (!selectedSetupLogId) return;
 
     const memoArea = document.getElementById('setup-log-detail-memo');
-    const memoContent = memoArea.value;
+    const memoContent = memoArea ? memoArea.value : '';
 
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     const equipKey = `${currentPath.site}::${currentPath.equip}`;
     let data = setupData[equipKey] || {};
 
-    const logIndex = data.setupLogs.findIndex(l => l.id === selectedSetupLogId);
+    const logIndex = data.setupLogs.findIndex(l => l.id == selectedSetupLogId);
     if (logIndex > -1) {
         data.setupLogs[logIndex].memo = memoContent;
         setupData[equipKey] = data;
@@ -1087,6 +1297,8 @@ function saveSetupLogMemo() {
             saveBtn.classList.remove('btn-orange-sm');
             saveBtn.classList.add('btn-green-sm');
         }
+
+        renderSetupLogList();
 
         if (typeof addSystemLog === 'function') addSystemLog('UPDATE_SETUP_LOG_MEMO', currentPath.equip, '셋업 일지 메모 수정');
     }
@@ -1114,7 +1326,9 @@ function deleteSetupLogItem(id) {
         if (selectedSetupLogId === id) {
             selectedSetupLogId = null;
             originalSetupLogMemo = "";
-            document.getElementById('setup-log-detail-memo').value = "";
+            originalSetupLogIssue = "";
+            if (document.getElementById('setup-log-detail-memo')) document.getElementById('setup-log-detail-memo').value = "";
+            if (document.getElementById('setup-equip-issue-memo')) document.getElementById('setup-equip-issue-memo').value = "";
         }
         renderSetupLogList();
         renderSetupDetailList(); // 리스트의 진행률 갱신
@@ -1126,13 +1340,82 @@ function deleteSetupLogItem(id) {
     }
 }
 
-function toggleSetupLogEditMode(btn) {
+async function toggleSetupLogEditMode(btn) {
     const card = document.getElementById('setup-log-card');
-    if (card) {
-        card.classList.toggle('edit-mode');
-        btn.classList.toggle('active');
+    if (!card) return;
+
+    if (!isSetupLogEditMode) {
+        // [1] 편집 모드 진입: 셋업구분/세부구분 드롭다운, 내용 텍스트 입력창 전환
+        isSetupLogEditMode = true;
+        card.classList.add('edit-mode');
+        if (btn) {
+            btn.classList.add('active');
+            btn.title = "수정 내용 저장 (클릭 시 저장)";
+        }
+        renderSetupLogList();
+    } else {
+        // [2] 톱니바퀴 한 번 더 클릭: 입력된 값들 일괄 저장 및 일반 모드 복귀
+        if (!currentPath.site || !currentPath.equip) return;
+        const rows = document.querySelectorAll('#setup-log-body tr');
+        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+        const equipKey = `${currentPath.site}::${currentPath.equip}`;
+        let data = setupData[equipKey] || {};
+        if (!data.setupLogs) data.setupLogs = [];
+
+        let updatedCount = 0;
+        rows.forEach(row => {
+            const id = row.getAttribute('data-id');
+            const catSelect = row.querySelector('.edit-cell-category');
+            const subcatSelect = row.querySelector('.edit-cell-subcategory');
+            const contentInput = row.querySelector('.edit-cell-content');
+
+            if (id && catSelect && subcatSelect && contentInput) {
+                const log = data.setupLogs.find(l => l.id == id);
+                if (log) {
+                    const newCat = catSelect.value.trim();
+                    const newSubcat = subcatSelect.value.trim();
+                    const newContent = contentInput.value.trim();
+
+                    if (log.category !== newCat || log.subcategory !== newSubcat || log.content !== newContent) {
+                        log.category = newCat;
+                        log.subcategory = newSubcat;
+                        log.content = newContent;
+                        updatedCount++;
+
+                        // Task 상태 갱신 확인
+                        if (data.setupDetails && typeof recalculateSetupTaskStatus === 'function') {
+                            recalculateSetupTaskStatus(data, newContent, currentPath.site, currentPath.equip);
+                        }
+                    }
+                }
+            }
+        });
+
+        setupData[equipKey] = data;
+        localStorage.setItem('setup_data', JSON.stringify(setupData));
+
+        // DB에 즉시 100% 동기화
+        await window.syncSetupDataDB(currentPath.site, currentPath.equip, data.setupDetails || null, data.setupLogs);
+
+        if (typeof addSystemLog === 'function') {
+            addSystemLog('UPDATE_SETUP_LOG', currentPath.equip, `셋업 일지 일괄 편집 저장 (${updatedCount}건 수정)`);
+        }
+
+        isSetupLogEditMode = false;
+        card.classList.remove('edit-mode');
+        if (btn) {
+            btn.classList.remove('active');
+            btn.title = "목록 편집";
+        }
+
+        renderSetupLogList();
+        renderSetupDetailList();
+        if (typeof renderGanttChart === 'function') renderGanttChart();
+
+        alert('셋업 일지 수정 사항이 저장되었습니다.');
     }
 }
+window.toggleSetupLogEditMode = toggleSetupLogEditMode;
 
 function toggleSetupLogEdit(id) {
     const row = document.querySelector(`#setup-log-body tr[data-id='${id}']`);
@@ -1447,3 +1730,276 @@ window.moveToGanttView = function () {
     // 홈 화면으로 이동
     window.location.href = '/?scrollTo=gantt';
 };
+
+/* ==========================================================================
+   셋업 일지 CSV 불러오기 (Import) 관련 함수
+   컬럼 순서:
+   1: 날짜 (date)
+   2: 작업내용 (memo)
+   3: 특이사항 (specialNote)
+   4: 작업자 (worker - "이름, 이름, 이름" 형태 그대로 보존)
+   셋업 구분, 세부 구분, 내용은 미입력('') 상태
+   ========================================================================== */
+
+/**
+ * 셋업 일지 CSV 불러오기 버튼 권한 체크 헬퍼 (최종관리자 superadmin 전용)
+ */
+function checkSetupCsvImportAuth() {
+    const btnImport = document.getElementById('btn-import-setup-log-csv');
+    if (!btnImport) return;
+    const userRole = sessionStorage.getItem('userRole') || localStorage.getItem('userRole') || (document.body.classList.contains('role-superadmin') ? 'superadmin' : '');
+    if (userRole === 'superadmin') {
+        btnImport.style.setProperty('display', 'inline-flex', 'important');
+    } else {
+        btnImport.style.setProperty('display', 'none', 'important');
+    }
+}
+window.checkSetupCsvImportAuth = checkSetupCsvImportAuth;
+
+/**
+ * 셋업 일지 CSV 불러오기 버튼 클릭 핸들러 (최종관리자 전용)
+ */
+function triggerSetupCsvImport() {
+    const userRole = sessionStorage.getItem('userRole') || localStorage.getItem('userRole') || (document.body.classList.contains('role-superadmin') ? 'superadmin' : '');
+    if (userRole !== 'superadmin') {
+        alert('최종관리자 권한이 필요합니다.');
+        return;
+    }
+    if (!currentPath.site || !currentPath.equip) {
+        alert('장비를 먼저 선택해주세요.');
+        return;
+    }
+    const fileInput = document.getElementById('setup-csv-file-input');
+    if (fileInput) {
+        fileInput.value = '';
+        fileInput.click();
+    }
+}
+window.triggerSetupCsvImport = triggerSetupCsvImport;
+
+/**
+ * CSV 파일 선택 시 인코딩 감지 및 읽기
+ */
+function handleSetupCsvFile(input) {
+    const file = input.files && input.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        let content = e.target.result;
+        // UTF-8 디코딩 시 한글 깨짐(\uFFFD) 감지 시 EUC-KR로 재시도
+        if (content.includes('\uFFFD')) {
+            const retryReader = new FileReader();
+            retryReader.onload = (retryEvent) => {
+                processSetupCsv(retryEvent.target.result);
+            };
+            retryReader.readAsText(file, 'EUC-KR');
+        } else {
+            processSetupCsv(content);
+        }
+    };
+    reader.readAsText(file, 'UTF-8');
+}
+window.handleSetupCsvFile = handleSetupCsvFile;
+
+/**
+ * CSV 파서 헬퍼 (큰따옴표 안의 쉼표 및 개행 처리)
+ */
+function parseSetupCsvText(text) {
+    const rows = [];
+    let currentRow = [];
+    let currentField = '';
+    let insideQuotes = false;
+
+    if (text.charCodeAt(0) === 0xFEFF) {
+        text = text.slice(1);
+    }
+
+    for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        const nextChar = text[i + 1];
+
+        if (char === '"') {
+            if (insideQuotes && nextChar === '"') {
+                currentField += '"';
+                i++;
+            } else {
+                insideQuotes = !insideQuotes;
+            }
+        } else if (char === ',' && !insideQuotes) {
+            currentRow.push(currentField.trim());
+            currentField = '';
+        } else if ((char === '\r' || char === '\n') && !insideQuotes) {
+            if (char === '\r' && nextChar === '\n') i++;
+            currentRow.push(currentField.trim());
+            if (currentRow.some(f => f !== '')) {
+                rows.push(currentRow);
+            }
+            currentRow = [];
+            currentField = '';
+        } else {
+            currentField += char;
+        }
+    }
+    if (currentField || currentRow.length > 0) {
+        currentRow.push(currentField.trim());
+        if (currentRow.some(f => f !== '')) {
+            rows.push(currentRow);
+        }
+    }
+    return rows;
+}
+
+/**
+ * 날짜 문자열 YYYY-MM-DD 표준화 헬퍼
+ */
+function normalizeCsvDate(val) {
+    if (!val) return '';
+    let str = String(val).trim().replace(/\s+/g, '');
+    str = str.replace(/[./]/g, '-');
+    const parts = str.split('-');
+    if (parts.length === 3) {
+        let y = parts[0];
+        let m = parts[1].padStart(2, '0');
+        let d = parts[2].padStart(2, '0');
+        if (y.length === 2) {
+            y = (Number(y) > 50 ? '19' : '20') + y;
+        }
+        return `${y}-${m}-${d}`;
+    }
+    return val.trim();
+}
+
+/**
+ * CSV 텍스트 파싱 및 셋업 일지 반영
+ */
+function processSetupCsv(csvText) {
+    if (!csvText || !csvText.trim()) {
+        alert('CSV 파일 내용이 비어 있습니다.');
+        return;
+    }
+    if (!currentPath.site || !currentPath.equip) {
+        alert('장비를 먼저 선택해주세요.');
+        return;
+    }
+
+    const rows = parseSetupCsvText(csvText);
+    if (!rows || rows.length === 0) {
+        alert('유효한 데이터 행을 찾을 수 없습니다.');
+        return;
+    }
+
+    // 헤더 행 감지 (기본 매핑: 0: 날짜, 1: 작업내용, 2: 특이사항, 3: 작업자)
+    let startRowIdx = 0;
+    const firstRow = rows[0];
+    let colIdxDate = 0;
+    let colIdxMemo = 1;
+    let colIdxNote = 2;
+    let colIdxWorker = 3;
+
+    const isHeader = firstRow.some(cell => {
+        const c = String(cell || '').trim().toLowerCase().replace(/\s+/g, '');
+        return ['날짜', '일자', 'date', '작업내용', '내용', 'memo', '특이사항', '특이', '비고', 'note', '작업자', 'worker'].includes(c);
+    });
+
+    if (isHeader) {
+        startRowIdx = 1;
+        firstRow.forEach((cell, idx) => {
+            const c = String(cell || '').trim().toLowerCase().replace(/\s+/g, '');
+            if (c.includes('날짜') || c.includes('일자') || c === 'date') colIdxDate = idx;
+            else if (c.includes('작업내용') || c === 'memo' || c.includes('내용')) colIdxMemo = idx;
+            else if (c.includes('특이') || c.includes('비고') || c.includes('note')) colIdxNote = idx;
+            else if (c.includes('작업자') || c.includes('worker') || c.includes('담당자')) colIdxWorker = idx;
+        });
+    }
+
+    const newLogs = [];
+    const baseTimestamp = Date.now();
+
+    for (let i = startRowIdx; i < rows.length; i++) {
+        const r = rows[i];
+        if (!r || r.length === 0) continue;
+
+        const rawDate = r[colIdxDate] !== undefined ? String(r[colIdxDate]) : '';
+        const rawMemo = r[colIdxMemo] !== undefined ? String(r[colIdxMemo]) : '';
+        const rawNote = r[colIdxNote] !== undefined ? String(r[colIdxNote]) : '';
+        const rawWorker = r[colIdxWorker] !== undefined ? String(r[colIdxWorker]) : '';
+
+        // 날짜, 메모, 특이사항, 작업자 모두 비어있는 행은 건너뜀
+        if (!rawDate.trim() && !rawMemo.trim() && !rawNote.trim() && !rawWorker.trim()) {
+            continue;
+        }
+
+        const dateVal = normalizeCsvDate(rawDate);
+        const memoVal = rawMemo.trim();
+        const noteVal = rawNote.trim();
+        const workerVal = rawWorker.trim(); // "이름, 이름, 이름" 형태 보존
+
+        // [공수 계산] 작업자 수에 맞춰 공수(MD) 자동 계산 (1명이면 1, 2명이면 2 등)
+        let mdVal = '0';
+        if (workerVal) {
+            const workers = workerVal.split(/[,/\n]+/).map(w => w.trim()).filter(Boolean);
+            mdVal = workers.length > 0 ? String(workers.length) : '0';
+        }
+
+        newLogs.push({
+            id: baseTimestamp + i,
+            date: dateVal,
+            category: '',       // 미입력 상태
+            subcategory: '',    // 미입력 상태
+            content: '',        // 미입력 상태
+            worker: workerVal,  // 그대로 입력
+            company: '위드텍',
+            memo: memoVal,      // 작업내용
+            specialNote: noteVal,   // [특이사항] 각 리스트마다 개별 기록
+            special_note: noteVal,  // [특이사항] 각 리스트마다 개별 기록
+            md: mdVal,              // 작업자 수 기반 공수
+            parts: ''
+        });
+    }
+
+    if (newLogs.length === 0) {
+        alert('CSV 파일에서 불러올 수 있는 데이터가 없습니다.');
+        return;
+    }
+
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${currentPath.site}::${currentPath.equip}`;
+    let data = setupData[equipKey] || {};
+    if (!data.setupLogs) data.setupLogs = [];
+
+    const existingCount = data.setupLogs.length;
+    let shouldAppend = true;
+
+    if (existingCount > 0) {
+        const userChoice = confirm(
+            `[${currentPath.site} > ${currentPath.equip}]\n` +
+            `현재 등록된 셋업 일지가 ${existingCount}건 있습니다.\n\n` +
+            `• [확인]: 기존 일지 뒤에 CSV(${newLogs.length}건) 추가\n` +
+            `• [취소]: 기존 일지를 모두 지우고 CSV(${newLogs.length}건)로 새로 대체`
+        );
+        shouldAppend = userChoice;
+    }
+
+    if (shouldAppend) {
+        data.setupLogs = data.setupLogs.concat(newLogs);
+    } else {
+        data.setupLogs = newLogs;
+    }
+
+    setupData[equipKey] = data;
+    localStorage.setItem('setup_data', JSON.stringify(setupData));
+
+    // 1. 셋업 일지 DB에 즉시 100% 동기화 (각 로그의 memo 및 special_note 포함)
+    window.syncSetupDataDB(currentPath.site, currentPath.equip, data.setupDetails || null, data.setupLogs);
+
+    renderSetupLogList();
+    if (newLogs.length > 0) {
+        // 첫 번째 불러온 로그 항목 선택하여 화면에 작업내용 및 특이사항 즉시 표출
+        selectSetupLog(newLogs[0].id);
+    } else {
+        renderSetupIssue();
+    }
+    alert(`CSV 셋업 일지 ${newLogs.length}건이 성공적으로 반영되었습니다.\n(작업내용 및 특이사항이 각 일지 항목별로 개별 기록되었습니다.)`);
+}
+window.processSetupCsv = processSetupCsv;

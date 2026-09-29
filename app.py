@@ -196,11 +196,21 @@ def update_content_part(content_str, old_code, new_code, old_part, new_part):
         
     return ', '.join(new_items)
 
+def normalize_key(val):
+    if not val:
+        return ""
+    import re
+    return re.sub(r'[^a-zA-Z0-9가-힣]', '', str(val)).lower()
+
 # Security Extensions
 csrf = CSRFProtect(app)
 # [수정] 메모리 저장소 명시적 설정
 # 잦은 API 호출로 인한 429 에러를 방지하면서도 기본적인 무차별 대입 공격을 막기 위해 넉넉한 기본 제한(Rate Limit) 설정 적용
 limiter = Limiter(get_remote_address, app=app, storage_uri="memory://", default_limits=["3000 per day", "500 per hour"])
+
+# 프롬프트 인젝션 및 AI 보안 남용 방지 메모리 카운터 및 블랙리스트
+IP_ABUSE_COUNTER = {}
+IP_BLACKLIST = {}
 
 # [변경] DB 설정 (환경변수에 따라 MySQL 또는 SQLite 사용)
  # [임시] 가비아 호스팅 전 로컬 환경을 위해 강제로 SQLite(로컬 파일 DB)를 사용하도록 고정합니다.
@@ -314,7 +324,8 @@ class Equipment(db.Model):
 def ensure_setup_columns():
     setup_log_cols = [
         ('category', 'VARCHAR(100)'),
-        ('subcategory', 'VARCHAR(100)')
+        ('subcategory', 'VARCHAR(100)'),
+        ('special_note', 'TEXT')
     ]
     for col, typ in setup_log_cols:
         try:
@@ -361,6 +372,7 @@ class SetupLog(db.Model):
     content = db.Column(db.String(255), default='')
     company = db.Column(db.String(100), default='위드텍')
     memo = db.Column(db.Text, default='')
+    special_note = db.Column(db.Text, default='')
     md = db.Column(db.String(50), default='0')
     parts = db.Column(db.Text, default='')
 
@@ -591,6 +603,8 @@ class ChatHistory(db.Model):
     message = db.Column(db.Text, nullable=False)
     date_str = db.Column(db.String(20), nullable=False, index=True) # YYYY-MM-DD
     created_at = db.Column(db.DateTime, default=get_utc_now, index=True)
+    session_id = db.Column(db.String(100), default="", index=True) # 세션/대화별 식별자
+    title = db.Column(db.String(255), default="") # 대화 주제(첫 질문 요약)
 
     def to_dict(self):
         return {
@@ -599,6 +613,8 @@ class ChatHistory(db.Model):
             'sender': self.sender,
             'text': self.message,
             'date': self.date_str,
+            'session_id': self.session_id or '',
+            'title': self.title or '',
             'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S') if self.created_at else ''
         }
 
@@ -646,6 +662,17 @@ def ensure_equipment_report_table():
 def ensure_chat_history_table():
     try:
         db.create_all()
+        # [추가] 세션 및 대화 제목 컬럼 자동 마이그레이션
+        cols = [
+            ('session_id', 'VARCHAR(100) DEFAULT ""'),
+            ('title', 'VARCHAR(255) DEFAULT ""')
+        ]
+        for col, typ in cols:
+            try:
+                db.session.execute(text(f'ALTER TABLE chat_history ADD COLUMN {col} {typ}'))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
     except Exception as e:
         app.logger.error(f"Error ensuring chat_history table: {e}")
 
@@ -1094,6 +1121,7 @@ def load_data():
                     "content": sl.content or '',
                     "company": sl.company or '위드텍',
                     "memo": sl.memo or '',
+                    "specialNote": getattr(sl, 'special_note', '') or '',
                     "md": sl.md or '0',
                     "parts": sl.parts or ''
                 } for sl in sl_list]
@@ -3369,19 +3397,32 @@ def ai_chatbot():
         demasked_reply = security_manager.demask_data(api_reply, mapping_table)
 
         # 6. DB에 챗봇 대화 기록 영구 저장 (사용자 질문 + AI 응답)
+        session_id = data.get('session_id', '').strip()
+        if not session_id:
+            session_id = f"sess_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+        title = data.get('title', '').strip()
+        if not title:
+            first_line = user_message.strip().split('\n')[0].strip()
+            title = first_line[:40] if first_line else "대화 내용"
+
         try:
             today_str = datetime.now().strftime('%Y-%m-%d')
             user_chat = ChatHistory(
                 user_id=user.id,
                 sender='user',
                 message=user_message,
-                date_str=today_str
+                date_str=today_str,
+                session_id=session_id,
+                title=title
             )
             ai_chat = ChatHistory(
                 user_id=user.id,
                 sender='ai',
                 message=demasked_reply,
-                date_str=today_str
+                date_str=today_str,
+                session_id=session_id,
+                title=title
             )
             db.session.add(user_chat)
             db.session.add(ai_chat)
@@ -3392,7 +3433,9 @@ def ai_chatbot():
 
         return jsonify({
             "status": "success",
-            "reply": demasked_reply
+            "reply": demasked_reply,
+            "session_id": session_id,
+            "title": title
         })
 
     except Exception as e:
@@ -3400,7 +3443,7 @@ def ai_chatbot():
         app.logger.error(f"Unexpected error in ai_chatbot endpoint: {str(e)}")
         return jsonify({"status": "fail", "message": "요청을 처리하는 중 서버 오류가 발생했습니다. 관리자에게 문의하세요."}), 500
 
-# [추가] 챗봇 대화 기록 조회 API (DB 기반 복원 및 날짜별 조회)
+# [추가] 챗봇 대화 기록 조회 API (실제 대화 내용 있는 것만 세션/제목별 반환)
 @app.route('/api/chat/history', methods=['GET'])
 @login_required
 def get_chat_history():
@@ -3408,9 +3451,24 @@ def get_chat_history():
         return jsonify({"status": "fail", "message": "권한이 없습니다."}), 403
 
     user_id = session.get('user_id')
-    date_str = request.args.get('date', '').strip() # 특정 날짜 지정 (없으면 전체 날짜 목록 및 오늘 대화 반환)
+    session_id = request.args.get('session_id', '').strip()
+    date_str = request.args.get('date', '').strip()
 
     try:
+        # 1. 특정 세션 상세 조회
+        if session_id:
+            if session_id.startswith('date_'):
+                legacy_date = session_id.replace('date_', '')
+                records = ChatHistory.query.filter_by(user_id=user_id, date_str=legacy_date).order_by(ChatHistory.id.asc()).all()
+            else:
+                records = ChatHistory.query.filter_by(user_id=user_id, session_id=session_id).order_by(ChatHistory.id.asc()).all()
+            return jsonify({
+                "status": "success",
+                "session_id": session_id,
+                "messages": [r.to_dict() for r in records]
+            })
+
+        # 2. 특정 날짜 조회 (기존 호환)
         if date_str:
             records = ChatHistory.query.filter_by(user_id=user_id, date_str=date_str).order_by(ChatHistory.id.asc()).all()
             return jsonify({
@@ -3419,24 +3477,61 @@ def get_chat_history():
                 "messages": [r.to_dict() for r in records]
             })
 
-        # 날짜별 그룹 및 최근 대화 목록 반환
-        dates = db.session.query(ChatHistory.date_str).filter_by(user_id=user_id).distinct().order_by(ChatHistory.date_str.desc()).all()
-        date_list = [d[0] for d in dates if d[0]]
+        # 3. 전체 대화 목록 조회 (실제 대화 내용이 존재하는 세션만 추출하여 제목과 함께 반환)
+        all_records = ChatHistory.query.filter_by(user_id=user_id).order_by(ChatHistory.id.asc()).all()
+        sessions_map = {}
 
-        # 오늘 날짜의 최신 대화 목록 (새로고침 시 세션 복원용)
+        for r in all_records:
+            s_id = r.session_id if r.session_id else f"date_{r.date_str}"
+            if s_id not in sessions_map:
+                sessions_map[s_id] = {
+                    'session_id': s_id,
+                    'title': r.title or '',
+                    'date': r.date_str,
+                    'created_at': r.created_at.strftime('%Y-%m-%d %H:%M') if r.created_at else r.date_str,
+                    'message_count': 0,
+                    'first_user_msg': '',
+                    'last_time': r.created_at
+                }
+            s_info = sessions_map[s_id]
+            s_info['message_count'] += 1
+            if r.created_at:
+                s_info['last_time'] = r.created_at
+            if r.sender == 'user' and not s_info['first_user_msg']:
+                first_line = r.message.strip().split('\n')[0].strip()
+                s_info['first_user_msg'] = first_line[:40] if first_line else "대화 내용"
+
+        # 대화 내용이 1건 이상 존재하는 세션만 리스트로 구성
+        session_list = []
+        for s_id, s_info in sessions_map.items():
+            if s_info['message_count'] == 0:
+                continue
+            title = s_info['title'] or s_info['first_user_msg'] or f"{s_info['date']} 대화"
+            session_list.append({
+                'session_id': s_id,
+                'title': title,
+                'date': s_info['date'],
+                'created_at': s_info['created_at'],
+                'message_count': s_info['message_count']
+            })
+
+        # 최신순 정렬 (created_at 내림차순)
+        session_list.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+
+        # 오늘 날짜 최신 대화 목록 (새로고침 시 세션 복원용)
         today_str = datetime.now().strftime('%Y-%m-%d')
         today_records = ChatHistory.query.filter_by(user_id=user_id, date_str=today_str).order_by(ChatHistory.id.asc()).all()
 
         return jsonify({
             "status": "success",
-            "dates": date_list,
+            "sessions": session_list,
             "today_messages": [r.to_dict() for r in today_records]
         })
     except Exception as e:
         app.logger.error(f"Error fetching chat history: {e}")
         return jsonify({"status": "fail", "message": "대화 기록을 불러오지 못했습니다."}), 500
 
-# [추가] 챗봇 대화 기록 삭제 API (특정 날짜 또는 전체 삭제)
+# [추가] 챗봇 대화 기록 삭제 API (세션별, 날짜별, 또는 전체 삭제)
 @app.route('/api/chat/history/delete', methods=['POST'])
 @login_required
 def delete_chat_history():
@@ -3445,6 +3540,7 @@ def delete_chat_history():
 
     user_id = session.get('user_id')
     data = request.json or {}
+    session_id = data.get('session_id', '').strip()
     date_str = data.get('date', '').strip()
     clear_all = data.get('all', False)
 
@@ -3453,12 +3549,20 @@ def delete_chat_history():
             ChatHistory.query.filter_by(user_id=user_id).delete()
             db.session.commit()
             return jsonify({"status": "success", "message": "모든 대화 기록이 삭제되었습니다."})
+        elif session_id:
+            if session_id.startswith('date_'):
+                legacy_date = session_id.replace('date_', '')
+                ChatHistory.query.filter_by(user_id=user_id, date_str=legacy_date).delete()
+            else:
+                ChatHistory.query.filter_by(user_id=user_id, session_id=session_id).delete()
+            db.session.commit()
+            return jsonify({"status": "success", "message": "해당 대화 기록이 삭제되었습니다."})
         elif date_str:
             ChatHistory.query.filter_by(user_id=user_id, date_str=date_str).delete()
             db.session.commit()
             return jsonify({"status": "success", "message": f"{date_str} 대화 기록이 삭제되었습니다."})
         else:
-            return jsonify({"status": "fail", "message": "삭제할 날짜가 지정되지 않았습니다."}), 400
+            return jsonify({"status": "fail", "message": "삭제할 대화가 지정되지 않았습니다."}), 400
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Error deleting chat history: {e}")
@@ -4705,20 +4809,6 @@ def resolve_master_equip_id(equip_id):
         for cand in all_equips:
             c_site = normalize_key(cand.site_name)
             if c_site and (c_site == site_tok_norm or c_site in site_tok_norm or site_tok_norm in c_site):
-                # [유령데이터 방지] 작업 완료 시 maint_log(LogItem)에서 동일 장비 내 동일 물품의 중복/미정형 잔재 레코드(status='작업예정' 및 id != item.id) 자동 제거
-                try:
-                    clean_kw = re.sub(r'\[.*?\]', '', pure_p).strip()
-                    if equip_id:
-                        LogItem.query.filter(
-                            LogItem.equip_id == equip_id,
-                            LogItem.id != item.id,
-                            LogItem.status == '작업예정',
-                            ((LogItem.content == pure_p) | (LogItem.content == code_val) |
-                             (LogItem.content.like(f"%{pure_p}%")) | (LogItem.content.like(f"%{code_val}%")) |
-                             (LogItem.content.like(f"%{clean_kw}%")))
-                        ).delete(synchronize_session=False)
-                except Exception:
-                    pass
                 c_serial = normalize_key(cand.serial)
                 c_cust = normalize_key(cand.cust_equip_name) if cand.cust_equip_name else ""
                 for tok in valid_toks:
@@ -5455,6 +5545,7 @@ def sync_setup_equip():
                     category=sl.get('category', ''), subcategory=sl.get('subcategory', ''),
                     worker=sl.get('worker', ''),
                     content=sl.get('content', ''), company=sl.get('company', '위드텍'), memo=sl.get('memo', ''),
+                    special_note=sl.get('specialNote', '') or sl.get('special_note', '') or '',
                     md=str(sl.get('md', '0')), parts=sl.get('parts', '')
                 ))
         db.session.commit()

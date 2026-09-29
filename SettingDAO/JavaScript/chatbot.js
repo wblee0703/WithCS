@@ -54,6 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (data.status === 'success' && Array.isArray(data.today_messages) && data.today_messages.length > 0) {
                         history = data.today_messages.map(m => ({ sender: m.sender, text: m.text }));
                         sessionStorage.setItem('chatbot_history', JSON.stringify(history));
+                        if (data.today_messages[0].session_id) {
+                            sessionStorage.setItem('chatbot_current_session_id', data.today_messages[0].session_id);
+                        }
                     }
                 }
             } catch (err) {
@@ -226,6 +229,37 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem('chatbot_window_active', 'false');
     });
 
+    // 세션 ID 생성 및 반환 유틸리티
+    function getCurrentSessionId() {
+        let sid = sessionStorage.getItem('chatbot_current_session_id');
+        if (!sid) {
+            sid = 'sess_' + Date.now();
+            sessionStorage.setItem('chatbot_current_session_id', sid);
+        }
+        return sid;
+    }
+
+    // [추가] ➕ 새 대화 시작 기능
+    const chatbotNewBtn = document.getElementById('chatbot-new-btn');
+    if (chatbotNewBtn) {
+        chatbotNewBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            startNewChat();
+        });
+    }
+
+    function startNewChat() {
+        chatbotMessages.innerHTML = '';
+        insertDefaultWelcome();
+        sessionStorage.removeItem('chatbot_history');
+        const newSid = 'sess_' + Date.now();
+        sessionStorage.setItem('chatbot_current_session_id', newSid);
+        if (chatbotInputField) {
+            chatbotInputField.value = '';
+            chatbotInputField.focus();
+        }
+    }
+
     // 챗봇 대화 기록 모달 제어
     const chatbotHistoryBtn = document.getElementById('chatbot-history-btn');
     const chatbotHistoryModal = document.getElementById('chatbot-history-modal');
@@ -252,12 +286,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     const keysToRemove = [];
                     for (let i = 0; i < localStorage.length; i++) {
                         const key = localStorage.key(i);
-                        if (key.startsWith('chatbot_saved_history_')) {
+                        if (key.startsWith('chatbot_saved_history_') || key.startsWith('chatbot_session_')) {
                             keysToRemove.push(key);
                         }
                     }
                     keysToRemove.forEach(k => localStorage.removeItem(k));
                     sessionStorage.removeItem('chatbot_history');
+                    sessionStorage.removeItem('chatbot_current_session_id');
+                    chatbotMessages.innerHTML = '';
+                    insertDefaultWelcome();
                     renderChatbotHistoryModal();
                 } else {
                     alert('대화 기록 삭제에 실패했습니다.');
@@ -317,76 +354,73 @@ document.addEventListener('DOMContentLoaded', () => {
         const dateListEl = document.getElementById('chatbot-history-date-list');
         const contentEl = document.getElementById('chatbot-history-content');
         const selectedDateEl = document.getElementById('chatbot-history-selected-date');
+        const totalCountEl = document.getElementById('chatbot-history-total-count');
+        const resumeBtn = document.getElementById('btn-resume-selected-chat');
         if (!dateListEl || !contentEl) return;
 
         makeDragScrollable(dateListEl);
         makeDragScrollable(contentEl);
 
+        if (resumeBtn) resumeBtn.style.display = 'none';
         dateListEl.innerHTML = '<li style="color:#8b949e; font-size:12px; padding:10px; text-align:center;">목록 조회 중...</li>';
         contentEl.innerHTML = '<div style="color:#8b949e; text-align:center; padding: 40px;">대화 기록을 불러오는 중입니다...</div>';
 
-        let savedKeys = [];
+        let sessions = [];
 
-        // 1. 서버 DB에서 저장된 대화 날짜 목록 조회
+        // 1. 서버 DB에서 저장된 대화 세션 목록 조회
         try {
             const res = await fetch('/api/chat/history');
             if (res.ok) {
                 const data = await res.json();
-                if (data.status === 'success' && Array.isArray(data.dates)) {
-                    savedKeys = [...data.dates];
+                if (data.status === 'success' && Array.isArray(data.sessions)) {
+                    sessions = data.sessions;
                 }
             }
         } catch (err) {
-            console.warn('Failed to load history dates from DB, fallback to localStorage:', err);
+            console.warn('Failed to load history sessions from DB:', err);
         }
 
-        // 2. localStorage 보조 병합
-        for (let i = 0; i < localStorage.length; i++) {
-            const key = localStorage.key(i);
-            if (key.startsWith('chatbot_saved_history_')) {
-                const k = key.replace('chatbot_saved_history_', '');
-                if (!savedKeys.includes(k)) savedKeys.push(k);
-            }
-        }
-
-        const todayKey = getTodayKey();
-        if (!savedKeys.includes(todayKey)) {
-            const todayHistory = sessionStorage.getItem('chatbot_history');
-            if (todayHistory) {
-                savedKeys.push(todayKey);
-            }
-        }
-
-        savedKeys.sort((a, b) => b.localeCompare(a));
+        // 실제 대화 내용이 있는 것만 엄격히 필터링 (메시지 수 0건이거나 내용 없는 것 제외)
+        sessions = sessions.filter(s => s && s.message_count > 0 && s.title);
 
         dateListEl.innerHTML = '';
         contentEl.innerHTML = '';
 
-        if (savedKeys.length === 0) {
-            dateListEl.innerHTML = '<li style="color:#8b949e; font-size:12px; padding:10px; text-align:center;">기록 없음</li>';
-            contentEl.innerHTML = '<div style="color:#8b949e; text-align:center; padding: 40px;">저장된 대화 기록이 없습니다.</div>';
-            if (selectedDateEl) selectedDateEl.textContent = '선택된 날짜 대화';
+        if (totalCountEl) {
+            totalCountEl.textContent = sessions.length > 0 ? `총 ${sessions.length}건` : '';
+        }
+
+        if (sessions.length === 0) {
+            dateListEl.innerHTML = '<li style="color:#8b949e; font-size:12px; padding:15px 10px; text-align:center;">저장된 대화가 없습니다.</li>';
+            contentEl.innerHTML = '<div style="color:#8b949e; text-align:center; padding: 40px;">실제 대화 내용이 존재하는 기록만 이곳에 저장 관리됩니다.</div>';
+            if (selectedDateEl) selectedDateEl.textContent = '선택된 대화 내역';
             return;
         }
 
-        savedKeys.forEach(dateStr => {
+        sessions.forEach((sessionItem) => {
             const li = document.createElement('li');
-            li.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 4px; cursor: pointer; color: #c9d1d9; background: #161b22; border: 1px solid #30363d; font-size: 12px; transition: all 0.2s;';
+            li.className = 'chatbot-history-session-item';
+            li.style.cssText = 'display: flex; flex-direction: column; padding: 9px 10px; border-radius: 6px; cursor: pointer; color: #c9d1d9; background: #161b22; border: 1px solid #30363d; font-size: 12px; gap: 5px;';
+
+            // 상단: 대화 제목 + 개별 삭제 버튼
+            const topRow = document.createElement('div');
+            topRow.style.cssText = 'display: flex; align-items: center; justify-content: space-between; gap: 6px;';
 
             const titleSpan = document.createElement('span');
-            titleSpan.style.cssText = 'overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; margin-right: 6px;';
-            titleSpan.textContent = dateStr === todayKey ? `${dateStr} (오늘)` : dateStr;
+            titleSpan.style.cssText = 'overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; font-weight: 600; color: #e6edf3; font-size: 12px;';
+            titleSpan.textContent = sessionItem.title || '대화 내용';
+            titleSpan.title = sessionItem.title || '';
 
             const deleteBtn = document.createElement('button');
             deleteBtn.innerHTML = '🗑️';
-            deleteBtn.title = '이 날짜 기록 삭제';
-            deleteBtn.style.cssText = 'background: transparent; border: none; cursor: pointer; font-size: 12px; opacity: 0.7; padding: 2px; border-radius: 3px; transition: opacity 0.2s;';
+            deleteBtn.title = '이 대화 삭제';
+            deleteBtn.style.cssText = 'background: transparent; border: none; cursor: pointer; font-size: 11px; opacity: 0.6; padding: 2px; border-radius: 3px; transition: opacity 0.2s;';
             deleteBtn.onmouseenter = () => deleteBtn.style.opacity = '1';
-            deleteBtn.onmouseleave = () => deleteBtn.style.opacity = '0.7';
+            deleteBtn.onmouseleave = () => deleteBtn.style.opacity = '0.6';
 
             deleteBtn.onclick = async (e) => {
                 e.stopPropagation();
-                if (confirm(`${dateStr} 대화 기록을 삭제하시겠습니까?`)) {
+                if (confirm(`'${sessionItem.title}' 대화 기록을 삭제하시겠습니까?`)) {
                     try {
                         const csrfToken = getCookie('csrf_token');
                         await fetch('/api/chat/history/delete', {
@@ -395,38 +429,52 @@ document.addEventListener('DOMContentLoaded', () => {
                                 'Content-Type': 'application/json',
                                 'X-CSRFToken': csrfToken
                             },
-                            body: JSON.stringify({ date: dateStr })
+                            body: JSON.stringify({ session_id: sessionItem.session_id })
                         });
                     } catch (delErr) {
                         console.error('Failed to delete history on server:', delErr);
                     }
-                    localStorage.removeItem(`chatbot_saved_history_${dateStr}`);
-                    if (dateStr === todayKey) {
+                    if (sessionStorage.getItem('chatbot_current_session_id') === sessionItem.session_id) {
                         sessionStorage.removeItem('chatbot_history');
                     }
                     renderChatbotHistoryModal();
                 }
             };
 
-            li.appendChild(titleSpan);
-            li.appendChild(deleteBtn);
+            topRow.appendChild(titleSpan);
+            topRow.appendChild(deleteBtn);
 
+            // 하단: 일시 (시간 포함) + 메시지 건수 배지
+            const bottomRow = document.createElement('div');
+            bottomRow.style.cssText = 'display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #8b949e;';
+
+            const timeSpan = document.createElement('span');
+            timeSpan.textContent = sessionItem.created_at || sessionItem.date;
+
+            const countBadge = document.createElement('span');
+            countBadge.style.cssText = 'background: #21262d; padding: 1px 5px; border-radius: 3px; color: #58a6ff; font-weight: 500; font-size: 10px;';
+            countBadge.textContent = `💬 ${sessionItem.message_count}건`;
+
+            bottomRow.appendChild(timeSpan);
+            bottomRow.appendChild(countBadge);
+
+            li.appendChild(topRow);
+            li.appendChild(bottomRow);
+
+            // 클릭 시 해당 대화 세션 로드
             li.onclick = async () => {
-                dateListEl.querySelectorAll('li').forEach(el => {
-                    el.style.borderColor = '#30363d';
-                    el.style.background = '#161b22';
-                });
-                li.style.borderColor = '#238636';
-                li.style.background = '#21262d';
+                dateListEl.querySelectorAll('li').forEach(el => el.classList.remove('selected'));
+                li.classList.add('selected');
 
-                if (selectedDateEl) selectedDateEl.textContent = `${dateStr} 대화 내역`;
+                if (selectedDateEl) {
+                    selectedDateEl.textContent = `💬 ${sessionItem.title}`;
+                    selectedDateEl.title = sessionItem.title;
+                }
                 contentEl.innerHTML = '<div style="color:#8b949e; text-align:center; padding: 30px;">대화 내용을 불러오는 중...</div>';
 
                 let messages = null;
-
-                // 1. 서버 DB에서 해당 날짜 대화 기록 조회
                 try {
-                    const res = await fetch(`/api/chat/history?date=${encodeURIComponent(dateStr)}`);
+                    const res = await fetch(`/api/chat/history?session_id=${encodeURIComponent(sessionItem.session_id)}`);
                     if (res.ok) {
                         const data = await res.json();
                         if (data.status === 'success' && Array.isArray(data.messages) && data.messages.length > 0) {
@@ -434,29 +482,30 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                 } catch (err) {
-                    console.warn('Failed to load date messages from DB:', err);
-                }
-
-                // 2. 로컬스토리지 fallback
-                if (!messages) {
-                    const storedData = localStorage.getItem(`chatbot_saved_history_${dateStr}`) || (dateStr === todayKey ? sessionStorage.getItem('chatbot_history') : null);
-                    if (storedData) {
-                        try {
-                            messages = JSON.parse(storedData);
-                        } catch (e) {
-                            messages = null;
-                        }
-                    }
+                    console.warn('Failed to load session messages from DB:', err);
                 }
 
                 if (!messages || messages.length === 0) {
-                    contentEl.innerHTML = '<div style="color:#8b949e; text-align:center; padding: 30px;">해당 날짜의 대화 내용이 존재하지 않습니다.</div>';
+                    contentEl.innerHTML = '<div style="color:#8b949e; text-align:center; padding: 30px;">대화 내용이 존재하지 않습니다.</div>';
+                    if (resumeBtn) resumeBtn.style.display = 'none';
                     return;
+                }
+
+                // 이어서 대화하기 버튼 활성화
+                if (resumeBtn) {
+                    resumeBtn.style.display = 'inline-block';
+                    resumeBtn.onclick = () => {
+                        sessionStorage.setItem('chatbot_current_session_id', sessionItem.session_id);
+                        sessionStorage.setItem('chatbot_history', JSON.stringify(messages.map(m => ({ sender: m.sender, text: m.text }))));
+                        restoreChatbotSession();
+                        window.closeChatbotHistoryModal();
+                        if (chatbotInputField) chatbotInputField.focus();
+                    };
                 }
 
                 try {
                     contentEl.innerHTML = '';
-                    messages.forEach((m, mIdx) => {
+                    messages.forEach((m) => {
                         const itemDiv = document.createElement('div');
                         itemDiv.style.cssText = 'margin-bottom: 14px; border-bottom: 1px solid #21262d; padding-bottom: 10px; position: relative;';
 
@@ -618,10 +667,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             history.push({ sender, text });
             sessionStorage.setItem('chatbot_history', JSON.stringify(history));
-
-            // 날짜별 대화 내역 저장
-            const todayKey = getTodayKey();
-            localStorage.setItem(`chatbot_saved_history_${todayKey}`, JSON.stringify(history));
         }
     }
 
@@ -703,19 +748,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const csrfToken = getCookie('csrf_token');
+            const sid = getCurrentSessionId();
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': csrfToken
                 },
-                body: JSON.stringify({ message: question })
+                body: JSON.stringify({ message: question, session_id: sid })
             });
 
             const data = await response.json();
             hideLoading();
 
             if (response.ok && data.status === 'success') {
+                if (data.session_id) {
+                    sessionStorage.setItem('chatbot_current_session_id', data.session_id);
+                }
                 appendMessage('ai', data.reply);
             } else {
                 appendMessage('ai', data.message || '오류가 발생하여 답변을 받을 수 없습니다. 잠시 후 다시 시도해주세요.');

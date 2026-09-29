@@ -352,8 +352,8 @@
     top: 100%;
     left: 0;
     width: 100%;
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: #161b22 !important;
+    border: 1px solid #30363d !important;
     border-radius: 4px;
     z-index: 1000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -367,6 +367,7 @@
     max-height: 200px;
     overflow-y: auto;
     padding: 5px;
+    background: #161b22;
 }
 
 .log-select-item {
@@ -376,15 +377,24 @@
     cursor: pointer;
     border-radius: 4px;
     margin-bottom: 2px;
+    color: #e6edf3 !important;
 }
 
 .log-select-item:hover {
-    background: #21262d;
+    background: #21262d !important;
+    color: #ffffff !important;
 }
 
 .log-select-item.selected {
-    background: #1f6feb;
-    color: #fff;
+    background: #1f6feb !important;
+    color: #fff !important;
+}
+
+select.modal-select option,
+.modal-select option {
+    background-color: #161b22 !important;
+    background: #161b22 !important;
+    color: #e6edf3 !important;
 }
 
 .log-select-item span {

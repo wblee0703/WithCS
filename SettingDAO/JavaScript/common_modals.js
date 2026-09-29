@@ -3589,6 +3589,27 @@ function setupRegisterScheduleModal() {
         const partList = document.getElementById('register-part-list');
         if (partList) partList.querySelectorAll('.log-select-item.selected').forEach(el => el.classList.remove('selected'));
 
+        // [추가] 구분 및 세부구분 상태 초기화
+        const typeSelect = document.getElementById('register-type-select');
+        const detailTypeSelect = document.getElementById('register-detail-type-select');
+        const detailType2Select = document.getElementById('register-detail-type2-select');
+        const detailType3Select = document.getElementById('register-detail-type3-select');
+        if (typeSelect) typeSelect.value = '';
+        if (detailTypeSelect) {
+            detailTypeSelect.innerHTML = '<option value="">구분 먼저 선택</option>';
+            detailTypeSelect.disabled = true;
+        }
+        if (detailType2Select) {
+            detailType2Select.style.display = 'none';
+            detailType2Select.value = '';
+            detailType2Select.disabled = true;
+        }
+        if (detailType3Select) {
+            detailType3Select.style.display = 'none';
+            detailType3Select.value = '';
+            detailType3Select.disabled = true;
+        }
+
         if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
     };
 
@@ -3645,9 +3666,11 @@ function setupRegisterScheduleModal() {
     }
 
     if (typeSelect) {
-        typeSelect.onchange = () => {
+        const handleTypeChange = () => {
             if (typeof updateRegisterDetailTypeOptions === 'function') updateRegisterDetailTypeOptions();
         };
+        typeSelect.onchange = handleTypeChange;
+        typeSelect.addEventListener('change', handleTypeChange);
     }
 
     if (detailTypeSelect) {
@@ -4064,7 +4087,8 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
         }
     }
 
-    if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
+    const initialType = (presetData && presetData.type) ? presetData.type : '';
+    if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions(initialType);
 
     // [추가] presetData가 있으면 폼 필드 미리 채우기
     if (presetData) {
@@ -4410,11 +4434,11 @@ function updateRegisterEquipSelect(site) {
 }
 
 /* --- 2.4 작업 등록 동적 드롭다운 헬퍼 (Dynamic Dropdowns) --- */
-window.updateRegisterTypeOptions = function () {
+window.updateRegisterTypeOptions = function (forcedType = null) {
     const rTypeSelect = document.getElementById('register-type-select');
     if (!rTypeSelect) return;
     const categories = ['정기', '비정기', '고객대응', '용액제조', '온라인점검'];
-    const currentVal = rTypeSelect.value;
+    const currentVal = (forcedType !== null) ? forcedType : rTypeSelect.value;
 
     rTypeSelect.innerHTML = '<option value="">선택</option>';
     categories.forEach(cat => {
@@ -4423,7 +4447,11 @@ window.updateRegisterTypeOptions = function () {
         opt.textContent = cat;
         rTypeSelect.appendChild(opt);
     });
-    if (currentVal && categories.includes(currentVal)) rTypeSelect.value = currentVal;
+    if (currentVal && categories.includes(currentVal)) {
+        rTypeSelect.value = currentVal;
+    } else {
+        rTypeSelect.value = '';
+    }
     updateRegisterDetailTypeOptions();
 };
 
@@ -4433,24 +4461,26 @@ window.updateRegisterDetailTypeOptions = function () {
     const rDetailTypeSelect = document.getElementById('register-detail-type-select');
     const rDetailType2Select = document.getElementById('register-detail-type2-select');
     const rDetailType2Row = document.getElementById('register-detail-type2-row');
-
     const rDetailType3Select = document.getElementById('register-detail-type3-select');
 
     if (!rTypeSelect || !rDetailTypeSelect) return;
     const type = rTypeSelect.value;
     rDetailTypeSelect.innerHTML = '';
 
+    // 구분선택 전: 세부구분 드롭다운 1개만 나오게 하고, 세부구분 2/3 숨김
     if (!type) {
         rDetailTypeSelect.innerHTML = '<option value="">구분 먼저 선택</option>';
         rDetailTypeSelect.disabled = true;
         if (rDetailType2Select) {
-            rDetailType2Select.style.display = 'none';
+            rDetailType2Select.style.setProperty('display', 'none', 'important');
             rDetailType2Select.value = '';
-            if (rDetailType2Row) rDetailType2Row.style.display = 'none';
+            rDetailType2Select.disabled = true;
+            if (rDetailType2Row) rDetailType2Row.style.setProperty('display', 'none', 'important');
         }
         if (rDetailType3Select) {
-            rDetailType3Select.style.display = 'none';
+            rDetailType3Select.style.setProperty('display', 'none', 'important');
             rDetailType3Select.value = '';
+            rDetailType3Select.disabled = true;
         }
         updateRegisterContentOptions();
         return;
@@ -4458,19 +4488,28 @@ window.updateRegisterDetailTypeOptions = function () {
 
     rDetailTypeSelect.disabled = false;
 
-    if (rDetailType2Select) {
-        if (type === '비정기') {
-            rDetailType2Select.style.display = 'inline-block';
-            if (rDetailType3Select) rDetailType3Select.style.display = 'inline-block';
-            if (rDetailType2Row) rDetailType2Row.style.display = 'none';
-        } else {
-            rDetailType2Select.style.display = 'none';
+    // 비정기로 선택했을 때만 세부구분 2, 세부구분 3 표시 (정기 등 다른 점검 구분일 때는 세부구분 1개만 유지)
+    if (type === '비정기') {
+        if (rDetailType2Select) {
+            rDetailType2Select.style.setProperty('display', 'inline-block', 'important');
+            rDetailType2Select.disabled = false;
+            if (rDetailType2Row) rDetailType2Row.style.setProperty('display', 'none', 'important');
+        }
+        if (rDetailType3Select) {
+            rDetailType3Select.style.setProperty('display', 'inline-block', 'important');
+            rDetailType3Select.disabled = false;
+        }
+    } else {
+        if (rDetailType2Select) {
+            rDetailType2Select.style.setProperty('display', 'none', 'important');
             rDetailType2Select.value = '';
-            if (rDetailType2Row) rDetailType2Row.style.display = 'none';
-            if (rDetailType3Select) {
-                rDetailType3Select.style.display = 'none';
-                rDetailType3Select.value = '';
-            }
+            rDetailType2Select.disabled = true;
+            if (rDetailType2Row) rDetailType2Row.style.setProperty('display', 'none', 'important');
+        }
+        if (rDetailType3Select) {
+            rDetailType3Select.style.setProperty('display', 'none', 'important');
+            rDetailType3Select.value = '';
+            rDetailType3Select.disabled = true;
         }
     }
 
@@ -4497,11 +4536,16 @@ window.updateRegisterDetailTypeOptions = function () {
             rDetailTypeSelect.appendChild(opt);
         });
     }
-    rDetailTypeSelect.onchange = updateRegisterDetailType2Options;
-    if (rDetailType2Select) rDetailType2Select.onchange = updateRegisterDetailType3Options;
-    if (rDetailType3Select) rDetailType3Select.onchange = updateRegisterContentOptions;
 
-    updateRegisterContentOptions();
+    if (type === '비정기') {
+        rDetailTypeSelect.onchange = updateRegisterDetailType2Options;
+        if (rDetailType2Select) rDetailType2Select.onchange = updateRegisterDetailType3Options;
+        if (rDetailType3Select) rDetailType3Select.onchange = updateRegisterContentOptions;
+        updateRegisterDetailType2Options();
+    } else {
+        rDetailTypeSelect.onchange = updateRegisterContentOptions;
+        updateRegisterContentOptions();
+    }
 };
 
 window.updateRegisterDetailType2Options = function () {
@@ -4509,18 +4553,32 @@ window.updateRegisterDetailType2Options = function () {
     const rTypeSelect = document.getElementById('register-type-select');
     const rDetailTypeSelect = document.getElementById('register-detail-type-select');
     const rDetailType2Select = document.getElementById('register-detail-type2-select');
+    const rDetailType3Select = document.getElementById('register-detail-type3-select');
 
     if (!rTypeSelect || !rDetailTypeSelect || !rDetailType2Select) return;
     const type = rTypeSelect.value;
     const detailType = rDetailTypeSelect.value;
 
-    rDetailType2Select.innerHTML = '<option value="" disabled selected hidden>세부 구분</option>';
-    if (type !== '비정기' || !detailType) {
+    if (type !== '비정기') {
+        rDetailType2Select.style.setProperty('display', 'none', 'important');
+        rDetailType2Select.value = '';
         rDetailType2Select.disabled = true;
+        if (rDetailType3Select) {
+            rDetailType3Select.style.setProperty('display', 'none', 'important');
+            rDetailType3Select.value = '';
+            rDetailType3Select.disabled = true;
+        }
         updateRegisterContentOptions();
         return;
     }
+
+    rDetailType2Select.style.setProperty('display', 'inline-block', 'important');
     rDetailType2Select.disabled = false;
+    rDetailType2Select.innerHTML = '<option value="" disabled selected hidden>세부 구분</option>';
+    if (!detailType) {
+        updateRegisterContentOptions();
+        return;
+    }
     const catData = JSON.parse(localStorage.getItem('check_type_categories2')) || {};
     const defaultSubCategories2 = {
         'Alarm': ['HPLC_알람', 'MFC(Flow)_알람', 'AUTOSOL_알람', '리크센서_알람', 'OVERFLOW_알람', 'ETC_알람', '액추에이터_알람', 'LoadPort_알람', '검출기_알람', 'MCU_알람'],
@@ -4555,15 +4613,17 @@ window.updateRegisterDetailType3Options = function () {
     const detailType = rDetailTypeSelect.value;
     const detailType2 = rDetailType2Select.value;
 
-    rDetailType3Select.innerHTML = '<option value="" disabled selected hidden>세부 구분 3</option>';
     if (type !== '비정기') {
-        rDetailType3Select.style.display = 'none';
+        rDetailType3Select.style.setProperty('display', 'none', 'important');
+        rDetailType3Select.value = '';
         rDetailType3Select.disabled = true;
         updateRegisterContentOptions();
         return;
     }
-    rDetailType3Select.style.display = 'inline-block';
+
+    rDetailType3Select.style.setProperty('display', 'inline-block', 'important');
     rDetailType3Select.disabled = false;
+    rDetailType3Select.innerHTML = '<option value="" disabled selected hidden>세부 구분 3</option>';
     const catData3 = JSON.parse(localStorage.getItem('check_type_categories3')) || {};
     const defaultSubCategories3 = [
         "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
@@ -5422,55 +5482,106 @@ async function confirmRegisterSchedule() {
         if (parseFloat(md) > workerCount) {
             alert(`입력된 공수(${md})가 등록된 작업자 수(${workerCount}명)를 초과할 수 없습니다.`);
             if (mdInput) mdInput.value = workerCount;
+            resetRegisterState();
             return;
         }
 
         let finalDetailType = detailType;
 
-        if (!window.currentAddWorkLogId && equip) {
+        if (!window.currentAddWorkLogId && equip && site && dateStr) {
+            const normDate = (d) => {
+                if (!d) return '';
+                const clean = String(d).trim().split('T')[0].replace(/\./g, '-').replace(/\//g, '-');
+                const parts = clean.split('-');
+                if (parts.length === 3) {
+                    const y = parts[0].padStart(4, '0');
+                    const m = parts[1].padStart(2, '0');
+                    const day = parts[2].padStart(2, '0');
+                    return `${y}-${m}-${day}`;
+                }
+                return clean;
+            };
+
+            const targetDateStr = normDate(dateStr);
+            const currentType = (type && type.trim()) ? type.trim() : '정기';
+
+            const targetKey = `details_${site}_${equip}`;
+            const targetDetailData = JSON.parse(localStorage.getItem(targetKey)) || {};
+            const checkEquipList = [{ site, equip, detailData: targetDetailData }];
+
             const targetParts = equip.split('::');
             const targetName = targetParts[0].trim().toLowerCase();
             const targetSerial = (targetParts.length > 1 ? targetParts[1] : '').trim().toLowerCase();
-            const targetKey = `details_${site}_${equip}`;
-            const targetDetailData = JSON.parse(localStorage.getItem(targetKey)) || {};
             const targetCustName = (targetDetailData.setup && targetDetailData.setup.custEquipName) ? targetDetailData.setup.custEquipName.trim().toLowerCase() : '';
 
-            if (targetSerial || targetCustName) {
-                const deviceDataMap = getDeviceDataMap();
-                let hasDuplicate = false;
+            const deviceDataMap = (typeof getDeviceDataMap === 'function') ? getDeviceDataMap() : {};
+            const equipsList = deviceDataMap[site] || [];
+            for (const eqName of equipsList) {
+                if (eqName === equip) continue;
+                const eqParts = eqName.split('::');
+                const eqNameStr = eqParts[0].trim().toLowerCase();
+                const eqSerial = (eqParts.length > 1 ? eqParts[1] : '').trim().toLowerCase();
+                const eqKey = `details_${site}_${eqName}`;
+                const eqDetailData = JSON.parse(localStorage.getItem(eqKey)) || {};
+                const eqCustName = (eqDetailData.setup && eqDetailData.setup.custEquipName) ? eqDetailData.setup.custEquipName.trim().toLowerCase() : '';
 
-                for (const sName in deviceDataMap) {
-                    const equipsList = deviceDataMap[sName] || [];
-                    for (const eqName of equipsList) {
-                        const eqParts = eqName.split('::');
-                        const eqNameStr = eqParts[0].trim().toLowerCase();
-                        const eqSerial = (eqParts.length > 1 ? eqParts[1] : '').trim().toLowerCase();
-                        const eqKey = `details_${sName}_${eqName}`;
-                        const eqDetailData = JSON.parse(localStorage.getItem(eqKey)) || {};
-                        const eqCustName = (eqDetailData.setup && eqDetailData.setup.custEquipName) ? eqDetailData.setup.custEquipName.trim().toLowerCase() : '';
+                const cleanTargetSerial = targetSerial.replace(/[^a-z0-9]/g, '');
+                const cleanEqSerial = eqSerial.replace(/[^a-z0-9]/g, '');
+                const isSameSerial = cleanTargetSerial && cleanTargetSerial.length > 3 && cleanTargetSerial === cleanEqSerial && targetName === eqNameStr;
+                const isSameCustName = targetCustName && eqCustName && targetCustName === eqCustName && targetName === eqNameStr;
 
-                        const invalidSerials = ['n/a', 'none', '-', '없음', 'null', 'undefined', ''];
-                        const cleanSerial = targetSerial ? targetSerial.replace(/[^a-z0-9]/g, '') : '';
-                        const isValidSerial = cleanSerial && cleanSerial.length > 3 && !invalidSerials.includes(targetSerial);
-                        const isSameSerial = isValidSerial && eqSerial && targetSerial === eqSerial && sName === site && targetName === eqNameStr;
-                        const isSameCustName = targetCustName && eqCustName && targetCustName === eqCustName && sName === site && targetName === eqNameStr;
+                if (isSameSerial || isSameCustName) {
+                    checkEquipList.push({ site, equip: eqName, detailData: eqDetailData });
+                }
+            }
 
-                        if (isSameSerial || isSameCustName) {
-                            const hasMaint = (eqDetailData.maint || []).some(m => m.scheduledDate === dateStr && (m.type || '정기') === type);
-                            const hasLog = (eqDetailData.logs || []).some(l => l.date === dateStr && l.detailType !== '일정변경' && (l.type || '정기') === type);
-                            if (hasMaint || hasLog) {
-                                hasDuplicate = true;
-                                break;
-                            }
-                        }
+            let hasDuplicate = false;
+            for (const item of checkEquipList) {
+                const eqDetailData = item.detailData || {};
+                const maints = eqDetailData.maint || [];
+                const logs = eqDetailData.logs || [];
+
+                // 1) 같은 날짜에 이미 '정기'로 구분된 작업이 있는 경우 (점검 계획 또는 점검 이력)
+                const hasRegularMaint = maints.some(m => {
+                    const mDate = normDate(m.scheduledDate || m.date);
+                    const mType = (m.type && m.type.trim()) ? m.type.trim() : '정기';
+                    return mDate === targetDateStr && mType === '정기';
+                });
+                const hasRegularLog = logs.some(l => {
+                    const lDate = normDate(l.date || l.scheduledDate);
+                    const lType = (l.type && l.type.trim()) ? l.type.trim() : '정기';
+                    return lDate === targetDateStr && l.detailType !== '일정변경' && lType === '정기';
+                });
+
+                if (hasRegularMaint || hasRegularLog) {
+                    hasDuplicate = true;
+                    break;
+                }
+
+                // 2) 등록하려는 구분이 '정기'가 아닌 경우 동일 구분/세부구분의 중복 작업 검사
+                if (currentType !== '정기') {
+                    const hasSameTypeMaint = maints.some(m => {
+                        const mDate = normDate(m.scheduledDate || m.date);
+                        const mType = (m.type && m.type.trim()) ? m.type.trim() : '정기';
+                        return mDate === targetDateStr && mType === currentType && m.detailType === detailType;
+                    });
+                    const hasSameTypeLog = logs.some(l => {
+                        const lDate = normDate(l.date || l.scheduledDate);
+                        const lType = (l.type && l.type.trim()) ? l.type.trim() : '정기';
+                        return lDate === targetDateStr && l.detailType !== '일정변경' && lType === currentType && l.detailType === detailType;
+                    });
+                    if (hasSameTypeMaint || hasSameTypeLog) {
+                        hasDuplicate = true;
+                        break;
                     }
-                    if (hasDuplicate) break;
                 }
+            }
 
-                if (hasDuplicate) {
-                    alert('이미 등록한 작업이 있습니다.');
-                    return;
-                }
+            if (hasDuplicate) {
+                alert('이미 작업 등록되었습니다.');
+                window.openDetailAfterRegister = false;
+                resetRegisterState();
+                return;
             }
         }
 

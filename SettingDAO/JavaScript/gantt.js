@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupGanttResizer();
     setupGanttZoom();
     setupGanttFilterButtons();
+    setupGanttScrollSync();
 
     // 창 크기 변경 시 전체 너비에 맞춰 자동 재계산
     window.addEventListener('resize', () => {
@@ -98,6 +99,75 @@ function setupGanttFilterButtons() {
     }
 }
 
+// [5-1] 좌/우측 스크롤 동기화 및 세로 스크롤 시 가로 스크롤 자동 조절
+let isSyncingTimelineScroll = false;
+let isSyncingTaskListScroll = false;
+let lastGanttScrollTop = 0;
+let currentGanttTaskItems = [];
+let currentDynamicDayWidth = 45;
+
+function handleTimelineVerticalScroll(currentScrollTop) {
+    if (!currentGanttTaskItems || currentGanttTaskItems.length === 0) return;
+    const timelineContainer = document.getElementById('gantt-timeline-container');
+    if (!timelineContainer) return;
+
+    const maxScrollTop = timelineContainer.scrollHeight - timelineContainer.clientHeight;
+    const maxScrollLeft = timelineContainer.scrollWidth - timelineContainer.clientWidth;
+    if (maxScrollLeft <= 0) return;
+
+    // 세로 스크롤 진행률에 따라 현재 활성 태스크 인덱스 계산
+    const progress = maxScrollTop > 0 ? (currentScrollTop / maxScrollTop) : 0;
+    const targetIdx = Math.min(currentGanttTaskItems.length - 1, Math.max(0, Math.round(progress * (currentGanttTaskItems.length - 1))));
+    const targetTask = currentGanttTaskItems[targetIdx];
+    if (!targetTask) return;
+
+    // 해당 태스크 바 위치로 가로 스크롤 이동 (중앙 정렬)
+    const barLeft = (targetTask.startDay - 1) * currentDynamicDayWidth;
+    const barWidth = targetTask.estDays * currentDynamicDayWidth;
+    const barCenter = barLeft + (barWidth / 2);
+    const desiredScrollLeft = barCenter - (timelineContainer.clientWidth / 2);
+    const targetScrollLeft = Math.max(0, Math.min(maxScrollLeft, desiredScrollLeft));
+
+    timelineContainer.scrollLeft = targetScrollLeft;
+}
+
+function setupGanttScrollSync() {
+    const taskList = document.getElementById('gantt-task-list');
+    const timelineContainer = document.getElementById('gantt-timeline-container');
+    if (!taskList || !timelineContainer) return;
+
+    if (taskList.dataset.scrollSyncAttached) return;
+    taskList.dataset.scrollSyncAttached = 'true';
+
+    timelineContainer.addEventListener('scroll', () => {
+        const currentScrollTop = timelineContainer.scrollTop;
+        const isVerticalScroll = Math.abs(currentScrollTop - lastGanttScrollTop) >= 1;
+
+        if (isVerticalScroll) {
+            lastGanttScrollTop = currentScrollTop;
+            if (!isSyncingTimelineScroll) {
+                isSyncingTaskListScroll = true;
+                taskList.scrollTop = currentScrollTop;
+                requestAnimationFrame(() => {
+                    isSyncingTaskListScroll = false;
+                });
+            }
+            // 세로 스크롤 시 리스트 작업 위치에 맞춰 가로 스크롤 자동 조절
+            handleTimelineVerticalScroll(currentScrollTop);
+        }
+    }, { passive: true });
+
+    taskList.addEventListener('scroll', () => {
+        if (!isSyncingTaskListScroll) {
+            isSyncingTimelineScroll = true;
+            timelineContainer.scrollTop = taskList.scrollTop;
+            requestAnimationFrame(() => {
+                isSyncingTimelineScroll = false;
+            });
+        }
+    }, { passive: true });
+}
+
 // [6] 메인 간트 차트 렌더링
 function renderGanttChart() {
     const wrapper = document.getElementById('gantt-wrapper');
@@ -111,6 +181,15 @@ function renderGanttChart() {
 
     const site = currentGanttFilters.site;
     const equip = currentGanttFilters.equip;
+
+    // 스크롤 위치 초기화
+    lastGanttScrollTop = 0;
+    if (taskList) taskList.scrollTop = 0;
+    const timelineContainer = document.getElementById('gantt-timeline-container');
+    if (timelineContainer) {
+        timelineContainer.scrollTop = 0;
+        timelineContainer.scrollLeft = 0;
+    }
 
     // 1. 장비 선택 여부 확인
     if (!site || !equip) {
@@ -222,26 +301,28 @@ function renderGanttChart() {
         return (a.id || 0) - (b.id || 0);
     });
 
-    // 기준 첫 작업일 (가장 빠른 작업일 또는 예정일) 계산
-    let firstDate = null;
-    const validDates = sortedItems.map(item => item.date).filter(Boolean);
-    if (validDates.length > 0) {
-        const [y, m, d] = validDates[0].split('-').map(Number);
-        if (y && m && d) firstDate = new Date(y, m - 1, d);
-    }
+    // 고유 작업 일자 목록 추출 및 오름차순 정렬 (실제 작업이 존재하는 날짜만 순서대로 D1, D2, D3...)
+    const dateSet = new Set();
+    sortedItems.forEach(item => {
+        if (item.date && item.date.trim()) {
+            dateSet.add(item.date.trim());
+        }
+    });
+    const uniqueDates = Array.from(dateSet).sort((a, b) => new Date(a) - new Date(b));
+
+    const dateToDayIndex = {};
+    uniqueDates.forEach((dStr, idx) => {
+        dateToDayIndex[dStr] = idx + 1;
+    });
 
     const taskItems = sortedItems.map((item, idx) => {
         const estDays = 1; // 작업당 무조건 1일 처리
-        let startDay = idx + 1;
+        let startDay = 1;
 
-        if (firstDate && item.date) {
-            const [ty, tm, td] = item.date.split('-').map(Number);
-            if (ty && tm && td) {
-                const taskDate = new Date(ty, tm - 1, td);
-                const diffTime = taskDate.getTime() - firstDate.getTime();
-                const diffDays = Math.max(0, Math.round(diffTime / (1000 * 60 * 60 * 24)));
-                startDay = diffDays + 1;
-            }
+        if (item.date && dateToDayIndex[item.date.trim()]) {
+            startDay = dateToDayIndex[item.date.trim()];
+        } else {
+            startDay = 1;
         }
 
         const endDay = startDay + estDays - 1;
@@ -255,8 +336,7 @@ function renderGanttChart() {
         };
     });
 
-    const maxDayReached = taskItems.reduce((max, t) => Math.max(max, t.endDay), 1);
-    const totalDays = Math.max(7, maxDayReached);
+    const totalDays = Math.max(1, uniqueDates.length);
 
     // 상단 타겟 정보 업데이트
     if (targetInfoEl) {
@@ -317,28 +397,46 @@ function renderGanttChart() {
         });
     }
 
-    // 5. 타임라인 너비 자동 계산 (간트뷰 전체 가용 너비를 100% 꽉 채우도록 계산)
-    const timelineContainer = document.getElementById('gantt-timeline-container');
+    // 5. 타임라인 너비 자동 계산 (간트뷰 전체 가용 너비를 채우되 일자별 최소/가변 너비 유지)
     let dynamicDayWidth = ganttDayWidth;
     if (timelineContainer && timelineContainer.clientWidth > 0 && totalDays > 0) {
-        dynamicDayWidth = Math.max(35, timelineContainer.clientWidth / totalDays);
+        dynamicDayWidth = Math.max(ganttDayWidth, Math.max(45, Math.floor(timelineContainer.clientWidth / totalDays)));
+    } else {
+        dynamicDayWidth = Math.max(ganttDayWidth, 45);
     }
     const totalTimelineWidth = Math.max(timelineContainer ? timelineContainer.clientWidth : 0, totalDays * dynamicDayWidth);
 
+    currentGanttTaskItems = taskItems;
+    currentDynamicDayWidth = dynamicDayWidth;
+
+    const ganttTimeline = document.getElementById('gantt-timeline');
+    if (ganttTimeline) {
+        ganttTimeline.style.width = `${totalTimelineWidth}px`;
+        ganttTimeline.style.minWidth = `${totalTimelineWidth}px`;
+    }
+
     if (headerMonths) {
-        headerMonths.innerHTML = `<div class="gantt__date-cell gantt__date-cell--month" style="width: 100%; text-align:center; font-weight:bold; color:#e6edf3;">셋업 일정 진행 현황 (일수 모드)</div>`;
+        headerMonths.style.width = `${totalTimelineWidth}px`;
+        headerMonths.style.minWidth = `${totalTimelineWidth}px`;
+        headerMonths.innerHTML = `
+            <div class="gantt__date-cell gantt__date-cell--month" style="width: 100%; min-width: 100%; box-sizing: border-box; text-align:center; font-weight:bold; color:#e6edf3; display:flex; align-items:center; justify-content:center;">
+                <span style="position: sticky; left: 0; padding: 0 16px; font-size: 12px; font-weight: 600; color: #e6edf3;">셋업 일정 진행 현황 (일수 모드)</span>
+            </div>
+        `;
     }
 
     if (headerWeeks) {
+        headerWeeks.style.width = `${totalTimelineWidth}px`;
+        headerWeeks.style.minWidth = `${totalTimelineWidth}px`;
         let dayHtml = '';
         for (let d = 1; d <= totalDays; d++) {
             let mmdd = '';
-            let dateTitle = `Day ${d}`;
-            if (firstDate) {
-                const currDate = new Date(firstDate);
-                currDate.setDate(currDate.getDate() + (d - 1));
-                mmdd = `${String(currDate.getMonth() + 1).padStart(2, '0')}/${String(currDate.getDate()).padStart(2, '0')}`;
-                dateTitle = `Day ${d} (${currDate.toISOString().split('T')[0]})`;
+            let dateTitle = `D${d}`;
+            if (d <= uniqueDates.length) {
+                const dateStr = uniqueDates[d - 1];
+                const parts = dateStr.split('-');
+                mmdd = parts.length === 3 ? `${parts[1]}/${parts[2]}` : dateStr;
+                dateTitle = `D${d} (${dateStr})`;
             }
 
             dayHtml += `
@@ -428,6 +526,8 @@ function renderGanttChart() {
             ganttBody.appendChild(rowDiv);
         });
     }
+
+    setupGanttScrollSync();
 }
 
 window.renderGanttChart = renderGanttChart;

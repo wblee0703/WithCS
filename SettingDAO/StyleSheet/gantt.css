@@ -30,7 +30,6 @@
 /* 간트 차트 영역 및 레이아웃 */
 .gantt {
     width: 100%;
-    flex: 1;
     overflow: hidden;
     position: relative;
     display: flex;
@@ -43,8 +42,9 @@
 
 .gantt__wrapper {
     display: flex;
-    flex: 1;
-    min-height: 0;
+    height: 446px;
+    max-height: 446px;
+    min-height: 446px;
     overflow: hidden;
     border: 1px solid var(--gantt-border);
     border-radius: 6px;
@@ -54,9 +54,27 @@
 /* 사이드바 (Task List) */
 .gantt__sidebar {
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
     background: var(--gantt-bg-card);
     border-right: 1px solid var(--gantt-border);
     z-index: 2;
+}
+
+#gantt-task-list {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 16px;
+    box-sizing: border-box;
+}
+
+#gantt-task-list::-webkit-scrollbar {
+    display: none;
 }
 
 .gantt__sidebar--initial { width: 200px; }
@@ -194,6 +212,11 @@
     background: var(--gantt-bg-dark);
 }
 
+.gantt__timeline {
+    width: max-content;
+    min-width: 100%;
+}
+
 #gantt-body {
     position: relative; /* For absolute positioned grid lines */
 }
@@ -203,6 +226,9 @@
     height: 40px;
     background: var(--gantt-bg-element);
     border-bottom: 1px solid var(--gantt-border);
+    box-sizing: border-box;
+    width: max-content;
+    min-width: 100%;
 }
 
 .gantt__header-row--fixed { height: 30px; }
@@ -213,6 +239,9 @@
     top: 0;
     z-index: 20;
     font-size: 16px;
+    background: var(--gantt-bg-element);
+    width: max-content;
+    min-width: 100%;
 }
 
 #gantt-header-weeks {
@@ -220,6 +249,9 @@
     top: 30px;
     z-index: 20;
     height: 40px; /* [수정] 일수 표시 칸의 높이를 증가 */
+    background: var(--gantt-bg-element);
+    width: max-content;
+    min-width: 100%;
 }
 
 .gantt__date-cell {
@@ -453,6 +485,9 @@
 
     /* [추가] 모바일 기본 레이아웃 (가로 배치 유지, 스크롤 활용) */
     .gantt__wrapper {
+        height: 446px;
+        max-height: 446px;
+        min-height: 446px;
         flex-direction: row;
     }
 
@@ -474,9 +509,9 @@
         width: 200px !important; /* 세로 모드에서 사이드바 너비 확대 */
         border-right: 1px solid var(--gantt-border);
         border-bottom: none;
-        height: auto;
-        max-height: none; 
-        overflow-y: visible;
+        height: 100%;
+        max-height: 100%; 
+        overflow-y: hidden;
     }
 /* [요청] 셋업 일정 검색된 내용 글씨 크기 조정 */
     .gantt__target-info {
@@ -484,12 +519,13 @@
     }
     
     #gantt-task-list {
-        overflow-y: visible;
+        overflow-y: auto;
     }
 
     .gantt__timeline-container {
-        height: auto; /* 남은 공간 차지 */
+        height: 100%;
         overflow-x: auto;
+        overflow-y: auto;
     }
 
     /* [요청] 모바일 가로 모드에서 1달치(약 30일) 보여주고 나머지는 스크롤 */
@@ -511,7 +547,7 @@
             width: 250px !important; /* 가로 모드에서는 조금 더 넓게 */
         }
         .gantt__timeline-container {
-            height: auto;
+            height: 100%;
         }
     }
 }
