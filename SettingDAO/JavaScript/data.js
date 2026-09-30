@@ -58,9 +58,40 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 /**
+ * 최종관리자(superadmin) 권한 여부 확인 헬퍼
+ */
+function isDataSuperAdmin() {
+    const userRole = sessionStorage.getItem('userRole') || localStorage.getItem('userRole') || (document.body.classList.contains('role-superadmin') ? 'superadmin' : '');
+    return userRole === 'superadmin';
+}
+
+/**
+ * 최종관리자(superadmin) 전용 툴바 버튼 권한 제어 (CSV 불러오기, CSV 내보내기, 시트 초기화)
+ */
+function checkDataSuperAdminAuth() {
+    const isSuperAdmin = isDataSuperAdmin();
+    const superAdminBtnIds = [
+        'btn-import-equip-data-csv',
+        'btn-export-equip-data-csv',
+        'btn-clear-equip-data',
+        'btn-import-param-csv',
+        'btn-export-param-csv',
+        'btn-clear-param-data'
+    ];
+
+    superAdminBtnIds.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            btn.style.display = isSuperAdmin ? '' : 'none';
+        }
+    });
+}
+
+/**
  * 페이지 초기화
  */
 function initDataPage() {
+    checkDataSuperAdminAuth();
     renderSiteList();
 
     // 하단 빠른 날짜 행 추가 기본값 설정
@@ -1923,23 +1954,116 @@ function handleConfirmAddParamDate() {
         return;
     }
 
-    // 이미 존재하는 날짜인지 확인
+    if (!currentSheetData) currentSheetData = { columns: ['파라미터 항목', '단위', '기준값', '측정값', '결과', '비고'], rows: [] };
     if (!currentSheetData.rows) currentSheetData.rows = [];
+
+    // 이미 존재하는 날짜인지 확인
     const exists = currentSheetData.rows.some(r => r.date === dateVal);
     if (!exists) {
-        // 새 날짜 기본 행 1개 생성
-        currentSheetData.rows.push({
-            id: 'row_' + Date.now(),
-            date: dateVal,
-            values: {
-                '파라미터 항목': '',
-                '단위': '',
-                '기준값': '',
-                '측정값': '',
-                '결과': '양호',
-                '비고': ''
+        // 1. 이전 점검 파라미터 탐색
+        const existingDates = Array.from(new Set(currentSheetData.rows.map(r => r.date).filter(Boolean)));
+        let targetPrevDate = null;
+
+        if (existingDates.length > 0) {
+            // 새 날짜(dateVal)보다 이전 날짜 중 가장 최근 날짜 우선
+            const earlierDates = existingDates.filter(d => d < dateVal).sort();
+            if (earlierDates.length > 0) {
+                targetPrevDate = earlierDates[earlierDates.length - 1];
+            } else if (currentParamDate && existingDates.includes(currentParamDate)) {
+                // 현재 보고 있던 날짜
+                targetPrevDate = currentParamDate;
+            } else {
+                // 존재하는 날짜 중 가장 최근 날짜
+                targetPrevDate = existingDates.sort()[existingDates.length - 1];
             }
-        });
+        }
+
+        // 이전 점검일자의 파라미터 행 추출
+        let prevRows = targetPrevDate ? currentSheetData.rows.filter(r => r.date === targetPrevDate) : [];
+
+        // 유효한 파라미터 행이 있는 경우: 파라미터 세트 복제 (측정값은 비운 상태)
+        if (prevRows.length > 0) {
+            prevRows.forEach((r, idx) => {
+                const origVals = r.values || {};
+                const paramName = origVals['파라미터 항목'] || origVals['항목'] || '';
+                const itemUnit = (origVals['단위'] || '').trim();
+                const standardVal = origVals['기준값'] || origVals['기준'] || '';
+                const memoVal = origVals['비고'] || '';
+
+                currentSheetData.rows.push({
+                    id: 'row_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 4),
+                    date: dateVal,
+                    values: {
+                        '파라미터 항목': paramName,
+                        '단위': itemUnit,
+                        '기준값': standardVal,
+                        '측정값': '', // [요청 반영] 측정값은 비워진 상태로 생성
+                        '결과': (itemUnit === '유무' ? '적합' : ''),
+                        '비고': memoVal
+                    }
+                });
+            });
+        } else {
+            // 이전 점검 데이터가 없는 경우: ADMIN에 등록된 장비 모델 기본 템플릿 탐색 시도
+            let modelParams = null;
+            try {
+                const modelParamsMap = JSON.parse(localStorage.getItem('equip_model_parameters')) || {};
+                const equipModelName = (currentSelectedEquip && currentSelectedEquip.displayName || '').trim();
+                if (equipModelName && modelParamsMap[equipModelName] && modelParamsMap[equipModelName].length > 0) {
+                    modelParams = modelParamsMap[equipModelName];
+                } else if (equipModelName) {
+                    const modelsData = JSON.parse(localStorage.getItem('equipment_models')) || [];
+                    const foundModel = modelsData.find(m =>
+                        (m.name && m.name.toLowerCase() === equipModelName.toLowerCase()) ||
+                        (m.abbr && m.abbr.toLowerCase() === equipModelName.toLowerCase())
+                    );
+                    if (foundModel) {
+                        if (modelParamsMap[foundModel.name] && modelParamsMap[foundModel.name].length > 0) {
+                            modelParams = modelParamsMap[foundModel.name];
+                        } else if (foundModel.abbr && modelParamsMap[foundModel.abbr] && modelParamsMap[foundModel.abbr].length > 0) {
+                            modelParams = modelParamsMap[foundModel.abbr];
+                        }
+                    }
+                }
+            } catch (e) { }
+
+            if (modelParams && modelParams.length > 0) {
+                modelParams.forEach((item, idx) => {
+                    const itemName = (item.name || '').trim();
+                    const itemUnit = (item.unit || '').trim();
+                    const itemStd = (item.standard || '').trim();
+                    const itemMemo = (item.memo || '').trim();
+
+                    currentSheetData.rows.push({
+                        id: 'row_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 4),
+                        date: dateVal,
+                        values: {
+                            '파라미터 항목': itemName,
+                            '단위': itemUnit,
+                            '기준값': itemStd,
+                            '측정값': '',
+                            '결과': (itemUnit === '유무' ? '적합' : ''),
+                            '비고': itemMemo
+                        }
+                    });
+                });
+            } else {
+                // 이전 점검 및 모델 템플릿 둘 다 없는 경우: 기본 빈 행 1개 생성
+                currentSheetData.rows.push({
+                    id: 'row_' + Date.now(),
+                    date: dateVal,
+                    values: {
+                        '파라미터 항목': '',
+                        '단위': '',
+                        '기준값': '',
+                        '측정값': '',
+                        '결과': '양호',
+                        '비고': ''
+                    }
+                });
+            }
+        }
+
         saveCurrentSheetData(true);
     }
 
@@ -1952,6 +2076,10 @@ function handleConfirmAddParamDate() {
  * 현재 선택된 날짜의 파라미터 데이터 초기화
  */
 function handleClearCurrentParamDate() {
+    if (!isDataSuperAdmin()) {
+        alert('최종 관리자만 이용할 수 있는 기능입니다.');
+        return;
+    }
     if (!currentParamDate) return;
     if (!confirm(`[${currentParamDate}] 일자의 파라미터 데이터를 초기화하시겠습니까?`)) return;
 
@@ -1977,6 +2105,10 @@ function handleClearCurrentParamDate() {
  * 파라미터 CSV 다운로드
  */
 function handleExportParamCsv() {
+    if (!isDataSuperAdmin()) {
+        alert('최종 관리자만 이용할 수 있는 기능입니다.');
+        return;
+    }
     if (!currentSelectedSite || !currentSelectedEquip) return;
 
     const allRows = currentSheetData.rows || [];
@@ -2127,6 +2259,10 @@ async function handleImportModelParams() {
  * 파라미터 CSV 파일 선택
  */
 function handleImportParamCsvClick() {
+    if (!isDataSuperAdmin()) {
+        alert('최종 관리자만 이용할 수 있는 기능입니다.');
+        return;
+    }
     if (!currentSelectedSite || !currentSelectedEquip) {
         alert('장비를 먼저 선택해주세요.');
         return;
@@ -3613,6 +3749,10 @@ window.deleteSheetColumn = function (colIdx) {
  * 시트 데이터 전체 초기화
  */
 function handleClearSheetData() {
+    if (!isDataSuperAdmin()) {
+        alert('최종 관리자만 이용할 수 있는 기능입니다.');
+        return;
+    }
     if (!currentSelectedSite || !currentSelectedEquip) return;
     const modeLabel = (currentDataMode === 'param') ? 'Parameter' : 'Raw Data';
     if (!confirm(`현재 장비(${currentSelectedEquip.displayName})의 [${modeLabel}] 시트 데이터를 초기화하시겠습니까?`)) return;
@@ -3625,6 +3765,10 @@ function handleClearSheetData() {
  * CSV 다운로드 (Excel 호환 UTF-8 BOM)
  */
 function handleExportCsv() {
+    if (!isDataSuperAdmin()) {
+        alert('최종 관리자만 이용할 수 있는 기능입니다.');
+        return;
+    }
     if (!currentSelectedSite || !currentSelectedEquip) return;
 
     const columns = currentSheetData.columns || [];
@@ -3677,6 +3821,10 @@ function handleExportCsv() {
  * CSV 파일 선택 창 열기
  */
 function handleImportCsvClick() {
+    if (!isDataSuperAdmin()) {
+        alert('최종 관리자만 이용할 수 있는 기능입니다.');
+        return;
+    }
     if (!currentSelectedSite || !currentSelectedEquip) {
         alert('장비를 먼저 선택해주세요.');
         return;
@@ -4009,6 +4157,18 @@ function setupDataEventListeners() {
     const btnConfirmAddParamDate = document.getElementById('btn-confirm-add-param-date');
     if (btnConfirmAddParamDate) btnConfirmAddParamDate.addEventListener('click', handleConfirmAddParamDate);
 
+    const inputNewParamDate = document.getElementById('data-new-param-date');
+    if (inputNewParamDate) {
+        inputNewParamDate.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleConfirmAddParamDate();
+            } else if (e.key === 'Escape') {
+                closeParamDateModal();
+            }
+        });
+    }
+
     const btnImportModelParam = document.getElementById('btn-import-model-param');
     if (btnImportModelParam) btnImportModelParam.addEventListener('click', handleImportModelParams);
 
@@ -4121,6 +4281,9 @@ function setupDataEventListeners() {
 
     // Raw Data 셀 복사 및 붙여넣기 이벤트 바인딩
     bindCopyPasteEvents();
+
+    // 최종관리자(superadmin) 전용 툴바 버튼 권한 체크
+    checkDataSuperAdminAuth();
 }
 
 /* ==========================================================================

@@ -87,6 +87,7 @@
                         <button type="button" id="btn-add-sheet-col" class="btn-blue-sm" title="새로운 항목 열 추가">
                             ➕ 열 추가
                         </button>
+                        {% if session.get('role') == 'superadmin' %}
                         <button type="button" id="btn-import-equip-data-csv" class="btn-blue-sm" title="CSV 파일 가져오기">
                             📂 CSV 불러오기
                         </button>
@@ -97,6 +98,7 @@
                         <button type="button" id="btn-clear-equip-data" class="btn-del-sm" title="시트 데이터 초기화">
                             시트 초기화
                         </button>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -109,6 +111,7 @@
                         <button type="button" id="btn-add-param-row" class="btn-blue-sm" title="파라미터 항목 행 추가">
                             ➕ 항목 추가
                         </button>
+                        {% if session.get('role') == 'superadmin' %}
                         <button type="button" id="btn-import-param-csv" class="btn-blue-sm" title="파라미터 CSV 파일 가져오기">
                             📂 CSV 불러오기
                         </button>
@@ -119,6 +122,7 @@
                         <button type="button" id="btn-clear-param-data" class="btn-del-sm" title="현재 날짜 파라미터 초기화">
                             일자 초기화
                         </button>
+                        {% endif %}
                     </div>
                 </div>
 
@@ -346,5 +350,5 @@
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="{{ url_for('SettingDAO', filename='JavaScript/data.js') }}?v=1.8.9"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/data.js') }}?v=1.9.1"></script>
 {% endblock %}

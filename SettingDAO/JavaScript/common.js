@@ -2495,36 +2495,83 @@ function showForcePwChangeModal() {
     modal.style.display = 'flex';
 
     const btnChange = document.getElementById('btn-force-pw-change');
+    const btnKeep = document.getElementById('btn-force-pw-keep');
     const btnCancel = document.getElementById('btn-force-pw-cancel');
 
-    btnChange.onclick = () => {
-        const currentPw = document.getElementById('force-pw-current').value;
-        const newPw = document.getElementById('force-pw-new').value;
-        const confirmPw = document.getElementById('force-pw-confirm').value;
+    if (btnChange) {
+        btnChange.onclick = () => {
+            const currentPw = document.getElementById('force-pw-current').value;
+            const newPw = document.getElementById('force-pw-new').value;
+            const confirmPw = document.getElementById('force-pw-confirm').value;
 
-        if (!currentPw || !newPw) return alert('현재 비밀번호와 새 비밀번호를 입력해주세요.');
-        if (newPw !== confirmPw) return alert('새 비밀번호가 일치하지 않습니다.');
-        if (!isValidPassword(newPw)) return alert('비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다.');
+            if (!currentPw || !newPw) return alert('현재 비밀번호와 새 비밀번호를 입력해주세요.');
+            if (newPw !== confirmPw) return alert('새 비밀번호가 일치하지 않습니다.');
+            if (!isValidPassword(newPw)) return alert('비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다.');
 
-        fetch('/api/user/password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
-            body: JSON.stringify({ id: sessionStorage.getItem('userId'), current_pw: currentPw, new_pw: newPw })
-        }).then(res => res.json()).then(resData => {
-            if (resData.status === 'success') {
-                alert('비밀번호가 성공적으로 변경되었습니다.\n새로운 비밀번호로 다시 로그인해주세요.');
-                modal.style.display = 'none';
-                fetch('/api/logout', { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrf_token') } }).then(() => { sessionStorage.clear(); location.reload(); });
-            } else {
-                alert(resData.message || '비밀번호 변경 실패');
+            fetch('/api/user/password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+                body: JSON.stringify({ id: sessionStorage.getItem('userId'), current_pw: currentPw, new_pw: newPw })
+            }).then(res => res.json()).then(resData => {
+                if (resData.status === 'success') {
+                    alert('비밀번호가 성공적으로 변경되었습니다.\n새로운 비밀번호로 다시 로그인해주세요.');
+                    modal.style.display = 'none';
+                    fetch('/api/logout', { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrf_token') } }).then(() => { sessionStorage.clear(); location.reload(); });
+                } else {
+                    alert(resData.message || '비밀번호 변경 실패');
+                }
+            });
+        };
+    }
+
+    if (btnKeep) {
+        btnKeep.onclick = () => {
+            if (!confirm('현재 비밀번호를 유지하시겠습니까?\n(다음 1개월 동안 비밀번호 변경 안내가 표시되지 않습니다.)')) {
+                return;
             }
-        });
-    };
 
-    btnCancel.onclick = () => {
-        modal.style.display = 'none';
-        fetch('/api/logout', { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrf_token') } }).then(() => { sessionStorage.clear(); location.reload(); });
-    };
+            window.showLoading('비밀번호 설정 저장 중입니다...');
+            fetch('/api/user/password/keep', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+                body: JSON.stringify({ id: sessionStorage.getItem('userId') })
+            })
+            .then(res => res.json())
+            .then(resData => {
+                window.hideLoading(true);
+                if (resData.status === 'success') {
+                    alert('기존 비밀번호가 유지되었습니다.\n(1개월 후 다시 변경 안내가 표시됩니다.)');
+                    modal.style.display = 'none';
+
+                    // 정상 로그인 진입 처리
+                    const homeLoginContainer = document.getElementById('home-login-container');
+                    if (homeLoginContainer) {
+                        document.getElementById('home-login-container').style.display = 'none';
+                        document.getElementById('home-welcome-container').style.display = 'flex';
+                        fetchServerData(() => {
+                            checkLoginStatus();
+                        });
+                    } else {
+                        location.reload();
+                    }
+                } else {
+                    alert(resData.message || '요청 처리에 실패했습니다.');
+                }
+            })
+            .catch(err => {
+                window.hideLoading(true);
+                console.error('Password keep error:', err);
+                alert('처리 중 오류가 발생했습니다.');
+            });
+        };
+    }
+
+    if (btnCancel) {
+        btnCancel.onclick = () => {
+            modal.style.display = 'none';
+            fetch('/api/logout', { method: 'POST', headers: { 'X-CSRFToken': getCookie('csrf_token') } }).then(() => { sessionStorage.clear(); location.reload(); });
+        };
+    }
 }
 
 function attemptLogin(id, pw, context) {

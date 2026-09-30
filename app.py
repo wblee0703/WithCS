@@ -3700,6 +3700,24 @@ def change_password():
 
     return jsonify({"status": "success"})
 
+# [추가] 기존 비밀번호 유지(1개월 연장) API
+@app.route('/api/user/password/keep', methods=['POST'])
+@login_required
+def keep_current_password():
+    data = request.json or {}
+    user_id = data.get('id') or session.get('user_id')
+    if not user_id:
+        return jsonify({"status": "fail", "message": "로그인이 필요합니다."}), 401
+
+    user = User.query.filter_by(id=user_id).first()
+    if not user:
+        return jsonify({"status": "fail", "message": "계정을 찾을 수 없습니다."}), 404
+
+    user.pw_changed_at = get_utc_now()
+    db.session.commit()
+
+    return jsonify({"status": "success", "message": "기존 비밀번호가 유지되었습니다."})
+
 # [추가] 계정 삭제 API
 @app.route('/api/user/delete', methods=['POST'])
 @login_required
