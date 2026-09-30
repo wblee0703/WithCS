@@ -2148,31 +2148,168 @@
 }
 
 /* --------------------------------------------------------------------------
-   3. 모바일 및 반응형 레이아웃
+   3. 모바일 및 반응형 레이아웃 (세로 모드 & 가로 모드 전체 최적화)
    -------------------------------------------------------------------------- */
-@media (max-width: 950px) {
+@media (max-width: 1024px), (max-height: 600px) {
+    /* 1. 바디 및 HTML 스크롤 체인 완전 개방 */
+    html, body {
+        height: auto !important;
+        min-height: 100% !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* 2. 대시보드 래퍼: 높이 제한 해제 및 하단 스크롤 여백 대폭 확보 */
     .data-dashboard-wrapper {
-        flex-direction: column;
-        height: auto;
-        min-height: calc(100vh - 65px);
-        overflow-y: auto;
+        flex-direction: column !important;
+        height: auto !important;
+        max-height: none !important;
+        min-height: 100vh !important;
+        min-height: 100dvh !important;
+        overflow: visible !important;
+        overflow-y: visible !important;
+        padding: 8px 10px 100px 10px !important;
+        padding-bottom: calc(100px + env(safe-area-inset-bottom, 25px)) !important;
+        gap: 10px !important;
     }
 
+    /* 3. 사이드바 (기본 모바일: 상하 2단) */
     .data-sidebar {
-        width: 100%;
-        max-width: none;
-        min-width: 0;
-        height: 340px;
-        border-right: none;
-        border-bottom: 1px solid #30363d;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        height: 280px !important;
+        max-height: 320px !important;
+        flex-shrink: 0 !important;
+        border-right: 1px solid #30363d !important;
+        border-bottom: 1px solid #30363d !important;
     }
 
+    /* 4. 메인 컨텐츠 영역: 스크롤 가둠 해제 */
     .data-main {
-        padding: 12px;
-        height: auto;
+        padding: 4px 0 0 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        max-height: none !important;
+        overflow: visible !important;
+        overflow-y: visible !important;
+    }
+
+    .data-content-view {
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        gap: 12px !important;
+    }
+
+    /* 5. 엑셀형 데이터 시트 카드 */
+    .data-sheet-card {
+        height: auto !important;
+        min-height: 360px !important;
+        overflow: visible !important;
+    }
+
+    .data-sheet-wrapper {
+        min-height: 300px !important;
+        max-height: 60vh !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* 6. Parameter 뷰 모바일 최적화 */
+    .data-param-view {
+        flex-direction: column !important;
+        height: auto !important;
+        overflow: visible !important;
+        gap: 10px !important;
+    }
+
+    .data-param-date-sidebar {
+        width: 100% !important;
+        max-width: none !important;
+        height: 150px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .data-param-content-card {
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .data-param-table-wrapper {
+        max-height: 55vh !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* 7. Analysis 뷰 모바일 최적화 */
+    .data-analysis-view {
+        height: auto !important;
+        overflow: visible !important;
+    }
+
+    .analysis-chart-canvas-wrap {
+        height: 280px !important;
+        min-height: 240px !important;
     }
 
     .data-form-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr !important;
     }
 }
+
+/* --------------------------------------------------------------------------
+   4. 핸드폰 가로 모드 (Landscape: 화면 높이가 좁은 모바일 화면 전용)
+   -------------------------------------------------------------------------- */
+@media (orientation: landscape) and (max-height: 600px), (max-height: 500px) {
+    /* 가로 모드에서 사이드바를 좌/우 2열(가로 분할)로 슬림하게 배치하여 아래 메인 뷰로 즉시 도달 가능하도록 개선 */
+    .data-sidebar {
+        flex-direction: row !important;
+        height: 190px !important;
+        max-height: 200px !important;
+    }
+
+    .data-sidebar-col {
+        flex: 1 1 50% !important;
+        border-bottom: none !important;
+        border-right: 1px solid #30363d !important;
+        height: 100% !important;
+    }
+
+    .data-sidebar-col:last-child {
+        border-right: none !important;
+    }
+
+    .data-sidebar-header {
+        padding: 5px 8px !important;
+    }
+
+    .data-sidebar-title-row {
+        margin-bottom: 4px !important;
+    }
+
+    .data-search-input {
+        height: 26px !important;
+        font-size: 11px !important;
+        padding: 2px 6px !important;
+    }
+
+    /* 가로 모드에서 하단 넉넉한 스크롤 패딩으로 최하단 요소가 완벽히 드러나도록 보장 */
+    .data-dashboard-wrapper {
+        padding: 6px 10px 140px 10px !important;
+        padding-bottom: calc(140px + env(safe-area-inset-bottom, 30px)) !important;
+    }
+
+    /* 가로 모드 시트 카드 및 헤더 컴팩트화 */
+    .data-sheet-header-card {
+        padding: 8px 10px !important;
+    }
+
+    .data-sheet-wrapper {
+        min-height: 260px !important;
+        max-height: 70vh !important;
+    }
+
+    .analysis-chart-canvas-wrap {
+        height: 240px !important;
+    }
+}
+

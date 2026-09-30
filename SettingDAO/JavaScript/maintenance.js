@@ -43,7 +43,7 @@ function setSplitDateTimeValues(prefix, value) {
     }
     if (minEl.children.length === 0) {
         let minHtml = '<option value="">분</option>';
-        for (let i = 0; i < 60; i++) {
+        for (let i = 0; i < 60; i += 10) {
             const v = String(i).padStart(2, '0');
             minHtml += `<option value="${v}">${v}분</option>`;
         }
@@ -89,7 +89,14 @@ function setSplitDateTimeValues(prefix, value) {
         dateEl.value = parts[0];
         const innerParts = parts[1].split(':');
         hourEl.value = innerParts[0].substring(0, 2);
-        minEl.value = innerParts.length > 1 ? innerParts[1].substring(0, 2) : '00';
+        const minVal = innerParts.length > 1 ? innerParts[1].substring(0, 2) : '00';
+        if (minVal && !Array.from(minEl.options).some(opt => opt.value === minVal)) {
+            const customOpt = document.createElement('option');
+            customOpt.value = minVal;
+            customOpt.textContent = `${minVal}분`;
+            minEl.appendChild(customOpt);
+        }
+        minEl.value = minVal;
     } else {
         dateEl.value = '';
         hourEl.value = '';

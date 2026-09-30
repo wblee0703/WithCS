@@ -12,14 +12,8 @@
         <section class="sidebar-group main-category">
             <div class="group-header">
                 <div class="sidebar-header-row">
-                    <h3>대분류: 사업장 <span id="site-count" class="count-badge">0</span> <button class="btn-list-setting"
-                            id="site-setting-btn" title="목록 편집">⚙️</button>
-                    </h3>
+                    <h3>대분류: 사업장 <span id="site-count" class="count-badge">0</span></h3>
                     <input type="text" id="site-search" class="search-input-mini" placeholder="검색" autocomplete="off">
-                </div>
-                <div class="input-with-btn">
-                    <input type="text" id="site-input" placeholder="사업장 추가">
-                    <button class="btn-add" id="site-add-btn">+</button>
                 </div>
             </div>
             <ul class="list-data" id="site-list"></ul>
@@ -28,19 +22,9 @@
         <section class="sidebar-group disabled" id="equip-section">
             <div class="group-header">
                 <div class="sidebar-header-row">
-                    <h3>중분류: 장비목록 <span id="equip-count" class="count-badge">0</span> <button class="btn-list-setting"
-                            id="equip-setting-btn" title="목록 편집">⚙️</button>
-                    </h3>
+                    <h3>중분류: 장비목록 <span id="equip-count" class="count-badge">0</span></h3>
                     <input type="text" id="equip-search" class="search-input-mini" placeholder="검색" autocomplete="off"
                         readonly onfocus="this.removeAttribute('readonly');">
-                </div>
-                <div class="sidebar-input-group">
-                    <div class="autocomplete-wrapper" style="flex: 1;">
-                        <input type="text" id="equip-input" placeholder="장비 명" disabled style="width: 100%;">
-                        <ul id="equip-input-suggestions" class="suggestion-list"></ul>
-                    </div>
-                    <input type="text" id="equip-model-input" placeholder="Serial No." disabled>
-                    <button class="btn-add" id="equip-add-btn" disabled>+</button>
                 </div>
             </div>
             <ul class="list-data" id="equip-list"></ul>
@@ -257,6 +241,6 @@
 {% endblock %}
 
 {% block extra_js %}    
-<script src="{{ url_for('SettingDAO', filename='JavaScript/maintenance.js') }}?v=1.1.0"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/maintenance.js') }}?v=1.1.1"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/calendar.js') }}?v=1.0.6"></script>
 {% endblock %}

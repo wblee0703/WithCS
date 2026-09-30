@@ -300,6 +300,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentWidth = window.innerWidth;
             lastWidth = currentWidth;
         });
+
+        // 9. 셋업 일지 키보드 방향키 이동 리스너 등록
+        initSetupLogKeyboardNav();
     };
 
     if (window.isDataLoaded) {
@@ -309,6 +312,92 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 });
+
+/* ==========================================================================
+   셋업 일지 키보드 방향키 이동 (Keyboard Navigation for Setup Log)
+   ========================================================================== */
+function initSetupLogKeyboardNav() {
+    if (window._setupLogKeyboardNavInitialized) return;
+    window._setupLogKeyboardNavInitialized = true;
+
+    document.addEventListener('keydown', (e) => {
+        // 위/아래 방향키만 감지
+        if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+
+        // 1. 입력 필드 또는 텍스트 영역에 포커스가 있으면 본래 커서 이동/입력 동작 유지
+        const activeEl = document.activeElement;
+        if (activeEl) {
+            const tagName = activeEl.tagName.toUpperCase();
+            if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT' || activeEl.isContentEditable) {
+                return;
+            }
+        }
+
+        // 2. 모달이 열려 있는 상태거나 셋업 일지 편집 모드인 경우 무시
+        if (typeof isSetupLogEditMode !== 'undefined' && isSetupLogEditMode) return;
+
+        const openModal = document.querySelector('.modal[style*="display: flex"], .modal[style*="display: block"], .modal.show, .modal.active, .modal-overlay[style*="display: flex"], .modal-overlay[style*="display: block"]');
+        if (openModal) {
+            const style = window.getComputedStyle(openModal);
+            if (style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0') {
+                return;
+            }
+        }
+
+        // 3. 셋업 일지 테이블 본문 확인
+        const tbody = document.getElementById('setup-log-body');
+        if (!tbody) return;
+
+        // 4. 화면에 노출되어 있는 일지 행 목록 조회
+        const rows = Array.from(tbody.querySelectorAll('tr[data-id]')).filter(row => {
+            return row.offsetParent !== null && window.getComputedStyle(row).display !== 'none';
+        });
+        if (rows.length === 0) return;
+
+        // 5. 현재 선택된 행의 인덱스 탐색
+        let currentIndex = -1;
+        if (selectedSetupLogId !== null && selectedSetupLogId !== undefined) {
+            currentIndex = rows.findIndex(row => row.getAttribute('data-id') == selectedSetupLogId);
+        }
+        if (currentIndex === -1) {
+            currentIndex = rows.findIndex(row => row.classList.contains('active-log'));
+        }
+
+        // 특정 항목을 클릭(선택)하지 않은 상태라면 리스트를 넘기지 않음
+        if (currentIndex === -1) return;
+
+        let targetIndex = -1;
+        if (e.key === 'ArrowUp') {
+            if (currentIndex > 0) {
+                targetIndex = currentIndex - 1;
+            }
+        } else if (e.key === 'ArrowDown') {
+            if (currentIndex < rows.length - 1) {
+                targetIndex = currentIndex + 1;
+            }
+        }
+
+        if (targetIndex !== -1 && targetIndex !== currentIndex) {
+            e.preventDefault(); // 브라우저 스크롤 등 기본 방향키 동작 방지
+            const targetRow = rows[targetIndex];
+            const nextId = targetRow.getAttribute('data-id');
+            if (nextId) {
+                const prevId = selectedSetupLogId;
+                selectSetupLog(nextId);
+
+                // 미저장 알림 등으로 취소되지 않고 정상 선택 변경 시 스크롤 부드럽게 동기화
+                if (selectedSetupLogId != prevId) {
+                    setTimeout(() => {
+                        const newActiveRow = tbody.querySelector(`tr[data-id="${nextId}"]`);
+                        if (newActiveRow && typeof newActiveRow.scrollIntoView === 'function') {
+                            newActiveRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                        }
+                    }, 10);
+                }
+            }
+        }
+    });
+}
 
 function setupRightResizer() {
     if (window.innerWidth <= 950) {
@@ -1072,7 +1161,7 @@ function renderSetupLogList() {
             const subcatSelectHtml = `<select class="edit-cell-select edit-cell-subcategory" onchange="handleSetupLogSubcategoryChange(this, ${item.id})" onclick="event.stopPropagation()">${buildSubcategoryOptionsHtml(item.category, item.subcategory)}</select>`;
             const contentInputHtml = `<input type="text" class="edit-cell-input edit-cell-content" value="${escapeHtml(item.content || '')}" placeholder="내용 입력" onclick="event.stopPropagation()">`;
 
-            return `<tr data-id="${item.id}" onclick="selectSetupLog(${item.id})" class="${selectedSetupLogId === item.id ? 'active-log' : ''}" style="cursor: pointer;">
+            return `<tr data-id="${item.id}" onclick="selectSetupLog(${item.id})" class="${selectedSetupLogId == item.id ? 'active-log' : ''}" style="cursor: pointer;">
                 <td class="log-date">${item.date}</td>
                 <td class="log-category" style="padding: 2px 4px; vertical-align: middle;">${catSelectHtml}</td>
                 <td class="log-subcategory" style="padding: 2px 4px; vertical-align: middle;">${subcatSelectHtml}</td>
@@ -1085,7 +1174,7 @@ function renderSetupLogList() {
             </tr>`;
         }
 
-        return `<tr data-id="${item.id}" onclick="selectSetupLog(${item.id})" class="${selectedSetupLogId === item.id ? 'active-log' : ''}" style="cursor: pointer;">
+        return `<tr data-id="${item.id}" onclick="selectSetupLog(${item.id})" class="${selectedSetupLogId == item.id ? 'active-log' : ''}" style="cursor: pointer;">
             <td class="log-date">${item.date}</td>
             <td class="log-category" style="text-align:center; vertical-align:middle; color:#8b949e; font-size:12px;">${escapeHtml(catText)}</td>
             <td class="log-subcategory" style="text-align:center; vertical-align:middle; color:#8b949e; font-size:12px;">${escapeHtml(subcatText)}</td>
@@ -1101,6 +1190,13 @@ function renderSetupLogList() {
 }
 
 function selectSetupLog(id) {
+    const numericId = (!isNaN(id) && id !== null && id !== '') ? Number(id) : id;
+
+    // 포커스가 텍스트 입력창 등에 머물러 있으면 키보드 네비게이션이 방해받지 않도록 해제
+    if (document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName.toUpperCase())) {
+        document.activeElement.blur();
+    }
+
     // 저장되지 않은 변경사항 확인
     const memoArea = document.getElementById('setup-log-detail-memo');
     const issueArea = document.getElementById('setup-equip-issue-memo');
@@ -1113,13 +1209,13 @@ function selectSetupLog(id) {
         }
     }
 
-    selectedSetupLogId = id;
-    localStorage.setItem(`lastSetupLog_${currentPath.site}_${currentPath.equip}`, id);
+    selectedSetupLogId = numericId;
+    localStorage.setItem(`lastSetupLog_${currentPath.site}_${currentPath.equip}`, numericId);
 
     // UI 업데이트 (행 강조)
     const rows = document.querySelectorAll('#setup-log-body tr');
     rows.forEach(row => row.classList.remove('active-log'));
-    const targetRow = document.querySelector(`#setup-log-body tr[data-id="${id}"]`);
+    const targetRow = document.querySelector(`#setup-log-body tr[data-id="${numericId}"]`);
     if (targetRow) targetRow.classList.add('active-log');
 
     // [중요] 편집 모드가 아닐 때만 전체 목록 재렌더링
@@ -1133,7 +1229,7 @@ function selectSetupLog(id) {
     const data = setupData[equipKey] || {};
     const logs = data.setupLogs || [];
     // [수정] ID 비교 시 타입 불일치 방지를 위해 == 사용 (HTML 속성은 문자열일 수 있음)
-    const log = logs.find(l => l.id == id);
+    const log = logs.find(l => l.id == numericId);
 
     if (memoArea) {
         const val = log ? (log.memo || "") : "";
