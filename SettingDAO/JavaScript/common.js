@@ -928,8 +928,8 @@ async function migrateDataFormat() {
         isModified = true;
     }
 
-    // [개선] 유지관리 물품(maint) 및 작업 이력(logs) 마이그레이션 (세부구분 내용 보정 포함)
-    const migrationVersion = 'v2.0'; // 마이그레이션 버전 업데이트 (세부구분 내용 '내용 없음' 자동 보정)
+    // [개선] 유지관리 물품(maint) 및 작업 이력(logs) 마이그레이션 (세부구분 내용 보정 및 '내용 없음' 비용 라벨 제거)
+    const migrationVersion = 'v2.1'; // 마이그레이션 버전 업데이트 (내용 없음 비용 라벨 제거 및 복수 내용 정제)
     const lastMigration = localStorage.getItem('keywordMigrationVersion');
 
     if (lastMigration !== migrationVersion) {
@@ -977,15 +977,20 @@ async function migrateDataFormat() {
                             data[arrKey].forEach(item => {
                                 if (item.content) {
                                     const original = item.content;
+                                    const originalCost = item.costType;
                                     item.content = migrateString(item.content);
 
-                                    // [추가] 세부구분 명칭으로만 채워진 기존 내용을 '내용 없음'으로 보정
+                                    // [추가] 세부구분 명칭으로만 채워진 기존 내용 또는 '내용 없음' 오염 보정
                                     if (item.content && item.content !== '[유상] Particle Filter') {
                                         let cleanContent = typeof window.removeCostLabels === 'function' ? window.removeCostLabels(item.content).trim() : item.content.replace(/^\[.*?\]\s*/, '').trim();
-                                        const dtParts = (item.detailType || '').split(' > ').map(s => s.trim()).filter(Boolean);
-                                        const isSubcategoryContent = dtParts.includes(cleanContent) || subCategoryKeywords.includes(cleanContent) || cleanContent === item.detailType;
-                                        if (isSubcategoryContent) {
+                                        if (cleanContent === '내용 없음' || cleanContent === '장비 점검' || cleanContent === '-') {
                                             item.content = '내용 없음';
+                                        } else {
+                                            const dtParts = (item.detailType || '').split(' > ').map(s => s.trim()).filter(Boolean);
+                                            const isSubcategoryContent = dtParts.includes(cleanContent) || subCategoryKeywords.includes(cleanContent) || cleanContent === item.detailType;
+                                            if (isSubcategoryContent) {
+                                                item.content = '내용 없음';
+                                            }
                                         }
                                     }
 
@@ -1020,6 +1025,15 @@ async function migrateDataFormat() {
                                                     cleanV = doubleTagMatch[1];
                                                 }
 
+                                                // [핵심] '내용 없음', '장비 점검' 등은 비용 라벨을 절대 붙이지 않음! 이미 라벨이 붙어있다면 제거
+                                                const noContentMatch = cleanV.match(/^\[(?:유상|무상[^\]]*|기타)\]\s*(내용\s*없음|장비\s*점검)$/);
+                                                if (noContentMatch) {
+                                                    return noContentMatch[1].replace(/\s+/, ' ');
+                                                }
+                                                if (cleanV === '내용 없음' || cleanV === '장비 점검') {
+                                                    return cleanV;
+                                                }
+
                                                 if (generalCost && !cleanV.match(/\[(유상|무상[^\]]*|기타)\]/)) {
                                                     const kwMatch = cleanV.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
                                                     if (kwMatch) return `${kwMatch[1].trim()} - [${generalCost}] ${kwMatch[2].trim()}`;
@@ -1027,7 +1041,19 @@ async function migrateDataFormat() {
                                                 }
                                                 return cleanV;
                                             });
-                                            item.content = formattedArr.join(', ');
+
+                                            // [추가] 중복 내용 제거 및 '내용 없음' 정리
+                                            const validParts = formattedArr.filter(p => p !== '내용 없음' && p !== '장비 점검' && p !== '-');
+                                            if (validParts.length > 0) {
+                                                item.content = [...new Set(validParts)].join(', ');
+                                            } else {
+                                                item.content = '내용 없음';
+                                            }
+
+                                            // [추가] 내용 없음 작업인데 비용처리에 쉼표로 다중 비용처리가 되어 있으면 단일화
+                                            if (item.content === '내용 없음' && item.costType && item.costType.includes(',')) {
+                                                item.costType = item.costType.includes('유상') ? '유상' : item.costType.split(',')[0].trim();
+                                            }
                                         }
                                     } else if (arrKey === 'maint') {
                                         // 예정된 유지관리(maint) 데이터에는 비용 라벨이 있으면 안됨 -> 제거
@@ -1045,7 +1071,7 @@ async function migrateDataFormat() {
                                         }
                                     }
 
-                                    if (item.content !== original) {
+                                    if (item.content !== original || item.costType !== originalCost) {
                                         isModified = true;
                                         if (arrKey === 'maint') payload.maint_upserts.push(item);
                                         else if (arrKey === 'logs') payload.log_upserts.push(item);

@@ -722,12 +722,13 @@ async function renderIntegMaintStats(mainData) {
 
     const typeCounts = { '정기': 0, '비정기': 0, '고객대응': 0, '용액제조': 0, '온라인점검': 0 };
 
+    // [수정] SORT와 100% 동일한 집계를 위해 SORT와 일치하는 완료 작업 목록 수집 맵
+    const sortMatchedGroupMap = new Map();
+
     Object.keys(mainData).forEach(site => {
         if (mainData[site] && Array.isArray(mainData[site])) {
             let groupName = typeof window.getSiteGroupName === 'function' ? window.getSiteGroupName(site) : '기타사업장';
             if (!groupStats[groupName]) groupStats[groupName] = { total: 0, completed: 0, md: 0 };
-
-            const isTypeCountValid = !integSelectedSite || integSelectedSite === groupName;
 
             // [수정] 캘린더의 통계 기준과 일치하도록 세부 항목(content) 단위가 아닌 그룹(블록) 단위로 먼저 묶어줌
             const groupMap = new Map();
@@ -748,7 +749,10 @@ async function renderIntegMaintStats(mainData) {
 
                             const isExtraWork = !!l.originalLogId;
                             const type = l.type || '정기';
-                            const groupKey = `${site}::${equip}::${l.date}::true::${type}::${isExtraWork}`;
+                            // [수정] 비정기 작업은 개별 독립 작업이므로 l.id를 포함하여 각각 고유하게 유지
+                            const groupKey = (type === '비정기')
+                                ? `${site}::${equip}::${l.date}::true::${type}::${l.id}`
+                                : `${site}::${equip}::${l.date}::true::${type}::${isExtraWork}`;
 
                             if (!groupMap.has(groupKey)) {
                                 groupMap.set(groupKey, {
@@ -770,7 +774,10 @@ async function renderIntegMaintStats(mainData) {
 
                             const isExtraWork = !!m.originalLogId;
                             const type = m.type || '정기';
-                            const groupKey = `${site}::${equip}::${m.scheduledDate}::false::${type}::${isExtraWork}`;
+                            // [수정] 비정기 작업은 개별 독립 작업이므로 m.id를 포함하여 각각 고유하게 유지
+                            const groupKey = (type === '비정기')
+                                ? `${site}::${equip}::${m.scheduledDate}::false::${type}::${m.id}`
+                                : `${site}::${equip}::${m.scheduledDate}::false::${type}::${isExtraWork}`;
 
                             if (!groupMap.has(groupKey)) {
                                 groupMap.set(groupKey, {
@@ -783,6 +790,90 @@ async function renderIntegMaintStats(mainData) {
                         }
                     });
                 }
+
+                // [추가] SORT와 100% 동일한 방식으로 완료된 작업 목록 수집 (SORT의 checkItemMatch + groupedResultsMap 로직)
+                if (detailData.logs && equipStatus !== '셋업 장비') {
+                    detailData.logs.forEach(l => {
+                        const itemDate = l.date;
+                        if (!itemDate || !dateCheckFn(itemDate)) return;
+                        if (l.detailType === '일정변경') return;
+                        if (l.content && l.content.startsWith('[변경]')) return;
+
+                        // SORT와 동일: 셋업 물품 제외
+                        const rawItemsList = typeof window.splitSafetyContent === 'function' ? window.splitSafetyContent(l.content || '') : (l.content || '').split(',').map(s => s.trim());
+                        let hasNonSetupItem = false;
+                        for (const rawItem of rawItemsList) {
+                            let itemCostType = l.costType || l.itemCost || '';
+                            const itemCostMatch = rawItem.match(/^\[(.*?)\]/);
+                            if (itemCostMatch) itemCostType = itemCostMatch[1];
+                            if (itemCostType !== '무상(셋업)' && !itemCostType.includes('셋업')) {
+                                hasNonSetupItem = true;
+                                break;
+                            }
+                        }
+                        if (!hasNonSetupItem && rawItemsList.length > 0) return;
+
+                        const itemType = l.type || '정기';
+
+                        // 세부구분 1, 2, 3 정규화 (SORT와 100% 동일)
+                        let rawDt1 = l.detailType || l.detail_type || (itemType === '정기' ? 'PM 점검' : 'BM 점검');
+                        let rawDt2 = l.detailType2 || l.detail_type2 || '';
+                        let rawDt3 = l.detailType3 || l.detail_type3 || '';
+                        let dt1 = '', dt2 = '', dt3 = '';
+
+                        if (rawDt1.includes(' > ')) {
+                            const parts = rawDt1.split(' > ').map(p => p.trim());
+                            dt1 = parts[0] || '';
+                            dt2 = parts[1] || rawDt2 || '';
+                            dt3 = parts[2] || rawDt3 || '';
+                        } else if (rawDt2.includes(' > ')) {
+                            const parts = rawDt2.split(' > ').map(p => p.trim());
+                            dt1 = rawDt1.trim();
+                            dt2 = parts[0] || '';
+                            dt3 = parts[1] || rawDt3 || '';
+                        } else {
+                            dt1 = rawDt1.trim();
+                            dt2 = rawDt2.trim();
+                            dt3 = rawDt3.trim();
+                        }
+
+                        if (itemType === '비정기' && (!dt3 || dt3 === '미지정' || dt3 === '-')) {
+                            const pureContent = l.content || l.code || '';
+                            if (pureContent) {
+                                const allowedIrregularItems = [
+                                    "현장 이슈", "PC 이상", "작업자 실수", "통신 이상", "용액 용자 이상",
+                                    "파트 이상 교체", "파트 이상 수리", "프로그램 이상", "단순조치", "기타"
+                                ];
+                                const items = typeof window.splitSafetyContent === 'function' ? window.splitSafetyContent(pureContent) : pureContent.split(',').map(s => s.trim());
+                                for (const item of items) {
+                                    let pureItem = item.replace(/\[.*?\]\s*/g, '').trim();
+                                    if (pureItem.includes(' - ')) {
+                                        pureItem = pureItem.split(' - ')[0].trim();
+                                    }
+                                    if (pureItem && allowedIrregularItems.includes(pureItem)) {
+                                        dt3 = pureItem;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        const finalDetailType = dt3 && dt3 !== '미지정' ? `${dt1} > ${dt2} > ${dt3}` : (dt2 && dt2 !== '미지정' ? `${dt1} > ${dt2}` : dt1);
+
+                        // SORT의 groupedResultsMap과 100% 동일한 groupKey
+                        const sortRowKey = (itemType === '비정기')
+                            ? `${site}_${equip}_${itemDate}_완료_${itemType}_${finalDetailType}_${l.id}`
+                            : `${site}_${equip}_${itemDate}_완료_${itemType}_${finalDetailType}`;
+
+                        if (!sortMatchedGroupMap.has(sortRowKey)) {
+                            sortMatchedGroupMap.set(sortRowKey, {
+                                site: site,
+                                siteGroup: groupName,
+                                type: itemType
+                            });
+                        }
+                    });
+                }
             });
 
             groupMap.forEach(group => {
@@ -791,11 +882,17 @@ async function renderIntegMaintStats(mainData) {
                     groupStats[groupName].completed++;
                 }
                 groupStats[groupName].md += calcValidMd(group.worker, group.md);
-
-                if (isTypeCountValid) {
-                    if (typeCounts[group.type] !== undefined) typeCounts[group.type]++;
-                }
             });
+        }
+    });
+
+    // [수정] 작업 구분별 현황(typeCounts): SORT와 동일하게 추출 및 병합된 완료 작업 목록에서 사업장 필터에 맞게 집계
+    sortMatchedGroupMap.forEach(row => {
+        const isTypeCountValid = !integSelectedSite || integSelectedSite === row.siteGroup;
+        if (isTypeCountValid) {
+            if (typeCounts[row.type] !== undefined) {
+                typeCounts[row.type]++;
+            }
         }
     });
 

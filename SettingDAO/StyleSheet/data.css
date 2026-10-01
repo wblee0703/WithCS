@@ -437,6 +437,16 @@
     box-sizing: border-box;
 }
 
+.sheet-th-port,
+.sheet-td-port {
+    width: 120px !important;
+    min-width: 120px !important;
+    max-width: 120px !important;
+    text-align: center;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
 .sheet-col-th,
 .sheet-td-data {
     width: 160px;
@@ -484,6 +494,10 @@
 
 .sheet-sticky-conc {
     left: 315px !important;
+}
+
+.sheet-sticky-port {
+    left: 445px !important;
     border-right: 2px solid #30363d !important;
     box-shadow: 2px 0 6px rgba(0, 0, 0, 0.45);
 }

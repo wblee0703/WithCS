@@ -1960,10 +1960,11 @@ def load_datasheet():
             cols_res = db.session.execute(text(f"PRAGMA table_info(`{table_name}`)"))
             all_cols = [r[1] for r in cols_res]
 
-        # raw 모드일 때 division, concentration, conc_unit 컬럼 누락 방지 (기존 테이블 마이그레이션)
+        # raw 모드일 때 division, concentration, port_name, conc_unit 컬럼 누락 방지 (기존 테이블 마이그레이션)
         if data_type == 'raw':
             for fix_col, col_def in [('division', 'VARCHAR(50) DEFAULT \'\''), 
                                     ('concentration', 'VARCHAR(50) DEFAULT \'\''), 
+                                    ('port_name', 'VARCHAR(100) DEFAULT \'\''), 
                                     ('conc_unit', 'VARCHAR(20) DEFAULT \'ppm\'')]:
                 if fix_col not in all_cols:
                     if db_type == 'mysql':
@@ -1973,7 +1974,7 @@ def load_datasheet():
                     all_cols.append(fix_col)
             db.session.commit()
 
-        data_cols = [c for c in all_cols if c not in ('id', 'record_date', 'created_at', 'updated_at', 'division', 'concentration', 'conc_unit')]
+        data_cols = [c for c in all_cols if c not in ('id', 'record_date', 'created_at', 'updated_at', 'division', 'concentration', 'port_name', 'conc_unit')]
 
         # 데이터 행 조회 (날짜는 최신순, 동일 날짜 내에서는 저장된 순서(id ASC) 그대로 유지)
         rows_res = db.session.execute(text(f"SELECT * FROM `{table_name}` ORDER BY record_date DESC, id ASC;")).fetchall()
@@ -1988,6 +1989,9 @@ def load_datasheet():
             conc_val = row_dict.get('concentration')
             if conc_val is None:
                 conc_val = ''
+            port_val = row_dict.get('port_name')
+            if port_val is None:
+                port_val = ''
             if row_dict.get('conc_unit'):
                 conc_unit_val = row_dict.get('conc_unit')
             vals = {c: (row_dict.get(c) if row_dict.get(c) is not None else '') for c in data_cols}
@@ -1999,6 +2003,8 @@ def load_datasheet():
                 "date": date_val,
                 "division": str(div_val),
                 "concentration": str(conc_val),
+                "port": str(port_val),
+                "port_name": str(port_val),
                 "values": vals
             })
 
@@ -2050,6 +2056,7 @@ def save_datasheet():
                 `record_date` VARCHAR(30) NOT NULL,
                 `division` VARCHAR(50) DEFAULT '',
                 `concentration` VARCHAR(50) DEFAULT '',
+                `port_name` VARCHAR(100) DEFAULT '',
                 `conc_unit` VARCHAR(20) DEFAULT 'ppm',
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -2061,6 +2068,7 @@ def save_datasheet():
                 `record_date` VARCHAR(30) NOT NULL,
                 `division` VARCHAR(50) DEFAULT '',
                 `concentration` VARCHAR(50) DEFAULT '',
+                `port_name` VARCHAR(100) DEFAULT '',
                 `conc_unit` VARCHAR(20) DEFAULT 'ppm',
                 `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             );
@@ -2076,10 +2084,11 @@ def save_datasheet():
             cols_res = db.session.execute(text(f"PRAGMA table_info(`{table_name}`)"))
             existing_cols = [r[1] for r in cols_res]
 
-        # 2-1. raw 모드일 때 division, concentration, conc_unit 컬럼 누락 방지 (기존 테이블 마이그레이션)
+        # 2-1. raw 모드일 때 division, concentration, port_name, conc_unit 컬럼 누락 방지 (기존 테이블 마이그레이션)
         if data_type == 'raw':
             for fix_col, col_def in [('division', 'VARCHAR(50) DEFAULT \'\''), 
                                     ('concentration', 'VARCHAR(50) DEFAULT \'\''), 
+                                    ('port_name', 'VARCHAR(100) DEFAULT \'\''), 
                                     ('conc_unit', 'VARCHAR(20) DEFAULT \'ppm\'')]:
                 if fix_col not in existing_cols:
                     if db_type == 'mysql':
@@ -2092,7 +2101,7 @@ def save_datasheet():
         # 3. 새로운 열(Column) 동적 추가
         for col in columns:
             col_safe = col.replace('`', '').strip()
-            if col_safe and col_safe not in existing_cols and col_safe not in ('id', 'record_date', 'created_at', 'updated_at', 'division', 'concentration', 'conc_unit'):
+            if col_safe and col_safe not in existing_cols and col_safe not in ('id', 'record_date', 'created_at', 'updated_at', 'division', 'concentration', 'port_name', 'conc_unit'):
                 if db_type == 'mysql':
                     db.session.execute(text(f"ALTER TABLE `{table_name}` ADD COLUMN `{col_safe}` TEXT NULL;"))
                 else:
@@ -2103,23 +2112,29 @@ def save_datasheet():
         # 4. 데이터 동기화 (전체 행 재반영)
         db.session.execute(text(f"DELETE FROM `{table_name}`;"))
 
-        valid_columns = [c for c in columns if c.replace('`', '').strip() in existing_cols and c.replace('`', '').strip() not in ('id', 'record_date', 'created_at', 'updated_at', 'division', 'concentration', 'conc_unit')]
+        valid_columns = [c for c in columns if c.replace('`', '').strip() in existing_cols and c.replace('`', '').strip() not in ('id', 'record_date', 'created_at', 'updated_at', 'division', 'concentration', 'port_name', 'conc_unit')]
         for r in rows:
             date_val = r.get('date', '')
             vals = r.get('values', {})
             div_val = r.get('division') if r.get('division') is not None and str(r.get('division')).strip() != '' else vals.get('구분', '')
             conc_val = r.get('concentration') if r.get('concentration') is not None and str(r.get('concentration')).strip() != '' else vals.get('농도', '')
+            port_val = r.get('port') if r.get('port') is not None and str(r.get('port')).strip() != '' else (r.get('port_name') if r.get('port_name') is not None and str(r.get('port_name')).strip() != '' else (vals.get('Port Name', '') or vals.get('포트', '')))
 
             col_list = ['`record_date`']
             ph_list = [':rec_date']
             params = {'rec_date': date_val}
 
-            # raw 모드이거나 테이블에 division/concentration 컬럼이 존재하는 경우 항상 저장
+            # raw 모드이거나 테이블에 division/concentration/port_name 컬럼이 존재하는 경우 항상 저장
             if 'division' in existing_cols and 'concentration' in existing_cols:
                 col_list.extend(['`division`', '`concentration`'])
                 ph_list.extend([':division', ':concentration'])
                 params['division'] = str(div_val) if div_val is not None else ''
                 params['concentration'] = str(conc_val) if conc_val is not None else ''
+
+            if 'port_name' in existing_cols:
+                col_list.append('`port_name`')
+                ph_list.append(':port_name')
+                params['port_name'] = str(port_val) if port_val is not None else ''
 
             if 'conc_unit' in existing_cols:
                 col_list.append('`conc_unit`')

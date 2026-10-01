@@ -571,9 +571,16 @@ async function loadEquipSheetData() {
                             ? String(r.concentration).trim()
                             : ((r.values && r.values['농도'] !== undefined && r.values['농도'] !== null) ? String(r.values['농도']).trim() : '');
 
+                        let portVal = (r.port !== undefined && r.port !== null && String(r.port).trim() !== '')
+                            ? String(r.port).trim()
+                            : ((r.port_name !== undefined && r.port_name !== null && String(r.port_name).trim() !== '')
+                                ? String(r.port_name).trim()
+                                : ((r.values && (r.values['Port Name'] || r.values['포트'])) ? String(r.values['Port Name'] || r.values['포트']).trim() : ''));
+
                         const vals = r.values || {};
                         vals['구분'] = divVal;
                         vals['농도'] = concVal;
+                        vals['Port Name'] = portVal;
 
                         return {
                             id: r.id,
@@ -582,6 +589,8 @@ async function loadEquipSheetData() {
                             date: r.date || getTodayString(),
                             division: divVal,
                             concentration: concVal,
+                            port: portVal,
+                            port_name: portVal,
                             values: vals
                         };
                     }),
@@ -631,9 +640,18 @@ async function loadEquipSheetData() {
                         : ((r.values && r.values['농도'] !== undefined && r.values['농도'] !== null) ? String(r.values['농도']).trim() : '');
                     r.concentration = concVal;
 
+                    let portVal = (r.port !== undefined && r.port !== null && String(r.port).trim() !== '')
+                        ? String(r.port).trim()
+                        : ((r.port_name !== undefined && r.port_name !== null && String(r.port_name).trim() !== '')
+                            ? String(r.port_name).trim()
+                            : ((r.values && (r.values['Port Name'] || r.values['포트'])) ? String(r.values['Port Name'] || r.values['포트']).trim() : ''));
+                    r.port = portVal;
+                    r.port_name = portVal;
+
                     if (!r.values) r.values = {};
                     r.values['구분'] = divVal;
                     r.values['농도'] = concVal;
+                    r.values['Port Name'] = portVal;
                 });
                 // 로컬 데이터를 DB에 반영하여 테이블 생성
                 saveCurrentSheetData(false);
@@ -670,6 +688,8 @@ function initDefaultSheet() {
                 date: getTodayString(),
                 division: '',
                 concentration: '',
+                port: '',
+                port_name: '',
                 values: initialValues
             }
         ]
@@ -685,7 +705,7 @@ function saveCurrentSheetData(showIndicator = true, resetTable = false, immediat
 
     const mode = (currentDataMode === 'analysis') ? 'raw' : (currentDataMode || 'raw');
 
-    // 저장 전 division 및 concentration 양방향 동기화 보장
+    // 저장 전 division, concentration, port_name 양방향 동기화 보장
     if (currentSheetData && currentSheetData.rows) {
         currentSheetData.rows.forEach(r => {
             if (!r.values) r.values = {};
@@ -698,6 +718,15 @@ function saveCurrentSheetData(showIndicator = true, resetTable = false, immediat
                 : (r.values['농도'] !== undefined && r.values['농도'] !== null ? String(r.values['농도']) : '');
             r.concentration = finalConc;
             r.values['농도'] = finalConc;
+
+            const finalPort = (r.port !== undefined && r.port !== null && r.port !== '')
+                ? String(r.port)
+                : ((r.port_name !== undefined && r.port_name !== null && r.port_name !== '')
+                    ? String(r.port_name)
+                    : (r.values['Port Name'] || r.values['포트'] || ''));
+            r.port = finalPort;
+            r.port_name = finalPort;
+            r.values['Port Name'] = finalPort;
         });
     }
 
@@ -733,6 +762,8 @@ function saveCurrentSheetData(showIndicator = true, resetTable = false, immediat
                         concentration: (r.concentration !== undefined && r.concentration !== null && r.concentration !== '')
                             ? String(r.concentration)
                             : ((r.values && r.values['농도'] !== undefined) ? String(r.values['농도']) : ''),
+                        port: r.port || r.port_name || (r.values && (r.values['Port Name'] || r.values['포트'])) || '',
+                        port_name: r.port || r.port_name || (r.values && (r.values['Port Name'] || r.values['포트'])) || '',
                         values: r.values || {}
                     })),
                     conc_unit: currentSheetData.concUnit || 'ppm',
@@ -858,6 +889,9 @@ window.toggleSheetSort = function (key) {
             } else if (key === '__concentration__') {
                 valA = (a.concentration !== undefined && a.concentration !== null) ? a.concentration : ((a.values && a.values['농도']) || '');
                 valB = (b.concentration !== undefined && b.concentration !== null) ? b.concentration : ((b.values && b.values['농도']) || '');
+            } else if (key === '__port__') {
+                valA = a.port || a.port_name || (a.values && (a.values['Port Name'] || a.values['포트'])) || '';
+                valB = b.port || b.port_name || (b.values && (b.values['Port Name'] || b.values['포트'])) || '';
             } else {
                 valA = (a.values && a.values[key] !== undefined) ? a.values[key] : '';
                 valB = (b.values && b.values[key] !== undefined) ? b.values[key] : '';
@@ -2405,6 +2439,9 @@ function renderRawSheetTable() {
                 </select>
             </div>
         </th>
+        <th class="sheet-th-port sheet-sticky-col sheet-sticky-port" onclick="toggleSheetSort('__port__')" title="Port Name 기준 정렬 (클릭 시 토글)">
+            Port Name
+        </th>
     `;
 
     // 동적 데이터 열들 (점 6개 및 정렬 아이콘 제거, 클릭 시 정렬/드래그 시 순서 이동)
@@ -2430,7 +2467,7 @@ function renderRawSheetTable() {
 
     // 2. 본문 (Tbody) 렌더링
     if (rows.length === 0) {
-        const colSpan = columns.length + 5;
+        const colSpan = columns.length + 6;
         tbody.innerHTML = `
             <tr>
                 <td colspan="${colSpan}" class="sheet-empty-state">
@@ -2508,10 +2545,24 @@ function renderRawSheetTable() {
             </td>
         `;
 
-        // 사용자 정의 동적 열들 (측정 데이터 열은 숫자 및 소수점만 입력 허용, colIdx = 3, 4, 5...)
+        // Port Name 컬럼 (좌우 스크롤 고정 + 셀 입력창, colIdx = 3)
+        const curPort = (row.port !== undefined && row.port !== null && row.port !== '')
+            ? row.port
+            : ((row.port_name !== undefined && row.port_name !== null && row.port_name !== '')
+                ? row.port_name
+                : ((row.values && (row.values['Port Name'] || row.values['포트'])) || ''));
+        bodyHtml += `
+            <td class="sheet-td-port sheet-sticky-col sheet-sticky-port" data-row-idx="${rowIdx}" data-col-idx="3">
+                <input type="text" class="sheet-cell-input sheet-port-cell-input" value="${escapeHtml(curPort)}" 
+                       data-row-id="${row.id}" data-row-idx="${rowIdx}" data-col-idx="3" data-field="port" 
+                       placeholder="-" autocomplete="off" onchange="updateRowPort('${row.id}', this.value)">
+            </td>
+        `;
+
+        // 사용자 정의 동적 열들 (측정 데이터 열은 숫자 및 소수점만 입력 허용, colIdx = 4, 5, 6...)
         columns.forEach((col, colIdx) => {
             const val = (row.values && row.values[col] !== undefined) ? row.values[col] : '';
-            const actualColIdx = 3 + colIdx;
+            const actualColIdx = 4 + colIdx;
             bodyHtml += `
                 <td class="sheet-td-data" data-row-idx="${rowIdx}" data-col-idx="${actualColIdx}" style="width: 160px; min-width: 150px;">
                     <input type="text" class="sheet-cell-input sheet-number-cell-input" value="${escapeHtml(val)}" 
@@ -2748,7 +2799,7 @@ let tabStartColIndex = null;
  * 다음 입력 가능한 input 탐색 헬퍼 (구분 컬럼 등 건너뜀)
  */
 function findNextSheetInput(rIdx, cIdx, forward = true) {
-    const totalCols = 3 + ((currentSheetData && currentSheetData.columns) ? currentSheetData.columns.length : 0);
+    const totalCols = 4 + ((currentSheetData && currentSheetData.columns) ? currentSheetData.columns.length : 0);
     let cur = cIdx + (forward ? 1 : -1);
     while (cur >= 0 && cur < totalCols) {
         const el = document.querySelector(`.sheet-cell-input[data-row-idx="${rIdx}"][data-col-idx="${cur}"]`);
@@ -2822,6 +2873,11 @@ function bindCellInputEvents() {
                     row.concentration = value;
                     if (!row.values) row.values = {};
                     row.values['농도'] = value;
+                } else if (field === 'port') {
+                    row.port = value;
+                    row.port_name = value;
+                    if (!row.values) row.values = {};
+                    row.values['Port Name'] = value;
                 } else if (field === 'date') {
                     row.date = value;
                 } else if (colName) {
@@ -3106,8 +3162,9 @@ function getRawSheetCellValue(rowIdx, colIdx) {
     if (colIdx === 0) return row.date || '';
     if (colIdx === 1) return row.division || (row.values && row.values['구분']) || '';
     if (colIdx === 2) return (row.concentration !== undefined && row.concentration !== null) ? String(row.concentration) : ((row.values && row.values['농도']) || '');
-    if (colIdx >= 3) {
-        const cName = currentSheetData.columns[colIdx - 3];
+    if (colIdx === 3) return (row.port !== undefined && row.port !== null) ? String(row.port) : ((row.port_name !== undefined && row.port_name !== null) ? String(row.port_name) : ((row.values && (row.values['Port Name'] || row.values['포트'])) || ''));
+    if (colIdx >= 4) {
+        const cName = currentSheetData.columns[colIdx - 4];
         return (row.values && cName && row.values[cName] !== undefined) ? String(row.values[cName]) : '';
     }
     return '';
@@ -3142,9 +3199,9 @@ function setRawSheetCellValue(rowIdx, colIdx, val) {
             row.division = 'STD5';
         } else if (cleanDiv === '기타' || cleanDiv === 'ETC') {
             row.division = '기타';
-            row.concentration = '-';
+            row.concentration = 'Sample';
             if (!row.values) row.values = {};
-            row.values['농도'] = '-';
+            row.values['농도'] = 'Sample';
         } else if (cleanDiv === 'SAMPLE') {
             row.division = '';
         } else {
@@ -3156,8 +3213,13 @@ function setRawSheetCellValue(rowIdx, colIdx, val) {
         row.concentration = trimmed;
         if (!row.values) row.values = {};
         row.values['농도'] = trimmed;
-    } else if (colIdx >= 3) {
-        const cName = currentSheetData.columns[colIdx - 3];
+    } else if (colIdx === 3) {
+        row.port = trimmed;
+        row.port_name = trimmed;
+        if (!row.values) row.values = {};
+        row.values['Port Name'] = trimmed;
+    } else if (colIdx >= 4) {
+        const cName = currentSheetData.columns[colIdx - 4];
         if (cName) {
             if (!row.values) row.values = {};
             // 컬럼 데이터는 숫자만 허용
@@ -3407,7 +3469,7 @@ function handlePasteSheetCells(e) {
         addSheetRow(null, false, true);
     }
 
-    const totalCols = 3 + (currentSheetData.columns ? currentSheetData.columns.length : 0);
+    const totalCols = 4 + (currentSheetData.columns ? currentSheetData.columns.length : 0);
     let updatedCount = 0;
 
     for (let rOffset = 0; rOffset < grid.length; rOffset++) {
@@ -3494,15 +3556,15 @@ window.updateRowDivision = function (rowId, val) {
             }
         }
 
-        // '기타' 선택 시 농도를 '-' 로 자동 표기
+        // '기타' 선택 시 농도를 'Sample' 로 자동 표기 (사용자 요청: 구분에 기타로하면 농도에 초기값으로 Sample 이 들어가게 해줘. 텍스트수정은 가능하게 해줘)
         if (val === '기타') {
-            row.concentration = '-';
+            row.concentration = 'Sample';
             if (!row.values) row.values = {};
-            row.values['농도'] = '-';
+            row.values['농도'] = 'Sample';
             if (tr) {
                 const concInput = tr.querySelector('.sheet-conc-cell-input');
                 if (concInput) {
-                    concInput.value = '-';
+                    concInput.value = 'Sample';
                 }
             }
         }
@@ -3523,6 +3585,23 @@ window.updateRowConcentration = function (rowId, val) {
         row.concentration = val;
         if (!row.values) row.values = {};
         row.values['농도'] = val;
+        // 즉시 동기화 저장
+        saveCurrentSheetData(true, false, true);
+    }
+};
+
+/**
+ * Port Name 변경 핸들러 (즉시 저장 및 row.values 동기화)
+ */
+window.updateRowPort = function (rowId, val) {
+    if (!currentSheetData || !currentSheetData.rows) return;
+    const row = currentSheetData.rows.find(r => r.id === rowId);
+    if (row && (row.port !== val || row.port_name !== val)) {
+        pushSheetUndoSnapshot();
+        row.port = val;
+        row.port_name = val;
+        if (!row.values) row.values = {};
+        row.values['Port Name'] = val;
         // 즉시 동기화 저장
         saveCurrentSheetData(true, false, true);
     }
@@ -3568,6 +3647,8 @@ function addSheetRow(specificDate = null, focusFirst = true, appendToBottom = tr
         date: dateStr,
         division: '',
         concentration: '',
+        port: '',
+        port_name: '',
         values: {}
     };
 
@@ -3781,10 +3862,10 @@ function handleExportCsv() {
 
     let csv = '\uFEFF'; // UTF-8 BOM
 
-    // 1. 헤더 (날짜, 구분, 농도(단위), ...동적 열들)
+    // 1. 헤더 (날짜, 구분, 농도(단위), Port Name, ...동적 열들)
     const concUnit = currentSheetData.concUnit || 'ppm';
     const concHeader = `농도(${concUnit})`;
-    const headers = ['날짜', '구분', concHeader, ...columns];
+    const headers = ['날짜', '구분', concHeader, 'Port Name', ...columns];
     csv += headers.map(h => `"${h.replace(/"/g, '""')}"`).join(',') + '\n';
 
     // 2. 행 데이터
@@ -3793,10 +3874,16 @@ function handleExportCsv() {
         const concVal = (row.concentration !== undefined && row.concentration !== null && row.concentration !== '')
             ? row.concentration
             : ((row.values && row.values['농도']) || '');
+        const portVal = (row.port !== undefined && row.port !== null && row.port !== '')
+            ? row.port
+            : ((row.port_name !== undefined && row.port_name !== null && row.port_name !== '')
+                ? row.port_name
+                : ((row.values && (row.values['Port Name'] || row.values['포트'])) || ''));
         const line = [
             `"${(row.date || '').replace(/"/g, '""')}"`,
             `"${String(divVal).replace(/"/g, '""')}"`,
             `"${String(concVal).replace(/"/g, '""')}"`,
+            `"${String(portVal).replace(/"/g, '""')}"`,
             ...columns.map(col => {
                 const val = (row.values && row.values[col] !== undefined) ? String(row.values[col]) : '';
                 return `"${val.replace(/"/g, '""')}"`;
@@ -3880,10 +3967,11 @@ function processCsvImport(csvText) {
     const headerRow = rows[0];
     const dataRows = rows.slice(1);
 
-    // 날짜, 구분, 농도 컬럼 인덱스 식별
+    // 날짜, 구분, 농도, 포트(Port Name) 컬럼 인덱스 식별
     let dateColIdx = -1;
     let divColIdx = -1;
     let concColIdx = -1;
+    let portColIdx = -1;
 
     for (let i = 0; i < headerRow.length; i++) {
         const colTitle = headerRow[i].toLowerCase().replace(/[\s_()（）]/g, '');
@@ -3898,26 +3986,35 @@ function processCsvImport(csvText) {
             if (rawHeader.includes('ppb')) currentSheetData.concUnit = 'ppb';
             else if (rawHeader.includes('ppt')) currentSheetData.concUnit = 'ppt';
             else if (rawHeader.includes('ppm')) currentSheetData.concUnit = 'ppm';
+        } else if (colTitle.includes('port') || colTitle.includes('포트')) {
+            portColIdx = i;
         }
     }
 
-    // 헤더명으로 못 찾은 경우, 데이터 행의 값이 날짜 패턴인지 검사
+    // [요청 반영] A1: 날짜, B1: 구분, C1: 농도, D1: 포트 형식 지원
     if (dateColIdx === -1) {
         if (dataRows.length > 0 && normalizeDate(dataRows[0][0])) {
             dateColIdx = 0;
-        } else if (dataRows.length > 0 && dataRows[0].length > 1 && normalizeDate(dataRows[0][1])) {
-            dateColIdx = 1;
         } else {
             dateColIdx = 0;
         }
     }
+    if (divColIdx === -1 && headerRow.length > 1) {
+        divColIdx = 1;
+    }
+    if (concColIdx === -1 && headerRow.length > 2) {
+        concColIdx = 2;
+    }
+    if (portColIdx === -1 && headerRow.length > 3) {
+        portColIdx = 3;
+    }
 
-    // CSV 파일 기준 열 목록 구성 (순번/No 제외, 날짜, 구분, 농도 제외)
+    // CSV 파일 기준 열 목록 구성 (순번/No 제외, 날짜, 구분, 농도, 포트 제외)
     const newColumns = [];
     const csvColMap = []; // { csvIdx, colName }
 
     for (let i = 0; i < headerRow.length; i++) {
-        if (i === dateColIdx || i === divColIdx || i === concColIdx) continue;
+        if (i === dateColIdx || i === divColIdx || i === concColIdx || i === portColIdx) continue;
         const rawName = headerRow[i].trim();
         const lower = rawName.toLowerCase();
         if (lower === 'no' || lower === '순번' || lower === '번호') continue;
@@ -3941,7 +4038,7 @@ function processCsvImport(csvText) {
         if (!rowArr || rowArr.length === 0 || rowArr.every(cell => !cell)) return;
 
         const rawDate = rowArr[dateColIdx];
-        const dateStr = normalizeDate(rawDate) || getTodayString();
+        const dateStr = normalizeDate(rawDate) || rawDate || getTodayString();
 
         let divStr = (divColIdx !== -1 && rowArr[divColIdx] !== undefined) ? String(rowArr[divColIdx]).trim() : '';
         const cleanDiv = divStr.replace(/[\s_\-]/g, '').toUpperCase();
@@ -3955,24 +4052,52 @@ function processCsvImport(csvText) {
             divStr = 'STD4';
         } else if (cleanDiv === 'STD5' || cleanDiv.startsWith('STD5')) {
             divStr = 'STD5';
+        } else if (cleanDiv === '기타' || cleanDiv === 'ETC') {
+            divStr = '기타';
         } else if (cleanDiv === 'SAMPLE') {
             divStr = '';
         }
 
-        const concStr = (concColIdx !== -1 && rowArr[concColIdx] !== undefined) ? String(rowArr[concColIdx]).trim() : '';
+        let concStr = (concColIdx !== -1 && rowArr[concColIdx] !== undefined) ? String(rowArr[concColIdx]).trim() : '';
+        // 구분이 기타인데 농도가 비어있는 경우 기본값 'Sample' 지정 (텍스트 수정 가능)
+        if (divStr === '기타' && !concStr) {
+            concStr = 'Sample';
+        }
+
+        const portStr = (portColIdx !== -1 && rowArr[portColIdx] !== undefined) ? String(rowArr[portColIdx]).trim() : '';
 
         const vals = {};
         newColumns.forEach(c => vals[c] = '');
 
         csvColMap.forEach(({ csvIdx, colName }) => {
-            vals[colName] = (rowArr[csvIdx] !== undefined) ? rowArr[csvIdx] : '';
+            let cellVal = (rowArr[csvIdx] !== undefined) ? String(rowArr[csvIdx]).trim() : '';
+            // 측정 데이터 열 숫자/소수점 포맷 보정
+            if (cellVal !== '' && cellVal !== '-') {
+                let filtered = cellVal.replace(/[^0-9.-]/g, '');
+                if (filtered.indexOf('-') > 0 || (filtered.match(/-/g) || []).length > 1) {
+                    const isNeg = filtered.startsWith('-');
+                    filtered = (isNeg ? '-' : '') + filtered.replace(/-/g, '');
+                }
+                const parts = filtered.split('.');
+                if (parts.length > 2) {
+                    filtered = parts[0] + '.' + parts.slice(1).join('');
+                }
+                cellVal = filtered;
+            }
+            vals[colName] = cellVal;
         });
+
+        vals['구분'] = divStr;
+        vals['농도'] = concStr;
+        vals['Port Name'] = portStr;
 
         newRows.push({
             id: 'row_' + Date.now() + '_' + rIdx + '_' + Math.random().toString(36).substr(2, 4),
             date: dateStr,
             division: divStr,
             concentration: concStr,
+            port: portStr,
+            port_name: portStr,
             values: vals
         });
     });

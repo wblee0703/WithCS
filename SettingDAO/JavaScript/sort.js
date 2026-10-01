@@ -1667,6 +1667,11 @@ function executeSortSearch() {
                                 rest = costMatch[2].trim();
                             }
 
+                            // [추가] '내용 없음'이나 '장비 점검'은 어떠한 경우에도 비용 라벨을 붙이지 않음
+                            if (rest === '내용 없음' || rest === '장비 점검' || rest === '-') {
+                                return rest;
+                            }
+
                             let prefix = '';
                             let purePart = rest;
                             if (rest.includes(' - ')) {
@@ -1680,6 +1685,10 @@ function executeSortSearch() {
                             if (specMatch) {
                                 spec = specMatch[0];
                                 purePart = purePart.replace(specMatch[0], '').trim();
+                            }
+
+                            if (purePart === '내용 없음' || purePart === '장비 점검' || purePart === '-') {
+                                return purePart;
                             }
 
                             const matchItem = adminItems.find(ai => ai.part === purePart || ai.code === purePart);
@@ -1837,8 +1846,8 @@ function executeSortSearch() {
     const groupedResultsMap = new Map();
     results.forEach(item => {
         const groupKey = (item.type === '비정기')
-            ? `${item.equipRaw}_${item.date}_${item.status}_${item.type}_${item.detailType}_${item.id}`
-            : `${item.equipRaw}_${item.date}_${item.status}_${item.type}_${item.detailType}`;
+            ? `${item.site}_${item.equipRaw}_${item.date}_${item.status}_${item.type}_${item.detailType}_${item.id}`
+            : `${item.site}_${item.equipRaw}_${item.date}_${item.status}_${item.type}_${item.detailType}`;
 
         if (!groupedResultsMap.has(groupKey)) {
             groupedResultsMap.set(groupKey, { ...item });
@@ -1848,10 +1857,39 @@ function executeSortSearch() {
             // 내용(물품) 병합
             const existingContents = window.splitSafetyContent(existing.content);
             const newContents = window.splitSafetyContent(item.content);
+
+            const getCleanItemName = (str) => {
+                if (!str) return '';
+                let s = str.replace(/^\[[^\]]+\]\s*/, '').trim();
+                if (s.includes(' - ')) {
+                    s = s.split(' - ').slice(1).join(' - ').trim();
+                }
+                const sm = s.match(/\s*\[(.*?)\]$/);
+                if (sm) s = s.replace(sm[0], '').trim();
+                return s;
+            };
+
             newContents.forEach(c => {
-                if (!existingContents.includes(c)) existingContents.push(c);
+                const cleanC = getCleanItemName(c);
+                const isAlreadyIncluded = existingContents.some(ec => {
+                    if (ec === c) return true;
+                    const cleanEc = getCleanItemName(ec);
+                    if (cleanEc && cleanC && cleanEc === cleanC) return true;
+                    return false;
+                });
+                if (!isAlreadyIncluded) existingContents.push(c);
             });
-            existing.content = existingContents.join(', ');
+
+            // 유효 물품이 있는 경우 '내용 없음', '장비 점검' 등은 제거하고, 유효 물품이 없으면 단일 '내용 없음' 유지
+            const validContents = existingContents.filter(c => {
+                const pure = c.replace(/^\[[^\]]+\]\s*/, '').trim();
+                return pure && pure !== '내용 없음' && pure !== '장비 점검' && pure !== '-';
+            });
+            if (validContents.length > 0) {
+                existing.content = validContents.join(', ');
+            } else {
+                existing.content = '내용 없음';
+            }
 
             // 작업자 병합
             const existingWorkers = existing.worker ? existing.worker.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -1868,10 +1906,17 @@ function executeSortSearch() {
 
             // 비용 처리 병합
             if (item.costType && item.costType !== existing.costType) {
-                const existingCosts = existing.costType.split(',').map(s => s.trim());
-                if (!existingCosts.includes(item.costType)) {
-                    existingCosts.push(item.costType);
-                    existing.costType = existingCosts.join(', ');
+                // 내용이 없는 작업('내용 없음')의 경우 다중 비용처리가 공존할 수 없으므로 쉼표로 합치지 않고 단일 비용처리(유상 우선) 적용
+                if (existing.content === '내용 없음') {
+                    if (item.costType === '유상' || existing.costType !== '유상') {
+                        existing.costType = item.costType === '유상' ? '유상' : existing.costType;
+                    }
+                } else {
+                    const existingCosts = existing.costType.split(',').map(s => s.trim());
+                    if (!existingCosts.includes(item.costType)) {
+                        existingCosts.push(item.costType);
+                        existing.costType = existingCosts.join(', ');
+                    }
                 }
             }
         }
@@ -2066,6 +2111,11 @@ function renderSortListTableOnly() {
             const costMatch = item.match(/^\[([^\]]+)\]/);
             if (costMatch) costTag = `[${costMatch[1]}] `;
 
+            // [요청 반영] cleanItem이 '내용 없음' 또는 '장비 점검'인 경우 비용처리 라벨을 절대 붙이지 않음
+            if (cleanItem === '내용 없음' || cleanItem === '장비 점검' || cleanItem === '-') {
+                costTag = '';
+            }
+
             let kwLabel = '';
             let purePart = cleanItem;
 
@@ -2087,29 +2137,47 @@ function renderSortListTableOnly() {
 
             let displayPart = purePart;
             if (purePart) {
-                let specStr = '';
-                const specMatch = purePart.match(/\s*\[(.*?)\]$/);
-                if (specMatch) {
-                    specStr = specMatch[0];
-                    purePart = purePart.replace(specMatch[0], '').trim();
-                }
-
-                const matchItem = adminItems.find(ai => (ai.part || '').trim().toLowerCase() === purePart.toLowerCase() || (ai.code || '').trim().toLowerCase() === purePart.toLowerCase());
-                if (matchItem && matchItem.code) {
-                    displayPart = `${matchItem.code}${specStr}`;
+                if (purePart === '내용 없음' || purePart === '장비 점검' || purePart === '-') {
+                    costTag = '';
+                    displayPart = purePart;
                 } else {
-                    displayPart = `${purePart}${specStr}`;
+                    let specStr = '';
+                    const specMatch = purePart.match(/\s*\[(.*?)\]$/);
+                    if (specMatch) {
+                        specStr = specMatch[0];
+                        purePart = purePart.replace(specMatch[0], '').trim();
+                    }
+
+                    const matchItem = adminItems.find(ai => (ai.part || '').trim().toLowerCase() === purePart.toLowerCase() || (ai.code || '').trim().toLowerCase() === purePart.toLowerCase());
+                    if (matchItem && matchItem.code) {
+                        displayPart = `${matchItem.code}${specStr}`;
+                    } else {
+                        displayPart = `${purePart}${specStr}`;
+                    }
                 }
             }
 
             let finalWorkItem = displayPart ? `${costTag}${displayPart}`.trim() : (kwLabel && row.type !== '비정기' ? `${costTag}${kwLabel}` : '');
             if (finalWorkItem && finalWorkItem !== '-') {
-                workContentList.push(finalWorkItem);
+                if (!workContentList.includes(finalWorkItem)) {
+                    workContentList.push(finalWorkItem);
+                }
             }
         });
 
-        if (workContentList.length === 0) {
-            workContentList.push('-');
+        // [추가] 유효한 부품이 포함되어 있다면 '내용 없음'은 리스트에서 제거, 모두 비어있으면 단일 '내용 없음'
+        const nonNoContentList = workContentList.filter(w => w !== '내용 없음' && w !== '장비 점검' && w !== '-');
+        if (nonNoContentList.length > 0) {
+            workContentList = nonNoContentList;
+        } else if (workContentList.length === 0) {
+            workContentList.push('내용 없음');
+        } else {
+            workContentList = ['내용 없음'];
+        }
+
+        // [추가] 직업내용이 '내용 없음'인 경우 비용처리에 쉼표로 다중 비용처리가 되어 있다면 단일 비용처리로 정제
+        if (workContentList.length === 1 && workContentList[0] === '내용 없음' && row.costType && row.costType.includes(',')) {
+            row.costType = row.costType.includes('유상') ? '유상' : row.costType.split(',')[0].trim();
         }
 
         // HTML 태그 렌더링용 (품목 1개당 1줄씩 표시)
