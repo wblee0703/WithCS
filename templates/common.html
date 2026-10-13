@@ -917,6 +917,9 @@
                 <h3>작업 등록</h3><button class="btn-del-sm" id="btn-close-register-modal">✕</button>
             </div>
             <div class="modal-body">
+                <div id="register-duplicate-alert" style="display: none; padding: 10px 14px; margin-bottom: 12px; background: rgba(235, 55, 31, 0.15); border: 1px solid #eb371f; border-radius: 6px; color: #ff6b6b; font-size: 13px; line-height: 1.4; font-weight: 500;">
+                    <span id="register-duplicate-alert-msg">⚠️ 이미 해당 일자에 등록된 정기 작업이 존재합니다.</span>
+                </div>
                 <div class="form-row"><label class="form-label">예정일</label><input type="date" id="register-date-display"
                         class="input-dark"></div>
                 <div class="form-row"><label class="form-label">사업장</label><select id="register-site-select"

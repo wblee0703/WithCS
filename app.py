@@ -4961,6 +4961,57 @@ def reassign_child_extra_works(equip_id, deleted_ids):
         if old_trouble:
             TroubleLog.query.filter_by(id=d_id_str).delete(synchronize_session=False)
 
+# [추가] 정기 PM 등록 시 동일 날짜 중복 작업 실시간 사전 감지 API
+@app.route('/api/check_duplicate_schedule', methods=['GET', 'POST'])
+@login_required
+@limiter.exempt
+def check_duplicate_schedule():
+    if request.method == 'POST':
+        payload = request.json or {}
+    else:
+        payload = request.args.to_dict()
+
+    site = payload.get('site', '').strip()
+    equip = payload.get('equip', '').strip()
+    date_str = payload.get('date', '').strip()
+    work_type = payload.get('type', '정기').strip()
+    exclude_id = str(payload.get('exclude_id', '')).strip()
+
+    if not site or not equip or not date_str:
+        return jsonify({'is_duplicate': False})
+
+    equip_id = lookup_equipment_id(equip_id=payload.get('equip_id'), site=site, equip_key=equip)
+    if not equip_id:
+        return jsonify({'is_duplicate': False})
+
+    # 날짜 정규화 (YYYY-MM-DD)
+    clean_date = date_str.split('T')[0].replace('.', '-').replace('/', '-').strip()
+    parts = clean_date.split('-')
+    if len(parts) == 3:
+        clean_date = f"{parts[0].zfill(4)}-{parts[1].zfill(2)}-{parts[2].zfill(2)}"
+
+    if not work_type or work_type == '정기':
+        query = LogItem.query.filter(
+            LogItem.equip_id == equip_id,
+            db.or_(LogItem.scheduled_date == clean_date, LogItem.date == clean_date),
+            db.or_(LogItem.type == '정기', LogItem.type == None, LogItem.type == ''),
+            LogItem.status.in_(['작업예정', '조치완료'])
+        )
+        if exclude_id:
+            query = query.filter(LogItem.id != exclude_id)
+
+        dup = query.first()
+        if dup:
+            return jsonify({
+                'is_duplicate': True,
+                'worker': dup.worker or '',
+                'type': dup.type or '정기',
+                'scheduled_date': dup.scheduled_date or dup.date or clean_date,
+                'content': dup.content or ''
+            })
+
+    return jsonify({'is_duplicate': False})
+
 # [추가] 유지관리 및 캘린더 장비 이력 100% DB 동기화 전용 트랜잭션 API
 @app.route('/api/history/transaction', methods=['POST'])
 @login_required
@@ -5232,6 +5283,23 @@ def history_transaction():
                             item.id = m_id
 
                 if not item:
+                    # [동시 등록 방지] 신규 정기 작업 등록 시 동일 일자에 이미 등록된 정기 작업이 있는지 DB 중복 검사
+                    if (not m_type or m_type == '정기') and not m.get('originalLogId'):
+                        dup_item = LogItem.query.filter(
+                            LogItem.equip_id == equip_id,
+                            LogItem.id != m_id,
+                            db.or_(LogItem.scheduled_date == m_sched_date, LogItem.date == m_sched_date),
+                            db.or_(LogItem.type == '정기', LogItem.type == None, LogItem.type == ''),
+                            LogItem.status.in_(['작업예정', '조치완료'])
+                        ).first()
+                        if dup_item:
+                            db.session.rollback()
+                            dup_worker = dup_item.worker or '다른 작업자'
+                            return jsonify({
+                                'status': 'fail',
+                                'message': f'해당 일자({m_sched_date})에 이미 등록된 정기 작업이 존재합니다. (작업자: {dup_worker})'
+                            }), 400
+
                     item = LogItem(id=m_id, equip_id=equip_id, status='작업예정')
                     db.session.add(item)
 

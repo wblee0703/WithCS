@@ -3573,6 +3573,83 @@ window.cancelScheduleCompletion = cancelScheduleCompletion;
    2. 작업 등록 모달 (Register Schedule Modal)
    ========================================================================== */
 
+/* --- [추가] 정기 PM 등록 시 동일 날짜 중복 실시간 검사 함수 --- */
+window.checkRegisterDuplicateRealtime = async function () {
+    const modal = document.getElementById('register-schedule-modal');
+    if (!modal || modal.style.display === 'none') return false;
+
+    const dateDisplay = document.getElementById('register-date-display');
+    const siteSelect = document.getElementById('register-site-select');
+    const equipSelect = document.getElementById('register-equip-select');
+    const typeSelect = document.getElementById('register-type-select');
+    const confirmBtn = document.getElementById('btn-confirm-register-schedule');
+    const alertBox = document.getElementById('register-duplicate-alert');
+    const alertMsg = document.getElementById('register-duplicate-alert-msg');
+
+    const dateVal = dateDisplay ? dateDisplay.value.trim() : '';
+    const siteVal = siteSelect ? siteSelect.value.trim() : '';
+    const equipVal = equipSelect ? equipSelect.value.trim() : '';
+    const typeVal = typeSelect ? (typeSelect.value.trim() || '정기') : '정기';
+
+    const clearAlert = () => {
+        if (alertBox) alertBox.style.display = 'none';
+        if (confirmBtn && !window.isRegisteringSchedule) {
+            confirmBtn.disabled = false;
+            confirmBtn.style.opacity = '';
+            confirmBtn.style.pointerEvents = '';
+            confirmBtn.removeAttribute('title');
+        }
+    };
+
+    // 추가 작업 등록 모드이거나 정기 작업이 아닌 경우 중복 알림 해제
+    if (window.currentAddWorkLogId || (typeVal && typeVal !== '정기')) {
+        clearAlert();
+        return false;
+    }
+
+    // 필수 정보가 아직 선택되지 않은 경우 알림 숨김
+    if (!dateVal || !siteVal || !equipVal) {
+        clearAlert();
+        return false;
+    }
+
+    try {
+        const queryParams = new URLSearchParams({
+            site: siteVal,
+            equip: equipVal,
+            date: dateVal,
+            type: typeVal
+        });
+        const res = await fetch(`/api/check_duplicate_schedule?${queryParams.toString()}`);
+        if (!res.ok) return false;
+        const result = await res.json();
+
+        if (result && result.is_duplicate) {
+            if (alertBox) {
+                const workerText = result.worker ? ` (작업자: ${result.worker})` : '';
+                const dateText = result.scheduled_date || dateVal;
+                if (alertMsg) {
+                    alertMsg.textContent = `⚠️ [중복 등록 방지] 해당 일자(${dateText})에 이미 등록된 정기 작업이 존재합니다.${workerText}`;
+                }
+                alertBox.style.display = 'block';
+            }
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.style.opacity = '0.5';
+                confirmBtn.style.pointerEvents = 'none';
+                confirmBtn.title = '이미 동일 일자에 등록된 정기 작업이 존재합니다.';
+            }
+            return true;
+        } else {
+            clearAlert();
+            return false;
+        }
+    } catch (err) {
+        console.warn('중복 검사 비동기 요청 오류:', err);
+        return false;
+    }
+};
+
 /* --- 2.1 초기화 (Setup) --- */
 function setupRegisterScheduleModal() {
     const modal = document.getElementById('register-schedule-modal');
@@ -3582,6 +3659,7 @@ function setupRegisterScheduleModal() {
     const equipSelect = document.getElementById('register-equip-select');
     const typeSelect = document.getElementById('register-type-select');
     const detailTypeSelect = document.getElementById('register-detail-type-select');
+    const dateDisplay = document.getElementById('register-date-display');
 
     if (!modal) return;
 
@@ -3589,6 +3667,19 @@ function setupRegisterScheduleModal() {
         modal.style.display = 'none';
         window.currentAddWorkLogId = null; // 팝업 닫을 시 상태 초기화
         window.openDetailAfterRegister = false; // [추가] 팝업 닫을 시 상세 팝업 오픈 플래그 초기화
+
+        if (window.registerDuplicateTimer) {
+            clearInterval(window.registerDuplicateTimer);
+            window.registerDuplicateTimer = null;
+        }
+        const alertBox = document.getElementById('register-duplicate-alert');
+        if (alertBox) alertBox.style.display = 'none';
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.style.opacity = '';
+            confirmBtn.style.pointerEvents = '';
+            confirmBtn.removeAttribute('title');
+        }
 
         // [추가] 팝업 닫을 때 제안박스 선택 상태 초기화
         const contentList = document.getElementById('register-content-list');
@@ -3620,15 +3711,31 @@ function setupRegisterScheduleModal() {
         if (typeof window.restoreTaskSearchModal === 'function') window.restoreTaskSearchModal();
     };
 
+    if (dateDisplay) {
+        const handleDateChange = () => {
+            if (typeof window.checkRegisterDuplicateRealtime === 'function') {
+                window.checkRegisterDuplicateRealtime();
+            }
+        };
+        dateDisplay.addEventListener('change', handleDateChange);
+        dateDisplay.addEventListener('input', handleDateChange);
+    }
+
     if (siteSelect) {
         siteSelect.onchange = () => {
             updateRegisterEquipSelect(siteSelect.value);
+            if (typeof window.checkRegisterDuplicateRealtime === 'function') {
+                window.checkRegisterDuplicateRealtime();
+            }
         };
     }
 
     if (equipSelect) {
         equipSelect.onchange = () => {
             if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
+            if (typeof window.checkRegisterDuplicateRealtime === 'function') {
+                window.checkRegisterDuplicateRealtime();
+            }
         };
 
         if (!document.getElementById('register-equip-wrapper')) {
@@ -3675,6 +3782,9 @@ function setupRegisterScheduleModal() {
     if (typeSelect) {
         const handleTypeChange = () => {
             if (typeof updateRegisterDetailTypeOptions === 'function') updateRegisterDetailTypeOptions();
+            if (typeof window.checkRegisterDuplicateRealtime === 'function') {
+                window.checkRegisterDuplicateRealtime();
+            }
         };
         typeSelect.onchange = handleTypeChange;
         typeSelect.addEventListener('change', handleTypeChange);
@@ -4244,6 +4354,22 @@ function openRegisterScheduleModal(dateStr, presetData = null) {
 
     modal.style.display = 'flex';
 
+    if (window.registerDuplicateTimer) {
+        clearInterval(window.registerDuplicateTimer);
+        window.registerDuplicateTimer = null;
+    }
+    if (typeof window.checkRegisterDuplicateRealtime === 'function') {
+        window.checkRegisterDuplicateRealtime();
+    }
+    window.registerDuplicateTimer = setInterval(() => {
+        if (modal.style.display !== 'none' && typeof window.checkRegisterDuplicateRealtime === 'function') {
+            window.checkRegisterDuplicateRealtime();
+        } else if (window.registerDuplicateTimer) {
+            clearInterval(window.registerDuplicateTimer);
+            window.registerDuplicateTimer = null;
+        }
+    }, 3000);
+
     setTimeout(() => {
         if (typeof window.updateRegisterInputStates === 'function') window.updateRegisterInputStates();
     }, 50);
@@ -4414,6 +4540,7 @@ function updateRegisterEquipSelect(site) {
                             if (equipDropdown) equipDropdown.classList.remove('show');
                             if (typeof updateRegisterTypeOptions === 'function') updateRegisterTypeOptions();
                             if (typeof window.updateRegisterInputStates === 'function') window.updateRegisterInputStates();
+                            if (typeof window.checkRegisterDuplicateRealtime === 'function') window.checkRegisterDuplicateRealtime();
                         };
 
                         li.addEventListener('touchend', (e) => {
@@ -5366,10 +5493,16 @@ async function confirmRegisterSchedule() {
     window.isRegisteringSchedule = true;
 
     const btnSave = document.getElementById('btn-save-register-schedule');
+    const confirmBtn = document.getElementById('btn-confirm-register-schedule');
     if (btnSave) {
         btnSave.disabled = true;
         btnSave.style.pointerEvents = 'none';
         btnSave.style.opacity = '0.5';
+    }
+    if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.style.pointerEvents = 'none';
+        confirmBtn.style.opacity = '0.5';
     }
 
     const resetRegisterState = () => {
@@ -5379,9 +5512,22 @@ async function confirmRegisterSchedule() {
             btnSave.style.pointerEvents = '';
             btnSave.style.opacity = '';
         }
+        if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.style.pointerEvents = '';
+            confirmBtn.style.opacity = '';
+        }
     };
 
     try {
+        if (typeof window.checkRegisterDuplicateRealtime === 'function') {
+            const isDup = await window.checkRegisterDuplicateRealtime();
+            if (isDup) {
+                alert('해당 일자에 이미 등록된 정기 작업이 존재합니다.');
+                resetRegisterState();
+                return;
+            }
+        }
         const dateStr = document.getElementById('register-date-display').value;
         const site = document.getElementById('register-site-select').value;
         const equip = document.getElementById('register-equip-select').value;
@@ -5825,6 +5971,13 @@ async function confirmRegisterSchedule() {
 
         alert('일정이 등록되었습니다.');
         document.getElementById('register-schedule-modal').style.display = 'none';
+
+        if (window.registerDuplicateTimer) {
+            clearInterval(window.registerDuplicateTimer);
+            window.registerDuplicateTimer = null;
+        }
+        const alertBox = document.getElementById('register-duplicate-alert');
+        if (alertBox) alertBox.style.display = 'none';
 
         if (costTypeSelect) costTypeSelect.value = '';
 
