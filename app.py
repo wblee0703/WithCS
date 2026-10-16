@@ -4990,25 +4990,31 @@ def check_duplicate_schedule():
     if len(parts) == 3:
         clean_date = f"{parts[0].zfill(4)}-{parts[1].zfill(2)}-{parts[2].zfill(2)}"
 
-    if not work_type or work_type == '정기':
-        query = LogItem.query.filter(
-            LogItem.equip_id == equip_id,
-            db.or_(LogItem.scheduled_date == clean_date, LogItem.date == clean_date),
-            db.or_(LogItem.type == '정기', LogItem.type == None, LogItem.type == ''),
-            LogItem.status.in_(['작업예정', '조치완료'])
-        )
-        if exclude_id:
-            query = query.filter(LogItem.id != exclude_id)
+    target_type = work_type if work_type else '정기'
 
-        dup = query.first()
-        if dup:
-            return jsonify({
-                'is_duplicate': True,
-                'worker': dup.worker or '',
-                'type': dup.type or '정기',
-                'scheduled_date': dup.scheduled_date or dup.date or clean_date,
-                'content': dup.content or ''
-            })
+    if target_type == '정기':
+        type_cond = db.or_(LogItem.type == '정기', LogItem.type == None, LogItem.type == '')
+    else:
+        type_cond = (LogItem.type == target_type)
+
+    query = LogItem.query.filter(
+        LogItem.equip_id == equip_id,
+        db.or_(LogItem.scheduled_date == clean_date, LogItem.date == clean_date),
+        type_cond,
+        LogItem.status.in_(['작업예정', '조치완료'])
+    )
+    if exclude_id:
+        query = query.filter(LogItem.id != exclude_id)
+
+    dup = query.first()
+    if dup:
+        return jsonify({
+            'is_duplicate': True,
+            'worker': dup.worker or '',
+            'type': dup.type or target_type,
+            'scheduled_date': dup.scheduled_date or dup.date or clean_date,
+            'content': dup.content or ''
+        })
 
     return jsonify({'is_duplicate': False})
 
@@ -5283,13 +5289,19 @@ def history_transaction():
                             item.id = m_id
 
                 if not item:
-                    # [동시 등록 방지] 신규 정기 작업 등록 시 동일 일자에 이미 등록된 정기 작업이 있는지 DB 중복 검사
-                    if (not m_type or m_type == '정기') and not m.get('originalLogId'):
+                    # [동시 등록 방지] 신규 작업 등록 시 동일 일자에 이미 등록된 동일 구분 작업이 있는지 DB 중복 검사
+                    if not m.get('originalLogId'):
+                        target_m_type = m_type if m_type else '정기'
+                        if target_m_type == '정기':
+                            type_filter = db.or_(LogItem.type == '정기', LogItem.type == None, LogItem.type == '')
+                        else:
+                            type_filter = (LogItem.type == target_m_type)
+
                         dup_item = LogItem.query.filter(
                             LogItem.equip_id == equip_id,
                             LogItem.id != m_id,
                             db.or_(LogItem.scheduled_date == m_sched_date, LogItem.date == m_sched_date),
-                            db.or_(LogItem.type == '정기', LogItem.type == None, LogItem.type == ''),
+                            type_filter,
                             LogItem.status.in_(['작업예정', '조치완료'])
                         ).first()
                         if dup_item:
@@ -5297,7 +5309,7 @@ def history_transaction():
                             dup_worker = dup_item.worker or '다른 작업자'
                             return jsonify({
                                 'status': 'fail',
-                                'message': f'해당 일자({m_sched_date})에 이미 등록된 정기 작업이 존재합니다. (작업자: {dup_worker})'
+                                'message': f'해당 일자({m_sched_date})에 이미 등록된 [{target_m_type}] 작업이 존재합니다. (작업자: {dup_worker})'
                             }), 400
 
                     item = LogItem(id=m_id, equip_id=equip_id, status='작업예정')

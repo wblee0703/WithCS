@@ -3601,8 +3601,8 @@ window.checkRegisterDuplicateRealtime = async function () {
         }
     };
 
-    // 추가 작업 등록 모드이거나 정기 작업이 아닌 경우 중복 알림 해제
-    if (window.currentAddWorkLogId || (typeVal && typeVal !== '정기')) {
+    // 추가 작업 등록 모드인 경우 중복 알림 해제
+    if (window.currentAddWorkLogId) {
         clearAlert();
         return false;
     }
@@ -3625,11 +3625,12 @@ window.checkRegisterDuplicateRealtime = async function () {
         const result = await res.json();
 
         if (result && result.is_duplicate) {
+            const dupType = result.type || typeVal || '정기';
             if (alertBox) {
                 const workerText = result.worker ? ` (작업자: ${result.worker})` : '';
                 const dateText = result.scheduled_date || dateVal;
                 if (alertMsg) {
-                    alertMsg.textContent = `⚠️ [중복 등록 방지] 해당 일자(${dateText})에 이미 등록된 정기 작업이 존재합니다.${workerText}`;
+                    alertMsg.textContent = `⚠️ [중복 등록 방지] 해당 일자(${dateText})에 이미 등록된 [${dupType}] 작업이 존재합니다.${workerText}`;
                 }
                 alertBox.style.display = 'block';
             }
@@ -3637,7 +3638,7 @@ window.checkRegisterDuplicateRealtime = async function () {
                 confirmBtn.disabled = true;
                 confirmBtn.style.opacity = '0.5';
                 confirmBtn.style.pointerEvents = 'none';
-                confirmBtn.title = '이미 동일 일자에 등록된 정기 작업이 존재합니다.';
+                confirmBtn.title = `이미 동일 일자에 등록된 [${dupType}] 작업이 존재합니다.`;
             }
             return true;
         } else {
@@ -5523,7 +5524,8 @@ async function confirmRegisterSchedule() {
         if (typeof window.checkRegisterDuplicateRealtime === 'function') {
             const isDup = await window.checkRegisterDuplicateRealtime();
             if (isDup) {
-                alert('해당 일자에 이미 등록된 정기 작업이 존재합니다.');
+                const currentRegType = document.getElementById('register-type-select')?.value.trim() || '정기';
+                alert(`해당 일자에 이미 등록된 [${currentRegType}] 작업이 존재합니다.`);
                 resetRegisterState();
                 return;
             }
@@ -5694,44 +5696,30 @@ async function confirmRegisterSchedule() {
                 const maints = eqDetailData.maint || [];
                 const logs = eqDetailData.logs || [];
 
-                // 1) 같은 날짜에 이미 '정기'로 구분된 작업이 있는 경우 (점검 계획 또는 점검 이력)
-                const hasRegularMaint = maints.some(m => {
-                    const mDate = normDate(m.scheduledDate || m.date);
+                // 1) 같은 날짜에 동일한 작업구분(currentType)으로 등록된 작업예정(maint)이 있는 경우
+                // [수정] 단순 물품 시작일(m.date)은 작업이 아니므로 제외하고, scheduledDate가 존재하는 실제 작업예정 건만 검사
+                const hasSameTypeMaint = maints.some(m => {
+                    const schedDate = m.scheduledDate ? normDate(m.scheduledDate) : '';
+                    if (!schedDate || schedDate === '-') return false;
                     const mType = (m.type && m.type.trim()) ? m.type.trim() : '정기';
-                    return mDate === targetDateStr && mType === '정기';
+                    return schedDate === targetDateStr && mType === currentType;
                 });
-                const hasRegularLog = logs.some(l => {
+
+                // 2) 같은 날짜에 동일한 작업구분(currentType)으로 등록된 작업 이력(logs)이 있는 경우
+                const hasSameTypeLog = logs.some(l => {
                     const lDate = normDate(l.date || l.scheduledDate);
                     const lType = (l.type && l.type.trim()) ? l.type.trim() : '정기';
-                    return lDate === targetDateStr && l.detailType !== '일정변경' && lType === '정기';
+                    return lDate === targetDateStr && l.detailType !== '일정변경' && lType === currentType;
                 });
 
-                if (hasRegularMaint || hasRegularLog) {
+                if (hasSameTypeMaint || hasSameTypeLog) {
                     hasDuplicate = true;
                     break;
-                }
-
-                // 2) 등록하려는 구분이 '정기'가 아닌 경우 동일 구분/세부구분의 중복 작업 검사
-                if (currentType !== '정기') {
-                    const hasSameTypeMaint = maints.some(m => {
-                        const mDate = normDate(m.scheduledDate || m.date);
-                        const mType = (m.type && m.type.trim()) ? m.type.trim() : '정기';
-                        return mDate === targetDateStr && mType === currentType && m.detailType === detailType;
-                    });
-                    const hasSameTypeLog = logs.some(l => {
-                        const lDate = normDate(l.date || l.scheduledDate);
-                        const lType = (l.type && l.type.trim()) ? l.type.trim() : '정기';
-                        return lDate === targetDateStr && l.detailType !== '일정변경' && lType === currentType && l.detailType === detailType;
-                    });
-                    if (hasSameTypeMaint || hasSameTypeLog) {
-                        hasDuplicate = true;
-                        break;
-                    }
                 }
             }
 
             if (hasDuplicate) {
-                alert('이미 작업 등록되었습니다.');
+                alert(`해당 일자(${targetDateStr})에 이미 [${currentType}] 작업이 등록되어 있습니다.`);
                 window.openDetailAfterRegister = false;
                 resetRegisterState();
                 return;
