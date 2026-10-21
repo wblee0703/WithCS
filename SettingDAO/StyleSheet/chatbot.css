@@ -526,3 +526,336 @@
     color: #ff9e3b;
     font-weight: 600;
 }
+
+/* 8. [개선] 마크다운 확장 요소 (말풍선 + 대화 기록 모달 공통) */
+.chatbot-md h1, .chatbot-md h2, .chatbot-md h3 {
+    color: #58a6ff;
+    font-weight: 700;
+    margin: 10px 0 6px 0;
+}
+.chatbot-md h1 { font-size: 16px; color: #e6edf3; }
+.chatbot-md h2 { font-size: 15px; }
+.chatbot-md h3 { font-size: 14px; }
+.chatbot-md strong { color: #ff9e3b; font-weight: 600; }
+.chatbot-md em { color: #8b949e; }
+.chatbot-md .chatbot-gap { height: 6px; }
+.chatbot-md .chatbot-list-item {
+    position: relative;
+    margin: 3px 0;
+    line-height: 1.5;
+    display: flex;
+    gap: 6px;
+}
+.chatbot-md .chatbot-li-mark {
+    color: #58a6ff;
+    flex-shrink: 0;
+    min-width: 10px;
+}
+/* 항목 본문은 한 덩어리로 흐르게 해서 '확인 항목:' 같은 굵은 글씨가 별도 칸으로 쪼개지지 않게 함 */
+.chatbot-md .chatbot-li-body {
+    flex: 1;
+    min-width: 0;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+}
+.chatbot-md .chatbot-quote {
+    border-left: 3px solid #30363d;
+    padding-left: 8px;
+    color: #8b949e;
+    margin: 4px 0;
+}
+.chatbot-md .chatbot-code {
+    background: rgba(110, 118, 129, 0.25);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: Consolas, monospace;
+    font-size: 12px;
+}
+.chatbot-md .chatbot-pre {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 8px 10px;
+    overflow-x: auto;
+    font-size: 12px;
+    white-space: pre;
+    word-break: normal;
+    margin: 6px 0;
+}
+.chatbot-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 6px 0;
+}
+.chatbot-table {
+    border-collapse: collapse;
+    font-size: 12px;
+    min-width: 100%;
+    word-break: keep-all;
+}
+.chatbot-table th, .chatbot-table td {
+    border: 1px solid #30363d;
+    padding: 4px 7px;
+    text-align: left;
+    vertical-align: top;
+}
+.chatbot-table th {
+    background: #161b22;
+    color: #e6edf3;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.chatbot-msg-bubble .chatbot-table-wrap { max-width: 100%; }
+
+/* 답변 하단: 사용량 + 복사 버튼 */
+.chatbot-msg-actions {
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+.chatbot-usage-line {
+    font-size: 10.5px;
+    color: #8b949e;
+    line-height: 1.4;
+    word-break: keep-all;
+}
+.chatbot-msg-actions .chatbot-copy-btn { margin-left: auto; flex-shrink: 0; }
+
+.chatbot-typing-indicator .chatbot-elapsed {
+    font-style: normal;
+    font-size: 11px;
+    color: #8b949e;
+    margin-left: 6px;
+}
+
+/* 9. 토큰 사용량 모달 */
+.chatbot-usage-container {
+    max-width: 920px;
+    width: 94%;
+    height: 640px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
+    overflow: hidden;
+    opacity: 1;
+}
+.chatbot-usage-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    border-bottom: 1px solid #30363d;
+    flex-shrink: 0;
+}
+.chatbot-usage-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #e6edf3;
+}
+.chatbot-usage-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.chatbot-usage-select {
+    background: #0d1117;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+}
+.chatbot-usage-close {
+    background: transparent;
+    border: none;
+    color: #8b949e;
+    font-size: 18px;
+    cursor: pointer;
+}
+.chatbot-usage-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px 20px 20px;
+    color: #c9d1d9;
+    font-size: 13px;
+}
+.chatbot-usage-config {
+    font-size: 11px;
+    color: #8b949e;
+    margin-bottom: 10px;
+}
+.chatbot-usage-warn {
+    background: rgba(248, 81, 73, 0.1);
+    border: 1px solid rgba(248, 81, 73, 0.4);
+    color: #ffa198;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 12px;
+    margin-bottom: 10px;
+}
+.chatbot-usage-warn ul { margin: 4px 0 0 16px; padding: 0; }
+.chatbot-usage-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.chatbot-usage-card {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 8px 10px;
+}
+.chatbot-usage-card .label { font-size: 11px; color: #8b949e; }
+.chatbot-usage-card .value { font-size: 16px; font-weight: 700; color: #e6edf3; margin-top: 2px; }
+.chatbot-usage-title {
+    font-size: 13px;
+    color: #e6edf3;
+    margin: 16px 0 6px 0;
+}
+.chatbot-usage-title span { font-size: 11px; color: #8b949e; font-weight: normal; }
+.chatbot-usage-bars { display: flex; flex-direction: column; gap: 5px; }
+.chatbot-usage-bar-row {
+    display: grid;
+    grid-template-columns: 110px 1fr 130px;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+.chatbot-usage-bar-row .bar {
+    height: 10px;
+    background: #21262d;
+    border-radius: 5px;
+    overflow: hidden;
+}
+.chatbot-usage-bar-row .bar span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #1f6feb, #58a6ff);
+    border-radius: 5px;
+}
+.chatbot-usage-bar-row .num { text-align: right; color: #8b949e; }
+.chatbot-usage-body .chatbot-table td.q { min-width: 160px; max-width: 320px; word-break: break-all; }
+.chatbot-usage-body .chatbot-table .err { color: #ffa198; font-size: 11px; margin-top: 2px; }
+.chatbot-usage-empty { color: #8b949e; text-align: center; padding: 16px; font-size: 12px; }
+
+@media screen and (max-width: 768px) {
+    .chatbot-usage-container {
+        width: 95% !important;
+        height: 88vh !important;
+    }
+    .chatbot-usage-body { padding: 10px; }
+    .chatbot-usage-bar-row { grid-template-columns: 80px 1fr 96px; font-size: 11px; }
+}
+
+/* 10. 시작 가이드 카드 (장비 문제 원인 파악 / 직접 입력) */
+.chatbot-guide-card {
+    width: 100%;
+    max-width: 100%;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 13px;
+    color: #c9d1d9;
+    box-sizing: border-box;
+}
+.chatbot-guide-card.done { opacity: 0.75; }
+.chatbot-guide-title { font-weight: 700; color: #e6edf3; font-size: 13px; }
+.chatbot-guide-summary {
+    font-size: 12px;
+    color: #58a6ff;
+    background: rgba(56, 139, 253, 0.08);
+    border-radius: 6px;
+    padding: 4px 8px;
+    word-break: keep-all;
+}
+.chatbot-guide-hint { font-size: 11.5px; color: #8b949e; line-height: 1.45; }
+.chatbot-guide-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.chatbot-guide-footer { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.chatbot-chip {
+    background: #21262d;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    border-radius: 16px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    line-height: 1.3;
+    touch-action: manipulation;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+.chatbot-chip:hover { border-color: #58a6ff; color: #ffffff; }
+.chatbot-chip-primary { background: #1f6feb; border-color: #1f6feb; color: #ffffff; font-weight: 600; }
+.chatbot-chip-primary:hover { background: #0969da; }
+.chatbot-guide-search,
+.chatbot-guide-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    color: #c9d1d9;
+    font-size: 13px;
+    padding: 7px 10px;
+    outline: none;
+    font-family: inherit;
+}
+.chatbot-guide-textarea { resize: vertical; min-height: 52px; }
+.chatbot-guide-search:focus,
+.chatbot-guide-textarea:focus { border-color: #1f6feb; }
+.chatbot-guide-list {
+    max-height: 230px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.chatbot-guide-item {
+    text-align: left;
+    background: #0d1117;
+    border: 1px solid #21262d;
+    border-radius: 6px;
+    padding: 6px 9px;
+    cursor: pointer;
+    color: #c9d1d9;
+    touch-action: pan-y;
+    flex-shrink: 0;
+}
+.chatbot-guide-item:hover { border-color: #58a6ff; background: #161b22; }
+.chatbot-guide-item .name { font-size: 12.5px; font-weight: 600; color: #e6edf3; word-break: break-all; }
+.chatbot-guide-item .sub { font-size: 11px; color: #8b949e; margin-top: 1px; }
+.chatbot-guide-empty { font-size: 12px; color: #8b949e; text-align: center; padding: 10px; }
+
+/* 사용량 화면 모드 배지 */
+.chatbot-mode-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 8px;
+    white-space: nowrap;
+}
+.chatbot-mode-badge.analysis { background: rgba(255, 158, 59, 0.15); color: #ff9e3b; }
+.chatbot-mode-badge.chat { background: rgba(56, 139, 253, 0.15); color: #58a6ff; }
+
+/* 가이드 버튼만 표시되는 상태: 카드 테두리 없이 버튼만 */
+.chatbot-guide-card.home {
+    background: transparent;
+    border: none;
+    padding: 0;
+}

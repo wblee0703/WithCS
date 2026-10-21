@@ -2648,6 +2648,8 @@ function attemptLogin(id, pw, context) {
                             checkLoginStatus();
                             window.hideLoading(true);
                         });
+                        // [추가] 새로고침 없는 로그인이므로 챗봇 아이콘을 즉시 활성화
+                        if (typeof window.activateChatbot === 'function') window.activateChatbot();
                     } else {
                         location.reload();
                     }
