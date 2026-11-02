@@ -657,7 +657,7 @@ select.input-dark option {
    ========================================================================== */
 body.role-admin .list-footer,
 body.role-admin .admin-form-container:not(#admin-equip-form) .form-actions,
-body.role-admin .btn-settings,
+body.role-admin .btn-settings:not(.equip-csv-export-btn):not(.item-csv-export-btn),
 body.role-admin .model-actions-col,
 body.role-admin .subcat-controls,
 body.role-admin .check-item-col-action,
@@ -1300,9 +1300,9 @@ body:not(.role-admin):not(.role-superadmin) .setup-template-footer {
     display: none !important;
 }
 
-/* 2. 관리 모드(⚙️) 토글 버튼 숨김 (단, CSV 내보내기 버튼은 유지) */
+/* 2. 관리 모드(⚙️) 토글 버튼 숨김 (관리자 계정은 CSV 내보내기 버튼 유지, 일반 계정은 CSV 내보내기 포함 전부 숨김) */
 body.admin-readonly-mode .btn-settings:not(#btn-export-site-csv):not(#btn-export-model-csv):not(#btn-export-equip-csv):not(#btn-export-item-csv):not(#btn-export-stock-csv),
-body:not(.role-admin):not(.role-superadmin) .btn-settings:not(#btn-export-site-csv):not(#btn-export-model-csv):not(#btn-export-equip-csv):not(#btn-export-item-csv):not(#btn-export-stock-csv) {
+body:not(.role-admin):not(.role-superadmin) .btn-settings {
     display: none !important;
 }
 
@@ -1392,6 +1392,12 @@ body:not(.role-admin):not(.role-superadmin) #btn-import-check-items,
 body:not(.role-admin):not(.role-superadmin) #btn-confirm-item-stock-modal,
 body:not(.role-admin):not(.role-superadmin) #superadmin-maint-btn-item {
     display: none !important;
+}
+
+/* 모달 헤더의 닫기(✕) 버튼은 btn-del-sm 클래스를 쓰지만 삭제 버튼이 아니므로 권한과 무관하게 항상 표시 */
+body.admin-readonly-mode .modal-overlay .modal-header .btn-del-sm,
+body:not(.role-admin):not(.role-superadmin) .modal-overlay .modal-header .btn-del-sm {
+    display: inline-flex !important;
 }
 
 /* 4. 물품 관리 현황 수량 조절 버튼 숨김 및 인풋 읽기 전용화 */

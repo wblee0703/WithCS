@@ -298,7 +298,7 @@
             guideHeader(card, 3, '증상 입력 (선택 사항)', st);
             const hint = document.createElement('div');
             hint.className = 'chatbot-guide-hint';
-            hint.textContent = '증상을 입력하면 관련 사례를 우선해서 보지만, 분석은 트러블 전반으로 진행합니다.';
+            hint.textContent = '증상은 비워둬도 됩니다. 입력하면 관련 사례를 우선해서 보지만, 분석은 트러블 전반으로 진행합니다.';
             card.appendChild(hint);
 
             const input = document.createElement('textarea');
@@ -324,7 +324,6 @@
 
             guideFooter(card, [
                 makeChip('← 이전', () => renderEquipStep(card, { model: st.model })),
-                makeChip('건너뛰고 분석', () => startAnalysis(card, st, '')),
                 makeChip('🔍 분석 시작', () => startAnalysis(card, st, input.value.trim()), 'primary')
             ]);
             scrollToBottom();

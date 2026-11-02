@@ -1147,6 +1147,7 @@ function setupEquipMgmt() {
                 }
 
                 const btnCsvExport = document.createElement('button');
+                btnCsvExport.id = 'btn-export-equip-csv';
                 btnCsvExport.className = 'btn-settings equip-csv-export-btn';
                 btnCsvExport.style.fontSize = '12px';
                 btnCsvExport.style.padding = '2px 6px';
