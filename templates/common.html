@@ -6,10 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
-    <title>{% block title %}WITHTECH - EQ System{% endblock %}</title>
+    <title>{% block title %}WITH ON{% endblock %}</title>
 
     <!-- 공통 CSS -->
-    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common.css') }}?v=1.1.3">
+    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common.css') }}?v=1.1.4">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_modals.css') }}?v=1.0.7">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_setup.css') }}">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/chatbot.css') }}?v=1.5.1">
@@ -48,7 +48,10 @@
         <!-- 모바일 현재 페이지 타이틀 -->
         <div id="mobile-page-title" class="mobile-page-title"></div>
 
-        <img src="{{ url_for('SettingDAO', filename='LOGO+WITHTECH.png') }}" alt="WITHTECH Logo" class="header-logo">
+        <div class="header-brand">
+            <img src="{{ url_for('SettingDAO', filename='LOGO+WITHTECH.png') }}" alt="WITHTECH Logo" class="header-logo">
+            <span class="header-brand-name">WITH ON</span>
+        </div>
 
         <div class="container">
             <nav>
@@ -1482,7 +1485,7 @@
         </div>
     </template>
 
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.1.0"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.1.1"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.1.6"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}?v=1.0.1"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/chatbot.js') }}?v=1.5.2"></script>

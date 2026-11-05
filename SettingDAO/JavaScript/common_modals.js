@@ -1408,6 +1408,13 @@ function buildDetailDropdown(item, site, equip) {
     let currentContent = contentDiv.dataset.rawContent || contentDiv.innerText.trim();
     if (currentContent === '내용 없음') currentContent = '';
 
+    // [수정] 고객대응 텍스트 입력형 세부구분(설비 평가 등)으로 등록된 작업을 '설비 정상화'로 바꾼 경우,
+    // 기존 자유 텍스트는 물품 항목이 아니므로 드롭다운 선택값으로 넘기지 않음
+    const isCustNormalize = (type === '고객대응' && detailType === '설비 정상화');
+    if (isCustNormalize && item && item.type === '고객대응' && !(item.detailType || '').startsWith('설비 정상화')) {
+        currentContent = '';
+    }
+
     const adminItems = JSON.parse(localStorage.getItem('admin_items')) || [];
     const itemsArr = window.splitSafetyContent(currentContent);
     let baseItems = [];
@@ -1511,6 +1518,8 @@ function buildDetailDropdown(item, site, equip) {
             availableItems = historyItems.map(m => ({ content: m.content, code: m.code || '' }));
         } else {
             availableItems = adminItems.map(mItem => ({ content: mItem.part, code: mItem.code }));
+            // [수정] 고객대응 > 설비 정상화는 이력이 없어도 물품 드롭다운 + 제안박스 모드로 표시 (작업 등록 모달과 동일 동작)
+            if (isCustNormalize) isDropdownMode = true;
         }
 
         if (availableItems.length === 0) {

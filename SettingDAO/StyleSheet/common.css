@@ -47,12 +47,30 @@ body {
     position: relative;
 }
 
-.header-logo {
+/* 로고 + 플랫폼명(WITH ON) 묶음 */
+.header-brand {
     position: absolute;
     left: 40px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-logo {
     height: 50px;
     width: auto;
     cursor: pointer;
+}
+
+.header-brand-name {
+    font-family: 'Montserrat', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #8b949e;
+    white-space: nowrap;
+    padding-left: 12px;
+    border-left: 1px solid #30363d;
 }
 
 .nav-links {
@@ -1122,13 +1140,21 @@ body.role-admin .btn-list-setting {
         gap: 8px;
     }
 
-    .header-logo {
+    .header-brand {
         position: static;
-        height: 30px;
         left: auto;
-        transform: none;
         margin-right: auto;
         order: 1;
+        gap: 8px;
+    }
+
+    .header-logo {
+        height: 30px;
+    }
+
+    .header-brand-name {
+        font-size: 11px;
+        padding-left: 8px;
     }
 
     .mobile-page-title {
