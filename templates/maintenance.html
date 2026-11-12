@@ -111,7 +111,7 @@
                                         <th>세부구분</th>
                                         <th>내용</th>
                                         <th>추가작업</th> <!-- 신규 추가 -->
-                                        <th class="th-issue-share">이슈 공유</th>
+                                        <th class="th-issue-share" title="정상화 미완료 작업 Tracking">Tracking</th>
                                     </tr>
                                 </thead>
                                 <tbody id="log-table-body"></tbody>
@@ -241,6 +241,6 @@
 {% endblock %}
 
 {% block extra_js %}    
-<script src="{{ url_for('SettingDAO', filename='JavaScript/maintenance.js') }}?v=1.1.1"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/maintenance.js') }}?v=1.1.2"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/calendar.js') }}?v=1.0.6"></script>
 {% endblock %}

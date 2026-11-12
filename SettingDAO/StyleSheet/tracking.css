@@ -1,0 +1,741 @@
+/* ==========================================================================
+   Tracking - 정상화 미완료 작업 추적
+   ========================================================================== */
+.tracking-wrapper {
+    flex-direction: column;
+}
+
+.tracking-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    min-width: 0;
+}
+
+.tracking-title {
+    margin: 0;
+    color: #e6edf3;
+    font-size: 20px;
+}
+
+.tracking-subtitle {
+    font-size: 13px;
+    font-weight: 600;
+    color: #8b949e;
+    margin-left: 6px;
+}
+
+.tracking-guide {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: #8b949e;
+}
+
+.tracking-guide b {
+    color: #f0883e;
+}
+
+/* 경과 구간 요약 카드 */
+.tracking-summary {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.tracking-summary-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-width: 120px;
+    padding: 10px 14px;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-left: 4px solid var(--lv-color);
+    border-radius: 6px;
+    cursor: pointer;
+    color: #e6edf3;
+    font-family: inherit;
+}
+
+.tracking-summary-card:hover {
+    background: #1c2128;
+}
+
+.tracking-summary-card.active {
+    border-color: var(--lv-color);
+    box-shadow: 0 0 0 1px var(--lv-color) inset;
+}
+
+.tracking-summary-label {
+    font-size: 12px;
+    color: #8b949e;
+}
+
+.tracking-summary-count {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--lv-color);
+}
+
+/* 필터 */
+.tracking-filters {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* 입력/드롭다운 다크 테마 (Trouble 페이지와 동일한 디자인) */
+.tracking-filters .input-dark {
+    height: 32px;
+    box-sizing: border-box;
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    color: #e6edf3;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 0 10px;
+    outline: none;
+    transition: border-color 0.15s ease;
+}
+
+.tracking-filters .input-dark::placeholder {
+    color: #6e7681;
+}
+
+.tracking-filters .input-dark:hover {
+    border-color: #484f58;
+}
+
+.tracking-filters .input-dark:focus {
+    border-color: #58a6ff;
+}
+
+.tracking-filters select.input-dark {
+    min-width: 140px;
+    padding: 0 30px 0 10px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%238b949e'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+}
+
+.tracking-filters select.input-dark option {
+    background-color: #161b22;
+    color: #e6edf3;
+}
+
+.tracking-filters select.input-dark::-ms-expand {
+    display: none;
+}
+
+#tracking-search-input {
+    width: 260px;
+}
+
+#btn-tracking-reset {
+    height: 32px;
+}
+
+/* 테이블 */
+.tracking-table-wrapper {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+}
+
+#tracking-table {
+    width: 100%;
+    min-width: 1780px; /* 좁은 화면에서는 가로 스크롤 (작업 내용·최근 작업 최소 약 230px 확보) */
+    border-collapse: collapse;
+    font-size: 12px;
+    table-layout: fixed; /* 작업 내용 / 최근 작업이 남은 너비를 동일하게 분배 */
+}
+
+/* 컬럼 너비 (작업 내용·최근 작업은 너비 미지정 → 남은 공간 1:1 분배) */
+#tracking-table col.col-status { width: 100px; }
+#tracking-table col.col-elapsed { width: 80px; }
+#tracking-table col.col-date { width: 100px; }
+#tracking-table col.col-site { width: 110px; }
+#tracking-table col.col-equip { width: 250px; }
+#tracking-table col.col-type { width: 200px; }
+#tracking-table col.col-count { width: 60px; }
+#tracking-table col.col-worker { width: 200px; }
+#tracking-table col.col-actions { width: 220px; }
+
+#tracking-table td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#tracking-table td:last-child {
+    overflow: visible;
+}
+
+#tracking-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #161b22;
+    color: #8b949e;
+    padding: 8px;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid #30363d;
+}
+
+#tracking-table td {
+    padding: 8px;
+    border-bottom: 1px solid #21262d;
+    color: #c9d1d9;
+    vertical-align: middle;
+}
+
+.tracking-row {
+    cursor: pointer;
+}
+
+.tracking-row td:first-child {
+    border-left: 4px solid var(--lv-color);
+}
+
+.tracking-row:hover td {
+    background: rgba(88, 166, 255, 0.06);
+}
+
+.tracking-dday {
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--lv-color);
+    white-space: nowrap;
+}
+
+.tracking-equip {
+    white-space: nowrap;
+    font-weight: 600;
+    color: #e6edf3 !important;
+}
+
+.tracking-sub {
+    font-size: 11px;
+    color: #8b949e;
+    margin-top: 2px;
+}
+
+.tracking-content {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tracking-muted {
+    color: #6e7681;
+}
+
+#tracking-table .text-center {
+    text-align: center;
+}
+
+.btn-tracking-close {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    background: #238636;
+    border: 1px solid #2ea043;
+    color: #ffffff;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-tracking-close:hover:not(:disabled) {
+    background: #2ea043;
+}
+
+.btn-tracking-close:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .tracking-wrapper {
+        height: auto;
+    }
+
+    .tracking-summary-card {
+        min-width: calc(50% - 5px);
+        flex: 1;
+    }
+
+    #tracking-search-input {
+        width: 100%;
+    }
+
+    .tracking-table-wrapper {
+        max-height: 70vh;
+    }
+}
+
+/* 상태 배지 / 요약 보조 텍스트 / Tracking 등록 버튼 */
+.tracking-status {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--st-color);
+    border: 1px solid var(--st-color);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.tracking-summary-sub {
+    font-size: 11px;
+    color: #8b949e;
+}
+
+.btn-tracking-open {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    background: transparent;
+    border: 1px solid #f0883e;
+    color: #f0883e;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-tracking-open:hover:not(:disabled) {
+    background: rgba(240, 136, 62, 0.12);
+}
+
+.btn-tracking-open:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 관리 버튼 그룹 */
+.tracking-actions {
+    display: flex;
+    gap: 4px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+}
+
+.btn-tracking-sub {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-tracking-sub:hover:not(:disabled) {
+    border-color: #58a6ff;
+    color: #58a6ff;
+}
+
+.btn-tracking-sub.warn {
+    border-color: #d29922;
+    color: #d29922;
+}
+
+.btn-tracking-sub:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Tracking 레포트 모달 */
+.tracking-report-window {
+    width: 820px;
+    max-width: 95vw;
+    height: auto;
+    max-height: 92vh;
+}
+
+.tracking-report-body {
+    overflow-y: auto;
+    gap: 10px;
+}
+
+.tracking-report-section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #58a6ff;
+    border-bottom: 1px solid #30363d;
+    padding-bottom: 6px;
+}
+
+.tracking-report-hint {
+    font-size: 11px;
+    font-weight: 400;
+    color: #8b949e;
+    margin-left: 6px;
+}
+
+.tracking-report-basic {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px 14px;
+    padding: 10px 12px;
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+}
+
+.tracking-report-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.tracking-report-item.wide {
+    grid-column: 1 / -1;
+}
+
+.tracking-report-item .k {
+    font-size: 11px;
+    color: #8b949e;
+}
+
+.tracking-report-item .v {
+    font-size: 12.5px;
+    color: #e6edf3;
+    word-break: break-all;
+}
+
+.tracking-report-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tracking-report-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tracking-report-field > span {
+    font-size: 12px;
+    font-weight: 700;
+    color: #e6edf3;
+}
+
+.tracking-report-field textarea.input-dark {
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    color: #e6edf3;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 8px 10px;
+    outline: none;
+    line-height: 1.5;
+}
+
+.tracking-report-field textarea.input-dark:focus {
+    border-color: #58a6ff;
+}
+
+.tracking-report-field textarea.input-dark::placeholder {
+    color: #6e7681;
+}
+
+.tracking-report-meta {
+    font-size: 11px;
+    color: #8b949e;
+    text-align: right;
+}
+
+.tracking-report-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tracking-report-footer button {
+    height: 32px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.tracking-report-footer button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+    .tracking-report-basic {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+.tracking-nowrap {
+    white-space: nowrap;
+}
+
+/* 필요물품 선택 (물품 관리 항목) */
+.tracking-parts-picker {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.tracking-parts-picker .input-dark {
+    height: 32px;
+    box-sizing: border-box;
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    color: #e6edf3;
+    font-size: 12.5px;
+    font-family: inherit;
+    padding: 0 10px;
+    outline: none;
+}
+
+.tracking-parts-picker .input-dark:focus {
+    border-color: #58a6ff;
+}
+
+.tracking-parts-picker .input-dark::placeholder {
+    color: #6e7681;
+}
+
+/* 물품 검색 + 선택 콤보박스 */
+.tracking-parts-combo {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+#tracking-parts-input {
+    width: 100%;
+    padding: 0 30px 0 10px;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%238b949e'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+}
+
+.tracking-parts-list {
+    position: absolute;
+    top: calc(100% + 2px);
+    left: 0;
+    right: 0; /* 입력창과 동일 너비 */
+    z-index: 30;
+    max-height: 240px;
+    overflow-y: auto;
+    margin: 0;
+    padding: 4px 0;
+    list-style: none;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+.tracking-parts-list[hidden] {
+    display: none;
+}
+
+.tracking-parts-option {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 6px 10px;
+    font-size: 12.5px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.tracking-parts-option .abbr {
+    color: #e6edf3;
+    flex-shrink: 0;
+}
+
+.tracking-parts-option .spec {
+    color: #8b949e;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tracking-parts-option:hover,
+.tracking-parts-option.active {
+    background: rgba(88, 166, 255, 0.15);
+}
+
+.tracking-parts-option.selected .abbr {
+    color: #58a6ff;
+    font-weight: 600;
+}
+
+.tracking-parts-option.empty {
+    color: #6e7681;
+    cursor: default;
+    justify-content: center;
+}
+
+.tracking-parts-option.empty:hover {
+    background: transparent;
+}
+
+#tracking-parts-qty {
+    width: 70px;
+    flex-shrink: 0;
+    text-align: center;
+    padding: 0 4px;
+}
+
+#btn-tracking-parts-add {
+    height: 32px;
+    flex-shrink: 0;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.tracking-parts-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    table-layout: fixed;
+}
+
+.tracking-parts-table th {
+    background: #21262d;
+    color: #8b949e;
+    font-weight: 600;
+    text-align: left;
+    padding: 6px 8px;
+    border: 1px solid #30363d;
+}
+
+.tracking-parts-table td {
+    padding: 4px 8px;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    background: #0d1117;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tracking-parts-table .c {
+    text-align: center;
+}
+
+.tracking-parts-empty {
+    text-align: center;
+    color: #6e7681 !important;
+    padding: 10px !important;
+}
+
+.tracking-parts-qty-input {
+    width: 100%;
+    height: 26px;
+    box-sizing: border-box;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    color: #e6edf3;
+    text-align: center;
+    font-size: 12px;
+    outline: none;
+}
+
+.tracking-parts-qty-input:focus {
+    border-color: #58a6ff;
+}
+
+.tracking-parts-del {
+    background: transparent;
+    border: 1px solid #da3633;
+    color: #da3633;
+    border-radius: 4px;
+    font-size: 10px;
+    padding: 2px 6px;
+    cursor: pointer;
+}
+
+.tracking-parts-del:hover {
+    background: rgba(218, 54, 51, 0.15);
+}
+
+@media (max-width: 768px) {
+    .tracking-parts-picker {
+        flex-wrap: wrap;
+    }
+
+    .tracking-parts-combo {
+        flex-basis: 100%;
+    }
+}
+
+/* 협의 담당자 (수기 입력) */
+.tracking-discussion-person {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tracking-discussion-person label {
+    font-size: 12px;
+    color: #8b949e;
+    white-space: nowrap;
+}
+
+#tracking-report-discussion-person {
+    flex: 1;
+    max-width: 320px;
+    height: 32px;
+    box-sizing: border-box;
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    color: #e6edf3;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 0 10px;
+    outline: none;
+}
+
+#tracking-report-discussion-person:focus {
+    border-color: #58a6ff;
+}
+
+#tracking-report-discussion-person::placeholder {
+    color: #6e7681;
+}
+
+/* 레포트 저장 완료 알림 */
+.tracking-report-toast {
+    font-size: 12px;
+    font-weight: 600;
+    color: #3fb950;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    white-space: nowrap;
+}
+
+.tracking-report-toast.show {
+    opacity: 1;
+}

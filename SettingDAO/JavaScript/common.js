@@ -2477,11 +2477,13 @@ function checkLoginStatus() {
         const setupLink = mobileNav.querySelector('a[href*="setup"]');
         const maintLink = mobileNav.querySelector('a[href*="maintenance"]');
         const troubleLink = mobileNav.querySelector('a[href*="trouble"]');
+        const trackingLink = mobileNav.querySelector('a[href*="tracking"]');
         const sortLink = mobileNav.querySelector('a[href*="sort"]');
         const operationLink = mobileNav.querySelector('a[href*="operation"]');
         if (setupLink) setupLink.style.display = isLoggedIn ? 'block' : 'none';
         if (maintLink) maintLink.style.display = isLoggedIn ? 'block' : 'none';
         if (troubleLink) troubleLink.style.display = isLoggedIn ? 'block' : 'none';
+        if (trackingLink) trackingLink.style.display = isLoggedIn ? 'block' : 'none';
         if (sortLink) sortLink.style.display = isLoggedIn ? 'block' : 'none';
         if (operationLink) operationLink.style.display = isLoggedIn ? 'block' : 'none';
     }
@@ -4857,8 +4859,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         issueShareCb.parentNode.replaceChild(newCb, issueShareCb);
         issueShareCb = document.getElementById('extra-work-issue-share');
 
-        const userRole = sessionStorage.getItem('userRole');
-        issueShareCb.disabled = (userRole !== 'admin' && userRole !== 'superadmin');
+        issueShareCb.disabled = (sessionStorage.getItem('isLoggedIn') !== 'true');
 
         issueShareCb.addEventListener('change', async (e) => {
             const isChecked = e.target.checked;
@@ -4881,9 +4882,10 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
 
                 localStorage.setItem(key, JSON.stringify(data));
                 window.syncHistoryTransaction(site, equip, { log_upserts: logUpserts });
-                if (typeof addSystemLog === 'function') addSystemLog('UPDATE_MEMO', equip, `이슈 공유 상태 세트 변경 (LogID: ${originalLogId})`);
+                if (typeof addSystemLog === 'function') addSystemLog('UPDATE_MEMO', equip, `Tracking(정상화 미완료) 상태 변경 (LogID: ${originalLogId})`);
                 if (typeof window.populateEquipmentIssues === 'function') window.populateEquipmentIssues();
                 if (typeof window.renderLogs === 'function') window.renderLogs();
+                if (typeof window.renderTrackingPage === 'function') window.renderTrackingPage();
             }
         });
     }
@@ -6251,3 +6253,218 @@ function openTaskFromSearch(site, equip, id, isCompleted) {
 }
 window.doTaskSearch = doTaskSearch;
 window.openTaskFromSearch = openTaskFromSearch;
+
+/* ==========================================================================
+   [Tracking] 정상화 미완료 작업 추적 공통 헬퍼
+   - 작업 로그의 isIssueShared 플래그를 "Tracking 대상(정상화 미완료)" 의미로 사용
+   - 최초 작업 + 추가작업(originalLogId)을 하나의 Tracking 항목으로 묶음
+   ========================================================================== */
+window.TRACKING_HOME_MIN_DAYS = 2; // Home 화면 노출 기준 (D+2 이상)
+
+window.getTrackingAgeLevel = function (days) {
+    if (days >= 31) return { key: 'd31', label: 'D+31 이상', color: '#f85149' };
+    if (days >= 8) return { key: 'd8', label: 'D+8~30', color: '#f0883e' };
+    if (days >= 2) return { key: 'd2', label: 'D+2~7', color: '#d29922' };
+    return { key: 'd0', label: 'D+0~1', color: '#8b949e' };
+};
+
+window.summarizeTrackingContent = function (log) {
+    let displayContent = (log && log.content) || '';
+    if (!displayContent || displayContent === '내용 없음') return displayContent;
+    const items = displayContent.split(',').map(s => {
+        let cleanS = s.replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').replace(/\s+/g, ' ').replace(/\s*-\s*$/, '').trim();
+        if (log.type === '정기') {
+            const kwMatch = cleanS.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|파츠 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
+            if (kwMatch) cleanS = kwMatch[2].trim();
+        }
+        return cleanS;
+    }).filter(Boolean);
+    if (items.length > 1) return `${items[0]} 외 ${items.length - 1}개`;
+    return items[0] || '';
+};
+
+window.formatTrackingDetailType = function (log) {
+    if (!log) return '';
+    const dt1 = (log.detailType || '').trim();
+    const dt2 = (log.detailType2 || '').trim();
+    if (dt2.includes('>')) return dt2;
+    if (dt1.includes('>')) return dt1;
+    if (dt2) return `${dt1 ? dt1 + ' > ' : ''}${dt2}`;
+    return dt1;
+};
+
+function _trackingDaysBetween(fromStr, toStr) {
+    const parse = (v) => {
+        const m = String(v || '').match(/^(\d{4})-(\d{2})-(\d{2})/);
+        return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+    };
+    const a = parse(fromStr), b = parse(toStr);
+    if (!a || !b) return 0;
+    return Math.round((b - a) / 86400000);
+}
+
+function _trackingToday() {
+    const n = new Date();
+    return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`;
+}
+
+window.TRACKING_STATUS = {
+    progress: { key: 'progress', label: '진행중', color: '#f85149', order: 0 },
+    overdue: { key: 'overdue', label: '지연', color: '#f0883e', order: 1 },
+    planned: { key: 'planned', label: '예정', color: '#58a6ff', order: 2 },
+    done: { key: 'done', label: '완료', color: '#3fb950', order: 3 }
+};
+
+function _trackingWorkers(list) {
+    const workers = [];
+    list.forEach(l => {
+        String(l.worker || '').split(/[,\/]/).map(w => w.trim()).filter(Boolean).forEach(w => {
+            if (!workers.includes(w)) workers.push(w);
+        });
+    });
+    return workers;
+}
+
+/**
+ * 장비 점검 일정에 등록된 모든 작업 목록 (상태 포함)
+ * - 수행된 작업: 최초 작업 + 추가작업(originalLogId)을 1건으로 묶음
+ *     · Tracking 체크 또는 예정된 추가작업이 남아 있으면 '진행중', 아니면 '완료'
+ * - 아직 수행되지 않은 예정 작업: 캘린더와 동일한 기준(같은 예정일/구분/세부구분1)으로 묶음
+ *     · 예정일이 지났으면 '지연', 아니면 '예정'
+ */
+window.collectTrackingWorks = function () {
+    const deviceData = JSON.parse(localStorage.getItem('device_data')) || {};
+    const base = (typeof storageData !== 'undefined' && storageData && Object.keys(storageData).length > 0) ? storageData : deviceData;
+    const dataMap = base.equipments ? base.equipments : base;
+    const today = _trackingToday();
+    const works = [];
+
+    Object.keys(dataMap || {}).forEach(site => {
+        if (!Array.isArray(dataMap[site])) return;
+        dataMap[site].forEach(equipKey => {
+            const details = JSON.parse(localStorage.getItem(`details_${site}_${equipKey}`)) || {};
+            const logs = Array.isArray(details.logs) ? details.logs : [];
+            const maints = (Array.isArray(details.maint) ? details.maint : []).filter(m => m.scheduledDate);
+            const logIds = new Set(logs.map(l => String(l.id)));
+
+            // 1) 수행된 작업 패밀리 (최초 작업 기준)
+            const families = new Map();
+            logs.forEach(l => {
+                let fid = String(l.originalLogId || l.id);
+                if (!logIds.has(fid)) fid = String(l.id); // 원본이 없는 추가작업은 독립 처리
+                if (!families.has(fid)) families.set(fid, []);
+                families.get(fid).push(l);
+            });
+
+            const usedMaintIds = new Set();
+            families.forEach((famLogs, fid) => {
+                famLogs.sort((a, b) => (a.date || '').localeCompare(b.date || '') || (Number(a.id) || 0) - (Number(b.id) || 0));
+                const parentLog = famLogs.find(l => String(l.id) === fid) || famLogs[0];
+                const lastLog = famLogs[famLogs.length - 1];
+                const pending = maints.filter(m => String(m.originalLogId || '') === fid);
+                pending.forEach(m => usedMaintIds.add(String(m.id)));
+                const nextPlanDate = pending.map(m => m.scheduledDate).sort()[0] || '';
+                const isFlagged = famLogs.some(l => l.isIssueShared === true);
+                const startDate = parentLog.date || famLogs[0].date || '';
+                const status = (isFlagged || pending.length > 0) ? 'progress' : 'done';
+                const days = status === 'progress'
+                    ? Math.max(0, _trackingDaysBetween(startDate, today))
+                    : Math.max(0, _trackingDaysBetween(startDate, lastLog.date || startDate));
+
+                works.push({
+                    kind: 'log', site, equipKey, familyId: parentLog.id, openId: parentLog.id,
+                    parentLog, lastLog, status, isFlagged,
+                    progressReason: status === 'progress' ? (isFlagged ? 'Tracking 체크' : '추가작업 예정') : '',
+                    baseDate: startDate, startDate, lastWorkDate: lastLog.date || '',
+                    filterDate: status === 'done' ? (lastLog.date || startDate) : startDate,
+                    workCount: famLogs.length, nextPlanDate,
+                    workers: _trackingWorkers(famLogs),
+                    days, level: window.getTrackingAgeLevel(status === 'progress' ? days : 0),
+                    detailStr: window.formatTrackingDetailType(parentLog),
+                    contentSummary: window.summarizeTrackingContent(parentLog),
+                    lastContentSummary: window.summarizeTrackingContent(lastLog)
+                });
+            });
+
+            // 2) 아직 수행되지 않은 예정 작업
+            const groups = new Map();
+            maints.forEach(m => {
+                if (usedMaintIds.has(String(m.id))) return;
+                let gKey;
+                if (m.originalLogId) gKey = `orig|${m.originalLogId}|${m.scheduledDate}`;
+                else if (m.type === '비정기') gKey = `id|${m.id}`;
+                else gKey = `grp|${m.scheduledDate}|${m.type || ''}|${m.detailType || ''}`;
+                if (!groups.has(gKey)) groups.set(gKey, []);
+                groups.get(gKey).push(m);
+            });
+
+            groups.forEach(items => {
+                const first = items[0];
+                const sDate = first.scheduledDate;
+                const isOverdue = sDate < today;
+                const diff = _trackingDaysBetween(sDate, today);
+                const days = isOverdue ? diff : -diff; // 예정: 남은 일수
+                const merged = Object.assign({}, first, { content: items.map(m => m.content).filter(Boolean).join(', ') });
+                works.push({
+                    kind: 'plan', site, equipKey, familyId: null, openId: first.id,
+                    parentLog: merged, lastLog: merged, status: isOverdue ? 'overdue' : 'planned', isFlagged: false,
+                    progressReason: '',
+                    baseDate: sDate, startDate: sDate, lastWorkDate: '', filterDate: sDate,
+                    workCount: 0, nextPlanDate: sDate,
+                    workers: _trackingWorkers(items),
+                    days, level: window.getTrackingAgeLevel(isOverdue ? days : 0),
+                    detailStr: window.formatTrackingDetailType(first),
+                    contentSummary: window.summarizeTrackingContent(merged),
+                    lastContentSummary: ''
+                });
+            });
+        });
+    });
+
+    const S = window.TRACKING_STATUS;
+    works.sort((a, b) => {
+        if (a.status !== b.status) return S[a.status].order - S[b.status].order;
+        if (a.status === 'progress' || a.status === 'overdue') return b.days - a.days;
+        if (a.status === 'planned') return a.baseDate.localeCompare(b.baseDate);
+        return (b.lastWorkDate || '').localeCompare(a.lastWorkDate || '');
+    });
+    return works;
+};
+
+// 진행중(정상화 미완료) 작업만 (Home 카드용, 경과일 내림차순)
+window.collectTrackingItems = function () {
+    return window.collectTrackingWorks().filter(w => w.status === 'progress');
+};
+
+// Tracking(정상화 미완료) 플래그 설정/해제: 최초 작업 + 추가작업 전체 적용
+window.setTrackingFlag = async function (site, equip, familyId, flag) {
+    const key = `details_${site}_${equip}`;
+    const data = JSON.parse(localStorage.getItem(key)) || {};
+    if (!Array.isArray(data.logs)) return false;
+
+    const fid = String(familyId);
+    const newLogs = JSON.parse(JSON.stringify(data.logs));
+    const logUpserts = [];
+    newLogs.forEach(l => {
+        if ((String(l.id) === fid || String(l.originalLogId || '') === fid) && !!l.isIssueShared !== flag) {
+            l.isIssueShared = flag;
+            logUpserts.push(l);
+        }
+    });
+    if (logUpserts.length === 0) return true;
+
+    if (typeof window.syncHistoryTransaction === 'function') {
+        const ok = await window.syncHistoryTransaction(site, equip, { log_upserts: logUpserts });
+        if (!ok) return false;
+    }
+    data.logs = newLogs;
+    localStorage.setItem(key, JSON.stringify(data));
+    if (typeof window.addSystemLog === 'function') {
+        window.addSystemLog('UPDATE_LOG_ISSUE_SHARE', equip, `Tracking ${flag ? '등록' : '정상화 완료 처리'} (LogID: ${familyId})`);
+    }
+    return true;
+};
+
+window.closeTrackingItem = function (site, equip, familyId) {
+    return window.setTrackingFlag(site, equip, familyId, false);
+};

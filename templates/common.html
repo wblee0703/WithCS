@@ -61,14 +61,15 @@
                     </li>
 
                     <!-- 1. 장비 작업 (SETUP, MAINT, TROUBLE) -->
-                    <li class="nav-dropdown {% if active_page in ['setup', 'maintenance', 'trouble'] %}active-group{% endif %}">
-                        <a href="javascript:void(0)" class="nav-dropdown-toggle {% if active_page in ['setup', 'maintenance', 'trouble'] %}active{% endif %}">
+                    <li class="nav-dropdown {% if active_page in ['setup', 'maintenance', 'trouble', 'tracking'] %}active-group{% endif %}">
+                        <a href="javascript:void(0)" class="nav-dropdown-toggle {% if active_page in ['setup', 'maintenance', 'trouble', 'tracking'] %}active{% endif %}">
                             WORKS <span class="nav-arrow">▾</span>
                         </a>
                         <ul class="nav-dropdown-menu">
                             <li><a href="{{ url_for('setup') }}" class="{% if active_page == 'setup' %}active{% endif %}">Setup</a></li>
                             <li><a href="{{ url_for('maintenance') }}" class="{% if active_page == 'maintenance' %}active{% endif %}">Maint</a></li>
                             <li><a href="{{ url_for('trouble') }}" class="{% if active_page == 'trouble' %}active{% endif %}">Trouble</a></li>
+                            <li><a href="{{ url_for('tracking') }}" class="{% if active_page == 'tracking' %}active{% endif %}">Tracking</a></li>
                         </ul>
                     </li>
 
@@ -365,7 +366,7 @@
                     <label class="modal-checkbox-label"
                         style="font-size: 13px; font-weight: bold; color: #f0883e; display: flex; align-items: center; cursor: pointer; margin: 0;">
                         <input type="checkbox" id="extra-work-issue-share" class="modal-checkbox-input"
-                            style="margin-right: 5px; transform: scale(1.2);"> 이슈 공유
+                            style="margin-right: 5px; transform: scale(1.2);"> Tracking (정상화 미완료)
                     </label>
                     <button id="btn-create-additional-work-from-extra" class="btn-blue-sm" style="padding: 4px 8px; font-size: 12px; margin-right: 5px; background-color: #238636; border: 1px solid #30863f; color: #ffffff; border-radius: 4px; cursor: pointer;">추가작업 생성</button>
                     <button class="btn-del-sm"
@@ -1485,8 +1486,8 @@
         </div>
     </template>
 
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.1.1"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.1.6"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.1.2"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.1.8"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}?v=1.0.1"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/chatbot.js') }}?v=1.5.2"></script>
     <!-- 페이지별 추가 스크립트 -->

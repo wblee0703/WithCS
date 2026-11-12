@@ -1318,7 +1318,7 @@ function renderSetupUpcomingList(activeEquips) {
 }
 
 /* ==========================================================================
-   7. 장비 이슈 공유 (Equipment Issue Sharing)
+   7. 장기 Down 설비 (Tracking D+2 이상)
    ========================================================================== */
 function restructureHomeMaintenance() {
     const allLeftCharts = document.querySelectorAll('.maint-left-charts');
@@ -1361,7 +1361,10 @@ function restructureHomeMaintenance() {
     issueCard.id = 'home-issue-card';
     issueCard.className = 'status-group card-like';
     issueCard.innerHTML = `
-        <h3 class="status-group-title" style="color: #eb371f;">장비 이슈 공유</h3>
+        <div style="position: relative; display: flex; justify-content: center; align-items: center; min-height: 26px;">
+            <h3 class="status-group-title" style="color: #eb371f; margin: 0; width: 100%; text-align: center; padding: 0 90px; box-sizing: border-box;" title="Tracking 진행중 작업 중 최초 작업일로부터 ${window.TRACKING_HOME_MIN_DAYS || 2}일 이상 경과한 작업">장기 Down 설비 <span id="home-issue-count" style="font-size: 12px; color: #8b949e;"></span></h3>
+            <a href="/tracking" class="btn-move" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 11px; padding: 2px 8px; text-decoration: none;">Tracking 이동</a>
+        </div>
         <div class="status-list-container" style="flex: 1; min-height: 0; width: 100%; border: none; overflow: hidden; display: flex; flex-direction: column;">
             <ul id="home-issue-list" class="upcoming-list" style="padding: 0 5px; margin: 0; list-style: none; flex: 1; min-height: 0; overflow-y: auto;"></ul>
         </div>
@@ -1377,100 +1380,45 @@ function populateEquipmentIssues() {
     if (!issueList) return;
 
     issueList.innerHTML = '';
-    let issues = [];
+    const minDays = window.TRACKING_HOME_MIN_DAYS || 2;
+    const allItems = typeof window.collectTrackingItems === 'function' ? window.collectTrackingItems() : [];
+    const items = allItems.filter(it => it.days >= minDays);
 
-    const dataMap = getDashboardData();
-    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+    const countEl = document.getElementById('home-issue-count');
+    if (countEl) countEl.textContent = `(${items.length})`;
 
-    Object.keys(dataMap).forEach(site => {
-        if (!dataMap[site] || !Array.isArray(dataMap[site])) return;
-        dataMap[site].forEach(equipKey => {
-            const key = `details_${site}_${equipKey}`;
-            const details = JSON.parse(localStorage.getItem(key)) || {};
-
-            if (details.logs) {
-                const addedIssueIds = new Set(); // 중복 방지용 Set
-                details.logs.forEach(log => {
-                    if (log.isIssueShared === true) {
-                        const familyId = log.originalLogId || log.id;
-                        if (!addedIssueIds.has(familyId)) {
-                            const parentLog = details.logs.find(l => l.id == familyId) || log;
-                            issues.push({ site, equipKey, log: parentLog });
-                            addedIssueIds.add(familyId);
-                        }
-                    }
-                });
-            }
-        });
-    });
-
-    issues.sort((a, b) => {
-        if (b.log.date !== a.log.date) return b.log.date.localeCompare(a.log.date);
-        return b.log.id - a.log.id;
-    });
-
-    if (issues.length === 0) {
-        issueList.innerHTML = '<li class="list-empty-msg">공유된 장비 이슈가 없습니다.</li>';
+    if (items.length === 0) {
+        issueList.innerHTML = `<li class="list-empty-msg">D+${minDays} 이상 정상화되지 않은 작업이 없습니다.</li>`;
         return;
     }
 
-    issues.forEach(issue => {
-        const { site, equipKey, log } = issue;
+    const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
+
+    items.forEach(item => {
+        const { site, equipKey, parentLog, level } = item;
         const info = formatEquipDisplayInfo(site, equipKey, equipmentModels);
-
-        let detailStr = '';
-        if (log.detailType2 && log.detailType2.includes('>')) {
-            detailStr = log.detailType2.trim();
-        } else if (log.detailType && log.detailType.includes('>')) {
-            detailStr = log.detailType.trim();
-        } else if (log.detailType2) {
-            detailStr = `${log.detailType ? log.detailType.trim() + ' > ' : ''}${log.detailType2.trim()}`;
-        } else {
-            detailStr = log.detailType ? log.detailType.trim() : '';
-        }
-
-        const dateStr = log.date || '';
-
-        let displayContent = log.content || '';
-        // 비용처리 태그 제거 및 외 N개 처리
-        if (displayContent && displayContent !== '내용 없음') {
-            const items = displayContent.split(',').map(s => {
-                let cleanS = s.replace(/\[(?:유상|무상[^\]]*|기타)\]/g, '').replace(/\s+/g, ' ').replace(/\s*-\s*$/, '').trim();
-                if (log.type === '정기') {
-                    const kwMatch = cleanS.match(/^(.*?(?:파트 이상\s*\(?(?:교체|수리)\)?|파츠 이상\s*\(?(?:교체|수리)\)?|물품 이상\s*\(?(?:교체|수리)\)?|용액\s*\/?\s*용자 이상))\s*-\s*(.*)$/);
-                    if (kwMatch) {
-                        cleanS = kwMatch[2].trim();
-                    }
-                }
-                return cleanS;
-            }).filter(Boolean);
-
-            if (items.length > 1) displayContent = `${items[0]} 외 ${items.length - 1}개`;
-            else if (items.length === 1) displayContent = items[0];
-        }
-
-        const line2Text = `${detailStr} : ${displayContent}`;
+        const metaText = `최초 발생 ${item.startDate || '-'} · 최근 작업 ${item.lastWorkDate || '-'} · 작업 ${item.workCount}회`;
 
         const li = document.createElement('li');
         li.className = 'upcoming-item';
-        li.style.borderLeft = '4px solid #eb371f';
+        li.style.borderLeft = `4px solid ${level.color}`;
         li.innerHTML = `
-            <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden; flex: 1; padding-right: 10px;">
+            <div style="font-size: 12px; font-weight: 800; color: ${level.color}; min-width: 52px; flex-shrink: 0;">D+${item.days}</div>
+            <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden; flex: 1; min-width: 0;">
                 <span style="font-size: 13px; font-weight: bold; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${info.fullTitle}">${info.mainInfo} <span class="equip-serial">${info.subInfo}</span></span>
-                <span style="font-size: 11px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(detailStr)} : ${escapeHtml(log.content)}">${escapeHtml(line2Text)}</span>
+                <span style="font-size: 11px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(metaText)}">${escapeHtml(metaText)}</span>
             </div>
-            <div style="font-size: 11px; color: #8b949e; white-space: nowrap; flex-shrink: 0;">${dateStr}</div>
         `;
 
         li.onclick = () => {
             if (typeof window.openExtraWorkHistoryModal === 'function') {
-                window.openExtraWorkHistoryModal(site, equipKey, log.id);
+                window.openExtraWorkHistoryModal(site, equipKey, parentLog.id);
             } else {
-                let targetUrl = `/maintenance?site=${encodeURIComponent(site)}&equip=${encodeURIComponent(equipKey)}&logId=${log.id}`;
-                window.location.href = targetUrl;
+                window.location.href = '/tracking';
             }
         };
 
         issueList.appendChild(li);
     });
 }
+window.populateEquipmentIssues = populateEquipmentIssues;

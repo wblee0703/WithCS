@@ -36,3 +36,12 @@
    ```bash
    python app.py
    ```
+
+4. **업데이트 방법**
+   1) 윈도우 실행 :cmd 파일 열기
+   2) ssh -oHostKeyAlgorithms=+ssh-rsa withtech001@211.47.75.61 입력
+   3) 비번 입력
+   4) 가상 서버 진입 : cd /web/WithCS
+   5) 수정 내용 불러오기 : git pull origin main
+   6) 서버 닫기 : pkill -u guser -9 python
+   7) 서버 실행 : nohup python app.py &

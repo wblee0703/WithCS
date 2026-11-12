@@ -776,7 +776,7 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
             issueShareWrapper.innerHTML = `
                     <label class="modal-checkbox-label" style="font-size: 13px; font-weight: bold; color: #f0883e; display: flex; align-items: center; cursor: pointer;">
                         <input type="checkbox" id="detail-issue-share-checkbox" class="modal-checkbox-input" style="margin-right: 5px; transform: scale(1.2);">
-                        이슈 공유
+                        Tracking (정상화 미완료)
                     </label>
                 `;
         }
@@ -1070,15 +1070,13 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
         if (costTypeInput) costTypeInput.disabled = false;
         dateField.disabled = false;
         if (issueShareCb) {
-            const userRole = sessionStorage.getItem('userRole');
-            issueShareCb.disabled = (userRole !== 'admin' && userRole !== 'superadmin');
+            issueShareCb.disabled = (sessionStorage.getItem('isLoggedIn') !== 'true');
         }
     }
 
     if (issueShareCb) {
         issueShareCb.checked = !!item.isIssueShared;
-        const userRole = sessionStorage.getItem('userRole');
-        issueShareCb.disabled = isCompleted || (userRole !== 'admin' && userRole !== 'superadmin');
+        issueShareCb.disabled = isCompleted || (sessionStorage.getItem('isLoggedIn') !== 'true');
     }
 
     if (workerInput) workerInput.dispatchEvent(new Event('updateTrigger'));

@@ -594,6 +594,57 @@ class EquipmentReport(db.Model):
             'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M:%S') if self.updated_at else ''
         }
 
+# [추가] Tracking(정상화 미완료) 작업 레포트 모델 - 작업 패밀리(최초 작업 + 추가작업)당 1건
+class TrackingReport(db.Model):
+    __tablename__ = 'tracking_report'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    equip_id = db.Column(db.String(200), nullable=False, index=True)
+    family_id = db.Column(db.String(50), nullable=False, index=True)  # 최초 작업 로그 ID
+    site_name = db.Column(db.String(100), default='')
+    equip_key = db.Column(db.String(200), default='')
+    symptom = db.Column(db.Text, default='')     # 증상
+    action = db.Column(db.Text, default='')      # 조치사항
+    parts = db.Column(db.Text, default='')       # 필요물품 비고 (발주/입고 현황 등)
+    parts_items = db.Column(db.Text, default='[]')  # 필요물품 목록 JSON (물품 관리 항목 + 수량)
+    discussion = db.Column(db.Text, default='')  # 협의 사항
+    discussion_person = db.Column(db.String(100), default='')  # 협의 담당자 (수기 입력)
+    basic_json = db.Column(db.Text, default='{}')  # 작성 시점 기본 정보 스냅샷
+    created_by = db.Column(db.String(100), default='')
+    updated_by = db.Column(db.String(100), default='')
+    created_at = db.Column(db.DateTime, default=get_utc_now)
+    updated_at = db.Column(db.DateTime, default=get_utc_now, onupdate=get_utc_now)
+
+    def to_dict(self):
+        try:
+            basic = json.loads(self.basic_json or '{}')
+        except Exception:
+            basic = {}
+        try:
+            parts_items = json.loads(self.parts_items or '[]')
+            if not isinstance(parts_items, list):
+                parts_items = []
+        except Exception:
+            parts_items = []
+        to_kst = lambda dt: (dt + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M') if dt else ''
+        return {
+            'id': self.id,
+            'equipId': self.equip_id,
+            'familyId': self.family_id,
+            'siteName': self.site_name or '',
+            'equipKey': self.equip_key or '',
+            'symptom': self.symptom or '',
+            'action': self.action or '',
+            'parts': self.parts or '',
+            'partsItems': parts_items,
+            'discussion': self.discussion or '',
+            'discussionPerson': self.discussion_person or '',
+            'basic': basic,
+            'createdBy': self.created_by or '',
+            'updatedBy': self.updated_by or '',
+            'createdAt': to_kst(self.created_at),
+            'updatedAt': to_kst(self.updated_at)
+        }
+
 # [추가] AI 챗봇 대화 기록 모델 (ChatHistory)
 class ChatHistory(db.Model):
     __tablename__ = 'chat_history'
@@ -723,11 +774,39 @@ def ensure_chat_history_table():
     except Exception as e:
         app.logger.error(f"Error ensuring chat_history table: {e}")
 
+def reset_legacy_issue_share_once():
+    """[Tracking 전환] 기존 '이슈 공유' 체크 데이터를 1회만 초기화 (is_issue_shared 플래그를 Tracking 대상 플래그로 재사용)"""
+    flag_key = 'tracking_legacy_reset_done'
+    try:
+        if SystemSetting.query.filter_by(key=flag_key).first():
+            return
+        LogItem.query.filter(LogItem.is_issue_shared == True).update({LogItem.is_issue_shared: False}, synchronize_session=False)
+        db.session.add(SystemSetting(key=flag_key, value=json.dumps(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))))
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Failed to reset legacy issue share flags: {e}")
+
+def ensure_tracking_report_columns():
+    """[Tracking] tracking_report 테이블 신규 컬럼 자동 추가"""
+    try:
+        db.create_all()
+    except Exception as e:
+        app.logger.error(f"Error ensuring tracking_report table: {e}")
+    for col, typ in [('parts_items', 'TEXT'), ('discussion_person', "VARCHAR(100) DEFAULT ''")]:
+        try:
+            db.session.execute(text(f'ALTER TABLE tracking_report ADD COLUMN {col} {typ}'))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+
 with app.app_context():
+    ensure_tracking_report_columns()
     ensure_item_stock_table()
     ensure_admin_parameter_table()
     ensure_equipment_report_table()
     ensure_chat_history_table()
+    reset_legacy_issue_share_once()
 
 # ------------------------------------------------------------------------------
 # 2. 경로 및 로깅 설정 (Paths & Logging Setup)
@@ -2259,6 +2338,74 @@ def maintenance():
 @app.route('/trouble.html')
 def trouble():
     return render_template('trouble.html', active_page='trouble')
+
+@app.route('/tracking')
+@app.route('/tracking.html')
+def tracking():
+    return render_template('tracking.html', active_page='tracking')
+
+@app.route('/api/tracking/reports', methods=['GET'])
+@login_required
+def get_tracking_reports():
+    try:
+        reports = TrackingReport.query.all()
+        return jsonify({"status": "success", "reports": [r.to_dict() for r in reports]})
+    except Exception as e:
+        app.logger.error(f"Failed to load tracking reports: {e}")
+        return jsonify({"status": "fail", "message": "Tracking 레포트를 불러오지 못했습니다."}), 500
+
+@app.route('/api/tracking/report', methods=['POST'])
+@login_required
+def save_tracking_report():
+    payload = request.json or {}
+    equip_id = str(payload.get('equipId') or '').strip()
+    family_id = str(payload.get('familyId') or '').strip()
+    if not equip_id or not family_id:
+        return jsonify({"status": "fail", "message": "장비 또는 작업 정보가 올바르지 않습니다."}), 400
+
+    def clip(v, n=5000):
+        return str(v or '')[:n]
+
+    try:
+        user = db.session.get(User, session.get('user_id'))
+        writer = (user.name if user and user.name else session.get('user_id')) or ''
+
+        report = TrackingReport.query.filter_by(equip_id=equip_id, family_id=family_id).first()
+        if not report:
+            report = TrackingReport(equip_id=equip_id, family_id=family_id, created_by=writer)
+            db.session.add(report)
+
+        report.site_name = clip(payload.get('siteName'), 100)
+        report.equip_key = clip(payload.get('equipKey'), 200)
+        report.symptom = clip(payload.get('symptom'))
+        report.action = clip(payload.get('action'))
+        if 'parts' in payload:  # 필요물품 텍스트 입력란 삭제 → 기존 값 보존
+            report.parts = clip(payload.get('parts'))
+        items = []
+        for it in (payload.get('partsItems') or [])[:100]:
+            if not isinstance(it, dict):
+                continue
+            try:
+                qty = max(1, min(9999, int(it.get('qty') or 1)))
+            except (TypeError, ValueError):
+                qty = 1
+            items.append({
+                'id': clip(it.get('id'), 50), 'code': clip(it.get('code'), 100), 'part': clip(it.get('part'), 100),
+                'spec': clip(it.get('spec'), 255), 'partno': clip(it.get('partno'), 100), 'qty': qty
+            })
+        report.parts_items = json.dumps(items, ensure_ascii=False)
+        report.discussion = clip(payload.get('discussion'))
+        report.discussion_person = clip(payload.get('discussionPerson'), 100)
+        basic = payload.get('basic') if isinstance(payload.get('basic'), dict) else {}
+        report.basic_json = json.dumps(basic, ensure_ascii=False)[:20000]
+        report.updated_by = writer
+        report.updated_at = get_utc_now()
+        db.session.commit()
+        return jsonify({"status": "success", "report": report.to_dict()})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Failed to save tracking report: {e}")
+        return jsonify({"status": "fail", "message": "Tracking 레포트 저장 중 오류가 발생했습니다."}), 500
 
 @app.route('/data')
 @app.route('/data_page')

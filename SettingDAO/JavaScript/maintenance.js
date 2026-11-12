@@ -1278,8 +1278,7 @@ function renderLogs() {
             if (cb) {
                 cb.dataset.familyId = targetParentId;
                 cb.checked = isShared;
-                const userRole = sessionStorage.getItem('userRole');
-                cb.disabled = (userRole !== 'admin' && userRole !== 'superadmin');
+                cb.disabled = (sessionStorage.getItem('isLoggedIn') !== 'true');
                 cb.onclick = (e) => {
                     e.stopPropagation();
                     const newChecked = e.target.checked;
@@ -2124,7 +2123,7 @@ window.toggleIssueShare = async function (logId, isChecked) {
 
             data.logs = newLogs;
             localStorage.setItem(key, JSON.stringify(data));
-            if (typeof window.addSystemLog === 'function') window.addSystemLog('UPDATE_LOG_ISSUE_SHARE', currentPath.equip, `이슈 공유 ${isChecked ? '설정' : '해제'} (LogID: ${logId})`);
+            if (typeof window.addSystemLog === 'function') window.addSystemLog('UPDATE_LOG_ISSUE_SHARE', currentPath.equip, `Tracking(정상화 미완료) ${isChecked ? '설정' : '해제'} (LogID: ${logId})`);
         }
     }
 };
