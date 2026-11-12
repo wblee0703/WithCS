@@ -404,6 +404,8 @@ class LogItem(db.Model):
     image_data = db.Column(db.Text(length=2000000), nullable=True) # [추가]
     status = db.Column(db.String(50), default='조치완료') # [통합] 상태 (작업예정 / 조치완료 / 연기됨 등)
     sort_order = db.Column(db.Integer, default=0)
+    updated_by = db.Column(db.String(100), default='')  # [추가] 마지막 등록/수정자 (로그인 사용자 이름)
+    updated_at = db.Column(db.String(30), default='')   # [추가] 마지막 등록/수정 일시 (KST, YYYY-MM-DD HH:MM)
 
 # [추가] 장비별 유지관리 물품 관리 테이블 (ItemLog / item_log)
 class ItemLog(db.Model):
@@ -799,6 +801,13 @@ def ensure_tracking_report_columns():
             db.session.commit()
         except Exception:
             db.session.rollback()
+    # [추가] 작업(maint_log) 마지막 등록/수정자 기록 컬럼
+    for col, typ in [('updated_by', "VARCHAR(100) DEFAULT ''"), ('updated_at', "VARCHAR(30) DEFAULT ''")]:
+        try:
+            db.session.execute(text(f'ALTER TABLE maint_log ADD COLUMN {col} {typ}'))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
 with app.app_context():
     ensure_tracking_report_columns()
@@ -1167,6 +1176,7 @@ def load_data():
                 "period": int(m.period) if getattr(m, 'period', None) and str(m.period).isdigit() else getattr(m, 'period', ''),
                 "costType": m.cost_type, "worker": m.worker, "md": m.md, "itemCost": getattr(m, 'item_cost', ''), "memo": m.memo,
                 "sortOrder": getattr(m, 'sort_order', 0),
+                "updatedBy": getattr(m, 'updated_by', '') or '', "updatedAt": getattr(m, 'updated_at', '') or '',
                 "originalLogId": int(m.original_log_id) if m.original_log_id and str(m.original_log_id).isdigit() else m.original_log_id
             })
 
@@ -1217,6 +1227,7 @@ def load_data():
                 "endTime": getattr(l, 'end_time', ''),
                 "addWork": l.add_work, "costType": l.cost_type, "md": l.md, "worker": l.worker, "memo": l.memo,
                 "isIssueShared": l.is_issue_shared,
+                "updatedBy": getattr(l, 'updated_by', '') or '', "updatedAt": getattr(l, 'updated_at', '') or '',
                 "originalLogId": int(l.original_log_id) if l.original_log_id and str(l.original_log_id).isdigit() else l.original_log_id,
                 "addWorkLogId": int(l.add_work_log_id) if l.add_work_log_id and str(l.add_work_log_id).isdigit() else l.add_work_log_id
             })
@@ -4034,6 +4045,13 @@ def history_transaction():
         app.logger.warning(f"[Rule 3] 등록되지 않은 마스터 장비 차단: {equip_id}")
         return jsonify({'status': 'fail', 'message': f'등록되지 않은 마스터 장비 데이터입니다 ({equip_id}). ADMIN에서 장비를 수동으로 등록해주세요.'}), 400
 
+    # [추가] 작업 내용이 실제로 바뀐 경우에만 마지막 등록/수정자 기록 (Tracking 체크, 정렬 순서 변경 등은 제외)
+    def _audit_fields(it):
+        return tuple(str(getattr(it, f, '') or '') for f in (
+            'status', 'date', 'scheduled_date', 'period', 'type', 'detail_type', 'detail_type2', 'detail_type3',
+            'content', 'add_work', 'cost_type', 'md', 'worker', 'memo', 'start_time', 'end_time'))
+    audit_targets = []  # [(item, before_snapshot)]
+
     try:
         # 1. log_upserts (작업 완료 처리)
         completed_orig_ids = set()
@@ -4058,6 +4076,7 @@ def history_transaction():
             if not item:
                 item = LogItem(id=l_id, equip_id=equip_id, status='조치완료')
                 db.session.add(item)
+            audit_targets.append((item, _audit_fields(item)))
 
             # [수정] 원본 작업예정 레코드(orig_id)가 별도 신규 l_id로 조치완료된 경우 원본 작업예정 레코드 삭제 (유령 데이터 방지)
             if orig_id and orig_id != 'None' and orig_id != '-' and orig_id != l_id:
@@ -4310,6 +4329,7 @@ def history_transaction():
 
                     item = LogItem(id=m_id, equip_id=equip_id, status='작업예정')
                     db.session.add(item)
+                audit_targets.append((item, _audit_fields(item)))
 
                 # 이전 버그로 생성된 동일 장비의 legacy duplicate LogItem 레코드 정밀 삭제
                 try:
@@ -4420,6 +4440,20 @@ def history_transaction():
                         LogItem.status == '작업예정',
                         (LogItem.id == m_id) | (LogItem.id.like('item_%')) | ((LogItem.content == clean_p) if clean_p else False) | ((LogItem.content.like(f"%{clean_p}%")) if clean_p else False)
                     ).delete(synchronize_session=False)
+
+        # [추가] 마지막 등록/수정자 기록
+        if audit_targets:
+            _u = db.session.get(User, session.get('user_id'))
+            _writer = ((_u.name if _u and _u.name else session.get('user_id')) or '')[:100]
+            _now_kst = (datetime.now(timezone.utc) + timedelta(hours=9)).strftime('%Y-%m-%d %H:%M')
+            _seen = set()
+            for _it, _before in audit_targets:
+                if id(_it) in _seen:
+                    continue
+                _seen.add(id(_it))
+                if _audit_fields(_it) != _before:
+                    _it.updated_by = _writer
+                    _it.updated_at = _now_kst
 
         # 4. log_deletes 처리 (maint_upserts에 포함된 완료 취소 항목은 DB 삭제 대상에서 제외)
         if log_deletes:
@@ -4537,7 +4571,15 @@ def history_transaction():
                 TroubleLog.query.filter_by(id=t_id).delete(synchronize_session=False)
 
         db.session.commit()
-        return jsonify({"status": "success"})
+        # [추가] 클라이언트 캐시 갱신용 마지막 등록/수정자 정보
+        audit_result = {}
+        for _it, _before in audit_targets:
+            try:
+                if getattr(_it, 'updated_at', ''):
+                    audit_result[str(_it.id)] = {"updatedBy": _it.updated_by or '', "updatedAt": _it.updated_at or ''}
+            except Exception:
+                pass  # 같은 요청에서 삭제된 항목 등
+        return jsonify({"status": "success", "audit": audit_result})
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"History Transaction Error: {str(e)}", exc_info=True)

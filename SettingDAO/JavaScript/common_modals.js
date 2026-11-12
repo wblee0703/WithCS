@@ -1079,6 +1079,18 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
         issueShareCb.disabled = isCompleted || (sessionStorage.getItem('isLoggedIn') !== 'true');
     }
 
+    // [추가] 마지막 등록/수정자 표시 (서버 기록)
+    const auditInfoEl = document.getElementById('detail-audit-info');
+    if (auditInfoEl) {
+        if (item && item.updatedAt) {
+            auditInfoEl.textContent = `최종 등록/수정: ${item.updatedBy || '-'} · ${item.updatedAt}`;
+            auditInfoEl.style.display = '';
+        } else {
+            auditInfoEl.textContent = '';
+            auditInfoEl.style.display = 'none';
+        }
+    }
+
     if (workerInput) workerInput.dispatchEvent(new Event('updateTrigger'));
 
     buildDetailDropdown(item, site, equip);

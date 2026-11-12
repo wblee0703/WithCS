@@ -611,6 +611,29 @@ window.reassignChildExtraWorks = function (site, equip, deletedIds) {
     }
 };
 
+// [추가] 작업 마지막 등록/수정자 정보(서버 기록)를 전송 객체와 로컬 캐시에 반영
+// - 호출부가 저장 후 같은 객체로 localStorage 를 다시 쓰는 경우와 이미 쓴 경우 모두 대응
+window.applyWorkAuditInfo = function (site, equip, payload, audit) {
+    try {
+        const patch = (o) => {
+            const a = o && audit[String(o.id)];
+            if (a) { o.updatedBy = a.updatedBy; o.updatedAt = a.updatedAt; }
+        };
+        [...(payload.log_upserts || []), ...(payload.maint_upserts || [])].forEach(patch);
+
+        const key = `details_${site}_${equip}`;
+        const detail = JSON.parse(localStorage.getItem(key) || 'null');
+        if (detail) {
+            (detail.logs || []).forEach(patch);
+            (detail.maint || []).forEach(patch);
+            localStorage.setItem(key, JSON.stringify(detail));
+            if (window.allEquipDetails && window.allEquipDetails[key]) window.allEquipDetails[key] = detail;
+        }
+    } catch (e) {
+        console.warn('Failed to apply work audit info:', e);
+    }
+};
+
 // [추가] 100% DB 전환을 위한 유지관리/이력 전용 트랜잭션 동기화 함수
 window.syncHistoryTransaction = async function (site, equip, payload) {
     window.activeSyncRequests++;
@@ -636,6 +659,9 @@ window.syncHistoryTransaction = async function (site, equip, payload) {
         if (data.status !== 'success') {
             console.error('DB Sync Error:', data.message);
             alert(`서버 요청 중 오류가 발생했습니다.\n사유: ${data.message || '알 수 없음'}`);
+        }
+        if (data.status === 'success' && data.audit && Object.keys(data.audit).length > 0) {
+            window.applyWorkAuditInfo(site, equip, payload, data.audit);
         }
         return data.status === 'success';
     } catch (e) {
