@@ -54,6 +54,7 @@
         const r = await fetch(path, o);
         let data = {};
         try { data = await r.json(); } catch (e) { /* 본문 없음 */ }
+        if (data.budget_blocked) showBlocked(data.message);
         if (!r.ok || data.status === "fail") throw new Error(data.message || `요청 실패 (${r.status})`);
         return data;
     }
@@ -230,6 +231,8 @@
     async function loadStatus() {
         const st = await api("/api/edu/status");
         S.admin = !!st.admin;
+        S.budgetBlocked = !!st.budget_blocked;
+        S.budgetMessage = st.budget_message || "";
         S.userName = st.user_name || "";
         S.categories = st.categories;
         $("edu-model-admin").hidden = !S.admin;
@@ -557,6 +560,7 @@
                 <div><b>${d.plays.toLocaleString()}회</b><span>이번 달 재생 · 오늘 ${d.today.plays.toLocaleString()}회</span></div>
                 <div><b>${won(d.cost.projected)}</b><span>이번 달 예상 비용 (지금까지 ${won(d.cost.now)})</span></div>
               </div>
+              ${budgetHtml(d.budget)}
               <div class="edu-hint">
                 모델 ${d.counts.models}개 · 영상 ${d.counts.videos}개 (버전 ${d.counts.versions}개) · 첨부자료 ${d.counts.attachments}개 · 자동 압축: ${encTxt}<br>
                 전송량은 재생 기록 × 영상 크기로 계산한 <b>최대 추정치</b>입니다 (중간에 끄면 실제는 더 적음). 정확한 청구 금액은 NCP 콘솔 › 비용 관리에서 확인하세요.<br>
@@ -581,6 +585,24 @@
               <div class="edu-scroll short"><table class="edu-table"><thead><tr><th>모델</th><th>영상</th><th>압축</th><th class="num">용량</th></tr></thead><tbody>${top}</tbody></table></div>`;
     }
 
+    function budgetHtml(b) {
+        if (!b || !b.enabled) return `<div class="edu-budget"><span>월 사용 한도: <b>없음</b> (.env EDU_BUDGET_WON=0)</span></div>`;
+        const pct = b.limit ? Math.round(b.spent / b.limit * 100) : 0;
+        return `<div class="edu-budget ${b.blocked ? "over" : pct >= 80 ? "warn" : ""}">
+            <div class="edu-budget-row">
+              <span>${esc(b.month)} 사용 한도 <b>${won(b.limit)}</b>
+                ${b.extra ? `<span class="edu-hint">(기본 ${won(b.base)} + 추가 허용 ${won(b.extra)})</span>` : ""}
+                · 사용 <b>${won(b.spent)}</b> (${pct}%)</span>
+              <button type="button" class="edu-btn edu-btn-xs" data-budget-extend>＋ ${won(b.step)} 추가 허용</button>
+            </div>
+            <div class="edu-budget-bar"><i style="width:${Math.min(100, pct)}%"></i></div>
+            <div class="edu-hint">${b.blocked
+                ? "⛔ 한도를 넘어 <b>일반 계정·관리자의 EDU 이용(목록·재생·다운로드)이 중지</b>되었습니다. 최종관리자는 계속 사용할 수 있습니다."
+                : "한도를 넘으면 일반 계정·관리자의 EDU 이용이 자동으로 중지됩니다 (최종관리자 제외)."}
+              매달 1일 기본 한도로 초기화됩니다.</div>
+          </div>`;
+    }
+
     async function openUsage() {
         let d = await api("/api/edu/usage");
         let timer = null, loading = false;
@@ -601,6 +623,17 @@
             onOpen: () => {
                 $("edu-modal-body").onclick = async (e) => {
                     if (e.target.closest("[data-usage-refresh]")) return load(true);
+                    const xb = e.target.closest("[data-budget-extend]");
+                    if (xb && !xb.disabled) {
+                        const b = d.budget;
+                        const okd = await confirmBox("사용 한도 추가 허용",
+                            `이번 달(${b.month}) 사용 한도를 ${won(b.step)} 늘릴까요?\n${won(b.limit)} → ${won(b.limit + b.step)}\n\n늘린 한도는 이번 달에만 적용되고, 다음 달 1일에 기본 한도(${won(b.base)})로 돌아갑니다.`,
+                            "추가 허용");
+                        if (!okd) return openUsage();
+                        await api("/api/edu/budget/extend", { method: "POST" });
+                        toast(`이번 달 사용 한도를 ${won(b.step)} 늘렸습니다.`);
+                        return openUsage();
+                    }
                     const ob = e.target.closest("[data-orphan-clean]");
                     if (!ob || ob.disabled) return;
                     ob.disabled = true;
@@ -995,6 +1028,20 @@
         });
     }
 
+    /** 월 사용 한도 초과 안내 (최종관리자가 아닌 사용자) */
+    function showBlocked(msg) {
+        const app = $("edu-app");
+        if (!app || app.dataset.blocked) return;
+        app.dataset.blocked = "1";
+        const v = $("edu-video");
+        if (v) { v.pause(); v.removeAttribute("src"); }
+        app.innerHTML = `<div class="edu-card edu-blocked">
+            <div class="edu-blocked-icon">${icon("box")}</div>
+            <div class="edu-blocked-title">EDU 이용이 일시 중지되었습니다</div>
+            <div class="edu-hint">${esc(msg || "이번 달 EDU 사용 한도를 초과했습니다. 최종관리자에게 문의하세요.")}</div>
+          </div>`;
+    }
+
     // ------------------------------------------------------------------ 시작
     async function start() {
         if (!$("edu-app")) return;
@@ -1003,6 +1050,7 @@
         initSplitter();
         try {
             await loadStatus();
+            if (S.budgetBlocked) return showBlocked(S.budgetMessage);
             if (!S.categories.some((c) => c.key === S.cat)) S.cat = S.categories[0].key;
             await loadModels();
             if (S.modelId != null && S.models.some((m) => m.id === S.modelId)) {

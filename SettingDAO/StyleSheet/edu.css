@@ -319,3 +319,16 @@ svg.edu-ic { width: 15px; height: 15px; flex: none; }
 @media (max-width: 600px) {
     .edu-vmenu button { padding: 12px 14px; font-size: 15px; }
 }
+
+/* 월 사용 한도 */
+.edu-budget { margin: 10px 0 8px; padding: 10px 12px; border: 1px solid #30363d; border-radius: 8px; background: #0d1117; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.edu-budget-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.edu-budget-bar { height: 8px; border-radius: 4px; background: #21262d; overflow: hidden; }
+.edu-budget-bar i { display: block; height: 100%; background: #238636; }
+.edu-budget.warn { border-color: rgba(210, 153, 34, .6); }
+.edu-budget.warn .edu-budget-bar i { background: #d29922; }
+.edu-budget.over { border-color: rgba(248, 81, 73, .7); background: rgba(248, 81, 73, .08); }
+.edu-budget.over .edu-budget-bar i { background: #f85149; }
+.edu-blocked { margin: auto; max-width: 460px; padding: 36px 28px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.edu-blocked-icon svg.edu-ic { width: 40px; height: 40px; color: #f85149; }
+.edu-blocked-title { font-size: 18px; font-weight: 700; color: #e6edf3; }

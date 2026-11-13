@@ -9,7 +9,7 @@
     <title>{% block title %}WITH ON{% endblock %}</title>
 
     <!-- 공통 CSS -->
-    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common.css') }}?v=1.1.4">
+    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common.css') }}?v=1.1.5">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_modals.css') }}?v=1.0.7">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_setup.css') }}">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/chatbot.css') }}?v=1.5.1">
@@ -87,7 +87,7 @@
                     </li>
 
                     <!-- 3. 교육 (WITH Edu 교육 영상) -->
-                    <li class="nav-edu-item"{% if not session.get('user_id') %} style="display: none;"{% endif %}>
+                    <li class="nav-edu-item"{% if not session.get('user_id') %} style="display: none;"{% endif %}{% if edu_nav_blocked is defined and edu_nav_blocked() %} data-blocked="1" title="이번 달 EDU 사용 한도 초과"{% endif %}>
                         <a href="{{ url_for('edu_page') }}" class="{% if active_page == 'edu' %}active{% endif %}">EDU</a>
                     </li>
 

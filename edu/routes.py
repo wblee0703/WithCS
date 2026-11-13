@@ -311,7 +311,9 @@ def delete_files(keys):
 @bp.route("/status", methods=["GET"])
 @need_login
 def api_status():
+    blocked = (not is_admin()) and _budget_blocked_safe()
     return ok(admin=is_admin(), user_name=user_name(), storage=D.storage.name,
+              budget_blocked=blocked, budget_message=BUDGET_MSG if blocked else "",
               categories=[{"key": k, "name": n} for k, n in CATEGORIES])
 
 
@@ -877,23 +879,24 @@ def _env_float(name, default):
         return default
 
 
-@bp.route("/usage", methods=["GET"])
-@need_admin
-def api_usage():
-    """저장 용량(저장소 실측) + 이번 달 재생 전송량(재생 기록 × 파일 크기 추정) + 예상 비용."""
-    M = em.M
-    db = M.db
-    if request.args.get("refresh") == "1" or time.time() - _usage_cache["t"] > USAGE_TTL:
+def _snapshot(force=False):
+    """저장소 파일 목록 집계 (USAGE_TTL 동안 재사용). (files, orphans, 조회 시각)"""
+    if force or time.time() - _usage_cache["t"] > USAGE_TTL:
         try:
             objs = D.storage.list_objects()
-            _usage_cache.update(data=st.summarize(objs), orphans=_orphans(objs),
-                                t=time.time())
+            _usage_cache.update(data=st.summarize(objs), orphans=_orphans(objs), t=time.time())
         except Exception as e:  # noqa: BLE001
             current_app.logger.error(f"[Edu] 저장소 용량 조회 실패: {e}")
             if _usage_cache["data"] is None:
                 raise ApiError(502, "저장소 용량을 불러오지 못했습니다. 잠시 후 다시 시도하세요.")
-    files = _usage_cache["data"]
-    orphans = _usage_cache.get("orphans") or []
+    return _usage_cache["data"], _usage_cache.get("orphans") or [], _usage_cache["t"]
+
+
+def _month_cost(force=False):
+    """이번 달 예상 비용 계산 (사용량 화면과 사용 한도 판단에 공통 사용)."""
+    M = em.M
+    db = M.db
+    files, orphans, checked = _snapshot(force)
     storage_bytes = sum(v["bytes"] for v in files.values())
 
     t = now()
@@ -908,11 +911,9 @@ def api_usage():
         d = daily.setdefault(created.strftime("%m-%d"), [0, 0])
         d[0] += 1
         d[1] += size or 0
-    plays = len(rows)
     traffic = sum(d[1] for d in daily.values())
     elapsed = max(1.0, (t - month_start).total_seconds() / 86400)
     traffic_proj = traffic / elapsed * days_in_month
-    today = daily.get(t.strftime("%m-%d"), [0, 0])
 
     # 자동 압축용 내려받기 (클라우드 → 서버). 이번 달 올린 영상의 원본 크기 합계
     enc_bytes = 0
@@ -928,8 +929,102 @@ def api_usage():
     p_enc = _env_float("EDU_PRICE_ENCODE_GB", p_traffic)
     cost_store = storage_bytes / GB * p_store
     cost_enc = enc_bytes / GB * p_enc
-    cost_now = cost_store + traffic / GB * p_traffic + cost_enc
-    cost_proj = cost_store + traffic_proj / GB * p_traffic + cost_enc
+    return {
+        "t": t, "month": t.strftime("%Y-%m"), "files": files, "orphans": orphans, "checked": checked,
+        "storage_bytes": storage_bytes, "daily": daily, "plays": len(rows),
+        "traffic": traffic, "traffic_proj": traffic_proj, "enc_bytes": enc_bytes,
+        "price": {"storage_gb": p_store, "traffic_gb": p_traffic, "encode_gb": p_enc},
+        "cost": {"storage": round(cost_store), "play": round(traffic / GB * p_traffic),
+                 "play_projected": round(traffic_proj / GB * p_traffic), "encode": round(cost_enc),
+                 "now": round(cost_store + traffic / GB * p_traffic + cost_enc),
+                 "projected": round(cost_store + traffic_proj / GB * p_traffic + cost_enc)},
+    }
+
+
+# ================================================================= 월 사용 한도
+# 이번 달 예상 비용(지금까지)이 한도를 넘으면 일반 계정·관리자는 EDU 이용 차단 (최종관리자는 계속 사용)
+BUDGET_TTL = 60
+_budget_cache = {"t": 0.0, "data": None}
+BUDGET_MSG = ("이번 달 EDU 사용 한도를 초과해 교육 영상 이용이 일시 중지되었습니다. "
+              "최종관리자에게 문의하세요.")
+
+
+def budget_state(cost=None, force=False):
+    """{"month", "base", "extra", "limit", "spent", "step", "enabled", "blocked"}"""
+    if cost is None and not force and _budget_cache["data"] and time.time() - _budget_cache["t"] < BUDGET_TTL:
+        return _budget_cache["data"]
+    c = cost or _month_cost()
+    base = max(0, int(_env_float("EDU_BUDGET_WON", 5000)))       # 0 이면 한도 없음
+    row = em.M.db.session.get(em.M.Budget, c["month"])
+    extra = int(row.extra_won or 0) if row else 0
+    limit = base + extra
+    spent = c["cost"]["now"]
+    data = {"month": c["month"], "base": base, "extra": extra, "limit": limit, "spent": spent,
+            "step": max(1, int(_env_float("EDU_BUDGET_STEP_WON", 5000))),
+            "enabled": base > 0, "blocked": base > 0 and spent >= limit,
+            "updated_by": row.updated_by if row else ""}
+    _budget_cache.update(t=time.time(), data=data)
+    return data
+
+
+def _budget_blocked_safe():
+    """차단 여부. 계산 실패 시에는 막지 않음 (저장소·DB 일시 오류로 서비스가 멈추지 않게)."""
+    try:
+        return budget_state()["blocked"]
+    except Exception as e:  # noqa: BLE001
+        current_app.logger.warning(f"[Edu] 사용 한도 확인 실패 (차단하지 않음): {e}")
+        try:
+            em.M.db.session.rollback()
+        except Exception:  # noqa: BLE001
+            pass
+        return False
+
+
+def nav_blocked():
+    """상단 메뉴용 (템플릿). 로그인한 경우에만 확인."""
+    return "user_id" in session and _budget_blocked_safe()
+
+
+@bp.before_request
+def _budget_guard():
+    """한도 초과 시 최종관리자가 아니면 EDU API(목록·재생·다운로드) 차단 → 추가 비용 발생 방지."""
+    if request.endpoint == "edu.api_status" or "user_id" not in session or is_admin():
+        return None
+    if _budget_blocked_safe():
+        return jsonify({"status": "fail", "budget_blocked": True, "message": BUDGET_MSG}), 403
+    return None
+
+
+@bp.route("/budget/extend", methods=["POST"])
+@need_admin
+def api_budget_extend():
+    """이번 달 사용 한도 추가 허용 (최종관리자). 달이 바뀌면 기본 한도로 돌아감."""
+    M = em.M
+    b = budget_state(force=True)
+    row = M.db.session.get(M.Budget, b["month"])
+    if row is None:
+        row = M.Budget(month=b["month"], extra_won=0)
+        M.db.session.add(row)
+    row.extra_won = int(row.extra_won or 0) + b["step"]
+    row.updated_by = user_name()
+    row.updated_at = now()
+    commit()
+    _budget_cache["t"] = 0.0
+    nb = budget_state(force=True)
+    audit("EDU_BUDGET_EXTEND", b["month"],
+          f"EDU 이번 달 사용 한도 {b['step']:,}원 추가 허용 → 한도 {nb['limit']:,}원 (사용 {nb['spent']:,}원)")
+    return ok(budget=nb)
+
+
+@bp.route("/usage", methods=["GET"])
+@need_admin
+def api_usage():
+    """저장 용량(저장소 실측) + 이번 달 재생 전송량(재생 기록 × 파일 크기 추정) + 예상 비용 + 사용 한도."""
+    M = em.M
+    db = M.db
+    c = _month_cost(force=request.args.get("refresh") == "1")
+    t, daily = c["t"], c["daily"]
+    today = daily.get(t.strftime("%m-%d"), [0, 0])
 
     states = dict(db.session.query(M.Version.encode_state, db.func.count(M.Version.id))
                   .group_by(M.Version.encode_state).all())
@@ -937,22 +1032,19 @@ def api_usage():
            .join(M.Video, M.Video.id == M.Version.video_id)
            .join(M.Model, M.Model.id == M.Video.model_id)
            .order_by(M.Version.file_size.desc()).limit(10).all())
+    orphans = c["orphans"]
     return ok(
         storage=D.storage.name, bucket=getattr(D.storage, "bucket", ""),
-        checked_at=time.strftime("%H:%M:%S", time.localtime(_usage_cache["t"])),
-        files=files, storage_bytes=storage_bytes,
+        checked_at=time.strftime("%H:%M:%S", time.localtime(c["checked"])),
+        files=c["files"], storage_bytes=c["storage_bytes"], budget=budget_state(cost=c),
         counts={"models": M.Model.query.count(), "videos": M.Video.query.count(),
                 "versions": sum(states.values()), "attachments": M.Attachment.query.count()},
         encode={"pending": sum(states.get(k, 0) for k in (None, "wait")), "working": states.get("work", 0),
                 "done": states.get("done", 0), "skip": states.get("skip", 0), "fail": states.get("fail", 0)},
-        month=t.strftime("%Y-%m"), plays=plays, traffic_bytes=traffic, traffic_proj_bytes=round(traffic_proj),
+        month=c["month"], plays=c["plays"], traffic_bytes=c["traffic"], traffic_proj_bytes=round(c["traffic_proj"]),
         today={"plays": today[0], "bytes": today[1]},
         daily=[{"day": k, "plays": v[0], "bytes": v[1]} for k, v in sorted(daily.items(), reverse=True)],
-        encode_bytes=enc_bytes,
-        price={"storage_gb": p_store, "traffic_gb": p_traffic, "encode_gb": p_enc},
-        cost={"storage": round(cost_store), "play": round(traffic / GB * p_traffic),
-              "play_projected": round(traffic_proj / GB * p_traffic), "encode": round(cost_enc),
-              "now": round(cost_now), "projected": round(cost_proj)},
+        encode_bytes=c["enc_bytes"], price=c["price"], cost=c["cost"],
         orphans={"count": len(orphans), "bytes": sum(o["size"] for o in orphans),
                  "min_age_hours": ORPHAN_MIN_AGE // 3600},
         top=[{"model": mn, "title": title, "revision": ver.revision, "bytes": ver.file_size or 0,

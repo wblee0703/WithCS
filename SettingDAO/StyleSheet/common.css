@@ -1745,3 +1745,6 @@ body.role-admin .btn-list-setting {
     font-size: 15px;
     font-weight: 600;
 }
+
+/* EDU: 월 사용 한도 초과 시 메뉴 비활성화 (최종관리자 제외) */
+body:not(.role-superadmin) .nav-edu-item[data-blocked="1"] > a { opacity: .35; pointer-events: none; cursor: not-allowed; }

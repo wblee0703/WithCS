@@ -98,10 +98,19 @@ def define_models(db):
         __table_args__ = (db.Index("idx_edu_view_video", "video_id", "created_at"),
                           db.Index("idx_edu_view_user", "video_id", "user_id", "created_at"))
 
+    class EduBudget(db.Model):
+        """월별 사용 한도 추가 허용액 (기본 한도는 .env EDU_BUDGET_WON). 달이 바뀌면 자동으로 기본 한도로."""
+        __tablename__ = "edu_budget"
+        month = db.Column(db.String(7), primary_key=True)          # YYYY-MM
+        extra_won = db.Column(db.Integer, nullable=False, default=0)
+        updated_by = db.Column(db.String(100), nullable=False, default="")
+        updated_at = db.Column(db.DateTime, nullable=False, default=now)
+
     M = _Models()
     M.db = db
     M.Model, M.Video, M.Version, M.Attachment = EduModel, EduVideo, EduVideoVersion, EduAttachment
     M.ViewLog = EduViewLog
+    M.Budget = EduBudget
     return M
 
 

@@ -40,11 +40,14 @@ def init_edu(app, db, limiter, login_required, admin_required, User=None, System
         limiter.exempt(view)
 
     app.register_blueprint(routes.bp)
+    # 상단 메뉴: 이번 달 사용 한도 초과 시 EDU 메뉴 비활성화 표시 (최종관리자 제외는 화면 CSS)
+    app.jinja_env.globals["edu_nav_blocked"] = routes.nav_blocked
 
     with app.app_context():
         try:
             tables = [M.Model.__table__, M.Video.__table__, M.Version.__table__,
-                      M.Attachment.__table__, M.ViewLog.__table__]
+                      M.Attachment.__table__, M.ViewLog.__table__,
+                      M.Budget.__table__]
             db.metadata.create_all(bind=db.engine, tables=tables)
             _add_missing_columns(db)
         except Exception as e:  # noqa: BLE001
