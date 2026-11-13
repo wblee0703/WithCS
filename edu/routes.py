@@ -271,6 +271,9 @@ def version_json(ver):
         "original_name": ver.original_name or "", "note": ver.note or "",
         "author": ver.author or "", "created_at": fmt_dt(ver.created_at),
         "encoding": encoder.enabled() and ver.encode_state in encoder.PENDING_STATES,
+        "encode_state": ver.encode_state or "",
+        # 실패 이유(서버 정보 포함 가능)는 관리자에게만
+        "encode_error": (ver.encode_error or "") if is_admin() else "",
     })
 
 
@@ -284,7 +287,8 @@ def video_json(v, latest=None, count=0, views=0):
     if latest is not None:
         lv = version_json(latest)
         for k in ("version_id", "revision", "file_path", "thumb_path", "duration_ms",
-                  "file_size", "original_name", "file_url", "thumb_url", "encoding"):
+                  "file_size", "original_name", "file_url", "thumb_url", "encoding",
+                  "encode_state", "encode_error"):
             d[k] = lv[k]
     return d
 
@@ -722,6 +726,18 @@ def api_version_delete(ver_id):
     return ok(file_errors=delete_files(files))
 
 
+@bp.route("/versions/<int:ver_id>/encode", methods=["POST"])
+@need_admin
+def api_version_reencode(ver_id):
+    """압축 실패한 버전 다시 압축."""
+    ver = get_or_404(em.M.Version, ver_id, "버전을 찾을 수 없습니다.")
+    if not encoder.enabled():
+        raise ApiError(400, "자동 압축이 꺼져 있습니다. (.env EDU_ENCODE)")
+    if not encoder.retry(ver.id):
+        raise ApiError(400, "실패한 영상만 다시 압축할 수 있습니다.")
+    return ok()
+
+
 @bp.route("/videos/<int:vid>/views", methods=["GET"])
 @need_admin
 def api_video_views(vid):
@@ -824,6 +840,36 @@ _usage_cache = {"t": 0.0, "data": None}
 GB = 1024 ** 3
 
 
+ORPHAN_MIN_AGE = 6 * 3600   # 이보다 오래된 파일만 정리 대상 (업로드 직후~등록 전 파일 보호)
+
+
+def _orphans(objs):
+    """DB 어디에도 연결되지 않은 파일 (압축 실패·업로드 중단 등으로 남은 것)."""
+    M = em.M
+    used = set()
+    for a, b in M.db.session.query(M.Version.file_path, M.Version.thumb_path).all():
+        used.update((a, b))
+    used.update(r[0] for r in M.db.session.query(M.Attachment.file_path).all())
+    with PENDING.lock:
+        used.update(PENDING.items)
+    cut = time.time() - ORPHAN_MIN_AGE
+    return [o for o in objs if o["key"] not in used and o["mtime"] < cut]
+
+
+@bp.route("/orphans/cleanup", methods=["POST"])
+@need_admin
+def api_orphans_cleanup():
+    objs = D.storage.list_objects()
+    orphans = _orphans(objs)
+    errors = delete_files([o["key"] for o in orphans]) if orphans else []
+    _usage_cache["t"] = 0.0
+    size = sum(o["size"] for o in orphans)
+    if orphans:
+        audit("EDU_CLEAN_FILES", f"{len(orphans)}개",
+              f"교육 저장소 미사용 파일 정리: {len(orphans)}개, {size / 1048576:.1f}MB")
+    return ok(count=len(orphans), bytes=size, errors=errors)
+
+
 def _env_float(name, default):
     try:
         return float(os.environ.get(name, default))
@@ -839,12 +885,15 @@ def api_usage():
     db = M.db
     if request.args.get("refresh") == "1" or time.time() - _usage_cache["t"] > USAGE_TTL:
         try:
-            _usage_cache.update(data=D.storage.usage(), t=time.time())
+            objs = D.storage.list_objects()
+            _usage_cache.update(data=st.summarize(objs), orphans=_orphans(objs),
+                                t=time.time())
         except Exception as e:  # noqa: BLE001
             current_app.logger.error(f"[Edu] 저장소 용량 조회 실패: {e}")
             if _usage_cache["data"] is None:
                 raise ApiError(502, "저장소 용량을 불러오지 못했습니다. 잠시 후 다시 시도하세요.")
     files = _usage_cache["data"]
+    orphans = _usage_cache.get("orphans") or []
     storage_bytes = sum(v["bytes"] for v in files.values())
 
     t = now()
@@ -904,6 +953,8 @@ def api_usage():
         cost={"storage": round(cost_store), "play": round(traffic / GB * p_traffic),
               "play_projected": round(traffic_proj / GB * p_traffic), "encode": round(cost_enc),
               "now": round(cost_now), "projected": round(cost_proj)},
+        orphans={"count": len(orphans), "bytes": sum(o["size"] for o in orphans),
+                 "min_age_hours": ORPHAN_MIN_AGE // 3600},
         top=[{"model": mn, "title": title, "revision": ver.revision, "bytes": ver.file_size or 0,
               "state": ver.encode_state or ""} for ver, title, mn in top],
     )

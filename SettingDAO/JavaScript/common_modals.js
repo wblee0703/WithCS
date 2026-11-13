@@ -6437,7 +6437,8 @@ window.renderTransferHistoryList = function () {
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key && key.startsWith('details_')) {
-                const data = JSON.parse(localStorage.getItem(key)) || {};
+                let data;
+                try { data = JSON.parse(localStorage.getItem(key)) || {}; } catch (e) { continue; } // 손상된 항목은 건너뜀
                 let updated = false;
 
                 if (data.logs && Array.isArray(data.logs)) {
@@ -6491,7 +6492,13 @@ window.renderTransferHistoryList = function () {
                 }
 
                 if (updated) {
-                    localStorage.setItem(key, JSON.stringify(data));
+                    // [수정] 이 파일은 common.js(저장소 안전망)보다 먼저 실행되므로 직접 예외 처리.
+                    // 브라우저 저장 공간(사이트당 약 5MB) 초과 시 해당 설비만 건너뛰고 나머지는 계속 정리
+                    try {
+                        localStorage.setItem(key, JSON.stringify(data));
+                    } catch (e) {
+                        if (!(e && (e.name === 'QuotaExceededError' || e.code === 22))) throw e;
+                    }
                 }
             }
         }

@@ -85,6 +85,17 @@ def content_disposition(download_name):
     return f"attachment; filename*=UTF-8''{quote(download_name)}"
 
 
+def summarize(objs):
+    """파일 목록 → 종류별 {count, bytes}."""
+    out = {k: {"count": 0, "bytes": 0} for k in KINDS + ("other",)}
+    for o in objs:
+        k = o["key"].split("/", 1)[0]
+        k = k if k in KINDS else "other"
+        out[k]["count"] += 1
+        out[k]["bytes"] += o["size"]
+    return out
+
+
 class BaseStorage:
     """저장소 공통 인터페이스."""
     name = "base"
@@ -127,6 +138,10 @@ class BaseStorage:
 
     def usage(self):
         """저장소에 실제로 있는 파일 집계 {kind: {"count", "bytes"}}."""
+        return summarize(self.list_objects())
+
+    def list_objects(self):
+        """저장소의 모든 파일 [{"key", "size", "mtime"(epoch 초)}] (업로드 중인 조각 제외)."""
         raise NotImplementedError
 
     def file_url(self, key, download_name=None):
@@ -217,16 +232,14 @@ class LocalStorage(BaseStorage):
     def put(self, key, src, ctype):
         shutil.move(src, self.path(key))
 
-    def usage(self):
-        out = {}
+    def list_objects(self):
+        out = []
         for k in KINDS:
-            n = b = 0
             d = os.path.join(self.root, k)
             for e in os.scandir(d) if os.path.isdir(d) else []:
                 if e.is_file() and not e.name.endswith(".part"):
-                    n += 1
-                    b += e.stat().st_size
-            out[k] = {"count": n, "bytes": b}
+                    stt = e.stat()
+                    out.append({"key": f"{k}/{e.name}", "size": stt.st_size, "mtime": stt.st_mtime})
         return out
 
 
@@ -308,14 +321,11 @@ class S3Storage(BaseStorage):
     def put(self, key, src, ctype):
         self.client.upload_file(src, self.bucket, key, ExtraArgs={"ContentType": ctype})
 
-    def usage(self):
-        out = {k: {"count": 0, "bytes": 0} for k in KINDS + ("other",)}
+    def list_objects(self):
+        out = []
         for page in self.client.get_paginator("list_objects_v2").paginate(Bucket=self.bucket):
             for o in page.get("Contents", []):
-                k = o["Key"].split("/", 1)[0]
-                k = k if k in KINDS else "other"
-                out[k]["count"] += 1
-                out[k]["bytes"] += int(o["Size"])
+                out.append({"key": o["Key"], "size": int(o["Size"]), "mtime": o["LastModified"].timestamp()})
         return out
 
     def serve(self, key, download_name=None):

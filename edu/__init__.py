@@ -17,7 +17,8 @@ from .storage import create_storage
 def _add_missing_columns(db):
     """기존 테이블에 나중에 추가된 컬럼을 덧붙임 (MySQL / SQLite 공용)."""
     cols = {c["name"] for c in inspect(db.engine).get_columns("edu_video_version")}
-    adds = {"encode_state": "VARCHAR(10) NULL", "source_size": "BIGINT NULL"}
+    adds = {"encode_state": "VARCHAR(10) NULL", "source_size": "BIGINT NULL",
+            "encode_error": "VARCHAR(300) NULL"}
     for name, ddl in adds.items():
         if name not in cols:
             with db.engine.begin() as conn:

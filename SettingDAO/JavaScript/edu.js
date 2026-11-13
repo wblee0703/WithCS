@@ -432,6 +432,7 @@
                   ${v.language ? `<span class="edu-chip edu-chip-slate">${esc(v.language)}</span>` : ""}
                   ${v.version_count > 1 ? `<span class="edu-chip edu-chip-orange">버전 ${v.version_count}개</span>` : ""}
                   ${v.encoding ? `<span class="edu-chip edu-chip-slate" title="용량을 줄이는 중입니다. 지금도 재생할 수 있습니다.">압축 중</span>` : ""}
+                  ${S.admin && v.encode_state === "fail" ? `<button type="button" class="edu-btn edu-btn-xs edu-btn-danger-soft" data-reencode="${v.version_id}" title="${esc(v.encode_error || "압축 실패")}">압축 실패 · 다시 시도</button>` : ""}
                 </div>
                 <div class="foot">
                 <div class="m">${esc([v.author, v.updated_at].filter(Boolean).join(" · "))}</div>
@@ -466,6 +467,16 @@
                    <div class="edu-views-title">재생 시각${d.total > d.logs.length ? ` (최근 ${d.logs.length}건)` : ""}</div>
                    <div class="edu-scroll short"><table class="edu-table"><thead><tr><th>재생 시각</th><th>이름 (아이디)</th><th>버전</th></tr></thead><tbody>${logs}</tbody></table></div>`,
         });
+    }
+
+    async function reencode(verId, reason) {
+        const yes = await confirmBox("압축 다시 시도", `실패 이유: ${reason}
+
+압축을 다시 시도할까요? (그동안에도 원본으로 재생됩니다)`, "다시 시도");
+        if (!yes) return;
+        await api(`/api/edu/versions/${verId}/encode`, { method: "POST" });
+        toast("압축을 다시 시작했습니다.");
+        await loadVideos();
     }
 
     // ------------------------------------------------------------------ 저장소 현황 (관리자)
@@ -513,6 +524,10 @@
                 <tr><td>압축용 내려받기</td><td class="num">${fmtBytes(d.encode_bytes)}</td><td class="num">${won(d.price.encode_gb)}/GB</td><td class="num">${won(d.cost.encode)}</td><td class="num">${won(d.cost.encode)}</td></tr>
                 <tr class="sum"><td>합계</td><td></td><td></td><td class="num">${won(d.cost.now)}</td><td class="num">${won(d.cost.projected)}</td></tr>
               </tbody></table>
+              ${d.orphans.count ? `<div class="edu-usage-orphan">
+                  <span>연결 안 된 파일 <b>${d.orphans.count}개 (${fmtBytes(d.orphans.bytes)})</b> — 압축 실패·업로드 중단 등으로 남은 파일입니다. (${d.orphans.min_age_hours}시간 지난 것만)</span>
+                  <button type="button" class="edu-btn edu-btn-xs edu-btn-danger-soft" data-orphan-clean>정리</button>
+                </div>` : ""}
               <div class="edu-views-title">저장 용량 구성</div>
               <table class="edu-table"><thead><tr><th>종류</th><th class="num">파일</th><th class="num">용량</th></tr></thead><tbody>${kinds}</tbody></table>
               <div class="edu-views-title">이번 달 일별 재생 · 전송량</div>
@@ -539,7 +554,17 @@
         await modal({
             title: "저장소 사용량 · 예상 비용", ok: "", cancel: "닫기", wide: true, body: usageHtml(d),
             onOpen: () => {
-                $("edu-modal-body").onclick = (e) => { if (e.target.closest("[data-usage-refresh]")) load(true); };
+                $("edu-modal-body").onclick = async (e) => {
+                    if (e.target.closest("[data-usage-refresh]")) return load(true);
+                    const ob = e.target.closest("[data-orphan-clean]");
+                    if (!ob || ob.disabled) return;
+                    ob.disabled = true;
+                    try {
+                        const r = await api("/api/edu/orphans/cleanup", { method: "POST" });
+                        toast(`미사용 파일 ${r.count}개 (${fmtBytes(r.bytes)})를 정리했습니다.`);
+                        await load(true);
+                    } catch (err) { toast(err.message || String(err), true); ob.disabled = false; }
+                };
                 timer = setInterval(() => { if (!document.hidden) load(false); }, 30000);
             },
         });
@@ -862,6 +887,8 @@
             renderSeg(); loadVideos().catch(showError);
         });
         $("edu-video-list").addEventListener("click", (e) => {
+            const rb = e.target.closest("[data-reencode]");
+            if (rb) { e.stopPropagation(); reencode(Number(rb.dataset.reencode), rb.title).catch(showError); return; }
             const vb = e.target.closest("[data-views]");
             if (vb) { e.stopPropagation(); openViews(Number(vb.dataset.views)).catch(showError); return; }
             const it = e.target.closest(".edu-vitem");

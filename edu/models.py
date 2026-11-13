@@ -71,6 +71,7 @@ def define_models(db):
         encode_state = db.Column(db.String(10), nullable=True)
         # 업로드한 원본 크기 (압축 후 file_size 는 압축본 크기로 바뀜 → 압축용 내려받기 전송량 계산에 사용)
         source_size = db.Column(db.BigInteger, nullable=True)
+        encode_error = db.Column(db.String(300), nullable=True)      # 압축 실패 이유
 
     class EduAttachment(db.Model):
         __tablename__ = "edu_attachment"

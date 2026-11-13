@@ -13,6 +13,8 @@ encode_state: None(기존 영상, 처리 전) | wait | work | done | skip(줄어
   EDU_ENCODE_MAX=720             (짧은 변 기준 최대 해상도: 720 → 1280x720)
   EDU_ENCODE_CRF=28              (화질. 낮을수록 고화질·대용량. 23~30 권장)
   EDU_ENCODE_THREADS=2           (압축에 쓸 CPU 코어 수)
+  EDU_ENCODE_PRESET=faster       (압축 속도: ultrafast > superfast > veryfast > faster > fast.
+                                  빠를수록 CPU 를 덜 쓰고 용량은 조금 커짐. 공유 호스팅은 veryfast 권장)
   EDU_FFMPEG=<ffmpeg 경로>        (없으면 시스템 ffmpeg → imageio-ffmpeg 내장 파일 순서로 찾음)
 """
 import os
@@ -130,20 +132,31 @@ def _worker():
                 _process(ver_id)
             except Exception as e:  # noqa: BLE001
                 _app.logger.error(f"[Edu] 영상 압축 실패 (버전 {ver_id}): {e}")
-                em.M.db.session.rollback()
-                _set_state(ver_id, "fail")
+                _reset_session()
+                _set_state(ver_id, "fail", str(e))
             finally:
                 em.M.db.session.remove()
         _retry_deletes()
 
 
-def _set_state(ver_id, state):
+def _reset_session():
+    """끊긴 연결이 남지 않도록 세션 정리 (다음 작업은 새 연결 사용)."""
+    try:
+        em.M.db.session.rollback()
+    except Exception:  # noqa: BLE001
+        pass
+    em.M.db.session.remove()
+
+
+def _set_state(ver_id, state, error=None):
     try:
         M = em.M
-        M.Version.query.filter_by(id=ver_id).update({"encode_state": state})
+        M.Version.query.filter_by(id=ver_id).update(
+            {"encode_state": state, "encode_error": (error or "")[:300] or None})
         M.db.session.commit()
-    except Exception:  # noqa: BLE001
-        em.M.db.session.rollback()
+    except Exception as e:  # noqa: BLE001
+        _app.logger.error(f"[Edu] 압축 상태 저장 실패 (버전 {ver_id}): {e}")
+        _reset_session()
 
 
 def _claim(ver_id):
@@ -164,21 +177,56 @@ def _ffmpeg_cmd(src, dst):
           f":force_original_aspect_ratio=decrease:force_divisible_by=2")
     return [ffmpeg_path(), "-hide_banner", "-nostdin", "-y", "-loglevel", "error",
             "-i", src, "-map", "0:v:0", "-map", "0:a:0?", "-vf", vf, "-fpsmax", "30",
-            "-c:v", "libx264", "-preset", "faster", "-crf", str(_env_int("EDU_ENCODE_CRF", 28)),
+            "-c:v", "libx264", "-preset", _preset(), "-crf", str(_env_int("EDU_ENCODE_CRF", 28)),
             "-pix_fmt", "yuv420p", "-threads", str(max(1, _env_int("EDU_ENCODE_THREADS", 2))),
             "-c:a", "aac", "-b:a", "96k", "-ac", "2",
             "-movflags", "+faststart", dst]
 
 
+PRESETS = ("ultrafast", "superfast", "veryfast", "faster", "fast", "medium")
+
+
+def _preset():
+    p = os.environ.get("EDU_ENCODE_PRESET", "faster").strip().lower()
+    return p if p in PRESETS else "faster"
+
+
 def _run(cmd):
-    kw = {"stdout": subprocess.DEVNULL, "stderr": subprocess.PIPE, "timeout": TIMEOUT_SEC}
+    kw = {"stdout": subprocess.DEVNULL, "stderr": subprocess.PIPE}
     if os.name == "nt":
         kw["creationflags"] = subprocess.BELOW_NORMAL_PRIORITY_CLASS | subprocess.CREATE_NO_WINDOW
     else:
-        kw["preexec_fn"] = lambda: os.nice(10)
-    r = subprocess.run(cmd, **kw)
+        cmd = (["nice", "-n", "10"] + cmd) if shutil.which("nice") else cmd   # 사이트 응답 우선
+    try:
+        r = subprocess.run(cmd, timeout=TIMEOUT_SEC, **kw)
+    except subprocess.TimeoutExpired:
+        raise RuntimeError(f"압축이 {TIMEOUT_SEC // 3600}시간 안에 끝나지 않아 중단했습니다.")
+    if r.returncode < 0 or r.returncode in (137, 152):
+        # 신호로 강제 종료 (9=KILL: 메모리/관리자, 24=XCPU: CPU 시간 제한) → 공유 호스팅 제한 가능성
+        raise RuntimeError(f"서버가 압축 프로그램을 강제로 종료했습니다 (코드 {r.returncode}). "
+                           "호스팅의 CPU·메모리·시간 제한일 수 있습니다. "
+                           ".env 에 EDU_ENCODE_PRESET=veryfast 로 낮춘 뒤 다시 시도해 보세요.")
     if r.returncode != 0:
-        raise RuntimeError(r.stderr.decode("utf-8", "replace")[-500:])
+        err = r.stderr.decode("utf-8", "replace")
+        raise RuntimeError(_explain(err) or "압축 프로그램 오류: " + (err.strip().splitlines() or [f"코드 {r.returncode}"])[-1][-200:])
+
+
+# 자주 나오는 ffmpeg 오류 → 이해하기 쉬운 설명
+_ERRORS = [
+    ("Invalid data found", "영상 파일이 손상됐거나 지원하지 않는 형식입니다. 원본을 다시 저장(내보내기)해서 올려 주세요."),
+    ("moov atom not found", "영상 파일이 끝까지 저장되지 않았습니다(촬영·내보내기 중단). 원본을 다시 올려 주세요."),
+    ("does not contain any stream", "영상 화면 정보가 없는 파일입니다."),
+    ("No space left", "서버 디스크 공간이 부족합니다."),
+    ("Cannot allocate memory", "서버 메모리가 부족합니다. EDU_ENCODE_PRESET=veryfast 로 낮춰 보세요."),
+    ("Permission denied", "서버에서 파일 쓰기 권한이 없습니다."),
+]
+
+
+def _explain(err):
+    for key, msg in _ERRORS:
+        if key in err:
+            return msg
+    return ""
 
 
 def _process(ver_id):
@@ -187,12 +235,15 @@ def _process(ver_id):
     if ver is None:
         return
     old_key = ver.file_path
+    # 압축(수 분~수십 분) 동안 DB 연결을 붙잡고 있으면 MySQL 이 끊어버림 (가비아 wait_timeout)
+    # → 여기서 연결을 반납하고, 끝난 뒤 새 연결(pool_pre_ping 확인)로 저장
+    M.db.session.remove()
     os.makedirs(_tmp_root, exist_ok=True)
     tmp = tempfile.mkdtemp(prefix="enc_", dir=_tmp_root)
     try:
         src = _storage.fetch(old_key, os.path.join(tmp, "in" + os.path.splitext(old_key)[1]))
         if not src:
-            _set_state(ver_id, "fail")
+            _set_state(ver_id, "fail", "저장소에서 원본 파일을 찾을 수 없습니다.")
             return
         in_size = os.path.getsize(src)
         dst = os.path.join(tmp, "out.mp4")
@@ -208,18 +259,32 @@ def _process(ver_id):
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
-    # 압축하는 동안 버전이 삭제·변경됐으면 새 파일만 정리
-    M.db.session.expire_all()
-    ver = M.db.session.get(M.Version, ver_id)
-    if ver is None or ver.file_path != old_key:
-        _storage.delete([new_key])
-        return
-    ver.file_path, ver.file_size, ver.encode_state = new_key, out_size, "done"
-    M.db.session.commit()
+    try:
+        # 압축하는 동안 버전이 삭제·변경됐으면 새 파일만 정리
+        ver = M.db.session.get(M.Version, ver_id)
+        if ver is None or ver.file_path != old_key:
+            _storage.delete([new_key])
+            return
+        ver.file_path, ver.file_size, ver.encode_state, ver.encode_error = new_key, out_size, "done", None
+        M.db.session.commit()
+    except Exception:
+        _storage.delete([new_key])      # DB 저장 실패 시 새 파일을 남기지 않음 (원본은 그대로)
+        raise
     REPLACED[old_key] = new_key
     _delete_later([old_key])
     _app.logger.info(f"[Edu] 영상 압축 완료 (버전 {ver_id}): {in_size / 1048576:.1f}MB → "
                      f"{out_size / 1048576:.1f}MB, {time.time() - t0:.0f}초")
+
+
+def retry(ver_id):
+    """실패한 압축 다시 시도 (최종관리자). 대기 상태로 돌리고 작업 목록에 넣음."""
+    M = em.M
+    n = (M.Version.query.filter(M.Version.id == ver_id, M.Version.encode_state.in_(("fail", "skip")))
+         .update({"encode_state": "wait", "encode_error": None}, synchronize_session=False))
+    M.db.session.commit()
+    if n:
+        enqueue(ver_id)
+    return bool(n)
 
 
 def _delete_later(keys):
