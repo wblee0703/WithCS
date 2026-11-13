@@ -132,6 +132,10 @@ class BaseStorage:
         """압축용: 서버에서 읽을 수 있는 파일 경로 반환 (필요하면 dst 로 내려받음). 없으면 None."""
         raise NotImplementedError
 
+    def read_head(self, key, n=8192):
+        """파일 앞부분 n 바이트 (형식 확인용). 없으면 b''."""
+        raise NotImplementedError
+
     def put(self, key, src, ctype):
         """압축 결과 파일(src)을 key 로 저장 (src 는 이동/삭제될 수 있음)."""
         raise NotImplementedError
@@ -229,6 +233,13 @@ class LocalStorage(BaseStorage):
         p = self.path(key)
         return p if os.path.isfile(p) else None
 
+    def read_head(self, key, n=8192):
+        p = self.path(key)
+        if not os.path.isfile(p):
+            return b""
+        with open(p, "rb") as f:
+            return f.read(n)
+
     def put(self, key, src, ctype):
         shutil.move(src, self.path(key))
 
@@ -311,6 +322,13 @@ class S3Storage(BaseStorage):
             except Exception as e:  # noqa: BLE001
                 errors.append(str(e))
         return errors
+
+    def read_head(self, key, n=8192):
+        try:
+            r = self.client.get_object(Bucket=self.bucket, Key=key, Range=f"bytes=0-{n - 1}")
+            return r["Body"].read()
+        except Exception:  # noqa: BLE001
+            return b""
 
     def fetch(self, key, dst):
         if self.size(key) is None:

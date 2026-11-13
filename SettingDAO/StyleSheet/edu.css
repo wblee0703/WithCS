@@ -332,3 +332,68 @@ svg.edu-ic { width: 15px; height: 15px; flex: none; }
 .edu-blocked { margin: auto; max-width: 460px; padding: 36px 28px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .edu-blocked-icon svg.edu-ic { width: 40px; height: 40px; color: #f85149; }
 .edu-blocked-title { font-size: 18px; font-weight: 700; color: #e6edf3; }
+
+/* 작은 버튼 (영상 등록 등) */
+.edu-btn.edu-btn-sm { min-height: 28px; padding: 0 10px; font-size: 12.5px; }
+
+/* 파일 선택 버튼: 파란색 */
+.edu-wrapper input[type=file]::file-selector-button,
+.edu-modal input[type=file]::file-selector-button {
+    background: #1f6feb; border: 1px solid #1f6feb; color: #fff; border-radius: 6px;
+    padding: 6px 12px; margin-right: 10px; font-size: 13px; font-family: inherit; cursor: pointer;
+}
+.edu-wrapper input[type=file]::-webkit-file-upload-button,
+.edu-modal input[type=file]::-webkit-file-upload-button {
+    background: #1f6feb; border: 1px solid #1f6feb; color: #fff; border-radius: 6px;
+    padding: 6px 12px; margin-right: 10px; font-size: 13px; font-family: inherit; cursor: pointer;
+}
+.edu-wrapper input[type=file]::file-selector-button:hover,
+.edu-modal input[type=file]::file-selector-button:hover { background: #388bfd; border-color: #388bfd; }
+
+.edu-field input:disabled { opacity: .6; cursor: not-allowed; }
+
+/* 첨부자료 자료 추가: 표시 이름·파일 선택 같은 너비, 버튼과 높이 맞춤 (34px) */
+.edu-att-add-row { align-items: stretch; }
+.edu-att-add-row input[type=text],
+.edu-att-add-row input[type=file] { flex: 1 1 0; min-width: 0; max-width: none; height: 34px; box-sizing: border-box; }
+.edu-att-add-row input[type=file] {
+    border: 1px solid #30363d; border-radius: 6px; background: #0d1117; padding: 3px 6px 3px 3px;
+    line-height: 26px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.edu-att-add-row input[type=file]::file-selector-button { height: 26px; padding: 0 10px; margin-right: 8px; font-size: 12.5px; }
+.edu-att-add-row input[type=file]::-webkit-file-upload-button { height: 26px; padding: 0 10px; margin-right: 8px; font-size: 12.5px; }
+.edu-att-add-row .edu-btn { flex: none; height: 34px; min-height: 34px; padding: 0 14px; }
+@media (max-width: 600px) {
+    .edu-att-add-row input[type=text] { flex-basis: 100%; height: 38px; }
+    .edu-att-add-row input[type=file] { height: 38px; line-height: 30px; }
+    .edu-att-add-row .edu-btn { height: 38px; min-height: 38px; }
+}
+
+.edu-limit-hint { margin: -6px 0 10px 112px; font-size: 12px; }
+.edu-att-add .edu-limit-hint { margin: 6px 0 0; }
+@media (max-width: 600px) { .edu-limit-hint { margin-left: 0; } }
+
+/* 팝업 오른쪽 위 닫기(X) */
+.edu-modal-head { position: relative; padding-right: 52px; }
+.edu-modal-x {
+    position: absolute; top: 10px; right: 12px; width: 32px; height: 32px; border: 0; border-radius: 6px;
+    background: transparent; color: #f85149; font-size: 26px; line-height: 1; cursor: pointer; font-family: inherit;
+}
+.edu-modal-x:hover { background: rgba(248, 81, 73, .15); color: #ff7b72; }
+/* 첨부자료 추가 줄: [추가]·[닫기] 같은 크기 */
+.edu-att-add-row .edu-btn { min-width: 64px; }
+.edu-modal-x { top: 12px; right: 12px; width: 26px; height: 26px; font-size: 19px; }
+
+/* 팝업 입력칸 높이 통일 (36px): 글 입력·선택·파일 선택 */
+.edu-field input[type=text], .edu-field input[type=password], .edu-field select { height: 36px; }
+.edu-field input[type=file] {
+    width: 100%; height: 36px; box-sizing: border-box; border: 1px solid #30363d; border-radius: 6px;
+    background: #0d1117; padding: 4px 8px 4px 4px; line-height: 26px;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.edu-field input[type=file]::file-selector-button { height: 26px; padding: 0 10px; margin-right: 8px; font-size: 12.5px; }
+.edu-field input[type=file]::-webkit-file-upload-button { height: 26px; padding: 0 10px; margin-right: 8px; font-size: 12.5px; }
+@media (max-width: 600px) {
+    .edu-field input[type=text], .edu-field input[type=password], .edu-field select, .edu-field input[type=file] { height: 40px; }
+    .edu-field input[type=file] { line-height: 30px; }
+}

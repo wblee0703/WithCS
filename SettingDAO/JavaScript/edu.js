@@ -172,7 +172,7 @@
      * modal({title, body, ok, cancel, danger, wide, onOk(form) -> Promise<any>, onOpen(dlg)})
      * onOk 가 예외를 던지면 창을 닫지 않고 오류 표시. 결과: onOk 반환값 / 취소 시 null
      */
-    function modal({ title, body = "", ok = "확인", cancel = "취소", danger = false, wide = false, onOk, onOpen }) {
+    function modal({ title, body = "", ok = "확인", cancel = "취소", danger = false, wide = false, closeX = false, hideActions = false, onOk, onOpen }) {
         return new Promise((resolve) => {
             const dlg = $("edu-modal"), form = $("edu-modal-form");
             $("edu-modal-title").textContent = title;
@@ -183,6 +183,8 @@
             okBtn.className = "edu-btn " + (danger ? "edu-btn-danger" : "edu-btn-blue");
             cancelBtn.textContent = cancel || "닫기";
             dlg.classList.toggle("wide", wide);
+            $("edu-modal-x").hidden = !closeX;          // 오른쪽 위 빨간 X
+            $("edu-modal-actions").hidden = hideActions; // 아래 버튼 줄 숨김 (본문에 닫기 버튼을 둘 때)
             paintIcons(dlg);
             let busy = false;
             const close = (v) => { dlg.close(); cleanup(); resolve(v); };
@@ -201,9 +203,11 @@
                 cancelBtn.removeEventListener("click", onCancel);
                 dlg.removeEventListener("cancel", onCancel);
                 $("edu-modal-body").onclick = null;
+                $("edu-modal-x").onclick = null;
             };
             form.addEventListener("submit", onSubmit);
             cancelBtn.addEventListener("click", onCancel);
+            $("edu-modal-x").onclick = onCancel;
             dlg.addEventListener("cancel", onCancel);
             dlg.showModal();
             // 모바일은 자동 포커스 시 키보드가 튀어나와 화면을 가리므로 데스크톱에서만
@@ -231,6 +235,7 @@
     async function loadStatus() {
         const st = await api("/api/edu/status");
         S.admin = !!st.admin;
+        S.limits = st.limits || null;
         S.budgetBlocked = !!st.budget_blocked;
         S.budgetMessage = st.budget_message || "";
         S.userName = st.user_name || "";
@@ -240,24 +245,28 @@
     }
 
     function showHelp() {
-        modal({
-            title: "교육 메뉴 도움말", ok: "", cancel: "닫기", wide: true,
-            body: `<div class="edu-hint">■ 영상 보기
-  설비 모델 선택 → 교육 분류(설비 / 프로그램 / 유지관리) 선택 → 영상 누르기
-  PC 단축키: Space 재생/일시정지 · ←/→ 10초 이동 · F 전체화면
+        const common = `■ 영상 보기
+  ① 왼쪽에서 설비 모델 선택  ② 교육 분류(설비 / 프로그램 / 유지관리) 선택  ③ 목록에서 영상 누르기
+  · 영상 화면을 누르면 재생 / 일시정지
+  · PC 단축키: Space 재생/일시정지 · ←/→ 10초 이동 · F 전체화면
+  · 여러 언어 영상이 있으면 목록 위 언어 선택으로 골라 볼 수 있습니다.
+  · 모바일: 모델을 고르면 모델 목록이 접히고, 오른쪽 위 목록 버튼으로 다시 펼칩니다.
 
-■ 영상 등록 (관리자)
-  영상 목록 위 [＋ 영상 등록]
-  수정된 영상은 [새 버전 업로드]로 올리면 이전 버전은 [버전 이력]에 보관됩니다.
-
-■ 설비 모델 (관리자)
-  [＋ 추가] / [이름 변경] / [삭제], 많은 모델은 [엑셀로 모델 일괄 등록] (A열에 모델명)
+■ 영상 메뉴 (⋮)
+  영상 오른쪽 ⋮ → [버전 이력]에서 이전 버전 영상을 다시 볼 수 있습니다.
 
 ■ 첨부자료
-  모델 이름 오른쪽 [첨부자료]에서 매뉴얼 등을 열거나 내려받습니다.
+  모델 이름 오른쪽 [첨부자료] (모바일은 📎 아이콘)에서 매뉴얼 등을 열거나 내려받습니다.
+  보안상 HTML 등 일부 형식은 열지 않고 내려받기만 됩니다.
 
-■ 기타
-  영상은 MP4(H.264 + AAC) 형식을 권장합니다. (아이폰·안드로이드 재생 호환)</div>`,
+■ 재생 횟수
+  영상마다 '재생 N회'가 표시됩니다. (같은 사람이 30분 안에 다시 본 것은 1회)
+
+■ 이용 중지 안내
+  이번 달 사용 한도를 넘으면 EDU 이용이 일시 중지됩니다. 최종관리자에게 문의하세요.`;
+        modal({
+            title: "교육 메뉴 도움말", ok: "", cancel: "닫기", wide: true,
+            body: `<div class="edu-hint">${esc(common)}</div>`,
         });
     }
 
@@ -372,29 +381,6 @@
             await loadModels(); showWorkspace(false); setModelsCollapsed(false);
             toast("모델을 삭제했습니다.");
         }
-    }
-
-    async function importExcel() {
-        let names = null;
-        const r = await modal({
-            title: "엑셀로 모델 일괄 등록", ok: "불러오기",
-            body: '<div class="edu-hint">첫 번째 시트의 A열에 모델명을 한 줄에 하나씩 입력한 엑셀 파일을 선택하세요. 이미 있는 모델은 건너뜁니다.\n양식은 [엑셀로 모델 일괄 등록] 오른쪽 버튼으로 내려받을 수 있습니다.</div>' +
-                field("엑셀 파일", '<input type="file" name="file" accept=".xlsx,.xlsm">') + '<div id="edu-xls-preview" class="edu-hint"></div>',
-            onOk: async (f) => {
-                if (names) return api("/api/edu/models/bulk", { method: "POST", json: { names } });
-                const file = f.file.files[0];
-                if (!file) throw new Error("엑셀 파일을 선택하세요.");
-                const fd = new FormData(); fd.append("file", file);
-                const d = await api("/api/edu/models/import-xlsx", { method: "POST", body: fd });
-                if (!d.names.length) throw new Error("첫 번째 시트의 A열에서 모델명을 찾지 못했습니다.");
-                names = d.names;
-                $("edu-xls-preview").textContent = `모델 ${names.length}개를 찾았습니다. [등록]을 누르면 추가합니다.\n\n` +
-                    names.slice(0, 10).join("\n") + (names.length > 10 ? `\n... 외 ${names.length - 10}개` : "");
-                $("edu-modal-ok").textContent = "등록";
-                throw Object.assign(new Error(""), { silent: true });
-            },
-        });
-        if (r) { await loadModels(); toast(`새로 등록 ${r.added}개 · 중복으로 건너뜀 ${r.skipped}개`); }
     }
 
     // ------------------------------------------------------------------ 영상 목록
@@ -556,16 +542,12 @@
               </div>
               <div class="edu-views-summary edu-usage-cards">
                 <div><b>${fmtBytes(d.storage_bytes)}</b><span>전체 저장 용량</span></div>
-                <div><b>${fmtBytes(d.traffic_bytes)}</b><span>${esc(d.month)} 재생 전송량 (추정)</span></div>
+                <div><b>${fmtBytes(d.traffic_bytes)}</b><span>${esc(d.month)} 재생 전송량</span></div>
                 <div><b>${d.plays.toLocaleString()}회</b><span>이번 달 재생 · 오늘 ${d.today.plays.toLocaleString()}회</span></div>
-                <div><b>${won(d.cost.projected)}</b><span>이번 달 예상 비용 (지금까지 ${won(d.cost.now)})</span></div>
+                <div><b>${won(d.cost.projected)}</b><span>이번 달 예상 비용 </span></div>
               </div>
               ${budgetHtml(d.budget)}
-              <div class="edu-hint">
-                모델 ${d.counts.models}개 · 영상 ${d.counts.videos}개 (버전 ${d.counts.versions}개) · 첨부자료 ${d.counts.attachments}개 · 자동 압축: ${encTxt}<br>
-                전송량은 재생 기록 × 영상 크기로 계산한 <b>최대 추정치</b>입니다 (중간에 끄면 실제는 더 적음). 정확한 청구 금액은 NCP 콘솔 › 비용 관리에서 확인하세요.<br>
-                압축용 내려받기는 이번 달 올린 영상 원본 크기 합계입니다 (서버가 압축하려고 클라우드에서 한 번 내려받음). 단가는 .env 의 EDU_PRICE_* 에서 변경
-              </div>
+              <div class="edu-hint">모델 ${d.counts.models}개 · 영상 ${d.counts.videos}개 (버전 ${d.counts.versions}개) · 첨부자료 ${d.counts.attachments}개 · 자동 압축: ${encTxt}</div>
               <div class="edu-views-title">이번 달 비용 구성 (VAT 별도)</div>
               <table class="edu-table"><thead><tr><th>항목</th><th class="num">사용량</th><th class="num">단가</th><th class="num">지금까지</th><th class="num">월 예상</th></tr></thead><tbody>
                 <tr><td>저장</td><td class="num">${fmtBytes(d.storage_bytes)}</td><td class="num">${won(d.price.storage_gb)}/GB·월</td><td class="num">${won(d.cost.storage)}</td><td class="num">${won(d.cost.storage)}</td></tr>
@@ -596,10 +578,6 @@
               <button type="button" class="edu-btn edu-btn-xs" data-budget-extend>＋ ${won(b.step)} 추가 허용</button>
             </div>
             <div class="edu-budget-bar"><i style="width:${Math.min(100, pct)}%"></i></div>
-            <div class="edu-hint">${b.blocked
-                ? "⛔ 한도를 넘어 <b>일반 계정·관리자의 EDU 이용(목록·재생·다운로드)이 중지</b>되었습니다. 최종관리자는 계속 사용할 수 있습니다."
-                : "한도를 넘으면 일반 계정·관리자의 EDU 이용이 자동으로 중지됩니다 (최종관리자 제외)."}
-              매달 1일 기본 한도로 초기화됩니다.</div>
           </div>`;
     }
 
@@ -729,6 +707,10 @@
         const ui = progressUI();
         ui.text("영상 정보 읽는 중...");
         const info = await probeVideo(file);
+        const L = S.limits;
+        if (L && info.duration_ms > (L.video_max_min * 60 + 60) * 1000) {
+            throw new Error(`영상 길이가 너무 깁니다 (${Math.floor(info.duration_ms / 60000)}분). 최대 ${L.video_max_min}분까지 올릴 수 있습니다.`);
+        }
         const videoKey = await uploadFile(file, "videos", (p) =>
             ui.set(p, `영상 올리는 중... ${Math.round(p * 100)}%  (${fmtSize(file.size * p)} / ${fmtSize(file.size)})`));
         let thumbKey = "";
@@ -739,8 +721,32 @@
         return { video_key: videoKey, thumb_key: thumbKey, duration_ms: info.duration_ms, original_name: file.name };
     }
 
+    const fileExt = (name) => ((/\.[^.]+$/.exec(name || "") || [""])[0]).toLowerCase();
+
+    /** 업로드 전 형식·크기 확인 (서버에서도 다시 확인함) */
+    function checkFileLimits(file, kind) {
+        const L = S.limits;
+        if (!L || !file) return;
+        const exts = kind === "videos" ? L.video_exts : L.attach_exts;
+        const max = kind === "videos" ? L.video_max_bytes : L.attach_max_bytes;
+        const what = kind === "videos" ? "영상" : "첨부자료";
+        if (!exts.includes(fileExt(file.name))) {
+            throw new Error(`${what}로 올릴 수 없는 형식입니다 (${fileExt(file.name) || "확장자 없음"}).\n가능한 형식: ${exts.map((e) => e.slice(1)).join(", ")}`);
+        }
+        if (file.size > max) throw new Error(`${what} 크기가 너무 큽니다 (${fmtSize(file.size)}). 최대 ${fmtSize(max)}까지 올릴 수 있습니다.`);
+    }
+
+    function limitHint(kind) {
+        const L = S.limits;
+        if (!L) return "";
+        return kind === "videos"
+            ? `<div class="edu-hint edu-limit-hint">MP4 권장 · 최대 ${L.video_max_min}분 · ${fmtSize(L.video_max_bytes)} (${L.video_exts.map((e) => e.slice(1)).join(", ")})</div>`
+            : `<div class="edu-hint edu-limit-hint">최대 ${fmtSize(L.attach_max_bytes)} · PPT·PDF·오피스·한글·이미지·TXT</div>`;
+    }
+
     function checkVideoFile(file) {
         if (!file) throw new Error("영상 파일을 선택하세요.");
+        checkFileLimits(file, "videos");
         if (!/\.(mp4|m4v)$/i.test(file.name) && !confirm("MP4(H.264) 형식이 아닌 영상은 브라우저(특히 모바일)에서 재생되지 않을 수 있습니다.\n그래도 등록할까요?")) {
             throw new Error("등록을 취소했습니다.");
         }
@@ -749,12 +755,12 @@
     async function videoAdd() {
         if (S.modelId == null) return;
         const r = await modal({
-            title: `새 교육 영상 등록 — ${catName(S.cat)}`, ok: "등록하기",
+            title: `새 교육 영상 등록 — ${catName(S.cat)}`, ok: "등록하기", closeX: true,
             body: field("제목 *", '<input type="text" name="title" maxlength="300" placeholder="예) 1강. 설비 개요 및 안전 수칙">') +
                 field("설명", '<textarea name="desc" maxlength="5000"></textarea>', true) +
                 field("작성자", `<input type="text" name="author" maxlength="100" value="${esc(S.userName)}">`) +
                 field("언어", langOptions()) +
-                field("영상 파일 *", '<input type="file" name="file" accept="video/*">') + UPLOAD_BOX,
+                field("영상 파일 *", `<input type="file" name="file" accept="${(S.limits ? S.limits.video_exts.join(",") : "video/*")}">`) + limitHint("videos") + UPLOAD_BOX,
             onOk: async (f) => {
                 if (!f.title.value.trim()) throw new Error("제목을 입력하세요.");
                 const file = f.file.files[0];
@@ -782,10 +788,10 @@
         if (r) { await loadVideos(v.id); toast("저장했습니다."); }
     }
 
-    function nextRevision(rev) {
+    // 서버와 같은 규칙으로 미리 보여 주기만 함 (실제 이름은 서버가 정함)
+    function nextRevision(rev, count) {
         const m = /(\d+)(?!.*\d)/.exec(rev || "");
-        if (!m) return rev ? `${rev} 2` : "Rev.2";
-        return rev.slice(0, m.index) + (Number(m[1]) + 1) + rev.slice(m.index + m[1].length);
+        return `Rev.${Math.max(m ? Number(m[1]) : 0, count || 0) + 1}`;
     }
 
     async function videoNewVersion() {
@@ -793,16 +799,15 @@
         const r = await modal({
             title: `새 버전 업로드 — ${v.title}`, ok: "업로드",
             body: `<div class="edu-hint">현재 버전: ${esc(v.revision)} · 이전 버전은 '버전 이력'에 보관됩니다.</div>` +
-                field("새 버전(Rev.)", `<input type="text" name="rev" maxlength="50" value="${esc(nextRevision(v.revision))}">`) +
+                field("새 버전(Rev.)", `<input type="text" name="rev" value="${esc(nextRevision(v.revision, v.version_count))}" readonly disabled title="버전 이름은 자동으로 정해집니다">`) +
                 field("작성자", `<input type="text" name="author" maxlength="100" value="${esc(S.userName || v.author)}">`) +
                 field("변경 내용", '<input type="text" name="note" maxlength="1000" placeholder="변경 내용 요약 (선택)">') +
-                field("영상 파일 *", '<input type="file" name="file" accept="video/*">') + UPLOAD_BOX,
+                field("영상 파일 *", `<input type="file" name="file" accept="${(S.limits ? S.limits.video_exts.join(",") : "video/*")}">`) + limitHint("videos") + UPLOAD_BOX,
             onOk: async (f) => {
-                if (!f.rev.value.trim()) throw new Error("버전(Rev.)을 입력하세요.");
                 const file = f.file.files[0];
                 checkVideoFile(file);
                 const up = await uploadVideoWithThumb(file);
-                return api(`/api/edu/videos/${v.id}/versions`, { method: "POST", json: { revision: f.rev.value, author: f.author.value, note: f.note.value, ...up } });
+                return api(`/api/edu/videos/${v.id}/versions`, { method: "POST", json: { author: f.author.value, note: f.note.value, ...up } });
             },
         });
         if (r) { await loadVideos(v.id); toast("새 버전을 올렸습니다."); }
@@ -868,20 +873,22 @@
                 <td class="edu-hide-sm">${fmtSize(a.file_size)}</td><td class="edu-hide-sm">${esc(a.created_at)}</td>
                 <td class="actions">
                   <a class="edu-btn" href="${esc(a.view_url)}" target="_blank" rel="noopener">열기</a>
-                  <a class="edu-btn" href="${esc(a.url)}">${icon("download")} 받기</a>
+                  <a class="edu-btn" href="${esc(a.url)}">받기</a>
                   ${S.admin ? `<button type="button" class="edu-btn edu-btn-danger-soft" data-del="${a.id}" data-title="${esc(a.title)}">삭제</button>` : ""}
                 </td></tr>`).join("") || '<tr><td colspan="4" class="empty">등록된 첨부자료가 없습니다.</td></tr>';
             const add = S.admin ? `<div class="edu-att-add"><span class="edu-att-add-label">자료 추가</span>
                 <div class="edu-att-add-row"><input type="text" id="edu-att-title" maxlength="300" placeholder="표시 이름 (비우면 파일명)">
-                <input type="file" id="edu-att-file"><button type="button" class="edu-btn edu-btn-primary" id="edu-att-add">${icon("plus")} 추가</button></div></div>` + UPLOAD_BOX : "";
+                <input type="file" id="edu-att-file" accept="${S.limits ? S.limits.attach_exts.join(",") : ""}"><button type="button" class="edu-btn edu-btn-primary" id="edu-att-add">추가</button><button type="button" class="edu-btn" data-att-close>닫기</button></div>${limitHint("attachments")}</div>` + UPLOAD_BOX : "";
             return `<div class="edu-scroll"><table class="edu-table"><thead><tr><th>자료</th><th class="edu-hide-sm">크기</th><th class="edu-hide-sm">등록일</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>${add}`;
         };
         await modal({
             title: `첨부자료 — ${S.model.name}`, ok: "", cancel: "닫기", wide: true, body: await render(),
+            closeX: true, hideActions: S.admin,   // 최종관리자는 자료 추가 줄의 [닫기] 사용
             onOpen: () => {
                 const body = $("edu-modal-body");
                 let busy = false;
                 body.onclick = async (e) => {
+                    if (e.target.closest("[data-att-close]")) return $("edu-modal-cancel").click();
                     const d = e.target.closest("[data-del]");
                     if (busy) return;
                     try {
@@ -892,6 +899,7 @@
                         } else if (e.target.closest("#edu-att-add")) {
                             const file = $("edu-att-file").files[0];
                             if (!file) return toast("추가할 파일을 선택하세요.", true);
+                            checkFileLimits(file, "attachments");
                             busy = true;
                             const ui = progressUI();
                             const key = await uploadFile(file, "attachments", (p) => ui.set(p, `올리는 중... ${Math.round(p * 100)}%`));
@@ -931,7 +939,6 @@
         on("edu-btn-model-add", modelAdd);
         on("edu-btn-model-rename", modelRename);
         on("edu-btn-model-del", modelDelete);
-        on("edu-btn-excel", importExcel);
         on("edu-btn-usage", () => openUsage().catch(showError));
         on("edu-btn-attach", openAttachments);
         on("edu-btn-video-add", videoAdd);

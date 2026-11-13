@@ -12,18 +12,18 @@
   2-b) direct : 브라우저가 url 로 PUT (클라우드 Presigned URL)
   3) 영상/버전/첨부 등록 API 에 key 전달 → 서버가 실제 저장 여부와 크기 확인 후 DB 기록
 """
-import io
 import os
 import threading
 import time
 from datetime import timedelta
 from functools import wraps
 
-from flask import Blueprint, jsonify, redirect, request, send_file, session, current_app
+from flask import Blueprint, jsonify, redirect, request, session, current_app
 from sqlalchemy.exc import IntegrityError
 
 from . import models as em
 from . import encoder
+from . import filecheck as fc
 from . import storage as st
 from .models import CATEGORIES, CAT_KEYS, fmt_dt, now
 
@@ -31,7 +31,6 @@ bp = Blueprint("edu", __name__, url_prefix="/api/edu")
 CAT_NAME = dict(CATEGORIES)
 
 DEFAULT_LANGUAGES = ["한국어", "English", "中文"]
-TEMPLATE_XLSX = os.path.join(os.path.dirname(os.path.abspath(__file__)), "모델목록_양식.xlsx")
 UPLOAD_CHUNK = 8 * 1024 * 1024          # 서버 경유 업로드 조각 크기 (프록시 본문 제한 회피)
 MAX_CHUNK = 16 * 1024 * 1024
 PENDING_MAX_AGE = 6 * 3600              # 등록되지 않은 업로드 파일 보관 시간
@@ -202,9 +201,10 @@ class _Pending:
         self.lock = threading.Lock()
         self.items = {}   # key -> {"t": 시각, "user": 사용자, "done": 완료여부}
 
-    def add(self, key, done):
+    def add(self, key, done, max_size=None):
         with self.lock:
-            self.items[key] = {"t": time.time(), "user": session.get("user_id"), "done": done}
+            self.items[key] = {"t": time.time(), "user": session.get("user_id"), "done": done,
+                               "max": max_size}
 
     def get(self, key):
         with self.lock:
@@ -248,6 +248,12 @@ def take_upload(key, kind, required=True):
     size = D.storage.size(key)
     if size is None:
         raise ApiError(400, "업로드된 파일을 찾을 수 없습니다. 다시 올려 주세요.")
+    # 실제 크기·내용 확인 (클라우드 직접 업로드는 여기서 처음 확인 가능)
+    err = fc.check_size(kind, size) or fc.check_head(fc.ext_of(key), D.storage.read_head(key))
+    if err:
+        PENDING.pop(key)
+        D.storage.abort_upload(key)
+        raise ApiError(400, err)
     PENDING.pop(key)
     return key, size
 
@@ -313,7 +319,7 @@ def delete_files(keys):
 def api_status():
     blocked = (not is_admin()) and _budget_blocked_safe()
     return ok(admin=is_admin(), user_name=user_name(), storage=D.storage.name,
-              budget_blocked=blocked, budget_message=BUDGET_MSG if blocked else "",
+              budget_blocked=blocked, budget_message=BUDGET_MSG if blocked else "", limits=fc.limits(),
               categories=[{"key": k, "name": n} for k, n in CATEGORIES])
 
 
@@ -409,74 +415,6 @@ def api_model_delete(mid):
     return ok(file_errors=delete_files(files))
 
 
-@bp.route("/models/import-xlsx", methods=["POST"])
-@need_admin
-def api_models_import_preview():
-    """엑셀(첫 시트 A열)에서 모델명 목록만 읽어서 돌려줌. 실제 등록은 /models/bulk."""
-    f = request.files.get("file")
-    if not f:
-        raise ApiError(400, "엑셀 파일을 선택하세요.")
-    data = f.read(20 * 1024 * 1024 + 1)
-    if not data or len(data) > 20 * 1024 * 1024:
-        raise ApiError(400, "엑셀 파일이 비어 있거나 너무 큽니다. (최대 20MB)")
-    try:
-        from openpyxl import load_workbook
-    except ImportError:
-        raise ApiError(500, "서버에 openpyxl 이 설치되어 있지 않습니다.")
-    try:
-        wb = load_workbook(io.BytesIO(data), read_only=True, data_only=True)
-        ws = wb.worksheets[0]
-        names = []
-        for i, r in enumerate(ws.iter_rows(min_col=1, max_col=1, values_only=True)):
-            v = r[0] if r else None
-            if v is None:
-                continue
-            v = str(v).strip()
-            if i == 0 and v.replace(" ", "").lower() in ("모델명", "모델", "설비모델", "model", "name"):
-                continue
-            if v:
-                names.append(v[:200])
-        wb.close()
-    except Exception as e:  # noqa: BLE001
-        raise ApiError(400, f"엑셀을 읽을 수 없습니다: {e}")
-    return ok(names=names)
-
-
-@bp.route("/models/bulk", methods=["POST"])
-@need_admin
-def api_models_bulk():
-    M = em.M
-    names = body().get("names") or []
-    if not isinstance(names, list):
-        raise ApiError(400, "잘못된 요청입니다.")
-    existing = {n.lower() for (n,) in M.db.session.query(M.Model.name).all()}
-    added = skipped = 0
-    t = now()
-    for n in names[:5000]:
-        n = clean(n, 200)
-        if not n:
-            continue
-        if n.lower() in existing:
-            skipped += 1
-            continue
-        existing.add(n.lower())
-        M.db.session.add(M.Model(name=n, created_at=t))
-        added += 1
-    commit()
-    if added:
-        audit("EDU_ADD_MODEL", f"{added}개", f"교육 설비 모델 엑셀 일괄 등록: {added}개 (중복 {skipped}개 제외)")
-    return ok(added=added, skipped=skipped)
-
-
-@bp.route("/template.xlsx", methods=["GET"])
-@need_login
-def api_template():
-    if not os.path.isfile(TEMPLATE_XLSX):
-        raise ApiError(404, "양식 파일이 없습니다.")
-    return send_file(TEMPLATE_XLSX, as_attachment=True, download_name="모델목록_양식.xlsx",
-                     max_age=0)
-
-
 # ================================================================= 업로드
 @bp.route("/uploads", methods=["POST"])
 @need_admin
@@ -486,11 +424,16 @@ def api_upload_start():
     kind = d.get("kind")
     if kind not in st.KINDS:
         raise ApiError(400, "잘못된 업로드 종류입니다.")
-    if to_int(d.get("size")) <= 0:
+    size = to_int(d.get("size"))
+    if size <= 0:
         raise ApiError(400, "빈 파일입니다.")
-    key = st.new_key(kind, clean(d.get("name"), 300))
+    name = clean(d.get("name"), 300)
+    err = fc.check_name(kind, name) or fc.check_size(kind, size)
+    if err:
+        raise ApiError(400, err)
+    key = st.new_key(kind, name)
     target = D.storage.upload_target(key, st.content_type(key))
-    PENDING.add(key, done=False)
+    PENDING.add(key, done=False, max_size=fc.max_bytes(kind))
     if target:
         return ok(key=key, mode="direct", url=target["url"], headers=target.get("headers", {}))
     return ok(key=key, mode="server", chunk_size=UPLOAD_CHUNK)
@@ -508,6 +451,11 @@ def api_upload_chunk(key):
     length = request.content_length or 0
     if length <= 0 or length > MAX_CHUNK:
         raise ApiError(400, "잘못된 업로드 조각입니다.")
+    lim = (PENDING.get(key) or {}).get("max")
+    if lim and to_int(request.args.get("offset"), 0) + length > lim:
+        PENDING.pop(key)
+        D.storage.abort_upload(key)
+        raise ApiError(400, f"파일이 너무 큽니다. 최대 {fc.fmt_mb(lim)}까지 올릴 수 있습니다.")
     try:
         size = D.storage.append_chunk(key, to_int(request.args.get("offset"), -1),
                                       request.stream, length)
@@ -587,6 +535,13 @@ def _take_video_files(d):
         raise
 
 
+def _check_duration(d, vkey, tkey):
+    err = fc.check_duration(max(0, to_int(d.get("duration_ms"))))
+    if err:
+        delete_files([vkey, tkey])
+        raise ApiError(400, err)
+
+
 @bp.route("/models/<int:mid>/videos", methods=["POST"])
 @need_admin
 def api_video_add(mid):
@@ -598,6 +553,7 @@ def api_video_add(mid):
         raise ApiError(400, "잘못된 분류입니다.")
     get_or_404(M.Model, mid, "모델을 찾을 수 없습니다.")
     vkey, vsize, tkey = _take_video_files(d)
+    _check_duration(d, vkey, tkey)
     f["author"] = f["author"] or user_name()
     try:
         t = now()
@@ -686,11 +642,10 @@ def api_versions(vid):
 def api_version_add(vid):
     M = em.M
     d = body()
-    rev = clean(d.get("revision"), 50)
-    if not rev:
-        raise ApiError(400, "버전(Rev.)을 입력하세요.")
     v = get_or_404(M.Video, vid, "영상을 찾을 수 없습니다.")
+    rev = next_revision(vid)   # 버전 이름은 서버가 통일 관리 (Rev.1, Rev.2, ...) — 사용자 입력 무시
     vkey, vsize, tkey = _take_video_files(d)
+    _check_duration(d, vkey, tkey)
     try:
         t = now()
         ver = M.Version(
@@ -706,7 +661,15 @@ def api_version_add(vid):
         raise
     encoder.enqueue(ver.id)
     audit("EDU_ADD_VERSION", v.title, f"교육 영상 새 버전 업로드: {v.title} {rev}")
-    return ok()
+    return ok(revision=rev)
+
+
+def next_revision(vid):
+    """다음 버전 이름: 기존 버전 이름의 가장 큰 숫자 + 1 (숫자가 없으면 버전 개수 + 1) → 'Rev.N'."""
+    import re
+    revs = [r[0] or "" for r in em.M.db.session.query(em.M.Version.revision).filter_by(video_id=vid).all()]
+    nums = [int(m.group(1)) for r in revs for m in [re.search(r"(\d+)(?!.*\d)", r)] if m]
+    return f"Rev.{max(nums + [len(revs)]) + 1}"
 
 
 @bp.route("/versions/<int:ver_id>", methods=["DELETE"])
