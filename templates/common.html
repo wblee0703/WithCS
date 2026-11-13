@@ -86,7 +86,12 @@
                         </ul>
                     </li>
 
-                    <!-- 3. ADMIN -->
+                    <!-- 3. 교육 (WITH Edu 교육 영상) -->
+                    <li class="nav-edu-item"{% if not session.get('user_id') %} style="display: none;"{% endif %}>
+                        <a href="{{ url_for('edu_page') }}" class="{% if active_page == 'edu' %}active{% endif %}">EDU</a>
+                    </li>
+
+                    <!-- 4. ADMIN -->
                     <li class="nav-admin-item"{% if not session.get('user_id') %} style="display: none;"{% endif %}>
                         <a href="{{ url_for('admin') }}" class="{% if active_page == 'admin' %}active{% endif %}">ADMIN</a>
                     </li>
@@ -1490,7 +1495,7 @@
     </template>
 
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.1.3"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.1.9"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.2.0"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}?v=1.0.1"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/chatbot.js') }}?v=1.5.2"></script>
     <!-- 페이지별 추가 스크립트 -->

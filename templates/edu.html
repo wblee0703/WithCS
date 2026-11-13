@@ -1,0 +1,148 @@
+{% extends 'common.html' %}
+{% set active_page = 'edu' %}
+
+{% block title %}EDU - WITH ON{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/edu.css') }}?v=1.1.4">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper edu-wrapper" id="edu-app">
+
+    <!-- ============ 1. 왼쪽: 설비 모델 목록 ============ -->
+    <aside class="edu-card edu-sidebar" id="edu-sidebar">
+        <div class="edu-side-head">
+            <span class="edu-side-title">교육 영상</span>
+            <button type="button" class="edu-icon-btn" id="edu-btn-help" title="도움말" data-icon="help"></button>
+            <button type="button" class="edu-icon-btn edu-mobile-only" id="edu-btn-models-toggle" title="모델 목록 접기/펼치기" data-icon="list"></button>
+        </div>
+
+        <div class="edu-side-body" id="edu-side-body">
+            <label class="edu-search">
+                <span data-icon="search"></span>
+                <input id="edu-search" type="search" placeholder="설비 모델명 검색..." autocomplete="off">
+            </label>
+
+            <div class="edu-section-row">
+                <span>설비 모델 목록</span>
+                <span class="edu-chip edu-chip-slate" id="edu-model-count">0개</span>
+            </div>
+
+            <ul class="edu-model-list" id="edu-model-list"></ul>
+
+            <div class="edu-model-admin" id="edu-model-admin" hidden>
+                <div class="edu-row">
+                    <button type="button" class="edu-btn edu-btn-primary edu-grow" id="edu-btn-model-add"><span data-icon="plus"></span> 추가</button>
+                    <button type="button" class="edu-btn" id="edu-btn-model-rename">이름 변경</button>
+                    <button type="button" class="edu-btn edu-btn-danger-soft" id="edu-btn-model-del">삭제</button>
+                </div>
+                <div class="edu-row">
+                    <button type="button" class="edu-btn edu-grow" id="edu-btn-excel"><span data-icon="table"></span> 엑셀로 모델 일괄 등록</button>
+                    <a class="edu-btn" href="/api/edu/template.xlsx" title="엑셀 양식 내려받기"><span data-icon="download"></span></a>
+                </div>
+                <div class="edu-row">
+                    <button type="button" class="edu-btn edu-grow" id="edu-btn-usage"><span data-icon="table"></span> 저장소 사용량 · 예상 비용</button>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ============ 2. 오른쪽: 작업 영역 ============ -->
+    <main class="edu-workspace">
+        <div class="edu-card edu-empty-workspace" id="edu-empty">
+            <div class="edu-empty-msg" id="edu-empty-msg">불러오는 중입니다...</div>
+        </div>
+
+        <div class="edu-detail" id="edu-detail" hidden>
+            <!-- 모델 정보 바 -->
+            <header class="edu-card edu-hero">
+                <div class="edu-model-icon" data-icon="box"></div>
+                <div class="edu-hero-title">
+                    <div class="edu-model-name" id="edu-model-name"></div>
+                    <div class="edu-model-info" id="edu-model-info"></div>
+                </div>
+                <span class="edu-grow"></span>
+                <button type="button" class="edu-btn edu-btn-soft" id="edu-btn-attach"><span data-icon="paperclip"></span> 첨부자료 <b id="edu-attach-count">(0)</b></button>
+            </header>
+
+            <div class="edu-studio" id="edu-studio">
+                <!-- 커리큘럼: 분류 탭 + 영상 목록 -->
+                <section class="edu-card edu-curriculum">
+                    <div class="edu-seg" id="edu-seg"></div>
+                    <div class="edu-cur-head">
+                        <span class="edu-cur-title" id="edu-cur-title">설비 교육</span>
+                        <span class="edu-chip edu-chip-slate" id="edu-cur-count">0개</span>
+                        <span class="edu-grow"></span>
+                        <select id="edu-lang-filter" class="edu-select" hidden></select>
+                        <button type="button" class="edu-btn edu-btn-primary" id="edu-btn-video-add" hidden><span data-icon="plus"></span> 영상 등록</button>
+                    </div>
+                    <div class="edu-video-list" id="edu-video-list"></div>
+                </section>
+
+                <div class="edu-splitter" id="edu-splitter" title="드래그해서 크기 조절"></div>
+
+                <!-- 플레이어 + 선택 영상 정보 -->
+                <section class="edu-stage">
+                    <div class="edu-card edu-vd">
+                        <div class="edu-vd-top">
+                            <span class="edu-vd-title" id="edu-vd-title">선택된 교육 영상이 없습니다</span>
+                            <span class="edu-chip edu-chip-blue" id="edu-vd-rev" hidden></span>
+                            <span class="edu-chip edu-chip-slate" id="edu-vd-lang" hidden></span>
+                            <span class="edu-grow"></span>
+                            <button type="button" class="edu-btn edu-btn-blue" id="edu-vd-play" disabled><span data-icon="play"></span> 재생</button>
+                            <button type="button" class="edu-btn" id="edu-vd-hist" disabled><span data-icon="history"></span> 버전 이력</button>
+                        </div>
+                    </div>
+
+                    <div class="edu-card edu-player">
+                        <div class="edu-player-top">
+                            <span class="edu-chip edu-chip-dark" id="edu-player-badge">대기</span>
+                            <span class="edu-player-title" id="edu-player-title">영상을 선택해 주세요</span>
+                        </div>
+                        <div class="edu-player-body">
+                            <video id="edu-video" controls preload="metadata" playsinline webkit-playsinline controlslist="nodownload" hidden></video>
+                            <div class="edu-player-placeholder" id="edu-player-placeholder">
+                                <div>목록에서 영상을 누르면 재생됩니다</div>
+                                <small class="edu-desktop-only">Space 재생/일시정지 · ←/→ 10초 이동 · F 전체화면</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="edu-card edu-vd" id="edu-vd-bottom">
+                        <div class="edu-vd-desc" id="edu-vd-desc"></div>
+                        <div class="edu-vd-actions" id="edu-vd-admin" hidden>
+                            <button type="button" class="edu-btn" id="edu-vd-edit" disabled><span data-icon="edit"></span> 정보 수정</button>
+                            <button type="button" class="edu-btn" id="edu-vd-ver" disabled><span data-icon="layers"></span> 새 버전 업로드</button>
+                            <button type="button" class="edu-btn" id="edu-vd-up" disabled title="순서 앞으로"><span data-icon="up"></span></button>
+                            <button type="button" class="edu-btn" id="edu-vd-down" disabled title="순서 뒤로"><span data-icon="down"></span></button>
+                            <button type="button" class="edu-btn edu-btn-danger-soft" id="edu-vd-del" disabled><span data-icon="trash"></span> 삭제</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- 교육 메뉴 전용 대화상자 -->
+<dialog id="edu-modal" class="edu-modal">
+    <form method="dialog" id="edu-modal-form" novalidate>
+        <div class="edu-modal-head">
+            <h3 id="edu-modal-title"></h3>
+        </div>
+        <div class="edu-modal-body" id="edu-modal-body"></div>
+        <div class="edu-modal-error" id="edu-modal-error" hidden></div>
+        <div class="edu-modal-actions">
+            <button type="button" class="edu-btn" id="edu-modal-cancel">취소</button>
+            <button type="submit" class="edu-btn edu-btn-blue" id="edu-modal-ok">확인</button>
+        </div>
+    </form>
+</dialog>
+
+<div class="edu-toast" id="edu-toast" hidden></div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('SettingDAO', filename='JavaScript/edu.js') }}?v=1.1.4"></script>
+{% endblock %}

@@ -2411,7 +2411,7 @@ function checkLoginStatus() {
             if (btnAllUsers) btnAllUsers.style.display = 'none';
         }
 
-        const adminItems = document.querySelectorAll('.nav-admin-item');
+        const adminItems = document.querySelectorAll('.nav-admin-item, .nav-edu-item'); // ADMIN·EDU 메뉴는 로그인한 모든 계정에 표시
         adminItems.forEach(el => el.style.display = 'block');
 
         // [추가] 데스크톱 타이머 UI 표시 (common.html 템플릿 사용)
@@ -2472,7 +2472,7 @@ function checkLoginStatus() {
         const btnEquipTransfer = document.getElementById('btn-equip-transfer');
         if (btnEquipTransfer) btnEquipTransfer.style.display = 'none';
 
-        const adminItems = document.querySelectorAll('.nav-admin-item');
+        const adminItems = document.querySelectorAll('.nav-admin-item, .nav-edu-item'); // ADMIN·EDU 메뉴는 로그인한 모든 계정에 표시
         adminItems.forEach(el => el.style.display = 'none');
 
         // [추가] 모바일 업데이트

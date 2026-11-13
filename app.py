@@ -2449,6 +2449,11 @@ def report_page():
 def admin():
     return render_template('admin.html', active_page='admin')
 
+@app.route('/edu')
+@app.route('/edu.html')
+def edu_page():
+    return render_template('edu.html', active_page='edu')
+
 # ------------------------------------------------------------------------------
 # 7. 라우트: API (Routes: API)
 # ------------------------------------------------------------------------------
@@ -2593,6 +2598,10 @@ init_chatbot(
     db_type=db_type,
     get_equip_data_table_name=get_equip_data_table_name,
 )
+
+# [추가] 교육(WITH Edu) 메뉴 — 세부 구현은 edu/ 패키지 (/api/edu/...)
+from edu import init_edu
+init_edu(app, db, limiter, login_required, admin_required, User, SystemLog)
 
 # [추가] 비밀번호 확인 API (수정 전 인증용)
 @app.route('/api/user/verify', methods=['POST'])
