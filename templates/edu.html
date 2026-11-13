@@ -4,7 +4,7 @@
 {% block title %}EDU - WITH ON{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/edu.css') }}?v=1.1.6">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/edu.css') }}?v=1.2.0">
 {% endblock %}
 
 {% block content %}
@@ -63,7 +63,7 @@
                     <div class="edu-model-info" id="edu-model-info"></div>
                 </div>
                 <span class="edu-grow"></span>
-                <button type="button" class="edu-btn edu-btn-soft" id="edu-btn-attach"><span data-icon="paperclip"></span> 첨부자료 <b id="edu-attach-count">(0)</b></button>
+                <button type="button" class="edu-btn edu-btn-soft" id="edu-btn-attach" title="첨부자료" aria-label="첨부자료"><span data-icon="paperclip"></span><span class="edu-btn-label"> 첨부자료 <b id="edu-attach-count">(0)</b></span></button>
             </header>
 
             <div class="edu-studio" id="edu-studio">
@@ -89,9 +89,6 @@
                             <span class="edu-vd-title" id="edu-vd-title">선택된 교육 영상이 없습니다</span>
                             <span class="edu-chip edu-chip-blue" id="edu-vd-rev" hidden></span>
                             <span class="edu-chip edu-chip-slate" id="edu-vd-lang" hidden></span>
-                            <span class="edu-grow"></span>
-                            <button type="button" class="edu-btn edu-btn-blue" id="edu-vd-play" disabled><span data-icon="play"></span> 재생</button>
-                            <button type="button" class="edu-btn" id="edu-vd-hist" disabled><span data-icon="history"></span> 버전 이력</button>
                         </div>
                     </div>
 
@@ -111,13 +108,6 @@
 
                     <div class="edu-card edu-vd" id="edu-vd-bottom">
                         <div class="edu-vd-desc" id="edu-vd-desc"></div>
-                        <div class="edu-vd-actions" id="edu-vd-admin" hidden>
-                            <button type="button" class="edu-btn" id="edu-vd-edit" disabled><span data-icon="edit"></span> 정보 수정</button>
-                            <button type="button" class="edu-btn" id="edu-vd-ver" disabled><span data-icon="layers"></span> 새 버전 업로드</button>
-                            <button type="button" class="edu-btn" id="edu-vd-up" disabled title="순서 앞으로"><span data-icon="up"></span></button>
-                            <button type="button" class="edu-btn" id="edu-vd-down" disabled title="순서 뒤로"><span data-icon="down"></span></button>
-                            <button type="button" class="edu-btn edu-btn-danger-soft" id="edu-vd-del" disabled><span data-icon="trash"></span> 삭제</button>
-                        </div>
                     </div>
                 </section>
             </div>
@@ -144,5 +134,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/edu.js') }}?v=1.1.6"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/edu.js') }}?v=1.2.2"></script>
 {% endblock %}

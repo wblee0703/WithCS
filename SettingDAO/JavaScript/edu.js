@@ -29,6 +29,7 @@
         layers: '<path d="m12 2 10 5-10 5L2 7z"/><path d="m2 17 10 5 10-5M2 12l10 5 10-5"/>',
         up: '<path d="m18 15-6-6-6 6"/>',
         down: '<path d="m6 9 6 6 6-6"/>',
+        more: '<circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/>',
         trash: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
         help: '<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>',
         file: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/>',
@@ -233,7 +234,6 @@
         S.categories = st.categories;
         $("edu-model-admin").hidden = !S.admin;
         $("edu-btn-video-add").hidden = !S.admin;
-        $("edu-vd-admin").hidden = !S.admin;
     }
 
     function showHelp() {
@@ -307,6 +307,7 @@
         $("edu-model-name").textContent = S.model.name;
         $("edu-model-info").textContent = `전체 교육 영상 ${S.model.total}개 · 등록일 ${S.model.created_at}`;
         $("edu-attach-count").textContent = `(${S.model.attachments})`;
+        $("edu-btn-attach").title = `첨부자료 ${S.model.attachments}개`;
         renderSeg();
     }
 
@@ -419,6 +420,7 @@
         }
         box.innerHTML = S.videos.map((v, i) => `
             <div class="edu-vitem ${v.id === S.videoId ? "active" : ""}" data-id="${v.id}" title="${esc(v.title)}">
+              <button type="button" class="edu-vmenu-btn" data-menu="${v.id}" aria-label="영상 메뉴" title="메뉴">${icon("more")}</button>
               <div class="thumb">
                 ${v.thumb_url ? `<img src="${esc(v.thumb_url)}" loading="lazy" alt="">` : ""}
                 <span class="no">${i + 1}강</span>
@@ -430,8 +432,6 @@
                 <div class="chips">
                   <span class="edu-chip edu-chip-blue">${esc(v.revision)}</span>
                   ${v.language ? `<span class="edu-chip edu-chip-slate">${esc(v.language)}</span>` : ""}
-                  ${v.version_count > 1 ? `<span class="edu-chip edu-chip-orange">버전 ${v.version_count}개</span>` : ""}
-                  ${v.encoding ? `<span class="edu-chip edu-chip-slate" title="용량을 줄이는 중입니다. 지금도 재생할 수 있습니다.">압축 중</span>` : ""}
                   ${S.admin && v.encode_state === "fail" ? `<button type="button" class="edu-btn edu-btn-xs edu-btn-danger-soft" data-reencode="${v.version_id}" title="${esc(v.encode_error || "압축 실패")}">압축 실패 · 다시 시도</button>` : ""}
                 </div>
                 <div class="foot">
@@ -466,6 +466,51 @@
                    <div class="edu-scroll short"><table class="edu-table"><thead><tr><th>이름 (아이디)</th><th class="num">횟수</th><th>마지막 재생</th></tr></thead><tbody>${users}</tbody></table></div>
                    <div class="edu-views-title">재생 시각${d.total > d.logs.length ? ` (최근 ${d.logs.length}건)` : ""}</div>
                    <div class="edu-scroll short"><table class="edu-table"><thead><tr><th>재생 시각</th><th>이름 (아이디)</th><th>버전</th></tr></thead><tbody>${logs}</tbody></table></div>`,
+        });
+    }
+
+    // ------------------------------------------------------------------ 영상 항목 메뉴 (⋮)
+    // 버전 이력은 모두, 정보 수정·새 버전·순서·삭제는 최종관리자만
+    function closeItemMenu() {
+        const m = $("edu-vmenu");
+        if (m) m.remove();
+        document.querySelectorAll(".edu-vmenu-btn.open").forEach((b) => b.classList.remove("open"));
+    }
+
+    function openItemMenu(id, btn) {
+        const wasOpen = btn.classList.contains("open");
+        closeItemMenu();
+        if (wasOpen) return;
+        const idx = S.videos.findIndex((x) => x.id === id);
+        if (idx < 0) return;
+        const items = [["history", "버전 이력", videoHistory]];
+        if (S.admin) {
+            items.push(
+                ["edit", "정보 수정", videoEdit],
+                ["layers", "새 버전 업로드", videoNewVersion],
+                ["trash", "삭제", videoDelete, false, true]);
+        }
+        const menu = document.createElement("div");
+        menu.id = "edu-vmenu";
+        menu.className = "edu-vmenu";
+        menu.setAttribute("role", "menu");
+        menu.innerHTML = items.map(([ic, label, , disabled, danger], i) =>
+            `<button type="button" role="menuitem" data-i="${i}" class="${danger ? "danger" : ""}" ${disabled ? "disabled" : ""}>${icon(ic)}<span>${label}</span></button>`).join("");
+        document.body.appendChild(menu);
+        btn.classList.add("open");
+        // 버튼 아래 오른쪽 정렬, 화면 밖으로 나가면 위로 펼침
+        const r = btn.getBoundingClientRect(), mw = menu.offsetWidth, mh = menu.offsetHeight;
+        const left = Math.max(8, Math.min(r.right - mw, window.innerWidth - mw - 8));
+        const top = r.bottom + 4 + mh > window.innerHeight - 8 ? Math.max(8, r.top - mh - 4) : r.bottom + 4;
+        menu.style.left = left + "px";
+        menu.style.top = top + "px";
+        menu.addEventListener("click", (e) => {
+            const b = e.target.closest("button[data-i]");
+            if (!b || b.disabled) return;
+            const fn = items[Number(b.dataset.i)][2];
+            closeItemMenu();
+            if (S.videoId !== id) selectVideo(id, false);   // 메뉴 기능은 선택된 영상 기준으로 동작
+            Promise.resolve().then(fn).catch(showError);
         });
     }
 
@@ -578,11 +623,7 @@
         if (v) { $("edu-vd-rev").textContent = v.revision; $("edu-vd-lang").textContent = v.language; }
         $("edu-vd-desc").textContent = v ? v.description : "";
         $("edu-vd-desc").hidden = !(v && v.description);
-        $("edu-vd-bottom").hidden = $("edu-vd-desc").hidden && !S.admin;
-        const idx = v ? S.videos.indexOf(v) : -1;
-        for (const id of ["edu-vd-play", "edu-vd-hist", "edu-vd-edit", "edu-vd-ver", "edu-vd-del"]) $(id).disabled = !v;
-        $("edu-vd-up").disabled = !v || idx <= 0 || !!S.lang;
-        $("edu-vd-down").disabled = !v || idx >= S.videos.length - 1 || !!S.lang;
+        $("edu-vd-bottom").hidden = $("edu-vd-desc").hidden;
     }
 
     function selectVideo(id, play = false) {
@@ -734,11 +775,6 @@
         if (r) { await loadVideos(v.id); toast("새 버전을 올렸습니다."); }
     }
 
-    async function videoMove(step) {
-        const v = curVideo(); if (!v) return;
-        await api(`/api/edu/videos/${v.id}/move`, { method: "POST", json: { step } });
-        await loadVideos(v.id);
-    }
 
     async function videoDelete() {
         const v = curVideo(); if (!v) return;
@@ -866,13 +902,6 @@
         on("edu-btn-usage", () => openUsage().catch(showError));
         on("edu-btn-attach", openAttachments);
         on("edu-btn-video-add", videoAdd);
-        on("edu-vd-play", () => playVideo(curVideo()));
-        on("edu-vd-hist", videoHistory);
-        on("edu-vd-edit", videoEdit);
-        on("edu-vd-ver", videoNewVersion);
-        on("edu-vd-up", () => videoMove(-1));
-        on("edu-vd-down", () => videoMove(1));
-        on("edu-vd-del", videoDelete);
 
         // click 은 스크롤(터치 이동) 시 발생하지 않으므로 모바일 목록 스크롤 중 오선택 없음
         $("edu-model-list").addEventListener("click", (e) => {
@@ -887,6 +916,8 @@
             renderSeg(); loadVideos().catch(showError);
         });
         $("edu-video-list").addEventListener("click", (e) => {
+            const mb = e.target.closest("[data-menu]");
+            if (mb) { e.stopPropagation(); openItemMenu(Number(mb.dataset.menu), mb); return; }
             const rb = e.target.closest("[data-reencode]");
             if (rb) { e.stopPropagation(); reencode(Number(rb.dataset.reencode), rb.title).catch(showError); return; }
             const vb = e.target.closest("[data-views]");
@@ -894,6 +925,12 @@
             const it = e.target.closest(".edu-vitem");
             if (it) selectVideo(Number(it.dataset.id), true);
         });
+        document.addEventListener("pointerdown", (e) => {
+            if (!e.target.closest("#edu-vmenu, .edu-vmenu-btn")) closeItemMenu();
+        });
+        document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeItemMenu(); });
+        window.addEventListener("resize", closeItemMenu);
+        document.addEventListener("scroll", closeItemMenu, true);
         $("edu-lang-filter").addEventListener("change", (e) => { S.lang = e.target.value; loadVideos().catch(showError); });
         let t;
         $("edu-search").addEventListener("input", () => {
@@ -901,8 +938,25 @@
             if (isMobile()) setModelsCollapsed(false);
         });
 
-        // 재생 중 임시 주소가 만료되면(클라우드 저장소) 새 주소를 받아 보던 위치부터 이어서 재생
+        // 화면을 누르면 재생/일시정지 (PC·모바일 공통)
+        // 브라우저가 스스로 전환하는 경우(PC 크롬 등)와 겹치지 않도록, 누르기 전 상태가 그대로일 때만 전환.
+        // 아래쪽 조작 막대(탐색·음량·전체화면) 영역은 제외
         const video = $("edu-video");
+        let pausedAtDown = null;
+        video.addEventListener("pointerdown", () => { pausedAtDown = video.paused; });
+        video.addEventListener("click", (e) => {
+            const r = video.getBoundingClientRect();
+            const bar = Math.min(64, r.height * 0.25);
+            if (e.clientY > r.bottom - bar || pausedAtDown === null) return;
+            const was = pausedAtDown;
+            pausedAtDown = null;
+            setTimeout(() => {
+                if (video.paused !== was) return;          // 브라우저가 이미 전환함
+                if (video.paused) video.play().catch(() => { }); else video.pause();
+            }, 0);
+        });
+
+        // 재생 중 임시 주소가 만료되면(클라우드 저장소) 새 주소를 받아 보던 위치부터 이어서 재생
         video.addEventListener("timeupdate", () => { if (video.currentTime > 0) P.lastTime = video.currentTime; });
         video.addEventListener("play", () => { P.wantPlay = true; });
         video.addEventListener("pause", () => { if (!P.recovering) P.wantPlay = false; });

@@ -296,3 +296,26 @@ svg.edu-ic { width: 15px; height: 15px; flex: none; }
 }
 .edu-table tr.sum td { font-weight: 700; color: #58a6ff; border-bottom: 0; }
 .edu-usage-orphan { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; padding: 8px 12px; border: 1px solid rgba(210, 153, 34, .45); background: rgba(210, 153, 34, .1); border-radius: 6px; font-size: 12.5px; color: #e3b341; }
+
+/* 모바일: 첨부자료 버튼은 아이콘만 (개수는 버튼 title) */
+@media (max-width: 600px) {
+    #edu-btn-attach .edu-btn-label { display: none; }
+    #edu-btn-attach { min-width: 40px; padding: 0 10px; justify-content: center; }
+}
+
+/* 영상 항목 메뉴 (⋮) */
+.edu-vitem { position: relative; }
+.edu-vitem .info { flex: 1; padding-right: 26px; }
+.edu-vmenu-btn { position: absolute; top: 6px; right: 4px; width: 30px; height: 30px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 6px; background: transparent; color: var(--edu-sub); cursor: pointer; }
+.edu-vmenu-btn:hover, .edu-vmenu-btn.open { background: #30363d; color: #e6edf3; }
+.edu-vmenu-btn svg.edu-ic { width: 18px; height: 18px; }
+.edu-vmenu { position: fixed; z-index: 3000; min-width: 170px; padding: 4px; background: #161b22; border: 1px solid #30363d; border-radius: 8px; box-shadow: 0 12px 32px rgba(0, 0, 0, .55); }
+.edu-vmenu button { display: flex; align-items: center; gap: 9px; width: 100%; padding: 9px 12px; border: 0; border-radius: 6px; background: transparent; color: #e6edf3; font-size: 13.5px; text-align: left; cursor: pointer; font-family: inherit; }
+.edu-vmenu button:hover:not(:disabled) { background: #1f6feb; color: #fff; }
+.edu-vmenu button:disabled { color: #6e7681; cursor: default; }
+.edu-vmenu button.danger { color: #f85149; }
+.edu-vmenu button.danger:hover { background: #da3633; color: #fff; }
+.edu-vmenu svg.edu-ic { width: 15px; height: 15px; flex: none; }
+@media (max-width: 600px) {
+    .edu-vmenu button { padding: 12px 14px; font-size: 15px; }
+}
