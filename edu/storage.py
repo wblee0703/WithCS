@@ -249,13 +249,16 @@ class S3Storage(BaseStorage):
         from botocore.config import Config
         self.bucket = bucket
         self.expires = int(expires)
+        opts = {"signature_version": "s3v4", "s3": {"addressing_style": "path"}}
+        try:
+            # NCP 등 S3 호환 저장소는 boto3 1.36+ 의 기본 무결성 헤더(CRC32)를 지원하지 않아 필요할 때만 사용
+            cfg = Config(request_checksum_calculation="when_required",
+                         response_checksum_validation="when_required", **opts)
+        except TypeError:   # boto3 1.36 미만 (Python 3.8/3.9 호스팅) 은 해당 옵션이 없고 문제도 없음
+            cfg = Config(**opts)
         self.client = boto3.client(
             "s3", endpoint_url=endpoint, region_name=region or None,
-            aws_access_key_id=access_key, aws_secret_access_key=secret_key,
-            # NCP 등 S3 호환 저장소는 boto3 최신 무결성 헤더(CRC32)를 지원하지 않아 필요할 때만 사용
-            config=Config(signature_version="s3v4", s3={"addressing_style": "path"},
-                          request_checksum_calculation="when_required",
-                          response_checksum_validation="when_required"))
+            aws_access_key_id=access_key, aws_secret_access_key=secret_key, config=cfg)
         # 버킷 설정 변경(CORS 등)은 Content-MD5 헤더가 필수
         self.client.meta.events.register("before-sign.s3.PutBucketCors", _add_content_md5)
 
