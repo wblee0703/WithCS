@@ -610,6 +610,7 @@ class TrackingReport(db.Model):
     parts_items = db.Column(db.Text, default='[]')  # 필요물품 목록 JSON (물품 관리 항목 + 수량)
     discussion = db.Column(db.Text, default='')  # 협의 사항
     discussion_person = db.Column(db.String(100), default='')  # 협의 담당자 (수기 입력)
+    due_date = db.Column(db.String(10), default='')  # 조치 예정일 (YYYY-MM-DD)
     basic_json = db.Column(db.Text, default='{}')  # 작성 시점 기본 정보 스냅샷
     created_by = db.Column(db.String(100), default='')
     updated_by = db.Column(db.String(100), default='')
@@ -640,6 +641,7 @@ class TrackingReport(db.Model):
             'partsItems': parts_items,
             'discussion': self.discussion or '',
             'discussionPerson': self.discussion_person or '',
+            'dueDate': self.due_date or '',
             'basic': basic,
             'createdBy': self.created_by or '',
             'updatedBy': self.updated_by or '',
@@ -795,7 +797,7 @@ def ensure_tracking_report_columns():
         db.create_all()
     except Exception as e:
         app.logger.error(f"Error ensuring tracking_report table: {e}")
-    for col, typ in [('parts_items', 'TEXT'), ('discussion_person', "VARCHAR(100) DEFAULT ''")]:
+    for col, typ in [('parts_items', 'TEXT'), ('discussion_person', "VARCHAR(100) DEFAULT ''"), ('due_date', "VARCHAR(10) DEFAULT ''")]:
         try:
             db.session.execute(text(f'ALTER TABLE tracking_report ADD COLUMN {col} {typ}'))
             db.session.commit()
@@ -2407,6 +2409,8 @@ def save_tracking_report():
         report.parts_items = json.dumps(items, ensure_ascii=False)
         report.discussion = clip(payload.get('discussion'))
         report.discussion_person = clip(payload.get('discussionPerson'), 100)
+        due_date = clip(payload.get('dueDate'), 10)
+        report.due_date = due_date if re.fullmatch(r'\d{4}-\d{2}-\d{2}', due_date or '') else ''
         basic = payload.get('basic') if isinstance(payload.get('basic'), dict) else {}
         report.basic_json = json.dumps(basic, ensure_ascii=False)[:20000]
         report.updated_by = writer

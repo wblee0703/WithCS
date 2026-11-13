@@ -170,6 +170,8 @@
 #tracking-table col.col-type { width: 200px; }
 #tracking-table col.col-count { width: 60px; }
 #tracking-table col.col-worker { width: 200px; }
+#tracking-table col.col-cust { width: 130px; }
+#tracking-table col.col-due { width: 100px; }
 #tracking-table col.col-actions { width: 220px; }
 
 #tracking-table td {
@@ -716,6 +718,29 @@
     font-family: inherit;
     padding: 0 10px;
     outline: none;
+}
+
+/* 조치 예정일 */
+#tracking-report-due-date {
+    height: 32px;
+    box-sizing: border-box;
+    background-color: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 4px;
+    color: #e6edf3;
+    font-size: 13px;
+    font-family: inherit;
+    padding: 0 8px;
+    outline: none;
+    color-scheme: dark;
+}
+
+#tracking-report-due-date:focus {
+    border-color: #58a6ff;
+}
+
+.tracking-discussion-person label[for="tracking-report-due-date"] {
+    margin-left: 8px;
 }
 
 #tracking-report-discussion-person:focus {

@@ -4,11 +4,11 @@
    ========================================================================== */
 (function () {
     const state = {
-        status: '',  // '', progress, overdue, planned, done
+        status: '',  // '', progress, done (작업 예정/지연은 표시하지 않음)
         site: '',
         type: '',
-        period: 90,  // 일 (0 = 전체) - 완료/예정/지연에만 적용
-        age: '',     // '', d2, d8, d31 - 진행중/지연에만 적용
+        period: 90,  // 일 (0 = 전체) - 완료에만 적용
+        age: '',     // '', d2, d8, d31 - 진행중에만 적용
         keyword: ''
     };
 
@@ -59,7 +59,7 @@
             const hay = [
                 w.site, disp.name, disp.sub, w.equipKey, w.detailStr, w.parentLog.type,
                 w.parentLog.content, w.lastLog.content, w.parentLog.memo, w.lastLog.memo,
-                w.workers.join(' ')
+                w.workers.join(' '), reportSearchText(getReport(w))
             ].join(' ').toLowerCase();
             if (!hay.includes(state.keyword)) return false;
         }
@@ -71,7 +71,7 @@
         if (!el) return;
         el.innerHTML = '';
         const S = window.TRACKING_STATUS;
-        const cards = [{ key: '', label: '전체', color: '#c9d1d9' }, S.progress, S.overdue, S.planned, S.done];
+        const cards = [{ key: '', label: '전체', color: '#c9d1d9' }, S.progress, S.done];
         cards.forEach(c => {
             const count = c.key ? baseRows.filter(r => r.w.status === c.key).length : baseRows.length;
             const card = document.createElement('button');
@@ -102,11 +102,17 @@
         return `<span class="tracking-muted">${w.days > 0 ? `소요 ${w.days + 1}일` : '당일 완료'}</span>`;
     }
 
+    function localTodayStr() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
     function render() {
         const tbody = document.getElementById('tracking-tbody');
         if (!tbody || typeof window.collectTrackingWorks !== 'function') return;
 
-        const works = window.collectTrackingWorks();
+        // 작업 예정(예정/지연) 일정은 제외하고 수행된 작업만 표시
+        const works = window.collectTrackingWorks().filter(w => w.kind === 'log');
         const models = JSON.parse(localStorage.getItem('equipment_models')) || [];
         const S = window.TRACKING_STATUS;
 
@@ -130,7 +136,7 @@
 
         tbody.innerHTML = '';
         if (rows.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="11" class="list-empty-msg">${works.length === 0 ? '등록된 작업이 없습니다.' : '조건에 맞는 작업이 없습니다.'}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="13" class="list-empty-msg">${works.length === 0 ? '등록된 작업이 없습니다.' : '조건에 맞는 작업이 없습니다.'}</td></tr>`;
             return;
         }
 
@@ -141,8 +147,18 @@
             tr.className = 'tracking-row';
             tr.style.setProperty('--lv-color', st.color);
 
-            const lastText = w.workCount > 1 ? `${esc(w.lastWorkDate)} · ${esc(w.lastContentSummary || '-')}` : '-';
+            const report = getReport(w);
+            const symptom = report ? (report.symptom || '') : '';
+            const parts = partsSummary(report);
+            const custPerson = report ? (report.discussionPerson || '') : '';
+            const dash = '<span class="tracking-muted">-</span>';
             const reason = w.progressReason ? `<div class="tracking-sub">${esc(w.progressReason)}</div>` : '';
+            // 조치 예정일 (레포트 협의 사항) - 진행중인데 예정일이 지났으면 빨간색 강조
+            const dueDate = report ? (report.dueDate || '') : '';
+            const dueOverdue = dueDate && w.status === 'progress' && dueDate < localTodayStr();
+            const dueCell = dueDate
+                ? `<span${dueOverdue ? ' style="color:#f85149;font-weight:bold" title="조치 예정일 경과"' : ''}>${esc(dueDate)}</span>`
+                : '<span class="tracking-muted">-</span>';
             tr.innerHTML = `
                 <td><span class="tracking-status" style="--st-color:${st.color}">${st.label}</span>${reason}</td>
                 <td>${elapsedCell(w)}</td>
@@ -150,10 +166,12 @@
                 <td class="tracking-nowrap" title="${esc(w.site)}">${esc(w.site)}</td>
                 <td class="tracking-equip" title="${esc(w.equipKey)}">${esc(disp.name)}${disp.sub ? ` <span class="equip-serial">[${esc(disp.sub)}]</span>` : ''}</td>
                 <td>${esc(w.parentLog.type || '-')}${w.detailStr ? `<div class="tracking-sub">${esc(w.detailStr)}</div>` : ''}</td>
-                <td class="tracking-content" title="${esc(w.parentLog.content || '')}">${esc(w.contentSummary || '-')}</td>
-                <td class="tracking-content" title="${esc(w.workCount > 1 ? (w.lastLog.content || '') : '')}">${lastText}</td>
+                <td class="tracking-content" title="${esc(symptom)}">${symptom ? esc(symptom.split(/\r?\n/)[0]) : dash}</td>
+                <td class="tracking-content" title="${esc(parts)}">${parts ? esc(parts) : dash}</td>
                 <td class="text-center">${w.workCount || '-'}</td>
                 <td class="tracking-nowrap" title="${esc(w.workers.join(', '))}">${esc(w.workers.join(', ') || '-')}</td>
+                <td class="tracking-nowrap" title="${esc(custPerson)}">${custPerson ? esc(custPerson) : dash}</td>
+                <td>${dueCell}</td>
                 <td></td>
             `;
 
@@ -162,7 +180,6 @@
                 const cell = tr.lastElementChild;
                 const box = document.createElement('div');
                 box.className = 'tracking-actions';
-                const report = getReport(w);
                 const mkBtn = (cls, text, title, onClick, disabled) => {
                     const b = document.createElement('button');
                     b.type = 'button';
@@ -228,6 +245,19 @@
 
     function reportKey(w) {
         return `${equipIdOf(w)}|${w.familyId}`;
+    }
+
+    // 레포트 필요물품 요약 (물품명 x수량, 목록이 없으면 기존 비고 텍스트)
+    function partsSummary(report) {
+        if (!report) return '';
+        const items = Array.isArray(report.partsItems) ? report.partsItems : [];
+        if (items.length) return items.map(p => `${p.part || p.code || '-'} x${p.qty || 1}`).join(', ');
+        return report.parts || '';
+    }
+
+    function reportSearchText(report) {
+        if (!report) return '';
+        return [report.symptom, partsSummary(report), report.discussionPerson].join(' ');
     }
 
     function getReport(w) {
@@ -456,9 +486,13 @@
                     <span class="k">${label}</span><span class="v">${esc(basic[k] === '' || basic[k] == null ? '-' : basic[k])}</span>
                 </div>`).join('');
 
-        document.getElementById('tracking-report-symptom').value = report ? report.symptom : '';
+        // 신규 레포트: 증상 기본값으로 완료된 작업 내용(+작업 메모) 기록
+        const workLog = w.parentLog || {};
+        const defaultSymptom = [workLog.content, workLog.memo].map(t => String(t || '').trim()).filter(Boolean).join('\n');
+        document.getElementById('tracking-report-symptom').value = report ? report.symptom : defaultSymptom;
         document.getElementById('tracking-report-action').value = report ? report.action : '';
         document.getElementById('tracking-report-discussion-person').value = report ? (report.discussionPerson || '') : '';
+        document.getElementById('tracking-report-due-date').value = report ? (report.dueDate || '') : '';
         partsItems = report && Array.isArray(report.partsItems) ? report.partsItems.map(p => Object.assign({}, p)) : [];
         document.getElementById('tracking-parts-qty').value = 1;
         resetPartsPicker();
@@ -500,6 +534,7 @@
             partsItems: partsItems,
             discussion: val('tracking-report-discussion'),
             discussionPerson: val('tracking-report-discussion-person'),
+            dueDate: val('tracking-report-due-date'),
             basic: buildBasic(w, disp)
         };
         if (!body.symptom) {
@@ -594,7 +629,7 @@
 
         const partRows = (report.partsItems || []).map((p, i) => `
             <tr>
-                <td class="c">${i + 1}</td><td>${v(p.code)}</td><td>${v(p.part)}</td><td class="spec">${v(p.spec)}</td><td>${v(p.partno)}</td><td class="c">${esc(p.qty)}</td>
+                <td class="c">${i + 1}</td><td>${v(p.code)}</td><td class="spec">${v(p.spec)}</td><td>${v(p.partno)}</td><td class="c">${esc(p.qty)}</td>
             </tr>`).join('');
 
         const logRows = logs.map((l, i) => `
@@ -602,7 +637,7 @@
                 <td class="c">${i === 0 ? '최초' : '추가 ' + i}</td>
                 <td class="c">${v(l.date)}</td>
                 <td>${v([l.type, window.formatTrackingDetailType(l)].filter(Boolean).join(' > '))}</td>
-                <td>${v(l.content)}${l.memo ? `<div class="memo">${nl2br(l.memo)}</div>` : ''}</td>
+                <td>${v(l.content)}</td>
                 <td class="c">${v(l.worker)}</td>
             </tr>`).join('');
 
@@ -610,7 +645,7 @@
 <html lang="ko"><head><meta charset="utf-8">
 <title>Tracking_Report_${esc(safeName)}</title>
 <style>
-    @page { size: A4; margin: 14mm 12mm; }
+    @page { size: A4; margin: 14mm 22mm; }
     * { box-sizing: border-box; }
     body { font-family: 'Malgun Gothic', '맑은 고딕', 'Apple SD Gothic Neo', sans-serif; color: #111; font-size: 11.5px; margin: 0; }
     .head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #111; padding-bottom: 6px; margin-bottom: 12px; }
@@ -627,9 +662,14 @@
     .c { text-align: center; white-space: nowrap; }
     .note { margin-top: -1px; }
     td.spec { color: #666; }
-    .memo { color: #555; font-size: 10.5px; margin-top: 3px; }
     .foot { margin-top: 14px; font-size: 10px; color: #666; text-align: right; }
     tr { page-break-inside: avoid; }
+    .parts { table-layout: fixed; }
+    /* 화면 미리보기: 인쇄와 같은 A4 여백(상하 14mm, 좌우 22mm)을 가진 용지 형태로 표시 */
+    @media screen {
+        html { background: #e5e7eb; }
+        body { width: 210mm; min-height: 297mm; margin: 16px auto; padding: 14mm 22mm; background: #fff; box-shadow: 0 2px 10px rgba(0,0,0,.18); }
+    }
 </style></head>
 <body>
     <div class="head">
@@ -648,17 +688,18 @@
     <h2>조치사항</h2>
     <table class="box"><tr><td>${nl2br(report.action)}</td></tr></table>
     <h2>필요물품</h2>
-    <table>
-        <tr><th class="c" style="width:36px">No</th><th style="width:18%">코드명</th><th>물품명</th><th style="width:22%">규격</th><th style="width:16%">품번</th><th class="c" style="width:52px">수량</th></tr>
-        ${partRows || '<tr><td colspan="6" class="c">등록된 필요물품이 없습니다.</td></tr>'}
+    <table class="parts">
+        <colgroup><col style="width:36px"><col style="width:24%"><col><col style="width:18%"><col style="width:52px"></colgroup>
+        <tr><th class="c">No</th><th>코드명</th><th>규격</th><th>품번</th><th class="c">수량</th></tr>
+        ${partRows || '<tr><td colspan="5" class="c">등록된 필요물품이 없습니다.</td></tr>'}
     </table>
     <h2>협의 사항</h2>
-    <table class="person"><tr><th>담당자</th><td>${v(report.discussionPerson)}</td></tr></table>
+    <table class="person"><tr><th>담당자</th><td>${v(report.discussionPerson)}</td><th>조치 예정일</th><td>${v(report.dueDate)}</td></tr></table>
     <table class="box" style="margin-top:-1px"><tr><td>${nl2br(report.discussion)}</td></tr></table>
 
     <h2>작업 이력</h2>
     <table>
-        <tr><th class="c" style="width:52px">구분</th><th class="c" style="width:80px">작업일</th><th style="width:22%">작업 구분</th><th>작업 내용</th><th class="c" style="width:80px">작업자</th></tr>
+        <tr><th class="c" style="width:52px">구분</th><th class="c" style="width:80px">작업일</th><th style="width:30%">작업 구분</th><th>작업 내용</th><th class="c" style="width:80px">작업자</th></tr>
         ${logRows || '<tr><td colspan="5" class="c">작업 이력이 없습니다.</td></tr>'}
     </table>
 

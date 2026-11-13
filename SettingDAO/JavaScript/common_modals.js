@@ -782,6 +782,20 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
         }
         memoInput.parentNode.insertBefore(issueShareWrapper, memoInput.nextSibling);
     }
+    // [추가] 완료된 작업일 때 체크박스 줄 오른쪽에 Tracking 메뉴 이동 버튼 표시
+    if (issueShareWrapper && !document.getElementById('btn-go-tracking')) {
+        const goTrackingBtn = document.createElement('button');
+        goTrackingBtn.type = 'button';
+        goTrackingBtn.id = 'btn-go-tracking';
+        goTrackingBtn.className = 'btn-blue-sm';
+        goTrackingBtn.textContent = 'Tracking 이동';
+        goTrackingBtn.title = 'Tracking 메뉴로 이동';
+        goTrackingBtn.style.cssText = 'margin-left: auto; padding: 4px 8px; font-size: 12px; cursor: pointer;';
+        goTrackingBtn.addEventListener('click', () => { window.location.href = '/tracking'; });
+        issueShareWrapper.appendChild(goTrackingBtn);
+    }
+    const goTrackingBtnEl = document.getElementById('btn-go-tracking');
+    if (goTrackingBtnEl) goTrackingBtnEl.style.display = isCompleted ? '' : 'none';
     const issueShareCb = document.getElementById('detail-issue-share-checkbox');
 
     // UI 초기화 (수정 모드 해제)

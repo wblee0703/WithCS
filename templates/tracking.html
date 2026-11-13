@@ -25,20 +25,20 @@
             <select id="tracking-type-filter" class="input-dark">
                 <option value="">전체 구분</option>
             </select>
-            <select id="tracking-period-filter" class="input-dark" title="완료·예정·지연 작업에 적용 (진행중은 항상 표시)">
+            <select id="tracking-period-filter" class="input-dark" title="완료 작업에 적용 (진행중은 항상 표시)">
                 <option value="30">최근/향후 1개월</option>
                 <option value="90" selected>최근/향후 3개월</option>
                 <option value="180">최근/향후 6개월</option>
                 <option value="365">최근/향후 1년</option>
                 <option value="0">전체 기간</option>
             </select>
-            <select id="tracking-age-filter" class="input-dark" title="진행중·지연 작업의 경과일 기준">
+            <select id="tracking-age-filter" class="input-dark" title="진행중 작업의 경과일 기준">
                 <option value="">전체 경과일</option>
                 <option value="d2">D+2 이상</option>
                 <option value="d8">D+8 이상</option>
                 <option value="d31">D+31 이상</option>
             </select>
-            <input type="text" id="tracking-search-input" class="input-dark" placeholder="장비명, 작업 내용, 담당자 검색..." autocomplete="off">
+            <input type="text" id="tracking-search-input" class="input-dark" placeholder="장비명, 증상, 필요물품, 담당자 검색..." autocomplete="off">
             <button id="btn-tracking-reset" class="btn-gray-sm">초기화</button>
         </div>
 
@@ -56,26 +56,30 @@
                     <col class="col-content">
                     <col class="col-count">
                     <col class="col-worker">
+                    <col class="col-cust">
+                    <col class="col-due">
                     <col class="col-actions">
                 </colgroup>
                 <thead>
                     <tr>
                         <th>상태</th>
                         <th>경과</th>
-                        <th>작업일/예정일</th>
+                        <th>작업일</th>
                         <th>사업장</th>
                         <th>장비</th>
                         <th>구분</th>
-                        <th>작업 내용</th>
-                        <th>최근 작업</th>
+                        <th>증상</th>
+                        <th>필요물품</th>
                         <th>작업 수</th>
                         <th>담당자</th>
+                        <th>고객사 담당자</th>
+                        <th>조치 예정일</th>
                         <th>관리</th>
                     </tr>
                 </thead>
                 <tbody id="tracking-tbody">
                     <tr>
-                        <td colspan="11" class="list-empty-msg">데이터를 불러오는 중입니다...</td>
+                        <td colspan="13" class="list-empty-msg">데이터를 불러오는 중입니다...</td>
                     </tr>
                 </tbody>
             </table>
@@ -126,6 +130,8 @@
                     <div class="tracking-discussion-person">
                         <label for="tracking-report-discussion-person">담당자</label>
                         <input type="text" id="tracking-report-discussion-person" class="input-dark" maxlength="100" placeholder="협의 담당자 (예: 고객사 홍길동 프로)" autocomplete="off">
+                        <label for="tracking-report-due-date">조치 예정일</label>
+                        <input type="date" id="tracking-report-due-date" class="input-dark" max="9999-12-31">
                     </div>
                     <textarea id="tracking-report-discussion" class="input-dark" rows="2" placeholder="고객사·내부 협의 내용, 일정 협의 등"></textarea>
                 </div>

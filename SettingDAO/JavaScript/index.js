@@ -1318,7 +1318,7 @@ function renderSetupUpcomingList(activeEquips) {
 }
 
 /* ==========================================================================
-   7. 장기 Down 설비 (Tracking D+2 이상)
+   7. 장기 Down 설비 (Tracking 진행중 전체)
    ========================================================================== */
 function restructureHomeMaintenance() {
     const allLeftCharts = document.querySelectorAll('.maint-left-charts');
@@ -1362,7 +1362,7 @@ function restructureHomeMaintenance() {
     issueCard.className = 'status-group card-like';
     issueCard.innerHTML = `
         <div style="position: relative; display: flex; justify-content: center; align-items: center; min-height: 26px;">
-            <h3 class="status-group-title" style="color: #eb371f; margin: 0; width: 100%; text-align: center; padding: 0 90px; box-sizing: border-box;" title="Tracking 진행중 작업 중 최초 작업일로부터 ${window.TRACKING_HOME_MIN_DAYS || 2}일 이상 경과한 작업">장기 Down 설비 <span id="home-issue-count" style="font-size: 12px; color: #8b949e;"></span></h3>
+            <h3 class="status-group-title" style="color: #eb371f; margin: 0; width: 100%; text-align: center; padding: 0 90px; box-sizing: border-box;" title="Tracking 진행중(정상화 미완료) 전체 작업">장기 Down 설비 <span id="home-issue-count" style="font-size: 12px; color: #8b949e;"></span></h3>
             <a href="/tracking" class="btn-move" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); font-size: 11px; padding: 2px 8px; text-decoration: none;">Tracking 이동</a>
         </div>
         <div class="status-list-container" style="flex: 1; min-height: 0; width: 100%; border: none; overflow: hidden; display: flex; flex-direction: column;">
@@ -1375,20 +1375,59 @@ function restructureHomeMaintenance() {
 }
 window.restructureHomeMaintenance = restructureHomeMaintenance; // UI 렌더링 후 호출용 유지
 
+// [Tracking] 레포트(조치 예정일) 캐시 - 로그인 시 1회 로드
+let homeTrackingReports = null;   // Map(`${equipId}|${familyId}` -> report), 미로드 시 null
+let homeTrackingReportsLoading = false;
+
+async function loadHomeTrackingReports() {
+    if (homeTrackingReportsLoading || homeTrackingReports) return;
+    if (sessionStorage.getItem('isLoggedIn') !== 'true') return;
+    homeTrackingReportsLoading = true;
+    try {
+        const res = await fetch('/api/tracking/reports', { headers: { 'X-CSRFToken': getCookie('csrf_token') } });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.status !== 'success') return;
+        homeTrackingReports = new Map((data.reports || []).map(r => [`${r.equipId}|${r.familyId}`, r]));
+        populateEquipmentIssues();
+    } catch (e) {
+        console.error('Failed to load tracking reports (home):', e);
+    } finally {
+        homeTrackingReportsLoading = false;
+    }
+}
+
+function getHomeTrackingDueDate(site, equipKey, familyId) {
+    if (!homeTrackingReports) return null;
+    const equipId = typeof window.getEquipmentDbId === 'function' ? window.getEquipmentDbId(site, equipKey) : `${site}::${equipKey}`;
+    const report = homeTrackingReports.get(`${equipId}|${familyId}`);
+    return (report && report.dueDate) || '';
+}
+
+// 조치 예정일 경과일 (오늘 기준, 지나지 않았으면 0 이하)
+function getDueOverDays(dueDate) {
+    const m = String(dueDate || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return 0;
+    const due = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.round((today - due) / 86400000);
+}
+
 function populateEquipmentIssues() {
     const issueList = document.getElementById('home-issue-list');
     if (!issueList) return;
+    loadHomeTrackingReports();
 
     issueList.innerHTML = '';
-    const minDays = window.TRACKING_HOME_MIN_DAYS || 2;
-    const allItems = typeof window.collectTrackingItems === 'function' ? window.collectTrackingItems() : [];
-    const items = allItems.filter(it => it.days >= minDays);
+    // Tracking 진행중(정상화 미완료) 작업 전체 표시 (경과일 제한 없음)
+    const items = typeof window.collectTrackingItems === 'function' ? window.collectTrackingItems() : [];
 
     const countEl = document.getElementById('home-issue-count');
     if (countEl) countEl.textContent = `(${items.length})`;
 
     if (items.length === 0) {
-        issueList.innerHTML = `<li class="list-empty-msg">D+${minDays} 이상 정상화되지 않은 작업이 없습니다.</li>`;
+        issueList.innerHTML = `<li class="list-empty-msg">Tracking 중인 정상화 미완료 작업이 없습니다.</li>`;
         return;
     }
 
@@ -1397,16 +1436,35 @@ function populateEquipmentIssues() {
     items.forEach(item => {
         const { site, equipKey, parentLog, level } = item;
         const info = formatEquipDisplayInfo(site, equipKey, equipmentModels);
-        const metaText = `최초 발생 ${item.startDate || '-'} · 최근 작업 ${item.lastWorkDate || '-'} · 작업 ${item.workCount}회`;
+        // 조치 예정일 (Tracking 레포트 협의 사항)
+        // - 입력: 주황색 날짜 / 경과: 빨간색 날짜 (D+N) / 미입력: 주황색 '미입력'
+        const dueDate = getHomeTrackingDueDate(site, equipKey, item.familyId);
+        let dueText = '-';
+        let dueHtml = '-';
+        let isDueOver = false;
+        if (dueDate === '') {
+            dueText = '미입력';
+            dueHtml = '<span style="color: #f0883e; font-weight: bold;">미입력</span>';
+        } else if (dueDate) {
+            const overDays = getDueOverDays(dueDate);
+            isDueOver = overDays > 0;
+            dueText = overDays > 0 ? `${dueDate} (D+${overDays})` : dueDate;
+            dueHtml = overDays > 0
+                ? `<span style="color: #f85149; font-weight: bold;">${escapeHtml(dueText)}</span>`
+                : `<span style="color: #f0883e; font-weight: bold;">${escapeHtml(dueText)}</span>`;
+        }
+        const metaText = `최초 발생 ${item.startDate || '-'} · 조치 예정일 ${dueText}`;
+        const metaHtml = `${escapeHtml(`최초 발생 ${item.startDate || '-'} · 조치 예정일 `)}${dueHtml}`;
 
         const li = document.createElement('li');
         li.className = 'upcoming-item';
-        li.style.borderLeft = `4px solid ${level.color}`;
+        // 조치 예정일 경과 시 좌측 바 빨간색
+        li.style.borderLeft = `4px solid ${isDueOver ? '#f85149' : level.color}`;
         li.innerHTML = `
             <div style="font-size: 12px; font-weight: 800; color: ${level.color}; min-width: 52px; flex-shrink: 0;">D+${item.days}</div>
             <div style="display: flex; flex-direction: column; gap: 4px; overflow: hidden; flex: 1; min-width: 0;">
                 <span style="font-size: 13px; font-weight: bold; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${info.fullTitle}">${info.mainInfo} <span class="equip-serial">${info.subInfo}</span></span>
-                <span style="font-size: 11px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(metaText)}">${escapeHtml(metaText)}</span>
+                <span style="font-size: 11px; color: #8b949e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(metaText)}">${metaHtml}</span>
             </div>
         `;
 
