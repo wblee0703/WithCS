@@ -4687,9 +4687,6 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         };
     }
 
-    // [수정] 헤더에 있는 통합 이슈 공유 체크박스 사용
-    let issueShareCb = document.getElementById('extra-work-issue-share');
-
     tbody.innerHTML = '';
 
     const createRow = (log, badgeText, badgeColor, isParent) => {
@@ -4826,9 +4823,6 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     parentRow.classList.add('active-row');
     tbody.appendChild(parentRow);
 
-    // 팝업 열릴 때 부모의 상태를 우선 표시
-    if (issueShareCb) issueShareCb.checked = !!parentLog.isIssueShared;
-
     // 자식 로그 렌더링
     childLogs.forEach((log, idx) => {
         tbody.appendChild(createRow(log, `추가 ${idx + 1}`, '#1f6feb', false));
@@ -4879,42 +4873,8 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
         tbody.appendChild(tr);
     });
 
-    // 체크박스 클릭(변경) 이벤트 바인딩
-    if (issueShareCb) {
-        const newCb = issueShareCb.cloneNode(true);
-        issueShareCb.parentNode.replaceChild(newCb, issueShareCb);
-        issueShareCb = document.getElementById('extra-work-issue-share');
-
-        issueShareCb.disabled = (sessionStorage.getItem('isLoggedIn') !== 'true');
-
-        issueShareCb.addEventListener('change', async (e) => {
-            const isChecked = e.target.checked;
-            const data = JSON.parse(localStorage.getItem(key)) || {};
-            if (data.logs) {
-                let logUpserts = [];
-                let newLogs = JSON.parse(JSON.stringify(data.logs));
-                const pLog = newLogs.find(l => l.id == originalLogId);
-                if (pLog) {
-                    pLog.isIssueShared = isChecked;
-                    logUpserts.push(pLog);
-                }
-                const cLogs = newLogs.filter(l => l.originalLogId == originalLogId);
-                cLogs.forEach(cLog => {
-                    cLog.isIssueShared = isChecked;
-                    logUpserts.push(cLog);
-                });
-
-                data.logs = newLogs; // 수정된 상태를 원본 데이터에 반영
-
-                localStorage.setItem(key, JSON.stringify(data));
-                window.syncHistoryTransaction(site, equip, { log_upserts: logUpserts });
-                if (typeof addSystemLog === 'function') addSystemLog('UPDATE_MEMO', equip, `Tracking(정상화 미완료) 상태 변경 (LogID: ${originalLogId})`);
-                if (typeof window.populateEquipmentIssues === 'function') window.populateEquipmentIssues();
-                if (typeof window.renderLogs === 'function') window.renderLogs();
-                if (typeof window.renderTrackingPage === 'function') window.renderTrackingPage();
-            }
-        });
-    }
+    // Tracking 관리 버튼 (Tracking 페이지 관리 칸과 동일: 등록 → 레포트/정상화 완료 → 재등록)
+    window.renderExtraWorkTrackingActions(site, equip, originalLogId);
 
     // [추가] '추가작업 생성' 버튼 동작 바인딩
     const extraCreateAddBtn = document.getElementById('btn-create-additional-work-from-extra');
@@ -4942,6 +4902,105 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     }
 
     modal.style.display = 'flex';
+};
+
+// [추가 작업 내역] Tracking 관리 버튼
+window.renderExtraWorkTrackingActions = function (site, equip, familyId, opts = {}) {
+    return window.renderTrackingActions('extra-work-tracking-actions', site, equip, familyId,
+        Object.assign({ closeModalId: 'extra-work-history-modal' }, opts));
+};
+
+// Tracking 관리 버튼 렌더링 (추가 작업 내역 / 작업 상세 정보 공용)
+// - 미등록: [Tracking 등록]  - 진행중: [레포트] [정상화 완료]  - 정상화 완료(레포트 있음/방금 완료): [재등록]
+// opts.closeModalId: '레포트' 클릭 시 닫을 모달, opts.onFlagChange(flag): 상태 변경 후 콜백
+window.renderTrackingActions = async function (boxId, site, equip, familyId, opts = {}) {
+    const box = document.getElementById(boxId);
+    if (!box) return;
+    box.innerHTML = '';
+    const token = String(Date.now()) + Math.random();
+    box.dataset.token = token; // 비동기 조회 중 다른 작업으로 다시 열린 경우 무시용
+
+    const data = JSON.parse(localStorage.getItem(`details_${site}_${equip}`)) || {};
+    const logs = Array.isArray(data.logs) ? data.logs : [];
+    const fid = String(familyId);
+    // Tracking 은 수행된 작업(로그)만 대상
+    if (!logs.some(l => String(l.id) === fid)) return;
+    const famLogs = logs.filter(l => String(l.id) === fid || String(l.originalLogId || '') === fid);
+    const isFlagged = famLogs.some(l => l.isIssueShared === true);
+    const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+    const loginTitle = '로그인 후 사용 가능합니다.';
+
+    const refresh = (o) => {
+        if (typeof window.populateEquipmentIssues === 'function') window.populateEquipmentIssues();
+        if (typeof window.renderLogs === 'function') window.renderLogs();
+        if (typeof window.renderTrackingPage === 'function') window.renderTrackingPage();
+        window.renderTrackingActions(boxId, site, equip, familyId, Object.assign({}, opts, { closed: false }, o));
+    };
+    const mkBtn = (cls, text, title, onClick) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = cls;
+        b.textContent = text;
+        b.title = isLoggedIn ? title : loginTitle;
+        b.disabled = !isLoggedIn;
+        b.onclick = (e) => { e.preventDefault(); e.stopPropagation(); onClick(b); };
+        box.appendChild(b);
+        return b;
+    };
+    const setFlag = async (b, flag, o) => {
+        b.disabled = true;
+        const ok = await window.setTrackingFlag(site, equip, familyId, flag);
+        if (!ok) { b.disabled = false; alert('Tracking 상태 변경에 실패했습니다. 다시 시도해주세요.'); return; }
+        if (typeof opts.onFlagChange === 'function') opts.onFlagChange(flag);
+        refresh(o);
+    };
+
+    if (isFlagged) {
+        mkBtn('btn-tracking-sub', '레포트', '레포트 보기/작성/수정/PDF 출력', () => {
+            if (opts.closeModalId) {
+                const m = document.getElementById(opts.closeModalId);
+                if (m) m.style.display = 'none';
+            }
+            if (window.trackingReportBridge) {
+                window.trackingReportBridge.open(site, equip, familyId);
+            } else {
+                // Tracking 페이지로 이동 후 레포트 창 자동 열기
+                sessionStorage.setItem('openTrackingReport', JSON.stringify({ site, equip, familyId: fid }));
+                location.href = '/tracking';
+            }
+        });
+        mkBtn('btn-tracking-close', '정상화 완료', 'Tracking 체크 해제 (최초 작업 + 추가작업 전체)', (b) => {
+            if (!confirm('이 작업을 정상화 완료 처리하시겠습니까?')) return;
+            setFlag(b, false, { closed: true });
+        });
+        return;
+    }
+
+    // 미등록 상태: 레포트가 있거나 방금 정상화 완료한 경우 '재등록'
+    let wasTracked = !!opts.closed;
+    if (!wasTracked && isLoggedIn) {
+        if (window.trackingReportBridge) {
+            wasTracked = window.trackingReportBridge.has(site, equip, familyId);
+        } else {
+            try {
+                const equipId = typeof window.getEquipmentDbId === 'function' ? window.getEquipmentDbId(site, equip) : `${site}::${equip}`;
+                const res = await fetch(`/api/tracking/report?equipId=${encodeURIComponent(equipId)}&familyId=${encodeURIComponent(fid)}`,
+                    { headers: { 'X-CSRFToken': getCookie('csrf_token') } });
+                const d = await res.json().catch(() => ({}));
+                wasTracked = !!(res.ok && d.status === 'success' && d.report);
+            } catch (e) { /* 조회 실패 시 'Tracking 등록' 으로 표시 */ }
+        }
+        if (box.dataset.token !== token) return; // 조회 중 다시 렌더링된 경우
+    }
+
+    if (wasTracked) {
+        mkBtn('btn-tracking-open', '재등록', '정상화 완료를 취소하고 Tracking을 다시 진행합니다. (기존 레포트 유지)', (b) => {
+            if (!confirm('이 작업을 Tracking 진행중으로 재등록하시겠습니까?')) return;
+            setFlag(b, true);
+        });
+    } else {
+        mkBtn('btn-tracking-open', 'Tracking 등록', '정상화 미완료 작업으로 Tracking 시작', (b) => setFlag(b, true));
+    }
 };
 
 /* ==========================================================================

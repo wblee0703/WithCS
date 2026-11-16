@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/gantt.css') }}">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/integ.css') }}">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_setup.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/tracking.css') }}?v=1.4.4">
 {% endblock %}
 
 {% block content %}
@@ -548,6 +549,9 @@
     </div>
 </template>
 
+
+<!-- Tracking 레포트 작성/수정 모달 (추가 작업 내역의 '레포트' 버튼용) -->
+{% include '_tracking_report_modal.html' %}
 {% endblock %}
 
 {% block extra_js %}
@@ -556,6 +560,7 @@
 <script src="{{ url_for('SettingDAO', filename='JavaScript/index.js') }}?v=1.1.5"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/integ.js') }}?v=1.1.0"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/tracking.js') }}?v=1.6.0"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         // [추가] 모바일 작업 등록 버튼 이벤트

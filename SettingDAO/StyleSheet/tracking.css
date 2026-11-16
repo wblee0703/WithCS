@@ -278,8 +278,20 @@
         flex: 1;
     }
 
+    /* 필터: 드롭다운 1줄에 2개씩, 검색 + 초기화 버튼은 마지막 한 줄 */
+    .tracking-filters select.input-dark {
+        flex: 1 1 calc(50% - 4px);
+        min-width: 0;
+    }
+
     #tracking-search-input {
-        width: 100%;
+        flex: 1 1 0;
+        width: auto;
+        min-width: 0;
+    }
+
+    #btn-tracking-reset {
+        flex: 0 0 auto;
     }
 
     .tracking-table-wrapper {
@@ -354,6 +366,28 @@
 .btn-tracking-sub.warn {
     border-color: #d29922;
     color: #d29922;
+}
+
+.btn-tracking-reset {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    background: transparent;
+    border: 1px solid #30363d;
+    color: #8b949e;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-tracking-reset:hover:not(:disabled) {
+    border-color: #f85149;
+    color: #f85149;
+}
+
+.btn-tracking-reset:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
 }
 
 .btn-tracking-sub:disabled {
@@ -683,12 +717,18 @@
 }
 
 @media (max-width: 768px) {
+    /* 물품 드롭다운 + 수량 + 추가 버튼 한 줄 유지 (드롭다운이 남은 너비 사용) */
     .tracking-parts-picker {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        gap: 4px;
     }
 
-    .tracking-parts-combo {
-        flex-basis: 100%;
+    #tracking-parts-qty {
+        width: 52px;
+    }
+
+    #btn-tracking-parts-add {
+        padding: 0 10px;
     }
 }
 

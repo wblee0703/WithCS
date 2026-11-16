@@ -4,7 +4,7 @@
    ========================================================================== */
 (function () {
     const state = {
-        status: '',  // '', progress, done (작업 예정/지연은 표시하지 않음)
+        status: '',  // '', progress, tracked, done (작업 예정/지연은 표시하지 않음)
         site: '',
         type: '',
         period: 90,  // 일 (0 = 전체) - 완료에만 적용
@@ -14,10 +14,25 @@
 
     const AGE_MIN = { d2: 2, d8: 8, d31: 31 };
 
+    // Tracking 완료: Tracking 진행 후 정상화 완료된 작업 (완료 상태 + 레포트 존재)
+    const TRACKED_STATUS = { key: 'tracked', label: 'Tracking 완료', color: '#a371f7' };
+
+    // 화면 표시용 상태 (done 중 레포트가 있으면 tracked 로 구분)
+    function viewStatus(w) {
+        return (w.status === 'done' && getReport(w)) ? 'tracked' : w.status;
+    }
+
+    function statusInfo(key) {
+        return key === 'tracked' ? TRACKED_STATUS : window.TRACKING_STATUS[key];
+    }
+
     function esc(text) {
         return typeof escapeHtml === 'function' ? escapeHtml(text == null ? '' : String(text)) : String(text == null ? '' : text);
     }
 
+    const custNameCache = new Map(); // render() 마다 초기화
+    let lastBaseRows = [];  // 마지막 render() 결과 (상태 필터 적용 전)
+    let lastWorkCount = 0;
     function equipDisplay(site, equipKey, models) {
         const parts = equipKey.split('::');
         const name = parts[0];
@@ -26,8 +41,12 @@
         const displayName = (model && model.abbr) ? model.abbr : name;
         let custName = parts[2] || '';
         if (!custName) {
-            const details = JSON.parse(localStorage.getItem(`details_${site}_${equipKey}`)) || {};
-            custName = (details.setup && details.setup.custEquipName) || '';
+            const ck = `${site}|${equipKey}`;
+            if (!custNameCache.has(ck)) {
+                const details = JSON.parse(localStorage.getItem(`details_${site}_${equipKey}`)) || {};
+                custNameCache.set(ck, (details.setup && details.setup.custEquipName) || '');
+            }
+            custName = custNameCache.get(ck);
         }
         return { name: displayName, sub: custName || serial };
     }
@@ -71,22 +90,20 @@
         if (!el) return;
         el.innerHTML = '';
         const S = window.TRACKING_STATUS;
-        const cards = [{ key: '', label: '전체', color: '#c9d1d9' }, S.progress, S.done];
+        const cards = [{ key: '', label: '전체', color: '#c9d1d9' }, S.done, S.progress, TRACKED_STATUS];
         cards.forEach(c => {
-            const count = c.key ? baseRows.filter(r => r.w.status === c.key).length : baseRows.length;
+            const count = c.key ? baseRows.filter(r => r.vs === c.key).length : baseRows.length;
             const card = document.createElement('button');
             card.type = 'button';
             card.className = 'tracking-summary-card' + (state.status === c.key ? ' active' : '');
             card.style.setProperty('--lv-color', c.color);
-            let sub = '';
-            if (c.key === 'progress') {
-                const long = baseRows.filter(r => r.w.status === 'progress' && r.w.days >= (window.TRACKING_HOME_MIN_DAYS || 2)).length;
-                sub = `<span class="tracking-summary-sub">D+2 이상 ${long}건</span>`;
-            }
-            card.innerHTML = `<span class="tracking-summary-label">${c.label}</span><span class="tracking-summary-count">${count}</span>${sub}`;
+            card.innerHTML = `<span class="tracking-summary-label">${c.label}</span><span class="tracking-summary-count">${count}</span>`;
+            card.dataset.key = c.key;
             card.onclick = () => {
                 state.status = (state.status === c.key) ? '' : c.key;
-                render();
+                // 상태 카드는 이미 계산된 목록을 다시 거르기만 함 (전체 재계산 X)
+                el.querySelectorAll('.tracking-summary-card').forEach(b => b.classList.toggle('active', b.dataset.key === state.status));
+                renderRows();
             };
             el.appendChild(card);
         });
@@ -113,8 +130,8 @@
 
         // 작업 예정(예정/지연) 일정은 제외하고 수행된 작업만 표시
         const works = window.collectTrackingWorks().filter(w => w.kind === 'log');
+        custNameCache.clear();
         const models = JSON.parse(localStorage.getItem('equipment_models')) || [];
-        const S = window.TRACKING_STATUS;
 
         // 필터 옵션 갱신
         const siteSel = document.getElementById('tracking-site-filter');
@@ -127,22 +144,32 @@
         if (typeSel) fillSelect(typeSel, types, '전체 구분', state.type);
 
         const baseRows = works
-            .map(w => ({ w, disp: equipDisplay(w.site, w.equipKey, models) }))
+            .map(w => ({ w, vs: viewStatus(w), disp: equipDisplay(w.site, w.equipKey, models) }))
             .filter(({ w, disp }) => passesBaseFilters(w, disp));
+        lastBaseRows = baseRows;
+        lastWorkCount = works.length;
         renderSummary(baseRows);
+        renderRows();
+    }
 
-        const rows = state.status ? baseRows.filter(r => r.w.status === state.status) : baseRows;
+    function renderRows() {
+        const tbody = document.getElementById('tracking-tbody');
+        if (!tbody) return;
+        const baseRows = lastBaseRows;
+        const rows = state.status ? baseRows.filter(r => r.vs === state.status) : baseRows;
         const isLoggedIn = sessionStorage.getItem('isLoggedIn') === 'true';
+        const userRole = sessionStorage.getItem('userRole');
+        const isAdmin = isLoggedIn && (userRole === 'admin' || userRole === 'superadmin');
 
         tbody.innerHTML = '';
         if (rows.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="13" class="list-empty-msg">${works.length === 0 ? '등록된 작업이 없습니다.' : '조건에 맞는 작업이 없습니다.'}</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="13" class="list-empty-msg">${lastWorkCount === 0 ? '등록된 작업이 없습니다.' : '조건에 맞는 작업이 없습니다.'}</td></tr>`;
             return;
         }
 
         const frag = document.createDocumentFragment();
-        rows.forEach(({ w, disp }) => {
-            const st = S[w.status];
+        rows.forEach(({ w, vs, disp }) => {
+            const st = statusInfo(vs);
             const tr = document.createElement('tr');
             tr.className = 'tracking-row';
             tr.style.setProperty('--lv-color', st.color);
@@ -193,7 +220,18 @@
                 };
                 const loginTitle = '로그인 후 사용 가능합니다.';
 
-                if (!w.isFlagged) {
+                if (!w.isFlagged && report) {
+                    // Tracking 완료 건: 레포트는 그대로 두고 상태만 진행중으로 되돌림 (레포트 수정은 '레포트' 버튼)
+                    mkBtn('btn-tracking-open', '재등록',
+                        isLoggedIn ? '정상화 완료를 취소하고 Tracking을 다시 진행합니다. (기존 레포트 유지)' : loginTitle,
+                        async (b) => {
+                            if (!confirm(`[${w.site}] ${disp.name}\n${w.startDate} 작업을 Tracking 진행중으로 재등록하시겠습니까?`)) return;
+                            b.disabled = true;
+                            const ok = await window.setTrackingFlag(w.site, w.equipKey, w.familyId, true);
+                            if (!ok) { b.disabled = false; alert('재등록에 실패했습니다. 다시 시도해주세요.'); return; }
+                            render();
+                        }, !isLoggedIn);
+                } else if (!w.isFlagged) {
                     mkBtn('btn-tracking-open', 'Tracking 등록',
                         isLoggedIn ? '레포트를 작성하고 정상화 미완료 작업으로 Tracking 시작' : loginTitle,
                         () => openReportModal(w, disp, 'register'), !isLoggedIn);
@@ -212,6 +250,19 @@
                             if (!confirm(msg)) return;
                             b.disabled = true;
                             const ok = await window.setTrackingFlag(w.site, w.equipKey, w.familyId, false);
+                            if (!ok) b.disabled = false;
+                            render();
+                        }, !isLoggedIn);
+                }
+                if ((w.isFlagged || report) && isAdmin) { // 초기화는 관리자 이상만
+                    mkBtn('btn-tracking-reset', '초기화',
+                        '레포트를 삭제하고 Tracking 등록 전 상태로 되돌립니다. (관리자)',
+                        async (b) => {
+                            const msg = `[${w.site}] ${disp.name}\n${w.startDate} 작업을 Tracking 등록 전 상태로 되돌리시겠습니까?` +
+                                '\n\n- 작성된 레포트가 삭제됩니다. (복구 불가)\n- Tracking 체크가 해제됩니다.';
+                            if (!confirm(msg)) return;
+                            b.disabled = true;
+                            const ok = await resetTracking(w);
                             if (!ok) b.disabled = false;
                             render();
                         }, !isLoggedIn);
@@ -274,6 +325,7 @@
             reports.clear();
             (data.reports || []).forEach(r => reports.set(`${r.equipId}|${r.familyId}`, r));
             render();
+            openPendingReport();
         } catch (e) {
             console.error('Failed to load tracking reports:', e);
         }
@@ -598,6 +650,41 @@
         }
     }
 
+    // Tracking 초기화: 레포트 삭제 + Tracking 체크 해제 (등록 전 원래 상태로)
+    async function resetTracking(w) {
+        const equipId = equipIdOf(w);
+        try {
+            const res = await fetch('/api/tracking/report', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+                body: JSON.stringify({ equipId, familyId: String(w.familyId) })
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || data.status !== 'success') {
+                alert(data.message || `초기화에 실패했습니다. (HTTP ${res.status})`);
+                return false;
+            }
+        } catch (e) {
+            console.error('Failed to reset tracking report:', e);
+            alert('서버와의 통신에 실패했습니다.');
+            return false;
+        }
+        reports.delete(`${equipId}|${w.familyId}`);
+
+        if (w.isFlagged) {
+            const ok = await window.setTrackingFlag(w.site, w.equipKey, w.familyId, false);
+            if (!ok) {
+                alert('레포트는 삭제되었지만 Tracking 체크 해제에 실패했습니다. 다시 시도해주세요.');
+                return false;
+            }
+            w.isFlagged = false;
+        }
+        if (typeof window.addSystemLog === 'function') {
+            window.addSystemLog('RESET_TRACKING', w.equipKey, `Tracking 초기화 - 레포트 삭제 및 체크 해제 (LogID: ${w.familyId})`);
+        }
+        return true;
+    }
+
     // PDF 출력: A4 인쇄용 창을 열고 브라우저 인쇄(PDF로 저장)
     // 레포트 창 하단 저장 완료 알림 (2초 후 사라짐)
     let toastTimer = null;
@@ -799,6 +886,34 @@
     });
 
     window.renderTrackingPage = render;
+
+    // 추가 작업 내역 모달 연동: 레포트 존재 여부 / 레포트 창 열기
+    window.trackingReportBridge = {
+        has(site, equipKey, familyId) {
+            const eid = equipIdOf({ site, equipKey });
+            return reports.has(`${eid}|${familyId}`);
+        },
+        open(site, equipKey, familyId) {
+            if (typeof window.collectTrackingWorks !== 'function') return false;
+            const w = window.collectTrackingWorks().find(x => x.kind === 'log' && x.site === site &&
+                x.equipKey === equipKey && String(x.familyId) === String(familyId));
+            if (!w) { alert('해당 작업을 찾을 수 없습니다.'); return false; }
+            const models = JSON.parse(localStorage.getItem('equipment_models')) || [];
+            openReportModal(w, equipDisplay(site, equipKey, models), 'edit');
+            return true;
+        }
+    };
+
+    // 다른 페이지의 추가 작업 내역에서 '레포트' 클릭 → 이 페이지로 이동 후 자동으로 레포트 창 열기
+    function openPendingReport() {
+        const raw = sessionStorage.getItem('openTrackingReport');
+        if (!raw) return;
+        sessionStorage.removeItem('openTrackingReport');
+        try {
+            const p = JSON.parse(raw);
+            window.trackingReportBridge.open(p.site, p.equip, p.familyId);
+        } catch (e) { /* ignore */ }
+    }
 
     document.addEventListener('DOMContentLoaded', () => {
         const bind = (id, evt, fn) => {

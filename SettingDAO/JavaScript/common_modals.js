@@ -1093,11 +1093,39 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
         issueShareCb.disabled = isCompleted || (sessionStorage.getItem('isLoggedIn') !== 'true');
     }
 
+    // [Tracking] 완료된 작업(로그)은 체크박스 대신 관리 버튼 (Tracking 등록 → 레포트/정상화 완료 → 재등록)
+    if (issueShareWrapper && issueShareCb) {
+        let trackingBox = document.getElementById('detail-tracking-actions');
+        if (!trackingBox) {
+            trackingBox = document.createElement('div');
+            trackingBox.id = 'detail-tracking-actions';
+            trackingBox.style.cssText = 'display: flex; align-items: center; gap: 6px;';
+            issueShareWrapper.insertBefore(trackingBox, document.getElementById('btn-go-tracking'));
+        }
+        const cbLabel = issueShareCb.closest('label') || issueShareCb;
+        const isLogItem = Array.isArray(data.logs) && data.logs.includes(item);
+        if (isLogItem && typeof window.renderTrackingActions === 'function') {
+            cbLabel.style.display = 'none';
+            trackingBox.style.display = 'flex';
+            window.renderTrackingActions('detail-tracking-actions', site, equip, String(item.originalLogId || item.id), {
+                // 숨김 체크박스도 동기화 (상세 정보 저장 시 Tracking 상태가 되돌아가지 않도록)
+                onFlagChange: (flag) => { issueShareCb.checked = flag; item.isIssueShared = flag; }
+            });
+        } else {
+            cbLabel.style.display = '';
+            trackingBox.style.display = 'none';
+            trackingBox.innerHTML = '';
+        }
+    }
+
     // [추가] 마지막 등록/수정자 표시 (서버 기록)
     const auditInfoEl = document.getElementById('detail-audit-info');
     if (auditInfoEl) {
         if (item && item.updatedAt) {
-            auditInfoEl.textContent = `최종 등록/수정: ${item.updatedBy || '-'} · ${item.updatedAt}`;
+            // YYYY-MM-DD HH:MM(:SS) → YY-MM-DD HH:MM
+            const m = String(item.updatedAt).match(/^\d{2}(\d{2}-\d{2}-\d{2})[ T](\d{2}:\d{2})/);
+            const when = m ? `${m[1]} ${m[2]}` : item.updatedAt;
+            auditInfoEl.textContent = `최종 수정: ${item.updatedBy || '-'} · ${when}`;
             auditInfoEl.style.display = '';
         } else {
             auditInfoEl.textContent = '';

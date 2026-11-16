@@ -2367,6 +2367,21 @@ def get_tracking_reports():
         app.logger.error(f"Failed to load tracking reports: {e}")
         return jsonify({"status": "fail", "message": "Tracking 레포트를 불러오지 못했습니다."}), 500
 
+@app.route('/api/tracking/report', methods=['GET'])
+@login_required
+def get_tracking_report():
+    """[Tracking] 작업 패밀리 1건의 레포트 조회 (없으면 report: null)"""
+    equip_id = (request.args.get('equipId') or '').strip()
+    family_id = (request.args.get('familyId') or '').strip()
+    if not equip_id or not family_id:
+        return jsonify({"status": "fail", "message": "장비 또는 작업 정보가 올바르지 않습니다."}), 400
+    try:
+        report = TrackingReport.query.filter_by(equip_id=equip_id, family_id=family_id).first()
+        return jsonify({"status": "success", "report": report.to_dict() if report else None})
+    except Exception as e:
+        app.logger.error(f"Failed to load tracking report: {e}")
+        return jsonify({"status": "fail", "message": "Tracking 레포트를 불러오지 못했습니다."}), 500
+
 @app.route('/api/tracking/report', methods=['POST'])
 @login_required
 def save_tracking_report():
@@ -2421,6 +2436,24 @@ def save_tracking_report():
         db.session.rollback()
         app.logger.error(f"Failed to save tracking report: {e}")
         return jsonify({"status": "fail", "message": "Tracking 레포트 저장 중 오류가 발생했습니다."}), 500
+
+@app.route('/api/tracking/report', methods=['DELETE'])
+@admin_required
+def delete_tracking_report():
+    """[Tracking 초기화] 작업 패밀리의 레포트 삭제 (없으면 그대로 성공 처리) - 관리자 이상"""
+    payload = request.json or {}
+    equip_id = str(payload.get('equipId') or '').strip()
+    family_id = str(payload.get('familyId') or '').strip()
+    if not equip_id or not family_id:
+        return jsonify({"status": "fail", "message": "장비 또는 작업 정보가 올바르지 않습니다."}), 400
+    try:
+        TrackingReport.query.filter_by(equip_id=equip_id, family_id=family_id).delete()
+        db.session.commit()
+        return jsonify({"status": "success"})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Failed to delete tracking report: {e}")
+        return jsonify({"status": "fail", "message": "Tracking 레포트 초기화 중 오류가 발생했습니다."}), 500
 
 @app.route('/data')
 @app.route('/data_page')

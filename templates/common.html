@@ -10,7 +10,7 @@
 
     <!-- 공통 CSS -->
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common.css') }}?v=1.1.5">
-    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_modals.css') }}?v=1.0.7">
+    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_modals.css') }}?v=1.0.9">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_setup.css') }}">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/chatbot.css') }}?v=1.5.1">
     <link
@@ -367,27 +367,22 @@
         <div class="modal-window">
             <div class="modal-header">
                 <h3>추가 작업 내역</h3>
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <label class="modal-checkbox-label"
-                        style="font-size: 13px; font-weight: bold; color: #f0883e; display: flex; align-items: center; cursor: pointer; margin: 0;">
-                        <input type="checkbox" id="extra-work-issue-share" class="modal-checkbox-input"
-                            style="margin-right: 5px; transform: scale(1.2);"> Tracking (정상화 미완료)
-                    </label>
-                    <button id="btn-create-additional-work-from-extra" class="btn-blue-sm" style="padding: 4px 8px; font-size: 12px; margin-right: 5px; background-color: #238636; border: 1px solid #30863f; color: #ffffff; border-radius: 4px; cursor: pointer;">추가작업 생성</button>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <!-- Tracking 관리 버튼 (Tracking 등록 / 레포트 / 정상화 완료 / 재등록) -->
+                    <div id="extra-work-tracking-actions" class="tracking-actions" style="display: flex; align-items: center; gap: 6px;"></div>
+                    <button id="btn-create-additional-work-from-extra" class="btn-blue-sm" style="padding: 4px 8px; font-size: 12px; margin-right: 5px; background-color: #238636; border: 1px solid #30863f; color: #ffffff; border-radius: 4px; cursor: pointer;">추가작업</button>
                     <button class="btn-del-sm"
                         onclick="document.getElementById('extra-work-history-modal').style.display='none'">✕</button>
                 </div>
             </div>
             <div class="modal-body" style="padding: 15px; display: flex; flex-direction: column; gap: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div id="extra-work-history-path" style="font-size: 14px; font-weight: bold; color: #58a6ff;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                    <div id="extra-work-history-path" style="font-size: 14px; font-weight: bold; color: #58a6ff; flex: 1; min-width: 0; word-break: break-all;">
                         <!-- 원본 작업 점검 구분 경로 -->
                     </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button id="btn-add-extra-work-from-history" class="btn-blue-sm"
-                            style="padding: 4px 0; width: 60px; font-size: 12px; text-align: center;">추가</button>
-                        <button id="btn-move-to-extra-work-origin" class="btn-green-sm"
-                            style="padding: 4px 0; width: 60px; font-size: 12px; text-align: center;">이동</button>
+                    <div style="display: flex; gap: 6px; flex-shrink: 0;">
+                        <button id="btn-move-to-extra-work-origin" class="btn-blue-sm"
+                            style="padding: 3px 0; width: 46px; font-size: 11px; text-align: center; flex-shrink: 0;">이동</button>
                     </div>
                 </div>
                 <div class="data-table-wrapper"
@@ -1494,8 +1489,8 @@
         </div>
     </template>
 
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.1.4"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.2.0"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.1.6"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.2.2"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}?v=1.0.1"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/chatbot.js') }}?v=1.5.2"></script>
     <!-- 페이지별 추가 스크립트 -->

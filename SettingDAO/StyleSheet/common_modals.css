@@ -1780,4 +1780,50 @@ input[type="date"]::-webkit-datetime-edit-year {
         width: 100% !important;
         margin-right: 0 !important;
     }
-}
+}
+/* 추가 작업 내역 - Tracking 관리 버튼 (Tracking 페이지 관리 버튼과 동일 디자인) */
+:is(#extra-work-tracking-actions, #detail-tracking-actions) button {
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+:is(#extra-work-tracking-actions, #detail-tracking-actions) .btn-tracking-open {
+    background: transparent;
+    border: 1px solid #f0883e;
+    color: #f0883e;
+}
+
+:is(#extra-work-tracking-actions, #detail-tracking-actions) .btn-tracking-open:hover:not(:disabled) {
+    background: rgba(240, 136, 62, 0.12);
+}
+
+:is(#extra-work-tracking-actions, #detail-tracking-actions) .btn-tracking-sub {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+}
+
+:is(#extra-work-tracking-actions, #detail-tracking-actions) .btn-tracking-sub:hover:not(:disabled) {
+    border-color: #58a6ff;
+    color: #58a6ff;
+}
+
+:is(#extra-work-tracking-actions, #detail-tracking-actions) .btn-tracking-close {
+    background: #238636;
+    border: 1px solid #2ea043;
+    color: #ffffff;
+}
+
+:is(#extra-work-tracking-actions, #detail-tracking-actions) .btn-tracking-close:hover:not(:disabled) {
+    background: #2ea043;
+}
+
+:is(#extra-work-tracking-actions, #detail-tracking-actions) button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
