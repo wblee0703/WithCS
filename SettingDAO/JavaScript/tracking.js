@@ -17,11 +17,6 @@
     // Tracking 완료: Tracking 진행 후 정상화 완료된 작업 (완료 상태 + 레포트 존재)
     const TRACKED_STATUS = { key: 'tracked', label: 'Tracking 완료', color: '#a371f7' };
 
-    // 화면 표시용 상태 (done 중 레포트가 있으면 tracked 로 구분)
-    function viewStatus(w) {
-        return (w.status === 'done' && getReport(w)) ? 'tracked' : w.status;
-    }
-
     function statusInfo(key) {
         return key === 'tracked' ? TRACKED_STATUS : window.TRACKING_STATUS[key];
     }
@@ -131,6 +126,7 @@
         // 작업 예정(예정/지연) 일정은 제외하고 수행된 작업만 표시
         const works = window.collectTrackingWorks().filter(w => w.kind === 'log');
         custNameCache.clear();
+        equipIdCache.clear();
         const models = JSON.parse(localStorage.getItem('equipment_models')) || [];
 
         // 필터 옵션 갱신
@@ -144,7 +140,10 @@
         if (typeSel) fillSelect(typeSel, types, '전체 구분', state.type);
 
         const baseRows = works
-            .map(w => ({ w, vs: viewStatus(w), disp: equipDisplay(w.site, w.equipKey, models) }))
+            .map(w => {
+                const report = getReport(w); // 행마다 1회만 조회 → 카드 필터 시 재조회 없음
+                return { w, report, vs: (w.status === 'done' && report) ? 'tracked' : w.status, disp: equipDisplay(w.site, w.equipKey, models) };
+            })
             .filter(({ w, disp }) => passesBaseFilters(w, disp));
         lastBaseRows = baseRows;
         lastWorkCount = works.length;
@@ -168,13 +167,12 @@
         }
 
         const frag = document.createDocumentFragment();
-        rows.forEach(({ w, vs, disp }) => {
+        rows.forEach(({ w, vs, disp, report }) => {
             const st = statusInfo(vs);
             const tr = document.createElement('tr');
             tr.className = 'tracking-row';
             tr.style.setProperty('--lv-color', st.color);
 
-            const report = getReport(w);
             const symptom = report ? (report.symptom || '') : '';
             const parts = partsSummary(report);
             const custPerson = report ? (report.discussionPerson || '') : '';
@@ -290,8 +288,14 @@
     const reports = new Map(); // key: `${equipId}|${familyId}`
     let reportCtx = null;      // 현재 모달에서 작업 중인 { w, disp, mode }
 
+    // 장비 DB ID 캐시: getEquipmentDbId 는 호출마다 localStorage JSON 을 파싱하므로 장비별 1회만 계산 (render() 마다 초기화)
+    const equipIdCache = new Map();
     function equipIdOf(w) {
-        return typeof window.getEquipmentDbId === 'function' ? window.getEquipmentDbId(w.site, w.equipKey) : `${w.site}::${w.equipKey}`;
+        const ck = `${w.site}|${w.equipKey}`;
+        if (!equipIdCache.has(ck)) {
+            equipIdCache.set(ck, typeof window.getEquipmentDbId === 'function' ? window.getEquipmentDbId(w.site, w.equipKey) : `${w.site}::${w.equipKey}`);
+        }
+        return equipIdCache.get(ck);
     }
 
     function reportKey(w) {
@@ -315,20 +319,56 @@
         return w.kind === 'log' ? (reports.get(reportKey(w)) || null) : null;
     }
 
-    async function loadReports() {
+    // 레포트 로컬 캐시: 페이지 진입 시 첫 화면부터 'Tracking 완료' 구분이 바로 보이도록 (서버 응답 후 최신화)
+    const REPORT_CACHE_KEY = 'tracking_reports_cache';
+    function saveReportCache() {
+        try { localStorage.setItem(REPORT_CACHE_KEY, JSON.stringify([...reports.values()])); } catch (e) { /* 용량 초과 등 무시 */ }
+    }
+    (function restoreReportCache() {
         if (sessionStorage.getItem('isLoggedIn') !== 'true') return;
         try {
-            const res = await fetch('/api/tracking/reports', { headers: { 'X-CSRFToken': getCookie('csrf_token') } });
-            if (!res.ok) return;
-            const data = await res.json();
-            if (data.status !== 'success') return;
-            reports.clear();
-            (data.reports || []).forEach(r => reports.set(`${r.equipId}|${r.familyId}`, r));
-            render();
-            openPendingReport();
-        } catch (e) {
-            console.error('Failed to load tracking reports:', e);
-        }
+            const list = JSON.parse(localStorage.getItem(REPORT_CACHE_KEY) || '[]');
+            if (Array.isArray(list)) list.forEach(r => r && reports.set(`${r.equipId}|${r.familyId}`, r));
+        } catch (e) { /* ignore */ }
+    })();
+
+    // 같은 순간에 여러 번 요청된 화면 갱신은 1회로 합침 (페이지 진입 시 중복 렌더링 방지)
+    let renderQueued = false;
+    function scheduleRender() {
+        if (renderQueued) return;
+        renderQueued = true;
+        requestAnimationFrame(() => { renderQueued = false; render(); });
+    }
+
+    let reportsLoading = null;
+    let reportsLoadedAt = 0;
+    function loadReports(force) {
+        if (sessionStorage.getItem('isLoggedIn') !== 'true') return Promise.resolve();
+        if (reportsLoading) return reportsLoading;                       // 진행 중인 요청 재사용
+        if (!force && Date.now() - reportsLoadedAt < 3000) return Promise.resolve(); // 직전에 받았으면 생략
+        reportsLoading = (async () => {
+            try {
+                const res = await fetch('/api/tracking/reports', { headers: { 'X-CSRFToken': getCookie('csrf_token') } });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.status !== 'success') return;
+                const before = JSON.stringify([...reports.values()]);
+                reports.clear();
+                (data.reports || []).forEach(r => reports.set(`${r.equipId}|${r.familyId}`, r));
+                reportsLoadedAt = Date.now();
+                const after = JSON.stringify([...reports.values()]);
+                if (after !== before) {   // 캐시와 달라진 경우에만 다시 그림
+                    saveReportCache();
+                    scheduleRender();
+                }
+                openPendingReport();
+            } catch (e) {
+                console.error('Failed to load tracking reports:', e);
+            } finally {
+                reportsLoading = null;
+            }
+        })();
+        return reportsLoading;
     }
 
     function familyLogsOf(w) {
@@ -613,6 +653,7 @@
                 return null;
             }
             reports.set(`${data.report.equipId}|${data.report.familyId}`, data.report);
+            saveReportCache();
 
             if (mode === 'register' && !w.isFlagged) {
                 const ok = await window.setTrackingFlag(w.site, w.equipKey, w.familyId, true);
@@ -670,6 +711,7 @@
             return false;
         }
         reports.delete(`${equipId}|${w.familyId}`);
+        saveReportCache();
 
         if (w.isFlagged) {
             const ok = await window.setTrackingFlag(w.site, w.equipKey, w.familyId, false);
@@ -918,7 +960,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         const bind = (id, evt, fn) => {
             const el = document.getElementById(id);
-            if (el) el.addEventListener(evt, () => { fn(el); render(); });
+            if (el) el.addEventListener(evt, () => { fn(el); scheduleRender(); });
         };
         bind('tracking-site-filter', 'change', el => { state.site = el.value; });
         bind('tracking-type-filter', 'change', el => { state.type = el.value; });
@@ -936,13 +978,13 @@
             render();
         });
 
-        if (window.isDataLoaded) render();
+        if (window.isDataLoaded) scheduleRender();
     });
 
     // 서버 데이터 동기화 완료 시 갱신 (로그인 직후 포함 - 레포트도 다시 로드)
     window.addEventListener('DataLoaded', () => {
-        render();
-        if (typeof loadReports === 'function') loadReports();
+        scheduleRender();
+        loadReports();
     });
 
     // 추가작업 내역 / 작업 상세 모달이 닫히면(저장/수정 반영) 리스트 갱신
@@ -955,7 +997,7 @@
             });
             if (!anyOpen) {
                 clearTimeout(timer);
-                timer = setTimeout(render, 200);
+                timer = setTimeout(scheduleRender, 200);
             }
         });
         ['extra-work-history-modal', 'event-detail-modal'].forEach(id => {
