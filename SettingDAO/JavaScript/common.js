@@ -4638,10 +4638,7 @@ window.openExtraWorkHistoryModal = function (site, equip, originalLogId) {
     if (parentLog.detailType2 && parentLog.detailType2 !== '-' && !detailStr.includes(parentLog.detailType2)) {
         detailStr += ` > ${parentLog.detailType2}`;
     }
-    const parentDt3 = parentLog.detailType3 || parentLog.detail_type3 || '';
-    if (parentDt3 && parentDt3 !== '-' && !detailStr.includes(parentDt3)) {
-        detailStr += ` > ${parentDt3}`;
-    }
+    // 세부구분 3은 아래 작업 리스트에 표시되므로 경로에는 세부구분 2까지만 표기
     if (detailStr) {
         pathText += ` > ${detailStr}`;
     }

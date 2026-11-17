@@ -751,6 +751,8 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
             memoRow.style.flexDirection = 'column';
             memoRow.style.alignItems = 'stretch';
             memoRow.style.gap = '0'; // [추가] 세로 배치 시 불필요한 gap 제거
+            // Tracking 버튼 줄 위(메모창)·아래(하단 버튼) 간격을 10px 로 동일하게 (아래는 .modal-btn-group margin-top 10px)
+            memoRow.style.marginBottom = '0';
             const memoLabel = memoRow.querySelector('.modal-label') || memoRow.querySelector('.detail-label');
             if (memoLabel) {
                 memoLabel.style.setProperty('flex', 'none', 'important');
@@ -766,7 +768,7 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
     if (!issueShareWrapper && memoInput) {
         issueShareWrapper = document.createElement('div');
         issueShareWrapper.id = 'detail-issue-share-wrapper';
-        issueShareWrapper.style.marginTop = '5px';
+        issueShareWrapper.style.marginTop = '10px';
         issueShareWrapper.style.display = 'flex';
         issueShareWrapper.style.alignItems = 'center';
         const templateContent = getTemplateContent('detail-issue-share-template');
@@ -1104,7 +1106,20 @@ function openEventDetailModal(site, equip, id, isCompleted, options = {}) {
         }
         const cbLabel = issueShareCb.closest('label') || issueShareCb;
         const isLogItem = Array.isArray(data.logs) && data.logs.includes(item);
-        if (isLogItem && typeof window.renderTrackingActions === 'function') {
+        // 미완료 추가작업은 원 작업의 Tracking 을 그대로 따름 (별도 체크 불가, 원 작업 기준 관리 버튼 표시)
+        const parentLogForExtra = (!isLogItem && item.originalLogId && Array.isArray(data.logs))
+            ? data.logs.find(l => String(l.id) === String(item.originalLogId)) : null;
+        if (parentLogForExtra) {
+            issueShareCb.checked = !!parentLogForExtra.isIssueShared;
+            item.isIssueShared = !!parentLogForExtra.isIssueShared;
+        }
+        if (parentLogForExtra) {
+            // 완료 전 추가작업: 체크박스·관리 버튼 모두 숨김 (완료 후 로그가 되면 관리 버튼 표시)
+            cbLabel.style.display = 'none';
+            trackingBox.style.display = 'none';
+            trackingBox.innerHTML = '';
+            trackingBox.dataset.token = ''; // 이전 작업의 비동기 렌더가 버튼을 다시 채우지 않도록
+        } else if (isLogItem && typeof window.renderTrackingActions === 'function') {
             cbLabel.style.display = 'none';
             trackingBox.style.display = 'flex';
             window.renderTrackingActions('detail-tracking-actions', site, equip, String(item.originalLogId || item.id), {
