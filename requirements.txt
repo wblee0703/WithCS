@@ -1,12 +1,13 @@
-cryptography==46.0.6
-Flask==3.1.2
+cryptography==50.0.2
+Flask==3.1.3
 Flask-Limiter==4.1.1
 Flask-SQLAlchemy==3.1.1
 Flask-WTF==1.2.2
 PyMySQL==1.1.2
-python-dotenv==1.2.1
+python-dotenv==1.2.2; python_version >= "3.10"
+python-dotenv==1.2.1; python_version < "3.10"  # 1.2.2+ 는 3.10 필요 (취약 기능 set_key 미사용)
 SQLAlchemy==2.0.48
 waitress==3.0.2
-Werkzeug==3.1.5
+Werkzeug==3.1.9
 imageio-ffmpeg>=0.4.9
 boto3>=1.34
