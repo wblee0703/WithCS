@@ -20,6 +20,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import secrets
+import hashlib
 import uuid
 import urllib.parse
 import unicodedata
@@ -1296,6 +1297,39 @@ def handle_bad_request(e):
 def ratelimit_handler(e):
     return jsonify({"status": "fail", "message": "요청이 너무 많습니다. 잠시 후 다시 시도해주세요."}), 429
 
+# [보안] 세션-계정 연결 표식: 비밀번호 해시가 바뀌면(변경·초기화) 기존 로그인 쿠키가 모두 무효가 됨
+def pw_stamp(user):
+    return hashlib.sha256((user.pw or '').encode('utf-8')).hexdigest()[:16]
+
+# [보안] 매 요청마다 로그인 계정을 DB 에서 다시 확인
+#  - 삭제된 계정 → 즉시 로그아웃 (퇴사자 쿠키 재사용 차단)
+#  - 비밀번호 변경·초기화 → 다른 곳에 남아 있던 로그인 모두 무효
+#  - 권한·사업장 변경 → 다음 요청부터 바로 반영
+@app.before_request
+def verify_session_user():
+    if request.endpoint == 'static' or 'user_id' not in session:
+        return None
+    try:
+        user = db.session.get(User, session['user_id'])
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"[Session] 계정 확인 실패: {e}")
+        return None
+    if user is None:
+        session.clear()
+        return None
+    stamp = pw_stamp(user)
+    if 'pwv' not in session:
+        session['pwv'] = stamp   # 이번 변경 전에 로그인한 세션 (한 번만 등록)
+    elif session['pwv'] != stamp:
+        session.clear()
+        return None
+    if session.get('role') != user.role:
+        session['role'] = user.role
+    if session.get('site') != user.site:
+        session['site'] = user.site
+    return None
+
 # [추가] 로그인 인증 데코레이터
 def login_required(f):
     @wraps(f)
@@ -2535,11 +2569,11 @@ def login():
     # 2. 비밀번호 검증
     try:
         is_valid = check_password_hash(user.pw, user_pw)
-    except AttributeError:
-        fallback_pw = os.environ.get('APP_ADMIN_PW', 'admin') if user.id in ['admin', os.environ.get('APP_ADMIN_ID', 'admin')] else (os.environ.get('APP_USER_PW', 'user') if user.id in ['user', os.environ.get('APP_USER_ID', 'user')] else 'withtech123!')
-        user.pw = generate_password_hash(fallback_pw, method='pbkdf2:sha256:50000')
-        db.session.commit()
-        return jsonify({"status": "fail", "message": "보안 시스템 업데이트로 비밀번호가 안전하게 초기화되었습니다.\n최초 발급받은 초기 비밀번호로 다시 로그인해주세요."}), 401
+    except (AttributeError, TypeError, ValueError):
+        # [보안] 비밀번호 정보가 손상된 계정은 알려진 기본 비밀번호로 초기화하지 않고 로그인만 막음
+        #        (최종 관리자가 계정 관리 화면에서 새 비밀번호를 지정해야 사용 가능)
+        app.logger.warning(f"[Login] 비밀번호 정보 손상 계정 로그인 시도: {user.id}")
+        return jsonify({"status": "fail", "message": "계정의 비밀번호 정보에 문제가 있습니다.\n관리자에게 비밀번호 초기화를 요청해주세요."}), 401
 
     if is_valid:
         # 성공: 실패 횟수 초기화 및 세션 설정
@@ -2557,7 +2591,8 @@ def login():
         session['user_id'] = user.id
         session['role'] = user.role
         session['site'] = user.site # [추가]
-        
+        session['pwv'] = pw_stamp(user)  # [보안] 비밀번호 변경 시 이 로그인 무효화용
+
         # [추가] 새 세션에 대한 유효한 CSRF 토큰 발급 및 응답 전달
         new_csrf = generate_csrf()
         resp = jsonify({
@@ -2745,26 +2780,31 @@ def add_user():
 @app.route('/api/user/password', methods=['POST'])
 @login_required
 def change_password():
-    data = request.json
-    user_id = data.get('id')
-    current_pw = data.get('current_pw')
-    new_pw = data.get('new_pw')
-    
-    user = User.query.filter_by(id=user_id).first()
+    data = request.json or {}
+    current_pw = data.get('current_pw') or ''
+    new_pw = data.get('new_pw') or ''
+
+    # [보안] 요청에 담긴 아이디가 아니라 로그인한 본인 계정만 변경 (다른 계정 비밀번호 대입 차단)
+    if data.get('id') and data.get('id') != session.get('user_id'):
+        return jsonify({"status": "fail", "message": "본인 계정의 비밀번호만 변경할 수 있습니다."}), 403
+    user = db.session.get(User, session.get('user_id'))
 
     if not user:
         return jsonify({"status": "fail", "message": "계정을 찾을 수 없습니다."}), 404
+    if not new_pw:
+        return jsonify({"status": "fail", "message": "새 비밀번호를 입력해주세요."}), 400
     try:
         is_valid = check_password_hash(user.pw, current_pw)
-    except AttributeError:
+    except (AttributeError, TypeError, ValueError):
         is_valid = False
-        
+
     if not is_valid:
         return jsonify({"status": "fail", "message": "현재 비밀번호가 일치하지 않습니다."}), 401
 
     user.pw = generate_password_hash(new_pw, method='pbkdf2:sha256:50000')
     user.pw_changed_at = get_utc_now() # [추가] 비밀번호 변경일 갱신
     db.session.commit()
+    session['pwv'] = pw_stamp(user)   # 지금 이 로그인은 유지, 다른 곳의 로그인은 무효
 
     return jsonify({"status": "success"})
 
@@ -2773,9 +2813,9 @@ def change_password():
 @login_required
 def keep_current_password():
     data = request.json or {}
-    user_id = data.get('id') or session.get('user_id')
-    if not user_id:
-        return jsonify({"status": "fail", "message": "로그인이 필요합니다."}), 401
+    user_id = session.get('user_id')   # [보안] 본인 계정만 연장
+    if data.get('id') and data.get('id') != user_id:
+        return jsonify({"status": "fail", "message": "본인 계정만 연장할 수 있습니다."}), 403
 
     user = User.query.filter_by(id=user_id).first()
     if not user:
@@ -2887,6 +2927,8 @@ def admin_update_any_user():
         user.pw_changed_at = get_utc_now()
 
     db.session.commit()
+    if user.id == session.get('user_id'):
+        session['pwv'] = pw_stamp(user)   # 본인 비밀번호를 바꾼 경우 지금 로그인은 유지
     return jsonify({"status": "success"})
 
 # [추가] DB 기반 로그 API
