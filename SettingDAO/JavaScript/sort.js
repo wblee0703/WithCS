@@ -2323,10 +2323,11 @@ function renderSortChart(results) {
     const monthlyTypeContainer = document.getElementById('sort-monthly-type-chart-container');
     const monthlyTypeYAxis = document.getElementById('sort-monthly-type-y-axis');
     const monthlyTypeLegend = document.getElementById('sort-monthly-type-legend');
+    const monthlySiteFilterEl = document.getElementById('sort-monthly-site-filter');
 
     if (!container) return;
 
-    [monthlyTypeContainer, monthlyTypeYAxis, monthlyTypeLegend]
+    [monthlyTypeContainer, monthlyTypeYAxis, monthlyTypeLegend, monthlySiteFilterEl]
         .forEach(el => { if (el) el.innerHTML = ''; });
 
     const itemDetailTypeFilters = getMultiValues('sort-item-detail-type-select');
@@ -2390,6 +2391,18 @@ function renderSortChart(results) {
     const equipModelData = {};
     // [추가] 월별 통계: { 'YYYY-MM': { 사업장: { 항목: 건수 } } }
     const monthlyTypeData = {};
+    const siteGroupCache = {}; // [추가] 사업장 → 사업장 구분 (월별 통계 사업장 구분 필터용)
+    const getRowSiteGroup = (site) => {
+        if (!(site in siteGroupCache)) {
+            let g = '기타사업장';
+            try {
+                const meta = JSON.parse(localStorage.getItem(`site_meta_${site}`));
+                if (meta && meta.group) g = meta.group;
+            } catch (e) { }
+            siteGroupCache[site] = g;
+        }
+        return siteGroupCache[site];
+    };
     const monthlyDetailRows = []; // [추가] 월별 세부구분 그래프용 { month, site, type, d1, d2, d3 }
     const addMonthly = (obj, month, site, key) => {
         if (!month || !site || !key) return;
@@ -3200,6 +3213,8 @@ function renderSortChart(results) {
             return '기타사업장';
         };
         const isMatchSite = (site) => {
+            // [추가] 월별 통계 사업장 구분 필터 (월별 작업 구분 현황 위 버튼)
+            if (window.sortMonthlySiteGroup && getSiteGroupName(site) !== window.sortMonthlySiteGroup) return false;
             const filter = window.chartSelectedSiteFilter;
             if (!filter) return true;
             if (filter === site) return true;
@@ -3414,11 +3429,42 @@ function renderSortChart(results) {
     };
     hideDetailFrom(1); // 새 검색 시 닫힘
 
-    drawMonthlyChart(monthlyTypeData, monthRange,
+    const monthlyTypeRender = drawMonthlyChart(monthlyTypeData, monthRange,
         ['정기', '비정기', '고객대응', '용액제조', '온라인점검'],
         { '정기': '#238636', '비정기': '#eb371f', '고객대응': '#d29922', '용액제조': '#8957e5', '온라인점검': '#0078d4' },
         '작업', monthlyTypeContainer, monthlyTypeYAxis, monthlyTypeLegend,
         { onSeriesSelect: (t) => { hideDetailFrom(1); if (t) showDetailLevel(1, { type: t }); } });
+
+    // [추가] 월별 통계 사업장 구분 필터 버튼 (전체 / SEC / SKH 이천 …) - 검색 결과에 있는 구분만 표시, 선택은 다시 검색해도 유지
+    const renderMonthlySiteFilter = () => {
+        if (!monthlySiteFilterEl) return;
+        const groupOrder = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '기타'];
+        const present = new Set();
+        Object.values(monthlyTypeData).forEach(siteObj => Object.keys(siteObj).forEach(site => present.add(getRowSiteGroup(site))));
+        const groups = groupOrder.filter(g => present.has(g));
+        Array.from(present).sort().forEach(g => { if (!groups.includes(g)) groups.push(g); });
+        if (window.sortMonthlySiteGroup && !present.has(window.sortMonthlySiteGroup)) window.sortMonthlySiteGroup = null;
+
+        monthlySiteFilterEl.innerHTML = '<span class="sort-monthly-site-filter-label">사업장 구분</span>';
+        [null, ...groups].forEach(g => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'sort-monthly-site-chip' + ((window.sortMonthlySiteGroup || null) === g ? ' active' : '');
+            btn.textContent = g || '전체';
+            btn.onclick = () => {
+                if ((window.sortMonthlySiteGroup || null) === g) return;
+                window.sortMonthlySiteGroup = g;
+                renderMonthlySiteFilter();
+                if (monthlyTypeRender) monthlyTypeRender();
+                detailLevels.forEach(lv => { if (lv.render) lv.render(); });
+            };
+            monthlySiteFilterEl.appendChild(btn);
+        });
+    };
+    const prevMonthlySiteGroup = window.sortMonthlySiteGroup || null;
+    renderMonthlySiteFilter();
+    // 이전 검색에서 고른 구분이 이번 결과에 없어 전체로 바뀌었으면 다시 그림
+    if (prevMonthlySiteGroup && !window.sortMonthlySiteGroup && monthlyTypeRender) monthlyTypeRender();
 
     // [추가] 장비 모델 세부구분(1 -> 2 -> 3) 순차 드릴다운 연동 차트 구현
     let isDrilldownGrouped = true; // [요청] 초기에는 사업장 구분별로 그룹화 표시

@@ -2,7 +2,7 @@
 {% set active_page = 'sort' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/sort.css') }}?v=15">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/sort.css') }}?v=17">
 {% endblock %}
 
 {% block content %}
@@ -379,6 +379,8 @@
 
                 <!-- ===== 월별 통계 (기간 설정의 시작 월 ~ 끝 월) ===== -->
                 <div class="sort-stat-group" data-group="monthly">
+                <!-- [추가] 월별 통계 사업장 구분 필터 (월별 작업 구분 현황 + 세부구분 그래프에 적용) -->
+                <div id="sort-monthly-site-filter" class="sort-monthly-site-filter"></div>
                 <div class="sort-full-chart"
                     style="display: flex; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0;">
                     <div
@@ -683,5 +685,5 @@
 <!-- Chart.js 라이브러리 (리포트 차트 렌더링용) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<script src="{{ url_for('SettingDAO', filename='JavaScript/sort.js') }}?v=1.1.9"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/sort.js') }}?v=1.2.1"></script>
 {% endblock %}

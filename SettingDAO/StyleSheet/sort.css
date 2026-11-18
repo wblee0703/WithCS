@@ -1306,3 +1306,45 @@
     border-color: #1f6feb;
     color: #fff;
 }
+
+/* [추가] 월별 통계 사업장 구분 필터 버튼 (월별 작업 구분 현황 위) */
+.sort-monthly-site-filter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 10px 2px;
+}
+
+.sort-monthly-site-filter:empty {
+    display: none;
+}
+
+.sort-monthly-site-filter-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #8b949e;
+    margin-right: 4px;
+}
+
+.sort-monthly-site-chip {
+    padding: 3px 10px;
+    font-size: 12px;
+    border-radius: 12px;
+    border: 1px solid #30363d;
+    background: transparent;
+    color: #8b949e;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.sort-monthly-site-chip:hover {
+    color: #c9d1d9;
+    border-color: #8b949e;
+}
+
+.sort-monthly-site-chip.active {
+    background: #1f6feb;
+    border-color: #1f6feb;
+    color: #fff;
+}
