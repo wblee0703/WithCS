@@ -1971,14 +1971,9 @@ function setupSidebarEvents() {
                 // [추가] 셋업(SETUP) 데이터 템플릿 적용 및 동기화
                 const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
                 const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-                let templateToUse = templates[equipVal] || templates['default'] || [
-                    { category: "장비 반입 및 정위치", content: "장비 도면 부착", estDays: "1" },
-                    { category: "통신 상태 및 유틸리티", content: "Utility 배관 공사 및 연결", estDays: "5" },
-                    { category: "셋업 평가", content: "분석부 안정화 및 오염제어", estDays: "5" },
-                    { category: "셋업 완료", content: "셋업 완료", estDays: "0" }
-                ];
+                let templateToUse = templates[equipVal] || templates['default'] || window.getDefaultSetupTemplate();
                 const initialSetupDetails = templateToUse.map((item, idx) => ({
-                    id: Date.now() + idx, category: item.category, content: item.content,
+                    id: Date.now() + idx, category: window.mapSetupCategory(item.category, item.subcategory, item.content), subcategory: item.subcategory || '', content: item.content,
                     startDate: "", date: "", estDays: item.estDays || "1",
                     completed: false, execStartDate: "", delayReason: ""
                 }));
@@ -2233,7 +2228,8 @@ function restoreLastState() {
                         if (window.restoreEquipInterval) clearInterval(window.restoreEquipInterval);
                         window.restoreEquipInterval = setInterval(() => {
                             const safeId = equipToSelect.replace(/"/g, '\\"');
-                            const targetEquipLi = document.querySelector(`#equip-list li[data-id="${safeId}"]`);
+                            const targetEquipLi = document.querySelector(`#equip-list li[data-id="${safeId}"]`)
+                                || Array.from(document.querySelectorAll('#equip-list li')).find(li => (li.dataset.members || '').split('\n').includes(equipToSelect));
                             if (targetEquipLi || equipRetries > 20) {
                                 clearInterval(window.restoreEquipInterval);
                                 if (targetEquipLi) targetEquipLi.click();
@@ -3379,7 +3375,16 @@ function renderSites() {
     if (!list) return;
     list.innerHTML = '';
 
-    Object.keys(storageData).forEach(name => {
+    let siteNames = Object.keys(storageData);
+    if (window.location.pathname.indexOf('setup') !== -1) {
+        const setupDataAll = JSON.parse(localStorage.getItem('setup_data')) || {};
+        const hasSetup = (site) => (storageData[site] || []).some(e => isSetupInProgressEquip(site, e, setupDataAll));
+        siteNames = siteNames.map((n, i) => ({ n, i, setup: hasSetup(n) }))
+            .sort((a, b) => (b.setup - a.setup) || (a.i - b.i))
+            .map(x => x.n);
+    }
+
+    siteNames.forEach(name => {
         const li = createListItem(name, name, 'site', (selectedSite) => {
             // [추가] 장비를 선택하지 않고 사업장만 클릭했을 때도 마지막 경로로 저장되도록 로직 추가
             let lastStateKey = 'lastSelectedPath';
@@ -3409,12 +3414,20 @@ function renderSites() {
 
     const countEl = document.getElementById('site-count');
     if (countEl) countEl.textContent = Object.keys(storageData).length;
+
+    refreshSetupSiteBadges(); // WORKS Setup 에서만 동작
 }
 
 function renderEquips(siteName) {
     const list = document.getElementById('equip-list');
     if (!list) return;
     list.innerHTML = '';
+
+    // [추가] WORKS Setup 은 프로젝트 단위 목록 (장비 모델 + 프로젝트 번호)
+    if (window.location.pathname.indexOf('setup') !== -1 && typeof window.getSetupProjects === 'function') {
+        renderSetupProjects(siteName, list);
+        return;
+    }
 
     // [추가] 장비 모델 약어 매핑을 위해 데이터 로드
     let equipmentModels = [];
@@ -3468,6 +3481,142 @@ function renderEquips(siteName) {
     if (countEl) {
         countEl.textContent = storageData[siteName] ? storageData[siteName].length : 0;
     }
+}
+
+// [추가] 셋업 진행 중 장비 여부 (HOME 셋업 관리와 같은 기준: ADMIN 장비 구분이 셋업 장비이고 '셋업 완료'가 아직 안 된 장비)
+function isSetupInProgressEquip(site, equip, setupData) {
+    try {
+        const d = JSON.parse(localStorage.getItem(`details_${site}_${equip}`)) || {};
+        if (!String((d.setup && d.setup.equipStatus) || '').includes('셋업')) return false;
+        const sd = (setupData || JSON.parse(localStorage.getItem('setup_data')) || {})[`${site}::${equip}`] || {};
+        const done = (sd.setupDetails || []).find(t => t.content === '셋업 완료');
+        return !(done && done.completed);
+    } catch (e) { return false; }
+}
+
+// [추가] WORKS Setup 중분류: 프로젝트 목록
+//  - 같은 프로젝트 번호 장비를 한 줄로 묶고 장비 모델과 프로젝트 번호 표시 (번호 없는 장비는 1대씩)
+//  - 클릭하면 프로젝트 대표 장비(첫 번째 장비)로 선택되고, 화면은 프로젝트 장비 전체 기록을 보여줌
+function renderSetupProjects(siteName, list) {
+    const setupDataAll = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const ctx = getSetupSidebarContext(setupDataAll);
+    const projects = window.getSetupProjects(siteName)
+        .map((p, i) => ({ p, i, state: getSetupProjectState(siteName, p, ctx) }))
+        // 셋업 진행 중 → (나머지) 순서, 같은 그룹 안에서는 원래 순서
+        .sort((a, b) => ((b.state.inSetup ? 1 : 0) - (a.state.inSetup ? 1 : 0)) || (a.i - b.i));
+
+    projects.forEach(({ p, state }) => {
+        const rep = p.equips[0];
+        const li = createListItem(rep, p.projectNo || state.modelText, 'equip', (selectedEquip) => {
+            onEquipClick(siteName, selectedEquip);
+        }, p.projectNo ? state.modelText : '');
+        li.draggable = false; // 프로젝트 목록은 순서 변경 대상이 아님
+        li.classList.add('setup-project-item');
+        li.dataset.members = p.equips.join('\n');
+        li.dataset.fullModelName = p.equips.map(e => e.split('::')[0]).join(' ');
+        li.dataset.custName = state.custNames.join(' ') + ' ' + p.equips.join(' ');
+        fillSetupProjectItem(li, p, state);
+        list.appendChild(li);
+    });
+
+    const searchInput = document.getElementById('equip-search');
+    if (searchInput && searchInput.value) filterList('equip-list', searchInput.value);
+    const countEl = document.getElementById('equip-count');
+    if (countEl) countEl.textContent = projects.length;
+}
+
+// 사이드바 계산에 공통으로 쓰는 데이터 (한 번만 읽음)
+function getSetupSidebarContext(setupDataAll) {
+    let equipmentModels = [];
+    try { equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || []; } catch (e) { }
+    let templates = {};
+    try { templates = JSON.parse(localStorage.getItem('setup_templates')) || {}; } catch (e) { }
+    const templateList = (Array.isArray(templates['default']) && templates['default'].length)
+        ? templates['default'] : (typeof window.getDefaultSetupTemplate === 'function' ? window.getDefaultSetupTemplate() : []);
+    return { setupDataAll, equipmentModels, templateList };
+}
+
+// 프로젝트 상태: 셋업 중 / 셋업 완료 / 그 외, 진행률(%)
+function getSetupProjectState(siteName, p, ctx) {
+    const modelLabel = (equip) => {
+        const name = String(equip).split('::')[0];
+        const m = ctx.equipmentModels.find(x => x.name === name || x.abbr === name);
+        return (m && m.abbr) ? m.abbr : name;
+    };
+    const models = [...new Set(p.equips.map(modelLabel))];
+    const custNames = p.equips.map(e => {
+        try { return ((JSON.parse(localStorage.getItem(`details_${siteName}_${e}`)) || {}).setup || {}).custEquipName || ''; } catch (err) { return ''; }
+    }).filter(Boolean);
+    const inSetup = p.equips.some(e => isSetupInProgressEquip(siteName, e, ctx.setupDataAll));
+    const isDone = !inSetup && p.equips.some(e => {
+        const sd = ctx.setupDataAll[`${siteName}::${e}`] || {};
+        const done = (sd.setupDetails || []).find(t => t.content === '셋업 완료');
+        return !!(done && done.completed);
+    });
+    let percent = null;
+    if (inSetup && typeof window.computeSetupProgress === 'function') {
+        const data = window.getSetupProjectData(siteName, p.equips[0], ctx.setupDataAll);
+        percent = Math.round(window.computeSetupProgress(data, ctx.templateList).overall);
+    }
+    return {
+        modelText: models.join(', ') + (p.equips.length > 1 ? ` · ${p.equips.length}대` : ''),
+        custNames, inSetup, isDone, percent
+    };
+}
+
+// 카드 내용: 1줄 프로젝트 번호 + 상태 배지 / 2줄 모델·대수 / 3줄 진행률 (셋업 중일 때)
+function fillSetupProjectItem(li, p, state) {
+    const title = p.projectNo || state.modelText;
+    const sub = p.projectNo ? state.modelText : '';
+    const badge = state.inSetup ? '<span class="sp-badge sp-badge--ing">셋업 중</span>'
+        : state.isDone ? '<span class="sp-badge sp-badge--done">완료</span>' : '';
+    const pct = state.percent;
+    const progress = (pct === null) ? '' : `
+        <div class="sp-progress" title="셋업 진행률 ${pct}%">
+            <div class="sp-progress__bar"><div style="width:${pct}%;"></div></div>
+            <span class="sp-progress__value">${pct}%</span>
+        </div>`;
+    li.innerHTML = `
+        <div class="item-wrapper sp-wrap">
+            <div class="sp-top">
+                <span class="item-text" title="${escapeHtml(title)}">${escapeHtml(title)}</span>${badge}
+            </div>
+            ${sub ? `<span class="item-subtext">${escapeHtml(sub)}</span>` : ''}
+            ${progress}
+        </div>`;
+}
+
+// 일지 저장·삭제 후 선택된 프로젝트 카드의 진행률·상태만 다시 그림
+window.refreshSetupProjectItem = function (site, equip) {
+    if (window.location.pathname.indexOf('setup') === -1) return;
+    const li = Array.from(document.querySelectorAll('#equip-list li.setup-project-item'))
+        .find(x => x.dataset.id === equip || (x.dataset.members || '').split('\n').includes(equip));
+    if (!li || typeof window.getSetupProjects !== 'function') return;
+    const p = window.getSetupProjects(site).find(g => g.equips[0] === li.dataset.id);
+    if (!p) return;
+    const ctx = getSetupSidebarContext(JSON.parse(localStorage.getItem('setup_data')) || {});
+    fillSetupProjectItem(li, p, getSetupProjectState(site, p, ctx));
+    refreshSetupSiteBadges();
+};
+
+// 사업장 옆 '셋업 N' 배지 (셋업 중인 프로젝트 수)
+function refreshSetupSiteBadges() {
+    if (window.location.pathname.indexOf('setup') === -1 || typeof window.getSetupProjects !== 'function') return;
+    const setupDataAll = JSON.parse(localStorage.getItem('setup_data')) || {};
+    document.querySelectorAll('#site-list li').forEach(li => {
+        const site = li.dataset.id;
+        const n = window.getSetupProjects(site)
+            .filter(p => p.equips.some(e => isSetupInProgressEquip(site, e, setupDataAll))).length;
+        let badge = li.querySelector('.sp-site-badge');
+        if (!n) { if (badge) badge.remove(); return; }
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'sp-site-badge';
+            li.appendChild(badge);
+        }
+        badge.textContent = `셋업 ${n}`;
+        badge.title = `셋업 진행 중인 프로젝트 ${n}개`;
+    });
 }
 
 function createListItem(id, text, type, onSelect, subText = '') {
@@ -5814,6 +5963,13 @@ window.openAllUsersModal = function () {
 
             if (!name || !dept || !pos) return alert('이름, 소속, 직급을 입력해주세요.');
 
+            const prevRole = document.getElementById('edit-all-role').dataset.original || '';
+            if (role === 'retired' && prevRole !== 'retired') {
+                if (!confirm(`'${name}(${targetId})' 계정을 퇴사 처리하시겠습니까?\n\n- 즉시 로그아웃되고 더 이상 로그인할 수 없습니다.\n- 작업자 선택 목록에서 빠집니다.\n- 지금까지의 작업 기록은 그대로 유지됩니다.\n- 재입사 시 권한을 다시 바꾸면 복구됩니다.`)) return;
+            } else if (prevRole === 'retired' && role !== 'retired') {
+                if (!confirm(`'${name}(${targetId})' 계정을 재입사(복구) 처리하시겠습니까?\n\n기존 비밀번호로 다시 로그인할 수 있게 됩니다.\n필요하면 비밀번호도 초기화해 주세요.`)) return;
+            }
+
             const payload = { id: targetId, name, department: dept, position: pos, role, site };
 
             try {
@@ -5825,8 +5981,12 @@ window.openAllUsersModal = function () {
                 const data = await res.json();
                 if (data.status === 'success') {
                     alert('계정 정보가 성공적으로 수정되었습니다.');
+                    document.getElementById('edit-all-role').dataset.original = role;
                     window.loadAllUsersList();
-                    if (typeof addSystemLog === 'function') addSystemLog('UPDATE_USER', targetId, '최종 관리자에 의한 계정 수정');
+                    let logMsg = '최종 관리자에 의한 계정 수정';
+                    if (role === 'retired' && prevRole !== 'retired') logMsg = '최종 관리자에 의한 퇴사 처리';
+                    else if (prevRole === 'retired' && role !== 'retired') logMsg = '최종 관리자에 의한 재입사(계정 복구) 처리';
+                    if (typeof addSystemLog === 'function') addSystemLog('UPDATE_USER', targetId, logMsg);
                 } else {
                     alert(data.message || '수정 실패');
                 }
@@ -5935,13 +6095,18 @@ window.loadAllUsersList = function () {
             if (data.status === 'success') {
                 const list = document.getElementById('all-users-list');
                 list.innerHTML = '';
-                data.users.forEach(u => {
+                // 재직자 먼저, 퇴사자는 맨 아래 (각 그룹 안에서는 서버 정렬(이름순) 유지)
+                const users = data.users.filter(u => u.role !== 'retired').concat(data.users.filter(u => u.role === 'retired'));
+                users.forEach(u => {
                     const li = document.createElement('li');
-                    li.dataset.search = `${u.id} ${u.name} ${u.department} ${u.position} ${u.role}`;
+                    const isRetired = u.role === 'retired';
+                    li.dataset.search = `${u.id} ${u.name} ${u.department} ${u.position} ${u.role}${isRetired ? ' 퇴사' : ''}`;
+                    if (isRetired) li.style.opacity = '0.55';
 
                     let roleBadge = '';
                     if (u.role === 'superadmin') roleBadge = '<span class="badge" style="background: #f85149; font-size: 12px; padding: 4px 8px;">최종 관리자</span>';
                     else if (u.role === 'admin') roleBadge = '<span class="badge" style="background: #d29922; font-size: 12px; padding: 4px 8px;">관리자</span>';
+                    else if (isRetired) roleBadge = '<span class="badge" style="background: transparent; border: 1px solid #6e7681; color: #8b949e; font-size: 12px; padding: 3px 7px;">퇴사</span>';
                     else roleBadge = '<span class="badge" style="background: #30363d; font-size: 12px; padding: 4px 8px;">일반</span>';
 
                     li.innerHTML = `
@@ -5964,7 +6129,9 @@ window.loadAllUsersList = function () {
                         document.getElementById('edit-all-name').value = u.name || '';
                         document.getElementById('edit-all-dept').value = u.department || '';
                         document.getElementById('edit-all-pos').value = u.position || '';
-                        document.getElementById('edit-all-role').value = u.role || 'user';
+                        const roleSel = document.getElementById('edit-all-role');
+                        roleSel.value = u.role || 'user';
+                        roleSel.dataset.original = roleSel.value;   // 퇴사·복구 확인 문구용
                         document.getElementById('edit-all-site').value = u.site || '';
                     };
                     list.appendChild(li);

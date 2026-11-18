@@ -545,6 +545,76 @@ select.modal-select option,
     margin-bottom: 10px !important;
 }
 
+/* [추가] 세부 선택항목 (복수 선택 체크 칩) */
+/*  한 줄에 4개씩 (다른 label 공통 스타일에 덮이지 않도록 !important) */
+#setup-log-register-modal .setup-log-options {
+    flex: 1 !important;
+    min-width: 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+}
+
+#setup-log-register-modal .setup-log-option-chip {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: auto !important;
+    min-width: 0 !important;
+    height: 28px;
+    margin: 0 !important;
+    box-sizing: border-box;
+}
+
+/* 공통 .form-row input { flex:1; min-width:120px } 이 체크박스에 걸려 글자가 밀려나는 것 방지 */
+#setup-log-register-modal .setup-log-option-chip input[type="checkbox"] {
+    flex: 0 0 auto !important;
+    width: 14px !important;
+    min-width: 14px !important;
+    height: 14px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    accent-color: #1f6feb;
+}
+
+#setup-log-register-modal .setup-log-option-chip span {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.setup-log-option-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border: 1px solid #30363d;
+    border-radius: 12px;
+    background: #0d1117;
+    color: #c9d1d9;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.setup-log-option-chip input {
+    margin: 0;
+    cursor: pointer;
+}
+
+.setup-log-option-chip.checked {
+    border-color: #1f6feb;
+    background: rgba(31, 111, 235, 0.15);
+    color: #58a6ff;
+}
+
+.setup-log-subopt {
+    color: #58a6ff;
+    font-size: 11px;
+}
+
 .setup-log-form-row.center {
     justify-content: center;
 }
@@ -911,3 +981,59 @@ select.modal-select option,
         width: 50px !important;
     }
 }
+/* ==========================================================================
+   셋업 진행률 (HOME 셋업 관리 · WORKS Setup 공용)
+   ========================================================================== */
+.setup-progress { flex-direction: column; gap: 10px; padding: 10px 4px; box-sizing: border-box; overflow-y: auto; }
+.setup-progress__overall { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid #30363d; border-radius: 6px; background: #161b22; }
+.setup-progress__overall-label { flex-shrink: 0; font-size: 13px; font-weight: 600; color: #e6edf3; }
+.setup-progress__overall-label span { font-size: 11px; font-weight: 400; color: #8b949e; margin-left: 4px; }
+.setup-progress__overall-value { flex-shrink: 0; width: 52px; text-align: right; font-size: 18px; font-weight: 700; }
+.setup-progress__bar { flex: 1; height: 10px; border-radius: 5px; background: #21262d; overflow: hidden; min-width: 80px; }
+.setup-progress__bar--lg { height: 14px; border-radius: 7px; }
+.setup-progress__bar > div { height: 100%; border-radius: inherit; transition: width .3s; }
+.setup-progress__list { display: flex; flex-direction: column; }
+.setup-progress__row { display: grid; grid-template-columns: 190px minmax(80px, 1fr) 90px; grid-template-areas: "stage bar value" "subs subs subs"; align-items: center; column-gap: 10px; row-gap: 6px; padding: 8px 12px; border-bottom: 1px solid #21262d; }
+.setup-progress__stage { grid-area: stage; font-size: 12px; font-weight: 600; color: #e6edf3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.setup-progress__row > .setup-progress__bar { grid-area: bar; }
+.setup-progress__value { grid-area: value; text-align: right; font-size: 11px; color: #8b949e; }
+.setup-progress__value strong { margin-left: 4px; font-size: 12px; }
+.setup-progress__subs { grid-area: subs; display: flex; flex-wrap: wrap; gap: 5px; }
+.setup-progress__sub { font-size: 11px; padding: 2px 8px; border: 1px solid; border-radius: 10px; cursor: pointer; white-space: nowrap; line-height: 1.5; }
+.setup-progress__sub:hover { filter: brightness(1.3); }
+@media (max-width: 768px) {
+    .setup-progress__row { grid-template-columns: 120px minmax(60px, 1fr) 72px; padding: 8px 6px; }
+    .setup-progress__overall-label span { display: none; }
+}
+
+/* 세부 구분 작업 기록 목록 팝업 */
+.setup-sub-log-window { width: 640px; max-width: 95vw; max-height: 85vh; display: flex; flex-direction: column; }
+.setup-sub-log-window .modal-body { display: flex; flex-direction: column; gap: 10px; min-height: 0; overflow: hidden; }
+.setup-sub-log-status { display: flex; align-items: center; gap: 10px; }
+.setup-sub-log-badge { font-size: 12px; font-weight: 600; padding: 2px 10px; border: 1px solid; border-radius: 10px; }
+.setup-sub-log-table-wrap { flex: 1; min-height: 120px; max-height: 50vh; overflow-y: auto; border: 1px solid #30363d; border-radius: 6px; }
+.setup-sub-log-table { min-width: 0 !important; }
+.setup-sub-log-table th, .setup-sub-log-table td { text-align: center; font-size: 12px; padding: 7px 8px; }
+.setup-sub-log-table tbody tr[data-id]:hover { background: #1c2128; }
+.setup-sub-log-footer { display: flex; gap: 8px; justify-content: flex-end; }
+.setup-sub-log-footer button { padding: 6px 14px; }
+
+/* 불필요 작업 (진행률 제외) */
+.setup-sub-log-exclude {
+    margin-left: auto;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 12px;
+    color: #ffffff;
+    background: #da3633;
+    border: 1px solid #f85149;
+    border-radius: 6px;
+    cursor: pointer;
+}
+.setup-sub-log-exclude:hover { background: #f85149; }
+.setup-sub-log-unexclude { margin-left: auto; }
+.setup-progress__row--excluded .setup-progress__stage { color: #6e7681; text-decoration: line-through; }
+.setup-progress__row--excluded .setup-progress__bar { opacity: 0.4; }
+
+/* 진행률 없는 단계 (사전 작업): 막대 자리 비움 */
+.setup-progress__bar.setup-progress__bar--none { visibility: hidden; }

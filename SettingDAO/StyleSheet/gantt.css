@@ -551,3 +551,7 @@
         }
     }
 }
+
+
+/* 셋업 진행률 (간트뷰 대체) – 공통 스타일은 common_setup.css, 여기서는 HOME 높이만 지정 */
+#gantt-wrapper.setup-progress { height: 446px; }

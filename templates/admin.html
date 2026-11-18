@@ -4,7 +4,7 @@
 {% block title %}Admin - WITH ON{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=31">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/admin.css') }}?v=33">
 {% endblock %}
 
 {% block content %}
@@ -913,20 +913,26 @@
                     <!-- 좌측 카테고리 영역: 셋업 구분 (대분류) 및 세부 구분 (소분류) -->
                     <div class="check-type-categories-wrapper">
                         <!-- 1. 셋업 구분 선택 -->
-                        <div class="admin-col-list col-list-200">
+                        <div class="admin-col-list" style="flex: 0 0 267px; max-width: 267px;">
                             <div class="list-header">
                                 <span>셋업 구분</span>
                             </div>
                             <ul id="setup-template-category-list" class="admin-list">
-                                <li data-category="장비 반입 및 정위치" class="active">장비 반입 및 정위치</li>
-                                <li data-category="통신 상태 및 유틸리티">통신 상태 및 유틸리티</li>
-                                <li data-category="셋업 평가">셋업 평가</li>
-                                <li data-category="셋업 완료">셋업 완료</li>
+                                <li data-category="사전 작업">사전 작업</li>
+                                <li data-category="1단계 - 납품/정위치" class="active">1단계 - 납품/정위치</li>
+                                <li data-category="2단계 - 다이크/지진브라켓">2단계 - 다이크/지진브라켓</li>
+                                <li data-category="3단계 - 전기 턴온">3단계 - 전기 턴온</li>
+                                <li data-category="4단계 - 인터락테스트">4단계 - 인터락테스트</li>
+                                <li data-category="5단계 - 유틸리티 턴온/인증">5단계 - 유틸리티 턴온/인증</li>
+                                <li data-category="6단계 - 설비안정화 및 구동">6단계 - 설비안정화 및 구동</li>
+                                <li data-category="7단계 - 셋업평가">7단계 - 셋업평가</li>
+                                <li data-category="8단계 - 셋업보고서">8단계 - 셋업보고서</li>
+                                <li data-category="9단계 - 종료">9단계 - 종료</li>
                             </ul>
                         </div>
 
                         <!-- 2. 세부 구분 (소분류) 패널 -->
-                        <div class="admin-col-list" id="setup-template-subcategory-panel" style="flex: 0 0 220px; max-width: 220px;">
+                        <div class="admin-col-list" id="setup-template-subcategory-panel" style="flex: 0 0 293px; max-width: 293px;">
                             <div class="list-header">
                                 <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                                     <span>세부 구분</span>
@@ -945,51 +951,38 @@
                             </div>
                             {% endif %}
                         </div>
-                    </div>
 
-                    <!-- 우측: 셋업 세부 항목 관리 (작업 세부 내용 및 소요일수) -->
-                    <div class="admin-col-detail" style="flex: 0 1 700px; max-width: 100%;">
-                        <div class="detail-header">
-                            <div class="flex-between-center mb-5">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <h4 class="m-0" id="setup-template-detail-title">셋업 항목 관리 (전체 공통)</h4>
-                                    <span id="setup-template-total-days" style="font-size: 13px; color: #3fb950; font-weight: bold;"></span>
+                        <!-- 3. [추가] 세부 선택 항목 (셋업 일지 등록 시 체크박스로 복수 선택, 예: EXH·Bulk·UPW·Drain) -->
+                        <div class="admin-col-list" id="setup-template-option-panel" style="flex: 0 0 240px; max-width: 240px;">
+                            <div class="list-header">
+                                <div style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+                                    <span>세부 선택 항목</span>
+                                    {% if session.get('role') in ['admin', 'superadmin'] %}
+                                    <button id="btn-setup-option-settings" class="btn-settings" title="관리 모드 토글">⚙️</button>
+                                    {% endif %}
                                 </div>
-                                {% if session.get('role') in ['admin', 'superadmin'] %}
-                                <div style="display: flex; gap: 5px;">
-                                    <button id="btn-reset-setup-template" class="btn-orange-sm" style="font-size: 12px; padding: 4px 8px;">기본값 초기화</button>
-                                    <button id="btn-save-setup-template" class="btn-blue-sm" style="font-size: 12px; padding: 4px 10px;">템플릿 저장</button>
-                                </div>
-                                {% endif %}
                             </div>
-                            <p class="detail-desc" id="setup-template-detail-desc">셋업 구분을 선택하면 해당 구분의 세부 작업 내용과 소요일수를 공통으로 관리할 수 있습니다.</p>
-                        </div>
-                        <div id="setup-template-detail-container" class="admin-form-container max-w-100" style="display: none;">
-                            <div class="admin-list-header mb-0">
-                                <div class="model-col" style="flex: 1.2; text-align: center;">구분</div>
-                                <div class="model-col" style="flex: 3; text-align: center;">작업 세부 내용</div>
-                                <div class="model-col" style="flex: 1; text-align: center;">소요일수(일)</div>
-                                {% if session.get('role') in ['admin', 'superadmin'] %}
-                                <div class="model-col col-action" style="width: 50px; text-align: center;">기능</div>
-                                {% endif %}
-                            </div>
-                            <ul id="setup-template-item-list" class="admin-list check-type-item-list" style="overflow-y: auto; max-height: 400px;">
-                                <!-- JS 동적 렌더링 -->
+                            <ul id="setup-template-option-list" class="admin-list">
+                                <!-- JS로 렌더링 -->
                             </ul>
-
                             {% if session.get('role') in ['admin', 'superadmin'] %}
-                            <div class="form-group form-section-divider">
-                                <label style="margin-bottom: 5px;">신규 셋업 작업 항목 추가</label>
-                                <div style="display: flex; gap: 6px; align-items: center;">
-                                    <input type="text" id="setup-template-item-content" class="input-dark flex-1" placeholder="작업 세부 내용 입력" autocomplete="off" style="height: 32px;">
-                                    <input type="number" id="setup-template-item-days" class="input-dark" placeholder="일수" min="0" value="1" style="width: 70px; height: 32px; text-align: center;">
-                                    <button id="btn-add-setup-template-item" class="btn-green-sm" style="height: 32px; padding: 0 12px; white-space: nowrap;">추가</button>
-                                </div>
+                            <div class="list-footer" id="setup-template-option-footer" style="display: none;">
+                                <input type="text" id="setup-template-option-input" placeholder="체크 항목 추가" class="input-dark full-width" maxlength="100">
+                                <button id="btn-add-setup-template-option" class="btn-green full-width">추가</button>
                             </div>
                             {% endif %}
                         </div>
-                        <div id="setup-template-detail-placeholder" class="placeholder-container">
-                            <p>좌측에서 셋업 구분을 선택해주세요.</p>
+                    </div>
+
+                    <!-- 우측: 템플릿 저장 / 기본값 초기화 (작업 세부 내용·소요일수 관리는 삭제) -->
+                    <div class="admin-col-detail" style="flex: 0 1 420px; max-width: 100%;">
+                        <div class="detail-header">
+                            <div class="flex-between-center mb-5">
+                                <h4 class="m-0">셋업 구분 관리 (전체 공통)</h4>
+                            </div>
+                            <p class="detail-desc">⚙️ 버튼을 누르면 세부 구분을 추가·이름 수정(✏️)·삭제하고 끌어서(⠿) 순서를 바꿀 수 있으며, 바로 저장되어 모든 화면에 반영됩니다.</p>
+                            <p class="detail-desc">세부 선택 항목은 셋업 일지 등록 시 해당 세부 구분을 고르면 체크박스로 나오는 항목입니다. (1~8단계만, ⚙️ 버튼으로 추가·삭제)</p>
+                            <p id="setup-template-save-status" style="font-size: 12px; margin: 4px 0 0;"></p>
                         </div>
                     </div>
                 </div>
@@ -1000,5 +993,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=43"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/admin.js') }}?v=52"></script>
 {% endblock %}

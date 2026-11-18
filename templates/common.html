@@ -9,9 +9,9 @@
     <title>{% block title %}WITH ON{% endblock %}</title>
 
     <!-- 공통 CSS -->
-    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common.css') }}?v=1.1.5">
+    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common.css') }}?v=1.1.7">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_modals.css') }}?v=1.0.9">
-    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_setup.css') }}">
+    <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_setup.css') }}?v=8">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/chatbot.css') }}?v=1.5.1">
     <link
         href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Noto+Sans+KR:wght@100;300;500;700&display=swap"
@@ -341,6 +341,7 @@
                         <option value="user">일반</option>
                         <option value="admin">관리자</option>
                         <option value="superadmin">최종관리자</option>
+                        <option value="retired">퇴사자 (로그인 불가)</option>
                     </select>
                 </div>
                 <div class="form-row all-users-form-row last-row">
@@ -1094,6 +1095,11 @@
                     </div>
                     <input type="hidden" id="setup-log-reg-task">
                 </div>
+                <!-- [추가] 세부 선택항목 (복수 선택) - 세부 구분에 선택항목이 있을 때만 표시 (예: 5-1 유틸리티 턴온 → EXH·Bulk·UPW·Drain) -->
+                <div class="form-row setup-log-form-row" id="setup-log-reg-options-row" style="display:none;">
+                    <label class="setup-log-label">세부 선택</label>
+                    <div id="setup-log-reg-options" class="setup-log-options"></div>
+                </div>
                 <div class="form-row setup-log-form-row">
                     <label class="setup-log-label">내용</label>
                     <input type="text" id="setup-log-reg-content" class="input-dark setup-log-input" placeholder="내용 입력" autocomplete="off">
@@ -1490,8 +1496,8 @@
     </template>
 
     <script src="{{ url_for('SettingDAO', filename='JavaScript/common_modals.js') }}?v=1.1.6"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.2.2"></script>
-    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}?v=1.0.1"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common.js') }}?v=1.2.8"></script>
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}?v=1.1.7"></script>
     <script src="{{ url_for('SettingDAO', filename='JavaScript/chatbot.js') }}?v=1.5.2"></script>
     <!-- 페이지별 추가 스크립트 -->
     {% block extra_js %}{% endblock %}

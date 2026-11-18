@@ -12,6 +12,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.engine import Engine
 from sqlalchemy import event
 from sqlalchemy import text
+from sqlalchemy import inspect as sa_inspect
+from sqlalchemy import or_
 from flask_wtf.csrf import CSRFProtect, generate_csrf, CSRFError
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -326,7 +328,8 @@ def ensure_setup_columns():
     setup_log_cols = [
         ('category', 'VARCHAR(100)'),
         ('subcategory', 'VARCHAR(100)'),
-        ('special_note', 'TEXT')
+        ('special_note', 'TEXT'),
+        ('sub_options', 'TEXT')
     ]
     for col, typ in setup_log_cols:
         try:
@@ -342,6 +345,15 @@ def ensure_setup_columns():
             db.session.execute(text(f'ALTER TABLE setup_detail ADD COLUMN {col} {typ}'))
         except Exception:
             pass
+
+    # [추가] 불필요 작업 표시 컬럼 (이미 있으면 건너뜀, 실패 시 되돌림)
+    try:
+        cols = [c['name'] for c in sa_inspect(db.engine).get_columns('setup_detail')]
+        if 'excluded' not in cols:
+            db.session.execute(text('ALTER TABLE setup_detail ADD COLUMN excluded BOOLEAN DEFAULT 0'))
+            db.session.commit()
+    except Exception:
+        db.session.rollback()
 
 with app.app_context():
     ensure_equipment_columns()
@@ -360,6 +372,7 @@ class SetupDetail(db.Model):
     completed = db.Column(db.Boolean, default=False)
     exec_start_date = db.Column(db.String(50), default='')
     delay_reason = db.Column(db.Text, default='')
+    excluded = db.Column(db.Boolean, default=False)  # [추가] 불필요 작업 (셋업 진행률에서 제외)
 
 # [추가] 셋업(SETUP) 이력/일지 모델
 class SetupLog(db.Model):
@@ -376,6 +389,7 @@ class SetupLog(db.Model):
     special_note = db.Column(db.Text, default='')
     md = db.Column(db.String(50), default='0')
     parts = db.Column(db.Text, default='')
+    sub_options = db.Column(db.Text, default='')  # [추가] 세부 선택항목 (복수 선택, 쉼표 구분 예: EXH,Bulk)
 
 
 
@@ -1250,7 +1264,8 @@ def load_data():
                     "estDays": sd.est_days or '1',
                     "completed": sd.completed,
                     "execStartDate": sd.exec_start_date or '',
-                    "delayReason": sd.delay_reason or ''
+                    "delayReason": sd.delay_reason or '',
+                    "excluded": bool(getattr(sd, 'excluded', False))
                 } for sd in sd_list],
                 "setupLogs": [{
                     "id": int(sl.id) if str(sl.id).isdigit() else sl.id,
@@ -1263,7 +1278,8 @@ def load_data():
                     "memo": sl.memo or '',
                     "specialNote": getattr(sl, 'special_note', '') or '',
                     "md": sl.md or '0',
-                    "parts": sl.parts or ''
+                    "parts": sl.parts or '',
+                    "subOptions": getattr(sl, 'sub_options', '') or ''
                 } for sl in sl_list]
             }
 
@@ -1297,6 +1313,10 @@ def handle_bad_request(e):
 def ratelimit_handler(e):
     return jsonify({"status": "fail", "message": "요청이 너무 많습니다. 잠시 후 다시 시도해주세요."}), 429
 
+# 계정 권한 값. retired(퇴사자) 는 로그인 불가 + 작업자 목록 제외 (작업 기록·이름은 그대로 유지, 재입사 시 권한만 되돌림)
+VALID_ROLES = ('user', 'admin', 'superadmin', 'retired')
+RETIRED_ROLE = 'retired'
+
 # [보안] 세션-계정 연결 표식: 비밀번호 해시가 바뀌면(변경·초기화) 기존 로그인 쿠키가 모두 무효가 됨
 def pw_stamp(user):
     return hashlib.sha256((user.pw or '').encode('utf-8')).hexdigest()[:16]
@@ -1315,7 +1335,7 @@ def verify_session_user():
         db.session.rollback()
         app.logger.error(f"[Session] 계정 확인 실패: {e}")
         return None
-    if user is None:
+    if user is None or user.role == RETIRED_ROLE:   # 삭제·퇴사 처리된 계정은 즉시 로그아웃
         session.clear()
         return None
     stamp = pw_stamp(user)
@@ -2575,6 +2595,10 @@ def login():
         app.logger.warning(f"[Login] 비밀번호 정보 손상 계정 로그인 시도: {user.id}")
         return jsonify({"status": "fail", "message": "계정의 비밀번호 정보에 문제가 있습니다.\n관리자에게 비밀번호 초기화를 요청해주세요."}), 401
 
+    if is_valid and user.role == RETIRED_ROLE:
+        # 비밀번호가 맞을 때만 퇴사 사실을 알려줌 (아이디만으로 퇴사 여부 확인 불가)
+        return jsonify({"status": "fail", "message": "퇴사 처리된 계정입니다.\n재입사한 경우 관리자에게 계정 복구를 요청해주세요."}), 403
+
     if is_valid:
         # 성공: 실패 횟수 초기화 및 세션 설정
         if user.failed_attempts > 0 or user.lockout_until:
@@ -2698,7 +2722,10 @@ def update_user_info():
     if 'name' in data: user.name = data['name']
     if 'site' in data: user.site = data['site']
     if 'role' in data and session.get('role') in ['admin', 'superadmin']:
-        if user.role != 'superadmin' and user.id != 'admin' and user.id != os.environ.get('APP_ADMIN_ID', 'admin'): 
+        if user.role != 'superadmin' and user.id != 'admin' and user.id != os.environ.get('APP_ADMIN_ID', 'admin'):
+            # [보안] 본인 권한은 일반/관리자 사이에서만 변경 (관리자가 스스로 최종관리자로 올리거나 퇴사 처리 불가)
+            if data['role'] not in ('user', 'admin'):
+                return jsonify({"status": "fail", "message": "변경할 수 없는 권한입니다."}), 403
             user.role = data['role']
     db.session.commit()
     session['role'] = user.role
@@ -2711,8 +2738,9 @@ def update_user_info():
 def get_user_names():
     target_site = request.args.get('site', None)
     excluded_ids = ['admin', 'user', os.environ.get('APP_ADMIN_ID', 'admin'), os.environ.get('APP_USER_ID', 'user')]
-    users = User.query.filter(~User.id.in_(excluded_ids)).all()
-    
+    # 퇴사자는 작업자 선택 목록에서 제외 (기존 작업 기록의 이름은 그대로 남음)
+    users = User.query.filter(~User.id.in_(excluded_ids), User.role != RETIRED_ROLE).all()
+
     site_workers = []
     other_workers = []
     seen = set()
@@ -2763,6 +2791,8 @@ def add_user():
     
     if session.get('role') not in ['admin', 'superadmin']:
         return jsonify({"status": "fail", "message": "관리자 권한이 필요합니다."}), 403
+    if role not in ('user', 'admin', 'superadmin'):
+        return jsonify({"status": "fail", "message": "잘못된 권한입니다."}), 400
     if role == 'superadmin' and session.get('role') != 'superadmin':
         return jsonify({"status": "fail", "message": "최종 관리자 계정은 최종 관리자만 생성할 수 있습니다."}), 403
     if role == 'admin' and session.get('role') != 'superadmin':
@@ -2861,7 +2891,7 @@ def get_deletable_users():
         return jsonify({"status": "fail", "message": "권한이 없습니다."}), 403
     
     if session.get('role') == 'superadmin':
-        users = User.query.filter(User.role.in_(['admin', 'user'])).all()
+        users = User.query.filter(User.role.in_(['admin', 'user', RETIRED_ROLE])).all()
     else:
         users = User.query.filter(~User.role.in_(['admin', 'superadmin'])).all()
         
@@ -2916,6 +2946,11 @@ def admin_update_any_user():
 
     if target_id in ['admin', os.environ.get('APP_ADMIN_ID', 'admin')] and data.get('role') != 'superadmin':
         return jsonify({"status": "fail", "message": "시스템 보호: 최고 관리자 계정의 권한은 하향할 수 없습니다."}), 403
+    if 'role' in data:
+        if data['role'] not in VALID_ROLES:
+            return jsonify({"status": "fail", "message": "잘못된 권한입니다."}), 400
+        if target_id == session.get('user_id') and data['role'] == RETIRED_ROLE:
+            return jsonify({"status": "fail", "message": "본인 계정은 퇴사 처리할 수 없습니다."}), 403
 
     if 'department' in data: user.department = data['department']
     if 'position' in data: user.position = data['position']
@@ -3071,6 +3106,8 @@ def admin_crud():
             if action == 'UPDATE':
                 deprecated_keys = ['check_type_categories', 'check_type_categories2', 'check_type_categories3', 'check_type_items', 'equipment_models', 'admin_items']
                 if payload.get('key') not in deprecated_keys:
+                    if payload.get('key') == 'setup_templates':
+                        map_setup_templates_value(payload.get('value'))   # 옛 셋업 구분 → 단계 구분
                     val_json = json.dumps(payload['value'], ensure_ascii=False)
                     setting = SystemSetting.query.filter_by(key=payload['key']).first()
                     if setting: setting.value = val_json
@@ -3574,6 +3611,8 @@ def admin_crud():
         elif domain == 'setting':
             deprecated_keys = ['check_type_categories', 'check_type_categories2', 'check_type_categories3', 'check_type_items', 'equipment_models', 'admin_items']
             if payload.get('key') not in deprecated_keys:
+                if payload.get('key') == 'setup_templates':
+                    map_setup_templates_value(payload.get('value'))   # 옛 셋업 구분 → 단계 구분
                 val_json = json.dumps(payload['value'], ensure_ascii=False)
                 setting = SystemSetting.query.filter_by(key=payload['key']).first()
                 if setting: setting.value = val_json
@@ -4698,6 +4737,72 @@ def get_item_logs_by_equip(equip_id):
     except Exception as e:
         return jsonify({"status": "fail", "message": str(e)}), 500
 
+# [추가] 셋업 세부 구분 이름 변경 (ADMIN > 셋업 일정 관리)
+#  - 셋업 템플릿(공통 + 모델별 사본), 모든 장비의 셋업 작업 항목·일지를 한 번에 변경
+#  - 작업 내용이 예전 세부 구분 이름과 같은 항목(세부 구분으로 자동 생성된 항목)은 내용도 같이 변경
+@app.route('/api/setup/rename_subcategory', methods=['POST'])
+@admin_required
+def rename_setup_subcategory():
+    data = request.json or {}
+    category = str(data.get('category') or '').strip()
+    old = str(data.get('old') or '').strip()
+    new = str(data.get('new') or '').strip()
+    if not category or not old or not new:
+        return jsonify({"status": "fail", "message": "셋업 구분과 세부 구분 이름을 입력해주세요."}), 400
+    if len(new) > 100:
+        return jsonify({"status": "fail", "message": "세부 구분 이름은 100자 이내로 입력해주세요."}), 400
+    if old == new:
+        return jsonify({"status": "success", "details": 0, "logs": 0})
+
+    try:
+        row = db.session.get(SystemSetting, 'setup_templates')
+        templates = json.loads(row.value) if row and row.value else {}
+        if not isinstance(templates, dict):
+            templates = {}
+
+        def in_category(item):
+            return map_setup_category(item.get('category', ''), item.get('subcategory', ''), item.get('content', '')) == category
+
+        default_items = templates.get('default') or []
+        if any(isinstance(it, dict) and in_category(it) and (it.get('subcategory') or it.get('content')) == new for it in default_items):
+            return jsonify({"status": "fail", "message": "같은 이름의 세부 구분이 이미 있습니다."}), 400
+
+        for key, items in templates.items():
+            if not isinstance(items, list):
+                continue
+            for it in items:
+                if isinstance(it, dict) and in_category(it) and (it.get('subcategory') or it.get('content')) == old:
+                    it['subcategory'] = new
+                    if (it.get('content') or '') == old:
+                        it['content'] = new
+        if row:
+            row.value = json.dumps(templates, ensure_ascii=False)
+
+        n_details = 0
+        for sd in SetupDetail.query.filter(or_(SetupDetail.subcategory == old, SetupDetail.content == old)).all():
+            if map_setup_category(sd.category or '', sd.subcategory or '', sd.content or '') != category:
+                continue
+            if (sd.subcategory or '') == old or (not sd.subcategory and (sd.content or '') == old):
+                sd.subcategory = new
+                if (sd.content or '') == old:
+                    sd.content = new
+                n_details += 1
+
+        n_logs = 0
+        for sl in SetupLog.query.filter(SetupLog.subcategory == old).all():
+            if map_setup_category(sl.category or '', sl.subcategory or '', sl.content or '') != category:
+                continue
+            sl.subcategory = new
+            n_logs += 1
+
+        db.session.commit()
+        return jsonify({"status": "success", "details": n_details, "logs": n_logs, "templates": templates})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"[Setup] 세부 구분 이름 변경 실패: {e}")
+        return jsonify({"status": "fail", "message": "세부 구분 이름 변경 중 오류가 발생했습니다."}), 500
+
+
 # [추가] 셋업 화면 데이터 전용 100% DB 동기화 API
 @app.route('/api/setup/sync_equip', methods=['POST'])
 @login_required
@@ -4709,7 +4814,7 @@ def sync_setup_equip():
     logs = data.get('logs')
 
     try:
-        app.logger.warning(f"[Sync Setup] Received raw equip_id: {equip_id}")
+        app.logger.debug(f"[Sync Setup] Received raw equip_id: {equip_id}")  # 저장할 때마다 찍히던 확인용 로그 (평소에는 숨김)
 
         if equip_id:
             import urllib.parse
@@ -4772,20 +4877,24 @@ def sync_setup_equip():
             for sd in details:
                 db.session.add(SetupDetail(
                     id=str(sd.get('id', '')), equip_id=equip_id,
-                    category=sd.get('category', ''), subcategory=sd.get('subcategory', ''), content=sd.get('content', ''),
+                    category=map_setup_category(sd.get('category', ''), sd.get('subcategory', ''), sd.get('content', '')),
+                    subcategory=sd.get('subcategory', ''), content=sd.get('content', ''),
                     start_date=sd.get('startDate', ''), date=sd.get('date', ''), est_days=str(sd.get('estDays', '1')),
-                    completed=bool(sd.get('completed', False)), exec_start_date=sd.get('execStartDate', ''), delay_reason=sd.get('delayReason', '')
+                    completed=bool(sd.get('completed', False)), exec_start_date=sd.get('execStartDate', ''), delay_reason=sd.get('delayReason', ''),
+                    excluded=bool(sd.get('excluded', False))
                 ))
         if logs is not None:
             db.session.query(SetupLog).filter_by(equip_id=equip_id).delete(synchronize_session=False)
             for sl in logs:
                 db.session.add(SetupLog(
                     id=str(sl.get('id', '')), equip_id=equip_id, date=sl.get('date', ''),
-                    category=sl.get('category', ''), subcategory=sl.get('subcategory', ''),
+                    category=map_setup_category(sl.get('category', ''), sl.get('subcategory', ''), sl.get('content', '')),
+                    subcategory=sl.get('subcategory', ''),
                     worker=sl.get('worker', ''),
                     content=sl.get('content', ''), company=sl.get('company', '위드텍'), memo=sl.get('memo', ''),
                     special_note=sl.get('specialNote', '') or sl.get('special_note', '') or '',
-                    md=str(sl.get('md', '0')), parts=sl.get('parts', '')
+                    md=str(sl.get('md', '0')), parts=sl.get('parts', ''),
+                    sub_options=str(sl.get('subOptions', '') or '')
                 ))
         db.session.commit()
         return jsonify({"status": "success"})
@@ -5966,6 +6075,215 @@ for d in [DATA_DIR, LOG_DIR, BACKUP_DIR, DATA_LOG_DIR]:
 
 
 init_db()
+
+
+# ------------------------------------------------------------------------------
+# [셋업 구분 1~9단계 전환] 기존 셋업 구분을 단계 구분으로 1회 변환 (일정·일지·템플릿)
+#  - 세부 구분(없으면 내용) 기준으로 변환 → 같은 세부 구분의 일정과 일지는 항상 같은 단계로 감 (연결 유지)
+#  - '셋업 완료' 항목은 구분만 '9단계 - 종료'로 바뀌고 세부 구분·내용 '셋업 완료'는 유지 (완료 처리 로직 호환)
+#  - 완료 표시(SystemSetting) 후에는 다시 실행되지 않음
+# ------------------------------------------------------------------------------
+SETUP_STAGE_MIGRATION_KEY = 'setup_category_stage_v1_done'
+
+
+def map_setup_category(category, subcategory='', content=''):
+    cat = (category or '').strip()
+    key = (subcategory or content or '').strip()
+    if cat == '장비 반입 및 정위치':
+        return '2단계 - 다이크/지진브라켓' if '다이크' in key else '1단계 - 납품/정위치'
+    if cat == '통신 상태 및 유틸리티':
+        return '4단계 - 인터락테스트' if '인터락' in key else '5단계 - 유틸리티 턴온/인증'
+    if cat == '셋업 평가':
+        return '6단계 - 설비안정화 및 구동' if '안정화' in key else '7단계 - 셋업평가'
+    if cat == '셋업 완료':
+        return '9단계 - 종료'
+    return category
+
+
+def map_setup_templates_value(templates):
+    """setup_templates 설정 값({모델: [항목]})의 옛 셋업 구분을 단계 구분으로 변환 (화면에 남은 옛 값 저장 대비)."""
+    if isinstance(templates, dict):
+        for items in templates.values():
+            for it in (items if isinstance(items, list) else []):
+                if isinstance(it, dict):
+                    it['category'] = map_setup_category(it.get('category'), it.get('subcategory'), it.get('content'))
+    return templates
+
+
+def migrate_setup_categories_to_stages():
+    with app.app_context():
+        try:
+            if db.session.get(SystemSetting, SETUP_STAGE_MIGRATION_KEY):
+                return
+            changed = {'detail': 0, 'log': 0, 'template': 0}
+            for model, name in ((SetupDetail, 'detail'), (SetupLog, 'log')):
+                for row in model.query.all():
+                    new_cat = map_setup_category(row.category, row.subcategory, row.content)
+                    if new_cat != row.category:
+                        row.category = new_cat
+                        changed[name] += 1
+            tpl_row = db.session.get(SystemSetting, 'setup_templates')
+            if tpl_row and tpl_row.value:
+                templates = json.loads(tpl_row.value)
+                before = json.dumps(templates, ensure_ascii=False)
+                map_setup_templates_value(templates)
+                after = json.dumps(templates, ensure_ascii=False)
+                if after != before:
+                    changed['template'] = 1
+                    tpl_row.value = after
+            db.session.add(SystemSetting(key=SETUP_STAGE_MIGRATION_KEY,
+                                         value=json.dumps({'at': get_utc_now().isoformat(), 'changed': changed})))
+            db.session.commit()
+            app.logger.warning(f"[Setup] 셋업 구분 단계 전환 완료: {changed}")
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"[Setup] 셋업 구분 단계 전환 실패: {e}", exc_info=True)
+
+
+migrate_setup_categories_to_stages()
+
+
+# ------------------------------------------------------------------------------
+# [셋업 단계 세부 구분] 단계별 기본 세부 구분·작업 내용을 ADMIN 셋업 템플릿(default)에 1회 추가
+#  - 같은 작업 내용이 이미 있으면(단계 무관) 추가하지 않음 (기존 항목·순서·수정 내용 유지)
+#  - 장비별 셋업 일정은 건드리지 않음 (드롭다운·새 장비 등록에만 반영)
+#  ※ 화면 common_setup.js getDefaultSetupTemplate 과 같은 목록
+# ------------------------------------------------------------------------------
+SETUP_STAGE_DETAIL_KEY = 'setup_stage_details_v1_done'
+SETUP_STAGE_DEFAULT_ITEMS = [
+    ("사전 작업", "현장 사전 점검", "설치 위치 및 반입 경로 확인", "1"),
+    ("사전 작업", "현장 사전 점검", "설치 공간/하중 확인", "1"),
+    ("사전 작업", "작업 허가", "작업 허가(PTW) 신청", "1"),
+    ("사전 작업", "작업 허가", "안전교육 이수", "1"),
+    ("사전 작업", "자재 준비", "설치 자재 및 공구 준비", "1"),
+    # 1~8단계 세부 구분 = 셋업 단계표의 세부단계 (8단계는 세부단계 없음 → 화면에서 단계 이름이 세부 구분으로 자동 표시)
+    #  5-1 / 5-2 는 세부 선택항목(EXH·Bulk 등)을 작업 내용으로 둠
+    ("1단계 - 납품/정위치", "1-1 납품", "1-1 납품", "1"),
+    ("1단계 - 납품/정위치", "1-2 정위치", "1-2 정위치", "1"),
+    ("1단계 - 납품/정위치", "1-3 수평 확인", "1-3 수평 확인", "1"),
+    ("2단계 - 다이크/지진브라켓", "2-1 다이크 납품", "2-1 다이크 납품", "1"),
+    ("2단계 - 다이크/지진브라켓", "2-2 다이크 설치", "2-2 다이크 설치", "1"),
+    ("2단계 - 다이크/지진브라켓", "2-3 다이크 침수테스트", "2-3 다이크 침수테스트", "1"),
+    ("2단계 - 다이크/지진브라켓", "2-4 지진브라켓 설치", "2-4 지진브라켓 설치", "1"),
+    ("3단계 - 전기 턴온", "3-1 전기/LAN 턴온", "3-1 전기/LAN 턴온", "1"),
+    ("3단계 - 전기 턴온", "3-2 LAN 통신 확인", "3-2 LAN 통신 확인", "1"),
+    ("4단계 - 인터락테스트", "4-1 인터락테스트", "4-1 인터락테스트", "2"),
+    ("5단계 - 유틸리티 턴온/인증", "5-1 유틸리티 턴온", "EXH", "1"),
+    ("5단계 - 유틸리티 턴온/인증", "5-1 유틸리티 턴온", "Bulk", "1"),
+    ("5단계 - 유틸리티 턴온/인증", "5-1 유틸리티 턴온", "UPW", "1"),
+    ("5단계 - 유틸리티 턴온/인증", "5-1 유틸리티 턴온", "Drain", "1"),
+    ("5단계 - 유틸리티 턴온/인증", "5-2 인증", "FOUP 센터/수평", "1"),
+    ("5단계 - 유틸리티 턴온/인증", "5-2 인증", "OHT", "1"),
+    ("5단계 - 유틸리티 턴온/인증", "5-2 인증", "PIO(E84)", "1"),
+    ("6단계 - 설비안정화 및 구동", "6-1 로컬테스트", "6-1 로컬테스트", "1"),
+    ("6단계 - 설비안정화 및 구동", "6-2 로봇 티칭", "6-2 로봇 티칭", "1"),
+    ("6단계 - 설비안정화 및 구동", "6-3 용액 설치 및 안정화", "6-3 용액 설치 및 안정화", "5"),
+    ("7단계 - 셋업평가", "7-1 STD 측정 및 Calibration", "7-1 STD 측정 및 Calibration", "2"),
+    ("7단계 - 셋업평가", "7-2 신뢰성 평가", "7-2 신뢰성 평가", "5"),
+    ("7단계 - 셋업평가", "7-3 기타 평가", "7-3 기타 평가", "1"),
+    ("9단계 - 종료", "인수인계", "고객 교육 및 인수인계", "1"),
+    ("9단계 - 종료", "셋업 완료", "셋업 완료", "0"),
+]
+
+
+def add_setup_stage_default_items():
+    with app.app_context():
+        try:
+            if db.session.get(SystemSetting, SETUP_STAGE_DETAIL_KEY):
+                return
+            row = db.session.get(SystemSetting, 'setup_templates')
+            templates = {}
+            if row and row.value:
+                try:
+                    templates = json.loads(row.value)
+                except Exception:
+                    templates = {}
+            if not isinstance(templates, dict):
+                templates = {}
+            if not isinstance(templates.get('default'), list):
+                templates['default'] = []
+            norm = lambda v: ' '.join(str(v or '').split())
+
+            def add_missing(items):
+                # 같은 작업 내용이 어느 단계에든 이미 있으면 추가하지 않음 (기존 항목을 다른 단계로 옮겨 쓰는 경우 중복 방지)
+                have = {norm(it.get('content') or it.get('subcategory')) for it in items if isinstance(it, dict)}
+                n = 0
+                for cat, sub, content, days in SETUP_STAGE_DEFAULT_ITEMS:
+                    if norm(content) in have:
+                        continue
+                    items.append({'category': cat, 'subcategory': sub, 'content': content, 'estDays': days})
+                    have.add(norm(content))
+                    n += 1
+                return n
+
+            # 공통(default) + 장비 모델별 사본(ADMIN 템플릿 저장 시 공통 템플릿이 모델마다 복사됨, 새 장비 등록에 사용)
+            added = add_missing(templates['default'])
+            for key, items in templates.items():
+                if key != 'default' and isinstance(items, list):
+                    add_missing(items)
+            value = json.dumps(templates, ensure_ascii=False)
+            if row:
+                row.value = value
+            else:
+                db.session.add(SystemSetting(key='setup_templates', value=value))
+            db.session.add(SystemSetting(key=SETUP_STAGE_DETAIL_KEY,
+                                         value=json.dumps({'at': get_utc_now().isoformat(), 'added': added})))
+            db.session.commit()
+            app.logger.warning(f"[Setup] 셋업 단계 세부 구분 기본 항목 추가: {added}건")
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"[Setup] 셋업 단계 세부 구분 추가 실패: {e}", exc_info=True)
+
+
+add_setup_stage_default_items()
+
+
+# ------------------------------------------------------------------------------
+# [셋업 단계 세부 구분 v2] 저장된 셋업 템플릿의 1~8단계 항목을 셋업 단계표 세부단계(SETUP_STAGE_DEFAULT_ITEMS)로 1회 교체
+#  - 공통(default) + 장비 모델별 사본 모두 적용
+#  - 사전 작업 / 9단계 - 종료 / 기타 구분 항목은 그대로 유지
+#  - 장비별 셋업 일정(SetupDetail)·일지는 건드리지 않음
+# ------------------------------------------------------------------------------
+SETUP_STAGE_DETAIL_V2_KEY = 'setup_stage_details_v2_done'
+SETUP_STAGE_REPLACE_CATEGORIES = {
+    "1단계 - 납품/정위치", "2단계 - 다이크/지진브라켓", "3단계 - 전기 턴온", "4단계 - 인터락테스트",
+    "5단계 - 유틸리티 턴온/인증", "6단계 - 설비안정화 및 구동", "7단계 - 셋업평가", "8단계 - 셋업보고서",
+}
+
+
+def replace_setup_stage_items_v2():
+    with app.app_context():
+        try:
+            if db.session.get(SystemSetting, SETUP_STAGE_DETAIL_V2_KEY):
+                return
+            new_items = [{'category': c, 'subcategory': s, 'content': t, 'estDays': d}
+                         for c, s, t, d in SETUP_STAGE_DEFAULT_ITEMS if c in SETUP_STAGE_REPLACE_CATEGORIES]
+            row = db.session.get(SystemSetting, 'setup_templates')
+            replaced = 0
+            if row and row.value:
+                templates = json.loads(row.value)
+                if isinstance(templates, dict):
+                    for key, items in templates.items():
+                        if not isinstance(items, list):
+                            continue
+                        # 1~8단계 항목을 빼고, 원래 1~8단계 자리(사전 작업 뒤, 9단계 앞)에 새 목록을 넣음
+                        kept = [it for it in items
+                                if not (isinstance(it, dict) and it.get('category') in SETUP_STAGE_REPLACE_CATEGORIES)]
+                        pos = next((i for i, it in enumerate(kept)
+                                    if isinstance(it, dict) and it.get('category') != '사전 작업'), len(kept))
+                        templates[key] = kept[:pos] + [dict(it) for it in new_items] + kept[pos:]
+                        replaced += 1
+                    row.value = json.dumps(templates, ensure_ascii=False)
+            db.session.add(SystemSetting(key=SETUP_STAGE_DETAIL_V2_KEY,
+                                         value=json.dumps({'at': get_utc_now().isoformat(), 'templates': replaced})))
+            db.session.commit()
+            app.logger.warning(f"[Setup] 셋업 단계 세부 구분 v2 교체: 템플릿 {replaced}개")
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"[Setup] 셋업 단계 세부 구분 v2 교체 실패: {e}", exc_info=True)
+
+
+replace_setup_stage_items_v2()
 
 if __name__ == '__main__':
     # 로컬과 서버 환경을 분리하기 위해 .env 파일에서 APP_PORT 값을 읽어옵니다. (기본값: 8080)

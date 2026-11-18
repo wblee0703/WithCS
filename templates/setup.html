@@ -2,7 +2,7 @@
 {% set active_page = 'setup' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/setup.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/setup.css') }}?v=6">
 <style>
     /* 달력 아이콘 회색 변경 */
     .custom-date-icon::-webkit-calendar-picker-indicator {
@@ -18,7 +18,7 @@
         <section class="sidebar-group main-category">
             <div class="group-header">
                 <div class="sidebar-header-row">
-                    <h3>대분류: 사업장 <span id="site-count" class="count-badge">0</span></h3>
+                    <h3>사업장 <span id="site-count" class="count-badge">0</span></h3>
                     <input type="text" id="site-search" class="search-input-mini" placeholder="검색" autocomplete="off">
                 </div>
             </div>
@@ -27,7 +27,7 @@
         <section class="sidebar-group disabled" id="equip-section">
             <div class="group-header">
                 <div class="sidebar-header-row">
-                    <h3>중분류: 장비목록 <span id="equip-count" class="count-badge">0</span></h3>
+                    <h3>프로젝트 목록 <span id="equip-count" class="count-badge">0</span></h3>
                     <input type="text" id="equip-search" class="search-input-mini" placeholder="검색"
                         autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly');">
                 </div>
@@ -44,50 +44,60 @@
         <div class="detail-content" style="display: none;">
             <div class="detail-header-row">
                 <header class="breadcrumb breadcrumb-no-margin" id="current-path">📍 사업장 > 장비명</header>
-                <button class="btn-blue-sm btn-gantt-move" onclick="moveToGanttView()">📅 간트뷰 이동</button>
+                <button class="btn-blue-sm btn-gantt-move" onclick="moveToGanttView()">📊 HOME 진행률 보기</button>
                 <input type="file" id="setup-csv-file-input" accept=".csv" style="display: none;" onchange="handleSetupCsvFile(this)">
                 <button type="button" class="btn-setup-csv-import" id="btn-import-setup-log-csv" onclick="triggerSetupCsvImport()" title="셋업 일지 CSV 불러오기">📥 CSV 불러오기</button>
                 <button class="btn-gray btn-header-setting" onclick="openSetupEquipModal()">장비 정보</button>
             </div>
 
-            <!-- 셋업 워크스페이스 영역 (좌측: 셋업 일지 / 우측: 작업 내용 및 셋업 이슈) -->
+            <!-- 셋업 워크스페이스 영역 (좌측: 셋업 진행률 / 우측: 셋업 일지 · 작업 내용 · 셋업 이슈 1:1:1) -->
             <div id="setup-workspace" class="setup-workspace">
-                <!-- 좌측: 셋업 일지 카드 -->
-                <div class="setup-card setup-card-flex" id="setup-log-card">
+                <!-- 좌측: 셋업 진행률 (HOME 셋업 관리와 동일) -->
+                <div class="setup-card setup-card-flex" id="setup-progress-card">
                     <div class="setup-card-header">
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <h3 style="margin: 0;">셋업 일지</h3>
-                            <button class="btn-list-setting" onclick="toggleSetupLogEditMode(this)" title="목록 편집">⚙️</button>
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <input type="text" id="setup-log-filter-date" placeholder="검색 (날짜, 내용, 작업자)" title="검색"
-                                class="input-search-dark">
-                            <button id="btn-setup-register-task" class="btn-green-sm" onclick="openSetupRegisterModal()" style="white-space: nowrap; height: 28px;">➕ 작업 등록</button>
-                        </div>
+                        <h3 style="margin: 0;">셋업 진행률</h3>
                     </div>
                     <div class="setup-card-body setup-card-body-flex">
-                        <div id="setup-log-list-wrapper" class="log-list-wrapper" style="height: 100%; border-bottom: none;">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th class="th-w110">날짜</th>
-                                        <th class="th-w120">셋업 구분</th>
-                                        <th class="th-w120">세부 구분</th>
-                                        <th>내용</th>
-                                        <th class="th-w100">작업자</th>
-                                        <th class="th-w50">공수</th>
-                                        <th class="th-w80 th-center manage-col">관리</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="setup-log-body"></tbody>
-                            </table>
-                        </div>
+                        <div class="setup-progress" id="setup-progress-body" style="display: flex; height: 100%;"></div>
                     </div>
                 </div>
 
-                <!-- 우측: 작업 내용 및 셋업 이슈 카드 -->
+                <!-- 우측: 셋업 일지 / 작업 내용 / 셋업 이슈 (높이 1:1:1) -->
                 <div class="setup-card setup-card-flex" id="setup-right-card">
-                    <!-- 상단: 작업 내용 -->
+                    <!-- 셋업 일지 -->
+                    <div class="setup-section-panel" id="setup-log-card">
+                        <div class="setup-card-header">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <h3 style="margin: 0;">셋업 일지</h3>
+                                <button class="btn-list-setting" onclick="toggleSetupLogEditMode(this)" title="목록 편집">⚙️</button>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <input type="text" id="setup-log-filter-date" placeholder="검색 (날짜, 내용, 작업자)" title="검색"
+                                    class="input-search-dark">
+                                <button id="btn-setup-register-task" class="btn-green-sm" onclick="openSetupRegisterModal()" style="white-space: nowrap; height: 28px;">➕ 작업 등록</button>
+                            </div>
+                        </div>
+                        <div class="setup-card-body setup-card-body-flex">
+                            <div id="setup-log-list-wrapper" class="log-list-wrapper" style="height: 100%; border-bottom: none;">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="th-w110">날짜</th>
+                                            <th class="th-w120">셋업 구분</th>
+                                            <th class="th-w120">세부 구분</th>
+                                            <th>내용</th>
+                                            <th class="th-w100">작업자</th>
+                                            <th class="th-w50">공수</th>
+                                            <th class="th-w80 th-center manage-col">관리</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="setup-log-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 작업 내용 -->
                     <div class="setup-section-panel" id="setup-work-memo-panel">
                         <div class="setup-card-header">
                             <h3 style="margin: 0;">작업 내용</h3>
@@ -95,13 +105,11 @@
                         </div>
                         <div class="setup-card-body" style="padding: 10px; display: flex; flex-direction: column;">
                             <textarea id="setup-log-detail-memo" class="textarea-dark"
-                                placeholder="좌측 셋업 일지 항목을 선택하여 상세 내용을 작성하세요."></textarea>
+                                placeholder="위 셋업 일지 항목을 선택하여 상세 내용을 작성하세요."></textarea>
                         </div>
                     </div>
 
-                    <div class="resizer-vertical" id="setup-right-resizer"></div>
-
-                    <!-- 하단: 셋업 이슈 -->
+                    <!-- 셋업 이슈 -->
                     <div class="setup-section-panel" id="setup-issue-panel">
                         <div class="setup-card-header">
                             <h3 style="margin: 0; color: #f0883e;">⚠️ 셋업 이슈 (장비 특이사항)</h3>
@@ -109,7 +117,7 @@
                         </div>
                         <div class="setup-card-body" style="padding: 10px; display: flex; flex-direction: column;">
                             <textarea id="setup-equip-issue-memo" class="textarea-dark"
-                                placeholder="좌측 셋업 일지 항목을 선택하여 특이사항을 확인하거나 작성하세요."></textarea>
+                                placeholder="위 셋업 일지 항목을 선택하여 특이사항을 확인하거나 작성하세요."></textarea>
                         </div>
                     </div>
                 </div>
@@ -121,5 +129,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/setup.js') }}?v=20260930_1"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/setup.js') }}?v=20261118_4"></script>
 {% endblock %}

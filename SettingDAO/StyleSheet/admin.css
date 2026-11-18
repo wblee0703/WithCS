@@ -2121,3 +2121,23 @@ body:not(.role-admin):not(.role-superadmin) #section-equip-param-mgmt .data-para
     cursor: pointer;
 }
 
+
+/* 셋업 일정 관리: 세부 구분 끌어서 순서 변경 */
+#setup-template-subcategory-list li.subcat-dragging { opacity: 0.4; }
+#setup-template-subcategory-list li.subcat-drop-before { box-shadow: inset 0 2px 0 #388bfd; }
+#setup-template-subcategory-list li.subcat-drop-after { box-shadow: inset 0 -2px 0 #388bfd; }
+#setup-template-subcategory-list .subcat-drag-handle:active { cursor: grabbing; }
+
+/* 셋업 일정 관리: 세부 구분 관리 모드에서 수정(✏️)·삭제(✕) 버튼을 오른쪽 끝에 정렬 */
+#setup-template-subcategory-list li {
+    display: flex;
+    align-items: center;
+}
+#setup-template-subcategory-list li .subcat-text,
+#setup-template-subcategory-list li .subcat-rename-input {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+#setup-template-subcategory-list li .subcat-edit-btn {
+    margin-left: auto;
+}

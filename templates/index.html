@@ -4,9 +4,9 @@
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/index.css') }}">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/calendar.css') }}?v=7">
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/gantt.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/gantt.css') }}?v=2">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/integ.css') }}">
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_setup.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_setup.css') }}?v=8">
 <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/tracking.css') }}?v=1.4.4">
 {% endblock %}
 
@@ -71,7 +71,7 @@
                                 </div>
                             </div>
                             <div class="status-group card-like" style="flex: 1;">
-                                <h5 class="status-group-title">사업장 및 장비 현황</h5>
+                                <h5 class="status-group-title">사업장 및 프로젝트 현황</h5>
                                 <div class="chart-row" style="display: flex; flex-direction: row; gap: 15px; width: 100%;">
                                     <div class="status-list-container status-list-flex" style="flex: 1; min-width: 0;">
                                         <div class="status-list-header">
@@ -83,7 +83,7 @@
                                     <div class="status-list-container status-list-flex" style="flex: 1; min-width: 0;">
                                         <div class="status-list-header">
                                             <span class="header-name">장비명</span>
-                                            <span class="header-count">장비수</span>
+                                            <span class="header-count" title="같은 프로젝트 번호의 장비는 1개로 셈">프로젝트수</span>
                                         </div>
                                         <ul class="site-status-list" id="setup-equip-status-list"></ul>
                                     </div>
@@ -112,7 +112,7 @@
                                 <button id="btn-gantt-history" class="btn-gray btn-text-sm" style="height: 28px;">📜 셋업 이력</button>
                             </div>
                             <div class="gantt__center-title">
-                                <h5 class="gantt__subtitle">셋업 일정</h5>
+                                <h5 class="gantt__subtitle">셋업 진행률</h5>
                                 <div class="title-right-align">
                                     <button class="btn-move" onclick="goToSetupPage()">장비 셋업 이동</button>
                                 </div>
@@ -120,38 +120,13 @@
                             </div>
                             <div class="gantt__right-toolbar">
                                 <div class="calendar-search-wrapper search-wrapper-flex">
-                                    <button id="btn-gantt-contract" class="btn-gray btn-spacing-right"
-                                        title="달력 축소 (1주)">-</button>
-                                    <button id="btn-gantt-expand" class="btn-gray btn-spacing-right"
-                                        title="달력 확장 (1주)">+</button>
                                     <button id="btn-gantt-filter" class="btn-gray ml-5" title="장비 검색">검색</button>
                                     <span id="gantt-filter-status" class="filter-status-text"></span>
                                 </div>
                             </div>
-                            <div class="gantt-mobile-guide">🔄 화면을 가로로 돌리면 차트가 표시됩니다</div>
                         </div>
-                        <div class="gantt__wrapper" id="gantt-wrapper" style="display: none;">
-                            <div class="gantt__sidebar gantt__sidebar--initial" id="gantt-sidebar">
-                                <div class="gantt__header-cell gantt__header-cell--fixed" style="display: flex; align-items: center; justify-content: space-between; padding: 0 10px; font-size: 11px; font-weight: bold; color: #8b949e;">
-                                    <span style="width: 105px; text-align: left; flex-shrink: 0;">셋업 구분</span>
-                                    <span style="width: 175px; text-align: left; flex-shrink: 0;">세부 내용</span>
-                                    <span style="flex: 1; text-align: left; min-width: 180px;">내용</span>
-                                    <span style="width: 45px; text-align: right; flex-shrink: 0;">상태</span>
-                                </div>
-
-                                <div id="gantt-task-list"></div>
-                            </div>
-                            <div class="gantt__resizer" id="gantt-resizer"></div>
-                            <div class="gantt__timeline-container" id="gantt-timeline-container">
-                                <div class="gantt__timeline" id="gantt-timeline">
-                                    <div class="gantt__header-row gantt__header-row--fixed" id="gantt-header-months">
-                                    </div>
-                                    <div class="gantt__header-row gantt__header-row--fixed" id="gantt-header-weeks">
-                                    </div>
-                                    <div id="gantt-body"></div>
-                                </div>
-                            </div>
-                        </div>
+                        <!-- 셋업 진행률 (단계별 세부 구분 완료 비율, 전체 = 단계 평균) -->
+                        <div class="setup-progress" id="gantt-wrapper" style="display: none;"></div>
                         <div id="gantt-empty-msg" class="empty-msg" style="display: none;">등록된 셋업 일정이 없습니다.</div>
                     </div>
                 </div>
@@ -522,9 +497,15 @@
                     <div class="form-row" style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
                         <label class="modal-label" style="width: 80px; flex-shrink: 0; color: #8b949e; font-size: 13px; font-weight: bold; margin-bottom: 0;">분류</label>
                         <select id="add-setup-task-category" class="input-dark" style="flex: 1; height: 34px; box-sizing: border-box; padding: 4px 10px; border-radius: 4px; background-color: #0d1117; color: #e6edf3; border: 1px solid #30363d; outline: none; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url(&quot;data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='16' height='16' fill='%238b949e'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 8px center; padding-right: 30px;">
-                            <option value="장비 반입 및 정위치" style="background-color: #161b22; color: #e6edf3;">장비 반입 및 정위치</option>
-                            <option value="통신 상태 및 유틸리티" style="background-color: #161b22; color: #e6edf3;">통신 상태 및 유틸리티</option>
-                            <option value="셋업 평가" style="background-color: #161b22; color: #e6edf3;">셋업 평가</option>
+                            <option value="사전 작업" style="background-color: #161b22; color: #e6edf3;">사전 작업</option>
+                            <option value="1단계 - 납품/정위치" style="background-color: #161b22; color: #e6edf3;">1단계 - 납품/정위치</option>
+                            <option value="2단계 - 다이크/지진브라켓" style="background-color: #161b22; color: #e6edf3;">2단계 - 다이크/지진브라켓</option>
+                            <option value="3단계 - 전기 턴온" style="background-color: #161b22; color: #e6edf3;">3단계 - 전기 턴온</option>
+                            <option value="4단계 - 인터락테스트" style="background-color: #161b22; color: #e6edf3;">4단계 - 인터락테스트</option>
+                            <option value="5단계 - 유틸리티 턴온/인증" style="background-color: #161b22; color: #e6edf3;">5단계 - 유틸리티 턴온/인증</option>
+                            <option value="6단계 - 설비안정화 및 구동" style="background-color: #161b22; color: #e6edf3;">6단계 - 설비안정화 및 구동</option>
+                            <option value="7단계 - 셋업평가" style="background-color: #161b22; color: #e6edf3;">7단계 - 셋업평가</option>
+                            <option value="8단계 - 셋업보고서" style="background-color: #161b22; color: #e6edf3;">8단계 - 셋업보고서</option>
                         </select>
                     </div>
                     <div class="form-row" style="margin-bottom: 15px; display: flex; align-items: center; gap: 10px;">
@@ -555,10 +536,10 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('SettingDAO', filename='JavaScript/gantt.js') }}"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/gantt.js') }}?v=2.0.0"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/calendar.js') }}?v=1.0.3"></script>
-<script src="{{ url_for('SettingDAO', filename='JavaScript/index.js') }}?v=1.1.5"></script>
-<script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/index.js') }}?v=1.1.6"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/common_setup.js') }}?v=1.1.7"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/integ.js') }}?v=1.1.0"></script>
 <script src="{{ url_for('SettingDAO', filename='JavaScript/tracking.js') }}?v=1.6.2"></script>
 <script>

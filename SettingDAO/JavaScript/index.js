@@ -1090,17 +1090,26 @@ function renderSetupEquipChart(equipStats, totalEquip, activeEquips) {
         filteredEquips = activeEquips.filter(e => window.getSiteGroupName(e.site) === setupDashboardFilter.site);
     }
 
-    let filteredStats = {};
+    // [변경] 같은 프로젝트 번호의 장비는 1개로 셈 (프로젝트 번호가 없는 장비는 장비마다 1개)
+    const projectKeyOf = (e) => {
+        const detail = JSON.parse(localStorage.getItem(`details_${e.site}_${e.equip}`)) || {};
+        const projectNo = String((detail.setup && detail.setup.projectNo) || '').trim().toUpperCase();
+        return projectNo ? `P:${projectNo}` : `E:${e.site}::${e.equip}`;
+    };
+    let filteredStats = {};   // 장비명 → 프로젝트 키 Set
+    const allProjects = new Set();
     const equipmentModels = JSON.parse(localStorage.getItem('equipment_models')) || [];
     filteredEquips.forEach(e => {
         const name = e.equip.split('::')[0];
         const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
         const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
-        filteredStats[displayName] = (filteredStats[displayName] || 0) + 1;
+        const key = projectKeyOf(e);
+        (filteredStats[displayName] = filteredStats[displayName] || new Set()).add(key);
+        allProjects.add(key);
     });
 
-    const statsArr = Object.keys(filteredStats).map(key => ({ name: key, count: filteredStats[key] }));
-    const filteredTotal = filteredEquips.length;
+    const statsArr = Object.keys(filteredStats).map(key => ({ name: key, count: filteredStats[key].size }));
+    const filteredTotal = allProjects.size;
 
     const listEl = document.getElementById('setup-equip-status-list');
     if (!listEl) return;

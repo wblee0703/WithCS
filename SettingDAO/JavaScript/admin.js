@@ -18,7 +18,7 @@ function checkAndApplyAdminReadOnlyMode() {
             '#btn-admin-del-site', '#btn-admin-save-site', '#btn-add-building', '#site-info-building-input',
             '#btn-admin-del-equip', '#btn-admin-save-equip', '#btn-admin-new-equip', '#btn-admin-add-model',
             '#btn-admin-del-item-detail', '#btn-admin-save-item-detail', '#btn-admin-add-item', '#btn-add-item-equip', '#btn-apply-equip-selection',
-            '#btn-save-setup-template', '#btn-reset-setup-template', '#btn-add-setup-template-item', '#btn-add-setup-template-subcategory', '#btn-setup-subcategory-settings',
+            '#btn-save-setup-template', '#btn-reset-setup-template', '#btn-add-setup-template-subcategory', '#btn-setup-subcategory-settings',
             '#btn-open-add-stock-modal', '#btn-import-master-items', '#btn-import-check-items',
             '#btn-import-model-param-csv', '#btn-add-model-param-row', '#btn-save-model-params', '#btn-revert-model-params',
             '#section-site-mgmt .form-actions', '#section-equip-mgmt .form-actions', '#section-item-mgmt .form-actions', '#section-setup-template-mgmt .form-actions',
@@ -1521,15 +1521,10 @@ function handleEquipCsvImport(event) {
                     const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
                     // 실제 모델명 추출 로직 필요 시 추가
                     let actualModelName = name;
-                    let templateToUse = templates[actualModelName] || templates['default'] || [
-                        { category: "장비 반입 및 정위치", content: "장비 도면 부착", estDays: "1" },
-                        { category: "통신 상태 및 유틸리티", content: "Utility 배관 공사 및 연결", estDays: "5" },
-                        { category: "셋업 평가", content: "분석부 안정화 및 오염제어", estDays: "5" },
-                        { category: "셋업 완료", content: "셋업 완료", estDays: "0" }
-                    ];
+                    let templateToUse = templates[actualModelName] || templates['default'] || window.getDefaultSetupTemplate();
                     const initialSetupDetails = templateToUse.map((item, idx) => ({
                         id: Date.now() + idx + (i * 100),
-                        category: item.category, content: item.content,
+                        category: window.mapSetupCategory(item.category, item.subcategory, item.content), subcategory: item.subcategory || '', content: item.content,
                         startDate: "", date: "", estDays: item.estDays || "1",
                         completed: false, execStartDate: "", delayReason: ""
                     }));
@@ -2376,14 +2371,9 @@ async function handleEquipSave() {
         const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
         const actualModelName = matchedModel ? matchedModel.name : name;
 
-        let templateToUse = templates[actualModelName] || templates['default'] || [
-            { category: "장비 반입 및 정위치", content: "장비 도면 부착", estDays: "1" },
-            { category: "통신 상태 및 유틸리티", content: "Utility 배관 공사 및 연결", estDays: "5" },
-            { category: "셋업 평가", content: "분석부 안정화 및 오염제어", estDays: "5" },
-            { category: "셋업 완료", content: "셋업 완료", estDays: "0" }
-        ];
+        let templateToUse = templates[actualModelName] || templates['default'] || window.getDefaultSetupTemplate();
         const initialSetupDetails = templateToUse.map((item, idx) => ({
-            id: Date.now() + idx, category: item.category, content: item.content,
+            id: Date.now() + idx, category: window.mapSetupCategory(item.category, item.subcategory, item.content), subcategory: item.subcategory || '', content: item.content,
             startDate: "", date: "", estDays: item.estDays || "1",
             completed: false, execStartDate: "", delayReason: ""
         }));
@@ -6069,7 +6059,7 @@ async function loadCheckTypeDataFromTarget() {
 /* ==========================================================================
    8. 셋업 일정 템플릿 관리 (Setup Template Management - 공통 셋업/세부 구분 구조)
    ========================================================================== */
-let currentSetupCategory = '장비 반입 및 정위치';
+let currentSetupCategory = '1단계 - 납품/정위치';
 let currentSetupSubCategory = null;
 let setupSubcategorySettingsMode = false;
 
@@ -6113,7 +6103,7 @@ function setupSetupTemplateMgmt() {
             template.push({
                 category: currentSetupCategory,
                 subcategory: subName,
-                content: `${subName} 세부 작업`,
+                content: subName,
                 estDays: '1'
             });
             saveCommonSetupTemplateLocal(template);
@@ -6121,76 +6111,27 @@ function setupSetupTemplateMgmt() {
             inputAddSub.value = '';
             currentSetupSubCategory = subName;
             renderSetupTemplateSubCategoryList();
+            saveSetupTemplateToServer(true); // [변경] 바로 서버에 반영
         };
         btnAddSub.onclick = handleAddSub;
         inputAddSub.onkeypress = (e) => { if (e.key === 'Enter') handleAddSub(); };
     }
 
-    const btnAddItem = document.getElementById('btn-add-setup-template-item');
-    const inputContent = document.getElementById('setup-template-item-content');
-    const inputDays = document.getElementById('setup-template-item-days');
-    if (btnAddItem && inputContent && inputDays) {
-        const handleAddItem = () => {
-            const content = inputContent.value.trim();
-            const estDays = inputDays.value.trim() || '1';
-            if (!content) return alert('작업 세부 내용을 입력해주세요.');
-            if (!currentSetupCategory) return alert('셋업 구분을 선택해주세요.');
-
-            const template = getCommonSetupTemplate();
-            const subcategory = currentSetupSubCategory || currentSetupCategory;
-
-            template.push({
-                category: currentSetupCategory,
-                subcategory: subcategory,
-                content: content,
-                estDays: estDays
-            });
-            saveCommonSetupTemplateLocal(template);
-
-            inputContent.value = '';
-            inputDays.value = '1';
-            renderSetupTemplateItemList();
-            updateSetupTemplateTotalDays();
-        };
-        btnAddItem.onclick = handleAddItem;
-        inputContent.onkeypress = (e) => { if (e.key === 'Enter') handleAddItem(); };
-    }
-
-    const btnReset = document.getElementById('btn-reset-setup-template');
-    if (btnReset) {
-        btnReset.onclick = () => {
-            if (!confirm('가장 기본적인 셋업 템플릿 양식으로 초기화하시겠습니까?\n작성 중이던 내용은 모두 초기화됩니다.')) return;
-            const defaultTemplate = getDefaultSetupTemplateData();
-            saveCommonSetupTemplateLocal(defaultTemplate);
-            renderSetupTemplateSubCategoryList();
-            alert('기본 템플릿으로 초기화되었습니다. [템플릿 저장]을 누르면 서버에 저장됩니다.');
-        };
-    }
+    // [삭제] 기본값 초기화 버튼 제거 (잘못 누르면 추가한 세부 구분·선택 항목이 모두 사라짐)
 
     const btnSave = document.getElementById('btn-save-setup-template');
     if (btnSave) {
         btnSave.onclick = saveSetupTemplateToServer;
     }
 
+    setupSetupTemplateOptionPanel();
+
     // 초기 렌더링
     renderSetupTemplateSubCategoryList();
 }
 
 function getDefaultSetupTemplateData() {
-    return [
-        { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크", content: "장비 도면 부착", estDays: "1" },
-        { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크", content: "다이크 설치", estDays: "1" },
-        { category: "장비 반입 및 정위치", subcategory: "장비 반입", content: "장비 반입", estDays: "1" },
-        { category: "장비 반입 및 정위치", subcategory: "장비 반입", content: "다이크 공사 및 리크센서 설치", estDays: "2" },
-        { category: "통신 상태 및 유틸리티", subcategory: "Utility 배관", content: "Utility 배관 공사 및 연결", estDays: "5" },
-        { category: "통신 상태 및 유틸리티", subcategory: "Utility 배관", content: "Utility 턴온", estDays: "1" },
-        { category: "통신 상태 및 유틸리티", subcategory: "인터락/통신", content: "인터락 Test 및 통신상태 확인 ", estDays: "2" },
-        { category: "셋업 평가", subcategory: "분석부 안정화", content: "분석부 안정화 및 오염제어", estDays: "5" },
-        { category: "셋업 평가", subcategory: "성능 평가", content: "Calibration 평가", estDays: "2" },
-        { category: "셋업 평가", subcategory: "성능 평가", content: "Sample 측정", estDays: "2" },
-        { category: "셋업 평가", subcategory: "성능 평가", content: "신뢰도 평가", estDays: "5" },
-        { category: "셋업 완료", subcategory: "셋업 완료", content: "셋업 완료", estDays: "0" }
-    ];
+    return window.getDefaultSetupTemplate();
 }
 
 function getCommonSetupTemplate() {
@@ -6239,11 +6180,23 @@ function renderSetupTemplateSubCategoryList() {
         li.dataset.subcategory = sub;
         if (sub === currentSetupSubCategory) li.classList.add('active');
 
-        if (setupSubcategorySettingsMode && isUserAdminRole()) {
+        // 세부 구분이 아직 없는 단계에 임시로 보이는 단계 이름은 수정·이동 대상 아님
+        const isPlaceholder = currentCatItems.length === 0;
+        if (setupSubcategorySettingsMode && isUserAdminRole() && !isPlaceholder) {
             li.innerHTML = `
+                <span class="subcat-drag-handle" title="끌어서 순서 변경" style="flex-shrink: 0; cursor: grab; color: #8b949e; padding: 0 6px 0 0; user-select: none;">⠿</span>
                 <span class="subcat-text" style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(sub)}</span>
+                <button class="subcat-edit-btn" style="flex-shrink: 0; margin-right: 4px; background: none; border: none; outline: none; box-shadow: none; cursor: pointer; padding: 0 2px; font-size: 13px; line-height: 1;" title="세부 구분 이름 수정">✏️</button>
                 <button class="btn-del-sm" style="flex-shrink: 0;" title="세부 구분 삭제">✕</button>
             `;
+            const editBtn = li.querySelector('.subcat-edit-btn');
+            if (editBtn) {
+                editBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    startInlineSubcategoryRename(li, sub);
+                };
+            }
+            setupSubcategoryDrag(li, listEl, sub);
             const delBtn = li.querySelector('.btn-del-sm');
             if (delBtn) {
                 delBtn.onclick = (e) => {
@@ -6253,6 +6206,7 @@ function renderSetupTemplateSubCategoryList() {
                     saveCommonSetupTemplateLocal(updatedTemplate);
                     if (currentSetupSubCategory === sub) currentSetupSubCategory = null;
                     renderSetupTemplateSubCategoryList();
+                    saveSetupTemplateToServer(true); // [변경] 바로 서버에 반영
                 };
             }
         } else {
@@ -6263,137 +6217,324 @@ function renderSetupTemplateSubCategoryList() {
             listEl.querySelectorAll('li').forEach(l => l.classList.remove('active'));
             li.classList.add('active');
             currentSetupSubCategory = sub;
-            renderSetupTemplateItemList();
+            renderSetupTemplateOptionList();
         };
 
         listEl.appendChild(li);
     });
 
-    renderSetupTemplateItemList();
+    renderSetupTemplateOptionList();
 }
 
-function renderSetupTemplateItemList() {
-    const placeholder = document.getElementById('setup-template-detail-placeholder');
-    const container = document.getElementById('setup-template-detail-container');
-    const listEl = document.getElementById('setup-template-item-list');
-    const titleEl = document.getElementById('setup-template-detail-title');
+/* --------------------------------------------------------------------------
+   [추가] 세부 선택 항목 (셋업 일지 등록 시 체크박스 복수 선택)
+   - 템플릿에서 세부 구분 이름과 다른 작업 내용 = 선택 항목 (common_setup.js getSetupSubOptions 와 같은 규칙)
+   - 첫 항목 추가 시 세부 구분 이름과 같은 기본 항목은 선택 항목으로 대체, 마지막 항목 삭제 시 기본 항목 복구
+   - 1~8단계만 사용
+   -------------------------------------------------------------------------- */
+let setupOptionSettingsMode = false;
 
-    if (!container || !listEl) return;
+function isSetupOptionStage(cat) {
+    return /^[1-8]단계/.test(cat || '');
+}
 
-    if (!currentSetupCategory) {
-        if (placeholder) placeholder.style.display = 'flex';
-        container.style.display = 'none';
-        return;
-    }
+// 현재 세부 구분이 템플릿에 실제 등록된 세부 구분인지 (세부 구분 없는 단계에 임시로 보이는 단계 이름은 제외)
+function isRealSetupSubcategory(template, cat, sub) {
+    return !!sub && template.some(t => t.category === cat && (t.subcategory || t.category) === sub);
+}
 
-    if (placeholder) placeholder.style.display = 'none';
-    container.style.display = 'block';
+function getSetupTemplateOptions(template, cat, sub) {
+    return template
+        .filter(t => t.category === cat && (t.subcategory || t.category) === sub)
+        .map(t => String(t.content || '').trim())
+        .filter(c => c && c !== sub);
+}
 
-    if (titleEl) {
-        titleEl.textContent = `${currentSetupCategory} > ${currentSetupSubCategory || '전체'} 항목 관리`;
-    }
-
+function renderSetupTemplateOptionList() {
+    const listEl = document.getElementById('setup-template-option-list');
+    if (!listEl) return;
+    const footer = document.getElementById('setup-template-option-footer');
     listEl.innerHTML = '';
+
+    const cat = currentSetupCategory;
+    const sub = currentSetupSubCategory;
     const template = getCommonSetupTemplate();
-    const items = template.filter(item => {
-        if (item.category !== currentSetupCategory) return false;
-        if (currentSetupSubCategory && (item.subcategory || item.category) !== currentSetupSubCategory) return false;
-        return true;
-    });
+    const msg = (text) => { listEl.innerHTML = `<li class="empty-msg" style="color:#8b949e; cursor:default; font-size:12px; white-space:normal;">${escapeHtml(text)}</li>`; };
 
-    if (items.length === 0) {
-        listEl.innerHTML = '<li class="list-empty-msg">등록된 세부 작업 항목이 없습니다. 하단에서 추가해주세요.</li>';
-        updateSetupTemplateTotalDays();
-        return;
-    }
+    const usable = isSetupOptionStage(cat) && isRealSetupSubcategory(template, cat, sub);
+    if (footer) footer.style.display = (setupOptionSettingsMode && usable) ? 'block' : 'none';
 
-    const isAdmin = isUserAdminRole();
+    if (!isSetupOptionStage(cat)) return msg('1~8단계에서만 사용할 수 있습니다.');
+    if (!isRealSetupSubcategory(template, cat, sub)) return msg('세부 구분을 먼저 추가해주세요.');
 
-    items.forEach((item, index) => {
+    const options = getSetupTemplateOptions(template, cat, sub);
+    if (options.length === 0) return msg(setupOptionSettingsMode ? '등록된 항목이 없습니다. 아래에서 추가해주세요.' : '등록된 항목이 없습니다.');
+
+    options.forEach(opt => {
         const li = document.createElement('li');
-        li.className = 'check-item-row';
-        li.style.display = 'flex';
-        li.style.alignItems = 'center';
-        li.style.gap = '8px';
-        li.style.padding = '6px 8px';
-
-        const subName = item.subcategory || item.category;
-
-        li.innerHTML = `
-            <div class="model-col" style="flex: 1.2; font-size: 12px; color: #8b949e; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(subName)}">
-                ${escapeHtml(subName)}
-            </div>
-            <div class="model-col" style="flex: 3;">
-                <input type="text" class="input-dark item-content-input" value="${escapeHtml(item.content)}" ${isAdmin ? '' : 'readonly disabled'} style="width: 100%; height: 28px; font-size: 13px; ${isAdmin ? '' : 'border:none; background:transparent; pointer-events:none;'}">
-            </div>
-            <div class="model-col" style="flex: 1; text-align: center;">
-                <input type="number" class="input-dark item-days-input" value="${escapeHtml(item.estDays || '1')}" min="0" ${isAdmin ? '' : 'readonly disabled'} style="width: 60px; height: 28px; text-align: center; font-size: 13px; ${isAdmin ? '' : 'border:none; background:transparent; pointer-events:none;'}">
-            </div>
-            ${isAdmin ? `
-            <div class="model-col col-action" style="width: 50px; text-align: center;">
-                <button class="btn-del-sm" title="삭제">✕</button>
-            </div>
-            ` : ''}
-        `;
-
-        if (!isAdmin) {
-            listEl.appendChild(li);
-            return;
-        }
-
-        const contentInput = li.querySelector('.item-content-input');
-        const daysInput = li.querySelector('.item-days-input');
-        const delBtn = li.querySelector('.btn-del-sm');
-
-        if (contentInput) {
-            contentInput.onchange = () => {
-                item.content = contentInput.value.trim();
-                saveCommonSetupTemplateLocal(template);
+        li.style.cursor = 'default';
+        if (setupOptionSettingsMode && isUserAdminRole()) {
+            li.style.display = 'flex';
+            li.style.alignItems = 'center';
+            li.style.gap = '6px';
+            li.innerHTML = `
+                <span style="flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">☑ ${escapeHtml(opt)}</span>
+                <button class="btn-del-sm" style="flex-shrink: 0;" title="항목 삭제">✕</button>`;
+            li.querySelector('.btn-del-sm').onclick = (e) => {
+                e.stopPropagation();
+                if (!confirm(`'${opt}' 항목을 삭제하시겠습니까?`)) return;
+                removeSetupTemplateOption(cat, sub, opt);
             };
+        } else {
+            li.textContent = `☑ ${opt}`;
         }
-
-        if (daysInput) {
-            daysInput.oninput = () => {
-                item.estDays = daysInput.value.trim() || '0';
-                saveCommonSetupTemplateLocal(template);
-                updateSetupTemplateTotalDays();
-            };
-        }
-
-        if (delBtn) {
-            delBtn.onclick = () => {
-                if (!confirm(`'${item.content}' 항목을 삭제하시겠습니까?`)) return;
-                const itemIdx = template.indexOf(item);
-                if (itemIdx !== -1) {
-                    template.splice(itemIdx, 1);
-                    saveCommonSetupTemplateLocal(template);
-                    renderSetupTemplateItemList();
-                    updateSetupTemplateTotalDays();
-                }
-            };
-        }
-
         listEl.appendChild(li);
     });
-
-    updateSetupTemplateTotalDays();
 }
 
-function updateSetupTemplateTotalDays() {
-    const template = getCommonSetupTemplate();
-    let totalDays = 0;
-    template.forEach(item => {
-        totalDays += parseInt(item.estDays, 10) || 0;
-    });
+function addSetupTemplateOption(cat, sub, optInput) {
+    const opt = String(optInput || '').trim();
+    if (!opt) { alert('항목명을 입력해주세요.'); return false; }
+    if (opt.includes(',')) { alert('항목명에는 쉼표(,)를 사용할 수 없습니다.'); return false; }
+    if (opt === sub) { alert('세부 구분 이름과 같은 항목은 추가할 수 없습니다.'); return false; }
 
-    const totalDaysEl = document.getElementById('setup-template-total-days');
-    if (totalDaysEl) {
-        totalDaysEl.textContent = `(전체 셋업 총 ${totalDays}일 소요)`;
+    const template = getCommonSetupTemplate();
+    if (getSetupTemplateOptions(template, cat, sub).includes(opt)) { alert('이미 있는 항목입니다.'); return false; }
+
+    const sameSub = (t) => t.category === cat && (t.subcategory || t.category) === sub;
+    // 세부 구분 이름과 같은 기본 항목이 있으면 첫 선택 항목으로 대체 (자리·소요일수 유지)
+    const baseIdx = template.findIndex(t => sameSub(t) && String(t.content || '').trim() === sub);
+    const newItem = { category: cat, subcategory: sub, content: opt, estDays: '1' };
+    if (baseIdx >= 0) {
+        newItem.estDays = template[baseIdx].estDays || '1';
+        template[baseIdx] = newItem;
+    } else {
+        // 같은 세부 구분의 마지막 항목 바로 뒤에 추가
+        let lastIdx = -1;
+        template.forEach((t, i) => { if (sameSub(t)) lastIdx = i; });
+        template.splice(lastIdx + 1, 0, newItem);
+    }
+    saveCommonSetupTemplateLocal(template);
+    renderSetupTemplateOptionList();
+    saveSetupTemplateToServer(true);
+    return true;
+}
+
+function removeSetupTemplateOption(cat, sub, opt) {
+    const template = getCommonSetupTemplate();
+    const sameSub = (t) => t.category === cat && (t.subcategory || t.category) === sub;
+    const idx = template.findIndex(t => sameSub(t) && String(t.content || '').trim() === opt);
+    if (idx < 0) return;
+    const removed = template[idx];
+    const remaining = template.filter((t, i) => i !== idx && sameSub(t));
+    if (remaining.length === 0) {
+        // 마지막 항목이면 세부 구분이 사라지지 않게 기본 항목(세부 구분 이름)으로 되돌림
+        template[idx] = { category: cat, subcategory: sub, content: sub, estDays: removed.estDays || '1' };
+    } else {
+        template.splice(idx, 1);
+    }
+    saveCommonSetupTemplateLocal(template);
+    renderSetupTemplateOptionList();
+    saveSetupTemplateToServer(true);
+}
+
+function setupSetupTemplateOptionPanel() {
+    const btnSettings = document.getElementById('btn-setup-option-settings');
+    if (btnSettings) {
+        btnSettings.onclick = () => {
+            setupOptionSettingsMode = !setupOptionSettingsMode;
+            btnSettings.classList.toggle('active', setupOptionSettingsMode);
+            renderSetupTemplateOptionList();
+        };
+    }
+    const btnAdd = document.getElementById('btn-add-setup-template-option');
+    const input = document.getElementById('setup-template-option-input');
+    if (btnAdd && input) {
+        const handleAdd = () => {
+            if (addSetupTemplateOption(currentSetupCategory, currentSetupSubCategory, input.value)) {
+                input.value = '';
+                input.focus();
+            }
+        };
+        btnAdd.onclick = handleAdd;
+        input.onkeydown = (e) => {
+            if (e.key !== 'Enter') return;
+            e.preventDefault();
+            // 한글 입력 중(조합 중) Enter 는 마지막 글자가 확정된 뒤에 추가
+            if (e.isComposing || e.keyCode === 229) setTimeout(handleAdd, 0); else handleAdd();
+        };
     }
 }
 
-async function saveSetupTemplateToServer() {
+// [추가] 세부 구분 끌어서 순서 변경 (관리 모드) → 바로 저장
+function setupSubcategoryDrag(li, listEl, sub) {
+    li.draggable = true;
+    li.addEventListener('dragstart', (e) => {
+        li.classList.add('subcat-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', sub);
+    });
+    li.addEventListener('dragend', () => {
+        li.classList.remove('subcat-dragging');
+        listEl.querySelectorAll('li').forEach(x => x.classList.remove('subcat-drop-before', 'subcat-drop-after'));
+    });
+    li.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const r = li.getBoundingClientRect();
+        const after = e.clientY > r.top + r.height / 2;
+        listEl.querySelectorAll('li').forEach(x => x.classList.remove('subcat-drop-before', 'subcat-drop-after'));
+        li.classList.add(after ? 'subcat-drop-after' : 'subcat-drop-before');
+    });
+    li.addEventListener('dragleave', () => li.classList.remove('subcat-drop-before', 'subcat-drop-after'));
+    li.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const dragged = e.dataTransfer.getData('text/plain');
+        const after = li.classList.contains('subcat-drop-after');
+        li.classList.remove('subcat-drop-before', 'subcat-drop-after');
+        if (!dragged || dragged === sub) return;
+
+        const order = Array.from(listEl.querySelectorAll('li')).map(x => x.dataset.subcategory).filter(x => x !== dragged);
+        const idx = order.indexOf(sub);
+        order.splice(after ? idx + 1 : idx, 0, dragged);
+        reorderSetupTemplateSubcategories(order);
+    });
+}
+
+function reorderSetupTemplateSubcategories(order) {
     const template = getCommonSetupTemplate();
+    const subOf = (t) => t.subcategory || t.category;
+    const positions = [];
+    const items = [];
+    template.forEach((t, i) => {
+        if (t.category === currentSetupCategory) { positions.push(i); items.push(t); }
+    });
+    const rank = (t) => { const r = order.indexOf(subOf(t)); return r < 0 ? order.length : r; };
+    const sorted = items.map((t, i) => [t, i]).sort((a, b) => (rank(a[0]) - rank(b[0])) || (a[1] - b[1])).map(x => x[0]);
+    positions.forEach((pos, k) => { template[pos] = sorted[k]; });
+    saveCommonSetupTemplateLocal(template);
+    renderSetupTemplateSubCategoryList();
+    saveSetupTemplateToServer(true);
+}
+
+// [추가] 세부 구분 이름을 목록에서 바로 수정 (Enter/바깥 클릭: 저장, Esc: 취소)
+function startInlineSubcategoryRename(li, oldName) {
+    const textEl = li.querySelector('.subcat-text');
+    if (!textEl || li.querySelector('.subcat-rename-input')) return;
+    const category = currentSetupCategory;   // 저장 중에 다른 셋업 구분을 눌러도 원래 구분으로 변경
+    li.draggable = false; // 입력 중에는 끌기로 글자 선택이 막히지 않게
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'input-dark subcat-rename-input';
+    input.value = oldName;
+    input.maxLength = 100;
+    input.spellcheck = false;
+    input.style.cssText = 'flex: 1; min-width: 0; height: 24px; padding: 0 6px; font-size: 13px; box-sizing: border-box;';
+    input.onclick = (e) => e.stopPropagation();
+    textEl.replaceWith(input);
+    li.querySelectorAll('.subcat-edit-btn, .btn-del-sm').forEach(btn => { btn.style.visibility = 'hidden'; });
+    input.focus();
+    input.select();
+
+    let finished = false;
+    const finish = async (save) => {
+        if (finished) return;
+        finished = true;
+        const newName = input.value.trim();
+        if (!save || !newName || newName === oldName) { renderSetupTemplateSubCategoryList(); return; }
+        input.disabled = true;
+        let ok = false;
+        try { ok = await renameSetupTemplateSubcategory(oldName, newName, category); }
+        catch (err) { console.error('세부 구분 이름 변경 오류:', err); }
+        if (!ok) renderSetupTemplateSubCategoryList();
+    };
+    input.onkeydown = (e) => {
+        // 한글 입력 중(조합 중) Enter 는 마지막 글자가 확정된 뒤에 저장
+        if (e.key === 'Enter' && (e.isComposing || e.keyCode === 229)) { e.preventDefault(); setTimeout(() => finish(true), 0); }
+        else if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+        else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    };
+    input.onblur = () => finish(true);
+}
+
+// [추가] 세부 구분 이름 수정 → 템플릿과 기존 장비의 셋업 작업·일지까지 같이 변경
+async function renameSetupTemplateSubcategory(oldName, newNameInput, categoryInput) {
+    const newName = String(newNameInput || '').trim();
+    const cat = categoryInput || currentSetupCategory;
+    if (!newName || newName === oldName || !cat) return false;
+
+    const template = getCommonSetupTemplate();
+    if (template.some(t => t.category === cat && (t.subcategory || t.category) === newName)) {
+        alert('같은 이름의 세부 구분이 이미 있습니다.');
+        return false;
+    }
+
+    let res;
+    try {
+        const r = await fetch('/api/setup/rename_subcategory', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
+            body: JSON.stringify({ category: cat, old: oldName, new: newName })
+        });
+        res = await r.json();
+    } catch (e) {
+        res = { status: 'fail', message: '서버에 연결할 수 없습니다.' };
+    }
+    if (!res || res.status !== 'success') {
+        alert(res && res.message ? res.message : '세부 구분 이름 변경에 실패했습니다.');
+        return false;
+    }
+
+    // 이 브라우저에 저장된 데이터도 서버와 같이 변경
+    //  - 템플릿은 서버가 바꾼 결과를 그대로 받아서 사용 (화면 쪽 템플릿을 다시 저장하면 예전 이름으로 덮어쓸 수 있음)
+    const mapCat = (t) => (typeof window.mapSetupCategory === 'function') ? window.mapSetupCategory(t.category, t.subcategory, t.content) : t.category;
+    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
+    Object.keys(templates).forEach(key => {
+        if (!Array.isArray(templates[key])) return;
+        templates[key].forEach(t => {
+            if (t && mapCat(t) === cat && (t.subcategory || t.content) === oldName) {
+                t.subcategory = newName;
+                if ((t.content || '') === oldName) t.content = newName;
+            }
+        });
+    });
+    localStorage.setItem('setup_templates', JSON.stringify(
+        (res.templates && Array.isArray(res.templates.default) && res.templates.default.length) ? res.templates : templates));
+
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    Object.values(setupData).forEach(d => {
+        (d.setupDetails || []).forEach(t => {
+            if (mapCat(t) !== cat) return;
+            if ((t.subcategory || '') === oldName || (!t.subcategory && (t.content || '') === oldName)) {
+                t.subcategory = newName;
+                if ((t.content || '') === oldName) t.content = newName;
+            }
+        });
+        (d.setupLogs || []).forEach(l => {
+            if (mapCat(l) === cat && (l.subcategory || '') === oldName) l.subcategory = newName;
+        });
+    });
+    localStorage.setItem('setup_data', JSON.stringify(setupData));
+
+    if (currentSetupCategory === cat && currentSetupSubCategory === oldName) currentSetupSubCategory = newName;
+    renderSetupTemplateSubCategoryList();
+    const statusEl = document.getElementById('setup-template-save-status');
+    if (statusEl) {
+        const now = new Date();
+        statusEl.textContent = `✓ 저장됨 (${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')})`;
+        statusEl.style.color = '#3fb950';
+    }
+    if (typeof addSystemLog === 'function') {
+        addSystemLog('RENAME_SETUP_SUBCATEGORY', cat, `${oldName} → ${newName} (작업 ${res.details}건, 일지 ${res.logs}건)`);
+    }
+    return true;
+}
+
+// silent = true : 세부 구분 추가/삭제 때 바로 저장 (성공 시 알림 없이 하단 상태 문구만 표시)
+async function saveSetupTemplateToServer(silent = false) {
+    if (silent !== true) silent = false; // 버튼 onclick 의 이벤트 객체가 넘어와도 일반 저장으로 처리
+    const template = getCommonSetupTemplate();
+    const statusEl = document.getElementById('setup-template-save-status');
+    if (statusEl) { statusEl.textContent = '저장 중...'; statusEl.style.color = '#8b949e'; }
 
     // 빈 항목 검증
     for (const item of template) {
@@ -6418,10 +6559,17 @@ async function saveSetupTemplateToServer() {
         if (typeof addSystemLog === 'function') {
             addSystemLog('UPDATE_SETUP_TEMPLATE', '공통 템플릿', '공통 셋업 일정 템플릿 수정 및 동기화');
         }
-        alert('셋업 일정 공통 템플릿이 성공적으로 저장되었습니다.');
-    } else {
-        alert('서버 저장 중 오류가 발생했습니다.');
+        if (statusEl) {
+            const now = new Date();
+            statusEl.textContent = `✓ 저장됨 (${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')})`;
+            statusEl.style.color = '#3fb950';
+        }
+        if (!silent) alert('셋업 일정 공통 템플릿이 성공적으로 저장되었습니다.');
+        return true;
     }
+    if (statusEl) { statusEl.textContent = '⚠ 저장 실패 - 다시 시도해주세요'; statusEl.style.color = '#f85149'; }
+    alert('서버 저장 중 오류가 발생했습니다. 다시 시도해주세요.');
+    return false;
 }
 
 /* ==========================================================================
@@ -7647,4 +7795,4 @@ if (typeof escapeHtml !== 'function') {
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
     }
-}
+}

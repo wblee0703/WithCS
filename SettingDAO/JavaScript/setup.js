@@ -442,6 +442,23 @@ function renderDetails() {
     const workspace = document.getElementById('setup-workspace');
     if (!workspace) return;
 
+    // [추가] 프로젝트 단위 표시: 경로에 프로젝트 번호와 장비 대수
+    const pathEl = document.getElementById('current-path');
+    const projectNo = window.getSetupProjectNo(currentPath.site, currentPath.equip);
+    if (pathEl && projectNo) {
+        const equips = window.getSetupProjectEquips(currentPath.site, currentPath.equip);
+        let models = [];
+        try {
+            const em = JSON.parse(localStorage.getItem('equipment_models')) || [];
+            models = [...new Set(equips.map(e => {
+                const name = e.split('::')[0];
+                const m = em.find(x => x.name === name || x.abbr === name);
+                return (m && m.abbr) ? m.abbr : name;
+            }))];
+        } catch (e) { }
+        pathEl.textContent = `📍 ${currentPath.site} > 프로젝트 ${projectNo} (${models.join(', ')}${equips.length > 1 ? ` · ${equips.length}대` : ''})`;
+    }
+
     isSetupLogEditMode = false;
     const card = document.getElementById('setup-log-card');
     if (card) card.classList.remove('edit-mode');
@@ -469,10 +486,7 @@ function renderDetails() {
     if (lastSetupLog) {
         setTimeout(() => selectSetupLog(Number(lastSetupLog)), 50);
     } else {
-        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-        const equipKey = `${currentPath.site}::${currentPath.equip}`;
-        const data = setupData[equipKey] || {};
-        const logs = data.setupLogs || [];
+        const logs = window.getSetupProjectData(currentPath.site, currentPath.equip).setupLogs;
         if (logs.length > 0) {
             setTimeout(() => selectSetupLog(logs[0].id), 50);
         }
@@ -484,10 +498,7 @@ function renderSetupIssue() {
     if (!issueArea) return;
 
     if (selectedSetupLogId !== null && currentPath.site && currentPath.equip) {
-        const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-        const equipKey = `${currentPath.site}::${currentPath.equip}`;
-        const data = setupData[equipKey] || {};
-        const logs = data.setupLogs || [];
+        const logs = window.getSetupProjectData(currentPath.site, currentPath.equip).setupLogs;
         const log = logs.find(l => l.id == selectedSetupLogId);
         const val = log ? (log.specialNote || log.special_note || '') : '';
         issueArea.value = val;
@@ -506,13 +517,14 @@ function renderSetupIssue() {
 
 async function saveSetupIssue() {
     if (!currentPath.site || !currentPath.equip) return alert('장비를 먼저 선택해주세요.');
-    if (!selectedSetupLogId) return alert('좌측 셋업 일지 리스트에서 항목을 먼저 선택해주세요.');
+    if (!selectedSetupLogId) return alert('셋업 일지 목록에서 항목을 먼저 선택해주세요.');
 
     const issueArea = document.getElementById('setup-equip-issue-memo');
     const issueContent = issueArea ? issueArea.value : '';
 
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `${currentPath.site}::${currentPath.equip}`;
+    const logEquip = window.findSetupLogEquip(currentPath.site, currentPath.equip, selectedSetupLogId);
+    const equipKey = `${currentPath.site}::${logEquip}`;
     let data = setupData[equipKey] || {};
 
     const logIndex = data.setupLogs ? data.setupLogs.findIndex(l => l.id == selectedSetupLogId) : -1;
@@ -522,7 +534,7 @@ async function saveSetupIssue() {
         setupData[equipKey] = data;
         localStorage.setItem('setup_data', JSON.stringify(setupData));
 
-        const success = await window.syncSetupDataDB(currentPath.site, currentPath.equip, null, data.setupLogs); // [DB 동기화]
+        const success = await window.syncSetupDataDB(currentPath.site, logEquip, null, data.setupLogs); // [DB 동기화]
         if (success) {
             originalSetupLogIssue = issueContent;
             const saveBtn = document.getElementById('btn-save-setup-issue');
@@ -580,24 +592,12 @@ function renderSetupDetailList() {
         let templateToUse = templates[actualModelName];
 
         if (!templateToUse || templateToUse.length === 0) {
-            templateToUse = templates['default'] || [
-                { category: "장비 반입 및 정위치", content: "장비 도면 부착", estDays: "1" },
-                { category: "장비 반입 및 정위치", content: "다이크 설치", estDays: "1" },
-                { category: "장비 반입 및 정위치", content: "장비 반입", estDays: "1" },
-                { category: "장비 반입 및 정위치", content: "다이크 공사 및 리크센서 설치", estDays: "2" },
-                { category: "통신 상태 및 유틸리티", content: "Utility 배관 공사 및 연결", estDays: "5" },
-                { category: "통신 상태 및 유틸리티", content: "Utility 턴온", estDays: "1" },
-                { category: "통신 상태 및 유틸리티", content: "인터락 Test 및 통신상태 확인 ", estDays: "2" },
-                { category: "셋업 평가", content: "분석부 안정화 및 오염제어", estDays: "5" },
-                { category: "셋업 평가", content: "Calibration 평가", estDays: "2" },
-                { category: "셋업 평가", content: "Sample 측정", estDays: "2" },
-                { category: "셋업 평가", content: "신뢰도 평가", estDays: "5" },
-                { category: "셋업 완료", content: "셋업 완료", estDays: "0" }
-            ];
+            templateToUse = templates['default'] || window.getDefaultSetupTemplate();
         }
 
         data.setupDetails = templateToUse.map((item, idx) => ({
-            id: Date.now() + idx, category: item.category, content: item.content,
+            id: Date.now() + idx, category: window.mapSetupCategory(item.category, item.subcategory, item.content),
+            subcategory: item.subcategory || '', content: item.content,
             startDate: "", date: "", estDays: item.estDays || "1",
             completed: false, execStartDate: "", delayReason: ""
         }));
@@ -609,11 +609,12 @@ function renderSetupDetailList() {
 
     // [요청] '셋업 완료' 항목이 없는 경우, 강제로 추가하여 복구
     if (data.setupDetails) {
-        const hasCompletionItem = data.setupDetails.some(item => item.category === '셋업 완료' && item.content === '셋업 완료');
+        const hasCompletionItem = data.setupDetails.some(item => item.content === '셋업 완료' || item.subcategory === '셋업 완료');
         if (!hasCompletionItem) {
             data.setupDetails.push({
                 id: Date.now() + 999, // 고유 ID
-                category: "셋업 완료",
+                category: window.SETUP_FINAL_CATEGORY,
+                subcategory: "셋업 완료",
                 content: "셋업 완료",
                 startDate: "", estDays: "0", date: ""
             });
@@ -629,14 +630,21 @@ function renderSetupDetailList() {
 
     tbody.innerHTML = '';
 
-    const categories = ["장비 반입 및 정위치", "통신 상태 및 유틸리티", "셋업 평가", "셋업 완료"];
+    // 셋업 구분: 사전 작업 + 1~9단계. 데이터에만 있는 다른 구분도 표시해야 저장 시 항목이 빠지지 않음
+    const DEFAULT_CAT = '1단계 - 납품/정위치';
+    const catOf = (item) => window.mapSetupCategory(item.category, item.subcategory, item.content) || DEFAULT_CAT;
+    const categories = window.SETUP_CATEGORY_ORDER.slice();
+    data.setupDetails.forEach(item => {
+        const c = catOf(item);
+        if (!categories.includes(c)) categories.splice(categories.length - 1, 0, c);
+    });
 
     categories.forEach(cat => {
         // 카테고리 헤더 생성
         const headerRow = document.createElement('tr');
         headerRow.className = 'category-header-row';
         headerRow.dataset.category = cat;
-        const addBtnClass = cat === '셋업 완료' ? 'display-none' : '';
+        const addBtnClass = cat === window.SETUP_FINAL_CATEGORY ? 'display-none' : '';
         headerRow.innerHTML = `
             <td colspan="7" class="category-header">
                 <span class="category-title">${cat}</span>
@@ -646,7 +654,8 @@ function renderSetupDetailList() {
         tbody.appendChild(headerRow);
 
         // 해당 카테고리의 아이템 필터링 및 렌더링
-        const items = data.setupDetails.filter(item => (item.category || categories[0]) === cat);
+        // 구분이 비어 있는 기존 항목은 1단계에 표시 (옛 구분 이름은 단계로 변환)
+        const items = data.setupDetails.filter(item => catOf(item) === cat);
         items.forEach(item => {
             const tr = document.createElement('tr');
             tr.className = 'item-row';
@@ -664,7 +673,7 @@ function renderSetupDetailList() {
 
             tr.dataset.completed = item.completed ? 'true' : 'false';
 
-            const checkboxVisibilityClass = (!item.execStartDate && !item.completed && cat !== '셋업 완료') ? 'visibility-hidden' : '';
+            const checkboxVisibilityClass = (!item.execStartDate && !item.completed && cat !== window.SETUP_FINAL_CATEGORY) ? 'visibility-hidden' : '';
 
             // [수정] 완료된 작업도 비활성화되지 않도록 disabled 속성을 제거하여 자유로운 수정 허용
             const inputDisabledAttr = '';
@@ -782,7 +791,7 @@ function renderSetupDetailList() {
 
 function addSetupDetailItem(category) {
     if (!currentPath.site || !currentPath.equip) return alert('장비를 선택해주세요.');
-    if (!category) category = "장비 반입 및 정위치"; // 기본값
+    if (!category) category = "1단계 - 납품/정위치"; // 기본값
 
     const tbody = document.getElementById('setup-detail-body');
     const id = Date.now();
@@ -925,7 +934,7 @@ function saveSetupDetails(logAction = 'UPDATE_SETUP_DETAILS', logDetails = '셋�
 
     const rows = document.querySelectorAll('#setup-detail-body tr');
     const newDetails = [];
-    let currentCategory = "장비 반입 및 정위치";
+    let currentCategory = "1단계 - 납품/정위치";
 
     let totalItems = 0;
     let completedItems = 0;
@@ -983,7 +992,9 @@ function saveSetupDetails(logAction = 'UPDATE_SETUP_DETAILS', logDetails = '셋�
         // originalItem fallback을 제거하여, DOM에서 초기화된 값이 무시되지 않도록 수정 (execStartDate도 포함)
         const delayReason = row.dataset.delayReason !== undefined ? row.dataset.delayReason : "";
 
-        newDetails.push({ id, completed, content, date, startDate, estDays, category: currentCategory, delayReason, execStartDate });
+        // 세부 구분(subcategory)·작업자는 화면에 입력칸이 없으므로 기존 값 유지 (빠지면 일지와 연결이 끊어짐)
+        newDetails.push({ id, completed, content, date, startDate, estDays, category: currentCategory, delayReason, execStartDate,
+                          subcategory: originalItem.subcategory || '', worker: originalItem.worker || '' });
 
         // 실행률 계산용 카운트
         totalItems++;
@@ -1034,22 +1045,9 @@ function getSetupCategoryOptions() {
     const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
     let list = templates['default'];
     if (!Array.isArray(list) || list.length === 0) {
-        list = [
-            { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크", content: "장비 도면 부착" },
-            { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크", content: "다이크 설치" },
-            { category: "장비 반입 및 정위치", subcategory: "장비 반입", content: "장비 반입" },
-            { category: "장비 반입 및 정위치", subcategory: "장비 반입", content: "다이크 공사 및 리크센서 설치" },
-            { category: "통신 상태 및 유틸리티", subcategory: "Utility 배관", content: "Utility 배관 공사 및 연결" },
-            { category: "통신 상태 및 유틸리티", subcategory: "Utility 배관", content: "Utility 턴온" },
-            { category: "통신 상태 및 유틸리티", subcategory: "인터락/통신", content: "인터락 Test 및 통신상태 확인 " },
-            { category: "셋업 평가", subcategory: "분석부 안정화", content: "분석부 안정화 및 오염제어" },
-            { category: "셋업 평가", subcategory: "성능 평가", content: "Calibration 평가" },
-            { category: "셋업 평가", subcategory: "성능 평가", content: "Sample 측정" },
-            { category: "셋업 평가", subcategory: "성능 평가", content: "신뢰도 평가" },
-            { category: "셋업 완료", subcategory: "셋업 완료", content: "셋업 완료" }
-        ];
+        list = window.getDefaultSetupTemplate();
     }
-    const combined = [...list];
+    const combined = typeof window.normalizeSetupTemplate === 'function' ? window.normalizeSetupTemplate(list) : [...list];
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
     if (typeof currentPath !== 'undefined' && currentPath.site && currentPath.equip) {
         const equipKey = `${currentPath.site}::${currentPath.equip}`;
@@ -1125,10 +1123,27 @@ function renderSetupLogList() {
     const tbody = document.getElementById('setup-log-body');
     if (!tbody || !currentPath.site || !currentPath.equip) return;
 
-    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `${currentPath.site}::${currentPath.equip}`;
-    let data = setupData[equipKey] || {};
-    const logs = data.setupLogs || [];
+    // 셋업 진행률 (일지가 바뀔 때마다 같이 갱신, HOME 셋업 관리와 같은 화면)
+    if (typeof window.renderSetupProgress === 'function') {
+        window.renderSetupProgress(document.getElementById('setup-progress-body'), currentPath.site, currentPath.equip);
+    }
+    // 왼쪽 프로젝트 카드의 진행률·상태도 같이 갱신
+    if (typeof window.refreshSetupProjectItem === 'function') {
+        window.refreshSetupProjectItem(currentPath.site, currentPath.equip);
+    }
+
+    // 프로젝트(같은 프로젝트 번호) 장비들의 일지를 합쳐서 표시
+    const projectEquips = window.getSetupProjectEquips(currentPath.site, currentPath.equip);
+    const logs = window.getSetupProjectData(currentPath.site, currentPath.equip).setupLogs;
+    // 장비가 여러 대인 프로젝트는 일지마다 어느 장비 기록인지 작게 표시
+    const equipTag = (equip) => {
+        if (projectEquips.length < 2) return '';
+        const parts = String(equip).split('::');
+        let cust = '';
+        try { cust = ((JSON.parse(localStorage.getItem(`details_${currentPath.site}_${equip}`)) || {}).setup || {}).custEquipName || ''; } catch (e) { }
+        const label = cust || parts[1] || parts[0];
+        return ` <span class="setup-log-equip-tag" style="font-size:10px; color:#8b949e; border:1px solid #30363d; border-radius:8px; padding:0 5px; margin-left:4px;" title="${escapeHtml(equip)}">${escapeHtml(label)}</span>`;
+    };
 
     const filterText = document.getElementById('setup-log-filter-date') ? document.getElementById('setup-log-filter-date').value.trim().toLowerCase() : '';
     let filteredLogs = logs;
@@ -1137,6 +1152,7 @@ function renderSetupLogList() {
             (l.date && l.date.includes(filterText)) ||
             (l.category && l.category.toLowerCase().includes(filterText)) ||
             (l.subcategory && l.subcategory.toLowerCase().includes(filterText)) ||
+            (l.subOptions && l.subOptions.toLowerCase().includes(filterText)) ||
             (l.content && l.content.toLowerCase().includes(filterText)) ||
             (l.worker && l.worker.toLowerCase().includes(filterText)) ||
             (l.company && l.company.toLowerCase().includes(filterText)) ||
@@ -1153,15 +1169,17 @@ function renderSetupLogList() {
     tbody.innerHTML = filteredLogs.map(item => {
         const catText = item.category || '-';
         const subcatText = item.subcategory || '-';
+        // [추가] 세부 선택항목 (예: EXH, Bulk) 은 세부 구분 아래에 작게 표시
+        const subOptHtml = item.subOptions ? `<div class="setup-log-subopt">${escapeHtml(item.subOptions)}</div>` : '';
         const contentText = item.content || '-';
-        const contentHtml = (escapeHtml(contentText) || '-').replace(/\[지연\]/g, '<span class="tag-delayed">[지연]</span>');
+        const contentHtml = (escapeHtml(contentText) || '-').replace(/\[지연\]/g, '<span class="tag-delayed">[지연]</span>') + equipTag(item._equip);
 
         if (isSetupLogEditMode) {
             const catSelectHtml = `<select class="edit-cell-select edit-cell-category" onchange="handleSetupLogCategoryChange(this, ${item.id})" onclick="event.stopPropagation()">${buildCategoryOptionsHtml(item.category)}</select>`;
             const subcatSelectHtml = `<select class="edit-cell-select edit-cell-subcategory" onchange="handleSetupLogSubcategoryChange(this, ${item.id})" onclick="event.stopPropagation()">${buildSubcategoryOptionsHtml(item.category, item.subcategory)}</select>`;
             const contentInputHtml = `<input type="text" class="edit-cell-input edit-cell-content" value="${escapeHtml(item.content || '')}" placeholder="내용 입력" onclick="event.stopPropagation()">`;
 
-            return `<tr data-id="${item.id}" onclick="selectSetupLog(${item.id})" class="${selectedSetupLogId == item.id ? 'active-log' : ''}" style="cursor: pointer;">
+            return `<tr data-id="${item.id}" data-equip="${escapeHtml(item._equip)}" onclick="selectSetupLog(${item.id})" class="${selectedSetupLogId == item.id ? 'active-log' : ''}" style="cursor: pointer;">
                 <td class="log-date">${item.date}</td>
                 <td class="log-category" style="padding: 2px 4px; vertical-align: middle;">${catSelectHtml}</td>
                 <td class="log-subcategory" style="padding: 2px 4px; vertical-align: middle;">${subcatSelectHtml}</td>
@@ -1174,15 +1192,15 @@ function renderSetupLogList() {
             </tr>`;
         }
 
-        return `<tr data-id="${item.id}" onclick="selectSetupLog(${item.id})" class="${selectedSetupLogId == item.id ? 'active-log' : ''}" style="cursor: pointer;">
+        return `<tr data-id="${item.id}" data-equip="${escapeHtml(item._equip)}" onclick="selectSetupLog(${item.id})" class="${selectedSetupLogId == item.id ? 'active-log' : ''}" style="cursor: pointer;">
             <td class="log-date">${item.date}</td>
             <td class="log-category" style="text-align:center; vertical-align:middle; color:#8b949e; font-size:12px;">${escapeHtml(catText)}</td>
-            <td class="log-subcategory" style="text-align:center; vertical-align:middle; color:#8b949e; font-size:12px;">${escapeHtml(subcatText)}</td>
+            <td class="log-subcategory" style="text-align:center; vertical-align:middle; color:#8b949e; font-size:12px;">${escapeHtml(subcatText)}${subOptHtml}</td>
             <td class="log-content" style="text-align:left; vertical-align:middle;">${contentHtml}</td>
             <td class="log-worker">${escapeHtml(item.worker)}</td>
             <td class="log-md" style="color:#d29922; font-weight:bold;">${item.md ? item.md : '0'}</td>
             <td class="manage-col" style="text-align: center; vertical-align:middle;">
-                <button class="btn-edit" onclick="event.stopPropagation(); if(typeof window.openLogForEditing === 'function'){ window.openLogForEditing('${currentPath.site}', '${currentPath.equip}', ${item.id}); } else { toggleSetupLogEdit(${item.id}); }">✏️</button>
+                <button class="btn-edit" onclick="event.stopPropagation(); if(typeof window.openLogForEditing === 'function'){ window.openLogForEditing(currentPath.site, this.closest('tr').dataset.equip, ${item.id}); } else { toggleSetupLogEdit(${item.id}); }">✏️</button>
                 <button class="btn-del-sm" onclick="event.stopPropagation(); deleteSetupLogItem(${item.id})">✕</button>
             </td>
         </tr>`;
@@ -1224,10 +1242,7 @@ function selectSetupLog(id) {
     }
 
     // 데이터 로드
-    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `${currentPath.site}::${currentPath.equip}`;
-    const data = setupData[equipKey] || {};
-    const logs = data.setupLogs || [];
+    const logs = window.getSetupProjectData(currentPath.site, currentPath.equip).setupLogs;
     // [수정] ID 비교 시 타입 불일치 방지를 위해 == 사용 (HTML 속성은 문자열일 수 있음)
     const log = logs.find(l => l.id == numericId);
 
@@ -1292,6 +1307,17 @@ function selectSetupLog(id) {
         partsTitle.textContent = '셋업 물품';
         replacedPartsContainer.appendChild(partsTitle);
 
+        // [추가] 물품 검색·추가 입력창 (입력하면 제안 목록 표시)
+        const partsSearch = document.createElement('input');
+        partsSearch.type = 'text';
+        partsSearch.id = 'setup-parts-search';
+        partsSearch.className = 'input-dark';
+        partsSearch.autocomplete = 'off';
+        partsSearch.spellcheck = false;
+        partsSearch.style.cssText = 'margin:8px; width:calc(100% - 16px); height:30px; box-sizing:border-box; font-size:12px;';
+        replacedPartsContainer.appendChild(partsSearch);
+        setupSetupPartsSearch(partsSearch);
+
         const partsList = document.createElement('ul');
         partsList.id = 'setup-replaced-parts-list';
         partsList.style.listStyle = 'none';
@@ -1327,48 +1353,207 @@ function selectSetupLog(id) {
         memoInput.style.boxSizing = 'border-box';
     }
 
-    const partsList = document.getElementById('setup-replaced-parts-list');
-    if (partsList) {
-        let partsData = log ? log.parts : '';
-        let replacedParts = [];
-
-        if (partsData) {
-            const itemsList = partsData.split(',').map(s => s.trim()).filter(Boolean);
-            itemsList.forEach(itemText => {
-                let pureContent = itemText;
-                let itemCost = '';
-                const costMatch = pureContent.match(/^\[(.*?)\]\s*(.*)$/);
-                if (costMatch) {
-                    itemCost = costMatch[1];
-                    pureContent = costMatch[2];
-                }
-                replacedParts.push({ name: pureContent, costType: itemCost });
-            });
-        }
-
-        partsList.innerHTML = '';
-        if (replacedParts.length > 0) {
-            replacedParts.forEach(part => {
-                const li = document.createElement('li');
-                li.style.padding = '10px';
-                li.style.borderBottom = '1px solid #30363d';
-                li.style.fontSize = '12px';
-                li.style.color = '#c9d1d9';
-                li.style.display = 'flex';
-                li.style.alignItems = 'center';
-                li.style.justifyContent = 'space-between';
-
-                let titleHtml = `<span style="font-weight:bold; color:#58a6ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(part.name)}">${escapeHtml(part.name)}</span>`;
-                let costHtml = part.costType ? `<span style="font-size:10px; background:#30363d; padding:2px 6px; border-radius:4px; color:#e6edf3; flex-shrink:0; margin-left:5px;">${escapeHtml(part.costType)}</span>` : '';
-
-                li.innerHTML = titleHtml + costHtml;
-                partsList.appendChild(li);
-            });
-        } else {
-            partsList.innerHTML = '<li style="padding:20px; text-align:center; color:#8b949e; font-size:12px;">선택된 물품 없음</li>';
-        }
-    }
+    renderSetupLogParts(log);
 }
+
+/* ==========================================================================
+   [추가] 셋업 물품 (작업 내용 옆) : 검색 제안박스로 추가, 비용 구분 변경, 삭제
+   - 선택한 셋업 일지의 parts 에 "[비용구분] 물품명, ..." 형식으로 저장 (작업 기록 창과 같은 형식)
+   ========================================================================== */
+const SETUP_PART_COSTS = ['무상(셋업)', '무상(중고)', '유상', '기타'];
+
+function parseSetupParts(partsData) {
+    return String(partsData || '').split(',').map(x => x.trim()).filter(Boolean).map(text => {
+        const m = text.match(/^\[(.*?)\]\s*(.*)$/);
+        return m ? { name: m[2], costType: m[1] } : { name: text, costType: '무상(셋업)' };
+    });
+}
+
+function getSelectedSetupLog() {
+    if (selectedSetupLogId === null || !currentPath.site || !currentPath.equip) return null;
+    return window.getSetupProjectData(currentPath.site, currentPath.equip).setupLogs.find(l => l.id == selectedSetupLogId) || null;
+}
+
+function renderSetupLogParts(log) {
+    const partsList = document.getElementById('setup-replaced-parts-list');
+    const search = document.getElementById('setup-parts-search');
+    if (search) {
+        search.disabled = !log;
+        search.placeholder = log ? '🔍 물품 검색 후 선택하여 추가' : '셋업 일지를 먼저 선택하세요';
+    }
+    if (!partsList) return;
+
+    const parts = log ? parseSetupParts(log.parts) : [];
+    partsList.innerHTML = '';
+    if (!parts.length) {
+        partsList.innerHTML = '<li style="padding:20px; text-align:center; color:#8b949e; font-size:12px;">선택된 물품 없음</li>';
+        return;
+    }
+    parts.forEach((part, idx) => {
+        const li = document.createElement('li');
+        li.style.cssText = 'padding:6px 8px 6px 10px; border-bottom:1px solid #30363d; font-size:12px; color:#c9d1d9; display:flex; align-items:center; gap:6px;';
+        const costOptions = [...new Set([...SETUP_PART_COSTS, part.costType])].map(c =>
+            `<option value="${escapeHtml(c)}" ${c === part.costType ? 'selected' : ''}>${escapeHtml(c)}</option>`).join('');
+        li.innerHTML = `
+            <span style="flex:1; min-width:0; font-weight:bold; color:#58a6ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${escapeHtml(part.name)}">${escapeHtml(part.name)}</span>
+            <select class="setup-part-cost" style="flex-shrink:0; background:#0d1117; border:1px solid #30363d; color:#e6edf3; border-radius:3px; padding:1px 2px; font-size:10px;">${costOptions}</select>
+            <button type="button" class="btn-del-sm" style="flex-shrink:0;" title="삭제">✕</button>`;
+        li.querySelector('.setup-part-cost').onchange = (e) => {
+            parts[idx].costType = e.target.value;
+            saveSetupLogParts(parts);
+        };
+        li.querySelector('.btn-del-sm').onclick = () => {
+            if (!confirm(`'${part.name}' 물품을 삭제하시겠습니까?`)) return;
+            parts.splice(idx, 1);
+            saveSetupLogParts(parts);
+        };
+        partsList.appendChild(li);
+    });
+}
+
+async function saveSetupLogParts(parts) {
+    if (selectedSetupLogId === null) return;
+    const logEquip = window.findSetupLogEquip(currentPath.site, currentPath.equip, selectedSetupLogId);
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equipKey = `${currentPath.site}::${logEquip}`;
+    const data = setupData[equipKey] || {};
+    const log = (data.setupLogs || []).find(l => l.id == selectedSetupLogId);
+    if (!log) return alert('선택된 일지 항목을 찾을 수 없습니다.');
+
+    log.parts = parts.map(p => `[${p.costType}] ${p.name}`).join(', ');
+    setupData[equipKey] = data;
+    localStorage.setItem('setup_data', JSON.stringify(setupData));
+    renderSetupLogParts(log);
+
+    const ok = await window.syncSetupDataDB(currentPath.site, logEquip, null, data.setupLogs);
+    if (!ok) alert('셋업 물품 저장 중 오류가 발생했습니다.');
+    if (typeof addSystemLog === 'function') addSystemLog('UPDATE_SETUP_LOG_PARTS', logEquip, `셋업 물품 수정 (ID: ${selectedSetupLogId})`);
+}
+
+// 물품 검색 제안박스 (ADMIN 물품 목록에서 코드/물품명 검색, 방향키·Enter 선택 지원)
+function setupSetupPartsSearch(input) {
+    let box = document.getElementById('setup-parts-suggest');
+    if (!box) {
+        box = document.createElement('ul');
+        box.id = 'setup-parts-suggest';
+        box.style.cssText = 'display:none; position:fixed; z-index:2000; list-style:none; margin:0; padding:4px; max-height:240px; overflow-y:auto; background:#161b22; border:1px solid #30363d; border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.5);';
+        document.body.appendChild(box);
+    }
+    let matches = [];
+    let activeIdx = -1;
+
+    const close = () => { box.style.display = 'none'; activeIdx = -1; };
+    const place = () => {
+        const r = input.getBoundingClientRect();
+        box.style.left = `${r.left}px`;
+        box.style.top = `${r.bottom + 2}px`;
+        box.style.width = `${Math.max(r.width, 220)}px`;
+    };
+    const addPart = (name) => {
+        const log = getSelectedSetupLog();
+        if (!log || !name) return;
+        const parts = parseSetupParts(log.parts);
+        if (parts.some(p => p.name === name)) { alert('이미 추가된 물품입니다.'); return; }
+        parts.push({ name, costType: '무상(셋업)' });
+        input.value = '';
+        close();
+        saveSetupLogParts(parts);
+    };
+    const highlight = () => {
+        box.querySelectorAll('li[data-idx]').forEach(li => {
+            li.style.background = Number(li.dataset.idx) === activeIdx ? '#1f6feb' : '';
+        });
+        const cur = box.querySelector(`li[data-idx="${activeIdx}"]`);
+        if (cur) cur.scrollIntoView({ block: 'nearest' });
+    };
+    const render = () => {
+        const q = input.value.trim().toLowerCase();
+        const keywords = q.split(/\s+/).filter(Boolean);
+        const log = getSelectedSetupLog();
+        const already = new Set(log ? parseSetupParts(log.parts).map(p => p.name) : []);
+        const items = JSON.parse(localStorage.getItem('admin_items')) || [];
+        const seen = new Set();
+        matches = [];
+        items.forEach(m => {
+            const name = m.code ? m.code : m.part;
+            if (!name || seen.has(name)) return;
+            const text = `${m.part || ''} ${m.code || ''}`.toLowerCase();
+            if (keywords.length && !keywords.every(kw => text.includes(kw))) return;
+            seen.add(name);
+            matches.push({ name, sub: (m.code && m.part && m.part !== m.code) ? m.part : '', added: already.has(name) });
+        });
+        matches = matches.slice(0, 50);
+        activeIdx = matches.findIndex(m => !m.added);
+
+        box.innerHTML = matches.length ? matches.map((m, i) => `
+            <li data-idx="${i}" style="padding:6px 8px; font-size:12px; border-radius:4px; cursor:${m.added ? 'default' : 'pointer'}; color:${m.added ? '#6e7681' : '#e6edf3'}; display:flex; justify-content:space-between; gap:8px;">
+                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(m.name)}${m.sub ? ` <span style="color:#8b949e;">${escapeHtml(m.sub)}</span>` : ''}</span>
+                ${m.added ? '<span style="flex-shrink:0; font-size:10px;">추가됨</span>' : ''}
+            </li>`).join('')
+            : '<li style="padding:10px; text-align:center; color:#8b949e; font-size:12px;">검색 결과가 없습니다.</li>';
+        box.querySelectorAll('li[data-idx]').forEach(li => {
+            const m = matches[Number(li.dataset.idx)];
+            li.onmousedown = (e) => { e.preventDefault(); if (!m.added) addPart(m.name); };
+            li.onmouseenter = () => { if (!m.added) { activeIdx = Number(li.dataset.idx); highlight(); } };
+        });
+        place();
+        box.style.display = 'block';
+        highlight();
+    };
+
+    input.addEventListener('focus', render);
+    input.addEventListener('input', render);
+    input.addEventListener('blur', () => setTimeout(close, 150));
+    input.addEventListener('keydown', (e) => {
+        if (box.style.display === 'none') return;
+        const move = (step) => {
+            if (!matches.length) return;
+            let i = activeIdx;
+            for (let n = 0; n < matches.length; n++) {
+                i = (i + step + matches.length) % matches.length;
+                if (!matches[i].added) { activeIdx = i; break; }
+            }
+            highlight();
+        };
+        if (e.key === 'ArrowDown') { e.preventDefault(); move(1); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1); }
+        else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (activeIdx >= 0 && matches[activeIdx] && !matches[activeIdx].added) addPart(matches[activeIdx].name);
+        } else if (e.key === 'Escape') { close(); input.blur(); }
+    });
+    window.addEventListener('resize', () => { if (box.style.display !== 'none') place(); });
+    document.addEventListener('scroll', () => { if (box.style.display !== 'none') place(); }, true);
+}
+
+// [추가] 작업 기록 창에서 일지를 수정·삭제한 뒤, 선택된 일지의 작업 내용·셋업 이슈·셋업 물품을 바로 다시 표시
+window.reloadSelectedSetupLogPanels = function () {
+    if (typeof currentPath === 'undefined' || !currentPath.site || !currentPath.equip) return;
+    const memoArea = document.getElementById('setup-log-detail-memo');
+    const issueArea = document.getElementById('setup-equip-issue-memo');
+    const log = getSelectedSetupLog();
+    if (!log) {
+        // 선택된 일지가 삭제됨
+        selectedSetupLogId = null;
+        originalSetupLogMemo = '';
+        originalSetupLogIssue = '';
+        if (memoArea) memoArea.value = '';
+        if (issueArea) issueArea.value = '';
+        renderSetupLogParts(null);
+        return;
+    }
+    const memo = log.memo || '';
+    const issue = log.specialNote || log.special_note || '';
+    if (memoArea) memoArea.value = memo;
+    if (issueArea) issueArea.value = issue;
+    originalSetupLogMemo = memo;
+    originalSetupLogIssue = issue;
+    ['btn-save-setup-log-memo', 'btn-save-setup-issue'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) { btn.classList.remove('btn-orange-sm'); btn.classList.add('btn-green-sm'); }
+    });
+    renderSetupLogParts(log);
+};
 
 function saveSetupLogMemo() {
     if (!selectedSetupLogId) return;
@@ -1377,15 +1562,16 @@ function saveSetupLogMemo() {
     const memoContent = memoArea ? memoArea.value : '';
 
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `${currentPath.site}::${currentPath.equip}`;
+    const logEquip = window.findSetupLogEquip(currentPath.site, currentPath.equip, selectedSetupLogId);
+    const equipKey = `${currentPath.site}::${logEquip}`;
     let data = setupData[equipKey] || {};
 
-    const logIndex = data.setupLogs.findIndex(l => l.id == selectedSetupLogId);
+    const logIndex = (data.setupLogs || []).findIndex(l => l.id == selectedSetupLogId);
     if (logIndex > -1) {
         data.setupLogs[logIndex].memo = memoContent;
         setupData[equipKey] = data;
         localStorage.setItem('setup_data', JSON.stringify(setupData));
-        window.syncSetupDataDB(currentPath.site, currentPath.equip, null, data.setupLogs); // [DB 동기화]
+        window.syncSetupDataDB(currentPath.site, logEquip, null, data.setupLogs); // [DB 동기화]
 
         originalSetupLogMemo = memoContent; // 원본 상태 업데이트
         const saveBtn = document.getElementById('btn-save-setup-log-memo');
@@ -1403,21 +1589,22 @@ function saveSetupLogMemo() {
 function deleteSetupLogItem(id) {
     if (!confirm('삭제하시겠습니까?')) return;
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `${currentPath.site}::${currentPath.equip}`;
+    const logEquip = window.findSetupLogEquip(currentPath.site, currentPath.equip, id);
+    const equipKey = `${currentPath.site}::${logEquip}`;
     let data = setupData[equipKey] || {};
 
     if (data.setupLogs) {
         const targetLog = data.setupLogs.find(l => l.id == id);
-        data.setupLogs = data.setupLogs.filter(l => l.id !== id);
+        data.setupLogs = data.setupLogs.filter(l => l.id != id);
 
         // [추가] 로그 삭제 후 Task 상태 재계산
         if (targetLog && data.setupDetails && typeof recalculateSetupTaskStatus === 'function') {
-            recalculateSetupTaskStatus(data, targetLog.content, currentPath.site, currentPath.equip);
+            recalculateSetupTaskStatus(data, targetLog.content, currentPath.site, logEquip);
         }
 
         setupData[equipKey] = data;
         localStorage.setItem('setup_data', JSON.stringify(setupData));
-        window.syncSetupDataDB(currentPath.site, currentPath.equip, data.setupDetails, data.setupLogs); // [DB 동기화 변경]
+        window.syncSetupDataDB(currentPath.site, logEquip, data.setupDetails, data.setupLogs); // [DB 동기화 변경]
 
         if (selectedSetupLogId === id) {
             selectedSetupLogId = null;
@@ -1454,18 +1641,18 @@ async function toggleSetupLogEditMode(btn) {
         if (!currentPath.site || !currentPath.equip) return;
         const rows = document.querySelectorAll('#setup-log-body tr');
         const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-        const equipKey = `${currentPath.site}::${currentPath.equip}`;
-        let data = setupData[equipKey] || {};
-        if (!data.setupLogs) data.setupLogs = [];
+        const changedEquips = new Set();
 
         let updatedCount = 0;
         rows.forEach(row => {
             const id = row.getAttribute('data-id');
+            const logEquip = row.dataset.equip || currentPath.equip;
             const catSelect = row.querySelector('.edit-cell-category');
             const subcatSelect = row.querySelector('.edit-cell-subcategory');
             const contentInput = row.querySelector('.edit-cell-content');
+            const data = setupData[`${currentPath.site}::${logEquip}`];
 
-            if (id && catSelect && subcatSelect && contentInput) {
+            if (id && data && data.setupLogs && catSelect && subcatSelect && contentInput) {
                 const log = data.setupLogs.find(l => l.id == id);
                 if (log) {
                     const newCat = catSelect.value.trim();
@@ -1477,21 +1664,24 @@ async function toggleSetupLogEditMode(btn) {
                         log.subcategory = newSubcat;
                         log.content = newContent;
                         updatedCount++;
+                        changedEquips.add(logEquip);
 
                         // Task 상태 갱신 확인
                         if (data.setupDetails && typeof recalculateSetupTaskStatus === 'function') {
-                            recalculateSetupTaskStatus(data, newContent, currentPath.site, currentPath.equip);
+                            recalculateSetupTaskStatus(data, newContent, currentPath.site, logEquip);
                         }
                     }
                 }
             }
         });
 
-        setupData[equipKey] = data;
         localStorage.setItem('setup_data', JSON.stringify(setupData));
 
-        // DB에 즉시 100% 동기화
-        await window.syncSetupDataDB(currentPath.site, currentPath.equip, data.setupDetails || null, data.setupLogs);
+        // DB에 즉시 동기화 (수정된 장비만)
+        for (const logEquip of changedEquips) {
+            const data = setupData[`${currentPath.site}::${logEquip}`];
+            await window.syncSetupDataDB(currentPath.site, logEquip, data.setupDetails || null, data.setupLogs);
+        }
 
         if (typeof addSystemLog === 'function') {
             addSystemLog('UPDATE_SETUP_LOG', currentPath.equip, `셋업 일지 일괄 편집 저장 (${updatedCount}건 수정)`);
@@ -1519,7 +1709,7 @@ function toggleSetupLogEdit(id) {
 
     // [추가] 셋업 기록 모달 창이 전역으로 존재하면 우선 호출 (인라인 수정 방지)
     if (typeof window.openLogForEditing === 'function') {
-        window.openLogForEditing(currentPath.site, currentPath.equip, id);
+        window.openLogForEditing(currentPath.site, window.findSetupLogEquip(currentPath.site, currentPath.equip, id), id);
         return;
     }
 
@@ -1587,7 +1777,8 @@ function toggleSetupLogEdit(id) {
 function updateSetupLogItem(id, newData) {
     if (!currentPath.site || !currentPath.equip) return;
     const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
-    const equipKey = `${currentPath.site}::${currentPath.equip}`;
+    const logEquip = window.findSetupLogEquip(currentPath.site, currentPath.equip, id);
+    const equipKey = `${currentPath.site}::${logEquip}`;
     let data = setupData[equipKey] || {};
     if (!data.setupLogs) return;
 
@@ -1596,7 +1787,7 @@ function updateSetupLogItem(id, newData) {
         data.setupLogs[logIndex] = { ...data.setupLogs[logIndex], ...newData };
         setupData[equipKey] = data;
         localStorage.setItem('setup_data', JSON.stringify(setupData));
-        window.syncSetupDataDB(currentPath.site, currentPath.equip, null, data.setupLogs); // [DB 동기화]
+        window.syncSetupDataDB(currentPath.site, logEquip, null, data.setupLogs); // [DB 동기화]
         if (typeof addSystemLog === 'function') {
             addSystemLog('UPDATE_SETUP_LOG', currentPath.equip, `LogID: ${id}`);
         }

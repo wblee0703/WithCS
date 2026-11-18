@@ -288,12 +288,21 @@
     min-height: 100px;
 }
 
-#setup-work-memo-panel {
-    flex: 1.2;
+/* 셋업 일지 · 작업 내용 · 셋업 이슈 높이 1:1:1 */
+#setup-log-card,
+#setup-work-memo-panel,
+#setup-issue-panel {
+    flex: 1 1 0;
+    min-height: 0;
 }
 
-#setup-issue-panel {
-    flex: 0.8;
+.setup-section-panel + .setup-section-panel {
+    border-top: 1px solid #30363d;
+}
+
+/* 셋업 진행률 카드 */
+#setup-progress-body {
+    padding: 10px 8px;
 }
 
 .resizer-vertical {
@@ -824,4 +833,101 @@ body[class*="role-"] #setup-detail-card.edit-mode .btn-add-category {
 .suggestion-item.selected {
     background-color: #1f6feb !important;
     color: #ffffff !important;
+}
+
+/* 모바일: 셋업 일지 · 작업 내용 · 셋업 이슈를 내용 높이대로 세로 배치 */
+@media (max-width: 950px) {
+    #setup-log-card,
+    #setup-work-memo-panel,
+    #setup-issue-panel {
+        flex: none;
+    }
+}
+
+/* WORKS Setup: 대분류(사업장)·중분류(프로젝트 목록) 사이드바 넓게 (기본 280px) */
+@media (min-width: 951px) {
+    .dashboard-sidebar {
+        width: 360px;
+    }
+    /* 대분류(사업장) : 중분류(프로젝트 목록) 높이 = 1 : 2 */
+    .dashboard-sidebar .sidebar-group.main-category { flex: 1 1 0; min-height: 0; }
+    .dashboard-sidebar #equip-section { flex: 2 1 0; min-height: 0; }
+}
+
+/* WORKS Setup 사이드바: 프로젝트 카드 / 사업장 셋업 배지 */
+#equip-list li.setup-project-item {
+    cursor: pointer;
+    padding: 8px 10px;
+    margin-bottom: 4px;
+    border: 1px solid #21262d;
+    border-left: 3px solid transparent;
+    border-radius: 6px;
+    background: #0d1117;
+}
+#equip-list li.setup-project-item:hover { border-color: #30363d; }
+#equip-list li.setup-project-item.active {
+    background: #1c2128;
+    border-color: #388bfd;
+    border-left-color: #388bfd;
+}
+#equip-list li.setup-project-item .sp-wrap {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 3px;
+}
+#equip-list li.setup-project-item .sp-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    min-width: 0;
+}
+#equip-list li.setup-project-item .item-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e6edf3;
+    min-width: 0;
+}
+#equip-list li.setup-project-item .item-subtext {
+    margin-left: 0;
+    font-size: 11px;
+    font-weight: 400;
+    color: #8b949e;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.sp-badge {
+    flex-shrink: 0;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 7px;
+    border-radius: 10px;
+    border: 1px solid;
+}
+.sp-badge--ing { color: #d29922; border-color: #9e6a03; background: rgba(158, 106, 3, 0.15); }
+.sp-badge--done { color: #3fb950; border-color: #238636; background: rgba(35, 134, 54, 0.15); }
+.sp-progress { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+.sp-progress__bar { flex: 1; height: 5px; border-radius: 3px; background: #21262d; overflow: hidden; }
+.sp-progress__bar > div { height: 100%; background: #d29922; border-radius: inherit; }
+.sp-progress__value { flex-shrink: 0; width: 32px; text-align: right; font-size: 10px; color: #d29922; font-weight: 600; }
+#site-list .sp-site-badge {
+    flex-shrink: 0;
+    margin-left: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    color: #d29922;
+    background: rgba(158, 106, 3, 0.15);
+    border: 1px solid #9e6a03;
+    border-radius: 10px;
+    padding: 0 6px;
+}
+
+/* WORKS Setup 사이드바 제목 (사업장 / 프로젝트 목록) 글자 크게 (기본 11px) */
+.dashboard-sidebar .group-header h3 {
+    font-size: 15px;
+    letter-spacing: 1px;
+}
+.dashboard-sidebar .group-header h3 .count-badge {
+    font-size: 12px;
+    letter-spacing: 0;
 }

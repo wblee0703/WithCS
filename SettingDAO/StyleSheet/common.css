@@ -1148,12 +1148,16 @@ body.role-admin .btn-list-setting {
         gap: 8px;
     }
 
+    /* 모바일: 로고 이미지에서 심볼(W 마크)만 보이게 잘라서 표시 (WITHTECH 글자 숨김) */
     .header-logo {
         height: 30px;
+        width: 30px;
+        object-fit: cover;
+        object-position: left center;
     }
 
     .header-brand-name {
-        font-size: 11px;
+        font-size: 15px;
         padding-left: 8px;
     }
 

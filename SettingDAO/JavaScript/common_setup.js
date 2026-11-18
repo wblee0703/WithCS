@@ -203,6 +203,599 @@ window.openLogRegisterOrEditModeWithIndex = function(site, equip, taskName, fall
 /* ==========================================================================
    [추가] 셋업 작업 기록 모달 (셋업구분/세부구분 커스텀 제안박스 연동)
    ========================================================================== */
+// [추가] 셋업 구분 (사전 작업 + 1~9단계) 표시 순서. 템플릿에 없는 구분은 '9단계 - 종료' 앞에 표시
+// (HOME 화면은 이 파일을 두 번 불러오므로 const 대신 window 속성으로 선언)
+window.SETUP_FINAL_CATEGORY = '9단계 - 종료';
+window.SETUP_CATEGORY_ORDER = [
+    '사전 작업',
+    '1단계 - 납품/정위치',
+    '2단계 - 다이크/지진브라켓',
+    '3단계 - 전기 턴온',
+    '4단계 - 인터락테스트',
+    '5단계 - 유틸리티 턴온/인증',
+    '6단계 - 설비안정화 및 구동',
+    '7단계 - 셋업평가',
+    '8단계 - 셋업보고서',
+    '9단계 - 종료'
+];
+
+// [추가] 옛 셋업 구분 → 단계 구분 (서버 app.py map_setup_category 와 같은 규칙, 세부 구분 기준)
+window.mapSetupCategory = function (category, subcategory, content) {
+    const cat = (category || '').trim();
+    const key = (subcategory || content || '').trim();
+    if (cat === '장비 반입 및 정위치') return key.includes('다이크') ? '2단계 - 다이크/지진브라켓' : '1단계 - 납품/정위치';
+    if (cat === '통신 상태 및 유틸리티') return key.includes('인터락') ? '4단계 - 인터락테스트' : '5단계 - 유틸리티 턴온/인증';
+    if (cat === '셋업 평가') return key.includes('안정화') ? '6단계 - 설비안정화 및 구동' : '7단계 - 셋업평가';
+    if (cat === '셋업 완료') return '9단계 - 종료';
+    return category;
+};
+
+// [추가] 기본 셋업 템플릿 (ADMIN 에 저장된 템플릿이 없을 때 사용)
+//  ※ 서버 app.py SETUP_STAGE_DEFAULT_ITEMS 와 같은 목록 (한쪽을 바꾸면 같이 바꿀 것)
+window.getDefaultSetupTemplate = function () {
+    const rows = [
+        ["사전 작업", "현장 사전 점검", "설치 위치 및 반입 경로 확인", "1"],
+        ["사전 작업", "현장 사전 점검", "설치 공간/하중 확인", "1"],
+        ["사전 작업", "작업 허가", "작업 허가(PTW) 신청", "1"],
+        ["사전 작업", "작업 허가", "안전교육 이수", "1"],
+        ["사전 작업", "자재 준비", "설치 자재 및 공구 준비", "1"],
+        // 1~8단계 세부 구분 = 셋업 단계표의 세부단계 (8단계는 세부단계 없음 → 단계 이름이 세부 구분으로 자동 표시)
+        //  5-1 / 5-2 는 세부 선택항목(EXH·Bulk 등)을 작업 내용으로 둠
+        ["1단계 - 납품/정위치", "1-1 납품", "1-1 납품", "1"],
+        ["1단계 - 납품/정위치", "1-2 정위치", "1-2 정위치", "1"],
+        ["1단계 - 납품/정위치", "1-3 수평 확인", "1-3 수평 확인", "1"],
+        ["2단계 - 다이크/지진브라켓", "2-1 다이크 납품", "2-1 다이크 납품", "1"],
+        ["2단계 - 다이크/지진브라켓", "2-2 다이크 설치", "2-2 다이크 설치", "1"],
+        ["2단계 - 다이크/지진브라켓", "2-3 다이크 침수테스트", "2-3 다이크 침수테스트", "1"],
+        ["2단계 - 다이크/지진브라켓", "2-4 지진브라켓 설치", "2-4 지진브라켓 설치", "1"],
+        ["3단계 - 전기 턴온", "3-1 전기/LAN 턴온", "3-1 전기/LAN 턴온", "1"],
+        ["3단계 - 전기 턴온", "3-2 LAN 통신 확인", "3-2 LAN 통신 확인", "1"],
+        ["4단계 - 인터락테스트", "4-1 인터락테스트", "4-1 인터락테스트", "2"],
+        ["5단계 - 유틸리티 턴온/인증", "5-1 유틸리티 턴온", "EXH", "1"],
+        ["5단계 - 유틸리티 턴온/인증", "5-1 유틸리티 턴온", "Bulk", "1"],
+        ["5단계 - 유틸리티 턴온/인증", "5-1 유틸리티 턴온", "UPW", "1"],
+        ["5단계 - 유틸리티 턴온/인증", "5-1 유틸리티 턴온", "Drain", "1"],
+        ["5단계 - 유틸리티 턴온/인증", "5-2 인증", "FOUP 센터/수평", "1"],
+        ["5단계 - 유틸리티 턴온/인증", "5-2 인증", "OHT", "1"],
+        ["5단계 - 유틸리티 턴온/인증", "5-2 인증", "PIO(E84)", "1"],
+        ["6단계 - 설비안정화 및 구동", "6-1 로컬테스트", "6-1 로컬테스트", "1"],
+        ["6단계 - 설비안정화 및 구동", "6-2 로봇 티칭", "6-2 로봇 티칭", "1"],
+        ["6단계 - 설비안정화 및 구동", "6-3 용액 설치 및 안정화", "6-3 용액 설치 및 안정화", "5"],
+        ["7단계 - 셋업평가", "7-1 STD 측정 및 Calibration", "7-1 STD 측정 및 Calibration", "2"],
+        ["7단계 - 셋업평가", "7-2 신뢰성 평가", "7-2 신뢰성 평가", "5"],
+        ["7단계 - 셋업평가", "7-3 기타 평가", "7-3 기타 평가", "1"],
+        ["9단계 - 종료", "인수인계", "고객 교육 및 인수인계", "1"],
+        ["9단계 - 종료", "셋업 완료", "셋업 완료", "0"]
+    ];
+    return rows.map(([category, subcategory, content, estDays]) => ({ category, subcategory, content, estDays }));
+};
+
+// [추가] 셋업 템플릿 목록을 화면용으로 정리 (원본은 변경하지 않음)
+//  - 옛 구분 이름은 단계 이름으로 변환
+//  - 세부 구분이 아직 없는 단계는 단계 이름을 세부 구분으로 하나 넣어 바로 선택 가능하게 함
+//    ('9단계 - 종료'는 '셋업 완료'). ADMIN > 셋업 템플릿에서 세부 구분을 등록하면 그 목록이 대신 사용됨
+//  - 셋업 구분 순서 정렬
+window.normalizeSetupTemplate = function (list) {
+    const out = (Array.isArray(list) ? list : []).filter(t => t && typeof t === 'object').map(t => {
+        const cat = window.mapSetupCategory(t.category, t.subcategory, t.content);
+        return cat === t.category ? t : Object.assign({}, t, { category: cat });
+    });
+    window.SETUP_CATEGORY_ORDER.forEach(cat => {
+        if (out.some(t => t.category === cat)) return;
+        const sub = cat === window.SETUP_FINAL_CATEGORY ? '셋업 완료' : cat;
+        out.push({ category: cat, subcategory: sub, content: sub, estDays: cat === window.SETUP_FINAL_CATEGORY ? '0' : '1' });
+    });
+    const order = window.SETUP_CATEGORY_ORDER;
+    const rank = (c) => {
+        const i = order.indexOf(c);
+        return i >= 0 ? i : order.length - 1.5;
+    };
+    return out.map((t, i) => [t, i])
+        .sort((a, b) => (rank(a[0].category) - rank(b[0].category)) || (a[1] - b[1]))
+        .map(x => x[0]);
+};
+
+// [추가] 셋업은 프로젝트 단위로 관리
+//  - 같은 사업장에서 프로젝트 번호가 같은 장비들을 한 프로젝트로 묶음 (번호가 없으면 장비 1대가 한 프로젝트)
+//  - 데이터는 지금처럼 장비별로 저장하고, 화면에서 프로젝트 장비들의 일지·작업 항목을 합쳐서 보여줌
+//  - 새 일지는 프로젝트 대표 장비(목록에서 첫 번째 장비)에 저장
+window.getSetupProjectNo = function (site, equip) {
+    try {
+        const d = JSON.parse(localStorage.getItem(`details_${site}_${equip}`)) || {};
+        return String((d.setup && d.setup.projectNo) || '').trim().toUpperCase();
+    } catch (e) { return ''; }
+};
+
+window.getSetupSiteEquips = function (site) {
+    let data = (typeof storageData !== 'undefined' && storageData && Object.keys(storageData).length) ? storageData : null;
+    if (!data) { try { data = JSON.parse(localStorage.getItem('device_data')) || {}; } catch (e) { data = {}; } }
+    if (data.equipments) data = data.equipments;
+    return Array.isArray(data[site]) ? data[site] : [];
+};
+
+// 사업장의 프로젝트 목록 [{ projectNo, equips: [장비...] }] (목록 순서 유지, 첫 장비 = 대표)
+window.getSetupProjects = function (site) {
+    const groups = [];
+    const byNo = {};
+    window.getSetupSiteEquips(site).forEach(equip => {
+        const no = window.getSetupProjectNo(site, equip);
+        if (no && byNo[no]) { byNo[no].equips.push(equip); return; }
+        const g = { projectNo: no, equips: [equip] };
+        if (no) byNo[no] = g;
+        groups.push(g);
+    });
+    return groups;
+};
+
+// 장비가 속한 프로젝트의 장비 목록 (대표 장비가 맨 앞)
+window.getSetupProjectEquips = function (site, equip) {
+    const no = window.getSetupProjectNo(site, equip);
+    if (!no) return [equip];
+    const g = window.getSetupProjects(site).find(p => p.projectNo === no);
+    return (g && g.equips.includes(equip)) ? g.equips : [equip];
+};
+
+window.isSameSetupProject = function (site, equipA, equipB) {
+    return equipA === equipB || window.getSetupProjectEquips(site, equipA).includes(equipB);
+};
+
+// 프로젝트 장비들의 작업 항목·일지를 합침 (항목마다 _equip = 실제 저장된 장비)
+window.getSetupProjectData = function (site, equip, setupDataCache) {
+    const setupData = setupDataCache || JSON.parse(localStorage.getItem('setup_data')) || {};
+    const out = { setupDetails: [], setupLogs: [] };
+    window.getSetupProjectEquips(site, equip).forEach(e => {
+        const d = setupData[`${site}::${e}`] || {};
+        (d.setupDetails || []).forEach(x => out.setupDetails.push(Object.assign({}, x, { _equip: e })));
+        (d.setupLogs || []).forEach(x => out.setupLogs.push(Object.assign({}, x, { _equip: e })));
+    });
+    return out;
+};
+
+// 일지 id 가 실제로 저장된 장비 (프로젝트 안에서 찾음, 없으면 선택 장비)
+window.findSetupLogEquip = function (site, equip, id) {
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const hit = window.getSetupProjectEquips(site, equip).find(e =>
+        ((setupData[`${site}::${e}`] || {}).setupLogs || []).some(l => l.id == id));
+    return hit || equip;
+};
+
+// [추가] 셋업 진행률
+//  - 단계 진행률 = 그 단계 세부 구분 중 완료된 개수 / 전체 개수
+//  - 전체 진행률 = 단계 진행률의 평균 (단계마다 같은 비중)
+//  - 세부 구분 완료 = 일지에서 '이 작업 완료'를 체크해 해당 작업 항목이 모두 완료된 상태
+//  equipData: setup_data[사업장::장비] ({ setupDetails, setupLogs })
+//  templateList: ADMIN 셋업 템플릿 (default)
+window.computeSetupProgress = function (equipData, templateList) {
+    const order = window.SETUP_CATEGORY_ORDER;
+    const mapCat = window.mapSetupCategory;
+    const norm = (v) => String(v || '').replace(/\s+/g, ' ').trim();
+    const template = window.normalizeSetupTemplate(templateList);
+
+    // 작업 내용 → 세부 구분 (예전 데이터 중 세부 구분이 비어 있는 항목을 제자리에 넣기 위함)
+    const subByContent = {};
+    template.forEach(t => {
+        const key = `${t.category}::${norm(t.content)}`;
+        if (t.content && !subByContent[key]) subByContent[key] = t.subcategory || t.content;
+    });
+
+    // 단계별 세부 구분 목록 (템플릿 순서, 이 장비에만 있는 세부 구분은 뒤에 추가)
+    const stages = order.map(cat => ({ category: cat, subs: [] }));
+    const stageOf = (cat) => stages.find(s => s.category === cat);
+    const ensureSub = (cat, name) => {
+        const stage = stageOf(cat);
+        if (!stage || !name) return null;
+        let sub = stage.subs.find(s => s.name === name);
+        if (!sub) {
+            sub = { name, tasks: [], logCount: 0 };
+            stage.subs.push(sub);
+        }
+        return sub;
+    };
+    template.forEach(t => ensureSub(t.category, t.subcategory || t.content));
+
+    const subNameOf = (cat, item) => item.subcategory
+        || subByContent[`${cat}::${norm(item.content)}`]
+        || item.content;
+
+    (equipData.setupDetails || []).forEach(d => {
+        const cat = mapCat(d.category, d.subcategory, d.content);
+        const sub = ensureSub(cat, subNameOf(cat, d));
+        if (sub) sub.tasks.push(d);
+    });
+    (equipData.setupLogs || []).forEach(l => {
+        const cat = mapCat(l.category, l.subcategory, l.content);
+        const stage = stageOf(cat);
+        const name = l.subcategory || subByContent[`${cat}::${norm(l.content)}`];
+        const sub = stage && stage.subs.find(s => s.name === name);
+        if (sub) sub.logCount++;
+    });
+
+    stages.forEach(stage => {
+        stage.subs.forEach(sub => {
+            // 프로젝트에 장비가 여러 대면 장비별로 보고, 어느 한 장비라도 그 세부 구분 작업을 모두 완료했으면 완료
+            const byEquip = {};
+            sub.tasks.forEach(t => { (byEquip[t._equip || ''] = byEquip[t._equip || ''] || []).push(t); });
+            sub.excluded = sub.tasks.some(t => t.excluded);
+            sub.done = !sub.excluded && Object.values(byEquip).some(list => list.every(t => t.completed));
+            sub.status = sub.excluded ? '제외'
+                : sub.done ? '완료'
+                : (sub.logCount > 0 || sub.tasks.some(t => t.completed)) ? '진행 중' : '미착수';
+        });
+        const counted = stage.subs.filter(s => !s.excluded);
+        stage.total = counted.length;
+        stage.doneCount = counted.filter(s => s.done).length;
+        stage.excluded = stage.subs.length > 0 && stage.total === 0;   // 세부 구분이 모두 불필요 작업
+        stage.percent = stage.total ? stage.doneCount / stage.total * 100 : 0;
+    });
+    stages.forEach(st => { st.noProgress = st.category === '사전 작업'; });
+    const active = stages.filter(s => !s.excluded && !s.noProgress);
+    const overall = active.length ? active.reduce((a, s) => a + s.percent, 0) / active.length : 0;
+    return { stages, overall };
+};
+
+
+// 셋업 진행률 화면 그리기 (HOME 셋업 관리, WORKS Setup 공용)
+//  - 세부 구분을 클릭하면 그 세부 구분으로 일지 작성 창이 열림
+window.renderSetupProgress = function (container, site, equip) {
+    if (!container) return;
+    const equipData = window.getSetupProjectData(site, equip);
+    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
+    const templateList = (Array.isArray(templates['default']) && templates['default'].length)
+        ? templates['default'] : window.getDefaultSetupTemplate();
+    const { stages, overall } = window.computeSetupProgress(equipData, templateList);
+
+    const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const pct = (v) => Math.round(v);
+    const barColor = (v) => v >= 100 ? '#3fb950' : v > 0 ? '#d29922' : '#30363d';
+    const textColor = (v) => v > 0 ? barColor(v) : '#8b949e';
+    const activeStages = stages.filter(s => !s.excluded && !s.noProgress);
+    const doneStages = activeStages.filter(s => s.percent >= 100).length;
+    const SUB_STYLE = {
+        '완료': 'color:#3fb950; border-color:#238636; background:rgba(35,134,54,0.15);',
+        '진행 중': 'color:#d29922; border-color:#9e6a03; background:rgba(158,106,3,0.15);',
+        '미착수': 'color:#8b949e; border-color:#30363d; background:transparent;',
+        '제외': 'color:#f85149; border-color:#da3633; border-style:dashed; background:rgba(218,54,51,0.10);'
+    };
+    const SUB_MARK = { '완료': '✓ ', '진행 중': '● ', '미착수': '', '제외': '' };
+
+    let html = `
+        <div class="setup-progress__overall">
+            <div class="setup-progress__overall-label">전체 셋업 진행률 <span>(완료 단계 ${doneStages} / ${activeStages.length})</span></div>
+            <div class="setup-progress__bar setup-progress__bar--lg"><div style="width:${overall}%; background:${barColor(overall)};"></div></div>
+            <div class="setup-progress__overall-value" style="color:${textColor(overall)};">${pct(overall)}%</div>
+        </div>
+        <div class="setup-progress__list">`;
+    stages.forEach(stage => {
+        const subsHtml = stage.subs.map(sub => `
+            <button type="button" class="setup-progress__sub" style="${SUB_STYLE[sub.status]}"
+                data-cat="${esc(stage.category)}" data-sub="${esc(sub.name)}" title="${esc(sub.name)} : ${sub.status === '제외' ? '불필요 작업 (진행률 제외)' : sub.status} (클릭 시 작업 기록 목록)">${SUB_MARK[sub.status]}${sub.status === '제외' ? `<s>${esc(sub.name)}</s>` : esc(sub.name)}</button>`).join('');
+        html += `
+            <div class="setup-progress__row${stage.excluded ? ' setup-progress__row--excluded' : ''}">
+                <div class="setup-progress__stage" title="${esc(stage.category)}">${esc(stage.category)}</div>
+                ${stage.noProgress ? '<div class="setup-progress__bar setup-progress__bar--none"></div>' : `<div class="setup-progress__bar"><div style="width:${stage.percent}%; background:${barColor(stage.percent)};"></div></div>`}
+                <div class="setup-progress__value">${stage.noProgress ? '' : stage.excluded ? '<strong style="color:#f85149;">전체 불필요</strong>' : `${stage.doneCount}/${stage.total} <strong style="color:${textColor(stage.percent)};">${pct(stage.percent)}%</strong>`}</div>
+                <div class="setup-progress__subs">${subsHtml}</div>
+            </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+
+    container.querySelectorAll('.setup-progress__sub').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            window.openSetupSubLogPopup(site, equip, btn.dataset.cat, btn.dataset.sub);
+        };
+    });
+};
+
+// [추가] 세부 구분 작업 기록 목록 팝업
+//  - 프로젝트 장비들의 해당 세부 구분 일지 목록 (클릭 시 수정)
+//  - [작업 추가] 같은 세부 구분으로 새 일지 작성
+//  - [작업 완료 처리] / [완료 취소] 세부 구분 완료 상태를 직접 지정
+window.setupSubName = function (item, category, template) {
+    const norm = (v) => String(v || '').replace(/\s+/g, ' ').trim();
+    if (item.subcategory) return item.subcategory;
+    const hit = (template || []).find(t => t.category === category && norm(t.content) === norm(item.content));
+    return hit ? (hit.subcategory || hit.content) : item.content;
+};
+
+function getSetupTemplateForPopup() {
+    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
+    const list = (Array.isArray(templates['default']) && templates['default'].length) ? templates['default'] : window.getDefaultSetupTemplate();
+    return window.normalizeSetupTemplate(list);
+}
+
+// 세부 구분에 해당하는 작업 항목/일지인지
+function isSetupItemOfSub(item, category, sub, template) {
+    const cat = window.mapSetupCategory(item.category, item.subcategory, item.content);
+    return cat === category && window.setupSubName(item, cat, template) === sub;
+}
+
+window.openSetupSubLogPopup = function (site, equip, category, sub) {
+    let modal = document.getElementById('setup-sub-log-popup');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'setup-sub-log-popup';
+        modal.className = 'modal-overlay';
+        // 작업 기록 창(셋업 작업 기록)이 이 팝업 위에 뜨도록 한 단계 아래에 둠
+        modal.style.zIndex = '1040';
+        modal.innerHTML = `
+            <div class="modal-window setup-sub-log-window">
+                <div class="modal-header">
+                    <h3 class="setup-sub-log-title"></h3>
+                    <button type="button" class="btn-del-sm" data-act="close">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="setup-sub-log-status"></div>
+                    <div class="setup-sub-log-table-wrap">
+                        <table class="data-table setup-sub-log-table">
+                            <thead><tr><th style="width:100px;">날짜</th><th>내용</th><th style="width:110px;">작업자</th><th style="width:50px;">공수</th></tr></thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer setup-sub-log-footer">
+                    <button type="button" class="btn-green" data-act="add">➕ 작업 추가</button>
+                    <button type="button" class="btn-blue" data-act="done">✓ 작업 완료 처리</button>
+                    <button type="button" class="btn-gray" data-act="close">닫기</button>
+                </div>
+            </div>`;
+        document.body.appendChild(modal);
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+    }
+    modal._ctx = { site, equip, category, sub };
+    window.refreshSetupSubLogPopup();
+    modal.style.display = 'flex';
+};
+
+window.refreshSetupSubLogPopup = function () {
+    const modal = document.getElementById('setup-sub-log-popup');
+    if (!modal || !modal._ctx) return;
+    const { site, equip, category, sub } = modal._ctx;
+    const esc = (v) => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const template = getSetupTemplateForPopup();
+    const data = window.getSetupProjectData(site, equip);
+    const projectEquips = window.getSetupProjectEquips(site, equip);
+
+    const logs = data.setupLogs.filter(l => isSetupItemOfSub(l, category, sub, template))
+        .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')) || ((b.id || 0) - (a.id || 0)));
+    const progress = window.computeSetupProgress(data, template);
+    const stage = progress.stages.find(st => st.category === category);
+    const subInfo = stage && stage.subs.find(x => x.name === sub);
+    const status = subInfo ? subInfo.status : '미착수';
+    const isFinal = sub === '셋업 완료' || category === window.SETUP_FINAL_CATEGORY && sub === '셋업 완료';
+
+    modal.querySelector('.setup-sub-log-title').textContent = `${category} > ${sub}`;
+    const color = { '완료': '#3fb950', '진행 중': '#d29922', '미착수': '#8b949e', '제외': '#6e7681' }[status];
+    const isExcluded = status === '제외';
+    // 불필요 작업: 착수한 작업(기록)이 하나도 없을 때만 표시, '셋업 완료'는 제외 불가
+    const canExclude = !isExcluded && status === '미착수' && logs.length === 0 && !isFinal;
+    const statusEl = modal.querySelector('.setup-sub-log-status');
+    statusEl.innerHTML =
+        `<span class="setup-sub-log-badge" style="color:${color}; border-color:${color};">${isExcluded ? '불필요 작업 (진행률 제외)' : status}</span>` +
+        `<span style="color:#8b949e; font-size:12px;">작업 기록 ${logs.length}건</span>` +
+        (canExclude ? '<button type="button" class="setup-sub-log-exclude" data-act="exclude">🚫 불필요 작업</button>' : '') +
+        (isExcluded ? '<button type="button" class="btn-gray setup-sub-log-unexclude" data-act="unexclude">↺ 제외 취소</button>' : '');
+    const toggleExclude = async (flag) => {
+        const msg = flag ? `'${sub}'을(를) 불필요 작업으로 지정하시겠습니까?\n셋업 진행률 계산에서 제외됩니다.` : `'${sub}' 불필요 작업 지정을 취소하시겠습니까?`;
+        if (!confirm(msg)) return;
+        const ok = await window.setSetupSubExcluded(site, equip, category, sub, flag);
+        if (!ok) return alert('저장 중 오류가 발생했습니다.');
+        window.refreshSetupSubLogPopup();
+        window.refreshSetupProgressViews();
+    };
+    const exBtn = statusEl.querySelector('[data-act="exclude"]');
+    if (exBtn) exBtn.onclick = () => toggleExclude(true);
+    const unexBtn = statusEl.querySelector('[data-act="unexclude"]');
+    if (unexBtn) unexBtn.onclick = () => toggleExclude(false);
+
+    const equipLabel = (e) => {
+        if (projectEquips.length < 2) return '';
+        let cust = '';
+        try { cust = ((JSON.parse(localStorage.getItem(`details_${site}_${e}`)) || {}).setup || {}).custEquipName || ''; } catch (err) { }
+        const parts = String(e).split('::');
+        return ` <span style="font-size:10px; color:#8b949e; border:1px solid #30363d; border-radius:8px; padding:0 5px;">${esc(cust || parts[1] || parts[0])}</span>`;
+    };
+    const tbody = modal.querySelector('tbody');
+    tbody.innerHTML = logs.length ? logs.map(l => `
+        <tr data-id="${esc(l.id)}" data-equip="${esc(l._equip)}" style="cursor:pointer;" title="클릭 시 작업 기록 수정">
+            <td>${esc(l.date)}</td>
+            <td style="text-align:left;">${esc(l.content || '-')}${equipLabel(l._equip)}</td>
+            <td>${esc(l.worker)}</td>
+            <td style="color:#d29922; font-weight:bold;">${esc(l.md || '0')}</td>
+        </tr>`).join('')
+        : '<tr><td colspan="4" style="padding:24px; text-align:center; color:#8b949e;">아직 작업 기록이 없습니다. [작업 추가]로 작성해주세요.</td></tr>';
+    tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+        tr.onclick = () => {
+            if (typeof window.openLogForEditing === 'function') window.openLogForEditing(site, tr.dataset.equip, Number(tr.dataset.id));
+        };
+    });
+
+    const doneBtn = modal.querySelector('[data-act="done"]');
+    const addBtn = modal.querySelector('[data-act="add"]');
+    doneBtn.style.display = isExcluded ? 'none' : '';
+    addBtn.style.display = isExcluded ? 'none' : '';
+    if (isFinal) {
+        doneBtn.disabled = true;
+        doneBtn.textContent = '✓ 작업 완료 처리';
+        doneBtn.title = "'셋업 완료'는 작업 기록을 작성하면 자동으로 완료됩니다.";
+        doneBtn.style.opacity = '0.5';
+    } else {
+        doneBtn.disabled = false;
+        doneBtn.style.opacity = '';
+        doneBtn.title = '';
+        doneBtn.textContent = status === '완료' ? '↺ 완료 취소' : '✓ 작업 완료 처리';
+        doneBtn.className = status === '완료' ? 'btn-gray' : 'btn-blue';
+    }
+
+    modal.querySelectorAll('[data-act="close"]').forEach(b => { b.onclick = () => { modal.style.display = 'none'; }; });
+    modal.querySelector('[data-act="add"]').onclick = () => {
+        if (typeof window.openSetupLogRegisterModal === 'function') {
+            window.openSetupLogRegisterModal(site, equip, sub, '', false, false, category);
+        }
+    };
+    doneBtn.onclick = async () => {
+        if (doneBtn.disabled) return;
+        const makeDone = status !== '완료';
+        if (!confirm(makeDone ? `'${sub}' 작업을 완료 처리하시겠습니까?` : `'${sub}' 작업 완료를 취소하시겠습니까?`)) return;
+        doneBtn.disabled = true;
+        const ok = await window.setSetupSubCompleted(site, equip, category, sub, makeDone);
+        doneBtn.disabled = false;
+        if (!ok) return alert('저장 중 오류가 발생했습니다.');
+        window.refreshSetupSubLogPopup();
+        window.refreshSetupProgressViews();
+    };
+};
+
+// 세부 구분 완료 상태 지정 (프로젝트 장비 모두에 반영, 대표 장비에 항목이 없으면 새로 만듦)
+window.setSetupSubCompleted = async function (site, equip, category, sub, done) {
+    const template = getSetupTemplateForPopup();
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equips = window.getSetupProjectEquips(site, equip);
+    const changed = [];
+    equips.forEach((e, idx) => {
+        const key = `${site}::${e}`;
+        const data = setupData[key] || {};
+        if (!data.setupDetails) data.setupDetails = [];
+        let tasks = data.setupDetails.filter(t => isSetupItemOfSub(t, category, sub, template));
+        if (!tasks.length && done && idx === 0) {
+            const t = { id: Date.now(), category, subcategory: sub, content: sub, startDate: '', date: '', estDays: '1',
+                        completed: false, execStartDate: '', delayReason: '', worker: '' };
+            data.setupDetails.push(t);
+            tasks = [t];
+        }
+        if (!tasks.length) return;
+        tasks.forEach(t => { t.completed = !!done; });
+        setupData[key] = data;
+        changed.push(e);
+    });
+    localStorage.setItem('setup_data', JSON.stringify(setupData));
+    let ok = true;
+    for (const e of changed) {
+        const data = setupData[`${site}::${e}`];
+        if (typeof window.syncSetupDataDB === 'function') {
+            const r = await window.syncSetupDataDB(site, e, data.setupDetails || [], data.setupLogs || []);
+            if (r === false) ok = false;
+        }
+    }
+    if (typeof addSystemLog === 'function') addSystemLog('UPDATE_SETUP_TASK', equip, `[${category} > ${sub}] ${done ? '작업 완료 처리' : '작업 완료 취소'}`);
+    return ok;
+};
+
+// 세부 구분 불필요 작업 지정/취소
+window.setSetupSubExcluded = async function (site, equip, category, sub, excluded) {
+    const template = getSetupTemplateForPopup();
+    const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
+    const equips = window.getSetupProjectEquips(site, equip);
+    const changed = [];
+    equips.forEach((e, idx) => {
+        const key = `${site}::${e}`;
+        const data = setupData[key] || {};
+        if (!data.setupDetails) data.setupDetails = [];
+        let tasks = data.setupDetails.filter(t => isSetupItemOfSub(t, category, sub, template));
+        if (!tasks.length && excluded && idx === 0) {
+            const t = { id: Date.now(), category, subcategory: sub, content: sub, startDate: '', date: '', estDays: '1',
+                        completed: false, execStartDate: '', delayReason: '', worker: '' };
+            data.setupDetails.push(t);
+            tasks = [t];
+        }
+        if (!tasks.length) return;
+        tasks.forEach(t => { t.excluded = !!excluded; });
+        setupData[key] = data;
+        changed.push(e);
+    });
+    localStorage.setItem('setup_data', JSON.stringify(setupData));
+    let ok = true;
+    for (const e of changed) {
+        const data = setupData[`${site}::${e}`];
+        if (typeof window.syncSetupDataDB === 'function') {
+            const r = await window.syncSetupDataDB(site, e, data.setupDetails || [], data.setupLogs || []);
+            if (r === false) ok = false;
+        }
+    }
+    if (typeof addSystemLog === 'function') addSystemLog('UPDATE_SETUP_TASK', equip, `[${category} > ${sub}] ${excluded ? '불필요 작업 지정' : '불필요 작업 취소'}`);
+    return ok;
+};
+
+// 진행률 화면들 다시 그리기 (HOME 셋업 관리 / WORKS Setup)
+window.refreshSetupProgressViews = function () {
+    if (typeof renderGanttChart === 'function') renderGanttChart();
+    if (typeof renderSetupLogList === 'function') renderSetupLogList();
+    if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
+};
+
+// [추가] '셋업 완료' 항목 여부 (일지를 쓰면 바로 완료 처리되는 특수 항목)
+function isSetupCompleteTask(t) {
+    return !!t && (t.category === '셋업 완료' || t.subcategory === '셋업 완료' || t.content === '셋업 완료');
+}
+
+// [추가] 일지(구분·세부 구분·내용)에 연결되는 일정 항목 찾기 (저장 시 매칭 규칙과 동일)
+function findSetupTasksForLog(data, category, subcategory, content) {
+    const task = subcategory || content;
+    const isCompleteLog = category === '셋업 완료' || subcategory === '셋업 완료' || content === '셋업 완료';
+    return (data.setupDetails || []).filter(t => {
+        const isCatMatch = !t.category || !category || t.category === category;
+        const isSubMatch = (t.subcategory && (t.subcategory === subcategory || t.subcategory === content || t.subcategory === task)) ||
+                           (t.content && (t.content === content || t.content === subcategory || t.content === task));
+        return (isCatMatch && isSubMatch) || (isCompleteLog && isSetupCompleteTask(t));
+    });
+}
+
+// [추가] 세부 선택항목 (복수 선택)
+//  - 1~8단계 세부 구분 중, ADMIN 셋업 템플릿에서 세부 구분 이름과 다른 작업 내용이 등록된 경우 그 작업 내용들이 선택항목
+//    (예: 5-1 유틸리티 턴온 → EXH·Bulk·UPW·Drain / 5-2 인증 → FOUP 센터/수평·OHT·PIO(E84))
+//  - 일지에는 subOptions 에 쉼표로 이어서 저장 (예: "EXH, Bulk")
+window.getSetupSubOptions = function (category, subcategory) {
+    if (!category || !subcategory || !/^[1-8]단계/.test(category)) return [];
+    const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
+    const raw = (Array.isArray(templates['default']) && templates['default'].length) ? templates['default'] : window.getDefaultSetupTemplate();
+    const list = window.normalizeSetupTemplate(raw);
+    const opts = list
+        .filter(t => t.category === category && t.subcategory === subcategory)
+        .map(t => String(t.content || '').trim())
+        .filter(c => c && c !== subcategory);
+    return Array.from(new Set(opts));
+};
+
+window.parseSetupSubOptions = function (value) {
+    return String(value || '').split(',').map(s => s.trim()).filter(Boolean);
+};
+
+// 일지 등록 창의 세부 선택 체크 칩 그리기 (선택된 셋업 구분·세부 구분 기준)
+window.renderSetupLogSubOptions = function (modalContext, selectedValue = '') {
+    const modal = modalContext || document;
+    const row = modal.querySelector('#setup-log-reg-options-row');
+    const box = modal.querySelector('#setup-log-reg-options');
+    if (!row || !box) return;
+    const cat = (modal.querySelector('#setup-log-reg-category') || {}).value || '';
+    const sub = (modal.querySelector('#setup-log-reg-subcategory') || {}).value || '';
+    const opts = window.getSetupSubOptions(cat, sub);
+    const selected = window.parseSetupSubOptions(selectedValue);
+    // 템플릿에서 빠진 예전 선택값도 수정 시 사라지지 않게 함께 표시
+    selected.forEach(s => { if (opts.length && !opts.includes(s)) opts.push(s); });
+    box.innerHTML = '';
+    if (!opts.length) { row.style.display = 'none'; return; }
+    row.style.display = '';
+    const esc = (v) => (typeof escapeHtml === 'function' ? escapeHtml(v) : v);
+    opts.forEach(opt => {
+        const label = document.createElement('label');
+        const checked = selected.includes(opt);
+        label.className = 'setup-log-option-chip' + (checked ? ' checked' : '');
+        label.innerHTML = `<input type="checkbox" value="${esc(opt)}"${checked ? ' checked' : ''}><span>${esc(opt)}</span>`;
+        const cb = label.querySelector('input');
+        cb.addEventListener('change', () => label.classList.toggle('checked', cb.checked));
+        box.appendChild(label);
+    });
+};
+
+// 일지 등록 창에서 체크된 세부 선택값 (선택항목이 없는 세부 구분이면 null)
+window.getCheckedSetupLogSubOptions = function (modalContext) {
+    const modal = modalContext || document;
+    const row = modal.querySelector('#setup-log-reg-options-row');
+    if (!row || row.style.display === 'none') return null;
+    return Array.from(modal.querySelectorAll('#setup-log-reg-options input[type="checkbox"]:checked')).map(cb => cb.value);
+};
+
 function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '', selectedSubcategory = '') {
     const modal = modalContext || document;
     const catHidden = modal.querySelector('#setup-log-reg-category');
@@ -218,24 +811,12 @@ function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '
     if (!catHidden || !subcatHidden || !catTrigger || !subcatTrigger) return;
 
     // ADMIN 셋업 템플릿 마스터 데이터 불러오기
-    const getTemplatesData = () => {
+    const getTemplatesData = () => window.normalizeSetupTemplate(getRawTemplatesData());
+    const getRawTemplatesData = () => {
         const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
         const list = templates['default'];
         if (Array.isArray(list) && list.length > 0) return list;
-        return [
-            { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크", content: "장비 도면 부착", estDays: "1" },
-            { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크", content: "다이크 설치", estDays: "1" },
-            { category: "장비 반입 및 정위치", subcategory: "장비 반입", content: "장비 반입", estDays: "1" },
-            { category: "장비 반입 및 정위치", subcategory: "장비 반입", content: "다이크 공사 및 리크센서 설치", estDays: "2" },
-            { category: "통신 상태 및 유틸리티", subcategory: "Utility 배관", content: "Utility 배관 공사 및 연결", estDays: "5" },
-            { category: "통신 상태 및 유틸리티", subcategory: "Utility 배관", content: "Utility 턴온", estDays: "1" },
-            { category: "통신 상태 및 유틸리티", subcategory: "인터락/통신", content: "인터락 Test 및 통신상태 확인 ", estDays: "2" },
-            { category: "셋업 평가", subcategory: "분석부 안정화", content: "분석부 안정화 및 오염제어", estDays: "5" },
-            { category: "셋업 평가", subcategory: "성능 평가", content: "Calibration 평가", estDays: "2" },
-            { category: "셋업 평가", subcategory: "성능 평가", content: "Sample 측정", estDays: "2" },
-            { category: "셋업 평가", subcategory: "성능 평가", content: "신뢰도 평가", estDays: "5" },
-            { category: "셋업 완료", subcategory: "셋업 완료", content: "셋업 완료", estDays: "0" }
-        ];
+        return window.getDefaultSetupTemplate();
     };
 
     // 세부 구분 활성화/비활성화 상태 관리
@@ -298,6 +879,7 @@ function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '
                 subcatHidden.value = '';
                 updateSubcategoryState();
                 renderSubcategoryList('');
+                window.renderSetupLogSubOptions(modal, '');
             });
 
             catList.appendChild(div);
@@ -336,10 +918,12 @@ function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '
 
             div.addEventListener('click', (e) => {
                 e.stopPropagation();
+                const changed = subcatHidden.value !== subName;
                 subcatHidden.value = subName;
                 subcatTrigger.textContent = subName;
                 subcatTrigger.classList.add('has-value');
                 subcatDropdown.classList.remove('show');
+                if (changed) window.renderSetupLogSubOptions(modal, '');
             });
 
             subcatList.appendChild(div);
@@ -371,6 +955,8 @@ function setupCategoryAndSubCategoryDropdowns(modalContext, selectedCategory = '
 
     // 세부 구분 활성화 상태 반영
     updateSubcategoryState();
+    // 세부 선택항목 초기화 (수정 모드는 openLogForEditing 에서 저장값으로 다시 그림)
+    window.renderSetupLogSubOptions(modal, '');
 
     // 트리거 클릭 이벤트 직접 바인딩 (매 호출 시 항상 최신 상태 반영)
     catTrigger.onclick = (e) => {
@@ -642,7 +1228,7 @@ function setupSetupLogRegSiteAndEquipDropdowns(modalContext, initialSite = '', i
     }
 }
 
-window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, forceComplete = false, isDropdownMode = false) {
+window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, forceComplete = false, isDropdownMode = false, taskCategory = '') {
     const modals = document.querySelectorAll('#setup-log-register-modal');
     if (modals.length === 0) return;
     const modal = modals[modals.length - 1];
@@ -666,7 +1252,7 @@ window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, 
     setupSetupLogRegSiteAndEquipDropdowns(modal, site || '', equip || '');
 
     // 셋업 구분 및 세부 구분 드롭다운 초기화
-    setupCategoryAndSubCategoryDropdowns(modal, '', taskName || '');
+    setupCategoryAndSubCategoryDropdowns(modal, taskCategory || '', taskName || '');
 
     const planDateInput = modal.querySelector('#setup-log-reg-plan-date');
     if (planDateInput) planDateInput.value = '';
@@ -741,7 +1327,7 @@ window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, 
     setupSetupLogRegWorkerDropdown(modal);
     // [추가] 셋업 물품 드롭다운 초기화 (기본값 없음)
     setupSetupLogRegPartDropdown(modal, site, equip, '');
-    
+
     modal.style.display = 'flex';
 };
 
@@ -769,6 +1355,7 @@ window.openLogForEditing = function(site, equip, logId) {
 
     // 셋업 구분 및 세부 구분 드롭다운 초기화
     setupCategoryAndSubCategoryDropdowns(modal, log.category || '', log.subcategory || '');
+    window.renderSetupLogSubOptions(modal, log.subOptions || '');
 
     const contentInput = modal.querySelector('#setup-log-reg-content');
     if (contentInput) contentInput.value = log.content || '';
@@ -1150,7 +1737,7 @@ function recalculateSetupTaskStatus(data, taskContent, site = null, equip = null
     if (!task && taskContent) {
         task = {
             id: Date.now(),
-            category: (taskContent === '셋업 완료' ? '셋업 완료' : ''),
+            category: (taskContent === '셋업 완료' ? window.SETUP_FINAL_CATEGORY : ''),
             subcategory: taskContent,
             content: taskContent,
             startDate: "", date: "", estDays: "1",
@@ -1193,11 +1780,16 @@ function recalculateSetupTaskStatus(data, taskContent, site = null, equip = null
     } else {
         task.execStartDate = taskLogs[0].date;
         task.date = taskLogs[taskLogs.length - 1]?.date || taskLogs[0].date;
-        task.completed = true;
-
-        if (isManualCompleted === false) {
-            task.completed = false;
+        // [변경] 일지가 있어도 자동 완료하지 않음: '이 작업 완료' 체크값(isManualCompleted)을 따르고,
+        //        체크값이 없는 경우(일지 삭제·목록 수정 등)는 기존 완료 상태 유지. '셋업 완료' 항목만 자동 완료
+        if (isManualCompleted === true || isManualCompleted === false) {
+            task.completed = isManualCompleted;
+        } else if (isSetupCompleteTask(task)) {
+            task.completed = true;
+        } else {
+            task.completed = !!task.completed;
         }
+        if (isSetupCompleteTask(task)) task.completed = true;
     }
 
     // 셋업 완료 작업인 경우 setupDetails의 모든 '셋업 완료' 항목을 동기화 완료 처리
@@ -1736,13 +2328,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (parentModal) parentModal.style.display = 'none';
                 alert('기록이 삭제되었습니다.');
                 
-                if (typeof renderSetupLogList === 'function' && typeof currentPath !== 'undefined' && currentPath.equip === equip) {
+                if (typeof renderSetupLogList === 'function' && typeof currentPath !== 'undefined' && currentPath.site === site && window.isSameSetupProject(site, currentPath.equip, equip)) {
                     renderSetupLogList();
+                    if (typeof window.reloadSelectedSetupLogPanels === 'function') window.reloadSelectedSetupLogPanels();
                 }
                 if (typeof renderSetupDetailList === 'function' && typeof currentPath !== 'undefined' && currentPath.equip === equip) {
                     renderSetupDetailList();
                 }
                 if (typeof renderGanttChart === 'function') renderGanttChart();
+                if (typeof window.refreshSetupSubLogPopup === 'function') window.refreshSetupSubLogPopup();
 
                 // [추가] 대시보드 리스트 즉시 갱신
                 if (typeof updateSetupDashboard === 'function') updateSetupDashboard();
@@ -1767,7 +2361,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if(!site || !equip || !date || !category || !subcategory || !worker || !md) {
                 return alert('사업장, 장비, 작업일, 셋업 구분, 세부 구분, 작업자, 공수를 모두 입력해주세요.');
             }
-            
+            // [추가] 세부 선택항목 (선택항목이 있는 세부 구분은 1개 이상 선택)
+            const checkedSubOptions = window.getCheckedSetupLogSubOptions(modal);
+            if (checkedSubOptions && checkedSubOptions.length === 0) {
+                return alert('세부 선택 항목을 1개 이상 선택해주세요.');
+            }
+            const subOptions = checkedSubOptions ? checkedSubOptions.join(', ') : '';
+
             const setupData = JSON.parse(localStorage.getItem('setup_data')) || {};
             const equipKey = `${site}::${equip}`;
             let data = setupData[equipKey] || {};
@@ -1781,6 +2381,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     existingLog.date = date;
                     existingLog.category = category;
                     existingLog.subcategory = subcategory;
+                    existingLog.subOptions = subOptions;
                     existingLog.content = content || '';
                     existingLog.worker = worker;
                     existingLog.md = md;
@@ -1799,6 +2400,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     date: date,
                     category: category,
                     subcategory: subcategory,
+                    subOptions: subOptions,
                     content: content || '',
                     worker: worker,
                     company: "위드텍",
@@ -1811,26 +2413,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.setupLogs.push(newLog);
             }
 
-            // [개선] 셋업 로그 기록 시 setupDetails의 해당 예정 항목을 즉시 완료 처리
+            // [변경] 일지를 기록해도 작업 완료 상태는 바꾸지 않음 (완료는 진행률 > 세부 구분 > [작업 완료 처리])
+            //        ('셋업 완료' 항목은 기존처럼 기록 즉시 완료)
+            const isCompleteLog = category === '셋업 완료' || subcategory === '셋업 완료' || content === '셋업 완료';
+            const taskDone = isCompleteLog ? true : null;
             let setupDetailsUpdated = false;
-            if (data.setupDetails) {
-                data.setupDetails.forEach(t => {
-                    const isCatMatch = !t.category || !category || t.category === category;
-                    const isSubMatch = (t.subcategory && (t.subcategory === subcategory || t.subcategory === content || t.subcategory === task)) ||
-                                       (t.content && (t.content === content || t.content === subcategory || t.content === task));
-                    const isCompleteSpecial = (category === '셋업 완료' || subcategory === '셋업 완료' || content === '셋업 완료') &&
-                                              (t.category === '셋업 완료' || t.subcategory === '셋업 완료' || t.content === '셋업 완료');
-
-                    if ((isCatMatch && isSubMatch) || isCompleteSpecial) {
-                        t.completed = true;
-                        t.date = date;
-                        t.execStartDate = t.execStartDate || date;
-                        if (worker) t.worker = worker;
-                        setupDetailsUpdated = true;
-                    }
-                });
-            }
-            const statusRecalculated = recalculateSetupTaskStatus(data, task, site, equip, null);
+            findSetupTasksForLog(data, category, subcategory, content).forEach(t => {
+                if (taskDone) t.completed = true;
+                if (!t.date || date > t.date) t.date = date;   // 예전 날짜 일지를 수정해도 종료일이 줄어들지 않게
+                if (!t.execStartDate || date < t.execStartDate) t.execStartDate = date;
+                if (worker) t.worker = worker;
+                setupDetailsUpdated = true;
+            });
+            const statusRecalculated = recalculateSetupTaskStatus(data, task, site, equip, taskDone);
+            // 일지로 새로 생긴 일정 항목은 일지의 셋업 구분을 따라감 (구분 없이 생성되면 엉뚱한 단계에 표시되므로)
+            if (category) findSetupTasksForLog(data, category, subcategory, content).forEach(t => { if (!t.category) t.category = category; });
             if (statusRecalculated) setupDetailsUpdated = true;
 
             setupData[equipKey] = data;
@@ -1846,12 +2443,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (parentModal) parentModal.style.display = 'none';
             alert('기록이 저장되었습니다.');
             
-            if (typeof renderSetupLogList === 'function' && typeof currentPath !== 'undefined' && currentPath.equip === equip) {
+            if (typeof renderSetupLogList === 'function' && typeof currentPath !== 'undefined' && currentPath.site === site && window.isSameSetupProject(site, currentPath.equip, equip)) {
                 renderSetupLogList();
+                if (typeof window.reloadSelectedSetupLogPanels === 'function') window.reloadSelectedSetupLogPanels();
             }
             
             // [수정] 셋업 기록(일지)이 추가되면 간트 차트에 즉시 반영(블록 생성 등)되도록 항상 리프레시
             if (typeof renderGanttChart === 'function') renderGanttChart();
+            if (typeof window.refreshSetupSubLogPopup === 'function') window.refreshSetupSubLogPopup();
 
             if (setupDetailsUpdated) {
                 if (typeof renderSetupDetailList === 'function' && typeof currentPath !== 'undefined' && currentPath.equip === equip) {
@@ -1953,7 +2552,7 @@ window.openAddSetupTaskModal = function(site, equip, defaultCategory) {
     modal.dataset.site = site;
     modal.dataset.equip = equip;
     const categorySelect = document.getElementById('add-setup-task-category');
-    if (categorySelect) categorySelect.value = (defaultCategory && defaultCategory !== '셋업 완료') ? defaultCategory : '장비 반입 및 정위치';
+    if (categorySelect) categorySelect.value = (defaultCategory && defaultCategory !== '셋업 완료') ? defaultCategory : '1단계 - 납품/정위치';
     document.getElementById('add-setup-task-name').value = '';
 
     modal.style.display = 'flex';
@@ -2297,19 +2896,9 @@ function populateSetupSchedSubcategories(modal, category, targetSubcat = '') {
     }
 
     const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-    const tplList = templates['default'] || [
-        { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크" },
-        { category: "장비 반입 및 정위치", subcategory: "장비 반입" },
-        { category: "유틸리티 연결", subcategory: "배관 연결" },
-        { category: "유틸리티 연결", subcategory: "전원 인가" },
-        { category: "티칭 및 캘리브레이션", subcategory: "로봇 티칭" },
-        { category: "티칭 및 캘리브레이션", subcategory: "광학계 캘리브레이션" },
-        { category: "셋업 평가", subcategory: "반복정밀도 평가" },
-        { category: "셋업 평가", subcategory: "고객사 승인" },
-        { category: "셋업 완료", subcategory: "셋업 완료" }
-    ];
+    const tplList = templates['default'] || window.getDefaultSetupTemplate();
 
-    const matchedSubs = [...new Set(tplList.filter(t => t.category === category).map(t => t.subcategory).filter(Boolean))];
+    const matchedSubs = [...new Set(window.normalizeSetupTemplate(tplList).filter(t => t.category === category).map(t => t.subcategory).filter(Boolean))];
 
     if (matchedSubs.length === 0) {
         subcatSelect.disabled = true;
@@ -2506,18 +3095,8 @@ window.openSetupScheduleRegisterModal = function(site = '', equip = '', defaultD
 
     // 셋업 구분 목록 populate
     const templates = JSON.parse(localStorage.getItem('setup_templates')) || {};
-    const tplList = templates['default'] || [
-        { category: "장비 반입 및 정위치", subcategory: "도면 및 다이크" },
-        { category: "장비 반입 및 정위치", subcategory: "장비 반입" },
-        { category: "유틸리티 연결", subcategory: "배관 연결" },
-        { category: "유틸리티 연결", subcategory: "전원 인가" },
-        { category: "티칭 및 캘리브레이션", subcategory: "로봇 티칭" },
-        { category: "티칭 및 캘리브레이션", subcategory: "광학계 캘리브레이션" },
-        { category: "셋업 평가", subcategory: "반복정밀도 평가" },
-        { category: "셋업 평가", subcategory: "고객사 승인" },
-        { category: "셋업 완료", subcategory: "셋업 완료" }
-    ];
-    const categories = [...new Set(tplList.map(t => t.category).filter(Boolean))];
+    const tplList = templates['default'] || window.getDefaultSetupTemplate();
+    const categories = [...new Set(window.normalizeSetupTemplate(tplList).map(t => t.category).filter(Boolean))];
     if (catSelect) {
         catSelect.innerHTML = '<option value="">셋업 구분 선택</option>';
         categories.forEach(cat => {
@@ -2527,9 +3106,11 @@ window.openSetupScheduleRegisterModal = function(site = '', equip = '', defaultD
             catSelect.appendChild(opt);
         });
         if (categories.length > 0) {
-            catSelect.value = categories[0];
+            // 기본 선택은 '1단계 - 납품/정위치' (사전 작업이 맨 앞에 있어도 기본값 유지)
+            const defaultCat = categories.includes('1단계 - 납품/정위치') ? '1단계 - 납품/정위치' : categories[0];
+            catSelect.value = defaultCat;
             catSelect.classList.add('has-value');
-            populateSetupSchedSubcategories(modal, categories[0]);
+            populateSetupSchedSubcategories(modal, defaultCat);
         } else {
             catSelect.classList.remove('has-value');
         }
