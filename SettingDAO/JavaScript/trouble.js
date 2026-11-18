@@ -185,7 +185,7 @@ function renderTroubleSites() {
     siteList.innerHTML = `<li data-site="ALL" class="active">전체 사업장</li>`;
 
     // 사업장들의 구분을 중복 없이 수집 (표준 그룹 기본 포함)
-    const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '기타'];
+    const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '개발', '기타'];
     const groups = new Set(order);
     Object.keys(deviceData).forEach(site => {
         if (site !== 'models' && site !== 'details') {

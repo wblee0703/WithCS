@@ -405,7 +405,8 @@ window.computeSetupProgress = function (equipData, templateList) {
     (equipData.setupLogs || []).forEach(l => {
         const cat = mapCat(l.category, l.subcategory, l.content);
         const stage = stageOf(cat);
-        const name = l.subcategory || subByContent[`${cat}::${norm(l.content)}`];
+        // 세부 구분 작업 기록 팝업(isSetupItemOfSub)과 같은 기준으로 집계
+        const name = subNameOf(cat, l);
         const sub = stage && stage.subs.find(s => s.name === name);
         if (sub) sub.logCount++;
     });
@@ -466,9 +467,13 @@ window.renderSetupProgress = function (container, site, equip) {
         </div>
         <div class="setup-progress__list">`;
     stages.forEach(stage => {
+        // [추가] 세부 구분별 작업(일지) 등록 횟수 표시
+        const countHtml = (sub) => sub.logCount > 0
+            ? ` <span class="setup-progress__sub-count" style="display:inline-block; min-width:16px; padding:0 5px; margin-left:3px; border-radius:8px; background:rgba(110,118,129,0.35); color:#e6edf3; font-size:10px; font-weight:700; line-height:15px; text-align:center;">${sub.logCount}</span>`
+            : '';
         const subsHtml = stage.subs.map(sub => `
             <button type="button" class="setup-progress__sub" style="${SUB_STYLE[sub.status]}"
-                data-cat="${esc(stage.category)}" data-sub="${esc(sub.name)}" title="${esc(sub.name)} : ${sub.status === '제외' ? '불필요 작업 (진행률 제외)' : sub.status} (클릭 시 작업 기록 목록)">${SUB_MARK[sub.status]}${sub.status === '제외' ? `<s>${esc(sub.name)}</s>` : esc(sub.name)}</button>`).join('');
+                data-cat="${esc(stage.category)}" data-sub="${esc(sub.name)}" title="${esc(sub.name)} : ${sub.status === '제외' ? '불필요 작업 (진행률 제외)' : sub.status} · 작업 ${sub.logCount}회 (클릭 시 작업 기록 목록)">${SUB_MARK[sub.status]}${sub.status === '제외' ? `<s>${esc(sub.name)}</s>` : esc(sub.name)}${countHtml(sub)}</button>`).join('');
         html += `
             <div class="setup-progress__row${stage.excluded ? ' setup-progress__row--excluded' : ''}">
                 <div class="setup-progress__stage" title="${esc(stage.category)}">${esc(stage.category)}</div>
@@ -1243,6 +1248,8 @@ window.openSetupLogRegisterModal = function(site, equip, taskName, defaultDate, 
     if (contentInput) contentInput.value = '';
     const memoInput = modal.querySelector('#setup-log-reg-memo');
     if (memoInput) memoInput.value = '';
+    const noteInput = modal.querySelector('#setup-log-reg-note');
+    if (noteInput) noteInput.value = '';
 
     // [삭제] 완료 버튼 제거
     const completeBtn = modal.querySelector('#btn-setup-log-reg-complete');
@@ -1369,6 +1376,8 @@ window.openLogForEditing = function(site, equip, logId) {
 
     const memoInput = modal.querySelector('#setup-log-reg-memo');
     if (memoInput) memoInput.value = log.memo || '';
+    const noteInput = modal.querySelector('#setup-log-reg-note');
+    if (noteInput) noteInput.value = log.specialNote || log.special_note || '';
 
     const delBtn = modal.querySelector('#btn-delete-setup-log-reg');
     const saveBtn = modal.querySelector('#btn-save-setup-log-reg');
@@ -2354,6 +2363,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const worker = modal.querySelector('#setup-log-reg-worker').value;
             const md = modal.querySelector('#setup-log-reg-md').value;
             const memo = modal.querySelector('#setup-log-reg-memo').value;
+            // [추가] 특이사항 → 셋업 이슈 (specialNote)
+            const noteEl = modal.querySelector('#setup-log-reg-note');
+            const specialNote = noteEl ? noteEl.value : null;
             // [추가] 선택된 셋업 물품 데이터
             const parts = modal.querySelector('#setup-log-reg-part-hidden') ? modal.querySelector('#setup-log-reg-part-hidden').value : '';
             const logId = modal.querySelector('#setup-log-reg-id') ? modal.querySelector('#setup-log-reg-id').value : ''; // 수정 모드 식별자
@@ -2387,7 +2399,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     existingLog.md = md;
                     existingLog.memo = memo;
                     existingLog.parts = parts; // [추가] 물품 업데이트
-                    existingLog.specialNote = existingLog.specialNote || existingLog.special_note || '';
+                    existingLog.specialNote = specialNote !== null ? specialNote : (existingLog.specialNote || existingLog.special_note || '');
                     existingLog.special_note = existingLog.specialNote;
                     isUpdating = true;
                 }
@@ -2405,8 +2417,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     worker: worker,
                     company: "위드텍",
                     memo: memo,
-                    specialNote: '',
-                    special_note: '',
+                    specialNote: specialNote || '',
+                    special_note: specialNote || '',
                     md: md,
                     parts: parts // [추가] 물품 등록
                 };

@@ -279,6 +279,7 @@ class User(db.Model):
     pw = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), default='user')
     site = db.Column(db.String(100), nullable=True) # [추가] 사업장 필드
+    division = db.Column(db.String(100), nullable=True) # [추가] 사업부 (소속의 상위)
     department = db.Column(db.String(100), nullable=True) # [추가] 소속
     position = db.Column(db.String(100), nullable=True) # [추가] 직급
     name = db.Column(db.String(100), nullable=True) # [추가] 이름
@@ -2411,6 +2412,12 @@ def trouble():
 def tracking():
     return render_template('tracking.html', active_page='tracking')
 
+# [추가] WORKS > Item : 물품 관리 현황 (ADMIN에서 분리)
+@app.route('/item')
+@app.route('/item.html')
+def item_page():
+    return render_template('item.html', active_page='item')
+
 @app.route('/api/tracking/reports', methods=['GET'])
 @login_required
 def get_tracking_reports():
@@ -2623,6 +2630,7 @@ def login():
             "status": "success", 
             "role": user.role, 
             "site": user.site,
+            "division": user.division or "",
             "department": user.department or "",
             "position": user.position or "",
             "name": user.name or "",
@@ -2669,6 +2677,7 @@ def get_user_info():
             "id": user.id,
             "role": user.role,
             "site": user.site or "",
+            "division": user.division or "",
             "department": user.department or "",
             "position": user.position or "",
             "name": user.name or ""
@@ -2710,6 +2719,21 @@ def verify_user_pw():
         return jsonify({"status": "fail", "message": "비밀번호가 일치하지 않습니다."}), 401
     return jsonify({"status": "success"})
 
+# [추가] 소속 → 계정 사업장(사업장 구분) 자동 지정. 목록에 없는 소속은 '' (전체 사업장)
+DEPT_SITE_MAP = {
+    '운영1팀(이천)': 'SKH 이천',
+    '운영1팀(삼성)': 'SEC',
+    '운영1팀(청주)': 'SKH 청주',
+    '운영1팀(본사)': '기타사업장',
+    '서안': 'SCS 서안',
+    '우시': 'SKH 우시',
+    '해외(서안)': 'SCS 서안',
+    '해외(우시)': 'SKH 우시',
+}
+
+def site_from_department(dept):
+    return DEPT_SITE_MAP.get((dept or '').strip(), '')
+
 # [추가] 계정 정보 수정 API
 @app.route('/api/user/update', methods=['POST'])
 @login_required
@@ -2717,10 +2741,12 @@ def update_user_info():
     data = request.json
     user = User.query.filter_by(id=session.get('user_id')).first()
     if not user: return jsonify({"status": "fail", "message": "사용자를 찾을 수 없습니다."}), 404
-    if 'department' in data: user.department = data['department']
+    if 'division' in data: user.division = data['division']
+    if 'department' in data:
+        user.department = data['department']
+        user.site = site_from_department(user.department)  # [변경] 사업장은 소속 기준 자동 지정
     if 'position' in data: user.position = data['position']
     if 'name' in data: user.name = data['name']
-    if 'site' in data: user.site = data['site']
     if 'role' in data and session.get('role') in ['admin', 'superadmin']:
         if user.role != 'superadmin' and user.id != 'admin' and user.id != os.environ.get('APP_ADMIN_ID', 'admin'):
             # [보안] 본인 권한은 일반/관리자 사이에서만 변경 (관리자가 스스로 최종관리자로 올리거나 퇴사 처리 불가)
@@ -2784,7 +2810,8 @@ def add_user():
     new_id = data.get('id')
     new_pw = data.get('pw')
     role = data.get('role', 'user')
-    site = data.get('site', '') # [추가]
+    site = site_from_department(data.get('department', ''))  # [변경] 사업장은 소속 기준 자동 지정
+    division = data.get('division', '') # [추가] 사업부
     department = data.get('department', '') # [추가]
     position = data.get('position', '') # [추가]
     name = data.get('name', '') # [추가]
@@ -2801,7 +2828,7 @@ def add_user():
     if User.query.filter_by(id=new_id).first():
         return jsonify({"status": "fail", "message": "이미 존재하는 아이디입니다."}), 400
 
-    new_user = User(id=new_id, pw=generate_password_hash(new_pw, method='pbkdf2:sha256:50000'), role=role, site=site, department=department, position=position, name=name, pw_changed_at=get_utc_now())
+    new_user = User(id=new_id, pw=generate_password_hash(new_pw, method='pbkdf2:sha256:50000'), role=role, site=site, division=division, department=department, position=position, name=name, pw_changed_at=get_utc_now())
     db.session.add(new_user)
     db.session.commit()
 
@@ -2927,7 +2954,7 @@ def get_all_users_for_admin():
         return jsonify({"status": "fail", "message": "최종 관리자 권한이 필요합니다."}), 403
     users = User.query.order_by(User.name).all()
     user_list = [{
-        "id": u.id, "name": u.name or '', "department": u.department or '',
+        "id": u.id, "name": u.name or '', "division": u.division or '', "department": u.department or '',
         "position": u.position or '', "role": u.role, "site": u.site or ''
     } for u in users]
     return jsonify({"status": "success", "users": user_list})
@@ -2952,10 +2979,12 @@ def admin_update_any_user():
         if target_id == session.get('user_id') and data['role'] == RETIRED_ROLE:
             return jsonify({"status": "fail", "message": "본인 계정은 퇴사 처리할 수 없습니다."}), 403
 
-    if 'department' in data: user.department = data['department']
+    if 'division' in data: user.division = data['division']
+    if 'department' in data:
+        user.department = data['department']
+        user.site = site_from_department(user.department)  # [변경] 사업장은 소속 기준 자동 지정
     if 'position' in data: user.position = data['position']
     if 'name' in data: user.name = data['name']
-    if 'site' in data: user.site = data['site']
     if 'role' in data: user.role = data['role']
     if 'pw' in data and data['pw']: # 비밀번호 변경(입력) 시에만 적용
         user.pw = generate_password_hash(data['pw'], method='pbkdf2:sha256:50000')
@@ -3083,6 +3112,82 @@ def get_admin_parameters():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 # [추가] 통합 Admin 설정 관리를 위한 만능 DB CRUD API
+# [추가] 사업장명 변경 시 이력 테이블의 장비 ID('사업장::장비...') 앞부분을 새 사업장명으로 변경
+#  - 이력 테이블은 equipment 와 FK 로 묶여 있지 않아 자동으로 따라 바뀌지 않음
+SITE_HISTORY_TABLES = ['maint_log', 'setup_log', 'setup_detail', 'item_log', 'trouble_log', 'tracking_report', 'equipment_report']
+SITE_NAME_TABLES = ['tracking_report', 'equipment_report', 'item_stock']
+
+def relink_site_history(old_name, new_name):
+    """old_name:: 으로 시작하는 equip_id 를 new_name:: 으로 바꾸고, site_name 컬럼도 변경. 변경 건수 반환 (commit 은 호출한 쪽에서)."""
+    old_prefix = f"{old_name}::"
+    new_prefix = f"{new_name}::"
+    total = 0
+    for table in SITE_HISTORY_TABLES:
+        try:
+            ids = [r[0] for r in db.session.execute(
+                text(f"SELECT DISTINCT equip_id FROM {table} WHERE SUBSTR(equip_id, 1, :n) = :p"),
+                {'n': len(old_prefix), 'p': old_prefix})]
+            for old_id in ids:
+                res = db.session.execute(text(f"UPDATE {table} SET equip_id=:new WHERE equip_id=:old"),
+                                         {'new': new_prefix + old_id[len(old_prefix):], 'old': old_id})
+                total += res.rowcount or 0
+        except Exception as e:
+            app.logger.error(f"[relink_site_history] {table}: {e}")
+            raise
+    for table in SITE_NAME_TABLES:
+        try:
+            db.session.execute(text(f"UPDATE {table} SET site_name=:n WHERE site_name=:o"), {'n': new_name, 'o': old_name})
+        except Exception as e:
+            app.logger.error(f"[relink_site_history] {table}.site_name: {e}")
+            raise
+    return total
+
+# [추가] 장비와 연결이 끊긴 이력 조회 (이력의 사업장명이 현재 사업장 목록에 없는 경우) - 최종관리자 전용
+@app.route('/api/admin/orphan_history', methods=['GET'])
+@login_required
+def get_orphan_history():
+    if session.get('role') != 'superadmin':
+        return jsonify({"status": "fail", "message": "최종 관리자 권한이 필요합니다."}), 403
+    site_names = set(s.name for s in Site.query.all())
+    equip_ids = set(r[0] for r in db.session.execute(text("SELECT id FROM equipment")))
+    counts = {}
+    for table in SITE_HISTORY_TABLES:
+        rows = db.session.execute(text(f"SELECT equip_id, COUNT(*) FROM {table} GROUP BY equip_id")).fetchall()
+        for eid, cnt in rows:
+            if not eid or eid in equip_ids or '::' not in str(eid):
+                continue
+            prefix = str(eid).split('::', 1)[0]
+            if prefix in site_names:
+                continue
+            counts[prefix] = counts.get(prefix, 0) + cnt
+    orphans = [{"old_site": k, "count": v} for k, v in sorted(counts.items(), key=lambda x: -x[1])]
+    return jsonify({"status": "success", "orphans": orphans, "sites": sorted(site_names)})
+
+# [추가] 끊긴 이력을 현재 사업장으로 다시 연결 - 최종관리자 전용
+@app.route('/api/admin/relink_history', methods=['POST'])
+@login_required
+def relink_history():
+    if session.get('role') != 'superadmin':
+        return jsonify({"status": "fail", "message": "최종 관리자 권한이 필요합니다."}), 403
+    data = request.json or {}
+    old_name = str(data.get('old_name', '')).strip()
+    new_name = str(data.get('new_name', '')).strip()
+    if not old_name or not new_name or old_name == new_name:
+        return jsonify({"status": "fail", "message": "이전 사업장명과 연결할 사업장을 확인해주세요."}), 400
+    if Site.query.filter_by(name=old_name).first():
+        return jsonify({"status": "fail", "message": f"'{old_name}' 사업장이 아직 있습니다. 끊긴 이력만 복구할 수 있습니다."}), 400
+    if not Site.query.filter_by(name=new_name).first():
+        return jsonify({"status": "fail", "message": f"'{new_name}' 사업장을 찾을 수 없습니다."}), 404
+    try:
+        count = relink_site_history(old_name, new_name)
+        db.session.add(SystemLog(action='RELINK_HISTORY', target=new_name,
+                                 details=f"{old_name} → {new_name} 이력 {count}건 재연결", worker=session.get('user_id')))
+        db.session.commit()
+        return jsonify({"status": "success", "count": count})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"status": "fail", "message": f"복구 중 오류: {e}"}), 500
+
 @app.route('/api/admin/crud', methods=['POST'])
 @login_required
 @limiter.exempt
@@ -3141,6 +3246,8 @@ def admin_crud():
                             frontend_id = frontend_id[len(f"{new_name}::"):]
                         new_eq_id = f"{new_name}::{frontend_id}"
                         db.session.execute(text("UPDATE equipment SET id=:n WHERE id=:o"), {'n':new_eq_id, 'o':eq.id})
+                    # [수정] 작업/셋업/물품/Trouble/레포트 이력의 장비 ID도 새 사업장명으로 변경 (누락 시 이력이 장비와 끊김)
+                    relink_site_history(old_name, new_name)
                 site = Site.query.filter_by(name=new_name).first()
                 if site: 
                     site.buildings = json.dumps(payload.get('buildings', []), ensure_ascii=False)
@@ -3374,6 +3481,19 @@ def admin_crud():
                 db.session.execute(text("DELETE FROM admin_item WHERE id=:i"), {'i': str(payload['id'])})
 
         elif domain == 'item_stock':
+            # [권한] 물품 관리 현황은 본인 계정 사업장만 수정 (최종관리자는 전체, 사업장 미지정(전체 사업장) 관리자는 수정 불가)
+            def _stock_group_denied(group):
+                if role == 'superadmin':
+                    return False
+                me = db.session.get(User, session.get('user_id'))
+                my_site = ((me.site if me else '') or '').strip()
+                if not my_site or my_site in ('전체', '구분없음', 'None', 'null'):
+                    return True
+                return (group or '').strip() != my_site
+
+            def _stock_denied_resp():
+                return jsonify({"status": "fail", "message": "본인 사업장의 물품만 수정할 수 있습니다."}), 403
+
             if action == 'CREATE':
                 site_group = str(payload.get('site_group', '')).strip()
                 site_name = str(payload.get('site_name', '')).strip()
@@ -3398,6 +3518,8 @@ def admin_crud():
                     return jsonify({"status": "fail", "message": "사업장 또는 사업장 구분이 필요합니다."}), 400
                 if not part and not code:
                     return jsonify({"status": "fail", "message": "물품명 또는 코드명이 필요합니다."}), 400
+                if _stock_group_denied(site_group):
+                    return _stock_denied_resp()
 
                 # 동일 사업장(또는 사업장 구분)에 동일한 물품(코드+물품명+규격) 및 동일한 등급(grade)이 있는지 확인
                 query = ItemStock.query.filter_by(site_group=site_group, site_name=site_name, grade=grade)
@@ -3446,6 +3568,8 @@ def admin_crud():
                 stock = db.session.get(ItemStock, stock_id) if stock_id else None
                 if not stock:
                     return jsonify({"status": "fail", "message": "물품 재고 항목을 찾을 수 없습니다."}), 404
+                if _stock_group_denied(stock.site_group) or ('site_group' in payload and _stock_group_denied(str(payload['site_group']))):
+                    return _stock_denied_resp()
 
                 if 'quantity' in payload:
                     try:
@@ -3484,6 +3608,11 @@ def admin_crud():
                 for u in updates:
                     s_id = u.get('id')
                     s = db.session.get(ItemStock, s_id) if s_id else None
+                    if s and _stock_group_denied(s.site_group):
+                        return _stock_denied_resp()
+                for u in updates:
+                    s_id = u.get('id')
+                    s = db.session.get(ItemStock, s_id) if s_id else None
                     if s:
                         if 'quantity' in u:
                             try:
@@ -3503,6 +3632,9 @@ def admin_crud():
             elif action == 'DELETE':
                 stock_id = payload.get('id')
                 if stock_id:
+                    target = db.session.get(ItemStock, stock_id)
+                    if target and _stock_group_denied(target.site_group):
+                        return _stock_denied_resp()
                     ItemStock.query.filter_by(id=stock_id).delete()
                     db.session.commit()
                 return jsonify({"status": "success"})
@@ -5925,6 +6057,23 @@ def init_db():
             db.session.execute(text('ALTER TABLE `user` ADD COLUMN department VARCHAR(100)'))
             db.session.execute(text('ALTER TABLE `user` ADD COLUMN position VARCHAR(100)'))
             db.session.execute(text('ALTER TABLE `user` ADD COLUMN name VARCHAR(100)'))
+            db.session.commit()
+        except:
+            db.session.rollback()
+
+        try:
+            db.session.execute(text('ALTER TABLE `user` ADD COLUMN division VARCHAR(100)'))
+            db.session.commit()
+        except:
+            db.session.rollback()
+
+        # [데이터 보정] 운영1팀(본사/이천/청주/삼성) 계정은 사업부를 '영업/운영사업부'로 지정 (사업부가 비어 있는 계정만)
+        try:
+            db.session.execute(text(
+                "UPDATE `user` SET division = :div "
+                "WHERE department IN ('운영1팀(본사)', '운영1팀(이천)', '운영1팀(청주)', '운영1팀(삼성)') "
+                "AND (division IS NULL OR division = '')"
+            ), {'div': '영업/운영사업부'})
             db.session.commit()
         except:
             db.session.rollback()

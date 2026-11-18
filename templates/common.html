@@ -8,6 +8,9 @@
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <title>{% block title %}WITH ON{% endblock %}</title>
 
+    <!-- [추가] localStorage 용량 초과 보완 (다른 스크립트보다 먼저 로드) -->
+    <script src="{{ url_for('SettingDAO', filename='JavaScript/storage_overflow.js') }}?v=1"></script>
+
     <!-- 공통 CSS -->
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common.css') }}?v=1.1.7">
     <link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/common_modals.css') }}?v=1.0.9">
@@ -61,8 +64,8 @@
                     </li>
 
                     <!-- 1. 장비 작업 (SETUP, MAINT, TROUBLE) -->
-                    <li class="nav-dropdown {% if active_page in ['setup', 'maintenance', 'trouble', 'tracking'] %}active-group{% endif %}">
-                        <a href="javascript:void(0)" class="nav-dropdown-toggle {% if active_page in ['setup', 'maintenance', 'trouble', 'tracking'] %}active{% endif %}">
+                    <li class="nav-dropdown {% if active_page in ['setup', 'maintenance', 'trouble', 'tracking', 'item'] %}active-group{% endif %}">
+                        <a href="javascript:void(0)" class="nav-dropdown-toggle {% if active_page in ['setup', 'maintenance', 'trouble', 'tracking', 'item'] %}active{% endif %}">
                             WORKS <span class="nav-arrow">▾</span>
                         </a>
                         <ul class="nav-dropdown-menu">
@@ -70,6 +73,7 @@
                             <li><a href="{{ url_for('maintenance') }}" class="{% if active_page == 'maintenance' %}active{% endif %}">Maint</a></li>
                             <li><a href="{{ url_for('trouble') }}" class="{% if active_page == 'trouble' %}active{% endif %}">Trouble</a></li>
                             <li><a href="{{ url_for('tracking') }}" class="{% if active_page == 'tracking' %}active{% endif %}">Tracking</a></li>
+                            <li><a href="{{ url_for('item_page') }}" class="{% if active_page == 'item' %}active{% endif %}">Item</a></li>
                         </ul>
                     </li>
 
@@ -273,8 +277,11 @@
                             placeholder="비밀번호 (영문,숫자,특수기호 포함 8자 이상)">
                         <input type="password" id="new-user-pw-confirm" class="input-dark" placeholder="비밀번호 확인">
                     </div>
-                    <div id="new-user-extra-wrapper" class="form-row">
+                    <div id="new-user-org-wrapper" class="form-row">
+                        <input type="text" id="new-user-division" class="input-dark" placeholder="사업부 (필수)">
                         <input type="text" id="new-user-department" class="input-dark" placeholder="소속 (필수)">
+                    </div>
+                    <div id="new-user-extra-wrapper" class="form-row">
                         <input type="text" id="new-user-position" class="input-dark" placeholder="직급 (필수)">
                         <input type="text" id="new-user-name" class="input-dark" placeholder="이름 (필수)">
                     </div>
@@ -322,6 +329,12 @@
                 <div class="form-row all-users-form-row">
                     <label class="modal-label all-users-label">이름</label>
                     <input type="text" id="edit-all-name" class="input-dark">
+                </div>
+                <div class="form-row all-users-form-row">
+                    <label class="modal-label all-users-label">사업부</label>
+                    <div class="autocomplete-wrapper" style="flex:1;">
+                        <input type="text" id="edit-all-division" class="input-dark" style="width:100%;" placeholder="사업부 미지정">
+                    </div>
                 </div>
                 <div class="form-row all-users-form-row">
                     <label class="modal-label all-users-label">소속</label>
@@ -484,7 +497,10 @@
     <!-- 계정 정보 조회 모드 템플릿 -->
     <template id="my-info-view-template">
         <div class="form-row">
+            <input type="text" id="view-my-division" class="input-dark" disabled title="사업부" placeholder="사업부 미지정">
             <input type="text" id="view-my-dept" class="input-dark" disabled title="소속" placeholder="소속 미지정">
+        </div>
+        <div class="form-row">
             <input type="text" id="view-my-pos" class="input-dark" disabled title="직급" placeholder="직급 미지정">
             <input type="text" id="view-my-name" class="input-dark" disabled title="이름" placeholder="이름 미지정">
         </div>
@@ -498,7 +514,10 @@
     <!-- 계정 정보 수정 모드 템플릿 -->
     <template id="my-info-edit-template">
         <div class="form-row">
+            <input type="text" id="edit-my-division" class="input-dark" placeholder="사업부 선택">
             <input type="text" id="edit-my-dept" class="input-dark" placeholder="소속 (필수)">
+        </div>
+        <div class="form-row">
             <input type="text" id="edit-my-pos" class="input-dark" placeholder="직급 (필수)">
             <input type="text" id="edit-my-name" class="input-dark" placeholder="이름 (필수)">
         </div>
@@ -1141,8 +1160,13 @@
                     <input type="hidden" id="setup-log-reg-part-hidden">
                 </div>
                 <div class="setup-log-form-col">
-                    <label class="setup-log-memo-label">작업 내용 / 특이사항</label>
+                    <label class="setup-log-memo-label">작업 내용</label>
                     <textarea id="setup-log-reg-memo" class="input-dark setup-log-memo-input" spellcheck="false"></textarea>
+                </div>
+                <!-- [추가] 특이사항 → 셋업 일지의 '셋업 이슈'로 저장 -->
+                <div class="setup-log-form-col">
+                    <label class="setup-log-memo-label">특이사항 <span style="font-weight:normal; font-size:11px; color:#8b949e;">(셋업 이슈로 등록)</span></label>
+                    <textarea id="setup-log-reg-note" class="input-dark setup-log-memo-input" spellcheck="false" style="height: 80px;" placeholder="입력하면 셋업 일지의 셋업 이슈에 표시됩니다."></textarea>
                 </div>
             </div>
             <div class="modal-footer">

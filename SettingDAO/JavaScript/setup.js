@@ -1133,17 +1133,7 @@ function renderSetupLogList() {
     }
 
     // 프로젝트(같은 프로젝트 번호) 장비들의 일지를 합쳐서 표시
-    const projectEquips = window.getSetupProjectEquips(currentPath.site, currentPath.equip);
     const logs = window.getSetupProjectData(currentPath.site, currentPath.equip).setupLogs;
-    // 장비가 여러 대인 프로젝트는 일지마다 어느 장비 기록인지 작게 표시
-    const equipTag = (equip) => {
-        if (projectEquips.length < 2) return '';
-        const parts = String(equip).split('::');
-        let cust = '';
-        try { cust = ((JSON.parse(localStorage.getItem(`details_${currentPath.site}_${equip}`)) || {}).setup || {}).custEquipName || ''; } catch (e) { }
-        const label = cust || parts[1] || parts[0];
-        return ` <span class="setup-log-equip-tag" style="font-size:10px; color:#8b949e; border:1px solid #30363d; border-radius:8px; padding:0 5px; margin-left:4px;" title="${escapeHtml(equip)}">${escapeHtml(label)}</span>`;
-    };
 
     const filterText = document.getElementById('setup-log-filter-date') ? document.getElementById('setup-log-filter-date').value.trim().toLowerCase() : '';
     let filteredLogs = logs;
@@ -1167,12 +1157,13 @@ function renderSetupLogList() {
     filteredLogs.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     tbody.innerHTML = filteredLogs.map(item => {
-        const catText = item.category || '-';
+        // 셋업 구분은 단계 표시 없이 이름만 (예: '1단계 - 납품/정위치' → '납품/정위치')
+        const catText = (item.category || '').replace(/^\s*\d+\s*단계\s*-\s*/, '') || '-';
         const subcatText = item.subcategory || '-';
         // [추가] 세부 선택항목 (예: EXH, Bulk) 은 세부 구분 아래에 작게 표시
         const subOptHtml = item.subOptions ? `<div class="setup-log-subopt">${escapeHtml(item.subOptions)}</div>` : '';
         const contentText = item.content || '-';
-        const contentHtml = (escapeHtml(contentText) || '-').replace(/\[지연\]/g, '<span class="tag-delayed">[지연]</span>') + equipTag(item._equip);
+        const contentHtml = (escapeHtml(contentText) || '-').replace(/\[지연\]/g, '<span class="tag-delayed">[지연]</span>');
 
         if (isSetupLogEditMode) {
             const catSelectHtml = `<select class="edit-cell-select edit-cell-category" onchange="handleSetupLogCategoryChange(this, ${item.id})" onclick="event.stopPropagation()">${buildCategoryOptionsHtml(item.category)}</select>`;

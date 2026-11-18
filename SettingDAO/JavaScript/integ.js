@@ -244,6 +244,7 @@ function renderIntegEquipStats(data) {
         'SCS 서안': { total: 0, setup: 0 },
         'SKH 우시': { total: 0, setup: 0 },
         '기타 해외': { total: 0, setup: 0 },
+        '개발': { total: 0, setup: 0 },
         '기타': { total: 0, setup: 0 }
     };
     const modelCounts = {};
@@ -329,6 +330,7 @@ function renderIntegEquipStats(data) {
         'SCS 서안': 'linear-gradient(to top, #0096D6, #66c2ff)',
         'SKH 우시': 'linear-gradient(to top, #d29922, #e3b341)',
         '기타 해외': 'linear-gradient(to top, #00a8a8, #33d1d1)',
+        '개발': 'linear-gradient(to top, #db61a2, #f778ba)',
         '기타': 'linear-gradient(to top, #1b7c83, #3fb950)'
     };
 
@@ -676,7 +678,7 @@ async function renderIntegMaintStats(mainData) {
 
     // [수정] 공통 헬퍼 함수를 통해 작업자 목록과 관리자 제외 목록 일관되게 적용
     const workers = await window.fetchWorkerNames();
-    const siteWorkerCounts = { 'SEC': 0, 'SKH 이천': 0, 'SKH 청주': 0, '기타사업장': 0, 'SCS 서안': 0, 'SKH 우시': 0, '기타 해외': 0, '기타': 0 };
+    const siteWorkerCounts = { 'SEC': 0, 'SKH 이천': 0, 'SKH 청주': 0, '기타사업장': 0, 'SCS 서안': 0, 'SKH 우시': 0, '기타 해외': 0, '개발': 0, '기타': 0 };
 
     workers.forEach(w => {
         if (typeof w === 'object' && w !== null) {
@@ -693,6 +695,8 @@ async function renderIntegMaintStats(mainData) {
             '운영1팀(본사)': '기타사업장',
             '해외(서안)': 'SCS 서안',
             '해외(우시)': 'SKH 우시',
+            '서안': 'SCS 서안',   // 사업부 '중국법인' 하위 소속
+            '우시': 'SKH 우시',
             '해외(기타)': '기타 해외',
             '기타 해외': '기타 해외',
             '기타': '기타'
@@ -717,6 +721,7 @@ async function renderIntegMaintStats(mainData) {
         'SCS 서안': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['SCS 서안'] || 0) },
         'SKH 우시': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['SKH 우시'] || 0) },
         '기타 해외': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['기타 해외'] || 0) },
+        '개발': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['개발'] || 0) },
         '기타': { total: 0, completed: 0, md: 0, totalMd: workingDays * (siteWorkerCounts['기타'] || 0) }
     };
 
@@ -896,7 +901,7 @@ async function renderIntegMaintStats(mainData) {
         }
     });
 
-    const groups = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '기타'];
+    const groups = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '개발', '기타'];
     const groupColors = {
         'SEC': 'linear-gradient(to top, #034EA2, #4a8eff)',
         'SKH 이천': 'linear-gradient(to top, #eb371f, #ff7b72)', // [요청] 붉은 계열로 색상 변경
@@ -905,6 +910,7 @@ async function renderIntegMaintStats(mainData) {
         'SCS 서안': 'linear-gradient(to top, #0096D6, #66c2ff)',
         'SKH 우시': 'linear-gradient(to top, #d29922, #e3b341)',
         '기타 해외': 'linear-gradient(to top, #00a8a8, #33d1d1)',
+        '개발': 'linear-gradient(to top, #db61a2, #f778ba)',
         '기타': 'linear-gradient(to top, #1b7c83, #3fb950)'
     };
 
@@ -1020,7 +1026,7 @@ async function renderIntegMaintStats(mainData) {
         filterGroup.style.marginBottom = '0px'; // [수정] 필터 버튼과 막대그래프 사이 빈 공간(여백) 완전 제거
         filterGroup.style.flexWrap = 'wrap';
 
-        const filterOptions = ['전체', 'SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '기타'];
+        const filterOptions = ['전체', 'SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '개발', '기타'];
         filterOptions.forEach(opt => {
             const btn = document.createElement('button');
             btn.textContent = opt;

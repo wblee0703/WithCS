@@ -55,5 +55,4 @@ def init_edu(app, db, limiter, login_required, admin_required, User=None, System
 
     encoder.setup(app, routes.D.storage, os.path.join(root, "data", "edu_tmp"))
 
-    app.logger.info(f"[Edu] 교육 메뉴 활성화 (저장소: {routes.D.storage.name})")
     return M

@@ -33,6 +33,7 @@ window.getSiteColor = function (siteName) {
     if (siteName === 'SCS 서안') return '#0096D6';
     if (siteName === 'SKH 우시') return '#d29922';
     if (siteName === '기타 해외') return '#00a8a8';
+    if (siteName === '개발') return '#db61a2';
     if (siteName === '기타') return '#1b7c83';
     if (siteName === '기타사업장') return '#8957e5';
 
@@ -63,6 +64,7 @@ window.getSiteGradient = function (siteName) {
     if (siteName === 'SCS 서안') return 'linear-gradient(to top, #0096D6, #66c2ff)';
     if (siteName === 'SKH 우시') return 'linear-gradient(to top, #d29922, #e3b341)';
     if (siteName === '기타 해외') return 'linear-gradient(to top, #00a8a8, #33d1d1)';
+    if (siteName === '개발') return 'linear-gradient(to top, #db61a2, #f778ba)';
     if (siteName === '기타') return 'linear-gradient(to top, #1b7c83, #3fb950)';
     if (siteName === '기타사업장') return 'linear-gradient(to top, #8957e5, #a371f7)';
 
@@ -341,13 +343,22 @@ function showHomeSection(type) {
 /* ==========================================================================
    4. 대시보드 로직 (Dashboard Logic)
    ========================================================================== */
+// [추가] 로그인 직후 소속 기준 사업장 필터를 다시 적용하도록 초기 상태로 되돌림
+window.resetHomeDashboardInit = function () {
+    isFirstLoad = true;
+};
+
 function updateHomeDashboard() {
     if (isFirstLoad) {
         const lastSection = localStorage.getItem('lastHomeSection');
         const rawUserSite = sessionStorage.getItem('user_site') || sessionStorage.getItem('userSite') || (window.currentUser && window.currentUser.site) || '';
 
         let userSiteFilter = null;
-        if (rawUserSite && rawUserSite !== '전체' && rawUserSite !== '구분없음' && rawUserSite !== 'None' && rawUserSite !== 'null') {
+        // [추가] 소속 기준 사업장 자동 필터 (계정 사업장 설정보다 우선)
+        const deptSiteGroup = window.getSiteByDepartment ? window.getSiteByDepartment(sessionStorage.getItem('userDepartment')) : '';
+        if (deptSiteGroup) {
+            userSiteFilter = deptSiteGroup;
+        } else if (rawUserSite && rawUserSite !== '전체' && rawUserSite !== '구분없음' && rawUserSite !== 'None' && rawUserSite !== 'null') {
             userSiteFilter = window.getSiteGroupName ? window.getSiteGroupName(rawUserSite) : rawUserSite;
         }
 
@@ -370,6 +381,14 @@ function updateHomeDashboard() {
                 currentSearchFilters = { site: '', equip: '' };
             }
         } catch (e) { console.error("Failed to restore filters", e); }
+
+        // [추가] 셋업 진행률 선택 장비 복원 (Setup 화면 [HOME 진행률 보기] 또는 마지막으로 본 장비)
+        try {
+            const savedGantt = JSON.parse(localStorage.getItem('currentGanttFilters'));
+            if (savedGantt && savedGantt.site && savedGantt.equip) {
+                currentGanttFilters = { site: savedGantt.site, equip: savedGantt.equip };
+            }
+        } catch (e) { console.error("Failed to restore gantt filter", e); }
 
         // [수정] 마지막으로 본 섹션이 유효하면 해당 섹션을, 없으면 '통합 현황'을 기본으로 표시
         if (lastSection && document.querySelector(`.btn-${lastSection}`)) {
@@ -442,7 +461,7 @@ function updateMaintenanceDashboard() {
         });
 
         // 지정된 우선순위대로 정렬
-        const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '기타'];
+        const order = ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '개발', '기타'];
         order.forEach(name => {
             if (groupCounts[name]) siteStats.push({ name: name, count: groupCounts[name] });
         });
@@ -1185,26 +1204,69 @@ function renderSetupEquipDetailList(activeEquips) {
         return;
     }
 
+    // [변경] 같은 프로젝트 번호의 장비는 한 줄로 묶어 '프로젝트 번호 + 장비 모델 몇 대' 로 표시
+    //        (프로젝트 번호가 없는 장비는 기존처럼 장비 한 대씩 표시)
+    const groups = [];
+    const groupByKey = {};
     filtered.forEach(item => {
-        const info = formatEquipDisplayInfo(item.site, item.equip, equipmentModels);
+        const projectNo = (typeof window.getSetupProjectNo === 'function') ? window.getSetupProjectNo(item.site, item.equip) : '';
+        const key = projectNo ? `${item.site}::${projectNo}` : `${item.site}::${item.equip}`;
+        if (!groupByKey[key]) {
+            groupByKey[key] = { site: item.site, projectNo, items: [] };
+            groups.push(groupByKey[key]);
+        }
+        groupByKey[key].items.push(item);
+    });
+
+    groups.forEach(group => {
+        // 대표 장비 (프로젝트 장비 목록의 첫 장비 = 셋업 일지 저장 기준)
+        const projectEquips = (group.projectNo && typeof window.getSetupProjectEquips === 'function')
+            ? window.getSetupProjectEquips(group.site, group.items[0].equip) : [];
+        const repEquip = projectEquips.find(e => group.items.some(it => it.equip === e)) || group.items[0].equip;
+        const item = { site: group.site, equip: repEquip };
+        const groupEquips = group.items.map(it => it.equip);
+
+        let nameHtml, titleText;
+        if (group.projectNo) {
+            const modelCounts = {};
+            group.items.forEach(it => {
+                const name = formatEquipDisplayInfo(it.site, it.equip, equipmentModels).name;
+                modelCounts[name] = (modelCounts[name] || 0) + 1;
+            });
+            const modelText = Object.keys(modelCounts).map(n => `${n} ${modelCounts[n]}대`).join(', ');
+            // 1줄: 사업장 > 프로젝트 번호 / 2줄: 장비 모델·수량
+            nameHtml = `<span style="display:block; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(group.site)} > ${escapeHtml(group.projectNo)}</span>`
+                + `<span style="display:block; overflow:hidden; text-overflow:ellipsis; color:#8b949e; font-size:12px; font-weight:normal; margin-top:2px;">${escapeHtml(modelText)}</span>`;
+            titleText = `${group.site} > ${group.projectNo} [${modelText}]`;
+        } else {
+            // [변경] 프로젝트 번호 없는 장비: 1줄 '프로젝트 번호 미작성' / 2줄 모델 [고객사 장비명 또는 시리얼]
+            const info = formatEquipDisplayInfo(item.site, item.equip, equipmentModels);
+            const plainSub = info.subInfo.replace(/<[^>]*>?/gm, '');
+            nameHtml = `<span style="display:block; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(group.site)} > <span style="color:#8b949e;">프로젝트 번호 미작성</span></span>`
+                + `<span style="display:block; overflow:hidden; text-overflow:ellipsis; color:#8b949e; font-size:12px; font-weight:normal; margin-top:2px;">${escapeHtml(info.name)}${info.subInfo ? ` ${info.subInfo}` : ''}</span>`;
+            titleText = `${group.site} > 프로젝트 번호 미작성 (${info.name}${plainSub ? ` ${plainSub}` : ''})`;
+        }
+
         const li = document.createElement('li');
         li.className = 'status-list-item';
 
-        if (currentGanttFilters.site === item.site && currentGanttFilters.equip === item.equip) {
+        const isActive = currentGanttFilters.site === item.site && groupEquips.includes(currentGanttFilters.equip);
+        if (isActive) {
             li.classList.add('active');
         }
 
-        const progressColor = item.isCompleted ? '#3fb950' : '#1f6feb'; // 완료: 녹색, 진행중: 파란색
+        const allCompleted = group.items.every(it => it.isCompleted);
+        const progressColor = allCompleted ? '#3fb950' : '#1f6feb'; // 완료: 녹색, 진행중: 파란색
 
         li.innerHTML = `
             <span class="status-color equip-bar" style="background-color: ${progressColor};"></span>
             <div style="flex: 1; display: flex; align-items: center; min-width: 0;">
-                <span class="status-name" title="${info.fullTitle}" style="margin-right: 0;">${info.mainInfo}${info.subInfo ? `<span class="equip-serial">${info.subInfo}</span>` : ''}</span>
+                <span class="status-name" title="${escapeHtml(titleText)}" style="margin-right: 0;">${nameHtml}</span>
             </div>
             <button class="btn-shortcut" style="margin-left: 10px;">이동</button>
         `;
         li.onclick = () => {
-            if (currentGanttFilters.site === item.site && currentGanttFilters.equip === item.equip) {
+            if (isActive) {
                 currentGanttFilters.site = '';
                 currentGanttFilters.equip = '';
             } else {
@@ -1253,7 +1315,8 @@ function renderSetupUpcomingList(activeEquips) {
             const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
             if (displayName !== setupDashboardFilter.equip) return;
         }
-        if (currentGanttFilters.equip && eq.equip !== currentGanttFilters.equip) return;
+        // 선택한 장비와 같은 프로젝트 장비의 예정 작업까지 표시
+        if (currentGanttFilters.equip && (eq.site !== currentGanttFilters.site || !(typeof window.isSameSetupProject === 'function' ? window.isSameSetupProject(currentGanttFilters.site, currentGanttFilters.equip, eq.equip) : eq.equip === currentGanttFilters.equip))) return;
 
         const data = setupData[`${eq.site}::${eq.equip}`];
 
@@ -1263,7 +1326,7 @@ function renderSetupUpcomingList(activeEquips) {
             uncheckedTasks.forEach(task => {
                 if (task.startDate) {
                     if (currentGanttFilters.site && currentGanttFilters.equip) {
-                        if (eq.site !== currentGanttFilters.site || eq.equip !== currentGanttFilters.equip) return;
+                        if (eq.site !== currentGanttFilters.site || !(typeof window.isSameSetupProject === 'function' ? window.isSameSetupProject(currentGanttFilters.site, currentGanttFilters.equip, eq.equip) : eq.equip === currentGanttFilters.equip)) return;
                     }
 
                     const start = new Date(task.startDate);

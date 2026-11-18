@@ -30,7 +30,7 @@ function renderGanttChart() {
         view.style.display = 'none';
         if (emptyMsg) {
             emptyMsg.style.display = 'block';
-            emptyMsg.textContent = '장비 정보에서 리스트를 클릭하면 셋업 진행률이 표시됩니다.';
+            emptyMsg.textContent = '프로젝트 목록에서 항목을 클릭하면 셋업 진행률이 표시됩니다.';
         }
         if (targetInfoEl) targetInfoEl.textContent = '';
         return;

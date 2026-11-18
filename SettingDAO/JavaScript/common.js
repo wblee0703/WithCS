@@ -2656,6 +2656,10 @@ function attemptLogin(id, pw, context) {
                 sessionStorage.setItem('userName', data.name || '');
                 addSystemLog('LOGIN', id, `로그인 성공 (${context})`);
 
+                // [추가] 로그인 시 운영관리 사업장 필터를 소속 기준으로 새로 적용 (이전 필터 기록 제거)
+                localStorage.removeItem('maintDashboardFilter');
+                if (typeof window.resetHomeDashboardInit === 'function') window.resetHomeDashboardInit();
+
                 const loginModal = document.getElementById('login-modal');
                 if (loginModal) loginModal.style.display = 'none'; // [추가] 모달 숨김
 
@@ -2726,9 +2730,18 @@ function openAddUserModal() {
         const btnClose = modal.querySelector('#btn-close-add-user-modal');
         if (btnClose) btnClose.onclick = closeAddUserModal;
 
-        // [추가] 소속 제안 박스 설정
+        // [추가] 사업부/소속 선택 박스 설정 (사업부 선택 시 소속에 하위 항목 표시)
+        const divisionInput = modal.querySelector('#new-user-division');
         const deptInput = modal.querySelector('#new-user-department');
-        if (deptInput) setupDepartmentSuggestion(deptInput);
+        // [추가] 사업장은 소속에 따라 자동 지정 (해당 없으면 전체 사업장)
+        const applyNewUserSite = (dept) => {
+            const site = window.getSiteByDepartment(dept);
+            const sInput = modal.querySelector('#new-user-site-input');
+            const sHidden = modal.querySelector('#new-user-site');
+            if (sInput) { sInput.value = site; sInput.dataset.lastValid = site; }
+            if (sHidden) sHidden.value = site;
+        };
+        if (divisionInput && deptInput) setupDivisionDeptSuggestion(divisionInput, deptInput, applyNewUserSite);
 
         // [추가] 직급 제안 박스 설정
         const posInput = modal.querySelector('#new-user-position');
@@ -2740,13 +2753,11 @@ function openAddUserModal() {
         const siteSuggestions = modal.querySelector('#new-user-site-suggestions');
 
         if (siteInput && siteSuggestions && siteSelect) {
-            // [추가] 관리자 본인의 사업장을 기본값으로 자동 입력
-            const adminSite = sessionStorage.getItem('userSite');
-            if (adminSite && !siteInput.value) {
-                siteInput.value = adminSite;
-                siteInput.dataset.lastValid = adminSite;
-                siteSelect.value = adminSite;
-            }
+            // [변경] 사업장은 소속에 따라 자동 지정 (해당 없으면 전체 사업장)
+            const autoSite = window.getSiteByDepartment(deptInput ? deptInput.value : '');
+            siteInput.value = autoSite;
+            siteInput.dataset.lastValid = autoSite;
+            siteSelect.value = autoSite;
 
             // [핵심 해결] 비동기 화면 전환 시 꼬여버린 이벤트를 초기화하기 위해 노드를 완전히 새로 복제하여 교체
             const newSiteInput = siteInput.cloneNode(true);
@@ -2894,7 +2905,9 @@ function openAddUserModal() {
             document.addEventListener('mousedown', outsideClickListener);
             document.addEventListener('touchstart', outsideClickListener, { passive: true });
 
-
+            // [추가] 직접 선택 차단 (소속에 따라 자동 지정)
+            siteInput.disabled = true;
+            siteInput.title = '사업장은 소속에 따라 자동 지정됩니다. (해당 없으면 전체 사업장)';
         }
     }
 }
@@ -2902,7 +2915,7 @@ function openAddUserModal() {
 function closeAddUserModal() {
     document.querySelectorAll('#add-user-modal').forEach(m => {
         m.style.display = 'none';
-        ['new-user-id', 'new-user-pw', 'new-user-pw-confirm', 'new-user-department', 'new-user-position', 'new-user-name', 'new-user-site-input', 'new-user-site'].forEach(id => {
+        ['new-user-id', 'new-user-pw', 'new-user-pw-confirm', 'new-user-division', 'new-user-department', 'new-user-position', 'new-user-name', 'new-user-site-input', 'new-user-site'].forEach(id => {
             const el = m.querySelector('#' + id);
             if (el) el.value = '';
         });
@@ -3071,6 +3084,7 @@ function addNewUser() {
     const pwConfirmEl = modal.querySelector('#new-user-pw-confirm');
     const roleSelect = modal.querySelector('#new-user-role');
     const siteSelect = modal.querySelector('#new-user-site');
+    const divisionInput = modal.querySelector('#new-user-division');
     const deptInput = modal.querySelector('#new-user-department');
     const posInput = modal.querySelector('#new-user-position');
     const nameInput = modal.querySelector('#new-user-name');
@@ -3080,8 +3094,9 @@ function addNewUser() {
     const pw = pwInput ? pwInput.value.trim() : '';
     const pwConfirm = pwConfirmEl ? pwConfirmEl.value.trim() : '';
     const role = roleSelect ? roleSelect.value : 'user';
-    const site = siteSelect ? siteSelect.value : ''; // [추가]
+    const site = window.getSiteByDepartment(deptInput ? deptInput.value : ''); // [변경] 소속 기준 자동 지정
 
+    const division = divisionInput ? divisionInput.value.trim() : '';
     const department = deptInput ? deptInput.value.trim() : '';
     const position = posInput ? posInput.value.trim() : '';
     const name = nameInput ? nameInput.value.trim() : '';
@@ -3089,7 +3104,8 @@ function addNewUser() {
     if (!id || !pw) return alert('아이디와 비밀번호를 입력해주세요.');
     if (pw !== pwConfirm) return alert('비밀번호가 일치하지 않습니다.');
     if (!isValidPassword(pw)) return alert('비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다.');
-    if (!department) return alert('소속을 입력해주세요.');
+    const orgErr = validateDivisionDept(division, department, true);
+    if (orgErr) return alert(orgErr);
     if (!position) return alert('직급을 입력해주세요.');
     if (!name) return alert('이름을 입력해주세요.');
 
@@ -3103,7 +3119,7 @@ function addNewUser() {
             'Content-Type': 'application/json',
             'X-CSRFToken': getCookie('csrf_token') // [보안] CSRF 토큰 추가
         },
-        body: JSON.stringify({ id, pw, role, site, department, position, name }) // [추가]
+        body: JSON.stringify({ id, pw, role, site, division, department, position, name }) // [추가]
     })
         .then(res => res.json())
         .then(data => {
@@ -3114,6 +3130,7 @@ function addNewUser() {
                 if (idInput) idInput.value = '';
                 if (pwInput) pwInput.value = '';
                 if (pwConfirmEl) pwConfirmEl.value = '';
+                if (divisionInput) divisionInput.value = '';
                 if (deptInput) deptInput.value = '';
                 if (posInput) posInput.value = '';
                 if (nameInput) nameInput.value = '';
@@ -3211,6 +3228,7 @@ window.renderMyInfo = function () {
                 content.innerHTML = '';
                 const clone = template.content.cloneNode(true);
 
+                clone.getElementById('view-my-division').value = user.division || '';
                 clone.getElementById('view-my-dept').value = user.department || '';
                 clone.getElementById('view-my-pos').value = user.position || '';
                 clone.getElementById('view-my-name').value = user.name || '';
@@ -3271,12 +3289,14 @@ window.renderMyInfoEdit = function (user) {
 
     const isRoleEditable = (sessionStorage.getItem('userRole') === 'superadmin' && user.id !== 'admin') || (sessionStorage.getItem('userRole') === 'admin' && user.role !== 'superadmin' && user.id !== 'admin');
 
+    const divisionInput = clone.getElementById('edit-my-division');
     const deptInput = clone.getElementById('edit-my-dept');
     const posInput = clone.getElementById('edit-my-pos');
     const nameInput = clone.getElementById('edit-my-name');
     const roleSelect = clone.getElementById('edit-my-role');
     const siteSelect = clone.getElementById('edit-my-site');
 
+    if (divisionInput) divisionInput.value = user.division || '';
     if (deptInput) deptInput.value = user.department || '';
     if (posInput) posInput.value = user.position || '';
     if (nameInput) nameInput.value = user.name || '';
@@ -3316,7 +3336,8 @@ window.renderMyInfoEdit = function (user) {
             opt.textContent = s;
             siteSelect.appendChild(opt);
         });
-        siteSelect.value = user.site || '';
+        // [변경] 사업장은 소속에 따라 자동 지정
+        applyAutoSiteToSelect(siteSelect, window.getSiteByDepartment(user.department));
     }
 
     const btnSave = clone.getElementById('btn-save-my-info');
@@ -3325,18 +3346,21 @@ window.renderMyInfoEdit = function (user) {
     if (btnCancel) btnCancel.onclick = () => window.renderMyInfo();
     if (btnSave) {
         btnSave.onclick = () => {
+            const division = document.getElementById('edit-my-division').value.trim();
             const dept = document.getElementById('edit-my-dept').value.trim();
             const pos = document.getElementById('edit-my-pos').value.trim();
             const name = document.getElementById('edit-my-name').value.trim();
             const role = document.getElementById('edit-my-role').value;
-            const site = document.getElementById('edit-my-site').value;
+            const site = window.getSiteByDepartment(dept); // [변경] 소속 기준 자동 지정
 
             if (!dept || !pos || !name) return alert("소속, 직급, 이름을 모두 입력해주세요.");
+            const orgErr = validateDivisionDept(division, dept, false);
+            if (orgErr) return alert(orgErr);
 
             fetch('/api/user/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrf_token') },
-                body: JSON.stringify({ department: dept, position: pos, name: name, role: role, site: site })
+                body: JSON.stringify({ division: division, department: dept, position: pos, name: name, role: role, site: site })
             })
                 .then(res => res.json())
                 .then(data => {
@@ -3358,9 +3382,14 @@ window.renderMyInfoEdit = function (user) {
 
     content.appendChild(clone);
 
-    // [추가] 소속 제안 박스 설정 (DOM에 추가된 후 실행)
+    // [추가] 사업부/소속 선택 박스 설정 (DOM에 추가된 후 실행)
+    const appendedDivisionInput = document.getElementById('edit-my-division');
     const appendedDeptInput = document.getElementById('edit-my-dept');
-    if (appendedDeptInput) setupDepartmentSuggestion(appendedDeptInput);
+    if (appendedDivisionInput && appendedDeptInput) {
+        setupDivisionDeptSuggestion(appendedDivisionInput, appendedDeptInput, (dept) => {
+            applyAutoSiteToSelect(document.getElementById('edit-my-site'), window.getSiteByDepartment(dept));
+        });
+    }
 
     // [추가] 직급 제안 박스 설정 (DOM에 추가된 후 실행)
     const appendedPosInput = document.getElementById('edit-my-pos');
@@ -3566,8 +3595,14 @@ function getSetupProjectState(siteName, p, ctx) {
 
 // 카드 내용: 1줄 프로젝트 번호 + 상태 배지 / 2줄 모델·대수 / 3줄 진행률 (셋업 중일 때)
 function fillSetupProjectItem(li, p, state) {
-    const title = p.projectNo || state.modelText;
-    const sub = p.projectNo ? state.modelText : '';
+    // [변경] 프로젝트 번호가 없으면 '프로젝트 번호 미작성' 표시, 2줄에 모델 (번호 없는 장비는 고객사 장비명/시리얼도 함께)
+    const title = p.projectNo || '프로젝트 번호 미작성';
+    let sub = state.modelText;
+    if (!p.projectNo) {
+        const parts = String(p.equips[0] || '').split('::');
+        const ident = state.custNames[0] || parts[2] || parts[1] || '';
+        if (ident) sub += ` [${ident}]`;
+    }
     const badge = state.inSetup ? '<span class="sp-badge sp-badge--ing">셋업 중</span>'
         : state.isDone ? '<span class="sp-badge sp-badge--done">완료</span>' : '';
     const pct = state.percent;
@@ -3579,7 +3614,7 @@ function fillSetupProjectItem(li, p, state) {
     li.innerHTML = `
         <div class="item-wrapper sp-wrap">
             <div class="sp-top">
-                <span class="item-text" title="${escapeHtml(title)}">${escapeHtml(title)}</span>${badge}
+                <span class="item-text" title="${escapeHtml(title)}"${p.projectNo ? '' : ' style="color:#8b949e;"'}>${escapeHtml(title)}</span>${badge}
             </div>
             ${sub ? `<span class="item-subtext">${escapeHtml(sub)}</span>` : ''}
             ${progress}
@@ -3706,7 +3741,7 @@ async function handleRename(oldName, newName, type) {
         const oldPrefix = `details_${oldName}_`;
         const newPrefix = `details_${newName}_`;
 
-        Object.keys(localStorage).forEach(key => {
+        window.localStorageKeys().forEach(key => {
             if (key.startsWith(oldPrefix)) {
                 const suffix = key.substring(oldPrefix.length);
                 const newKey = newPrefix + suffix;
@@ -5766,24 +5801,61 @@ window.getDragAfterElement = function (container, y, selector) {
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 };
 
-// [추가] 소속(Department) 입력창 제안 박스 설정 함수
-function setupDepartmentSuggestion(inputEl) {
-    if (!inputEl || inputEl.dataset.deptSetup === 'true') return;
-    inputEl.dataset.deptSetup = 'true';
+// [추가] 사업부 → 소속(팀/파트) 조직 구성
+window.ORG_DIVISIONS = {
+    '경영기획사업부': ['인사총무팀', '회계팀', '구매팀'],
+    '영업/운영사업부': ['영업팀', '글로벌마케팅팀', '운영1팀(본사)', '운영1팀(이천)', '운영1팀(청주)', '운영1팀(삼성)', '운영2팀'],
+    '개발사업부': ['모니터링기술팀', '공정기술팀', '분석파트', '환경기술팀', '시스템기술팀', '제어기술팀', '광학파트', '제조기술팀', '설계팀'],
+    '방사화학연구실': ['방사화학파트'],
+    '직속 조직': ['품질경영팀', '환경안전팀'],
+    '중국법인': ['서안', '우시']
+};
 
+// [추가] 소속 → 계정 사업장(사업장 구분) 자동 지정. 목록에 없는 소속은 '' (전체 사업장)
+window.DEPT_SITE_MAP = {
+    '운영1팀(이천)': 'SKH 이천',
+    '운영1팀(삼성)': 'SEC',
+    '운영1팀(청주)': 'SKH 청주',
+    '운영1팀(본사)': '기타사업장',
+    '서안': 'SCS 서안',
+    '우시': 'SKH 우시',
+    '해외(서안)': 'SCS 서안',   // 사업부 지정 전 기존 소속 값
+    '해외(우시)': 'SKH 우시'
+};
+window.getSiteByDepartment = function (dept) {
+    return window.DEPT_SITE_MAP[(dept || '').trim()] || '';
+};
+
+// [추가] 사업장 선택창에 값 지정 (목록에 없는 사업장이면 옵션 추가) 후 잠금
+function applyAutoSiteToSelect(selectEl, site) {
+    if (!selectEl) return;
+    if (site && !Array.from(selectEl.options).some(o => o.value === site)) {
+        const opt = document.createElement('option');
+        opt.value = site;
+        opt.textContent = site;
+        selectEl.appendChild(opt);
+    }
+    selectEl.value = site || '';
+    selectEl.disabled = true;
+    selectEl.title = '사업장은 소속에 따라 자동 지정됩니다. (해당 없으면 전체 사업장)';
+}
+
+// [추가] 읽기 전용 입력창에 선택 목록(드롭다운)을 붙이는 공통 함수
+//  - getItems(): 표시할 항목 배열 (빈 배열이면 emptyMsg 표시)
+//  - onPick(value): 항목 선택 후 호출
+function attachPickList(inputEl, getItems, onPick, emptyMsg) {
     let wrapper = inputEl.closest('.autocomplete-wrapper');
-    let suggestionList;
-
     if (!wrapper) {
         wrapper = document.createElement('div');
         wrapper.className = 'autocomplete-wrapper';
         wrapper.style.position = 'relative';
         wrapper.style.width = '100%';
         wrapper.style.display = 'flex';
-
         inputEl.parentNode.insertBefore(wrapper, inputEl);
         wrapper.appendChild(inputEl);
-
+    }
+    let suggestionList = wrapper.querySelector('.suggestion-list');
+    if (!suggestionList) {
         suggestionList = document.createElement('ul');
         suggestionList.className = 'suggestion-list';
         suggestionList.style.zIndex = '99999';
@@ -5791,21 +5863,7 @@ function setupDepartmentSuggestion(inputEl) {
         suggestionList.style.left = '0';
         suggestionList.style.minWidth = '100%';
         wrapper.appendChild(suggestionList);
-    } else {
-        suggestionList = wrapper.querySelector('.suggestion-list');
-        if (!suggestionList) {
-            suggestionList = document.createElement('ul');
-            suggestionList.className = 'suggestion-list';
-            suggestionList.style.zIndex = '99999';
-            suggestionList.style.top = '100%';
-            suggestionList.style.left = '0';
-            suggestionList.style.minWidth = '100%';
-            wrapper.appendChild(suggestionList);
-        }
     }
-
-    // 지정된 소속 목록 ('직접 입력' 제거 및 '기타' 추가)
-    const depts = ['운영1팀(본사)', '운영1팀(삼성)', '운영1팀(청주)', '운영1팀(이천)', '셋업', '해외(서안)', '해외(우시)', '해외(기타)', '기타'];
 
     // 직접 입력을 차단하고 드롭다운 선택만 허용
     inputEl.readOnly = true;
@@ -5813,14 +5871,24 @@ function setupDepartmentSuggestion(inputEl) {
 
     const showSuggestions = () => {
         suggestionList.innerHTML = '';
-        depts.forEach(dept => {
+        const items = getItems() || [];
+        if (items.length === 0) {
             const li = document.createElement('li');
             li.className = 'user-suggestion-item suggestion-item';
-            li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(dept)}</span>`;
+            li.style.cursor = 'default';
+            li.innerHTML = `<span style="color: #8b949e;">${escapeHtml(emptyMsg || '선택할 항목이 없습니다.')}</span>`;
+            suggestionList.appendChild(li);
+        }
+        items.forEach(item => {
+            const li = document.createElement('li');
+            li.className = 'user-suggestion-item suggestion-item';
+            li.innerHTML = `<span style="color: #e6edf3;">${escapeHtml(item)}</span>`;
             li.addEventListener('pointerdown', (e) => {
                 e.preventDefault();
-                inputEl.value = dept;
+                const prev = inputEl.value;
+                inputEl.value = item;
                 suggestionList.style.display = 'none';
+                if (typeof onPick === 'function') onPick(item, prev);
             });
             suggestionList.appendChild(li);
         });
@@ -5831,9 +5899,7 @@ function setupDepartmentSuggestion(inputEl) {
         e.stopPropagation();
         showSuggestions();
     });
-
     inputEl.addEventListener('focus', showSuggestions);
-
     inputEl.addEventListener('blur', () => {
         setTimeout(() => {
             if (suggestionList) suggestionList.style.display = 'none';
@@ -5848,6 +5914,34 @@ function setupDepartmentSuggestion(inputEl) {
     };
     document.addEventListener('mousedown', outsideClickListener);
     document.addEventListener('touchstart', outsideClickListener, { passive: true });
+}
+
+// [변경] 사업부 + 소속 선택 박스 연동
+//  - 사업부를 고르면 소속에는 그 사업부의 하위 항목만 표시
+//  - 사업부를 바꿔 기존 소속이 새 사업부에 없으면 소속을 비움
+//  - 사업부가 없는 기존 계정의 소속 값은 그대로 둠 (사업부를 고를 때까지)
+function setupDivisionDeptSuggestion(divisionEl, deptEl, onDeptChange) {
+    if (!divisionEl || !deptEl || divisionEl.dataset.divSetup === 'true') return;
+    divisionEl.dataset.divSetup = 'true';
+    deptEl.dataset.deptSetup = 'true';
+    const notify = () => { if (typeof onDeptChange === 'function') onDeptChange(deptEl.value.trim()); };
+
+    attachPickList(divisionEl, () => Object.keys(window.ORG_DIVISIONS), (division) => {
+        const children = window.ORG_DIVISIONS[division] || [];
+        if (!children.includes(deptEl.value.trim())) deptEl.value = '';
+        notify();
+    });
+
+    attachPickList(deptEl, () => window.ORG_DIVISIONS[divisionEl.value.trim()] || [], notify, '사업부를 먼저 선택해주세요.');
+}
+
+// [추가] 사업부/소속 입력값 검사 (사업부가 있으면 소속은 반드시 그 하위 항목이어야 함)
+function validateDivisionDept(division, dept, requireDivision) {
+    if (!division) return requireDivision ? '사업부를 선택해주세요.' : '';
+    const children = window.ORG_DIVISIONS[division];
+    if (!children) return '사업부를 목록에서 다시 선택해주세요.';
+    if (!dept || !children.includes(dept)) return '소속을 선택해주세요.';
+    return '';
 }
 
 // [추가] 직급(Position) 입력창 제안 박스 설정 함수
@@ -5950,18 +6044,23 @@ window.openAllUsersModal = function () {
         document.getElementById('btn-close-all-users').onclick = () => { modal.style.display = 'none'; };
 
         // 소속/직급 제안 박스 연동
-        setupDepartmentSuggestion(document.getElementById('edit-all-dept'));
+        setupDivisionDeptSuggestion(document.getElementById('edit-all-division'), document.getElementById('edit-all-dept'), (dept) => {
+            applyAutoSiteToSelect(document.getElementById('edit-all-site'), window.getSiteByDepartment(dept));
+        });
         setupPositionSuggestion(document.getElementById('edit-all-pos'));
 
         document.getElementById('btn-save-all-user').onclick = async () => {
             const targetId = document.getElementById('edit-all-id').value;
             const name = document.getElementById('edit-all-name').value.trim();
+            const division = document.getElementById('edit-all-division').value.trim();
             const dept = document.getElementById('edit-all-dept').value.trim();
             const pos = document.getElementById('edit-all-pos').value.trim();
             const role = document.getElementById('edit-all-role').value;
-            const site = document.getElementById('edit-all-site').value;
+            const site = window.getSiteByDepartment(dept); // [변경] 소속 기준 자동 지정
 
             if (!name || !dept || !pos) return alert('이름, 소속, 직급을 입력해주세요.');
+            const orgErr = validateDivisionDept(division, dept, false);
+            if (orgErr) return alert(orgErr);
 
             const prevRole = document.getElementById('edit-all-role').dataset.original || '';
             if (role === 'retired' && prevRole !== 'retired') {
@@ -5970,7 +6069,7 @@ window.openAllUsersModal = function () {
                 if (!confirm(`'${name}(${targetId})' 계정을 재입사(복구) 처리하시겠습니까?\n\n기존 비밀번호로 다시 로그인할 수 있게 됩니다.\n필요하면 비밀번호도 초기화해 주세요.`)) return;
             }
 
-            const payload = { id: targetId, name, department: dept, position: pos, role, site };
+            const payload = { id: targetId, name, division, department: dept, position: pos, role, site };
 
             try {
                 const res = await fetch('/api/admin/user/update_all', {
@@ -6100,7 +6199,7 @@ window.loadAllUsersList = function () {
                 users.forEach(u => {
                     const li = document.createElement('li');
                     const isRetired = u.role === 'retired';
-                    li.dataset.search = `${u.id} ${u.name} ${u.department} ${u.position} ${u.role}${isRetired ? ' 퇴사' : ''}`;
+                    li.dataset.search = `${u.id} ${u.name} ${u.division || ''} ${u.department} ${u.position} ${u.role}${isRetired ? ' 퇴사' : ''}`;
                     if (isRetired) li.style.opacity = '0.55';
 
                     let roleBadge = '';
@@ -6112,7 +6211,7 @@ window.loadAllUsersList = function () {
                     li.innerHTML = `
                         <div style="display:flex; flex-direction:column; gap:4px; min-width:0;">
                             <strong style="color:#e6edf3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(u.name || '이름 없음')} <span style="color:#8b949e; font-weight:normal;">(${escapeHtml(u.id)})</span></strong>
-                            <span style="font-size:11px; color:#8b949e; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(u.department || '-')} ${escapeHtml(u.position || '-')}</span>
+                            <span style="font-size:11px; color:#8b949e; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${u.division ? escapeHtml(u.division) + ' · ' : '<span style="color:#d29922;">사업부 미지정</span> · '}${escapeHtml(u.department || '-')} ${escapeHtml(u.position || '-')}</span>
                         </div>
                         <div style="flex-shrink:0; margin-left:10px;">${roleBadge}</div>
                     `;
@@ -6127,12 +6226,13 @@ window.loadAllUsersList = function () {
                         document.getElementById('edit-all-id').value = u.id;
                         document.getElementById('edit-all-id-display').value = u.id;
                         document.getElementById('edit-all-name').value = u.name || '';
+                        document.getElementById('edit-all-division').value = u.division || '';
                         document.getElementById('edit-all-dept').value = u.department || '';
                         document.getElementById('edit-all-pos').value = u.position || '';
                         const roleSel = document.getElementById('edit-all-role');
                         roleSel.value = u.role || 'user';
                         roleSel.dataset.original = roleSel.value;   // 퇴사·복구 확인 문구용
-                        document.getElementById('edit-all-site').value = u.site || '';
+                        applyAutoSiteToSelect(document.getElementById('edit-all-site'), window.getSiteByDepartment(u.department));
                     };
                     list.appendChild(li);
                 });
