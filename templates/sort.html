@@ -2,7 +2,7 @@
 {% set active_page = 'sort' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/sort.css') }}">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/sort.css') }}?v=15">
 {% endblock %}
 
 {% block content %}
@@ -141,14 +141,25 @@
 
     <div class="resizer" id="sidebar-resizer"></div>
 
+    <!-- [추가] Sort 메뉴 접기/펼치기 버튼 (PC 화면) -->
+    <button type="button" id="btn-sort-sidebar-toggle" class="sort-sidebar-toggle" title="Sort 메뉴 접기" aria-label="Sort 메뉴 접기">◀</button>
+
     <!-- 우측 차트 화면 -->
     <section class="dashboard-main">
         <div class="card" style="width: 100%; display: flex; flex-direction: column; margin-top: 15px;">
-            <div class="card-header">
+            <div class="card-header sort-stat-header">
                 <h3>데이터 통계</h3>
+                <!-- [추가] 통계 묶음 선택 (기본 통계 / 장비별 통계 / 월별 통계) -->
+                <div id="sort-stat-tabs" class="sort-stat-tabs">
+                    <button type="button" class="sort-stat-tab" data-group="basic">기본 통계</button>
+                    <button type="button" class="sort-stat-tab" data-group="equip">장비별 통계</button>
+                    <button type="button" class="sort-stat-tab" data-group="monthly">월별 통계</button>
+                </div>
             </div>
             <div id="sort-charts-body" class="card-body"
                 style="padding: 15px 20px 10px 10px; overflow: visible; display: flex; flex-direction: column;">
+                <!-- ===== 기본 통계 (1~7) ===== -->
+                <div class="sort-stat-group" data-group="basic">
                 <div class="sort-full-chart"
                     style="display: flex; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0;">
                     <div
@@ -299,8 +310,12 @@
                     </div>
                 </div>
 
+                </div>
+
+                <!-- ===== 장비별 통계 (8) ===== -->
+                <div class="sort-stat-group" data-group="equip">
                 <div class="sort-full-chart"
-                    style="display: flex; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px;">
+                    style="display: flex; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0;">
                     <div
                         style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
                         <span>장비별 작업 현황</span>
@@ -359,6 +374,91 @@
                                 style="width: 100%; text-align: center; margin-bottom: auto; margin-top: auto;">데이터를 불러오는 중입니다...</div>
                         </div>
                     </div>
+                </div>
+                </div>
+
+                <!-- ===== 월별 통계 (기간 설정의 시작 월 ~ 끝 월) ===== -->
+                <div class="sort-stat-group" data-group="monthly">
+                <div class="sort-full-chart"
+                    style="display: flex; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0;">
+                    <div
+                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #e6edf3;">
+                        <span>월별 작업 구분 현황</span>
+                    </div>
+                    <div class="chart-content-row"
+                        style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
+                        <div id="sort-monthly-type-legend" class="chart-legend-table"></div>
+                        <div id="sort-monthly-type-y-axis"
+                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                        </div>
+                        <div id="sort-monthly-type-chart-container"
+                            style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
+                            <div class="list-empty-msg"
+                                style="width: 100%; text-align: center; margin-bottom: auto; margin-top: auto;">조건을 설정하고
+                                검색해주세요.</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- [추가] 월별 세부구분 현황 (월별 작업 구분 현황의 범례에서 작업 구분을 누르면 표시) -->
+                <div id="sort-monthly-detail-wrapper" class="sort-full-chart"
+                    style="display: none; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px; border-top: 1px dashed #30363d;">
+                    <div
+                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #58a6ff;">
+                        <span id="sort-monthly-detail-title">월별 세부구분 현황</span>
+                        <!-- [추가] 세부구분 1/2/3 보기 전환 (장비별 통계 세부 그래프와 같은 방식) -->
+                        <span class="sort-monthly-mode-group">
+                            <button type="button" class="sort-monthly-mode-btn" data-level="1" title="세부구분 1별 월별 건수 (범례 클릭 시 아래에 세부구분 2·3 이어서 표시)">세부구분 1</button>
+                            <button type="button" class="sort-monthly-mode-btn" data-level="2" title="상위 구분 없이 전체 세부구분 2별 월별 건수">세부구분 2</button>
+                            <button type="button" class="sort-monthly-mode-btn" data-level="3" title="상위 구분 없이 전체 세부구분 3별 월별 건수">세부구분 3</button>
+                        </span>
+                    </div>
+                    <div class="chart-content-row"
+                        style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
+                        <div id="sort-monthly-detail-legend" class="chart-legend-table"></div>
+                        <div id="sort-monthly-detail-y-axis"
+                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                        </div>
+                        <div id="sort-monthly-detail-chart-container"
+                            style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
+                        </div>
+                    </div>
+                </div>
+                <!-- [추가] 월별 세부구분 2 현황 (위 세부구분 그래프 범례 클릭 시 표시) -->
+                <div id="sort-monthly-detail2-wrapper" class="sort-full-chart"
+                    style="display: none; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px; border-top: 1px dashed #30363d;">
+                    <div
+                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #58a6ff;">
+                        <span id="sort-monthly-detail2-title">월별 세부구분 2 현황</span>
+                    </div>
+                    <div class="chart-content-row"
+                        style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
+                        <div id="sort-monthly-detail2-legend" class="chart-legend-table"></div>
+                        <div id="sort-monthly-detail2-y-axis"
+                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                        </div>
+                        <div id="sort-monthly-detail2-chart-container"
+                            style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
+                        </div>
+                    </div>
+                </div>
+                <!-- [추가] 월별 세부구분 3 현황 (위 세부구분 그래프 범례 클릭 시 표시) -->
+                <div id="sort-monthly-detail3-wrapper" class="sort-full-chart"
+                    style="display: none; flex-direction: column; width: 100%; margin-bottom: 20px; flex-shrink: 0; margin-top: 20px; border-top: 1px dashed #30363d;">
+                    <div
+                        style="font-size: 14px; font-weight: bold; margin-left: 10px; margin-bottom: 5px; color: #58a6ff;">
+                        <span id="sort-monthly-detail3-title">월별 세부구분 3 현황</span>
+                    </div>
+                    <div class="chart-content-row"
+                        style="display: flex; flex-direction: row; width: 100%; height: 300px; min-height: 200px; flex-shrink: 0;">
+                        <div id="sort-monthly-detail3-legend" class="chart-legend-table"></div>
+                        <div id="sort-monthly-detail3-y-axis"
+                            style="width: 30px; display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: flex-end; padding-right: 5px; border-right: 1px solid #30363d; color: #8b949e; font-size: 11px; margin-bottom: 48px; flex-shrink: 0;">
+                        </div>
+                        <div id="sort-monthly-detail3-chart-container"
+                            style="flex: 1; display: flex; align-items: flex-end; justify-content: flex-start; overflow-x: auto; overflow-y: hidden; gap: 10px; padding-bottom: 5px; padding-left: 10px;">
+                        </div>
+                    </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -583,5 +683,5 @@
 <!-- Chart.js 라이브러리 (리포트 차트 렌더링용) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<script src="{{ url_for('SettingDAO', filename='JavaScript/sort.js') }}?v=1.1.0"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/sort.js') }}?v=1.1.9"></script>
 {% endblock %}

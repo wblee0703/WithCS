@@ -182,7 +182,7 @@
     justify-content: flex-end;
     height: 100%;
     flex: 1;
-    max-width: 30px;
+    max-width: 16px; /* [변경] 막대 너비 축소 (30px → 16px, 모든 통계 그래프 공통) */
 }
 
 .multi-bar-wrapper .bar-value {
@@ -573,7 +573,8 @@
 #sort-irregular-chart-container,
 #sort-cust-response-chart-container,
 #sort-equip-model-chart-container,
-#sort-drilldown-chart-container {
+#sort-drilldown-chart-container,
+#sort-monthly-type-chart-container {
     position: relative;
     flex: 1;
     min-width: 0;
@@ -588,7 +589,8 @@
 #sort-irregular-chart-container::after,
 #sort-cust-response-chart-container::after,
 #sort-equip-model-chart-container::after,
-#sort-drilldown-chart-container::after {
+#sort-drilldown-chart-container::after,
+#sort-monthly-type-chart-container::after {
     content: '';
     position: absolute;
     left: 0;
@@ -609,7 +611,8 @@
 #sort-irregular-y-axis,
 #sort-cust-response-y-axis,
 #sort-equip-model-y-axis,
-#sort-drilldown-y-axis {
+#sort-drilldown-y-axis,
+#sort-monthly-type-y-axis {
     margin-bottom: 100px !important;
 }
 
@@ -621,7 +624,8 @@
 #sort-irregular-chart-container,
 #sort-cust-response-chart-container,
 #sort-equip-model-chart-container,
-#sort-drilldown-chart-container {
+#sort-drilldown-chart-container,
+#sort-monthly-type-chart-container {
     padding-bottom: 100px !important;
 }
 
@@ -1100,4 +1104,205 @@
     .report-markdown-body h2 {
         color: #1f6feb !important;
     }
+}
+/* ==========================================================================
+   [추가] 데이터 통계 묶음 선택 (기본 통계 / 장비별 통계 / 월별 통계)
+   ========================================================================== */
+.sort-stat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.sort-stat-tabs {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.sort-stat-tab {
+    padding: 4px 12px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid #30363d;
+    background: transparent;
+    color: #8b949e;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.sort-stat-tab:hover {
+    color: #c9d1d9;
+    border-color: #8b949e;
+}
+
+.sort-stat-tab.active {
+    background: #1f6feb;
+    border-color: #1f6feb;
+    color: #fff;
+}
+
+.sort-stat-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.sort-stat-group.hidden {
+    display: none !important;
+}
+
+/* [추가] 월별 통계: X축 라벨이 월(1월, 2월 …)뿐이라 기울이지 않고 가운데 정렬, 하단 여백 축소 */
+#sort-monthly-type-chart-container {
+    padding-bottom: 28px !important;
+}
+
+#sort-monthly-type-chart-container::after {
+    bottom: 28px !important;
+}
+
+#sort-monthly-type-y-axis {
+    margin-bottom: 28px !important;
+}
+
+#sort-monthly-type-chart-container .sort-bar-group .bar-label {
+    top: calc(100% + 6px);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    transform-origin: center;
+    text-align: center;
+}
+
+/* [추가] 막대 묶음 너비
+   - 항목이 적어 공간이 남으면: 묶음이 늘어나 화면 너비를 100% 사용 (막대는 묶음 가운데)
+   - 항목이 많아 화면을 넘으면: 최소 너비(막대 수 × 20px)로 촘촘히 배치 후 가로 스크롤 */
+#sort-charts-body .sort-bar-group {
+    flex: 1 0 auto;
+    min-width: 36px;
+}
+
+#sort-charts-body .chart-content-row > div[id$="-chart-container"] {
+    justify-content: flex-start !important;
+    gap: 14px !important;
+}
+
+/* [추가] Sort 메뉴 접기/펼치기 버튼 (사이드바와 데이터 통계 사이, 세로 가운데) */
+.sort-sidebar-toggle {
+    align-self: center;
+    flex-shrink: 0;
+    width: 16px;
+    height: 56px;
+    /* 왼쪽: 기본 간격 15 + 4 = 19px / 오른쪽: -11 + 기본 간격 15 + 데이터 통계 안쪽 여백 15 = 19px */
+    margin: 0 -11px 0 4px;
+    padding: 0;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    background: #161b22;
+    color: #8b949e;
+    font-size: 10px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 5;
+}
+
+.sort-sidebar-toggle:hover {
+    background: #1f6feb;
+    border-color: #1f6feb;
+    color: #fff;
+}
+
+#section-sort.sort-sidebar-collapsed .dashboard-sidebar {
+    display: none !important;
+}
+
+/* 모바일은 기존 '접기' 버튼 사용 */
+@media (max-width: 950px) {
+    .sort-sidebar-toggle {
+        display: none !important;
+    }
+
+    #section-sort.sort-sidebar-collapsed .dashboard-sidebar {
+        display: flex !important;
+    }
+}
+
+/* [추가] 월별 세부구분 현황 (월별 작업 구분 현황 범례 클릭 시 표시) - 다른 월별 그래프와 같은 축·라벨 */
+#sort-monthly-detail-chart-container,
+#sort-monthly-detail2-chart-container,
+#sort-monthly-detail3-chart-container {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding-bottom: 28px !important;
+}
+
+#sort-monthly-detail-chart-container::after,
+#sort-monthly-detail2-chart-container::after,
+#sort-monthly-detail3-chart-container::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 28px !important;
+    height: 1px;
+    background-color: #30363d;
+}
+
+#sort-monthly-detail-y-axis,
+#sort-monthly-detail2-y-axis,
+#sort-monthly-detail3-y-axis {
+    margin-bottom: 28px !important;
+}
+
+#sort-monthly-detail-chart-container .sort-bar-group .bar-label,
+#sort-monthly-detail2-chart-container .sort-bar-group .bar-label,
+#sort-monthly-detail3-chart-container .sort-bar-group .bar-label {
+    top: calc(100% + 6px);
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    transform-origin: center;
+    text-align: center;
+}
+
+/* [추가] 월별 통계 카드 높이 축소: X축 아래 여백을 100px → 28px 로 줄인 만큼(72px) 카드도 줄임
+   (그래프·Y축은 카드 높이에 맞춰 함께 줄어듦) */
+.sort-stat-group[data-group="monthly"] .sort-full-chart {
+    height: 328px !important;
+    min-height: 328px !important;
+    max-height: 328px !important;
+}
+
+/* [추가] 월별 세부구분 현황: 세부구분 1/2/3 보기 전환 버튼 */
+.sort-monthly-mode-group {
+    display: inline-flex;
+    gap: 4px;
+    margin-left: 12px;
+    margin-right: 8px;
+}
+
+.sort-monthly-mode-btn {
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: normal;
+    cursor: pointer;
+    border-radius: 4px;
+    border: 1px solid #30363d;
+    background: transparent;
+    color: #8b949e;
+}
+
+.sort-monthly-mode-btn:hover {
+    color: #c9d1d9;
+    border-color: #8b949e;
+}
+
+.sort-monthly-mode-btn.active {
+    background: #1f6feb;
+    border-color: #1f6feb;
+    color: #fff;
 }

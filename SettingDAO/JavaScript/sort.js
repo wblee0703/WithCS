@@ -78,6 +78,8 @@ function initSortPage() {
     setupSortFilters();
     setupSortEvents();
     setupSortResizer();
+    setupSortStatTabs(); // [추가] 데이터 통계 묶음 선택
+    setupSortSidebarToggle(); // [추가] Sort 메뉴 접기/펼치기
 
     // 마지막 검색 필터 복원
     try {
@@ -245,6 +247,43 @@ function initSortPage() {
 }
 
 // [1.4] 사이드바 너비 조절(Resizer) 이벤트 설정
+// [추가] 데이터 통계 묶음 선택 버튼 (기본 통계 / 장비별 통계 / 월별 통계) - 마지막 선택 기억
+function setupSortStatTabs() {
+    const tabs = document.querySelectorAll('#sort-stat-tabs .sort-stat-tab');
+    if (!tabs.length) return;
+    const groups = document.querySelectorAll('#sort-charts-body .sort-stat-group');
+    const valid = Array.from(tabs).map(t => t.dataset.group);
+    const show = (group) => {
+        if (!valid.includes(group)) group = 'basic';
+        tabs.forEach(t => t.classList.toggle('active', t.dataset.group === group));
+        groups.forEach(g => g.classList.toggle('hidden', g.dataset.group !== group));
+        localStorage.setItem('sortStatGroup', group);
+    };
+    tabs.forEach(t => {
+        t.onclick = (e) => {
+            e.stopPropagation(); // 카드 헤더 접기/펼치기 동작 방지
+            show(t.dataset.group);
+        };
+    });
+    show(localStorage.getItem('sortStatGroup') || 'basic');
+}
+
+// [추가] Sort 메뉴 접기/펼치기 (PC 화면, 마지막 상태 기억)
+function setupSortSidebarToggle() {
+    const btn = document.getElementById('btn-sort-sidebar-toggle');
+    const section = document.getElementById('section-sort');
+    if (!btn || !section) return;
+    const apply = (collapsed) => {
+        section.classList.toggle('sort-sidebar-collapsed', collapsed);
+        btn.textContent = collapsed ? '▶' : '◀';
+        btn.title = collapsed ? 'Sort 메뉴 펼치기' : 'Sort 메뉴 접기';
+        btn.setAttribute('aria-label', btn.title);
+        localStorage.setItem('sortSidebarCollapsed', collapsed ? '1' : '0');
+    };
+    btn.onclick = () => apply(!section.classList.contains('sort-sidebar-collapsed'));
+    apply(localStorage.getItem('sortSidebarCollapsed') === '1');
+}
+
 function setupSortResizer() {
     const resizer = document.getElementById('sidebar-resizer');
     const sidebar = document.querySelector('.dashboard-sidebar');
@@ -1519,6 +1558,7 @@ function executeSortSearch() {
         keywordSelected: keywordSelected
     };
     localStorage.setItem('lastSortFilters', JSON.stringify(currentSortFilters));
+    window.sortChartPeriod = { startDate, endDate }; // [추가] 월별 통계의 월 범위 기준
 
     let results = [];
 
@@ -2279,7 +2319,15 @@ function renderSortChart(results) {
     const equipModelYAxis = document.getElementById('sort-equip-model-y-axis');
     const equipModelLegend = document.getElementById('sort-equip-model-legend');
 
+    // [추가] 월별 통계
+    const monthlyTypeContainer = document.getElementById('sort-monthly-type-chart-container');
+    const monthlyTypeYAxis = document.getElementById('sort-monthly-type-y-axis');
+    const monthlyTypeLegend = document.getElementById('sort-monthly-type-legend');
+
     if (!container) return;
+
+    [monthlyTypeContainer, monthlyTypeYAxis, monthlyTypeLegend]
+        .forEach(el => { if (el) el.innerHTML = ''; });
 
     const itemDetailTypeFilters = getMultiValues('sort-item-detail-type-select');
     const isItemDetailTypeAll = isAllSelected('sort-item-detail-type-select', itemDetailTypeFilters);
@@ -2318,6 +2366,11 @@ function renderSortChart(results) {
         if (irregularContainer) irregularContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
         if (custResponseContainer) custResponseContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
         if (equipModelContainer) equipModelContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
+        if (monthlyTypeContainer) monthlyTypeContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">검색된 결과가 없습니다.</div>';
+        ['sort-monthly-detail-wrapper', 'sort-monthly-detail2-wrapper', 'sort-monthly-detail3-wrapper'].forEach(id => {
+            const w = document.getElementById(id);
+            if (w) w.style.display = 'none';
+        });
         return;
     }
 
@@ -2335,6 +2388,15 @@ function renderSortChart(results) {
     const irregularSiteCounts = {};
     const custResponseSiteCounts = {};
     const equipModelData = {};
+    // [추가] 월별 통계: { 'YYYY-MM': { 사업장: { 항목: 건수 } } }
+    const monthlyTypeData = {};
+    const monthlyDetailRows = []; // [추가] 월별 세부구분 그래프용 { month, site, type, d1, d2, d3 }
+    const addMonthly = (obj, month, site, key) => {
+        if (!month || !site || !key) return;
+        if (!obj[month]) obj[month] = {};
+        if (!obj[month][site]) obj[month][site] = {};
+        obj[month][site][key] = (obj[month][site][key] || 0) + 1;
+    };
     const allWorkTypes = new Set(['정기', '비정기', '고객대응', '용액제조', '온라인점검']);
     const allSites = new Set();
     const allowedCustResponseItems = ['순회 점검', '프로그램 변경 / 평가', '설비 평가', '파티클 필터 교체', '업무 협조', '설비 정상화', '단순조치', '설비 개조', 'Cal 보정', '기타'];
@@ -2351,6 +2413,7 @@ function renderSortChart(results) {
     results.forEach(row => {
         // [수정] 통계 차트에는 작업이 '완료'된 내역만 포함하도록 필터링
         if (row.status !== '완료') return;
+        const rowMonth = /^\d{4}-\d{2}/.test(row.date || '') ? row.date.slice(0, 7) : '';
 
         // [요청 반영] 추가작업으로 분류되는 작업(originalLogId 존재)도 통계 데이터에 포함하여 그래프 생성
 
@@ -2395,6 +2458,9 @@ function renderSortChart(results) {
             });
         }
 
+        // [추가] 월별 작업 구분 (장비별 작업 현황과 같은 기준)
+        addMonthly(monthlyTypeData, rowMonth, row.site, row.type || '기타');
+
         // 점검 구분 및 사업장별 데이터 수집
         if (row.type && row.site) {
             const targetType = row.originalLogId ? `${row.type}(추가)` : row.type;
@@ -2410,6 +2476,15 @@ function renderSortChart(results) {
             const ps = dt1.split(' > ');
             dt1 = ps[0].trim();
             dt2 = ps[1].trim();
+        }
+        // [추가] 월별 세부구분 (작업 구분 > 세부구분 1 > 2 > 3)
+        if (rowMonth && row.site) {
+            const dtParts = (row.detailType || '').split(' > ').map(x => x.trim());
+            const d3 = (row.detailType3 && row.detailType3 !== '미지정') ? row.detailType3 : (dtParts[2] || '미지정');
+            monthlyDetailRows.push({
+                month: rowMonth, site: row.site, type: row.type || '기타',
+                d1: dt1 || '미지정', d2: dt2 || '미지정', d3: d3 || '미지정'
+            });
         }
         if (dt1 && row.site) {
             if (!detailTypeSiteCounts[dt1]) detailTypeSiteCounts[dt1] = {};
@@ -2756,7 +2831,7 @@ function renderSortChart(results) {
                 groupDiv.appendChild(labelDiv);
                 if (totalInGroup > 0) {
                     // 항목 내의 사업장(막대) 수에 맞추어 그룹 가로폭을 최소 가로폭으로 가변 동적 계산하여 겹침을 방지합니다.
-                    const computedMinWidth = Math.max(60, totalInGroup * 35);
+                    const computedMinWidth = Math.max(36, totalInGroup * 20);
                     groupDiv.style.minWidth = computedMinWidth + 'px';
                     targetContainer.appendChild(groupDiv);
                 }
@@ -3014,7 +3089,10 @@ function renderSortChart(results) {
                 trackDiv.className = 'bar-track';
                 let totalInGroup = 0;
 
-                availableWorkTypes.forEach((wt, idx) => {
+                // [변경] 장비마다 건수가 많은 막대부터 표시 (같으면 범례 순서, 색은 범례 기준 유지)
+                const workTypesByCount = availableWorkTypes.map((wt, idx) => ({ wt, idx }))
+                    .sort((a, b) => ((currentDataObj[model][b.wt] || 0) - (currentDataObj[model][a.wt] || 0)) || (a.idx - b.idx));
+                workTypesByCount.forEach(({ wt, idx }) => {
                     if (selectedWorkTypeFilter && selectedWorkTypeFilter !== wt) return;
                     const count = currentDataObj[model][wt] || 0;
                     if (count > 0) {
@@ -3044,7 +3122,7 @@ function renderSortChart(results) {
                 groupDiv.appendChild(labelDiv);
 
                 if (totalInGroup > 0) {
-                    const computedMinWidth = Math.max(60, totalInGroup * 35);
+                    const computedMinWidth = Math.max(36, totalInGroup * 20);
                     groupDiv.style.minWidth = computedMinWidth + 'px';
                     targetContainer.appendChild(groupDiv);
                 }
@@ -3058,6 +3136,289 @@ function renderSortChart(results) {
     };
 
     drawEquipModelChart(equipModelContainer, equipModelYAxis, equipModelLegend);
+
+    // ----------------------------------------------------------------------
+    // [추가] 월별 통계 (기간 설정의 시작 월 ~ 끝 월, 예: 1~11월 → 1월부터 11월까지)
+    // ----------------------------------------------------------------------
+    const getMonthRange = (dataObjs) => {
+        const period = window.sortChartPeriod || {};
+        let start = /^\d{4}-\d{2}/.test(period.startDate || '') ? period.startDate.slice(0, 7) : '';
+        let end = /^\d{4}-\d{2}/.test(period.endDate || '') ? period.endDate.slice(0, 7) : '';
+        const dataMonths = Array.from(new Set(dataObjs.flatMap(o => Object.keys(o)))).sort();
+        if (!start) start = dataMonths[0] || '';
+        if (!end) end = dataMonths[dataMonths.length - 1] || '';
+        if (!start || !end || start > end) return dataMonths;
+        const months = [];
+        let [y, m] = start.split('-').map(Number);
+        const [ey, em] = end.split('-').map(Number);
+        while ((y < ey || (y === ey && m <= em)) && months.length < 120) {
+            months.push(`${y}-${String(m).padStart(2, '0')}`);
+            m++;
+            if (m > 12) { m = 1; y++; }
+        }
+        return months;
+    };
+    const monthRange = getMonthRange([monthlyTypeData]);
+    const isSingleYear = new Set(monthRange.map(mo => mo.slice(0, 4))).size <= 1;
+    const monthLabel = (mo) => isSingleYear ? `${Number(mo.slice(5, 7))}월` : `${mo.slice(2, 4)}.${mo.slice(5, 7)}`;
+
+    // 월(가로축) × 항목(막대, 범례) 차트. 모양·범례 클릭 필터·CSV 는 장비별 작업 현황과 동일
+    //  opts.onSeriesSelect(항목|null): 범례로 항목을 고르거나 해제할 때 호출
+    //  opts.register === false: 사업장 필터 동기화 목록(chartRenderers)에 등록하지 않음 (다시 그려지는 하위 그래프용)
+    const drawMonthlyChart = (dataObj, months, baseOrder, colorMap, seriesTitle, targetContainer, targetYAxis, targetLegend, opts = {}) => {
+        if (!targetContainer || !targetYAxis) return null;
+
+        const card = targetContainer.closest('.sort-full-chart');
+        let titleEl = null;
+        let exportBtn = null;
+        if (card) {
+            titleEl = card.querySelector('h3, .card-title, .status-group-title') || card.firstElementChild;
+            if (titleEl) {
+                const newTitleEl = titleEl.cloneNode(true);
+                titleEl.parentNode.replaceChild(newTitleEl, titleEl);
+                titleEl = newTitleEl;
+                titleEl.style.display = 'flex';
+                titleEl.style.justifyContent = 'space-between';
+                titleEl.style.alignItems = 'center';
+                exportBtn = titleEl.querySelector('.btn-export-chart-csv');
+                if (!exportBtn) {
+                    exportBtn = document.createElement('button');
+                    exportBtn.className = 'btn-export-chart-csv';
+                    exportBtn.innerHTML = '⬇️ CSV';
+                    exportBtn.title = '차트 데이터 CSV 추출';
+                    exportBtn.style.cssText = 'padding: 2px 6px; font-size: 11px; cursor: pointer; border-radius: 4px; border: 1px solid #30363d; background: transparent; color: #8b949e; margin-left: auto;';
+                    titleEl.appendChild(exportBtn);
+                }
+            }
+        }
+
+        const getSiteGroupName = (s) => {
+            try {
+                const meta = JSON.parse(localStorage.getItem(`site_meta_${s}`));
+                if (meta && meta.group) return meta.group;
+            } catch (e) { }
+            return '기타사업장';
+        };
+        const isMatchSite = (site) => {
+            const filter = window.chartSelectedSiteFilter;
+            if (!filter) return true;
+            if (filter === site) return true;
+            return getSiteGroupName(site) === filter;
+        };
+
+        const fallbackColors = ['#1f6feb', '#f0883e', '#da3633', '#1b7c83', '#8b949e', '#a371f7', '#56d364',
+            '#d29922', '#0096D6', '#db61a2', '#3fb950', '#e3b341', '#79c0ff', '#ff7b72'];
+        let selectedSeriesFilter = null;
+        const notifySelect = () => { if (typeof opts.onSeriesSelect === 'function') opts.onSeriesSelect(selectedSeriesFilter); };
+
+        const renderInner = () => {
+            // 사업장 필터 반영해서 월 → 항목 건수 합산
+            const currentDataObj = {};
+            const activeSeries = new Set();
+            months.forEach(mo => {
+                currentDataObj[mo] = {};
+                Object.entries(dataObj[mo] || {}).forEach(([site, seriesObj]) => {
+                    if (!isMatchSite(site)) return;
+                    Object.entries(seriesObj).forEach(([key, count]) => {
+                        currentDataObj[mo][key] = (currentDataObj[mo][key] || 0) + count;
+                        if (count > 0) activeSeries.add(key);
+                    });
+                });
+            });
+
+            const order = [...baseOrder];
+            Array.from(activeSeries).sort().forEach(k => { if (!order.includes(k)) order.push(k); });
+            const seriesList = order.filter(k => activeSeries.has(k));
+            const colorOf = (k) => colorMap[k] || fallbackColors[order.indexOf(k) % fallbackColors.length];
+            if (selectedSeriesFilter && !activeSeries.has(selectedSeriesFilter)) { selectedSeriesFilter = null; notifySelect(); }
+            const visibleSeries = seriesList.filter(k => !selectedSeriesFilter || k === selectedSeriesFilter);
+
+            let maxCount = 0;
+            months.forEach(mo => visibleSeries.forEach(k => { maxCount = Math.max(maxCount, currentDataObj[mo][k] || 0); }));
+
+            if (maxCount === 0) {
+                targetContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">표시할 데이터가 없습니다.</div>';
+                if (targetLegend) targetLegend.innerHTML = '';
+                if (targetYAxis) targetYAxis.innerHTML = '';
+                return;
+            }
+
+            let yAxisMax = 10;
+            if (maxCount > 10) yAxisMax = Math.ceil(maxCount / 5) * 5;
+            targetYAxis.innerHTML = '';
+            for (let i = 0; i <= 5; i++) {
+                const div = document.createElement('div');
+                div.textContent = Math.round((yAxisMax / 5) * i);
+                targetYAxis.appendChild(div);
+            }
+
+            // 범례 (클릭 시 해당 항목만 보기 / 다시 클릭 시 전체)
+            if (targetLegend) {
+                targetLegend.innerHTML = '';
+                seriesList.forEach(k => {
+                    const legDiv = document.createElement('div');
+                    legDiv.className = 'legend-item';
+                    if (selectedSeriesFilter && selectedSeriesFilter !== k) legDiv.classList.add('faded');
+                    legDiv.innerHTML = `<div class="legend-color-box" style="background:${colorOf(k)};"></div><span title="${escapeHtml(k)}">${escapeHtml(k)}</span>`;
+                    legDiv.onclick = () => {
+                        selectedSeriesFilter = (selectedSeriesFilter === k) ? null : k;
+                        renderInner();
+                        notifySelect();
+                    };
+                    targetLegend.appendChild(legDiv);
+                });
+            }
+
+            // CSV (월 × 항목, 합계)
+            if (exportBtn && titleEl) {
+                exportBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    let csvContent = '﻿';
+                    csvContent += `월,${seriesList.map(k => '"' + String(k).replace(/"/g, '""') + '"').join(',')},합계\n`;
+                    months.forEach(mo => {
+                        let total = 0;
+                        const row = [mo];
+                        seriesList.forEach(k => { const v = currentDataObj[mo][k] || 0; row.push(v); total += v; });
+                        row.push(total);
+                        csvContent += row.join(',') + '\n';
+                    });
+                    const rawTitle = titleEl.cloneNode(true);
+                    rawTitle.querySelectorAll('.btn-export-chart-csv, .sort-monthly-mode-group').forEach(el => el.remove());
+                    const titleName = rawTitle.textContent.trim().replace(/\s+/g, '_');
+                    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `SORT_통계_${titleName}_${new Date().toISOString().slice(0, 10)}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    logActionToServer('EXPORT_CSV', '정렬/통계 차트 데이터 CSV 내보내기 (' + titleName + ')');
+                };
+            }
+
+            // 월 순서대로 막대 그룹 (건수가 없는 달도 자리 유지)
+            targetContainer.innerHTML = '';
+            months.forEach(mo => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'sort-bar-group type-group';
+                const trackDiv = document.createElement('div');
+                trackDiv.className = 'bar-track';
+                let barCount = 0;
+                let monthTotal = 0;
+                // [변경] 달마다 건수가 많은 막대부터 표시 (같으면 범례 순서)
+                const seriesByCount = [...visibleSeries].sort((a, b) =>
+                    ((currentDataObj[mo][b] || 0) - (currentDataObj[mo][a] || 0)) || (visibleSeries.indexOf(a) - visibleSeries.indexOf(b)));
+                seriesByCount.forEach(k => {
+                    const count = currentDataObj[mo][k] || 0;
+                    if (count <= 0) return;
+                    barCount++;
+                    monthTotal += count;
+                    const barWrapper = document.createElement('div');
+                    barWrapper.className = 'multi-bar-wrapper';
+                    barWrapper.title = `${mo} - ${k}: ${count}건`;
+                    barWrapper.innerHTML = `<div class="bar-value">${count}</div><div class="bar" style="height: ${(count / yAxisMax) * 100}%; background: ${colorOf(k)};"></div>`;
+                    trackDiv.appendChild(barWrapper);
+                });
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'bar-label';
+                labelDiv.textContent = monthLabel(mo);
+                labelDiv.title = `${mo} (${seriesTitle} 합계 ${monthTotal}건)`;
+                groupDiv.appendChild(trackDiv);
+                groupDiv.appendChild(labelDiv);
+                groupDiv.style.minWidth = Math.max(36, barCount * 20) + 'px';
+                targetContainer.appendChild(groupDiv);
+            });
+        };
+
+        if (opts.register !== false) {
+            if (!window.chartRenderers) window.chartRenderers = [];
+            window.chartRenderers.push(renderInner);
+        }
+        renderInner();
+        return renderInner;
+    };
+
+    // [추가] 월별 세부구분 현황 (연쇄)
+    //  - 월별 작업 구분 현황 범례에서 작업 구분 선택 → 세부구분 1 월별 그래프
+    //  - 세부구분 1 그래프 범례에서 항목 선택 → 세부구분 2 월별 그래프 → 같은 방식으로 세부구분 3
+    //  - 상위에서 선택을 바꾸거나 해제하면 그 아래 그래프는 닫힘
+    const detailLevels = [1, 2, 3].map(n => {
+        const p = n === 1 ? 'sort-monthly-detail' : `sort-monthly-detail${n}`;
+        return {
+            n,
+            wrapper: document.getElementById(`${p}-wrapper`),
+            titleId: `${p}-title`,
+            container: document.getElementById(`${p}-chart-container`),
+            yAxis: document.getElementById(`${p}-y-axis`),
+            legend: document.getElementById(`${p}-legend`),
+            render: null   // 현재 표시 중인 그래프 (사업장 필터 변경 시 다시 그림)
+        };
+    });
+    if (!window.chartRenderers) window.chartRenderers = [];
+    window.chartRenderers.push(() => detailLevels.forEach(lv => { if (lv.render) lv.render(); }));
+
+    const hideDetailFrom = (n) => {
+        detailLevels.forEach(lv => {
+            if (lv.n < n) return;
+            lv.render = null;
+            if (lv.wrapper) lv.wrapper.style.display = 'none';
+        });
+    };
+
+    // path: { type, d1, d2 } - n 단계 그래프는 path 로 거른 작업들의 세부구분 n 을 월별로 표시
+    // mode (1단계 그래프만): 1 = 세부구분 1 (범례 클릭 시 아래로 2·3 이어서 표시)
+    //                       2 / 3 = 상위 구분 없이 해당 작업 전체의 세부구분 2 / 3 (장비별 통계 세부 그래프와 같은 방식)
+    const showDetailLevel = (n, path, mode = 1) => {
+        const lv = detailLevels[n - 1];
+        if (!lv || !lv.wrapper) return;
+        const key = (n === 1) ? mode : n;
+        const dataObj = {};
+        monthlyDetailRows.forEach(r => {
+            if (r.type !== path.type) return;
+            if (n >= 2 && r.d1 !== path.d1) return;
+            if (n >= 3 && r.d2 !== path.d2) return;
+            addMonthly(dataObj, r.month, r.site, r['d' + key]);
+        });
+        lv.wrapper.style.display = 'flex';
+        const crumbs = [path.type, path.d1, path.d2].slice(0, n).join(' > ');
+        const titleSpan = document.getElementById(lv.titleId);
+        if (titleSpan) {
+            titleSpan.textContent = (n === 1 && key > 1)
+                ? `월별 세부구분 ${key} 현황 - ${crumbs} (전체)`
+                : `월별 세부구분 ${key === 1 ? '' : key + ' '}현황 - ${crumbs}`;
+        }
+        lv.render = drawMonthlyChart(dataObj, monthRange, [], {}, crumbs, lv.container, lv.yAxis, lv.legend, {
+            register: false,
+            onSeriesSelect: (v) => {
+                hideDetailFrom(n + 1);
+                // 세부구분 1 보기에서만 아래로 이어서 표시 (2·3 전체 보기는 범례 = 항목 필터)
+                if (v && key === n && n < 3) showDetailLevel(n + 1, Object.assign({}, path, { ['d' + n]: v }));
+            }
+        });
+        // 1단계 그래프의 세부구분 1/2/3 전환 버튼 (제목줄은 그릴 때마다 새로 복제되므로 매번 연결)
+        if (n === 1) {
+            lv.wrapper.querySelectorAll('.sort-monthly-mode-btn').forEach(btn => {
+                const lvNum = Number(btn.dataset.level);
+                btn.classList.toggle('active', lvNum === key);
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (lvNum === key) return;
+                    hideDetailFrom(2);
+                    showDetailLevel(1, path, lvNum);
+                };
+            });
+        }
+        setTimeout(() => lv.wrapper.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+    };
+    hideDetailFrom(1); // 새 검색 시 닫힘
+
+    drawMonthlyChart(monthlyTypeData, monthRange,
+        ['정기', '비정기', '고객대응', '용액제조', '온라인점검'],
+        { '정기': '#238636', '비정기': '#eb371f', '고객대응': '#d29922', '용액제조': '#8957e5', '온라인점검': '#0078d4' },
+        '작업', monthlyTypeContainer, monthlyTypeYAxis, monthlyTypeLegend,
+        { onSeriesSelect: (t) => { hideDetailFrom(1); if (t) showDetailLevel(1, { type: t }); } });
 
     // [추가] 장비 모델 세부구분(1 -> 2 -> 3) 순차 드릴다운 연동 차트 구현
     let isDrilldownGrouped = true; // [요청] 초기에는 사업장 구분별로 그룹화 표시
@@ -3558,7 +3919,10 @@ function renderSortChart(results) {
             trackDiv.className = 'bar-track';
             let totalInGroup = 0;
 
-            currentSitesArray.forEach(site => {
+            // [변경] 항목마다 건수가 많은 막대부터 표시 (같으면 사업장 순서)
+            const sitesByCount = [...currentSitesArray].sort((a, b) =>
+                ((currentDataObj[cat][b] || 0) - (currentDataObj[cat][a] || 0)) || (currentSitesArray.indexOf(a) - currentSitesArray.indexOf(b)));
+            sitesByCount.forEach(site => {
                 if (!isMatchSite(site)) return;
                 const count = currentDataObj[cat][site] || 0;
                 if (count > 0) {
@@ -3594,7 +3958,7 @@ function renderSortChart(results) {
             }
 
             if (totalInGroup > 0) {
-                const computedMinWidth = Math.max(60, totalInGroup * 35);
+                const computedMinWidth = Math.max(36, totalInGroup * 20);
                 groupDiv.style.minWidth = computedMinWidth + 'px';
                 container.appendChild(groupDiv);
             }
