@@ -1348,3 +1348,30 @@
     border-color: #1f6feb;
     color: #fff;
 }
+
+/* [추가] 월별 작업 구분 현황: 선택한 범례 항목 옆 [펼치기]/[접기] 버튼 */
+.sort-legend-expand-btn {
+    flex-shrink: 0;
+    margin-left: 6px;
+    padding: 1px 6px;
+    font-size: 10px;
+    line-height: 1.4;
+    border-radius: 4px;
+    border: 1px solid #1f6feb;
+    background: transparent;
+    color: #58a6ff;
+    cursor: pointer;
+}
+
+.sort-legend-expand-btn:hover {
+    background: #1f6feb;
+    color: #fff;
+}
+
+/* [추가] 월별 작업 구분 현황 [펼치기]: 펼친 항목 아래 사업장 구분 색 표시 (들여쓰기, 클릭 없음) */
+.legend-item.legend-sub {
+    padding-left: 14px;
+    font-size: 11px;
+    color: #8b949e;
+    cursor: default;
+}

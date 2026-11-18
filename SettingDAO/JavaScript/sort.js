@@ -2391,7 +2391,7 @@ function renderSortChart(results) {
     const equipModelData = {};
     // [추가] 월별 통계: { 'YYYY-MM': { 사업장: { 항목: 건수 } } }
     const monthlyTypeData = {};
-    const siteGroupCache = {}; // [추가] 사업장 → 사업장 구분 (월별 통계 사업장 구분 필터용)
+    const siteGroupCache = {}; // [추가] 사업장 → 사업장 구분 (월별 통계 사업장 구분 필터·사업장 비정기 그래프용)
     const getRowSiteGroup = (site) => {
         if (!(site in siteGroupCache)) {
             let g = '기타사업장';
@@ -3248,8 +3248,36 @@ function renderSortChart(results) {
             if (selectedSeriesFilter && !activeSeries.has(selectedSeriesFilter)) { selectedSeriesFilter = null; notifySelect(); }
             const visibleSeries = seriesList.filter(k => !selectedSeriesFilter || k === selectedSeriesFilter);
 
+            // [추가] 펼치기: 선택한 항목의 월별 막대를 하위 구분(예: 사업장 구분)별 막대로 나눠 표시
+            //  opts.getExpanded(항목) → { dataObj: { 월: { 사업장: { 하위구분: 건수 } } }, order, colorMap } 또는 null(접힘)
+            const expanded = (selectedSeriesFilter && typeof opts.getExpanded === 'function') ? opts.getExpanded(selectedSeriesFilter) : null;
+            let barData = currentDataObj;
+            let barSeries = visibleSeries;
+            let barColor = colorOf;
+            let barName = (k) => k;
+            if (expanded) {
+                const expData = {};
+                const expActive = new Set();
+                months.forEach(mo => {
+                    expData[mo] = {};
+                    Object.entries(expanded.dataObj[mo] || {}).forEach(([site, subObj]) => {
+                        if (!isMatchSite(site)) return;
+                        Object.entries(subObj).forEach(([g, c]) => {
+                            expData[mo][g] = (expData[mo][g] || 0) + c;
+                            if (c > 0) expActive.add(g);
+                        });
+                    });
+                });
+                const eOrder = [...(expanded.order || [])];
+                Array.from(expActive).sort().forEach(g => { if (!eOrder.includes(g)) eOrder.push(g); });
+                barData = expData;
+                barSeries = eOrder.filter(g => expActive.has(g));
+                barColor = (g) => (expanded.colorMap || {})[g] || fallbackColors[eOrder.indexOf(g) % fallbackColors.length];
+                barName = (g) => `${selectedSeriesFilter} / ${g}`;
+            }
+
             let maxCount = 0;
-            months.forEach(mo => visibleSeries.forEach(k => { maxCount = Math.max(maxCount, currentDataObj[mo][k] || 0); }));
+            months.forEach(mo => barSeries.forEach(k => { maxCount = Math.max(maxCount, barData[mo][k] || 0); }));
 
             if (maxCount === 0) {
                 targetContainer.innerHTML = '<div class="list-empty-msg sort-chart-empty">표시할 데이터가 없습니다.</div>';
@@ -3280,7 +3308,18 @@ function renderSortChart(results) {
                         renderInner();
                         notifySelect();
                     };
+                    // [추가] 선택된 항목 옆에 붙일 버튼 등 (opts.legendExtra)
+                    if (typeof opts.legendExtra === 'function' && selectedSeriesFilter === k) opts.legendExtra(k, legDiv);
                     targetLegend.appendChild(legDiv);
+                    // [추가] 펼친 항목 아래에 하위 구분(사업장 구분) 색 표시
+                    if (expanded && selectedSeriesFilter === k) {
+                        barSeries.forEach(g => {
+                            const sub = document.createElement('div');
+                            sub.className = 'legend-item legend-sub';
+                            sub.innerHTML = `<div class="legend-color-box" style="background:${barColor(g)};"></div><span title="${escapeHtml(g)}">${escapeHtml(g)}</span>`;
+                            targetLegend.appendChild(sub);
+                        });
+                    }
                 });
             }
 
@@ -3289,11 +3328,14 @@ function renderSortChart(results) {
                 exportBtn.onclick = (e) => {
                     e.stopPropagation();
                     let csvContent = '﻿';
-                    csvContent += `월,${seriesList.map(k => '"' + String(k).replace(/"/g, '""') + '"').join(',')},합계\n`;
+                    // 펼친 상태면 하위 구분(사업장 구분)별, 아니면 항목별
+                    const csvSeries = expanded ? barSeries : seriesList;
+                    const csvData = expanded ? barData : currentDataObj;
+                    csvContent += `월,${csvSeries.map(k => '"' + String(expanded ? barName(k) : k).replace(/"/g, '""') + '"').join(',')},합계\n`;
                     months.forEach(mo => {
                         let total = 0;
                         const row = [mo];
-                        seriesList.forEach(k => { const v = currentDataObj[mo][k] || 0; row.push(v); total += v; });
+                        csvSeries.forEach(k => { const v = csvData[mo][k] || 0; row.push(v); total += v; });
                         row.push(total);
                         csvContent += row.join(',') + '\n';
                     });
@@ -3323,17 +3365,17 @@ function renderSortChart(results) {
                 let barCount = 0;
                 let monthTotal = 0;
                 // [변경] 달마다 건수가 많은 막대부터 표시 (같으면 범례 순서)
-                const seriesByCount = [...visibleSeries].sort((a, b) =>
-                    ((currentDataObj[mo][b] || 0) - (currentDataObj[mo][a] || 0)) || (visibleSeries.indexOf(a) - visibleSeries.indexOf(b)));
+                const seriesByCount = [...barSeries].sort((a, b) =>
+                    ((barData[mo][b] || 0) - (barData[mo][a] || 0)) || (barSeries.indexOf(a) - barSeries.indexOf(b)));
                 seriesByCount.forEach(k => {
-                    const count = currentDataObj[mo][k] || 0;
+                    const count = barData[mo][k] || 0;
                     if (count <= 0) return;
                     barCount++;
                     monthTotal += count;
                     const barWrapper = document.createElement('div');
                     barWrapper.className = 'multi-bar-wrapper';
-                    barWrapper.title = `${mo} - ${k}: ${count}건`;
-                    barWrapper.innerHTML = `<div class="bar-value">${count}</div><div class="bar" style="height: ${(count / yAxisMax) * 100}%; background: ${colorOf(k)};"></div>`;
+                    barWrapper.title = `${mo} - ${barName(k)}: ${count}건`;
+                    barWrapper.innerHTML = `<div class="bar-value">${count}</div><div class="bar" style="height: ${(count / yAxisMax) * 100}%; background: ${barColor(k)};"></div>`;
                     trackDiv.appendChild(barWrapper);
                 });
                 const labelDiv = document.createElement('div');
@@ -3429,11 +3471,47 @@ function renderSortChart(results) {
     };
     hideDetailFrom(1); // 새 검색 시 닫힘
 
-    const monthlyTypeRender = drawMonthlyChart(monthlyTypeData, monthRange,
+    // [추가] 월별 작업 구분 현황 [펼치기]: 범례에서 고른 작업 구분의 월별 막대를 사업장 구분별 막대로 나눠 표시
+    let monthlyTypeExpanded = false;
+    const getTypeExpanded = (type) => {
+        if (!monthlyTypeExpanded) return null;
+        const dataObj = {};
+        monthlyDetailRows.forEach(r => {
+            if (r.type === type) addMonthly(dataObj, r.month, r.site, getRowSiteGroup(r.site));
+        });
+        return {
+            dataObj,
+            order: ['SEC', 'SKH 이천', 'SKH 청주', '기타사업장', 'SCS 서안', 'SKH 우시', '기타 해외', '기타'],
+            colorMap: { 'SEC': '#034EA2', 'SKH 이천': '#eb371f', 'SKH 청주': '#F37021', '기타사업장': '#8957e5', 'SCS 서안': '#0096D6', 'SKH 우시': '#d29922', '기타 해외': '#00a8a8', '기타': '#1b7c83' }
+        };
+    };
+
+    let monthlyTypeRender = null;
+    monthlyTypeRender = drawMonthlyChart(monthlyTypeData, monthRange,
         ['정기', '비정기', '고객대응', '용액제조', '온라인점검'],
         { '정기': '#238636', '비정기': '#eb371f', '고객대응': '#d29922', '용액제조': '#8957e5', '온라인점검': '#0078d4' },
         '작업', monthlyTypeContainer, monthlyTypeYAxis, monthlyTypeLegend,
-        { onSeriesSelect: (t) => { hideDetailFrom(1); if (t) showDetailLevel(1, { type: t }); } });
+        {
+            onSeriesSelect: (t) => {
+                hideDetailFrom(1);
+                if (t) showDetailLevel(1, { type: t });
+                if (!t) monthlyTypeExpanded = false;   // 선택 해제 시 접힘 (다른 구분을 고르면 펼친 상태 유지)
+            },
+            getExpanded: getTypeExpanded,
+            legendExtra: (k, legDiv) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'sort-legend-expand-btn';
+                btn.textContent = monthlyTypeExpanded ? '접기' : '펼치기';
+                btn.title = monthlyTypeExpanded ? '사업장 구분별 막대 접기' : `${k} 작업을 사업장 구분별 막대로 펼치기`;
+                btn.onclick = (e) => {
+                    e.stopPropagation(); // 범례 선택 해제 방지
+                    monthlyTypeExpanded = !monthlyTypeExpanded;
+                    if (monthlyTypeRender) monthlyTypeRender();
+                };
+                legDiv.appendChild(btn);
+            }
+        });
 
     // [추가] 월별 통계 사업장 구분 필터 버튼 (전체 / SEC / SKH 이천 …) - 검색 결과에 있는 구분만 표시, 선택은 다시 검색해도 유지
     const renderMonthlySiteFilter = () => {

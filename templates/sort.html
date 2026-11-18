@@ -2,7 +2,7 @@
 {% set active_page = 'sort' %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/sort.css') }}?v=17">
+<link rel="stylesheet" href="{{ url_for('SettingDAO', filename='StyleSheet/sort.css') }}?v=20">
 {% endblock %}
 
 {% block content %}
@@ -685,5 +685,5 @@
 <!-- Chart.js 라이브러리 (리포트 차트 렌더링용) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
-<script src="{{ url_for('SettingDAO', filename='JavaScript/sort.js') }}?v=1.2.1"></script>
+<script src="{{ url_for('SettingDAO', filename='JavaScript/sort.js') }}?v=1.2.4"></script>
 {% endblock %}
