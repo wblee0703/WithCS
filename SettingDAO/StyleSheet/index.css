@@ -542,6 +542,21 @@ body {
     font-size: 15px;
 }
 
+/* 셋업 관리 프로젝트 목록: 항목마다 테두리·배경으로 구분 (선택 항목은 아래 .active 로 더 진하게) */
+#setup-equip-detail-list .status-list-item {
+    border: 1px solid #30363d;
+    background-color: #161b22;
+    padding: 6px 8px;
+}
+#setup-equip-detail-list .status-list-item:hover {
+    background-color: #21262d;
+    border-color: #484f58;
+}
+#setup-equip-detail-list .status-list-item.active {
+    background-color: rgba(31, 111, 235, .15);
+    border-color: #1f6feb;
+}
+
 .status-color {
     width: 10px;
     height: 10px;

@@ -6036,6 +6036,7 @@ window.openAllUsersModal = function () {
         console.error('all-users-modal HTML 요소를 찾을 수 없습니다. common.html에 포함되어 있는지 확인해주세요.');
         return;
     }
+    if (window.setAllUsersListExpanded) window.setAllUsersListExpanded(false); // 열 때는 항상 접힌 상태
 
     // 초기 이벤트 리스너 바인딩 (1회만 실행)
     if (!modal.dataset.initialized) {
@@ -6186,6 +6187,20 @@ window.openAllUsersModal = function () {
     if (editForm) { editForm.style.opacity = '0.3'; editForm.style.pointerEvents = 'none'; }
 };
 
+// [추가] 모바일: 계정 목록 접기/펼치기 (접힌 상태는 3명 높이)
+window.setAllUsersListExpanded = function (on) {
+    const panel = document.querySelector('.all-users-list-panel');
+    const btn = document.getElementById('all-users-list-toggle');
+    if (!panel || !btn) return;
+    panel.classList.toggle('expanded', on);
+    btn.textContent = on ? '목록 접기 ▲' : '전체 목록 펼치기 ▼';
+};
+document.addEventListener('click', (e) => {
+    if (!e.target.closest('#all-users-list-toggle')) return;
+    const panel = document.querySelector('.all-users-list-panel');
+    window.setAllUsersListExpanded(!(panel && panel.classList.contains('expanded')));
+});
+
 // [추가] 모든 계정 리스트 불러오기 및 렌더링
 window.loadAllUsersList = function () {
     fetch('/api/admin/users/all', { headers: { 'X-CSRFToken': getCookie('csrf_token') } })
@@ -6219,6 +6234,11 @@ window.loadAllUsersList = function () {
                     li.onclick = () => {
                         document.querySelectorAll('#all-users-list li').forEach(el => el.classList.remove('active'));
                         li.classList.add('active');
+                        // 모바일에서 펼친 목록에서 고르면 다시 접고 고른 계정이 보이게
+                        if (window.setAllUsersListExpanded) {
+                            window.setAllUsersListExpanded(false);
+                            li.scrollIntoView({ block: 'nearest' });
+                        }
 
                         const editForm = document.getElementById('all-users-edit-form');
                         if (editForm) { editForm.style.opacity = '1'; editForm.style.pointerEvents = 'auto'; }

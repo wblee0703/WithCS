@@ -774,6 +774,18 @@ input:disabled {
     background: #0d1117;
     box-sizing: border-box;
 }
+.all-users-list-toggle {
+    display: none; /* 모바일에서만 표시 */
+    width: 100%;
+    padding: 10px;
+    border: 0;
+    border-top: 1px solid #30363d;
+    background: #161b22;
+    color: #58a6ff;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+}
 .all-users-search-container {
     padding: 10px;
     border-bottom: 1px solid #30363d;
@@ -1501,6 +1513,17 @@ body.role-admin .btn-list-setting {
     .all-users-list-panel, #all-users-edit-form {
         width: 100% !important;
         flex: none !important;
+    }
+    /* 계정 목록은 3명 정도 높이로 접어 두고, [전체 목록 펼치기]로 전체 확인 */
+    .all-users-list-panel .all-users-list {
+        flex: none;
+        max-height: 172px;
+    }
+    .all-users-list-panel.expanded .all-users-list {
+        max-height: 60vh;
+    }
+    .all-users-list-toggle {
+        display: block;
     }
 
     /* 본인 확인 및 비밀번호 강제 변경 팝업 모바일 크기 최적화 */

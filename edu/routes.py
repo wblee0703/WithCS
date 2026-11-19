@@ -493,15 +493,20 @@ def api_videos(mid):
     cat = request.args.get("category") or CAT_KEYS[0]
     if cat not in CAT_KEYS:
         raise ApiError(400, "잘못된 분류입니다.")
-    q = M.Video.query.filter_by(model_id=mid, category=cat)
+    rows = (M.Video.query.filter_by(model_id=mid, category=cat)
+            .order_by(M.Video.sort_order, M.Video.id).all())
+    videos = videos_with_latest(rows)
+    # 강 번호(no)는 언어 필터와 관계없이 분류 전체 순서 기준
+    for n, v in enumerate(videos, 1):
+        v["no"] = n
+    total = len(videos)
     lang = clean(request.args.get("lang"), 50)
     if lang:
-        q = q.filter_by(language=lang)
-    rows = q.order_by(M.Video.sort_order, M.Video.id).all()
+        videos = [v for v in videos if v["language"] == lang]
     langs = [l for (l,) in M.db.session.query(M.Video.language).distinct()
              .filter(M.Video.model_id == mid, M.Video.category == cat, M.Video.language != "")
              .order_by(M.Video.language).all()]
-    return ok(videos=videos_with_latest(rows), languages=langs)
+    return ok(videos=videos, languages=langs, total=total)
 
 
 @bp.route("/languages", methods=["GET"])
@@ -586,6 +591,9 @@ def api_video_edit(vid):
     for k, val in f.items():
         setattr(v, k, val)
     v.updated_at = now()
+    pos = to_int(body().get("position"), 0)
+    if pos > 0:
+        _move_to(v, pos)
     commit()
     audit("EDU_EDIT_VIDEO", f["title"], f"교육 영상 정보 수정: {f['title']}")
     return ok()
@@ -604,6 +612,22 @@ def api_video_delete(vid):
     commit()
     audit("EDU_DELETE_VIDEO", title, f"교육 영상 삭제: {title}")
     return ok(file_errors=delete_files(files))
+
+
+def _move_to(v, pos):
+    """같은 분류 안에서 v 를 pos 번째(1부터, 목록에 보이는 강 번호 기준)로 끼워 넣음. 나머지는 한 칸씩 밀림."""
+    M = em.M
+    rows = (M.Video.query.filter_by(model_id=v.model_id, category=v.category)
+            .order_by(M.Video.sort_order, M.Video.id).all())
+    lat = em.latest_versions([r.id for r in rows])
+    shown = [r for r in rows if r.id in lat]          # 화면에 강 번호가 붙는 영상
+    if v not in shown:
+        return
+    shown.remove(v)
+    shown.insert(min(pos, len(shown) + 1) - 1, v)
+    hidden = [r for r in rows if r.id not in lat]
+    for order, r in enumerate(shown + hidden, 1):
+        r.sort_order = order
 
 
 @bp.route("/videos/<int:vid>/move", methods=["POST"])

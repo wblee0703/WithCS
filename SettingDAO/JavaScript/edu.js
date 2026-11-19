@@ -317,7 +317,7 @@
 
     function renderModelHeader() {
         $("edu-model-name").textContent = S.model.name;
-        $("edu-model-info").textContent = `전체 교육 영상 ${S.model.total}개 · 등록일 ${S.model.created_at}`;
+        $("edu-model-info").textContent = `전체 교육 영상 ${S.model.total}개`;
         $("edu-attach-count").textContent = `(${S.model.attachments})`;
         $("edu-btn-attach").title = `첨부자료 ${S.model.attachments}개`;
         renderSeg();
@@ -388,6 +388,7 @@
         if (S.modelId == null) return;
         const d = await api(`/api/edu/models/${S.modelId}/videos?category=${encodeURIComponent(S.cat)}&lang=${encodeURIComponent(S.lang)}`);
         S.videos = d.videos;
+        S.videoTotal = d.total || d.videos.length;
         if (selectId !== undefined) S.videoId = selectId;
         if (!S.videos.some((v) => v.id === S.videoId)) S.videoId = null;
         store.set("videoId", S.videoId);
@@ -410,9 +411,10 @@
         box.innerHTML = S.videos.map((v, i) => `
             <div class="edu-vitem ${v.id === S.videoId ? "active" : ""}" data-id="${v.id}" title="${esc(v.title)}">
               <button type="button" class="edu-vmenu-btn" data-menu="${v.id}" aria-label="영상 메뉴" title="메뉴">${icon("more")}</button>
+              <div class="mt">${esc(v.title)}</div>
               <div class="thumb">
                 ${v.thumb_url ? `<img src="${esc(v.thumb_url)}" loading="lazy" alt="">` : ""}
-                <span class="no">${i + 1}강</span>
+                <span class="no">${v.no || i + 1}강</span>
                 ${v.duration_ms ? `<span class="dur">${fmtDur(v.duration_ms)}</span>` : ""}
                 ${v.id === S.playingId ? '<span class="playing">▶ 재생 중</span>' : ""}
               </div>
@@ -427,7 +429,6 @@
                 <div class="m">${esc([v.author, v.updated_at].filter(Boolean).join(" · "))}</div>
                 <div class="views">
                   <span class="edu-view-count" title="재생 횟수 (같은 사람이 ${30}분 안에 다시 본 것은 1회)">${icon("play")} 재생 ${Number(v.view_count || 0).toLocaleString()}회</span>
-                  ${S.admin ? `<button type="button" class="edu-btn edu-btn-xs" data-views="${v.id}" title="누가 언제 재생했는지 보기">${icon("history")} 기록</button>` : ""}
                 </div>
                 </div>
               </div>
@@ -459,7 +460,7 @@
     }
 
     // ------------------------------------------------------------------ 영상 항목 메뉴 (⋮)
-    // 버전 이력은 모두, 정보 수정·새 버전·순서·삭제는 최종관리자만
+    // 버전 이력은 모두, 재생 기록·정보 수정·새 버전·삭제는 최종관리자만
     function closeItemMenu() {
         const m = $("edu-vmenu");
         if (m) m.remove();
@@ -472,7 +473,9 @@
         if (wasOpen) return;
         const idx = S.videos.findIndex((x) => x.id === id);
         if (idx < 0) return;
-        const items = [["history", "버전 이력", videoHistory]];
+        const items = [];
+        if (S.admin) items.push(["play", "재생 기록", () => openViews(id)]);   // 누가 언제 재생했는지
+        items.push(["history", "버전 이력", videoHistory]);
         if (S.admin) {
             items.push(
                 ["edit", "정보 수정", videoEdit],
@@ -775,6 +778,14 @@
         if (r) { await refreshModelHeader(); await loadVideos(r.id); toast("영상을 등록했습니다."); }
     }
 
+    /** 강 번호 선택: 지금 번호는 빼고 나머지 번호만. 고르면 그 자리로 끼워 넣고 사이 영상은 한 칸씩 밀림 */
+    function posOptions(v) {
+        const total = S.videoTotal || S.videos.length, cur = v.no;
+        const opts = [];
+        for (let n = 1; n <= total; n++) if (n !== cur) opts.push(`<option value="${n}">${n}강으로 이동</option>`);
+        return `<select name="pos"><option value="0">${cur ? `${cur}강 (변경 안 함)` : "변경 안 함"}</option>${opts.join("")}</select>`;
+    }
+
     async function videoEdit() {
         const v = curVideo(); if (!v) return;
         const r = await modal({
@@ -782,8 +793,9 @@
             body: field("제목 *", `<input type="text" name="title" maxlength="300" value="${esc(v.title)}">`) +
                 field("설명", `<textarea name="desc" maxlength="5000">${esc(v.description)}</textarea>`, true) +
                 field("작성자", `<input type="text" name="author" maxlength="100" value="${esc(v.author)}">`) +
-                field("언어", langOptions(v.language)),
-            onOk: (f) => api(`/api/edu/videos/${v.id}`, { method: "PUT", json: { title: f.title.value, description: f.desc.value, author: f.author.value, language: f.lang.value } }),
+                field("언어", langOptions(v.language)) +
+                field("강 번호", posOptions(v)),
+            onOk: (f) => api(`/api/edu/videos/${v.id}`, { method: "PUT", json: { title: f.title.value, description: f.desc.value, author: f.author.value, language: f.lang.value, position: Number(f.pos.value) || 0 } }),
         });
         if (r) { await loadVideos(v.id); toast("저장했습니다."); }
     }
@@ -960,8 +972,6 @@
             if (mb) { e.stopPropagation(); openItemMenu(Number(mb.dataset.menu), mb); return; }
             const rb = e.target.closest("[data-reencode]");
             if (rb) { e.stopPropagation(); reencode(Number(rb.dataset.reencode), rb.title).catch(showError); return; }
-            const vb = e.target.closest("[data-views]");
-            if (vb) { e.stopPropagation(); openViews(Number(vb.dataset.views)).catch(showError); return; }
             const it = e.target.closest(".edu-vitem");
             if (it) selectVideo(Number(it.dataset.id), true);
         });

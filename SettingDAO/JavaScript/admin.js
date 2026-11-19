@@ -1946,12 +1946,13 @@ function renderAdminEquipList() {
             const matchedModel = equipmentModels.find(m => m.name === name || m.abbr === name);
             const displayName = (matchedModel && matchedModel.abbr) ? matchedModel.abbr : name;
 
-            // [추가] 고객사 장비명(custEquipName) 및 장비 구분(equipStatus) 정보를 가져와 검색 대상 텍스트에 포함
+            // [추가] 고객사 장비명(custEquipName), 장비 구분(equipStatus), 프로젝트 번호(projectNo) 정보를 가져와 검색 대상 텍스트에 포함
             const detailData = JSON.parse(localStorage.getItem(`details_${item.site}_${item.key}`)) || {};
             const custEquipName = custNameFromKey || ((detailData.setup && detailData.setup.custEquipName) ? detailData.setup.custEquipName : '');
             const equipStatus = (detailData.setup && detailData.setup.equipStatus) ? detailData.setup.equipStatus : '';
+            const projectNo = (detailData.setup && detailData.setup.projectNo) ? detailData.setup.projectNo : '';
 
-            const text = `${item.site} ${name} ${displayName} ${serial} ${custEquipName} ${equipStatus}`.toLowerCase();
+            const text = `${item.site} ${name} ${displayName} ${serial} ${custEquipName} ${equipStatus} ${projectNo}`.toLowerCase();
             return keywords.every(kw => text.includes(kw));
         });
     }
